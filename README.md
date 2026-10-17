@@ -1,0 +1,48 @@
+# ask
+
+A Swift coding agent.
+
+`ask` is a from-scratch Swift implementation of a pi-class terminal coding agent, built for latency:
+cold start, idle memory, input delay, and action-to-action delay are budgets with numbers, not
+adjectives.
+
+## Read this first
+
+**[docs/WHITE-PAPER.md](docs/WHITE-PAPER.md)** — the project rules. Paste it at the start of any
+iteration. It leads with the evidence rule: every claim is challenged and backed by an actual probe
+before it is adopted, and there is no place for an assumption.
+
+## Layout
+
+| Path | What |
+|---|---|
+| `docs/WHITE-PAPER.md` | The rules this project runs on, and the probe ledger |
+| `docs/adr/` | One decision per file |
+| `docs/roadmap/` | One entry per file — a unit of work, claimable on its own |
+| `docs/diary/` | The working log, capped at 256 lines per file |
+
+## Status
+
+Early. One target (`AskCore`), tested green in release. The terminal stack, the agent core and the
+codemode host have not been built.
+
+**No performance number has been measured yet.** Until
+[roadmap 0004](docs/roadmap/0004-measure-the-budgets.md) lands, the performance goals are an
+unmeasured claim, and nothing here may be justified by one.
+
+## Building
+
+```sh
+swift build -c release
+swift test  -c release
+```
+
+Release only, always — see [ADR-0002](docs/adr/0002-release-only-no-testable.md). A debug build
+measures a program nobody ships.
+
+## Foundation
+
+The kernel tier and the deterministic test kit come from [Aemi](https://github.com/Aemi-Studio/aemi).
+The terminal stack becomes `AemiTerminal` inside Aemi — see
+[ADR-0001](docs/adr/0001-aemiterminal-in-aemi.md). Aemi publishes no tags yet, which currently blocks
+depending on it by version.
