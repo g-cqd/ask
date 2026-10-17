@@ -1,9 +1,15 @@
 ---
-status: proposed
+status: superseded
+superseded-by: ADR-0004
 date: 2026-10-18
 ---
 
 # 0001 — The terminal stack becomes `AemiTerminal`, inside Aemi
+
+> **Superseded by [ADR-0004](0004-terminal-stack-seam-corrected.md).** The seam described here was
+> assumed from the module list; probing the imports showed three further modules are inside it, and
+> that Aemi is one package with many targets rather than a set of packages. The decision — the stack
+> lives in Aemi, shared by all three projects — stands. The scope and the shape below do not.
 
 ## Context
 
