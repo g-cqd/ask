@@ -41,10 +41,17 @@ public enum DocumentationLayout {
             text.contains("status:")
         }
 
-        /// Whether the file claims more than one entry, which happens when an entry grows to hold a
-        /// batch: a second top-level `## ` heading means a second unit of work is hiding inside it.
+        /// Whether the file claims more than one entry.
+        ///
+        /// An entry is one unit of work, so the signals are the ones that actually mark one: a
+        /// second top-level title, or a second `status:` field. Section headings deliberately do not
+        /// count — an entry may legitimately have `## Done` and `## Still owed` sections, and treating
+        /// those as extra entries punishes the file for being well organised.
         public var holdsMultipleEntries: Bool {
-            text.split(separator: "\n").filter { $0.hasPrefix("## ") }.count > 1
+            let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+            let titles = lines.filter { $0.hasPrefix("# ") }.count
+            let statuses = lines.filter { $0.hasPrefix("status:") }.count
+            return titles > 1 || statuses > 1
         }
     }
 
