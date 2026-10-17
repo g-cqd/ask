@@ -157,6 +157,11 @@ actually ran.**
 | 8 | The diary line-budget guard might be vacuous — a test that has only ever passed proves nothing | Wrote a 300-line diary file, ran the suite, removed it | **REFUTED.** The guard fired and named the offending file. It is load-bearing. |
 | 9 | The one-entry-per-roadmap-file guard might be vacuous | Wrote a roadmap file holding two `## ` entries, ran the suite, removed it | **REFUTED.** The guard fired and named the file. It is load-bearing. |
 | 10 | Something in `ask` requires a macOS floor above 15 | Built and ran the full suite at floors 15, 26 and 27 | **REFUTED.** All three pass with 0 errors. The floor is a free choice today, not a constraint. Floor set to 26. ADR-0003. |
+| 11 | The terminal stack is the three modules `KittyTerminal`, `KittyCodecs`, `KittyRenderer` | `grep` of every `import` in those three modules | **REFUTED.** `KittyCodecs` also needs `KittyStyle`; `KittyRenderer` also needs `AtelierText` and `KittyStyle`. The move would not have compiled. ADR-0004. |
+| 12 | The terminal seam is 3,530 lines | Extended the same import probe through the newly revealed dependencies | **REFUTED.** Six modules, 6,263 lines — 79% larger. But the closure is clean: every external dependency is stdlib or `AemiKernel`, already in Aemi. |
+| 13 | `AemiTerminal` should be a new package inside Aemi | Read Aemi's own manifest | **REFUTED.** Aemi states "ONE package, MANY small targets". `AemiTerminalCore` was added as a target in that same manifest. |
+| 14 | Aemi's zero tags block Atelier from consuming it | Read `Apps/KittyCode/Package.swift:40` | **REFUTED.** Atelier pins by `revision:`, not by version. Tagging is desirable, not a prerequisite. |
+| 15 | The escape sequences for modes 1006 and 2004 are correct | Byte-exact test comparing emitted bytes to literals | **REFUTED.** Both were written a byte short (`1,0,6` and `2,0,4`). Reading the arrays three times did not find it; printing the bytes and diffing did, in one run. |
 
 **Open questions — claims not yet probed, and therefore not acted on:**
 
