@@ -9,27 +9,6 @@ internal import Synchronization
 internal import System
 internal import TerminalKitInput
 
-/// Adapts the Anthropic client to the loop, resolving auth per request so a long run survives a refresh.
-private struct ClaudeProvider: ModelProvider {
-    let client: AnthropicClient
-    let auth: @Sendable () async throws -> AnthropicClient.Auth
-
-    func stream(_ request: ModelRequest) -> AsyncThrowingStream<ModelEvent, any Error> {
-        let (client, auth) = (client, auth)
-        return AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    for try await event in client.stream(request, auth: try await auth()) { continuation.yield(event) }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            continuation.onTermination = { _ in task.cancel() }
-        }
-    }
-}
-
 /// The answer goes to standard output; tool activity and diagnostics to standard error.
 private final class PrintRenderer: Sendable {
     private let midLine = Mutex(false)
@@ -67,34 +46,19 @@ private final class PrintRenderer: Sendable {
 /// is stopped, and then exit with 128 + the signal.
 func runPrompt(_ prompt: String, model: String) async {
     let transport = URLSessionTransport()
-    let auth: @Sendable () async throws -> AnthropicClient.Auth
-    if let key = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !key.isEmpty {
-        auth = { .apiKey(key) }
-    } else {
-        let access = ClaudeAccess(file: .standard(), client: ClaudeAuthClient(transport: transport))
-        do {
-            _ = try await access.auth(now: Date().timeIntervalSince1970)
-        } catch .signedOut {
-            fail("ask: not signed in. Run `ask login`, or set ANTHROPIC_API_KEY.", code: 77)
-        } catch {
-            fail("ask: \(error)", code: 77)
-        }
-        auth = { try await access.auth(now: Date().timeIntervalSince1970) }
+    // Fail fast before any work when there is no way to authenticate.
+    do {
+        _ = try await requestAuth(transport: transport)()
+    } catch let error as NotSignedIn {
+        fail("ask: \(error)", code: 77)
+    } catch {
+        fail("ask: \(error)", code: 77)
     }
     let workingDirectory = FileManager.default.currentDirectoryPath
-    let tools: ToolRegistry
-    do { tools = try ToolRegistry(FileTools.all + [BashTool()]) } catch { fail("ask: \(error)", code: 70) }
-    let loop = AgentLoop(
-        provider: ClaudeProvider(
-            client: AnthropicClient(
-                transport: transport,
-                endpoint: AnthropicClient.endpoint(environment: ProcessInfo.processInfo.environment)),
-            auth: auth),
-        tools: tools,
-        settings: AgentSettings(
-            model: model, maximumTokens: 16_384, systemPrompt: [instructions(workingDirectory: workingDirectory)],
-            maximumTurns: 100),
-        context: ToolContext(workingDirectory: workingDirectory))
+    let loop: AgentLoop
+    do { loop = try makeLoop(model: model, workingDirectory: workingDirectory, transport: transport) } catch {
+        fail("ask: \(error)", code: 70)
+    }
     let directory = SessionDirectory(project: workingDirectory)
     let sessionPath = directory.newSessionPath()
     let renderer = PrintRenderer()
@@ -117,14 +81,4 @@ func runPrompt(_ prompt: String, model: String) async {
     FileHandle.standardError.write(Data("ask: session \(sessionPath)\n".utf8))
     if let signal = interrupted.withLock({ $0 }) { Foundation.exit(128 + signal) }
     if case .failure(let error) = result { fail("ask: \(error)", code: 69) }
-}
-
-/// ask's instructions, carried in the first user message (ADR-0007).
-private func instructions(workingDirectory: String) -> String {
-    """
-    You are ask, a coding agent working in a terminal on macOS. The working directory is \(workingDirectory). \
-    Use the tools to read, write and edit files and to run bash commands; relative paths resolve against the \
-    working directory. Prefer small changes you have verified, by running the build or tests when there are any. \
-    Answer concisely, and say plainly what you did not verify.
-    """
 }
