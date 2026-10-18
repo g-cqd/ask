@@ -20,6 +20,12 @@ public enum TextWrap {
         for character in paragraph {
             let characterWidth = UnicodeWidth.displayWidth(of: character)
             if lineWidth + characterWidth > width {
+                if character == " " {
+                    // The line is exactly full: break here, and the space is the break.
+                    lines.append(line)
+                    (line, lineWidth, lastSpace) = ("", 0, nil)
+                    continue
+                }
                 if let space = lastSpace, space.index > line.startIndex {
                     // Break at the last space: the space itself is dropped, the rest carries over.
                     let carried = String(line[line.index(after: space.index)...])
@@ -32,7 +38,6 @@ public enum TextWrap {
                     lineWidth = 0
                 }
                 lastSpace = nil
-                if character == " " { continue }
             }
             if character == " " { lastSpace = (line.endIndex, lineWidth) }
             line.append(character)
