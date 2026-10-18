@@ -1,0 +1,20 @@
+name: quality
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  gate:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-swift@v2
+        with:
+          swift-version: "6.4"
+      - name: SwiftLint (metrics)
+        run: brew install swiftlint
+      - name: Quality gate
+        # --check: fail if the tree is not already canonical, so a formatting drift is a red build
+        # rather than something a reviewer has to notice.
+        run: Scripts/quality.sh --check

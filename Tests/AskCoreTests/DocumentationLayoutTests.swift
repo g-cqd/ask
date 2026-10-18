@@ -1,7 +1,6 @@
+import AskCore
 import Foundation
 import Testing
-
-import AskCore
 
 @Suite("The diary stays within its line budget")
 struct DiaryLineBudgetTests {

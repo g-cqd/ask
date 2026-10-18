@@ -33,12 +33,15 @@ unmeasured claim, and nothing here may be justified by one.
 ## Building
 
 ```sh
-swift build -c release
-swift test  -c release
+Scripts/quality.sh            # format, lint, build and test
+Scripts/quality.sh --check    # verify only; what CI runs
 ```
 
 Release only, always — see [ADR-0002](docs/adr/0002-release-only-no-testable.md). A debug build
 measures a program nobody ships.
+
+Style and size are Aemi's canonical configuration, synced rather than reinvented: swift-format owns
+style, SwiftLint owns size and complexity.
 
 ## Foundation
 
