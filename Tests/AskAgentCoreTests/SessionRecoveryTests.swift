@@ -1,8 +1,8 @@
 import AskAgentCore
 import Testing
 
-/// Damaged sessions load by default (ADR-0013). Convenience is measured against pi 1.3.0: ask keeps at
-/// least what pi keeps, never loses content pi would keep, and reports every repair where pi is silent.
+/// Damaged sessions load by default (ADR-0013): damage costs only what is actually damaged, every repair is
+/// reported, and loading never writes.
 @Suite("A damaged session loads, and every repair is reported")
 struct SessionRecoveryTests {
     private let header = #"{"type":"session","version":1}"#
@@ -33,8 +33,8 @@ struct SessionRecoveryTests {
 
     // MARK: - Damage at the end
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi drops the torn record silently, and appends a newline to the
-    /// file during load, which makes the fragment a permanent corrupt line. ask reports it and is pure.
+    /// A crash mid-write costs only the record being written. Loading does not touch the file, so the
+    /// fragment never becomes a permanent corrupt line.
     @Test func `a torn final record is dropped and reported`() throws {
         let bytes = log([header, entry("a"), entry("b", parent: "a"), #"{"id":"c","pa"#], terminated: false)
         let recovered = try SessionLog.recover(bytes)
@@ -52,8 +52,8 @@ struct SessionRecoveryTests {
 
     // MARK: - Damage in the middle
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi skips the corrupt line silently and truncates context at the
-    /// gap. ask keeps every intact entry, re-roots the orphan so its subtree stays reachable, and says so.
+    /// The orphan's true parent is unknowable once that line is corrupt, so it becomes a root: its subtree
+    /// stays reachable, and nothing is attached to a guessed parent.
     @Test func `a corrupt line is skipped and its orphaned child becomes a root`() throws {
         let bytes = log([header, entry("a"), "{garbage", entry("c", parent: "b"), entry("d", parent: "c")])
         let recovered = try SessionLog.recover(bytes)
@@ -77,7 +77,7 @@ struct SessionRecoveryTests {
 
     // MARK: - Headers
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi returns no entries at all when the header does not parse.
+    /// One bad line must not cost the whole session.
     @Test func `a corrupt header still loads every intact message`() throws {
         let bytes = log(["{corrupt header", entry("a"), entry("b", parent: "a")])
         let recovered = try SessionLog.recover(bytes)
@@ -112,7 +112,7 @@ struct SessionRecoveryTests {
 
     // MARK: - Structure
 
-    /// Matches pi 1.3.0's fallback to the last entry, but reported instead of silent.
+    /// The last surviving entry is the best available position; the fallback is reported, not silent.
     @Test func `an unknown leaf falls back to the last surviving entry`() throws {
         let bytes = log([header, entry("a"), entry("b", parent: "a"), #"{"id":"ghost","type":"leaf"}"#])
         let recovered = try SessionLog.recover(bytes)
@@ -120,8 +120,7 @@ struct SessionRecoveryTests {
         #expect(recovered.issues == [.ignoredLeaf(EntryID("ghost"), line: 4)])
     }
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi's index keeps the last duplicate. ask keeps the first, since
-    /// children written after it were written against it.
+    /// The first wins: every child written after it was written against it.
     @Test func `a duplicate identifier keeps the first entry`() throws {
         let bytes = log([header, entry("a", "first"), entry("a", "second")])
         let recovered = try SessionLog.recover(bytes)
@@ -129,8 +128,8 @@ struct SessionRecoveryTests {
         #expect(recovered.issues == [.duplicateEntry(EntryID("a"), line: 3)])
     }
 
-    /// Diverges from pi 1.3.0 (ADR-0012): with a boundary it cannot find, pi shows the summary and drops
-    /// everything before it. ask splices the bad compaction out and keeps the raw messages it would hide.
+    /// A summary of messages it cannot locate is less trustworthy than the messages themselves, so the
+    /// compaction goes and the raw messages stay.
     @Test func `a compaction with a boundary off its branch is spliced out`() throws {
         let compaction =
             #"{"id":"c","parent":"x","payload":{"firstKept":"other","kind":"compaction","summary":"s"},"type":"entry"}"#

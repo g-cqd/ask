@@ -62,7 +62,7 @@ public enum SessionLog {
 
     /// Loads a log, repairing damage and reporting each repair. The default way to open a session.
     ///
-    /// Keeps at least what pi 1.3.0 keeps from the same file and never writes to it (ADR-0013): torn and
+    /// Damage costs only what is damaged, and the file is never written (ADR-0013): torn and
     /// corrupt lines are skipped, orphans become roots, a compaction with an off-branch boundary is
     /// spliced out, and every such repair is listed in ``RecoveredSession/issues``.
     /// - Parameters:

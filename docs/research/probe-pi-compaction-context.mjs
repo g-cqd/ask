@@ -1,5 +1,5 @@
 // Runs pi's own compaction context builder on nested compactions (ask ADR-0012).
-//   PI_VERSION=1.4.0 node Scripts/probe-pi-compaction-context.mjs
+//   PI_VERSION=1.4.0 node docs/research/probe-pi-compaction-context.mjs
 import os from "node:os";
 const version = process.env.PI_VERSION ?? "1.3.0";
 const dist = `${os.homedir()}/.pi/agent/install/releases/${version}/node_modules/@earendil-works/pi-coding-agent/dist`;

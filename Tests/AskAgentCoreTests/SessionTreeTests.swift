@@ -129,7 +129,6 @@ struct SessionTreeTests {
         }
     }
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi falls back to the last entry for an unknown leaf.
     @Test func `restoring rejects a leaf that is not in the archive`() throws {
         let entry = SessionEntry(id: EntryID("a"), parentID: nil, payload: .user("one"))
         #expect(throws: SessionTreeError.unknownEntry(EntryID("z"))) {
@@ -175,7 +174,6 @@ struct SessionTreeTests {
         }
     }
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi truncates context at a missing parent without reporting it.
     @Test func `restoring rejects parents that have not appeared yet`() throws {
         let entry = SessionEntry(id: EntryID("a"), parentID: EntryID("b"), payload: .user("one"))
         #expect(throws: SessionTreeError.unknownEntry(EntryID("b"))) {

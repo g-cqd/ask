@@ -1,11 +1,15 @@
 ---
-status: accepted
+status: superseded
+superseded-by: ADR-0014
 amended-by: ADR-0013
 date: 2026-10-18
 ---
 
 # 0012 — pi is a reference, not a specification
 
+> **Superseded by [ADR-0014](0014-our-own-bar-not-a-reference.md):** requirements are stated in ask's own
+> terms, and research on other agents lives in `docs/research/`.
+>
 > **Amended by [ADR-0013](0013-damaged-sessions-load-by-default.md).** Damaged sessions now load by
 > default with every repair reported, and pi findings are recorded in `docs/PI-FINDINGS.md`, never filed
 > upstream. The principle below stands.

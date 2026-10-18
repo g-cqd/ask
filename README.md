@@ -2,7 +2,7 @@
 
 A Swift coding agent.
 
-`ask` is a from-scratch Swift implementation of a pi-class terminal coding agent, built for latency:
+`ask` is a terminal coding agent written from scratch in Swift, built to be reliable, fast and light:
 cold start, idle memory, input delay, and action-to-action delay are budgets with numbers, not
 adjectives.
 
