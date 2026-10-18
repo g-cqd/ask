@@ -12,7 +12,7 @@ import PackageDescription
 //   AskAgentCore   — session tree and context construction; later the loop.        (exists)
 //   AskTUI         — screen model, widgets, input routing, over TerminalKit only.   (exists)
 //   AskAI          — providers, streaming, protocol adapters, auth.                 (exists)
-//   AskTools       — read, write, edit, bash over swift-subprocess (ADR-0011).      (0011)
+//   AskTools       — read, write, edit, bash over swift-subprocess (ADR-0011).      (exists)
 //   AskCodeMode    — the codemode host.                                             (0012)
 //   ask            — composition root, the only target that sees everything.
 //
@@ -69,6 +69,7 @@ let package = Package(
         // Consumed by the Benchmarks package (ADR-0016).
         .library(name: "AskAgentCore", targets: ["AskAgentCore"]),
         .library(name: "AskAI", targets: ["AskAI"]),
+        .library(name: "AskTools", targets: ["AskTools"]),
         .library(name: "AskTUI", targets: ["AskTUI"])
     ],
     dependencies: [
@@ -107,6 +108,12 @@ let package = Package(
             swiftSettings: packageSettings
         ),
         .target(
+            name: "AskTools",
+            dependencies: ["AskAgentCore", "AskAI", .product(name: "AemiKernel", package: "aemi")],
+            path: "Sources/AskTools",
+            swiftSettings: packageSettings
+        ),
+        .target(
             name: "AskTUI",
             dependencies: [
                 .product(name: "TerminalKitCore", package: "TerminalKit"),
@@ -141,6 +148,12 @@ let package = Package(
             name: "AskAITests",
             dependencies: ["AskAI"],
             path: "Tests/AskAITests",
+            swiftSettings: packageSettings
+        ),
+        .testTarget(
+            name: "AskToolsTests",
+            dependencies: ["AskTools", "AskAgentCore", "AskAI"],
+            path: "Tests/AskToolsTests",
             swiftSettings: packageSettings
         ),
         .testTarget(
