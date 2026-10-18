@@ -95,7 +95,7 @@ let package = Package(
         .target(
             name: "AskAgentCore",
             dependencies: [
-                .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiIO", package: "aemi")
+                "AskAI", .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiIO", package: "aemi")
             ],
             path: "Sources/AskAgentCore",
             swiftSettings: packageSettings
@@ -133,7 +133,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AskAgentCoreTests",
-            dependencies: ["AskAgentCore", .product(name: "AemiIO", package: "aemi")],
+            dependencies: ["AskAgentCore", "AskAI", .product(name: "AemiIO", package: "aemi")],
             path: "Tests/AskAgentCoreTests",
             swiftSettings: packageSettings
         ),

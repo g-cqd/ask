@@ -166,21 +166,6 @@ extension WireEvent.Delta {
     }
 }
 
-extension StopReason {
-    fileprivate init(wire: String) {
-        switch wire {
-            case "end_turn": self = .endTurn
-            case "max_tokens": self = .maxTokens
-            case "stop_sequence": self = .stopSequence
-            case "tool_use": self = .toolUse
-            case "pause_turn": self = .pauseTurn
-            case "refusal": self = .refusal
-            case "model_context_window_exceeded": self = .contextWindowExceeded
-            default: self = .other(wire)
-        }
-    }
-}
-
 extension ProviderFailure.Kind {
     fileprivate init(wire: String) {
         switch wire {
