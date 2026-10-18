@@ -20,6 +20,19 @@ public struct AssembledResponse: Sendable, Equatable {
     public var usage: TokenUsage
     /// Events and deltas that were not understood, as `event/type`, for diagnostics.
     public var unrecognized: [String]
+
+    /// A response with these fields.
+    public init(
+        id: String, model: String, blocks: [ContentBlock], stopReason: StopReason?, usage: TokenUsage,
+        unrecognized: [String]
+    ) {
+        self.id = id
+        self.model = model
+        self.blocks = blocks
+        self.stopReason = stopReason
+        self.usage = usage
+        self.unrecognized = unrecognized
+    }
 }
 
 /// Why a stream did not assemble. Each names the first event that broke the protocol's order.
