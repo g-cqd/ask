@@ -53,3 +53,22 @@ recoverable, and every failure mode is a typed error the model can act on.
 ## Reordered (ADR-0019)
 
 No longer waits for Spettro. Tools sit behind the neutral seam, `(id, name, JSONObject) → (content, isError)`, which OpenAI-completions' `tool_calls` also map onto. The protocol lives in `AskAgentCore` (ADR-0009) and implementations in `AskTools`.
+
+## Progress (2026-10-18)
+
+`read`, `write`, `edit` and `bash` are in `AskTools`. The contract and the uniform output cap are in `AskAgentCore`.
+
+`bash` runs on swift-subprocess in its own session, with group teardown, a head-and-tail collector and a timeout on an injected clock.
+
+Benchmarks:
+
+| | Before | After |
+|---|---|---|
+| edit, 1 MiB | 20 ms | 1.23 ms (byte search) |
+| read, 1 MiB | 3.97 ms | 0.57 ms |
+| cap, 1 MiB | 14 ms | 0.37–0.50 ms |
+| bash spawn | — | 2.0 ms |
+
+**Owed:**
+- a spool file for full bash output (the 0011 design names it);
+- a glob/grep tool, if the model needs more than bash `rg`.
