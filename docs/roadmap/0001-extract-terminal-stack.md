@@ -1,15 +1,19 @@
 ---
-status: in-progress
+status: done
 blocked-by:
-prerequisites: ["ADR-0005"]
 date: 2026-10-18
 supersedes-scope-in: ADR-0001
+closed-by: ADR-0010
 ---
 
 # 0001 — Share the terminal stack through TerminalKit
 
 Move reusable terminal implementations out of Atelier into TerminalKit (ADR-0005).
 Aemi remains the source of generic kernel utilities.
+
+**Closed in `ask` by [ADR-0010](0010-the-blocker-on-0001-did-not-exist.md).** The extraction itself is
+done; the only remaining work was Atelier's consumer switch, which was always TerminalKit's entry to own
+and never `ask`'s.
 
 **Scope, corrected by probe.** The seam is **six modules, 6,263 lines**, not the three modules and
 3,530 lines ADR-0001 claimed:
@@ -38,6 +42,7 @@ with explicit release testability. ADR-0012 there resolves the prior build block
 **Still required:** switch Atelier to the shared implementation, verify all affected consumers,
 and remove duplicate implementation bodies. Compatibility module names may remain as re-export
 shims; `TerminalKit/docs/roadmap/0003-atelier-consumes-terminalkit.md` owns that work.
+*(That is TerminalKit's entry, not this one — see ADR-0010.)*
 
 **Slicing.** `AtelierText` moves from `AtelierCore` and touches a different package, so it is a
 separate commit from the Kitty modules. Behaviour changes are separate commits again: the DEC 2026
