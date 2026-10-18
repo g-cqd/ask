@@ -100,7 +100,6 @@ struct SessionLogTests {
 
     // MARK: - Damage
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi trims the file and drops a torn final record silently.
     @Test func `a missing final newline is a torn line, not a dropped one`() throws {
         var bytes = try SessionLog.snapshot(try branchedTree())
         let count = lines(bytes).count - 1
@@ -108,7 +107,6 @@ struct SessionLogTests {
         #expect(throws: SessionLogError.tornFinalLine(line: count)) { try SessionLog.decode(bytes) }
     }
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi's JSON.parse failure is caught and the record skipped.
     @Test func `a record cut mid-way is a torn line`() throws {
         var bytes = try SessionLog.snapshot(try branchedTree())
         let count = lines(bytes).count - 1
@@ -116,14 +114,12 @@ struct SessionLogTests {
         #expect(throws: SessionLogError.tornFinalLine(line: count)) { try SessionLog.decode(bytes) }
     }
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi skips a malformed line and loads the rest silently.
     @Test func `a corrupt record is reported with its line number`() throws {
         var parts = lines(try SessionLog.snapshot(try branchedTree()))
         parts[2] = Array("{not json".utf8)
         #expect(throws: SessionLogError.malformedLine(line: 3)) { try SessionLog.decode(join(parts)) }
     }
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi skips blank lines.
     @Test func `a blank line is malformed rather than skipped`() throws {
         var parts = lines(try SessionLog.snapshot(try branchedTree()))
         parts.insert([], at: 1)
@@ -172,7 +168,6 @@ struct SessionLogTests {
         }
     }
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi truncates context at a missing parent without reporting it.
     @Test func `structural errors surface as invalid archives`() throws {
         var parts = lines(try SessionLog.snapshot(SessionTree()))
         let orphan = #"{"id":"a","parent":"ghost","payload":{"kind":"user","text":"x"},"type":"entry"}"#
@@ -193,7 +188,6 @@ struct SessionLogTests {
         }
     }
 
-    /// Diverges from pi 1.3.0 (ADR-0012): pi falls back to the last entry for an unknown leaf.
     @Test func `a leaf record must name an entry already written`() throws {
         var parts = lines(try SessionLog.snapshot(SessionTree()))
         parts.insert(Array(#"{"id":"ghost","type":"leaf"}"#.utf8), at: 1)

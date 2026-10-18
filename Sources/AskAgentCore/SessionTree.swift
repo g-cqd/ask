@@ -1,6 +1,6 @@
 /// A conversation as a tree: entries are never removed, and the leaf selects the active branch.
 ///
-/// Mirrors pi's session model. Branching, checkout and compaction change which entries a model sees,
+/// Branching, checkout and compaction change which entries a model sees,
 /// never which entries exist. Every mutation validates before changing state, so a thrown error leaves
 /// the tree exactly as it was.
 ///

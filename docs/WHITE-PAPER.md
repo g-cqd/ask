@@ -54,10 +54,10 @@ package, and specialised packages build on it. This binds the whole ecosystem, n
 whether a second consumer is plausible, not whether one exists today. Promotion is a real change to a
 shared package, so it is measured, reviewed and pinned by dependents like any other.
 
-**pi is a reference, not a specification.** `ask` ports pi's design, not its defects. Before adopting a
-behaviour, run pi's own code against the edge cases. A defect or a rejected trade-off found there is fixed
-here, pinned by a test marked `Diverges from pi`, and recorded in `docs/PI-FINDINGS.md` — never filed
-upstream. Diverging never means less convenient: ask keeps at least what pi keeps (ADR-0013).
+**Reliable by default, and never silent.** Damage costs only what is actually damaged: everything intact
+still loads, every repair is reported, and reading never writes. Refusing input needs a written safety
+reason, because convenience and reliability are requirements together, like speed and safety. Other agents
+are studied by running their code, never from their source alone; notes live in `docs/research/`.
 
 ---
 

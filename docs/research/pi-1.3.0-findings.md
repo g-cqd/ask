@@ -1,11 +1,11 @@
-# pi findings
+# Research note — pi 1.3.0 session handling
 
-Defects and rejected trade-offs found in [earendil-works/pi](https://github.com/earendil-works/pi) while
-porting its design. **Recorded here, never filed upstream** (ADR-0013). Each row was found by running pi's
-own installed code, not by reading it, and each has an ask test marked `Diverges from pi <version>`.
+Notes from studying [earendil-works/pi](https://github.com/earendil-works/pi) 1.3.0 while designing ask's
+sessions. Kept for what they taught about reliability, not as a target: ask's own requirements are in the
+white paper and ADR-0013. Each row was observed by running pi's installed code with the probe named, not
+by reading it. Nothing here is filed upstream.
 
-Append a row per finding. Re-run the probe against a new pi release with `PI_VERSION=<v>` before
-assuming a row still holds; a fixed row moves to *Resolved upstream* with the version that fixed it.
+Re-run a probe with `PI_VERSION=<v> node docs/research/<probe>.mjs` before relying on a row.
 
 | # | Area | pi 1.3.0 behaviour | ask behaviour | Probe | Kind |
 |---|---|---|---|---|---|
