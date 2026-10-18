@@ -11,7 +11,7 @@ import PackageDescription
 //   AskCore        — budgets, documentation layout, source standards.               (exists)
 //   AskAgentCore   — session tree and context construction; later the loop.        (exists)
 //   AskTUI         — screen model, widgets, input routing, over TerminalKit only.   (exists)
-//   AskAI          — providers, streaming, protocol adapters, auth.                 (0010)
+//   AskAI          — providers, streaming, protocol adapters, auth.                 (exists)
 //   AskTools       — read, write, edit, bash over swift-subprocess (ADR-0011).      (0011)
 //   AskCodeMode    — the codemode host.                                             (0012)
 //   ask            — composition root, the only target that sees everything.
@@ -100,6 +100,12 @@ let package = Package(
             swiftSettings: packageSettings
         ),
         .target(
+            name: "AskAI",
+            dependencies: [.product(name: "AemiJSON", package: "AemiJSON")],
+            path: "Sources/AskAI",
+            swiftSettings: packageSettings
+        ),
+        .target(
             name: "AskTUI",
             dependencies: [
                 .product(name: "TerminalKitCore", package: "TerminalKit"),
@@ -128,6 +134,12 @@ let package = Package(
             name: "AskAgentCoreTests",
             dependencies: ["AskAgentCore", .product(name: "AemiIO", package: "aemi")],
             path: "Tests/AskAgentCoreTests",
+            swiftSettings: packageSettings
+        ),
+        .testTarget(
+            name: "AskAITests",
+            dependencies: ["AskAI"],
+            path: "Tests/AskAITests",
             swiftSettings: packageSettings
         ),
         .testTarget(
