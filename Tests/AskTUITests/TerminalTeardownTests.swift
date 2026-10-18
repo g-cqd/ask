@@ -72,6 +72,26 @@ struct TerminalTeardownTests {
         #expect(connection.restoreModeCallCount == 1)
     }
 
+    @Test func `bracketed paste is on while the screen runs, so a pasted newline is not Enter`() async throws {
+        let connection = MockTerminalConnection()
+        connection.feedInput(Array("\u{1B}[200~one\ntwo\u{1B}[201~\r".utf8))
+        let conversation = RecordingConversation()
+        try await Self.run(connection, conversation: conversation)
+        let output = connection.writtenOutput
+        let enable = Array("\u{1B}[?2004h".utf8)
+        let disable = Array("\u{1B}[?2004l".utf8)
+        let enabledAt = try #require(Self.firstIndex(of: enable, in: output))
+        let disabledAt = try #require(Self.firstIndex(of: disable, in: output, after: enabledAt))
+        #expect(enabledAt < disabledAt)
+        #expect(conversation.prompts == ["one two"], "the paste is one prompt, submitted by the Enter after it")
+    }
+
+    private static func firstIndex(of needle: [UInt8], in haystack: [UInt8], after start: Int = 0) -> Int? {
+        guard haystack.count >= needle.count, start <= haystack.count - needle.count else { return nil }
+        return (start ... (haystack.count - needle.count))
+            .first { Array(haystack[$0 ..< ($0 + needle.count)]) == needle }
+    }
+
     @Test func `a submitted prompt reaches the conversation and the screen`() async throws {
         let connection = MockTerminalConnection()
         connection.feedInput(Array("hi\r".utf8))
