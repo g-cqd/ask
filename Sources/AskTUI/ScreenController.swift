@@ -1,24 +1,6 @@
 internal import TerminalKitCodecs
 public import TerminalKitInput
 
-/// What a running conversation tells the screen. The composition root maps agent events onto these.
-public enum ConversationUpdate: Sendable, Equatable {
-    case assistantText(String)
-    case toolStarted(name: String, summary: String)
-    case toolFinished(Transcript.ToolStatus)
-    case notice(String, isError: Bool)
-    /// The run is over, however it ended.
-    case runEnded
-}
-
-/// Starts runs for the screen. Implemented by the composition root over the agent loop, so AskTUI never
-/// imports the agent (ADR-0009).
-public protocol Conversation: Sendable {
-    /// Starts a run for `prompt`. Updates arrive through `update`, ending with ``ConversationUpdate/runEnded``.
-    /// - Returns: the run's task; cancelling it aborts the run.
-    func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>
-}
-
 /// The screen's behaviour as a pure state machine: events in, state and effects out. The driver performs the
 /// effects; tests drive this directly.
 public struct ScreenController: Sendable {

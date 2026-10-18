@@ -108,70 +108,70 @@ public struct BashTool: Tool {
             return Task.isCancelled ? .cancelled : .failedToStart(String(describing: error))
         }
     }
-}
 
-/// How a command ended.
-private enum Ending: Sendable {
-    case exited(Int)
-    case signalled(Int)
-    case timedOut(seconds: Int)
-    case cancelled
-    case failedToStart(String)
+    /// How a command ended.
+    private enum Ending: Sendable {
+        case exited(Int)
+        case signalled(Int)
+        case timedOut(seconds: Int)
+        case cancelled
+        case failedToStart(String)
 
-    func output(_ text: String) -> ToolOutput {
-        let body = text.isEmpty ? "" : (text.hasSuffix("\n") ? text : text + "\n")
-        switch self {
-            case .exited(0): return ToolOutput(body + "[exit 0]")
-            case .exited(let code): return .error(body + "[exit \(code)]")
-            case .signalled(let signal): return .error(body + "[terminated by signal \(signal)]")
-            case .timedOut(let seconds):
-                return .error(body + "[timed out after \(seconds) s; the command and its children were stopped]")
-            case .cancelled: return .error(body + "[aborted; the command and its children were stopped]")
-            case .failedToStart(let reason): return .error("bash could not start: \(reason)")
+        func output(_ text: String) -> ToolOutput {
+            let body = text.isEmpty ? "" : (text.hasSuffix("\n") ? text : text + "\n")
+            switch self {
+                case .exited(0): return ToolOutput(body + "[exit 0]")
+                case .exited(let code): return .error(body + "[exit \(code)]")
+                case .signalled(let signal): return .error(body + "[terminated by signal \(signal)]")
+                case .timedOut(let seconds):
+                    return .error(body + "[timed out after \(seconds) s; the command and its children were stopped]")
+                case .cancelled: return .error(body + "[aborted; the command and its children were stopped]")
+                case .failedToStart(let reason): return .error("bash could not start: \(reason)")
+            }
         }
     }
-}
 
-/// Keeps the first and the last `keeping` bytes of a stream, and counts what fell between.
-private final class OutputCollector: Sendable {
-    private struct State {
-        var head: [UInt8] = []
-        var tail: [UInt8] = []
-        var tailStart = 0
-        var omitted = 0
-    }
+    /// Keeps the first and the last `keeping` bytes of a stream, and counts what fell between.
+    private final class OutputCollector: Sendable {
+        private struct State {
+            var head: [UInt8] = []
+            var tail: [UInt8] = []
+            var tailStart = 0
+            var omitted = 0
+        }
 
-    private let keeping: Int
-    private let state = Mutex(State())
+        private let keeping: Int
+        private let state = Mutex(State())
 
-    init(keeping: Int) { self.keeping = keeping }
+        init(keeping: Int) { self.keeping = keeping }
 
-    func append(_ bytes: [UInt8]) {
-        state.withLock { state in
-            var rest = bytes[...]
-            if state.head.count < keeping {
-                let taken = rest.prefix(keeping - state.head.count)
-                state.head += taken
-                rest = rest.dropFirst(taken.count)
-            }
-            for byte in rest {
-                if state.tail.count < keeping {
-                    state.tail.append(byte)
-                } else {
-                    state.tail[state.tailStart] = byte
-                    state.tailStart = (state.tailStart + 1) % keeping
-                    state.omitted += 1
+        func append(_ bytes: [UInt8]) {
+            state.withLock { state in
+                var rest = bytes[...]
+                if state.head.count < keeping {
+                    let taken = rest.prefix(keeping - state.head.count)
+                    state.head += taken
+                    rest = rest.dropFirst(taken.count)
+                }
+                for byte in rest {
+                    if state.tail.count < keeping {
+                        state.tail.append(byte)
+                    } else {
+                        state.tail[state.tailStart] = byte
+                        state.tailStart = (state.tailStart + 1) % keeping
+                        state.omitted += 1
+                    }
                 }
             }
         }
-    }
 
-    var text: String {
-        state.withLock { state in
-            let tail = Array(state.tail[state.tailStart...] + state.tail[..<state.tailStart])
-            let head = String(decoding: state.head, as: UTF8.self)
-            guard state.omitted > 0 else { return head + String(decoding: tail, as: UTF8.self) }
-            return head + "\n[… \(state.omitted) bytes omitted …]\n" + String(decoding: tail, as: UTF8.self)
+        var text: String {
+            state.withLock { state in
+                let tail = Array(state.tail[state.tailStart...] + state.tail[..<state.tailStart])
+                let head = String(decoding: state.head, as: UTF8.self)
+                guard state.omitted > 0 else { return head + String(decoding: tail, as: UTF8.self) }
+                return head + "\n[… \(state.omitted) bytes omitted …]\n" + String(decoding: tail, as: UTF8.self)
+            }
         }
     }
 }
