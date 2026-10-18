@@ -73,13 +73,13 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "98650f4a0c3220121f5866cb0b018b1653034b8b"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "d3235eacc43fe162c465b55547c93465cffb71bf"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "6cbe2ae39b91e2721b25d6c6321e3cbdfe3496a9"),
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "d8f32b2e1cf8449bd12b99dde3a328044db00885"),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
-        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "a6446f154b42945891107e739c0617fbe965db8c"),
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "639caad90b0a8409185a712f32f9dea795e6470c"),
         // Command-line parsing for the `ask` executable only (ADR-0015). Its link cost against the
         // cold-start budget was measured before adoption.
         .package(url: "https://github.com/apple/swift-argument-parser.git", .upToNextMinor(from: "1.8.2"))
