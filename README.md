@@ -50,7 +50,7 @@ Read a roadmap entry's `status:` and `blocked-by:` before starting it.
 | [0010](docs/roadmap/0010-model-providers.md) | Model providers — first one open | 0009 |
 | [0011](docs/roadmap/0011-tool-execution.md) | Tool protocol and dispatch | 0010 |
 | [0012](docs/roadmap/0012-codemode-host.md) | The codemode host | 0011 |
-| [0015](docs/roadmap/0015-compact-pixel-ui.md) | Compact UI drawn in pixels | 0013, 0003 |
+| [0015](docs/roadmap/0015-compact-pixel-ui.md) | Two first-class layouts: compact pixel and compact character | 0013, 0003 |
 
 ## Building
 
