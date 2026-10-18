@@ -1,13 +1,13 @@
 ---
-status: in-progress
-blocked-by: ["TerminalKit SignalHandler cannot fire from a blocking read"]
+status: done
+blocked-by:
 date: 2026-10-18
 ---
 
 # 0006 — Apply the reset ladder on teardown and on signal
 
-**The teardown half is done. The signal half is blocked on TerminalKit, and the blocker is worse than
-"not implemented" — wiring the obvious fix makes the process unstoppable. Details below.**
+**Done.** Every exit path in the loop writes tier 1, and a shutdown signal both restores the terminal and
+dies with the shell-conventional status. The blocker that stood here is resolved in TerminalKit ADR-0013.
 
 ## Done — every exit path in the loop
 
@@ -29,7 +29,7 @@ terminal is restored even when the write fails** — a dead terminal must not le
 
 Guard probed both ways: swallowing the signal turns four tests red; skipping the restore turns six.
 
-## Blocked — the signal cannot be delivered to a blocking read
+## Resolved — the signal could not be delivered to a blocking read, and now can
 
 Probed on a PTY, sending a real `SIGTERM` to a running `ask`:
 
@@ -38,31 +38,25 @@ Probed on a PTY, sending a real `SIGTERM` to a running `ask`:
 | no signal handler (current) | killed by `SIGTERM` — dies, terminal **not** restored |
 | TerminalKit's `SignalHandler` wired | **ignores `SIGTERM`** — still running after 4 s |
 
-**TerminalKit's `SignalHandler` cannot fire here, and installing it is worse than the bug.**
-`DispatchSource.makeSignalSource(signal:queue:)` is given `.main`, and `ask`'s main thread is blocked
-inside `read(into:)` waiting for input. The main queue never runs, the `AsyncStream` never yields, and
-the process simply stops responding to `SIGTERM`.
+**Found:** `DispatchSource.makeSignalSource(signal:queue:)` was given `.main`, and `ask`'s main thread
+is blocked inside `read(into:)`. The main queue never ran, so the process stopped responding to
+`SIGTERM` — and installing that handler was **worse than the bug**, leaving an unstoppable process.
 
-That is the second time this session a correct-looking primitive turned out not to do its job, and it
-is the same shape as the earlier harness defect: something that returns and does nothing is worse than
-nothing, because it looks handled.
+**Fixed in TerminalKit ADR-0013:** a `sigaction` handler writes one byte to a pipe and returns — the only
+async-signal-safe thing worth doing — and a dedicated `Thread` drains it. Neither the main thread nor a
+cooperative pool thread is involved. `onShutdown` now reports which signal fired, which is what
+`128 + signo` requires.
 
-**Why it is not worked around here.** A signal installer is generic, so the white paper puts it in the
-shared package rather than in `ask` — and the one in TerminalKit is the wrong shape. Fixing it is a
-change to a package Atelier and KittyCode also link, so it is TerminalKit's change to make and record.
-The white paper's rule against duplicating a shared primitive applies with more force here, not less.
+Verified end to end against the real binary on a PTY, for both shutdown signals:
 
-**What the fix needs to be.** Deliver the signal off the main thread, so a blocked read cannot starve
-it. A `sigaction` handler writing to a self-pipe, drained by a `Task`, would do it without
-`DispatchQueue` — which this project bans — and without the main-queue starvation.
+    SIGTERM: exit=143  raw-restored=True  alt-screen-left=True  cursor=True
+    SIGINT : exit=130  raw-restored=True  alt-screen-left=True  cursor=True
 
-`SignalShutdown` stays in `ask` as the tested model of *what* must happen when the signal lands. It is
-not wired, and the wiring is blocked.
+Exit 130 for SIGINT is the part the old signature could not produce at all.
 
-## Still owed
+## Notes
 
-- The `128 + signo` exit convention depends on knowing which signal fired. TerminalKit's
-  `onShutdown` does not report it, so a `SIGINT` would exit `143` rather than `130`. That is a second
-  change the same fix should carry.
-- `SIGHUP` means the terminal closed, so there is nothing left to restore — restoring is pointless
-  there, and the unit tests cover the sequence rather than claiming it matters in that case.
+- `SIGHUP` is not handled. That is correct rather than an omission — `SIGHUP` means the terminal
+  closed, so there is nothing left to restore — and it is stated here so it is not mistaken for a gap.
+- `SignalShutdown` stays in `ask` as the tested model of *what* happens; the delivery mechanism is
+  TerminalKit's, per the rule that generic tools live in the shared package.
