@@ -58,7 +58,7 @@ public enum SourceStandards {
         return found
     }
 
-    /// `@unchecked Sendable` declarations with no `SAFETY:` justification on the same or previous line.
+    /// `@unchecked Sendable` declarations with no `SAFETY:` justification in the comment block above.
     ///
     /// - Returns: `path:line` for each unannotated declaration.
     public static func uncheckedSendableWithoutSafetyComment() throws -> [String] {
@@ -67,13 +67,26 @@ public enum SourceStandards {
             let lines = try String(contentsOf: file, encoding: .utf8)
                 .split(separator: "\n", omittingEmptySubsequences: false)
             for (index, line) in lines.enumerated() where line.contains("@unchecked Sendable") {
-                let justified =
-                    line.contains("SAFETY:")
-                    || (index > 0 && lines[index - 1].contains("SAFETY:"))
-                if !justified { found.append("\(relative(file)):\(index + 1)") }
+                if !hasSafetyComment(lines, at: index) { found.append("\(relative(file)):\(index + 1)") }
             }
         }
         return found
+    }
+
+    /// Whether the comment block immediately above `index` carries a `SAFETY:` justification.
+    ///
+    /// The search walks upward through contiguous comment lines, so a `SAFETY:` note separated from
+    /// its declaration by a doc comment still counts. Requiring it on the immediately preceding line
+    /// would have rejected `POSIXTerminalConnection`, which states its invariant and then documents
+    /// itself — the note is there, and demanding one arrangement enforces formatting, not safety.
+    private static func hasSafetyComment(_ lines: [Substring], at index: Int) -> Bool {
+        if lines[index].contains("SAFETY:") { return true }
+        var cursor = index - 1
+        while cursor >= 0, isComment(lines[cursor]) {
+            if lines[cursor].contains("SAFETY:") { return true }
+            cursor -= 1
+        }
+        return false
     }
 
     /// `Task.sleep` inside a test, skipping the ones that name an injected clock.
@@ -86,7 +99,7 @@ public enum SourceStandards {
             let lines = try String(contentsOf: file, encoding: .utf8)
                 .split(separator: "\n", omittingEmptySubsequences: false)
             for (index, line) in lines.enumerated()
-            where line.contains("Task.sleep") && !line.contains("clock:") {
+            where line.contains("Task.sleep") && !line.contains("clock:") && !isComment(line) {
                 found.append("\(relative(file)):\(index + 1)")
             }
         }
