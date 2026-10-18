@@ -98,7 +98,11 @@ Two focused dependencies, each with one job (ADR-0005).
 `Package.swift` pins TerminalKit by full revision; `Package.resolved` must agree with that revision.
 After a verified upstream change, update the explicit pin and resolve it. Do not silently follow main.
 
-Production child execution uses **swiftlang/swift-subprocess** (ADR-0011), behind an injected interface.
+Each concern has one owner, and `SourceStandards` enforces the first two:
+
+- **JSON: AemiJSON** (ADR-0015), named qualified as `AemiJSON.JSONEncoder` and `AemiJSON.JSONDecoder`.
+- **Command line: swift-argument-parser**, in the `ask` executable only.
+- **Child processes: swiftlang/swift-subprocess** (ADR-0011), behind an injected interface.
 Introduce it with the first tool; avoid an unused dependency or a second POSIX/Foundation launcher.
 Read its lifetime/output-limit contracts before implementing cancellation or output truncation.
 
@@ -129,7 +133,7 @@ requested change from the extra one.
 
 ## Current state
 
-Targets: `AskCore` (budgets, documentation layout, source standards), `AskAgentCore` (session tree, log,
+Targets: `AskCore` (budgets and their report, documentation layout, source standards), `AskAgentCore` (session tree, log,
 recovery), `AskTUI` (terminal loop, signal shutdown) and the `ask` binary. Not built yet: the agent loop,
 providers, tools and the codemode host. `docs/roadmap/` says what is owed and in what order.
 
