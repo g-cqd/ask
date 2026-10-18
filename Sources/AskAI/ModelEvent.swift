@@ -40,6 +40,24 @@ public enum StopReason: Sendable, Equatable {
     case other(String)
 }
 
+extension StopReason {
+    private static let names: [(StopReason, String)] = [
+        (.endTurn, "end_turn"), (.maxTokens, "max_tokens"), (.stopSequence, "stop_sequence"), (.toolUse, "tool_use"),
+        (.pauseTurn, "pause_turn"), (.refusal, "refusal"), (.contextWindowExceeded, "model_context_window_exceeded")
+    ]
+
+    /// The reason for its name on the wire; an unknown name is kept verbatim.
+    public init(wire: String) {
+        self = Self.names.first { $0.1 == wire }?.0 ?? .other(wire)
+    }
+
+    /// The reason's name on the wire, which sessions persist.
+    public var wire: String {
+        if case .other(let name) = self { return name }
+        return Self.names.first { $0.0 == self }?.1 ?? ""
+    }
+}
+
 /// Token counts. A field the provider did not report is nil, never zero.
 public struct TokenUsage: Sendable, Equatable {
     public var input: Int?
