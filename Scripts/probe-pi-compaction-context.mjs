@@ -28,3 +28,13 @@ const messages = buildSessionContext(entries, "c2").messages;
 const text = JSON.stringify(messages);
 console.log("summaries in model context:",
   ["OLDER SUMMARY", "LATEST SUMMARY"].filter((s) => text.includes(s)).join(", "));
+
+// A compaction whose firstKeptEntryId is on another branch (hand edit or damage).
+const offBranch = [
+  msg("root", null, "root"),
+  msg("other", "root", "other"),
+  msg("x", "root", "x"),
+  compaction("c", "x", "other", "SUMMARY"),
+  msg("after", "c", "after"),
+];
+console.log("boundary off branch -> context entry ids:", JSON.stringify(buildContextEntries(offBranch, "after").map((e) => e.id)));
