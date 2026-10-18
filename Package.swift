@@ -53,7 +53,7 @@ let strictSettings: [SwiftSetting] = [
     .enableUpcomingFeature("MemberImportVisibility"),
     .treatAllWarnings(as: .error),
     .unsafeFlags(["-Xfrontend", "-warn-long-function-bodies=100"]),
-    .unsafeFlags(["-Xfrontend", "-warn-long-expression-type-checking=500"]),
+    .unsafeFlags(["-Xfrontend", "-warn-long-expression-type-checking=500"])
 ]
 
 /// Settings for every target in this package. `swift build` and `swift test` always run release
@@ -65,17 +65,35 @@ let package = Package(
     name: "ask",
     platforms: [.macOS(.v26)],
     products: [
-        .library(name: "AskCore", targets: ["AskCore"])
+        .executable(name: "ask", targets: ["ask"]),
+        .library(name: "AskCore", targets: ["AskCore"]),
+        .library(name: "AskTUI", targets: ["AskTUI"])
     ],
     dependencies: [
-        // Aemi arrives with roadmap entry 0002, once `AemiTerminal` exists inside it and Aemi is
-        // tagged. Aemi publishes no tags yet, so a version requirement cannot resolve today, and a
-        // dependency nothing imports is a liability rather than a foundation.
+        // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
+        // terminal code Atelier's KittyCode does, rather than a third copy of it.
+        .package(name: "TerminalKit", url: "https://github.com/g-cqd/TerminalKit.git", branch: "main")
     ],
     targets: [
         .target(
             name: "AskCore",
             path: "Sources/AskCore",
+            swiftSettings: packageSettings
+        ),
+        .target(
+            name: "AskTUI",
+            dependencies: [
+                .product(name: "TerminalKitCore", package: "TerminalKit"),
+                .product(name: "TerminalKitCodecs", package: "TerminalKit"),
+                .product(name: "TerminalKitIO", package: "TerminalKit")
+            ],
+            path: "Sources/AskTUI",
+            swiftSettings: packageSettings
+        ),
+        .executableTarget(
+            name: "ask",
+            dependencies: ["AskTUI"],
+            path: "Sources/ask",
             swiftSettings: packageSettings
         ),
         .testTarget(
