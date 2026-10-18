@@ -1,4 +1,4 @@
-internal import Foundation
+internal import AemiJSON
 
 /// Append-only JSON Lines encoding of a ``SessionTree``.
 ///
@@ -106,7 +106,7 @@ public enum SessionLog {
     /// reported; the tree is valid after every step.
     private struct Recovery {
         let limits: Limits
-        let decoder = JSONDecoder()
+        let decoder = AemiJSON.JSONDecoder()
         var tree = SessionTree()
         var issues: [SessionLogIssue] = []
         private var headerSeen = false
@@ -123,8 +123,8 @@ public enum SessionLog {
             }
             let record: SessionLogRecord
             do {
-                // The one copy at the boundary: JSONDecoder reads `Data`.
-                record = try decoder.decode(SessionLogRecord.self, from: Data(line))
+                // The one copy at the boundary: the decoder reads a contiguous `[UInt8]`.
+                record = try decoder.decode(SessionLogRecord.self, from: Array(line))
             } catch {
                 issues.append(isFinal ? .tornFinalLine(line: number) : .malformedLine(line: number))
                 return
@@ -198,10 +198,11 @@ public enum SessionLog {
     }
 
     private static func encode(_ record: SessionLogRecord) throws(SessionLogError) -> [UInt8] {
-        let encoder = JSONEncoder()
-        encoder.outputFormatting = [.sortedKeys, .withoutEscapingSlashes]
+        var encoder = AemiJSON.JSONEncoder()
+        // Sorted keys make equal records byte-identical; slashes stay unescaped, AemiJSON's default.
+        encoder.options.keyOrder = .sorted
         do {
-            var bytes = [UInt8](try encoder.encode(record))
+            var bytes = try encoder.encodeToBytes(record)
             bytes.append(0x0A)
             return bytes
         } catch {

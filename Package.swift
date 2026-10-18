@@ -71,7 +71,10 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "98650f4a0c3220121f5866cb0b018b1653034b8b")
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "98650f4a0c3220121f5866cb0b018b1653034b8b"),
+        // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
+        // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "6cbe2ae39b91e2721b25d6c6321e3cbdfe3496a9")
     ],
     targets: [
         .target(
@@ -81,6 +84,7 @@ let package = Package(
         ),
         .target(
             name: "AskAgentCore",
+            dependencies: [.product(name: "AemiJSON", package: "AemiJSON")],
             path: "Sources/AskAgentCore",
             swiftSettings: packageSettings
         ),
