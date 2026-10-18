@@ -60,66 +60,139 @@ public enum SessionLog {
         try encode(.leaf(leaf))
     }
 
-    /// Replays a log into a session, or throws; never returns a partially read session.
+    /// Loads a log, repairing damage and reporting each repair. The default way to open a session.
+    ///
+    /// Keeps at least what pi 1.3.0 keeps from the same file and never writes to it (ADR-0013): torn and
+    /// corrupt lines are skipped, orphans become roots, a compaction with an off-branch boundary is
+    /// spliced out, and every such repair is listed in ``RecoveredSession/issues``.
     /// - Parameters:
     ///   - bytes: the whole archive.
     ///   - limits: ceilings applied before any parsing.
-    /// - Returns: the restored session.
-    /// - Throws: ``SessionLogError``, with 1-based line numbers.
+    /// - Returns: a valid tree and the repairs made.
+    /// - Throws: only what cannot be repaired safely: ``SessionLogError/archiveTooLarge(_:)`` and
+    ///   ``SessionLogError/unsupportedVersion(_:)``.
     /// - Complexity: O(n) in the archive size, plus tree validation.
+    public static func recover(
+        _ bytes: [UInt8], limits: Limits = .standard
+    ) throws(SessionLogError) -> RecoveredSession {
+        guard bytes.count <= limits.maximumArchiveBytes else { throw .archiveTooLarge(bytes.count) }
+        guard !bytes.isEmpty else { return RecoveredSession(tree: SessionTree(), issues: [.missingHeader]) }
+        var lines = bytes.split(separator: 0x0A, omittingEmptySubsequences: false)
+        // Empty when the archive ends in a newline, as every complete write does.
+        let finalLine = lines.removeLast()
+        var recovery = Recovery(limits: limits)
+        for (index, line) in lines.enumerated() {
+            try recovery.consume(line, number: index + 1, isFinal: false)
+        }
+        if !finalLine.isEmpty { try recovery.consume(finalLine, number: lines.count + 1, isFinal: true) }
+        return RecoveredSession(tree: recovery.tree, issues: recovery.issues)
+    }
+
+    /// Loads a log only if it is undamaged. For validation and tests; sessions open with ``recover(_:limits:)``.
+    /// - Parameters:
+    ///   - bytes: the whole archive.
+    ///   - limits: ceilings applied before any parsing.
+    /// - Returns: the session.
+    /// - Throws: the first issue ``recover(_:limits:)`` would have repaired, as a ``SessionLogError``.
     public static func decode(
         _ bytes: [UInt8], limits: Limits = .standard
     ) throws(SessionLogError) -> SessionTree {
-        guard bytes.count <= limits.maximumArchiveBytes else { throw .archiveTooLarge(bytes.count) }
-        guard !bytes.isEmpty else { throw .missingHeader }
-        var lines = bytes.split(separator: 0x0A, omittingEmptySubsequences: false)
-        guard let tail = lines.popLast(), tail.isEmpty else { throw .tornFinalLine(line: lines.count + 1) }
+        let recovered = try recover(bytes, limits: limits)
+        if let issue = recovered.issues.first { throw issue.strictError }
+        return recovered.tree
+    }
 
+    /// Replay with repairs. Each record either applies, applies after a stated repair, or is skipped and
+    /// reported; the tree is valid after every step.
+    private struct Recovery {
+        let limits: Limits
         let decoder = JSONDecoder()
-        var replay = Replay()
-        for (index, line) in lines.enumerated() {
-            let number = index + 1
-            guard line.count <= limits.maximumLineBytes else { throw .lineTooLong(line: number) }
+        var tree = SessionTree()
+        var issues: [SessionLogIssue] = []
+        private var headerSeen = false
+        private var missingHeaderReported = false
+        /// Spliced-out compactions, mapped to the parent their children now attach to.
+        private var spliced: [EntryID: EntryID?] = [:]
+
+        init(limits: Limits) { self.limits = limits }
+
+        mutating func consume(_ line: ArraySlice<UInt8>, number: Int, isFinal: Bool) throws(SessionLogError) {
+            guard line.count <= limits.maximumLineBytes else {
+                issues.append(.lineTooLong(line: number))
+                return
+            }
             let record: SessionLogRecord
             do {
                 // The one copy at the boundary: JSONDecoder reads `Data`.
                 record = try decoder.decode(SessionLogRecord.self, from: Data(line))
             } catch {
-                throw .malformedLine(line: number)
+                issues.append(isFinal ? .tornFinalLine(line: number) : .malformedLine(line: number))
+                return
             }
-            try replay.apply(record, line: number)
+            try apply(record, line: number)
+            if isFinal { issues.append(.unterminatedFinalLine(line: number)) }
         }
-        return try replay.tree()
-    }
 
-    /// The replay state: records in order, then one validated tree at the end.
-    private struct Replay {
-        private var entries: [SessionEntry] = []
-        private var written = Set<EntryID>()
-        private var leaf: EntryID?
-
-        mutating func apply(_ record: SessionLogRecord, line: Int) throws(SessionLogError) {
+        private mutating func apply(_ record: SessionLogRecord, line: Int) throws(SessionLogError) {
+            if case .header(let version) = record {
+                guard !headerSeen, line == 1 else {
+                    issues.append(.malformedLine(line: line))
+                    return
+                }
+                guard version == formatVersion else { throw .unsupportedVersion(version) }
+                headerSeen = true
+                return
+            }
+            if !headerSeen, !missingHeaderReported {
+                issues.append(.missingHeader)
+                missingHeaderReported = true
+            }
             switch record {
-                case .header(let version):
-                    guard line == 1 else { throw .malformedLine(line: line) }
-                    guard version == formatVersion else { throw .unsupportedVersion(version) }
-                case .entry(let entry):
-                    guard line > 1 else { throw .missingHeader }
-                    entries.append(entry)
-                    written.insert(entry.id)
-                    leaf = entry.id
-                case .leaf(let id):
-                    guard line > 1 else { throw .missingHeader }
-                    if let id, !written.contains(id) { throw .invalidArchive(.unknownEntry(id)) }
-                    leaf = id
+                case .header: break
+                case .entry(let entry): restore(entry, line: line)
+                case .leaf(let id): select(id, line: line)
             }
         }
 
-        func tree() throws(SessionLogError) -> SessionTree {
+        private mutating func restore(_ original: SessionEntry, line: Int) {
+            var entry = original
+            if let parent = entry.parentID, let replacement = spliced[parent] {
+                entry = SessionEntry(id: entry.id, parentID: replacement, payload: entry.payload)
+            }
+            // At most two attempts: as written, then re-rooted when the parent is missing.
+            for _ in 0 ..< 2 {
+                do {
+                    try tree.restore(entry)
+                    return
+                } catch .unknownEntry(let missing) {
+                    issues.append(.orphanedEntry(entry.id, missingParent: missing, line: line))
+                    entry = SessionEntry(id: entry.id, parentID: nil, payload: entry.payload)
+                } catch .invalidCompactionBoundary(let boundary) {
+                    issues.append(.droppedCompaction(entry.id, boundary: boundary, line: line))
+                    spliced[entry.id] = .some(entry.parentID)
+                    return
+                } catch .duplicateEntry(let id) {
+                    issues.append(.duplicateEntry(id, line: line))
+                    return
+                } catch .invalidIdentifier(let id) {
+                    issues.append(.invalidIdentifier(id, line: line))
+                    return
+                } catch {
+                    // `restore` mints no identifiers, so exhaustion cannot occur; skip rather than trap.
+                    issues.append(.malformedLine(line: line))
+                    return
+                }
+            }
+        }
+
+        private mutating func select(_ id: EntryID?, line: Int) {
+            // A leaf naming a spliced compaction lands where the compaction's children now attach.
+            let target: EntryID? = id.flatMap { named in spliced[named] ?? named }
             do {
-                return try SessionTree(entries: entries, leaf: leaf)
+                try tree.moveLeaf(to: target)
             } catch {
-                throw .invalidArchive(error)
+                // Only a named, unknown entry can fail; selecting a new root cannot.
+                if let id { issues.append(.ignoredLeaf(id, line: line)) }
             }
         }
     }
