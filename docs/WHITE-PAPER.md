@@ -165,7 +165,10 @@ actually ran.**
 | 16 | The terminal stack belongs inside Aemi | Read Aemi's own target categories, then `git tag` | **REFUTED.** Aemi splits kernel and application tiers and keeps them apart; terminal is a third category. Aemi has **zero tags**. Moved to its own repository, `TerminalKit`. |
 | 17 | Separating the terminal removes the Aemi dependency cost | `grep` of Aemi's `.package(url:)` declarations | **PARTLY REFUTED — and deliberately not overstated.** Aemi declares swift-syntax 603..<605, so *any* consumer of `AemiKernel` resolves the macro tree; and TerminalKit will still import `AemiKernel` after the extraction. The gain is cadence and a focused manifest, **not** independence. |
 | 18 | A real kitty instance can verify the reset tiers from here | `kitty @ ls` | **REFUTED.** `open /dev/tty: device not configured`. kitty 0.49.2 is installed, but this session has no controlling TTY. The tiers are verified against a model, not an emulator. |
-| 19 | A PTY harness is buildable on macOS | `util.h` in the macOS SDK | **CONFIRMED.** `openpty` is declared at `util.h:99`. Not yet attempted. |
+| 19 | A PTY harness is buildable on macOS | `util.h` in the macOS SDK | **CONFIRMED.** `openpty` is declared at `util.h:99`. Not needed for the mode probe. |
+| 20 | The reset tiers can be verified against real terminals | DECRQM round trip on `/dev/tty`, inside kitty / ghostty / wezterm / Terminal.app | **CONFIRMED.** Tier 1 passes on all three that report mode state; Terminal.app answers no DECRQM and is inconclusive. |
+| 21 | DECSTR resets DEC private modes | Same probe, tier 2 | **REFUTED — by the emulators, against our own oracle and docs.** Left `?1049`, the mouse modes and `?2004` set on kitty, ghostty and wezterm. TerminalKit ADR-0002. |
+| 22 | The first emulator harness was sound | Ran it and read the verdict | **REFUTED.** Double-quoted `\033` became a real ESC that `send-text` swallowed, so every tier ran as a no-op and it reported PASS for all three. A probe that cannot fail proves nothing. |
 
 **Open questions — claims not yet probed, and therefore not acted on:**
 
