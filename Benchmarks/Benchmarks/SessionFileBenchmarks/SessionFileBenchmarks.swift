@@ -17,6 +17,19 @@ let benchmarks: @Sendable () -> Void = {
     Benchmark.defaultConfiguration = .init(
         metrics: [.wallClock, .cpuTotal, .syscalls], maxDuration: .seconds(3), maxIterations: 2_000)
 
+    // Does a change cost more as the session grows? Measured without flushing, so only ask's work shows.
+    for size in [0, 10_000, 100_000] {
+        Benchmark("append/none after \(size) entries") { benchmark in
+            var file = try SessionFile.create(at: scratchPath(), durability: .none)
+            for _ in 0 ..< size { try file.append(payload) }
+            benchmark.startMeasurement()
+            for _ in benchmark.scaledIterations {
+                blackHole(try file.append(payload))
+            }
+            benchmark.stopMeasurement()
+        }
+    }
+
     for (name, durability) in DurabilityCase.all {
         Benchmark("append/\(name)") { benchmark in
             var file = try SessionFile.create(at: scratchPath(), durability: durability)

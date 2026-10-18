@@ -27,7 +27,7 @@ public struct SessionFile: ~Copyable {
 
     /// Where the session lives.
     public let path: FilePath
-    /// The session, always equal to what replaying the file yields (after any pending repair).
+    /// The session: always what replaying the file yields, after any pending repair.
     public private(set) var tree: SessionTree
     /// Repairs made when the file was opened. Empty for an undamaged file.
     public let issues: [SessionLogIssue]
@@ -108,39 +108,45 @@ public struct SessionFile: ~Copyable {
 
     // MARK: - Changes
 
-    /// Appends under the leaf, persists it, then commits it.
+    /// Appends under the leaf and persists it. A change that cannot be persisted is undone.
     /// - Returns: the new entry's identifier.
     /// - Throws: ``SessionFileError/tree(_:)`` for an invalid change, with nothing written, or an I/O error.
+    /// - Complexity: O(1) amortized, plus the flush. Holding a copy of ``tree`` across a change makes that
+    ///   change copy the whole tree, so read it when needed rather than keeping it.
     @discardableResult
     public mutating func append(_ payload: SessionPayload) throws(SessionFileError) -> EntryID {
-        var next = tree
+        let checkpoint = tree.checkpoint
         let id: EntryID
-        do { id = try next.append(payload) } catch { throw .tree(error) }
-        try commitEntry(id, in: next)
+        do { id = try tree.append(payload) } catch { throw .tree(error) }
+        try persistEntry(id, undoingTo: checkpoint)
         return id
     }
 
-    /// Appends under an earlier entry, persists it, then commits it.
+    /// Appends under an earlier entry and persists it. A change that cannot be persisted is undone.
     /// - Returns: the new entry's identifier.
     /// - Throws: ``SessionFileError/tree(_:)`` for an invalid change, with nothing written, or an I/O error.
     @discardableResult
     public mutating func continuing(
         from parent: EntryID, with payload: SessionPayload
     ) throws(SessionFileError) -> EntryID {
-        var next = tree
+        let checkpoint = tree.checkpoint
         let id: EntryID
-        do { id = try next.continuing(from: parent, with: payload) } catch { throw .tree(error) }
-        try commitEntry(id, in: next)
+        do { id = try tree.continuing(from: parent, with: payload) } catch { throw .tree(error) }
+        try persistEntry(id, undoingTo: checkpoint)
         return id
     }
 
-    /// Selects an entry, or nil for a new root, persists the checkout, then commits it.
+    /// Selects an entry, or nil for a new root, and persists the checkout. Undone if it cannot be persisted.
     /// - Throws: ``SessionFileError/tree(_:)`` for an unknown entry, with nothing written, or an I/O error.
     public mutating func moveLeaf(to id: EntryID?) throws(SessionFileError) {
-        var next = tree
-        do { try next.moveLeaf(to: id) } catch { throw .tree(error) }
-        try commit(
-            next, record: try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(forLeaf: id) })
+        let checkpoint = tree.checkpoint
+        do { try tree.moveLeaf(to: id) } catch { throw .tree(error) }
+        do throws(SessionFileError) {
+            try persist(try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(forLeaf: id) })
+        } catch {
+            tree.rewind(to: checkpoint)
+            throw error
+        }
     }
 
     /// Writes the active branch to a new file. Never overwrites.
@@ -159,17 +165,23 @@ public struct SessionFile: ~Copyable {
 
     // MARK: - Persistence
 
-    private mutating func commitEntry(_ id: EntryID, in next: SessionTree) throws(SessionFileError) {
-        guard let entry = next.entry(id) else { throw .tree(.unknownEntry(id)) }
-        try commit(
-            next, record: try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(for: entry) })
+    private mutating func persistEntry(_ id: EntryID, undoingTo checkpoint: SessionTree.Checkpoint)
+        throws(SessionFileError)
+    {
+        do throws(SessionFileError) {
+            guard let entry = tree.entry(id) else { throw .tree(.unknownEntry(id)) }
+            try persist(try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(for: entry) })
+        } catch {
+            tree.rewind(to: checkpoint)
+            throw error
+        }
     }
 
-    /// Persists `record` (or a full rewrite when one is pending) and only then adopts `next`.
-    private mutating func commit(_ next: SessionTree, record: [UInt8]) throws(SessionFileError) {
+    /// Persists the change already applied to ``tree``: `record` is appended, or, when a rewrite is
+    /// pending, the whole tree is written beside the file and swapped in.
+    private mutating func persist(_ record: [UInt8]) throws(SessionFileError) {
         if needsRewrite {
-            try rewrite(with: next)
-            tree = next
+            try rewrite()
             return
         }
         let descriptor = try openAppender()
@@ -181,7 +193,6 @@ public struct SessionFile: ~Copyable {
             needsRewrite = true
             throw error
         }
-        tree = next
     }
 
     private mutating func openAppender() throws(SessionFileError) -> FileDescriptor {
@@ -193,10 +204,10 @@ public struct SessionFile: ~Copyable {
         return descriptor
     }
 
-    /// Writes `next` beside the file, keeps the current file as a damaged copy, then swaps atomically.
-    private mutating func rewrite(with next: SessionTree) throws(SessionFileError) {
+    /// Writes ``tree`` beside the file, keeps the current file as a damaged copy, then swaps atomically.
+    private mutating func rewrite() throws(SessionFileError) {
         let temporary = FilePath(path.string + ".tmp")
-        let snapshot = try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(next) }
+        let snapshot = try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(tree) }
         let descriptor = try SessionFileIO.io(.open) {
             try FileDescriptor.open(
                 temporary, .writeOnly, options: [.create, .truncate], permissions: [.ownerReadWrite])
