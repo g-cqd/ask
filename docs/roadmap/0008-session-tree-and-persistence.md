@@ -64,13 +64,20 @@ Research behind the damage cases is in `docs/research/pi-1.3.0-findings.md`.
 reported, and loading never writes. 16 recovery tests, 10 of 10 mutations caught. `decode` is a
 strict wrapper over the same parser.
 
+## Done — the file store
+
+`SessionFile` (ADR-0017): one record per change, flushed with an ordering barrier before it counts, and
+rewound if it cannot be persisted. The first change after damage rewrites beside the file and keeps the
+original as `<name>.damaged[-n]`. Create and fork never overwrite. A change is O(1): 8–11 µs before the
+flush at any session size, down from 1.86 ms at 100,000 entries. 19 tests; every compiling mutation of the
+repair, undo and default paths was caught.
+
 ## Still owed
 
-- **The file store**: placement, one whole record per append call, and fsync policy, with its cost
-  measured. On a session that needed repairs, keep the damaged original and write the repaired snapshot
-  beside it, never over it.
+- **Placement**: where session files live, and how a session is named. Decided with the agent loop,
+  which is the first thing that creates one.
+- **A second writer**: two processes appending to one session. Needs a lock or a refusal, with a probe.
 - Surfacing `issues` to the user, once there is a UI to surface them in.
-- Fork to a new file.
 
 ## Done when
 
@@ -79,5 +86,5 @@ entry leaves the tree intact.
 
 ## Notes
 
-Not blocked by anything. `AskCore` already reaches `FileManager`, and `public import Foundation` is
-already in place for SE-0409.
+Not blocked by anything. `AskAgentCore` does not import Foundation; files go through swift-system and
+AemiIO.
