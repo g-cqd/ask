@@ -30,6 +30,8 @@ let benchmarks: @Sendable () -> Void = {
         }
     }
 
+    contextBenchmarks()
+
     for (name, durability) in DurabilityCase.all {
         Benchmark("append/\(name)") { benchmark in
             var file = try SessionFile.create(at: scratchPath(), durability: durability)
