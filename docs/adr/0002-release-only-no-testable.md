@@ -1,9 +1,13 @@
 ---
-status: accepted
+status: superseded
+superseded-by: ADR-0006
 date: 2026-10-18
 ---
 
 # 0002 — Release-only builds, and therefore no `@testable`
+
+> Superseded by ADR-0006. Release tests can enable testability explicitly. This record
+> confused the defaults of `swift build` with what `swift test` can request.
 
 ## Context
 
