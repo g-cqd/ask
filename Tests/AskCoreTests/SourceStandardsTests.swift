@@ -25,10 +25,13 @@ struct SourceStandardsTests {
         ("NSLock", "`Mutex` or `Atomic` from Synchronization"),
         ("os_unfair_lock", "`Mutex` from Synchronization"),
         ("pthread_mutex", "`Mutex` from Synchronization"),
-        ("DispatchQueue", "`Task`, `TaskGroup`, `AsyncStream`, or a dedicated `Thread` for blocking I/O"),
-        ("@unchecked Sendable", "a `Mutex`-backed type, or a written SAFETY comment on the same line")
+        ("DispatchQueue", "`Task`, `TaskGroup`, `AsyncStream`, or a dedicated `Thread` for blocking I/O")
     ]
 
+    /// `@unchecked Sendable` is deliberately absent from the list above. It is permitted with a written
+    /// justification and is checked separately below, because a file descriptor cannot be made checked
+    /// and banning it outright would push the code somewhere worse. Banning it here while allowing it
+    /// there would be two rules contradicting each other in one file.
     @Test(arguments: SourceStandardsTests.banned)
     func `the banned construct is absent from the sources`(construct: (name: String, alternatives: String)) throws {
         let offenders = try SourceStandards.occurrences(of: construct.name, in: SourceStandards.sources)
