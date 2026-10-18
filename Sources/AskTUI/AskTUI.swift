@@ -31,27 +31,54 @@ enum StartupSequence {
 /// screen.
 private let eraseToEndOfLine: [UInt8] = [0x1B, 0x5B, 0x4B]
 
+/// Everything written on the way out: the frame closed, then the cheapest tier of the reset ladder.
+///
+/// Tier 1 is the tier that clears the private modes, because neither reset tier does — TerminalKit
+/// ADR-0002 measured that against four emulators, leaving `?1049`, the mouse modes and `?2004` set
+/// across DECSTR. So the normal path writes this and nothing above it.
+///
+/// It exists as a named value rather than inline in a `defer` so that every exit path — normal quit,
+/// thrown error, and the signal path — writes the same bytes, and so a test can assert them.
+enum TerminalTeardown {
+    /// The bytes that return the terminal to a usable state.
+    static var bytes: ContiguousArray<UInt8> {
+        var teardown = ContiguousArray<UInt8>()
+        teardown.append(contentsOf: StartupSequence.end)
+        teardown.append(contentsOf: TerminalResetLadder.escapeBytes(upTo: .selectiveCleanup))
+        return teardown
+    }
+
+    /// Writes the teardown and restores termios, in that order, ignoring a write failure.
+    ///
+    /// The order matters: leaving the alternate screen while the cursor is still hidden would leave a
+    /// visible cursor on the normal screen, and a terminal that cannot be written to is a terminal
+    /// whose `termios` still needs restoring.
+    ///
+    /// - Complexity: O(1) — a fixed 60-odd byte sequence, not a function of screen size.
+    static func run(on connection: any TerminalConnection) {
+        try? connection.writeContiguous(bytes)
+        try? connection.restoreMode()
+    }
+}
+
 /// Runs the terminal loop until the user quits, then restores the terminal.
 public func runAskTUI() throws {
-    let connection = POSIXTerminalConnection()
+    try runAskTUI(on: POSIXTerminalConnection())
+}
 
+/// The loop, over an injected connection.
+///
+/// The connection is a parameter so that every exit path is drivable from a test — see
+/// ``TerminalTeardownTests``. The production entry point above is the one that binds a real terminal.
+internal func runAskTUI(on connection: any TerminalConnection) throws {
     try connection.enterRawMode()
-    defer { try? connection.restoreMode() }
+    defer { TerminalTeardown.run(on: connection) }
 
     _ = try connection.getSize()
     var output = ContiguousArray<UInt8>()
     output.append(contentsOf: StartupSequence.begin)
     output.append(contentsOf: promptBytes(line: ""))
     try connection.writeContiguous(output)
-
-    defer {
-        // The ladder, cheapest tier first. Tier 1 is the one that clears the private modes, because
-        // neither reset tier does — TerminalKit ADR-0002 measured that against four emulators.
-        var teardown = ContiguousArray<UInt8>()
-        teardown.append(contentsOf: StartupSequence.end)
-        teardown.append(contentsOf: TerminalResetLadder.escapeBytes(upTo: .selectiveCleanup))
-        try? connection.writeContiguous(teardown)
-    }
 
     let buffer = UnsafeMutableRawBufferPointer.allocate(byteCount: 4096, alignment: 8)
     defer { buffer.deallocate() }
