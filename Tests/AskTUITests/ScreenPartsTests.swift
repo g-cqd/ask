@@ -145,6 +145,53 @@ struct ScreenPartsTests {
         #expect(cursor.row == 5 && cursor.column == 5)
     }
 
+    @Test func `composing an unchanged screen again writes nothing`() {
+        var state = ScreenState(label: "m")
+        for index in 1 ... 30 { state.transcript.addNotice("line \(index)", isError: false) }
+        var buffer = ScreenBuffer(columns: 40, rows: 10)
+        var composer = ScreenComposer()
+        _ = composer.compose(state, into: &buffer)
+        buffer.dirty.clear()
+        _ = composer.compose(state, into: &buffer)
+        #expect(buffer.dirty.isEmpty)
+    }
+
+    @Test func `a keystroke dirties only the prompt row`() {
+        var state = ScreenState(label: "m")
+        for index in 1 ... 30 { state.transcript.addNotice("line \(index)", isError: false) }
+        var buffer = ScreenBuffer(columns: 40, rows: 10)
+        var composer = ScreenComposer()
+        _ = composer.compose(state, into: &buffer)
+        buffer.dirty.clear()
+        state.editor.paste("x")
+        _ = composer.compose(state, into: &buffer)
+        #expect(buffer.dirty.dirtyRanges(columns: 40).map(\.row) == [9])
+        #expect(rows(buffer)[9] == "ask> x")
+    }
+
+    @Test func `a resize recomposes everything at the new width`() {
+        var state = ScreenState(label: "m")
+        state.transcript.addAssistantText("one two three four five")
+        var composer = ScreenComposer()
+        var wide = ScreenBuffer(columns: 30, rows: 4)
+        _ = composer.compose(state, into: &wide)
+        var narrow = ScreenBuffer(columns: 10, rows: 5)
+        _ = composer.compose(state, into: &narrow)
+        #expect(Array(rows(narrow).prefix(3)) == ["one two", "three four", "five"])
+    }
+
+    @Test func `after reset, a fresh buffer of the same size is drawn in full`() {
+        var state = ScreenState(label: "m")
+        state.transcript.addAssistantText("hello")
+        var composer = ScreenComposer()
+        var first = ScreenBuffer(columns: 20, rows: 3)
+        _ = composer.compose(state, into: &first)
+        var second = ScreenBuffer(columns: 20, rows: 3)
+        composer.reset()
+        _ = composer.compose(state, into: &second)
+        #expect(rows(second)[0] == "hello")
+    }
+
     @Test func `a streamed delta re-wraps only the item it extends`() {
         var state = ScreenState(label: "m")
         state.transcript.addAssistantText("first")
