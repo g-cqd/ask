@@ -1,7 +1,8 @@
 ---
-status: not-started
+status: done
 blocked-by:
 date: 2026-10-18
+closed-by: ADR-0010
 ---
 
 # 0005 — Correct the cross-repo blocker recorded against roadmap 0001
@@ -38,6 +39,8 @@ the documentation law that is a **new ADR that supersedes**, not an edit to the 
 `0001`'s status reflects reality and names where its remaining work actually lives, `0003` is
 unblocked or re-pointed, and an ADR records the correction and its probe.
 
-## Risk
+## Done
 
-Low, and reversible. The only cost is a superseded ADR and an honest status field.
+ADR-0010. `grep` found no reference to Atelier anywhere in `ask` outside comments; `0001` is closed,
+`0003`'s blocker was re-pointed at `0014`, and the ADR records the probe plus the pattern this is the
+third instance of.
