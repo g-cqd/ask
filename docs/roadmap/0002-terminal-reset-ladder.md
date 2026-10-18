@@ -1,8 +1,12 @@
 ---
 status: in-progress
-blocked-by:
+blocked-by: ["0006"]
 date: 2026-10-18
 ---
+
+> **The application half moved to [0006](0006-apply-the-reset-ladder.md).** The ladder's bytes and its
+> model are TerminalKit's and were verified there; what was owed here — applying it on teardown and on
+> signal — is now tracked, and partly done, in `0006`. `0006` is the live entry for this work.
 
 # 0002 — The tiered terminal reset ladder
 
