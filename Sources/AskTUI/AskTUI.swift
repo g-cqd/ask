@@ -70,10 +70,12 @@ public func runAskTUI() throws {
     // can still reach us are SIGINT and SIGTERM, and both bypass every `defer` in the read loop —
     // which is how a terminal ends up in the alternate screen with the cursor hidden and echo off.
     //
-    // TerminalKit delivers these off the main thread (TerminalKit ADR-0013), so a blocked read cannot
-    // starve delivery, and it reports which signal fired — which is what `128 + signo` needs.
+    // TerminalKit ADR-0015 keeps Swift and locks out of the OS callback; the reader thread invokes
+    // this shutdown closure. Restore the previous dispositions on normal return as well.
     let shutdown = SignalShutdown(connection: connection) { code in exit(code) }
-    try SignalHandler(onResize: {}, onShutdown: { shutdown.handle($0) }).start()
+    let signals = SignalHandler(onResize: {}, onShutdown: { shutdown.handle($0) })
+    try signals.start()
+    defer { signals.stop() }
 
     try runAskTUI(on: connection)
 }
