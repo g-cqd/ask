@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: ["0009"]
 date: 2026-10-18
 decision: ADR-0007
@@ -75,3 +75,25 @@ budget is what catches it.
 Claude streams a full turn including tool calls under subscription auth, Spettro does the same on the
 OpenAI-completions protocol, usage is recorded for both, and a mid-stream failure or a gate rejection
 recovers or reports cleanly.
+
+## Progress — Claude, offline-complete (2026-10-18)
+
+`AskAI` holds the whole Claude path, each layer tested against probed ground truth and mutation-checked:
+- SSE framing, Anthropic events into provider-neutral `ModelEvent`s, and assembly into validated responses;
+- request encoding in the gated shape (ADR-0007);
+- PKCE, the authorize URL and pasted-code parsing (conformance cases from pi-integrations);
+- token exchange, refresh and expiry;
+- an HTTP transport;
+- owner-only credential storage (ADR-0018);
+- refresh-on-expiry access.
+
+`ask login`, `ask logout` and `ask -p` bind them.
+
+**Owed, needing the user once:** the first live sign-in and request, which verifies:
+- that the honest `user-agent: ask` passes;
+- that `claude-sonnet-5-5` exists (`GET /v1/models`);
+- that streaming works against the real API.
+
+Also owed: a concurrent-refresh guard, Spettro, usage recording into the session, and the gate-drift
+diagnostic.
+
