@@ -54,3 +54,21 @@ Slices:
 3. The tool protocol (with `0011`).
 4. The loop with abort.
 5. The interactive loop, after `0013`.
+
+## Progress: headless and working (2026-10-18)
+
+Slices 1–4 have landed:
+- session payloads for agent turns;
+- context into valid requests, with named repairs;
+- the tool contract;
+- `AgentLoop`, with abort, a turn limit and `pause_turn`.
+
+`ask -p` runs it with the four tools. `Scripts/probe-agent-run.py` proves the binary end to end against a fake server, including SIGINT mid-command.
+
+Per-turn cost with an instant provider: 33 µs fresh and 210 µs after 500 turns.
+
+**Owed:**
+- slice 5, the interactive loop (after `0013`);
+- steering and follow-up messages;
+- resuming a session (`--continue`, which needs a lock);
+- the first live run (needs the user's `ask login`).
