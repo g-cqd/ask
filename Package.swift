@@ -137,6 +137,7 @@ let package = Package(
             name: "ask",
             dependencies: [
                 "AskAI", "AskAgentCore", "AskCore", "AskTools", "AskTUI",
+                .product(name: "AemiJSON", package: "AemiJSON"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "TerminalKitInput", package: "TerminalKit")
             ],
