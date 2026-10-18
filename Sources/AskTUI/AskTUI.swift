@@ -12,6 +12,7 @@ internal import Foundation
 internal import TerminalKitCodecs
 internal import TerminalKitCore
 internal import TerminalKitIO
+internal import TerminalKitInput
 
 /// Everything written before the first frame: alternate screen, cursor hidden, screen cleared, and
 /// the frame bracketed by synchronised-output markers so it cannot tear.
@@ -63,7 +64,18 @@ enum TerminalTeardown {
 
 /// Runs the terminal loop until the user quits, then restores the terminal.
 public func runAskTUI() throws {
-    try runAskTUI(on: POSIXTerminalConnection())
+    let connection = POSIXTerminalConnection()
+
+    // Raw mode clears `ISIG`, so Ctrl-C arrives as byte `0x03` rather than SIGINT. The signals that
+    // can still reach us are SIGINT and SIGTERM, and both bypass every `defer` in the read loop —
+    // which is how a terminal ends up in the alternate screen with the cursor hidden and echo off.
+    //
+    // TerminalKit delivers these off the main thread (TerminalKit ADR-0013), so a blocked read cannot
+    // starve delivery, and it reports which signal fired — which is what `128 + signo` needs.
+    let shutdown = SignalShutdown(connection: connection) { code in exit(code) }
+    try SignalHandler(onResize: {}, onShutdown: { shutdown.handle($0) }).start()
+
+    try runAskTUI(on: connection)
 }
 
 /// The loop, over an injected connection.
