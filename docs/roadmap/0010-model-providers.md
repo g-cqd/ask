@@ -1,6 +1,6 @@
 ---
 status: in-progress
-blocked-by: ["0009"]
+blocked-by: 
 date: 2026-10-18
 decision: ADR-0007
 ---

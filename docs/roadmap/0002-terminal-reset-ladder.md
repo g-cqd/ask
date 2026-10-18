@@ -1,6 +1,6 @@
 ---
-status: in-progress
-blocked-by: ["0006"]
+status: done
+blocked-by: 
 date: 2026-10-18
 ---
 
@@ -53,3 +53,7 @@ inconclusive. See TerminalKit roadmap 0002.
 
 **Remaining scope:** applying the ladder on teardown and on signal, so the normal path writes the
 selective tier and only escalates when the cheap tier demonstrably failed.
+
+## Closed (2026-10-18)
+
+Its remaining scope moved to `0006`, which is done. Nothing is owed here.

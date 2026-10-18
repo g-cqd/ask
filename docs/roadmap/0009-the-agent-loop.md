@@ -1,6 +1,6 @@
 ---
-status: not-started
-blocked-by: ["0008"]
+status: in-progress
+blocked-by: 
 date: 2026-10-18
 ---
 
@@ -43,3 +43,14 @@ without a terminal, and so `ask` the binary links only what it uses.
 
 The loop runs end to end against a real provider, a tool executes and its result reaches the model, abort
 works, and `0007` has re-derived the budget.
+
+## Reordered (ADR-0019)
+
+Next, and headless first, driving `ask -p` with tools. `0008`'s remaining items (placement, a second writer) are decided here. It lives in `AskAgentCore`, which depends on `AskAI` (ADR-0009), not in a separate `AskAgent` target.
+
+Slices:
+1. Session payloads for agent turns.
+2. Context into requests.
+3. The tool protocol (with `0011`).
+4. The loop with abort.
+5. The interactive loop, after `0013`.
