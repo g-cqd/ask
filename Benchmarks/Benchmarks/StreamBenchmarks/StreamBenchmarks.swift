@@ -47,6 +47,31 @@ let benchmarks: @Sendable () -> Void = {
         }
     }
 
+    // The whole history is re-encoded on every request, so this grows with the session.
+    for turns in [50, 500] {
+        let input = try! JSONObject(validating: Array(#"{"path": "Sources/AskAI/SSEDecoder.swift"}"#.utf8))
+        let result = String(repeating: "let value = compute(input) // a line of a file that was read\n", count: 34)
+        let messages: [ModelMessage] = (0 ..< turns)
+            .flatMap { turn in
+                [
+                    ModelMessage(role: .user, blocks: [.text("Step \(turn): read the decoder and explain it.")]),
+                    ModelMessage(
+                        role: .assistant,
+                        blocks: [
+                            .text("Reading it."), .toolCall(id: "toolu_\(turn)", name: "read", input: input)
+                        ]),
+                    ModelMessage(
+                        role: .user, blocks: [.toolResult(id: "toolu_\(turn)", content: result, isError: false)])
+                ]
+            }
+        let request = ModelRequest(
+            model: "claude-x", maxTokens: 8_192, systemPrompt: ["You are ask."], messages: messages, tools: [])
+        Benchmark("request/encode \(turns) turns (\(AnthropicRequestEncoder.encode(request).count / 1024) KiB)") {
+            benchmark in
+            for _ in benchmark.scaledIterations { blackHole(AnthropicRequestEncoder.encode(request)) }
+        }
+    }
+
     Benchmark("stream/frame and decode 2000 events") { benchmark in
         for _ in benchmark.scaledIterations {
             var framer = SSEDecoder()
