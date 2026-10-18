@@ -1,0 +1,20 @@
+# Hook configuration for `project-hooks` (https://github.com/g-cqd/project-hooks).
+#
+# pre-commit needs none: it discovers swift-format and SwiftLint and their configurations by itself.
+#
+# pre-push would otherwise run a plain `swift test`, which is a DEBUG build. This project tests release only
+# (AGENTS.md, ADR-0002: a debug build measures a program nobody ships) and needs testability stated
+# explicitly (ADR-0006), so the automatic test stage is switched off and the real invocation runs as a task.
+# Tasks run in the verification worktree at the pushed commit, not in the working tree, so uncommitted work
+# never decides whether a push passes.
+#
+# The scratch path is fixed so the release build is reused between pushes; the worktree's own .build is
+# thrown away with the worktree.
+pre-push:
+  test-override:
+    type: swift
+    skip: true
+  tasks:
+    - name: "Release tests"
+      run: 'swift test -c release --enable-testable-imports --scratch-path "$HOME/Library/Caches/project-hooks/builds/ask-release"'
+      timeout: 1200
