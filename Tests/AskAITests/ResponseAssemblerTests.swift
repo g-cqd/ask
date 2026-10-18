@@ -84,6 +84,12 @@ struct ResponseAssemblerTests {
         #expect(throws: ResponseAssemblyError.incomplete(openBlocks: [1])) {
             _ = try assemble([start, .blockStarted(index: 1, .text), .textDelta(index: 1, "cut")])
         }
+        #expect(throws: ResponseAssemblyError.incomplete(openBlocks: [0])) {
+            _ = try assemble([
+                start, .blockStarted(index: 0, .toolUse(id: "t", name: "read")), .toolInputDelta(index: 0, "{"),
+                .messageStopped
+            ])
+        }
         #expect(throws: ResponseAssemblyError.incomplete(openBlocks: [])) {
             _ = try assemble([start, .blockStarted(index: 0, .text), .blockStopped(index: 0)])
         }

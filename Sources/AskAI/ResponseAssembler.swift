@@ -85,9 +85,10 @@ public struct ResponseAssembler: Sendable {
     }
 
     /// The assembled response.
-    /// - Throws: ``ResponseAssemblyError/incomplete(openBlocks:)`` unless the stream reached `messageStopped`.
+    /// - Throws: ``ResponseAssemblyError/incomplete(openBlocks:)`` unless the stream reached `messageStopped`
+    ///   with every block stopped.
     public func finish() throws(ResponseAssemblyError) -> AssembledResponse {
-        guard stopped, var response else { throw .incomplete(openBlocks: open.sorted()) }
+        guard stopped, open.isEmpty, var response else { throw .incomplete(openBlocks: open.sorted()) }
         response.blocks = blocks.keys.sorted().compactMap { blocks[$0].map(Self.finished) }
         return response
     }
@@ -153,7 +154,7 @@ public struct ResponseAssembler: Sendable {
             case .thinking: .thinking(text: block.text, signature: block.signature)
             case .redactedThinking(let data): .redactedThinking(data: data)
             case .toolCall(let id, let name):
-                // A tool block still open at the stop has no validated input yet.
+                // Unreachable: finish() requires every block stopped, and stopping a tool block validates it.
                 .toolCall(id: id, name: name, input: block.validatedInput ?? JSONObject.empty)
             case .unrecognized(let type): .unrecognized(type: type)
         }
