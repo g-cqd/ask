@@ -1,0 +1,103 @@
+import Testing
+
+@testable import AskAI
+
+/// Anthropic Messages request bodies, in the shape subscription inference accepts (ADR-0007): the system
+/// parameter is exactly the canonical identity line, and ask's own prompt rides at the front of the first
+/// user message, after any tool results.
+@Suite("Anthropic requests carry the system prompt in user messages")
+struct AnthropicRequestTests {
+    private func body(_ request: ModelRequest) -> String {
+        String(decoding: AnthropicRequestEncoder.encode(request), as: UTF8.self)
+    }
+
+    private func request(_ messages: [ModelMessage], prompt: [String] = ["Be brief."], tools: [ToolDefinition] = [])
+        -> ModelRequest
+    {
+        ModelRequest(model: "claude-x", maxTokens: 1024, systemPrompt: prompt, messages: messages, tools: tools)
+    }
+
+    private let head =
+        #"{"model":"claude-x","max_tokens":1024,"stream":true,"#
+        + #""system":[{"type":"text","text":"You are a Claude agent, built on Anthropic's Claude Agent SDK."}],"#
+
+    @Test func `the prompt leads the first user message`() {
+        let encoded = body(request([ModelMessage(role: .user, blocks: [.text("Hi")])]))
+        #expect(
+            encoded == head + #""messages":[{"role":"user","content":["#
+                + #"{"type":"text","text":"Be brief."},{"type":"text","text":"Hi"}]}]}"#)
+    }
+
+    @Test func `the prompt follows the tool results that must lead a user message`() {
+        let encoded = body(
+            request([
+                ModelMessage(role: .user, blocks: [.toolResult(id: "t1", content: "42", isError: false), .text("and?")])
+            ]))
+        #expect(
+            encoded == head + #""messages":[{"role":"user","content":["#
+                + #"{"type":"tool_result","tool_use_id":"t1","content":"42"},"#
+                + #"{"type":"text","text":"Be brief."},{"type":"text","text":"and?"}]}]}"#)
+    }
+
+    @Test func `without a leading user message, one is added to carry the prompt`() {
+        #expect(
+            body(request([])) == head + #""messages":[{"role":"user","content":[{"type":"text","text":"Be brief."}]}]}"#
+        )
+        let encoded = body(request([ModelMessage(role: .assistant, blocks: [.text("Hello")])]))
+        #expect(
+            encoded == head + #""messages":[{"role":"user","content":[{"type":"text","text":"Be brief."}]},"#
+                + #"{"role":"assistant","content":[{"type":"text","text":"Hello"}]}]}"#)
+    }
+
+    @Test func `no prompt adds nothing`() {
+        let encoded = body(request([ModelMessage(role: .user, blocks: [.text("Hi")])], prompt: []))
+        #expect(encoded == head + #""messages":[{"role":"user","content":[{"type":"text","text":"Hi"}]}]}"#)
+        let resumed = body(request([ModelMessage(role: .assistant, blocks: [.text("Hello")])], prompt: []))
+        #expect(resumed == head + #""messages":[{"role":"assistant","content":[{"type":"text","text":"Hello"}]}]}"#)
+    }
+
+    @Test func `assistant blocks replay exactly, tool input spliced verbatim`() throws {
+        let input = try JSONObject(validating: Array(#"{"path": "a.swift"}"#.utf8))
+        let encoded = body(
+            request(
+                [
+                    ModelMessage(role: .user, blocks: [.text("Go")]),
+                    ModelMessage(
+                        role: .assistant,
+                        blocks: [
+                            .thinking(text: "Hmm", signature: "sig=="), .redactedThinking(data: "opaque"),
+                            .text("Reading."),
+                            .toolCall(id: "toolu_1", name: "read", input: input)
+                        ]),
+                    ModelMessage(
+                        role: .user, blocks: [.toolResult(id: "toolu_1", content: "no such file", isError: true)])
+                ], prompt: []))
+        #expect(
+            encoded == head + #""messages":[{"role":"user","content":[{"type":"text","text":"Go"}]},"#
+                + #"{"role":"assistant","content":[{"type":"thinking","thinking":"Hmm","signature":"sig=="},"#
+                + #"{"type":"redacted_thinking","data":"opaque"},{"type":"text","text":"Reading."},"#
+                + #"{"type":"tool_use","id":"toolu_1","name":"read","input":{"path": "a.swift"}}]},"#
+                + #"{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_1","content":"no such file","#
+                + #""is_error":true}]}]}"#)
+    }
+
+    @Test func `tools are declared with their schema, and omitted when there are none`() throws {
+        let schema = try JSONObject(validating: Array(#"{"type":"object"}"#.utf8))
+        let tool = ToolDefinition(name: "read", description: "Read a file.", inputSchema: schema)
+        let encoded = body(request([ModelMessage(role: .user, blocks: [.text("Hi")])], prompt: [], tools: [tool]))
+        #expect(
+            encoded.hasSuffix(
+                #"}]}],"tools":[{"name":"read","description":"Read a file.","input_schema":{"type":"object"}}]}"#))
+    }
+
+    @Test func `text is escaped, and non-ASCII is kept as UTF-8`() {
+        let encoded = body(request([ModelMessage(role: .user, blocks: [.text("a \"quote\"\n\tand é/本")])], prompt: []))
+        #expect(encoded.contains(#""text":"a \"quote\"\n\tand é/本""#))
+    }
+
+    @Test func `only a JSON object is accepted as tool input or schema`() {
+        for bytes in ["[1]", "42", "\"s\"", #"{"open": "#, ""] {
+            #expect(throws: JSONObject.Invalid.self) { _ = try JSONObject(validating: Array(bytes.utf8)) }
+        }
+    }
+}

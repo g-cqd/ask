@@ -1,13 +1,11 @@
-internal import AemiJSON
-
 /// One block of a complete assistant response.
 public enum ContentBlock: Sendable, Equatable {
     case text(String)
     /// Reasoning, with the signature that must accompany it when sent back.
     case thinking(text: String, signature: String)
     case redactedThinking(data: String)
-    /// A tool call. `input` is the call's arguments as one JSON object, validated.
-    case toolCall(id: String, name: String, input: [UInt8])
+    /// A tool call with its arguments, validated as one JSON object.
+    case toolCall(id: String, name: String, input: JSONObject)
     /// A block type the decoder did not know, kept so the response is not silently shortened.
     case unrecognized(type: String)
 }
@@ -53,6 +51,7 @@ public struct ResponseAssembler: Sendable {
         var text = ""
         var signature = ""
         var input: [UInt8] = []
+        var validatedInput: JSONObject?
     }
 
     private var response: AssembledResponse?
@@ -110,8 +109,10 @@ public struct ResponseAssembler: Sendable {
     private mutating func stop(_ index: Int) throws(ResponseAssemblyError) {
         guard open.remove(index) != nil, let block = blocks[index] else { throw .unknownBlock(index: index) }
         guard case .toolCall(let id, _) = block.kind else { return }
-        if block.input.isEmpty { blocks[index]?.input = Array("{}".utf8) }
-        guard let input = blocks[index]?.input, (try? AemiJSON.parse(input))?.root.isObject == true else {
+        do {
+            blocks[index]?.validatedInput = try JSONObject(
+                validating: block.input.isEmpty ? Array("{}".utf8) : block.input)
+        } catch {
             throw .invalidToolInput(id: id)
         }
     }
@@ -151,7 +152,9 @@ public struct ResponseAssembler: Sendable {
             case .text: .text(block.text)
             case .thinking: .thinking(text: block.text, signature: block.signature)
             case .redactedThinking(let data): .redactedThinking(data: data)
-            case .toolCall(let id, let name): .toolCall(id: id, name: name, input: block.input)
+            case .toolCall(let id, let name):
+                // A tool block still open at the stop has no validated input yet.
+                .toolCall(id: id, name: name, input: block.validatedInput ?? JSONObject.empty)
             case .unrecognized(let type): .unrecognized(type: type)
         }
     }
