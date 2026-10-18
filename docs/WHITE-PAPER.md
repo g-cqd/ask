@@ -11,17 +11,11 @@ excludes something that would otherwise look like an optimisation.
 
 **A lightweight runtime.** A binary links only what it uses. No umbrella target that re-exports
 everything, no speculative generality, no framework pulled in for one function. Startup cost is paid
-once per process, so what a binary **links** is paid for at every launch.
-
-That is a statement about link **weight**, not module **count**. Measured: one target versus twenty
-changed spawn time by 0.067 ms, inside noise, so fine-grained targets are free and the discipline belongs
-on what is linked rather than on how many modules carry it. ADR-0009 corrected the earlier claim here,
-which said every linked *module* was paid for per launch; it was not measurable, and a wrong principle
-outlives the investigation that found it.
-
-The measurement behind it covers process load only. Cold start itself is 6.23 ms of a 25 ms budget —
-spawn to the prompt on the terminal — so the headroom is 18.77 ms and the choice of granularity does not
-rest on the measurement.
+once per process, so what a binary **links** is paid for at every launch — a statement about link
+**weight**, not module **count**, which was measured at 0.067 ms between one target and twenty and is
+inside noise. Fine-grained targets are free; the discipline is on what is linked. Cold start is 6.23 ms
+of a 25 ms budget, so the headroom is 18.77 ms and granularity does not rest on the measurement. ADR-0009
+records the correction.
 
 **Fewest allocations.** Allocation is not free and it is not only slow — it fragments, and a fragmented
 allocator costs more in cache misses than the work that needed it. The hot path allocates zero times,
@@ -33,11 +27,25 @@ inward. No `Array`/`ContiguousArray` bridging, no `String` round-trip per keystr
 buffer to append to it. Copy once, at the edge where data enters or leaves the process. Copy-on-write
 is what a runtime reaches for when it cannot avoid a copy; here the aim is to have nothing to copy.
 
-**Safest, and still near zero-copy.** These are requirements together, never a trade against each
-other. No `-Ounchecked`, no disabled bounds or overflow checks, no `unsafe` that is not immediately
-justified in a comment. The way to be both fast and safe is to **do less work** — diff a frame instead
-of repainting it, reuse a buffer instead of allocating one, decode a byte once instead of re-scanning
-it — not to remove the checks that catch the bugs.
+**Safest, and still near zero-copy.** Requirements together, never a trade against each other. No
+`-Ounchecked`, no disabled bounds or overflow checks, no `unsafe` not justified in a comment. Being
+both fast and safe means **doing less work** — diff a frame instead of repainting it, reuse a buffer
+instead of allocating one — not removing the checks that catch the bugs.
+
+**Modern primitives, and a written reason for every escape.** The floor is macOS 26, so `Mutex`,
+`Atomic`, `InlineArray`, `Span` and `RawSpan` all compile — `NSLock`, `os_unfair_lock`, `pthread_mutex`
+and `DispatchQueue` are banned, and reaching for one is not a compatibility decision. Shared mutable
+state goes in a `Mutex` or an `Atomic`; an actor is for a real async boundary or an invariant that must
+hold across an `await`, and is the last resort. `@concurrent` and `nonisolated` are the default answer
+for anything that does not need an actor. `@unchecked Sendable` is permitted only with the invariant
+written next to it, because a file descriptor cannot be made checked.
+
+**Tests are deterministic.** No `Task.yield`, no `Task.sleep`, no polling, no wall-clock assertion. Wait
+on the event — Aemi's `AsyncEventProbe` under a `TestClock`, or a `CheckedContinuation` the code under
+test resumes. A test that depends on scheduling can pass for the wrong reason.
+
+Both are enforced by `SourceStandards`, and each rule was probed by breaking it with a violation that
+compiles.
 
 **Every claim is measured.** A performance claim without before-and-after numbers, same harness, same
 configuration, with units, is not a claim this project will act on.
@@ -80,35 +88,31 @@ tool "usually" behaves is not a probe.
    changes when a principle changes, and a probe is not a principle.
 5. **Act only then.** An unprobed claim is written down as an open question, never as a fact.
 
-**Forbidden substitutes for a probe:**
+**Not a probe:** confidence, experience, or "it is well known that…"; a blog post, a second model, or
+documentation read out of context; a passing build that does not distinguish between the hypotheses;
+inference from a *different* configuration than the one shipping.
 
-- Confidence, experience, or "it is well known that…"
-- A blog post, a second model, or documentation read out of context
-- A passing build that does not distinguish between the hypotheses
-- Inference from a *different* configuration than the one shipping
+**The bisect lesson.** A flag blamed for a failure was cleared by removing it — from a build that still
+failed, because four other flags were present. The claim was false and nearly became a written
+constraint. *A probe that cannot fail is not a probe.*
 
-**The bisect lesson.** A flag blamed for a failure was cleared by removing it — from a build that
-still failed, because four other flags were still present. The claim "flag X breaks the test target"
-was false, and nearly became a written constraint. *A probe that cannot fail is not a probe.*
-
-**Escalation.** When a probe contradicts a belief held confidently, the belief loses. Record the
-contradiction in the diary. Do not re-litigate a settled decision unless new evidence contradicts it.
+**Escalation.** When a probe contradicts a confident belief, the belief loses; record the contradiction
+in the diary. Do not re-litigate a settled decision unless new evidence contradicts it.
 
 ---
 
 ## 1. Red TDD
 
-- **Red first.** A test is written, run, and observed to fail **for the right reason**, before the
-  implementation exists. A test that has never failed has proven nothing.
-- **One behaviour per test.** Named in backticks as a sentence:
+- **Red first.** Written, run, and observed to fail **for the right reason**, before the implementation
+  exists. A test that has never failed has proven nothing.
+- **One behaviour per test**, named in backticks as a sentence:
   ``@Test func `every diary file is within the line budget`()`` — the name says what must hold, so a
   failure names its own cause.
 - **Green by the minimum *general* code** — not code special-cased to the test's input.
 - **Refactor with tests green**, one named move at a time.
-- **Red and green land in the same commit.** History stays buildable and `git bisect` keeps working.
-  The red is observed locally and recorded; it is not left broken on the main line.
-- **Never** assert on nothing, never sleep or time out inside a test, never share mutable state
-  between tests, never test a private method to test itself.
+- **Red and green land in the same commit**, so history stays buildable and `git bisect` keeps working.
+- **Never** assert on nothing, never share mutable state between tests, never test a private method to
+  test itself.
 - Coverage is measured by **behaviour**, never by percentage.
 
 ## 2. Performance doctrine
@@ -141,10 +145,10 @@ not remove one without a probe that shows the project is better without it.**
 | `MemberImportVisibility` | SE-0444, Swift 6.1 | A member is visible only where its module is imported. |
 | `.treatAllWarnings(as: .error)` | — | A warning is a defect with a louder voice. |
 
-Prefer behavior tests through public APIs. Where internal access is justified, explicitly enable
-testability for optimized tests. Shipping binaries and benchmarks must be built separately without
-testability; do not claim those binaries are identical. Compiler settings require controlled probes,
-not blanket prohibitions inferred from a failed build.
+Prefer behavior tests through public APIs; where internal access is justified, enable testability
+explicitly for optimized tests. Shipping binaries and benchmarks are built separately, without it, and
+are not claimed identical. Compiler settings require controlled probes, not blanket prohibitions
+inferred from a failed build.
 
 **Banned:** `-Ounchecked`. It strips the bounds and overflow checks `StrictMemorySafety` depends on,
 trading correctness for a benchmark number.
@@ -175,16 +179,15 @@ trading correctness for a benchmark number.
 
 ## 6. Terminal doctrine
 
-- **Synchronised output (DEC 2026)** wraps every frame. Already proven in KittyCode; carried forward.
-- **Capability detection must be active, not guessed.** Environment variables are a hint, never proof.
-  Probe the terminal and cache the answer.
-- **The reset ladder** is the recovery primitive, in order, cheapest first:
-  1. **Selective cleanup** — leave alt screen, disable mouse and bracketed paste, `ESC[m`, show cursor.
-  2. **DECSTR soft reset** (`CSI ! p`) — resets modes, cursor and attributes while **preserving screen
-     contents and scrollback**. This is the primitive that was missing, and it is the correct middle
-     tier.
-  3. **RIS full reset** (`ESC c`) — destroys scrollback, visibly disruptive. Last resort only.
-- The whole ladder is **testable against a PTY**, so it is written test-first, not by inspection.
+The terminal belongs to **TerminalKit**, and so does its doctrine — synchronised output (DEC 2026) on
+every frame, capability detection by active probe rather than by environment variable, and the tiered
+reset ladder. It is not restated here, because a copy is a second thing to drift.
+
+One correction that stays, because it is the shape of the mistake rather than the detail: this section
+used to assert that DECSTR resets modes while preserving scrollback. TerminalKit measured it against
+four emulators and **DECSTR resets no DEC private mode** (TerminalKit ADR-0002), so the tier that
+actually clears `?1049`, the mouse modes and `?2004` is the selective one. A restated claim outlives the
+evidence that refuted it.
 
 ## 7. Bans
 
