@@ -119,95 +119,95 @@ struct AgentLoopTests {
         let next = RequestContext(file.tree.context())
         #expect(next.repairs == [.interruptedToolCall(id: "b")])
     }
+
+    private struct Upper: Tool {
+        struct Arguments: Decodable { let text: String }
+        let definition = ToolDefinition(
+            name: "upper", description: "Uppercase text.",
+            inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
+
+        func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
+            switch arguments(Arguments.self, from: input) {
+                case .success(let arguments): ToolOutput(arguments.text.uppercased())
+                case .failure(let output): output
+            }
+        }
+    }
+
+    /// Cancels the task running the loop, as an abort would, and still returns its result.
+    private struct AbortingTool: Tool {
+        let definition = ToolDefinition(
+            name: "abort", description: "Abort.",
+            inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
+
+        func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
+            withUnsafeCurrentTask { $0?.cancel() }
+            return ToolOutput("stopping")
+        }
+    }
+
+    /// Answers each request with the next scripted turn, and keeps every request it received.
+    final class ScriptedProvider: ModelProvider {
+        enum Turn {
+            case reply(String)
+            /// Text that stops with `pause_turn`: the provider asks to be continued.
+            case pause(String)
+            case call(id: String, name: String, input: String)
+            case calls([(String, String, String)])
+            case failure
+        }
+
+        struct Failure: Error, CustomStringConvertible {
+            var description: String { "scripted failure" }
+        }
+
+        private let turns: Mutex<[Turn]>
+        private let received = Mutex<[ModelRequest]>([])
+
+        init(_ turns: [Turn]) { self.turns = Mutex(turns) }
+
+        var requests: [ModelRequest] { received.withLock { $0 } }
+
+        func stream(_ request: ModelRequest) -> AsyncThrowingStream<ModelEvent, any Error> {
+            received.withLock { $0.append(request) }
+            let turn = turns.withLock { $0.isEmpty ? Turn.failure : $0.removeFirst() }
+            let (stream, continuation) = AsyncThrowingStream<ModelEvent, any Error>.makeStream()
+            var events: [ModelEvent] = [.messageStarted(id: "m", model: "claude-x", usage: TokenUsage(input: 1))]
+            switch turn {
+                case .reply(let text):
+                    events += [
+                        .blockStarted(index: 0, .text), .textDelta(index: 0, text), .blockStopped(index: 0),
+                        .messageDelta(stopReason: .endTurn, usage: TokenUsage(output: 1))
+                    ]
+                case .pause(let text):
+                    events += [
+                        .blockStarted(index: 0, .text), .textDelta(index: 0, text), .blockStopped(index: 0),
+                        .messageDelta(stopReason: .pauseTurn, usage: TokenUsage(output: 1))
+                    ]
+                case .call(let id, let name, let input):
+                    events += Self.call(index: 0, id: id, name: name, input: input)
+                    events.append(.messageDelta(stopReason: .toolUse, usage: TokenUsage(output: 1)))
+                case .calls(let calls):
+                    for (index, call) in calls.enumerated() {
+                        events += Self.call(index: index, id: call.0, name: call.1, input: call.2)
+                    }
+                    events.append(.messageDelta(stopReason: .toolUse, usage: TokenUsage(output: 1)))
+                case .failure:
+                    continuation.finish(throwing: Failure())
+                    return stream
+            }
+            for event in events + [.messageStopped] { continuation.yield(event) }
+            continuation.finish()
+            return stream
+        }
+
+        private static func call(index: Int, id: String, name: String, input: String) -> [ModelEvent] {
+            [
+                .blockStarted(index: index, .toolUse(id: id, name: name)), .toolInputDelta(index: index, input),
+                .blockStopped(index: index)
+            ]
+        }
+    }
 }
 
 // MARK: - Doubles
-
-private struct Upper: Tool {
-    struct Arguments: Decodable { let text: String }
-    let definition = ToolDefinition(
-        name: "upper", description: "Uppercase text.",
-        inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
-
-    func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
-        switch arguments(Arguments.self, from: input) {
-            case .success(let arguments): ToolOutput(arguments.text.uppercased())
-            case .failure(let output): output
-        }
-    }
-}
-
-/// Cancels the task running the loop, as an abort would, and still returns its result.
-private struct AbortingTool: Tool {
-    let definition = ToolDefinition(
-        name: "abort", description: "Abort.",
-        inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
-
-    func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
-        withUnsafeCurrentTask { $0?.cancel() }
-        return ToolOutput("stopping")
-    }
-}
-
-/// Answers each request with the next scripted turn, and keeps every request it received.
-final class ScriptedProvider: ModelProvider {
-    enum Turn {
-        case reply(String)
-        /// Text that stops with `pause_turn`: the provider asks to be continued.
-        case pause(String)
-        case call(id: String, name: String, input: String)
-        case calls([(String, String, String)])
-        case failure
-    }
-
-    struct Failure: Error, CustomStringConvertible {
-        var description: String { "scripted failure" }
-    }
-
-    private let turns: Mutex<[Turn]>
-    private let received = Mutex<[ModelRequest]>([])
-
-    init(_ turns: [Turn]) { self.turns = Mutex(turns) }
-
-    var requests: [ModelRequest] { received.withLock { $0 } }
-
-    func stream(_ request: ModelRequest) -> AsyncThrowingStream<ModelEvent, any Error> {
-        received.withLock { $0.append(request) }
-        let turn = turns.withLock { $0.isEmpty ? Turn.failure : $0.removeFirst() }
-        let (stream, continuation) = AsyncThrowingStream<ModelEvent, any Error>.makeStream()
-        var events: [ModelEvent] = [.messageStarted(id: "m", model: "claude-x", usage: TokenUsage(input: 1))]
-        switch turn {
-            case .reply(let text):
-                events += [
-                    .blockStarted(index: 0, .text), .textDelta(index: 0, text), .blockStopped(index: 0),
-                    .messageDelta(stopReason: .endTurn, usage: TokenUsage(output: 1))
-                ]
-            case .pause(let text):
-                events += [
-                    .blockStarted(index: 0, .text), .textDelta(index: 0, text), .blockStopped(index: 0),
-                    .messageDelta(stopReason: .pauseTurn, usage: TokenUsage(output: 1))
-                ]
-            case .call(let id, let name, let input):
-                events += Self.call(index: 0, id: id, name: name, input: input)
-                events.append(.messageDelta(stopReason: .toolUse, usage: TokenUsage(output: 1)))
-            case .calls(let calls):
-                for (index, call) in calls.enumerated() {
-                    events += Self.call(index: index, id: call.0, name: call.1, input: call.2)
-                }
-                events.append(.messageDelta(stopReason: .toolUse, usage: TokenUsage(output: 1)))
-            case .failure:
-                continuation.finish(throwing: Failure())
-                return stream
-        }
-        for event in events + [.messageStopped] { continuation.yield(event) }
-        continuation.finish()
-        return stream
-    }
-
-    private static func call(index: Int, id: String, name: String, input: String) -> [ModelEvent] {
-        [
-            .blockStarted(index: index, .toolUse(id: id, name: name)), .toolInputDelta(index: index, input),
-            .blockStopped(index: index)
-        ]
-    }
-}

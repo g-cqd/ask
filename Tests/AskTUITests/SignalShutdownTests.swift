@@ -115,18 +115,18 @@ struct SignalShutdownTests {
         }
         return false
     }
-}
 
-/// Collects the exit codes the shutdown path asks for, instead of exiting the test process.
-///
-/// `Mutex` from `Synchronization`, not `NSLock`: `NSLock` is a class from Foundation with an
-/// Objective-C runtime behind it, and this project bans it in favour of the standard library's
-/// lock — the same choice TerminalKit's own `POSIXTerminalConnection` and `SignalHandler` make for
-/// the state they guard.
-private final class ExitRecorder: Sendable {
-    private let recorded = Mutex<[Int32]>([])
+    /// Collects the exit codes the shutdown path asks for, instead of exiting the test process.
+    ///
+    /// `Mutex` from `Synchronization`, not `NSLock`: `NSLock` is a class from Foundation with an
+    /// Objective-C runtime behind it, and this project bans it in favour of the standard library's
+    /// lock — the same choice TerminalKit's own `POSIXTerminalConnection` and `SignalHandler` make for
+    /// the state they guard.
+    private final class ExitRecorder: Sendable {
+        private let recorded = Mutex<[Int32]>([])
 
-    var codes: [Int32] { recorded.withLock { $0 } }
+        var codes: [Int32] { recorded.withLock { $0 } }
 
-    func record(_ code: Int32) { recorded.withLock { $0.append(code) } }
+        func record(_ code: Int32) { recorded.withLock { $0.append(code) } }
+    }
 }
