@@ -41,8 +41,8 @@ swiftlint lint --strict --config .swiftlint.yml Sources Tests \
     || fail "SwiftLint metric violations"
 
 printf '==> build and test (release)\n'
-# Release, always: this package exists for latency, and a debug build measures a program nobody runs.
-swift build -c release
-swift test -c release
+# Explicit testability for optimized tests (ADR-0006). Benchmark/shipping binaries are built
+# separately with `swift build -c release`; do not treat a testable build as byte-identical.
+swift test -c release --enable-testable-imports
 
 printf '\n[OK] clean\n'
