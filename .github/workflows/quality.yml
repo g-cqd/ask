@@ -4,14 +4,23 @@ on:
   push:
   pull_request:
 
+# Actions are pinned to full commit SHAs, with the version in a comment, rather than floating on a
+# tag. A tag is a name someone can move; a SHA is the code that actually ran. This matches Aemi's
+# own workflows, and the drift between the two used to be a bug rather than a policy — see below.
+env:
+  SWIFT_VERSION: "6.4"
+
 jobs:
   gate:
-    runs-on: macos-15
+    # macos-26 matches the package's declared floor (.macOS(.v26)). Testing on the oldest supported
+    # system is the point: it is the only way to notice that something quietly started using an API
+    # newer than the floor it claims to support.
+    runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-swift@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: swift-actions/setup-swift@7ca6abe6b3b0e8b5421b88be48feee39cbf52c6a # v2.4.0
         with:
-          swift-version: "6.4"
+          swift-version: ${{ env.SWIFT_VERSION }}
       - name: SwiftLint (metrics)
         run: brew install swiftlint
       - name: Quality gate
@@ -20,18 +29,19 @@ jobs:
         run: Scripts/quality.sh --check
 
   budgets:
-    # The four performance budgets are enforced by running the real binary on a real PTY. These are
-    # hardware-specific numbers, so the runner is pinned rather than taken from the pool: a budget
-    # measured on one machine and enforced on another is a budget that fires for the wrong reason.
-    runs-on: macos-15
+    # The four performance budgets, enforced by running the real binary on a real PTY. Same pinned
+    # runner as the gate: these are hardware-specific numbers, and a budget measured on one machine
+    # and enforced on another fires for the wrong reason, which is worse than no budget because it
+    # trains people to ignore red.
+    runs-on: macos-26
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-swift@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: swift-actions/setup-swift@7ca6abe6b3b0e8b5421b88be48feee39cbf52c6a # v2.4.0
         with:
-          swift-version: "6.4"
+          swift-version: ${{ env.SWIFT_VERSION }}
       - name: Build release
         run: swift build -c release
       - name: Measure the four budgets
         # Exits non-zero when any budget is over. The limits come from the binary itself
-        # (`ask --budgets`), so there is one definition of them and no copy in a script to drift.
+        # (`ask --budgets`), so there is one definition and no copy in a script to drift.
         run: python3 Scripts/measure-budgets.py .build/release/ask 12
