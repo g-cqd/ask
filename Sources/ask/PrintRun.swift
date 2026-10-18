@@ -101,8 +101,8 @@ func runPrompt(_ prompt: String, model: String) async {
 
     let run = Task<Void, any Error> {
         try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
-        var file = try SessionFile.create(at: FilePath(sessionPath))
-        try await loop.run(prompt, in: &file) { renderer.render($0) }
+        let session = SessionRecorder(try SessionFile.create(at: FilePath(sessionPath)))
+        try await loop.run(prompt, in: session) { renderer.render($0) }
     }
     let interrupted = Mutex<Int32?>(nil)
     let signals = SignalHandler(

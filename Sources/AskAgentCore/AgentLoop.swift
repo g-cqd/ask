@@ -69,15 +69,15 @@ public struct AgentLoop: Sendable {
         self.context = context
     }
 
-    /// Runs `prompt` to completion in `file`, reporting each step to `events`.
+    /// Runs `prompt` to completion in `session`, reporting each step to `events`.
     /// - Throws: an ``AgentError``. Cancelling the task aborts the run as ``AgentError/cancelled``.
     public func run(
-        _ prompt: String, in file: inout SessionFile, events: (AgentEvent) -> Void
+        _ prompt: String, in session: SessionRecorder, events: (AgentEvent) -> Void
     ) async throws(AgentError) {
-        try record(.user(prompt), in: &file)
+        try record(.user(prompt), in: session)
         for _ in 0 ..< settings.maximumTurns {
-            let response = try await respond(to: file.tree, events: events)
-            try record(.response(response), in: &file)
+            let response = try await respond(to: session.tree, events: events)
+            try record(.response(response), in: session)
             events(.responded(response))
             let calls = response.blocks.compactMap { block -> (String, String, JSONObject)? in
                 guard case .toolCall(let id, let name, let input) = block else { return nil }
@@ -91,7 +91,7 @@ public struct AgentLoop: Sendable {
                 guard !Task.isCancelled else { throw .cancelled }
                 events(.toolStarted(id: id, name: name, input: input))
                 let output = await tools.run(name: name, input: input, in: context)
-                try record(.toolResult(callID: id, content: output.content, isError: output.isError), in: &file)
+                try record(.toolResult(callID: id, content: output.content, isError: output.isError), in: session)
                 events(.toolFinished(id: id, name: name, output: output))
             }
             guard !Task.isCancelled else { throw .cancelled }
@@ -123,7 +123,7 @@ public struct AgentLoop: Sendable {
         do { return try assembler.finish() } catch { throw .assembly(error) }
     }
 
-    private func record(_ payload: SessionPayload, in file: inout SessionFile) throws(AgentError) {
-        do { try file.append(payload) } catch { throw .session(error) }
+    private func record(_ payload: SessionPayload, in session: SessionRecorder) throws(AgentError) {
+        do { try session.append(payload) } catch { throw .session(error) }
     }
 }
