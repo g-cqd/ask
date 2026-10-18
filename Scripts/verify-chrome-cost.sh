@@ -23,20 +23,47 @@ wait_report() { # name, seconds
   return 1
 }
 
+# A MINIMAL environment, deliberately.
+#
+# The first run of this harness reported `supportsKittyGraphics: True` for Terminal.app — a terminal
+# that does not speak the kitty graphics protocol. The cause was environment inheritance: the process
+# that launched the probes was itself running inside kitty, so `KITTY_WINDOW_ID=4` was set in its
+# environment and inherited by every terminal started from it. TerminalKit's detection is
+# `KITTY_WINDOW_ID != nil || ...`, so an inherited variable alone flipped a terminal to "graphics".
+#
+# This is not an edge case. It fires whenever the launching process was inside kitty and then spawned
+# another terminal — a normal shape for a launcher script, a task runner, or a multiplexer.
+#
+# So the launcher unsets only the detection variables, in ITS OWN process, before spawning the
+# terminal. Each terminal then sets its own — kitty sets KITTY_WINDOW_ID, ghostty and wezterm set
+# TERM_PROGRAM, Terminal.app sets TERM_PROGRAM=Apple_Terminal — and the probe reads that terminal's
+# own report rather than the agent session's leaked one.
+#
+# `env -i` was tried first and is WRONG here, which is worth recording: it strips the environment the
+# terminal sets for its children as well as the inherited one, so every terminal reported
+# `guess=False` including kitty. That is a different wrong answer, and a more dangerous one, because it
+# would make the detection look broken everywhere rather than merely contaminated in one place.
+#
+# Scrubbing only the detection variables leaves every other inherited variable able to influence the
+# probe. The probe reads nothing else, so that is a stated scope rather than an oversight.
+LAUNCH_ENV=(env -u KITTY_WINDOW_ID -u TERM_PROGRAM -u TERM -u KONSOLE_VERSION -u COLORTERM)
+
 launch() {
   case $1 in
-    kitty) kitty --config NONE -e /bin/sh -c "python3 $P $OUT/$1.txt; sleep 240" >/dev/null 2>&1 & ;;
-    ghostty) /Applications/Ghostty.app/Contents/MacOS/ghostty \
+    kitty) "${LAUNCH_ENV[@]}" kitty --config NONE -e /bin/sh -c "python3 $P $OUT/$1.txt; sleep 240" >/dev/null 2>&1 & ;;
+    ghostty) "${LAUNCH_ENV[@]}" /Applications/Ghostty.app/Contents/MacOS/ghostty \
                  -e /bin/sh -c "python3 $P $OUT/$1.txt; sleep 240" >/dev/null 2>&1 & ;;
-    wezterm) wezterm start -- /bin/sh -c "python3 $P $OUT/$1.txt; sleep 240" >/dev/null 2>&1 & ;;
+    wezterm) "${LAUNCH_ENV[@]}" wezterm start -- /bin/sh -c "python3 $P $OUT/$1.txt; sleep 240" >/dev/null 2>&1 & ;;
     terminal)
       # Written to a file and run by path. Nesting shell quoting inside an AppleScript string
       # inside a case statement is how the equivalent TerminalKit script silently stopped
-      # launching, so it is kept out of the case body entirely.
+      # launching, so it is kept out of the case body entirely. The scrub lives in this script
+      # rather than on the osascript line, because AppleScript's "do script" inherits Terminal.app's
+      # environment and that inheritance is exactly what has to be removed.
       printf '#!/bin/sh\npython3 %s %s\nsleep 240\n' "$P" "$OUT/terminal.txt" > "$OUT/run-terminal.sh"
       chmod +x "$OUT/run-terminal.sh"
       osascript -e 'tell application "Terminal" to activate' >/dev/null 2>&1
-      osascript -e "tell application \"Terminal\" to do script \"/bin/sh $OUT/run-terminal.sh\"" >/dev/null 2>&1 &
+      osascript -e "tell application \"Terminal\" to do script \"/usr/bin/env -u KITTY_WINDOW_ID -u TERM_PROGRAM -u TERM -u KONSOLE_VERSION -u COLORTERM /bin/sh $OUT/run-terminal.sh\"" >/dev/null 2>&1 &
       ;;
     *) echo "unknown terminal: $1" >&2; return 2 ;;
   esac

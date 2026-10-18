@@ -27,10 +27,19 @@ of a cell layout gives back exactly the rows the pixel version was supposed to r
 **Probe 1 — how large is the fallback population?** Listed the installed terminals and looked for
 Terminal.app in the two places macOS keeps it.
 
-**CONFIRMED, and not hypothetical.** Installed and speaking the kitty graphics protocol: kitty, ghostty,
-wezterm. Falling back to characters: **Terminal.app at
-`/System/Applications/Utilities/Terminal.app`**, which ships with macOS and is therefore present on every
-machine, plus Orion RC. The character layout has an audience that cannot be deferred.
+**CONFIRMED that a fallback audience exists, but REFUTED in its stated reason.** Probed: kitty, ghostty
+and wezterm speak the kitty protocol; Terminal.app is present at
+`/System/Applications/Utilities/Terminal.app` and ships with macOS, so the character layout has an
+audience that cannot be deferred.
+
+But `0014`'s measurement then showed **Terminal.app reports real cell pixels** — 560×336 with a 7×14
+cell, `drawable: True`. So pixels are *available* there. What Terminal.app lacks is the kitty graphics
+**protocol**, and those are two independent axes.
+
+The original probe merged them, which is why it looked like a pixel problem and is actually a protocol
+problem. Corrected here: the character layout is required because the graphics protocol is unsupported,
+not because cell pixels are unavailable. The conclusion survives; the reason was wrong, and the two
+reasons would lead a reader to different designs.
 
 **Probe 2 — is the two-layout cost avoidable?** Read `PixelChrome`'s three primitives and
 `ChromeElement`'s placement semantics.
@@ -78,5 +87,8 @@ layout, it is a screenshot.
 
 - The character layout's own density budget is undecided: how compact it can be before it stops being
   legible. That belongs to `0015`, not here.
+- Whether Terminal.app can in fact render kitty graphics is **unverified**. The measurement shows it
+  reports cell pixels; that is not the same claim as protocol support, and this ADR does not assert it
+  either way. `0015` needs it answered rather than assumed.
 - Nothing in this decision says which is the default when capability is unknown. That falls to `0003`'s
   degraded-mode policy and should be decided there.
