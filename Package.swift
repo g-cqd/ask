@@ -71,7 +71,7 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "264f7448191b0d802db9f4a625a54d3d3064ddd7")
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "98650f4a0c3220121f5866cb0b018b1653034b8b")
     ],
     targets: [
         .target(
