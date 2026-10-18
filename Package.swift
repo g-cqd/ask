@@ -99,6 +99,17 @@ let package = Package(
             dependencies: ["AskCore"],
             path: "Tests/AskCoreTests",
             swiftSettings: packageSettings
+        ),
+        .testTarget(
+            name: "AskTUITests",
+            dependencies: [
+                "AskTUI",
+                .product(name: "TerminalKitIO", package: "TerminalKit"),
+                .product(name: "TerminalKitCore", package: "TerminalKit"),
+                .product(name: "TerminalKitCodecs", package: "TerminalKit")
+            ],
+            path: "Tests/AskTUITests",
+            swiftSettings: packageSettings
         )
     ]
 )
