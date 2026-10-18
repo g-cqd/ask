@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: 
 date: 2026-10-18
 ---
@@ -42,3 +42,21 @@ output still wraps every frame, and all four budgets still pass.
 ## Reordered (ADR-0019)
 
 `0014` no longer blocks this entry: its last item needs a renderer, so the dependency runs the other way. The agent loop no longer waits for this entry either; it lands headless first. This is what the *interactive* loop needs, and it comes next after the headless loop.
+
+## Done (2026-10-19)
+
+ask renders its interactive screen through `RenderPipeline`:
+- a repaint is a diff inside synchronised output;
+- the old byte editor is gone;
+- `Scripts/probe-interactive.py` reads the screen through an emulator and passes.
+
+**Budgets:**
+
+| Budget | Result |
+|---|---|
+| Input delay | 0.26 ms |
+| Action | 0.26 ms |
+| Cold start | 9.8–20 ms, depending on load |
+| Idle memory | 16–32 KiB over 8 MiB |
+
+The memory overrun is TerminalKit's cell grids, recorded in 0007 and in TerminalKit roadmap 0007.
