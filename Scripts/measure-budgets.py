@@ -20,7 +20,7 @@ Method, and why:
 Every figure is the median of N runs, with the spread reported, never the best run.
 Percentiles matter because users feel the tail; an average hides it.
 """
-import os, pty, select, statistics, subprocess, sys, time
+import json, os, pty, select, statistics, subprocess, sys, time
 
 BINARY = sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask"
 RUNS = int(sys.argv[2]) if len(sys.argv) > 2 else 15
@@ -119,6 +119,16 @@ def one_run():
             pass
 
 
+def load_budgets():
+    """Read the budgets from the binary itself, so there is exactly one definition of them."""
+    try:
+        out = subprocess.run([BINARY, "--budgets"], capture_output=True, text=True, timeout=30).stdout
+        return json.loads(out)
+    except Exception as e:
+        print("  (could not read budgets from the binary: %s)" % e, file=sys.stderr)
+        return None
+
+
 def main():
     runs = []
     for i in range(RUNS):
@@ -141,10 +151,35 @@ def main():
     col(1, 1.0, "KiB")
     col(2, 1.0, "ms")
     col(3, 1.0, "ms")
+    budgets = load_budgets()
+    if budgets is None:
+        print("\n  No budgets available, so nothing is checked. Reporting nothing is not passing.")
+        return 1
+
+    limits = [
+        ("cold start", 0, budgets["coldStartMilliseconds"], "ms"),
+        ("idle memory", 1, budgets["idleMemoryMebibytes"] * 1024.0, "KiB"),
+        ("input delay", 2, budgets["inputDelayMilliseconds"], "ms"),
+        ("action-to-action", 3, budgets["actionToActionMilliseconds"], "ms"),
+    ]
     print()
-    print("  These are BASELINES on this machine, not targets. A budget without a")
-    print("  measurement is not a budget, and these numbers are the first honest")
-    print("  ones this project has produced.")
+    print("  %-22s %12s %12s   %s" % ("budget", "median", "limit", "verdict"))
+    failed = []
+    for name, idx, limit, unit in limits:
+        med = statistics.median(r[idx] for r in runs)
+        ok = med <= limit
+        if not ok:
+            failed.append(name)
+        print("  %-22s %12.2f %12.2f   %s" % (name, med, limit, "ok" if ok else "OVER BUDGET"))
+
+    print()
+    if failed:
+        print("  OVER BUDGET: %s" % ", ".join(failed))
+        return 1
+    print("  All four within budget.")
+    print("  The action-to-action figure measures Enter producing the next prompt in a program")
+    print("  with no agent in it — a trivial action, not yet the one a user feels. Re-derive it")
+    print("  when the agent loop lands.")
     return 0
 
 
