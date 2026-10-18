@@ -30,14 +30,26 @@ public struct AnthropicClient: Sendable {
     public static let oauthBetas = "claude-code-20250219,oauth-2025-04-20"
 
     private let transport: any HTTPTransport
+    private let endpoint: URL
 
-    /// A client that sends through `transport`.
-    public init(transport: any HTTPTransport) { self.transport = transport }
+    /// A client that sends through `transport` to `endpoint`.
+    public init(transport: any HTTPTransport, endpoint: URL = AnthropicClient.endpoint) {
+        self.transport = transport
+        self.endpoint = endpoint
+    }
+
+    /// The Messages endpoint under `ANTHROPIC_BASE_URL` (as the official SDK reads it), else the default.
+    public static func endpoint(environment: [String: String]) -> URL {
+        guard let base = environment["ANTHROPIC_BASE_URL"], !base.isEmpty,
+            let url = URL(string: base.hasSuffix("/") ? String(base.dropLast()) : base), url.scheme != nil
+        else { return endpoint }
+        return url.appending(path: "v1/messages")
+    }
 
     /// Sends `request` and streams the response's events. The stream throws an ``AnthropicClientError``.
     public func stream(_ request: ModelRequest, auth: Auth) -> AsyncThrowingStream<ModelEvent, any Error> {
         let http = HTTPRequest(
-            url: Self.endpoint, method: "POST", headers: Self.headers(for: auth),
+            url: endpoint, method: "POST", headers: Self.headers(for: auth),
             body: AnthropicRequestEncoder.encode(request))
         let transport = transport
         return AsyncThrowingStream { continuation in

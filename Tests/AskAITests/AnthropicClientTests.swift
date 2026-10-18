@@ -45,6 +45,19 @@ struct AnthropicClientTests {
         #expect(sent.body == AnthropicRequestEncoder.encode(request))
     }
 
+    @Test func `ANTHROPIC_BASE_URL moves the endpoint, as the official SDK does`() {
+        #expect(AnthropicClient.endpoint(environment: [:]).absoluteString == "https://api.anthropic.com/v1/messages")
+        #expect(
+            AnthropicClient.endpoint(environment: ["ANTHROPIC_BASE_URL": "http://127.0.0.1:8080/"]).absoluteString
+                == "http://127.0.0.1:8080/v1/messages")
+        #expect(
+            AnthropicClient.endpoint(environment: ["ANTHROPIC_BASE_URL": "https://gw.example/anthropic"]).absoluteString
+                == "https://gw.example/anthropic/v1/messages")
+        #expect(
+            AnthropicClient.endpoint(environment: ["ANTHROPIC_BASE_URL": "not a url"]).absoluteString
+                == "https://api.anthropic.com/v1/messages")
+    }
+
     @Test func `an API key request uses x-api-key and no OAuth betas`() async throws {
         let transport = ScriptedTransport(status: 200, chunks: turn)
         _ = try await events(AnthropicClient(transport: transport), auth: .apiKey("sk-ant-api-K"))

@@ -63,7 +63,7 @@ struct AgentLoopTests {
         #expect(
             provider.requests[1].messages.last
                 == ModelMessage(role: .user, blocks: [.toolResult(id: "t1", content: "ABC", isError: false)]))
-        #expect(events.contains(.toolStarted(id: "t1", name: "upper")))
+        #expect(events.contains(.toolStarted(id: "t1", name: "upper", input: input(#"{"text":"abc"}"#))))
         #expect(events.contains(.toolFinished(id: "t1", name: "upper", output: ToolOutput("ABC"))))
     }
 
