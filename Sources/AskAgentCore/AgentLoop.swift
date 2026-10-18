@@ -30,7 +30,8 @@ public enum AgentEvent: Sendable, Equatable {
     case repaired([RequestContext.Repair])
     /// A response was complete and recorded.
     case responded(AssembledResponse)
-    case toolStarted(id: String, name: String)
+    /// A tool started, with the input the model gave it.
+    case toolStarted(id: String, name: String, input: JSONObject)
     /// A tool finished and its result was recorded.
     case toolFinished(id: String, name: String, output: ToolOutput)
     /// The run ended because the model stopped calling tools.
@@ -88,7 +89,7 @@ public struct AgentLoop: Sendable {
             }
             for (id, name, input) in calls {
                 guard !Task.isCancelled else { throw .cancelled }
-                events(.toolStarted(id: id, name: name))
+                events(.toolStarted(id: id, name: name, input: input))
                 let output = await tools.run(name: name, input: input, in: context)
                 try record(.toolResult(callID: id, content: output.content, isError: output.isError), in: &file)
                 events(.toolFinished(id: id, name: name, output: output))
