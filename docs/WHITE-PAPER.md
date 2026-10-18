@@ -27,7 +27,8 @@ tool "usually" behaves is not a probe.
 2. **Design the probe** that would make it false if it is false. A probe that cannot fail proves
    nothing.
 3. **Run it.** Record the command verbatim.
-4. **Record the verdict** in the probe ledger below — claim, probe, result.
+4. **Record the verdict** in the diary — claim, probe, result. Not here: this document
+   changes when a principle changes, and a probe is not a principle.
 5. **Act only then.** An unprobed claim is written down as an open question, never as a fact.
 
 **Forbidden substitutes for a probe:**
@@ -69,7 +70,7 @@ contradiction in the diary. Do not re-litigate a settled decision unless new evi
   nobody ships. See ADR-0002.
 - **Percentiles, not averages.** Users feel p95 and p99.
 - **Budgets, stated as numbers.** The four `ask` budgets are cold start, idle memory, input delay,
-  and action-to-action delay. Each is a number with units, recorded in the probe ledger once measured.
+  and action-to-action delay. Each is a number with units, recorded in the diary once measured.
   An unmeasured budget is not a budget.
 - **Order of attack:** don't do the work → do less work → do it elsewhere → do it in parallel →
   micro-optimise last. Micro-optimisation without profiler evidence is banned.
@@ -104,10 +105,13 @@ trading correctness for a benchmark number.
 - `docs/roadmap/NNNN-title.md` — **one entry per file**. A roadmap entry is a unit of work: claimable,
   reviewable, completable alone. Two entries in one file is a defect, and a test says so. Every entry
   declares a `status:` field.
-- `docs/diary/YYYY-MM-DD-NN.md` — the working log, and the probe ledger. **No diary file exceeds 256
-  lines**; at the ceiling, roll over to the next file. A diary is written, not read, and a test enforces
-  the cap.
-- `docs/WHITE-PAPER.md` — this file.
+- `docs/diary/YYYY-MM-DD-NN.md` — the working log, and **where probe history lives**. No diary file
+  exceeds 256 lines; at the ceiling, roll over. A diary is written, not read, and a test enforces the
+  cap.
+- `docs/WHITE-PAPER.md` — this file. It is **principles, not a log**: it changes when a principle
+  changes, and never when a probe runs. Probe history belongs in the diary. A white paper that grows
+  with every experiment stops being a document anyone reads, and the principles end up buried under
+  history that only mattered on the day it was written. A test enforces that it stays short.
 
 ## 5. Commit discipline
 
@@ -139,41 +143,3 @@ trading correctness for a benchmark number.
 - Taking on a bug the task did not ask about, mid-task: report it as follow-up instead.
 
 ---
-
-## Probe ledger
-
-Every entry: the claim, the probe, and the verdict. **This table only ever grows with probes that
-actually ran.**
-
-| # | Claim | Probe | Verdict |
-|---|---|---|---|
-| 1 | The five strict upcoming-feature flags are real and available in Swift 6.4 | `apple-docs search_docs source=swift-evolution` for each flag name | **CONFIRMED.** SE-0458 (6.2), SE-0409 (6.0), SE-0444 (6.1), SE-0470 (6.2), SE-0335. |
-| 2 | `RegionBasedIsolation`, `DisableOutwardActorInference`, `InferSendableFromCaptures`, `DeprecateApplicationMain` are extra strictness to add | `swift build` with each added under `.v6` | **REFUTED.** Compiler: "already enabled as of the Swift 6 language mode". Removed from the table; `.v6` is what enables them. |
-| 3 | An upcoming-feature flag breaks the test-target module handshake | Removed one flag at a time from the full set | **REFUTED.** The build failed identically with `v6` **alone**. The flags were never implicated. |
-| 4 | `public` declarations cannot use `URL` under these settings | Full error text from `swift build` | **CONFIRMED, and the cause is SE-0409.** `InternalImportsByDefault` makes a plain `import Foundation` grant *internal* visibility, so `URL` was internal. Fixed with `public import Foundation`. |
-| 5 | `FoundationEssentials` is the module declaring `URL` on this SDK | `swift build` after adding the import | **REFUTED.** `unable to resolve module dependency: 'FoundationEssentials'`. Corrected to `public import`. |
-| 6 | `@testable import` is incompatible with the strict settings | Build the same test target in `release` and in `debug` | **PARTLY REFUTED.** The cause is not strictness: SwiftPM passes `-enable-testing` **only for debug builds**, so `@testable` cannot resolve in `release`. Policy: no `@testable`; test the public API in the shipping configuration. ADR-0002. |
-| 7 | Aemi publishes versions `ask` can depend on | `git tag` in the Aemi clone | **REFUTED.** Zero tags. Aemi cannot be depended on by version; it must be tagged first. Dependency deferred. |
-| 8 | The diary line-budget guard might be vacuous — a test that has only ever passed proves nothing | Wrote a 300-line diary file, ran the suite, removed it | **REFUTED.** The guard fired and named the offending file. It is load-bearing. |
-| 9 | The one-entry-per-roadmap-file guard might be vacuous | Wrote a roadmap file holding two `## ` entries, ran the suite, removed it | **REFUTED.** The guard fired and named the file. It is load-bearing. |
-| 10 | Something in `ask` requires a macOS floor above 15 | Built and ran the full suite at floors 15, 26 and 27 | **REFUTED.** All three pass with 0 errors. The floor is a free choice today, not a constraint. Floor set to 26. ADR-0003. |
-| 11 | The terminal stack is the three modules `KittyTerminal`, `KittyCodecs`, `KittyRenderer` | `grep` of every `import` in those three modules | **REFUTED.** `KittyCodecs` also needs `KittyStyle`; `KittyRenderer` also needs `AtelierText` and `KittyStyle`. The move would not have compiled. ADR-0004. |
-| 12 | The terminal seam is 3,530 lines | Extended the same import probe through the newly revealed dependencies | **REFUTED.** Six modules, 6,263 lines — 79% larger. But the closure is clean: every external dependency is stdlib or `AemiKernel`, already in Aemi. |
-| 13 | `AemiTerminal` should be a new package inside Aemi | Read Aemi's own manifest | **REFUTED.** Aemi states "ONE package, MANY small targets". `AemiTerminalCore` was added as a target in that same manifest. |
-| 14 | Aemi's zero tags block Atelier from consuming it | Read `Apps/KittyCode/Package.swift:40` | **REFUTED.** Atelier pins by `revision:`, not by version. Tagging is desirable, not a prerequisite. |
-| 14 | This project needed its own style rules | Read Aemi's `.swift-format` / `.swiftlint.yml` and its `sync-config.sh` | **REFUTED.** A canonical configuration already exists, with a rationale and a supported propagation script. Adopted, not reinvented. TerminalKit ADR-0003. |
-| 15 | The escape sequences for modes 1006 and 2004 are correct | Byte-exact test comparing emitted bytes to literals | **REFUTED.** Both were written a byte short (`1,0,6` and `2,0,4`). Reading the arrays three times did not find it; printing the bytes and diffing did, in one run. |
-| 16 | The terminal stack belongs inside Aemi | Read Aemi's own target categories, then `git tag` | **REFUTED.** Aemi splits kernel and application tiers and keeps them apart; terminal is a third category. Aemi has **zero tags**. Moved to its own repository, `TerminalKit`. |
-| 17 | Separating the terminal removes the Aemi dependency cost | `grep` of Aemi's `.package(url:)` declarations | **PARTLY REFUTED — and deliberately not overstated.** Aemi declares swift-syntax 603..<605, so *any* consumer of `AemiKernel` resolves the macro tree; and TerminalKit will still import `AemiKernel` after the extraction. The gain is cadence and a focused manifest, **not** independence. |
-| 18 | A real kitty instance can verify the reset tiers from here | `kitty @ ls` | **REFUTED.** `open /dev/tty: device not configured`. kitty 0.49.2 is installed, but this session has no controlling TTY. The tiers are verified against a model, not an emulator. |
-| 19 | A PTY harness is buildable on macOS | `util.h` in the macOS SDK | **CONFIRMED.** `openpty` is declared at `util.h:99`. Not needed for the mode probe. |
-| 20 | The reset tiers can be verified against real terminals | DECRQM round trip on `/dev/tty`, inside kitty / ghostty / wezterm / Terminal.app | **CONFIRMED.** Tier 1 passes on all three that report mode state; Terminal.app answers no DECRQM and is inconclusive. |
-| 21 | DECSTR resets DEC private modes | Same probe, tier 2 | **REFUTED — by the emulators, against our own oracle and docs.** Left `?1049`, the mouse modes and `?2004` set on kitty, ghostty and wezterm. TerminalKit ADR-0002. |
-| 22 | The first emulator harness was sound | Ran it and read the verdict | **REFUTED.** Double-quoted `\033` became a real ESC that `send-text` swallowed, so every tier ran as a no-op and it reported PASS for all three. A probe that cannot fail proves nothing. |
-
-**Open questions — claims not yet probed, and therefore not acted on:**
-
-- Whether `-warn-long-function-bodies=100` is too aggressive for real source files.
-- The measured value of each of the four performance budgets. **No number here is a guess; none has
-  been measured yet.**
-- Whether the DECSTR tier is supported by every terminal `ask` will meet.
