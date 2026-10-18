@@ -50,13 +50,24 @@ to notice. That is the enforcement; the diagram above is documentation.
 
 ## Why fine grain is affordable — measured
 
-One target versus twenty changed spawn-to-exit by **0.067 ms**, inside noise, and what `ask` links costs
-about **1.55 ms** over a trivial binary. So targets are free and link weight is not. ADR-0009 carries the
-numbers and the white paper now says so.
+One target versus twenty changed spawn-to-exit by **0.067 ms**, inside noise. Cold start itself is 6.23 ms
+of a 25 ms budget, so even if twenty targets cost a full millisecond the total would still be under 30% of
+budget — **the choice does not rest on the measurement.** ADR-0009 carries the numbers and the audit of
+their limits: the probe covers process load, not the terminal path, and its binaries had no TTY.
 
 **Scope of that measurement:** trivial modules, no static initializers, no globals, no Objective-C
 classes, spawn-to-exit rather than spawn-to-first-frame. A module carrying heavy initialisation is not
 covered.
+
+## The products list, reviewed here
+
+The manifest declares `.library(name: "AskCore")` and `.library(name: "AskTUI")`. Probed: nothing imports
+either — `ask` is not a dependency of TerminalKit, Aemi or Atelier — so both are **speculative generality**,
+which the white paper bans.
+
+**Rule adopted:** a product exists because something consumes it. When this entry rewrites the manifest,
+each declared product gets a named consumer or is removed. Do not extend the list to six targets as the
+targets land.
 
 ## Done when
 
