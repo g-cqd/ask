@@ -103,3 +103,7 @@ pid, responsible pid, uid.
   kind as `@unchecked Sendable` with a `SAFETY:` note.
 - **Where it lives:** a watcher (kqueue for files, FSEvents for trees) is generic, so per the white paper it
   belongs in Aemi (AemiIO), not in ask.
+
+**Decision (user, 2026-10-19):** FSEvents is dropped as too deep for now. kqueue on the directory covers
+what ask needs: the config file and the binary. That also leaves the `DispatchQueue` ban without an
+exception. Tree-wide waiting, if the `wait` tool ever needs it, is revisited then.
