@@ -1,6 +1,5 @@
+import AskAgentCore
 import Testing
-
-@testable import AskCore
 
 @Suite("Session branches and context")
 struct SessionTreeTests {
