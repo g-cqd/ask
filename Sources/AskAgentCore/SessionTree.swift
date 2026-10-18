@@ -27,20 +27,26 @@ public struct SessionTree: Sendable, Equatable {
     /// - Throws: `SessionTreeError` for any malformed archive; nothing partial is returned.
     /// - Complexity: O(n × depth) for compaction checks, O(n) otherwise.
     public init(entries: [SessionEntry], leaf: EntryID?) throws(SessionTreeError) {
-        for entry in entries {
-            let size = entry.id.description.utf8.count
-            guard size > 0, size <= Self.maximumIdentifierBytes else {
-                throw .invalidIdentifier(entry.id)
-            }
-            guard positions[entry.id] == nil else { throw .duplicateEntry(entry.id) }
-            if let parent = entry.parentID, positions[parent] == nil { throw .unknownEntry(parent) }
-            try validate(entry.payload, under: entry.parentID)
-            positions[entry.id] = self.entries.count
-            self.entries.append(entry)
-        }
-        if let leaf, positions[leaf] == nil { throw .unknownEntry(leaf) }
-        self.leaf = leaf
-        nextOrdinal = entries.count
+        for entry in entries { try restore(entry) }
+        try moveLeaf(to: leaf)
+    }
+
+    /// Appends an archived entry with its own identifier and parent, and selects it.
+    ///
+    /// The single validation point for archived entries, used by ``init(entries:leaf:)`` and by
+    /// ``SessionLog/recover(_:limits:)`` to repair a damaged log one entry at a time.
+    /// - Throws: `invalidIdentifier`, `duplicateEntry`, `unknownEntry` for an absent parent, or
+    ///   `invalidCompactionBoundary`. Nothing changes on failure.
+    mutating func restore(_ entry: SessionEntry) throws(SessionTreeError) {
+        let size = entry.id.description.utf8.count
+        guard size > 0, size <= Self.maximumIdentifierBytes else { throw .invalidIdentifier(entry.id) }
+        guard positions[entry.id] == nil else { throw .duplicateEntry(entry.id) }
+        if let parent = entry.parentID, positions[parent] == nil { throw .unknownEntry(parent) }
+        try validate(entry.payload, under: entry.parentID)
+        positions[entry.id] = entries.count
+        entries.append(entry)
+        leaf = entry.id
+        nextOrdinal = max(nextOrdinal, entries.count)
     }
 
     /// How many entries exist across all branches.
