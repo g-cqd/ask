@@ -13,9 +13,7 @@ excludes something that would otherwise look like an optimisation.
 everything, no speculative generality, no framework pulled in for one function. Startup cost is paid
 once per process, so what a binary **links** is paid for at every launch — a statement about link
 **weight**, not module **count**, which was measured at 0.067 ms between one target and twenty and is
-inside noise. Fine-grained targets are free; the discipline is on what is linked. Cold start is 6.23 ms
-of a 25 ms budget, so the headroom is 18.77 ms and granularity does not rest on the measurement. ADR-0009
-records the correction.
+inside noise. Fine-grained targets are free; the discipline is on what is linked (ADR-0009).
 
 **Fewest allocations.** Allocation is not free and it is not only slow — it fragments, and a fragmented
 allocator costs more in cache misses than the work that needed it. The hot path allocates zero times,
@@ -46,8 +44,14 @@ test resumes. A test that depends on scheduling can pass for the wrong reason.
 Both are enforced by `SourceStandards`, and each rule was probed by breaking it with a violation that
 compiles.
 
-**Every claim is measured.** A performance claim without before-and-after numbers, same harness, same
-configuration, with units, is not a claim this project will act on.
+**Every change that can affect performance is benchmarked.** Not only optimisations: a dependency, a data
+structure, an extra system call, a different encoder. Before and after, same harness, same release build,
+median and spread with units, in the diary and the commit message. A change whose cost is unknown is not
+finished, and a performance claim without those numbers is not one this project acts on.
+
+**Micro-optimisation is welcome, and measured.** Large wins first, but small ones are not polish: a hoisted
+allocation, a `Span` for an array, a branch out of a loop compound on every keystroke and record. Each
+carries a benchmark; one that moves no number is reverted, as cleverness that costs and returns nothing.
 
 **Generic tools belong in Aemi.** A tool not specific to one application is promoted to Aemi, the kernel
 package, and specialised packages build on it. This binds the whole ecosystem, not only `ask`. The test is
@@ -115,8 +119,7 @@ in the diary. Do not re-litigate a settled decision unless new evidence contradi
 
 ## 2. Performance doctrine
 
-- **No optimisation without a measurement showing the bottleneck, and a second measurement proving
-  the fix.** Before/after, same harness, same inputs, same build configuration, with units.
+- **Measure to find the bottleneck, and measure again to prove the fix.**
 - **Release only.** `swift build` and `swift test` run `-c release`. A debug build measures a program
   nobody ships. See ADR-0002.
 - **Percentiles, not averages.** Users feel p95 and p99.
@@ -124,9 +127,10 @@ in the diary. Do not re-litigate a settled decision unless new evidence contradi
   and action-to-action delay. Each is a number with units, recorded in the diary once measured.
   An unmeasured budget is not a budget.
 - **Order of attack:** don't do the work → do less work → do it elsewhere → do it in parallel →
-  micro-optimise last. Micro-optimisation without profiler evidence is banned.
+  micro-optimise. The order says where to look first, not what to skip (ADR-0016).
+- **A benchmark is the evidence.** It runs the shipping build's code path, not a model of it in
+  another language, and lands with the change it measures.
 - **Never trade correctness or safety for speed.** No `-Ounchecked` in this project, ever.
-- Report median and spread, never the best run.
 
 ## 3. Swift package strictness
 
@@ -163,9 +167,8 @@ trading correctness for a benchmark number.
   exceeds 256 lines; at the ceiling, roll over. A diary is written, not read, and a test enforces the
   cap.
 - `docs/WHITE-PAPER.md` — this file. It is **principles, not a log**: it changes when a principle
-  changes, and never when a probe runs. Probe history belongs in the diary. A white paper that grows
-  with every experiment stops being a document anyone reads, and the principles end up buried under
-  history that only mattered on the day it was written. A test enforces that it stays short.
+  changes, and never when a probe runs; probe history belongs in the diary. A white paper that grows
+  with every experiment stops being read. A test enforces that it stays short.
 
 ## 5. Commit discipline
 
@@ -179,18 +182,16 @@ trading correctness for a benchmark number.
 
 The terminal belongs to **TerminalKit**, and so does its doctrine — synchronised output, capability
 detection, and the tiered reset ladder. Not restated here: a copy is a second thing to drift. Two
-corrections stay, because they are the shape of the mistake rather than the detail. This section once
-asserted DECSTR resets modes while preserving scrollback; TerminalKit measured four emulators and
-**DECSTR resets no DEC private mode** (TerminalKit ADR-0002). And it once read capabilities from
-environment variables, until an inherited `KITTY_WINDOW_ID` made Terminal.app claim a protocol it does
-not speak — so capabilities are **probed**, and silence means *unknown*, not *unsupported*.
+corrections stay as the shape of the mistake: **DECSTR resets no DEC private mode** (measured on four
+emulators, TerminalKit ADR-0002), and capabilities are **probed**, never read from environment variables
+an inherited `KITTY_WINDOW_ID` once lied through; silence means *unknown*, not *unsupported*.
 
 Probing is not free: two queries against a terminal that answers nothing cost **520 ms** against a 25 ms
 budget, so a probe never gates the first frame.
 
 ## 7. Bans
 
-- Unmeasured optimisation. Unprobed claims. Best-run reporting. Debug-build benchmarking.
+- Unbenchmarked performance-affecting changes. Unprobed claims. Best-run or debug-build benchmarking.
 - Sleeping or timing out inside a test. Tests that assert on nothing.
 - Big-bang rewrites. Drive-by churn beyond the task's scope.
 - Adding a dependency for convenience. **A dependency is an architectural decision.**
