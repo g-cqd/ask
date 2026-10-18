@@ -43,6 +43,8 @@ measures a program nobody ships.
 ## Foundation
 
 The kernel tier and the deterministic test kit come from [Aemi](https://github.com/Aemi-Studio/aemi).
-The terminal stack becomes `AemiTerminal` inside Aemi — see
-[ADR-0001](docs/adr/0001-aemiterminal-in-aemi.md). Aemi publishes no tags yet, which currently blocks
-depending on it by version.
+The terminal stack comes from **TerminalKit**, its own repository — see
+[ADR-0005](docs/adr/0005-ask-depends-on-terminalkit.md).
+
+Aemi publishes no tags, so `ask` depends on it by pinned revision, as Atelier already does. TerminalKit
+has no GitHub remote yet, which blocks a shipping dependency on it.
