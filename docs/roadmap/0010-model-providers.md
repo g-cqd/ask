@@ -97,3 +97,16 @@ recovers or reports cleanly.
 Also owed: a concurrent-refresh guard, Spettro, usage recording into the session, and the gate-drift
 diagnostic.
 
+## Live probes passed (2026-10-19, after the user's `ask login`)
+
+- `GET /v1/models` with the subscription token lists `claude-sonnet-5-5`, the default, plus thirteen others.
+- `ask -p` ran a live turn with a `read` tool call:
+  - stdout carried exactly the file's contents;
+  - the session recorded user, response (`tool_use`), tool result, response (`end_turn`), with usage.
+- The gated shape (ADR-0007) passes with `user-agent: ask`. Copying another client's identity is not
+  needed.
+
+**Found:** `cacheRead` is 0 on every turn. ask sends no `cache_control`, so each turn pays full input price
+for the whole history. Prompt caching is now owed (see 0024).
+
+**Still owed:** Spettro, a concurrent-refresh guard, and the gate-drift diagnostic.
