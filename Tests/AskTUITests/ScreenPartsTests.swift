@@ -1,0 +1,169 @@
+import TerminalKitCodecs
+import TerminalKitInput
+import TerminalKitRender
+import Testing
+
+@testable import AskTUI
+
+/// The interactive screen's pure parts: wrapping, the line editor, and the layout.
+@Suite("The screen wraps by display width, edits lines, and lays out transcript, status and prompt")
+struct ScreenPartsTests {
+    // MARK: - Wrapping
+
+    @Test func `text wraps at spaces, and inside a word only when it must`() {
+        #expect(TextWrap.lines("the quick brown fox", width: 10) == ["the quick", "brown fox"])
+        #expect(TextWrap.lines("abcdefghij", width: 4) == ["abcd", "efgh", "ij"])
+        #expect(TextWrap.lines("a\n\nb", width: 10) == ["a", "", "b"])
+        #expect(TextWrap.lines("", width: 10) == [""])
+    }
+
+    @Test func `wide characters count as two columns`() {
+        #expect(TextWrap.lines("日本語テキスト", width: 6) == ["日本語", "テキス", "ト"])
+        #expect(TextWrap.lines("ab 日本", width: 4) == ["ab", "日本"])
+    }
+
+    // MARK: - Editing
+
+    private func key(_ code: UInt32, _ modifiers: KeyModifiers = []) -> KeyEvent {
+        KeyEvent(keyCode: code, modifiers: modifiers)
+    }
+    private func type(_ text: String, into editor: inout PromptEditor) {
+        for scalar in text.unicodeScalars { _ = editor.apply(key(scalar.value)) }
+    }
+
+    @Test func `typing, moving and deleting edit at the cursor`() {
+        var editor = PromptEditor()
+        type("helo", into: &editor)
+        _ = editor.apply(key(Key.left.rawValue))
+        type("l", into: &editor)
+        #expect(editor.text == "hello" && editor.cursor == 4)
+        _ = editor.apply(key(0x01))  // Ctrl-A
+        _ = editor.apply(key(0x04))  // Ctrl-D deletes forward when the line is not empty
+        #expect(editor.text == "ello" && editor.cursor == 0)
+        _ = editor.apply(key(0x05))  // Ctrl-E
+        _ = editor.apply(key(0x7F))
+        #expect(editor.text == "ell")
+    }
+
+    @Test func `word and line deletion`() {
+        var editor = PromptEditor()
+        type("run the tests", into: &editor)
+        _ = editor.apply(key(0x17))  // Ctrl-W
+        #expect(editor.text == "run the ")
+        _ = editor.apply(key(0x15))  // Ctrl-U
+        #expect(editor.text.isEmpty && editor.cursor == 0)
+    }
+
+    @Test func `enter submits non-blank text and clears the line`() {
+        var editor = PromptEditor()
+        #expect(editor.apply(key(0x0D)) == .ignored)
+        type("  ", into: &editor)
+        #expect(editor.apply(key(0x0D)) == .ignored)
+        type("go", into: &editor)
+        #expect(editor.apply(key(0x0D)) == .submitted("  go"))
+        #expect(editor.text.isEmpty)
+    }
+
+    @Test func `control keys report intent instead of editing`() {
+        var editor = PromptEditor()
+        #expect(editor.apply(key(0x03)) == .interrupt)
+        #expect(editor.apply(key(UInt32(Character("c").asciiValue!), .ctrl)) == .interrupt)
+        #expect(editor.apply(key(0x04)) == .endOfInput)
+        #expect(editor.apply(key(0x1B)) == .escape)
+        #expect(editor.apply(key(Key.up.rawValue)) == .ignored)
+    }
+
+    @Test func `pasted line breaks become spaces`() {
+        var editor = PromptEditor()
+        editor.paste("one\ntwo\r\nthree")
+        #expect(editor.text == "one two three")
+    }
+
+    // MARK: - Layout
+
+    private func rows(_ buffer: ScreenBuffer) -> [String] {
+        (0 ..< buffer.rows)
+            .map { row in
+                String(
+                    (0 ..< buffer.columns)
+                        .compactMap { column -> Character? in
+                            let cell = buffer[row, column]
+                            return cell.isContinuation ? nil : cell.character
+                        }
+                )
+                .trimmingTrailingSpaces
+            }
+    }
+
+    @Test func `the transcript sits above the status line and the prompt, bottom-aligned`() {
+        var state = ScreenState(label: "model")
+        state.transcript.addUser("hi")
+        state.transcript.addAssistantText("hello there")
+        var buffer = ScreenBuffer(columns: 20, rows: 6)
+        var composer = ScreenComposer()
+        let cursor = composer.compose(state, into: &buffer)
+        #expect(rows(buffer) == ["", "", "› hi", "hello there", "model · ready", "ask>"])
+        #expect(cursor.row == 5 && cursor.column == 5)
+    }
+
+    @Test func `older lines scroll off the top, and scrollback brings them back`() {
+        var state = ScreenState(label: "m")
+        for index in 1 ... 5 { state.transcript.addNotice("line \(index)", isError: false) }
+        var buffer = ScreenBuffer(columns: 20, rows: 4)
+        var composer = ScreenComposer()
+        _ = composer.compose(state, into: &buffer)
+        #expect(Array(rows(buffer).prefix(2)) == ["line 4", "line 5"])
+        state.scrollback = 2
+        _ = composer.compose(state, into: &buffer)
+        #expect(Array(rows(buffer).prefix(2)) == ["line 2", "line 3"])
+    }
+
+    @Test func `tools show their status, and a running state says how to abort`() {
+        var state = ScreenState(label: "m")
+        state.transcript.startTool(name: "bash", summary: "ls")
+        state.running = true
+        var buffer = ScreenBuffer(columns: 40, rows: 3)
+        var composer = ScreenComposer()
+        _ = composer.compose(state, into: &buffer)
+        #expect(rows(buffer)[0] == "▸ bash ls …")
+        #expect(rows(buffer)[1] == "m · working… (esc to abort)")
+        state.transcript.finishTool(.failed("exit 1"))
+        state.running = false
+        _ = composer.compose(state, into: &buffer)
+        #expect(rows(buffer)[0] == "▸ bash ls ✗ exit 1")
+    }
+
+    @Test func `a long prompt wraps and the cursor follows it`() {
+        var state = ScreenState(label: "m")
+        state.editor.paste(String(repeating: "x", count: 20))
+        var buffer = ScreenBuffer(columns: 10, rows: 6)
+        var composer = ScreenComposer()
+        let cursor = composer.compose(state, into: &buffer)
+        #expect(Array(rows(buffer).suffix(3)) == ["ask> xxxxx", "xxxxxxxxxx", "xxxxx"])
+        #expect(cursor.row == 5 && cursor.column == 5)
+    }
+
+    @Test func `a streamed delta re-wraps only the item it extends`() {
+        var state = ScreenState(label: "m")
+        state.transcript.addAssistantText("first")
+        state.transcript.addUser("next")
+        state.transcript.addAssistantText("a")
+        var buffer = ScreenBuffer(columns: 20, rows: 8)
+        var composer = ScreenComposer()
+        _ = composer.compose(state, into: &buffer)
+        let revisionsBefore = state.transcript.revisions
+        state.transcript.addAssistantText("b")
+        #expect(Array(state.transcript.revisions.prefix(2)) == Array(revisionsBefore.prefix(2)))
+        #expect(state.transcript.revisions[2] != revisionsBefore[2])
+        _ = composer.compose(state, into: &buffer)
+        #expect(rows(buffer)[5] == "ab")
+    }
+}
+
+extension String {
+    fileprivate var trimmingTrailingSpaces: String {
+        var copy = self
+        while copy.last == " " { copy.removeLast() }
+        return copy
+    }
+}

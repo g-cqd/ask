@@ -125,7 +125,10 @@ let package = Package(
                 .product(name: "TerminalKitCore", package: "TerminalKit"),
                 .product(name: "TerminalKitCodecs", package: "TerminalKit"),
                 .product(name: "TerminalKitIO", package: "TerminalKit"),
-                .product(name: "TerminalKitInput", package: "TerminalKit")
+                .product(name: "TerminalKitInput", package: "TerminalKit"),
+                .product(name: "TerminalKitRender", package: "TerminalKit"),
+                .product(name: "TerminalKitStyle", package: "TerminalKit"),
+                .product(name: "TerminalKitText", package: "TerminalKit")
             ],
             path: "Sources/AskTUI",
             swiftSettings: packageSettings
@@ -170,7 +173,10 @@ let package = Package(
                 "AskTUI",
                 .product(name: "TerminalKitIO", package: "TerminalKit"),
                 .product(name: "TerminalKitCore", package: "TerminalKit"),
-                .product(name: "TerminalKitCodecs", package: "TerminalKit")
+                .product(name: "TerminalKitCodecs", package: "TerminalKit"),
+                .product(name: "TerminalKitInput", package: "TerminalKit"),
+                .product(name: "TerminalKitRender", package: "TerminalKit"),
+                .product(name: "TerminalKitStyle", package: "TerminalKit")
             ],
             path: "Tests/AskTUITests",
             swiftSettings: packageSettings
