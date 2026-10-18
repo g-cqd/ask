@@ -32,6 +32,21 @@ let benchmarks: @Sendable () -> Void = {
         }
     }
 
+    // Assembly must cost the same per delta however long the block grows.
+    for count in [2_000, 20_000] {
+        let events: [ModelEvent] =
+            [.messageStarted(id: "m", model: "c", usage: TokenUsage()), .blockStarted(index: 0, .text)]
+            + (0 ..< count).map { .textDelta(index: 0, "token \($0) of the reply, ") }
+            + [.blockStopped(index: 0), .messageDelta(stopReason: .endTurn, usage: TokenUsage()), .messageStopped]
+        Benchmark("stream/assemble \(count) text deltas") { benchmark in
+            for _ in benchmark.scaledIterations {
+                var assembler = ResponseAssembler()
+                for event in events { try assembler.apply(event) }
+                blackHole(try assembler.finish())
+            }
+        }
+    }
+
     Benchmark("stream/frame and decode 2000 events") { benchmark in
         for _ in benchmark.scaledIterations {
             var framer = SSEDecoder()
