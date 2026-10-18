@@ -32,13 +32,12 @@ is what a runtime reaches for when it cannot avoid a copy; here the aim is to ha
 both fast and safe means **doing less work** — diff a frame instead of repainting it, reuse a buffer
 instead of allocating one — not removing the checks that catch the bugs.
 
-**Modern primitives, and a written reason for every escape.** The floor is macOS 26, so `Mutex`,
-`Atomic`, `InlineArray`, `Span` and `RawSpan` all compile — `NSLock`, `os_unfair_lock`, `pthread_mutex`
-and `DispatchQueue` are banned, and reaching for one is not a compatibility decision. Shared mutable
-state goes in a `Mutex` or an `Atomic`; an actor is for a real async boundary or an invariant that must
-hold across an `await`, and is the last resort. `@concurrent` and `nonisolated` are the default answer
-for anything that does not need an actor. `@unchecked Sendable` is permitted only with the invariant
-written next to it, because a file descriptor cannot be made checked.
+**Modern primitives, and a written reason for every escape.** The floor is macOS 26, so `Mutex`, `Atomic`,
+`InlineArray`, `Span` and `RawSpan` all compile — `NSLock`, `os_unfair_lock`, `pthread_mutex` and
+`DispatchQueue` are banned. Shared mutable state goes in a `Mutex` or an `Atomic`; an actor is for a real
+async boundary or an invariant that must hold across an `await`, and is the last resort.
+`@concurrent` and `nonisolated` are the default answer. `@unchecked Sendable` is permitted only with the
+invariant written next to it.
 
 **Tests are deterministic.** No `Task.yield`, no `Task.sleep`, no polling, no wall-clock assertion. Wait
 on the event — Aemi's `AsyncEventProbe` under a `TestClock`, or a `CheckedContinuation` the code under
@@ -179,15 +178,16 @@ trading correctness for a benchmark number.
 
 ## 6. Terminal doctrine
 
-The terminal belongs to **TerminalKit**, and so does its doctrine — synchronised output (DEC 2026) on
-every frame, capability detection by active probe rather than by environment variable, and the tiered
-reset ladder. It is not restated here, because a copy is a second thing to drift.
+The terminal belongs to **TerminalKit**, and so does its doctrine — synchronised output, capability
+detection, and the tiered reset ladder. Not restated here: a copy is a second thing to drift. Two
+corrections stay, because they are the shape of the mistake rather than the detail. This section once
+asserted DECSTR resets modes while preserving scrollback; TerminalKit measured four emulators and
+**DECSTR resets no DEC private mode** (TerminalKit ADR-0002). And it once read capabilities from
+environment variables, until an inherited `KITTY_WINDOW_ID` made Terminal.app claim a protocol it does
+not speak — so capabilities are **probed**, and silence means *unknown*, not *unsupported*.
 
-One correction that stays, because it is the shape of the mistake rather than the detail: this section
-used to assert that DECSTR resets modes while preserving scrollback. TerminalKit measured it against
-four emulators and **DECSTR resets no DEC private mode** (TerminalKit ADR-0002), so the tier that
-actually clears `?1049`, the mouse modes and `?2004` is the selective one. A restated claim outlives the
-evidence that refuted it.
+Probing is not free: two queries against a terminal that answers nothing cost **520 ms** against a 25 ms
+budget, so a probe never gates the first frame.
 
 ## 7. Bans
 
