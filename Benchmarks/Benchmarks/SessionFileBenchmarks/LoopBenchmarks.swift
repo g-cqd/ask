@@ -31,14 +31,14 @@ func loopBenchmarks() {
             let directory = FileManager.default.temporaryDirectory.appending(
                 path: "ask-bench-loop-\(UUID().uuidString)")
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            var file = try SessionFile.create(
-                at: FilePath(directory.appending(path: "s.jsonl").path), durability: .none)
+            let file = SessionRecorder(
+                try SessionFile.create(at: FilePath(directory.appending(path: "s.jsonl").path), durability: .none))
             for turn in 0 ..< history {
                 try file.append(.user("Step \(turn)."))
                 try file.append(.assistant("Reply \(turn), with a sentence of ordinary length in it."))
             }
             benchmark.startMeasurement()
-            for _ in benchmark.scaledIterations { try await loop.run("Next step.", in: &file) { blackHole($0) } }
+            for _ in benchmark.scaledIterations { try await loop.run("Next step.", in: file) { blackHole($0) } }
             benchmark.stopMeasurement()
         }
     }
