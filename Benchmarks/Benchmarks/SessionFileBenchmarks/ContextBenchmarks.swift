@@ -61,3 +61,12 @@ func fileToolBenchmarks() {
         }
     }
 }
+
+/// One trivial bash call, spawn to exit: the fixed cost every command pays.
+func bashBenchmarks() {
+    let context = ToolContext(workingDirectory: FileManager.default.temporaryDirectory.path)
+    let echo = try! JSONObject(validating: Array(#"{"command":"echo hi"}"#.utf8))
+    Benchmark("tools/bash echo", configuration: .init(maxDuration: .seconds(3), maxIterations: 300)) { benchmark in
+        for _ in benchmark.scaledIterations { blackHole(await BashTool().run(echo, in: context)) }
+    }
+}

@@ -82,6 +82,9 @@ let package = Package(
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "639caad90b0a8409185a712f32f9dea795e6470c"),
+        // Child processes for the bash tool (ADR-0011): the official package, added with the first tool that
+        // runs one.
+        .package(url: "https://github.com/swiftlang/swift-subprocess.git", .upToNextMinor(from: "1.0.2")),
         // Command-line parsing for the `ask` executable only (ADR-0015). Its link cost against the
         // cold-start budget was measured before adoption.
         .package(url: "https://github.com/apple/swift-argument-parser.git", .upToNextMinor(from: "1.8.2"))
@@ -109,7 +112,10 @@ let package = Package(
         ),
         .target(
             name: "AskTools",
-            dependencies: ["AskAgentCore", "AskAI", .product(name: "AemiKernel", package: "aemi")],
+            dependencies: [
+                "AskAgentCore", "AskAI", .product(name: "AemiKernel", package: "aemi"),
+                .product(name: "Subprocess", package: "swift-subprocess")
+            ],
             path: "Sources/AskTools",
             swiftSettings: packageSettings
         ),
@@ -152,7 +158,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AskToolsTests",
-            dependencies: ["AskTools", "AskAgentCore", "AskAI"],
+            dependencies: ["AskTools", "AskAgentCore", "AskAI", .product(name: "AemiTesting", package: "aemi")],
             path: "Tests/AskToolsTests",
             swiftSettings: packageSettings
         ),
