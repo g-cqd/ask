@@ -1,14 +1,15 @@
 ---
-status: not-started
+status: in-progress
 blocked-by:
 prerequisites: ["ADR-0005"]
 date: 2026-10-18
 supersedes-scope-in: ADR-0001
 ---
 
-# 0001 — Extract the terminal stack into Aemi
+# 0001 — Share the terminal stack through TerminalKit
 
-Move the terminal stack out of Atelier into Aemi, renaming `Kitty*` to `AemiTerminal*`.
+Move reusable terminal implementations out of Atelier into TerminalKit (ADR-0005).
+Aemi remains the source of generic kernel utilities.
 
 **Scope, corrected by probe.** The seam is **six modules, 6,263 lines**, not the three modules and
 3,530 lines ADR-0001 claimed:
@@ -30,8 +31,13 @@ tier. ADR-0004 records how this was measured.
 joining the `TerminalKitCore` already there. This is also where the package's first dependency
 arrives — `KittyCodecs` and `KittyInput` both import `AemiKernel` — and not one moment before.
 
-**Done when:** Atelier builds and its existing tests pass against the Aemi targets; no `Kitty*`
-terminal module remains in Atelier; `AemiTerminalCodecs` and `AemiTerminalRender` are exported.
+**Receiving side verified:** TerminalKit exports all six modules and now runs the inherited IO,
+codec, input, renderer and text suites. Commit `4365a4d` reports 368 tests across seven targets
+with explicit release testability. ADR-0012 there resolves the prior build blocker.
+
+**Still required:** switch Atelier to the shared implementation, verify all affected consumers,
+and remove duplicate implementation bodies. Compatibility module names may remain as re-export
+shims; `TerminalKit/docs/roadmap/0003-atelier-consumes-terminalkit.md` owns that work.
 
 **Slicing.** `AtelierText` moves from `AtelierCore` and touches a different package, so it is a
 separate commit from the Kitty modules. Behaviour changes are separate commits again: the DEC 2026
