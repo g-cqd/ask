@@ -1,8 +1,12 @@
 ---
-status: not-started
-blocked-by: ["0014"]
+status: in-progress
+blocked-by:
 date: 2026-10-18
 ---
+
+> **Partially landed, in TerminalKit (ADR-0014), with a measured constraint that changes how `ask` must
+> use it.** The probe exists and is tested. What remains is the integration, and the measurement below
+> decides its shape.
 
 # 0003 — Probe the terminal instead of guessing at it
 
@@ -14,7 +18,29 @@ protocol.
 for the session, and the probe is itself tested against a mock terminal that answers correctly, lies,
 and times out.
 
-## A false positive, measured rather than argued
+## Done — the probe, in TerminalKit
+
+`TerminalProbe` asks rather than guesses: cell size from the window, synchronised output via DECRQM,
+keyboard protocol via `CSI ? u`. Every field is **optional, and nil means unknown** — a terminal that
+ignores a query has not said it lacks the feature. Graphics support is not queryable and stays a hint,
+kept out of the measured result entirely.
+
+Eleven tests cover the three cases this entry names — answers correctly, lies, and times out.
+
+## Measured: a blocking probe costs 520 ms
+
+Two queries on a PTY whose far end never replies: **518.5 / 519.8 / 520.1 ms**. A terminal that does
+answer costs microseconds, so the whole cost is refusal — and Terminal.app is exactly such a terminal.
+
+**Against a 25 ms cold-start budget that is twenty times the budget.** So `ask` must not gate its first
+frame on a probe. Either run it off the startup path and keep conservative defaults until answers arrive,
+or shorten the deadline and accept false negatives under load. The first is right; the second trades a
+correctness bug for latency.
+
+That is a design decision this entry now owns, and it is the reason the status is `in-progress` rather
+than `done`.
+
+## The false positive that motivated it
 
 `0014`'s harness reported `supportsKittyGraphics: True` for **Terminal.app**, which does not speak the
 kitty graphics protocol. The cause was environment inheritance, not the terminal: the agent session runs
