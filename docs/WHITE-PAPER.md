@@ -56,8 +56,8 @@ shared package, so it is measured, reviewed and pinned by dependents like any ot
 
 **pi is a reference, not a specification.** `ask` ports pi's design, not its defects. Before adopting a
 behaviour, run pi's own code against the edge cases. A defect or a rejected trade-off found there is fixed
-here and pinned by a test marked `Diverges from pi`, naming the version (ADR-0012). Upstream reports are
-offered to the user, never filed unilaterally.
+here, pinned by a test marked `Diverges from pi`, and recorded in `docs/PI-FINDINGS.md` — never filed
+upstream. Diverging never means less convenient: ask keeps at least what pi keeps (ADR-0013).
 
 ---
 
