@@ -27,6 +27,15 @@ Head-and-tail with an omission marker keeps the useful part and stays inside the
 - Output capping with head-and-tail preservation, from the start rather than retrofitted.
 - Every tool bounded: attacker input must not exhaust CPU, memory or disk.
 
+## Production subprocesses — decided
+
+[ADR-0011](../adr/0011-official-subprocess-for-tools.md) selects the official
+`swiftlang/swift-subprocess` package, introduced with the first real tool rather than speculatively.
+Use an injected runner with structured child lifetime and bounded concurrent stdout/stderr draining.
+Do not copy Atelier's actor/unstructured-task wrapper wholesale or build another POSIX/Foundation
+launcher. Collected-output limits throw: head/tail truncation plus a spool file needs explicit streaming
+policy, including a disk cap. Cancellation/descendants and all failure paths need integration fixtures.
+
 ## Red TDD
 
 One behaviour per test, named as a sentence. Test the failure paths first — a tool that works on the
