@@ -69,3 +69,37 @@ documented as lost.
 Resume first; then configuration (the loader, layered files, manual reload); then binary reload; then
 automatic watching for both. Developing ask inside ask also needs long builds and tests to behave: the jobs
 and waits proposal, and full-output files.
+
+## File watching, deeper: Endpoint Security (objective-see/FileMonitor), FSEvents, kqueue (2026-10-19)
+
+The user pointed at objective-see/FileMonitor (1e7248e, last commit 2022-03-02). Read from its source: an
+Endpoint Security client with `com.apple.developer.endpoint-security.client` in its entitlements. It
+subscribes to file and exec events system-wide, and each event carries the acting process's audit token:
+pid, responsible pid, uid.
+
+| Mechanism | Probe (macOS 27.2) | What it gives | What it costs |
+|---|---|---|---|
+| **Endpoint Security** | `es_new_client` from an ad-hoc-signed CLI as uid 503, with and without the entitlement embedded | **`ERR_NOT_PRIVILEGED`** both ways: refused before entitlements are checked | Root, Apple's restricted entitlement (granted on application, needs a provisioning profile), and Full Disk Access. In exchange, every file event attributed to a process, system-wide |
+| **FSEvents** (file events, `NoDefer`, latency 0, `MarkSelf`) | Save by temp-then-rename in-process; a child `sh` writes two directories down | Recursive trees by path. A rename-over is reported as Renamed on both names, so re-reading the path is correct. **`OwnEvent` marks only the watching process's writes, not its children's** | About **12 ms** in-process and 30 ms including a spawned shell; flags coalesce. Needs a dispatch queue or run loop |
+| **kqueue `EVFILT_VNODE`** | (Earlier) rename-over and in-place saves | Sub-millisecond, per descriptor | A rename-over shows as DELETE on the old inode: watch the directory and re-open. Not recursive; one descriptor per file |
+
+## What this means for ask
+
+- **Endpoint Security is out of reach for ask as an unprivileged CLI.** Its one strength, attributing writes
+  to the agent's process tree, could only come from a separately installed privileged helper (a system
+  extension or launchd daemon with Apple's entitlement): a far-future option for audit-grade "what did the
+  agent touch".
+- **The security need does not require attribution.** "The agent cannot widen its own config" is met by
+  **prevention**: Seatbelt write-denies the config paths for every child (ADR-0020), and the file tools refuse
+  them in-process. Detection after the fact would be weaker even with Endpoint Security.
+- **Watching a few known files** (config, the binary): kqueue on the directory, sub-millisecond. Or FSEvents
+  by path, simpler around renames; 12 ms is irrelevant for config.
+- **Waiting on a tree** (the `wait` tool: "until a file matching X appears under build/"): FSEvents, recursive.
+- **"Files changed during this turn"** without Endpoint Security: FSEvents over the workspace while the turn
+  runs, labelled honestly as changes made while the turn ran, by anyone. ask's own in-process writes are
+  distinguishable through `OwnEvent`; its children's are not.
+- **A standard to settle:** FSEvents delivers on a dispatch queue (the run-loop scheduling API is deprecated),
+  and `SourceStandards` bans `DispatchQueue`. Adopting FSEvents needs a written, scoped exception, the same
+  kind as `@unchecked Sendable` with a `SAFETY:` note.
+- **Where it lives:** a watcher (kqueue for files, FSEvents for trees) is generic, so per the white paper it
+  belongs in Aemi (AemiIO), not in ask.
