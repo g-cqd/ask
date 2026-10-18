@@ -162,6 +162,10 @@ actually ran.**
 | 13 | `AemiTerminal` should be a new package inside Aemi | Read Aemi's own manifest | **REFUTED.** Aemi states "ONE package, MANY small targets". `AemiTerminalCore` was added as a target in that same manifest. |
 | 14 | Aemi's zero tags block Atelier from consuming it | Read `Apps/KittyCode/Package.swift:40` | **REFUTED.** Atelier pins by `revision:`, not by version. Tagging is desirable, not a prerequisite. |
 | 15 | The escape sequences for modes 1006 and 2004 are correct | Byte-exact test comparing emitted bytes to literals | **REFUTED.** Both were written a byte short (`1,0,6` and `2,0,4`). Reading the arrays three times did not find it; printing the bytes and diffing did, in one run. |
+| 16 | The terminal stack belongs inside Aemi | Read Aemi's own target categories, then `git tag` | **REFUTED.** Aemi splits kernel and application tiers and keeps them apart; terminal is a third category. Aemi has **zero tags**. Moved to its own repository, `TerminalKit`. |
+| 17 | Separating the terminal removes the Aemi dependency cost | `grep` of Aemi's `.package(url:)` declarations | **PARTLY REFUTED — and deliberately not overstated.** Aemi declares swift-syntax 603..<605, so *any* consumer of `AemiKernel` resolves the macro tree; and TerminalKit will still import `AemiKernel` after the extraction. The gain is cadence and a focused manifest, **not** independence. |
+| 18 | A real kitty instance can verify the reset tiers from here | `kitty @ ls` | **REFUTED.** `open /dev/tty: device not configured`. kitty 0.49.2 is installed, but this session has no controlling TTY. The tiers are verified against a model, not an emulator. |
+| 19 | A PTY harness is buildable on macOS | `util.h` in the macOS SDK | **CONFIRMED.** `openpty` is declared at `util.h:99`. Not yet attempted. |
 
 **Open questions — claims not yet probed, and therefore not acted on:**
 
