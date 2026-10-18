@@ -11,21 +11,28 @@ Method, and why:
                   Wall time from the fork to seeing "ask> " in the PTY master.
   idle memory     RSS of the child once it is up and idle. Sampled after the
                   prompt appears, not before.
-  input delay     write one byte, then wait for the echoed line to reach the
-                  stream. Includes read, decode and render.
-  action delay    Enter -> the next prompt appears. The full round trip of one
-                  action, which is the number a user feels between doing something
-                  and seeing that it happened.
+  input delay     write one byte, then wait for the end of the frame that shows it
+                  (the synchronised-output close, ESC[?2026l, after the byte appears).
+                  Includes read, decode, layout, diff and write. Frame-based, because a
+                  diff renderer sends only what changed, never a repeated prompt.
+  action delay    Enter -> the end of the frame that shows the submitted prompt in the
+                  transcript. The child runs with empty, temporary configuration, so
+                  the run it starts fails at once as signed out: no request is ever
+                  sent with the user's credentials.
 
 Every figure is the median of N runs, with the spread reported, never the best run.
 Percentiles matter because users feel the tail; an average hides it.
 """
-import json, os, pty, select, statistics, subprocess, sys, time
+import json, os, pty, select, statistics, subprocess, sys, tempfile, time
 
 BINARY = sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask"
 RUNS = int(sys.argv[2]) if len(sys.argv) > 2 else 15
 
 PROMPT = b"ask> "
+ISOLATED_CONFIG = tempfile.mkdtemp(prefix="ask-budget-config-")
+ISOLATED_STATE = tempfile.mkdtemp(prefix="ask-budget-state-")
+FRAME_END = b"\x1b[?2026l"
+SUBMITTED = "› x".encode()
 
 
 def spawn():
@@ -33,6 +40,11 @@ def spawn():
     if pid == 0:
         os.environ["TERM"] = "xterm-kitty"
         os.environ["TERM_PROGRAM"] = "kitty"
+        # Never the user's credentials or sessions: Enter starts a run, which must fail as signed out. The
+        # directories are made in the parent: work in the child before exec would be timed as ask's cold start.
+        os.environ["XDG_CONFIG_HOME"] = ISOLATED_CONFIG
+        os.environ["XDG_STATE_HOME"] = ISOLATED_STATE
+        os.environ.pop("ANTHROPIC_API_KEY", None)
         os.execv(BINARY, [BINARY])
         os._exit(127)
     # Keep the window a sane size; a 1x1 PTY would make the app's own logic degenerate.
@@ -65,6 +77,37 @@ def read_until(fd, needle, deadline_s):
     return None
 
 
+def read_frame_showing(fd, token, deadline_s):
+    """Read until a frame that shows `token` has ended: `token`, then the synchronised-output close."""
+    end = time.time() + deadline_s
+    buf = b""
+    while time.time() < end:
+        r, _, _ = select.select([fd], [], [], max(0.005, min(0.25, end - time.time())))
+        if not r:
+            continue
+        try:
+            chunk = os.read(fd, 65536)
+        except OSError:
+            return None
+        if not chunk:
+            return None
+        buf += chunk
+        at = buf.find(token)
+        if at >= 0 and buf.find(FRAME_END, at) >= 0:
+            return time.time(), buf
+    return None
+
+
+def drain(fd, quiet_s=0.05):
+    """Discard pending output, so the next measurement starts from a quiet terminal."""
+    while select.select([fd], [], [], quiet_s)[0]:
+        try:
+            if not os.read(fd, 65536):
+                return
+        except OSError:
+            return
+
+
 def rss_kb(pid):
     try:
         out = subprocess.run(["ps", "-o", "rss=", "-p", str(pid)],
@@ -86,18 +129,20 @@ def one_run():
         time.sleep(0.25)                       # let it settle before sampling memory
         idle_kb = rss_kb(pid)
 
-        # input delay: one byte, echoed by the app
+        # input delay: one byte, to the end of the frame that shows it
+        drain(fd)
         t1 = time.time()
         os.write(fd, b"x")
-        got = read_until(fd, b"ask> x", 5.0)
+        got = read_frame_showing(fd, b"x", 5.0)
         if got is None:
             return None
         input_ms = (got[0] - t1) * 1000.0
 
-        # action delay: Enter -> next prompt
+        # action delay: Enter -> the end of the frame that shows the submitted prompt
+        drain(fd)
         t2 = time.time()
         os.write(fd, b"\r")
-        got2 = read_until(fd, PROMPT, 5.0)
+        got2 = read_frame_showing(fd, SUBMITTED, 5.0)
         if got2 is None:
             return None
         action_ms = (got2[0] - t2) * 1000.0

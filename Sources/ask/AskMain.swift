@@ -22,7 +22,7 @@ struct Ask: AsyncParsableCommand {
         name: [.short, .customLong("print")], help: "Send one prompt, stream the reply to standard output, and exit.")
     var prompt: String?
 
-    @Option(help: "The model for --print.")
+    @Option(help: "The model to use.")
     var model = "claude-sonnet-5-5"
 
     func run() async throws {
@@ -34,12 +34,7 @@ struct Ask: AsyncParsableCommand {
             await runPrompt(prompt, model: model)
             return
         }
-        do {
-            try runAskTUI()
-        } catch {
-            // The loop has already restored the terminal by the time an error reaches here.
-            fail("ask: \(error)", code: 70)
-        }
+        await runInteractive(model: model)
     }
 }
 
