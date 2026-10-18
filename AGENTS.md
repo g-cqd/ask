@@ -52,6 +52,15 @@ tests. Style is Aemi's canonical configuration, synced rather than reinvented â€
 
 A pre-commit hook runs lint. A green test run is not a green commit.
 
+**Structure is gated too (ADR-0021).** `SourceStructureTests` and `ProviderNeutralityTests` run inside
+`swift test`, so the hooks, CI and `quality.sh` all enforce them: one top-level type per file, named for it;
+no file over 250 lines, tests included; provider names only in `AskAI/Anthropic`, `AskAI/Claude` and
+`Sources/ask`. Read the `ask-structure` skill before adding or moving code. `SourceStructure.knownViolations`
+is a ratchet baseline: it shrinks and never takes a new entry.
+
+The pre-push hook runs `.project-hooks.yml`'s release task, not a plain `swift test`. If a hook looks wrong,
+`project-hooks repair --dry-run` says whether it is the generator's current script.
+
 ## Documentation law
 
 Four directories, and the shape is enforced by tests rather than by good intentions:
@@ -122,6 +131,13 @@ to Aemi. The test is whether a second consumer is plausible, not whether one exi
   and a real emulator. Byte tests prove the encoder emitted what was intended; they do not prove any
   terminal obeys it. Do not infer universal terminal behaviour from one emulator or from a model.
 
+- **Another writer may share the working tree.** Check `git status` for staged changes you did not make. Do
+  not `git add -A` or reformat the tree with `quality.sh` under them; work in a clone and deliver a branch.
+- **Splitting a file is not mechanical.** An unused `public import` is a compile error here, and `fileprivate`
+  members that cross the new boundary must widen. Recipe: `.agents/skills/ask-structure/references/`.
+- **A clone's `.build` cannot be reused.** Delete it; the paths are absolute.
+- **SwiftPM 6.4 writes no index store** by default, so Periphery needs `--build-system native`.
+
 ## Commit discipline
 
 Atomic and buildable. The message states **why** â€” the diff already says what. Never mix a refactor
@@ -133,8 +149,10 @@ requested change from the extra one.
 
 ## Current state
 
-Targets: `AskCore` (budgets and their report, documentation layout, source standards), `AskAgentCore` (session tree, log,
-recovery), `AskTUI` (terminal loop, signal shutdown) and the `ask` binary. Not built yet: the agent loop,
-providers, tools and the codemode host. `docs/roadmap/` says what is owed and in what order.
+Targets: `AskCore` (budgets, documentation layout, source standards), `AskAI` (`Model` and
+`Transport` are provider-neutral; `Anthropic` and `Claude` are the one provider so far), `AskAgentCore` (`Loop`,
+`Tools`, `Session`, `Context`), `AskTools`, `AskTUI` and the `ask` binary. Not built yet: a second provider and
+the codemode host. `docs/roadmap/` says what is owed and in what order; 0026 and 0027 hold the open questions
+about extending the provider seam and the loop.
 
 Read an entry's `status:` and `blocked-by:` before starting it.
