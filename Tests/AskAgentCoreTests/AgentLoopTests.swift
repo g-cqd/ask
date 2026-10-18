@@ -11,9 +11,10 @@ import Testing
 @Suite("The agent loop runs turns and tools, records each as it happens, and stops cleanly")
 struct AgentLoopTests {
     private let directory = FileManager.default.temporaryDirectory.appending(path: "ask-loop-\(UUID().uuidString)")
-    private func newFile() throws -> SessionFile {
+    private func newFile() throws -> SessionRecorder {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        return try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none)
+        return SessionRecorder(
+            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none))
     }
 
     private func input(_ json: String) -> JSONObject { try! JSONObject(validating: Array(json.utf8)) }
@@ -29,10 +30,10 @@ struct AgentLoopTests {
     }
 
     @Test func `a reply without tool calls ends the run after one turn`() async throws {
-        var file = try newFile()
+        let file = try newFile()
         let provider = ScriptedProvider([.reply("Hello.")])
         var events: [AgentEvent] = []
-        try await loop(provider).run("Hi", in: &file) { events.append($0) }
+        try await loop(provider).run("Hi", in: file) { events.append($0) }
         #expect(file.tree.entries.map(\.payload).count == 2)
         guard case .user("Hi") = file.tree.entries[0].payload,
             case .response(let response) = file.tree.entries[1].payload
@@ -50,12 +51,12 @@ struct AgentLoopTests {
     }
 
     @Test func `a tool call runs, its result is recorded, and the model sees it next turn`() async throws {
-        var file = try newFile()
+        let file = try newFile()
         let provider = ScriptedProvider([
             .call(id: "t1", name: "upper", input: #"{"text":"abc"}"#), .reply("It is ABC.")
         ])
         var events: [AgentEvent] = []
-        try await loop(provider).run("Shout abc", in: &file) { events.append($0) }
+        try await loop(provider).run("Shout abc", in: file) { events.append($0) }
         let payloads = file.tree.entries.map(\.payload)
         #expect(payloads.count == 4)
         #expect(payloads[2] == .toolResult(callID: "t1", content: "ABC", isError: false))
@@ -68,18 +69,18 @@ struct AgentLoopTests {
     }
 
     @Test func `a paused turn is continued, not taken as the end`() async throws {
-        var file = try newFile()
+        let file = try newFile()
         let provider = ScriptedProvider([.pause("Working…"), .reply("Done.")])
         var events: [AgentEvent] = []
-        try await loop(provider).run("Go", in: &file) { events.append($0) }
+        try await loop(provider).run("Go", in: file) { events.append($0) }
         #expect(provider.requests.count == 2)
         #expect(events.last == .finished(.endTurn))
     }
 
     @Test func `an unknown tool becomes an error result and the run continues`() async throws {
-        var file = try newFile()
+        let file = try newFile()
         let provider = ScriptedProvider([.call(id: "t1", name: "rm", input: "{}"), .reply("Sorry.")])
-        try await loop(provider).run("Delete it", in: &file) { _ in }
+        try await loop(provider).run("Delete it", in: file) { _ in }
         guard case .toolResult("t1", let content, true) = file.tree.entries[2].payload else {
             Issue.record("expected an error result, got \(file.tree.entries[2].payload)")
             return
@@ -89,29 +90,29 @@ struct AgentLoopTests {
     }
 
     @Test func `a provider failure ends the run and records no partial response`() async throws {
-        var file = try newFile()
+        let file = try newFile()
         let provider = ScriptedProvider([.failure])
         await #expect(throws: AgentError.provider("scripted failure")) {
-            try await loop(provider).run("Hi", in: &file) { _ in }
+            try await loop(provider).run("Hi", in: file) { _ in }
         }
         #expect(file.tree.entries.map(\.payload) == [.user("Hi")])
     }
 
     @Test func `the turn limit stops a model that never stops calling tools`() async throws {
-        var file = try newFile()
+        let file = try newFile()
         let provider = ScriptedProvider(
             Array(repeating: .call(id: "t", name: "upper", input: #"{"text":"a"}"#), count: 5))
         await #expect(throws: AgentError.turnLimit(3)) {
-            try await loop(provider, maximumTurns: 3).run("Loop", in: &file) { _ in }
+            try await loop(provider, maximumTurns: 3).run("Loop", in: file) { _ in }
         }
         #expect(provider.requests.count == 3)
     }
 
     @Test func `abort between tools records the finished result and leaves the rest unanswered`() async throws {
-        var file = try newFile()
+        let file = try newFile()
         let provider = ScriptedProvider([.calls([("a", "abort", "{}"), ("b", "upper", #"{"text":"x"}"#)])])
         await #expect(throws: AgentError.cancelled) {
-            try await loop(provider, tools: [Upper(), AbortingTool()]).run("Go", in: &file) { _ in }
+            try await loop(provider, tools: [Upper(), AbortingTool()]).run("Go", in: file) { _ in }
         }
         let payloads = file.tree.entries.map(\.payload)
         #expect(payloads.last == .toolResult(callID: "a", content: "stopping", isError: false))
