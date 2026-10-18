@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by:
 date: 2026-10-18
 decision: ADR-0009
@@ -73,3 +73,7 @@ targets land.
 
 Six targets exist, the dependency graph compiles in that shape, the manifest header matches it, the gate
 is green, and the four budgets have not regressed.
+
+## Progress
+
+Step 1, `AskAI`, landed with the Claude path. Steps 2 and 3 land as the loop and the tools gain content (ADR-0019), not as a separate restructure.
