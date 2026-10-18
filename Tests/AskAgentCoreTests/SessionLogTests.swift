@@ -94,6 +94,13 @@ struct SessionLogTests {
         #expect(try SessionLog.snapshot(tree) == Array(expected.utf8))
     }
 
+    @Test func `paths stay readable on the wire`() throws {
+        var tree = SessionTree()
+        _ = try tree.append(.user("edit Sources/ask/AskMain.swift"))
+        let entryLine = try #require(lines(try SessionLog.snapshot(tree)).dropFirst().first)
+        #expect(String(decoding: entryLine, as: UTF8.self).contains("Sources/ask/AskMain.swift"))
+    }
+
     @Test func `a new root is an explicit null leaf on the wire`() throws {
         #expect(try SessionLog.line(forLeaf: nil) == Array("{\"id\":null,\"type\":\"leaf\"}\n".utf8))
     }
