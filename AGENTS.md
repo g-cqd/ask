@@ -20,18 +20,14 @@ Three consequences worth internalising:
 - **A test that has never failed proves nothing.** New gates are broken on purpose once, to prove they fire.
 - **Unprobed claims are written as open questions, never as facts.**
 
-## Porting from pi
+## Reliability
 
-pi 1.3.0 is installed under `~/.pi/agent/install/releases/1.3.0/`. Its `dist/` modules are importable
-from node, so a pi behaviour can be *run* rather than read. Do that before porting it: pi's session
-loader silently drops torn and corrupt records, and that was found only by executing it
-(`node Scripts/probe-pi-session-parsing.mjs`). Fix any defect here, pin it with a test whose doc comment
-starts `Diverges from pi <version> (ADR-0012)`, and add a row to `docs/PI-FINDINGS.md`. Nothing is filed
-upstream.
+Damage costs only what is actually damaged. Everything intact loads, every repair is reported, and reading
+never writes; `SessionLog.recover` is the worked example (ADR-0013). Refusing input needs a written safety
+reason. Convenience is a requirement, not a nice-to-have.
 
-**At least as convenient as pi.** A divergence may be stricter about *reporting*, never about *working*.
-Damaged sessions load with every repair listed (`SessionLog.recover`, ADR-0013); refusing input pi would
-accept needs a safety reason, written down.
+Code and tests state their own reasons. When studying another agent, run its code against edge cases
+rather than trusting its source, and keep the notes in `docs/research/`, not in the codebase.
 
 ## Commands
 
@@ -133,8 +129,8 @@ requested change from the extra one.
 
 ## Current state
 
-`AskCore`, `AskTUI` and the `ask` binary. The agent loop, providers and the codemode host are not built
-yet. Roadmap entries under `docs/roadmap/` say what is owed; several are blocked on work landing in
-TerminalKit or on Atelier's consumer switch.
+Targets: `AskCore` (budgets, documentation layout, source standards), `AskAgentCore` (session tree, log,
+recovery), `AskTUI` (terminal loop, signal shutdown) and the `ask` binary. Not built yet: the agent loop,
+providers, tools and the codemode host. `docs/roadmap/` says what is owed and in what order.
 
 Read an entry's `status:` and `blocked-by:` before starting it.

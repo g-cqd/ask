@@ -1,6 +1,6 @@
 // Runs pi's own exported session functions against damaged inputs (ask ADR-0012).
 // Re-run against a new pi release before relying on a divergence still being one:
-//   PI_VERSION=1.4.0 node Scripts/probe-pi-session-parsing.mjs
+//   PI_VERSION=1.4.0 node docs/research/probe-pi-session-parsing.mjs
 import os from "node:os";
 const version = process.env.PI_VERSION ?? "1.3.0";
 const dist = `${os.homedir()}/.pi/agent/install/releases/${version}/node_modules/@earendil-works/pi-coding-agent/dist`;

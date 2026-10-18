@@ -1,5 +1,5 @@
 // Runs pi's own file loader on damaged session files in a temp directory (ask ADR-0012).
-//   PI_VERSION=1.4.0 node Scripts/probe-pi-session-loading.mjs
+//   PI_VERSION=1.4.0 node docs/research/probe-pi-session-loading.mjs
 import { mkdtempSync, writeFileSync, readFileSync, rmSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
