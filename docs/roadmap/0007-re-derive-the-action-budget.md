@@ -40,3 +40,15 @@ ADR-0015 measured idle RSS at 6.8 of 8 MiB after adopting AemiJSON and swift-arg
 of headroom with no agent in the binary. That budget was set over an agent-less program too, so it is
 re-derived in the same pass as action-to-action, from measurements of the agent loop.
 
+## Evidence gathered by the loop (2026-10-18)
+
+ask's own work per turn, excluding the network, is linear in history:
+
+| Part | Fresh | After 500 turns |
+|---|---|---|
+| Context building | — | 204 µs |
+| Request encoding | — | 1.02 ms |
+| Whole loop turn | 33 µs | 210 µs |
+| Barrier flush | ~0.3 ms | ~0.3 ms |
+
+At 500 turns that is about 1.5 ms of the 2 ms budget, and the linear re-encoding would cross the budget near 700 turns. The obvious remedy is to reuse the encoded prefix of an unchanged history (a cache keyed by entry count) rather than re-encode it every turn. Decide it with the re-derived budget, on measurements.

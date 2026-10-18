@@ -88,3 +88,11 @@ entry leaves the tree intact.
 
 Not blocked by anything. `AskAgentCore` does not import Foundation; files go through swift-system and
 AemiIO.
+
+## Decided with the loop (2026-10-18)
+
+- **Placement:** `$XDG_STATE_HOME/ask/sessions/<project>/<UTC>-<hex>.jsonl`, else under `~/.local/state` (`SessionDirectory`).
+- **A second writer:** every run creates a new file with `O_EXCL`, so two writers cannot share one. Resume, when it lands, takes a lock first.
+- **Agent turns:** whole responses and tool results are persisted, with exact replay (thinking signatures included).
+
+Still owed here: surfacing `issues` in the interactive UI.
