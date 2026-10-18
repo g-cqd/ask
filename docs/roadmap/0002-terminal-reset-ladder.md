@@ -37,9 +37,15 @@ the need was identified. TerminalKit's roadmap 0002 carries the outstanding work
 driven with the real bytes. Eight tests. They found a bug in the oracle itself: mode 25 is inverted
 relative to other private modes, and the model had it backwards.
 
-**A real-emulator test is still owed.** Neither the byte tests nor the oracle prove that *kitty* obeys
-the tiers. `kitty @ ls` returns `open /dev/tty: device not configured` — kitty 0.49.2 is installed,
-but this session has no controlling TTY. Tracked in TerminalKit roadmap 0002.
+**Measured against four real terminals**, via DECRQM, each launched as `-e /bin/sh -c` so no shell
+configuration could contribute escape sequences. Tier 1 passes on kitty, ghostty and wezterm.
+
+**It refuted us.** DECSTR resets no DEC private mode on any of them, which the oracle and these docs
+had asserted. TerminalKit's ADR-0002 corrects the oracle and the tier documentation.
+
+**Still unmeasured: scrollback preservation.** DECRQM reports modes, not history, so that claim still
+rests on the tiers emitting no `ESC c` plus the oracle. Terminal.app answers no DECRQM and is
+inconclusive. See TerminalKit roadmap 0002.
 
 **Remaining scope:** applying the ladder on teardown and on signal, so the normal path writes the
 selective tier and only escalates when the cheap tier demonstrably failed.
