@@ -1,3 +1,4 @@
+import AemiIO
 import Foundation
 import System
 import Testing
@@ -77,7 +78,7 @@ struct SessionFileTests {
         #expect(file.tree == tree)
     }
 
-    @Test(arguments: [SessionFile.Durability.process, .system, .device])
+    @Test(arguments: [SessionFile.Durability.none, .barrier, .full])
     func `every durability level writes the same bytes`(durability: SessionFile.Durability) throws {
         var file = try SessionFile.create(at: path("s.jsonl"), durability: durability)
         _ = try file.append(.user("same"))
@@ -142,7 +143,8 @@ struct SessionFileTests {
         var file = try SessionFile.create(at: path("s.jsonl"))
         let first = try file.append(.user("one"))
         var failuresLeft = 1
-        var reopened = try SessionFile.open(at: path("s.jsonl")) { record, descriptor throws(SessionFileError) in
+        var reopened = try SessionFile.open(at: path("s.jsonl"), durability: .barrier) {
+            record, descriptor throws(SessionFileError) in
             // Once: write half the record, as a full disk would, then report the failure.
             let torn = failuresLeft > 0
             failuresLeft -= 1
@@ -160,6 +162,13 @@ struct SessionFileTests {
         let third = try reopened.continuing(from: first, with: .user("three"))
         #expect(try bytes("s.jsonl.damaged") == torn)
         #expect(try SessionLog.decode(bytes("s.jsonl")).entries.map(\.id) == [first, second, third])
+    }
+
+    @Test func `sessions default to an ordered flush`() throws {
+        let file = try SessionFile.create(at: path("s.jsonl"))
+        #expect(file.durability == .barrier)
+        let reopened = try SessionFile.open(at: path("s.jsonl"))
+        #expect(reopened.durability == .barrier)
     }
 
     // MARK: - Opening

@@ -1,3 +1,4 @@
+public import AemiIO
 internal import Darwin
 public import System
 
@@ -15,18 +16,14 @@ public import System
 ///
 /// `~Copyable`, so the descriptor has exactly one owner and closes when it does.
 public struct SessionFile: ~Copyable {
-    /// How far a record must travel before a change counts as committed.
+    /// How far a record must travel before a change counts as committed: AemiIO's profile (ADR-0017).
     ///
-    /// Measured on this machine's APFS volume, per 484-byte record: `write` 2 µs, `fsync` 25 µs median,
-    /// `F_FULLFSYNC` 2.9 ms median and 14 ms worst. Only the first two fit the 2 ms action budget.
-    public enum Durability: Sendable, Equatable {
-        /// In the kernel's cache: survives a crash of `ask`, not of the OS.
-        case process
-        /// `fsync`: survives an OS crash. The default.
-        case system
-        /// `F_FULLFSYNC`: survives power loss. Costs milliseconds per change.
-        case device
-    }
+    /// `.barrier`, the default, is what recovery needs. A crash leaves a prefix of the log and at most a torn
+    /// tail, which ``SessionLog/recover(_:limits:)`` repairs losslessly. Plain `fsync` lets the drive reorder
+    /// writes, which can leave a hole mid-log or a renamed repair whose bytes never landed. `.full` adds
+    /// "on disk when the call returns", at about 2.6 ms per change, more than the action budget. `.none`
+    /// survives a crash of `ask` only.
+    public typealias Durability = DurabilityProfile
 
     /// Where the session lives.
     public let path: FilePath
@@ -34,7 +31,8 @@ public struct SessionFile: ~Copyable {
     public private(set) var tree: SessionTree
     /// Repairs made when the file was opened. Empty for an undamaged file.
     public let issues: [SessionLogIssue]
-    private let durability: Durability
+    /// The flush applied to every change.
+    public let durability: Durability
     private var appender: FileDescriptor?
     private var needsRewrite: Bool
     private let writeRecord: RecordWriter
@@ -68,7 +66,7 @@ public struct SessionFile: ~Copyable {
     /// - Returns: the open session.
     /// - Throws: ``SessionFileError/alreadyExists``, or an I/O error, after removing any partial file.
     public static func create(
-        at path: FilePath, durability: Durability = .system
+        at path: FilePath, durability: Durability = .barrier
     ) throws(SessionFileError) -> SessionFile {
         let empty = SessionTree()
         let descriptor = try SessionFileIO.writeExclusively(
@@ -86,14 +84,14 @@ public struct SessionFile: ~Copyable {
     /// - Throws: an I/O error, or ``SessionLogError/archiveTooLarge(_:)`` and
     ///   ``SessionLogError/unsupportedVersion(_:)`` as ``SessionFileError/log(_:)``.
     public static func open(
-        at path: FilePath, durability: Durability = .system, limits: SessionLog.Limits = .standard
+        at path: FilePath, durability: Durability = .barrier, limits: SessionLog.Limits = .standard
     ) throws(SessionFileError) -> SessionFile {
         try open(at: path, durability: durability, limits: limits, writeRecord: SessionFileIO.writeAll)
     }
 
     /// ``open(at:durability:limits:)`` with the record write replaced, so tests can fail it.
     static func open(
-        at path: FilePath, durability: Durability = .system, limits: SessionLog.Limits = .standard,
+        at path: FilePath, durability: Durability, limits: SessionLog.Limits = .standard,
         writeRecord: @escaping RecordWriter
     ) throws(SessionFileError) -> SessionFile {
         let bytes = try SessionFileIO.readAll(path, limits: limits)
