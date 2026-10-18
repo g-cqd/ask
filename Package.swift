@@ -7,13 +7,14 @@ import PackageDescription
 // (byte/number/Unicode/text/IO/concurrency) and the deterministic test kit come from Aemi; the
 // terminal stack comes from the shared TerminalKit package. `ask` layers the agent on top.
 //
-// Layout of the targets as they land:
-//   AskCore        — perf budgets, session identity, errors. No I/O.
-//   AskTerminal    — thin bindings over TerminalKit (capability negotiation, reset ladder).
-//   AskTUI         — screen model, widgets, input routing.
-//   AskAgent       — agent loop, tool execution, session persistence.
-//   AskProviders   — model providers and streaming.
-//   AskCodeMode    — the Swift/Python/Bash/JavaScript codemode host.
+// The target graph is ADR-0009's; targets land when they have content, never as empty shells.
+//   AskCore        — budgets, documentation layout, source standards.               (exists)
+//   AskAgentCore   — session tree and context construction; later the loop.        (exists)
+//   AskTUI         — screen model, widgets, input routing, over TerminalKit only.   (exists)
+//   AskAI          — providers, streaming, protocol adapters, auth.                 (0010)
+//   AskTools       — read, write, edit, bash over swift-subprocess (ADR-0011).      (0011)
+//   AskCodeMode    — the codemode host.                                             (0012)
+//   ask            — composition root, the only target that sees everything.
 //
 // AemiRuntime (kernel pools/seams) and any app-level concurrency provider are deliberately never
 // co-exported from a single umbrella target, matching the Aemi rule.
@@ -79,6 +80,11 @@ let package = Package(
             swiftSettings: packageSettings
         ),
         .target(
+            name: "AskAgentCore",
+            path: "Sources/AskAgentCore",
+            swiftSettings: packageSettings
+        ),
+        .target(
             name: "AskTUI",
             dependencies: [
                 .product(name: "TerminalKitCore", package: "TerminalKit"),
@@ -99,6 +105,12 @@ let package = Package(
             name: "AskCoreTests",
             dependencies: ["AskCore"],
             path: "Tests/AskCoreTests",
+            swiftSettings: packageSettings
+        ),
+        .testTarget(
+            name: "AskAgentCoreTests",
+            dependencies: ["AskAgentCore"],
+            path: "Tests/AskAgentCoreTests",
             swiftSettings: packageSettings
         ),
         .testTarget(
