@@ -4,6 +4,45 @@ The rules this project runs on. **Paste this at the start of every iteration.** 
 cannot satisfy a rule below stops and fixes the rule, or asks to change it in writing — it does not
 quietly proceed.
 
+## Runtime principles
+
+These are what "fast" is allowed to mean here. They bind every target in the ecosystem, and each one
+excludes something that would otherwise look like an optimisation.
+
+**A lightweight runtime.** A binary links only what it uses. No umbrella target that re-exports
+everything, no speculative generality, no framework pulled in for one function. Startup cost is paid
+once per process, so every linked module is paid for at every launch.
+
+**Fewest allocations.** Allocation is not free and it is not only slow — it fragments, and a fragmented
+allocator costs more in cache misses than the work that needed it. The hot path allocates zero times,
+and a buffer is reused rather than re-made. Where a budget can be stated it is **measured and enforced
+by a test**, because an allocation ceiling nobody checks is a wish.
+
+**Close to zero copy.** Work in `ContiguousArray` and `UnsafeMutableRawBufferPointer` from the boundary
+inward. No `Array`/`ContiguousArray` bridging, no `String` round-trip per keystroke, no copying a
+buffer to append to it. Copy once, at the edge where data enters or leaves the process. Copy-on-write
+is what a runtime reaches for when it cannot avoid a copy; here the aim is to have nothing to copy.
+
+**Safest, and still near zero-copy.** These are requirements together, never a trade against each
+other. No `-Ounchecked`, no disabled bounds or overflow checks, no `unsafe` that is not immediately
+justified in a comment. The way to be both fast and safe is to **do less work** — diff a frame instead
+of repainting it, reuse a buffer instead of allocating one, decode a byte once instead of re-scanning
+it — not to remove the checks that catch the bugs.
+
+**Every claim is measured.** A performance claim without before-and-after numbers, same harness, same
+configuration, with units, is not a claim this project will act on.
+
+**Generic tools belong in Aemi.** A tool that is not specific to one application does not live inside
+that application. It is promoted to Aemi, the kernel package, and the specialised packages build on it
+from there. This is not only about `ask`, TerminalKit, Atelier or KittyCode — it is a standing rule
+for anything encountered anywhere in the ecosystem: if Aemi's scope would serve it better than a
+single consumer's, it goes to Aemi. The test is whether a second consumer is plausible, not whether
+one exists today.
+
+The consequence is accepted rather than avoided: Aemi grows, and promoting something into it is a real
+change to a package other projects depend on, so it is measured, reviewed and pinned by dependents
+like any other.
+
 ---
 
 ## 0. The Evidence Rule

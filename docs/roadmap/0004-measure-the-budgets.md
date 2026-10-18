@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: ["0001", "0002", "0003"]
 date: 2026-10-18
 ---
@@ -30,12 +30,31 @@ prompt in a program with no agent in it. It is a real measurement of a trivial a
 **not** yet the number a user feels between a tool running and its result appearing. That arrives
 with the agent loop.
 
+## Targets and a guard — done
+
+`Budget` (in `AskCore`) states each budget as a number with headroom above the measurement, so
+ordinary variance cannot fail the gate:
+
+| Budget | measured median | limit |
+|---|---|---|
+| cold start | 11.06 ms | **25 ms** |
+| idle memory | 5.58 MiB | **8 MiB** |
+| input delay | 0.12 ms | **2 ms** |
+| action-to-action | 0.05 ms | **2 ms** |
+
+`Scripts/measure-budgets.py` now reads the limits from the binary itself — `ask --budgets` prints them
+as JSON — so there is exactly one definition and a script copy cannot drift. It reports a verdict per
+budget and **exits non-zero when any is over**.
+
+Both were probed rather than trusted: tightening the cold-start limit to 1 ms fails three unit tests
+and makes the harness exit 1; restoring it returns both to green.
+
 ## Still owed
 
-- **Targets**, not just baselines. A baseline says where we are; only a stated target makes a
-  regression a failure rather than an observation.
-- **CI guard.** Nothing fails yet if cold start doubles.
-- Benchmarks comparable across machines, so a number from this machine means something.
+- **CI runs the harness.** The guard exists and is wired to the measurement, but the workflow does
+  not invoke it yet, and these numbers are macOS-hardware-specific so the job needs a fixed runner.
+- **The action-to-action budget is provisional.** It measures a trivial action in a program with no
+  agent. When the loop lands it must be re-derived, and the stale number must not survive.
 
 **Notes:** no number in this project is a guess. Until this entry lands, "ultra-performance" is an
 unmeasured claim and nothing may be justified by it. Percentiles, not averages; median and spread,
