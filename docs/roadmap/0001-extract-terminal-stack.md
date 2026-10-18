@@ -1,7 +1,7 @@
 ---
 status: not-started
 blocked-by:
-prerequisites: ["ADR-0004"]
+prerequisites: ["ADR-0005"]
 date: 2026-10-18
 supersedes-scope-in: ADR-0001
 ---
@@ -25,9 +25,10 @@ Move the terminal stack out of Atelier into Aemi, renaming `Kitty*` to `AemiTerm
 `KittyEditor` (10,890 lines, sixteen dependencies) is **outside** the seam — it is the application
 tier. ADR-0004 records how this was measured.
 
-**Destination.** Targets in Aemi's single package, not a new package: `AemiTerminalCodecs` and
-`AemiTerminalRender`, joining the `AemiTerminalCore` that already exists. Aemi's own convention is one
-package with many targets.
+**Destination.** The `TerminalKit` repository, which now exists (ADR-0005): `TerminalKitStyle`,
+`TerminalKitIO`, `TerminalKitCodecs`, `TerminalKitText`, `TerminalKitRender` and `TerminalKitInput`,
+joining the `TerminalKitCore` already there. This is also where the package's first dependency
+arrives — `KittyCodecs` and `KittyInput` both import `AemiKernel` — and not one moment before.
 
 **Done when:** Atelier builds and its existing tests pass against the Aemi targets; no `Kitty*`
 terminal module remains in Atelier; `AemiTerminalCodecs` and `AemiTerminalRender` are exported.

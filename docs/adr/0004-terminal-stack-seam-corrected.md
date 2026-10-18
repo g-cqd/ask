@@ -1,10 +1,15 @@
 ---
-status: accepted
+status: superseded
 supersedes: ADR-0001
+superseded-by: ADR-0005
 date: 2026-10-18
 ---
 
 # 0004 — The terminal seam, corrected by probing
+
+> **Placement superseded by [ADR-0005](0005-ask-depends-on-terminalkit.md).** The scope
+> measurement below — six modules, 6,263 lines, found by following the import closure — stands.
+> The destination does not: the terminal is its own repository, not a group of Aemi targets.
 
 ## Context
 
