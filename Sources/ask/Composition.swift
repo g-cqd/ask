@@ -6,32 +6,6 @@ internal import AskAgentCore
 internal import AskTools
 internal import Foundation
 
-/// Adapts the Anthropic client to the loop, resolving auth per request so a long run survives a refresh.
-struct ClaudeProvider: ModelProvider {
-    let client: AnthropicClient
-    let auth: @Sendable () async throws -> AnthropicClient.Auth
-
-    func stream(_ request: ModelRequest) -> AsyncThrowingStream<ModelEvent, any Error> {
-        let (client, auth) = (client, auth)
-        return AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    for try await event in client.stream(request, auth: try await auth()) { continuation.yield(event) }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            continuation.onTermination = { _ in task.cancel() }
-        }
-    }
-}
-
-/// Signed out, said so a person can act on it.
-struct NotSignedIn: Error, CustomStringConvertible {
-    var description: String { "not signed in. Run `ask login`, or set ANTHROPIC_API_KEY." }
-}
-
 /// Auth for each request: `ANTHROPIC_API_KEY` when set, else the stored subscription, refreshed as needed.
 func requestAuth(transport: URLSessionTransport) -> @Sendable () async throws -> AnthropicClient.Auth {
     if let key = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !key.isEmpty {
