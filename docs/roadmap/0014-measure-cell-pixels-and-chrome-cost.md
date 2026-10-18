@@ -1,6 +1,6 @@
 ---
-status: not-started
-blocked-by:
+status: in-progress
+blocked-by: ["0013"]
 date: 2026-10-18
 prerequisites: ["ADR-0005"]
 ---
@@ -41,27 +41,64 @@ four characters, and with `.bar` it is one placement at an exact pixel offset co
 2. **`ask` has no renderer.** It has a `ContiguousArray<UInt8>` and a `switch` over bytes. Chrome
    lives inside `RenderPipeline`, which `ask` does not use.
 
-## What is being measured
+## What was being measured
 
-Run inside real terminals, each launched as `-e /bin/sh -c` so no shell configuration contributes:
+Run inside real terminals, each launched as `-e /bin/sh -c` so no shell configuration contributes, and
+with the detection variables unset in the launcher's own process so each terminal reports its own values:
 
 1. What does `TIOCGWINSZ` report for `pixelWidth`/`pixelHeight` per terminal — real numbers, or zeros?
 2. What cell size does that imply, and is it inside `CellPixelSize.drawableWidths/Heights`?
 3. What do the four budgets read with chrome enabled versus off, at idle and while repainting?
 
-Scripts land at `Scripts/verify-cell-pixels.py` and `Scripts/verify-chrome-cost.sh`, following
+Scripts are at `Scripts/verify-cell-pixels.py` and `Scripts/verify-chrome-cost.sh`, following
 TerminalKit's existing `Scripts/verify-*` split: the in-terminal probe writes only to a file, and the
 outside reader is the only thing that inspects results.
-
-## Known limitation, recorded honestly
-
-**This environment has no controlling TTY.** Probed: a `pty.fork()` plus `TIOCGWINSZ` returns
-`rows=0 cols=0 pixelWidth=0 pixelHeight=0`, and reading fd 0 fails with `ENOTTY`. So the numbers
-cannot be obtained from here — the probe must run in a real terminal.
 
 A terminal reporting `pixelWidth == 0` gets **no chrome and no error**. That silent degradation is
 exactly the failure the white paper warns about, so the probe records zeros as a first-class result
 rather than as a skip.
+
+## Measured — items 1 and 2
+
+Run 2026-10-18 across four terminals, each launched as `-e /bin/sh -c` with the detection variables
+unset in the launcher's own process, so each terminal reports **its own** values rather than the agent
+session's inherited ones.
+
+| Terminal | px W×H | rows×cols | Cell | `KITTY_WINDOW_ID` | `TERM` | `TERM_PROGRAM` | guess | pixels |
+|---|---|---|---|---|---|---|---|---|
+| kitty | 1274×800 | 32×91 | **14×25** | 1 | `xterm-kitty` | — | True | True |
+| ghostty | 1592×1192 | 35×99 | **16×34** | — | `xterm-ghostty` | `ghostty` | True | True |
+| wezterm | 560×384 | 24×80 | **7×16** | — | `xterm-256color` | `WezTerm` | True | True |
+| Terminal.app | 560×336 | 24×80 | **7×14** | — | — | — | **False** | **True** |
+
+Every cell size is inside TerminalKit's drawable ranges (1…256 wide, 1…512 high).
+
+**Two findings, and they are the whole entry.**
+
+**1. Cell pixels are available everywhere — including Terminal.app.** So pixels are *not* the axis that
+separates terminals. What Terminal.app lacks is the kitty graphics **protocol**, and the two are
+independent. ADR-0008 had merged them; the measurement separates them.
+
+**2. The first run reported Terminal.app as `guess=True`, and that was contamination.** The agent session
+runs inside kitty, so `KITTY_WINDOW_ID=4` was set in its environment and inherited by every terminal the
+launcher started. TerminalKit's check is `KITTY_WINDOW_ID != nil || …`, so one inherited variable flipped
+a terminal that cannot speak the protocol to "graphics". Scrubbing the launcher's own detection variables
+— and letting each terminal set its own — makes Terminal.app read `False`, which is correct.
+
+`env -i` was tried first and is the **wrong** scrub: it strips the environment each terminal sets for its
+children along with the inherited one, so all four reported `guess=False` including kitty. That is a
+different wrong answer, and a more dangerous one, because it makes detection look broken everywhere
+rather than contaminated in one place.
+
+Cell height varies by **2.4×** across these terminals (14 px to 34 px), which matters for any density
+budget: a compact layout tuned at one cell size is not the same layout at another.
+
+## Still owed — item 3
+
+What the four budgets do with chrome enabled versus off cannot be measured yet, because `ask` has no
+renderer and no chrome to enable. That is `0013`'s work, and this entry stays `in-progress` until then.
+
+Reproduce with `OUT=/tmp/ask-cell bash Scripts/verify-chrome-cost.sh`.
 
 ## Cost, stated as what is known and what is not
 
@@ -76,10 +113,10 @@ Small on its face — **small on its face is not a measurement.** Item 3 above s
 
 ## Done when
 
-- A table exists, per terminal, of reported pixels, implied cell size, and whether that size is drawable.
-- The four budgets have chrome-off and chrome-on numbers from the same harness and the same run.
-- Zeros are recorded as a result, with the terminal named.
-- `0003` can be written against measured facts rather than against an assumption about `TERM_PROGRAM`.
+- [x] A table exists, per terminal, of reported pixels, implied cell size, and whether that size is drawable.
+- [ ] The four budgets have chrome-off and chrome-on numbers from the same harness and the same run.
+- [x] Zeros are recorded as a result, with the terminal named.
+- [x] `0003` can be written against measured facts rather than against an assumption about `TERM_PROGRAM`.
 
 ## Not in this entry
 
