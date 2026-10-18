@@ -41,6 +41,34 @@ problem. Corrected here: the character layout is required because the graphics p
 not because cell pixels are unavailable. The conclusion survives; the reason was wrong, and the two
 reasons would lead a reader to different designs.
 
+## Whether Terminal.app speaks the protocol — probed, not assumed
+
+The first version of this ADR listed Terminal.app as not speaking the kitty graphics protocol on the
+strength of it being absent from TerminalKit's detection list. That is an argument from absence, and the
+white paper does not accept one. A direct behavioural probe was run instead.
+
+**Method.** A script emits the same kitty graphics sequence in each terminal: clear, print text markers,
+transmit a solid image, place it. The screen is then read back from **outside** each terminal — AppleScript
+for Terminal.app, `kitty @` for kitty.
+
+**Result — decisive, and it refutes my own framing.**
+
+| Terminal | Screen readback | Verdict |
+|---|---|---|
+| kitty | `ROW0 MARKER AAAA ROW2 MARKER BBBB DONE` + `ESC _ G i=1;OK ESC \` | APC **consumed**, and it **answered** — an explicit acknowledgement that image 1 was accepted |
+| Terminal.app | `////AP///wD///8A////AP///wD///8A////…` | APC **rendered as visible text** — the introducer and the base64 payload drawn on screen |
+
+Terminal.app does not interpret APC sequences at all, so it cannot implement a protocol carried inside
+them. **CONFIRMED unsupported**, now by observed behaviour rather than by absence from a list.
+
+**The control is what makes it a probe.** kitty consuming the same bytes and replying is what shows the
+readback method can detect consumption at all. Without it, "Terminal.app showed text" could have meant
+the test was broken rather than the terminal.
+
+**What this still does not prove:** that Terminal.app has no image capability of any kind. It ships its
+own inline-image support, which this probe does not exercise. The claim is scoped to the kitty protocol,
+which is the one `PixelChrome` speaks.
+
 **Probe 2 — is the two-layout cost avoidable?** Read `PixelChrome`'s three primitives and
 `ChromeElement`'s placement semantics.
 
@@ -87,8 +115,7 @@ layout, it is a screenshot.
 
 - The character layout's own density budget is undecided: how compact it can be before it stops being
   legible. That belongs to `0015`, not here.
-- Whether Terminal.app can in fact render kitty graphics is **unverified**. The measurement shows it
-  reports cell pixels; that is not the same claim as protocol support, and this ADR does not assert it
-  either way. `0015` needs it answered rather than assumed.
+- A second protocol-negative terminal would strengthen the character layout's test coverage.
+  Terminal.app is currently the only one; iTerm2 is the obvious candidate and is not installed.
 - Nothing in this decision says which is the default when capability is unknown. That falls to `0003`'s
   degraded-mode policy and should be decided there.

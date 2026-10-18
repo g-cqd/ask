@@ -65,10 +65,52 @@ half stands and is what Probe 3 measured.
 The principle is corrected in `docs/WHITE-PAPER.md` rather than left standing, because a wrong principle
 outlives the investigation and gets cited as a reason to avoid fine-grained modules forever.
 
+### Audit of Probe 2 and Probe 3 — including where they were wrong
+
+Asked to challenge these before adopting them. Two flaws, both mine:
+
+**Probe 3 measured the wrong path.** The cold-start budget is *spawn to the prompt appearing on the
+terminal's output stream*. I measured spawn-to-exit of `ask --budgets` — a path with no terminal, no raw
+mode and no frame. So the 1.55 ms figure is an **upper bound that includes real work** (parsing arguments,
+building and printing JSON), not a pure link cost. It is not the number the budget measures, and the white
+paper should not quote it as if it were. The decomposition below replaces it.
+
+**Probe 2 never ran a terminal either.** Its binaries had no TTY, no `ioctl` and no frame write. The
+finding stands for the *load-time* component of cold start; it says nothing about the rest.
+
 **Scope of Probe 2, stated honestly:** trivial modules with no static initializers, no globals and no
 Objective-C classes, measured spawn-to-exit rather than spawn-to-first-frame. A module carrying heavy
 initialisation is not covered, and is exactly the kind of thing that would make the claim true. The
 finding is that module *count* is free, not that module *content* is.
+
+### What the budget actually decomposes into
+
+| Stage | median | note |
+|---|---|---|
+| process spawn to exit, `/bin/echo` | 2.05 ms | fork/exec and loader floor on this harness |
+| trivial Swift binary | 3.04 ms | the Swift runtime is ~1.0 ms |
+| `ask --budgets` | 4.59 ms | **upper bound**; includes ask's own work |
+| **`ask` TUI to first prompt** | **6.23 ms** | the figure the budget measures |
+| budget | 25 ms | 18.77 ms of headroom |
+
+**The decision does not depend on Probe 2.** Cold start is 6.23 ms of a 25 ms budget, so even if twenty
+targets cost a full millisecond — roughly fifteen times what was measured — the total would be 29% of
+budget. The fine-grained choice is safe on the budget alone, with the measurement merely confirming it.
+That is the honest dependency structure: the decision was already justified without the probe.
+
+## The library products in the manifest
+
+Probed rather than assumed: `Package.swift:67-68` already declares `.library(name: "AskCore")` and
+`.library(name: "AskTUI")`.
+
+Nothing consumes either. `ask` is not a dependency of TerminalKit, Aemi or Atelier — checked — and those
+products exist to make a target importable by another package. So as things stand they are **speculative
+generality**, which the white paper bans.
+
+**Decision: left alone here, reviewed by `0016`,** which rewrites the manifest anyway. Removing them now
+would be a drive-by change beyond this ADR's scope, and the per-documentation-law rule is that a
+pre-existing issue found mid-task is reported rather than silently repaired. The rule `0016` should apply:
+**a product exists because something consumes it** — and if the answer is nothing, it is not declared.
 
 ## Decision
 
@@ -126,6 +168,14 @@ messages. That is a wire-format constraint, so it belongs with the wire format.
 
 The agent's context builder stays unaware of it and produces ordinary messages; the adapter relocates
 them. That keeps the gate out of the loop, which means a Spettro request never pays for it.
+
+**Risk in this placement, unprobed and named rather than glossed.** Relocating content from the system
+param into the first user message changes the request's **prefix structure**, which is what prompt caching
+keys on. ADR-0007 records that pi's gate preserves `cache_control` markers, so the *markers* survive — but
+preserved markers over a differently-shaped prefix may not hit the same cache. `0010` must measure cache
+behaviour with the gate active before assuming relocation is free. If it is not, the alternative is a
+provider-specific context builder rather than a relocating adapter, which is a real design cost and should
+be discovered at `0010` rather than after.
 
 ## Consequences
 
