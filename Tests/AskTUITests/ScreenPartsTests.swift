@@ -15,6 +15,8 @@ struct ScreenPartsTests {
         #expect(TextWrap.lines("abcdefghij", width: 4) == ["abcd", "efgh", "ij"])
         #expect(TextWrap.lines("a\n\nb", width: 10) == ["a", "", "b"])
         #expect(TextWrap.lines("", width: 10) == [""])
+        // A line that is exactly full when a space arrives breaks at that space, gluing nothing.
+        #expect(TextWrap.lines("one two three four five", width: 10) == ["one two", "three four", "five"])
     }
 
     @Test func `wide characters count as two columns`() {
