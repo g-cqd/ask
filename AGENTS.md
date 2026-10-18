@@ -86,18 +86,20 @@ and `.v6` is what guarantees they stay on.
 Terminal stack from **TerminalKit**, kernel tier and test kit from **Aemi** at a pinned revision.
 Two focused dependencies, each with one job (ADR-0005).
 
-`Package.swift` declares TerminalKit as `branch: "main"`. **The lockfile is what actually pins it**, so
-after any TerminalKit change, run `swift package update terminalkit` and build — a stale lockfile will
-happily build against a commit upstream has moved past, and the rename will surface as
-`cannot find 'X' in scope` rather than as a version problem.
+`Package.swift` pins TerminalKit by full revision; `Package.resolved` must agree with that revision.
+After a verified upstream change, update the explicit pin and resolve it. Do not silently follow main.
+
+Production child execution uses **swiftlang/swift-subprocess** (ADR-0011), behind an injected interface.
+Introduce it with the first tool; avoid an unused dependency or a second POSIX/Foundation launcher.
+Read its lifetime/output-limit contracts before implementing cancellation or output truncation.
 
 Adding a dependency is an architectural decision. Generic tools do not live in `ask`: they are promoted
 to Aemi. The test is whether a second consumer is plausible, not whether one exists today.
 
 ## Traps
 
-- **A stale lockfile reads as a green build.** `Package.resolved` can lag `branch: "main"` by many
-  commits, and the code still compiles against the old API.
+- **A green old dependency is not upstream verification.** Check the explicit manifest revision and
+  resolved revision together before attributing a fix to an updated package.
 - **`public` signatures need `public import Foundation`** under `InternalImportsByDefault` (SE-0409).
   A plain import grants *internal* visibility, which makes `URL` internal and every public signature illegal.
 - **Release tests need `--enable-testable-imports`** (ADR-0006). `swift build --build-tests -c release`
