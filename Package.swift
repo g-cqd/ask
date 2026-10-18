@@ -120,7 +120,7 @@ let package = Package(
         .executableTarget(
             name: "ask",
             dependencies: [
-                "AskCore", "AskTUI", .product(name: "ArgumentParser", package: "swift-argument-parser")
+                "AskAI", "AskCore", "AskTUI", .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
             path: "Sources/ask",
             swiftSettings: packageSettings
