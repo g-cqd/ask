@@ -11,14 +11,17 @@ excludes something that would otherwise look like an optimisation.
 
 **A lightweight runtime.** A binary links only what it uses. No umbrella target that re-exports
 everything, no speculative generality, no framework pulled in for one function. Startup cost is paid
-once per process, so what a binary **links** is paid for at every launch — measured at about 1.55 ms
-for everything `ask` links over a trivial binary, against a 3.04 ms trivial baseline.
+once per process, so what a binary **links** is paid for at every launch.
 
-That figure is link *weight*, not module *count*. Measured: one target versus twenty changed spawn time
-by 0.067 ms, inside noise. Fine-grained targets are therefore free, and the discipline belongs on what
-is linked rather than on how many modules carry it. ADR-0009 corrected the earlier claim here, which said
-every linked *module* was paid for per launch; it was not measurable, and a wrong principle outlives the
-investigation that found it.
+That is a statement about link **weight**, not module **count**. Measured: one target versus twenty
+changed spawn time by 0.067 ms, inside noise, so fine-grained targets are free and the discipline belongs
+on what is linked rather than on how many modules carry it. ADR-0009 corrected the earlier claim here,
+which said every linked *module* was paid for per launch; it was not measurable, and a wrong principle
+outlives the investigation that found it.
+
+The measurement behind it covers process load only. Cold start itself is 6.23 ms of a 25 ms budget —
+spawn to the prompt on the terminal — so the headroom is 18.77 ms and the choice of granularity does not
+rest on the measurement.
 
 **Fewest allocations.** Allocation is not free and it is not only slow — it fragments, and a fragmented
 allocator costs more in cache misses than the work that needed it. The hot path allocates zero times,
