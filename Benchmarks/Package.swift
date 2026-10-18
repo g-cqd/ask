@@ -11,7 +11,7 @@ let package = Package(
     name: "benchmarks",
     platforms: [.macOS(.v26)],
     dependencies: [
-        .package(path: ".."),
+        .package(name: "ask", path: ".."),
         .package(url: "https://github.com/ordo-one/package-benchmark", .upToNextMajor(from: "1.38.0"))
     ],
     targets: [
