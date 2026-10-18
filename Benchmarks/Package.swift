@@ -12,7 +12,9 @@ let package = Package(
     platforms: [.macOS(.v26)],
     dependencies: [
         .package(name: "ask", path: ".."),
-        .package(url: "https://github.com/ordo-one/package-benchmark", .upToNextMajor(from: "1.38.0"))
+        .package(url: "https://github.com/ordo-one/package-benchmark", .upToNextMajor(from: "1.38.0")),
+        // The same revision ask pins; SwiftPM resolves one revision per package.
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "3440cbd95f5f35f2d08ccb14635467a60f123a78")
     ],
     targets: [
         .executableTarget(
@@ -33,6 +35,29 @@ let package = Package(
             ],
             path: "Benchmarks/StreamBenchmarks",
             plugins: [.plugin(name: "BenchmarkPlugin", package: "package-benchmark")]
+        ),
+        .executableTarget(
+            name: "RenderBenchmarks",
+            dependencies: [
+                .product(name: "Benchmark", package: "package-benchmark"),
+                .product(name: "AskTUI", package: "ask"),
+                .product(name: "TerminalKitRender", package: "TerminalKit"),
+                .product(name: "TerminalKitStyle", package: "TerminalKit"),
+                .product(name: "TerminalKitIO", package: "TerminalKit")
+            ],
+            path: "Benchmarks/RenderBenchmarks",
+            plugins: [.plugin(name: "BenchmarkPlugin", package: "package-benchmark")]
+        ),
+        // Measures the real RenderPipeline, which is main-actor isolated: top-level code runs on the main actor,
+        // which the benchmark framework's closures cannot.
+        .executableTarget(
+            name: "PipelineProbe",
+            dependencies: [
+                .product(name: "AskTUI", package: "ask"),
+                .product(name: "TerminalKitRender", package: "TerminalKit"),
+                .product(name: "TerminalKitIO", package: "TerminalKit")
+            ],
+            path: "Benchmarks/PipelineProbe"
         )
     ]
 )
