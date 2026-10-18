@@ -18,3 +18,20 @@ jobs:
         # --check: fail if the tree is not already canonical, so a formatting drift is a red build
         # rather than something a reviewer has to notice.
         run: Scripts/quality.sh --check
+
+  budgets:
+    # The four performance budgets are enforced by running the real binary on a real PTY. These are
+    # hardware-specific numbers, so the runner is pinned rather than taken from the pool: a budget
+    # measured on one machine and enforced on another is a budget that fires for the wrong reason.
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-swift@v2
+        with:
+          swift-version: "6.4"
+      - name: Build release
+        run: swift build -c release
+      - name: Measure the four budgets
+        # Exits non-zero when any budget is over. The limits come from the binary itself
+        # (`ask --budgets`), so there is one definition of them and no copy in a script to drift.
+        run: python3 Scripts/measure-budgets.py .build/release/ask 12
