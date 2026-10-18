@@ -74,11 +74,15 @@ let package = Package(
         .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "98650f4a0c3220121f5866cb0b018b1653034b8b"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "6cbe2ae39b91e2721b25d6c6321e3cbdfe3496a9")
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "6cbe2ae39b91e2721b25d6c6321e3cbdfe3496a9"),
+        // Command-line parsing for the `ask` executable only (ADR-0015). Its link cost against the
+        // cold-start budget was measured before adoption.
+        .package(url: "https://github.com/apple/swift-argument-parser.git", .upToNextMinor(from: "1.8.2"))
     ],
     targets: [
         .target(
             name: "AskCore",
+            dependencies: [.product(name: "AemiJSON", package: "AemiJSON")],
             path: "Sources/AskCore",
             swiftSettings: packageSettings
         ),
@@ -101,13 +105,15 @@ let package = Package(
         ),
         .executableTarget(
             name: "ask",
-            dependencies: ["AskCore", "AskTUI"],
+            dependencies: [
+                "AskCore", "AskTUI", .product(name: "ArgumentParser", package: "swift-argument-parser")
+            ],
             path: "Sources/ask",
             swiftSettings: packageSettings
         ),
         .testTarget(
             name: "AskCoreTests",
-            dependencies: ["AskCore"],
+            dependencies: ["AskCore", .product(name: "AemiJSON", package: "AemiJSON")],
             path: "Tests/AskCoreTests",
             swiftSettings: packageSettings
         ),
