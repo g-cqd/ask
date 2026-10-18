@@ -5,11 +5,11 @@ import PackageDescription
 //
 // ONE package, MANY small targets, so a given binary links only what it uses. The kernel tier
 // (byte/number/Unicode/text/IO/concurrency) and the deterministic test kit come from Aemi; the
-// terminal stack comes from the shared AemiTerminal package. `ask` layers the agent on top.
+// terminal stack comes from the shared TerminalKit package. `ask` layers the agent on top.
 //
 // Layout of the targets as they land:
 //   AskCore        — perf budgets, session identity, errors. No I/O.
-//   AskTerminal    — thin bindings over AemiTerminal (capability negotiation, reset ladder).
+//   AskTerminal    — thin bindings over TerminalKit (capability negotiation, reset ladder).
 //   AskTUI         — screen model, widgets, input routing.
 //   AskAgent       — agent loop, tool execution, session persistence.
 //   AskProviders   — model providers and streaming.
@@ -70,7 +70,7 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", branch: "main")
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "7a1f22a6d78e63df717e9f5fb0a7968a15a3f38b")
     ],
     targets: [
         .target(
