@@ -66,6 +66,8 @@ let package = Package(
     products: [
         .executable(name: "ask", targets: ["ask"]),
         .library(name: "AskCore", targets: ["AskCore"]),
+        // Consumed by the Benchmarks package (ADR-0016).
+        .library(name: "AskAgentCore", targets: ["AskAgentCore"]),
         .library(name: "AskTUI", targets: ["AskTUI"])
     ],
     dependencies: [
@@ -75,6 +77,9 @@ let package = Package(
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
         .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "6cbe2ae39b91e2721b25d6c6321e3cbdfe3496a9"),
+        // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
+        // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "a6446f154b42945891107e739c0617fbe965db8c"),
         // Command-line parsing for the `ask` executable only (ADR-0015). Its link cost against the
         // cold-start budget was measured before adoption.
         .package(url: "https://github.com/apple/swift-argument-parser.git", .upToNextMinor(from: "1.8.2"))
@@ -88,7 +93,9 @@ let package = Package(
         ),
         .target(
             name: "AskAgentCore",
-            dependencies: [.product(name: "AemiJSON", package: "AemiJSON")],
+            dependencies: [
+                .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiIO", package: "aemi")
+            ],
             path: "Sources/AskAgentCore",
             swiftSettings: packageSettings
         ),
@@ -119,7 +126,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AskAgentCoreTests",
-            dependencies: ["AskAgentCore"],
+            dependencies: ["AskAgentCore", .product(name: "AemiIO", package: "aemi")],
             path: "Tests/AskAgentCoreTests",
             swiftSettings: packageSettings
         ),
