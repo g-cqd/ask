@@ -23,8 +23,15 @@ before it is adopted, and there is no place for an assumption.
 
 ## Status
 
-Three targets (`AskCore`, `AskTUI`, `ask`), tested green in release. The agent loop, providers, tool
-execution and the codemode host have not been built — see the roadmap below.
+Four targets (`AskCore`, `AskTUI`, `ask`, `AskTUITests`), green in release. The agent loop, providers,
+tool execution and the codemode host have not been built — see the roadmap below.
+
+Every exit path of the terminal loop writes the reset ladder, and a shutdown signal both restores the
+terminal and dies with `128 + signo` (verified on a PTY: 143 for `SIGTERM`, 130 for `SIGINT`).
+
+The standards are enforced rather than requested: `SourceStandards` scans this repository's own Swift
+and fails the suite on `NSLock`, `os_unfair_lock`, `pthread_mutex`, `DispatchQueue`, an unjustified
+`@unchecked Sendable`, or a `Task.yield` in a test. Each rule was probed by breaking it.
 
 **The four budgets are measured**, by `Scripts/measure-budgets.py` against the release binary on a PTY,
 and enforced in CI. The **action-to-action** figure is provisional: it measures a trivial action in a
