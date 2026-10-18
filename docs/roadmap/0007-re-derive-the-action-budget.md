@@ -33,3 +33,10 @@ were the agent's number.
 `0004` is `done`; this is the debt it recorded. It stays `not-started` rather than `in-progress`
 because there is nothing to do until `0009` lands, and a status that says "waiting" is more honest
 than one that says "started".
+
+## Also owed: the idle-memory budget
+
+ADR-0015 measured idle RSS at 6.8 of 8 MiB after adopting AemiJSON and swift-argument-parser, about 1.1 MiB
+of headroom with no agent in the binary. That budget was set over an agent-less program too, so it is
+re-derived in the same pass as action-to-action, from measurements of the agent loop.
+
