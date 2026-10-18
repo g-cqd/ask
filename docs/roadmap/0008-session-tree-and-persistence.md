@@ -60,12 +60,18 @@ These are deliberate divergences from pi 1.3.0, which silently drops torn and co
 to the last entry for an unknown leaf, and truncates context at a missing parent. Probed by running pi's
 own code; recorded in ADR-0012.
 
+## Done — recovery is the default
+
+`SessionLog.recover` opens sessions (ADR-0013): at least as convenient as pi 1.3.0 on every damage case
+probed, never silent, never writing on load. 16 recovery tests, 10 of 10 mutations caught. `decode` is a
+strict wrapper over the same parser.
+
 ## Still owed
 
-- **The file store**: placement, an append that writes one whole record per call, and fsync policy, with
-  its cost measured rather than assumed.
-- **Explicit recovery.** Strictness means a corrupt file will not load. The answer is an opt-in mode that
-  keeps the readable prefix and reports exactly what it discarded, not pi's silent skip.
+- **The file store**: placement, one whole record per append call, and fsync policy, with its cost
+  measured. On a session that needed repairs, keep the damaged original and write the repaired snapshot
+  beside it, never over it.
+- Surfacing `issues` to the user, once there is a UI to surface them in.
 - Fork to a new file.
 
 ## Done when
