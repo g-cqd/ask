@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["0014"]
+blocked-by: 
 date: 2026-10-18
 ---
 
@@ -38,3 +38,7 @@ the agent loop needs a screen model to render streaming text into.
 
 `ask` renders through `RenderPipeline`, a repaint emits a diff rather than a full redraw, synchronised
 output still wraps every frame, and all four budgets still pass.
+
+## Reordered (ADR-0019)
+
+`0014` no longer blocks this entry: its last item needs a renderer, so the dependency runs the other way. The agent loop no longer waits for this entry either; it lands headless first. This is what the *interactive* loop needs, and it comes next after the headless loop.

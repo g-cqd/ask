@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["0010"]
+blocked-by: 
 date: 2026-10-18
 ---
 
@@ -49,3 +49,7 @@ recoverable, and every failure mode is a typed error the model can act on.
 ## Notes
 
 `0012` depends on this: "call a tool from a script" is not expressible until tools exist.
+
+## Reordered (ADR-0019)
+
+No longer waits for Spettro. Tools sit behind the neutral seam, `(id, name, JSONObject) → (content, isError)`, which OpenAI-completions' `tool_calls` also map onto. The protocol lives in `AskAgentCore` (ADR-0009) and implementations in `AskTools`.
