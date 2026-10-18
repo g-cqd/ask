@@ -1,3 +1,4 @@
+internal import AemiIO
 internal import Darwin
 internal import System
 
@@ -56,21 +57,20 @@ enum SessionFileIO {
     }
 
     static func flush(_ descriptor: FileDescriptor, _ durability: SessionFile.Durability) throws(SessionFileError) {
-        let result: Int32
-        switch durability {
-            case .process: return
-            case .system: result = fsync(descriptor.rawValue)
-            case .device: result = fcntl(descriptor.rawValue, F_FULLFSYNC)
+        guard durability != .none else { return }
+        do {
+            try PosixFile(borrowing: descriptor.rawValue).sync(durability)
+        } catch {
+            throw .io(.flush, errno: error.errno)
         }
-        guard result == 0 else { throw .io(.flush, errno: errno) }
     }
 
     /// Makes a create or rename durable: the directory entry must reach disk too.
     static func flushDirectory(of path: FilePath, _ durability: SessionFile.Durability) throws(SessionFileError) {
-        guard durability != .process else { return }
+        guard durability != .none else { return }
         let directory = try io(.open) { try FileDescriptor.open(path.removingLastComponent(), .readOnly) }
         defer { _ = try? directory.close() }
-        guard fsync(directory.rawValue) == 0 else { throw .io(.flush, errno: errno) }
+        try flush(directory, durability)
     }
 
     static func encoded(_ body: () throws(SessionLogError) -> [UInt8]) throws(SessionFileError) -> [UInt8] {
