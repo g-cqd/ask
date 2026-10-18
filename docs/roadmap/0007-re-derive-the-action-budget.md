@@ -52,3 +52,19 @@ ask's own work per turn, excluding the network, is linear in history:
 | Barrier flush | ~0.3 ms | ~0.3 ms |
 
 At 500 turns that is about 1.5 ms of the 2 ms budget, and the linear re-encoding would cross the budget near 700 turns. The obvious remedy is to reuse the encoded prefix of an unchanged history (a cache keyed by entry count) rather than re-encode it every turn. Decide it with the re-derived budget, on measurements.
+
+## Idle memory, measured with the interactive screen (2026-10-19)
+
+RSS is 8,208–8,224 KiB against the 8,192 budget; the physical footprint is 2.88 MiB. The heap is
+dominated by TerminalKit's two cell grids: 393 KB at 120×40, which grow with the window (about 1.9 MB at
+300×80).
+
+The fixes already taken:
+- URLSession is lazy: −3.4 MiB;
+- the agent loop is built lazily: −520 KiB;
+- TerminalKit's digit table went from 393 KB to 4 KB: −368 KiB.
+
+**For the re-derivation:**
+- state the window size a memory budget is measured at;
+- prefer physical footprint to RSS, which counts shared library pages;
+- treat TerminalKit roadmap 0007 (compact cells, ≤ 16 bytes) as the lever, not trimming ask.

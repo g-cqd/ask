@@ -1,0 +1,37 @@
+---
+status: not-started
+blocked-by:
+date: 2026-10-19
+---
+
+# 0023 — TerminalKit to professional grade, in the order ask needs it
+
+TerminalKit's own roadmap (0006–0014, in that repository) holds the work, each entry with its evidence.
+ask's first full-screen use measured TerminalKit under a real app:
+- 40-byte cells;
+- about 16 ns to rewrite an unchanged cell;
+- a one-cell flush at 3 µs (120×40) but 15 µs (300×80);
+- 494–1,048 bytes per streamed line.
+
+From the code: input holds a cooperative pool thread, and nothing owns terminal modes.
+
+## Order, by what ask feels
+
+| | TerminalKit entry | Reason |
+|---|---|---|
+| 1 | **0006**, time benchmarks | Every other change needs a before and an after. |
+| 2 | **0010**, modes as a unit | ask already shipped one mode bug (bracketed paste, fixed in ask). Kitty keyboard flags remove the Escape heuristic. |
+| 3 | **0007**, compact cells | The lever for the idle-memory budget, and for every frame's per-cell cost. |
+| 4 | **0011**, scroll regions | A streamed line currently rewrites every visible row: 186 µs at 120×40 and 354 µs at 300×80 after ask's own composer work. |
+| 5 | **0008**, flush proportional to change; **0009**, input on a dedicated thread | |
+| 6 | **0012**, text layout promoted from ask's `TextWrap`; **0013**, Unicode widths; **0014**, pipeline isolation | |
+
+## ask's side
+
+ask adopts each entry as it lands, re-pins TerminalKit, and re-runs:
+- `Benchmarks/PipelineProbe`;
+- `measure-budgets.py`;
+- `probe-interactive.py`.
+
+ask's own composer already does work proportional to the change: a keystroke frame went from 172 µs to
+42 µs at 120×40, and from 671 µs to 59 µs at 300×80.
