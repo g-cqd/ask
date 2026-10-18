@@ -26,7 +26,12 @@ pi 1.3.0 is installed under `~/.pi/agent/install/releases/1.3.0/`. Its `dist/` m
 from node, so a pi behaviour can be *run* rather than read. Do that before porting it: pi's session
 loader silently drops torn and corrupt records, and that was found only by executing it
 (`node Scripts/probe-pi-session-parsing.mjs`). Fix any defect here, pin it with a test whose doc comment
-starts `Diverges from pi <version> (ADR-0012)`, and offer, never file, an upstream report.
+starts `Diverges from pi <version> (ADR-0012)`, and add a row to `docs/PI-FINDINGS.md`. Nothing is filed
+upstream.
+
+**At least as convenient as pi.** A divergence may be stricter about *reporting*, never about *working*.
+Damaged sessions load with every repair listed (`SessionLog.recover`, ADR-0013); refusing input pi would
+accept needs a safety reason, written down.
 
 ## Commands
 

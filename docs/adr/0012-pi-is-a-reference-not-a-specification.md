@@ -1,9 +1,14 @@
 ---
 status: accepted
+amended-by: ADR-0013
 date: 2026-10-18
 ---
 
 # 0012 — pi is a reference, not a specification
+
+> **Amended by [ADR-0013](0013-damaged-sessions-load-by-default.md).** Damaged sessions now load by
+> default with every repair reported, and pi findings are recorded in `docs/PI-FINDINGS.md`, never filed
+> upstream. The principle below stands.
 
 ## Context
 
