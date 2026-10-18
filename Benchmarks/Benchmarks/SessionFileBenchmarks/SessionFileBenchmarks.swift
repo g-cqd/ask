@@ -34,6 +34,7 @@ let benchmarks: @Sendable () -> Void = {
     capBenchmarks()
     fileToolBenchmarks()
     loopBenchmarks()
+    bashBenchmarks()
 
     for (name, durability) in DurabilityCase.all {
         Benchmark("append/\(name)") { benchmark in
