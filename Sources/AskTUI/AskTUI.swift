@@ -17,13 +17,13 @@ internal import TerminalKitIO
 /// the frame bracketed by synchronised-output markers so it cannot tear.
 enum StartupSequence {
     static var begin: [UInt8] {
-        KittySequences.enterAlternateScreen
-            + KittySequences.hideCursor
-            + KittySequences.clearScreen
-            + KittySequences.beginSyncUpdate
+        EscapeSequences.enterAlternateScreen
+            + EscapeSequences.hideCursor
+            + EscapeSequences.clearScreen
+            + EscapeSequences.beginSyncUpdate
     }
 
-    static var end: [UInt8] { KittySequences.endSyncUpdate + KittySequences.showCursor }
+    static var end: [UInt8] { EscapeSequences.endSyncUpdate + EscapeSequences.showCursor }
 }
 
 /// `ESC [ K` — erase from the cursor to the end of the line. One byte sequence, no repaint of the
@@ -62,7 +62,7 @@ public func runAskTUI() throws {
         guard count > 0 else { continue }
 
         var redraw = ContiguousArray<UInt8>()
-        redraw.append(contentsOf: KittySequences.beginSyncUpdate)
+        redraw.append(contentsOf: EscapeSequences.beginSyncUpdate)
         var submitted = false
 
         for index in 0 ..< count {
@@ -92,7 +92,7 @@ public func runAskTUI() throws {
             redraw.append(contentsOf: promptBytes(line: ""))
             line = ""
         }
-        redraw.append(contentsOf: KittySequences.endSyncUpdate)
+        redraw.append(contentsOf: EscapeSequences.endSyncUpdate)
         try connection.writeContiguous(redraw)
 
         if submitted, line.isEmpty, redraw.count > 8 {

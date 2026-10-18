@@ -1,5 +1,5 @@
 {
-  "originHash" : "54c7d5945d4cb9d7a9d955667ef0dc632fd609e99f75a7fe60e6b4d2d39536dd",
+  "originHash" : "c17bb8cc5c3b2fd182e7e340285748fcf3ae6f15961a01a086817497e2a99d90",
   "pins" : [
     {
       "identity" : "aemi",
@@ -42,7 +42,7 @@
       "location" : "https://github.com/g-cqd/TerminalKit.git",
       "state" : {
         "branch" : "main",
-        "revision" : "8e8fc8565230cfbd626f7a029147785e898dad59"
+        "revision" : "7a1f22a6d78e63df717e9f5fb0a7968a15a3f38b"
       }
     }
   ],
