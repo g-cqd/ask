@@ -65,11 +65,18 @@ public protocol HTTPTransport: Sendable {
 }
 
 /// ``HTTPTransport`` over URLSession, delivering the body in the chunks the system receives.
+///
+/// The default session is created on the first request, not with the transport: creating a URLSession loads
+/// the networking stack, which a screen that has not sent anything yet should not pay for at launch.
 public struct URLSessionTransport: HTTPTransport {
-    private let session: URLSession
+    private let provided: URLSession?
+    private let lazySession = LazySession()
 
-    /// A transport on `session`, by default an ephemeral one: no cookies, cache or credentials on disk.
-    public init(session: URLSession = URLSession(configuration: .ephemeral)) { self.session = session }
+    /// A transport on `session`, by default an ephemeral one, created on first use: no cookies, cache or
+    /// credentials on disk.
+    public init(session: URLSession? = nil) { self.provided = session }
+
+    private var session: URLSession { provided ?? lazySession.value }
 
     public func send(_ request: HTTPRequest) async throws -> HTTPStreamingResponse {
         var urlRequest = URLRequest(url: request.url)
@@ -93,6 +100,20 @@ public struct URLSessionTransport: HTTPTransport {
             task.cancel()
         }
         return HTTPStreamingResponse(status: status, body: body)
+    }
+}
+
+/// An ephemeral session made once, on first use, by whichever request needs it first.
+private final class LazySession: Sendable {
+    private let session = Mutex<URLSession?>(nil)
+
+    var value: URLSession {
+        session.withLock { existing in
+            if let existing { return existing }
+            let created = URLSession(configuration: .ephemeral)
+            existing = created
+            return created
+        }
     }
 }
 
