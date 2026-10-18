@@ -68,6 +68,7 @@ let package = Package(
         .library(name: "AskCore", targets: ["AskCore"]),
         // Consumed by the Benchmarks package (ADR-0016).
         .library(name: "AskAgentCore", targets: ["AskAgentCore"]),
+        .library(name: "AskAI", targets: ["AskAI"]),
         .library(name: "AskTUI", targets: ["AskTUI"])
     ],
     dependencies: [

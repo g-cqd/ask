@@ -23,6 +23,15 @@ let package = Package(
             ],
             path: "Benchmarks/SessionFileBenchmarks",
             plugins: [.plugin(name: "BenchmarkPlugin", package: "package-benchmark")]
+        ),
+        .executableTarget(
+            name: "StreamBenchmarks",
+            dependencies: [
+                .product(name: "Benchmark", package: "package-benchmark"),
+                .product(name: "AskAI", package: "ask")
+            ],
+            path: "Benchmarks/StreamBenchmarks",
+            plugins: [.plugin(name: "BenchmarkPlugin", package: "package-benchmark")]
         )
     ]
 )
