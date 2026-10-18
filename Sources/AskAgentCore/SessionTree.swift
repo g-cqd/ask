@@ -89,6 +89,26 @@ public struct SessionTree: Sendable, Equatable {
         }
     }
 
+    /// Where the tree stood before a change, so a change that cannot be persisted can be undone in O(1)
+    /// instead of every change working on an O(n) copy.
+    struct Checkpoint {
+        fileprivate let count: Int
+        fileprivate let leaf: EntryID?
+        fileprivate let nextOrdinal: Int
+    }
+
+    /// The current position, for ``rewind(to:)``.
+    var checkpoint: Checkpoint { Checkpoint(count: entries.count, leaf: leaf, nextOrdinal: nextOrdinal) }
+
+    /// Undoes every change since `checkpoint`. Only appends and checkouts exist, so this is exact.
+    /// - Complexity: O(entries added since the checkpoint).
+    mutating func rewind(to checkpoint: Checkpoint) {
+        for entry in entries[checkpoint.count...] { positions[entry.id] = nil }
+        entries.removeSubrange(checkpoint.count...)
+        leaf = checkpoint.leaf
+        nextOrdinal = checkpoint.nextOrdinal
+    }
+
     /// Selects an existing entry, or nil to start a new root. Nothing is removed.
     /// - Throws: `unknownEntry` when the identifier is absent.
     public mutating func moveLeaf(to id: EntryID?) throws(SessionTreeError) {

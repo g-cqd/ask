@@ -164,6 +164,25 @@ struct SessionFileTests {
         #expect(try SessionLog.decode(bytes("s.jsonl")).entries.map(\.id) == [first, second, third])
     }
 
+    @Test(arguments: ["checkout", "branch", "append"])
+    func `a change that cannot be persisted is undone`(change: String) throws {
+        var file = try SessionFile.create(at: path("s.jsonl"))
+        let root = try file.append(.user("root"))
+        _ = try file.append(.assistant("leaf"))
+        var failing = try SessionFile.open(at: path("s.jsonl"), durability: .barrier) { _, _ throws(SessionFileError) in
+            throw .io(.write, errno: EIO)
+        }
+        let before = failing.tree
+        #expect(throws: SessionFileError.io(.write, errno: EIO)) {
+            switch change {
+                case "checkout": try failing.moveLeaf(to: root)
+                case "branch": try failing.continuing(from: root, with: .user("lost"))
+                default: try failing.append(.user("lost"))
+            }
+        }
+        #expect(failing.tree == before)
+    }
+
     @Test func `sessions default to an ordered flush`() throws {
         let file = try SessionFile.create(at: path("s.jsonl"))
         #expect(file.durability == .barrier)
