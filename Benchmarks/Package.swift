@@ -19,7 +19,8 @@ let package = Package(
             name: "SessionFileBenchmarks",
             dependencies: [
                 .product(name: "Benchmark", package: "package-benchmark"),
-                .product(name: "AskAgentCore", package: "ask")
+                .product(name: "AskAgentCore", package: "ask"),
+                .product(name: "AskTools", package: "ask")
             ],
             path: "Benchmarks/SessionFileBenchmarks",
             plugins: [.plugin(name: "BenchmarkPlugin", package: "package-benchmark")]
