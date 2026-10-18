@@ -32,7 +32,8 @@ struct ResponseAssemblerTests {
             response.blocks == [
                 .thinking(text: "Let me look.", signature: "sig"),
                 .text("Reading it."),
-                .toolCall(id: "toolu_1", name: "read", input: Array(#"{"path": "a.swift"}"#.utf8))
+                .toolCall(
+                    id: "toolu_1", name: "read", input: try JSONObject(validating: Array(#"{"path": "a.swift"}"#.utf8)))
             ])
         #expect(response.stopReason == .toolUse)
         // Input and cache counts come from the start; output is the cumulative count from the delta.
@@ -55,7 +56,7 @@ struct ResponseAssemblerTests {
             start, .blockStarted(index: 0, .toolUse(id: "t", name: "now")), .toolInputDelta(index: 0, ""),
             .blockStopped(index: 0), .messageDelta(stopReason: .toolUse, usage: TokenUsage()), .messageStopped
         ])
-        #expect(response.blocks == [.toolCall(id: "t", name: "now", input: Array("{}".utf8))])
+        #expect(response.blocks == [.toolCall(id: "t", name: "now", input: .empty)])
     }
 
     @Test func `tool input that is not a JSON object is refused`() {
