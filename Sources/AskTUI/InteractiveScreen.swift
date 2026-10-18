@@ -28,9 +28,12 @@ func runInteractiveScreen(
 ) async throws {
     try connection.enterRawMode()
     defer { TerminalTeardown.run(on: connection) }
+    // Bracketed paste, so a pasted newline arrives inside the paste rather than as Enter. The reset ladder's first
+    // tier turns it off again on every exit path.
     try connection.writeContiguous(
-        ContiguousArray(EscapeSequences.enterAlternateScreen + EscapeSequences.hideCursor + EscapeSequences.clearScreen)
-    )
+        ContiguousArray(
+            EscapeSequences.enterAlternateScreen + EscapeSequences.hideCursor + EscapeSequences.clearScreen
+                + EscapeSequences.enableBracketedPaste))
     let session = try ScreenSession(connection: connection, conversation: conversation, label: label)
     try await session.run(resizes: resizes)
 }
