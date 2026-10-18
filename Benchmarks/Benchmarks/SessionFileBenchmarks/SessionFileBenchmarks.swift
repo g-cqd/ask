@@ -31,6 +31,7 @@ let benchmarks: @Sendable () -> Void = {
     }
 
     contextBenchmarks()
+    capBenchmarks()
 
     for (name, durability) in DurabilityCase.all {
         Benchmark("append/\(name)") { benchmark in
