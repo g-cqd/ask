@@ -49,10 +49,15 @@ budget and **exits non-zero when any is over**.
 Both were probed rather than trusted: tightening the cold-start limit to 1 ms fails three unit tests
 and makes the harness exit 1; restoring it returns both to green.
 
+## CI runs the harness — done
+
+A second workflow job builds the release binary and runs the measurement, which exits non-zero when
+any budget is over. The runner is pinned to `macos-15` rather than taken from the pool: these are
+hardware-specific numbers, and a budget measured on one machine and enforced on another fires for the
+wrong reason. The exact command was run locally first — all four within budget, exit 0.
+
 ## Still owed
 
-- **CI runs the harness.** The guard exists and is wired to the measurement, but the workflow does
-  not invoke it yet, and these numbers are macOS-hardware-specific so the job needs a fixed runner.
 - **The action-to-action budget is provisional.** It measures a trivial action in a program with no
   agent. When the loop lands it must be re-derived, and the stale number must not survive.
 
