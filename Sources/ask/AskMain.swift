@@ -1,44 +1,32 @@
-/// The `ask` executable.
+/// The `ask` executable: argument parsing and the composition root, nothing else.
 ///
-/// A thin entry point. Everything lives in the library targets so it can be tested, and so this file
-/// stays small enough to prove it cannot slow anything down.
-///
-/// `--budgets` prints the four budgets as JSON so the measurement harness reads them from the one
-/// place that defines them, rather than keeping a second copy of the numbers in a script that can
-/// drift.
+/// Everything with behaviour lives in library targets so it can be tested; this file only binds them.
 
+internal import ArgumentParser
 internal import AskCore
 internal import AskTUI
 internal import Foundation
 
 @main
-struct Ask {
-    static func main() {
-        let arguments = CommandLine.arguments.dropFirst()
-        if arguments.first == "--budgets" {
-            print(budgetsJSON)
+struct Ask: ParsableCommand {
+    static let configuration = CommandConfiguration(
+        commandName: "ask",
+        abstract: "A terminal coding agent: reliable, fast, light.")
+
+    @Flag(help: "Print the four performance budgets as JSON and exit. Read by Scripts/measure-budgets.py.")
+    var budgets = false
+
+    func run() throws {
+        if budgets {
+            FileHandle.standardOutput.write(Data(try Budget.reportJSON()))
             return
         }
-
         do {
             try runAskTUI()
         } catch {
-            // A terminal program that fails to start still has to leave the terminal usable, so the
-            // teardown ladder runs before anything is printed.
+            // The loop has already restored the terminal by the time an error reaches here.
             FileHandle.standardError.write(Data("ask: \(error)\n".utf8))
-            exit(70)
+            throw ExitCode(70)
         }
-    }
-
-    /// The budgets, as JSON, for `Scripts/measure-budgets.py`.
-    static var budgetsJSON: String {
-        """
-        {
-          "coldStartMilliseconds": \(Budget.coldStartMilliseconds),
-          "idleMemoryMebibytes": \(Budget.idleMemoryMebibytes),
-          "inputDelayMilliseconds": \(Budget.inputDelayMilliseconds),
-          "actionToActionMilliseconds": \(Budget.actionToActionMilliseconds)
-        }
-        """
     }
 }
