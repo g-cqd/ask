@@ -15,6 +15,20 @@ public enum DocumentationLayout {
     /// happened last, so the ceiling is enforced here rather than left to good intentions.
     public static let maximumDiaryLines = 256
 
+    /// The most lines the white paper may hold.
+    ///
+    /// It is a core document of principles, not a log. Every probe that lands in the diary tempts
+    /// someone to append it here as well, and a few dozen rows of history bury the principles that
+    /// are the only reason anyone opens the file. The cap makes "is this a principle?" a mechanical
+    /// question instead of a matter of restraint.
+    public static let maximumWhitePaperLines = 200
+
+    /// The white paper's path.
+    public static func whitePaperURL() -> URL { repositoryRoot.appending(path: "docs/WHITE-PAPER.md") }
+
+    /// The white paper's current line count.
+    public static func whitePaperLineCount() throws -> Int { try lineCount(of: whitePaperURL()) }
+
     /// A diary file that has reached `maximumDiaryLines`.
     public struct OverlongDiaryFile: Sendable, Equatable {
         public var url: URL
