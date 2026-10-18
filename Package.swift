@@ -35,10 +35,9 @@ import PackageDescription
 // `InferSendableFromCaptures`, `DeprecateApplicationMain`. Naming them would be noise; `.v6` is
 // what actually turns them on, and it is the only way to guarantee they stay on.
 //
-// The two `-warn-long-*` limits are the niche pair that matter most here: an agent whose whole
-// claim is latency has no excuse for a function body or an expression-type-check that runs long.
-// Both thresholds raise a warning, and a warning is an error in this package, so an accidental
-// quadratic expression type-check fails the build instead of the benchmark.
+// The expression type-check threshold below diagnoses slow compilation, not runtime latency.
+// It does not prevent @testable imports when testability is explicitly enabled (ADR-0006).
+// Runtime performance claims still require measurement of the separate shipping release build.
 //
 // SAFETY: `-Ounchecked` is deliberately NOT used. It would strip the bounds and overflow checks
 // that `StrictMemorySafety` relies on, trading correctness for a benchmark number. Performance in

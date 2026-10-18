@@ -131,10 +131,10 @@ not remove one without a probe that shows the project is better without it.**
 | `MemberImportVisibility` | SE-0444, Swift 6.1 | A member is visible only where its module is imported. |
 | `.treatAllWarnings(as: .error)` | — | A warning is a defect with a louder voice. |
 
-**Banned: `-warn-long-*`, as much as `-Ounchecked`.** A target carrying `unsafeFlags` is not built
-with `-enable-testing`, so `@testable import` of it fails — a warning threshold silently costing the
-ability to test the thing at all. A strictness flag that quietly removes a capability is not
-strictness.
+Prefer behavior tests through public APIs. Where internal access is justified, explicitly enable
+testability for optimized tests. Shipping binaries and benchmarks must be built separately without
+testability; do not claim those binaries are identical. Compiler settings require controlled probes,
+not blanket prohibitions inferred from a failed build.
 
 **Banned:** `-Ounchecked`. It strips the bounds and overflow checks `StrictMemorySafety` depends on,
 trading correctness for a benchmark number.
