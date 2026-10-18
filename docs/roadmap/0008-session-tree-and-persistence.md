@@ -56,14 +56,12 @@ Torn final lines, corrupt or blank lines, out-of-place headers, unknown versions
 and oversized lines or archives are all reported, never skipped. The wire format is pinned by a literal.
 22 tests, 11 of 11 compiling mutations caught.
 
-These are deliberate divergences from pi 1.3.0, which silently drops torn and corrupt records, falls back
-to the last entry for an unknown leaf, and truncates context at a missing parent. Probed by running pi's
-own code; recorded in ADR-0012.
+Research behind the damage cases is in `docs/research/pi-1.3.0-findings.md`.
 
 ## Done — recovery is the default
 
-`SessionLog.recover` opens sessions (ADR-0013): at least as convenient as pi 1.3.0 on every damage case
-probed, never silent, never writing on load. 16 recovery tests, 10 of 10 mutations caught. `decode` is a
+`SessionLog.recover` opens sessions (ADR-0013): damage costs only what is damaged, every repair is
+reported, and loading never writes. 16 recovery tests, 10 of 10 mutations caught. `decode` is a
 strict wrapper over the same parser.
 
 ## Still owed

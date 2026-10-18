@@ -1,10 +1,14 @@
 ---
 status: accepted
 amends: ADR-0012
+amended-by: ADR-0014
 date: 2026-10-18
 ---
 
 # 0013 — Damaged sessions load by default, and pi findings stay in this workspace
+
+> **Amended by [ADR-0014](0014-our-own-bar-not-a-reference.md).** The decision stands on its own merits,
+> reliability, rather than on comparison with pi. The findings file moved to `docs/research/`.
 
 ## Context
 
