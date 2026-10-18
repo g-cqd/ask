@@ -19,9 +19,14 @@ public struct ScreenState: Sendable, Equatable {
 
 /// Lays the screen out into a buffer: the transcript, bottom-aligned, then a status line, then the prompt.
 ///
-/// Each transcript item's wrapped lines are cached by revision and width, so a keystroke re-wraps nothing but
-/// the prompt, and a streamed delta re-wraps only the item it extends. Every visible row is written in full;
-/// the renderer's diff then sends only the cells that changed.
+/// Work is proportional to what changed, not to the screen:
+/// - the transcript's wrapped lines are kept flattened, and only lines from the first changed item onward are
+///   rebuilt, so a streamed delta re-wraps only the item it extends;
+/// - a row whose content is unchanged since the last frame is not rewritten, so a keystroke writes the prompt
+///   row and nothing else.
+///
+/// The composer assumes it composes into the same buffer each frame. A size change resets it; call ``reset()``
+/// before composing into a different buffer.
 public struct ScreenComposer: Sendable {
     struct Line: Sendable, Equatable {
         var text: String
@@ -31,25 +36,40 @@ public struct ScreenComposer: Sendable {
     static let prompt = "ask> "
     static let maximumPromptRows = 6
 
-    private var cache: [Int: (revision: Int, width: Int, lines: [Line])] = [:]
+    /// Every transcript item's wrapped lines, end to end, at `flatWidth`.
+    private var flat: [Line] = []
+    /// Where each item's lines start in `flat`, and the revision they were built from.
+    private var itemStarts: [Int] = []
+    private var itemRevisions: [Int] = []
+    private var flatWidth = -1
+    /// What each row of the buffer holds since the last frame, and the size it was composed at.
+    private var shown: [Line?] = []
+    private var shownSize = (columns: -1, rows: -1)
 
     /// An empty composer.
     public init() {}
+
+    /// Forgets what the buffer holds, so the next frame writes every row.
+    public mutating func reset() { shownSize = (-1, -1) }
 
     /// Writes `state` into `buffer`.
     /// - Returns: where the cursor belongs: in the prompt, at the editor's cursor.
     public mutating func compose(_ state: ScreenState, into buffer: inout ScreenBuffer) -> (row: Int, column: Int) {
         let (columns, rows) = (buffer.columns, buffer.rows)
+        if shownSize != (columns, rows) {
+            shown = Array(repeating: nil, count: rows)
+            shownSize = (columns, rows)
+        }
         let editor = promptLines(state.editor, columns: columns)
         let promptRows = Swift.min(editor.lines.count, Self.maximumPromptRows, Swift.max(1, rows - 1))
         let firstPromptLine = Swift.max(
             0, Swift.min(editor.cursorLine - promptRows + 1, editor.lines.count - promptRows))
         let transcriptRows = Swift.max(0, rows - promptRows - 1)
 
-        let lines = transcriptLines(state.transcript, columns: columns)
-        let end = Swift.max(0, lines.count - state.scrollback)
+        updateTranscriptLines(state.transcript, columns: columns)
+        let end = Swift.max(0, flat.count - state.scrollback)
         let start = Swift.max(0, end - transcriptRows)
-        let visible = lines[start ..< end]
+        let visible = flat[start ..< end]
         for row in 0 ..< transcriptRows {
             let index = row - (transcriptRows - visible.count)
             let line = index >= 0 ? visible[visible.startIndex + index] : Line(text: "", style: .default)
@@ -69,19 +89,23 @@ public struct ScreenComposer: Sendable {
 
     // MARK: - Lines
 
-    private mutating func transcriptLines(_ transcript: Transcript, columns: Int) -> [Line] {
-        var all: [Line] = []
-        for (index, item) in transcript.items.enumerated() {
-            let revision = transcript.revisions[index]
-            if let cached = cache[index], cached.revision == revision, cached.width == columns {
-                all += cached.lines
-                continue
-            }
-            let lines = Self.lines(for: item, columns: columns)
-            cache[index] = (revision, columns, lines)
-            all += lines
+    /// Brings `flat` up to date: lines from the first changed item onward are rebuilt, the rest kept.
+    private mutating func updateTranscriptLines(_ transcript: Transcript, columns: Int) {
+        if columns != flatWidth {
+            (flat, itemStarts, itemRevisions, flatWidth) = ([], [], [], columns)
         }
-        return all
+        let kept = Swift.min(itemRevisions.count, transcript.items.count)
+        let firstChanged = (0 ..< kept).first { itemRevisions[$0] != transcript.revisions[$0] } ?? kept
+        if firstChanged < itemRevisions.count {
+            flat.removeSubrange(itemStarts[firstChanged]...)
+            itemStarts.removeSubrange(firstChanged...)
+            itemRevisions.removeSubrange(firstChanged...)
+        }
+        for index in firstChanged ..< transcript.items.count {
+            itemStarts.append(flat.count)
+            flat += Self.lines(for: transcript.items[index], columns: columns)
+            itemRevisions.append(transcript.revisions[index])
+        }
     }
 
     static func lines(for item: Transcript.Item, columns: Int) -> [Line] {
@@ -135,8 +159,10 @@ public struct ScreenComposer: Sendable {
         return (lines, cursor.line, cursor.column)
     }
 
-    /// Writes a whole row: the text, then blanks to the edge, so nothing from an earlier frame survives.
-    private func write(_ line: Line, row: Int, into buffer: inout ScreenBuffer) {
+    /// Writes a whole row, the text then blanks to the edge, unless the row already holds exactly this line.
+    private mutating func write(_ line: Line, row: Int, into buffer: inout ScreenBuffer) {
+        guard shown[row] != line else { return }
+        shown[row] = line
         buffer.write(line.text, row: row, col: 0, style: line.style)
         let used = Swift.min(buffer.columns, UnicodeWidth.displayWidth(of: line.text))
         if used < buffer.columns {
