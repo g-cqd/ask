@@ -1,9 +1,4 @@
-/// The terminal loop of `ask`.
-///
-/// This is the smallest program that exercises the whole path a real agent needs: raw mode, the
-/// alternate screen, synchronised output, input decoding, a redraw, and an ordered teardown. It
-/// exists so the performance budgets can be **measured** against a real binary rather than argued
-/// about — every number this project will later quote starts here.
+/// The terminal's entry and exit sequences for `ask`'s interactive screen (see `InteractiveScreen`).
 ///
 /// Nothing here is instrumented into the hot path. Timings are taken externally, from a PTY, because
 /// a program that reports its own latency reports the flattering number.
@@ -26,11 +21,6 @@ enum StartupSequence {
 
     static var end: [UInt8] { EscapeSequences.endSyncUpdate + EscapeSequences.showCursor }
 }
-
-/// `ESC [ K` — erase from the cursor to the end of the line. One byte sequence, no repaint of the
-/// rest of the line, which is what keeps a keystroke's cost proportional to the line rather than the
-/// screen.
-private let eraseToEndOfLine: [UInt8] = [0x1B, 0x5B, 0x4B]
 
 /// Everything written on the way out: the frame closed, then the cheapest tier of the reset ladder.
 ///
@@ -60,94 +50,4 @@ enum TerminalTeardown {
         try? connection.writeContiguous(bytes)
         try? connection.restoreMode()
     }
-}
-
-/// Runs the terminal loop until the user quits, then restores the terminal.
-public func runAskTUI() throws {
-    let connection = POSIXTerminalConnection()
-
-    // Raw mode clears `ISIG`, so Ctrl-C arrives as byte `0x03` rather than SIGINT. The signals that
-    // can still reach us are SIGINT and SIGTERM, and both bypass every `defer` in the read loop —
-    // which is how a terminal ends up in the alternate screen with the cursor hidden and echo off.
-    //
-    // TerminalKit ADR-0015 keeps Swift and locks out of the OS callback; the reader thread invokes
-    // this shutdown closure. Restore the previous dispositions on normal return as well.
-    let shutdown = SignalShutdown(connection: connection) { code in exit(code) }
-    let signals = SignalHandler(onResize: {}, onShutdown: { shutdown.handle($0) })
-    try signals.start()
-    defer { signals.stop() }
-
-    try runAskTUI(on: connection)
-}
-
-/// The loop, over an injected connection.
-///
-/// The connection is a parameter so that every exit path is drivable from a test — see
-/// ``TerminalTeardownTests``. The production entry point above is the one that binds a real terminal.
-internal func runAskTUI(on connection: any TerminalConnection) throws {
-    try connection.enterRawMode()
-    defer { TerminalTeardown.run(on: connection) }
-
-    _ = try connection.getSize()
-    var output = ContiguousArray<UInt8>()
-    output.append(contentsOf: StartupSequence.begin)
-    output.append(contentsOf: promptBytes(line: ""))
-    try connection.writeContiguous(output)
-
-    let buffer = UnsafeMutableRawBufferPointer.allocate(byteCount: 4096, alignment: 8)
-    defer { buffer.deallocate() }
-
-    var line = ""
-    while true {
-        let count = try connection.read(into: buffer)
-        guard count > 0 else { continue }
-
-        var redraw = ContiguousArray<UInt8>()
-        redraw.append(contentsOf: EscapeSequences.beginSyncUpdate)
-        var submitted = false
-
-        for index in 0 ..< count {
-            let byte = buffer[index]
-            switch byte {
-                case 0x03, 0x04:
-                    return  // Ctrl-C, Ctrl-D
-                case 0x1B:
-                    // An escape sequence. Discard the rest of it rather than render half of it.
-                    return
-                case 0x0D, 0x0A:
-                    submitted = true
-                    redraw.append(contentsOf: "\r\n".utf8)
-                case 0x7F, 0x08:
-                    if !line.isEmpty { line.removeLast() }
-                    redraw.append(contentsOf: promptBytes(line: line))
-                    redraw.append(contentsOf: eraseToEndOfLine)
-                case 0x20 ... 0x7E:
-                    line.append(Character(UnicodeScalar(byte)))
-                    redraw.append(contentsOf: promptBytes(line: line))
-                default:
-                    break
-            }
-        }
-
-        if submitted {
-            redraw.append(contentsOf: promptBytes(line: ""))
-            line = ""
-        }
-        redraw.append(contentsOf: EscapeSequences.endSyncUpdate)
-        try connection.writeContiguous(redraw)
-
-        if submitted, line.isEmpty, redraw.count > 8 {
-            // A bare Enter re-prompts; nothing else to do.
-            continue
-        }
-    }
-}
-
-/// The prompt plus the current line.
-private func promptBytes(line: String) -> ContiguousArray<UInt8> {
-    var bytes = ContiguousArray<UInt8>()
-    bytes.append(contentsOf: "\r".utf8)
-    bytes.append(contentsOf: "ask> ".utf8)
-    bytes.append(contentsOf: line.utf8)
-    return bytes
 }

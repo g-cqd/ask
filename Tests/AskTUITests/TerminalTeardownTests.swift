@@ -1,4 +1,5 @@
 internal import Foundation
+internal import Synchronization
 internal import TerminalKitCore
 internal import TerminalKitIO
 internal import Testing
@@ -32,45 +33,93 @@ struct TerminalTeardownTests {
         return Array(haystack.suffix(needle.count)) == Array(needle)
     }
 
-    @Test func `quitting on Ctrl-D leaves the alternate screen and restores the cursor`() throws {
+    private static func run(_ connection: MockTerminalConnection, conversation: any Conversation = IdleConversation())
+        async throws
+    {
+        let (resizes, done) = AsyncStream<Void>.makeStream()
+        done.finish()
+        try await runInteractiveScreen(on: connection, conversation: conversation, label: "m", resizes: resizes)
+    }
+
+    @Test func `quitting on Ctrl-D leaves the alternate screen and restores the cursor`() async throws {
         let connection = MockTerminalConnection()
         connection.feedInput([0x04])
-
-        try runAskTUI(on: connection)
-
+        try await Self.run(connection)
         #expect(Self.endsWith(connection.writtenOutput, Self.expectedSuffix))
     }
 
-    @Test func `quitting on Ctrl-C leaves the alternate screen and restores the cursor`() throws {
+    @Test func `quitting on Ctrl-C leaves the alternate screen and restores the cursor`() async throws {
         let connection = MockTerminalConnection()
         connection.feedInput([0x03])
-
-        try runAskTUI(on: connection)
-
+        try await Self.run(connection)
         #expect(Self.endsWith(connection.writtenOutput, Self.expectedSuffix))
     }
 
-    @Test func `a failed read still restores the terminal`() throws {
-        // The read loop is the only place `runAskTUI` can throw. If the ladder were written inline on
-        // the normal return it would be skipped here, and a user who hits an I/O error gets a broken
-        // shell.
+    @Test func `a failed read ends the screen and still restores the terminal`() async throws {
+        // The input source ends its stream on a read error, and the screen treats that as quitting. If the
+        // ladder were written inline on one path it would be skipped on another.
         let connection = MockTerminalConnection()
         connection.enqueueReadError(.readFailed(5))
-
-        #expect(throws: (any Error).self) {
-            try runAskTUI(on: connection)
-        }
-
+        try await Self.run(connection)
         #expect(Self.endsWith(connection.writtenOutput, Self.expectedSuffix))
     }
 
-    @Test func `termios is restored on the normal quit path`() {
+    @Test func `termios is restored on the normal quit path`() async throws {
         let connection = MockTerminalConnection()
         connection.feedInput([0x04])
-
-        #expect(throws: Never.self) { try runAskTUI(on: connection) }
-
+        try await Self.run(connection)
         #expect(connection.isRawMode == false)
         #expect(connection.restoreModeCallCount == 1)
+    }
+
+    @Test func `a submitted prompt reaches the conversation and the screen`() async throws {
+        let connection = MockTerminalConnection()
+        connection.feedInput(Array("hi\r".utf8))
+        let conversation = RecordingConversation()
+        try await Self.run(connection, conversation: conversation)
+        #expect(conversation.prompts == ["hi"])
+        #expect(String(decoding: connection.writtenOutput, as: UTF8.self).contains("› hi"))
+    }
+
+    @Test func `Ctrl-C mid-turn cancels the run, and the screen waits for it to stop`() async throws {
+        let connection = MockTerminalConnection()
+        connection.feedInput(Array("go\r".utf8) + [0x03])
+        let conversation = RecordingConversation(waitsForCancellation: true)
+        try await Self.run(connection, conversation: conversation)
+        #expect(conversation.cancelled)
+        #expect(Self.endsWith(connection.writtenOutput, Self.expectedSuffix))
+    }
+}
+
+/// Starts nothing.
+private struct IdleConversation: Conversation {
+    func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
+        Task { update(.runEnded) }
+    }
+}
+
+/// Records prompts; optionally runs until cancelled, as a long tool call would.
+private final class RecordingConversation: Conversation {
+    private let state = Mutex<(prompts: [String], cancelled: Bool)>(([], false))
+    private let waitsForCancellation: Bool
+
+    init(waitsForCancellation: Bool = false) { self.waitsForCancellation = waitsForCancellation }
+
+    var prompts: [String] { state.withLock { $0.prompts } }
+    var cancelled: Bool { state.withLock { $0.cancelled } }
+
+    private func markCancelled() { state.withLock { $0.cancelled = true } }
+
+    func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
+        state.withLock { $0.prompts.append(prompt) }
+        let waits = waitsForCancellation
+        return Task {
+            if waits {
+                let stream = AsyncStream<Never> { _ in }
+                for await _ in stream {}  // ends only when this task is cancelled
+                self.markCancelled()
+            }
+            update(.runEnded)
+        }
     }
 }
