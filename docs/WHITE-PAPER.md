@@ -49,16 +49,15 @@ compiles.
 **Every claim is measured.** A performance claim without before-and-after numbers, same harness, same
 configuration, with units, is not a claim this project will act on.
 
-**Generic tools belong in Aemi.** A tool that is not specific to one application does not live inside
-that application. It is promoted to Aemi, the kernel package, and the specialised packages build on it
-from there. This is not only about `ask`, TerminalKit, Atelier or KittyCode — it is a standing rule
-for anything encountered anywhere in the ecosystem: if Aemi's scope would serve it better than a
-single consumer's, it goes to Aemi. The test is whether a second consumer is plausible, not whether
-one exists today.
+**Generic tools belong in Aemi.** A tool not specific to one application is promoted to Aemi, the kernel
+package, and specialised packages build on it. This binds the whole ecosystem, not only `ask`. The test is
+whether a second consumer is plausible, not whether one exists today. Promotion is a real change to a
+shared package, so it is measured, reviewed and pinned by dependents like any other.
 
-The consequence is accepted rather than avoided: Aemi grows, and promoting something into it is a real
-change to a package other projects depend on, so it is measured, reviewed and pinned by dependents
-like any other.
+**pi is a reference, not a specification.** `ask` ports pi's design, not its defects. Before adopting a
+behaviour, run pi's own code against the edge cases. A defect or a rejected trade-off found there is fixed
+here and pinned by a test marked `Diverges from pi`, naming the version (ADR-0012). Upstream reports are
+offered to the user, never filed unilaterally.
 
 ---
 

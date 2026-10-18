@@ -20,6 +20,14 @@ Three consequences worth internalising:
 - **A test that has never failed proves nothing.** New gates are broken on purpose once, to prove they fire.
 - **Unprobed claims are written as open questions, never as facts.**
 
+## Porting from pi
+
+pi 1.3.0 is installed under `~/.pi/agent/install/releases/1.3.0/`. Its `dist/` modules are importable
+from node, so a pi behaviour can be *run* rather than read. Do that before porting it: pi's session
+loader silently drops torn and corrupt records, and that was found only by executing it
+(`node Scripts/probe-pi-session-parsing.mjs`). Fix any defect here, pin it with a test whose doc comment
+starts `Diverges from pi <version> (ADR-0012)`, and offer, never file, an upstream report.
+
 ## Commands
 
 ```sh
