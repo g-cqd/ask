@@ -24,3 +24,15 @@ func contextBenchmarks() {
         }
     }
 }
+
+/// Caps a large tool output, which happens to every output a tool returns.
+func capBenchmarks() {
+    let manyLines = String(repeating: "a build log line that says something about a file and a target\n", count: 16_384)
+    let oneLine = String(repeating: "x", count: 1 << 20)
+    Benchmark("cap/1 MiB in 16384 lines") { benchmark in
+        for _ in benchmark.scaledIterations { blackHole(OutputCap.standard.apply(manyLines)) }
+    }
+    Benchmark("cap/1 MiB on one line") { benchmark in
+        for _ in benchmark.scaledIterations { blackHole(OutputCap.standard.apply(oneLine)) }
+    }
+}
