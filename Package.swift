@@ -70,7 +70,7 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "7a1f22a6d78e63df717e9f5fb0a7968a15a3f38b")
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "86b940facdb5503527fdac3c8d168d94ed8eacf3")
     ],
     targets: [
         .target(
@@ -83,7 +83,8 @@ let package = Package(
             dependencies: [
                 .product(name: "TerminalKitCore", package: "TerminalKit"),
                 .product(name: "TerminalKitCodecs", package: "TerminalKit"),
-                .product(name: "TerminalKitIO", package: "TerminalKit")
+                .product(name: "TerminalKitIO", package: "TerminalKit"),
+                .product(name: "TerminalKitInput", package: "TerminalKit")
             ],
             path: "Sources/AskTUI",
             swiftSettings: packageSettings
