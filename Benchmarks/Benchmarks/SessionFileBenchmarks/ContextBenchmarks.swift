@@ -1,6 +1,8 @@
 import AskAI
 import AskAgentCore
+import AskTools
 import Benchmark
+import Foundation
 
 /// Builds request messages from a session's context, which happens on every request over the whole history.
 func contextBenchmarks() {
@@ -34,5 +36,28 @@ func capBenchmarks() {
     }
     Benchmark("cap/1 MiB on one line") { benchmark in
         for _ in benchmark.scaledIterations { blackHole(OutputCap.standard.apply(oneLine)) }
+    }
+}
+
+/// read and edit on a 1 MiB source file: the per-call cost of the file tools.
+func fileToolBenchmarks() {
+    let directory = FileManager.default.temporaryDirectory.appending(path: "ask-bench-tools-\(UUID().uuidString)")
+    try! FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+    let source =
+        String(repeating: "    let value = compute(input) // a line of Swift source\n", count: 19_000) + "MARKER\n"
+    try! Data(source.utf8).write(to: directory.appending(path: "big.swift"))
+    let context = ToolContext(workingDirectory: directory.path)
+    let read = try! JSONObject(validating: Array(#"{"path":"big.swift"}"#.utf8))
+    Benchmark("tools/read 1 MiB") { benchmark in
+        for _ in benchmark.scaledIterations { blackHole(await ReadTool().run(read, in: context)) }
+    }
+    let flip = [
+        try! JSONObject(validating: Array(#"{"path":"big.swift","old_text":"MARKER","new_text":"MARKED"}"#.utf8)),
+        try! JSONObject(validating: Array(#"{"path":"big.swift","old_text":"MARKED","new_text":"MARKER"}"#.utf8))
+    ]
+    Benchmark("tools/edit 1 MiB, one match") { benchmark in
+        for iteration in benchmark.scaledIterations {
+            blackHole(await EditTool().run(flip[iteration % 2], in: context))
+        }
     }
 }
