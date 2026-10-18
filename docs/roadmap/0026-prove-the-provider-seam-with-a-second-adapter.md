@@ -1,0 +1,39 @@
+---
+status: not-started
+blocked-by: []
+date: 2026-10-19
+decision: ADR-0019
+---
+
+# 0026 — Prove the provider seam with a second adapter, before Spettro depends on it
+
+ADR-0019 let tools proceed without a second provider on the claim that the seam, `ModelRequest` in and
+`ModelEvent` out, is protocol-shaped and that a second adapter "must map onto it, never widen it". ADR-0021
+holds the *names* (no provider word outside provider directories). It cannot hold the *shape*. This entry
+tests the shape, in a scratch adapter, before the real second provider is written against it.
+
+## The claims to try to refute
+
+Each is written so a probe can fail it. Record verdicts in the diary.
+
+1. A chat-completions-shaped stream (text deltas, indexed tool-call fragments, a finish reason, a usage
+   chunk, no block start/stop) maps onto `ModelEvent` through `ResponseAssembler` with no change to either.
+2. The assembled response survives `WirePayload` encode → decode → `RequestContext` → the second adapter's
+   request, with the tool-call ids unchanged. A provider without call ids (some do not) is the hard case.
+3. A stop reason that is not Anthropic's persists as `.other(...)` and resume behaves the same as for a
+   known one. `StopReason.wire` strings are Anthropic's today.
+4. `thinking` without a signature, and reasoning that needs provider-private round-trip state, can be
+   carried. Today the block requires a signature and has nowhere to keep provider state.
+5. Tool results that are not plain text, and a user turn with an attachment, have somewhere to go.
+6. Compaction can learn the context window. No model catalog exists.
+
+## Done when
+
+A scratch adapter and its tests exist, each claim has a recorded verdict, and for each refuted one either the
+neutral type is widened by a new ADR (never silently) or the claim is written down as a limit. If the seam
+holds, a **provider contract test** (a suite every adapter's scripted stream runs through) is kept, so the
+second and third providers cannot bend it.
+
+## Not this entry
+
+Writing Spettro itself (0010). Auth, model catalogs and live probes stay there.
