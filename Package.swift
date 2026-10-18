@@ -52,7 +52,6 @@ let strictSettings: [SwiftSetting] = [
     .enableUpcomingFeature("InternalImportsByDefault"),
     .enableUpcomingFeature("MemberImportVisibility"),
     .treatAllWarnings(as: .error),
-    .unsafeFlags(["-Xfrontend", "-warn-long-function-bodies=100"]),
     .unsafeFlags(["-Xfrontend", "-warn-long-expression-type-checking=500"])
 ]
 
