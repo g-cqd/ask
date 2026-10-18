@@ -31,7 +31,7 @@ struct Ask: AsyncParsableCommand {
             return
         }
         if let prompt {
-            try await printReply(to: prompt, model: model)
+            await runPrompt(prompt, model: model)
             return
         }
         do {
@@ -73,37 +73,7 @@ struct Logout: ParsableCommand {
     }
 }
 
-/// Streams one reply to standard output.
-private func printReply(to prompt: String, model: String) async throws {
-    let transport = URLSessionTransport()
-    let auth: AnthropicClient.Auth
-    if let key = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !key.isEmpty {
-        auth = .apiKey(key)
-    } else {
-        do {
-            auth = try await ClaudeAccess(file: .standard(), client: ClaudeAuthClient(transport: transport))
-                .auth(now: Date().timeIntervalSince1970)
-        } catch .signedOut {
-            fail("ask: not signed in. Run `ask login`, or set ANTHROPIC_API_KEY.", code: 77)
-        } catch {
-            fail("ask: \(error)", code: 77)
-        }
-    }
-    let request = ModelRequest(
-        model: model, maxTokens: 16_384, systemPrompt: [],
-        messages: [ModelMessage(role: .user, blocks: [.text(prompt)])],
-        tools: [])
-    do {
-        for try await event in AnthropicClient(transport: transport).stream(request, auth: auth) {
-            if case .textDelta(_, let text) = event { FileHandle.standardOutput.write(Data(text.utf8)) }
-        }
-        FileHandle.standardOutput.write(Data("\n".utf8))
-    } catch {
-        fail("\nask: \(error)", code: 69)
-    }
-}
-
-private func fail(_ message: String, code: Int32) -> Never {
+func fail(_ message: String, code: Int32) -> Never {
     FileHandle.standardError.write(Data((message + "\n").utf8))
     Foundation.exit(code)
 }
