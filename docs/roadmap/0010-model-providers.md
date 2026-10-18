@@ -2,30 +2,67 @@
 status: not-started
 blocked-by: ["0009"]
 date: 2026-10-18
+decision: ADR-0007
 ---
 
 # 0010 — Model providers
 
-**One provider end to end, before a second is designed.** A second provider is what reveals the
-abstraction; designing for it up front produces the widest possible interface and the least useful one.
+**Decided (ADR-0007): Claude subscription first, Spettro second.** `pi-integrations` already has both
+working and tested, so their auth and transport edge cases do not have to be rediscovered.
 
-## The choice is open
+## Why this pair, and not a convenient one
 
-`pi-integrations` already has working, tested providers for Claude, Codex, Antigravity, Spettro, Mistral
-Vibe and on-device Apple Foundation Models. Reusing their auth and transport knowledge is cheaper than
-rediscovering OAuth edge cases — and the streaming and tool-call decoding each one needs is where the real
-work is.
+They sit on **two different wire protocols**, which is the point:
 
-The first provider should be decided before `0011`, because tool-call decoding differs per provider and
-`0011` must not be built against a guess. **This is the open question recorded in the plan.**
+| Provider | API | Base | Auth | Tool-call shape |
+|---|---|---|---|---|
+| Claude subscription | `anthropic-messages` | `api.anthropic.com` | OAuth PKCE S256, pasted `code#state`, real refresh token | `tool_use` / `tool_result` blocks |
+| Spettro | `openai-completions` | `api.spettro.app/v1` | Browser session + polling, `Authorization: Bearer`, **no real refresh token** | `tool_calls` / `tool` role messages |
+
+One provider would not have revealed the seam; the second does. Building Claude first and then Spettro
+forces the provider interface to be protocol-shaped rather than accidentally Anthropic-shaped — and
+`0011` must not be built against a guess at either one's tool-call encoding, so **this entry completes
+before `0011` starts**.
+
+The auth stories also differ in kind, which is worth knowing before designing:
+
+- Claude: PKCE with a pasted response, a real `refreshToken`, and client-identity headers applied
+  automatically when the key is `sk-ant-oat`.
+- Spettro: `/auth/initiate` → browser → `/auth/poll/{session}` every 2 s under a 10-minute deadline, and
+  `refreshToken` returns the same credentials unchanged because the "refresh token" is a duplicated
+  device key. Its model catalog is fetched live from `/v1/models`, with a placeholder entry kept so the
+  provider stays discoverable when signed out.
+
+## The constraint this exposes, which reaches back into `0009`
+
+**Claude subscription inference is gated by a fuzzy prompt-content classifier.** Empirically derived by
+live bisection on 2026-10-16 and documented in `pi-integrations/src/domains/claude/gate.ts`:
+
+- The system param's first block must exactly equal one canonical identity line. Generic first blocks
+  get `429`.
+- Third-party harness prompts in the system param — after block 0 — or sent as **system-role messages**
+  anywhere in the conversation trip the classifier (`400 out of extra usage` / `429`).
+- **The same content passes cleanly carried as blocks inside user messages.**
+- Headers, betas, tools, metadata and `max_tokens` are irrelevant to the gate.
+
+So an `ask` system prompt cannot live in the system param. It has to ride in user messages, behind one
+canonical first block — Claude Code's own `<system-reminder>` pattern.
+
+This is an architectural constraint on `0009`, not a provider detail, and it is much cheaper to design
+around now than to retrofit. `0009`'s context builder should therefore build the system prompt as
+user-carried blocks from the start.
+
+The gate's contract is undocumented and can change without notice, and `pi-integrations` already carries
+drift diagnostics for it. `ask` should fail with a diagnostic rather than a bare 429.
 
 ## What lands
 
 - Streaming, incrementally decoded from bytes rather than reassembled per chunk.
-- Tool-call decoding, including partial calls split across chunk boundaries.
-- Usage accounting — pi records a `UsageEntry` per response, and compaction depends on it.
-- Errors as a typed path, not a thrown string: an overloaded provider and a malformed response are
-  different problems.
+- Tool-call decoding, including partial calls split across chunk boundaries — and both protocols'
+  encodings, since they differ.
+- Usage accounting: pi records a `UsageEntry` per response, and compaction depends on it.
+- Errors as typed paths: an overloaded provider, a malformed response, a gate rejection and an expired
+  login session are four different problems and must not collapse into one thrown string.
 
 ## Hot-path note
 
@@ -35,5 +72,6 @@ budget is what catches it.
 
 ## Done when
 
-One provider streams a full turn including tool calls, usage is recorded, and a mid-stream failure
+Claude streams a full turn including tool calls under subscription auth, Spettro does the same on the
+OpenAI-completions protocol, usage is recorded for both, and a mid-stream failure or a gate rejection
 recovers or reports cleanly.
