@@ -49,11 +49,23 @@ unknown leaf, fork copying every branch — each turned the suite red.
 The first draft's compaction test passed without ever creating a compaction: it compared `dropFirst()` of
 an ordinary branch. Every context assertion now compares the whole list.
 
-## Still owed — persistence
+## Done — the log codec
 
-- Append-only JSONL with `Codable` added alongside round-trip tests, not before.
-- Crash safety: a torn final line must be detected and reported, never silently dropped or half-read.
-- Size bounds per line and per file; a hostile archive must not exhaust memory.
+`SessionLog`: append-only JSON Lines, header plus one record per entry plus leaf records for checkouts.
+Torn final lines, corrupt or blank lines, out-of-place headers, unknown versions, forward leaf references,
+and oversized lines or archives are all reported, never skipped. The wire format is pinned by a literal.
+22 tests, 11 of 11 compiling mutations caught.
+
+These are deliberate divergences from pi 1.3.0, which silently drops torn and corrupt records, falls back
+to the last entry for an unknown leaf, and truncates context at a missing parent. Probed by running pi's
+own code; recorded in ADR-0012.
+
+## Still owed
+
+- **The file store**: placement, an append that writes one whole record per call, and fsync policy, with
+  its cost measured rather than assumed.
+- **Explicit recovery.** Strictness means a corrupt file will not load. The answer is an opt-in mode that
+  keeps the readable prefix and reports exactly what it discarded, not pi's silent skip.
 - Fork to a new file.
 
 ## Done when
