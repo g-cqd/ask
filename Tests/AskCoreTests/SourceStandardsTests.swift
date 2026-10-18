@@ -25,7 +25,12 @@ struct SourceStandardsTests {
         ("NSLock", "`Mutex` or `Atomic` from Synchronization"),
         ("os_unfair_lock", "`Mutex` from Synchronization"),
         ("pthread_mutex", "`Mutex` from Synchronization"),
-        ("DispatchQueue", "`Task`, `TaskGroup`, `AsyncStream`, or a dedicated `Thread` for blocking I/O")
+        ("DispatchQueue", "`Task`, `TaskGroup`, `AsyncStream`, or a dedicated `Thread` for blocking I/O"),
+        // JSON and command-line handling each have one owner (ADR-0015).
+        ("JSONSerialization", "`AemiJSON`"),
+        ("= JSONEncoder(", "`AemiJSON.JSONEncoder`, named qualified so Foundation's cannot be picked up"),
+        ("= JSONDecoder(", "`AemiJSON.JSONDecoder`, named qualified so Foundation's cannot be picked up"),
+        ("CommandLine.arguments", "`swift-argument-parser` in the `ask` executable")
     ]
 
     /// `@unchecked Sendable` is deliberately absent from the list above. It is permitted with a written

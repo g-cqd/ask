@@ -1,5 +1,5 @@
 {
-  "originHash" : "d726b3cc082d4dbc199d12ec83759e57f8de37b7f9a433f14cfd0c93bda5e2c7",
+  "originHash" : "c7e0692dfe556ef516b1690859bf7a356ecd82bcf6db30db949d79ed75f55f71",
   "pins" : [
     {
       "identity" : "aemi",
@@ -15,6 +15,15 @@
       "location" : "https://github.com/g-cqd/AemiJSON.git",
       "state" : {
         "revision" : "6cbe2ae39b91e2721b25d6c6321e3cbdfe3496a9"
+      }
+    },
+    {
+      "identity" : "swift-argument-parser",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/swift-argument-parser.git",
+      "state" : {
+        "revision" : "6a52f3251125d74daf04fcbd5e6f08a75d074382",
+        "version" : "1.8.2"
       }
     },
     {
