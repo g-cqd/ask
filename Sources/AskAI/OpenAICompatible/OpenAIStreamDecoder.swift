@@ -8,7 +8,7 @@ internal import AemiJSON
 /// usage can arrive after the finish reason. Text that is only whitespace is held back until real text follows and
 /// dropped if none does: servers send `""` or `"\n\n"` around a tool call, and a whitespace-only text block is one a
 /// provider such as Anthropic refuses if the session later moves to it.
-public struct OpenAIStreamDecoder: Sendable {
+public struct OpenAIStreamDecoder: ModelEventDecoding {
     private enum Scalar: Sendable {
         case text(Int)
         case thinking(Int)
@@ -63,6 +63,20 @@ public struct OpenAIStreamDecoder: Sendable {
         toolOrder.removeAll()
         events.append(.messageDelta(stopReason: stopReason, usage: usage))
         events.append(.messageStopped)
+    }
+
+    /// The server's reason in an error body (`{"error":{…}}`), if it has one.
+    public static func failure(inErrorBody body: [UInt8]) -> ProviderFailure? {
+        var decoder = OpenAIStreamDecoder()
+        var events: [ModelEvent] = []
+        do {
+            try decoder.decode(SSEEvent(name: "message", data: body), into: &events)
+        } catch .provider(let failure) {
+            return failure
+        } catch {
+            return nil
+        }
+        return nil
     }
 
     // MARK: - Deltas
