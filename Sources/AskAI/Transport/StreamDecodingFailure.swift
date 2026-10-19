@@ -2,4 +2,6 @@
 public protocol StreamDecodingFailure: Error, Equatable {
     /// Whether the same request may succeed if sent again, such as after an overload the provider reported.
     var isRetryable: Bool { get }
+    /// The failure the provider reported in the stream, if this is one.
+    var providerFailure: ProviderFailure? { get }
 }
