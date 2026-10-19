@@ -48,6 +48,12 @@ public struct PromptEditor: Sendable, Equatable {
         insert(pasted.replacing("\r\n", with: " ").replacing("\n", with: " ").replacing("\r", with: " "))
     }
 
+    /// Returns unsent input to the editor without flattening its message boundaries.
+    mutating func restore(_ text: String) {
+        self.text = text
+        cursor = text.count
+    }
+
     private mutating func control(_ code: UInt32) -> Outcome {
         switch code {
             case 0x03: return .interrupt
