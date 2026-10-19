@@ -34,6 +34,7 @@ rather than trusting its source, and keep the notes in `docs/research/`, not in 
 ```sh
 Scripts/quality.sh              # format, lint, build and test
 Scripts/quality.sh --check      # verify only; this is what CI runs
+Scripts/analyzers.sh            # unused code, duplicated code, retain cycles; also a stage of quality.sh
 swift test -c release --enable-testable-imports   # tests, without re-linting
 python3 Scripts/measure-budgets.py .build/release/ask 12   # the four budgets
 ```
@@ -57,6 +58,14 @@ A pre-commit hook runs lint. A green test run is not a green commit.
 no file over 250 lines, tests included; provider names only in `AskAI/Anthropic`, `AskAI/Claude` and
 `Sources/ask`. Read the `ask-structure` skill before adding or moving code. `SourceStructure.knownViolations`
 is a ratchet baseline: it shrinks and never takes a new entry.
+
+**Static analysis is gated too (ADR-0022).** deadwood, dolly and arcleak run under `--strict`, pinned by version
+and SHA-256 in `Scripts/analyzers.sh`. A finding is fixed, or accepted where it is with a reason
+(`// @dl:accept -- why`, `@dw:`, `@al:`, on the line above the anchor); there are no baselines.
+
+**When a refactor or factorisation is on the table, ask what Swift already offers first** (white paper §8):
+result builders, scoped closures, protocol extensions with defaults, typed throws, `callAsFunction`, key paths,
+macros. Compile candidates, pin behaviour with a characterisation test, benchmark on a request path.
 
 The pre-push hook runs `.project-hooks.yml`'s release task, not a plain `swift test`. If a hook looks wrong,
 `project-hooks repair --dry-run` says whether it is the generator's current script.

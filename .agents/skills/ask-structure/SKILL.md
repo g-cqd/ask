@@ -52,6 +52,39 @@ and attributes, nest a private helper into the one type that uses it, give each 
 needs, and build once from the compiler's whole error list. Splitting is a refactor commit, never mixed with
 behaviour.
 
+## Refactoring: ask the language first
+
+Before extracting or hand-rolling, look at what Swift offers (white paper §8), then **compile the candidate**,
+**pin behaviour first**, and **benchmark if it is on a request path**. What each idiom fixed here:
+
+| Repeated shape | Idiom | Where |
+|---|---|---|
+| "decode input, else return the same error" in every tool | protocol with an associated type and a default method in an extension (template method) | `ArgumentTool` |
+| `switch` over a `Result` to unwrap, in each body | typed throws, `throws(ToolFailure)` | `FileTools.text`, `.write` |
+| a JSON string beside the struct that decodes it | result builder over typed property values | `ToolDefinition(name:description:) { ToolProperty… }` |
+| `beginObject()`/`endObject()` pairs, `into: &writer` threading | scoped closure over an `inout` writer, like `withTaskGroup` | `JSONStreamWriter+Scopes` |
+| two builders that differ in a literal | name the shape | `writer.typed(type, key, value)` |
+| two enums that look alike | **leave it** if they differ in direction; accept with a reason | `ContentBlock`, `RequestBlock` |
+| explicit `Codable` that dolly calls a clone | **leave it**: synthesized enum coding would change the on-disk format | `SessionLogRecord`, `WirePayload` |
+
+Rejected, with reasons in ADR-0023: a macro to derive schemas (a swift-syntax target against a cold-start
+budget) and `ExpressibleByStringLiteral` for `JSONObject` (a malformed literal would trap at first use).
+
+How to probe: write the **old output as expected bytes first** (the four tool schemas are pinned in
+`ToolDefinitionTests`), build the new form against it, then time old against new in one test, interleaved, with
+the equality assertion inside the timing test. A public protocol's `associatedtype` makes the conforming type's
+associated type public; budget for that.
+
+## Static analyzers
+
+`Scripts/analyzers.sh` (ADR-0022). Accept a finding with the tool's directive on the **line above the anchor**
+(`// @dl:accept -- reason`, `// @dw:accept -- reason`, `// @al:accept -- reason`). dolly's near-clone matching
+normalises identifiers and literals, so a test that restates a source shape with other names still matches;
+change the shape, not the names. deadwood cannot see a global found by name (the Benchmark plugin's
+`benchmarks`), which is why `Benchmarks/` is outside the corpus. `dead-store` and `unused-import` are off, with
+the measurements in the diary. Planting a violation and requiring exit 1 is how a tool is proven; plant it so
+it does not also trip another tool.
+
 ## Generic helpers: a decision, not a default
 
 `Base64URL`, `FormEncoding` and `leftPadded` are in `AskAI/Support`. Aemi's `AemiKernel` has overlapping

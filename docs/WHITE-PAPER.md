@@ -41,27 +41,23 @@ invariant written next to it.
 on the event — Aemi's `AsyncEventProbe` under a `TestClock`, or a `CheckedContinuation` the code under
 test resumes. A test that depends on scheduling can pass for the wrong reason.
 
-Both are enforced by `SourceStandards`, and each rule was probed by breaking it with a violation that
-compiles.
+Both are enforced by `SourceStandards`, each rule probed by breaking it with a violation that compiles.
 
 **Every change that can affect performance is benchmarked.** Not only optimisations: a dependency, a data
 structure, an extra system call, a different encoder. Before and after, same harness, same release build,
 median and spread with units, in the diary and the commit message. A change whose cost is unknown is not
-finished, and a performance claim without those numbers is not one this project acts on.
-
-**Micro-optimisation is welcome, and measured.** Large wins first, but small ones are not polish: a hoisted
-allocation, a `Span` for an array, a branch out of a loop compound on every keystroke and record. Each
-carries a benchmark; one that moves no number is reverted, as cleverness that costs and returns nothing.
+finished, and a performance claim without those numbers is not one this project acts on. Small wins count,
+a hoisted allocation or a `Span` for an array compounds on every keystroke; one that moves no number is reverted.
 
 **Generic tools belong in Aemi.** A tool not specific to one application is promoted to Aemi, the kernel
-package, and specialised packages build on it. This binds the whole ecosystem, not only `ask`. The test is
-whether a second consumer is plausible, not whether one exists today. Promotion is a real change to a
-shared package, so it is measured, reviewed and pinned by dependents like any other.
+package, and specialised packages build on it; this binds the whole ecosystem. The test is whether a second
+consumer is plausible, not whether one exists. Promotion is a real change to a shared package: measured,
+reviewed and pinned by dependents like any other.
 
 **Reliable by default, and never silent.** Damage costs only what is actually damaged: everything intact
-still loads, every repair is reported, and reading never writes. Refusing input needs a written safety
-reason, because convenience and reliability are requirements together, like speed and safety. Other agents
-are studied by running their code, never from their source alone; notes live in `docs/research/`.
+still loads, every repair is reported, reading never writes. Refusing input needs a written safety reason,
+because convenience and reliability are requirements together, like speed and safety. Other agents are
+studied by running their code, never from their source alone; notes live in `docs/research/`.
 
 ---
 
@@ -83,11 +79,9 @@ tool "usually" behaves is not a probe.
 **The probe protocol:**
 
 1. **Name the claim.** Write it as a sentence that could be true or false.
-2. **Design the probe** that would make it false if it is false. A probe that cannot fail proves
-   nothing.
+2. **Design the probe** that would make it false if it is false; one that cannot fail proves nothing.
 3. **Run it.** Record the command verbatim.
-4. **Record the verdict** in the diary — claim, probe, result. Not here: this document
-   changes when a principle changes, and a probe is not a principle.
+4. **Record the verdict** in the diary: claim, probe, result.
 5. **Act only then.** An unprobed claim is written down as an open question, never as a fact.
 
 **Not a probe:** confidence, experience, or "it is well known that…"; a blog post, a second model, or
@@ -152,23 +146,18 @@ explicitly for optimized tests. Shipping binaries and benchmarks are built separ
 are not claimed identical. Compiler settings require controlled probes, not blanket prohibitions
 inferred from a failed build.
 
-**Banned:** `-Ounchecked`. It strips the bounds and overflow checks `StrictMemorySafety` depends on,
-trading correctness for a benchmark number.
-
 ## 4. Documentation law
 
-- `docs/adr/NNNN-title.md` — **one decision per file**, stating context, decision, and consequences.
-  A decision changed by new evidence is a **new ADR** that supersedes the old one; ADRs are not edited
-  into an unrecognisable shape.
+- `docs/adr/NNNN-title.md` — **one decision per file**: context, decision, consequences. New evidence makes a
+  **new ADR that supersedes** the old one; records are never edited into an unrecognisable shape.
 - `docs/roadmap/NNNN-title.md` — **one entry per file**. A roadmap entry is a unit of work: claimable,
   reviewable, completable alone. Two entries in one file is a defect, and a test says so. Every entry
   declares a `status:` field.
 - `docs/diary/YYYY-MM-DD-NN.md` — the working log, and **where probe history lives**. No diary file
   exceeds 256 lines; at the ceiling, roll over. A diary is written, not read, and a test enforces the
   cap.
-- `docs/WHITE-PAPER.md` — this file. It is **principles, not a log**: it changes when a principle
-  changes, and never when a probe runs; probe history belongs in the diary. A white paper that grows
-  with every experiment stops being read. A test enforces that it stays short.
+- `docs/WHITE-PAPER.md` — this file: **principles, not a log**. It changes when a principle changes, never
+  when a probe runs (that belongs in the diary), and a test keeps it short enough to be read.
 
 ## 5. Commit discipline
 
@@ -180,21 +169,32 @@ trading correctness for a benchmark number.
 
 ## 6. Terminal doctrine
 
-The terminal belongs to **TerminalKit**, and so does its doctrine — synchronised output, capability
-detection, and the tiered reset ladder. Not restated here: a copy is a second thing to drift. Two
-corrections stay as the shape of the mistake: **DECSTR resets no DEC private mode** (measured on four
-emulators, TerminalKit ADR-0002), and capabilities are **probed**, never read from environment variables
-an inherited `KITTY_WINDOW_ID` once lied through; silence means *unknown*, not *unsupported*.
-
-Probing is not free: two queries against a terminal that answers nothing cost **520 ms** against a 25 ms
-budget, so a probe never gates the first frame.
+The terminal belongs to **TerminalKit**, and so does its doctrine (synchronised output, capability detection,
+the tiered reset ladder); a copy here would be a second thing to drift. Two corrections stay as the shape of
+the mistake: **DECSTR resets no DEC private mode** (measured on four emulators, TerminalKit ADR-0002), and
+capabilities are **probed**, never read from environment variables (an inherited `KITTY_WINDOW_ID` once lied);
+silence means *unknown*, not *unsupported*. Probing is not free: two queries against a terminal that answers
+nothing cost **520 ms** against a 25 ms budget, so a probe never gates the first frame.
 
 ## 7. Bans
 
 - Unbenchmarked performance-affecting changes. Unprobed claims. Best-run or debug-build benchmarking.
-- Sleeping or timing out inside a test. Tests that assert on nothing.
+  Sleeping or timing out inside a test. Tests that assert on nothing.
 - Big-bang rewrites. Drive-by churn beyond the task's scope.
 - Adding a dependency for convenience. **A dependency is an architectural decision.**
 - Taking on a bug the task did not ask about, mid-task: report it as follow-up instead.
+
+## 8. Structure and idiom
+
+- **The file listing is the map.** One top-level type per file, named for it; no file past 250 lines; provider
+  names only in provider code; code only tests use does not ship (ADR-0021). Tests enforce each of them.
+- **Ask what Swift already offers before hand-rolling.** When a refactor or factorisation is on the table,
+  look at the language first: result builders, scoped closures (`object { }`, `with…`), `callAsFunction`,
+  key paths, protocol extensions with default implementations, typed throws over `Result` switches,
+  property wrappers, macros. Compile the candidates, pin behaviour with a characterisation test, benchmark
+  on a request path, and record what was rejected.
+- **A finding is a question.** deadwood, dolly and arcleak (pinned by version and hash) end in one of three
+  answers: fix it, name the abstraction the duplicate was missing, or accept it at the source with a
+  written reason. A baseline is for legacy debt, never for new code.
 
 ---

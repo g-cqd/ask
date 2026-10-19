@@ -19,7 +19,9 @@ headless single run, and a few of its choices are cheap now and expensive once f
 - `ToolRegistry` is built once, at init, from an array; there is no add or remove, so tools that appear
   mid-session (MCP, codemode) have no path in.
 - `ToolDefinition` is name, description, schema. It says nothing about whether a tool is read-only,
-  safe to run concurrently, or needs approval, which parallel calls and sandboxing both need.
+  safe to run concurrently, or needs approval, which parallel calls and sandboxing both need. Tools now
+  conform to `ArgumentTool` and declare their input with `ToolProperty` (ADR-0023), so a metadata field has
+  one place to go and one default to be given.
 - `SessionPayload` is a closed enum. A feature that records its own state (a skill load, a hook result,
   a sub-agent's transcript) must change that enum.
 - The prompt is a `String`; `AgentSettings` has no place for per-run additions such as skills or reminders.
