@@ -10,6 +10,12 @@ struct TrustCommand: ParsableCommand {
         abstract: "Trust this project's .ask/config.json, as it is now. A later change untrusts it again.")
 
     func run() {
+        // A project's file is text from a repository, and the agent has a bash tool: a prompt-injected README
+        // could tell it to run this. The agent's bash has no terminal, a person does. This is a speed bump, not
+        // a wall (a pty can be allocated); denying the trust store's path to the agent is the sandbox's job.
+        guard isatty(STDIN_FILENO) != 0 else {
+            fail("ask: trust is for a person at a terminal; it will not run from a script or a tool.", code: 77)
+        }
         let loader = ConfigurationSource.here.loader
         guard let data = FileManager.default.contents(atPath: loader.projectPath) else {
             fail("ask: there is no \(loader.projectPath).", code: 66)
