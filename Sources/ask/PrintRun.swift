@@ -18,7 +18,11 @@ private final class PrintRenderer: Sendable {
     var usageSummary: String { usage.withLock { $0.summary } }
 
     func render(_ event: AgentEvent) {
-        if case .responded(let response) = event { usage.withLock { $0.add(response.usage) } }
+        if let spent = event.usage { usage.withLock { $0.add(spent) } }
+        if let notice = compactionNotice(event) {
+            endLine()
+            write("ask: \(notice)\n", to: .standardError)
+        }
         switch event {
             case .model(.textDelta(_, let text)):
                 write(text, to: .standardOutput)
@@ -57,7 +61,7 @@ private final class PrintRenderer: Sendable {
 
 /// Runs `prompt` to completion. SIGINT and SIGTERM abort the run, so a running command's whole process group
 /// is stopped, and then exit with 128 + the signal.
-func runPrompt(_ prompt: String, model: String, maximumTurns: Int, session choice: SessionChoice) async {
+func runPrompt(_ prompt: String, model: String, limits: RunLimits, session choice: SessionChoice) async {
     let transport = URLSessionTransport()
     // Fail fast before any work when there is no way to authenticate.
     do {
@@ -73,7 +77,7 @@ func runPrompt(_ prompt: String, model: String, maximumTurns: Int, session choic
     for line in describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     do {
         loop = try makeLoop(
-            model: model, workingDirectory: workingDirectory, instructions: files, maximumTurns: maximumTurns,
+            model: model, workingDirectory: workingDirectory, instructions: files, limits: limits,
             transport: transport)
     } catch {
         fail("ask: \(error)", code: 70)

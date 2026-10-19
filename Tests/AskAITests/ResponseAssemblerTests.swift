@@ -70,16 +70,17 @@ struct ResponseAssemblerTests {
         }
     }
 
-    @Test func `a tool call cut off by the output limit is dropped, and the rest is kept`() throws {
+    @Test(arguments: [StopReason.maxTokens, .contextWindowExceeded])
+    func `a tool call cut off by a limit is dropped, and the rest is kept`(limit: StopReason) throws {
         let response = try assemble([
             start, .blockStarted(index: 0, .text), .textDelta(index: 0, "Writing it."), .blockStopped(index: 0),
             .blockStarted(index: 1, .toolUse(id: "done", name: "read")), .toolInputDelta(index: 1, #"{"path":"a"}"#),
             .blockStopped(index: 1),
             .blockStarted(index: 2, .toolUse(id: "cut", name: "write")),
             .toolInputDelta(index: 2, #"{"path":"b","con"#),
-            .blockStopped(index: 2), .messageDelta(stopReason: .maxTokens, usage: TokenUsage()), .messageStopped
+            .blockStopped(index: 2), .messageDelta(stopReason: limit, usage: TokenUsage()), .messageStopped
         ])
-        #expect(response.stopReason == .maxTokens)
+        #expect(response.stopReason == limit)
         #expect(
             response.blocks == [
                 .text("Writing it."),

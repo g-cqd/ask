@@ -42,7 +42,7 @@ func describe(_ files: [ProjectInstructions.File]) -> [String] {
 
 /// The agent loop with the four tools, rooted at `workingDirectory`, following `instructions` after ask's own.
 func makeLoop(
-    model: String, workingDirectory: String, instructions files: [ProjectInstructions.File], maximumTurns: Int,
+    model: String, workingDirectory: String, instructions files: [ProjectInstructions.File], limits: RunLimits,
     transport: URLSessionTransport
 ) throws -> AgentLoop {
     let environment = ProcessInfo.processInfo.environment
@@ -54,7 +54,7 @@ func makeLoop(
         settings: AgentSettings(
             model: model, maximumTokens: 16_384,
             systemPrompt: [instructions(workingDirectory: workingDirectory)] + ProjectInstructions.promptBlocks(files),
-            maximumTurns: Swift.max(1, maximumTurns)),
+            maximumTurns: limits.maximumTurns, compactAtTokens: limits.compactAtTokens),
         context: ToolContext(workingDirectory: workingDirectory))
 }
 
@@ -81,6 +81,17 @@ func toolSummary(name: String, input: JSONObject) -> String {
 }
 
 /// A retry, said for a person: what failed, how long ask waits, and which attempt comes next.
+/// What a compaction's notice says.
+func compactionNotice(_ event: AgentEvent) -> String? {
+    switch event {
+        case .compacted(let summary, _):
+            "Compacted the conversation: earlier messages are now a \(summary.count)-character summary. "
+                + "The session file keeps them all."
+        case .compactionFailed(let reason): "Could not compact (\(reason)); continuing with the whole conversation."
+        default: nil
+    }
+}
+
 func retryNotice(attempt: Int, of total: Int, delay: Duration, reason: String) -> String {
     let milliseconds = delay.components.seconds * 1_000 + delay.components.attoseconds / 1_000_000_000_000_000
     let wait = milliseconds % 1_000 == 0 ? "\(milliseconds / 1_000) s" : "\(Double(milliseconds) / 1_000) s"

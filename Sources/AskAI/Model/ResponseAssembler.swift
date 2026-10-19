@@ -51,13 +51,15 @@ public struct ResponseAssembler: Sendable {
     ///   with every block stopped.
     public func finish() throws(ResponseAssemblyError) -> AssembledResponse {
         guard stopped, open.isEmpty, var response else { throw .incomplete(openBlocks: open.sorted()) }
-        // Tool input is judged here, once the stop reason is known: a call cut off by the output limit is
-        // dropped (the loop asks the model to continue), any other invalid input is refused.
+        // Tool input is judged here, once the stop reason is known: a call cut off by the output limit or a full
+        // window is dropped (the loop asks the model to continue), any other invalid input is refused.
         var kept: [ContentBlock] = []
         for index in blocks.keys.sorted() {
             guard let block = blocks[index] else { continue }
             if case .toolCall(let id, _) = block.kind, block.validatedInput == nil {
-                guard response.stopReason == .maxTokens else { throw .invalidToolInput(id: id) }
+                guard response.stopReason == .maxTokens || response.stopReason == .contextWindowExceeded else {
+                    throw .invalidToolInput(id: id)
+                }
                 continue
             }
             kept.append(Self.finished(block))
