@@ -31,9 +31,8 @@ enum SessionFileIO {
         return descriptor
     }
 
-    static func readAll(_ path: FilePath, limits: SessionLog.Limits) throws(SessionFileError) -> [UInt8] {
-        let descriptor = try io(.open) { try FileDescriptor.open(path, .readOnly) }
-        defer { _ = try? descriptor.close() }
+    /// Reads the whole file through `descriptor`, from the start, after checking its size against `limits`.
+    static func readAll(_ descriptor: FileDescriptor, limits: SessionLog.Limits) throws(SessionFileError) -> [UInt8] {
         let size = Int(try io(.read) { try descriptor.seek(offset: 0, from: .end) })
         guard size <= limits.maximumArchiveBytes else { throw .log(.archiveTooLarge(size)) }
         _ = try io(.read) { try descriptor.seek(offset: 0, from: .start) }
