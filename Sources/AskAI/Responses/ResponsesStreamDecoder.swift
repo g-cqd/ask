@@ -159,10 +159,15 @@ public struct ResponsesStreamDecoder: ModelEventDecoding {
 
     // MARK: - Deltas
 
+    /// The item a delta is for and its text, registering an item no `added` event announced; nil for an empty delta.
+    private mutating func delta(_ wire: ResponsesWireEvent, for kind: Kind) -> (id: String, text: String)? {
+        guard let text = wire.delta, !text.isEmpty, let id = wire.itemID else { return nil }
+        if items[id] == nil { items[id] = Tracked(kind: kind) }
+        return (id, text)
+    }
+
     private mutating func appendText(_ wire: ResponsesWireEvent, into events: inout [ModelEvent]) {
-        guard let text = wire.delta, !text.isEmpty, let id = wire.itemID else { return }
-        if items[id] == nil { items[id] = Tracked(kind: .message) }
-        guard var tracked = items[id] else { return }
+        guard let (id, text) = delta(wire, for: .message), var tracked = items[id] else { return }
         if let block = tracked.block {
             events.append(.textDelta(index: block, text))
             return
@@ -179,8 +184,7 @@ public struct ResponsesStreamDecoder: ModelEventDecoding {
     }
 
     private mutating func appendThinking(_ wire: ResponsesWireEvent, into events: inout [ModelEvent]) {
-        guard let text = wire.delta, !text.isEmpty, let id = wire.itemID else { return }
-        if items[id] == nil { items[id] = Tracked(kind: .reasoning) }
+        guard let (id, text) = delta(wire, for: .reasoning) else { return }
         let block = items[id]?.block ?? begin(id, .thinking, into: &events)
         if items[id]?.pendingBreak == true {
             events.append(.thinkingDelta(index: block, "\n\n"))
