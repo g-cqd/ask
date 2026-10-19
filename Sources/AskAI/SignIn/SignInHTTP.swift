@@ -32,13 +32,10 @@ struct SignInHTTP: Sendable {
     }
 
     private func send(_ url: URL, method: String, body: [UInt8]) async throws(SignInError) -> Reply {
-        let request = HTTPRequest(
-            url: url, method: method,
-            headers: [("content-type", "application/json"), ("accept", "application/json"), ("user-agent", "ask")],
-            body: body)
+        let request = HTTPRequest.account(method, url, body: body)
         do {
-            let reply = try await transport.send(request)
-            return Reply(status: reply.status, body: try await reply.collect(limit: Self.limit))
+            let reply = try await transport.collecting(request, limit: Self.limit)
+            return Reply(status: reply.status, body: reply.body)
         } catch is CancellationError {
             throw .cancelled
         } catch {
