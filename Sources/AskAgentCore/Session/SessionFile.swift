@@ -68,11 +68,17 @@ public struct SessionFile: ~Copyable {
     public static func create(
         at path: FilePath, durability: Durability = .barrier
     ) throws(SessionFileError) -> SessionFile {
-        let empty = SessionTree()
+        try begin(SessionTree(), at: path, durability: durability)
+    }
+
+    /// Writes `tree` as a new file at `path`, which must not exist, and opens it for appending.
+    private static func begin(
+        _ tree: SessionTree, at path: FilePath, durability: Durability
+    ) throws(SessionFileError) -> SessionFile {
         let descriptor = try SessionFileIO.writeExclusively(
-            try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(empty) },
+            try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(tree) },
             to: path, durability: durability)
-        return SessionFile(path: path, tree: empty, issues: [], durability: durability, appender: descriptor)
+        return SessionFile(path: path, tree: tree, issues: [], durability: durability, appender: descriptor)
     }
 
     /// Opens a session, repairing damage in memory. Never writes.
@@ -156,11 +162,7 @@ public struct SessionFile: ~Copyable {
     public borrowing func fork(to destination: FilePath) throws(SessionFileError) -> SessionFile {
         let forked: SessionTree
         do { forked = try tree.fork() } catch { throw .tree(error) }
-        let descriptor = try SessionFileIO.writeExclusively(
-            try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(forked) },
-            to: destination, durability: durability)
-        return SessionFile(
-            path: destination, tree: forked, issues: [], durability: durability, appender: descriptor)
+        return try Self.begin(forked, at: destination, durability: durability)
     }
 
     // MARK: - Persistence

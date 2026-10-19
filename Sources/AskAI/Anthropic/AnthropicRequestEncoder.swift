@@ -16,30 +16,26 @@ public enum AnthropicRequestEncoder {
     /// The request body.
     public static func encode(_ request: ModelRequest) -> [UInt8] {
         var writer = JSONStreamWriter(capacity: 4_096)
-        writer.beginObject()
-        writer.key("model")
-        writer.string(request.model)
-        writer.key("max_tokens")
-        writer.integer(request.maxTokens)
-        writer.key("stream")
-        writer.bool(true)
-        writer.key("system")
-        writer.beginArray()
-        text(canonicalSystemLine, into: &writer)
-        writer.endArray()
-        writer.key("messages")
-        writer.beginArray()
-        for message in carryingPrompt(request.systemPrompt, in: request.messages) {
-            encode(message, into: &writer)
+        writer.object { writer in
+            writer.field("model", request.model)
+            writer.field("max_tokens", request.maxTokens)
+            writer.key("stream")
+            writer.bool(true)
+            writer.key("system")
+            writer.array { $0.typed("text", "text", canonicalSystemLine) }
+            writer.key("messages")
+            writer.array { writer in
+                for message in carryingPrompt(request.systemPrompt, in: request.messages) {
+                    encode(message, into: &writer)
+                }
+            }
+            if !request.tools.isEmpty {
+                writer.key("tools")
+                writer.array { writer in
+                    for tool in request.tools { encode(tool, into: &writer) }
+                }
+            }
         }
-        writer.endArray()
-        if !request.tools.isEmpty {
-            writer.key("tools")
-            writer.beginArray()
-            for tool in request.tools { encode(tool, into: &writer) }
-            writer.endArray()
-        }
-        writer.endObject()
         return writer.finish()
     }
 
@@ -59,69 +55,53 @@ public enum AnthropicRequestEncoder {
     // MARK: - Pieces
 
     private static func encode(_ message: ModelMessage, into writer: inout JSONStreamWriter) {
-        writer.beginObject()
-        writer.key("role")
-        writer.string(message.role == .user ? "user" : "assistant")
-        writer.key("content")
-        writer.beginArray()
-        for block in message.blocks { encode(block, into: &writer) }
-        writer.endArray()
-        writer.endObject()
+        writer.object { writer in
+            writer.field("role", message.role == .user ? "user" : "assistant")
+            writer.key("content")
+            writer.array { writer in
+                for block in message.blocks { encode(block, into: &writer) }
+            }
+        }
     }
 
     private static func encode(_ block: RequestBlock, into writer: inout JSONStreamWriter) {
         switch block {
-            case .text(let value): text(value, into: &writer)
+            case .text(let value): writer.typed("text", "text", value)
             case .thinking(let thinking, let signature):
-                writer.beginObject()
-                field("type", "thinking", into: &writer)
-                field("thinking", thinking, into: &writer)
-                field("signature", signature, into: &writer)
-                writer.endObject()
-            case .redactedThinking(let data):
-                writer.beginObject()
-                field("type", "redacted_thinking", into: &writer)
-                field("data", data, into: &writer)
-                writer.endObject()
-            case .toolCall(let id, let name, let input):
-                writer.beginObject()
-                field("type", "tool_use", into: &writer)
-                field("id", id, into: &writer)
-                field("name", name, into: &writer)
-                writer.key("input")
-                writer.raw(input.bytes)
-                writer.endObject()
-            case .toolResult(let id, let content, let isError):
-                writer.beginObject()
-                field("type", "tool_result", into: &writer)
-                field("tool_use_id", id, into: &writer)
-                field("content", content, into: &writer)
-                if isError {
-                    writer.key("is_error")
-                    writer.bool(true)
+                writer.object {
+                    $0.field("type", "thinking")
+                    $0.field("thinking", thinking)
+                    $0.field("signature", signature)
                 }
-                writer.endObject()
+            case .redactedThinking(let data): writer.typed("redacted_thinking", "data", data)
+            // @dl:accept -- tool_use and tool_result are two wire shapes that happen to share a field count; they read best written out
+            case .toolCall(let id, let name, let input):
+                writer.object {
+                    $0.field("type", "tool_use")
+                    $0.field("id", id)
+                    $0.field("name", name)
+                    $0.key("input")
+                    $0.raw(input.bytes)
+                }
+            case .toolResult(let id, let content, let isError):
+                writer.object {
+                    $0.field("type", "tool_result")
+                    $0.field("tool_use_id", id)
+                    $0.field("content", content)
+                    if isError {
+                        $0.key("is_error")
+                        $0.bool(true)
+                    }
+                }
         }
     }
 
     private static func encode(_ tool: ToolDefinition, into writer: inout JSONStreamWriter) {
-        writer.beginObject()
-        field("name", tool.name, into: &writer)
-        field("description", tool.description, into: &writer)
-        writer.key("input_schema")
-        writer.raw(tool.inputSchema.bytes)
-        writer.endObject()
-    }
-
-    private static func text(_ value: String, into writer: inout JSONStreamWriter) {
-        writer.beginObject()
-        field("type", "text", into: &writer)
-        field("text", value, into: &writer)
-        writer.endObject()
-    }
-
-    private static func field(_ key: String, _ value: String, into writer: inout JSONStreamWriter) {
-        writer.key(key)
-        writer.string(value)
+        writer.object {
+            $0.field("name", tool.name)
+            $0.field("description", tool.description)
+            $0.key("input_schema")
+            $0.raw(tool.inputSchema.bytes)
+        }
     }
 }
