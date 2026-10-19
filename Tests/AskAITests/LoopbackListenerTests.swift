@@ -110,38 +110,32 @@ struct LoopbackListenerTests {
         await stalled.value
     }
 
-    /// How a wait ended, or nil if it had not within `limit`. A wait that will not end is closed, so a broken
-    /// cancel path fails this test in seconds instead of hanging the suite.
-    private func settled(
-        _ wait: Task<String, any Error>, on listener: LoopbackListener, within limit: Duration = .seconds(5)
-    )
-        async -> Result<String, any Error>?
-    {
-        await withTaskGroup(of: Result<String, any Error>?.self) { group in
-            group.addTask { await wait.result }
-            group.addTask {
-                try? await Task.sleep(for: limit)
-                return nil
-            }
-            let first = await group.next() ?? nil
-            if first == nil { listener.close() }
-            group.cancelAll()
-            return first
-        }
-    }
-
     @Test func `cancelling stops the wait and frees the port`() async throws {
         let listener = try listener()
         let port = listener.port
         let wait = waiting(listener, state: "s")
         try await Task.sleep(for: .milliseconds(150))
         wait.cancel()
-        guard case .failure(let error)? = await settled(wait, on: listener) else {
+        guard case .failure(let error)? = await BoundedWait.result(of: wait, release: { listener.close() }) else {
             Issue.record("cancelling did not end the wait")
             return
         }
         #expect(error as? SignInError == .cancelled)
         #expect(RawClient.refused(port: port))
+    }
+
+    @Test func `two sign-ins waiting at once do not wait for each other`() async throws {
+        let first = try listener()
+        let second = try listener()
+        let firstWait = waiting(first, state: "a")
+        try await Task.sleep(for: .milliseconds(150))  // the first is now blocking its thread
+        let secondWait = waiting(second, state: "b")
+        try await Task.sleep(for: .milliseconds(150))
+        _ = await RawClient.get("\(Self.path)?code=two&state=b", port: second.port)
+        let ended = await BoundedWait.result(of: secondWait, release: { second.close() })
+        #expect(try ended?.get() == "two", "the second sign-in must not queue behind the first")
+        first.close()
+        _ = await firstWait.result
     }
 
     @Test func `a port already listened on cannot be bound, so the caller can ask for a pasted address`() throws {
