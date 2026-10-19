@@ -57,6 +57,7 @@ public struct ScreenController: Sendable {
             case .toolStarted(let name, let summary): state.transcript.startTool(name: name, summary: summary)
             case .toolFinished(let status): state.transcript.finishTool(status)
             case .notice(let text, let isError): state.transcript.addNotice(text, isError: isError)
+            case .requestExit(let exit): state.exitRequest = exit
             case .label(let text): state.label = text
             case .status(let text): state.detail = text
             case .runEnded: state.running = false

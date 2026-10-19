@@ -29,49 +29,21 @@ enum FileWait {
     /// Waits for one change to `directory`, or returns at once if `path` moved on while the watch was set up.
     /// - Returns: false when cancelled or when the directory cannot be watched.
     private static func directoryChanged(_ directory: String, awaiting path: String) async -> Bool {
-        let queue = kqueue()
-        let watched = open(directory, O_EVTONLY)
-        guard queue >= 0, watched >= 0 else {
-            if queue >= 0 { close(queue) }
-            if watched >= 0 { close(watched) }
-            return false
-        }
-        var changes = [
-            kevent(
-                ident: UInt(watched), filter: Int16(EVFILT_VNODE), flags: UInt16(EV_ADD | EV_CLEAR),
-                fflags: UInt32(NOTE_WRITE | NOTE_DELETE | NOTE_RENAME | NOTE_LINK), data: 0, udata: nil),
-            kevent(
-                ident: 1, filter: Int16(EVFILT_USER), flags: UInt16(EV_ADD | EV_CLEAR), fflags: 0, data: 0,
-                udata: nil)
-        ]
-        guard unsafe kevent(queue, &changes, 2, nil, 0, nil) == 0 else {
-            close(queue)
-            close(watched)
-            return false
-        }
+        guard let watch = DirectoryWatch(directory: directory) else { return false }
         // A change between choosing the directory and watching it raised no event: look again now that the
         // watch is set, or that change is missed and the wait never ends.
         if FileManager.default.fileExists(atPath: path) || deepestExisting(path) != directory {
-            close(queue)
-            close(watched)
+            watch.close()
             return true
         }
         let changed = await withTaskCancellationHandler {
             await withCheckedContinuation { (continuation: CheckedContinuation<Bool, Never>) in
-                let thread = Thread {
-                    var event = kevent()
-                    let count = unsafe kevent(queue, nil, 0, &event, 1, nil)
-                    continuation.resume(returning: count == 1 && event.filter == Int16(EVFILT_VNODE))
-                }
-                thread.start()
+                Thread { continuation.resume(returning: watch.next()) }.start()
             }
         } onCancel: {
-            var wake = kevent(
-                ident: 1, filter: Int16(EVFILT_USER), flags: 0, fflags: UInt32(NOTE_TRIGGER), data: 0, udata: nil)
-            _ = unsafe kevent(queue, &wake, 1, nil, 0, nil)
+            watch.wake()
         }
-        close(queue)
-        close(watched)
+        watch.close()
         return changed && !Task.isCancelled
     }
 }
