@@ -27,6 +27,9 @@ private final class PrintRenderer: Sendable {
                 write(output.isError ? "  ✗ \(first)\n" : "  ✓\n", to: .standardError)
             case .repaired(let repairs):
                 write("ask: repaired the context: \(repairs)\n", to: .standardError)
+            case .continuedAtOutputLimit:
+                endLine()
+                write("ask: the response hit the output limit; asking the model to continue.\n", to: .standardError)
             case .retrying(let attempt, let total, let delay, let reason):
                 endLine()
                 write(

@@ -64,10 +64,27 @@ struct ResponseAssemblerTests {
             #expect(throws: ResponseAssemblyError.invalidToolInput(id: "t")) {
                 _ = try assemble([
                     start, .blockStarted(index: 0, .toolUse(id: "t", name: "read")), .toolInputDelta(index: 0, input),
-                    .blockStopped(index: 0)
+                    .blockStopped(index: 0), .messageDelta(stopReason: .toolUse, usage: TokenUsage()), .messageStopped
                 ])
             }
         }
+    }
+
+    @Test func `a tool call cut off by the output limit is dropped, and the rest is kept`() throws {
+        let response = try assemble([
+            start, .blockStarted(index: 0, .text), .textDelta(index: 0, "Writing it."), .blockStopped(index: 0),
+            .blockStarted(index: 1, .toolUse(id: "done", name: "read")), .toolInputDelta(index: 1, #"{"path":"a"}"#),
+            .blockStopped(index: 1),
+            .blockStarted(index: 2, .toolUse(id: "cut", name: "write")),
+            .toolInputDelta(index: 2, #"{"path":"b","con"#),
+            .blockStopped(index: 2), .messageDelta(stopReason: .maxTokens, usage: TokenUsage()), .messageStopped
+        ])
+        #expect(response.stopReason == .maxTokens)
+        #expect(
+            response.blocks == [
+                .text("Writing it."),
+                .toolCall(id: "done", name: "read", input: try JSONObject(validating: Array(#"{"path":"a"}"#.utf8)))
+            ])
     }
 
     @Test func `redacted and unrecognized blocks are kept`() throws {
