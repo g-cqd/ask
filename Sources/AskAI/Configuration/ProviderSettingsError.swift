@@ -12,8 +12,12 @@ public enum ProviderSettingsError: Error, Sendable, Equatable, CustomStringConve
     case noModel(provider: String)
     /// The entry's key names an environment variable that is not set.
     case missingVariable(provider: String, variable: String)
+    /// A preset with a sign-in has no key from the environment or a sign-in.
+    case notSignedIn(provider: String, variable: String?, login: String)
     /// The entry is no preset and lacks a field it needs.
     case incomplete(provider: String, field: String)
+    /// The stored credentials could not be read, so a key that may be in them is unknown.
+    case credentials(CredentialFileError)
     /// The endpoint may not be used (ADR-0024).
     case refusedEndpoint(provider: String, reason: String)
 
@@ -28,8 +32,12 @@ public enum ProviderSettingsError: Error, Sendable, Equatable, CustomStringConve
             case .noModel(let provider): "provider \"\(provider)\" lists no model; add one, or pass --model"
             case .missingVariable(let provider, let variable):
                 "provider \"\(provider)\" reads its key from $\(variable), which is not set"
+            case .notSignedIn(let provider, let variable, let login):
+                "provider \"\(provider)\" has no key: run `ask login \(login)`"
+                    + (variable.map { ", or set $\($0)" } ?? "")
             case .incomplete(let provider, let field):
                 "provider \"\(provider)\" in providers.json needs \"\(field)\""
+            case .credentials(let error): "the stored credentials cannot be used: \(error)"
             case .refusedEndpoint(let provider, let reason): "provider \"\(provider)\" was refused: \(reason)"
         }
     }
