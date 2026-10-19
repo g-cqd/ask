@@ -112,6 +112,30 @@ struct ProviderSettingsTests {
         #expect(try resolve(json, provider: "local", model: "other").contextWindow == nil)
     }
 
+    @Test func `a provider may speak the Responses API, and says so by its api`() throws {
+        let json =
+            #"{ "providers": { "resp": { "api": "openai-responses", "baseUrl": "http://127.0.0.1:8190/v1", "defaultModel": "m" } } }"#
+        guard case .openAIResponses(let name, let url, let key, _) = try resolve(json, provider: "resp").provider else {
+            Issue.record("not a Responses provider")
+            return
+        }
+        #expect(name == "resp")
+        #expect(url.absoluteString == "http://127.0.0.1:8190/v1")
+        #expect(key == nil)
+    }
+
+    @Test func `an api nobody speaks names the ones that are spoken`() {
+        let json =
+            #"{ "providers": { "x": { "api": "openai-chat", "baseUrl": "http://127.0.0.1:1/v1", "defaultModel": "m" } } }"#
+        do {
+            _ = try resolve(json, provider: "x")
+            Issue.record("an unknown api resolved")
+        } catch let error as ProviderSettingsError {
+            #expect("\(error)".contains("openai-completions"))
+            #expect("\(error)".contains("openai-responses"))
+        } catch { Issue.record("\(error)") }
+    }
+
     @Test func `a file that is not valid settings is an error`() {
         #expect(throws: ProviderSettingsError.self) { try settings("{ not json") }
     }

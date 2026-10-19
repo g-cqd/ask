@@ -11,8 +11,8 @@ internal import Foundation
 ///                             "apiKey": "$LOCAL_KEY", "headers": {}, "models": [{ "id": "ornith-1.5-9b" }] } } }
 /// ```
 ///
-/// Only `openai-completions` is accepted: it is the one protocol ask speaks besides Anthropic's, which is built in
-/// under the reserved name `anthropic`. The known services are presets (``ProviderPreset``): an entry with a preset's
+/// Only `openai-completions` and `openai-responses` are accepted: they are the protocols ask speaks besides
+/// Anthropic's, which is built in under the reserved name `anthropic`. The known services are presets (``ProviderPreset``): an entry with a preset's
 /// name gives only what it changes, so `{ "groq": { "defaultModel": "…" } }` is a whole entry. Keys come from a literal or from `$NAME` / `${NAME}`; a key that would run a
 /// command, as pi allows with a leading `!`, is not supported.
 public struct ProviderSettings: Sendable, Equatable {
@@ -22,8 +22,9 @@ public struct ProviderSettings: Sendable, Equatable {
     public static let anthropicDefaultModel = "claude-sonnet-5-5"
     /// The name of the built-in provider, which a file may not redefine.
     public static let anthropic = "anthropic"
-    /// The one protocol a configured provider may name.
+    /// The protocols a configured provider may name besides Anthropic's, which is built in.
     public static let openAICompletions = "openai-completions"
+    public static let openAIResponses = "openai-responses"
 
     struct Entry: Decodable, Sendable, Equatable {
         struct Model: Decodable, Sendable, Equatable {
@@ -100,7 +101,9 @@ public struct ProviderSettings: Sendable, Equatable {
         }
         let api = entry.api ?? (preset != nil ? Self.openAICompletions : nil)
         guard let api else { throw .incomplete(provider: name, field: "api") }
-        guard api == Self.openAICompletions else { throw .unsupportedAPI(provider: name, api: api) }
+        guard api == Self.openAICompletions || api == Self.openAIResponses else {
+            throw .unsupportedAPI(provider: name, api: api)
+        }
         guard let baseURL = entry.baseUrl ?? preset?.address(environment: environment) else {
             throw .incomplete(provider: name, field: "baseUrl")
         }
@@ -114,8 +117,11 @@ public struct ProviderSettings: Sendable, Equatable {
             throw .refusedEndpoint(provider: name, reason: reason)
         }
         let listed = entry.models?.first { $0.id == chosen }
+        let headers = entry.headers ?? [:]
         return ResolvedModel(
-            provider: .openAICompatible(name: name, baseURL: url, apiKey: key, headers: entry.headers ?? [:]),
+            provider: api == Self.openAIResponses
+                ? .openAIResponses(name: name, baseURL: url, apiKey: key, headers: headers)
+                : .openAICompatible(name: name, baseURL: url, apiKey: key, headers: headers),
             model: chosen, contextWindow: listed?.contextWindow, maxOutputTokens: listed?.maxTokens)
     }
 

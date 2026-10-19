@@ -28,7 +28,7 @@ public enum ProviderSettingsError: Error, Sendable, Equatable, CustomStringConve
             case .unknownProvider(let name, let known):
                 "no provider is named \"\(name)\"; known: \(known.joined(separator: ", "))"
             case .unsupportedAPI(let provider, let api):
-                "provider \"\(provider)\" uses api \"\(api)\"; only \"\(ProviderSettings.openAICompletions)\" is supported"
+                "provider \"\(provider)\" uses api \"\(api)\"; only \"\(ProviderSettings.openAICompletions)\" and \"\(ProviderSettings.openAIResponses)\" are supported"
             case .noModel(let provider): "provider \"\(provider)\" lists no model; add one, or pass --model"
             case .missingVariable(let provider, let variable):
                 "provider \"\(provider)\" reads its key from $\(variable), which is not set"

@@ -53,12 +53,19 @@ func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> 
             OpenAICompatibleProvider(
                 client: OpenAICompatibleClient(transport: transport, baseURL: baseURL, apiKey: apiKey, headers: headers)
             )
+        case .openAIResponses(_, let baseURL, let apiKey, let headers):
+            ResponsesProvider(
+                client: ResponsesClient(transport: transport, baseURL: baseURL, apiKey: apiKey, headers: headers))
     }
 }
 
 /// How the model is named to the user: `model`, or `provider/model` for a configured provider.
 func modelLabel(_ resolved: ResolvedModel) -> String {
-    if case .openAICompatible(let name, _, _, _) = resolved.provider { return "\(name)/\(resolved.model)" }
+    switch resolved.provider {
+        case .openAICompatible(let name, _, _, _), .openAIResponses(let name, _, _, _):
+            return "\(name)/\(resolved.model)"
+        case .anthropic: break
+    }
     return resolved.model
 }
 
