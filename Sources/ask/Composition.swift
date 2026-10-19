@@ -40,6 +40,22 @@ func describe(_ files: [ProjectInstructions.File]) -> [String] {
     }
 }
 
+/// Fails fast, before any work, when there is no way to authenticate: exit 77 with what to do. A configured provider has no
+/// sign-in to check.
+func requireSignIn(for provider: ResolvedModel.Provider, transport: URLSessionTransport) async {
+    do {
+        switch provider {
+            case .anthropic: _ = try await requestAuth(transport: transport)()
+            case .codex:
+                let access = CodexAccess(file: .standard(), client: CodexAuthClient(transport: transport))
+                _ = try await access.credentials(now: Date().timeIntervalSince1970)
+            case .openAICompatible, .openAIResponses: return
+        }
+    } catch {
+        fail("ask: \(error)", code: 77)
+    }
+}
+
 /// The loop's provider for `resolved`, sending through `transport`.
 func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> any ModelProvider {
     switch resolved.provider {
