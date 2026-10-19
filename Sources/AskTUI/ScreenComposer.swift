@@ -31,6 +31,9 @@ public struct ScreenComposer: Sendable {
     private var shown: [Line?] = []
     private var shownSize = (columns: -1, rows: -1)
 
+    /// The rows the transcript took in the last frame, from the top: everything above the status line.
+    public private(set) var transcriptRows = 0
+
     /// An empty composer.
     public init() {}
 
@@ -50,6 +53,7 @@ public struct ScreenComposer: Sendable {
         let firstPromptLine = Swift.max(
             0, Swift.min(editor.cursorLine - promptRows + 1, editor.lines.count - promptRows))
         let transcriptRows = Swift.max(0, rows - promptRows - 1)
+        self.transcriptRows = transcriptRows
 
         updateTranscriptLines(state.transcript, columns: columns)
         let end = Swift.max(0, flat.count - state.scrollback)
