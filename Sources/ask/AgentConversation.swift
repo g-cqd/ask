@@ -113,7 +113,7 @@ final class AgentConversation: Conversation {
 }
 
 /// The interactive screen in the working directory.
-func runInteractive(model: String, limits: RunLimits, session choice: SessionChoice) async {
+func runInteractive(model: ResolvedModel, limits: RunLimits, session choice: SessionChoice) async {
     let workingDirectory = FileManager.default.currentDirectoryPath
     let directory = SessionDirectory(project: workingDirectory)
     var notices: [String] = []
@@ -127,7 +127,7 @@ func runInteractive(model: String, limits: RunLimits, session choice: SessionCho
                 transport: URLSessionTransport())
         }
         try await runInteractiveScreen(
-            conversation: conversation, label: model, history: conversation.history(),
+            conversation: conversation, label: modelLabel(model), history: conversation.history(),
             notices: notices + describe(files))
     } catch {
         // The screen has already restored the terminal by the time an error reaches here.
