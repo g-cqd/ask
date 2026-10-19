@@ -90,8 +90,9 @@ Twenty-four services are known by name and need only their key variable (`--prov
 pi. `ask login spettro` and `ask login mistral-vibe` sign in by browser and store the key they are issued;
 `ask login codex` signs in to a ChatGPT subscription (a browser, or `--device` for a code typed at a link), and
 `ask --provider codex --model ID` uses it. `api: "openai-responses"` points an entry at any server speaking the
-Responses API. Not yet tried against a real OpenAI or ChatGPT account: see
-[the remaining live checks](docs/roadmap/0036-responses-protocol-and-codex-sign-in.md). `ask logout [NAME]` forgets one sign-in, or all. For Ollama, start it with `OLLAMA_CONTEXT_LENGTH=32768`: its default context is sized
+Responses API. Browser sign-in, inference and a read/write tool loop have been verified with a real ChatGPT account
+([live results](docs/diary/2026-10-20-27.md)); direct OpenAI-account use remains unverified. Model availability depends on
+your account; the installed pi catalog is not proof that Codex accepts a model. `ask logout [NAME]` forgets one sign-in, or all. For Ollama, start it with `OLLAMA_CONTEXT_LENGTH=32768`: its default context is sized
 from memory and can be 4,096 tokens. Measured local set-ups: `docs/research/local-models-2026-10.md`.
 
 ## Roadmap
