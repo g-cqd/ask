@@ -491,7 +491,40 @@ def probe_sandbox():
     return all(results)
 
 
+def probe_sandbox_allowance():
+    print("K: the user's sandbox section lifts a secret store and never ask's own files")
+    project, state, home = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    ask_dir = os.path.join(home, ".config", "ask")
+    os.makedirs(ask_dir)
+    os.makedirs(os.path.join(home, ".aws"))
+    os.makedirs(os.path.join(home, "clients"))
+    open(os.path.join(ask_dir, "credentials.json"), "w").write("sk-ant-oat-SECRET")
+    open(os.path.join(home, ".aws", "credentials"), "w").write("AWS-SECRET")
+    open(os.path.join(home, "clients", "notes.txt"), "w").write("CLIENT-NOTES")
+    # The user's file names the aws store, ask's own directory (which must not be lifted), and a directory to hide.
+    open(os.path.join(ask_dir, "config.json"), "w").write(
+        "{sandbox: {allowRead: ['~/.aws', '~/.config/ask'], denyRead: ['~/clients']}}")
+    server = Server([
+        turn([("tool", "t1", f"cat '{home}/.aws/credentials'")], "tool_use"),
+        turn([("tool", "t2", f"cat '{ask_dir}/credentials.json'")], "tool_use"),
+        turn([("tool", "t3", f"cat '{home}/clients/notes.txt'")], "tool_use"),
+        turn([("text", "Done.")], "end_turn")])
+    env = environment(state, server.url, os.path.join(home, ".config"))
+    env["HOME"] = home
+    run = subprocess.run([ASK, "-p", "Read."], cwd=project, env=env, capture_output=True, text=True, timeout=120)
+    got = tool_results(server) if len(server.requests) == 4 else {}
+    server.httpd.shutdown()
+    shown = subprocess.run([ASK, "config"], cwd=project, env=env, capture_output=True, text=True, timeout=30)
+    return all([check("the run finishes", run.returncode == 0 and len(got) == 3, f"{run.returncode} {run.stderr[-200:]}"),
+                check("the allowed secret store is readable", "AWS-SECRET" in got.get("t1", ""), got.get("t1")),
+                check("ask's own credentials still are not, though the list named them",
+                      "Operation not permitted" in got.get("t2", "") and "SECRET" not in got.get("t2", ""), got.get("t2")),
+                check("a directory the user asked to hide is hidden", "Operation not permitted" in got.get("t3", ""), got.get("t3")),
+                check("ask config shows the section and where it came from",
+                      "allowRead" in shown.stdout and "denyRead" in shown.stdout and "sandbox   on" in shown.stdout, shown.stdout)])
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

@@ -31,12 +31,14 @@ public struct Configuration: Sendable, Equatable {
     public var provider: Setting<String?>
     public var maxTurns: Setting<Int>
     public var compactAt: Setting<Int>
+    public var sandbox: Setting<SandboxSection>
 
     /// Built-in defaults only.
     public static let defaults = Configuration(
         model: Setting(value: nil, source: .defaults), provider: Setting(value: nil, source: .defaults),
         maxTurns: Setting(value: 100, source: .defaults),
-        compactAt: Setting(value: AgentSettings.defaultCompactAtTokens, source: .defaults))
+        compactAt: Setting(value: AgentSettings.defaultCompactAtTokens, source: .defaults),
+        sandbox: Setting(value: SandboxSection(), source: .defaults))
 
     /// `self` with every key `file` sets replaced, attributed to `source`.
     public func applying(_ file: ConfigurationFile, from source: Source) -> Configuration {
@@ -45,6 +47,15 @@ public struct Configuration: Sendable, Equatable {
         if let provider = file.provider { next.provider = Setting(value: provider, source: source) }
         if let turns = file.maxTurns { next.maxTurns = Setting(value: turns, source: source) }
         if let compactAt = file.compactAt { next.compactAt = Setting(value: compactAt, source: source) }
+        if let section = file.sandbox {
+            // What may be read is replaced by the file that names it (only the user's file can); what is kept
+            // unreadable accumulates across layers, since every layer may narrow.
+            let before = next.sandbox.value
+            let merged = SandboxSection(
+                allowRead: section.allowRead.isEmpty ? before.allowRead : section.allowRead,
+                denyRead: before.denyRead + section.denyRead.filter { !before.denyRead.contains($0) })
+            next.sandbox = Setting(value: merged, source: source)
+        }
         return next
     }
 
@@ -100,6 +111,7 @@ extension Configuration {
         compare("provider", previous.provider, provider)
         compare("maxTurns", previous.maxTurns, maxTurns)
         compare("compactAt", previous.compactAt, compactAt)
+        compare("sandbox", previous.sandbox, sandbox)
         return lines
     }
 
