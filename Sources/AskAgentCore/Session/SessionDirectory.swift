@@ -11,8 +11,15 @@ public struct SessionDirectory: Sendable, Equatable {
         project: String, environment: [String: String] = ProcessInfo.processInfo.environment,
         home: String = NSHomeDirectory()
     ) {
+        path = Self.stateRoot(environment: environment, home: home) + "/sessions/" + Self.projectName(project)
+    }
+
+    /// ask's state directory: `$XDG_STATE_HOME/ask`, else `~/.local/state/ask`. Sessions live under it.
+    public static func stateRoot(
+        environment: [String: String] = ProcessInfo.processInfo.environment, home: String = NSHomeDirectory()
+    ) -> String {
         let state = environment["XDG_STATE_HOME"].flatMap { $0.hasPrefix("/") ? $0 : nil } ?? home + "/.local/state"
-        path = state + "/ask/sessions/" + Self.projectName(project)
+        return state + "/ask"
     }
 
     /// A readable, flat name for a project path: separators become `-`, spaces `_`.

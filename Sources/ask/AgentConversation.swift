@@ -195,8 +195,8 @@ func runInteractive(
             directory: directory, resumed: resumed, settings: settings, source: source, jobs: jobs,
             makeLoop: { settings in
                 try makeLoop(
-                    model: settings.model, workingDirectory: workingDirectory, instructions: files,
-                    limits: settings.limits, jobs: jobs, transport: URLSessionTransport())
+                    settings, workingDirectory: workingDirectory, instructions: files, jobs: jobs,
+                    transport: URLSessionTransport())
             })
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.

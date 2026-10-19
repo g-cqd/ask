@@ -45,6 +45,11 @@ struct Ask: AsyncParsableCommand {
             valueName: "tokens"))
     var compactAt: Int?
 
+    @Flag(
+        name: .customLong("no-sandbox"),
+        help: "Turn off ask's protections for this run: its own files and your secret stores become reachable.")
+    var noSandbox = false
+
     @Flag(name: .customLong("self-check"), help: .hidden)
     var selfCheck = false
 
@@ -80,7 +85,8 @@ struct Ask: AsyncParsableCommand {
         }
         let source = ConfigurationSource(
             workingDirectory: FileManager.default.currentDirectoryPath,
-            flags: .init(model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt))
+            flags: .init(
+                model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt, noSandbox: noSandbox))
         let settings: RunSettings
         do { settings = try source.load() } catch { fail("ask: \(error)", code: 78) }
         if selfCheck {

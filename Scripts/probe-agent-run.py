@@ -430,7 +430,68 @@ def probe_configuration():
     return all(results)
 
 
+def probe_sandbox():
+    print("J: the sandbox protects ask's own files from the model's tools")
+    project, state, home = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    config = os.path.join(home, ".config")
+    os.makedirs(os.path.join(config, "ask"))
+    os.makedirs(os.path.join(home, ".aws"))
+    ask_dir = os.path.join(config, "ask")
+    files = {"config.json": "{}", "credentials.json": "sk-ant-oat-SECRET", "trusted.json": "{}"}
+    for name, text in files.items():
+        open(os.path.join(ask_dir, name), "w").write(text)
+    open(os.path.join(home, ".aws", "credentials"), "w").write("AWS-SECRET")
+
+    def run(*arguments):
+        server = Server([
+            turn([("call", "t1", "write", {"path": os.path.join(ask_dir, "config.json"), "content": "{maxTurns: 9999}"})], "tool_use"),
+            turn([("call", "t2", "read", {"path": os.path.join(ask_dir, "credentials.json")})], "tool_use"),
+            turn([("tool", "t3", f"echo owned > '{ask_dir}/trusted.json'")], "tool_use"),
+            turn([("tool", "t4", f"cat '{ask_dir}/credentials.json'")], "tool_use"),
+            turn([("tool", "t5", f"cat '{home}/.aws/credentials'")], "tool_use"),
+            turn([("tool", "t6", f"mv '{config}' '{home}/.c2' && echo owned > '{home}/.c2/ask/config.json'; mv '{home}/.c2' '{config}'")], "tool_use"),
+            turn([("tool", "t7", "echo fine > made.txt && cat made.txt")], "tool_use"),
+            turn([("text", "Done.")], "end_turn")])
+        env = environment(state, server.url, config)
+        env["HOME"] = home
+        process = subprocess.run([ASK, "-p", "Attack.", *arguments], cwd=project, env=env, capture_output=True,
+                                 text=True, timeout=120)
+        results = tool_results(server) if len(server.requests) == 8 else {}
+        server.httpd.shutdown()
+        return process, results
+
+    def contents(name):
+        return open(os.path.join(ask_dir, name)).read()
+
+    process, got = run()
+    results = [check("the run finishes", process.returncode == 0 and len(got) == 7, f"{process.returncode} {len(got)} {process.stderr[-200:]}"),
+               check("write to config.json is refused, naming the capability and path",
+                     got.get("t1", "").startswith("Sandbox: ") and "cannot be written" in got.get("t1", "") and "config.json" in got.get("t1", ""), got.get("t1")),
+               check("read of credentials.json is refused", "cannot be read" in got.get("t2", "") and "SECRET" not in got.get("t2", ""), got.get("t2")),
+               check("bash cannot write the trust store", "Operation not permitted" in got.get("t3", ""), got.get("t3")),
+               check("nor read the credentials", "Operation not permitted" in got.get("t4", "") and "SECRET" not in got.get("t4", ""), got.get("t4")),
+               check("nor another secret store", "Operation not permitted" in got.get("t5", "") and "AWS-SECRET" not in got.get("t5", ""), got.get("t5")),
+               check("a refused command comes with the sandbox note", "ran in a sandbox" in got.get("t4", ""), got.get("t4")),
+               check("renaming the config's parent away and back changes nothing", "Operation not permitted" in got.get("t6", ""), got.get("t6")),
+               check("ordinary work still runs", got.get("t7", "").startswith("fine"), got.get("t7")),
+               check("config.json is untouched", contents("config.json") == files["config.json"], contents("config.json")),
+               check("trusted.json is untouched", contents("trusted.json") == files["trusted.json"], contents("trusted.json")),
+               check("credentials.json is untouched", contents("credentials.json") == files["credentials.json"]),
+               check("the session was still written, by ask itself", len(sessions(state)) == 1, sessions(state))]
+    # The user's switch: the same attack succeeds, and ask says the sandbox is off.
+    process, got = run("--no-sandbox")
+    results += [check("--no-sandbox: the write is allowed", got.get("t1", "").startswith("Wrote "), got.get("t1")),
+                check("--no-sandbox: ask said so", "The sandbox is off" in process.stderr, process.stderr[-300:]),
+                check("--no-sandbox: config.json really changed", contents("config.json") != files["config.json"], contents("config.json"))]
+    # Put back what the unsandboxed attack overwrote, so ask can read its configuration again.
+    for name, text in files.items():
+        open(os.path.join(ask_dir, name), "w").write(text)
+    shown = subprocess.run([ASK, "config"], cwd=project, env={**environment(state, "http://127.0.0.1:9", config), "HOME": home}, capture_output=True, text=True, timeout=30)
+    results.append(check("ask config says the sandbox is on", "sandbox   on" in shown.stdout, shown.stdout))
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

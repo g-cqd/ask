@@ -16,6 +16,8 @@ struct ConfigurationSource: Sendable {
         var provider: String?
         var maxTurns: Int?
         var compactAt: Int?
+        /// `--no-sandbox`: the user turned ask's protections off for this run.
+        var noSandbox = false
 
         /// The flags as they were given, to pass to a replacement process.
         var arguments: [String] {
@@ -24,6 +26,7 @@ struct ConfigurationSource: Sendable {
             if let provider { arguments += ["--provider", provider] }
             if let maxTurns { arguments += ["--max-turns", String(maxTurns)] }
             if let compactAt { arguments += ["--compact-at", String(compactAt)] }
+            if noSandbox { arguments.append("--no-sandbox") }
             return arguments
         }
     }
@@ -35,6 +38,23 @@ struct ConfigurationSource: Sendable {
         providersPath = directory + "/providers.json"
         self.flags = flags
         self.environment = environment
+    }
+
+    /// ask's default protections over every home directory a tool could mean by `~`: the account's, and `$HOME` when
+    /// it names another. `NSHomeDirectory()` ignores `$HOME`, while a command's `~` follows it, so protecting one
+    /// would leave the other's secret stores open.
+    private func protections() -> SandboxPolicy {
+        var homes = [NSHomeDirectory()]
+        if let fromEnvironment = environment["HOME"], fromEnvironment.hasPrefix("/"), !homes.contains(fromEnvironment) {
+            homes.append(fromEnvironment)
+        }
+        return
+            homes.map { home in
+                SandboxPolicy.standard(
+                    home: home, configDirectory: askConfigDirectory(environment: environment),
+                    stateDirectory: SessionDirectory.stateRoot(environment: environment, home: home))
+            }
+            .reduce(SandboxPolicy.unrestricted) { $0.intersecting($1) }
     }
 
     /// The source for the current directory with no flags: what the configuration commands read.
@@ -52,7 +72,12 @@ struct ConfigurationSource: Sendable {
             provider: result.configuration.provider.value, model: result.configuration.model.value,
             environment: environment,
             storedKeys: { () throws(CredentialFileError) in try CredentialFile.standard().loadKeys().mapValues(\.key) })
+        let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections()
         return RunSettings(
-            configuration: result.configuration, model: model, applied: result.applied, notices: result.notices)
+            configuration: result.configuration, model: model, sandbox: sandbox, applied: result.applied,
+            notices: result.notices
+                + (flags.noSandbox
+                    ? ["The sandbox is off (--no-sandbox): ask's own files and your secret stores are not protected."]
+                    : []))
     }
 }

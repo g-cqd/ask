@@ -35,7 +35,7 @@ public final class JobTable: Sendable {
         let job = Job.start(
             Job.Launch(
                 id: id, command: command, workingDirectory: context.workingDirectory, outputPath: path,
-                keepsInputOpen: keepsInputOpen, keeping: keeping),
+                keepsInputOpen: keepsInputOpen, keeping: keeping, sandbox: context.sandbox),
             observe: observe)
         jobs.withLock { $0[id] = job }
         return job

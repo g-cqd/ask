@@ -2,14 +2,26 @@ internal import Foundation
 internal import Subprocess
 internal import System
 
+internal import struct AskAgentCore.SandboxPolicy
+internal import struct AskAgentCore.SeatbeltProfile
+
 /// How a job's process is started: bash in its own session, torn down as a group, its output file created
 /// owner-only.
 enum JobProcess {
     /// bash running the job's command in its own session. Teardown: SIGTERM to the group, two seconds, then
     /// SIGKILL to the group.
+    ///
+    /// Under a policy that restricts anything, bash runs inside `sandbox-exec` with the policy's Seatbelt profile, which
+    /// `exec`s bash so the group teardown still reaches it. Without one, bash is started directly and costs nothing.
     static func configuration(_ launch: Job.Launch) -> Configuration {
-        Configuration(
-            executable: .path("/bin/bash"), arguments: ["-c", launch.command],
+        var arguments = ["-c", launch.command]
+        var executable = "/bin/bash"
+        if !launch.sandbox.isUnrestricted {
+            arguments = SeatbeltProfile(launch.sandbox).arguments + ["/bin/bash"] + arguments
+            executable = "/usr/bin/sandbox-exec"
+        }
+        return Configuration(
+            executable: .path(FilePath(executable)), arguments: Arguments(arguments),
             workingDirectory: FilePath(launch.workingDirectory), platformOptions: groupOptions(graceSeconds: 2))
     }
 
