@@ -35,6 +35,20 @@ Found by the 2026-10-19 audit (`docs/diary/2026-10-19-02.md`), each with the pro
    `fix/dead-store-false-positives` of g-cqd/deadwood, not yet released: a binding with no initialiser is not a
    store, and shorthand `if let x` reads the `x` it shadows. When a release carries it, bump the pin in
    `Scripts/analyzers.sh` (version and hash together) and re-measure before enabling the rule.
+9. **CI has never run.** Every run in the repository's history failed, with no steps: GitHub will not start the
+   jobs ("recent account payments have failed or your spending limit needs to be increased"). Needs the account
+   owner. Until then the gates are `Scripts/quality.sh` and the hooks, and `.github/workflows/quality.yml`
+   describes intent. When it does run, the `budgets` job will fail on idle memory (item 7).
+10. **`Sources/ask` holds untested behaviour**: `AgentConversation.update(for:)` (loop event to screen update)
+    and `toolSummary(name:input:)`. Either a small library target or an accepted gap; item 2 is the same issue.
+11. **Show `AnthropicClient.endpointProblem` to the user** (ADR-0024). It needs `Composition.swift`, which was
+    being rewritten on `robust-runs`; do it after that lands.
+12. **`RetryPolicy.never` is public and unreferenced** on `robust-runs` (deadwood, `unused-public-api`), and that
+    branch collides with the encoder refactor on `main` (`AnthropicRequestEncoder.swift`).
+13. **The bash tool passes the whole environment to commands**, including `ANTHROPIC_API_KEY`. Decide with the
+    sandbox work (0017-0022) whether to scrub it first.
+14. **`SessionFile.swift` is 246 of 250 lines**, with a 150-line struct body. The next change to it forces a
+    split; do it deliberately, by behaviour (creating, opening, appending, forking), before then.
 
 ## Done when
 

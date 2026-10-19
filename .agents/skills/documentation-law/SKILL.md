@@ -75,6 +75,10 @@ Say what you were wrong about. "This refuted us" is a useful sentence.
 
 ## Tests
 
-`Tests/AskCoreTests/DocumentationLayoutTests.swift` enforces the caps and the one-entry rule. Run
+The tests in `Tests/AskCoreTests` enforce the caps and the one-entry rule (`DiaryLineBudgetTests`,
+`RoadmapGranularityTests`, `WhitePaperTests`), the shape of the records (`ADRLayoutTests`: a unique number, a status,
+a superseded record whose successor exists and names it back) and the truth of the roadmap (`RoadmapStatusTests`:
+a valid status, blockers that exist and are not already done, unique numbers). `Scripts/roadmap.sh open` prints
+the roadmap from the front matter; never copy it into another document. Run
 `Scripts/quality.sh --check` before committing: if you added a file that breaks the law, the suite is
 what tells you, and it names the file.
