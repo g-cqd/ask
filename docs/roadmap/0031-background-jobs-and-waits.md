@@ -1,7 +1,8 @@
 ---
-status: not-started
+status: done
 blocked-by:
 date: 2026-10-19
+decision: ADR-0029
 ---
 
 # 0031 — Background jobs and waits
@@ -30,3 +31,13 @@ Probes show:
 - `job_stop` ends it and every child it started;
 - a 10 MB log's cut middle is recoverable from the named file;
 - killing ask leaves no job running.
+
+## Done (2026-10-19)
+
+Everything listed above landed (ADR-0029), with probes F, G and screen E and a live run.
+
+Two parts of "done when" are only partly met:
+- **"Killing ask leaves no job running"** holds for every exit ask can see: the end of `-p`, closing the
+  screen, SIGTERM and SIGINT. It does not hold for SIGKILL, which ask cannot observe. A watchdog would close
+  that gap; ADR-0029 records the options.
+- **The cut-middle check** used 10.9 MB of `seq` output rather than a log file.
