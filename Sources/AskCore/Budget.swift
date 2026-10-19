@@ -21,9 +21,12 @@ public enum Budget {
 
     /// Resident memory once the prompt is up and the process is idle, in mebibytes.
     ///
-    /// Measured 5,712 KiB median with a 32 KiB spread — remarkably tight, because an idle agent
-    /// allocates nothing. Budget set at 8 MiB. This is the one budget that should never grow at all.
-    public static let idleMemoryMebibytes: Int = 8
+    /// Measured 5,712 KiB median with a 32 KiB spread when the budget was first set at 8 MiB, over a program with no
+    /// agent in it. With the loop, providers, tools and the full-screen interface the median is about 9 MiB, so the
+    /// 8 MiB limit was exceeded for a long time and reported nothing useful. The owner raised it to 24 MiB
+    /// (ADR-0038). It is a ceiling that catches a regression, not a statement that 24 MiB is wanted: a change that
+    /// adds memory still needs its before and after numbers.
+    public static let idleMemoryMebibytes: Int = 24
 
     /// One byte written to the terminal to its echo reaching the output stream, in milliseconds.
     ///
