@@ -1,6 +1,6 @@
 ---
 status: in-progress
-blocked-by: ["0013"]
+blocked-by: []
 date: 2026-10-18
 prerequisites: ["ADR-0005"]
 ---
