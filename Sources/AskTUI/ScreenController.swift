@@ -40,6 +40,7 @@ public struct ScreenController: Sendable {
     /// Applies an update from the running conversation.
     public mutating func handle(_ update: ConversationUpdate) {
         switch update {
+            case .userPrompt(let text): state.transcript.addUser(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
             case .toolStarted(let name, let summary): state.transcript.startTool(name: name, summary: summary)
             case .toolFinished(let status): state.transcript.finishTool(status)
