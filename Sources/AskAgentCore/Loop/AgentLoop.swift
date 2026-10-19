@@ -9,9 +9,10 @@ public struct AgentLoop: Sendable {
     let tools: ToolRegistry
     let settings: AgentSettings
     private let context: ToolContext
-    private let retry: RetryPolicy
-    private let clock: any Clock<Duration>
+    let retry: RetryPolicy
+    let clock: any Clock<Duration>
     private let hooks: [any AgentHook]
+    let learnedWindow = LearnedWindow()
 
     /// What the loop sends, as a recorded user message, after a response stopped at the output-token limit.
     public static let continuationPrompt =
@@ -35,6 +36,22 @@ public struct AgentLoop: Sendable {
         self.context = context
         self.retry = retry
         self.clock = clock
+    }
+
+    /// What a tool output clipped to fit the window says in place of its middle.
+    static let clipNote = "omitted to fit the context window; read again with an offset and limit for the rest"
+
+    /// Whether generation stopped because the context window filled, not because the reply reached its limit.
+    ///
+    /// Anthropic says so in its stop reason. llama.cpp says `length` for both, so a reply stopped for length having
+    /// written less than it was allowed is taken as a full window: asking it to continue would only fill it again
+    /// (diary 14, six continuations in a row on an 8k server). A provider that reports no output count is trusted.
+    static func filledTheWindow(_ response: AssembledResponse, allowedOutput: Int) -> Bool {
+        switch response.stopReason {
+            case .contextWindowExceeded: true
+            case .maxTokens: (response.usage.output ?? allowedOutput) < allowedOutput
+            default: false
+        }
     }
 
     /// Runs one call through the hooks and the tool: each hook may rewrite or block it, then each may transform
@@ -62,43 +79,84 @@ public struct AgentLoop: Sendable {
         _ prompt: String, in session: SessionRecorder, events: (AgentEvent) -> Void
     ) async throws(AgentError) {
         try record(.user(prompt), in: session)
-        var contextFull = false
+        var watch = WindowWatch()
         for _ in 0 ..< settings.maximumTurns {
-            if compactionDue(session, contextFull: contextFull) {
-                try await compact(session, contextFull: contextFull, events: events)
+            if compactionDue(session, contextFull: watch.contextFull) {
+                try await compact(session, contextFull: watch.contextFull, events: events)
             }
-            let response = try await respond(to: session.tree, events: events)
-            try record(.response(response), in: session)
-            events(.responded(response))
-            let calls = response.blocks.compactMap { block -> (String, String, JSONObject)? in
-                guard case .toolCall(let id, let name, let input) = block else { return nil }
-                return (id, name, input)
-            }
-            // A full window: compact before the next request; without calls, say why the reply stopped.
-            contextFull = response.stopReason == .contextWindowExceeded
-            if calls.isEmpty, contextFull {
-                try record(.user(Self.contextFullPrompt), in: session)
+            let allowedOutput = budget.maximumTokens
+            let response: AssembledResponse
+            do {
+                response = try await respond(to: session.tree, events: events)
+            } catch .contextOverflow(let reason) {
+                // Refused for its length: compact and send the shorter conversation, once.
+                try watch.overflowed(reason)
+                try await compact(session, contextFull: true, events: events)
                 continue
             }
-            if calls.isEmpty, response.stopReason == .maxTokens {
+            watch.responded()
+            try record(.response(response), in: session)
+            events(.responded(response))
+            let filled = Self.filledTheWindow(response, allowedOutput: allowedOutput)
+            // What the reply held when the window filled is the window: size every later request to it.
+            if filled { learnedWindow.learn(Self.contextTokens(of: response)) }
+            try watch.observe(filled: filled)
+            let calls = Self.toolCalls(in: response)
+            if calls.isEmpty {
+                guard try continuesWithoutCalls(response, filled: filled, in: session, events: events) else { return }
+                continue
+            }
+            try await runTurn(calls, in: session, events: events)
+        }
+        throw .turnLimit(settings.maximumTurns)
+    }
+
+    /// The tool calls a response makes, in order.
+    static func toolCalls(in response: AssembledResponse) -> [ToolInvocation] {
+        response.blocks.compactMap { block in
+            guard case .toolCall(let id, let name, let input) = block else { return nil }
+            return ToolInvocation(id: id, name: name, input: input)
+        }
+    }
+
+    /// What a reply without tool calls means: the run is done, or it goes on after recording why.
+    /// - Returns: whether the run continues.
+    private func continuesWithoutCalls(
+        _ response: AssembledResponse, filled: Bool, in session: SessionRecorder, events: (AgentEvent) -> Void
+    ) throws(AgentError) -> Bool {
+        if filled {
+            // The window filled: the next request is compacted first; say why the reply stopped.
+            try record(.user(Self.contextFullPrompt), in: session)
+            return true
+        }
+        switch response.stopReason {
+            case .maxTokens:
                 // Cut off mid-thought or mid-call: say so in the session and ask the model to carry on.
                 try record(.user(Self.continuationPrompt), in: session)
                 events(.continuedAtOutputLimit)
-                continue
-            }
-            if calls.isEmpty, response.stopReason != .pauseTurn {
+                return true
+            case .pauseTurn:
+                return true
+            default:
                 events(.finished(response.stopReason))
-                return
-            }
-            for (id, name, input) in calls {
-                guard !Task.isCancelled else { throw .cancelled }
-                let output = await runTool(ToolInvocation(id: id, name: name, input: input), events: events)
-                try record(.toolResult(callID: id, content: output.content, isError: output.isError), in: session)
-                events(.toolFinished(id: id, name: name, output: output))
-            }
-            guard !Task.isCancelled else { throw .cancelled }
+                return false
         }
-        throw .turnLimit(settings.maximumTurns)
+    }
+
+    /// Runs a turn's calls in order, recording each result as it arrives. The results cannot be split by
+    /// compaction, so with a window known they share what it allows, each keeping its head and tail.
+    private func runTurn(_ calls: [ToolInvocation], in session: SessionRecorder, events: (AgentEvent) -> Void)
+        async throws(AgentError)
+    {
+        let limit = budget.toolOutputBytes.map { Swift.max(512, $0 / calls.count) }
+        for call in calls {
+            guard !Task.isCancelled else { throw .cancelled }
+            var output = await runTool(call, events: events)
+            if let limit { output.content = Compaction.clipped(output.content, toBytes: limit, note: Self.clipNote) }
+            try record(.toolResult(callID: call.id, content: output.content, isError: output.isError), in: session)
+            events(.toolFinished(id: call.id, name: call.name, output: output))
+        }
+        guard !Task.isCancelled else { throw .cancelled }
     }
 
     /// Streams one response for the tree's context and assembles it.
@@ -113,45 +171,8 @@ public struct AgentLoop: Sendable {
         let built = RequestContext(context)
         if !built.repairs.isEmpty { events(.repaired(built.repairs)) }
         return ModelRequest(
-            model: settings.model, maxTokens: settings.maximumTokens, systemPrompt: settings.systemPrompt,
+            model: settings.model, maxTokens: budget.maximumTokens, systemPrompt: settings.systemPrompt,
             messages: built.messages, tools: tools.definitions)
-    }
-
-    /// Streams `request` and assembles the response, retrying transient failures.
-    func stream(_ request: ModelRequest, events: (AgentEvent) -> Void) async throws(AgentError)
-        -> AssembledResponse
-    {
-        var attempt = 1
-        while true {
-            var assembler = ResponseAssembler()
-            var shown = false
-            do {
-                for try await event in provider.stream(request) {
-                    try assembler.apply(event)
-                    shown = true
-                    events(.model(event))
-                }
-            } catch let error as ResponseAssemblyError {
-                throw .assembly(error)
-            } catch {
-                if Task.isCancelled { throw .cancelled }
-                // Retried only when nothing of this attempt reached the screen: a second attempt would
-                // otherwise repeat what was already shown.
-                guard !shown, attempt < retry.maximumAttempts, let advice = error as? any RetryAdvice,
-                    advice.isRetryable
-                else { throw .provider(String(describing: error)) }
-                let delay = retry.delay(after: attempt, requested: advice.retryAfter)
-                events(
-                    .retrying(
-                        attempt: attempt + 1, of: retry.maximumAttempts, delay: delay, reason: String(describing: error)
-                    ))
-                do { try await clock.sleep(for: delay) } catch { throw .cancelled }
-                attempt += 1
-                continue
-            }
-            guard !Task.isCancelled else { throw .cancelled }
-            do { return try assembler.finish() } catch { throw .assembly(error) }
-        }
     }
 
     func record(_ payload: SessionPayload, in session: SessionRecorder) throws(AgentError) {

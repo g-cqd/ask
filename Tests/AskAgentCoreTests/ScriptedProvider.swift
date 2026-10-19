@@ -24,6 +24,24 @@ final class ScriptedProvider: ModelProvider {
         case sized(String, prompt: Int)
         /// Text that stops because the context window is full.
         case windowFull(String)
+        /// The provider refuses the request for being longer than the context window.
+        case overflow
+        /// The same refusal, naming the window, as llama.cpp's `n_ctx` and every server's wording do.
+        case overflowNaming(window: Int)
+        /// Reasoning only, stopped at the output limit before any text: a reasoning model out of reply budget.
+        case thinkingOnly(String)
+        /// Text that stops for length having written far less than the request allowed: the server's context
+        /// filled during generation, which llama.cpp reports as `length`, like the output limit.
+        case contextExhausted(String, prompt: Int = 1, output: Int = 3)
+    }
+
+    struct OverflowFailure: RetryAdvice, CustomStringConvertible {
+        var window: Int?
+        var reportedContextWindow: Int? { window }
+        var isRetryable: Bool { false }
+        var retryAfter: Duration? { nil }
+        var isContextOverflow: Bool { true }
+        var description: String { "request exceeds the available context size" }
     }
 
     struct TransientFailure: RetryAdvice, CustomStringConvertible {
@@ -90,11 +108,27 @@ final class ScriptedProvider: ModelProvider {
             case .cutOff(let text):
                 events += [
                     .blockStarted(index: 0, .text), .textDelta(index: 0, text), .blockStopped(index: 0),
-                    .messageDelta(stopReason: .maxTokens, usage: TokenUsage(output: 1))
+                    .messageDelta(stopReason: .maxTokens, usage: TokenUsage(output: request.maxTokens))
                 ]
             case .permanent:
                 continuation.finish(throwing: PermanentFailure())
+            case .overflow:
+                continuation.finish(throwing: OverflowFailure())
                 return stream
+            case .overflowNaming(let window):
+                continuation.finish(throwing: OverflowFailure(window: window))
+                return stream
+            case .contextExhausted(let text, let prompt, let output):
+                events = [.messageStarted(id: "m", model: "claude-x", usage: TokenUsage(input: prompt))]
+                events += [
+                    .blockStarted(index: 0, .text), .textDelta(index: 0, text), .blockStopped(index: 0),
+                    .messageDelta(stopReason: .maxTokens, usage: TokenUsage(output: output))
+                ]
+            case .thinkingOnly(let text):
+                events += [
+                    .blockStarted(index: 0, .thinking), .thinkingDelta(index: 0, text), .blockStopped(index: 0),
+                    .messageDelta(stopReason: .maxTokens, usage: TokenUsage(output: 1))
+                ]
             case .transient(let retryAfter):
                 continuation.finish(throwing: TransientFailure(retryAfter: retryAfter))
                 return stream
