@@ -8,7 +8,8 @@ import Testing
 @Suite("Anthropic requests carry the system prompt in user messages")
 struct AnthropicRequestTests {
     private func body(_ request: ModelRequest) -> String {
-        String(decoding: AnthropicRequestEncoder.encode(request), as: UTF8.self)
+        // Shape tests turn caching off; the caching tests below pin where breakpoints go.
+        String(decoding: AnthropicRequestEncoder.encode(request, caching: false), as: UTF8.self)
     }
 
     private func request(_ messages: [ModelMessage], prompt: [String] = ["Be brief."], tools: [ToolDefinition] = [])
@@ -93,6 +94,52 @@ struct AnthropicRequestTests {
     @Test func `text is escaped, and non-ASCII is kept as UTF-8`() {
         let encoded = body(request([ModelMessage(role: .user, blocks: [.text("a \"quote\"\n\tand é/本")])], prompt: []))
         #expect(encoded.contains(#""text":"a \"quote\"\n\tand é/本""#))
+    }
+
+    // MARK: - Prompt caching
+
+    private func cached(_ request: ModelRequest) -> String {
+        String(decoding: AnthropicRequestEncoder.encode(request), as: UTF8.self)
+    }
+
+    private let mark = #","cache_control":{"type":"ephemeral"}"#
+
+    @Test func `caching marks the end of the prompt, the last tool, and the end of the conversation`() throws {
+        let schema = try JSONObject(validating: Array(#"{"type":"object"}"#.utf8))
+        let tool = ToolDefinition(name: "read", description: "Read.", inputSchema: schema)
+        let encoded = cached(
+            request(
+                [
+                    ModelMessage(role: .user, blocks: [.text("Hi")]),
+                    ModelMessage(role: .assistant, blocks: [.text("Hello")]),
+                    ModelMessage(role: .user, blocks: [.text("Again")])
+                ], prompt: ["One.", "Two."], tools: [tool]))
+        #expect(encoded.contains(#"{"type":"text","text":"One."},{"type":"text","text":"Two.""# + mark + "}"))
+        #expect(encoded.contains(#"{"type":"text","text":"Again""# + mark + "}"))
+        #expect(encoded.contains(#""input_schema":{"type":"object"}"# + mark + "}"))
+        #expect(encoded.ranges(of: "cache_control").count == 3, "three breakpoints, within the four allowed")
+        #expect(!encoded.contains(#""text":"Hi""# + mark))
+    }
+
+    @Test func `the conversation breakpoint skips blocks that cannot carry one`() {
+        let encoded = cached(
+            request(
+                [ModelMessage(role: .assistant, blocks: [.text("Answer"), .thinking(text: "t", signature: "s")])],
+                prompt: []))
+        #expect(encoded.contains(#"{"type":"text","text":"Answer""# + mark + "}"))
+        #expect(!encoded.contains(#""signature":"s""# + mark))
+    }
+
+    @Test func `when the prompt is the last block, it carries one breakpoint, not two`() {
+        let encoded = cached(request([], prompt: ["Only."]))
+        #expect(encoded.ranges(of: "cache_control").count == 1)
+    }
+
+    @Test func `tool results carry the conversation breakpoint`() {
+        let encoded = cached(
+            request(
+                [ModelMessage(role: .user, blocks: [.toolResult(id: "t", content: "42", isError: false)])], prompt: []))
+        #expect(encoded.contains(#""content":"42""# + mark + "}"))
     }
 
     @Test func `only a JSON object is accepted as tool input or schema`() {

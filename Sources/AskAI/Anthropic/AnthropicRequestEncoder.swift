@@ -9,12 +9,27 @@ internal import AemiJSON
 ///
 /// Written with a streaming writer straight into one buffer; tool input and schemas are spliced verbatim,
 /// because ``JSONObject`` validated them when they were made.
+///
+/// **Prompt caching.** Three `cache_control` breakpoints, within the four the API allows:
+/// - the last tool, which caches the tools and the system line;
+/// - the last prompt block, which caches ask's instructions;
+/// - the last block of the conversation that can carry one, so the next turn reads everything before it
+///   from cache.
+///
+/// The history is re-sent every turn; without these, every turn paid full input price for all of it.
 public enum AnthropicRequestEncoder {
     /// The first-party identity line the subscription gate requires as the whole `system` parameter.
     public static let canonicalSystemLine = "You are a Claude agent, built on Anthropic's Claude Agent SDK."
 
     /// The request body.
-    public static func encode(_ request: ModelRequest) -> [UInt8] {
+    /// - Parameters:
+    ///   - request: the request to encode.
+    ///   - caching: whether to place prompt-caching breakpoints. On for every real request; shape tests turn
+    ///     it off to keep their expectations readable.
+    /// - Returns: the JSON body.
+    public static func encode(_ request: ModelRequest, caching: Bool = true) -> [UInt8] {
+        let (messages, promptEnd) = carryingPromptMarkingItsEnd(request.systemPrompt, in: request.messages)
+        let marks = caching ? [promptEnd, conversationEnd(messages)].compactMap { $0 } : []
         var writer = JSONStreamWriter(capacity: 4_096)
         writer.object { writer in
             writer.field("model", request.model)
@@ -25,48 +40,79 @@ public enum AnthropicRequestEncoder {
             writer.array { $0.typed("text", "text", canonicalSystemLine) }
             writer.key("messages")
             writer.array { writer in
-                for message in carryingPrompt(request.systemPrompt, in: request.messages) {
-                    encode(message, into: &writer)
+                for (index, message) in messages.enumerated() {
+                    encode(message, into: &writer, marking: marks.filter { $0.message == index }.map(\.block))
                 }
             }
             if !request.tools.isEmpty {
                 writer.key("tools")
                 writer.array { writer in
-                    for tool in request.tools { encode(tool, into: &writer) }
+                    for (index, tool) in request.tools.enumerated() {
+                        encode(tool, into: &writer, cached: caching && index == request.tools.count - 1)
+                    }
                 }
             }
         }
         return writer.finish()
     }
 
-    /// The messages with the prompt moved into the first user message.
-    static func carryingPrompt(_ prompt: [String], in messages: [ModelMessage]) -> [ModelMessage] {
-        guard !prompt.isEmpty else { return messages }
+    /// The messages with the prompt moved in, and where its last block landed.
+    private static func carryingPromptMarkingItsEnd(
+        _ prompt: [String], in messages: [ModelMessage]
+    ) -> (messages: [ModelMessage], promptEnd: (message: Int, block: Int)?) {
+        guard !prompt.isEmpty else { return (messages, nil) }
         let promptBlocks = prompt.map(RequestBlock.text)
         guard var first = messages.first, first.role == .user else {
-            return [ModelMessage(role: .user, blocks: promptBlocks)] + messages
+            return ([ModelMessage(role: .user, blocks: promptBlocks)] + messages, (0, promptBlocks.count - 1))
         }
         var lead = 0
         while lead < first.blocks.count, case .toolResult = first.blocks[lead] { lead += 1 }
         first.blocks.insert(contentsOf: promptBlocks, at: lead)
-        return [first] + messages.dropFirst()
+        return ([first] + messages.dropFirst(), (0, lead + promptBlocks.count - 1))
+    }
+
+    /// The last block of the conversation that can carry a breakpoint: thinking blocks cannot.
+    private static func conversationEnd(_ messages: [ModelMessage]) -> (message: Int, block: Int)? {
+        guard let last = messages.indices.last else { return nil }
+        let block = messages[last].blocks
+            .lastIndex { block in
+                switch block {
+                    case .thinking, .redactedThinking: false
+                    default: true
+                }
+            }
+        return block.map { (last, $0) }
     }
 
     // MARK: - Pieces
 
-    private static func encode(_ message: ModelMessage, into writer: inout JSONStreamWriter) {
+    private static func encode(_ message: ModelMessage, into writer: inout JSONStreamWriter, marking marked: [Int]) {
         writer.object { writer in
             writer.field("role", message.role == .user ? "user" : "assistant")
             writer.key("content")
             writer.array { writer in
-                for block in message.blocks { encode(block, into: &writer) }
+                for (index, block) in message.blocks.enumerated() {
+                    encode(block, into: &writer, cached: marked.contains(index))
+                }
             }
         }
     }
 
-    private static func encode(_ block: RequestBlock, into writer: inout JSONStreamWriter) {
+    /// Writes the breakpoint member, inside the object being written, when `cached`.
+    private static func breakpoint(if cached: Bool, _ writer: inout JSONStreamWriter) {
+        guard cached else { return }
+        writer.key("cache_control")
+        writer.object { $0.field("type", "ephemeral") }
+    }
+
+    private static func encode(_ block: RequestBlock, into writer: inout JSONStreamWriter, cached: Bool) {
         switch block {
-            case .text(let value): writer.typed("text", "text", value)
+            case .text(let value):
+                writer.object {
+                    $0.field("type", "text")
+                    $0.field("text", value)
+                    breakpoint(if: cached, &$0)
+                }
             case .thinking(let thinking, let signature):
                 writer.object {
                     $0.field("type", "thinking")
@@ -82,6 +128,7 @@ public enum AnthropicRequestEncoder {
                     $0.field("name", name)
                     $0.key("input")
                     $0.raw(input.bytes)
+                    breakpoint(if: cached, &$0)
                 }
             case .toolResult(let id, let content, let isError):
                 writer.object {
@@ -92,16 +139,18 @@ public enum AnthropicRequestEncoder {
                         $0.key("is_error")
                         $0.bool(true)
                     }
+                    breakpoint(if: cached, &$0)
                 }
         }
     }
 
-    private static func encode(_ tool: ToolDefinition, into writer: inout JSONStreamWriter) {
+    private static func encode(_ tool: ToolDefinition, into writer: inout JSONStreamWriter, cached: Bool) {
         writer.object {
             $0.field("name", tool.name)
             $0.field("description", tool.description)
             $0.key("input_schema")
             $0.raw(tool.inputSchema.bytes)
+            breakpoint(if: cached, &$0)
         }
     }
 }
