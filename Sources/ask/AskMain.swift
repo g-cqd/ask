@@ -45,6 +45,15 @@ struct Ask: AsyncParsableCommand {
             valueName: "tokens"))
     var compactAt: Int?
 
+    @Flag(name: .customLong("self-check"), help: .hidden)
+    var selfCheck = false
+
+    @Option(name: .customLong("reloaded-from"), help: .hidden)
+    var reloadedFrom: String?
+
+    @Option(name: .customLong("reload-started"), help: .hidden)
+    var reloadStarted: Int?
+
     @Flag(name: [.short, .customLong("continue")], help: "Continue the session written last in this project.")
     var continueLatest = false
 
@@ -74,11 +83,16 @@ struct Ask: AsyncParsableCommand {
             flags: .init(model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt))
         let settings: RunSettings
         do { settings = try source.load() } catch { fail("ask: \(error)", code: 78) }
+        if selfCheck {
+            checkSelf(settings)
+            return
+        }
+        let reloaded = reloadedFrom.map { ReloadNotice(from: $0, startedMilliseconds: reloadStarted ?? 0) }
         if let prompt {
             await runPrompt(prompt, source: source, settings: settings, session: session)
             return
         }
-        await runInteractive(source: source, settings: settings, session: session)
+        await runInteractive(source: source, settings: settings, session: session, reloaded: reloaded)
     }
 }
 

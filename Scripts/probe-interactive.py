@@ -8,6 +8,7 @@ C: Ctrl-C at an idle prompt quits, exit 0, with the terminal restored (the teard
 Usage: Scripts/probe-interactive.py .build/release/ask
 """
 import json
+import shutil
 import importlib.util, os, pty, select, signal, struct, sys, tempfile, time, fcntl, termios
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -102,13 +103,14 @@ class Emulator:
 
 
 class Screen:
-    def __init__(self, server_url, project, state=None, arguments=(), config=None):
+    def __init__(self, server_url, project, state=None, arguments=(), config=None, binary=None):
         self.state = state or tempfile.mkdtemp()
         env = agent.environment(self.state, server_url, config)
+        binary = binary or ASK
         self.pid, self.fd = pty.fork()
         if self.pid == 0:
             os.chdir(project)
-            os.execve(ASK, [ASK, *arguments], env)
+            os.execve(binary, [binary, *arguments], env)
         fcntl.ioctl(self.fd, termios.TIOCSWINSZ, struct.pack("HHHH", ROWS, COLUMNS, 0, 0))
         self.output = b""
         self.screen = Emulator()
@@ -392,7 +394,107 @@ def probe_slash():
     return all(results)
 
 
+def install_build(directory, name="ask", script=None):
+    """Puts a build at `directory/name` the way a linker does: written beside, then renamed into place, so the
+    path names a new file. A copy of the real binary, or a shell `script` standing in for a broken build."""
+    staged = os.path.join(directory, f".{name}.new")
+    if script is None:
+        shutil.copy2(ASK, staged)
+    else:
+        open(staged, "w").write(script)
+        os.chmod(staged, 0o755)
+    os.rename(staged, os.path.join(directory, name))
+    return os.path.join(directory, name)
+
+
+def terminal_is_cooked(fd):
+    """Whether the terminal behind the pty master `fd` is in line mode with echo, as a shell needs it. On macOS
+    `tcgetattr` on the master reports the slave's settings, and still does after the child has exited."""
+    lflag = termios.tcgetattr(fd)[3]
+    return bool(lflag & termios.ICANON) and bool(lflag & termios.ECHO)
+
+
+def probe_reload_binary():
+    print("H: /reload switches to a newly built ask and keeps the session")
+    project, state, config, bin_dir = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(config, "ask"))
+    binary = install_build(bin_dir)
+    server = agent.Server([agent.turn([("text", "Answer 1.")], "end_turn"), agent.turn([("text", "Answer 2.")], "end_turn")])
+    screen = Screen(server.url, project, state, config=config, binary=binary)
+    results = [check("prompt drawn", screen.until("ask>"))]
+    screen.type("one\r")
+    screen.until("Answer 1.")
+    screen.until_status("ready")
+    screen.type("/reload\r")
+    results.append(check("with the build unchanged there is nothing to reload", screen.until("nothing to reload")))
+    install_build(bin_dir)
+    results.append(check("a new build appearing beside the running one is announced", screen.until("A new ask binary appeared.")))
+    screen.until_status("ready")
+    results.append(check("the terminal is raw while ask runs", not terminal_is_cooked(screen.fd)))
+    screen.type("/reload\r")
+    results += [check("it checks the new build", screen.until("Checking the new build")),
+                check("and the new process says it reloaded", screen.until("Reloaded ask: built ", 30)),
+                check("resuming the same session", screen.until("Resumed session 20")),
+                check("with the earlier conversation shown", screen.until("› one") and screen.until("Answer 1."))]
+    screen.until_status("ready")
+    results.append(check("the terminal is raw again in the new process", not terminal_is_cooked(screen.fd)))
+    screen.type("two\r")
+    results.append(check("the next prompt works in the new process", screen.until("Answer 2.", 30)))
+    screen.until_status("ready")
+    files = agent.sessions(state)
+    kinds = [json.loads(l)["payload"]["kind"] for l in open(files[0]) if '"type":"entry"' in l] if len(files) == 1 else files
+    results.append(check("one session file holds both runs", kinds == ["user", "response", "user", "response"], kinds))
+    if len(server.requests) >= 2:
+        texts = [b.get("text", "") for m in server.requests[1]["body"]["messages"] for b in m["content"]]
+        results.append(check("and the earlier exchange was sent again", "one" in texts and "Answer 1." in texts, texts))
+    screen.type("/quit\r")
+    results += [check("quits cleanly", screen.finish() == 0),
+                check("and the terminal is back in line mode with echo", terminal_is_cooked(screen.fd))]
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_reload_refused():
+    print("I: a broken build, and running jobs, stop a reload")
+    project, state, config, bin_dir = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(config, "ask"))
+    binary = install_build(bin_dir)
+    port = agent.free_port()
+    server = agent.Server([
+        agent.turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
+        agent.turn([("call", "t2", "wait", {"job": "job-1", "port_open": port, "timeout_seconds": 20})], "tool_use"),
+        agent.turn([("text", "Serving.")], "end_turn"),
+        agent.turn([("text", "Still here.")], "end_turn")])
+    screen = Screen(server.url, project, state, config=config, binary=binary)
+    screen.until("ask>")
+    screen.type("serve\r")
+    results = [check("a job is running", screen.until("Serving.", 30) and agent.accepts(port))]
+    screen.until_status("ready")
+    install_build(bin_dir, script="#!/bin/sh\necho 'bad build' >&2\nexit 3\n")
+    screen.type("/reload\r")
+    results.append(check("a running job stops the reload, naming it and the way out", screen.until("Not reloading: 1 job is running (job-1)") and screen.until("/reload now")))
+    results.append(check("and the job still runs", agent.accepts(port)))
+    screen.until_status("ready")
+    screen.type("/reload now\r")
+    results += [check("a build that fails its self-check is refused, with why", screen.until("failed its self-check: it exited 3", 30) and screen.until("bad build") and screen.until("Staying on the running")),
+                check("and reload now had not stopped the job before checking", agent.accepts(port))]
+    screen.until_status("ready")
+    screen.type("still there?\r")
+    results.append(check("ask carries on after a refused reload", screen.until("Still here.", 30)))
+    screen.until_status("ready")
+    install_build(bin_dir)
+    screen.type("/reload now\r")
+    results += [check("with a good build, /reload now reloads", screen.until("Reloaded ask: built ", 30)),
+                check("having stopped the job first", not agent.accepts(port)),
+                check("into the same session", screen.until("Resumed session 20") and screen.until("Still here."))]
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("and quits cleanly", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

@@ -8,15 +8,21 @@ enum JobProcess {
     /// bash running the job's command in its own session. Teardown: SIGTERM to the group, two seconds, then
     /// SIGKILL to the group.
     static func configuration(_ launch: Job.Launch) -> Configuration {
+        Configuration(
+            executable: .path("/bin/bash"), arguments: ["-c", launch.command],
+            workingDirectory: FilePath(launch.workingDirectory), platformOptions: groupOptions(graceSeconds: 2))
+    }
+
+    /// Own session, and a teardown that reaches every process the command started: SIGTERM to the group, `graceSeconds`
+    /// to stop, then SIGKILL to the group. Shared by jobs and by the self-check of a new build.
+    static func groupOptions(graceSeconds: Int) -> PlatformOptions {
         var options = PlatformOptions()
         options.createSession = true
         options.teardownSequence = [
-            .gracefulShutDown(toProcessGroup: true, allowedDurationToNextStep: .seconds(2)),
+            .gracefulShutDown(toProcessGroup: true, allowedDurationToNextStep: .seconds(graceSeconds)),
             .send(signal: .kill, toProcessGroup: true, allowedDurationToNextStep: .seconds(1))
         ]
-        return Configuration(
-            executable: .path("/bin/bash"), arguments: ["-c", launch.command],
-            workingDirectory: FilePath(launch.workingDirectory), platformOptions: options)
+        return options
     }
 
     /// A new, owner-only file at `path`, in a directory created owner-only if needed; nil if it cannot be made.

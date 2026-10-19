@@ -11,6 +11,10 @@ public protocol Conversation: Sendable {
     /// The commands this conversation understands, beyond the screen's own `/help` and `/quit`.
     var commands: [SlashCommand] { get }
 
+    /// Starts anything that reports on its own while the screen is open, such as a new build appearing, until the
+    /// returned task is cancelled. Nil when there is nothing to watch.
+    func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>?
+
     /// Runs the command `name`, one of ``commands``. It is a run like a prompt's: updates arrive through
     /// `update`, ending with ``ConversationUpdate/runEnded``, and cancelling the task aborts it.
     func command(
@@ -21,6 +25,9 @@ public protocol Conversation: Sendable {
 extension Conversation {
     /// No commands of its own.
     public var commands: [SlashCommand] { [] }
+
+    /// Nothing to watch.
+    public func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>? { nil }
 
     /// Ends at once, saying the command is unknown. A conversation with no commands is never asked to run one.
     public func command(
