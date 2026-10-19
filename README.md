@@ -44,6 +44,17 @@ Idle memory is currently **over** its budget, and the action-to-action figure is
 ([roadmap 0007](docs/roadmap/0007-re-derive-the-action-budget.md)). **CI has never run**: GitHub refuses to start
 the jobs for a billing reason, so the gates are enforced by `Scripts/quality.sh` and the git hooks, not by CI.
 
+## Configuration
+
+Settings live in `config.json`, JSON or JSON5 (comments, unquoted keys, trailing commas), in `~/.config/ask/` and
+in a project's `.ask/`. The keys are `model`, `provider`, `maxTurns` and `compactAt`. Layers apply lowest first:
+built-in defaults, the user file, the project file, `ASK_*` environment variables, flags. `ask config` shows each
+value and where it came from.
+
+A project's file is text from a repository, so it is ignored until you run `ask trust` in that project, at a
+terminal, and ignored again if it changes. Edits are picked up at the next prompt; a broken edit is reported and
+the previous settings stay ([ADR-0032](docs/adr/0032-configuration-is-json-or-json5-in-layers-and-a-project-file-needs-trust.md)).
+
 ## Providers
 
 Claude is built in (`ask login`, or `ANTHROPIC_API_KEY`). Any server that speaks OpenAI chat completions (llama.cpp,
