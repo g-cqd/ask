@@ -14,8 +14,8 @@ struct ResponsesRequestEncoderTests {
     private static let schema = try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8))
     private static let tool = ToolDefinition(name: "read", description: "Read.", inputSchema: schema)
 
-    private func encode(_ request: ModelRequest, outputLimit: Bool = true) -> String {
-        String(decoding: ResponsesRequestEncoder.encode(request, sendsOutputLimit: outputLimit), as: UTF8.self)
+    private func encode(_ request: ModelRequest, dialect: ResponsesDialect = .standard) -> String {
+        String(decoding: ResponsesRequestEncoder.encode(request, dialect: dialect), as: UTF8.self)
     }
 
     private func call(_ id: String, _ json: String) throws -> RequestBlock {
@@ -51,8 +51,8 @@ struct ResponsesRequestEncoderTests {
         let request = ModelRequest(
             model: "m", maxTokens: 100, systemPrompt: [],
             messages: [ModelMessage(role: .user, blocks: [.text("hi")])], tools: [])
-        #expect(!encode(request, outputLimit: false).contains("max_output_tokens"))
-        #expect(encode(request, outputLimit: true).contains(#""max_output_tokens":100"#))
+        #expect(!encode(request, dialect: ResponsesDialect(sendsOutputLimit: false)).contains("max_output_tokens"))
+        #expect(encode(request).contains(#""max_output_tokens":100"#))
     }
 
     @Test func `no instructions and no tools leave those fields out`() {
@@ -110,5 +110,28 @@ struct ResponsesRequestEncoderTests {
             messages: [ModelMessage(role: .user, blocks: [.toolResult(id: "c", content: "boom", isError: true)])],
             tools: [])
         #expect(encode(request).contains(#""input":[{"type":"function_call_output","call_id":"c","output":"boom"}]"#))
+    }
+
+    @Test func `a cache key is sent last, and only when the dialect has one`() {
+        let request = ModelRequest(
+            model: "m", maxTokens: 1, systemPrompt: [],
+            messages: [ModelMessage(role: .user, blocks: [.text("hi")])], tools: [])
+        #expect(
+            encode(request, dialect: ResponsesDialect(promptCacheKey: "sess-1"))
+                .hasSuffix(#","prompt_cache_key":"sess-1"}"#))
+        #expect(!encode(request).contains("prompt_cache_key"))
+    }
+
+    @Test func `instructions the server insists on are supplied only when ask has none`() {
+        let bare = ModelRequest(
+            model: "m", maxTokens: 1, systemPrompt: [],
+            messages: [ModelMessage(role: .user, blocks: [.text("hi")])], tools: [])
+        let dialect = ResponsesDialect(fallbackInstructions: "You are a helpful assistant.")
+        #expect(encode(bare, dialect: dialect).contains(#""instructions":"You are a helpful assistant.""#))
+        var given = bare
+        given.systemPrompt = ["Mine."]
+        let body = encode(given, dialect: dialect)
+        #expect(body.contains(#""instructions":"Mine.""#))
+        #expect(!body.contains("helpful assistant"))
     }
 }
