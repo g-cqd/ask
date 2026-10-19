@@ -41,7 +41,7 @@ public struct CodexBrowserSignIn: Sendable {
         let how =
             listener == nil
             ? "Sign in, then paste the address your browser ends on (it starts with \(CodexOAuth.redirectURI))."
-            : "A browser window should open; complete sign-in there and ask continues by itself."
+            : "Open the address above in a browser and sign in; ask continues by itself when you are done."
         show(SignInPrompt(url: link, instructions: how))
         let code: String
         if let listener {

@@ -15,7 +15,7 @@ func codexLogin(device: Bool, file: CredentialFile) async {
                 .run(
                     show: show,
                     paste: {
-                        print("Paste the address here:")
+                        say("Paste the address here:")
                         return await Task.detached { readLine(strippingNewline: true) }.value
                     })
         }
