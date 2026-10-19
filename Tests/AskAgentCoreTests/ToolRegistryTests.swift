@@ -7,17 +7,14 @@ import Testing
 /// on, and no output larger than the cap.
 @Suite("Tools dispatch by name, and every outcome is a bounded output")
 struct ToolRegistryTests {
-    private struct Echo: Tool {
-        struct Arguments: Decodable { let text: String }
+    private struct Echo: ArgumentTool {
+        struct Arguments: Decodable, Sendable { let text: String }
         let definition = ToolDefinition(
             name: "echo", description: "Echo text.",
             inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
 
-        func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
-            switch arguments(Arguments.self, from: input) {
-                case .success(let arguments): ToolOutput(arguments.text)
-                case .failure(let output): output
-            }
+        func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
+            ToolOutput(arguments.text)
         }
     }
 

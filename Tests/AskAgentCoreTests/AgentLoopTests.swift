@@ -120,17 +120,14 @@ struct AgentLoopTests {
         #expect(next.repairs == [.interruptedToolCall(id: "b")])
     }
 
-    private struct Upper: Tool {
-        struct Arguments: Decodable { let text: String }
+    private struct Upper: ArgumentTool {
+        struct Arguments: Decodable, Sendable { let text: String }
         let definition = ToolDefinition(
             name: "upper", description: "Uppercase text.",
             inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
 
-        func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
-            switch arguments(Arguments.self, from: input) {
-                case .success(let arguments): ToolOutput(arguments.text.uppercased())
-                case .failure(let output): output
-            }
+        func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
+            ToolOutput(arguments.text.uppercased())
         }
     }
 

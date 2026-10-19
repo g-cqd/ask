@@ -14,6 +14,12 @@ public struct JSONObject: Sendable, Equatable {
 
     private init(trusted bytes: [UInt8]) { self.bytes = bytes }
 
+    /// Wraps `bytes` that are one JSON object by construction, such as a stream writer's output for an object.
+    ///
+    /// The caller carries the proof, which is why this is internal: anything from outside the module goes through
+    /// ``init(validating:)``.
+    init(unchecked bytes: [UInt8]) { self.bytes = bytes }
+
     /// Validates `bytes` as one JSON object.
     /// - Throws: ``Invalid`` for anything else, including other JSON values.
     public init(validating bytes: [UInt8]) throws(Invalid) {
