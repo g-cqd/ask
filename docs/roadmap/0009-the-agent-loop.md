@@ -72,3 +72,15 @@ Per-turn cost with an instant provider: 33 µs fresh and 210 µs after 500 turns
 - steering and follow-up messages;
 - resuming a session (`--continue`, which needs a lock);
 - the first live run (needs the user's `ask login`).
+
+## Robust runs (2026-10-19)
+
+- **Retry with backoff** for transient failures (RetryAdvice, RetryPolicy): never after anything of the
+  attempt was shown.
+- **Continuation after the output-token limit:** a cut-off tool call is dropped, and a visible user entry asks
+  the model to continue.
+- **`--max-turns`.**
+- **Token usage** on the status line and at the end of `-p`.
+- **AGENTS.md / CLAUDE.md** discovery.
+
+Still owed for full runs: resume, compaction, steering, jobs and waits.
