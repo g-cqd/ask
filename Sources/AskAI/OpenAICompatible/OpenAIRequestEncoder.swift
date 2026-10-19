@@ -37,6 +37,7 @@ public enum OpenAIRequestEncoder {
 
     private static func encode(_ message: ModelMessage, into writer: inout JSONStreamWriter) {
         let text = message.blocks.compactMap { if case .text(let text) = $0 { text } else { nil } }
+        // @dl:accept -- each protocol writes a tool result as its own item in its own words; the loop is the same shape, the fields are not
         switch message.role {
             case .user:
                 for case .toolResult(let id, let content, _) in message.blocks {
