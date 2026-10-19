@@ -1,4 +1,5 @@
 /// One block of a complete assistant response.
+// @dl:accept -- the assembled response and the request are different directions with different cases (unrecognized; toolResult); roadmap 0026 revisits the block vocabulary
 public enum ContentBlock: Sendable, Equatable {
     case text(String)
     /// Reasoning, with the signature that must accompany it when sent back.

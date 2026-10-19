@@ -133,6 +133,7 @@ private final class RecordingConversation: Conversation {
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
         state.withLock { $0.prompts.append(prompt) }
         let waits = waitsForCancellation
+        // @al:accept -- a test double: the task ends only when the test cancels it, and the object lives for that test alone
         return Task {
             if waits {
                 let stream = AsyncStream<Never> { _ in }

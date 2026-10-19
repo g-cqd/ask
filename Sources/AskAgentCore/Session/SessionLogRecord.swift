@@ -32,6 +32,7 @@ extension SessionLogRecord: Codable {
 
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
+        // @dl:accept -- explicit coding keeps the session format ours, not Swift's synthesized shape (ADR-0013)
         switch self {
             case .header(let version):
                 try container.encode(Kind.session, forKey: .type)
