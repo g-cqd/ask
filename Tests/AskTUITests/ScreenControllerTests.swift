@@ -74,6 +74,14 @@ struct ScreenControllerTests {
         #expect(controller.state.scrollback == 0)
     }
 
+    @Test func `a resumed session's prompts show as the user's, without starting a run`() {
+        var controller = ScreenController(label: "m")
+        controller.handle(.userPrompt("fix it"))
+        controller.handle(.assistantText("Fixed."))
+        #expect(controller.state.transcript.items == [.user("fix it"), .assistant("Fixed.")])
+        #expect(!controller.state.running)
+    }
+
     @Test func `a status update shows at the right of the status line`() {
         var controller = ScreenController(label: "m")
         controller.handle(.status("in 2.1k (48% cached) · out 55"))

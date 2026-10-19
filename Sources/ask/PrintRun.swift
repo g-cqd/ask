@@ -57,7 +57,7 @@ private final class PrintRenderer: Sendable {
 
 /// Runs `prompt` to completion. SIGINT and SIGTERM abort the run, so a running command's whole process group
 /// is stopped, and then exit with 128 + the signal.
-func runPrompt(_ prompt: String, model: String, maximumTurns: Int) async {
+func runPrompt(_ prompt: String, model: String, maximumTurns: Int, session choice: SessionChoice) async {
     let transport = URLSessionTransport()
     // Fail fast before any work when there is no way to authenticate.
     do {
@@ -79,12 +79,21 @@ func runPrompt(_ prompt: String, model: String, maximumTurns: Int) async {
         fail("ask: \(error)", code: 70)
     }
     let directory = SessionDirectory(project: workingDirectory)
-    let sessionPath = directory.newSessionPath()
+    let session: SessionRecorder
+    if let resumed = choice.open(in: directory, note: { FileHandle.standardError.write(Data("ask: \($0)\n".utf8)) }) {
+        session = resumed
+    } else {
+        do {
+            try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
+            session = SessionRecorder(try SessionFile.create(at: FilePath(directory.newSessionPath())))
+        } catch {
+            fail("ask: cannot create a session: \(error)", code: 73)
+        }
+    }
+    let sessionPath = session.path
     let renderer = PrintRenderer()
 
     let run = Task<Void, any Error> {
-        try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
-        let session = SessionRecorder(try SessionFile.create(at: FilePath(sessionPath)))
         try await loop.run(prompt, in: session) { renderer.render($0) }
     }
     let interrupted = Mutex<Int32?>(nil)
