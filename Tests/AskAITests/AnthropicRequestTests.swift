@@ -82,6 +82,28 @@ struct AnthropicRequestTests {
                 + #""is_error":true}]}]}"#)
     }
 
+    @Test func `reasoning another provider produced, with no signature, is not sent to Anthropic`() {
+        // A session that began on an OpenAI-compatible server holds thinking blocks with no signature. Anthropic
+        // rejects a thinking block whose signature it did not issue, so a resumed session would fail every turn.
+        let messages = [
+            ModelMessage(role: .user, blocks: [.text("Q")]),
+            ModelMessage(role: .assistant, blocks: [.thinking(text: "local", signature: ""), .text("A")]),
+            ModelMessage(role: .assistant, blocks: [.thinking(text: "only", signature: "")]),
+            ModelMessage(role: .user, blocks: [.text("Again")])
+        ]
+        let encoded = body(request(messages, prompt: []))
+        #expect(!encoded.contains("local"))
+        #expect(!encoded.contains("only"))
+        #expect(encoded.contains(#"{"role":"assistant","content":[{"type":"text","text":"A"}]}"#))
+        // A message left with nothing is dropped, never sent with empty content, which the API refuses.
+        #expect(!encoded.contains(#""content":[]"#))
+    }
+
+    @Test func `signed reasoning is still sent back exactly`() {
+        let messages = [ModelMessage(role: .assistant, blocks: [.thinking(text: "t", signature: "sig"), .text("A")])]
+        #expect(body(request(messages, prompt: [])).contains(#"{"type":"thinking","thinking":"t","signature":"sig"}"#))
+    }
+
     @Test func `tools are declared with their schema, and omitted when there are none`() throws {
         let schema = try JSONObject(validating: Array(#"{"type":"object"}"#.utf8))
         let tool = ToolDefinition(name: "read", description: "Read a file.", inputSchema: schema)
