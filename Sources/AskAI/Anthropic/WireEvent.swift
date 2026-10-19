@@ -94,7 +94,10 @@ extension WireEvent {
             case "message_stop": return .messageStopped
             case "error":
                 guard let error else { throw .malformed(event: name) }
-                throw .provider(ProviderFailure(kind: .init(wire: error.type), message: error.message))
+                throw .provider(
+                    ProviderFailure(
+                        kind: .init(wire: error.type, message: error.message), message: error.message,
+                        contextWindow: ProviderFailure.Kind.contextWindow(describedIn: error.message)))
             default: return .unrecognized(event: name, type: type)
         }
     }

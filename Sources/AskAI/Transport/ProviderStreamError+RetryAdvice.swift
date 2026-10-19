@@ -10,6 +10,22 @@ extension ProviderStreamError: RetryAdvice {
         }
     }
 
+    public var isContextOverflow: Bool {
+        switch self {
+            case .status(_, let failure?, _): failure.kind == .contextOverflow
+            case .stream(let failure): failure.providerFailure?.kind == .contextOverflow
+            default: false
+        }
+    }
+
+    public var reportedContextWindow: Int? {
+        switch self {
+            case .status(_, let failure?, _): failure.contextWindow
+            case .stream(let failure): failure.providerFailure?.contextWindow
+            default: nil
+        }
+    }
+
     public var retryAfter: Duration? {
         guard case .status(_, _, let seconds?) = self else { return nil }
         return .milliseconds(Int(seconds * 1_000))

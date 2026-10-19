@@ -37,10 +37,14 @@ public struct OpenAIStreamDecoder: ModelEventDecoding {
         } catch {
             throw .malformed
         }
-        if let error = chunk.error {
+        if let error = chunk.error ?? chunk.topLevelError {
             let status = if case .number(let code) = error.code { code } else { Int?.none }
+            let code = if case .text(let text) = error.code { text } else { String?.none }
+            let message = error.message ?? ""
+            let kind = ProviderFailure.Kind(openAIType: error.type, status: status, code: code, message: message)
+            let window = error.nCtx ?? ProviderFailure.Kind.contextWindow(describedIn: message)
             throw .provider(
-                ProviderFailure(kind: .init(openAIType: error.type, status: status), message: error.message ?? ""))
+                ProviderFailure(kind: kind, message: message, contextWindow: kind == .contextOverflow ? window : nil))
         }
         if !started {
             started = true
