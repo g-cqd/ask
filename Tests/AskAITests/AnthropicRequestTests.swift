@@ -82,6 +82,20 @@ struct AnthropicRequestTests {
                 + #""is_error":true}]}]}"#)
     }
 
+    @Test func `reasoning another protocol signed is not sent to Anthropic, and Anthropic's own still is`() {
+        // A session that moved from a Responses provider holds thinking blocks signed by it. Anthropic refuses a
+        // signature it did not issue, so the resumed session would fail every turn.
+        let foreign = ReasoningProvenance.mark(scheme: "responses", payload: #"{"id":"rs_1"}"#)
+        let messages = AnthropicRequestEncoder.withoutForeignReasoning([
+            ModelMessage(role: .assistant, blocks: [.thinking(text: "theirs", signature: foreign), .text("A")]),
+            ModelMessage(role: .assistant, blocks: [.thinking(text: "only theirs", signature: foreign)]),
+            ModelMessage(role: .assistant, blocks: [.thinking(text: "mine", signature: "sig=="), .text("B")])
+        ])
+        #expect(messages.count == 2)
+        #expect(messages[0].blocks == [.text("A")])
+        #expect(messages[1].blocks == [.thinking(text: "mine", signature: "sig=="), .text("B")])
+    }
+
     @Test func `reasoning another provider produced, with no signature, is not sent to Anthropic`() {
         // A session that began on an OpenAI-compatible server holds thinking blocks with no signature. Anthropic
         // rejects a thinking block whose signature it did not issue, so a resumed session would fail every turn.
