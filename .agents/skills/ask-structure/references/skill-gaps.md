@@ -24,6 +24,10 @@ observation behind it in `docs/diary/2026-10-19-04.md`.
 | `swift` | Silent that a public protocol's `associatedtype` forces the conforming types' associated types public | `ArgumentTool.Arguments` |
 | `code-review` / `engineering-practices` | Say to remove duplication, not to treat a duplicate as a question with three answers (fix, name the missing abstraction, accept with a reason) or that "near" clone detection ignores identifiers | dolly findings |
 | `testing` | Says to run mutation testing; does not say that a characterisation test's expected value should be the *old output captured before the change* | tool schemas |
+| `engineering-practices` / `project-conventions` | Say to verify before reporting done and to detect conventions, but not to check that CI executes at all. Eight red runs were a billing refusal, not a code failure, and no run ever passed | `gh run list`, annotation on a job with no steps |
+| `testing` | Coverage is "behaviour, not percent", but nothing says how to *measure* across several test bundles, and a one-bundle number reads as the whole | diary 09, probe 32 |
+| `secure-coding` | Lists SSRF and secrets; does not name the specific case of an env var that redirects an authenticated client | `ANTHROPIC_BASE_URL` over `http://` |
+| `work-docs` / `documentation-law` | Say to keep `blocked-by` accurate, not that a test can; and do not warn against a README that copies the roadmap | four stale blockers; a drifted table |
 | `agora` | Not consulted during the audit, so whether it would have helped with the second writer was not checked | worked around with a branch |
 
 ## Questions the skills suggest and the project has not answered
