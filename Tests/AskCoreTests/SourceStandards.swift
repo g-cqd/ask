@@ -1,7 +1,4 @@
-// SE-0409 `InternalImportsByDefault` makes an ordinary import grant INTERNAL visibility, which
-// would leave `URL` internal and make every public signature below illegal. An import therefore
-// carries its own access level here — the same trap ADR-0004 recorded, met again in a new file.
-public import Foundation
+internal import Foundation
 
 /// Reads the repository's own Swift sources so the standards can be checked rather than remembered.
 ///
@@ -11,12 +8,12 @@ public import Foundation
 ///
 /// The scan walks outward from this file to the repository root, the same way ``DocumentationLayout``
 /// finds `docs/`, so it works from any checkout without configuration.
-public enum SourceStandards {
+enum SourceStandards {
     /// Repository root, found by walking up to the directory holding `Package.swift`.
-    public static let repositoryRoot: URL = {
+    static let repositoryRoot: URL = {
         var directory = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()  // AskCore
-            .deletingLastPathComponent()  // Sources
+            .deletingLastPathComponent()  // AskCoreTests
+            .deletingLastPathComponent()  // Tests
             .deletingLastPathComponent()  // repository root
         return directory
     }()
@@ -29,12 +26,12 @@ public enum SourceStandards {
     private static let excludedPrefix = "SourceStandards"
 
     /// Every `.swift` file under `Sources`, in path order.
-    public static var sources: [URL] {
+    static var sources: [URL] {
         swiftFiles(in: repositoryRoot.appending(path: "Sources")).filter { !isGuard($0) }
     }
 
     /// Every `.swift` file under `Tests`, in path order.
-    public static var tests: [URL] {
+    static var tests: [URL] {
         swiftFiles(in: repositoryRoot.appending(path: "Tests")).filter { !isGuard($0) }
     }
 
@@ -46,7 +43,7 @@ public enum SourceStandards {
     ///
     /// Comment lines are skipped because a file that *documents* a banned construct must not fail its
     /// own repository's gate — which is exactly the situation this file is in.
-    public static func occurrences(of needle: String, in files: [URL]) throws -> [String] {
+    static func occurrences(of needle: String, in files: [URL]) throws -> [String] {
         var found: [String] = []
         for file in files {
             let text = try String(contentsOf: file, encoding: .utf8)
@@ -61,7 +58,7 @@ public enum SourceStandards {
     /// `@unchecked Sendable` declarations with no `SAFETY:` justification in the comment block above.
     ///
     /// - Returns: `path:line` for each unannotated declaration.
-    public static func uncheckedSendableWithoutSafetyComment() throws -> [String] {
+    static func uncheckedSendableWithoutSafetyComment() throws -> [String] {
         var found: [String] = []
         for file in sources + tests {
             let lines = try String(contentsOf: file, encoding: .utf8)
@@ -93,7 +90,7 @@ public enum SourceStandards {
     ///
     /// `AsyncEventProbe.wait(forAtLeast:within:clock:)` is the sanctioned form: it parks on a
     /// `TestClock` and ends when the event arrives, so a test using it contains no real-time deadline.
-    public static func testSleeps() throws -> [String] {
+    static func testSleeps() throws -> [String] {
         var found: [String] = []
         for file in tests {
             let lines = try String(contentsOf: file, encoding: .utf8)
