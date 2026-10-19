@@ -40,7 +40,11 @@ public enum Budget {
     /// number must not survive the change.
     public static let actionToActionMilliseconds: Double = 2
 
-    /// Whether a measurement is inside budget. Used by the CI guard and by `ask --budgets`.
+    /// Whether a measurement is inside budget.
+    ///
+    /// Nothing at run time calls this: `Scripts/measure-budgets.py` reads the limits from `ask --budgets` and
+    /// compares them itself. It states the rule once in Swift, for the tests. (The comment here used to say the
+    /// CI guard and `--budgets` call it; deadwood's `referenced-only-by-tests` found that was not true.)
     public static func isWithinBudget(
         coldStart: Double, idleMemoryMebibytes: Double, inputDelay: Double, action: Double
     ) -> Bool {
