@@ -11,6 +11,7 @@ public enum CodexAccessError: Error, Sendable, Equatable, CustomStringConvertibl
     /// Another ask process held the refresh lock for the whole wait.
     case lockUnavailable
 
+    // @dl:accept -- describing an error enum case by case is the shape of every one; the sentences are its own
     public var description: String {
         switch self {
             case .signedOut: "not signed in to Codex: run `ask login codex`"

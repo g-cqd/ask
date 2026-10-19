@@ -15,6 +15,7 @@ public struct ClaudeAccess: Sendable {
         let stored: ClaudeCredentials?
         do { stored = try file.loadClaude() } catch { throw .storage(error) }
         guard let credentials = stored else { throw .signedOut }
+        // @dl:accept -- load, refresh, save is every subscription's access; Codex's adds a lock around it and has its own errors
         guard credentials.needsRefresh(now: now) else { return .subscription(accessToken: credentials.accessToken) }
         let refreshed: ClaudeCredentials
         do { refreshed = try await client.refresh(credentials, now: now) } catch { throw .refreshFailed(error) }
