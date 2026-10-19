@@ -5,7 +5,7 @@ date: 2026-10-20
 decision: ADR-0036
 ---
 
-# 0043 — Refresh Claude's credentials under the same lock
+# 0044 — Refresh Claude's credentials under the same lock
 
 Codex's refresh runs under a lock beside the credential file, with a second look after taking it (ADR-0036), because its
 refresh token is single use. `ClaudeAccess` has the same read, refresh, save shape and no lock, so two asks finding the

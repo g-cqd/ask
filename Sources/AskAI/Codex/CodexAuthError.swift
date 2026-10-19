@@ -22,7 +22,7 @@ public enum CodexAuthError: Error, Sendable, Equatable, CustomStringConvertible 
     }
 
     /// The words that mean the sign-in itself is over, so only a new one helps. `token_expired` is what the server was
-    /// observed to answer for a code or refresh token it does not know (diary 26).
+    /// observed to answer for a code or refresh token it does not know (diary 27).
     static let signInEnded: Set<String> = [
         "invalid_grant", "refresh_token_expired", "refresh_token_reused", "refresh_token_invalidated", "token_expired"
     ]
