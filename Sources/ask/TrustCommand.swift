@@ -22,7 +22,7 @@ struct TrustCommand: ParsableCommand {
         }
         let bytes = [UInt8](data)
         let file: ConfigurationFile
-        do { file = try ConfigurationFile.parse(bytes, path: loader.projectPath) } catch {
+        do { file = try ConfigurationFile.parse(bytes, path: loader.projectPath, isProject: true) } catch {
             fail("ask: not trusting a file that does not load: \(error)", code: 78)
         }
         do {

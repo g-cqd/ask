@@ -56,7 +56,8 @@ struct RunSettings: Equatable {
             row("model", c.model.value ?? "(the provider's default)", c.model.source),
             row("maxTurns", String(c.maxTurns.value), c.maxTurns.source),
             row("compactAt", String(c.compactAt.value), c.compactAt.source),
-            "sandbox   " + (sandbox.isUnrestricted ? "off (--no-sandbox)" : "on"),
+            "sandbox   " + (sandbox.isUnrestricted ? "off (--no-sandbox)" : "on")
+                + (c.sandbox.value.isEmpty ? "" : ", \(c.sandbox.value)  [\(c.sandbox.source)]"),
             "user file     \(userFile)  \(standing(userFile))",
             "project file  \(projectFile)  \(standing(projectFile))"
         ] + notices.map { "note: \($0)" }
