@@ -61,3 +61,48 @@ so a wrong answer shows the wrong interface, not a missing decoration) and after
   not asserted.
 - The character layout's own density budget is decided and written down: how compact it can be before it
   stops being legible. Undecided at the time of writing.
+
+## What a prototype showed (2026-10-20)
+
+`docs/prototypes/ui-lab/lab.py` is a throwaway screen, fixture data only, tried in kitty. It is evidence for the table
+above and for the decisions below. It is **not** a result for the two layouts as built: nothing ran inside ask or
+TerminalKit, and no terminal other than kitty was tried.
+
+**Measured or observed**
+
+- **Cell size comes from the ioctl**, as 0014 says: kitty reported 1952 x 1260 px for 122 x 42 cells, so 16 x 30 px.
+- **The table holds.** A 1 px hairline and a pixel-positioned scrollbar thumb cost **no row and no column** (checked by
+  zooming a screenshot). With glyph separators each costs a row: the bottom stack is **4 / 3 / 2 rows** with pixel
+  lines and **5 / 4 / 3** with glyph rules, for the roomy / tight / flush densities below.
+- **Padding is inside a block's own surface**, not a margin between blocks. A message, an agent group and a diff each
+  open and close with one padded row in their own background, and the gap between blocks is zero. Two surfaced blocks
+  that touch would merge into one panel, so in pixel mode a hairline at the top edge of the second separates them for
+  free. The character layout has no equivalent and needs another answer, or the blocks must not touch.
+- **The bottom section can be nearly flat.** Roomy is a work strip, a two-row input, a status bar. Tight drops the strip
+  (its counts are already in the status bar). Flush is a one-row input with its chips inline, then the status bar.
+- **Kitty turns the mouse wheel into Up and Down keys** in the alternate screen unless mouse reporting is enabled, so
+  an input with a picker is driven by the wheel. ask must enable reporting and handle the wheel (also in 0048).
+
+**Terminal colours first**
+
+- Read the terminal's own background, foreground and ANSI colours (OSC 10, 11 and 4, with a DA1 reply as the end
+  marker), derive every surface and accent from them, and fall back to a dark preset when the terminal does not
+  answer. Only kitty was tested. wezterm, ghostty and Terminal.app are **unverified**, as is the colour-scheme
+  notification (`CSI ? 2031`), which the prototype parses but has not seen sent.
+- A contrast guard keeps text readable on any palette: 120 palettes, including Solarized (whose own foreground is
+  low-contrast), meet WCAG-style ratios for text, muted text, accents and tinted rows. With the guard disabled the
+  check fails at once, so it is not vacuous.
+- **Transparent terminals.** Using the terminal's default background keeps its opacity and blur, but surfaces are
+  opaque, so on a translucent terminal (the owner's kitty has `background_opacity 0.85`) they look **darker than the
+  page**. Painting the base fixes that, but kitty treats an explicit background equal to the default as the default,
+  so a painted base must differ by one unit. Both modes need to exist, as a setting.
+
+**Settings worth keeping** (proposed, not decided; they would join the configuration of roadmap 0039): theme source
+(`terminal`, `light`, `dark`), accent (an ANSI colour), surface strength, background (`terminal default` or
+`painted`), separator style, pixel thickness, transcript spacing, bottom density, status style, layout.
+
+**Still undecided**
+
+- Which of the three bottom densities is the default.
+- What separates two touching blocks in the character layout.
+- Whether `terminal` is the right default theme source on a terminal that does not answer the colour query.
