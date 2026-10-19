@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-19
 decision: ADR-0031
@@ -13,5 +13,13 @@ catalog with the stored key, cache it beside the credentials, choose a default, 
 ADR-0030 already uses. Probe each preset's list endpoint first: OpenRouter and Hugging Face answered it without a key
 (diary 16); the rest need one.
 
-Codex has no default model today (ADR-0036): `--model` is required. Its catalogue is `GET /backend-api/codex/models`,
-which pi-integrations reads from strings in the Codex CLI and has not seen answer; probe it with a real token first.
+## Done (diary 28, ADR-0037)
+
+Codex only: the account's live catalog (`ask models codex`), an account-scoped cache, and a default chosen from it when no
+model is named. Observed on one real account.
+
+## Still owed
+
+- Spettro and every preset with a list endpoint, each probed with its own key first.
+- Codex reasoning levels, which the catalog reports as objects.
+- Per-connection registrations and aliases (0047).
