@@ -9,7 +9,7 @@ public enum ClaudeToken {
 
     /// The body that exchanges an authorization code.
     public static func exchangeBody(code: String, verifier: String, state: String) -> [UInt8] {
-        body([
+        JSONStreamWriter.object(of: [
             ("grant_type", "authorization_code"), ("code", code), ("redirect_uri", ClaudeOAuth.redirectURI),
             ("client_id", ClaudeOAuth.clientID), ("code_verifier", verifier), ("state", state)
         ])
@@ -17,7 +17,9 @@ public enum ClaudeToken {
 
     /// The body that refreshes credentials.
     public static func refreshBody(refreshToken: String) -> [UInt8] {
-        body([("grant_type", "refresh_token"), ("refresh_token", refreshToken), ("client_id", ClaudeOAuth.clientID)])
+        JSONStreamWriter.object(of: [
+            ("grant_type", "refresh_token"), ("refresh_token", refreshToken), ("client_id", ClaudeOAuth.clientID)
+        ])
     }
 
     /// Credentials from a token endpoint response received at `now` (seconds since 1970).
@@ -37,17 +39,6 @@ public enum ClaudeToken {
             accessToken: token.accessToken, refreshToken: token.refreshToken, expiresAt: now + token.expiresIn - margin,
             refreshExpiresAt: token.refreshTokenExpiresIn.map { now + $0 }, accountEmail: token.account?.emailAddress,
             organizationName: token.organization?.name, scopes: token.scope)
-    }
-
-    private static func body(_ fields: [(String, String)]) -> [UInt8] {
-        var writer = JSONStreamWriter()
-        writer.beginObject()
-        for (key, value) in fields {
-            writer.key(key)
-            writer.string(value)
-        }
-        writer.endObject()
-        return writer.finish()
     }
 
     private struct ErrorBody: Decodable {
