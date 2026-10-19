@@ -1,5 +1,6 @@
 import TerminalKitCodecs
 import TerminalKitInput
+import TerminalKitRender
 import Testing
 
 @testable import AskTUI
@@ -71,6 +72,16 @@ struct ScreenControllerTests {
         type("x", into: &controller)
         _ = controller.handle(key(0x0D), pageRows: 7)
         #expect(controller.state.scrollback == 0)
+    }
+
+    @Test func `a status update shows at the right of the status line`() {
+        var controller = ScreenController(label: "m")
+        controller.handle(.status("in 2.1k (48% cached) · out 55"))
+        var buffer = ScreenBuffer(columns: 60, rows: 3)
+        var composer = ScreenComposer()
+        _ = composer.compose(controller.state, into: &buffer)
+        let statusRow = String((0 ..< 60).map { buffer[1, $0].character })
+        #expect(statusRow.hasPrefix("m · ready · in 2.1k (48% cached) · out 55"))
     }
 
     @Test func `a paste lands in the editor`() {

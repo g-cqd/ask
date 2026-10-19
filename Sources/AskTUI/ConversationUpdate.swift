@@ -7,6 +7,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case toolStarted(name: String, summary: String)
     case toolFinished(Transcript.ToolStatus)
     case notice(String, isError: Bool)
+    /// A short status for the status line, such as token usage.
+    case status(String)
     /// The run is over, however it ended.
     case runEnded
 }

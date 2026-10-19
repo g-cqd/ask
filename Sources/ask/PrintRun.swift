@@ -12,8 +12,13 @@ internal import TerminalKitInput
 /// The answer goes to standard output; tool activity and diagnostics to standard error.
 private final class PrintRenderer: Sendable {
     private let midLine = Mutex(false)
+    private let usage = Mutex(UsageTotals())
+
+    /// Token usage over the run, for the closing line.
+    var usageSummary: String { usage.withLock { $0.summary } }
 
     func render(_ event: AgentEvent) {
+        if case .responded(let response) = event { usage.withLock { $0.add(response.usage) } }
         switch event {
             case .model(.textDelta(_, let text)):
                 write(text, to: .standardOutput)
@@ -52,7 +57,7 @@ private final class PrintRenderer: Sendable {
 
 /// Runs `prompt` to completion. SIGINT and SIGTERM abort the run, so a running command's whole process group
 /// is stopped, and then exit with 128 + the signal.
-func runPrompt(_ prompt: String, model: String) async {
+func runPrompt(_ prompt: String, model: String, maximumTurns: Int) async {
     let transport = URLSessionTransport()
     // Fail fast before any work when there is no way to authenticate.
     do {
@@ -67,7 +72,9 @@ func runPrompt(_ prompt: String, model: String) async {
     let files = instructionFiles(workingDirectory: workingDirectory)
     for line in describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     do {
-        loop = try makeLoop(model: model, workingDirectory: workingDirectory, instructions: files, transport: transport)
+        loop = try makeLoop(
+            model: model, workingDirectory: workingDirectory, instructions: files, maximumTurns: maximumTurns,
+            transport: transport)
     } catch {
         fail("ask: \(error)", code: 70)
     }
@@ -90,7 +97,7 @@ func runPrompt(_ prompt: String, model: String) async {
     try? signals.start()
     let result = await run.result
     signals.stop()
-    FileHandle.standardError.write(Data("ask: session \(sessionPath)\n".utf8))
+    FileHandle.standardError.write(Data("ask: tokens \(renderer.usageSummary)\nask: session \(sessionPath)\n".utf8))
     if let signal = interrupted.withLock({ $0 }) { Foundation.exit(128 + signal) }
     if case .failure(let error) = result { fail("ask: \(error)", code: 69) }
 }
