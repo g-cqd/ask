@@ -54,6 +54,73 @@ public enum Compaction {
         return index > 0 ? index : nil
     }
 
+    /// Where the kept tail starts when a compaction must happen: the tail asked for if it leaves something to
+    /// summarise, else the largest tail, halving from `bytes`, that does. Nil only when the context holds one turn.
+    static func cut(_ context: [SessionEntry], keepingAtMost bytes: Int) -> Int? {
+        var keep = Swift.max(1, bytes)
+        while true {
+            if let index = cut(context, keepingRecentBytes: keep) { return index }
+            // Never below one byte: a zero-byte tail would start past the end of the context.
+            guard keep > 1 else { return nil }
+            keep /= 2
+        }
+    }
+
+    /// `entries` with each tool result clipped to `bytes`, for a summary request that must fit a small window.
+    static func clippingResults(_ entries: some Sequence<SessionEntry>, toBytes bytes: Int) -> [SessionEntry] {
+        entries.map { entry in
+            guard case .toolResult(let id, let content, let isError) = entry.payload else { return entry }
+            return SessionEntry(
+                id: entry.id, parentID: entry.parentID,
+                payload: .toolResult(callID: id, content: clipped(content, toBytes: bytes), isError: isError))
+        }
+    }
+
+    /// `text` cut to about `bytes` of UTF-8, keeping its head and its tail, where a command's output says what it
+    /// was and how it ended, and saying how much of the middle was left out.
+    static func clipped(_ text: String, toBytes bytes: Int, note: String = "omitted from this summary request")
+        -> String
+    {
+        let utf8 = text.utf8
+        guard utf8.count > bytes else { return text }
+        let half = Swift.max(1, bytes / 2)
+        let head = String(decoding: utf8.prefix(half), as: UTF8.self)
+        let tail = String(decoding: utf8.suffix(half), as: UTF8.self)
+        return head + "\n[… \(utf8.count - 2 * half) bytes \(note) …]\n" + tail
+    }
+
+    /// A summary made without the model, for when it wrote none: the user's words, earlier summaries, and each tool
+    /// call with the start and end of its result.
+    ///
+    /// Using the model's reasoning instead was tried and refuted (diary 14): its musings replaced the goal and the model
+    /// invented another task. This record is plainer and cannot lose what the user asked for.
+    static func record(of entries: some Sequence<SessionEntry>) -> String {
+        var asked: [String] = []
+        var summaries: [String] = []
+        var calls: [(id: String, line: String)] = []
+        var results: [String: String] = [:]
+        for entry in entries {
+            switch entry.payload {
+                case .user(let text): asked.append(clipped(text, toBytes: 2_000))
+                case .compaction(let summary, _): summaries.append(summary)
+                case .toolResult(let id, let content, _): results[id] = clipped(content, toBytes: 400, note: "omitted")
+                case .response(let response):
+                    for case .toolCall(let id, let name, let input) in response.blocks {
+                        calls.append((id, "\(name) \(String(decoding: input.bytes, as: UTF8.self))"))
+                    }
+                case .assistant: continue
+            }
+        }
+        var lines = ["[ask] The model wrote no summary, so this is a record of the conversation it replaced."]
+        lines += ["The user asked:"] + asked.map { "- \($0)" }
+        if !summaries.isEmpty { lines += ["Earlier summary:"] + summaries }
+        if !calls.isEmpty {
+            lines.append("Tool calls, with the start and end of each result:")
+            lines += calls.map { call in "- \(call.line) → \(results[call.id] ?? "(no result)")" }
+        }
+        return lines.joined(separator: "\n")
+    }
+
     private static func startsATurn(_ payload: SessionPayload) -> Bool {
         switch payload {
             case .user, .assistant, .response: true
