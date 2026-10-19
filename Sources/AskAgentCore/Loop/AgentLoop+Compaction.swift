@@ -10,6 +10,13 @@ extension AgentLoop {
         return (session.reading { Compaction.contextTokens(sinceCompactionIn: $0) } ?? 0) >= threshold
     }
 
+    /// Compacts now, at the user's request, whatever the context's size. A summary that cannot be made is reported
+    /// as a ``AgentEvent/compactionFailed(_:)``, and the session is left whole.
+    /// - Throws: ``AgentError/cancelled`` when aborted.
+    public func compactNow(in session: SessionRecorder, events: (AgentEvent) -> Void) async throws(AgentError) {
+        try await compact(session, contextFull: false, events: events)
+    }
+
     /// Compacts the session's context.
     ///
     /// A threshold compaction that fails is reported and skipped: the run goes on with the whole context. A
