@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-19
 decision: ADR-0028
@@ -28,3 +28,10 @@ stdio. This entry builds the host.
 
 The reference extension runs end to end with a local model through `ask -p`, its block is enforced, and killing it
 mid-run leaves the run alive and the user told. Sandboxing each extension is roadmap 0018's, applied here.
+
+## Progress (2026-10-19)
+
+Item 1 is drafted: `docs/protocol/extensions.md`, version 1. Its complete Python example was run through the
+documented exchange (initialize, a blocked and an allowed `hooks/tool_call`, shutdown) and behaved as written.
+The version is fixed when the host ships. Items 2 to 5 are owed.
+
