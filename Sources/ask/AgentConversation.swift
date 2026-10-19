@@ -16,6 +16,7 @@ final class AgentConversation: Conversation {
     private let directory: SessionDirectory
     private let loop = Mutex<AgentLoop?>(nil)
     private let session = Mutex<SessionRecorder?>(nil)
+    private let usage = Mutex(UsageTotals())
 
     init(directory: SessionDirectory, makeLoop: @escaping @Sendable () throws -> AgentLoop) {
         self.makeLoop = makeLoop
@@ -28,6 +29,13 @@ final class AgentConversation: Conversation {
                 let loop = try self.agentLoop()
                 let recorder = try self.recorder()
                 try await loop.run(prompt, in: recorder) { event in
+                    if case .responded(let response) = event {
+                        let summary = self.usage.withLock { totals in
+                            totals.add(response.usage)
+                            return totals.summary
+                        }
+                        update(.status(summary))
+                    }
                     if let shown = Self.update(for: event) { update(shown) }
                 }
             } catch AgentError.cancelled {
@@ -79,13 +87,14 @@ final class AgentConversation: Conversation {
 }
 
 /// The interactive screen in the working directory.
-func runInteractive(model: String) async {
+func runInteractive(model: String, maximumTurns: Int) async {
     let workingDirectory = FileManager.default.currentDirectoryPath
     do {
         let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(directory: SessionDirectory(project: workingDirectory)) {
             try makeLoop(
-                model: model, workingDirectory: workingDirectory, instructions: files, transport: URLSessionTransport())
+                model: model, workingDirectory: workingDirectory, instructions: files, maximumTurns: maximumTurns,
+                transport: URLSessionTransport())
         }
         try await runInteractiveScreen(conversation: conversation, label: model, notices: describe(files))
     } catch {

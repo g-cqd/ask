@@ -19,11 +19,15 @@ struct Ask: AsyncParsableCommand {
     var budgets = false
 
     @Option(
-        name: [.short, .customLong("print")], help: "Send one prompt, stream the reply to standard output, and exit.")
+        name: [.short, .customLong("print")],
+        help: "Run one prompt with the tools, stream the answer to standard output, and exit.")
     var prompt: String?
 
     @Option(help: "The model to use.")
     var model = "claude-sonnet-5-5"
+
+    @Option(help: "The most model requests one prompt may make before ask stops it.")
+    var maxTurns = 100
 
     func run() async throws {
         if budgets {
@@ -31,10 +35,10 @@ struct Ask: AsyncParsableCommand {
             return
         }
         if let prompt {
-            await runPrompt(prompt, model: model)
+            await runPrompt(prompt, model: model, maximumTurns: maxTurns)
             return
         }
-        await runInteractive(model: model)
+        await runInteractive(model: model, maximumTurns: maxTurns)
     }
 }
 
