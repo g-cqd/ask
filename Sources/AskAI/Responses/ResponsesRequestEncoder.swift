@@ -1,0 +1,107 @@
+internal import AemiJSON
+
+/// Encodes a ``ModelRequest`` as a Responses API streaming request body.
+///
+/// The conversation is a flat list of items rather than messages:
+/// - ask's instructions travel as `instructions`, not as a leading message;
+/// - a user turn is `input_text`; each tool result is its own `function_call_output` item, placed before any text of
+///   the same turn, because a result must follow the call it answers;
+/// - an assistant turn is its text, and each tool call its own `function_call` item, in the order the model wrote
+///   them; a call and its result are matched by `call_id`;
+/// - reasoning is not sent back yet, and no item carries an `id`, so a server that pairs reasoning items with the item
+///   that followed them has nothing to pair (ADR-0033);
+/// - `store` is false: ask keeps the conversation, the server need not.
+public enum ResponsesRequestEncoder {
+    /// The request body.
+    /// - Parameters:
+    ///   - request: what to ask.
+    ///   - sendsOutputLimit: whether the body carries `max_output_tokens`; the ChatGPT subscription backend is not
+    ///     sent one.
+    /// - Returns: the JSON body.
+    public static func encode(_ request: ModelRequest, sendsOutputLimit: Bool = true) -> [UInt8] {
+        JSONStreamWriter.streamingRequest(
+            model: request.model, maxTokens: request.maxTokens, limitField: sendsOutputLimit ? "max_output_tokens" : nil
+        ) { writer in
+            writer.field("store", false)
+            if !request.systemPrompt.isEmpty {
+                writer.field("instructions", request.systemPrompt.joined(separator: "\n\n"))
+            }
+            writer.key("input")
+            writer.array { writer in
+                for message in request.messages { encode(message, into: &writer) }
+            }
+            guard !request.tools.isEmpty else { return }
+            writer.key("tools")
+            writer.array { writer in
+                for tool in request.tools { encode(tool, into: &writer) }
+            }
+            writer.field("tool_choice", "auto")
+            writer.field("parallel_tool_calls", true)
+        }
+    }
+
+    // MARK: - Items
+
+    private static func encode(_ message: ModelMessage, into writer: inout JSONStreamWriter) {
+        switch message.role {
+            case .user:
+                for case .toolResult(let id, let content, _) in message.blocks {
+                    writer.object {
+                        $0.field("type", "function_call_output")
+                        $0.field("call_id", id)
+                        $0.field("output", content)
+                    }
+                }
+                let text = message.blocks.compactMap { if case .text(let text) = $0 { text } else { nil } }
+                if !text.isEmpty {
+                    writer.object { writer in
+                        writer.field("role", "user")
+                        writer.key("content")
+                        writer.array { $0.typed("input_text", "text", text.joined(separator: "\n\n")) }
+                    }
+                }
+            case .assistant: encodeAssistant(message.blocks, into: &writer)
+        }
+    }
+
+    /// Text and calls in the order the model produced them; a run of text blocks is one item.
+    private static func encodeAssistant(_ blocks: [RequestBlock], into writer: inout JSONStreamWriter) {
+        var run: [String] = []
+        func flush(_ writer: inout JSONStreamWriter) {
+            guard !run.isEmpty else { return }
+            let text = run.joined(separator: "\n\n")
+            writer.object {
+                $0.field("role", "assistant")
+                $0.field("content", text)
+            }
+            run.removeAll()
+        }
+        for block in blocks {
+            switch block {
+                case .text(let text): run.append(text)
+                case .toolCall(let id, let name, let input):
+                    flush(&writer)
+                    writer.object {
+                        $0.field("type", "function_call")
+                        $0.field("call_id", id)
+                        $0.field("name", name)
+                        // The protocol carries arguments as a JSON document inside a string.
+                        $0.field("arguments", String(decoding: input.bytes, as: UTF8.self))
+                    }
+                case .thinking, .redactedThinking, .toolResult: break
+            }
+        }
+        flush(&writer)
+    }
+
+    private static func encode(_ tool: ToolDefinition, into writer: inout JSONStreamWriter) {
+        writer.object { writer in
+            writer.field("type", "function")
+            writer.field("name", tool.name)
+            writer.field("description", tool.description)
+            writer.key("parameters")
+            writer.raw(tool.inputSchema.bytes)
+            writer.field("strict", false)
+        }
+    }
+}

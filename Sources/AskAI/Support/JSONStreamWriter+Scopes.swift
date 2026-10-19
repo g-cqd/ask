@@ -47,13 +47,22 @@ extension JSONStreamWriter {
         }
     }
 
-    /// The body of a streaming model request: one object that opens with `model`, `max_tokens` and `"stream": true`,
-    /// the fields every provider's protocol shares, followed by what `rest` writes.
-    static func streamingRequest(model: String, maxTokens: Int, _ rest: (inout JSONStreamWriter) -> Void) -> [UInt8] {
+    /// The body of a streaming model request: one object that opens with `model`, the output limit and
+    /// `"stream": true`, the fields every provider's protocol shares, followed by what `rest` writes.
+    ///
+    /// - Parameters:
+    ///   - model: the model's name.
+    ///   - maxTokens: the output limit.
+    ///   - limitField: the name the protocol gives the output limit; nil sends no limit.
+    ///   - rest: writes the fields that follow.
+    /// - Returns: the JSON body.
+    static func streamingRequest(
+        model: String, maxTokens: Int, limitField: String? = "max_tokens", _ rest: (inout JSONStreamWriter) -> Void
+    ) -> [UInt8] {
         var writer = JSONStreamWriter(capacity: 4_096)
         writer.object { writer in
             writer.field("model", model)
-            writer.field("max_tokens", maxTokens)
+            if let limitField { writer.field(limitField, maxTokens) }
             writer.field("stream", true)
             rest(&writer)
         }
