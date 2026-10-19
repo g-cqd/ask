@@ -8,6 +8,8 @@ internal import Foundation
 struct RunSettings: Equatable {
     var configuration: Configuration
     var model: ResolvedModel
+    /// What the tools may touch: ask's protections, or nothing when the user turned them off.
+    var sandbox: SandboxPolicy
     /// Configuration files that applied.
     var applied: [String]
     /// Notices from loading: an ignored project file, an ignored environment value.
@@ -21,7 +23,7 @@ struct RunSettings: Equatable {
 
     /// Whether a run built for `other` would behave differently: its layers or its model changed.
     func differs(from other: RunSettings) -> Bool {
-        configuration != other.configuration || model != other.model
+        configuration != other.configuration || model != other.model || sandbox != other.sandbox
     }
 
     /// What the screen is told when these settings replace `previous`: nothing when nothing changed; a heading
@@ -54,6 +56,7 @@ struct RunSettings: Equatable {
             row("model", c.model.value ?? "(the provider's default)", c.model.source),
             row("maxTurns", String(c.maxTurns.value), c.maxTurns.source),
             row("compactAt", String(c.compactAt.value), c.compactAt.source),
+            "sandbox   " + (sandbox.isUnrestricted ? "off (--no-sandbox)" : "on"),
             "user file     \(userFile)  \(standing(userFile))",
             "project file  \(projectFile)  \(standing(projectFile))"
         ] + notices.map { "note: \($0)" }

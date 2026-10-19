@@ -72,32 +72,37 @@ func modelLabel(_ resolved: ResolvedModel) -> String {
 /// The agent loop with the tools, rooted at `workingDirectory`, following `instructions` after ask's own. Jobs
 /// live in `jobs`, which the caller stops when ask exits.
 func makeLoop(
-    model resolved: ResolvedModel, workingDirectory: String, instructions files: [ProjectInstructions.File],
-    limits: RunLimits, jobs: JobTable, transport: URLSessionTransport
+    _ run: RunSettings, workingDirectory: String, instructions files: [ProjectInstructions.File], jobs: JobTable,
+    transport: URLSessionTransport
 ) throws -> AgentLoop {
-    AgentLoop(
+    let resolved = run.model
+    let limits = run.limits
+    let sandbox = run.sandbox
+    return AgentLoop(
         provider: makeProvider(resolved, transport: transport),
         tools: try ToolRegistry(
             FileTools.all + [
                 BashTool(jobs: jobs), WaitTool(jobs: jobs), JobInputTool(jobs: jobs), JobStopTool(jobs: jobs)
             ]),
-        settings: settings(for: resolved, workingDirectory: workingDirectory, instructions: files, limits: limits),
+        settings: settings(
+            for: resolved, workingDirectory: workingDirectory, instructions: files, limits: limits, sandbox: sandbox),
         context: ToolContext(
             workingDirectory: workingDirectory,
-            outputDirectory: SessionDirectory(project: workingDirectory).path + "/output"))
+            outputDirectory: SessionDirectory(project: workingDirectory).path + "/output", sandbox: sandbox))
 }
 
 /// The run's settings, with the reply limit, compaction threshold and kept tail sized to the model's window.
 private func settings(
     for resolved: ResolvedModel, workingDirectory: String, instructions files: [ProjectInstructions.File],
-    limits: RunLimits
+    limits: RunLimits, sandbox: SandboxPolicy
 ) -> AgentSettings {
     let budget = ContextBudget(
         contextWindow: resolved.contextWindow, maxOutputTokens: resolved.maxOutputTokens,
         requestedCompactAt: limits.compactAtTokens)
     return AgentSettings(
         model: resolved.model, maximumTokens: budget.maximumTokens,
-        systemPrompt: [instructions(workingDirectory: workingDirectory)] + ProjectInstructions.promptBlocks(files),
+        systemPrompt: [instructions(workingDirectory: workingDirectory, sandbox: sandbox)]
+            + ProjectInstructions.promptBlocks(files),
         maximumTurns: limits.maximumTurns, compactAtTokens: budget.compactAtTokens,
         keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes)
 }
@@ -108,8 +113,8 @@ private func settings(
 func checkSelf(_ settings: RunSettings) {
     do {
         _ = try makeLoop(
-            model: settings.model, workingDirectory: FileManager.default.currentDirectoryPath, instructions: [],
-            limits: settings.limits, jobs: JobTable(), transport: URLSessionTransport())
+            settings, workingDirectory: FileManager.default.currentDirectoryPath, instructions: [], jobs: JobTable(),
+            transport: URLSessionTransport())
     } catch {
         fail("ask: \(error)", code: 70)
     }
@@ -117,14 +122,15 @@ func checkSelf(_ settings: RunSettings) {
 }
 
 /// ask's instructions, carried in the first user message (ADR-0007).
-private func instructions(workingDirectory: String) -> String {
-    """
-    You are ask, a coding agent working in a terminal on macOS. The working directory is \(workingDirectory). \
-    Use the tools to read, write and edit files and to run bash commands; relative paths resolve against the \
-    working directory. Start servers, watchers and long builds with bash yield_seconds, then use wait, job_input \
-    and job_stop; stop the jobs you started when you no longer need them. Prefer small changes you have verified, by running the build or tests when there are any. \
-    Answer concisely, and say plainly what you did not verify.
-    """
+private func instructions(workingDirectory: String, sandbox: SandboxPolicy) -> String {
+    let rules = sandbox.summary.map { " " + $0 } ?? ""
+    return """
+        You are ask, a coding agent working in a terminal on macOS. The working directory is \(workingDirectory). \
+        Use the tools to read, write and edit files and to run bash commands; relative paths resolve against the \
+        working directory. Start servers, watchers and long builds with bash yield_seconds, then use wait, job_input \
+        and job_stop; stop the jobs you started when you no longer need them. Prefer small changes you have verified, by running the build or tests when there are any. \
+        Answer concisely, and say plainly what you did not verify.\(rules)
+        """
 }
 
 /// A short description of a tool call for a one-line display: the command or the path when there is one.

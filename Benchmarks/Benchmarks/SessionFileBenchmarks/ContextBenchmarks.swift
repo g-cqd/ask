@@ -69,4 +69,14 @@ func bashBenchmarks() {
     Benchmark("tools/bash echo", configuration: .init(maxDuration: .seconds(3), maxIterations: 300)) { benchmark in
         for _ in benchmark.scaledIterations { blackHole(await BashTool().run(echo, in: context)) }
     }
+    // The same call under ask's default protections: what the sandbox adds to every command (ADR-0035).
+    let home = NSHomeDirectory()
+    let protected = ToolContext(
+        workingDirectory: FileManager.default.temporaryDirectory.path,
+        sandbox: .standard(
+            home: home, configDirectory: home + "/.config/ask", stateDirectory: home + "/.local/state/ask"))
+    Benchmark("tools/bash echo sandboxed", configuration: .init(maxDuration: .seconds(3), maxIterations: 300)) {
+        benchmark in
+        for _ in benchmark.scaledIterations { blackHole(await BashTool().run(echo, in: protected)) }
+    }
 }

@@ -34,7 +34,7 @@ public struct EditTool: ArgumentTool {
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         guard !arguments.oldText.isEmpty else { return .error("old_text must not be empty.") }
-        let url = FileTools.url(arguments.path, in: context)
+        let url = try FileTools.authorized(arguments.path, for: [.read, .write], in: context)
         let text = try FileTools.text(at: url, shownAs: arguments.path)
         // Exact UTF-8 bytes, not canonically equivalent characters: the model must reproduce what the file holds,
         // and an edit must never land on text written differently from what it quoted.
