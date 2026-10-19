@@ -21,12 +21,8 @@ public struct ScreenComposer: Sendable {
     static let prompt = "ask> "
     static let maximumPromptRows = 6
 
-    /// Every transcript item's wrapped lines, end to end, at `flatWidth`.
-    private var flat: [Line] = []
-    /// Where each item's lines start in `flat`, and the revision they were built from.
-    private var itemStarts: [Int] = []
-    private var itemRevisions: [Int] = []
-    private var flatWidth = -1
+    /// Every transcript item's wrapped lines, end to end, rebuilt from the first item whose revision changed.
+    private var transcriptLines = LayoutCache<Line>()
     /// What each row of the buffer holds since the last frame, and the size it was composed at.
     private var shown: [Line?] = []
     private var shownSize = (columns: -1, rows: -1)
@@ -56,6 +52,7 @@ public struct ScreenComposer: Sendable {
         self.transcriptRows = transcriptRows
 
         updateTranscriptLines(state.transcript, columns: columns)
+        let flat = transcriptLines.lines
         let end = Swift.max(0, flat.count - state.scrollback)
         let start = Swift.max(0, end - transcriptRows)
         let visible = flat[start ..< end]
@@ -79,22 +76,9 @@ public struct ScreenComposer: Sendable {
 
     // MARK: - Lines
 
-    /// Brings `flat` up to date: lines from the first changed item onward are rebuilt, the rest kept.
     private mutating func updateTranscriptLines(_ transcript: Transcript, columns: Int) {
-        if columns != flatWidth {
-            (flat, itemStarts, itemRevisions, flatWidth) = ([], [], [], columns)
-        }
-        let kept = Swift.min(itemRevisions.count, transcript.items.count)
-        let firstChanged = (0 ..< kept).first { itemRevisions[$0] != transcript.revisions[$0] } ?? kept
-        if firstChanged < itemRevisions.count {
-            flat.removeSubrange(itemStarts[firstChanged]...)
-            itemStarts.removeSubrange(firstChanged...)
-            itemRevisions.removeSubrange(firstChanged...)
-        }
-        for index in firstChanged ..< transcript.items.count {
-            itemStarts.append(flat.count)
-            flat += Self.lines(for: transcript.items[index], columns: columns)
-            itemRevisions.append(transcript.revisions[index])
+        transcriptLines.update(width: columns, revisions: transcript.revisions) {
+            Self.lines(for: transcript.items[$0], columns: columns)
         }
     }
 

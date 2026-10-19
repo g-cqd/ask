@@ -55,5 +55,8 @@ line costs 101 bytes instead of 481 at 120×40, and 102 instead of 1,035 at 300�
 **0008** and **0009**, pinned at `f067f50`: a one-cell flush costs under 1 µs at every size, and input is read
 on its own thread, off the cooperative pool (diary 17).
 
-Next in this order: **0012**, text layout promoted from ask's `TextWrap`; **0013**, Unicode widths (CJK costs
-139 ns a grapheme); **0014**, the pipeline's isolation.
+**0012** and **0013**, pinned at `43c4879`: wrapping and the layout cache live in TerminalKit, a streamed line's
+layout and flush take a third less (154 → 107 µs at 120×40), and widths match four real terminals, with a cursor
+move after the graphemes they disagree on (diary 19).
+
+Next: **0014**, the pipeline's isolation.
