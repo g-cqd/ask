@@ -56,7 +56,11 @@ func runPrompt(_ prompt: String, model: String) async {
     }
     let workingDirectory = FileManager.default.currentDirectoryPath
     let loop: AgentLoop
-    do { loop = try makeLoop(model: model, workingDirectory: workingDirectory, transport: transport) } catch {
+    let files = instructionFiles(workingDirectory: workingDirectory)
+    for line in describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
+    do {
+        loop = try makeLoop(model: model, workingDirectory: workingDirectory, instructions: files, transport: transport)
+    } catch {
         fail("ask: \(error)", code: 70)
     }
     let directory = SessionDirectory(project: workingDirectory)

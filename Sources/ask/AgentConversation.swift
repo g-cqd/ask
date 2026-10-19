@@ -78,10 +78,12 @@ final class AgentConversation: Conversation {
 func runInteractive(model: String) async {
     let workingDirectory = FileManager.default.currentDirectoryPath
     do {
+        let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(directory: SessionDirectory(project: workingDirectory)) {
-            try makeLoop(model: model, workingDirectory: workingDirectory, transport: URLSessionTransport())
+            try makeLoop(
+                model: model, workingDirectory: workingDirectory, instructions: files, transport: URLSessionTransport())
         }
-        try await runInteractiveScreen(conversation: conversation, label: model)
+        try await runInteractiveScreen(conversation: conversation, label: model, notices: describe(files))
     } catch {
         // The screen has already restored the terminal by the time an error reaches here.
         fail("ask: \(error)", code: 70)

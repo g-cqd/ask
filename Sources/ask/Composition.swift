@@ -21,8 +21,30 @@ func requestAuth(transport: URLSessionTransport) -> @Sendable () async throws ->
     }
 }
 
-/// The agent loop with the four tools, rooted at `workingDirectory`.
-func makeLoop(model: String, workingDirectory: String, transport: URLSessionTransport) throws -> AgentLoop {
+/// ask's configuration directory: `$XDG_CONFIG_HOME/ask` when that is absolute, else `~/.config/ask`.
+func askConfigDirectory(environment: [String: String] = ProcessInfo.processInfo.environment) -> String {
+    let base = environment["XDG_CONFIG_HOME"].flatMap { $0.hasPrefix("/") ? $0 : nil } ?? NSHomeDirectory() + "/.config"
+    return base + "/ask"
+}
+
+/// The project's instruction files for `workingDirectory` (AGENTS.md / CLAUDE.md), outermost first.
+func instructionFiles(workingDirectory: String) -> [ProjectInstructions.File] {
+    ProjectInstructions.discover(
+        from: workingDirectory, home: NSHomeDirectory(), configDirectory: askConfigDirectory())
+}
+
+/// One line per instruction file, for the user: what was loaded and what was skipped.
+func describe(_ files: [ProjectInstructions.File]) -> [String] {
+    files.map { file in
+        file.skippedBecause.map { "Skipped \(file.path): \($0)." } ?? "Instructions loaded from \(file.path)."
+    }
+}
+
+/// The agent loop with the four tools, rooted at `workingDirectory`, following `instructions` after ask's own.
+func makeLoop(
+    model: String, workingDirectory: String, instructions files: [ProjectInstructions.File],
+    transport: URLSessionTransport
+) throws -> AgentLoop {
     let environment = ProcessInfo.processInfo.environment
     return AgentLoop(
         provider: ClaudeProvider(
@@ -30,7 +52,8 @@ func makeLoop(model: String, workingDirectory: String, transport: URLSessionTran
             auth: requestAuth(transport: transport)),
         tools: try ToolRegistry(FileTools.all + [BashTool()]),
         settings: AgentSettings(
-            model: model, maximumTokens: 16_384, systemPrompt: [instructions(workingDirectory: workingDirectory)],
+            model: model, maximumTokens: 16_384,
+            systemPrompt: [instructions(workingDirectory: workingDirectory)] + ProjectInstructions.promptBlocks(files),
             maximumTurns: 100),
         context: ToolContext(workingDirectory: workingDirectory))
 }

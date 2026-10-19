@@ -10,21 +10,23 @@ internal import TerminalKitRender
 /// SIGINT and SIGTERM still restore the terminal (raw mode clears `ISIG`, so Ctrl-C arrives as a key and
 /// means "abort the turn" or "quit"). SIGWINCH redraws at the new size.
 @MainActor
-public func runInteractiveScreen(conversation: any Conversation, label: String) async throws {
+public func runInteractiveScreen(conversation: any Conversation, label: String, notices: [String] = []) async throws {
     let connection = POSIXTerminalConnection()
     let shutdown = SignalShutdown(connection: connection) { code in exit(code) }
     let (resizes, resized) = AsyncStream<Void>.makeStream()
     let signals = SignalHandler(onResize: { resized.yield() }, onShutdown: { shutdown.handle($0) })
     try signals.start()
     defer { signals.stop() }
-    try await runInteractiveScreen(on: connection, conversation: conversation, label: label, resizes: resizes)
+    try await runInteractiveScreen(
+        on: connection, conversation: conversation, label: label, notices: notices, resizes: resizes)
 }
 
 /// The screen over an injected connection, so every exit path is drivable from a test. On the main actor,
 /// where TerminalKit's render pipeline lives; the loop only awaits, it never blocks.
 @MainActor
 func runInteractiveScreen(
-    on connection: any TerminalConnection, conversation: any Conversation, label: String, resizes: AsyncStream<Void>
+    on connection: any TerminalConnection, conversation: any Conversation, label: String, notices: [String] = [],
+    resizes: AsyncStream<Void>
 ) async throws {
     try connection.enterRawMode()
     defer { TerminalTeardown.run(on: connection) }
@@ -34,7 +36,7 @@ func runInteractiveScreen(
         ContiguousArray(
             EscapeSequences.enterAlternateScreen + EscapeSequences.hideCursor + EscapeSequences.clearScreen
                 + EscapeSequences.enableBracketedPaste))
-    let session = try ScreenSession(connection: connection, conversation: conversation, label: label)
+    let session = try ScreenSession(connection: connection, conversation: conversation, label: label, notices: notices)
     try await session.run(resizes: resizes)
 }
 
@@ -50,12 +52,13 @@ private final class ScreenSession {
     private let events: AsyncStream<ScreenEvent>
     private let sink: AsyncStream<ScreenEvent>.Continuation
 
-    init(connection: any TerminalConnection, conversation: any Conversation, label: String) throws {
+    init(connection: any TerminalConnection, conversation: any Conversation, label: String, notices: [String]) throws {
         let size = try connection.getSize()
         self.connection = connection
         self.conversation = conversation
         pipeline = RenderPipeline(connection: connection, columns: size.columns, rows: size.rows)
         controller = ScreenController(label: label)
+        for notice in notices { controller.handle(.notice(notice, isError: false)) }
         (events, sink) = AsyncStream<ScreenEvent>.makeStream()
     }
 
