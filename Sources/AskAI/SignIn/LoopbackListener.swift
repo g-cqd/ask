@@ -11,7 +11,8 @@ internal import Synchronization
 ///
 /// This replaces an HTTP server framework: the redirect is one GET, once, on this machine (ADR-0036).
 public final class LoopbackListener: Sendable {
-    private static let queue = DispatchQueue(label: "ask.signin.loopback", qos: .userInitiated)
+    /// Concurrent, because each wait blocks its thread: two listeners waiting at once must not queue behind each other.
+    private static let queue = DispatchQueue(label: "ask.signin.loopback", qos: .userInitiated, attributes: .concurrent)
 
     private struct State {
         var descriptor: Int32?
