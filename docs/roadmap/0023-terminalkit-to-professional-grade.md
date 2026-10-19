@@ -49,4 +49,8 @@ TerminalKit landed 0006 (time benchmarks), 0010 (modes as a unit) and its 0015 (
 **0007**, compact cells, pinned at `332ae7a`: two 120×40 grids take 160 KB of live heap, down from
 385 KB, and an unchanged cell compares in about 2.3 ns, down from 14 (diary 12).
 
-Next in this order: **0011**, scroll regions.
+**0011**, scroll regions, pinned at `2450544`: the transcript is the pipeline's scroll region, and a streamed
+line costs 101 bytes instead of 481 at 120×40, and 102 instead of 1,035 at 300×80 (diary 14).
+
+Next in this order: **0008**, a one-cell flush that costs the same at every size; then **0009**, input off the
+cooperative pool.
