@@ -143,16 +143,21 @@ struct JobToolsTests {
         #expect(await waiting == ToolOutput("[port \(port) accepts connections]"))
     }
 
-    /// A port the kernel just handed out and that is free again.
+    /// A port the kernel handed out, released, and that refuses connections now. Anything else on the machine may take
+    /// the number between the release and the check, so a port that is not refused is discarded and another tried.
     private static func freePort() -> Int? {
-        guard let socket = listen(on: 0) else { return nil }
-        defer { close(socket) }
-        var address = sockaddr_in()
-        var length = socklen_t(MemoryLayout<sockaddr_in>.size)
-        let named = withUnsafeMutablePointer(to: &address) { pointer in
-            pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(socket, $0, &length) == 0 }
+        for _ in 0 ..< 20 {
+            guard let socket = listen(on: 0) else { return nil }
+            var address = sockaddr_in()
+            var length = socklen_t(MemoryLayout<sockaddr_in>.size)
+            let named = withUnsafeMutablePointer(to: &address) { pointer in
+                pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) { getsockname(socket, $0, &length) == 0 }
+            }
+            close(socket)
+            let port = Int(UInt16(bigEndian: address.sin_port))
+            if named, !PortWait.accepts(port) { return port }
         }
-        return named ? Int(UInt16(bigEndian: address.sin_port)) : nil
+        return nil
     }
 
     /// A socket listening on `port` at 127.0.0.1.
