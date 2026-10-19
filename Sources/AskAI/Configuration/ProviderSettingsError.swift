@@ -32,7 +32,7 @@ public enum ProviderSettingsError: Error, Sendable, Equatable, CustomStringConve
                 "provider \"\(provider)\" uses api \"\(api)\"; only \"\(ProviderSettings.openAICompletions)\" and \"\(ProviderSettings.openAIResponses)\" are supported"
             // @dl:accept -- these enum-case sentences are independent diagnostic data, not shared logic with session-log repairs
             case .noModel(let provider) where provider == ProviderSettings.codex:
-                "provider \"\(provider)\" needs a model: pass --model with one your plan offers"
+                "provider \"\(provider)\" has no model chosen: run `ask models codex` to list your account's, or pass --model"
             case .noModel(let provider): "provider \"\(provider)\" lists no model; add one, or pass --model"
             case .missingVariable(let provider, let variable):
                 "provider \"\(provider)\" reads its key from $\(variable), which is not set"

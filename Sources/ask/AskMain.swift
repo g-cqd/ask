@@ -15,7 +15,8 @@ struct Ask: AsyncParsableCommand {
         commandName: "ask",
         abstract: "A terminal coding agent: reliable, fast, light.",
         subcommands: [
-            Login.self, Logout.self, Sessions.self, ConfigCommand.self, TrustCommand.self, UntrustCommand.self
+            Login.self, Logout.self, ModelsCommand.self, Sessions.self, ConfigCommand.self, TrustCommand.self,
+            UntrustCommand.self
         ])
 
     @Flag(help: "Print the four performance budgets as JSON and exit. Read by Scripts/measure-budgets.py.")
@@ -88,7 +89,9 @@ struct Ask: AsyncParsableCommand {
             flags: .init(
                 model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt, noSandbox: noSandbox))
         let settings: RunSettings
-        do { settings = try source.load() } catch { fail("ask: \(error)", code: 78) }
+        do { settings = try await source.load(allowNetwork: !selfCheck) } catch {
+            fail("ask: \(error)", code: ModelDiscovery.exitCode(for: error))
+        }
         if selfCheck {
             checkSelf(settings)
             return

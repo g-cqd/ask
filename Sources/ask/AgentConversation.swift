@@ -58,10 +58,10 @@ final class AgentConversation: Conversation {
 
     /// Reads the configuration again and, when it changed, tells the screen what changed. The loop is rebuilt
     /// on the next use.
-    func refreshSettings(update: @Sendable (ConversationUpdate) -> Void) {
+    func refreshSettings(update: @Sendable (ConversationUpdate) -> Void) async {
         let fresh: RunSettings
         do {
-            fresh = try source.load()
+            fresh = try await source.load()
         } catch {
             let text = "Configuration not reloaded: \(error). Keeping the previous settings."
             let isNew: Bool = current.withLock { current in
@@ -100,7 +100,7 @@ final class AgentConversation: Conversation {
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
         Task {
             do {
-                self.refreshSettings(update: update)
+                await self.refreshSettings(update: update)
                 let loop = try self.agentLoop()
                 let recorder = try self.recorder()
                 try await loop.run(prompt, in: recorder) { self.deliver($0, to: update) }

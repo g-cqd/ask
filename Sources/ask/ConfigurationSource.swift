@@ -66,18 +66,18 @@ struct ConfigurationSource: Sendable {
 
     /// Reads every layer and resolves the model, all or nothing.
     /// - Throws: a ``ConfigurationError`` or a ``ProviderSettingsError``, naming the file.
-    func load() throws -> RunSettings {
+    func load(allowNetwork: Bool = true) async throws -> RunSettings {
         let result = try loader.load(
             model: flags.model, provider: flags.provider, maxTurns: flags.maxTurns, compactAt: flags.compactAt)
         let providers = try ProviderSettings.load(from: providersPath)
-        let model = try providers.resolve(
-            provider: result.configuration.provider.value, model: result.configuration.model.value,
-            environment: environment,
-            storedKeys: { () throws(CredentialFileError) in try CredentialFile.standard().loadKeys().mapValues(\.key) })
+        let discovered = try await ModelDiscovery.resolve(
+            providers: providers, provider: result.configuration.provider.value,
+            model: result.configuration.model.value,
+            environment: environment, allowNetwork: allowNetwork)
         let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections(result.configuration.sandbox.value)
         return RunSettings(
-            configuration: result.configuration, model: model, sandbox: sandbox, applied: result.applied,
-            notices: result.notices
+            configuration: result.configuration, model: discovered.model, sandbox: sandbox, applied: result.applied,
+            notices: result.notices + discovered.notices
                 + (flags.noSandbox
                     ? ["The sandbox is off (--no-sandbox): ask's own files and your secret stores are not protected."]
                     : []))
