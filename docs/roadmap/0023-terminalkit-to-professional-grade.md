@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by:
 date: 2026-10-19
 ---
@@ -59,4 +59,6 @@ on its own thread, off the cooperative pool (diary 17).
 layout and flush take a third less (154 → 107 µs at 120×40), and widths match four real terminals, with a cursor
 move after the graphemes they disagree on (diary 19).
 
-Next: **0014**, the pipeline's isolation.
+**0014**, pinned at `74719fb`: the pipeline belongs to no actor, and the screen is drawn by a `RenderLoop` on its
+own thread; a key is handled in 0.01 ms whatever a frame costs (diary 23). Every entry of TerminalKit's 0006
+to 0014 is now landed and adopted. What remains is ask's: the idle-memory budget (roadmap 0007).
