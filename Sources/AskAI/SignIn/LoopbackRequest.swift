@@ -8,15 +8,10 @@ struct LoopbackRequest: Equatable, Sendable {
     /// The most bytes of request head accepted: a callback is a few hundred.
     static let limit = 8 * 1024
 
-    struct QueryItem: Equatable, Sendable {
-        let name: String
-        let value: String
-    }
-
     let method: String
     /// The path as sent, not decoded, so it is compared exactly.
     let path: String
-    let query: [QueryItem]
+    let query: [QueryString.Item]
     let host: String?
 
     /// The request in `bytes`, up to and including the blank line that ends the head.
@@ -41,7 +36,7 @@ struct LoopbackRequest: Equatable, Sendable {
         let split = target.firstIndex(of: "?")
         method = String(parts[0])
         path = String(split.map { target[..<$0] } ?? target)
-        guard let items = Self.items(in: split.map { String(target[target.index(after: $0)...]) } ?? "") else {
+        guard let items = QueryString.items(in: split.map { String(target[target.index(after: $0)...]) } ?? "") else {
             return nil
         }
         query = items
@@ -49,32 +44,12 @@ struct LoopbackRequest: Equatable, Sendable {
     }
 
     /// The value of `name`, when it is given exactly once.
-    func value(of name: String) -> String? {
-        let matches = query.filter { $0.name == name }
-        return matches.count == 1 ? matches[0].value : nil
-    }
+    func value(of name: String) -> String? { QueryString.value(of: name, in: query) }
 
     /// Whether `host` names this machine on `port`: anything else is a page on the internet reaching a local server
     /// through the user's browser (DNS rebinding).
     static func allows(host: String?, port: UInt16) -> Bool {
         guard let host else { return false }
         return ["localhost:\(port)", "127.0.0.1:\(port)", "[::1]:\(port)"].contains(host.lowercased())
-    }
-
-    private static func items(in query: String) -> [QueryItem]? {
-        var items: [QueryItem] = []
-        for pair in query.split(separator: "&", omittingEmptySubsequences: true) {
-            let halves = pair.split(separator: "=", maxSplits: 1, omittingEmptySubsequences: false)
-            guard let name = decode(halves[0]), let value = decode(halves.count == 2 ? halves[1] : "") else {
-                return nil
-            }
-            items.append(QueryItem(name: name, value: value))
-        }
-        return items
-    }
-
-    /// A query component as a form encodes it: `+` is a space, and a bad percent escape is an error.
-    private static func decode(_ component: Substring) -> String? {
-        component.replacingOccurrences(of: "+", with: " ").removingPercentEncoding
     }
 }
