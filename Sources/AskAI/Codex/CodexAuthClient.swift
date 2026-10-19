@@ -7,11 +7,10 @@ internal import Foundation
 /// already have spent it, and a retry would present a token it knows is used.
 public struct CodexAuthClient: Sendable {
     // @dl:accept -- a table of the OAuth error words this endpoint may name; tables share a shape by being tables
-    private static let errorCodes: Set = [
-        "invalid_request", "invalid_client", "invalid_grant", "unauthorized_client", "unsupported_grant_type",
-        "invalid_scope", "access_denied", "temporarily_unavailable", "expired_token", "slow_down",
-        "refresh_token_expired", "refresh_token_reused", "refresh_token_invalidated"
-    ]
+    private static let errorCodes: Set<String> = CodexAuthError.signInEnded.union([
+        "invalid_request", "invalid_client", "unauthorized_client", "unsupported_grant_type", "invalid_scope",
+        "access_denied", "temporarily_unavailable", "expired_token", "slow_down"
+    ])
 
     private let transport: any HTTPTransport
 
