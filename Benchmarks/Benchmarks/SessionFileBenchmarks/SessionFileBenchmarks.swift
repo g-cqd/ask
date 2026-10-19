@@ -31,6 +31,7 @@ let benchmarks: @Sendable () -> Void = {
     }
 
     sessionOpenBenchmarks()
+    configurationBenchmarks()
     contextBenchmarks()
     capBenchmarks()
     fileToolBenchmarks()

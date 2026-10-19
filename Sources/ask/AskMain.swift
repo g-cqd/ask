@@ -14,7 +14,9 @@ struct Ask: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "ask",
         abstract: "A terminal coding agent: reliable, fast, light.",
-        subcommands: [Login.self, Logout.self, Sessions.self])
+        subcommands: [
+            Login.self, Logout.self, Sessions.self, ConfigCommand.self, TrustCommand.self, UntrustCommand.self
+        ])
 
     @Flag(help: "Print the four performance budgets as JSON and exit. Read by Scripts/measure-budgets.py.")
     var budgets = false
@@ -24,21 +26,24 @@ struct Ask: AsyncParsableCommand {
         help: "Run one prompt with the tools, stream the answer to standard output, and exit.")
     var prompt: String?
 
-    @Option(help: "The model to use. Default: the provider's default model.")
+    @Option(help: "The model to use. Default: config.json, else the provider's default model.")
     var model: String?
 
     @Option(
-        help: "The provider: \"anthropic\", or a name from ~/.config/ask/providers.json. Default: the file's default.")
+        help:
+            "The provider: \"anthropic\", or a name from ~/.config/ask/providers.json. Default: config.json, else the file's default."
+    )
     var provider: String?
 
-    @Option(help: "The most model requests one prompt may make before ask stops it.")
-    var maxTurns = 100
+    @Option(help: "The most model requests one prompt may make before ask stops it. Default: config.json, else 100.")
+    var maxTurns: Int?
 
     @Option(
         help: ArgumentHelp(
-            "Compact the conversation once its context reaches this many tokens; 0 only when the window is full.",
+            "Compact the conversation once its context reaches this many tokens; 0 only when the window is full. "
+                + "Default: config.json, else 150000.",
             valueName: "tokens"))
-    var compactAt = AgentSettings.defaultCompactAtTokens
+    var compactAt: Int?
 
     @Flag(name: [.short, .customLong("continue")], help: "Continue the session written last in this project.")
     var continueLatest = false
@@ -50,10 +55,8 @@ struct Ask: AsyncParsableCommand {
 
     func validate() throws {
         if continueLatest, resume != nil { throw ValidationError("Use --continue or --resume, not both.") }
-    }
-
-    private var limits: RunLimits {
-        RunLimits(maximumTurns: Swift.max(1, maxTurns), compactAtTokens: compactAt > 0 ? compactAt : nil)
+        if let maxTurns, maxTurns < 1 { throw ValidationError("--max-turns must be at least 1.") }
+        if let compactAt, compactAt < 0 { throw ValidationError("--compact-at must be 0 or more.") }
     }
 
     private var session: SessionChoice {
@@ -66,13 +69,16 @@ struct Ask: AsyncParsableCommand {
             FileHandle.standardOutput.write(Data(try Budget.reportJSON()))
             return
         }
-        let resolved: ResolvedModel
-        do { resolved = try resolveModel(provider: provider, model: model) } catch { fail("ask: \(error)", code: 78) }
+        let source = ConfigurationSource(
+            workingDirectory: FileManager.default.currentDirectoryPath,
+            flags: .init(model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt))
+        let settings: RunSettings
+        do { settings = try source.load() } catch { fail("ask: \(error)", code: 78) }
         if let prompt {
-            await runPrompt(prompt, model: resolved, limits: limits, session: session)
+            await runPrompt(prompt, source: source, settings: settings, session: session)
             return
         }
-        await runInteractive(model: resolved, limits: limits, session: session)
+        await runInteractive(source: source, settings: settings, session: session)
     }
 }
 
