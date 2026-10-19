@@ -11,6 +11,7 @@ public struct AgentLoop: Sendable {
     private let context: ToolContext
     private let retry: RetryPolicy
     private let clock: any Clock<Duration>
+    private let hooks: [any AgentHook]
 
     /// What the loop sends, as a recorded user message, after a response stopped at the output-token limit.
     public static let continuationPrompt =
@@ -25,14 +26,34 @@ public struct AgentLoop: Sendable {
     /// A loop over `provider` and `tools`, retrying transient failures per `retry` and waiting on `clock`.
     public init(
         provider: any ModelProvider, tools: ToolRegistry, settings: AgentSettings, context: ToolContext,
-        retry: RetryPolicy = .standard, clock: any Clock<Duration> = ContinuousClock()
+        retry: RetryPolicy = .standard, clock: any Clock<Duration> = ContinuousClock(), hooks: [any AgentHook] = []
     ) {
+        self.hooks = hooks
         self.provider = provider
         self.tools = tools
         self.settings = settings
         self.context = context
         self.retry = retry
         self.clock = clock
+    }
+
+    /// Runs one call through the hooks and the tool: each hook may rewrite or block it, then each may transform
+    /// the result. A blocked call never runs; its result is an error naming the reason.
+    private func runTool(_ original: ToolInvocation, events: (AgentEvent) -> Void) async -> ToolOutput {
+        var call = original
+        for hook in hooks {
+            switch await hook.toolCall(call) {
+                case .allow: continue
+                case .rewrite(let input): call = ToolInvocation(id: call.id, name: call.name, input: input)
+                case .block(let reason):
+                    events(.toolStarted(id: call.id, name: call.name, input: call.input))
+                    return .error("This call was blocked before it ran: \(reason)")
+            }
+        }
+        events(.toolStarted(id: call.id, name: call.name, input: call.input))
+        var output = await tools.run(name: call.name, input: call.input, in: context)
+        for hook in hooks { output = await hook.toolResult(call, output) }
+        return output
     }
 
     /// Runs `prompt` to completion in `session`, reporting each step to `events`.
@@ -71,8 +92,7 @@ public struct AgentLoop: Sendable {
             }
             for (id, name, input) in calls {
                 guard !Task.isCancelled else { throw .cancelled }
-                events(.toolStarted(id: id, name: name, input: input))
-                let output = await tools.run(name: name, input: input, in: context)
+                let output = await runTool(ToolInvocation(id: id, name: name, input: input), events: events)
                 try record(.toolResult(callID: id, content: output.content, isError: output.isError), in: session)
                 events(.toolFinished(id: id, name: name, output: output))
             }
