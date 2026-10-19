@@ -12,4 +12,16 @@ public struct ResolvedModel: Sendable, Equatable {
 
     public let provider: Provider
     public let model: String
+    /// The model's context window in tokens, when the settings say.
+    public var contextWindow: Int?
+    /// The longest reply the model allows, when the settings say.
+    public var maxOutputTokens: Int?
+
+    /// A resolved provider and model, with what is known of the model's limits.
+    public init(provider: Provider, model: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil) {
+        self.provider = provider
+        self.model = model
+        self.contextWindow = contextWindow
+        self.maxOutputTokens = maxOutputTokens
+    }
 }
