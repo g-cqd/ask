@@ -18,9 +18,33 @@ final class AgentConversation: Conversation {
     private let session = Mutex<SessionRecorder?>(nil)
     private let usage = Mutex(UsageTotals())
 
-    init(directory: SessionDirectory, makeLoop: @escaping @Sendable () throws -> AgentLoop) {
+    /// - Parameters:
+    ///   - directory: where a new session is created on the first prompt.
+    ///   - resumed: a session already open, which prompts continue instead.
+    ///   - makeLoop: builds the loop, on the first prompt.
+    init(
+        directory: SessionDirectory, resumed: SessionRecorder? = nil,
+        makeLoop: @escaping @Sendable () throws -> AgentLoop
+    ) {
         self.makeLoop = makeLoop
         self.directory = directory
+        session.withLock { $0 = resumed }
+    }
+
+    /// What the screen shows first for a resumed session: its conversation, then its usage so far, which the
+    /// status line keeps adding to.
+    func history() -> [ConversationUpdate] {
+        guard let tree = session.withLock({ $0?.tree }) else { return [] }
+        var updates: [ConversationUpdate] = []
+        for step in SessionReplay.steps(tree.activeBranch()) {
+            switch step {
+                case .prompt(let text): updates.append(.userPrompt(text))
+                case .event(let event):
+                    if case .responded(let response) = event { usage.withLock { $0.add(response.usage) } }
+                    if let shown = Self.update(for: event) { updates.append(shown) }
+            }
+        }
+        return updates + [.status(usage.withLock { $0.summary })]
     }
 
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
@@ -87,16 +111,22 @@ final class AgentConversation: Conversation {
 }
 
 /// The interactive screen in the working directory.
-func runInteractive(model: String, maximumTurns: Int) async {
+func runInteractive(model: String, maximumTurns: Int, session choice: SessionChoice) async {
     let workingDirectory = FileManager.default.currentDirectoryPath
+    let directory = SessionDirectory(project: workingDirectory)
+    var notices: [String] = []
+    let resumed = choice.open(in: directory) { notices.append($0) }
+    if let resumed { notices.append("Resumed session \((resumed.path as NSString).lastPathComponent)") }
     do {
         let files = instructionFiles(workingDirectory: workingDirectory)
-        let conversation = AgentConversation(directory: SessionDirectory(project: workingDirectory)) {
+        let conversation = AgentConversation(directory: directory, resumed: resumed) {
             try makeLoop(
                 model: model, workingDirectory: workingDirectory, instructions: files, maximumTurns: maximumTurns,
                 transport: URLSessionTransport())
         }
-        try await runInteractiveScreen(conversation: conversation, label: model, notices: describe(files))
+        try await runInteractiveScreen(
+            conversation: conversation, label: model, history: conversation.history(),
+            notices: notices + describe(files))
     } catch {
         // The screen has already restored the terminal by the time an error reaches here.
         fail("ask: \(error)", code: 70)

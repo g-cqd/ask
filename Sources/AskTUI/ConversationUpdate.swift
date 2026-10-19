@@ -3,6 +3,8 @@ internal import TerminalKitInput
 
 /// What a running conversation tells the screen. The composition root maps agent events onto these.
 public enum ConversationUpdate: Sendable, Equatable {
+    /// A prompt the user wrote earlier, shown when a recorded session is resumed.
+    case userPrompt(String)
     case assistantText(String)
     case toolStarted(name: String, summary: String)
     case toolFinished(Transcript.ToolStatus)
