@@ -49,6 +49,10 @@ func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> 
                     transport: transport,
                     endpoint: AnthropicClient.endpoint(environment: ProcessInfo.processInfo.environment)),
                 auth: requestAuth(transport: transport))
+        case .codex:
+            CodexProvider(
+                access: CodexAccess(file: .standard(), client: CodexAuthClient(transport: transport)),
+                transport: transport, session: UUID().uuidString)
         case .openAICompatible(_, let baseURL, let apiKey, let headers):
             OpenAICompatibleProvider(
                 client: OpenAICompatibleClient(transport: transport, baseURL: baseURL, apiKey: apiKey, headers: headers)
@@ -64,6 +68,7 @@ func modelLabel(_ resolved: ResolvedModel) -> String {
     switch resolved.provider {
         case .openAICompatible(let name, _, _, _), .openAIResponses(let name, _, _, _):
             return "\(name)/\(resolved.model)"
+        case .codex: return "codex/\(resolved.model)"
         case .anthropic: break
     }
     return resolved.model
