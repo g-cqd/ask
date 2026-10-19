@@ -125,7 +125,7 @@ public struct OpenAIStreamDecoder: ModelEventDecoding {
         if let existing = toolBlocks[wireIndex] {
             block = existing
         } else {
-            let id = call.id.flatMap { $0.isEmpty ? nil : $0 } ?? Self.generatedID()
+            let id = call.id.flatMap { $0.isEmpty ? nil : $0 } ?? ToolCallID.generated()
             block = openBlock(.toolUse(id: id, name: call.function?.name ?? ""), into: &events)
             toolBlocks[wireIndex] = block
             toolOrder.append(block)
@@ -152,12 +152,6 @@ public struct OpenAIStreamDecoder: ModelEventDecoding {
             case nil: break
         }
         scalar = nil
-    }
-
-    /// A call id for a server that sent none, unique enough that a session cannot match a result to the wrong call.
-    private static func generatedID() -> String {
-        var random = SystemRandomNumberGenerator()
-        return "call_" + String(random.next(), radix: 16)
     }
 
     private static func stopReason(_ wire: String) -> StopReason {
