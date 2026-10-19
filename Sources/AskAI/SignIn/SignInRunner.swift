@@ -1,6 +1,4 @@
-public import Foundation
-
-/// Runs a ``BrowserSignIn``: shows the link, polls until the user finishes, and returns the key.
+/// Runs a ``BrowserSignIn``: shows the link, polls until the user finishes, and returns what the sign-in ends in.
 ///
 /// The clock is injected so a test passes ten minutes in no time. Time is measured on it, not summed from waits, so a
 /// server that answers slowly cannot stretch the deadline.
@@ -13,29 +11,31 @@ public struct SignInRunner<C: Clock<Duration>>: Sendable {
     /// Signs in.
     /// - Parameters:
     ///   - flow: the provider's sign-in.
-    ///   - show: called once with the link for the user to open.
-    /// - Returns: the key the sign-in issued.
+    ///   - show: called once with what the user is shown: the link and what to do there.
+    /// - Returns: what the sign-in ends in.
     /// - Throws: ``SignInError``; ``SignInError/cancelled`` when the task is cancelled, before any further request.
-    public func run<Flow: BrowserSignIn>(_ flow: Flow, show: @Sendable (URL) -> Void) async throws(SignInError)
-        -> StoredKey
+    public func run<Flow: BrowserSignIn>(_ flow: Flow, show: @Sendable (SignInPrompt) -> Void) async throws(SignInError)
+        -> Flow.Outcome
     {
         let started = try await flow.start()
-        show(started.url)
+        show(SignInPrompt(url: started.url, instructions: started.instructions))
         let deadline = clock.now.advanced(by: started.window)
+        var interval = started.interval
         var waits = !flow.pollsImmediately
         while true {
             try live(until: deadline)
             if waits {
-                try await wait(min(flow.pollInterval, clock.now.duration(to: deadline)))
+                try await wait(min(interval, clock.now.duration(to: deadline)))
                 try live(until: deadline)
             }
             let polled = try await flow.poll(started.session)
             try live(until: deadline)
             switch polled {
                 case .pending: waits = true
-                case .complete(let token):
-                    let key = try await flow.finish(started.session, token: token)
-                    return StoredKey(key: key, obtainedAt: flow.timestamp())
+                case .slowDown:
+                    interval += .seconds(5)
+                    waits = true
+                case .complete(let grant): return try await flow.finish(started.session, grant: grant)
             }
         }
     }
