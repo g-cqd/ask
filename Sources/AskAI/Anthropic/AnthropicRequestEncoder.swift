@@ -29,7 +29,7 @@ public enum AnthropicRequestEncoder {
     /// - Returns: the JSON body.
     public static func encode(_ request: ModelRequest, caching: Bool = true) -> [UInt8] {
         let (messages, promptEnd) = carryingPromptMarkingItsEnd(
-            request.systemPrompt, in: withoutUnsignedReasoning(request.messages))
+            request.systemPrompt, in: withoutForeignReasoning(request.messages))
         let marks = caching ? [promptEnd, conversationEnd(messages)].compactMap { $0 } : []
         return JSONStreamWriter.streamingRequest(model: request.model, maxTokens: request.maxTokens) { writer in
             writer.key("system")
@@ -66,15 +66,22 @@ public enum AnthropicRequestEncoder {
         return ([first] + messages.dropFirst(), (0, lead + promptBlocks.count - 1))
     }
 
-    /// The messages without reasoning that carries no signature, and without any message that leaves empty.
+    /// The messages without reasoning Anthropic did not sign, and without any message that leaves empty.
     ///
-    /// Reasoning from another provider (an OpenAI-compatible server sends none) has no signature, and Anthropic
-    /// refuses a thinking block whose signature it did not issue; so does a message with no content. Removing them
-    /// here, before breakpoints are placed, keeps every later index true.
-    static func withoutUnsignedReasoning(_ messages: [ModelMessage]) -> [ModelMessage] {
+    /// Reasoning from another provider has no signature (an OpenAI-compatible server sends none) or one that
+    /// protocol marked (``ReasoningProvenance``), and Anthropic refuses a thinking block whose signature it did not
+    /// issue; so does a message with no content. Removing them here, before breakpoints are placed, keeps every later
+    /// index true.
+    static func withoutForeignReasoning(_ messages: [ModelMessage]) -> [ModelMessage] {
         messages.compactMap { message in
             var kept = message
-            kept.blocks.removeAll { if case .thinking(_, let signature) = $0 { signature.isEmpty } else { false } }
+            kept.blocks.removeAll {
+                if case .thinking(_, let signature) = $0 {
+                    signature.isEmpty || ReasoningProvenance.isForeign(signature)
+                } else {
+                    false
+                }
+            }
             return kept.blocks.isEmpty ? nil : kept
         }
     }
