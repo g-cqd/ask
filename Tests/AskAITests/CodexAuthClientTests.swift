@@ -81,6 +81,11 @@ struct CodexAuthClientTests {
         (400, #"{"error":"invalid_grant"}"#, "invalid_grant"),
         (400, #"{"error":{"code":"refresh_token_reused"}}"#, "refresh_token_reused"),
         (401, #"{"error":"refresh_token_expired"}"#, "refresh_token_expired"),
+        (
+            401,
+            #"{"error":{"message":"Could not validate your token.","type":"invalid_request_error","code":"token_expired"}}"#,
+            "token_expired"
+        ),
         (400, #"{"error":"made_up_code_with_secret_rt-old"}"#, nil as String?), (500, "boom rt-old", nil as String?)
     ])
     func `a refusal names its status and a known code, never the body`(status: Int, body: String, code: String?) async {
@@ -126,5 +131,18 @@ struct CodexAuthClientTests {
             Issue.record("succeeded")
         } catch { #expect("\(error)".contains("offline")) }
         #expect(transport.sent.count == 1, "a refresh token may already be spent; never retry")
+    }
+
+    @Test(arguments: [
+        "invalid_grant", "refresh_token_expired", "refresh_token_reused", "refresh_token_invalidated", "token_expired"
+    ])
+    func `a spent sign-in tells the user to sign in again`(code: String) {
+        let text = CodexAuthError.tokenEndpoint(status: 401, code: code).description
+        #expect(text.contains("ask login codex"), "\(code)")
+    }
+
+    @Test func `a refusal that is not about the sign-in does not say to sign in again`() {
+        #expect(!CodexAuthError.tokenEndpoint(status: 500, code: nil).description.contains("ask login codex"))
+        #expect(!CodexAuthError.tokenEndpoint(status: 429, code: "slow_down").description.contains("ask login codex"))
     }
 }

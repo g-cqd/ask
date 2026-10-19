@@ -13,7 +13,7 @@ public enum CodexAuthError: Error, Sendable, Equatable, CustomStringConvertible 
         switch self {
             case .tokenEndpoint(let status, let code):
                 "the token endpoint refused with status \(status)" + (code.map { " (\($0))" } ?? "")
-                    + (Self.spent.contains(code ?? "")
+                    + (Self.signInEnded.contains(code ?? "")
                         ? "; the sign-in is no longer valid, run `ask login codex` again" : "")
             case .invalidResponse: "the token endpoint's answer was not sound credentials"
             case .noAccountID: "the access token names no ChatGPT account"
@@ -21,7 +21,9 @@ public enum CodexAuthError: Error, Sendable, Equatable, CustomStringConvertible 
         }
     }
 
-    private static let spent: Set = [
-        "invalid_grant", "refresh_token_expired", "refresh_token_reused", "refresh_token_invalidated"
+    /// The words that mean the sign-in itself is over, so only a new one helps. `token_expired` is what the server was
+    /// observed to answer for a code or refresh token it does not know (diary 26).
+    static let signInEnded: Set<String> = [
+        "invalid_grant", "refresh_token_expired", "refresh_token_reused", "refresh_token_invalidated", "token_expired"
     ]
 }
