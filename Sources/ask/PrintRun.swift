@@ -72,12 +72,13 @@ func runPrompt(_ prompt: String, model: ResolvedModel, limits: RunLimits, sessio
         }
     }
     let workingDirectory = FileManager.default.currentDirectoryPath
+    let jobs = JobTable()
     let loop: AgentLoop
     let files = instructionFiles(workingDirectory: workingDirectory)
     for line in describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     do {
         loop = try makeLoop(
-            model: model, workingDirectory: workingDirectory, instructions: files, limits: limits,
+            model: model, workingDirectory: workingDirectory, instructions: files, limits: limits, jobs: jobs,
             transport: transport)
     } catch {
         fail("ask: \(error)", code: 70)
@@ -109,6 +110,8 @@ func runPrompt(_ prompt: String, model: ResolvedModel, limits: RunLimits, sessio
         })
     try? signals.start()
     let result = await run.result
+    // Jobs outlive turns, not ask: whatever ended the run, nothing it started keeps running.
+    await jobs.stopAll()
     signals.stop()
     FileHandle.standardError.write(Data("ask: tokens \(renderer.usageSummary)\nask: session \(sessionPath)\n".utf8))
     if let signal = interrupted.withLock({ $0 }) { Foundation.exit(128 + signal) }

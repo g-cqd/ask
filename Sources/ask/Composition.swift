@@ -69,19 +69,25 @@ func modelLabel(_ resolved: ResolvedModel) -> String {
     return resolved.model
 }
 
-/// The agent loop with the four tools, rooted at `workingDirectory`, following `instructions` after ask's own.
+/// The agent loop with the tools, rooted at `workingDirectory`, following `instructions` after ask's own. Jobs
+/// live in `jobs`, which the caller stops when ask exits.
 func makeLoop(
     model resolved: ResolvedModel, workingDirectory: String, instructions files: [ProjectInstructions.File],
-    limits: RunLimits, transport: URLSessionTransport
+    limits: RunLimits, jobs: JobTable, transport: URLSessionTransport
 ) throws -> AgentLoop {
     AgentLoop(
         provider: makeProvider(resolved, transport: transport),
-        tools: try ToolRegistry(FileTools.all + [BashTool()]),
+        tools: try ToolRegistry(
+            FileTools.all + [
+                BashTool(jobs: jobs), WaitTool(jobs: jobs), JobInputTool(jobs: jobs), JobStopTool(jobs: jobs)
+            ]),
         settings: AgentSettings(
             model: resolved.model, maximumTokens: 16_384,
             systemPrompt: [instructions(workingDirectory: workingDirectory)] + ProjectInstructions.promptBlocks(files),
             maximumTurns: limits.maximumTurns, compactAtTokens: limits.compactAtTokens),
-        context: ToolContext(workingDirectory: workingDirectory))
+        context: ToolContext(
+            workingDirectory: workingDirectory,
+            outputDirectory: SessionDirectory(project: workingDirectory).path + "/output"))
 }
 
 /// ask's instructions, carried in the first user message (ADR-0007).
@@ -89,7 +95,8 @@ private func instructions(workingDirectory: String) -> String {
     """
     You are ask, a coding agent working in a terminal on macOS. The working directory is \(workingDirectory). \
     Use the tools to read, write and edit files and to run bash commands; relative paths resolve against the \
-    working directory. Prefer small changes you have verified, by running the build or tests when there are any. \
+    working directory. Start servers, watchers and long builds with bash yield_seconds, then use wait, job_input \
+    and job_stop; stop the jobs you started when you no longer need them. Prefer small changes you have verified, by running the build or tests when there are any. \
     Answer concisely, and say plainly what you did not verify.
     """
 }

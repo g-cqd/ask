@@ -3,6 +3,7 @@
 internal import AskAI
 internal import AskAgentCore
 internal import AskTUI
+internal import AskTools
 internal import Foundation
 internal import Synchronization
 internal import System
@@ -119,17 +120,22 @@ func runInteractive(model: ResolvedModel, limits: RunLimits, session choice: Ses
     var notices: [String] = []
     let resumed = choice.open(in: directory) { notices.append($0) }
     if let resumed { notices.append("Resumed session \((resumed.path as NSString).lastPathComponent)") }
+    let jobs = JobTable()
     do {
         let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(directory: directory, resumed: resumed) {
             try makeLoop(
-                model: model, workingDirectory: workingDirectory, instructions: files, limits: limits,
+                model: model, workingDirectory: workingDirectory, instructions: files, limits: limits, jobs: jobs,
                 transport: URLSessionTransport())
         }
+        // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
+        // stops them gracefully below.
         try await runInteractiveScreen(
             conversation: conversation, label: modelLabel(model), history: conversation.history(),
-            notices: notices + describe(files))
+            notices: notices + describe(files), beforeSignalExit: { jobs.terminateAllNow() })
+        await jobs.stopAll()
     } catch {
+        await jobs.stopAll()
         // The screen has already restored the terminal by the time an error reaches here.
         fail("ask: \(error)", code: 70)
     }
