@@ -44,6 +44,13 @@ Idle memory is currently **over** its budget, and the action-to-action figure is
 ([roadmap 0007](docs/roadmap/0007-re-derive-the-action-budget.md)). **CI has never run**: GitHub refuses to start
 the jobs for a billing reason, so the gates are enforced by `Scripts/quality.sh` and the git hooks, not by CI.
 
+## Commands
+
+Type `/help` in the screen. `/config` shows the settings and re-reads the files, `/compact` summarises the
+conversation now, `/quit` leaves. To develop ask with ask: build it (ask can run `swift build` for you), then type
+`/reload`. ask checks the new binary starts, then replaces itself with it, keeping the session
+([ADR-0034](docs/adr/0034-reload-is-a-checked-re-exec-between-turns.md)).
+
 ## Configuration
 
 Settings live in `config.json`, JSON or JSON5 (comments, unquoted keys, trailing commas), in `~/.config/ask/` and
