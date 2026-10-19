@@ -13,6 +13,8 @@ public import System
 ///   session file exists, and damaged bytes are never discarded. Appending instead would glue the new record
 ///   onto a torn fragment and corrupt it.
 /// - A failed append marks the file for the same rewrite, so a half-written record is never appended to.
+/// - It is the session's only writer: creating and opening take an exclusive lock that is held until the file
+///   closes, and carried over to the replacement file across a rewrite (``SessionLock``, ADR-0024).
 ///
 /// `~Copyable`, so the descriptor has exactly one owner and closes when it does.
 public struct SessionFile: ~Copyable {
@@ -34,16 +36,20 @@ public struct SessionFile: ~Copyable {
     /// The flush applied to every change.
     public let durability: Durability
     private var appender: FileDescriptor?
+    private var lock: SessionLock
     private var needsRewrite: Bool
     private let writeRecord: RecordWriter
 
     /// Writes one record to the append descriptor. Only tests replace it, to make that write fail.
     typealias RecordWriter = ([UInt8], FileDescriptor) throws(SessionFileError) -> Void
 
-    private init(
+    /// Internal for the opening extension only; sessions are made by ``create(at:durability:)`` and ``open(at:durability:limits:)``.
+    init(
         path: FilePath, tree: SessionTree, issues: [SessionLogIssue], durability: Durability,
-        appender: FileDescriptor?, writeRecord: @escaping RecordWriter = SessionFileIO.writeAll
+        appender: FileDescriptor?, lock: consuming SessionLock,
+        writeRecord: @escaping RecordWriter = SessionFileIO.writeAll
     ) {
+        self.lock = lock
         self.writeRecord = writeRecord
         self.path = path
         self.tree = tree
@@ -55,61 +61,6 @@ public struct SessionFile: ~Copyable {
 
     deinit {
         if let appender { _ = try? appender.close() }
-    }
-
-    // MARK: - Creating and opening
-
-    /// Creates an empty session at `path`. Never overwrites.
-    /// - Parameters:
-    ///   - path: the new file.
-    ///   - durability: the flush applied to every change.
-    /// - Returns: the open session.
-    /// - Throws: ``SessionFileError/alreadyExists``, or an I/O error, after removing any partial file.
-    public static func create(
-        at path: FilePath, durability: Durability = .barrier
-    ) throws(SessionFileError) -> SessionFile {
-        try begin(SessionTree(), at: path, durability: durability)
-    }
-
-    /// Writes `tree` as a new file at `path`, which must not exist, and opens it for appending.
-    private static func begin(
-        _ tree: SessionTree, at path: FilePath, durability: Durability
-    ) throws(SessionFileError) -> SessionFile {
-        let descriptor = try SessionFileIO.writeExclusively(
-            try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(tree) },
-            to: path, durability: durability)
-        return SessionFile(path: path, tree: tree, issues: [], durability: durability, appender: descriptor)
-    }
-
-    /// Opens a session, repairing damage in memory. Never writes.
-    /// - Parameters:
-    ///   - path: the session file.
-    ///   - durability: the flush applied to every later change.
-    ///   - limits: the size ceilings, checked before the file is read.
-    /// - Returns: the session, with ``issues`` describing any repair.
-    /// - Throws: an I/O error, or ``SessionLogError/archiveTooLarge(_:)`` and
-    ///   ``SessionLogError/unsupportedVersion(_:)`` as ``SessionFileError/log(_:)``.
-    public static func open(
-        at path: FilePath, durability: Durability = .barrier, limits: SessionLog.Limits = .standard
-    ) throws(SessionFileError) -> SessionFile {
-        try open(at: path, durability: durability, limits: limits, writeRecord: SessionFileIO.writeAll)
-    }
-
-    /// ``open(at:durability:limits:)`` with the record write replaced, so tests can fail it.
-    static func open(
-        at path: FilePath, durability: Durability, limits: SessionLog.Limits = .standard,
-        writeRecord: @escaping RecordWriter
-    ) throws(SessionFileError) -> SessionFile {
-        let bytes = try SessionFileIO.readAll(path, limits: limits)
-        let recovered: RecoveredSession
-        do {
-            recovered = try SessionLog.recover(bytes, limits: limits)
-        } catch {
-            throw .log(error)
-        }
-        return SessionFile(
-            path: path, tree: recovered.tree, issues: recovered.issues, durability: durability, appender: nil,
-            writeRecord: writeRecord)
     }
 
     // MARK: - Changes
@@ -153,16 +104,6 @@ public struct SessionFile: ~Copyable {
             tree.rewind(to: checkpoint)
             throw error
         }
-    }
-
-    /// Writes the active branch to a new file. Never overwrites.
-    /// - Parameter destination: the new file.
-    /// - Returns: the forked session, open at `destination`.
-    /// - Throws: ``SessionFileError/alreadyExists`` or an I/O error.
-    public borrowing func fork(to destination: FilePath) throws(SessionFileError) -> SessionFile {
-        let forked: SessionTree
-        do { forked = try tree.fork() } catch { throw .tree(error) }
-        return try Self.begin(forked, at: destination, durability: durability)
     }
 
     // MARK: - Persistence
@@ -221,9 +162,11 @@ public struct SessionFile: ~Copyable {
             _ = try? descriptor.close()
             throw error
         }
-        _ = try? descriptor.close()
+        // The replacement is locked before it takes the session's name, so the name is never unlocked.
+        let replacementLock = try SessionLock.adopt(descriptor)
         try preserveDamagedOriginal()
         guard rename(temporary.string, path.string) == 0 else { throw .io(.rename, errno: errno) }
+        lock = replacementLock
         try SessionFileIO.flushDirectory(of: path, durability)
         if let appender { _ = try? appender.close() }
         appender = nil

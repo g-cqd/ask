@@ -44,12 +44,16 @@ struct SessionFileTests {
     }
 
     @Test func `every change survives reopening`() throws {
-        var file = try SessionFile.create(at: path("s.jsonl"))
-        let root = try file.append(.user("root"))
-        _ = try file.append(.assistant("abandoned"))
-        _ = try file.continuing(from: root, with: .assistant("kept"))
-        try file.moveLeaf(to: root)
-        let written = file.tree
+        let written: SessionTree
+        do {
+            // Closed before reopening: a session has one writer at a time.
+            var file = try SessionFile.create(at: path("s.jsonl"))
+            let root = try file.append(.user("root"))
+            _ = try file.append(.assistant("abandoned"))
+            _ = try file.continuing(from: root, with: .assistant("kept"))
+            try file.moveLeaf(to: root)
+            written = file.tree
+        }
         let reopened = try SessionFile.open(at: path("s.jsonl"))
         let tree = reopened.tree
         #expect(tree.entries == written.entries)
@@ -117,8 +121,10 @@ struct SessionFileTests {
     @Test func `a later repair does not overwrite an earlier damaged copy`() throws {
         let first = "{\"type\":\"session\",\"version\":1}\n{\"id\":\"a"
         try write("s.jsonl", first)
-        var file = try SessionFile.open(at: path("s.jsonl"))
-        _ = try file.append(.user("one"))
+        do {
+            var file = try SessionFile.open(at: path("s.jsonl"))
+            _ = try file.append(.user("one"))
+        }
         let second = "{\"type\":\"session\",\"version\":1}\n{\"id\":\"z"
         try write("s.jsonl", second)
         var again = try SessionFile.open(at: path("s.jsonl"))
@@ -140,8 +146,11 @@ struct SessionFileTests {
     // MARK: - A failed write
 
     @Test func `a torn append is never appended to, and is kept as a damaged copy`() throws {
-        var file = try SessionFile.create(at: path("s.jsonl"))
-        let first = try file.append(.user("one"))
+        let first: EntryID
+        do {
+            var file = try SessionFile.create(at: path("s.jsonl"))
+            first = try file.append(.user("one"))
+        }
         var failuresLeft = 1
         var reopened = try SessionFile.open(at: path("s.jsonl"), durability: .barrier) {
             record, descriptor throws(SessionFileError) in
@@ -166,9 +175,12 @@ struct SessionFileTests {
 
     @Test(arguments: ["checkout", "branch", "append"])
     func `a change that cannot be persisted is undone`(change: String) throws {
-        var file = try SessionFile.create(at: path("s.jsonl"))
-        let root = try file.append(.user("root"))
-        _ = try file.append(.assistant("leaf"))
+        let root: EntryID
+        do {
+            var file = try SessionFile.create(at: path("s.jsonl"))
+            root = try file.append(.user("root"))
+            _ = try file.append(.assistant("leaf"))
+        }
         var failing = try SessionFile.open(at: path("s.jsonl"), durability: .barrier) { _, _ throws(SessionFileError) in
             throw .io(.write, errno: EIO)
         }
@@ -184,8 +196,10 @@ struct SessionFileTests {
     }
 
     @Test func `sessions default to an ordered flush`() throws {
-        let file = try SessionFile.create(at: path("s.jsonl"))
-        #expect(file.durability == .barrier)
+        do {
+            let file = try SessionFile.create(at: path("s.jsonl"))
+            #expect(file.durability == .barrier)
+        }
         let reopened = try SessionFile.open(at: path("s.jsonl"))
         #expect(reopened.durability == .barrier)
     }
@@ -214,8 +228,11 @@ struct SessionFileTests {
         let root = try file.append(.user("root"))
         _ = try file.append(.assistant("other"))
         let chosen = try file.continuing(from: root, with: .assistant("chosen"))
-        let fork = try file.fork(to: path("fork.jsonl"))
-        let forkTree = fork.tree
+        let forkTree: SessionTree
+        do {
+            let fork = try file.fork(to: path("fork.jsonl"))
+            forkTree = fork.tree
+        }
         #expect(forkTree.entries.map(\.id) == [root, chosen])
         let reopened = try SessionFile.open(at: path("fork.jsonl"))
         let tree = reopened.tree
