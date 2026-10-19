@@ -11,6 +11,7 @@ public struct AnthropicStreamDecoder: ModelEventDecoding {
     /// Decodes one event, appending what it means to `events`.
     /// - Throws: ``AnthropicStreamError/provider(_:)`` for an `error` event, or
     ///   ``AnthropicStreamError/malformed(event:)`` when the data does not match the event.
+    // @dl:accept -- every decoder wraps its JSON decode in the same four lines over a different wire type; a helper would only rename the repetition
     public func decode(_ frame: SSEEvent, into events: inout [ModelEvent]) throws(AnthropicStreamError) {
         let wire: WireEvent
         do {
