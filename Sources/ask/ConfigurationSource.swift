@@ -43,7 +43,7 @@ struct ConfigurationSource: Sendable {
     /// ask's default protections over every home directory a tool could mean by `~`: the account's, and `$HOME` when
     /// it names another. `NSHomeDirectory()` ignores `$HOME`, while a command's `~` follows it, so protecting one
     /// would leave the other's secret stores open.
-    private func protections() -> SandboxPolicy {
+    private func protections(_ section: SandboxSection) -> SandboxPolicy {
         var homes = [NSHomeDirectory()]
         if let fromEnvironment = environment["HOME"], fromEnvironment.hasPrefix("/"), !homes.contains(fromEnvironment) {
             homes.append(fromEnvironment)
@@ -52,7 +52,9 @@ struct ConfigurationSource: Sendable {
             homes.map { home in
                 SandboxPolicy.standard(
                     home: home, configDirectory: askConfigDirectory(environment: environment),
-                    stateDirectory: SessionDirectory.stateRoot(environment: environment, home: home))
+                    stateDirectory: SessionDirectory.stateRoot(environment: environment, home: home),
+                    allowRead: section.allowRead.map { SandboxSection.expand($0, home: home) },
+                    denyRead: section.denyRead.map { SandboxSection.expand($0, home: home) })
             }
             .reduce(SandboxPolicy.unrestricted) { $0.intersecting($1) }
     }
@@ -72,7 +74,7 @@ struct ConfigurationSource: Sendable {
             provider: result.configuration.provider.value, model: result.configuration.model.value,
             environment: environment,
             storedKeys: { () throws(CredentialFileError) in try CredentialFile.standard().loadKeys().mapValues(\.key) })
-        let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections()
+        let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections(result.configuration.sandbox.value)
         return RunSettings(
             configuration: result.configuration, model: model, sandbox: sandbox, applied: result.applied,
             notices: result.notices

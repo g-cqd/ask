@@ -51,7 +51,7 @@ public struct ConfigurationLoader: Sendable {
         if let bytes = try ConfigurationFileReader.read(projectPath) {
             switch try ProjectTrust.load(trustPath).standing(of: projectPath, bytes: bytes) {
                 case .trusted:
-                    let project = try ConfigurationFile.parse(bytes, path: projectPath)
+                    let project = try ConfigurationFile.parse(bytes, path: projectPath, isProject: true)
                     configuration = configuration.applying(project, from: .file(projectPath))
                     applied.append(projectPath)
                 case .unknown:

@@ -11,16 +11,21 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var provider: String?
     public var maxTurns: Int?
     public var compactAt: Int?
+    public var sandbox: SandboxSection?
 
     /// The keys ask knows, in the order `ask config` shows them.
-    public static let keys = ["model", "provider", "maxTurns", "compactAt"]
+    public static let keys = ["model", "provider", "maxTurns", "compactAt", "sandbox"]
 
     /// A file with these values.
-    public init(model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil) {
+    public init(
+        model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil,
+        sandbox: SandboxSection? = nil
+    ) {
         self.model = model
         self.provider = provider
         self.maxTurns = maxTurns
         self.compactAt = compactAt
+        self.sandbox = sandbox
     }
 
     /// Whether the file sets the key `name`.
@@ -30,6 +35,7 @@ public struct ConfigurationFile: Sendable, Equatable {
             case "provider": provider != nil
             case "maxTurns": maxTurns != nil
             case "compactAt": compactAt != nil
+            case "sandbox": sandbox != nil
             default: false
         }
     }
@@ -42,8 +48,16 @@ public struct ConfigurationFile: Sendable, Equatable {
     }
 
     /// Parses and validates `bytes`, naming `path` in any error.
+    /// - Parameters:
+    ///   - bytes: the file's contents.
+    ///   - path: named in any error.
+    ///   - isProject: whether the file belongs to a project rather than the user. A project's file may narrow the
+    ///     sandbox but not widen it.
+    /// - Returns: the validated file.
     /// - Throws: ``ConfigurationError``.
-    public static func parse(_ bytes: [UInt8], path: String) throws(ConfigurationError) -> ConfigurationFile {
+    public static func parse(
+        _ bytes: [UInt8], path: String, isProject: Bool = false
+    ) throws(ConfigurationError) -> ConfigurationFile {
         var decoder = AemiJSON.JSONDecoder()
         decoder.options = JSONParseOptions(validation: .json5, duplicateKeys: .throwError)
         let file: ConfigurationFile
@@ -55,6 +69,7 @@ public struct ConfigurationFile: Sendable, Equatable {
             let (line, column) = position(of: error, in: bytes)
             throw .invalid(path: path, line: line, column: column, reason: reason(of: error))
         }
+        try validateSandbox(file.sandbox, path: path, isProject: isProject)
         if let turns = file.maxTurns, turns < 1 {
             throw .outOfRange(path: path, key: "maxTurns", reason: "must be at least 1")
         }
@@ -62,6 +77,25 @@ public struct ConfigurationFile: Sendable, Equatable {
             throw .outOfRange(path: path, key: "compactAt", reason: "must be 0 (only when the window is full) or more")
         }
         return file
+    }
+
+    /// The sandbox section's paths must be absolute or start with `~/`, and a project's file may not widen it.
+    private static func validateSandbox(
+        _ section: SandboxSection?, path: String, isProject: Bool
+    ) throws(ConfigurationError) {
+        guard let section else { return }
+        for (key, entries) in [("sandbox.allowRead", section.allowRead), ("sandbox.denyRead", section.denyRead)] {
+            for entry in entries where !(entry.hasPrefix("/") || entry == "~" || entry.hasPrefix("~/")) {
+                throw .outOfRange(
+                    path: path, key: key, reason: "has \"\(entry)\": use an absolute path, or one starting with ~/")
+            }
+        }
+        if isProject, !section.allowRead.isEmpty {
+            throw .outOfRange(
+                path: path, key: "sandbox.allowRead",
+                reason:
+                    "can only be set in your own config file: a project that could widen the sandbox would defeat it")
+        }
     }
 
     /// An error in words: a parser's `unexpectedCharacter(93, at: 28)` as "unexpected ']'".
@@ -104,16 +138,40 @@ public struct ConfigurationFile: Sendable, Equatable {
         init?(intValue: Int) { nil }
     }
 
+    /// Calls `body` with each key of the object being decoded, and the container to read its value from.
+    private static func eachKey(
+        of decoder: any Decoder, _ body: (Key, KeyedDecodingContainer<Key>) throws -> Void
+    ) throws {
+        let container = try decoder.container(keyedBy: Key.self)
+        // @dl:accept -- the walk both key tables share; the analyzer matches it against their closing lines
+        for key in container.allKeys { try body(key, container) }
+    }
+
+    /// The `sandbox` object: its two lists, and nothing else.
+    private struct SandboxDecoded: Decodable {
+        var section = SandboxSection()
+        init(from decoder: any Decoder) throws {
+            // @dl:accept -- two key tables decoded the same way; the tables are the data, and the walk is already shared
+            try ConfigurationFile.eachKey(of: decoder) { key, container in
+                switch key.stringValue {
+                    case "allowRead": section.allowRead = try container.decode([String].self, forKey: key)
+                    case "denyRead": section.denyRead = try container.decode([String].self, forKey: key)
+                    default: throw UnknownKey(key: "sandbox." + key.stringValue)
+                }
+            }
+        }
+    }
+
     private struct Decoded: Decodable {
         var file = ConfigurationFile()
         init(from decoder: any Decoder) throws {
-            let container = try decoder.container(keyedBy: Key.self)
-            for key in container.allKeys {
+            try ConfigurationFile.eachKey(of: decoder) { key, container in
                 switch key.stringValue {
                     case "model": file.model = try container.decode(String.self, forKey: key)
                     case "provider": file.provider = try container.decode(String.self, forKey: key)
                     case "maxTurns": file.maxTurns = try container.decode(Int.self, forKey: key)
                     case "compactAt": file.compactAt = try container.decode(Int.self, forKey: key)
+                    case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
                     default: throw UnknownKey(key: key.stringValue)
                 }
             }
