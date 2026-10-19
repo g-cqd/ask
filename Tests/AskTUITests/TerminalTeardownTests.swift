@@ -21,11 +21,9 @@ struct TerminalTeardownTests {
     ///
     /// Tier 1 is the one that clears the private modes, because neither reset tier does — TerminalKit
     /// ADR-0002 measured that against four emulators.
+    /// TerminalKit's session ends every exit with tier 1 of the reset ladder (its ADR-0019).
     private static var expectedSuffix: ContiguousArray<UInt8> {
-        var expected = ContiguousArray<UInt8>()
-        expected.append(contentsOf: StartupSequence.end)
-        expected.append(contentsOf: TerminalResetLadder.escapeBytes(upTo: .selectiveCleanup))
-        return expected
+        ContiguousArray(TerminalResetLadder.escapeBytes(upTo: .selectiveCleanup))
     }
 
     private static func endsWith(_ haystack: [UInt8], _ needle: ContiguousArray<UInt8>) -> Bool {
@@ -90,6 +88,31 @@ struct TerminalTeardownTests {
         guard haystack.count >= needle.count, start <= haystack.count - needle.count else { return nil }
         return (start ... (haystack.count - needle.count))
             .first { Array(haystack[$0 ..< ($0 + needle.count)]) == needle }
+    }
+
+    @Test func `the screen asks the terminal about its keyboard without waiting for the answer`() async throws {
+        // The mock never answers, and the screen still runs and quits.
+        let connection = MockTerminalConnection()
+        connection.feedInput([0x04])
+        try await Self.run(connection)
+        #expect(Self.firstIndex(of: Array("\u{1B}[?u\u{1B}[c".utf8), in: connection.writtenOutput) != nil)
+    }
+
+    @Test func `a kitty keyboard reply turns on disambiguated keys, and quitting turns them off`() async throws {
+        let connection = MockTerminalConnection()
+        connection.feedInput(Array("\u{1B}[?0u\u{1B}[?62;52c".utf8) + [0x04])
+        try await Self.run(connection)
+        let output = connection.writtenOutput
+        let pushedAt = try #require(Self.firstIndex(of: Array("\u{1B}[>1u".utf8), in: output))
+        #expect(Self.firstIndex(of: Array("\u{1B}[<u".utf8), in: output, after: pushedAt) != nil)
+    }
+
+    @Test func `the terminal's replies never reach the prompt`() async throws {
+        let connection = MockTerminalConnection()
+        connection.feedInput(Array("\u{1B}[?0u\u{1B}[?62;52chi\r".utf8))
+        let conversation = RecordingConversation()
+        try await Self.run(connection, conversation: conversation)
+        #expect(conversation.prompts == ["hi"])
     }
 
     @Test func `the screen opens with the notices it was given`() async throws {
