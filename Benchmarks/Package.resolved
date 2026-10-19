@@ -1,5 +1,5 @@
 {
-  "originHash" : "6376fa4673659889fd264d2afcb91c369f1f77b701635a05435927601bd4f93e",
+  "originHash" : "a72da30ac3af612de9d0001fc6e69b3e0a3f0942eb74ce1577fb2797e9bc9231",
   "pins" : [
     {
       "identity" : "aemi",
@@ -14,7 +14,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiJSON.git",
       "state" : {
-        "revision" : "d8f32b2e1cf8449bd12b99dde3a328044db00885"
+        "revision" : "31b0229cba844dd98ea5517d97da1609888a0502"
       }
     },
     {
@@ -24,6 +24,15 @@
       "state" : {
         "revision" : "c2e1210df04b4fff47e53f2f9dad9cc45ae15d63",
         "version" : "0.2.0"
+      }
+    },
+    {
+      "identity" : "malloc-interposer",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ordo-one/malloc-interposer.git",
+      "state" : {
+        "revision" : "f479398f73b14dbd1d25f4e01fd667171ddc9f18",
+        "version" : "1.6.0"
       }
     },
     {
@@ -103,7 +112,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/TerminalKit.git",
       "state" : {
-        "revision" : "74719fbfc981835a9afd4ad226dcf7e488907834"
+        "revision" : "ac898fde3cc9ca26451e18308901c8e51f28ea0b"
       }
     },
     {
