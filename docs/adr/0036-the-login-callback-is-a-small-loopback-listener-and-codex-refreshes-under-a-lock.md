@@ -13,7 +13,7 @@ rotate and are single use, so how ask refreshes them decides whether two termina
 
 ## The probes
 
-Ledger in `docs/diary/2026-10-20-26.md`.
+Ledger in `docs/diary/2026-10-20-27.md`.
 
 - **Does `g-cqd/HTTP` resolve next to ask's pins?** In a scratch package depending on its published `main`
   (`82dee19`) and ask's own Aemi revision: **REFUTED**. SwiftPM stops with "aemi is required using two different
@@ -31,7 +31,7 @@ Ledger in `docs/diary/2026-10-20-26.md`.
    exact path; a `Host` that is this machine on the bound port (DNS rebinding); exactly one value per parameter; a wrong
    or missing `state` ignored, so a stray request can neither end nor complete a sign-in; a provider error shown only as
    an allowlisted word; static pages that never echo the query; a read timeout, so a stalled tab delays the real
-   callback by a second at most; a concurrent queue, so two sign-ins do not wait on each other; the port free again
+   callback by a second at most; a dedicated thread per wait, so two sign-ins do not wait on each other; the port free again
    however the wait ends.
 2. If ask ever needs a real server (an extension host is a process, ADR-0028), `g-cqd/HTTP` is the first candidate, and
    the Aemi requirement is the first thing to settle with its owner.
@@ -46,6 +46,6 @@ Ledger in `docs/diary/2026-10-20-26.md`.
 ## Consequences
 
 - Two `ask` processes cannot spend one refresh token twice. Claude's refresh has the same read-refresh-save shape and no
-  lock; whether Claude's refresh tokens are single use is unprobed (roadmap 0043).
-- Everything about the live service beyond what diary 26 probed is from pi's working implementation, not observed.
+  lock; whether Claude's refresh tokens are single use is unprobed (roadmap 0044).
+- Everything about the live service beyond what diary 27 probed is from pi's implementation, not observed here.
   The first real `ask login codex` is the test of the authorize step, which scripts cannot reach (a bot check answers 403).

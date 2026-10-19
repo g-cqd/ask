@@ -23,7 +23,7 @@ completions (`docs/research/provider-connections-2026-10.md`). This entry owes, 
 Steps 1 and 2: provenance on reasoning, the decoder and encoder, the client, `api: "openai-responses"`. Recorded on
 llama.cpp only. Steps 3 and 4 remain, and replaying reasoning is roadmap 0040.
 
-## Done (diary 26, ADR-0036)
+## Done (diary 27, ADR-0036)
 
 Step 3: Codex sign-in by browser and by device code, locked refresh, the backend's headers and dialect, `ask login codex`,
 `ask --provider codex`. Probed live where a script can reach it. Step 4 remains and needs the user: the authorize step,
