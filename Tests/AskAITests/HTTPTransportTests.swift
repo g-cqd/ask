@@ -20,6 +20,7 @@ struct HTTPTransportTests {
         StubProtocol.script(request.url, Script(status: 200, chunks: ["data: one\n\n", "data: two\n\n"], failure: nil))
         let response = try await transport.send(request)
         #expect(response.status == 200)
+        #expect(response.headers["content-type"] == "text/event-stream", "header names arrive lowercased")
         #expect(try await response.collect() == Array("data: one\n\ndata: two\n\n".utf8))
         let seen = try #require(StubProtocol.received(request.url))
         #expect(seen.method == "POST")

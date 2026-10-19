@@ -4,12 +4,15 @@ internal import Synchronization
 /// A response whose body arrives as it is received.
 public struct HTTPStreamingResponse: Sendable {
     public let status: Int
+    /// Header fields, names lowercased (header names are case-insensitive).
+    public let headers: [String: String]
     /// The body, one chunk per network delivery. Ends when the response ends; throws if it is cut.
     public let body: AsyncThrowingStream<[UInt8], any Error>
 
-    /// A response with this status and body.
-    public init(status: Int, body: AsyncThrowingStream<[UInt8], any Error>) {
+    /// A response with this status, headers and body.
+    public init(status: Int, headers: [String: String] = [:], body: AsyncThrowingStream<[UInt8], any Error>) {
         self.status = status
+        self.headers = headers
         self.body = body
     }
 

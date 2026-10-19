@@ -9,13 +9,20 @@ public struct AgentLoop: Sendable {
     private let tools: ToolRegistry
     private let settings: AgentSettings
     private let context: ToolContext
+    private let retry: RetryPolicy
+    private let clock: any Clock<Duration>
 
-    /// A loop over `provider` and `tools`.
-    public init(provider: any ModelProvider, tools: ToolRegistry, settings: AgentSettings, context: ToolContext) {
+    /// A loop over `provider` and `tools`, retrying transient failures per `retry` and waiting on `clock`.
+    public init(
+        provider: any ModelProvider, tools: ToolRegistry, settings: AgentSettings, context: ToolContext,
+        retry: RetryPolicy = .standard, clock: any Clock<Duration> = ContinuousClock()
+    ) {
         self.provider = provider
         self.tools = tools
         self.settings = settings
         self.context = context
+        self.retry = retry
+        self.clock = clock
     }
 
     /// Runs `prompt` to completion in `session`, reporting each step to `events`.
@@ -57,19 +64,37 @@ public struct AgentLoop: Sendable {
         let request = ModelRequest(
             model: settings.model, maxTokens: settings.maximumTokens, systemPrompt: settings.systemPrompt,
             messages: built.messages, tools: tools.definitions)
-        var assembler = ResponseAssembler()
-        do {
-            for try await event in provider.stream(request) {
-                try assembler.apply(event)
-                events(.model(event))
+        var attempt = 1
+        while true {
+            var assembler = ResponseAssembler()
+            var shown = false
+            do {
+                for try await event in provider.stream(request) {
+                    try assembler.apply(event)
+                    shown = true
+                    events(.model(event))
+                }
+            } catch let error as ResponseAssemblyError {
+                throw .assembly(error)
+            } catch {
+                if Task.isCancelled { throw .cancelled }
+                // Retried only when nothing of this attempt reached the screen: a second attempt would
+                // otherwise repeat what was already shown.
+                guard !shown, attempt < retry.maximumAttempts, let advice = error as? any RetryAdvice,
+                    advice.isRetryable
+                else { throw .provider(String(describing: error)) }
+                let delay = retry.delay(after: attempt, requested: advice.retryAfter)
+                events(
+                    .retrying(
+                        attempt: attempt + 1, of: retry.maximumAttempts, delay: delay, reason: String(describing: error)
+                    ))
+                do { try await clock.sleep(for: delay) } catch { throw .cancelled }
+                attempt += 1
+                continue
             }
-        } catch let error as ResponseAssemblyError {
-            throw .assembly(error)
-        } catch {
-            throw Task.isCancelled ? .cancelled : .provider(String(describing: error))
+            guard !Task.isCancelled else { throw .cancelled }
+            do { return try assembler.finish() } catch { throw .assembly(error) }
         }
-        guard !Task.isCancelled else { throw .cancelled }
-        do { return try assembler.finish() } catch { throw .assembly(error) }
     }
 
     private func record(_ payload: SessionPayload, in session: SessionRecorder) throws(AgentError) {

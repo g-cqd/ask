@@ -78,7 +78,9 @@ public struct AnthropicClient: Sendable {
         }
         guard response.status == 200 else {
             let body = (try? await response.collect(limit: 64 << 10)) ?? []
-            throw AnthropicClientError.status(response.status, failure(in: body))
+            // `retry-after` in seconds; the HTTP-date form is not used by this API and is ignored.
+            let retryAfter = response.headers["retry-after"].flatMap(Double.init).flatMap { $0 >= 0 ? $0 : nil }
+            throw AnthropicClientError.status(response.status, failure(in: body), retryAfter: retryAfter)
         }
         var framer = SSEDecoder()
         let decoder = AnthropicStreamDecoder()

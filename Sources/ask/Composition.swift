@@ -79,3 +79,10 @@ func toolSummary(name: String, input: JSONObject) -> String {
     let firstLine = summary.split(separator: "\n").first.map(String.init) ?? summary
     return firstLine.count > 160 ? String(firstLine.prefix(160)) + "…" : firstLine
 }
+
+/// A retry, said for a person: what failed, how long ask waits, and which attempt comes next.
+func retryNotice(attempt: Int, of total: Int, delay: Duration, reason: String) -> String {
+    let milliseconds = delay.components.seconds * 1_000 + delay.components.attoseconds / 1_000_000_000_000_000
+    let wait = milliseconds % 1_000 == 0 ? "\(milliseconds / 1_000) s" : "\(Double(milliseconds) / 1_000) s"
+    return "\(reason); retrying in \(wait) (attempt \(attempt) of \(total))."
+}
