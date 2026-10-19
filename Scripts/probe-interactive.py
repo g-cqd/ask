@@ -19,12 +19,15 @@ ROWS, COLUMNS = 30, 100
 
 
 class Emulator:
-    """Just enough of a terminal to read a diff renderer's screen: cursor moves, text, erase. Bytes alone cannot
-    show what is on screen, because a diff sends only the cells that changed."""
+    """Just enough of a terminal to read a diff renderer's screen: cursor moves, text, erase, and the scroll
+    region with scroll up and down. Bytes alone cannot show what is on screen, because a diff sends only the
+    cells that changed. A scroll region matters: the transcript scrolls by `ESC[n S` inside `ESC[t;b r`, and
+    an emulator that ignores it draws every new line over the last one."""
 
     def __init__(self):
         self.grid = [[" "] * COLUMNS for _ in range(ROWS)]
         self.row = self.column = 0
+        self.top, self.bottom = 0, ROWS - 1
         self.pending = b""
 
     def feed(self, data):
@@ -78,15 +81,29 @@ class Emulator:
         elif final == "K":
             for c in range(self.column, COLUMNS):
                 self.grid[self.row][c] = " "
+        elif final == "r":
+            top = (numbers[0] if numbers and numbers[0] else 1) - 1
+            bottom = (numbers[1] if len(numbers) > 1 and numbers[1] else ROWS) - 1
+            self.top, self.bottom = (top, bottom) if 0 <= top < bottom < ROWS else (0, ROWS - 1)
+            self.row = self.column = 0
+        elif final in "ST":
+            for _ in range(max(1, numbers[0] if numbers else 1)):
+                blank = [" "] * COLUMNS
+                if final == "S":
+                    del self.grid[self.top]
+                    self.grid.insert(self.bottom, blank)
+                else:
+                    del self.grid[self.bottom]
+                    self.grid.insert(self.top, blank)
 
     def text(self):
         return "\n".join("".join(line).rstrip() for line in self.grid)
 
 
 class Screen:
-    def __init__(self, server_url, project, state=None, arguments=()):
+    def __init__(self, server_url, project, state=None, arguments=(), config=None):
         self.state = state or tempfile.mkdtemp()
-        env = agent.environment(self.state, server_url)
+        env = agent.environment(self.state, server_url, config)
         self.pid, self.fd = pty.fork()
         if self.pid == 0:
             os.chdir(project)
@@ -274,7 +291,48 @@ def probe_signal_stops_jobs():
     return all(results)
 
 
+def probe_reload():
+    print("F: configuration edited while ask runs is reloaded before the next prompt")
+    project, config = tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(config, "ask"))
+    user_file = os.path.join(config, "ask", "config.json")
+    server = agent.Server([agent.turn([("text", f"Answer {i}.")], "end_turn") for i in range(1, 10)])
+    screen = Screen(server.url, project, config=config)
+    results = [check("prompt drawn", screen.until("ask>"))]
+
+    def turn(prompt, answer):
+        screen.type(prompt + "\r")
+        ok = screen.until(answer)
+        screen.until_status("ready")
+        return ok
+
+    results.append(check("a first prompt with no config file runs", turn("one", "Answer 1.")))
+    open(user_file, "w").write("// raised\n{maxTurns: 7, model: 'reloaded-model'}\n")
+    results.append(check("a second prompt runs", turn("two", "Answer 2.")))
+    results += [check("the change is announced", screen.until("Configuration reloaded.")),
+                check("with each setting and where it came from", screen.until("maxTurns: 100 → 7")),
+                check("the status line follows the model", "reloaded-model" in screen.status(), screen.status())]
+    if len(server.requests) >= 2:
+        results.append(check("and the next request used the new model", server.requests[1]["body"]["model"] == "reloaded-model",
+                             server.requests[1]["body"]["model"]))
+    open(user_file, "w").write("{maxTurns: ]")
+    turn("three", "Answer 3.")
+    results.append(check("a broken edit is reported, keeping the old settings", screen.until("Configuration not reloaded:") and screen.until("Keeping the previous settings.")))
+    turn("four", "Answer 4.")
+    shown = screen.screen.text().count("Configuration not reloaded:")
+    results.append(check("and reported once, not at every prompt", shown == 1, shown))
+    results.append(check("the run still worked on the old settings", server.requests[3]["body"]["model"] == "reloaded-model"
+                         if len(server.requests) >= 4 else False))
+    open(user_file, "w").write("{maxTurns: 9, model: 'reloaded-model'}")
+    turn("five", "Answer 5.")
+    results.append(check("a fixed file reloads again, from the settings that were in force", screen.until("maxTurns: 7 → 9")))
+    screen.type("\x03")
+    results.append(check("quits on Ctrl-C", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
