@@ -1,6 +1,4 @@
 internal import Foundation
-internal import TerminalKitCodecs
-internal import TerminalKitCore
 internal import TerminalKitIO
 public import TerminalKitInput
 internal import TerminalKitRender
@@ -20,40 +18,55 @@ public func runInteractiveScreen(
     conversation: any Conversation, label: String, history: [ConversationUpdate] = [], notices: [String] = []
 ) async throws {
     let connection = POSIXTerminalConnection()
-    let shutdown = SignalShutdown(connection: connection) { code in exit(code) }
+    let terminal = TerminalSession(connection: connection, modes: .fullScreen, keyboardProtocol: .probe)
+    let shutdown = SignalShutdown(session: terminal) { code in exit(code) }
     let (resizes, resized) = AsyncStream<Void>.makeStream()
     let signals = SignalHandler(onResize: { resized.yield() }, onShutdown: { shutdown.handle($0) })
     try signals.start()
     defer { signals.stop() }
     try await runInteractiveScreen(
-        on: connection, conversation: conversation, label: label, history: history, notices: notices,
-        resizes: resizes)
+        in: terminal, on: connection, conversation: conversation, label: label,
+        opening: openingUpdates(history: history, notices: notices), resizes: resizes)
 }
 
-/// The screen over an injected connection, so every exit path is drivable from a test. On the main actor,
-/// where TerminalKit's render pipeline lives; the loop only awaits, it never blocks.
+/// The screen over an injected connection, so every exit path is drivable from a test.
 @MainActor
 func runInteractiveScreen(
     on connection: any TerminalConnection, conversation: any Conversation, label: String,
     history: [ConversationUpdate] = [], notices: [String] = [], resizes: AsyncStream<Void>
 ) async throws {
-    try connection.enterRawMode()
-    defer { TerminalTeardown.run(on: connection) }
-    // Bracketed paste, so a pasted newline arrives inside the paste rather than as Enter. The reset ladder's first
-    // tier turns it off again on every exit path.
-    try connection.writeContiguous(
-        ContiguousArray(
-            EscapeSequences.enterAlternateScreen + EscapeSequences.hideCursor + EscapeSequences.clearScreen
-                + EscapeSequences.enableBracketedPaste))
+    let terminal = TerminalSession(connection: connection, modes: .fullScreen, keyboardProtocol: .probe)
+    try await runInteractiveScreen(
+        in: terminal, on: connection, conversation: conversation, label: label,
+        opening: openingUpdates(history: history, notices: notices), resizes: resizes)
+}
+
+/// The screen inside a terminal session: TerminalKit enters its modes (alternate screen, hidden cursor,
+/// bracketed paste, and disambiguated keys when the terminal answers the keyboard probe) in one write and
+/// leaves them on every exit path (TerminalKit ADR-0019, ADR-0020). On the main actor, where TerminalKit's
+/// render pipeline lives; the loop only awaits, it never blocks.
+@MainActor
+private func runInteractiveScreen(
+    in terminal: TerminalSession, on connection: any TerminalConnection, conversation: any Conversation,
+    label: String, opening: [ConversationUpdate], resizes: AsyncStream<Void>
+) async throws {
+    try terminal.enter()
+    defer { terminal.leave() }
     let session = try ScreenSession(
-        connection: connection, conversation: conversation, label: label, history: history, notices: notices)
+        terminal: terminal, connection: connection, conversation: conversation, label: label, opening: opening)
     try await session.run(resizes: resizes)
 }
 
-/// One interactive screen: its state has a single owner, the loop over one merged event stream.
+/// What the screen shows before the first prompt: a resumed session's history, then the notices.
+private func openingUpdates(history: [ConversationUpdate], notices: [String]) -> [ConversationUpdate] {
+    history + notices.map { .notice($0, isError: false) }
+}
+
 @MainActor
 private final class ScreenSession {
+    private let terminal: TerminalSession
     private let connection: any TerminalConnection
+    private let input: InputSource
     private let conversation: any Conversation
     private let pipeline: RenderPipeline
     private var controller: ScreenController
@@ -63,21 +76,22 @@ private final class ScreenSession {
     private let sink: AsyncStream<ScreenEvent>.Continuation
 
     init(
-        connection: any TerminalConnection, conversation: any Conversation, label: String,
-        history: [ConversationUpdate], notices: [String]
+        terminal: TerminalSession, connection: any TerminalConnection, conversation: any Conversation, label: String,
+        opening: [ConversationUpdate]
     ) throws {
         let size = try connection.getSize()
+        self.terminal = terminal
         self.connection = connection
+        input = InputSource(connection: connection, escapeIsUnambiguous: terminal.escapeIsUnambiguous)
         self.conversation = conversation
         pipeline = RenderPipeline(connection: connection, columns: size.columns, rows: size.rows)
         controller = ScreenController(label: label)
-        for update in history { controller.handle(update) }
-        for notice in notices { controller.handle(.notice(notice, isError: false)) }
+        for update in opening { controller.handle(update) }
         (events, sink) = AsyncStream<ScreenEvent>.makeStream()
     }
 
     func run(resizes: AsyncStream<Void>) async throws {
-        let input = InputSource(connection: connection)
+        let input = input
         let sink = sink
         let forwarding = Task {
             for await event in input.events { sink.yield(.input(event)) }
@@ -102,6 +116,11 @@ private final class ScreenSession {
     private func handle(_ event: ScreenEvent) async throws -> Bool {
         var effects: [ScreenController.Effect] = []
         switch event {
+            case .input(let inputEvent) where terminal.observe(inputEvent):
+                // The terminal's answer to the keyboard probe, not a key. Here, between frames, so the flags it
+                // pushes never land inside one.
+                input.escapeIsUnambiguous = terminal.escapeIsUnambiguous
+                return true
             case .input(let inputEvent):
                 effects = controller.handle(inputEvent, pageRows: Swift.max(1, pipeline.rows - 3))
             case .update(let update):

@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by:
 date: 2026-10-19
 ---
@@ -35,3 +35,15 @@ ask adopts each entry as it lands, re-pins TerminalKit, and re-runs:
 
 ask's own composer already does work proportional to the change: a keystroke frame went from 172 µs to
 42 µs at 120×40, and from 671 µs to 59 µs at 300×80.
+
+## Progress (2026-10-19)
+
+TerminalKit landed 0006 (time benchmarks), 0010 (modes as a unit) and its 0015 (rst's reset techniques), at
+`adfd404`. ask pins it:
+- `TerminalSession(modes: .fullScreen, keyboardProtocol: .probe)` replaces `StartupSequence`,
+  `TerminalTeardown` and the raw-mode calls, and `SignalShutdown` leaves the session;
+- the screen hands input to `session.observe(_:)`, which pushes kitty disambiguation when the terminal
+  answers, so Escape stops depending on where a read ends;
+- leaving raw mode no longer waits on output, so a stopped terminal cannot hang ask's exit.
+
+Next in this order: **0007**, compact cells.
