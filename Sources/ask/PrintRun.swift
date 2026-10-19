@@ -61,15 +61,15 @@ private final class PrintRenderer: Sendable {
 
 /// Runs `prompt` to completion. SIGINT and SIGTERM abort the run, so a running command's whole process group
 /// is stopped, and then exit with 128 + the signal.
-func runPrompt(_ prompt: String, model: String, limits: RunLimits, session choice: SessionChoice) async {
+func runPrompt(_ prompt: String, model: ResolvedModel, limits: RunLimits, session choice: SessionChoice) async {
     let transport = URLSessionTransport()
-    // Fail fast before any work when there is no way to authenticate.
-    do {
-        _ = try await requestAuth(transport: transport)()
-    } catch let error as NotSignedIn {
-        fail("ask: \(error)", code: 77)
-    } catch {
-        fail("ask: \(error)", code: 77)
+    // Fail fast before any work when there is no way to authenticate. A configured provider has no sign-in.
+    if model.provider == .anthropic {
+        do {
+            _ = try await requestAuth(transport: transport)()
+        } catch {
+            fail("ask: \(error)", code: 77)
+        }
     }
     let workingDirectory = FileManager.default.currentDirectoryPath
     let loop: AgentLoop

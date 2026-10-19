@@ -24,8 +24,12 @@ struct Ask: AsyncParsableCommand {
         help: "Run one prompt with the tools, stream the answer to standard output, and exit.")
     var prompt: String?
 
-    @Option(help: "The model to use.")
-    var model = "claude-sonnet-5-5"
+    @Option(help: "The model to use. Default: the provider's default model.")
+    var model: String?
+
+    @Option(
+        help: "The provider: \"anthropic\", or a name from ~/.config/ask/providers.json. Default: the file's default.")
+    var provider: String?
 
     @Option(help: "The most model requests one prompt may make before ask stops it.")
     var maxTurns = 100
@@ -62,11 +66,13 @@ struct Ask: AsyncParsableCommand {
             FileHandle.standardOutput.write(Data(try Budget.reportJSON()))
             return
         }
+        let resolved: ResolvedModel
+        do { resolved = try resolveModel(provider: provider, model: model) } catch { fail("ask: \(error)", code: 78) }
         if let prompt {
-            await runPrompt(prompt, model: model, limits: limits, session: session)
+            await runPrompt(prompt, model: resolved, limits: limits, session: session)
             return
         }
-        await runInteractive(model: model, limits: limits, session: session)
+        await runInteractive(model: resolved, limits: limits, session: session)
     }
 }
 
