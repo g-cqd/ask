@@ -142,10 +142,10 @@ struct CodexBrowserSignInTests {
         let port = listener.port
         let transport = SequencedTransport([.json(200, Self.tokens)])
         let task = Task { try await flow(transport, listener: listener).run(show: { _ in }, paste: { nil }) }
-        try await Task.sleep(for: .milliseconds(200))
+        // A reply to a stray request proves the sign-in is waiting on the listener, so the cancel lands on it.
+        _ = await RawClient.get("/ping", port: port)
         task.cancel()
-        let ended = await BoundedWait.result(of: task, release: { listener.close() })
-        #expect(ended != nil, "cancelling did not end the sign-in")
+        _ = await task.result
         #expect(RawClient.refused(port: port))
     }
 }
