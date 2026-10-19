@@ -13,13 +13,19 @@ internal import TerminalKitRender
 ///   - label: shown at the left of the status line.
 ///   - history: a resumed session's conversation, shown before anything else.
 ///   - notices: shown after the history, such as which instruction files apply.
+///   - beforeSignalExit: runs when a shutdown signal is about to end the process, after the terminal is
+///     restored: the last chance to stop child processes.
 /// - Throws: when the terminal cannot be set up.
 public func runInteractiveScreen(
-    conversation: any Conversation, label: String, history: [ConversationUpdate] = [], notices: [String] = []
+    conversation: any Conversation, label: String, history: [ConversationUpdate] = [], notices: [String] = [],
+    beforeSignalExit: @escaping @Sendable () -> Void = {}
 ) async throws {
     let connection = POSIXTerminalConnection()
     let terminal = TerminalSession(connection: connection, modes: .fullScreen, keyboardProtocol: .probe)
-    let shutdown = SignalShutdown(session: terminal) { code in exit(code) }
+    let shutdown = SignalShutdown(session: terminal) { code in
+        beforeSignalExit()
+        exit(code)
+    }
     let (resizes, resized) = AsyncStream<Void>.makeStream()
     let signals = SignalHandler(onResize: { resized.yield() }, onShutdown: { shutdown.handle($0) })
     try signals.start()

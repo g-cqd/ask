@@ -39,7 +39,7 @@ struct ToolDefinitionTests {
     @Test func `bash`() {
         #expect(
             schema(BashTool())
-                == #"{"type":"object","properties":{"command":{"type":"string"},"timeout_seconds":{"type":"integer","minimum":1,"maximum":600}},"required":["command"]}"#
+                == #"{"type":"object","properties":{"command":{"type":"string"},"timeout_seconds":{"type":"integer","minimum":1,"maximum":600},"yield_seconds":{"type":"integer","minimum":1,"maximum":600}},"required":["command"]}"#
         )
     }
 }
