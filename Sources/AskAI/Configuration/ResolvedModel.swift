@@ -6,6 +6,8 @@ public struct ResolvedModel: Sendable, Equatable {
     public enum Provider: Sendable, Equatable {
         /// The built-in Anthropic provider, with ask's own sign-in.
         case anthropic
+        /// The ChatGPT subscription's Codex backend, with ask's own Codex sign-in.
+        case codex
         /// A server speaking OpenAI chat completions, at `baseURL`.
         case openAICompatible(name: String, baseURL: URL, apiKey: String?, headers: [String: String])
         /// A server speaking the Responses API, at `baseURL`.
