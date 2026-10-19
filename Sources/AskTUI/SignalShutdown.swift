@@ -15,18 +15,25 @@ internal import TerminalKitInput
 /// as signalled rather than as a plain failure.
 struct SignalShutdown: Sendable {
     private let session: TerminalSession
+    private let stopRendering: @Sendable () -> Void
     private let onExit: @Sendable (Int32) -> Void
 
     /// - Parameters:
     ///   - session: the terminal session to leave.
+    ///   - stopRendering: stops the render thread and returns once it has, so no frame lands after the terminal is
+    ///     restored.
     ///   - onExit: asked to end the process with the given code, after the terminal is restored.
     ///     Injected so the sequence can be tested; production passes `exit`.
-    init(session: TerminalSession, onExit: @escaping @Sendable (Int32) -> Void) {
+    init(
+        session: TerminalSession, stopRendering: @escaping @Sendable () -> Void = {},
+        onExit: @escaping @Sendable (Int32) -> Void
+    ) {
         self.session = session
+        self.stopRendering = stopRendering
         self.onExit = onExit
     }
 
-    /// Leaves the session, then requests the exit.
+    /// Stops the render thread, leaves the session, then requests the exit.
     ///
     /// Leaving first, always. It ignores a write failure and still restores `termios`. The normal path's
     /// own `leave()` then does nothing, so the terminal sees one exit (TerminalKit ADR-0019).
@@ -34,6 +41,7 @@ struct SignalShutdown: Sendable {
     /// - Parameter signal: the signal number that arrived.
     /// - Complexity: O(1) — a fixed byte sequence, not a function of screen size.
     func handle(_ signal: Int32) {
+        stopRendering()
         session.leave()
         onExit(128 + signal)
     }
