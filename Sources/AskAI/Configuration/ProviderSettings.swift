@@ -22,6 +22,8 @@ public struct ProviderSettings: Sendable, Equatable {
     public static let anthropicDefaultModel = "claude-sonnet-5-5"
     /// The name of the built-in provider, which a file may not redefine.
     public static let anthropic = "anthropic"
+    /// The ChatGPT subscription's Codex backend, also built in.
+    public static let codex = "codex"
     /// The protocols a configured provider may name besides Anthropic's, which is built in.
     public static let openAICompletions = "openai-completions"
     public static let openAIResponses = "openai-responses"
@@ -91,10 +93,7 @@ public struct ProviderSettings: Sendable, Equatable {
         storedKeys: () throws(CredentialFileError) -> [String: String] = { [:] }
     ) throws(ProviderSettingsError) -> ResolvedModel {
         let name = provider ?? defaultProvider ?? Self.anthropic
-        if entries[Self.anthropic] != nil { throw .reservedName(Self.anthropic) }
-        if name == Self.anthropic {
-            return ResolvedModel(provider: .anthropic, model: model ?? Self.anthropicDefaultModel)
-        }
+        if let builtIn = try builtIn(name, model: model) { return builtIn }
         let preset = ProviderPreset.named(name)
         guard let entry = entries[name] ?? (preset != nil ? Entry() : nil) else {
             throw .unknownProvider(name, known: known(environment: environment, stored: (try? storedKeys()) ?? [:]))
@@ -125,6 +124,20 @@ public struct ProviderSettings: Sendable, Equatable {
             model: chosen, contextWindow: listed?.contextWindow, maxOutputTokens: listed?.maxTokens)
     }
 
+    /// The built-in provider called `name`, if there is one; nil for anything a file or a preset names.
+    /// - Throws: ``ProviderSettingsError/reservedName(_:)`` when the file defines a built-in name, and
+    ///   ``ProviderSettingsError/noModel(provider:)`` for a built-in provider that needs a model named.
+    private func builtIn(_ name: String, model: String?) throws(ProviderSettingsError) -> ResolvedModel? {
+        for reserved in [Self.anthropic, Self.codex] where entries[reserved] != nil { throw .reservedName(reserved) }
+        switch name {
+            case Self.anthropic: return ResolvedModel(provider: .anthropic, model: model ?? Self.anthropicDefaultModel)
+            case Self.codex:
+                guard let model else { throw .noModel(provider: name) }
+                return ResolvedModel(provider: .codex, model: model)
+            default: return nil
+        }
+    }
+
     /// The key to send: the entry's own, else the preset's variable, else the key a sign-in stored. A preset that
     /// has none is an error, never a request without a key. An entry that is no preset may have no key at all.
     private func credential(
@@ -151,7 +164,7 @@ public struct ProviderSettings: Sendable, Equatable {
                     .compactMap { $0 }
                 return "\(preset.name) (needs \(needs.joined(separator: " or ")))"
             }
-        return [Self.anthropic] + (entries.keys + presets).sorted()
+        return [Self.anthropic, Self.codex] + (entries.keys + presets).sorted()
     }
 
     /// `$NAME` or `${NAME}` from the environment, `$$…` as a literal `$…`, and anything else as written.
