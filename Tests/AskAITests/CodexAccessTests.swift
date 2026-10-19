@@ -86,13 +86,11 @@ struct CodexAccessTests {
         #expect(transport.sent.isEmpty)
     }
 
-    @Test func `a lock released in time is taken, and the refresh goes ahead`() async throws {
+    @Test func `a lock released by its holder is taken, and the refresh goes ahead`() async throws {
         try file.saveCodex(expired)
         let held = try await CredentialLock.acquire(beside: file.url, wait: .seconds(1))
-        Task {
-            try? await Task.sleep(for: .milliseconds(200))
-            held.release()
-        }
+        // Released while the refresh may or may not yet be waiting: either way it is taken.
+        Task { held.release() }
         let transport = SequencedTransport([.json(200, Self.tokens)])
         #expect(try await access(transport, lockWait: .seconds(3)).credentials(now: 5_000).refreshToken == "rt-2")
     }

@@ -1,5 +1,5 @@
 internal import Darwin
-internal import Dispatch
+internal import Foundation
 internal import Synchronization
 
 /// A one-shot listener for the browser's redirect at the end of an authorization-code sign-in.
@@ -11,9 +11,6 @@ internal import Synchronization
 ///
 /// This replaces an HTTP server framework: the redirect is one GET, once, on this machine (ADR-0036).
 public final class LoopbackListener: Sendable {
-    /// Concurrent, because each wait blocks its thread: two listeners waiting at once must not queue behind each other.
-    private static let queue = DispatchQueue(label: "ask.signin.loopback", qos: .userInitiated, attributes: .concurrent)
-
     private struct State {
         var descriptor: Int32?
         var running = false
@@ -53,11 +50,14 @@ public final class LoopbackListener: Sendable {
         guard let descriptor = claimed else { throw .cancelled }
         let result: Result<String, SignInError> = await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
-                Self.queue.async {
+                // A thread of its own: the wait blocks, and two sign-ins must not wait on each other.
+                let thread = Thread {
                     let result = self.serve(descriptor, path: path, state: expected)
                     self.release()
                     continuation.resume(returning: result)
                 }
+                thread.name = "ask.signin.loopback"
+                thread.start()
             }
         } onCancel: {
             close()
