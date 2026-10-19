@@ -22,6 +22,7 @@ public enum OpenAIRequestEncoder {
                         $0.field("content", request.systemPrompt.joined(separator: "\n\n"))
                     }
                 }
+                // @dl:accept -- both protocols write their messages then their tools; the items inside each are the protocol's own
                 for message in request.messages { encode(message, into: &writer) }
             }
             if !request.tools.isEmpty {

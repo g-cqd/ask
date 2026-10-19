@@ -106,14 +106,16 @@ struct Ask: AsyncParsableCommand {
 struct Login: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Sign in to a provider.",
-        discussion: "claude: a Claude subscription. spettro, mistral-vibe: a browser sign-in that issues an API key.")
+        discussion: "claude, codex: a subscription. spettro, mistral-vibe: a browser sign-in that issues an API key.")
 
     @Argument(help: "Which sign-in to run.") var provider: LoginTarget = .claude
+    @Flag(help: "For codex: sign in with a code typed at a link, on a machine with no browser.") var device = false
 
     func run() async throws {
         let file = CredentialFile.standard()
         switch provider {
             case .claude: await claudeLogin(file: file)
+            case .codex: await codexLogin(device: device, file: file)
             case .spettro:
                 let flow: SpettroSignIn
                 do {
@@ -154,6 +156,7 @@ struct Logout: ParsableCommand {
             switch provider {
                 case nil: try file.remove()
                 case .claude?: try file.removeClaude()
+                case .codex?: try file.removeCodex()
                 case let target?: try target.keyName.map { try file.removeKey(for: $0) }
             }
         } catch { fail("ask: \(error)", code: 78) }
