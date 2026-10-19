@@ -12,6 +12,11 @@ public struct AgentLoop: Sendable {
     private let retry: RetryPolicy
     private let clock: any Clock<Duration>
 
+    /// What the loop sends, as a recorded user message, after a response stopped at the output-token limit.
+    public static let continuationPrompt =
+        "[ask] Your previous response was cut off at the output token limit. Continue from where you stopped. "
+        + "If you were writing a tool call, it was dropped: issue it again, in smaller steps if it was large."
+
     /// A loop over `provider` and `tools`, retrying transient failures per `retry` and waiting on `clock`.
     public init(
         provider: any ModelProvider, tools: ToolRegistry, settings: AgentSettings, context: ToolContext,
@@ -38,6 +43,12 @@ public struct AgentLoop: Sendable {
             let calls = response.blocks.compactMap { block -> (String, String, JSONObject)? in
                 guard case .toolCall(let id, let name, let input) = block else { return nil }
                 return (id, name, input)
+            }
+            if calls.isEmpty, response.stopReason == .maxTokens {
+                // Cut off mid-thought or mid-call: say so in the session and ask the model to carry on.
+                try record(.user(Self.continuationPrompt), in: session)
+                events(.continuedAtOutputLimit)
+                continue
             }
             if calls.isEmpty, response.stopReason != .pauseTurn {
                 events(.finished(response.stopReason))

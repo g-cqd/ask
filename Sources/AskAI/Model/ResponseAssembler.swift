@@ -51,7 +51,18 @@ public struct ResponseAssembler: Sendable {
     ///   with every block stopped.
     public func finish() throws(ResponseAssemblyError) -> AssembledResponse {
         guard stopped, open.isEmpty, var response else { throw .incomplete(openBlocks: open.sorted()) }
-        response.blocks = blocks.keys.sorted().compactMap { blocks[$0].map(Self.finished) }
+        // Tool input is judged here, once the stop reason is known: a call cut off by the output limit is
+        // dropped (the loop asks the model to continue), any other invalid input is refused.
+        var kept: [ContentBlock] = []
+        for index in blocks.keys.sorted() {
+            guard let block = blocks[index] else { continue }
+            if case .toolCall(let id, _) = block.kind, block.validatedInput == nil {
+                guard response.stopReason == .maxTokens else { throw .invalidToolInput(id: id) }
+                continue
+            }
+            kept.append(Self.finished(block))
+        }
+        response.blocks = kept
         return response
     }
 
@@ -71,13 +82,10 @@ public struct ResponseAssembler: Sendable {
 
     private mutating func stop(_ index: Int) throws(ResponseAssemblyError) {
         guard open.remove(index) != nil, let block = blocks[index] else { throw .unknownBlock(index: index) }
-        guard case .toolCall(let id, _) = block.kind else { return }
-        do {
-            blocks[index]?.validatedInput = try JSONObject(
-                validating: block.input.isEmpty ? Array("{}".utf8) : block.input)
-        } catch {
-            throw .invalidToolInput(id: id)
-        }
+        guard case .toolCall = block.kind else { return }
+        // Invalid input leaves `validatedInput` nil; `finish` decides what that means once the stop reason is known.
+        blocks[index]?.validatedInput = try? JSONObject(
+            validating: block.input.isEmpty ? Array("{}".utf8) : block.input)
     }
 
     private mutating func applyDelta(_ reason: StopReason?, _ usage: TokenUsage) {
@@ -116,7 +124,7 @@ public struct ResponseAssembler: Sendable {
             case .thinking: .thinking(text: block.text, signature: block.signature)
             case .redactedThinking(let data): .redactedThinking(data: data)
             case .toolCall(let id, let name):
-                // Unreachable: finish() requires every block stopped, and stopping a tool block validates it.
+                // Unreachable with nil: finish() drops or refuses tool blocks whose input did not validate.
                 .toolCall(id: id, name: name, input: block.validatedInput ?? JSONObject.empty)
             case .unrecognized(let type): .unrecognized(type: type)
         }

@@ -69,6 +69,8 @@ final class AgentConversation: Conversation {
                 return .toolFinished(output.isError ? .failed(last) : .succeeded)
             case .repaired(let repairs):
                 return .notice("Repaired the context before this turn: \(repairs)", isError: false)
+            case .continuedAtOutputLimit:
+                return .notice("The response hit the output limit; asking the model to continue.", isError: false)
             case .retrying(let attempt, let total, let delay, let reason):
                 return .notice(retryNotice(attempt: attempt, of: total, delay: delay, reason: reason), isError: false)
             default: return nil

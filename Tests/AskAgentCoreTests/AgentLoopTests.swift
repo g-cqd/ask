@@ -77,6 +77,21 @@ struct AgentLoopTests {
         #expect(events.last == .finished(.endTurn))
     }
 
+    @Test func `a response cut off at the output limit is continued, and the continuation is recorded`() async throws {
+        let file = try newFile()
+        let provider = ScriptedProvider([.cutOff("The first half"), .reply(" and the rest.")])
+        var events: [AgentEvent] = []
+        try await loop(provider).run("Write a lot", in: file) { events.append($0) }
+        let payloads = file.tree.entries.map(\.payload)
+        #expect(payloads.count == 4)
+        #expect(payloads[2] == .user(AgentLoop.continuationPrompt))
+        #expect(provider.requests.count == 2)
+        #expect(
+            provider.requests[1].messages.last
+                == ModelMessage(role: .user, blocks: [.text(AgentLoop.continuationPrompt)]))
+        #expect(events.last == .finished(.endTurn))
+    }
+
     @Test func `an unknown tool becomes an error result and the run continues`() async throws {
         let file = try newFile()
         let provider = ScriptedProvider([.call(id: "t1", name: "rm", input: "{}"), .reply("Sorry.")])
@@ -142,99 +157,4 @@ struct AgentLoopTests {
             return ToolOutput("stopping")
         }
     }
-
-    /// Answers each request with the next scripted turn, and keeps every request it received.
-    final class ScriptedProvider: ModelProvider {
-        enum Turn {
-            case reply(String)
-            /// Text that stops with `pause_turn`: the provider asks to be continued.
-            case pause(String)
-            case call(id: String, name: String, input: String)
-            case calls([(String, String, String)])
-            case failure
-            /// A failure the provider calls transient, optionally with its own requested wait.
-            case transient(retryAfter: Duration?)
-            /// Some text reaches the screen, then the stream fails transiently.
-            case textThenTransient(String)
-            /// A failure the provider says will not succeed if retried, such as a refused credential.
-            case permanent
-        }
-
-        struct TransientFailure: RetryAdvice, CustomStringConvertible {
-            let retryAfter: Duration?
-            var isRetryable: Bool { true }
-            var description: String { "overloaded" }
-        }
-
-        struct PermanentFailure: RetryAdvice, CustomStringConvertible {
-            var isRetryable: Bool { false }
-            var retryAfter: Duration? { nil }
-            var description: String { "credential refused" }
-        }
-
-        struct Failure: Error, CustomStringConvertible {
-            var description: String { "scripted failure" }
-        }
-
-        private let turns: Mutex<[Turn]>
-        private let received = Mutex<[ModelRequest]>([])
-
-        init(_ turns: [Turn]) { self.turns = Mutex(turns) }
-
-        var requests: [ModelRequest] { received.withLock { $0 } }
-
-        func stream(_ request: ModelRequest) -> AsyncThrowingStream<ModelEvent, any Error> {
-            received.withLock { $0.append(request) }
-            let turn = turns.withLock { $0.isEmpty ? Turn.failure : $0.removeFirst() }
-            let (stream, continuation) = AsyncThrowingStream<ModelEvent, any Error>.makeStream()
-            var events: [ModelEvent] = [.messageStarted(id: "m", model: "claude-x", usage: TokenUsage(input: 1))]
-            switch turn {
-                case .reply(let text):
-                    events += [
-                        .blockStarted(index: 0, .text), .textDelta(index: 0, text), .blockStopped(index: 0),
-                        .messageDelta(stopReason: .endTurn, usage: TokenUsage(output: 1))
-                    ]
-                case .pause(let text):
-                    events += [
-                        .blockStarted(index: 0, .text), .textDelta(index: 0, text), .blockStopped(index: 0),
-                        .messageDelta(stopReason: .pauseTurn, usage: TokenUsage(output: 1))
-                    ]
-                case .call(let id, let name, let input):
-                    events += Self.call(index: 0, id: id, name: name, input: input)
-                    events.append(.messageDelta(stopReason: .toolUse, usage: TokenUsage(output: 1)))
-                case .calls(let calls):
-                    for (index, call) in calls.enumerated() {
-                        events += Self.call(index: index, id: call.0, name: call.1, input: call.2)
-                    }
-                    events.append(.messageDelta(stopReason: .toolUse, usage: TokenUsage(output: 1)))
-                case .failure:
-                    continuation.finish(throwing: Failure())
-                    return stream
-                case .permanent:
-                    continuation.finish(throwing: PermanentFailure())
-                    return stream
-                case .transient(let retryAfter):
-                    continuation.finish(throwing: TransientFailure(retryAfter: retryAfter))
-                    return stream
-                case .textThenTransient(let text):
-                    for event in events + [.blockStarted(index: 0, .text), .textDelta(index: 0, text)] {
-                        continuation.yield(event)
-                    }
-                    continuation.finish(throwing: TransientFailure(retryAfter: nil))
-                    return stream
-            }
-            for event in events + [.messageStopped] { continuation.yield(event) }
-            continuation.finish()
-            return stream
-        }
-
-        private static func call(index: Int, id: String, name: String, input: String) -> [ModelEvent] {
-            [
-                .blockStarted(index: index, .toolUse(id: id, name: name)), .toolInputDelta(index: index, input),
-                .blockStopped(index: index)
-            ]
-        }
-    }
 }
-
-// MARK: - Doubles
