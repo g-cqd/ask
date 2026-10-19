@@ -12,7 +12,8 @@ internal import Foundation
 /// ```
 ///
 /// Only `openai-completions` is accepted: it is the one protocol ask speaks besides Anthropic's, which is built in
-/// under the reserved name `anthropic`. Keys come from a literal or from `$NAME` / `${NAME}`; a key that would run a
+/// under the reserved name `anthropic`. The known services are presets (``ProviderPreset``): an entry with a preset's
+/// name gives only what it changes, so `{ "groq": { "defaultModel": "…" } }` is a whole entry. Keys come from a literal or from `$NAME` / `${NAME}`; a key that would run a
 /// command, as pi allows with a leading `!`, is not supported.
 public struct ProviderSettings: Sendable, Equatable {
     /// No configured providers: only the built-in one.
@@ -31,12 +32,17 @@ public struct ProviderSettings: Sendable, Equatable {
             let maxTokens: Int?
         }
 
-        let api: String
-        let baseUrl: String
+        let api: String?
+        let baseUrl: String?
         let apiKey: String?
         let headers: [String: String]?
         let models: [Model]?
         let defaultModel: String?
+
+        /// An entry that changes nothing, which is how a preset no file mentions is resolved.
+        init() {
+            (api, baseUrl, apiKey, headers, models, defaultModel) = (nil, nil, nil, nil, nil, nil)
+        }
     }
 
     private struct File: Decodable {
@@ -85,17 +91,24 @@ public struct ProviderSettings: Sendable, Equatable {
         if name == Self.anthropic {
             return ResolvedModel(provider: .anthropic, model: model ?? Self.anthropicDefaultModel)
         }
-        guard let entry = entries[name] else {
-            throw .unknownProvider(name, known: [Self.anthropic] + entries.keys.sorted())
+        let preset = ProviderPreset.named(name)
+        guard let entry = entries[name] ?? (preset != nil ? Entry() : nil) else {
+            throw .unknownProvider(name, known: known(environment: environment))
         }
-        guard entry.api == Self.openAICompletions else { throw .unsupportedAPI(provider: name, api: entry.api) }
+        let api = entry.api ?? (preset != nil ? Self.openAICompletions : nil)
+        guard let api else { throw .incomplete(provider: name, field: "api") }
+        guard api == Self.openAICompletions else { throw .unsupportedAPI(provider: name, api: api) }
+        guard let baseURL = entry.baseUrl ?? preset?.baseURL else {
+            throw .incomplete(provider: name, field: "baseUrl")
+        }
         guard let chosen = model ?? entry.defaultModel ?? entry.models?.first?.id else {
             throw .noModel(provider: name)
         }
-        let key = try entry.apiKey.map { (raw) throws(ProviderSettingsError) in
-            try Self.interpolate(raw, provider: name, environment: environment)
-        }
-        let trimmed = entry.baseUrl.hasSuffix("/") ? String(entry.baseUrl.dropLast()) : entry.baseUrl
+        let key = try (entry.apiKey ?? preset.map { "$" + $0.keyVariable })
+            .map { (raw) throws(ProviderSettingsError) in
+                try Self.interpolate(raw, provider: name, environment: environment)
+            }
+        let trimmed = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
         guard let url = URL(string: trimmed) else { throw .refusedEndpoint(provider: name, reason: "it is not a URL") }
         if let reason = EndpointPolicy.refusal(for: url, carriesCredential: key != nil) {
             throw .refusedEndpoint(provider: name, reason: reason)
@@ -104,6 +117,16 @@ public struct ProviderSettings: Sendable, Equatable {
         return ResolvedModel(
             provider: .openAICompatible(name: name, baseURL: url, apiKey: key, headers: entry.headers ?? [:]),
             model: chosen, contextWindow: listed?.contextWindow, maxOutputTokens: listed?.maxTokens)
+    }
+
+    /// Every provider name that resolves, in order; a preset whose key variable is unset says which one it needs.
+    private func known(environment: [String: String]) -> [String] {
+        let presets = ProviderPreset.all.filter { entries[$0.name] == nil }
+            .map { preset in
+                environment[preset.keyVariable, default: ""].isEmpty
+                    ? "\(preset.name) (needs $\(preset.keyVariable))" : preset.name
+            }
+        return [Self.anthropic] + (entries.keys + presets).sorted()
     }
 
     /// `$NAME` or `${NAME}` from the environment, `$$…` as a literal `$…`, and anything else as written.
