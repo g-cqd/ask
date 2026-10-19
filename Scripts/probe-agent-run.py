@@ -8,6 +8,7 @@ B: SIGINT while a command runs. ask exits 130, and the command's backgrounded ch
 Usage: Scripts/probe-agent-run.py .build/release/ask
 """
 import json
+import pty
 import re
 import socket, os, signal, subprocess, sys, tempfile, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -360,6 +361,16 @@ def probe_configuration():
         env.update(extra)
         return subprocess.run([ASK, *arguments], cwd=project, env=env, capture_output=True, text=True, timeout=60)
 
+    def ask_at_terminal(*arguments):
+        """`ask` with a terminal on standard input, as a person has and the agent's bash tool does not."""
+        master, slave = pty.openpty()
+        try:
+            return subprocess.run([ASK, *arguments], cwd=project, env=environment(state, server.url, config),
+                                  stdin=slave, capture_output=True, text=True, timeout=60)
+        finally:
+            os.close(slave)
+            os.close(master)
+
     def requests_made(*arguments, **extra):
         before = len(server.requests)
         run = ask("-p", "Loop.", *arguments, **extra)
@@ -379,7 +390,11 @@ def probe_configuration():
     made, run = requests_made()
     results += [check("an untrusted project file is ignored", made == 3, made),
                 check("with a notice saying how to use it", "run `ask trust`" in run.stderr, run.stderr[-300:])]
-    trusted = ask("trust")
+    refused = ask("trust")
+    made_untrusted, _ = requests_made()
+    results += [check("ask trust refuses without a terminal (the agent's bash has none)", refused.returncode == 77 and "terminal" in refused.stderr, f"{refused.returncode} {refused.stderr}"),
+                check("and trusted nothing", made_untrusted == 3, made_untrusted)]
+    trusted = ask_at_terminal("trust")
     made, _ = requests_made()
     results += [check("ask trust succeeds", trusted.returncode == 0 and "maxTurns" in trusted.stdout, trusted.stdout + trusted.stderr),
                 check("a trusted project file overrides the user's: maxTurns 2", made == 2, made)]
@@ -393,7 +408,7 @@ def probe_configuration():
     made, run = requests_made()
     results += [check("a changed project file is ignored until trusted again", made == 3, made),
                 check("and the notice says it changed", "changed since you trusted it" in run.stderr, run.stderr[-300:])]
-    ask("trust")
+    ask_at_terminal("trust")
     ask("untrust")
     made, _ = requests_made()
     results.append(check("ask untrust withdraws it", made == 3, made))
