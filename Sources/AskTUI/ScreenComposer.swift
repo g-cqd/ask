@@ -115,6 +115,11 @@ public struct ScreenComposer: Sendable {
         var cursor = (line: 0, column: width)
         for (offset, character) in editor.text.enumerated() {
             if offset == editor.cursor { cursor = (lines.count - 1, width) }
+            if character == "\n" {
+                lines.append("")
+                width = 0
+                continue
+            }
             let characterWidth = UnicodeWidth.displayWidth(of: character)
             if width + characterWidth > columns {
                 lines.append("")
