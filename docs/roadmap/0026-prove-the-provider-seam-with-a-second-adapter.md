@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-19
 decision: ADR-0019
@@ -44,3 +44,16 @@ part type both are built from, would be decided; do not unify them before that.
 ## Not this entry
 
 Writing Spettro itself (0010). Auth, model catalogs and live probes stay there.
+
+## Done (2026-10-19, ADR-0027)
+
+Answered with a real second adapter, not a scratch one: the OpenAI-compatible provider, tested against streams
+recorded from llama.cpp, MLX and Ollama and run end to end through `ask -p` on all three. Verdicts on the claims:
+
+1. **Held.** Chat-completions streams map onto `ModelEvent` through `ResponseAssembler` with no change to either.
+2. **Held.** Assembled responses persist and replay; a server that sends no call id gets a generated one.
+3. **Held.** Finish reasons map onto the neutral `StopReason` (`stop`, `tool_calls`, `length`, `content_filter`).
+4. **Held, with one fix in the Anthropic adapter.** Reasoning without a signature is kept with an empty one; the
+   Anthropic encoder now drops unsigned thinking, which it would otherwise have sent and had refused.
+5. **Not tested.** Non-text tool results and attachments: neither provider sends them yet.
+6. **Open.** No model catalog: context windows are not known, so compaction uses its own threshold.
