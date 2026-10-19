@@ -24,12 +24,45 @@ public struct AnthropicClient: Sendable {
         self.endpoint = endpoint
     }
 
+    /// Why `ANTHROPIC_BASE_URL` is being ignored, or nil when it is unset, empty or in use. Never echoes the value,
+    /// which may carry credentials of its own.
+    public static func endpointProblem(environment: [String: String]) -> String? {
+        if case .refused(let reason) = baseURL(environment) { return "ANTHROPIC_BASE_URL was ignored: \(reason)." }
+        return nil
+    }
+
     /// The Messages endpoint under `ANTHROPIC_BASE_URL` (as the official SDK reads it), else the default.
+    ///
+    /// Every request carries a bearer credential, so the variable is honoured only for `https`, or for plain
+    /// `http` to this machine. Anything else is ignored and the official endpoint used: the safe direction, since
+    /// the credential then goes only where it was issued. ``endpointProblem(environment:)`` says why.
     public static func endpoint(environment: [String: String]) -> URL {
-        guard let base = environment["ANTHROPIC_BASE_URL"], !base.isEmpty,
-            let url = URL(string: base.hasSuffix("/") ? String(base.dropLast()) : base), url.scheme != nil
-        else { return endpoint }
+        guard case .use(let url) = baseURL(environment) else { return endpoint }
         return url.appending(path: "v1/messages")
+    }
+
+    private enum BaseURL {
+        case unset
+        case use(URL)
+        case refused(String)
+    }
+
+    private static let loopbackHosts: Set<String> = ["localhost", "127.0.0.1", "::1", "[::1]"]
+
+    private static func baseURL(_ environment: [String: String]) -> BaseURL {
+        guard let base = environment["ANTHROPIC_BASE_URL"], !base.isEmpty else { return .unset }
+        guard let url = URL(string: base.hasSuffix("/") ? String(base.dropLast()) : base),
+            let scheme = url.scheme?.lowercased(), let host = url.host(percentEncoded: false)?.lowercased()
+        else { return .refused("it is not a URL") }
+        switch scheme {
+            case "https": return .use(url)
+            case "http" where loopbackHosts.contains(host): return .use(url)
+            case "http":
+                return .refused(
+                    "plain http to another machine would send the credential unencrypted; use https, or http only for localhost"
+                )
+            default: return .refused("it is not an http or https URL")
+        }
     }
 
     /// Sends `request` and streams the response's events. The stream throws an ``AnthropicClientError``.
