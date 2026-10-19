@@ -10,33 +10,13 @@ import Testing
 /// `.compaction` entry that keeps the recent tail, and the run continues on the shorter context.
 @Suite("Long sessions are compacted before they outgrow the context")
 struct AgentLoopCompactionTests {
-    private let directory = FileManager.default.temporaryDirectory.appending(path: "ask-compact-\(UUID().uuidString)")
-    private func newFile() throws -> SessionRecorder {
-        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-        return SessionRecorder(
-            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none))
+    private let harness = CompactionHarness()
+    private func newFile() throws -> SessionRecorder { try harness.newFile() }
+    private func loop(_ provider: ScriptedProvider, compactAt: Int?, keepRecentBytes: Int = 1) -> AgentLoop {
+        harness.loop(provider, compactAt: compactAt, keepRecentBytes: keepRecentBytes)
     }
-
-    private func loop(_ provider: ScriptedProvider, compactAt: Int?) -> AgentLoop {
-        AgentLoop(
-            provider: provider, tools: try! ToolRegistry([]),
-            settings: AgentSettings(
-                model: "claude-x", maximumTokens: 1_024, systemPrompt: ["Be brief."], maximumTurns: 8,
-                compactAtTokens: compactAt, keepRecentBytes: 1),
-            context: ToolContext(workingDirectory: directory.path))
-    }
-
-    private func kinds(_ file: SessionRecorder) -> [String] {
-        file.tree.entries.map {
-            switch $0.payload {
-                case .user: "user"
-                case .assistant: "assistant"
-                case .response: "response"
-                case .toolResult: "result"
-                case .compaction: "compaction"
-            }
-        }
-    }
+    private func kinds(_ file: SessionRecorder) -> [String] { harness.kinds(file) }
+    private var directory: URL { harness.directory }
 
     @Test func `a prompt past the threshold is compacted before the next request, keeping the recent tail`()
         async throws
@@ -83,6 +63,17 @@ struct AgentLoopCompactionTests {
         #expect(kinds(file) == ["user", "response", "user", "compaction", "response"])
         #expect(file.tree.entries[2].payload == .user(AgentLoop.contextFullPrompt))
         #expect(events.last == .finished(.endTurn))
+    }
+
+    @Test func `a large tool output in the part being summarised is clipped to its head and tail`() {
+        let big = String(repeating: "a", count: 50_000) + "MIDDLE" + String(repeating: "z", count: 50_000)
+        let clipped = Compaction.clipped(big, toBytes: 4_000)
+        #expect(clipped.utf8.count < 4_200)
+        #expect(clipped.hasPrefix("aaaa"))
+        #expect(clipped.hasSuffix("zzzz"))
+        #expect(!clipped.contains("MIDDLE"))
+        #expect(clipped.contains("omitted"))
+        #expect(Compaction.clipped("short", toBytes: 4_000) == "short")
     }
 
     @Test func `a summary that cannot be made leaves the session whole, says so, and the run goes on`() async throws {
