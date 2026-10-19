@@ -13,6 +13,8 @@ public struct AgentSettings: Sendable, Equatable {
     public var compactAtTokens: Int?
     /// How much of the recent conversation a compaction keeps word for word, in bytes of text.
     public var keepRecentBytes: Int
+    /// How much tool output one turn may add, in bytes, shared by its calls; nil for no limit beyond the tools' own.
+    public var toolOutputBytes: Int?
 
     /// The default threshold: Anthropic's own default trigger for server-side compaction.
     public static let defaultCompactAtTokens = 150_000
@@ -25,10 +27,12 @@ public struct AgentSettings: Sendable, Equatable {
     ///   - maximumTurns: the most requests one run may make.
     ///   - compactAtTokens: the prompt size that triggers compaction, or nil.
     ///   - keepRecentBytes: how much recent text a compaction keeps; about 20,000 tokens by default.
+    ///   - toolOutputBytes: how much tool output one turn may add, or nil.
     public init(
         model: String, maximumTokens: Int, systemPrompt: [String], maximumTurns: Int,
-        compactAtTokens: Int? = defaultCompactAtTokens, keepRecentBytes: Int = 80_000
+        compactAtTokens: Int? = defaultCompactAtTokens, keepRecentBytes: Int = 80_000, toolOutputBytes: Int? = nil
     ) {
+        self.toolOutputBytes = toolOutputBytes
         self.model = model
         self.maximumTokens = maximumTokens
         self.systemPrompt = systemPrompt

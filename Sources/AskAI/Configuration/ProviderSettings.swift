@@ -25,7 +25,11 @@ public struct ProviderSettings: Sendable, Equatable {
     public static let openAICompletions = "openai-completions"
 
     struct Entry: Decodable, Sendable, Equatable {
-        struct Model: Decodable, Sendable, Equatable { let id: String }
+        struct Model: Decodable, Sendable, Equatable {
+            let id: String
+            let contextWindow: Int?
+            let maxTokens: Int?
+        }
 
         let api: String
         let baseUrl: String
@@ -96,9 +100,10 @@ public struct ProviderSettings: Sendable, Equatable {
         if let reason = EndpointPolicy.refusal(for: url, carriesCredential: key != nil) {
             throw .refusedEndpoint(provider: name, reason: reason)
         }
+        let listed = entry.models?.first { $0.id == chosen }
         return ResolvedModel(
             provider: .openAICompatible(name: name, baseURL: url, apiKey: key, headers: entry.headers ?? [:]),
-            model: chosen)
+            model: chosen, contextWindow: listed?.contextWindow, maxOutputTokens: listed?.maxTokens)
     }
 
     /// `$NAME` or `${NAME}` from the environment, `$$…` as a literal `$…`, and anything else as written.
