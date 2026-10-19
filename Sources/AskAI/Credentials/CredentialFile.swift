@@ -37,6 +37,26 @@ public struct CredentialFile: Sendable {
         try write(stored)
     }
 
+    /// The stored Codex credentials, or nil when there are none.
+    /// - Throws: as ``loadClaude()``.
+    public func loadCodex() throws(CredentialFileError) -> CodexCredentials? { try read()?.codex }
+
+    /// Stores Codex credentials, replacing any, whole, and keeping every other provider's.
+    /// - Throws: as ``saveClaude(_:)``.
+    public func saveCodex(_ credentials: CodexCredentials) throws(CredentialFileError) {
+        var stored = try read() ?? Stored()
+        stored.codex = credentials
+        try write(stored)
+    }
+
+    /// Removes Codex's credentials, keeping every other provider's. Nothing stored is not an error.
+    /// - Throws: as ``saveClaude(_:)``.
+    public func removeCodex() throws(CredentialFileError) {
+        guard var stored = try read(), stored.codex != nil else { return }
+        stored.codex = nil
+        try write(stored)
+    }
+
     /// The key a provider's sign-in stored, or nil when there is none.
     /// - Throws: as ``loadClaude()``.
     public func loadKey(for provider: String) throws(CredentialFileError) -> StoredKey? { try read()?.keys?[provider] }
@@ -124,5 +144,6 @@ public struct CredentialFile: Sendable {
     private struct Stored: Codable {
         var claude: ClaudeCredentials?
         var keys: [String: StoredKey]?
+        var codex: CodexCredentials?
     }
 }
