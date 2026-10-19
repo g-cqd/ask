@@ -11,4 +11,6 @@ public enum AgentError: Error, Sendable, Equatable {
     /// The run was aborted. Results already known are recorded; calls not yet run are left unanswered.
     case cancelled
     case turnLimit(Int)
+    /// The request was longer than the model's context window even after compacting; the provider's words.
+    case contextOverflow(String)
 }
