@@ -57,10 +57,16 @@ public struct CredentialFile: Sendable {
         try write(stored)
     }
 
-    /// The providers that have a stored key, in name order.
+    /// Every stored key, by provider.
     /// - Throws: as ``loadClaude()``.
-    public func storedKeyProviders() throws(CredentialFileError) -> [String] {
-        (try read()?.keys?.keys).map { $0.sorted() } ?? []
+    public func loadKeys() throws(CredentialFileError) -> [String: StoredKey] { try read()?.keys ?? [:] }
+
+    /// Removes Claude's credentials, keeping every other provider's. Nothing stored is not an error.
+    /// - Throws: as ``saveClaude(_:)``.
+    public func removeClaude() throws(CredentialFileError) {
+        guard var stored = try read(), stored.claude != nil else { return }
+        stored.claude = nil
+        try write(stored)
     }
 
     // MARK: - The file

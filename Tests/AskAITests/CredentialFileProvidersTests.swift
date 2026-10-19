@@ -36,7 +36,7 @@ struct CredentialFileProvidersTests {
     @Test func `a file from before keys existed reads as Claude's alone`() throws {
         try file.saveClaude(claude)
         #expect(try file.loadKey(for: "spettro") == nil)
-        #expect(try file.storedKeyProviders() == [])
+        #expect(try file.loadKeys().isEmpty)
     }
 
     @Test func `a damaged file is refused, never overwritten by a save`() throws {
@@ -49,9 +49,21 @@ struct CredentialFileProvidersTests {
         #expect(String(decoding: try Data(contentsOf: file.url), as: UTF8.self) == "{not json")
     }
 
-    @Test func `which providers have a stored key is listed, in name order`() throws {
+    @Test func `every provider's stored key loads at once, by provider`() throws {
         try file.saveKey(StoredKey(key: "b", obtainedAt: 2), for: "spettro")
-        try file.saveKey(StoredKey(key: "a", obtainedAt: 1), for: "mistral-vibe")
-        #expect(try file.storedKeyProviders() == ["mistral-vibe", "spettro"])
+        try file.saveKey(StoredKey(key: "a", obtainedAt: 1), for: "mistral")
+        #expect(
+            try file.loadKeys() == [
+                "spettro": StoredKey(key: "b", obtainedAt: 2), "mistral": StoredKey(key: "a", obtainedAt: 1)
+            ])
+    }
+
+    @Test func `signing out of Claude keeps the other providers' keys`() throws {
+        try file.saveClaude(claude)
+        try file.saveKey(StoredKey(key: "b", obtainedAt: 2), for: "spettro")
+        try file.removeClaude()
+        #expect(try file.loadClaude() == nil)
+        #expect(try file.loadKey(for: "spettro") == StoredKey(key: "b", obtainedAt: 2))
+        try file.removeClaude()
     }
 }
