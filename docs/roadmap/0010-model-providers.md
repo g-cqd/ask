@@ -115,3 +115,16 @@ for the whole history. Prompt caching is now owed (see 0024).
 
 OpenAI chat completions is spoken, so any compatible endpoint is configuration (`providers.json`). Spettro's
 protocol is `openai-completions`; what it still needs is its browser sign-in and device-key auth, not a wire adapter.
+
+## Audit (2026-10-19)
+
+Delivered since: Spettro and Mistral sign-in (0037, ADR-0031), any OpenAI-compatible server by configuration
+(ADR-0027), the Responses protocol (0036), usage recorded per response and shown, and retry with backoff for
+overload and dropped connections.
+
+Still owed from "Done when" and "Also owed":
+- **A gate-drift diagnostic.** A rejection from the Claude subscription gate (ADR-0007) should fail with a message
+  that says what changed, not a bare 429.
+- **A concurrent-refresh guard.** Two asks refreshing the same OAuth token can invalidate one another's refresh
+  token; a lock around the refresh would stop it. (A test I ran by hand this session broke the real sign-in that way
+  through a symlinked credentials file, which is the same hazard.)

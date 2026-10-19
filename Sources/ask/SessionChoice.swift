@@ -12,7 +12,7 @@ enum SessionChoice {
     /// `--continue` with no session here starts a new one, and says so through `note`.
     /// - Parameters:
     ///   - directory: the project's sessions.
-    ///   - note: told when `--continue` found nothing to continue.
+    ///   - note: told when `--continue` found nothing to continue, and when the session had to be repaired.
     /// - Returns: the open session, or nil.
     func open(in directory: SessionDirectory, note: (String) -> Void) -> SessionRecorder? {
         let path: String
@@ -28,7 +28,9 @@ enum SessionChoice {
                 do { path = try directory.resolve(query) } catch { fail("ask: \(error)", code: 66) }
         }
         do {
-            return SessionRecorder(try SessionFile.open(at: FilePath(path)))
+            let recorder = SessionRecorder(try SessionFile.open(at: FilePath(path)))
+            if let notice = recorder.repairNotice { note(notice) }
+            return recorder
         } catch .inUse {
             fail("ask: this session is open in another ask: \(path)", code: 75)
         } catch {

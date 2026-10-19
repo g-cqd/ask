@@ -7,9 +7,25 @@ internal import System
 /// borrow cannot cross into it. Appends happen under the lock; readers get a copy of the tree.
 public final class SessionRecorder: Sendable {
     private let file: Mutex<SessionFile>
+    /// The repairs made when the session was opened. Empty for an undamaged file.
+    public let issues: [SessionLogIssue]
 
     /// Takes ownership of `file`.
-    public init(_ file: consuming sending SessionFile) { self.file = Mutex(file) }
+    public init(_ file: consuming sending SessionFile) {
+        issues = file.issues
+        self.file = Mutex(file)
+    }
+
+    /// A sentence telling the user what was wrong with the session file and what was done, or nil when nothing was.
+    /// The repair is in memory; the original is kept beside the file, as `.damaged`, when the first change is made.
+    public var repairNotice: String? {
+        guard !issues.isEmpty else { return nil }
+        let shown = issues.prefix(3).map(\.explanation)
+        let more = issues.count > shown.count ? ", and \(issues.count - shown.count) more" : ""
+        let count = issues.count == 1 ? "a problem" : "\(issues.count) problems"
+        return "The session file had \(count), repaired as it was opened: " + shown.joined(separator: "; ") + more
+            + ". The original is kept as a .damaged copy once anything is added."
+    }
 
     /// Appends `payload` and persists it before returning.
     /// - Throws: whatever the file throws; nothing is recorded then.
