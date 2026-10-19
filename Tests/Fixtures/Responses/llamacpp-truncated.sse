@@ -1,0 +1,63 @@
+event: response.created
+data: {"type":"response.created","response":{"id":"resp_q9IKgBxFhp5Dpttcj1972q5iRaFWuT2G","object":"response","status":"in_progress"}}
+
+event: response.in_progress
+data: {"type":"response.in_progress","response":{"id":"resp_q9IKgBxFhp5Dpttcj1972q5iRaFWuT2G","object":"response","status":"in_progress"}}
+
+event: response.output_item.added
+data: {"type":"response.output_item.added","item":{"id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh","summary":[],"type":"reasoning","content":[],"encrypted_content":"","status":"in_progress"}}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":"The","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" user","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" wants","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" me","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" to","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" count","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" from","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" one","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" to","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" fifty","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" in","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" words","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":".","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" This","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" is","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" a","item_id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh"}
+
+event: response.output_item.done
+data: {"type":"response.output_item.done","item":{"id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh","summary":[],"type":"reasoning","content":[{"text":"The user wants me to count from one to fifty in words. This is a","type":"reasoning_text"}],"encrypted_content":""}}
+
+event: response.completed
+data: {"type":"response.completed","response":{"id":"resp_q9IKgBxFhp5Dpttcj1972q5iRaFWuT2G","object":"response","created_at":1792436700,"status":"completed","model":"ornith","output":[{"id":"rs_z7v7SRSXs8l9FqIoCnBInRn2sJtGMdxh","summary":[],"type":"reasoning","content":[{"text":"The user wants me to count from one to fifty in words. This is a","type":"reasoning_text"}],"encrypted_content":""}],"usage":{"input_tokens":18,"output_tokens":16,"total_tokens":34,"input_tokens_details":{"cached_tokens":0}}},"timings":{"cache_n":0,"prompt_n":18,"prompt_ms":156.926,"prompt_per_token_ms":8.71811111111111,"prompt_per_second":114.70374571454063,"predicted_n":16,"predicted_ms":563.827,"predicted_per_token_ms":37.58846666666667,"predicted_per_second":26.60390509854973}}
+
