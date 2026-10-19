@@ -19,9 +19,10 @@ enum ProviderStream {
             }
             guard succeeds(response.status) else {
                 let (body, retryAfter) = await response.rejection()
-                throw ProviderStreamError<Decoder.Failure>
-                    .status(
-                        response.status, Decoder.failure(inErrorBody: body), retryAfter: retryAfter)
+                let failure =
+                    Decoder.failure(inErrorBody: body)
+                    ?? ProviderFailure(unrecognizedBody: body, status: response.status)
+                throw ProviderStreamError<Decoder.Failure>.status(response.status, failure, retryAfter: retryAfter)
             }
             try await pump(response.body, into: Decoder(), yield: yield)
         }
