@@ -68,3 +68,13 @@ The fixes already taken:
 - state the window size a memory budget is measured at;
 - prefer physical footprint to RSS, which counts shared library pages;
 - treat TerminalKit roadmap 0007 (compact cells, ≤ 16 bytes) as the lever, not trimming ask.
+
+## After compact cells (2026-10-19, diary 12)
+
+TerminalKit 0007 landed. At 120×40:
+- live heap 565 → 336 KB;
+- footprint about 3,040 → 2,912 KiB;
+- RSS about 8,632 → 8,512 KiB, still over 8,192.
+
+The cell grids are no longer the lever; the rest is code and libraries mapped at launch. The question
+for the re-derivation stands: state the window size, and decide whether RSS or footprint is the budget.
