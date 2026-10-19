@@ -61,7 +61,8 @@ public struct ScreenComposer: Sendable {
             write(line, row: row, into: &buffer)
         }
 
-        let status = state.running ? "\(state.label) · working… (esc to abort)" : "\(state.label) · ready"
+        let activity = state.running ? "\(state.label) · working… (esc to abort)" : "\(state.label) · ready"
+        let status = state.detail.isEmpty ? activity : activity + " · " + state.detail
         write(Line(text: status, style: Style(dim: true, inverse: true)), row: transcriptRows, into: &buffer)
 
         for offset in 0 ..< promptRows {
