@@ -12,6 +12,8 @@ public enum ProviderSettingsError: Error, Sendable, Equatable, CustomStringConve
     case noModel(provider: String)
     /// The entry's key names an environment variable that is not set.
     case missingVariable(provider: String, variable: String)
+    /// The entry is no preset and lacks a field it needs.
+    case incomplete(provider: String, field: String)
     /// The endpoint may not be used (ADR-0024).
     case refusedEndpoint(provider: String, reason: String)
 
@@ -26,6 +28,8 @@ public enum ProviderSettingsError: Error, Sendable, Equatable, CustomStringConve
             case .noModel(let provider): "provider \"\(provider)\" lists no model; add one, or pass --model"
             case .missingVariable(let provider, let variable):
                 "provider \"\(provider)\" reads its key from $\(variable), which is not set"
+            case .incomplete(let provider, let field):
+                "provider \"\(provider)\" in providers.json needs \"\(field)\""
             case .refusedEndpoint(let provider, let reason): "provider \"\(provider)\" was refused: \(reason)"
         }
     }
