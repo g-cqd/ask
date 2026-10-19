@@ -18,8 +18,6 @@ public enum CodexOAuth {
     /// Names this client to the authorization server.
     public static let originator = "ask"
 
-    private static let claim = "https://api.openai.com/auth"
-
     /// The address the user opens to sign in.
     public static func authorizeURL(state: String, challenge: String) -> String {
         let query: [(String, String)] = [
@@ -28,8 +26,7 @@ public enum CodexOAuth {
             ("id_token_add_organizations", "true"), ("codex_cli_simplified_flow", "true"), ("originator", originator)
         ]
         // %20, not the form encoding's "+": a space in a query is valid that way to every parser.
-        func encoded(_ text: String) -> String { FormEncoding.encode(text).replacingOccurrences(of: "+", with: "%20") }
-        return authorizeEndpoint + "?" + query.map { encoded($0) + "=" + encoded($1) }.joined(separator: "&")
+        return authorizeEndpoint + "?" + FormEncoding.query(query, spaceAs: "%20")
     }
 
     /// The authorization code in what a user pasted after signing in, when the callback listener was unavailable: the
@@ -61,11 +58,8 @@ public enum CodexOAuth {
         let parts = token.split(separator: ".", omittingEmptySubsequences: false)
         guard parts.count == 3, let bytes = Base64URL.decode(String(parts[1])),
             let claims = try? AemiJSON.JSONDecoder().decode(Claims.self, from: bytes),
-            let id = claims.auth?.accountID, (1 ... 128).contains(id.utf8.count),
-            id.utf8.allSatisfy({
-                ($0 >= 0x30 && $0 <= 0x39) || ($0 >= 0x41 && $0 <= 0x5A) || ($0 >= 0x61 && $0 <= 0x7A) || $0 == 0x2E
-                    || $0 == 0x5F || $0 == 0x2D
-            })
+            let id = claims.auth?.accountID,
+            PlainToken.matches(id, length: 1 ... 128, extra: "._-")
         else { return nil }
         return id
     }
@@ -89,11 +83,7 @@ public enum CodexOAuth {
     }
 
     private static func fits(_ value: String, _ length: ClosedRange<Int>) -> Bool {
-        length.contains(value.utf8.count)
-            && value.utf8.allSatisfy {
-                ($0 >= 0x30 && $0 <= 0x39) || ($0 >= 0x41 && $0 <= 0x5A) || ($0 >= 0x61 && $0 <= 0x7A) || $0 == 0x5F
-                    || $0 == 0x2E || $0 == 0x7E || $0 == 0x2D
-            }
+        PlainToken.matches(value, length: length, extra: "_.~-")
     }
 
     private struct Claims: Decodable {

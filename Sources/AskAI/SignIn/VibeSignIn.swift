@@ -45,7 +45,9 @@ public struct VibeSignIn: KeySignIn {
         let body = JSONStreamWriter.object(of: [("code_challenge", pkce.challenge), ("code_challenge_method", "S256")])
         let begun = try await http.post(Self.api.appending(path: "vibe/sign-in"), json: body).succeeded()
             .decode(Begun.self)
-        guard let id = begun.process_id, Self.isProcessID(id) else { throw .invalidResponse("process_id") }
+        guard let id = begun.process_id, PlainToken.matches(id, length: 1 ... 200, extra: "_-") else {
+            throw .invalidResponse("process_id")
+        }
         let link = try SignInURL.trusted(begun.sign_in_url, under: Self.console, field: "sign_in_url")
         let poll = try SignInURL.trusted(begun.poll_url, under: Self.api, field: "poll_url")
         guard let expiry = begun.expires_at.flatMap(Self.seconds(since1970:)), expiry > now() else {
@@ -80,15 +82,6 @@ public struct VibeSignIn: KeySignIn {
     }
 
     public func timestamp() -> Double { now() }
-
-    /// Letters, digits, `_` and `-`, one to 200: an id that cannot climb out of the path it is put in.
-    private static func isProcessID(_ id: String) -> Bool {
-        (1 ... 200).contains(id.utf8.count)
-            && id.utf8.allSatisfy {
-                ($0 >= 0x30 && $0 <= 0x39) || ($0 >= 0x41 && $0 <= 0x5A) || ($0 >= 0x61 && $0 <= 0x7A) || $0 == 0x5F
-                    || $0 == 0x2D
-            }
-    }
 
     private static func seconds(since1970 text: String) -> Double? {
         let formatter = ISO8601DateFormatter()

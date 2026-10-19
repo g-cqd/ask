@@ -25,14 +25,14 @@ public enum ClaudeOAuth {
     }
 
     /// The URL the user opens to sign in.
+    // @dl:accept -- each provider's authorize address is its own table of parameters; they share a shape by being OAuth
     public static func authorizeURL(state: String, challenge: String) -> String {
         let query: [(String, String)] = [
+            // @dl:accept -- the parameter rows are data, and the two providers' differ in every value
             ("code", "true"), ("client_id", clientID), ("response_type", "code"), ("redirect_uri", redirectURI),
             ("scope", scopes), ("state", state), ("code_challenge", challenge), ("code_challenge_method", "S256")
         ]
-        return authorizeEndpoint + "?"
-            + query.map { FormEncoding.encode($0) + "=" + FormEncoding.encode($1) }
-            .joined(separator: "&")
+        return authorizeEndpoint + "?" + FormEncoding.query(query)
     }
 
     /// The authorization code in what the user pasted, when it is genuine and carries `expectedState`.

@@ -6,6 +6,7 @@ internal import Foundation
 /// A refresh spends the refresh token, so an uncertain result is reported and never retried here: the server may
 /// already have spent it, and a retry would present a token it knows is used.
 public struct CodexAuthClient: Sendable {
+    // @dl:accept -- a table of the OAuth error words this endpoint may name; tables share a shape by being tables
     private static let errorCodes: Set = [
         "invalid_request", "invalid_client", "invalid_grant", "unauthorized_client", "unsupported_grant_type",
         "invalid_scope", "access_denied", "temporarily_unavailable", "expired_token", "slow_down",
@@ -50,27 +51,17 @@ public struct CodexAuthClient: Sendable {
     }
 
     private func post(_ fields: [(String, String)], now: Double) async throws(CodexAuthError) -> CodexCredentials {
-        let body = fields.map { FormEncoding.encode($0) + "=" + FormEncoding.encode($1) }.joined(separator: "&")
-        let request = HTTPRequest(
-            url: URL(string: CodexOAuth.tokenEndpoint)!, method: "POST",
-            headers: [
-                ("content-type", "application/x-www-form-urlencoded"), ("accept", "application/json"),
-                ("user-agent", "ask")
-            ], body: Array(body.utf8))
-        let status: Int
-        let response: [UInt8]
-        do {
-            let reply = try await transport.send(request)
-            status = reply.status
-            response = try await reply.collect(limit: 64 << 10)
-        } catch {
-            throw .transport(String(describing: error))
+        let body = FormEncoding.query(fields)
+        let request = HTTPRequest.account(
+            "POST", URL(string: CodexOAuth.tokenEndpoint)!, contentType: "application/x-www-form-urlencoded",
+            body: Array(body.utf8))
+        let reply: (status: Int, body: [UInt8])
+        do { reply = try await transport.collecting(request) } catch { throw .transport(String(describing: error)) }
+        guard (200 ..< 300).contains(reply.status) else {
+            let code = CodexErrorBody.code(in: reply.body)
+            throw .tokenEndpoint(status: reply.status, code: code.flatMap { Self.errorCodes.contains($0) ? $0 : nil })
         }
-        guard (200 ..< 300).contains(status) else {
-            let code = (try? AemiJSON.JSONDecoder().decode(ErrorBody.self, from: response))?.code
-            throw .tokenEndpoint(status: status, code: code.flatMap { Self.errorCodes.contains($0) ? $0 : nil })
-        }
-        return try credentials(from: response, now: now)
+        return try credentials(from: reply.body, now: now)
     }
 
     private func credentials(from body: [UInt8], now: Double) throws(CodexAuthError) -> CodexCredentials {
@@ -94,24 +85,6 @@ public struct CodexAuthClient: Sendable {
             case accessToken = "access_token"
             case refreshToken = "refresh_token"
             case expiresIn = "expires_in"
-        }
-    }
-
-    /// An error body, whose `error` is a code or an object holding one.
-    private struct ErrorBody: Decodable {
-        let code: String?
-
-        private enum Keys: String, CodingKey { case error }
-        private enum Nested: String, CodingKey { case code }
-
-        init(from decoder: any Decoder) throws {
-            let keys = try decoder.container(keyedBy: Keys.self)
-            if let text = try? keys.decode(String.self, forKey: .error) {
-                code = text
-            } else {
-                code = try? keys.nestedContainer(keyedBy: Nested.self, forKey: .error)
-                    .decode(String.self, forKey: .code)
-            }
         }
     }
 }

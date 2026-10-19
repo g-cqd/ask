@@ -1,6 +1,8 @@
 internal import Darwin
 internal import Foundation
 
+@testable import AskAI
+
 /// A blocking client that sends exactly the bytes it is given to a loopback port and returns what comes back until
 /// the server closes: the one way to send a listener a request no browser would.
 enum RawClient {
@@ -23,10 +25,7 @@ enum RawClient {
     static func refused(port: UInt16) -> Bool {
         let descriptor = socket(AF_INET, SOCK_STREAM, 0)
         defer { close(descriptor) }
-        var address = sockaddr_in()
-        address.sin_family = sa_family_t(AF_INET)
-        address.sin_port = port.bigEndian
-        address.sin_addr.s_addr = UInt32(0x7f00_0001).bigEndian
+        var address = LoopbackSockets.address(port: port)
         let result = withUnsafePointer(to: &address) {
             unsafe $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
                 unsafe connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
@@ -41,10 +40,7 @@ enum RawClient {
         defer { close(descriptor) }
         var wait = timeval(tv_sec: timeout, tv_usec: 0)
         unsafe setsockopt(descriptor, SOL_SOCKET, SO_RCVTIMEO, &wait, socklen_t(MemoryLayout<timeval>.size))
-        var address = sockaddr_in()
-        address.sin_family = sa_family_t(AF_INET)
-        address.sin_port = port.bigEndian
-        address.sin_addr.s_addr = UInt32(0x7f00_0001).bigEndian
+        var address = LoopbackSockets.address(port: port)
         let connected = withUnsafePointer(to: &address) {
             unsafe $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
                 unsafe connect(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
