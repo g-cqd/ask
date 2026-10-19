@@ -13,3 +13,11 @@ public struct TokenUsage: Sendable, Equatable {
         self.cacheCreation = cacheCreation
     }
 }
+
+extension TokenUsage {
+    /// Usage as an OpenAI protocol reports it, in neutral terms: `input` counts only the prompt tokens the server did
+    /// not read from its cache, as Anthropic reports it, so the two providers' figures mean the same thing.
+    init(prompt: Int?, completion: Int?, cached: Int?) {
+        self.init(input: prompt.map { Swift.max(0, $0 - (cached ?? 0)) }, output: completion, cacheRead: cached)
+    }
+}

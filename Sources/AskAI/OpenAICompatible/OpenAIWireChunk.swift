@@ -8,7 +8,7 @@ struct OpenAIWireChunk: Decodable, Sendable {
     let id: String?
     let model: String?
     let choices: [Choice]?
-    let usage: Usage?
+    let usage: ReportedUsage?
     let error: ErrorBody?
     /// vLLM's error shape, `{"object":"error","message":…,"type":…,"code":…}`, with no `error` wrapper.
     let object: String?
@@ -57,35 +57,6 @@ struct OpenAIWireChunk: Decodable, Sendable {
     struct Function: Decodable, Sendable {
         let name: String?
         let arguments: String?
-    }
-
-    struct Usage: Decodable, Sendable {
-        let promptTokens: Int?
-        let completionTokens: Int?
-        let promptTokensDetails: Details?
-
-        enum CodingKeys: String, CodingKey {
-            case promptTokens = "prompt_tokens"
-            case completionTokens = "completion_tokens"
-            case promptTokensDetails = "prompt_tokens_details"
-        }
-
-        /// The usage in neutral terms: `input` counts only prompt tokens the server did not read from its cache,
-        /// as Anthropic reports it, so the two providers' figures mean the same thing.
-        var tokens: TokenUsage {
-            let cached = promptTokensDetails?.cachedTokens
-            return TokenUsage(
-                input: promptTokens.map { Swift.max(0, $0 - (cached ?? 0)) }, output: completionTokens,
-                cacheRead: cached)
-        }
-    }
-
-    struct Details: Decodable, Sendable {
-        let cachedTokens: Int?
-
-        enum CodingKeys: String, CodingKey {
-            case cachedTokens = "cached_tokens"
-        }
     }
 
     struct ErrorBody: Decodable, Sendable {

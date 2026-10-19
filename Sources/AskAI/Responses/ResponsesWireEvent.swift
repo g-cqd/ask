@@ -43,7 +43,7 @@ struct ResponsesWireEvent: Decodable, Sendable {
         let model: String?
         let status: String?
         let output: [Item]?
-        let usage: Usage?
+        let usage: ReportedUsage?
         let error: ErrorBody?
         let incompleteDetails: Incomplete?
 
@@ -61,30 +61,5 @@ struct ResponsesWireEvent: Decodable, Sendable {
         let code: OpenAIWireChunk.Code?
         let message: String?
         let type: String?
-    }
-
-    struct Usage: Decodable, Sendable {
-        let inputTokens: Int?
-        let outputTokens: Int?
-        let inputTokensDetails: Details?
-
-        enum CodingKeys: String, CodingKey {
-            case inputTokens = "input_tokens"
-            case outputTokens = "output_tokens"
-            case inputTokensDetails = "input_tokens_details"
-        }
-
-        struct Details: Decodable, Sendable {
-            let cachedTokens: Int?
-
-            enum CodingKeys: String, CodingKey { case cachedTokens = "cached_tokens" }
-        }
-
-        /// The usage in neutral terms: `input` counts only prompt tokens the server did not read from its cache.
-        var tokens: TokenUsage {
-            let cached = inputTokensDetails?.cachedTokens
-            return TokenUsage(
-                input: inputTokens.map { Swift.max(0, $0 - (cached ?? 0)) }, output: outputTokens, cacheRead: cached)
-        }
     }
 }
