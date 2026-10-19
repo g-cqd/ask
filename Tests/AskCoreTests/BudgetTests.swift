@@ -83,6 +83,12 @@ struct BudgetTests {
         }
     }
 
+    @Test func `the idle memory budget is the 24 MiB the owner chose, so changing it is a deliberate act`() {
+        // ADR-0038. The earlier 8 MiB had been exceeded since before the agent loop landed; the measured median is
+        // about 9 MiB. Moving this number again means editing this test and writing down why.
+        #expect(Budget.idleMemoryMebibytes == 24)
+    }
+
     @Test func `every budget sits above what was measured`() {
         // Measured: 11.06 ms cold start, 5.58 MiB idle, 0.12 ms input, 0.05 ms action. A budget at or
         // below the measurement would leave no room for ordinary variance.
