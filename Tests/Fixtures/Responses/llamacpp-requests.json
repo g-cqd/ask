@@ -1,0 +1,135 @@
+{
+  "text": {
+    "model": "ornith",
+    "stream": true,
+    "max_output_tokens": 400,
+    "temperature": 0,
+    "instructions": "Answer briefly.",
+    "input": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "Reply with exactly: héllo wörld ✓"
+          }
+        ]
+      }
+    ]
+  },
+  "tool-call": {
+    "model": "ornith",
+    "stream": true,
+    "max_output_tokens": 600,
+    "temperature": 0,
+    "tools": [
+      {
+        "type": "function",
+        "name": "read",
+        "description": "Read a UTF-8 text file.",
+        "strict": false,
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    ],
+    "tool_choice": "auto",
+    "input": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "Read notes/todo.txt with the read tool."
+          }
+        ]
+      }
+    ]
+  },
+  "truncated": {
+    "model": "ornith",
+    "stream": true,
+    "max_output_tokens": 16,
+    "temperature": 0,
+    "input": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "Count from one to fifty in words."
+          }
+        ]
+      }
+    ]
+  },
+  "replay": {
+    "model": "ornith",
+    "stream": true,
+    "max_output_tokens": 400,
+    "temperature": 0,
+    "tools": [
+      {
+        "type": "function",
+        "name": "read",
+        "description": "Read a UTF-8 text file.",
+        "strict": false,
+        "parameters": {
+          "type": "object",
+          "properties": {
+            "path": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "path"
+          ]
+        }
+      }
+    ],
+    "input": [
+      {
+        "role": "user",
+        "content": [
+          {
+            "type": "input_text",
+            "text": "Read notes/todo.txt with the read tool."
+          }
+        ]
+      },
+      {
+        "id": "rs_FtfbgkDWHkf1q9IqEUpe10wQ4QVtl7yN",
+        "summary": [],
+        "type": "reasoning",
+        "content": [
+          {
+            "text": "The user wants me to read the file notes/todo.txt using the read tool.\n",
+            "type": "reasoning_text"
+          }
+        ],
+        "encrypted_content": ""
+      },
+      {
+        "id": "fc_dm0AppEu10yRPO1GjUS4t4eIJYRRYPDa",
+        "type": "function_call",
+        "status": "completed",
+        "arguments": "{\"path\":\"notes/todo.txt\"}",
+        "call_id": "call_dm0AppEu10yRPO1GjUS4t4eIJYRRYPDa",
+        "name": "read"
+      },
+      {
+        "type": "function_call_output",
+        "call_id": "call_dm0AppEu10yRPO1GjUS4t4eIJYRRYPDa",
+        "output": "buy milk\ncall the bank"
+      }
+    ]
+  }
+}

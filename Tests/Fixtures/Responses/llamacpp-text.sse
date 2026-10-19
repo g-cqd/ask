@@ -1,0 +1,105 @@
+event: response.created
+data: {"type":"response.created","response":{"id":"resp_Ne61jFeb9XaAmp5ep4Qn5EQ4vXtQoPlf","object":"response","status":"in_progress"}}
+
+event: response.in_progress
+data: {"type":"response.in_progress","response":{"id":"resp_Ne61jFeb9XaAmp5ep4Qn5EQ4vXtQoPlf","object":"response","status":"in_progress"}}
+
+event: response.output_item.added
+data: {"type":"response.output_item.added","item":{"id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf","summary":[],"type":"reasoning","content":[],"encrypted_content":"","status":"in_progress"}}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":"The","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" user","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" wants","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" me","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" to","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" reply","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" with","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" exactly","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" \"","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":"h","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":"él","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":"lo","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" w","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":"ör","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":"ld","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":" ✓","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":"\".","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.reasoning_text.delta
+data: {"type":"response.reasoning_text.delta","delta":"\n","item_id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf"}
+
+event: response.output_item.added
+data: {"type":"response.output_item.added","item":{"content":[],"id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","role":"assistant","status":"in_progress","type":"message"}}
+
+event: response.content_part.added
+data: {"type":"response.content_part.added","item_id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","part":{"type":"output_text","text":""}}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","item_id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","delta":"h"}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","item_id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","delta":"él"}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","item_id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","delta":"lo"}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","item_id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","delta":" w"}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","item_id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","delta":"ör"}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","item_id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","delta":"ld"}
+
+event: response.output_text.delta
+data: {"type":"response.output_text.delta","item_id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","delta":" ✓"}
+
+event: response.output_item.done
+data: {"type":"response.output_item.done","item":{"id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf","summary":[],"type":"reasoning","content":[{"text":"The user wants me to reply with exactly \"héllo wörld ✓\".\n","type":"reasoning_text"}],"encrypted_content":""}}
+
+event: response.output_text.done
+data: {"type":"response.output_text.done","item_id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","text":"héllo wörld ✓"}
+
+event: response.content_part.done
+data: {"type":"response.content_part.done","item_id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","part":{"type":"output_text","annotations":[],"logprobs":[],"text":"héllo wörld ✓"}}
+
+event: response.output_item.done
+data: {"type":"response.output_item.done","item":{"type":"message","status":"completed","id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"héllo wörld ✓"}],"role":"assistant"}}
+
+event: response.completed
+data: {"type":"response.completed","response":{"id":"resp_Ne61jFeb9XaAmp5ep4Qn5EQ4vXtQoPlf","object":"response","created_at":1792436696,"status":"completed","model":"ornith","output":[{"id":"rs_UUj4OqhBZHPca4HQt9Cg8hJopEop56uf","summary":[],"type":"reasoning","content":[{"text":"The user wants me to reply with exactly \"héllo wörld ✓\".\n","type":"reasoning_text"}],"encrypted_content":""},{"type":"message","status":"completed","id":"msg_jOm5S37ovtrss5aZ5Kdzuw4WIoZQHJcz","content":[{"type":"output_text","annotations":[],"logprobs":[],"text":"héllo wörld ✓"}],"role":"assistant"}],"usage":{"input_tokens":28,"output_tokens":28,"total_tokens":56,"input_tokens_details":{"cached_tokens":0}}},"timings":{"cache_n":0,"prompt_n":28,"prompt_ms":460.024,"prompt_per_token_ms":16.42942857142857,"prompt_per_second":60.866389579674106,"predicted_n":28,"predicted_ms":1025.33,"predicted_per_token_ms":37.97518518518518,"predicted_per_second":26.332985477846158}}
+
