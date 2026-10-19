@@ -1,19 +1,16 @@
-// SE-0409 `InternalImportsByDefault` makes an ordinary import grant INTERNAL visibility, which
-// would leave `URL` internal and make every public signature here illegal. An import therefore
-// carries its own access level here, and the ones that appear in this module's API say so.
-public import Foundation
+internal import Foundation
 
 /// Reads the shape of the repository's own documentation.
 ///
 /// The rules this type exists to police are rules about writing, not about running: a journal that
 /// nobody reads to the end, and a roadmap whose entries have grown into multi-item essays, both
 /// fail silently. A silent failure is the one kind of documentation defect worth a test.
-public enum DocumentationLayout {
+enum DocumentationLayout {
     /// The most lines a single diary file may hold before it rolls over to a new file.
     ///
     /// A diary is written, not read. Past this length nobody scrolls to the bottom to find out what
     /// happened last, so the ceiling is enforced here rather than left to good intentions.
-    public static let maximumDiaryLines = 256
+    static let maximumDiaryLines = 256
 
     /// The most lines the white paper may hold.
     ///
@@ -21,37 +18,32 @@ public enum DocumentationLayout {
     /// someone to append it here as well, and a few dozen rows of history bury the principles that
     /// are the only reason anyone opens the file. The cap makes "is this a principle?" a mechanical
     /// question instead of a matter of restraint.
-    public static let maximumWhitePaperLines = 200
+    static let maximumWhitePaperLines = 200
 
     /// The white paper's path.
-    public static func whitePaperURL() -> URL { repositoryRoot.appending(path: "docs/WHITE-PAPER.md") }
+    static func whitePaperURL() -> URL { repositoryRoot.appending(path: "docs/WHITE-PAPER.md") }
 
     /// The white paper's current line count.
-    public static func whitePaperLineCount() throws -> Int { try lineCount(of: whitePaperURL()) }
+    static func whitePaperLineCount() throws -> Int { try lineCount(of: whitePaperURL()) }
 
     /// A diary file that has reached `maximumDiaryLines`.
-    public struct OverlongDiaryFile: Sendable, Equatable {
-        public var url: URL
-        public var lines: Int
-
-        public init(url: URL, lines: Int) {
-            self.url = url
-            self.lines = lines
-        }
+    struct OverlongDiaryFile: Sendable, Equatable {
+        var url: URL
+        var lines: Int
     }
 
     /// One roadmap entry, read from its own file.
-    public struct RoadmapEntry: Sendable, Equatable {
-        public var url: URL
-        public var text: String
+    struct RoadmapEntry: Sendable, Equatable {
+        var url: URL
+        var text: String
 
-        public init(url: URL, text: String) {
+        init(url: URL, text: String) {
             self.url = url
             self.text = text
         }
 
         /// The `status: pending` style field every entry declares.
-        public var declaresStatus: Bool {
+        var declaresStatus: Bool {
             text.contains("status:")
         }
 
@@ -61,7 +53,7 @@ public enum DocumentationLayout {
         /// second top-level title, or a second `status:` field. Section headings deliberately do not
         /// count — an entry may legitimately have `## Done` and `## Still owed` sections, and treating
         /// those as extra entries punishes the file for being well organised.
-        public var holdsMultipleEntries: Bool {
+        var holdsMultipleEntries: Bool {
             let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
             let titles = lines.filter { $0.hasPrefix("# ") }.count
             let statuses = lines.filter { $0.hasPrefix("status:") }.count
@@ -72,10 +64,10 @@ public enum DocumentationLayout {
     // MARK: - Roots
 
     /// The repository root, found by walking up from this file to the directory holding `Package.swift`.
-    public static let repositoryRoot: URL = {
+    static let repositoryRoot: URL = {
         var directory = URL(fileURLWithPath: #filePath)
-            .deletingLastPathComponent()  // AskCore
-            .deletingLastPathComponent()  // Sources
+            .deletingLastPathComponent()  // AskCoreTests
+            .deletingLastPathComponent()  // Tests
             .deletingLastPathComponent()  // repository root
         precondition(
             FileManager.default.fileExists(atPath: directory.appending(path: "Package.swift").path),
@@ -85,16 +77,16 @@ public enum DocumentationLayout {
     }()
 
     /// `docs/diary`.
-    public static func diaryDirectory() -> URL { repositoryRoot.appending(path: "docs/diary") }
+    static func diaryDirectory() -> URL { repositoryRoot.appending(path: "docs/diary") }
 
     /// `docs/roadmap`.
-    public static func roadmapDirectory() -> URL { repositoryRoot.appending(path: "docs/roadmap") }
+    static func roadmapDirectory() -> URL { repositoryRoot.appending(path: "docs/roadmap") }
 
     /// `docs/adr`.
-    public static func adrDirectory() -> URL { repositoryRoot.appending(path: "docs/adr") }
+    static func adrDirectory() -> URL { repositoryRoot.appending(path: "docs/adr") }
 
     /// A scratch directory for fixtures the tests write and remove.
-    public static func fixtureDirectory() throws -> URL {
+    static func fixtureDirectory() throws -> URL {
         let directory = repositoryRoot.appending(path: ".build/documentation-fixtures")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return directory
@@ -103,26 +95,19 @@ public enum DocumentationLayout {
     // MARK: - Reading
 
     /// Whether `docs/diary` is present.
-    public static func diaryDirectoryExists() throws -> Bool {
+    static func diaryDirectoryExists() throws -> Bool {
         var isDirectory: ObjCBool = false
         return FileManager.default.fileExists(atPath: diaryDirectory().path, isDirectory: &isDirectory)
             && isDirectory.boolValue
     }
 
-    /// Every diary file, in filename order, paired with its line count.
-    public static func diaryFiles() throws -> [(url: URL, lines: Int)] {
-        try markdownFiles(in: diaryDirectory())
-            .map { (url: $0, lines: try lineCount(of: $0)) }
-            .sorted { $0.url.lastPathComponent < $1.url.lastPathComponent }
-    }
-
     /// The diary files past the ceiling, longest first, so the worst offender leads the message.
-    public static func diaryFilesExceedingLines(_ limit: Int) throws -> [OverlongDiaryFile] {
+    static func diaryFilesExceedingLines(_ limit: Int) throws -> [OverlongDiaryFile] {
         try filesExceedingLines(in: diaryDirectory(), limit: limit)
     }
 
     /// The Markdown files in `directory` that pass `limit` lines, longest first.
-    public static func filesExceedingLines(in directory: URL, limit: Int) throws -> [OverlongDiaryFile] {
+    static func filesExceedingLines(in directory: URL, limit: Int) throws -> [OverlongDiaryFile] {
         try markdownFiles(in: directory)
             .map { OverlongDiaryFile(url: $0, lines: try lineCount(of: $0)) }
             .filter { $0.lines > limit }
@@ -130,14 +115,14 @@ public enum DocumentationLayout {
     }
 
     /// Every roadmap entry file, in filename order.
-    public static func roadmapEntries() throws -> [RoadmapEntry] {
+    static func roadmapEntries() throws -> [RoadmapEntry] {
         try markdownFiles(in: roadmapDirectory())
             .sorted { $0.lastPathComponent < $1.lastPathComponent }
             .map { RoadmapEntry(url: $0, text: try String(contentsOf: $0, encoding: .utf8)) }
     }
 
     /// Every architecture decision record, in filename order.
-    public static func adrFiles() throws -> [URL] {
+    static func adrFiles() throws -> [URL] {
         try markdownFiles(in: adrDirectory()).sorted { $0.lastPathComponent < $1.lastPathComponent }
     }
 
@@ -147,7 +132,7 @@ public enum DocumentationLayout {
     ///
     /// An empty file has no lines at all, and a file ending in a newline does not gain a trailing
     /// empty line: both are counted the way a reader would count them.
-    public static func lineCount(of url: URL) throws -> Int {
+    static func lineCount(of url: URL) throws -> Int {
         let contents = try String(contentsOf: url, encoding: .utf8)
         guard !contents.isEmpty else { return 0 }
         return contents.split(separator: "\n", omittingEmptySubsequences: false).count
