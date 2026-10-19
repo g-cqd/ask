@@ -76,15 +76,35 @@ struct Ask: AsyncParsableCommand {
     }
 }
 
-/// `ask login`: sign in with a Claude subscription.
+/// `ask login`: sign in to a provider. Claude by default.
 struct Login: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "Sign in with a Claude subscription.")
+    static let configuration = CommandConfiguration(
+        abstract: "Sign in to a provider.",
+        discussion: "claude: a Claude subscription. spettro, mistral-vibe: a browser sign-in that issues an API key.")
+
+    @Argument(help: "Which sign-in to run.") var provider: LoginTarget = .claude
 
     func run() async throws {
+        let file = CredentialFile.standard()
+        switch provider {
+            case .claude: await claudeLogin(file: file)
+            case .spettro:
+                let flow: SpettroSignIn
+                do {
+                    let base = ProcessInfo.processInfo.environment["SPETTRO_API_URL"] ?? SpettroSignIn.defaultBase
+                    flow = try SpettroSignIn(transport: URLSessionTransport(), base: base)
+                } catch { fail("ask: sign-in failed: \(error)", code: 77) }
+                await browserLogin(flow, keyName: SpettroSignIn.provider, file: file)
+            case .mistralVibe:
+                await browserLogin(
+                    VibeSignIn(transport: URLSessionTransport()), keyName: VibeSignIn.provider, file: file)
+        }
+    }
+
+    private func claudeLogin(file: CredentialFile) async {
         let pending = PendingSignIn.begin()
         print("Open this URL and sign in:\n\n  \(pending.url)\n\nThen paste the code it shows (code#state):")
         guard let pasted = readLine(strippingNewline: true) else { fail("ask: no code entered.", code: 66) }
-        let file = CredentialFile.standard()
         do {
             let credentials = try await ClaudeAuthClient(transport: URLSessionTransport())
                 .complete(pending, pasted: pasted, now: Date().timeIntervalSince1970)
@@ -96,12 +116,21 @@ struct Login: AsyncParsableCommand {
     }
 }
 
-/// `ask logout`: forget stored credentials.
+/// `ask logout`: forget stored credentials, one provider's or all.
 struct Logout: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Forget stored credentials.")
 
+    @Argument(help: "Forget only this sign-in. Default: all of them.") var provider: LoginTarget?
+
     func run() throws {
-        try CredentialFile.standard().remove()
+        let file = CredentialFile.standard()
+        do {
+            switch provider {
+                case nil: try file.remove()
+                case .claude?: try file.removeClaude()
+                case let target?: try target.keyName.map { try file.removeKey(for: $0) }
+            }
+        } catch { fail("ask: \(error)", code: 78) }
         print("Signed out.")
     }
 }
