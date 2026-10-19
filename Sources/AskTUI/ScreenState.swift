@@ -10,6 +10,8 @@ public struct ScreenState: Sendable, Equatable {
     public var label: String
     /// Whether a run is in progress: the status line says so and how to abort it.
     public var running = false
+    /// Set by a command that wants the screen closed with this reason once its run has ended.
+    public var exitRequest: ScreenExit?
     /// Shown at the right of the status line, such as token usage; empty for none.
     public var detail = ""
     /// How many wrapped lines the transcript is scrolled up from the bottom.

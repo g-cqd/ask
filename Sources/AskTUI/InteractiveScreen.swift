@@ -18,11 +18,13 @@ internal import TerminalKitRender
 ///   - notices: shown after the history, such as which instruction files apply.
 ///   - beforeSignalExit: runs when a shutdown signal is about to end the process, after the terminal is
 ///     restored: the last chance to stop child processes.
+/// - Returns: why the screen closed.
 /// - Throws: when the terminal cannot be set up.
+@discardableResult
 public func runInteractiveScreen(
     conversation: any Conversation, label: String, history: [ConversationUpdate] = [], notices: [String] = [],
     beforeSignalExit: @escaping @Sendable () -> Void = {}
-) async throws {
+) async throws -> ScreenExit {
     // Frames and the session's own escape sequences share one terminal, so their writes take turns.
     let connection = SerializedConnection(POSIXTerminalConnection())
     let terminal = TerminalSession(connection: connection, modes: .fullScreen, keyboardProtocol: .probe)
@@ -37,7 +39,7 @@ public func runInteractiveScreen(
     let signals = SignalHandler(onResize: { resized.yield() }, onShutdown: { shutdown.handle($0) })
     try signals.start()
     defer { signals.stop() }
-    try await runInteractiveScreen(
+    return try await runInteractiveScreen(
         on: ScreenTerminal(connection: connection, session: terminal, renderer: renderer),
         conversation: conversation, label: label, opening: openingUpdates(history: history, notices: notices),
         resizes: resizes)
@@ -51,13 +53,14 @@ private struct ScreenTerminal {
 }
 
 /// The screen over an injected connection, so every exit path is drivable from a test.
+@discardableResult
 func runInteractiveScreen(
     on connection: any TerminalConnection, conversation: any Conversation, label: String,
     history: [ConversationUpdate] = [], notices: [String] = [], resizes: AsyncStream<Void>
-) async throws {
+) async throws -> ScreenExit {
     let connection = SerializedConnection(connection)
     let terminal = TerminalSession(connection: connection, modes: .fullScreen, keyboardProtocol: .probe)
-    try await runInteractiveScreen(
+    return try await runInteractiveScreen(
         on: ScreenTerminal(connection: connection, session: terminal, renderer: try makeRenderer(on: connection)),
         conversation: conversation, label: label, opening: openingUpdates(history: history, notices: notices),
         resizes: resizes)
@@ -77,11 +80,12 @@ private func makeRenderer(on connection: any TerminalConnection) throws -> Rende
 private func runInteractiveScreen(
     on screen: ScreenTerminal, conversation: any Conversation, label: String, opening: [ConversationUpdate],
     resizes: AsyncStream<Void>
-) async throws {
+) async throws -> ScreenExit {
+    let exit: ScreenExit
     do {
         try screen.session.enter()
         let session = ScreenSession(screen, conversation: conversation, label: label, opening: opening)
-        try await session.run(resizes: resizes)
+        exit = try await session.run(resizes: resizes)
     } catch {
         await screen.renderer.finish()
         screen.session.leave()
@@ -89,6 +93,7 @@ private func runInteractiveScreen(
     }
     await screen.renderer.finish()
     screen.session.leave()
+    return exit
 }
 
 /// What the screen shows before the first prompt: a resumed session's history, then the notices.
@@ -108,6 +113,7 @@ private final class ScreenSession {
     private var run: Task<Void, Never>?
     private let events: AsyncStream<ScreenEvent>
     private let sink: AsyncStream<ScreenEvent>.Continuation
+    private var exit = ScreenExit.quit
 
     fileprivate init(
         _ screen: ScreenTerminal, conversation: any Conversation, label: String, opening: [ConversationUpdate]
@@ -123,7 +129,7 @@ private final class ScreenSession {
         (events, sink) = AsyncStream<ScreenEvent>.makeStream()
     }
 
-    func run(resizes: AsyncStream<Void>) async throws {
+    func run(resizes: AsyncStream<Void>) async throws -> ScreenExit {
         let input = input
         let sink = sink
         let forwarding = Task {
@@ -133,16 +139,19 @@ private final class ScreenSession {
         let resizing = Task {
             for await _ in resizes { sink.yield(.resize) }
         }
+        let watching = conversation.background { sink.yield(.update($0)) }
         input.start()
         defer {
             forwarding.cancel()
             resizing.cancel()
+            watching?.cancel()
             input.stop()
         }
         render(full: true)
         for await event in events {
-            guard await handle(event) else { return }
+            guard await handle(event) else { return exit }
         }
+        return exit
     }
 
     /// Applies one event and renders. Returns false when the screen should close.
@@ -158,7 +167,13 @@ private final class ScreenSession {
                 effects = controller.handle(inputEvent, pageRows: Swift.max(1, rows - 3))
             case .update(let update):
                 controller.handle(update)
-                if update == .runEnded { run = nil }
+                if update == .runEnded {
+                    run = nil
+                    if let requested = controller.state.exitRequest {
+                        exit = requested
+                        return false
+                    }
+                }
             case .resize:
                 if let size = try? connection.getSize() {
                     rows = size.rows

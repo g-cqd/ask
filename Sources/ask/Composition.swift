@@ -102,6 +102,20 @@ private func settings(
         keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes)
 }
 
+/// `ask --self-check`: starts everything a run starts, without a network, so a reload can tell a build that works
+/// from one that does not (ADR-0033). The settings are already loaded: this build has read this configuration
+/// with its own parser, which is the part a new build most often gets wrong.
+func checkSelf(_ settings: RunSettings) {
+    do {
+        _ = try makeLoop(
+            model: settings.model, workingDirectory: FileManager.default.currentDirectoryPath, instructions: [],
+            limits: settings.limits, jobs: JobTable(), transport: URLSessionTransport())
+    } catch {
+        fail("ask: \(error)", code: 70)
+    }
+    print("ask self-check ok")
+}
+
 /// ask's instructions, carried in the first user message (ADR-0007).
 private func instructions(workingDirectory: String) -> String {
     """

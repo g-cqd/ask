@@ -13,6 +13,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case label(String)
     /// A short status for the status line, such as token usage.
     case status(String)
+    /// Close the screen once the run that sent this has ended, so the caller can act on `exit`.
+    case requestExit(ScreenExit)
     /// The run is over, however it ended.
     case runEnded
 }
