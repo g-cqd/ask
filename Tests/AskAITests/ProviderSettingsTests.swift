@@ -136,6 +136,29 @@ struct ProviderSettingsTests {
         } catch { Issue.record("\(error)") }
     }
 
+    @Test func `codex is built in beside anthropic, and needs a model named`() throws {
+        let resolved = try resolve(provider: "codex", model: "gpt-x")
+        #expect(resolved.provider == .codex)
+        #expect(resolved.model == "gpt-x")
+        #expect(throws: ProviderSettingsError.noModel(provider: "codex")) { try resolve(provider: "codex") }
+    }
+
+    @Test func `a file may not define codex, which is built in`() {
+        let json = #"{ "providers": { "codex": { "api": "openai-completions", "baseUrl": "http://127.0.0.1:1/v1" } } }"#
+        #expect(throws: ProviderSettingsError.reservedName("codex")) {
+            try resolve(json, provider: "codex", model: "m")
+        }
+    }
+
+    @Test func `codex is the file's default when it says so, and is listed among the known`() throws {
+        let json = #"{ "default": "codex" }"#
+        #expect(try resolve(json, model: "gpt-x").provider == .codex)
+        do {
+            _ = try resolve(provider: "nope")
+            Issue.record("an unknown provider resolved")
+        } catch let error as ProviderSettingsError { #expect("\(error)".contains("codex")) }
+    }
+
     @Test func `a file that is not valid settings is an error`() {
         #expect(throws: ProviderSettingsError.self) { try settings("{ not json") }
     }
