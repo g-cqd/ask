@@ -20,6 +20,10 @@ observation behind it in `docs/diary/2026-10-19-04.md`.
 | `performance-engineering` / tooling | SwiftPM 6.4's default build system writes no index store and ignores `-index-store-path`; tools that need one (Periphery) need `--build-system native` | Periphery found no store |
 | any | `cp -Rc` of a repository with its `.build` yields a copy that cannot build (absolute paths). Clone, then delete `.build` | C target failed |
 | any | A generated git hook is a copy made at install time. A fix upstream does not reach existing repositories until `repair` runs | 158 stale generated hooks on this machine (dry-run) |
+| `swift` | Lists typed throws, protocols and macros, but not "when a factorisation is on the table, survey the language first and compile the candidates". Left alone, the reflex is a free function | tool preamble, JSON begin/end pairing |
+| `swift` | Silent that a public protocol's `associatedtype` forces the conforming types' associated types public | `ArgumentTool.Arguments` |
+| `code-review` / `engineering-practices` | Say to remove duplication, not to treat a duplicate as a question with three answers (fix, name the missing abstraction, accept with a reason) or that "near" clone detection ignores identifiers | dolly findings |
+| `testing` | Says to run mutation testing; does not say that a characterisation test's expected value should be the *old output captured before the change* | tool schemas |
 | `agora` | Not consulted during the audit, so whether it would have helped with the second writer was not checked | worked around with a branch |
 
 ## Questions the skills suggest and the project has not answered

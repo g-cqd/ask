@@ -10,9 +10,10 @@ decision: ADR-0021
 Found by the 2026-10-19 audit (`docs/diary/2026-10-19-02.md`), each with the probe that showed it.
 
 1. **Unused imports are not gated.** Under `InternalImportsByDefault`, an unused `public import` fails the
-   build but an unused `internal import` does not, and the split left five. Periphery finds them but needs
-   `--build-system native` for an index store and is noisy otherwise. Decide: a narrowed Periphery run that
-   reports only unused imports, or a scan.
+   build but an unused `internal import` does not. deadwood's opt-in `unused-import` was measured (diary 07):
+   270 findings, mostly "low" confidence, and one of its two "medium" ones was wrong (`Darwin`, used for
+   `open` and `O_*`). Not gateable as it stands. Options: raise `--minimum-confidence` for that rule once the
+   tool's heuristic sees module-qualified names such as `AemiJSON.JSONDecoder`, or a scan.
 2. **`Sources/ask` has no tests.** `PrintRenderer` (output routing between stdout and stderr) and
    `ClaudeProvider` (auth per request) are behaviour, not binding. Move what can move into a library target
    and test it; leave only argument parsing in the executable.
@@ -24,14 +25,16 @@ Found by the 2026-10-19 audit (`docs/diary/2026-10-19-02.md`), each with the pro
 5. **Duplicate helper.** `leftPadded(to:)` exists in `AskAI/Support` and as a `fileprivate` helper in
    `AskAgentCore/Session/SessionDirectory.swift`. Aemi's `AemiKernel` has overlapping `Hex` and `Base64`;
    adopting them needs an equivalence test and, for anything on the SSE path, a benchmark (ADR-0016).
-6. **Test-only code ships in the binary.** `SourceStandards` and `DocumentationLayout` live in `AskCore`,
-   which `ask` links. The new `SourceStructure` scanner was measured there (+33 KB of binary) and moved to
-   the test target. The two older ones were not measured; moving them is the same change. Idle-memory effect
-   is unknown and, per the diary (probes 16 and 17), not separable from page-layout noise by `measure-budgets`
-   alone.
+6. **Test-only code shipped in the binary. Closed** (ADR-0022): `SourceStandards` and `DocumentationLayout`
+   moved to the test target, found by deadwood's `referenced-only-by-tests`. Binary -0.9%; idle memory about
+   30-45 KiB lower, four interleaved rounds.
 7. **The idle-memory budget is already exceeded on main.** 8208–8264 KiB against 8192 KiB, before this work
    (diary probe 18), so `ask --budgets` reports OVER BUDGET and the CI `budgets` job should be red. Roadmap
    0007 owns re-deriving the budgets; this entry only records that nobody is currently told.
+8. **deadwood's `dead-store` rule was wrong on 13 of 13 findings here.** Two causes, fixed with tests on branch
+   `fix/dead-store-false-positives` of g-cqd/deadwood, not yet released: a binding with no initialiser is not a
+   store, and shorthand `if let x` reads the `x` it shadows. When a release carries it, bump the pin in
+   `Scripts/analyzers.sh` (version and hash together) and re-measure before enabling the rule.
 
 ## Done when
 

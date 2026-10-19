@@ -34,6 +34,13 @@ neutral type is widened by a new ADR (never silently) or the claim is written do
 holds, a **provider contract test** (a suite every adapter's scripted stream runs through) is kept, so the
 second and third providers cannot bend it.
 
+## A finding that belongs here
+
+dolly reports `ContentBlock` (an assembled response's blocks) and `RequestBlock` (a request's blocks) as a
+near-clone: the same cases bar `unrecognized` and `toolResult`. The duplication is accepted in the code, with
+this entry as the reason. Claim 5 (content that is not plain text) is where one block vocabulary, or a shared
+part type both are built from, would be decided; do not unify them before that.
+
 ## Not this entry
 
 Writing Spettro itself (0010). Auth, model catalogs and live probes stay there.
