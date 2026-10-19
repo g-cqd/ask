@@ -36,6 +36,7 @@ Scripts/quality.sh              # format, lint, build and test
 Scripts/quality.sh --check      # verify only; what CI would run (it has never started: billing, roadmap 0028)
 Scripts/analyzers.sh            # unused code, duplicated code, retain cycles; also a stage of quality.sh
 Scripts/roadmap.sh open         # the open roadmap entries, read from their front matter
+ask --provider NAME --model ID  # a provider from ~/.config/ask/providers.json (ADR-0027)
 swift test -c release --enable-testable-imports   # tests, without re-linting
 python3 Scripts/measure-budgets.py .build/release/ask 12   # the four budgets
 ```
@@ -147,6 +148,21 @@ to Aemi. The test is whether a second consumer is plausible, not whether one exi
   members that cross the new boundary must widen. Recipe: `.agents/skills/ask-structure/references/`.
 - **A clone's `.build` cannot be reused.** Delete it; the paths are absolute.
 - **SwiftPM 6.4 writes no index store** by default, so Periphery needs `--build-system native`.
+
+## Working beside other agents
+
+Several agents work in this repository at once. To keep `main` the meeting point:
+
+- **One worktree per task**: `git worktree add ../ask-<task> -b <task> main`. Never edit the main checkout another
+  agent may be using, and never `git add -A` there.
+- **Merge each finished unit as soon as it is green**, not at the end: check `main`, rebase onto it, resolve
+  conflicts in the worktree, run `Scripts/quality.sh --check`, then `git merge --ff-only` from the main checkout.
+  A rebase that conflicts is resolved by reading both sides; the other agent's change is not discarded.
+- **Leave nothing dangling**: after the merge, `git worktree remove` and `git branch -d`. Before ending a session,
+  check `git branch -a` and `git worktree list`; a branch fully merged into `main` with no live worktree is deleted,
+  locally and on `origin`. A branch checked out in another agent's worktree is theirs.
+- **Take the next free number** for an ADR, roadmap entry or diary at the moment of writing, not at the start; it
+  may have been taken meanwhile.
 
 ## Commit discipline
 

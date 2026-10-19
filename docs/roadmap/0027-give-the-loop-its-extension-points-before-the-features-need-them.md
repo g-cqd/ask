@@ -1,6 +1,6 @@
 ---
-status: not-started
-blocked-by: ["0026"]
+status: in-progress
+blocked-by: []
 date: 2026-10-19
 decision: ADR-0019
 ---
@@ -36,3 +36,9 @@ decide the seams while they are cheap, not to build the features.
 ## Done when
 
 Each of the five has a recorded verdict and, where refuted, a decision. No feature is implemented here.
+
+## Progress (2026-10-19, ADR-0028)
+
+Done: `AgentHook` lets code block, rewrite or transform each tool call, in order, with each rule broken once in a
+test. Still owed: a registry that takes tools after start (extensions, MCP), tool annotations (read-only,
+destructive) for approval and parallel calls, and a place in a session for an extension's own records.

@@ -110,3 +110,8 @@ diagnostic.
 for the whole history. Prompt caching is now owed (see 0024).
 
 **Still owed:** Spettro, a concurrent-refresh guard, and the gate-drift diagnostic.
+
+## Progress (2026-10-19, ADR-0027)
+
+OpenAI chat completions is spoken, so any compatible endpoint is configuration (`providers.json`). Spettro's
+protocol is `openai-completions`; what it still needs is its browser sign-in and device-key auth, not a wire adapter.
