@@ -1,7 +1,11 @@
 internal import AemiJSON
 
 extension ProviderFailure.Kind {
-    init(wire: String) {
+    init(wire: String, message: String = "") {
+        if wire == "invalid_request_error", Self.describesContextOverflow(message) {
+            self = .contextOverflow
+            return
+        }
         switch wire {
             case "overloaded_error": self = .overloaded
             case "rate_limit_error": self = .rateLimited

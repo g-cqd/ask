@@ -8,4 +8,14 @@ public protocol RetryAdvice: Error {
     var isRetryable: Bool { get }
     /// How long the provider asked the caller to wait, when it said.
     var retryAfter: Duration? { get }
+    /// Whether the request was refused for being longer than the model's context window, which compacting the
+    /// conversation can cure. A requirement, not only an extension, so it dispatches through `any RetryAdvice`.
+    var isContextOverflow: Bool { get }
+    /// The context window a refusal for length named, so the caller can size later requests to it.
+    var reportedContextWindow: Int? { get }
+}
+
+extension RetryAdvice {
+    public var isContextOverflow: Bool { false }
+    public var reportedContextWindow: Int? { nil }
 }

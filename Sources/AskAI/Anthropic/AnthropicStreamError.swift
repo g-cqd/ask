@@ -10,6 +10,11 @@ public enum AnthropicStreamError: Error, Sendable, Equatable {
 
 extension AnthropicStreamError: StreamDecodingFailure {
     /// An `error` event the provider classified as overloaded, rate limited or a server error.
+    public var providerFailure: ProviderFailure? {
+        if case .provider(let failure) = self { return failure }
+        return nil
+    }
+
     public var isRetryable: Bool {
         if case .provider(let failure) = self { return failure.isTransient }
         return false

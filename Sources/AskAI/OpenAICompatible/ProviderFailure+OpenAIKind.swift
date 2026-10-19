@@ -1,33 +1,27 @@
 extension ProviderFailure.Kind {
-    /// The kind an OpenAI-compatible server means, from the error `type` it names and else from an HTTP status.
-    ///
-    /// Servers word their types differently (`rate_limit_exceeded`, `server_error`, `invalid_request_error`), so the
-    /// type is matched by what it contains, and a numeric status decides when the type says nothing known.
-    init(openAIType type: String?, status: Int?) {
-        let named = type?.lowercased() ?? ""
-        switch true {
-            case named.contains("rate_limit"), named.contains("quota"): self = .rateLimited
-            case named.contains("overloaded"): self = .overloaded
-            case named.contains("server_error"), named.contains("internal"): self = .server
-            case named.contains("authentication"), named.contains("invalid_api_key"): self = .authentication
-            case named.contains("permission"): self = .permission
-            case named.contains("not_found"): self = .notFound
-            case named.contains("invalid_request"): self = .invalidRequest
-            default: self = Self(status: status, unknown: type)
-        }
-    }
+    /// Fragments of the error `type` servers send, and the kind each means, tried in order: servers word their types
+    /// differently (`rate_limit_exceeded`, `server_error`, `invalid_request_error`), so a type is matched by what it
+    /// contains.
+    private static let byTypeName: [(fragments: [String], kind: ProviderFailure.Kind)] = [
+        (["rate_limit", "quota"], .rateLimited), (["overloaded"], .overloaded), (["server_error", "internal"], .server),
+        (["authentication", "invalid_api_key"], .authentication), (["permission"], .permission),
+        (["not_found"], .notFound), (["invalid_request"], .invalidRequest)
+    ]
 
-    private init(status: Int?, unknown type: String?) {
-        switch status {
-            case 400: self = .invalidRequest
-            case 401: self = .authentication
-            case 403: self = .permission
-            case 404: self = .notFound
-            case 413: self = .requestTooLarge
-            case 429: self = .rateLimited
-            case 503, 529: self = .overloaded
-            case let code? where (500 ... 599).contains(code): self = .server
-            default: self = .other(type ?? status.map(String.init) ?? "unknown")
+    /// The kind an OpenAI-compatible server means: a refusal for length first, whatever its type says, then the
+    /// type's name, then the HTTP status. A status that says nothing keeps the provider's own name for the error.
+    init(openAIType type: String?, status: Int?, code: String? = nil, message: String = "") {
+        let named = type?.lowercased() ?? ""
+        if named.contains("exceed_context_size") || code == "context_length_exceeded"
+            || Self.describesContextOverflow(message)
+        {
+            self = .contextOverflow
+        } else if let match = Self.byTypeName.first(where: { $0.fragments.contains(where: named.contains) }) {
+            self = match.kind
+        } else if case .other = Self(status: status), let type {
+            self = .other(type)
+        } else {
+            self = Self(status: status)
         }
     }
 }
