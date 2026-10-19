@@ -1,7 +1,8 @@
 ---
-status: not-started
+status: done
 blocked-by:
 date: 2026-10-19
+decision: ADR-0026
 ---
 
 # 0030 — Compact long sessions
@@ -31,3 +32,19 @@ that exist already:
 A scripted session past a small, injected window compacts and continues. The request after compacting
 holds the summary and the kept tail only. A live run compacts and still answers about something from
 before the boundary.
+
+## Done (2026-10-19)
+
+- **The trigger** is `--compact-at`: 150,000 tokens by default, and 0 means only when the window is full.
+  `contextWindowExceeded` also triggers it.
+- **The summary** comes from ask's own cached-prefix request (ADR-0026).
+- **What stays:** an 80 KB kept tail, and the whole history in the file.
+
+| Evidence | Where |
+|---|---|
+| 6 loop and rule tests; 9 compiling mutations caught | unit tests |
+| Summary request, then summary before the kept tail, full history kept | probe E (fake server, default threshold) |
+| A code word recalled after two compactions | live run |
+
+The window is 1,000,000 tokens for claude-sonnet-5-5, and the models API reports it; ask does not read
+it yet.
