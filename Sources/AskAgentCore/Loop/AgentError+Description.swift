@@ -3,6 +3,7 @@ extension AgentError: CustomStringConvertible {
     public var description: String {
         switch self {
             case .provider(let reason): reason
+            // @dl:accept -- describing an unrelated enum (JobStatus) case by case gives the same shape, not a shared meaning
             case .assembly(let error): "the response broke the protocol: \(error)"
             case .session(let error): "the session could not be recorded: \(error)"
             case .cancelled: "the run was cancelled"
