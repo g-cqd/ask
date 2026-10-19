@@ -46,4 +46,7 @@ TerminalKit landed 0006 (time benchmarks), 0010 (modes as a unit) and its 0015 (
   answers, so Escape stops depending on where a read ends;
 - leaving raw mode no longer waits on output, so a stopped terminal cannot hang ask's exit.
 
-Next in this order: **0007**, compact cells.
+**0007**, compact cells, pinned at `332ae7a`: two 120×40 grids take 160 KB of live heap, down from
+385 KB, and an unchanged cell compares in about 2.3 ns, down from 14 (diary 12).
+
+Next in this order: **0011**, scroll regions.
