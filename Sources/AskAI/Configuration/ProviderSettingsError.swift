@@ -30,6 +30,7 @@ public enum ProviderSettingsError: Error, Sendable, Equatable, CustomStringConve
                 "no provider is named \"\(name)\"; known: \(known.joined(separator: ", "))"
             case .unsupportedAPI(let provider, let api):
                 "provider \"\(provider)\" uses api \"\(api)\"; only \"\(ProviderSettings.openAICompletions)\" and \"\(ProviderSettings.openAIResponses)\" are supported"
+            // @dl:accept -- these enum-case sentences are independent diagnostic data, not shared logic with session-log repairs
             case .noModel(let provider) where provider == ProviderSettings.codex:
                 "provider \"\(provider)\" needs a model: pass --model with one your plan offers"
             case .noModel(let provider): "provider \"\(provider)\" lists no model; add one, or pass --model"
