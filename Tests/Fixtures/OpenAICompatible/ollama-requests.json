@@ -1,0 +1,52 @@
+{
+  "tool-call": {
+    "model": "ornith-1.5:9b",
+    "temperature": 0,
+    "stream": true,
+    "stream_options": {
+      "include_usage": true
+    },
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "read",
+          "description": "Read a UTF-8 text file.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "path": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "path"
+            ]
+          }
+        }
+      }
+    ],
+    "max_tokens": 400,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Read notes/todo.txt with the read tool."
+      }
+    ]
+  },
+  "text": {
+    "model": "ornith-1.5:9b",
+    "temperature": 0,
+    "stream": true,
+    "stream_options": {
+      "include_usage": true
+    },
+    "max_tokens": 400,
+    "messages": [
+      {
+        "role": "user",
+        "content": "Reply with exactly: héllo wörld ✓"
+      }
+    ]
+  }
+}
