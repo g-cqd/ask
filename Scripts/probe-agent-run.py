@@ -60,9 +60,14 @@ class Server:
         self.url = f"http://127.0.0.1:{self.httpd.server_address[1]}"
 
 
-def environment(state, url):
+def environment(state, url, config=None):
+    """The run's environment. `config` is a directory standing in for ~/.config; none by default."""
     env = dict(os.environ, ANTHROPIC_API_KEY="sk-ant-api-fake", ANTHROPIC_BASE_URL=url, XDG_STATE_HOME=state)
     env.pop("XDG_CONFIG_HOME", None)
+    for name in [n for n in env if n.startswith("ASK_")]:
+        del env[name]
+    if config:
+        env["XDG_CONFIG_HOME"] = config
     return env
 
 
@@ -342,7 +347,75 @@ def probe_jobs_end_with_ask():
     return all(results)
 
 
+def probe_configuration():
+    print("H: configuration files, trust, layers and failures")
+    project, state, config = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(config, "ask"))
+    os.makedirs(os.path.join(project, ".ask"))
+    user_file, project_file = os.path.join(config, "ask", "config.json"), os.path.join(project, ".ask", "config.json")
+    server = Server([turn([("tool", f"t{i}", "true")], "tool_use") for i in range(1, 80)])
+
+    def ask(*arguments, **extra):
+        env = environment(state, server.url, config)
+        env.update(extra)
+        return subprocess.run([ASK, *arguments], cwd=project, env=env, capture_output=True, text=True, timeout=60)
+
+    def requests_made(*arguments, **extra):
+        before = len(server.requests)
+        run = ask("-p", "Loop.", *arguments, **extra)
+        return len(server.requests) - before, run
+
+    # JSON5 in a .json file: comments, unquoted keys, single quotes, trailing comma.
+    open(user_file, "w").write("// my settings\n{\n  model: 'fake-model', /* x */\n  maxTurns: 4,\n}\n")
+    made, run = requests_made()
+    results = [check("a JSON5 user file applies: the loop stops at maxTurns 4", made == 4 and "4" in run.stderr, f"{made} {run.stderr[-200:]}"),
+               check("and it says which file it used", user_file in run.stderr, run.stderr[-300:])]
+    # Plain JSON reads the same.
+    open(user_file, "w").write('{"model": "fake-model", "maxTurns": 3}')
+    made, _ = requests_made()
+    results.append(check("plain JSON in the same file applies: maxTurns 3", made == 3, made))
+    # A project file counts only after `ask trust`.
+    open(project_file, "w").write("{maxTurns: 2}")
+    made, run = requests_made()
+    results += [check("an untrusted project file is ignored", made == 3, made),
+                check("with a notice saying how to use it", "run `ask trust`" in run.stderr, run.stderr[-300:])]
+    trusted = ask("trust")
+    made, _ = requests_made()
+    results += [check("ask trust succeeds", trusted.returncode == 0 and "maxTurns" in trusted.stdout, trusted.stdout + trusted.stderr),
+                check("a trusted project file overrides the user's: maxTurns 2", made == 2, made)]
+    # The environment beats files, a flag beats the environment.
+    made, _ = requests_made(ASK_MAX_TURNS="5")
+    results.append(check("ASK_MAX_TURNS=5 beats the project file", made == 5, made))
+    made, _ = requests_made("--max-turns", "1", ASK_MAX_TURNS="5")
+    results.append(check("--max-turns 1 beats the environment", made == 1, made))
+    # The file changes after it was trusted: ignored again.
+    open(project_file, "w").write("{maxTurns: 6}")
+    made, run = requests_made()
+    results += [check("a changed project file is ignored until trusted again", made == 3, made),
+                check("and the notice says it changed", "changed since you trusted it" in run.stderr, run.stderr[-300:])]
+    ask("trust")
+    ask("untrust")
+    made, _ = requests_made()
+    results.append(check("ask untrust withdraws it", made == 3, made))
+    # Failures: named, with line and column, before any request.
+    open(user_file, "w").write("{\n  model: 'x',\n  maxTurns: ]\n}\n")
+    before = len(server.requests)
+    run = ask("-p", "Hi.")
+    results += [check("a broken file exits 78", run.returncode == 78, run.returncode),
+                check("naming file, line, column and the character", f"{user_file}:3:13: unexpected ']'" in run.stderr, run.stderr),
+                check("and no request was made", len(server.requests) == before)]
+    open(user_file, "w").write("{modle: 'x'}")
+    run = ask("-p", "Hi.")
+    results.append(check("a typo'd key is refused, listing the known keys", run.returncode == 78 and '"maxTurns"' in run.stderr and "modle" in run.stderr, run.stderr))
+    open(user_file, "w").write("{maxTurns: 2, maxTurns: 3}")
+    results.append(check("a repeated key is refused", ask("-p", "Hi.").returncode == 78))
+    shown = ask("config")
+    results.append(check("ask config on a broken file also fails", shown.returncode == 78))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

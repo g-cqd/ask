@@ -61,7 +61,12 @@ private final class PrintRenderer: Sendable {
 
 /// Runs `prompt` to completion. SIGINT and SIGTERM abort the run, so a running command's whole process group
 /// is stopped, and then exit with 128 + the signal.
-func runPrompt(_ prompt: String, model: ResolvedModel, limits: RunLimits, session choice: SessionChoice) async {
+func runPrompt(_ prompt: String, source: ConfigurationSource, settings: RunSettings, session choice: SessionChoice)
+    async
+{
+    let model = settings.model
+    let limits = settings.limits
+    for line in settings.description { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     let transport = URLSessionTransport()
     // Fail fast before any work when there is no way to authenticate. A configured provider has no sign-in.
     if model.provider == .anthropic {
