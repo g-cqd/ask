@@ -12,6 +12,8 @@ public enum SignInError: Error, Sendable, Equatable, CustomStringConvertible {
     case expired
     /// The user said no in the browser.
     case denied
+    /// The provider ended the sign-in with this error code, one of a known set of words.
+    case authorizationFailed(String)
     /// The user did not finish in time.
     case timedOut
     /// The run was cancelled.
@@ -28,6 +30,7 @@ public enum SignInError: Error, Sendable, Equatable, CustomStringConvertible {
                 "the server named a place it does not own in \"\(field)\"; nothing was opened"
             case .expired: "the sign-in session expired; run login again"
             case .denied: "the sign-in was denied in the browser"
+            case .authorizationFailed(let code): "the provider ended the sign-in (\(code)); run login again"
             case .timedOut: "the sign-in was not finished in time; run login again"
             case .cancelled: "the sign-in was cancelled"
         }
