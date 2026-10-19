@@ -1,13 +1,13 @@
 ---
 status: not-started
-blocked-by: ["0013"]
+blocked-by: []
 date: 2026-10-19
 decision: ADR-0021
 ---
 
 # 0025 — Split the files the structure gate still tolerates
 
-ADR-0021 enforces one type per file, named for it. Five files break that today and sit on
+ADR-0021 enforces one type per file, named for it. Four files break that today and sit on
 `SourceStructure.knownViolations`, because the interactive-screen work (0013) was editing them and a split
 underneath it would have made that work unmergeable.
 
@@ -17,11 +17,14 @@ underneath it would have made that work unmergeable.
 | `Sources/ask/PrintRun.swift` | `ClaudeProvider`, `PrintRenderer`, plus `runPrompt` | `ClaudeProvider.swift`, `PrintRenderer.swift`; `PrintRun.swift` keeps the free functions |
 | `Sources/AskTUI/InteractiveScreen.swift` | `ScreenSession`, `ScreenEvent` | one file per type |
 | `Tests/AskTUITests/TerminalTeardownTests.swift` | the suite and `IdleConversation`, `RecordingConversation` | nest the doubles in the suite, or give a shared one a file |
-| `Sources/AskTUI/AskTUI.swift` | `StartupSequence`, `TerminalTeardown`, plus `runAskTUI` | one file per type; keep the "terminal loop" header comment with `runAskTUI` |
+
+`AskTUI.swift` was split on 2026-10-19 (diary 08): it was not in the other branch's way. `AskMain.swift`,
+`PrintRun.swift` and `InteractiveScreen.swift` are all edited on `robust-runs`, and `TerminalTeardownTests.swift`
+too, so they wait for it to land.
 
 ## Done when
 
-The five entries are gone from the baseline, `the baseline names only files that still break a rule` still
+The four entries are gone from the baseline, `the baseline names only files that still break a rule` still
 passes with an empty set, and the set itself can then be deleted so the gate has no escape hatch.
 
 ## Notes for whoever does it

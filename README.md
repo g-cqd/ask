@@ -23,47 +23,36 @@ before it is adopted, and there is no place for an assumption.
 
 ## Status
 
-Four targets (`AskCore`, `AskTUI`, `ask`, `AskTUITests`), green in release. The agent loop, providers,
-tool execution and the codemode host have not been built — see the roadmap below.
+Six library targets and the `ask` executable, green in release (`Scripts/quality.sh`): `AskCore` (budgets),
+`AskAI` (provider-neutral `Model` and `Transport`, with `Anthropic` and `Claude` as the one provider so far),
+`AskAgentCore` (the agent loop, tools contract, sessions), `AskTools` (`read`, `write`, `edit`, `bash`),
+`AskTUI` (the interactive screen) and the `ask` composition root. `ask -p` runs one prompt through the loop;
+without `-p` it opens the full-screen interface. Not built: a second provider, the codemode host, sandboxing.
 
 Every exit path of the terminal loop writes the reset ladder, and a shutdown signal both restores the
 terminal and dies with `128 + signo` (verified on a PTY: 143 for `SIGTERM`, 130 for `SIGINT`).
 
-The standards are enforced rather than requested: `SourceStandards` scans this repository's own Swift
-and fails the suite on `NSLock`, `os_unfair_lock`, `pthread_mutex`, `DispatchQueue`, an unjustified
-`@unchecked Sendable`, or a `Task.yield` in a test. Each rule was probed by breaking it.
+The standards are enforced rather than requested, as tests that run inside `swift test`: banned constructs
+and unjustified `@unchecked Sendable` (`SourceStandards`), one type per file and a 250-line ceiling
+(`SourceStructureTests`, ADR-0021), provider names only in provider code, and the shape of the ADRs and the
+roadmap. `Scripts/analyzers.sh` adds unused code, duplicated code and retain cycles (ADR-0022). Each rule was
+probed by breaking it.
 
-**The four budgets are measured**, by `Scripts/measure-budgets.py` against the release binary on a PTY,
-and enforced in CI. The **action-to-action** figure is provisional: it measures a trivial action in a
-program with no agent in it, and must be re-derived when the agent loop lands
-([roadmap 0007](docs/roadmap/0007-re-derive-the-action-budget.md)).
-
-Read a roadmap entry's `status:` and `blocked-by:` before starting it.
+**The four budgets are measured**, by `Scripts/measure-budgets.py` against the release binary on a PTY.
+Idle memory is currently **over** its budget, and the action-to-action figure is provisional
+([roadmap 0007](docs/roadmap/0007-re-derive-the-action-budget.md)). **CI has never run**: GitHub refuses to start
+the jobs for a billing reason, so the gates are enforced by `Scripts/quality.sh` and the git hooks, not by CI.
 
 ## Roadmap
 
-`docs/roadmap/` is the plan, one claimable unit of work per file. Ordered by dependency:
-
-| Entry | Work | Blocked by |
-|---|---|---|
-| [0005](docs/roadmap/0005-correct-the-cross-repo-blocker.md) | Correct a blocker recorded against two repos that do not depend on each other | — |
-| [0006](docs/roadmap/0006-apply-the-reset-ladder.md) | Apply the reset ladder on teardown and on signal | — |
-| [0014](docs/roadmap/0014-measure-cell-pixels-and-chrome-cost.md) | Measure what a real terminal reports for its cell size, and what chrome costs | — |
-| [0003](docs/roadmap/0003-probe-terminal-capabilities.md) | Probe capabilities instead of guessing from environment variables | 0014 |
-| [0013](docs/roadmap/0013-adopt-the-render-pipeline.md) | Adopt TerminalKit's screen model and diff renderer | 0014 |
-| [0008](docs/roadmap/0008-session-tree-and-persistence.md) | Session tree, branches, persistence | — |
-| [0009](docs/roadmap/0009-the-agent-loop.md) | The agent loop | 0008 |
-| [0007](docs/roadmap/0007-re-derive-the-action-budget.md) | Re-derive action-to-action against a real action | 0009 |
-| [0010](docs/roadmap/0010-model-providers.md) | Model providers — first one open | 0009 |
-| [0011](docs/roadmap/0011-tool-execution.md) | Tool protocol and dispatch | 0010 |
-| [0012](docs/roadmap/0012-codemode-host.md) | The codemode host | 0011 |
-| [0015](docs/roadmap/0015-compact-pixel-ui.md) | Two first-class layouts: compact pixel and compact character | 0013, 0003 |
+`docs/roadmap/` is the plan, one claimable unit of work per file; read an entry's `status:` and `blocked-by:`
+before starting it. `Scripts/roadmap.sh open` prints the open entries from their front matter.
 
 ## Building
 
 ```sh
 Scripts/quality.sh            # format, lint, build and test
-Scripts/quality.sh --check    # verify only; what CI runs
+Scripts/quality.sh --check    # verify only; what CI would run
 ```
 
 Release only, always — see [ADR-0002](docs/adr/0002-release-only-no-testable.md). A debug build

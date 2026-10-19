@@ -52,7 +52,7 @@ extension DocumentationLayout {
     }
 
     /// The `key: value` lines between the opening and closing `---`.
-    private static func frontMatter(of text: String) -> [String: String] {
+    static func frontMatter(of text: String) -> [String: String] {
         var fields: [String: String] = [:]
         var inside = false
         for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
