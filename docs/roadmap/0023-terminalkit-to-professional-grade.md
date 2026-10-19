@@ -52,5 +52,8 @@ TerminalKit landed 0006 (time benchmarks), 0010 (modes as a unit) and its 0015 (
 **0011**, scroll regions, pinned at `2450544`: the transcript is the pipeline's scroll region, and a streamed
 line costs 101 bytes instead of 481 at 120×40, and 102 instead of 1,035 at 300×80 (diary 14).
 
-Next in this order: **0008**, a one-cell flush that costs the same at every size; then **0009**, input off the
-cooperative pool.
+**0008** and **0009**, pinned at `f067f50`: a one-cell flush costs under 1 µs at every size, and input is read
+on its own thread, off the cooperative pool (diary 17).
+
+Next in this order: **0012**, text layout promoted from ask's `TextWrap`; **0013**, Unicode widths (CJK costs
+139 ns a grapheme); **0014**, the pipeline's isolation.
