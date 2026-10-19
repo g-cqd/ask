@@ -97,6 +97,21 @@ struct ProviderSettingsTests {
         #expect(throws: ProviderSettingsError.self) { try resolve(json, provider: "x") }
     }
 
+    @Test func `a model's context window and output limit travel with it, as pi's models.json names them`() throws {
+        let json = #"""
+            {"providers":{"local":{"api":"openai-completions","baseUrl":"http://127.0.0.1:8182/v1",
+             "models":[{"id":"small","contextWindow":32768,"maxTokens":4096},{"id":"plain"}]}}}
+            """#
+        let small = try resolve(json, provider: "local", model: "small")
+        #expect(small.contextWindow == 32_768)
+        #expect(small.maxOutputTokens == 4_096)
+        let plain = try resolve(json, provider: "local", model: "plain")
+        #expect(plain.contextWindow == nil)
+        #expect(plain.maxOutputTokens == nil)
+        // A model named on the command line that the file does not list has nothing known about it.
+        #expect(try resolve(json, provider: "local", model: "other").contextWindow == nil)
+    }
+
     @Test func `a file that is not valid settings is an error`() {
         #expect(throws: ProviderSettingsError.self) { try settings("{ not json") }
     }

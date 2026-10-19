@@ -81,13 +81,25 @@ func makeLoop(
             FileTools.all + [
                 BashTool(jobs: jobs), WaitTool(jobs: jobs), JobInputTool(jobs: jobs), JobStopTool(jobs: jobs)
             ]),
-        settings: AgentSettings(
-            model: resolved.model, maximumTokens: 16_384,
-            systemPrompt: [instructions(workingDirectory: workingDirectory)] + ProjectInstructions.promptBlocks(files),
-            maximumTurns: limits.maximumTurns, compactAtTokens: limits.compactAtTokens),
+        settings: settings(for: resolved, workingDirectory: workingDirectory, instructions: files, limits: limits),
         context: ToolContext(
             workingDirectory: workingDirectory,
             outputDirectory: SessionDirectory(project: workingDirectory).path + "/output"))
+}
+
+/// The run's settings, with the reply limit, compaction threshold and kept tail sized to the model's window.
+private func settings(
+    for resolved: ResolvedModel, workingDirectory: String, instructions files: [ProjectInstructions.File],
+    limits: RunLimits
+) -> AgentSettings {
+    let budget = ContextBudget(
+        contextWindow: resolved.contextWindow, maxOutputTokens: resolved.maxOutputTokens,
+        requestedCompactAt: limits.compactAtTokens)
+    return AgentSettings(
+        model: resolved.model, maximumTokens: budget.maximumTokens,
+        systemPrompt: [instructions(workingDirectory: workingDirectory)] + ProjectInstructions.promptBlocks(files),
+        maximumTurns: limits.maximumTurns, compactAtTokens: budget.compactAtTokens,
+        keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes)
 }
 
 /// ask's instructions, carried in the first user message (ADR-0007).
