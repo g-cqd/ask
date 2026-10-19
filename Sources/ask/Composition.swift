@@ -44,7 +44,9 @@ func describe(_ files: [ProjectInstructions.File]) -> [String] {
 /// directory.
 func resolveModel(provider: String?, model: String?) throws -> ResolvedModel {
     let settings = try ProviderSettings.load(from: askConfigDirectory() + "/providers.json")
-    return try settings.resolve(provider: provider, model: model, environment: ProcessInfo.processInfo.environment)
+    return try settings.resolve(
+        provider: provider, model: model, environment: ProcessInfo.processInfo.environment,
+        storedKeys: { () throws(CredentialFileError) in try CredentialFile.standard().loadKeys().mapValues(\.key) })
 }
 
 /// The loop's provider for `resolved`, sending through `transport`.

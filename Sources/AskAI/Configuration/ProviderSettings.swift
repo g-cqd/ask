@@ -81,11 +81,14 @@ public struct ProviderSettings: Sendable, Equatable {
     ///   - provider: the name given on the command line, if any; else the file's default; else `anthropic`.
     ///   - model: the model given on the command line, if any; else the entry's default or first model.
     ///   - environment: where `$NAME` keys are read.
+    ///   - storedKeys: reads the keys sign-ins stored, by provider name. Called only when nothing else gives a preset a
+    ///     key, so a damaged credential file blocks only the providers that need it.
     /// - Returns: the provider, with its endpoint and key, and the model.
     /// - Throws: a ``ProviderSettingsError`` naming what cannot be honoured.
-    public func resolve(provider: String?, model: String?, environment: [String: String])
-        throws(ProviderSettingsError) -> ResolvedModel
-    {
+    public func resolve(
+        provider: String?, model: String?, environment: [String: String],
+        storedKeys: () throws(CredentialFileError) -> [String: String] = { [:] }
+    ) throws(ProviderSettingsError) -> ResolvedModel {
         let name = provider ?? defaultProvider ?? Self.anthropic
         if entries[Self.anthropic] != nil { throw .reservedName(Self.anthropic) }
         if name == Self.anthropic {
@@ -93,21 +96,18 @@ public struct ProviderSettings: Sendable, Equatable {
         }
         let preset = ProviderPreset.named(name)
         guard let entry = entries[name] ?? (preset != nil ? Entry() : nil) else {
-            throw .unknownProvider(name, known: known(environment: environment))
+            throw .unknownProvider(name, known: known(environment: environment, stored: (try? storedKeys()) ?? [:]))
         }
         let api = entry.api ?? (preset != nil ? Self.openAICompletions : nil)
         guard let api else { throw .incomplete(provider: name, field: "api") }
         guard api == Self.openAICompletions else { throw .unsupportedAPI(provider: name, api: api) }
-        guard let baseURL = entry.baseUrl ?? preset?.baseURL else {
+        guard let baseURL = entry.baseUrl ?? preset?.address(environment: environment) else {
             throw .incomplete(provider: name, field: "baseUrl")
         }
         guard let chosen = model ?? entry.defaultModel ?? entry.models?.first?.id else {
             throw .noModel(provider: name)
         }
-        let key = try (entry.apiKey ?? preset.map { "$" + $0.keyVariable })
-            .map { (raw) throws(ProviderSettingsError) in
-                try Self.interpolate(raw, provider: name, environment: environment)
-            }
+        let key = try credential(of: name, entry: entry, preset: preset, environment: environment, stored: storedKeys)
         let trimmed = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
         guard let url = URL(string: trimmed) else { throw .refusedEndpoint(provider: name, reason: "it is not a URL") }
         if let reason = EndpointPolicy.refusal(for: url, carriesCredential: key != nil) {
@@ -119,12 +119,31 @@ public struct ProviderSettings: Sendable, Equatable {
             model: chosen, contextWindow: listed?.contextWindow, maxOutputTokens: listed?.maxTokens)
     }
 
-    /// Every provider name that resolves, in order; a preset whose key variable is unset says which one it needs.
-    private func known(environment: [String: String]) -> [String] {
+    /// The key to send: the entry's own, else the preset's variable, else the key a sign-in stored. A preset that
+    /// has none is an error, never a request without a key. An entry that is no preset may have no key at all.
+    private func credential(
+        of name: String, entry: Entry, preset: ProviderPreset?, environment: [String: String],
+        stored: () throws(CredentialFileError) -> [String: String]
+    ) throws(ProviderSettingsError) -> String? {
+        if let raw = entry.apiKey { return try Self.interpolate(raw, provider: name, environment: environment) }
+        guard let preset else { return nil }
+        if let variable = preset.keyVariable, let value = environment[variable], !value.isEmpty { return value }
+        do {
+            if let key = try stored()[name] { return key }
+        } catch { throw .credentials(error) }
+        if let login = preset.login { throw .notSignedIn(provider: name, variable: preset.keyVariable, login: login) }
+        throw .missingVariable(provider: name, variable: preset.keyVariable ?? "")
+    }
+
+    /// Every provider name that resolves, in order; a preset with no key yet says what would give it one.
+    private func known(environment: [String: String], stored: [String: String]) -> [String] {
         let presets = ProviderPreset.all.filter { entries[$0.name] == nil }
             .map { preset in
-                environment[preset.keyVariable, default: ""].isEmpty
-                    ? "\(preset.name) (needs $\(preset.keyVariable))" : preset.name
+                let fromVariable = preset.keyVariable.map { !(environment[$0] ?? "").isEmpty } ?? false
+                if fromVariable || stored[preset.name] != nil { return preset.name }
+                let needs = [preset.keyVariable.map { "$" + $0 }, preset.login.map { "ask login " + $0 }]
+                    .compactMap { $0 }
+                return "\(preset.name) (needs \(needs.joined(separator: " or ")))"
             }
         return [Self.anthropic] + (entries.keys + presets).sorted()
     }
