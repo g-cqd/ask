@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by:
 date: 2026-10-18
 ---
@@ -95,4 +95,15 @@ AemiIO.
 - **A second writer:** every run creates a new file with `O_EXCL`, so two writers cannot share one. Resume, when it lands, takes a lock first.
 - **Agent turns:** whole responses and tool results are persisted, with exact replay (thinking signatures included).
 
-Still owed here: surfacing `issues` in the interactive UI.
+## Done — audit (2026-10-19)
+
+Everything this entry asked for is delivered, and its last owed item is closed.
+
+- **Resume** (0029) reads one run's session in the next, behind a writer lock (ADR-0025): the "second writer" item.
+- **Placement and naming** were decided with the loop.
+- **Compaction** is an entry that leaves the originals in the tree (0030, ADR-0026).
+- **A damaged session is reported.** Opening one repairs it in memory (ADR-0013), and now says so: how many
+  problems, the first three in words with their line numbers, and that the original is kept as a `.damaged` copy
+  once anything is added. `-p` prints it on standard error and the screen shows it as a notice. Probe L (the real
+  binary) cuts a session mid-record, resumes it, and checks the notice, the run, the byte-for-byte `.damaged` copy
+  and both exchanges in the repaired file.
