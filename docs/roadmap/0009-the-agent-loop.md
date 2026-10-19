@@ -84,3 +84,15 @@ Per-turn cost with an instant provider: 33 µs fresh and 210 µs after 500 turns
 - **AGENTS.md / CLAUDE.md** discovery.
 
 Still owed for full runs: resume, compaction, steering, jobs and waits.
+
+## Audit (2026-10-19)
+
+Delivered since this entry's last progress note: the interactive screen (0013), resume (0029), compaction (0030),
+jobs and waits (0031), configuration and reload (0039, 0041), slash commands, and the sandbox (0017, 0018).
+
+Two things keep it open, both named in its own "Done when" and in "Steering and abort":
+- **Steering and follow-up messages.** A message typed while a turn runs is refused today ("a turn is still running").
+  It should queue and enter after the current turn (steering) or after the run (follow-up), and abort should return
+  queued messages to the editor.
+- **The budget.** `0007` has not re-derived the action-to-action budget against a real action, which this entry
+  makes a condition of being done.

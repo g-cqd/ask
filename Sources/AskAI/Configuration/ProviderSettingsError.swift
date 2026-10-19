@@ -23,6 +23,7 @@ public enum ProviderSettingsError: Error, Sendable, Equatable, CustomStringConve
 
     public var description: String {
         switch self {
+            // @dl:accept -- an enum describing each of its cases in a sentence: the three error enums share this shape, and the sentences are the data
             case .unreadable(let detail): "providers.json is not valid settings: \(detail)"
             case .reservedName(let name): "providers.json may not define \"\(name)\", which is built in"
             case .unknownProvider(let name, let known):

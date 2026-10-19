@@ -19,6 +19,7 @@ public enum SignInError: Error, Sendable, Equatable, CustomStringConvertible {
 
     public var description: String {
         switch self {
+            // @dl:accept -- an enum describing each of its cases in a sentence: the three error enums share this shape, and the sentences are the data
             case .transport(let detail): "no answer from the server: \(detail)"
             case .rejected(let status): "the server refused with status \(status)"
             case .invalidResponse(let field):

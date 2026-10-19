@@ -524,7 +524,32 @@ def probe_sandbox_allowance():
                       "allowRead" in shown.stdout and "denyRead" in shown.stdout and "sandbox   on" in shown.stdout, shown.stdout)])
 
 
+def probe_damaged_session():
+    print("L: resuming a damaged session says what was repaired, and keeps the original")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    server = Server([turn([("text", "First.")], "end_turn"), turn([("text", "Second.")], "end_turn")])
+    env = environment(state, server.url)
+    first = subprocess.run([ASK, "-p", "Remember KIWI."], cwd=project, env=env, capture_output=True, text=True, timeout=60)
+    files = sessions(state)
+    if len(files) != 1:
+        return check("one session to damage", False, files)
+    original = open(files[0], "rb").read()
+    damaged = original + b'{"id":"cut'  # an interrupted write: half a record, no newline
+    open(files[0], "wb").write(damaged)
+    second = subprocess.run([ASK, "-p", "And now?", "--continue"], cwd=project, env=env, capture_output=True, text=True, timeout=60)
+    kept = [f for f in os.listdir(os.path.dirname(files[0])) if ".damaged" in f]
+    server.httpd.shutdown()
+    return all([check("the first run worked", first.returncode == 0, first.stderr),
+                check("the resumed run worked", second.returncode == 0 and second.stdout == "Second.\n", second.stdout + second.stderr),
+                check("it said the session was repaired, naming the line",
+                      "The session file had a problem, repaired as it was opened" in second.stderr
+                      and "cut off mid-write" in second.stderr, second.stderr),
+                check("the damaged original was kept beside it, byte for byte",
+                      len(kept) == 1 and open(os.path.join(os.path.dirname(files[0]), kept[0]), "rb").read() == damaged, kept),
+                check("the repaired session carries both exchanges", entry_kinds(files[0]) == ["user", "response"] * 2, entry_kinds(files[0]))])
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

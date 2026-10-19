@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: 
 date: 2026-10-18
 ---
@@ -77,3 +77,12 @@ Benchmarks:
 **Owed:**
 - a spool file for full bash output (the 0011 design names it);
 - a glob/grep tool, if the model needs more than bash `rg`.
+
+## Done — audit (2026-10-19)
+
+Every line of "Done when" holds: a tool takes structured arguments and returns a structured result; output is capped
+with the whole of it recoverable (commands stream to a file that a cut result names, 0031); every failure is a typed
+error the model reads, and the sandbox now refuses with the capability and the path (ADR-0035). `read`, `write`,
+`edit`, `bash`, `wait`, `job_input` and `job_stop` ship.
+
+What the entry listed as "owed" beyond that, searching tools, is its own entry now: 0043.
