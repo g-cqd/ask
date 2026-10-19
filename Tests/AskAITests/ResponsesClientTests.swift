@@ -53,7 +53,8 @@ struct ResponsesClientTests {
         _ = try await collect(ResponsesClient(transport: sends, baseURL: Self.base))
         #expect(sends.sent?.bodyText.contains(#""max_output_tokens":10"#) == true)
         let omits = ScriptedTransport(status: 200, chunks: Self.recorded)
-        _ = try await collect(ResponsesClient(transport: omits, baseURL: Self.base, sendsOutputLimit: false))
+        _ = try await collect(
+            ResponsesClient(transport: omits, baseURL: Self.base, dialect: ResponsesDialect(sendsOutputLimit: false)))
         #expect(omits.sent?.bodyText.contains("max_output_tokens") == false)
     }
 

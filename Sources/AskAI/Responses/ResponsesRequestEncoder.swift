@@ -15,28 +15,31 @@ public enum ResponsesRequestEncoder {
     /// The request body.
     /// - Parameters:
     ///   - request: what to ask.
-    ///   - sendsOutputLimit: whether the body carries `max_output_tokens`; the ChatGPT subscription backend is not
-    ///     sent one.
+    ///   - dialect: how this server differs from the plain API.
     /// - Returns: the JSON body.
-    public static func encode(_ request: ModelRequest, sendsOutputLimit: Bool = true) -> [UInt8] {
+    public static func encode(_ request: ModelRequest, dialect: ResponsesDialect = .standard) -> [UInt8] {
         JSONStreamWriter.streamingRequest(
-            model: request.model, maxTokens: request.maxTokens, limitField: sendsOutputLimit ? "max_output_tokens" : nil
+            model: request.model, maxTokens: request.maxTokens,
+            limitField: dialect.sendsOutputLimit ? "max_output_tokens" : nil
         ) { writer in
             writer.field("store", false)
-            if !request.systemPrompt.isEmpty {
-                writer.field("instructions", request.systemPrompt.joined(separator: "\n\n"))
-            }
+            let instructions =
+                request.systemPrompt.isEmpty
+                ? dialect.fallbackInstructions : request.systemPrompt.joined(separator: "\n\n")
+            if let instructions { writer.field("instructions", instructions) }
             writer.key("input")
             writer.array { writer in
                 for message in request.messages { encode(message, into: &writer) }
             }
-            guard !request.tools.isEmpty else { return }
-            writer.key("tools")
-            writer.array { writer in
-                for tool in request.tools { encode(tool, into: &writer) }
+            if !request.tools.isEmpty {
+                writer.key("tools")
+                writer.array { writer in
+                    for tool in request.tools { encode(tool, into: &writer) }
+                }
+                writer.field("tool_choice", "auto")
+                writer.field("parallel_tool_calls", true)
             }
-            writer.field("tool_choice", "auto")
-            writer.field("parallel_tool_calls", true)
+            if let key = dialect.promptCacheKey { writer.field("prompt_cache_key", key) }
         }
     }
 

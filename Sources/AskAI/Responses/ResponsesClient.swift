@@ -7,7 +7,7 @@ public import Foundation
 /// statuses, retry advice and delivery. ``ResponsesStreamDecoder`` is the only part that knows this protocol.
 public struct ResponsesClient: Sendable {
     private let endpoint: ProviderEndpoint
-    private let sendsOutputLimit: Bool
+    private let dialect: ResponsesDialect
 
     /// A client for the server at `baseURL`.
     /// - Parameters:
@@ -15,20 +15,20 @@ public struct ResponsesClient: Sendable {
     ///   - baseURL: the API root; requests go to `responses` beneath it.
     ///   - apiKey: sent as a bearer token; local servers usually need none.
     ///   - headers: extra headers the server asks for.
-    ///   - sendsOutputLimit: whether requests carry `max_output_tokens`, which the ChatGPT subscription's backend refuses.
+    ///   - dialect: how this server's requests differ from the plain API's.
     public init(
         transport: any HTTPTransport, baseURL: URL, apiKey: String? = nil, headers: [String: String] = [:],
-        sendsOutputLimit: Bool = true
+        dialect: ResponsesDialect = .standard
     ) {
         endpoint = ProviderEndpoint(
             transport: transport, baseURL: baseURL, path: "responses", apiKey: apiKey, headers: headers)
-        self.sendsOutputLimit = sendsOutputLimit
+        self.dialect = dialect
     }
 
     /// Sends `request` and streams the response's events. The stream throws an ``OpenAICompatibleError``.
     public func stream(_ request: ModelRequest) -> AsyncThrowingStream<ModelEvent, any Error> {
         endpoint.stream(
-            ResponsesRequestEncoder.encode(request, sendsOutputLimit: sendsOutputLimit),
+            ResponsesRequestEncoder.encode(request, dialect: dialect),
             decoder: ResponsesStreamDecoder.self)
     }
 }
