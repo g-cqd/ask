@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["0017", "0018", "0013"]
+blocked-by: ["0017", "0018"]
 date: 2026-10-19
 decision: ADR-0020
 ---

@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: 
 date: 2026-10-18
 ---
@@ -54,9 +54,14 @@ recoverable, and every failure mode is a typed error the model can act on.
 
 No longer waits for Spettro. Tools sit behind the neutral seam, `(id, name, JSONObject) → (content, isError)`, which OpenAI-completions' `tool_calls` also map onto. The protocol lives in `AskAgentCore` (ADR-0009) and implementations in `AskTools`.
 
-## Progress (2026-10-18)
+## Progress (2026-10-19)
 
-`read`, `write`, `edit` and `bash` are in `AskTools`. The contract and the uniform output cap are in `AskAgentCore`.
+`read`, `write`, `edit` and `bash` are in `AskTools`, tested, and shipping in `ask`. The contract (`Tool`, and
+`ArgumentTool` since ADR-0023) and the uniform output cap are in `AskAgentCore`.
+
+Still owed from "Done when": the **full text of a capped output is not recoverable** (the head-and-tail
+cap drops the middle and nothing spools it to a file), and tools that search (`grep`, `find`, `ls`) do not
+exist, so the model reads with `bash`.
 
 `bash` runs on swift-subprocess in its own session, with group teardown, a head-and-tail collector and a timeout on an injected clock.
 

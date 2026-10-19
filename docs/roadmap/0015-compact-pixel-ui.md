@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["0013", "0003"]
+blocked-by: ["0003"]
 date: 2026-10-18
 decision: ADR-0008
 ---
