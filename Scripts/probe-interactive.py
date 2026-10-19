@@ -254,7 +254,27 @@ def probe_resume():
     return all(results)
 
 
+def probe_signal_stops_jobs():
+    print("E: SIGTERM with a job running restores the terminal and stops the job")
+    project, port = tempfile.mkdtemp(), agent.free_port()
+    server = agent.Server([
+        agent.turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
+        agent.turn([("call", "t2", "wait", {"job": "job-1", "port_open": port, "timeout_seconds": 20})], "tool_use"),
+        agent.turn([("text", "Serving.")], "end_turn")])
+    screen = Screen(server.url, project)
+    screen.until("ask>")
+    screen.type("Serve\r")
+    results = [check("the job came up", screen.until("Serving.") and agent.accepts(port))]
+    os.kill(screen.pid, signal.SIGTERM)
+    code = screen.finish()
+    results += [check("exit 143", code == 143, code),
+                check("left the alternate screen", b"\x1b[?1049l" in screen.output[-300:]),
+                check("the job is gone", not agent.accepts(port))]
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
