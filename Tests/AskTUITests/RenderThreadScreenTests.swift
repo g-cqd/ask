@@ -63,7 +63,7 @@ struct RenderThreadScreenTests {
         var received = prompts.makeAsyncIterator()
         let prompt = await received.next()  // handled all the same
         connection.releaseFrame()
-        try await screen.value
+        _ = try await screen.value
 
         #expect(prompt == "go")
     }
