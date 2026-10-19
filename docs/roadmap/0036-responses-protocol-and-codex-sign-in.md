@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-19
 decision: ADR-0027
@@ -17,3 +17,8 @@ completions (`docs/research/provider-connections-2026-10.md`). This entry owes, 
 3. Codex sign-in, ask's own: browser PKCE with the loopback callback on 1455 and a pasted-URL fallback, and the
    device-code flow; rotating refresh tokens stored and replaced whole. Never `~/.codex/auth.json`.
 4. A live run, which needs the user to sign in once.
+
+## Done (diary 22, ADR-0033)
+
+Steps 1 and 2: provenance on reasoning, the decoder and encoder, the client, `api: "openai-responses"`. Recorded on
+llama.cpp only. Steps 3 and 4 remain, and replaying reasoning is roadmap 0040.
