@@ -16,6 +16,16 @@ struct ConfigurationSource: Sendable {
         var provider: String?
         var maxTurns: Int?
         var compactAt: Int?
+
+        /// The flags as they were given, to pass to a replacement process.
+        var arguments: [String] {
+            var arguments: [String] = []
+            if let model { arguments += ["--model", model] }
+            if let provider { arguments += ["--provider", provider] }
+            if let maxTurns { arguments += ["--max-turns", String(maxTurns)] }
+            if let compactAt { arguments += ["--compact-at", String(compactAt)] }
+            return arguments
+        }
     }
 
     /// The source for the project at `workingDirectory`.

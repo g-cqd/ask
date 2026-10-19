@@ -23,6 +23,12 @@ final class AgentConversation: Conversation {
     let current: Mutex<Current>
     let session = Mutex<SessionRecorder?>(nil)
     let usage = Mutex(UsageTotals())
+    /// Jobs outlive turns, not a reload: `/reload` refuses while any run, or stops them when told to.
+    let jobs: JobTable
+    /// The build that is running, to tell when a newer one appears.
+    let startup = BinaryIdentity.running()
+    /// The build a successful `/reload` chose; ``reExecute()`` starts it.
+    let reloadTarget = Mutex<BinaryIdentity?>(nil)
 
     /// The settings in force, the loop built from them, and the last reload error shown.
     struct Current {
@@ -36,12 +42,14 @@ final class AgentConversation: Conversation {
     ///   - resumed: a session already open, which prompts continue instead.
     ///   - settings: what the run starts with.
     ///   - source: where the settings come from, read again before each prompt, all or nothing.
+    ///   - jobs: the jobs `/reload` must not orphan.
     ///   - makeLoop: builds the loop for some settings, on the first prompt and after a change.
     init(
         directory: SessionDirectory, resumed: SessionRecorder? = nil, settings: RunSettings,
-        source: ConfigurationSource, makeLoop: @escaping @Sendable (RunSettings) throws -> AgentLoop
+        source: ConfigurationSource, jobs: JobTable, makeLoop: @escaping @Sendable (RunSettings) throws -> AgentLoop
     ) {
         self.source = source
+        self.jobs = jobs
         self.makeLoop = makeLoop
         self.directory = directory
         current = Mutex(Current(settings: settings))
@@ -166,17 +174,25 @@ final class AgentConversation: Conversation {
 }
 
 /// The interactive screen in the working directory.
-func runInteractive(source: ConfigurationSource, settings: RunSettings, session choice: SessionChoice) async {
+func runInteractive(
+    source: ConfigurationSource, settings: RunSettings, session choice: SessionChoice, reloaded: ReloadNotice?
+) async {
     let workingDirectory = FileManager.default.currentDirectoryPath
     let directory = SessionDirectory(project: workingDirectory)
     var notices: [String] = []
     let resumed = choice.open(in: directory) { notices.append($0) }
     if let resumed { notices.append("Resumed session \((resumed.path as NSString).lastPathComponent)") }
+    if let reloaded {
+        let now = Int(Date().timeIntervalSince1970 * 1_000)
+        let to = BinaryIdentity.running()?.summary ?? "the new build"
+        notices.append(
+            "Reloaded ask: \(reloaded.from) → \(to), in \(Swift.max(0, now - reloaded.startedMilliseconds)) ms.")
+    }
     let jobs = JobTable()
     do {
         let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(
-            directory: directory, resumed: resumed, settings: settings, source: source,
+            directory: directory, resumed: resumed, settings: settings, source: source, jobs: jobs,
             makeLoop: { settings in
                 try makeLoop(
                     model: settings.model, workingDirectory: workingDirectory, instructions: files,
@@ -184,10 +200,12 @@ func runInteractive(source: ConfigurationSource, settings: RunSettings, session 
             })
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.
-        try await runInteractiveScreen(
+        let exit = try await runInteractiveScreen(
             conversation: conversation, label: modelLabel(settings.model), history: conversation.history(),
             notices: notices + settings.description + describe(files), beforeSignalExit: { jobs.terminateAllNow() })
         await jobs.stopAll()
+        // The terminal is already restored: replace this process with the new build, resuming this session.
+        if exit == .reload { conversation.reExecute() }
     } catch {
         await jobs.stopAll()
         // The screen has already restored the terminal by the time an error reaches here.
