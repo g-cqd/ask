@@ -5,25 +5,10 @@ import Testing
 
 @testable import AskTUI
 
-/// The interactive screen's pure parts: wrapping, the line editor, and the layout.
-@Suite("The screen wraps by display width, edits lines, and lays out transcript, status and prompt")
+/// The interactive screen's pure parts: the line editor and the layout. Wrapping is TerminalKit's `TextWrap`,
+/// tested there.
+@Suite("The screen edits lines, and lays out transcript, status and prompt")
 struct ScreenPartsTests {
-    // MARK: - Wrapping
-
-    @Test func `text wraps at spaces, and inside a word only when it must`() {
-        #expect(TextWrap.lines("the quick brown fox", width: 10) == ["the quick", "brown fox"])
-        #expect(TextWrap.lines("abcdefghij", width: 4) == ["abcd", "efgh", "ij"])
-        #expect(TextWrap.lines("a\n\nb", width: 10) == ["a", "", "b"])
-        #expect(TextWrap.lines("", width: 10) == [""])
-        // A line that is exactly full when a space arrives breaks at that space, gluing nothing.
-        #expect(TextWrap.lines("one two three four five", width: 10) == ["one two", "three four", "five"])
-    }
-
-    @Test func `wide characters count as two columns`() {
-        #expect(TextWrap.lines("日本語テキスト", width: 6) == ["日本語", "テキス", "ト"])
-        #expect(TextWrap.lines("ab 日本", width: 4) == ["ab", "日本"])
-    }
-
     // MARK: - Editing
 
     private func key(_ code: UInt32, _ modifiers: KeyModifiers = []) -> KeyEvent {
