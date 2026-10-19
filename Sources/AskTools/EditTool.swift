@@ -4,8 +4,8 @@ public import AskAgentCore
 internal import Foundation
 
 /// `edit`: replaces an exact piece of text that occurs once, or everywhere when asked.
-public struct EditTool: Tool {
-    struct Arguments: Decodable {
+public struct EditTool: ArgumentTool {
+    public struct Arguments: Decodable, Sendable {
         let path: String
         let oldText: String
         let newText: String
@@ -22,30 +22,20 @@ public struct EditTool: Tool {
     public let definition = ToolDefinition(
         name: "edit",
         description:
-            "Replace old_text with new_text in a file. old_text must match exactly once unless replace_all is true.",
-        inputSchema: try! JSONObject(
-            validating: Array(
-                #"""
-                {"type":"object","properties":{"path":{"type":"string"},"old_text":{"type":"string","minLength":1},\#
-                "new_text":{"type":"string"},"replace_all":{"type":"boolean"}},"required":["path","old_text","new_text"]}
-                """#
-                .utf8)))
+            "Replace old_text with new_text in a file. old_text must match exactly once unless replace_all is true."
+    ) {
+        ToolProperty.string("path")
+        ToolProperty.string("old_text", minLength: 1)
+        ToolProperty.string("new_text")
+        ToolProperty.boolean("replace_all").optional
+    }
 
     public init() {}
 
-    public func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
-        let arguments: Arguments
-        switch self.arguments(Arguments.self, from: input) {
-            case .success(let value): arguments = value
-            case .failure(let output): return output
-        }
+    public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         guard !arguments.oldText.isEmpty else { return .error("old_text must not be empty.") }
         let url = FileTools.url(arguments.path, in: context)
-        let text: String
-        switch FileTools.text(at: url, shownAs: arguments.path) {
-            case .success(let value): text = value
-            case .failure(let failure): return failure.output
-        }
+        let text = try FileTools.text(at: url, shownAs: arguments.path)
         // Exact UTF-8 bytes, not canonically equivalent characters: the model must reproduce what the file holds,
         // and an edit must never land on text written differently from what it quoted.
         let pieces = ByteSearch.split(Array(text.utf8), on: Array(arguments.oldText.utf8))
@@ -64,7 +54,7 @@ public struct EditTool: Tool {
             editedBytes += piece
         }
         let edited = String(decoding: editedBytes, as: UTF8.self)
-        if let failure = FileTools.write(edited, to: url, shownAs: arguments.path) { return failure.output }
+        try FileTools.write(edited, to: url, shownAs: arguments.path)
         return ToolOutput("Replaced \(count) occurrence\(count == 1 ? "" : "s") in \(arguments.path).")
     }
 }

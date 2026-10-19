@@ -13,8 +13,8 @@ internal import System
 /// - Standard output and error are merged and read as a stream: a 512 KiB head and a 512 KiB tail are kept
 ///   around a counted omission, so memory stays bounded however much a command prints.
 /// - Standard input is closed, so a command that waits for input ends instead of hanging.
-public struct BashTool: Tool {
-    struct Arguments: Decodable {
+public struct BashTool: ArgumentTool {
+    public struct Arguments: Decodable, Sendable {
         let command: String
         let timeoutSeconds: Int?
         enum CodingKeys: String, CodingKey {
@@ -37,14 +37,11 @@ public struct BashTool: Tool {
         description: """
             Run a bash command in the working directory. Returns combined stdout and stderr and the exit status. \
             Standard input is closed. timeout_seconds defaults to 120, at most 600.
-            """,
-        inputSchema: try! JSONObject(
-            validating: Array(
-                #"""
-                {"type":"object","properties":{"command":{"type":"string"},\#
-                "timeout_seconds":{"type":"integer","minimum":1,"maximum":600}},"required":["command"]}
-                """#
-                .utf8)))
+            """
+    ) {
+        ToolProperty.string("command")
+        ToolProperty.integer("timeout_seconds", minimum: 1, maximum: 600).optional
+    }
 
     private let clock: any Clock<Duration>
     private let observe: @Sendable (Event) -> Void
@@ -57,12 +54,7 @@ public struct BashTool: Tool {
         self.observe = observe
     }
 
-    public func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
-        let arguments: Arguments
-        switch self.arguments(Arguments.self, from: input) {
-            case .success(let value): arguments = value
-            case .failure(let output): return output
-        }
+    public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         let timeout = Swift.min(Swift.max(1, arguments.timeoutSeconds ?? Self.defaultTimeout), Self.maximumTimeout)
         let collector = OutputCollector(keeping: Self.keptBytes)
         let ending = await withTaskGroup(of: Ending?.self) { group in
