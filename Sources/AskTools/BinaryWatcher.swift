@@ -37,7 +37,7 @@ public enum BinaryWatcher {
                     if live { watch.wake() }
                 }
             }
-            Thread {
+            let work: @Sendable () -> Void = {
                 var last = identity
                 func report() {
                     if let now = BinaryIdentity(path: identity.path), now != last {
@@ -55,7 +55,7 @@ public enum BinaryWatcher {
                 continuation.finish()
                 stopped?(closed.queue, closed.directory)
             }
-            .start()
+            DetachedThread.start(stackBytes: 64 << 10, work)
         }
     }
 }
