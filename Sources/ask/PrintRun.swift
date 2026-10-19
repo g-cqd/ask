@@ -67,14 +67,7 @@ func runPrompt(_ prompt: String, source: ConfigurationSource, settings: RunSetti
     let model = settings.model
     for line in settings.description { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     let transport = URLSessionTransport()
-    // Fail fast before any work when there is no way to authenticate. A configured provider has no sign-in.
-    if model.provider == .anthropic {
-        do {
-            _ = try await requestAuth(transport: transport)()
-        } catch {
-            fail("ask: \(error)", code: 77)
-        }
-    }
+    await requireSignIn(for: model.provider, transport: transport)
     let workingDirectory = FileManager.default.currentDirectoryPath
     let jobs = JobTable()
     let loop: AgentLoop

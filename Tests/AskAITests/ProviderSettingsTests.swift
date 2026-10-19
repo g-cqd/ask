@@ -143,6 +143,13 @@ struct ProviderSettingsTests {
         #expect(throws: ProviderSettingsError.noModel(provider: "codex")) { try resolve(provider: "codex") }
     }
 
+    @Test func `a missing model for codex says to pass one, not to add it to a file it cannot be added to`() {
+        let text = ProviderSettingsError.noModel(provider: "codex").description
+        #expect(text.contains("--model"))
+        #expect(!text.contains("add one"))
+        #expect(ProviderSettingsError.noModel(provider: "local").description.contains("add one"))
+    }
+
     @Test func `a file may not define codex, which is built in`() {
         let json = #"{ "providers": { "codex": { "api": "openai-completions", "baseUrl": "http://127.0.0.1:1/v1" } } }"#
         #expect(throws: ProviderSettingsError.reservedName("codex")) {
