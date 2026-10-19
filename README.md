@@ -25,7 +25,7 @@ before it is adopted, and there is no place for an assumption.
 
 Six library targets and the `ask` executable, green in release (`Scripts/quality.sh`): `AskCore` (budgets),
 `AskAI` (provider-neutral `Model` and `Transport`, with `Anthropic` and `Claude` as the one provider so far),
-`AskAgentCore` (the agent loop, tools contract, sessions), `AskTools` (`read`, `write`, `edit`, `bash`),
+`AskAgentCore` (the agent loop, tools contract, sessions), `AskTools` (`read`, `write`, `edit`, `bash`, and jobs: `wait`, `job_input`, `job_stop`),
 `AskTUI` (the interactive screen) and the `ask` composition root. `ask -p` runs one prompt through the loop, on Claude or any OpenAI-compatible server;
 without `-p` it opens the full-screen interface. Every run is a session file: `-c`/`--continue` resumes the
 last one, `-r`/`--resume <name>` a named one, and `ask sessions` lists them. Not built: a second provider, the codemode host, sandboxing.
