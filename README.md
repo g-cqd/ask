@@ -51,6 +51,11 @@ conversation now, `/quit` leaves. To develop ask with ask: build it (ask can run
 `/reload`. ask checks the new binary starts, then replaces itself with it, keeping the session
 ([ADR-0034](docs/adr/0034-reload-is-a-checked-re-exec-between-turns.md)).
 
+While the agent is working, Enter queues **steering** after its current response and tools.
+`/follow-up TEXT` queues a message after it finishes; Alt+Enter is a shortcut on terminals that report it.
+Esc aborts and returns unsent messages to the editor alongside your draft. A message is accepted only once it
+is recorded in the session ([ADR-0037](docs/adr/0037-queued-input-is-acknowledged-only-after-it-is-persisted.md)).
+
 ## Sandbox
 
 The model's tools run inside a sandbox by default: the read, write and edit tools check a policy, and every `bash`

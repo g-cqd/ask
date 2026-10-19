@@ -23,6 +23,7 @@ final class AgentConversation: Conversation {
     let current: Mutex<Current>
     let session = Mutex<SessionRecorder?>(nil)
     let usage = Mutex(UsageTotals())
+    private let promptInput = Mutex<PromptQueue?>(nil)
     /// Jobs outlive turns, not a reload: `/reload` refuses while any run, or stops them when told to.
     let jobs: JobTable
     /// The build that is running, to tell when a newer one appears.
@@ -97,15 +98,25 @@ final class AgentConversation: Conversation {
         return updates + [.status(usage.withLock { $0.summary })]
     }
 
+    func enqueue(_ text: String, id: Int, followUp: Bool) {
+        promptInput.withLock { $0 }?
+            .append(
+                QueuedPrompt(
+                    id: id, text: text, delivery: followUp ? .followUp : .steering))
+    }
+
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
-        Task {
+        let input = PromptQueue()
+        promptInput.withLock { $0 = input }
+        return Task {
             do {
                 self.refreshSettings(update: update)
                 let loop = try self.agentLoop()
                 let recorder = try self.recorder()
-                try await loop.run(prompt, in: recorder) { self.deliver($0, to: update) }
+                try await loop.run(prompt, in: recorder, input: input) { self.deliver($0, to: update) }
             } catch {
                 self.report(error, to: update)
+                update(.returnQueuedPrompts)
             }
             update(.runEnded)
         }
@@ -155,6 +166,7 @@ final class AgentConversation: Conversation {
     static func update(for event: AgentEvent) -> ConversationUpdate? {
         switch event {
             case .model(.textDelta(_, let text)): return .assistantText(text)
+            case .promptAccepted(let prompt): return .promptAccepted(id: prompt.id, text: prompt.text)
             case .toolStarted(_, let name, let input):
                 return .toolStarted(name: name, summary: toolSummary(name: name, input: input))
             case .toolFinished(_, _, let output):

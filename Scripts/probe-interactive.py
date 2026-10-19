@@ -494,7 +494,112 @@ def probe_reload_refused():
     return all(results)
 
 
+def probe_steering():
+    print("J: steering after the whole tool batch; a follow-up only after the agent finishes")
+    project = tempfile.mkdtemp()
+    server = agent.Server([
+        agent.turn([("call", "gate1", "wait", {"file_exists": "release-one"}),
+                    ("tool", "batch", "echo batch-finished > batch.txt")], "tool_use"),
+        agent.turn([("call", "gate2", "wait", {"file_exists": "release-two"})], "tool_use"),
+        agent.turn([("text", "BASE WORK FINISHED")], "end_turn"),
+        agent.turn([("text", "FOLLOWUP ANSWER")], "end_turn")])
+    screen = Screen(server.url, project)
+    results = [check("initial prompt drawn", screen.until("ask>"))]
+    screen.type("Start the work\r")
+    results.append(check("first gate is running", screen.until("release-one")))
+    screen.type("Later please\x1b[13;3u")  # CSI-u Alt+Enter, independent of legacy ESC/Enter ambiguity
+    results.append(check("follow-up visibly queued", screen.until("Queued follow-up: Later please")))
+    screen.type("Change direction\r")
+    results.append(check("steering visibly queued", screen.until("Queued steering: Change direction")))
+    open(os.path.join(project, "release-one"), "w").close()
+    results.append(check("the next turn has reached its gate", screen.until("release-two")))
+    if len(server.requests) >= 2:
+        blocks = server.requests[1]["body"]["messages"][-1]["content"]
+        results.append(check("both tool results precede steering in the actual request",
+                             [b["type"] for b in blocks] == ["tool_result", "tool_result", "text"]
+                             and blocks[-1]["text"] == "Change direction", blocks))
+        results.append(check("the follow-up has not entered yet",
+                             "Later please" not in json.dumps(server.requests[1]["body"]["messages"])))
+    else:
+        results.append(check("second request exists", False, len(server.requests)))
+    results.append(check("the rest of the tool batch was not skipped", os.path.exists(os.path.join(project, "batch.txt"))))
+    open(os.path.join(project, "release-two"), "w").close()
+    results.append(check("the follow-up is answered", screen.until("FOLLOWUP ANSWER")))
+    results.append(check("the run is ready", screen.until_status("ready")))
+    results.append(check("four requests, with the follow-up only on the last",
+                         len(server.requests) == 4
+                         and "Later please" not in json.dumps(server.requests[2]["body"]["messages"])
+                         and server.requests[3]["body"]["messages"][-1]["content"][-1]["text"] == "Later please",
+                         len(server.requests)))
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    files = agent.sessions(screen.state)
+    prompts = [r["payload"]["text"] for r in map(json.loads, open(files[0]))
+               if r.get("type") == "entry" and r["payload"]["kind"] == "user"] if files else []
+    results.append(check("each queued prompt was persisted once, in delivery order",
+                         prompts == ["Start the work", "Change direction", "Later please"], prompts))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_abort_queue():
+    print("K: abort returns unsent input alongside the draft, without persisting or running it")
+    project = tempfile.mkdtemp()
+    server = agent.Server([
+        agent.turn([("call", "gate", "wait", {"file_exists": "never-created"})], "tool_use"),
+        agent.turn([("text", "RECOVERED AFTER ABORT")], "end_turn")])
+    screen = Screen(server.url, project)
+    screen.until("ask>")
+    screen.type("Start\r")
+    results = [check("waiting in a tool", screen.until("never-created"))]
+    screen.type("Unsent steering\r")
+    results.append(check("steering queued", screen.until("Queued steering: Unsent steering")))
+    screen.type("/follow-up Unsent followup\r")
+    results.append(check("follow-up queued without a modified Enter key", screen.until("Queued follow-up: Unsent followup")))
+    screen.type("draft\x1b")
+    results.append(check("abort ends the run", screen.until_status("ready")))
+    lines = screen.screen.text().splitlines()
+    editor = lines[lines.index(next(line for line in lines if " · ready" in line)) + 1:]
+    results.append(check("the editor holds both unsent messages and the draft on separate lines",
+                         editor == ["ask> Unsent steering", "", "Unsent followup", "", "draft"], editor))
+    results.append(check("nothing was automatically requested after abort", len(server.requests) == 1))
+    screen.type("\x15Recovered\r")
+    results.append(check("the editor can submit another prompt", screen.until("RECOVERED AFTER ABORT")))
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    files = agent.sessions(screen.state)
+    prompts = [r["payload"]["text"] for r in map(json.loads, open(files[0]))
+               if r.get("type") == "entry" and r["payload"]["kind"] == "user"] if files else []
+    results.append(check("unsent messages never entered the session", prompts == ["Start", "Recovered"], prompts))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_failed_queue():
+    print("L: a failed stream returns queued input rather than automatically starting it")
+    project = tempfile.mkdtemp()
+    server = agent.Server([
+        agent.turn([("call", "gate", "wait", {"file_exists": "release"})], "tool_use"),
+        b'event: message_stop\ndata: {"type":"message_stop"}\n\n'])
+    screen = Screen(server.url, project)
+    screen.until("ask>")
+    screen.type("Start\r")
+    results = [check("waiting in a tool", screen.until("release"))]
+    screen.type("Unsent followup\x1b[13;3u")
+    results.append(check("follow-up queued", screen.until("Queued follow-up: Unsent followup")))
+    open(os.path.join(project, "release"), "w").close()
+    results.append(check("failed stream ends the run", screen.until_status("ready")))
+    lines = screen.screen.text().splitlines()
+    results.append(check("unsent input is back in the editor", lines[-1] == "ask> Unsent followup", lines[-1]))
+    results.append(check("no automatic third request", len(server.requests) == 2, len(server.requests)))
+    screen.type("\x15/quit\r")  # clear the restored prompt first
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
