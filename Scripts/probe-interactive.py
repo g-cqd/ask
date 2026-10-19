@@ -7,6 +7,7 @@ C: Ctrl-C at an idle prompt quits, exit 0, with the terminal restored (the teard
 
 Usage: Scripts/probe-interactive.py .build/release/ask
 """
+import json
 import importlib.util, os, pty, select, signal, struct, sys, tempfile, time, fcntl, termios
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -332,7 +333,66 @@ def probe_reload():
     return all(results)
 
 
+def probe_slash():
+    print("G: slash commands")
+    project, config = tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(config, "ask"))
+    server = agent.Server([agent.turn([("text", "Answer 1.")], "end_turn"),
+                           agent.turn([("text", "Answer 2.")], "end_turn"),
+                           agent.turn([("text", "SUMMARY: the user pasted notes.")], "end_turn"),
+                           agent.turn([("text", "Answer 4.")], "end_turn")])
+    screen = Screen(server.url, project, config=config)
+    results = [check("prompt drawn", screen.until("ask>"))]
+
+    def line(text):
+        screen.type(text + "\r")
+
+    line("/help")
+    results += [check("/help lists the screen's commands", screen.until("/quit  Leave ask")),
+                check("and the conversation's", screen.until("/compact  Summarise") and screen.until("/config  Read"))]
+    line("/confg")
+    results.append(check("an unknown command is an error, and no request was made",
+                         screen.until("There is no command /confg; /help lists them.") and len(server.requests) == 0,
+                         len(server.requests)))
+    line("/compact")
+    results.append(check("/compact with nothing recorded says so", screen.until("Nothing to compact yet.")))
+    line("/config")
+    results += [check("/config shows each setting with its source", screen.until("maxTurns  100  [default]")),
+                check("and the files", screen.until("user file") and screen.until("(none)"))]
+    open(os.path.join(config, "ask", "config.json"), "w").write("{maxTurns: 7}")
+    line("/config")
+    results += [check("/config reads the files again and announces the change", screen.until("maxTurns: 100 → 7")),
+                check("and shows the new value from its file", screen.until("maxTurns  7  [") and screen.until("(applied)"))]
+    line("/etc/hosts: what is this file?")
+    results.append(check("a path is a prompt for the model", screen.until("Answer 1.") and len(server.requests) == 1
+                         and "/etc/hosts: what is this file?" in json.dumps(server.requests[0]["body"]["messages"]),
+                         len(server.requests)))
+    screen.until_status("ready")
+    line("/compact")
+    results.append(check("/compact with only a short exchange says nothing could be summarised",
+                         screen.until("Could not compact") and len(server.requests) == 1, len(server.requests)))
+    screen.until_status("ready")
+    # A prompt well past the 80 KB kept tail, pasted: bracketed paste, as a terminal sends it.
+    screen.type("\x1b[200~Notes: " + "lorem ipsum " * 7500 + "\x1b[201~\r")
+    results.append(check("a large prompt is answered", screen.until("Answer 2.", 30)))
+    screen.until_status("ready")
+    line("/compact")
+    results += [check("/compact summarises the older conversation", screen.until("Compacted the conversation", 30)),
+                check("through one summary request", len(server.requests) == 3, len(server.requests))]
+    screen.until_status("ready")
+    line("and now?")
+    answered = screen.until("Answer 4.", 30)
+    dumped = json.dumps(server.requests[3]["body"]["messages"]) if len(server.requests) >= 4 else ""
+    results.append(check("and the next prompt carries the summary", answered
+                         and "SUMMARY: the user pasted notes." in dumped and "Summary of the conversation so far" in dumped,
+                         f"{len(server.requests)} requests: {dumped[:200]}"))
+    line("/quit")
+    results.append(check("/quit leaves cleanly", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

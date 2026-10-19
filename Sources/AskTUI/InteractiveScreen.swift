@@ -118,7 +118,7 @@ private final class ScreenSession {
         input = InputSource(connection: screen.connection, escapeIsUnambiguous: screen.session.escapeIsUnambiguous)
         self.conversation = conversation
         rows = (try? screen.connection.getSize().rows) ?? 24
-        controller = ScreenController(label: label)
+        controller = ScreenController(label: label, commands: conversation.commands)
         for update in opening { controller.handle(update) }
         (events, sink) = AsyncStream<ScreenEvent>.makeStream()
     }
@@ -174,6 +174,9 @@ private final class ScreenSession {
                 case .startRun(let prompt):
                     let sink = sink
                     run = conversation.start(prompt) { sink.yield(.update($0)) }
+                case .runCommand(let name, let arguments):
+                    let sink = sink
+                    run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }
                 case .cancelRun:
                     run?.cancel()
                 case .quit:

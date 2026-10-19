@@ -16,15 +16,16 @@ internal import System
 /// Configuration is read again before every prompt (ADR-0031). A valid change takes effect on that prompt and
 /// is reported; an invalid one is reported once and the previous settings stay.
 final class AgentConversation: Conversation {
-    private let reload: @Sendable () throws -> RunSettings
+    // Internal rather than private: the command handlers live in AgentConversation+Commands.swift.
+    let source: ConfigurationSource
     private let makeLoop: @Sendable (RunSettings) throws -> AgentLoop
     private let directory: SessionDirectory
-    private let current: Mutex<Current>
-    private let session = Mutex<SessionRecorder?>(nil)
-    private let usage = Mutex(UsageTotals())
+    let current: Mutex<Current>
+    let session = Mutex<SessionRecorder?>(nil)
+    let usage = Mutex(UsageTotals())
 
     /// The settings in force, the loop built from them, and the last reload error shown.
-    private struct Current {
+    struct Current {
         var settings: RunSettings
         var loop: AgentLoop?
         var shownError: String?
@@ -34,14 +35,13 @@ final class AgentConversation: Conversation {
     ///   - directory: where a new session is created on the first prompt.
     ///   - resumed: a session already open, which prompts continue instead.
     ///   - settings: what the run starts with.
-    ///   - reload: reads the settings again, all or nothing.
+    ///   - source: where the settings come from, read again before each prompt, all or nothing.
     ///   - makeLoop: builds the loop for some settings, on the first prompt and after a change.
     init(
         directory: SessionDirectory, resumed: SessionRecorder? = nil, settings: RunSettings,
-        reload: @escaping @Sendable () throws -> RunSettings,
-        makeLoop: @escaping @Sendable (RunSettings) throws -> AgentLoop
+        source: ConfigurationSource, makeLoop: @escaping @Sendable (RunSettings) throws -> AgentLoop
     ) {
-        self.reload = reload
+        self.source = source
         self.makeLoop = makeLoop
         self.directory = directory
         current = Mutex(Current(settings: settings))
@@ -50,10 +50,10 @@ final class AgentConversation: Conversation {
 
     /// Reads the configuration again and, when it changed, tells the screen what changed. The loop is rebuilt
     /// on the next use.
-    private func refreshSettings(update: @Sendable (ConversationUpdate) -> Void) {
+    func refreshSettings(update: @Sendable (ConversationUpdate) -> Void) {
         let fresh: RunSettings
         do {
-            fresh = try reload()
+            fresh = try source.load()
         } catch {
             let text = "Configuration not reloaded: \(error). Keeping the previous settings."
             let isNew: Bool = current.withLock { current in
@@ -95,26 +95,36 @@ final class AgentConversation: Conversation {
                 self.refreshSettings(update: update)
                 let loop = try self.agentLoop()
                 let recorder = try self.recorder()
-                try await loop.run(prompt, in: recorder) { event in
-                    if let spent = event.usage {
-                        let summary = self.usage.withLock { totals in
-                            totals.add(spent)
-                            return totals.summary
-                        }
-                        update(.status(summary))
-                    }
-                    if let shown = Self.update(for: event) { update(shown) }
-                }
-            } catch AgentError.cancelled {
-                update(.notice("Aborted. Results already known were kept.", isError: false))
+                try await loop.run(prompt, in: recorder) { self.deliver($0, to: update) }
             } catch {
-                update(.notice("ask: \(error)", isError: true))
+                self.report(error, to: update)
             }
             update(.runEnded)
         }
     }
 
-    private func agentLoop() throws -> AgentLoop {
+    /// Shows an event on the screen and adds what it cost to the status line.
+    func deliver(_ event: AgentEvent, to update: @Sendable (ConversationUpdate) -> Void) {
+        if let spent = event.usage {
+            let summary = usage.withLock { totals in
+                totals.add(spent)
+                return totals.summary
+            }
+            update(.status(summary))
+        }
+        if let shown = Self.update(for: event) { update(shown) }
+    }
+
+    /// Says why a run or command ended without finishing.
+    func report(_ error: any Error, to update: @Sendable (ConversationUpdate) -> Void) {
+        if case AgentError.cancelled = error {
+            update(.notice("Aborted. Results already known were kept.", isError: false))
+        } else {
+            update(.notice("ask: \(error)", isError: true))
+        }
+    }
+
+    func agentLoop() throws -> AgentLoop {
         try current.withLock { current throws -> AgentLoop in
             if let existing = current.loop { return existing }
             let created = try makeLoop(current.settings)
@@ -124,7 +134,7 @@ final class AgentConversation: Conversation {
     }
 
     /// The session, created on the first prompt so that opening and closing ask leaves no empty sessions.
-    private func recorder() throws -> SessionRecorder {
+    func recorder() throws -> SessionRecorder {
         try session.withLock { existing throws -> SessionRecorder in
             if let existing { return existing }
             try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
@@ -134,7 +144,7 @@ final class AgentConversation: Conversation {
         }
     }
 
-    private static func update(for event: AgentEvent) -> ConversationUpdate? {
+    static func update(for event: AgentEvent) -> ConversationUpdate? {
         switch event {
             case .model(.textDelta(_, let text)): return .assistantText(text)
             case .toolStarted(_, let name, let input):
@@ -166,7 +176,7 @@ func runInteractive(source: ConfigurationSource, settings: RunSettings, session 
     do {
         let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(
-            directory: directory, resumed: resumed, settings: settings, reload: { try source.load() },
+            directory: directory, resumed: resumed, settings: settings, source: source,
             makeLoop: { settings in
                 try makeLoop(
                     model: settings.model, workingDirectory: workingDirectory, instructions: files,
