@@ -51,6 +51,15 @@ conversation now, `/quit` leaves. To develop ask with ask: build it (ask can run
 `/reload`. ask checks the new binary starts, then replaces itself with it, keeping the session
 ([ADR-0034](docs/adr/0034-reload-is-a-checked-re-exec-between-turns.md)).
 
+## Sandbox
+
+The model's tools run inside a sandbox by default: the read, write and edit tools check a policy, and every `bash`
+command runs under macOS Seatbelt with the same one. ask's own files (`~/.config/ask`, and its session state) are
+off limits, as are `~/.aws`, `~/.gnupg`, Keychains, `~/.netrc` and ssh private keys. A refused command says so, and the
+model is told, so it does not look for a way round. `ask --no-sandbox` turns this off for one run. A `sandbox`
+section in your own `config.json` lifts a secret store (`allowRead: ['~/.aws']`) or hides more (`denyRead`); a project's
+file may only hide more. It costs about 8 ms per command ([ADR-0035](docs/adr/0035-the-sandbox-protects-ask-and-the-secret-stores-by-default.md)).
+
 ## Configuration
 
 Settings live in `config.json`, JSON or JSON5 (comments, unquoted keys, trailing commas), in `~/.config/ask/` and
