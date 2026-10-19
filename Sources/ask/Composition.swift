@@ -40,19 +40,45 @@ func describe(_ files: [ProjectInstructions.File]) -> [String] {
     }
 }
 
+/// The provider and model for this run, from `--provider`, `--model` and `providers.json` in ask's configuration
+/// directory.
+func resolveModel(provider: String?, model: String?) throws -> ResolvedModel {
+    let settings = try ProviderSettings.load(from: askConfigDirectory() + "/providers.json")
+    return try settings.resolve(provider: provider, model: model, environment: ProcessInfo.processInfo.environment)
+}
+
+/// The loop's provider for `resolved`, sending through `transport`.
+func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> any ModelProvider {
+    switch resolved.provider {
+        case .anthropic:
+            ClaudeProvider(
+                client: AnthropicClient(
+                    transport: transport,
+                    endpoint: AnthropicClient.endpoint(environment: ProcessInfo.processInfo.environment)),
+                auth: requestAuth(transport: transport))
+        case .openAICompatible(_, let baseURL, let apiKey, let headers):
+            OpenAICompatibleProvider(
+                client: OpenAICompatibleClient(transport: transport, baseURL: baseURL, apiKey: apiKey, headers: headers)
+            )
+    }
+}
+
+/// How the model is named to the user: `model`, or `provider/model` for a configured provider.
+func modelLabel(_ resolved: ResolvedModel) -> String {
+    if case .openAICompatible(let name, _, _, _) = resolved.provider { return "\(name)/\(resolved.model)" }
+    return resolved.model
+}
+
 /// The agent loop with the four tools, rooted at `workingDirectory`, following `instructions` after ask's own.
 func makeLoop(
-    model: String, workingDirectory: String, instructions files: [ProjectInstructions.File], limits: RunLimits,
-    transport: URLSessionTransport
+    model resolved: ResolvedModel, workingDirectory: String, instructions files: [ProjectInstructions.File],
+    limits: RunLimits, transport: URLSessionTransport
 ) throws -> AgentLoop {
-    let environment = ProcessInfo.processInfo.environment
-    return AgentLoop(
-        provider: ClaudeProvider(
-            client: AnthropicClient(transport: transport, endpoint: AnthropicClient.endpoint(environment: environment)),
-            auth: requestAuth(transport: transport)),
+    AgentLoop(
+        provider: makeProvider(resolved, transport: transport),
         tools: try ToolRegistry(FileTools.all + [BashTool()]),
         settings: AgentSettings(
-            model: model, maximumTokens: 16_384,
+            model: resolved.model, maximumTokens: 16_384,
             systemPrompt: [instructions(workingDirectory: workingDirectory)] + ProjectInstructions.promptBlocks(files),
             maximumTurns: limits.maximumTurns, compactAtTokens: limits.compactAtTokens),
         context: ToolContext(workingDirectory: workingDirectory))
