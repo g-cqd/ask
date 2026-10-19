@@ -7,19 +7,25 @@ public struct ScreenController: Sendable {
     /// Something the driver must do.
     public enum Effect: Sendable, Equatable {
         case startRun(String)
+        case queuePrompt(id: Int, text: String, followUp: Bool)
         case runCommand(name: String, arguments: String)
         case cancelRun
         case quit
     }
 
-    public private(set) var state: ScreenState
+    public internal(set) var state: ScreenState
     /// The commands the screen answers itself (`/help`, `/quit`) and those the conversation runs.
     private let commands: [SlashCommand]
+    var pending: [Pending] = []
+    var nextPromptID = 0
+    var acceptsInput = false
+    var returningInput = false
 
     /// What `/help` and `/quit` are, always present.
     static let builtIn = [
-        SlashCommand(name: "help", summary: "List the commands."),
-        SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first.")
+        SlashCommand(name: "help", summary: "List commands. While busy: Enter steers; Alt+Enter queues a follow-up."),
+        SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first."),
+        SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT.")
     ]
 
     /// A controller showing `label` in the status line, answering `commands` besides the built-in ones.
@@ -50,7 +56,8 @@ public struct ScreenController: Sendable {
     }
 
     /// Applies an update from the running conversation.
-    public mutating func handle(_ update: ConversationUpdate) {
+    @discardableResult
+    public mutating func handle(_ update: ConversationUpdate) -> [Effect] {
         switch update {
             case .userPrompt(let text): state.transcript.addUser(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
@@ -60,14 +67,19 @@ public struct ScreenController: Sendable {
             case .requestExit(let exit): state.exitRequest = exit
             case .label(let text): state.label = text
             case .status(let text): state.detail = text
-            case .runEnded: state.running = false
+            case .promptAccepted(let id, let text):
+                pending.removeAll { $0.id == id }
+                state.transcript.addUser(text)
+            case .returnQueuedPrompts: returningInput = true
+            case .runEnded: return endRun()
         }
+        return []
     }
 
     private mutating func edit(_ key: KeyEvent) -> [Effect] {
         switch state.editor.apply(key) {
             case .submitted(let line):
-                return submit(line)
+                return submit(line, followUp: key.modifiers.contains(.alt))
             case .escape:
                 return state.running ? abort() : []
             case .interrupt:
@@ -80,12 +92,10 @@ public struct ScreenController: Sendable {
     }
 
     /// A submitted line: a prompt, a command, or a command that does not exist.
-    private mutating func submit(_ line: String) -> [Effect] {
+    private mutating func submit(_ line: String, followUp: Bool) -> [Effect] {
         switch SlashInput(line) {
             case .prompt(let text):
-                guard !busy() else { return [] }
-                state.transcript.addUser(text)
-                return begin(.startRun(text))
+                return submitPrompt(text, followUp: followUp)
             case .command(let name, let arguments):
                 state.transcript.addUser(line)
                 guard let command = commands.first(where: { $0.name == name }) else {
@@ -99,6 +109,7 @@ public struct ScreenController: Sendable {
                         }
                         return []
                     case "quit": return [.quit]
+                    case "follow-up": return submitPrompt(arguments, followUp: true)
                     default:
                         guard !busy() else { return [] }
                         return begin(.runCommand(name: name, arguments: arguments))
@@ -113,13 +124,16 @@ public struct ScreenController: Sendable {
         return true
     }
 
-    private mutating func begin(_ effect: Effect) -> [Effect] {
+    mutating func begin(_ effect: Effect) -> [Effect] {
+        if case .startRun = effect { acceptsInput = true } else { acceptsInput = false }
+        returningInput = false
         state.running = true
         state.scrollback = 0
         return [effect]
     }
 
     private mutating func abort() -> [Effect] {
+        returningInput = true
         state.transcript.addNotice("Aborting…", isError: false)
         return [.cancelRun]
     }

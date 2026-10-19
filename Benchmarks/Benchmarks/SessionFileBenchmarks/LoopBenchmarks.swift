@@ -21,13 +21,13 @@ private struct InstantProvider: ModelProvider {
 
 /// One whole turn (record the prompt, build context, encode nothing, assemble, record the reply) on sessions
 /// of growing length, without flushing: ask's overhead per turn, which roadmap 0007's budget needs.
-func loopBenchmarks() {
+func loopBenchmarks(input: PromptQueue? = nil) {
     let loop = AgentLoop(
         provider: InstantProvider(), tools: try! ToolRegistry([]),
         settings: AgentSettings(model: "c", maximumTokens: 1_024, systemPrompt: ["You are ask."], maximumTurns: 4),
         context: ToolContext(workingDirectory: "/tmp"))
     for history in [0, 50, 500] {
-        Benchmark("loop/one turn after \(history) turns") { benchmark in
+        Benchmark("loop/one turn after \(history) turns\(input == nil ? "" : ", empty input")") { benchmark in
             let directory = FileManager.default.temporaryDirectory.appending(
                 path: "ask-bench-loop-\(UUID().uuidString)")
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
@@ -38,7 +38,9 @@ func loopBenchmarks() {
                 try file.append(.assistant("Reply \(turn), with a sentence of ordinary length in it."))
             }
             benchmark.startMeasurement()
-            for _ in benchmark.scaledIterations { try await loop.run("Next step.", in: file) { blackHole($0) } }
+            for _ in benchmark.scaledIterations {
+                try await loop.run("Next step.", in: file, input: input) { blackHole($0) }
+            }
             benchmark.stopMeasurement()
         }
     }
