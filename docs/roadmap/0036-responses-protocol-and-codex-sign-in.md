@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-19
 decision: ADR-0027
@@ -28,3 +28,14 @@ llama.cpp only. Steps 3 and 4 remain, and replaying reasoning is roadmap 0040.
 Step 3: Codex sign-in by browser and by device code, locked refresh, the backend's headers and dialect, `ask login codex`,
 `ask --provider codex`. Probed live where a script can reach it. Step 4 remains and needs the user: the authorize step,
 a first inference request, and the originator, headers and body the backend accepts.
+
+## Live check completed (diary 27)
+
+The user ran the release binary from `main` at `042ee46`: browser sign-in completed, `gpt-6.1-sol` returned `CODEX_OK`,
+and `gpt-6-luna` read a file, wrote its content to another file, and returned `DONE`. This confirms the authorize step
+and the current inference headers/body on that account. `gpt-5.5` was refused as unsupported for the account, despite
+appearing in pi's static catalog. The first tool-loop attempt lost its connection (`NSURLErrorDomain -1005`); the
+identical manual retry succeeded. The disconnect is unexplained, not evidence that automatic retries would be safe.
+
+Live rotating refresh and successful device-code sign-in remain unverified (their offline tests pass). Model discovery
+is roadmap 0038; encrypted reasoning replay remains roadmap 0040. None is claimed proven by this smoke test.
