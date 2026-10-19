@@ -1,5 +1,5 @@
 {
-  "originHash" : "a1bbcbe786fead2de1247f0b7e4286312349aa7cadc08a02d1e311a41c9ca099",
+  "originHash" : "8a3c8cf3ad06fe9f0ce86638f3b382a0355512fff5b835cc85662e1f8b15eabc",
   "pins" : [
     {
       "identity" : "aemi",
@@ -24,6 +24,15 @@
       "state" : {
         "revision" : "c2e1210df04b4fff47e53f2f9dad9cc45ae15d63",
         "version" : "0.2.0"
+      }
+    },
+    {
+      "identity" : "malloc-interposer",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/ordo-one/malloc-interposer.git",
+      "state" : {
+        "revision" : "f479398f73b14dbd1d25f4e01fd667171ddc9f18",
+        "version" : "1.6.0"
       }
     },
     {
@@ -103,7 +112,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/TerminalKit.git",
       "state" : {
-        "revision" : "332ae7ae3a04993e4b6ada3332c6f2dea14fe49f"
+        "revision" : "245054497db23cb6f8ab8c12971435f5ea6918bd"
       }
     },
     {
