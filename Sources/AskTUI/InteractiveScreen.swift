@@ -154,10 +154,7 @@ private final class ScreenSession {
     }
 
     private func render(full: Bool = false) throws {
-        pipeline.beginFrame()
-        let cursor = composer.compose(controller.state, into: &pipeline.buffer)
-        (pipeline.cursorRow, pipeline.cursorCol) = (cursor.row, cursor.column)
-        if full { try pipeline.forceRedraw() } else { try pipeline.flush() }
+        try pipeline.draw(controller.state, with: &composer, full: full)
     }
 }
 

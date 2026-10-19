@@ -52,4 +52,16 @@ for (columns, rows) in [(120, 40), (300, 80)] {
         _ = composer.compose(state, into: &pipeline.buffer)
         try? pipeline.flush()
     }
+    // What the screen ships: the transcript as a scroll region (TerminalKit ADR-0022).
+    let bytes = BytesCounter()
+    let scrolling = RenderPipeline(connection: bytes, columns: columns, rows: rows)
+    var scrollingComposer = ScreenComposer()  // a composer belongs to one buffer
+    try? scrolling.draw(state, with: &scrollingComposer, full: true)
+    var written = 0
+    measure("streamed line: draw, scroll region") { iteration in
+        state.transcript.addNotice("streamed line \(iteration) of ordinary length", isError: false)
+        try? scrolling.draw(state, with: &scrollingComposer)
+        written = bytes.last
+    }
+    print("  bytes per streamed line with the scroll region: \(written)")
 }
