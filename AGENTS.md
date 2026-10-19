@@ -33,8 +33,9 @@ rather than trusting its source, and keep the notes in `docs/research/`, not in 
 
 ```sh
 Scripts/quality.sh              # format, lint, build and test
-Scripts/quality.sh --check      # verify only; this is what CI runs
+Scripts/quality.sh --check      # verify only; what CI would run (it has never started: billing, roadmap 0028)
 Scripts/analyzers.sh            # unused code, duplicated code, retain cycles; also a stage of quality.sh
+Scripts/roadmap.sh open         # the open roadmap entries, read from their front matter
 swift test -c release --enable-testable-imports   # tests, without re-linting
 python3 Scripts/measure-budgets.py .build/release/ask 12   # the four budgets
 ```
@@ -54,7 +55,7 @@ tests. Style is Aemi's canonical configuration, synced rather than reinvented â€
 A pre-commit hook runs lint. A green test run is not a green commit.
 
 **Structure is gated too (ADR-0021).** `SourceStructureTests` and `ProviderNeutralityTests` run inside
-`swift test`, so the hooks, CI and `quality.sh` all enforce them: one top-level type per file, named for it;
+`swift test`, so the pre-push hook and `quality.sh` enforce them (CI would, if it ran): one top-level type per file, named for it;
 no file over 250 lines, tests included; provider names only in `AskAI/Anthropic`, `AskAI/Claude` and
 `Sources/ask`. Read the `ask-structure` skill before adding or moving code. `SourceStructure.knownViolations`
 is a ratchet baseline: it shrinks and never takes a new entry.

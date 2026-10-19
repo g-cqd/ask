@@ -18,7 +18,7 @@ underneath it would have made that work unmergeable.
 | `Sources/AskTUI/InteractiveScreen.swift` | `ScreenSession`, `ScreenEvent` | one file per type |
 | `Tests/AskTUITests/TerminalTeardownTests.swift` | the suite and `IdleConversation`, `RecordingConversation` | nest the doubles in the suite, or give a shared one a file |
 
-`AskTUI.swift` was split on 2026-10-19 (diary 08): it was not in the other branch's way. `AskMain.swift`,
+`AskTUI.swift` was split on 2026-10-19 (diary 09): it was not in the other branch's way. `AskMain.swift`,
 `PrintRun.swift` and `InteractiveScreen.swift` are all edited on `robust-runs`, and `TerminalTeardownTests.swift`
 too, so they wait for it to land.
 
