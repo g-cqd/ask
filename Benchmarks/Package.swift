@@ -14,7 +14,7 @@ let package = Package(
         .package(name: "ask", path: ".."),
         .package(url: "https://github.com/ordo-one/package-benchmark", .upToNextMajor(from: "1.38.0")),
         // The same revision ask pins; SwiftPM resolves one revision per package.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "f067f505d7dc5da6a509df3c7e40bea5967bd0bd")
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "43c4879988962c6dbe8b39b5a15fa3f4b88fa290")
     ],
     targets: [
         .executableTarget(
