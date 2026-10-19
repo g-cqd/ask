@@ -18,6 +18,14 @@ public final class SessionRecorder: Sendable {
         try file.withLock { (file: inout SessionFile) throws(SessionFileError) -> EntryID in try file.append(payload) }
     }
 
+    /// Reads the session under the lock without copying it out: a copy alive at the next append would make
+    /// that append copy the whole tree.
+    /// - Parameter body: reads the tree.
+    /// - Returns: what `body` returns.
+    func reading<Result: Sendable>(_ body: (borrowing SessionTree) -> Result) -> Result {
+        file.withLock { body($0.tree) }
+    }
+
     /// The session as recorded so far.
     public var tree: SessionTree { file.withLock { $0.tree } }
 

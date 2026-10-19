@@ -16,6 +16,22 @@ public enum AgentEvent: Sendable, Equatable {
     case retrying(attempt: Int, of: Int, delay: Duration, reason: String)
     /// The response stopped at the output-token limit; a continuation request was recorded and sent.
     case continuedAtOutputLimit
+    /// The conversation before the kept tail was replaced by `summary` in context; the session keeps it all.
+    /// `usage` is the summarisation request's.
+    case compacted(summary: String, usage: TokenUsage)
+    /// Compaction was due but no summary could be made; the run continues on the whole context.
+    case compactionFailed(String)
     /// The run ended because the model stopped calling tools.
     case finished(StopReason?)
+}
+
+extension AgentEvent {
+    /// The tokens a request cost, on the events that end one: a response, and a compaction's summary.
+    public var usage: TokenUsage? {
+        switch self {
+            case .responded(let response): response.usage
+            case .compacted(_, let usage): usage
+            default: nil
+        }
+    }
 }

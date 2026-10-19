@@ -72,4 +72,12 @@ struct SessionReplayTests {
                         id: "t1", name: "bash", output: ToolOutput(RequestContext.interruptedResult, isError: true)))
             ])
     }
+
+    @Test func `a compaction replays as one, and its usage and a response's count toward the totals`() {
+        let steps = SessionReplay.steps(entries([.user("Go."), .compaction(summary: "S", firstKept: EntryID("e0"))]))
+        #expect(steps.last == .event(.compacted(summary: "S", usage: TokenUsage())))
+        #expect(AgentEvent.compacted(summary: "S", usage: TokenUsage(output: 3)).usage == TokenUsage(output: 3))
+        #expect(AgentEvent.responded(response([], output: 4)).usage == TokenUsage(output: 4))
+        #expect(AgentEvent.continuedAtOutputLimit.usage == nil)
+    }
 }

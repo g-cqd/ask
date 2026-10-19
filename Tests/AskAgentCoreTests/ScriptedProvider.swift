@@ -20,6 +20,10 @@ final class ScriptedProvider: ModelProvider {
         case permanent
         /// Text that stops at the output-token limit.
         case cutOff(String)
+        /// A reply whose request the provider says held `prompt` input tokens.
+        case sized(String, prompt: Int)
+        /// Text that stops because the context window is full.
+        case windowFull(String)
     }
 
     struct TransientFailure: RetryAdvice, CustomStringConvertible {
@@ -72,6 +76,17 @@ final class ScriptedProvider: ModelProvider {
             case .failure:
                 continuation.finish(throwing: Failure())
                 return stream
+            case .sized(let text, let prompt):
+                events = [.messageStarted(id: "m", model: "claude-x", usage: TokenUsage(input: prompt))]
+                events += [
+                    .blockStarted(index: 0, .text), .textDelta(index: 0, text), .blockStopped(index: 0),
+                    .messageDelta(stopReason: .endTurn, usage: TokenUsage(output: 1))
+                ]
+            case .windowFull(let text):
+                events += [
+                    .blockStarted(index: 0, .text), .textDelta(index: 0, text), .blockStopped(index: 0),
+                    .messageDelta(stopReason: .contextWindowExceeded, usage: TokenUsage(output: 1))
+                ]
             case .cutOff(let text):
                 events += [
                     .blockStarted(index: 0, .text), .textDelta(index: 0, text), .blockStopped(index: 0),

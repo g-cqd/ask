@@ -40,7 +40,7 @@ final class AgentConversation: Conversation {
             switch step {
                 case .prompt(let text): updates.append(.userPrompt(text))
                 case .event(let event):
-                    if case .responded(let response) = event { usage.withLock { $0.add(response.usage) } }
+                    if let spent = event.usage { usage.withLock { $0.add(spent) } }
                     if let shown = Self.update(for: event) { updates.append(shown) }
             }
         }
@@ -53,9 +53,9 @@ final class AgentConversation: Conversation {
                 let loop = try self.agentLoop()
                 let recorder = try self.recorder()
                 try await loop.run(prompt, in: recorder) { event in
-                    if case .responded(let response) = event {
+                    if let spent = event.usage {
                         let summary = self.usage.withLock { totals in
-                            totals.add(response.usage)
+                            totals.add(spent)
                             return totals.summary
                         }
                         update(.status(summary))
@@ -101,6 +101,8 @@ final class AgentConversation: Conversation {
                 return .toolFinished(output.isError ? .failed(last) : .succeeded)
             case .repaired(let repairs):
                 return .notice("Repaired the context before this turn: \(repairs)", isError: false)
+            case .compacted, .compactionFailed:
+                return compactionNotice(event).map { .notice($0, isError: false) }
             case .continuedAtOutputLimit:
                 return .notice("The response hit the output limit; asking the model to continue.", isError: false)
             case .retrying(let attempt, let total, let delay, let reason):
@@ -111,7 +113,7 @@ final class AgentConversation: Conversation {
 }
 
 /// The interactive screen in the working directory.
-func runInteractive(model: String, maximumTurns: Int, session choice: SessionChoice) async {
+func runInteractive(model: String, limits: RunLimits, session choice: SessionChoice) async {
     let workingDirectory = FileManager.default.currentDirectoryPath
     let directory = SessionDirectory(project: workingDirectory)
     var notices: [String] = []
@@ -121,7 +123,7 @@ func runInteractive(model: String, maximumTurns: Int, session choice: SessionCho
         let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(directory: directory, resumed: resumed) {
             try makeLoop(
-                model: model, workingDirectory: workingDirectory, instructions: files, maximumTurns: maximumTurns,
+                model: model, workingDirectory: workingDirectory, instructions: files, limits: limits,
                 transport: URLSessionTransport())
         }
         try await runInteractiveScreen(
