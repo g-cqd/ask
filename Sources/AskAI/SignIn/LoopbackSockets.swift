@@ -10,10 +10,8 @@ enum LoopbackSockets {
         guard descriptor >= 0 else { throw .bindFailed(errno: errno) }
         var on: Int32 = 1
         unsafe setsockopt(descriptor, SOL_SOCKET, SO_REUSEADDR, &on, socklen_t(MemoryLayout<Int32>.size))
-        var address = sockaddr_in()
-        address.sin_family = sa_family_t(AF_INET)
-        address.sin_port = port.bigEndian
-        address.sin_addr.s_addr = UInt32(0x7f00_0001).bigEndian
+        // @dl:accept -- the test client makes the same BSD calls to connect that the listener makes to bind; the call dance is the API's
+        var address = address(port: port)
         let bound = withUnsafePointer(to: &address) {
             unsafe $0.withMemoryRebound(to: sockaddr.self, capacity: 1) {
                 unsafe bind(descriptor, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
@@ -26,6 +24,15 @@ enum LoopbackSockets {
         }
         _ = fcntl(descriptor, F_SETFL, fcntl(descriptor, F_GETFL) | O_NONBLOCK)
         return (descriptor, port == 0 ? boundPort(of: descriptor) : port)
+    }
+
+    /// `127.0.0.1:port` as a socket address.
+    static func address(port: UInt16) -> sockaddr_in {
+        var address = sockaddr_in()
+        address.sin_family = sa_family_t(AF_INET)
+        address.sin_port = port.bigEndian
+        address.sin_addr.s_addr = UInt32(0x7f00_0001).bigEndian
+        return address
     }
 
     /// Waits up to `milliseconds` for a connection, and accepts it.
