@@ -1,5 +1,4 @@
-internal import TerminalKitCore
-internal import TerminalKitIO
+internal import TerminalKitInput
 
 /// Restores the terminal when a shutdown signal arrives, then asks the process to die.
 ///
@@ -15,27 +14,27 @@ internal import TerminalKitIO
 /// The exit code follows the shell convention `128 + signo` so a supervising shell reports the exit
 /// as signalled rather than as a plain failure.
 struct SignalShutdown: Sendable {
-    private let connection: any TerminalConnection
+    private let session: TerminalSession
     private let onExit: @Sendable (Int32) -> Void
 
     /// - Parameters:
-    ///   - connection: the terminal to restore.
+    ///   - session: the terminal session to leave.
     ///   - onExit: asked to end the process with the given code, after the terminal is restored.
     ///     Injected so the sequence can be tested; production passes `exit`.
-    init(connection: any TerminalConnection, onExit: @escaping @Sendable (Int32) -> Void) {
-        self.connection = connection
+    init(session: TerminalSession, onExit: @escaping @Sendable (Int32) -> Void) {
+        self.session = session
         self.onExit = onExit
     }
 
-    /// Restores the terminal, then requests the exit.
+    /// Leaves the session, then requests the exit.
     ///
-    /// Restore first, always: a terminal that cannot be written to must still have its `termios`
-    /// put back, and ``TerminalTeardown/run(on:)`` ignores a write failure for exactly that reason.
+    /// Leaving first, always. It ignores a write failure and still restores `termios`. The normal path's
+    /// own `leave()` then does nothing, so the terminal sees one exit (TerminalKit ADR-0019).
     ///
     /// - Parameter signal: the signal number that arrived.
     /// - Complexity: O(1) — a fixed byte sequence, not a function of screen size.
     func handle(_ signal: Int32) {
-        TerminalTeardown.run(on: connection)
+        session.leave()
         onExit(128 + signal)
     }
 }
