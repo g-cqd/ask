@@ -139,7 +139,97 @@ def probe_interrupt():
     return all(results)
 
 
+def entry_kinds(path):
+    return [json.loads(l)["payload"]["kind"] for l in open(path) if '"type":"entry"' in l]
+
+
+def probe_resume():
+    print("C: resume, and one writer per session")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    server = Server([turn([("text", "First answer.")], "end_turn"), turn([("text", "Second answer.")], "end_turn")])
+    env = environment(state, server.url)
+
+    def ask(*arguments):
+        return subprocess.run([ASK, *arguments], cwd=project, env=env, capture_output=True, text=True, timeout=60)
+
+    first = ask("-p", "Remember the word KIWI.")
+    second = ask("-p", "What was the word?", "--continue")
+    files = sessions(state)
+    results = [check("first run exits 0", first.returncode == 0, first.stderr),
+               check("continued run exits 0", second.returncode == 0, second.stderr),
+               check("continued answer on stdout", second.stdout == "Second answer.\n", repr(second.stdout)),
+               check("still one session file", len(files) == 1, files)]
+    if len(server.requests) >= 2:
+        texts = [b.get("text", "") for m in server.requests[1]["body"]["messages"] for b in m["content"]]
+        results.append(check("the earlier exchange is sent again",
+                             any("KIWI" in t for t in texts) and "First answer." in texts, texts))
+    if len(files) != 1:
+        server.httpd.shutdown()
+        return False
+    session = files[0]
+    results.append(check("both runs recorded in it", entry_kinds(session) == ["user", "response"] * 2,
+                         entry_kinds(session)))
+    listing = ask("sessions")
+    results.append(check("ask sessions lists it with its first prompt",
+                         listing.returncode == 0 and os.path.basename(session) in listing.stdout
+                         and "Remember the word KIWI." in listing.stdout, listing.stdout + listing.stderr))
+    # Another process holds the session: a continued run must refuse, not write beside it.
+    holder = subprocess.Popen([sys.executable, "-c", "import fcntl, os, sys, time\n"
+                               "fd = os.open(sys.argv[1], os.O_RDONLY); fcntl.flock(fd, fcntl.LOCK_EX)\n"
+                               "print('held', flush=True); time.sleep(60)", session],
+                              stdout=subprocess.PIPE, text=True)
+    holder.stdout.readline()
+    before = open(session, "rb").read()
+    refused = ask("-p", "Again.", "--continue")
+    holder.kill()
+    holder.wait()
+    results += [check("refused while another process holds it", refused.returncode == 75
+                      and "open in another ask" in refused.stderr, f"{refused.returncode} {refused.stderr}"),
+                check("the held session is untouched", open(session, "rb").read() == before),
+                check("no session was started instead", len(sessions(state)) == 1, sessions(state))]
+    named = ask("-p", "By name.", "--resume", os.path.basename(session)[:12])
+    results.append(check("--resume finds it by a name prefix", named.returncode == 0
+                         and entry_kinds(session) == ["user", "response"] * 3, f"{named.stderr} {entry_kinds(session)}"))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_crash_resume():
+    print("D: --continue after ask was killed mid-command")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    server = Server([turn([("tool", "t1", "sleep 300 & echo $! > child.pid; wait")], "tool_use"),
+                     turn([("text", "Recovered.")], "end_turn")])
+    env = environment(state, server.url)
+    process = subprocess.Popen([ASK, "-p", "Run it"], cwd=project, env=env,
+                               stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    pid_file = os.path.join(project, "child.pid")
+    deadline = time.time() + 15
+    while not os.path.exists(pid_file) and time.time() < deadline:
+        time.sleep(0.02)
+    process.kill()
+    process.communicate(timeout=15)
+    try:
+        os.kill(int(open(pid_file).read()), signal.SIGKILL)  # SIGKILL gives ask no chance to stop its children.
+    except (OSError, ValueError):
+        pass
+    files = sessions(state)
+    results = [check("killed with the call unanswered", len(files) == 1 and entry_kinds(files[0]) == ["user", "response"],
+                     files and entry_kinds(files[0]))]
+    resumed = subprocess.run([ASK, "-p", "Go on.", "--continue"], cwd=project, env=env,
+                             capture_output=True, text=True, timeout=60)
+    results.append(check("the continued run exits 0", resumed.returncode == 0, resumed.stderr))
+    results.append(check("and answers", resumed.stdout == "Recovered.\n", repr(resumed.stdout)))
+    if check("two requests", len(server.requests) == 2, len(server.requests)):
+        blocks = [b for m in server.requests[1]["body"]["messages"] for b in m["content"]]
+        answered = [b for b in blocks if b["type"] == "tool_result" and b["tool_use_id"] == "t1"]
+        results.append(check("the unanswered call is answered as interrupted",
+                             len(answered) == 1 and answered[0].get("is_error") and "interrupted" in answered[0]["content"],
+                             answered))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

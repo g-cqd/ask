@@ -13,7 +13,7 @@ struct Ask: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "ask",
         abstract: "A terminal coding agent: reliable, fast, light.",
-        subcommands: [Login.self, Logout.self])
+        subcommands: [Login.self, Logout.self, Sessions.self])
 
     @Flag(help: "Print the four performance budgets as JSON and exit. Read by Scripts/measure-budgets.py.")
     var budgets = false
@@ -29,16 +29,33 @@ struct Ask: AsyncParsableCommand {
     @Option(help: "The most model requests one prompt may make before ask stops it.")
     var maxTurns = 100
 
+    @Flag(name: [.short, .customLong("continue")], help: "Continue the session written last in this project.")
+    var continueLatest = false
+
+    @Option(
+        name: [.short, .customLong("resume")],
+        help: "Resume a session by name, unique name prefix, or path. `ask sessions` lists them.")
+    var resume: String?
+
+    func validate() throws {
+        if continueLatest, resume != nil { throw ValidationError("Use --continue or --resume, not both.") }
+    }
+
+    private var session: SessionChoice {
+        if let resume { return .named(resume) }
+        return continueLatest ? .latest : .new
+    }
+
     func run() async throws {
         if budgets {
             FileHandle.standardOutput.write(Data(try Budget.reportJSON()))
             return
         }
         if let prompt {
-            await runPrompt(prompt, model: model, maximumTurns: maxTurns)
+            await runPrompt(prompt, model: model, maximumTurns: maxTurns, session: session)
             return
         }
-        await runInteractive(model: model, maximumTurns: maxTurns)
+        await runInteractive(model: model, maximumTurns: maxTurns, session: session)
     }
 }
 

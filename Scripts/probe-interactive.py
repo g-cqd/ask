@@ -84,13 +84,13 @@ class Emulator:
 
 
 class Screen:
-    def __init__(self, server_url, project):
-        self.state = tempfile.mkdtemp()
+    def __init__(self, server_url, project, state=None, arguments=()):
+        self.state = state or tempfile.mkdtemp()
         env = agent.environment(self.state, server_url)
         self.pid, self.fd = pty.fork()
         if self.pid == 0:
             os.chdir(project)
-            os.execve(ASK, [ASK], env)
+            os.execve(ASK, [ASK, *arguments], env)
         fcntl.ioctl(self.fd, termios.TIOCSWINSZ, struct.pack("HHHH", ROWS, COLUMNS, 0, 0))
         self.output = b""
         self.screen = Emulator()
@@ -221,7 +221,40 @@ def probe_quit():
     return all(results)
 
 
+def probe_resume():
+    print("D: --continue shows the earlier conversation and carries it on")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    server = agent.Server([agent.turn([("tool", "t1", "echo kept > kept.txt")], "tool_use"),
+                           agent.turn([("text", "First answer.")], "end_turn"),
+                           agent.turn([("text", "Second answer.")], "end_turn")])
+    first = Screen(server.url, project, state)
+    first.until("ask>")
+    first.type("Remember KIWI\r")
+    first.until("First answer.")
+    first.until_status("ready")
+    first.type("\x03")
+    first.finish()
+    resumed = Screen(server.url, project, state, ["--continue"])
+    results = [check("says which session it resumed", resumed.until("Resumed session 20")),
+               check("earlier prompt shown", resumed.until("› Remember KIWI")),
+               check("earlier tool call shown, succeeded", resumed.until("▸ bash echo kept > kept.txt ✓")),
+               check("earlier answer shown", resumed.until("First answer.")),
+               check("usage so far on the status line", "% cached" in resumed.status(), resumed.status())]
+    resumed.type("And now?\r")
+    results.append(check("new answer streamed", resumed.until("Second answer.")))
+    resumed.until_status("ready")
+    resumed.type("\x03")
+    results.append(check("quits on Ctrl-C", resumed.finish() == 0))
+    if check("three requests", len(server.requests) == 3, len(server.requests)):
+        texts = [b.get("text", "") for m in server.requests[2]["body"]["messages"] for b in m["content"]]
+        results.append(check("the earlier exchange is sent again", "Remember KIWI" in texts
+                             and "First answer." in texts, texts))
+    results.append(check("still one session", len(agent.sessions(state)) == 1, agent.sessions(state)))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
