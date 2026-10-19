@@ -21,7 +21,7 @@ extension AgentConversation {
     ) -> Task<Void, Never> {
         Task {
             switch name {
-                case "config": self.showConfiguration(update: update)
+                case "config": await self.showConfiguration(update: update)
                 case "compact": await self.compact(update: update)
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))
@@ -31,8 +31,8 @@ extension AgentConversation {
     }
 
     /// Reads the configuration again, so a change is announced here as it would be before a prompt, then shows it.
-    private func showConfiguration(update: @Sendable (ConversationUpdate) -> Void) {
-        refreshSettings(update: update)
+    private func showConfiguration(update: @Sendable (ConversationUpdate) -> Void) async {
+        await refreshSettings(update: update)
         let settings = current.withLock { $0.settings }
         let lines = settings.report(userFile: source.loader.userPath, projectFile: source.loader.projectPath)
         for line in lines { update(.notice(line, isError: false)) }
@@ -46,7 +46,7 @@ extension AgentConversation {
             return
         }
         do {
-            refreshSettings(update: update)
+            await refreshSettings(update: update)
             try await agentLoop().compactNow(in: recorder) { self.deliver($0, to: update) }
         } catch {
             report(error, to: update)
