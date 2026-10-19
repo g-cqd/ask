@@ -1,4 +1,4 @@
-extension SignInPoll {
+extension SignInPoll where Grant == String {
     /// Reads a poll answer in the shape both sign-ins use: a status, and a secret once the status says it is done.
     ///
     /// Anything not named is refused rather than guessed at, so a server that adds a state cannot be mistaken for
@@ -14,7 +14,7 @@ extension SignInPoll {
     ///   for a status not named or a secret not fit to use.
     static func reading(
         status: String?, secret: String?, complete: String, secretField: String, ending: [String: SignInError]
-    ) throws(SignInError) -> SignInPoll {
+    ) throws(SignInError) -> SignInPoll<String> {
         if status == "pending" { return .pending }
         if let status, let reason = ending[status] { throw reason }
         guard status == complete else { throw .invalidResponse("status") }

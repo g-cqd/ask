@@ -5,11 +5,10 @@ public import Foundation
 /// source): a PKCE-bound process, browser approval, polling for an exchange token, and a PKCE exchange for an API key.
 ///
 /// The key is a Mistral API key, not an OAuth token pair: nothing refreshes, and it is revoked in Mistral's console.
-public struct VibeSignIn: BrowserSignIn {
+public struct VibeSignIn: KeySignIn {
     /// The name the key is stored under: it is a Mistral key, so Mistral's preset finds it.
     public static let provider = "mistral"
 
-    public let pollInterval = Duration.seconds(3)
     public let pollsImmediately = true
 
     private struct Begun: Decodable {
@@ -54,10 +53,11 @@ public struct VibeSignIn: BrowserSignIn {
         }
         let window = min(Self.longest, .seconds(expiry - now()))
         return SignInStart(
-            session: VibeSession(processID: id, pollURL: poll, verifier: pkce.verifier), url: link, window: window)
+            session: VibeSession(processID: id, pollURL: poll, verifier: pkce.verifier), url: link, window: window,
+            interval: .seconds(3))
     }
 
-    public func poll(_ session: VibeSession) async throws(SignInError) -> SignInPoll {
+    public func poll(_ session: VibeSession) async throws(SignInError) -> SignInPoll<String> {
         let reply = try await http.get(session.pollURL)
         if reply.status == 410 { throw .expired }
         let polled = try reply.succeeded().decode(Polled.self)
@@ -66,7 +66,7 @@ public struct VibeSignIn: BrowserSignIn {
             ending: ["denied": .denied, "expired": .expired])
     }
 
-    public func finish(_ session: VibeSession, token: String) async throws(SignInError) -> String {
+    public func finish(_ session: VibeSession, grant token: String) async throws(SignInError) -> StoredKey {
         let body = JSONStreamWriter.object(of: [("exchange_token", token), ("code_verifier", session.verifier)])
         let exchanged =
             try await http.post(
@@ -76,7 +76,7 @@ public struct VibeSignIn: BrowserSignIn {
         guard SignInSecret.isValid(exchanged.api_key), let key = exchanged.api_key else {
             throw .invalidResponse("api_key")
         }
-        return key
+        return StoredKey(key: key, obtainedAt: now())
     }
 
     public func timestamp() -> Double { now() }
