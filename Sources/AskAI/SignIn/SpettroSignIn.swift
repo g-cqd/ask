@@ -5,13 +5,12 @@ public import Foundation
 /// link, then polling that session for the device's API key.
 ///
 /// The key is Spettro's own and does not expire on a schedule; it is revoked at spettro.app.
-public struct SpettroSignIn: BrowserSignIn {
+public struct SpettroSignIn: KeySignIn {
     /// Where Spettro serves its API unless `SPETTRO_API_URL` says otherwise.
     public static let defaultBase = "https://api.spettro.app"
     /// The name its key is stored under.
     public static let provider = "spettro"
 
-    public let pollInterval = Duration.seconds(2)
     public let pollsImmediately = false
 
     private struct Initiated: Decodable { let browser_url: String? }
@@ -44,10 +43,10 @@ public struct SpettroSignIn: BrowserSignIn {
             )
             .succeeded()
         let link = try SignInURL.browser(reply.decode(Initiated.self).browser_url, field: "browser_url")
-        return SignInStart(session: sessionID, url: link, window: .seconds(600))
+        return SignInStart(session: sessionID, url: link, window: .seconds(600), interval: .seconds(2))
     }
 
-    public func poll(_ session: String) async throws(SignInError) -> SignInPoll {
+    public func poll(_ session: String) async throws(SignInError) -> SignInPoll<String> {
         // @dl:accept -- each flow states its own words for the one reading; the shared logic is in SignInPoll.reading
         let reply = try await http.get(endpoint("auth/poll/\(session)"))
         if reply.status == 404 { throw .expired }
