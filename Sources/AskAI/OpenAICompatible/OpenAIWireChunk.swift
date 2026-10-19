@@ -10,6 +10,17 @@ struct OpenAIWireChunk: Decodable, Sendable {
     let choices: [Choice]?
     let usage: Usage?
     let error: ErrorBody?
+    /// vLLM's error shape, `{"object":"error","message":…,"type":…,"code":…}`, with no `error` wrapper.
+    let object: String?
+    let message: String?
+    let type: String?
+    let code: Code?
+
+    /// The error a payload carries at its top level, as vLLM sends it.
+    var topLevelError: ErrorBody? {
+        guard object == "error" else { return nil }
+        return ErrorBody(message: message, type: type, code: code)
+    }
 
     struct Choice: Decodable, Sendable {
         let delta: Delta?
@@ -81,6 +92,13 @@ struct OpenAIWireChunk: Decodable, Sendable {
         let message: String?
         let type: String?
         let code: Code?
+        /// llama.cpp's context size, sent with a refusal for length.
+        var nCtx: Int?
+
+        enum CodingKeys: String, CodingKey {
+            case message, type, code
+            case nCtx = "n_ctx"
+        }
     }
 
     /// An error `code`, which servers send as a number or as a string.

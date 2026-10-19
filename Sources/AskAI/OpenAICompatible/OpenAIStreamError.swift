@@ -11,6 +11,11 @@ public enum OpenAIStreamError: Error, Sendable, Equatable {
 extension OpenAIStreamError: StreamDecodingFailure {
     /// A failure the server called transient, or a stream that ended without saying why it stopped, which a
     /// local server does when it is stopped or runs out of memory mid-answer.
+    public var providerFailure: ProviderFailure? {
+        if case .provider(let failure) = self { return failure }
+        return nil
+    }
+
     public var isRetryable: Bool {
         switch self {
             case .provider(let failure): failure.isTransient
