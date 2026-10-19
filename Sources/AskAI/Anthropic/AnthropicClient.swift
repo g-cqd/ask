@@ -47,22 +47,13 @@ public struct AnthropicClient: Sendable {
         case refused(String)
     }
 
-    private static let loopbackHosts: Set<String> = ["localhost", "127.0.0.1", "::1", "[::1]"]
-
     private static func baseURL(_ environment: [String: String]) -> BaseURL {
         guard let base = environment["ANTHROPIC_BASE_URL"], !base.isEmpty else { return .unset }
-        guard let url = URL(string: base.hasSuffix("/") ? String(base.dropLast()) : base),
-            let scheme = url.scheme?.lowercased(), let host = url.host(percentEncoded: false)?.lowercased()
-        else { return .refused("it is not a URL") }
-        switch scheme {
-            case "https": return .use(url)
-            case "http" where loopbackHosts.contains(host): return .use(url)
-            case "http":
-                return .refused(
-                    "plain http to another machine would send the credential unencrypted; use https, or http only for localhost"
-                )
-            default: return .refused("it is not an http or https URL")
+        guard let url = URL(string: base.hasSuffix("/") ? String(base.dropLast()) : base) else {
+            return .refused("it is not a URL")
         }
+        if let reason = EndpointPolicy.refusal(for: url, carriesCredential: true) { return .refused(reason) }
+        return .use(url)
     }
 
     /// Sends `request` and streams the response's events. The stream throws an ``AnthropicClientError``.
