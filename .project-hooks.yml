@@ -15,6 +15,9 @@ pre-push:
     type: swift
     skip: true
   tasks:
+    - name: "Static analyzers"
+      run: "Scripts/analyzers.sh"
+      timeout: 300
     - name: "Release tests"
       run: 'swift test -c release --enable-testable-imports --scratch-path "$HOME/Library/Caches/project-hooks/builds/ask-release"'
       timeout: 1200
