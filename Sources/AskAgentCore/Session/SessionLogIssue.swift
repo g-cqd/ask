@@ -22,6 +22,24 @@ public enum SessionLogIssue: Sendable, Equatable {
     /// A leaf record named an entry not yet written. It was ignored; the leaf stays where it was.
     case ignoredLeaf(EntryID, line: Int)
 
+    /// What was repaired, in a clause: `line 12 was not a valid record and was skipped`.
+    public var explanation: String {
+        switch self {
+            case .missingHeader: "the file had no header, so it was read as the current format"
+            case .tornFinalLine(let line): "the last line (line \(line)) was cut off mid-write and was dropped"
+            case .unterminatedFinalLine(let line): "the last line (line \(line)) had no newline and was kept"
+            case .malformedLine(let line): "line \(line) was not a valid record and was skipped"
+            case .lineTooLong(let line): "line \(line) was too long and was skipped"
+            case .duplicateEntry(let id, let line): "line \(line) reused the entry id \(id); the first was kept"
+            case .invalidIdentifier(_, let line): "line \(line) had an invalid entry id and was skipped"
+            case .orphanedEntry(let id, _, let line):
+                "line \(line) (entry \(id)) had no parent, so it became a new root"
+            case .droppedCompaction(_, _, let line):
+                "line \(line) was a compaction pointing off its own branch, and was removed"
+            case .ignoredLeaf(_, let line): "line \(line) selected an entry that does not exist, and was ignored"
+        }
+    }
+
     /// The error strict decoding raises for this issue.
     var strictError: SessionLogError {
         switch self {
