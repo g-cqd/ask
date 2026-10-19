@@ -12,24 +12,65 @@ internal import System
 ///
 /// The loop and the session are both made on the first prompt, not at launch: nothing needs them before then,
 /// and building the loop measured about 1.2 ms of cold start.
+///
+/// Configuration is read again before every prompt (ADR-0031). A valid change takes effect on that prompt and
+/// is reported; an invalid one is reported once and the previous settings stay.
 final class AgentConversation: Conversation {
-    private let makeLoop: @Sendable () throws -> AgentLoop
+    private let reload: @Sendable () throws -> RunSettings
+    private let makeLoop: @Sendable (RunSettings) throws -> AgentLoop
     private let directory: SessionDirectory
-    private let loop = Mutex<AgentLoop?>(nil)
+    private let current: Mutex<Current>
     private let session = Mutex<SessionRecorder?>(nil)
     private let usage = Mutex(UsageTotals())
+
+    /// The settings in force, the loop built from them, and the last reload error shown.
+    private struct Current {
+        var settings: RunSettings
+        var loop: AgentLoop?
+        var shownError: String?
+    }
 
     /// - Parameters:
     ///   - directory: where a new session is created on the first prompt.
     ///   - resumed: a session already open, which prompts continue instead.
-    ///   - makeLoop: builds the loop, on the first prompt.
+    ///   - settings: what the run starts with.
+    ///   - reload: reads the settings again, all or nothing.
+    ///   - makeLoop: builds the loop for some settings, on the first prompt and after a change.
     init(
-        directory: SessionDirectory, resumed: SessionRecorder? = nil,
-        makeLoop: @escaping @Sendable () throws -> AgentLoop
+        directory: SessionDirectory, resumed: SessionRecorder? = nil, settings: RunSettings,
+        reload: @escaping @Sendable () throws -> RunSettings,
+        makeLoop: @escaping @Sendable (RunSettings) throws -> AgentLoop
     ) {
+        self.reload = reload
         self.makeLoop = makeLoop
         self.directory = directory
+        current = Mutex(Current(settings: settings))
         session.withLock { $0 = resumed }
+    }
+
+    /// Reads the configuration again and, when it changed, tells the screen what changed. The loop is rebuilt
+    /// on the next use.
+    private func refreshSettings(update: @Sendable (ConversationUpdate) -> Void) {
+        let fresh: RunSettings
+        do {
+            fresh = try reload()
+        } catch {
+            let text = "Configuration not reloaded: \(error). Keeping the previous settings."
+            let isNew: Bool = current.withLock { current in
+                defer { current.shownError = text }
+                return current.shownError != text
+            }
+            if isNew { update(.notice(text, isError: true)) }
+            return
+        }
+        let updates: [ConversationUpdate] = current.withLock { current in
+            current.shownError = nil
+            let updates = fresh.updates(replacing: current.settings)
+            if fresh.differs(from: current.settings) { current.loop = nil }
+            current.settings = fresh
+            return updates
+        }
+        for item in updates { update(item) }
     }
 
     /// What the screen shows first for a resumed session: its conversation, then its usage so far, which the
@@ -51,6 +92,7 @@ final class AgentConversation: Conversation {
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
         Task {
             do {
+                self.refreshSettings(update: update)
                 let loop = try self.agentLoop()
                 let recorder = try self.recorder()
                 try await loop.run(prompt, in: recorder) { event in
@@ -73,10 +115,10 @@ final class AgentConversation: Conversation {
     }
 
     private func agentLoop() throws -> AgentLoop {
-        try loop.withLock { existing throws -> AgentLoop in
-            if let existing { return existing }
-            let created = try makeLoop()
-            existing = created
+        try current.withLock { current throws -> AgentLoop in
+            if let existing = current.loop { return existing }
+            let created = try makeLoop(current.settings)
+            current.loop = created
             return created
         }
     }
@@ -114,7 +156,7 @@ final class AgentConversation: Conversation {
 }
 
 /// The interactive screen in the working directory.
-func runInteractive(model: ResolvedModel, limits: RunLimits, session choice: SessionChoice) async {
+func runInteractive(source: ConfigurationSource, settings: RunSettings, session choice: SessionChoice) async {
     let workingDirectory = FileManager.default.currentDirectoryPath
     let directory = SessionDirectory(project: workingDirectory)
     var notices: [String] = []
@@ -123,16 +165,18 @@ func runInteractive(model: ResolvedModel, limits: RunLimits, session choice: Ses
     let jobs = JobTable()
     do {
         let files = instructionFiles(workingDirectory: workingDirectory)
-        let conversation = AgentConversation(directory: directory, resumed: resumed) {
-            try makeLoop(
-                model: model, workingDirectory: workingDirectory, instructions: files, limits: limits, jobs: jobs,
-                transport: URLSessionTransport())
-        }
+        let conversation = AgentConversation(
+            directory: directory, resumed: resumed, settings: settings, reload: { try source.load() },
+            makeLoop: { settings in
+                try makeLoop(
+                    model: settings.model, workingDirectory: workingDirectory, instructions: files,
+                    limits: settings.limits, jobs: jobs, transport: URLSessionTransport())
+            })
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.
         try await runInteractiveScreen(
-            conversation: conversation, label: modelLabel(model), history: conversation.history(),
-            notices: notices + describe(files), beforeSignalExit: { jobs.terminateAllNow() })
+            conversation: conversation, label: modelLabel(settings.model), history: conversation.history(),
+            notices: notices + settings.description + describe(files), beforeSignalExit: { jobs.terminateAllNow() })
         await jobs.stopAll()
     } catch {
         await jobs.stopAll()

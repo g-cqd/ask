@@ -40,15 +40,6 @@ func describe(_ files: [ProjectInstructions.File]) -> [String] {
     }
 }
 
-/// The provider and model for this run, from `--provider`, `--model` and `providers.json` in ask's configuration
-/// directory.
-func resolveModel(provider: String?, model: String?) throws -> ResolvedModel {
-    let settings = try ProviderSettings.load(from: askConfigDirectory() + "/providers.json")
-    return try settings.resolve(
-        provider: provider, model: model, environment: ProcessInfo.processInfo.environment,
-        storedKeys: { () throws(CredentialFileError) in try CredentialFile.standard().loadKeys().mapValues(\.key) })
-}
-
 /// The loop's provider for `resolved`, sending through `transport`.
 func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> any ModelProvider {
     switch resolved.provider {
