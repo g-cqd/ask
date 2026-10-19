@@ -27,7 +27,8 @@ Six library targets and the `ask` executable, green in release (`Scripts/quality
 `AskAI` (provider-neutral `Model` and `Transport`, with `Anthropic` and `Claude` as the one provider so far),
 `AskAgentCore` (the agent loop, tools contract, sessions), `AskTools` (`read`, `write`, `edit`, `bash`),
 `AskTUI` (the interactive screen) and the `ask` composition root. `ask -p` runs one prompt through the loop;
-without `-p` it opens the full-screen interface. Not built: a second provider, the codemode host, sandboxing.
+without `-p` it opens the full-screen interface. Every run is a session file: `-c`/`--continue` resumes the
+last one, `-r`/`--resume <name>` a named one, and `ask sessions` lists them. Not built: a second provider, the codemode host, sandboxing.
 
 Every exit path of the terminal loop writes the reset ladder, and a shutdown signal both restores the
 terminal and dies with `128 + signo` (verified on a PTY: 143 for `SIGTERM`, 130 for `SIGINT`).
