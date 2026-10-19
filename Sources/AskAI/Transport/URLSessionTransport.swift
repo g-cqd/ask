@@ -28,15 +28,16 @@ public struct URLSessionTransport: HTTPTransport {
         continuation.onTermination = { termination in
             if case .cancelled = termination { task.cancel() }
         }
-        let status = try await withTaskCancellationHandler {
-            try await withCheckedThrowingContinuation { (head: CheckedContinuation<Int, any Error>) in
+        let (status, headers) = try await withTaskCancellationHandler {
+            try await withCheckedThrowingContinuation {
+                (head: CheckedContinuation<(Int, [String: String]), any Error>) in
                 delegate.awaitHead(head)
                 task.resume()
             }
         } onCancel: {
             task.cancel()
         }
-        return HTTPStreamingResponse(status: status, body: body)
+        return HTTPStreamingResponse(status: status, headers: headers, body: body)
     }
 
     /// An ephemeral session made once, on first use, by whichever request needs it first.
@@ -57,11 +58,11 @@ public struct URLSessionTransport: HTTPTransport {
     private final class StreamingDelegate: NSObject, URLSessionDataDelegate, Sendable {
         private let body: AsyncThrowingStream<[UInt8], any Error>.Continuation
         /// Resumed exactly once: by the response, or by completion when no response came.
-        private let head = Mutex<CheckedContinuation<Int, any Error>?>(nil)
+        private let head = Mutex<CheckedContinuation<(Int, [String: String]), any Error>?>(nil)
 
         init(body: AsyncThrowingStream<[UInt8], any Error>.Continuation) { self.body = body }
 
-        func awaitHead(_ continuation: CheckedContinuation<Int, any Error>) {
+        func awaitHead(_ continuation: CheckedContinuation<(Int, [String: String]), any Error>) {
             head.withLock { $0 = continuation }
         }
 
@@ -73,8 +74,13 @@ public struct URLSessionTransport: HTTPTransport {
             _ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
             completionHandler: @escaping @Sendable (URLSession.ResponseDisposition) -> Void
         ) {
-            let status = (response as? HTTPURLResponse)?.statusCode ?? 0
-            head.withLock { $0.take() }?.resume(returning: status)
+            let http = response as? HTTPURLResponse
+            // Header names are case-insensitive; lowercased keys make lookups exact.
+            var headers: [String: String] = [:]
+            for (name, value) in http?.allHeaderFields ?? [:] {
+                if let name = name as? String, let value = value as? String { headers[name.lowercased()] = value }
+            }
+            head.withLock { $0.take() }?.resume(returning: (http?.statusCode ?? 0, headers))
             completionHandler(.allow)
         }
 

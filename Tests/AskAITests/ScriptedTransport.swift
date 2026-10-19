@@ -10,7 +10,10 @@ final class ScriptedTransport: HTTPTransport {
     private let chunks: [String]
     private let lastRequest = Mutex<HTTPRequest?>(nil)
 
-    init(status: Int, chunks: [String]) {
+    private let headers: [String: String]
+
+    init(status: Int, chunks: [String], headers: [String: String] = [:]) {
+        self.headers = headers
         self.status = status
         self.chunks = chunks
     }
@@ -22,6 +25,6 @@ final class ScriptedTransport: HTTPTransport {
         let (body, continuation) = AsyncThrowingStream<[UInt8], any Error>.makeStream()
         for chunk in chunks { continuation.yield(Array(chunk.utf8)) }
         continuation.finish()
-        return HTTPStreamingResponse(status: status, body: body)
+        return HTTPStreamingResponse(status: status, headers: headers, body: body)
     }
 }

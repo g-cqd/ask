@@ -81,6 +81,35 @@ struct AnthropicClientTests {
         }
     }
 
+    @Test func `retry-after is read from an error response, and transient statuses say they are retryable`() async {
+        let overloaded = ScriptedTransport(
+            status: 529, chunks: [#"{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"#],
+            headers: ["retry-after": "3"])
+        do {
+            _ = try await events(AnthropicClient(transport: overloaded), auth: .apiKey("k"))
+            Issue.record("expected a failure")
+        } catch let error as AnthropicClientError {
+            #expect(error == .status(529, ProviderFailure(kind: .overloaded, message: "Overloaded"), retryAfter: 3))
+            #expect(error.isRetryable)
+            #expect(error.retryAfter == .seconds(3))
+        } catch {
+            Issue.record("unexpected \(error)")
+        }
+    }
+
+    @Test(arguments: [
+        (AnthropicClientError.status(429, nil), true), (.status(500, nil), true), (.status(529, nil), true),
+        (.status(408, nil), true), (.status(400, nil), false), (.status(401, nil), false),
+        (.status(200, ProviderFailure(kind: .overloaded, message: "")), true),
+        (.stream(.provider(ProviderFailure(kind: .rateLimited, message: ""))), true),
+        (.stream(.provider(ProviderFailure(kind: .invalidRequest, message: ""))), false),
+        (.stream(.malformed(event: "x")), false), (.truncated, true), (.transport("down"), true),
+        (.framing(.eventTooLarge(limit: 1)), false)
+    ])
+    func `only transient failures are retryable`(error: AnthropicClientError, retryable: Bool) {
+        #expect(error.isRetryable == retryable)
+    }
+
     @Test func `a stream that ends mid-event is truncated, not complete`() async {
         let transport = ScriptedTransport(
             status: 200, chunks: [turn[0], turn[1], turn[2], "data: {\"type\":\"content_bl"])

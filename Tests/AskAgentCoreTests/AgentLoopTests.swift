@@ -152,6 +152,24 @@ struct AgentLoopTests {
             case call(id: String, name: String, input: String)
             case calls([(String, String, String)])
             case failure
+            /// A failure the provider calls transient, optionally with its own requested wait.
+            case transient(retryAfter: Duration?)
+            /// Some text reaches the screen, then the stream fails transiently.
+            case textThenTransient(String)
+            /// A failure the provider says will not succeed if retried, such as a refused credential.
+            case permanent
+        }
+
+        struct TransientFailure: RetryAdvice, CustomStringConvertible {
+            let retryAfter: Duration?
+            var isRetryable: Bool { true }
+            var description: String { "overloaded" }
+        }
+
+        struct PermanentFailure: RetryAdvice, CustomStringConvertible {
+            var isRetryable: Bool { false }
+            var retryAfter: Duration? { nil }
+            var description: String { "credential refused" }
         }
 
         struct Failure: Error, CustomStringConvertible {
@@ -191,6 +209,18 @@ struct AgentLoopTests {
                     events.append(.messageDelta(stopReason: .toolUse, usage: TokenUsage(output: 1)))
                 case .failure:
                     continuation.finish(throwing: Failure())
+                    return stream
+                case .permanent:
+                    continuation.finish(throwing: PermanentFailure())
+                    return stream
+                case .transient(let retryAfter):
+                    continuation.finish(throwing: TransientFailure(retryAfter: retryAfter))
+                    return stream
+                case .textThenTransient(let text):
+                    for event in events + [.blockStarted(index: 0, .text), .textDelta(index: 0, text)] {
+                        continuation.yield(event)
+                    }
+                    continuation.finish(throwing: TransientFailure(retryAfter: nil))
                     return stream
             }
             for event in events + [.messageStopped] { continuation.yield(event) }
