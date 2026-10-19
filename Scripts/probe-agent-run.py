@@ -18,8 +18,8 @@ def sse(events):
     return "".join(f"event: {e['type']}\ndata: {json.dumps(e)}\n\n" for e in events).encode()
 
 
-def turn(blocks, stop):
-    events = [{"type": "message_start", "message": {"id": "m", "model": "fake", "usage": {"input_tokens": 1, "output_tokens": 1}}}]
+def turn(blocks, stop, input_tokens=1):
+    events = [{"type": "message_start", "message": {"id": "m", "model": "fake", "usage": {"input_tokens": input_tokens, "output_tokens": 1}}}]
     for i, block in enumerate(blocks):
         if block[0] == "text":
             events += [{"type": "content_block_start", "index": i, "content_block": {"type": "text", "text": ""}},
@@ -229,7 +229,47 @@ def probe_crash_resume():
     return all(results)
 
 
+def probe_compaction():
+    print("E: a context past the default threshold is compacted before the next request")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    server = Server([turn([("text", "Noted.")], "end_turn", input_tokens=200_000),
+                     turn([("text", "SUMMARY: the vault code is HERON-4412.")], "end_turn"),
+                     turn([("text", "Done.")], "end_turn")])
+    env = environment(state, server.url)
+
+    def ask(*arguments):
+        return subprocess.run([ASK, *arguments], cwd=project, env=env, capture_output=True, text=True, timeout=60)
+
+    first = ask("-p", "The vault code is HERON-4412.")
+    # Larger than the 80 KB kept tail, so the tail starts at this prompt and everything before it is summarised.
+    second = ask("-p", "Background notes: " + "lorem ipsum " * 7_500 + "Now say Done.", "--continue")
+    results = [check("both runs exit 0", first.returncode == 0 and second.returncode == 0, first.stderr + second.stderr),
+               check("compaction reported", "Compacted the conversation" in second.stderr, second.stderr[-400:]),
+               check("answer on stdout", second.stdout == "Done.\n", repr(second.stdout)),
+               check("three requests", len(server.requests) == 3, len(server.requests))]
+    if len(server.requests) == 3:
+        def texts(index):
+            return [b.get("text", "") for m in server.requests[index]["body"]["messages"] for b in m["content"]]
+        results.append(check("the summary request carries the old context and asks for a summary",
+                             any("HERON-4412" in t for t in texts(1)) and "compacted" in texts(1)[-1], texts(1)[-1][:80]))
+        # ask's own prompt leads the first user message (ADR-0007); the summary follows it, before the kept tail.
+        summary = "Summary of the conversation so far:\nSUMMARY: the vault code is HERON-4412."
+        later = texts(2)
+        kept = next((i for i, t in enumerate(later) if t.startswith("Background notes:")), -1)
+        results.append(check("the next request carries the summary before the kept tail",
+                             summary in later and later.index(summary) < kept, [t[:40] for t in later]))
+        results.append(check("and no longer carries what it summarised",
+                             not any(t == "The vault code is HERON-4412." for t in texts(2)), texts(2)[:3]))
+    files = sessions(state)
+    if check("one session file", len(files) == 1, files):
+        kinds = entry_kinds(files[0])
+        results.append(check("the full history is kept, with the compaction in it",
+                             kinds == ["user", "response", "user", "compaction", "response"], kinds))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

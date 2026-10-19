@@ -143,6 +143,17 @@ public struct SessionTree: Sendable, Equatable {
 
     // MARK: - Private
 
+    /// The nearest entry on the active branch, the leaf first, that `matches` accepts.
+    /// - Complexity: O(distance from the leaf), not O(depth): it stops at the first match.
+    public func nearest(where matches: (SessionPayload) -> Bool) -> SessionEntry? {
+        var cursor = leaf
+        while let current = cursor, let position = positions[current] {
+            if matches(entries[position].payload) { return entries[position] }
+            cursor = entries[position].parentID
+        }
+        return nil
+    }
+
     private func ancestry(of id: EntryID?) -> [SessionEntry] {
         var walked: [SessionEntry] = []
         var cursor = id

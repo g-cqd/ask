@@ -4,6 +4,7 @@
 
 internal import ArgumentParser
 internal import AskAI
+internal import AskAgentCore
 internal import AskCore
 internal import AskTUI
 internal import Foundation
@@ -29,6 +30,12 @@ struct Ask: AsyncParsableCommand {
     @Option(help: "The most model requests one prompt may make before ask stops it.")
     var maxTurns = 100
 
+    @Option(
+        help: ArgumentHelp(
+            "Compact the conversation once its context reaches this many tokens; 0 only when the window is full.",
+            valueName: "tokens"))
+    var compactAt = AgentSettings.defaultCompactAtTokens
+
     @Flag(name: [.short, .customLong("continue")], help: "Continue the session written last in this project.")
     var continueLatest = false
 
@@ -39,6 +46,10 @@ struct Ask: AsyncParsableCommand {
 
     func validate() throws {
         if continueLatest, resume != nil { throw ValidationError("Use --continue or --resume, not both.") }
+    }
+
+    private var limits: RunLimits {
+        RunLimits(maximumTurns: Swift.max(1, maxTurns), compactAtTokens: compactAt > 0 ? compactAt : nil)
     }
 
     private var session: SessionChoice {
@@ -52,10 +63,10 @@ struct Ask: AsyncParsableCommand {
             return
         }
         if let prompt {
-            await runPrompt(prompt, model: model, maximumTurns: maxTurns, session: session)
+            await runPrompt(prompt, model: model, limits: limits, session: session)
             return
         }
-        await runInteractive(model: model, maximumTurns: maxTurns, session: session)
+        await runInteractive(model: model, limits: limits, session: session)
     }
 }
 
