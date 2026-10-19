@@ -92,6 +92,19 @@ struct TerminalTeardownTests {
             .first { Array(haystack[$0 ..< ($0 + needle.count)]) == needle }
     }
 
+    @Test func `the screen opens with the notices it was given`() async throws {
+        let connection = MockTerminalConnection()
+        connection.feedInput([0x04])
+        let (resizes, done) = AsyncStream<Void>.makeStream()
+        done.finish()
+        try await runInteractiveScreen(
+            on: connection, conversation: IdleConversation(), label: "m",
+            notices: ["Instructions loaded from /p/AGENTS.md."], resizes: resizes)
+        #expect(
+            String(decoding: connection.writtenOutput, as: UTF8.self).contains("Instructions loaded from /p/AGENTS.md.")
+        )
+    }
+
     @Test func `a submitted prompt reaches the conversation and the screen`() async throws {
         let connection = MockTerminalConnection()
         connection.feedInput(Array("hi\r".utf8))
