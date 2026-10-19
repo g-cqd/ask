@@ -7,3 +7,15 @@ public enum OpenAIStreamError: Error, Sendable, Equatable {
     /// The server reported a failure inside the stream.
     case provider(ProviderFailure)
 }
+
+extension OpenAIStreamError: StreamDecodingFailure {
+    /// A failure the server called transient, or a stream that ended without saying why it stopped, which a
+    /// local server does when it is stopped or runs out of memory mid-answer.
+    public var isRetryable: Bool {
+        switch self {
+            case .provider(let failure): failure.isTransient
+            case .unfinished: true
+            case .malformed: false
+        }
+    }
+}

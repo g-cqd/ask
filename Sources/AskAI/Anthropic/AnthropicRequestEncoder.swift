@@ -31,12 +31,7 @@ public enum AnthropicRequestEncoder {
         let (messages, promptEnd) = carryingPromptMarkingItsEnd(
             request.systemPrompt, in: withoutUnsignedReasoning(request.messages))
         let marks = caching ? [promptEnd, conversationEnd(messages)].compactMap { $0 } : []
-        var writer = JSONStreamWriter(capacity: 4_096)
-        writer.object { writer in
-            writer.field("model", request.model)
-            writer.field("max_tokens", request.maxTokens)
-            writer.key("stream")
-            writer.bool(true)
+        return JSONStreamWriter.streamingRequest(model: request.model, maxTokens: request.maxTokens) { writer in
             writer.key("system")
             writer.array { $0.typed("text", "text", canonicalSystemLine) }
             writer.key("messages")
@@ -54,7 +49,6 @@ public enum AnthropicRequestEncoder {
                 }
             }
         }
-        return writer.finish()
     }
 
     /// The messages with the prompt moved in, and where its last block landed.

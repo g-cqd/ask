@@ -26,6 +26,12 @@ extension JSONStreamWriter {
         string(value)
     }
 
+    /// Writes `key` with a boolean value.
+    mutating func field(_ key: String, _ value: Bool) {
+        self.key(key)
+        bool(value)
+    }
+
     /// Writes `key` with an integer value.
     mutating func field(_ key: String, _ value: Int) {
         self.key(key)
@@ -39,5 +45,18 @@ extension JSONStreamWriter {
             $0.field("type", type)
             $0.field(key, value)
         }
+    }
+
+    /// The body of a streaming model request: one object that opens with `model`, `max_tokens` and `"stream": true`,
+    /// the fields every provider's protocol shares, followed by what `rest` writes.
+    static func streamingRequest(model: String, maxTokens: Int, _ rest: (inout JSONStreamWriter) -> Void) -> [UInt8] {
+        var writer = JSONStreamWriter(capacity: 4_096)
+        writer.object { writer in
+            writer.field("model", model)
+            writer.field("max_tokens", maxTokens)
+            writer.field("stream", true)
+            rest(&writer)
+        }
+        return writer.finish()
     }
 }

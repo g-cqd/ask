@@ -61,18 +61,8 @@ public struct AnthropicClient: Sendable {
         let http = HTTPRequest(
             url: endpoint, method: "POST", headers: Self.headers(for: auth),
             body: AnthropicRequestEncoder.encode(request))
-        let transport = transport
-        return AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    try await Self.run(http, over: transport) { continuation.yield($0) }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            continuation.onTermination = { _ in task.cancel() }
-        }
+        return ProviderStream.events(
+            http, over: transport, decoder: AnthropicStreamDecoder.self, succeeds: { $0 == 200 })
     }
 
     static func headers(for auth: Auth) -> [(name: String, value: String)] {
@@ -87,51 +77,5 @@ public struct AnthropicClient: Sendable {
                 headers.append(("x-api-key", key))
         }
         return headers
-    }
-
-    private static func run(
-        _ http: HTTPRequest, over transport: any HTTPTransport, yield: (ModelEvent) -> Void
-    ) async throws {
-        let response: HTTPStreamingResponse
-        do {
-            response = try await transport.send(http)
-        } catch let error as CancellationError {
-            throw error
-        } catch {
-            throw AnthropicClientError.transport(String(describing: error))
-        }
-        guard response.status == 200 else {
-            let body = (try? await response.collect(limit: 64 << 10)) ?? []
-            // `retry-after` in seconds; the HTTP-date form is not used by this API and is ignored.
-            let retryAfter = response.headers["retry-after"].flatMap(Double.init).flatMap { $0 >= 0 ? $0 : nil }
-            throw AnthropicClientError.status(response.status, failure(in: body), retryAfter: retryAfter)
-        }
-        var framer = SSEDecoder()
-        let decoder = AnthropicStreamDecoder()
-        var frames: [SSEEvent] = []
-        var events: [ModelEvent] = []
-        for try await chunk in response.body {
-            do { try framer.feed(chunk.span, into: &frames) } catch { throw AnthropicClientError.framing(error) }
-            for frame in frames {
-                do { try decoder.decode(frame, into: &events) } catch { throw AnthropicClientError.stream(error) }
-            }
-            frames.removeAll(keepingCapacity: true)
-            for event in events { yield(event) }
-            events.removeAll(keepingCapacity: true)
-        }
-        guard framer.finish() == .complete else { throw AnthropicClientError.truncated }
-    }
-
-    /// The provider's reason in an error body (`{"type":"error","error":{…}}`), if it has one.
-    private static func failure(in body: [UInt8]) -> ProviderFailure? {
-        var events: [ModelEvent] = []
-        do {
-            try AnthropicStreamDecoder().decode(SSEEvent(name: "error", data: body), into: &events)
-        } catch .provider(let failure) {
-            return failure
-        } catch {
-            return nil
-        }
-        return nil
     }
 }

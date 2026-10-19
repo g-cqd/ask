@@ -4,7 +4,7 @@ internal import AemiJSON
 ///
 /// Each event's JSON is parsed exactly once. `ping` is a keep-alive and produces nothing; any other event,
 /// delta or block type this decoder does not know produces ``ModelEvent/unrecognized(event:type:)``.
-public struct AnthropicStreamDecoder: Sendable {
+public struct AnthropicStreamDecoder: ModelEventDecoding {
     /// A decoder at the start of a response.
     public init() {}
 
@@ -20,6 +20,19 @@ public struct AnthropicStreamDecoder: Sendable {
         }
         guard let event = try wire.modelEvent(named: frame.name) else { return }
         events.append(event)
+    }
+
+    /// The provider's reason in an error body (`{"type":"error","error":{…}}`), if it has one.
+    public static func failure(inErrorBody body: [UInt8]) -> ProviderFailure? {
+        var events: [ModelEvent] = []
+        do {
+            try AnthropicStreamDecoder().decode(SSEEvent(name: "error", data: body), into: &events)
+        } catch .provider(let failure) {
+            return failure
+        } catch {
+            return nil
+        }
+        return nil
     }
 }
 

@@ -11,17 +11,9 @@ internal import AemiJSON
 public enum OpenAIRequestEncoder {
     /// The request body.
     public static func encode(_ request: ModelRequest) -> [UInt8] {
-        var writer = JSONStreamWriter(capacity: 4_096)
-        writer.object { writer in
-            writer.field("model", request.model)
-            writer.field("max_tokens", request.maxTokens)
-            writer.key("stream")
-            writer.bool(true)
+        JSONStreamWriter.streamingRequest(model: request.model, maxTokens: request.maxTokens) { writer in
             writer.key("stream_options")
-            writer.object {
-                $0.key("include_usage")
-                $0.bool(true)
-            }
+            writer.object { $0.field("include_usage", true) }
             writer.key("messages")
             writer.array { writer in
                 if !request.systemPrompt.isEmpty {
@@ -39,7 +31,6 @@ public enum OpenAIRequestEncoder {
                 }
             }
         }
-        return writer.finish()
     }
 
     // MARK: - Messages

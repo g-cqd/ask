@@ -1,17 +1,2 @@
-internal import AemiJSON
-internal import Foundation
-
-/// Why an Anthropic request failed. Each case calls for a different response.
-public enum AnthropicClientError: Error, Sendable, Equatable {
-    /// The API answered with a non-2xx status, its reason when the body carried one, and the seconds its
-    /// `retry-after` header asked for, when it sent one.
-    case status(Int, ProviderFailure?, retryAfter: Double? = nil)
-    /// The event stream reported a failure, or broke the protocol.
-    case stream(AnthropicStreamError)
-    /// The event stream exceeded a size limit.
-    case framing(SSEError)
-    /// The connection closed in the middle of an event.
-    case truncated
-    /// The request did not complete.
-    case transport(String)
-}
+/// Why an Anthropic request failed: a shared ``ProviderStreamError`` over the Anthropic decoder's failures.
+public typealias AnthropicClientError = ProviderStreamError<AnthropicStreamError>
