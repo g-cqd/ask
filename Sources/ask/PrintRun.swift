@@ -65,7 +65,6 @@ func runPrompt(_ prompt: String, source: ConfigurationSource, settings: RunSetti
     async
 {
     let model = settings.model
-    let limits = settings.limits
     for line in settings.description { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     let transport = URLSessionTransport()
     // Fail fast before any work when there is no way to authenticate. A configured provider has no sign-in.
@@ -83,8 +82,7 @@ func runPrompt(_ prompt: String, source: ConfigurationSource, settings: RunSetti
     for line in describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     do {
         loop = try makeLoop(
-            model: model, workingDirectory: workingDirectory, instructions: files, limits: limits, jobs: jobs,
-            transport: transport)
+            settings, workingDirectory: workingDirectory, instructions: files, jobs: jobs, transport: transport)
     } catch {
         fail("ask: \(error)", code: 70)
     }

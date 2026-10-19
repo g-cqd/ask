@@ -18,12 +18,14 @@ public struct ReadTool: ArgumentTool {
         ToolProperty.string("path")
         ToolProperty.integer("offset", minimum: 1).optional
         ToolProperty.integer("limit", minimum: 1).optional
+        // @dl:accept -- the file tools share a tool's shape: a schema, an empty init, and a run that asks the sandbox first
     }
 
     public init() {}
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
-        let text = try FileTools.text(at: FileTools.url(arguments.path, in: context), shownAs: arguments.path)
+        let url = try FileTools.authorized(arguments.path, for: [.read], in: context)
+        let text = try FileTools.text(at: url, shownAs: arguments.path)
         guard arguments.offset != nil || arguments.limit != nil else { return ToolOutput(text) }
         let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
         let first = Swift.max(1, arguments.offset ?? 1)

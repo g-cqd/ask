@@ -101,12 +101,20 @@ public struct BashTool: ArgumentTool {
         let printed = job.printed
         let cut = printed.bytes > OutputCap.standard.maximumBytes || printed.lines >= OutputCap.standard.maximumLines
         if !cut { job.discardFile() }
-        let body = body(job.takeOutput()) + (cut ? JobWaiting.fileLine(job) : "")
+        let output = job.takeOutput()
+        let body = body(output) + (cut ? JobWaiting.fileLine(job) : "") + sandboxNote(for: job, output: output)
         switch job.status {
             case .exited(0): return ToolOutput(body + "[exit 0]")
             case .failedToStart(let reason): return .error("bash could not start: \(reason)")
             case let status: return .error(body + "[\(status)]")
         }
+    }
+
+    /// When a sandboxed command's output says something was not permitted, a line saying the sandbox may be why and
+    /// what it protects, so the model does not retry the same thing or hunt for a way round it. Nothing otherwise.
+    static func sandboxNote(for job: Job, output: String) -> String {
+        guard output.contains("Operation not permitted"), let summary = job.sandbox.summary else { return "" }
+        return "[This command ran in a sandbox, which may be why it was refused. \(summary)]\n"
     }
 
     static func body(_ text: String) -> String { text.isEmpty ? "" : (text.hasSuffix("\n") ? text : text + "\n") }

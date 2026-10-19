@@ -4,6 +4,8 @@ internal import Subprocess
 internal import Synchronization
 internal import System
 
+internal import struct AskAgentCore.SandboxPolicy
+
 /// One command, running in its own session, whose output is collected, streamed to a file, and waited on
 /// (roadmap 0031, ADR-0027).
 ///
@@ -57,7 +59,11 @@ public final class Job: Sendable {
     let state: Mutex<State>
     private let keeping: Int
 
-    private init(id: String, command: String, outputPath: String?, keeping: Int) {
+    /// What the command is allowed to do; its output is explained against it when the sandbox refused something.
+    let sandbox: SandboxPolicy
+
+    private init(id: String, command: String, outputPath: String?, keeping: Int, sandbox: SandboxPolicy) {
+        self.sandbox = sandbox
         self.keeping = keeping
         self.id = id
         self.command = command
@@ -77,6 +83,8 @@ public final class Job: Sendable {
         var keepsInputOpen: Bool
         /// How many bytes of unread output to keep at each end.
         var keeping: Int
+        /// What the command may touch.
+        var sandbox: SandboxPolicy
     }
 
     /// Starts a job.
@@ -85,7 +93,9 @@ public final class Job: Sendable {
     ///   - observe: sees every chunk of output, for tests.
     /// - Returns: the running job.
     static func start(_ launch: Launch, observe: @escaping @Sendable ([UInt8]) -> Void) -> Job {
-        let job = Job(id: launch.id, command: launch.command, outputPath: launch.outputPath, keeping: launch.keeping)
+        let job = Job(
+            id: launch.id, command: launch.command, outputPath: launch.outputPath, keeping: launch.keeping,
+            sandbox: launch.sandbox)
         let (input, feed) = AsyncStream<[UInt8]>.makeStream()
         if !launch.keepsInputOpen { feed.finish() }
         let file = launch.outputPath.flatMap(JobProcess.createFile)
