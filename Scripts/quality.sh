@@ -11,6 +11,9 @@
 # `only_rules`, so it contributes the size and complexity metrics that formatting cannot express and
 # can never fight the formatter over a style question.
 #
+# Static analysis (unused code, duplicated code, retain cycles) is `Scripts/analyzers.sh`, which downloads its own
+# pinned tools; unlike swift-format and SwiftLint they are not expected to be installed.
+#
 # Exit codes: 0 clean, 1 drift or a violation, 2 a tool is missing.
 set -eu
 
@@ -39,6 +42,11 @@ fi
 printf '==> swiftlint (metrics, --strict)\n'
 swiftlint lint --strict --config .swiftlint.yml Sources Tests Benchmarks/Benchmarks \
     || fail "SwiftLint metric violations"
+
+printf '==> static analyzers (deadwood, dolly, arcleak)\n'
+# Pinned releases, installed on first use; see Scripts/analyzers.sh. They read source, so they need no build and
+# finish in well under a second, which is why they run before the tests rather than after.
+Scripts/analyzers.sh || fail "static analyzer findings"
 
 printf '==> build and test (release)\n'
 # Explicit testability for optimized tests (ADR-0006). Benchmark/shipping binaries are built
