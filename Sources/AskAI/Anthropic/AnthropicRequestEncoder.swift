@@ -28,7 +28,8 @@ public enum AnthropicRequestEncoder {
     ///     it off to keep their expectations readable.
     /// - Returns: the JSON body.
     public static func encode(_ request: ModelRequest, caching: Bool = true) -> [UInt8] {
-        let (messages, promptEnd) = carryingPromptMarkingItsEnd(request.systemPrompt, in: request.messages)
+        let (messages, promptEnd) = carryingPromptMarkingItsEnd(
+            request.systemPrompt, in: withoutUnsignedReasoning(request.messages))
         let marks = caching ? [promptEnd, conversationEnd(messages)].compactMap { $0 } : []
         var writer = JSONStreamWriter(capacity: 4_096)
         writer.object { writer in
@@ -69,6 +70,19 @@ public enum AnthropicRequestEncoder {
         while lead < first.blocks.count, case .toolResult = first.blocks[lead] { lead += 1 }
         first.blocks.insert(contentsOf: promptBlocks, at: lead)
         return ([first] + messages.dropFirst(), (0, lead + promptBlocks.count - 1))
+    }
+
+    /// The messages without reasoning that carries no signature, and without any message that leaves empty.
+    ///
+    /// Reasoning from another provider (an OpenAI-compatible server sends none) has no signature, and Anthropic
+    /// refuses a thinking block whose signature it did not issue; so does a message with no content. Removing them
+    /// here, before breakpoints are placed, keeps every later index true.
+    static func withoutUnsignedReasoning(_ messages: [ModelMessage]) -> [ModelMessage] {
+        messages.compactMap { message in
+            var kept = message
+            kept.blocks.removeAll { if case .thinking(_, let signature) = $0 { signature.isEmpty } else { false } }
+            return kept.blocks.isEmpty ? nil : kept
+        }
     }
 
     /// The last block of the conversation that can carry a breakpoint: thinking blocks cannot.
