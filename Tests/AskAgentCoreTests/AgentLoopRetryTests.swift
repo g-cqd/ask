@@ -11,7 +11,7 @@ import Testing
 /// immediate clock that records them, so no test can hang on a wait it did not expect.
 @Suite("Transient failures are retried with backoff, never after anything was shown")
 struct AgentLoopRetryTests {
-    private typealias Provider = AgentLoopTests.ScriptedProvider
+    private typealias Provider = ScriptedProvider
     private let directory = FileManager.default.temporaryDirectory.appending(path: "ask-retry-\(UUID().uuidString)")
 
     private func session() throws -> SessionRecorder {
