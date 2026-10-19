@@ -2,13 +2,23 @@ name: quality
 
 on:
   push:
+    branches: [main]
   pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Superseded runs on a branch or pull request are cancelled; main's never are.
+concurrency:
+  group: quality-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 # Actions are pinned to full commit SHAs, with the version in a comment, rather than floating on a
 # tag. A tag is a name someone can move; a SHA is the code that actually ran. This matches Aemi's
 # own workflows, and the drift between the two used to be a bug rather than a policy — see below.
 env:
-  SWIFT_VERSION: "6.4"
+  SWIFT_VERSION: "6.4.1"
 
 jobs:
   gate:
@@ -24,6 +34,20 @@ jobs:
       - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3.0.0-beta.1
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
+      - name: Restore the SwiftPM tree
+        id: spm-gate
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .build
+          key: spm-gate-${{ runner.os }}-${{ env.SWIFT_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: spm-gate-${{ runner.os }}-${{ env.SWIFT_VERSION }}-
+      - name: Restore the analyzers
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # Pinned by version and SHA-256 in Scripts/analyzers.sh, which re-verifies the hash; the cache only
+          # saves the download.
+          path: ~/Library/Caches/ask/analyzers
+          key: analyzers-${{ hashFiles('Scripts/analyzers.sh') }}
       - name: SwiftLint (metrics)
         # The runner image already ships SwiftLint; install only when it is missing.
         run: |
@@ -35,8 +59,16 @@ jobs:
         # --check: fail if the tree is not already canonical, so a formatting drift is a red build
         # rather than something a reviewer has to notice.
         run: Scripts/quality.sh --check
+      - name: Save the SwiftPM tree
+        if: ${{ always() && github.ref == 'refs/heads/main' && steps.spm-gate.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .build
+          key: spm-gate-${{ runner.os }}-${{ env.SWIFT_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
 
   budgets:
+    # After the gate: a tree that fails format, metrics, analyzers or tests is not worth a PTY measurement.
+    needs: gate
     # The four performance budgets, enforced by running the real binary on a real PTY. Same pinned
     # runner as the gate: these are hardware-specific numbers, and a budget measured on one machine
     # and enforced on another fires for the wrong reason, which is worse than no budget because it
@@ -50,9 +82,34 @@ jobs:
       - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3.0.0-beta.1
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
+      - name: Restore the SwiftPM tree
+        id: spm-release
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .build
+          key: spm-release-${{ runner.os }}-${{ env.SWIFT_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: spm-release-${{ runner.os }}-${{ env.SWIFT_VERSION }}-
       - name: Build release
         run: swift build -c release
       - name: Measure the four budgets
         # Exits non-zero when any budget is over. The limits come from the binary itself
         # (`ask --budgets`), so there is one definition and no copy in a script to drift.
         run: python3 Scripts/measure-budgets.py .build/release/ask 12
+      - name: Save the SwiftPM tree
+        if: ${{ always() && github.ref == 'refs/heads/main' && steps.spm-release.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .build
+          key: spm-release-${{ runner.os }}-${{ env.SWIFT_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+
+  result:
+    name: quality result
+    needs: [gate, budgets]
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Every job passed
+        run: |
+          echo '${{ toJSON(needs) }}' > needs.json
+          if grep -E '"result": "(failure|cancelled)"' needs.json; then exit 1; fi
