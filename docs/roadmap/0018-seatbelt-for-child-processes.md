@@ -1,6 +1,6 @@
 ---
-status: not-started
-blocked-by: ["0017"]
+status: done
+blocked-by:
 date: 2026-10-19
 decision: ADR-0020
 ---
@@ -30,3 +30,12 @@ bash, and any later spawning tool, run under a Seatbelt profile compiled from th
 
 Spawn cost against unsandboxed bash; the probe says about +7 ms. The candidate improvement is a launcher
 that calls `sandbox_init_with_parameters` and then `exec`, kept only if it measures faster.
+
+## Done (2026-10-19)
+
+ADR-0035. bash runs under `sandbox-exec` with the policy compiled to Seatbelt: paths as parameters, the
+protections last, every ancestor of a protected path guarded against rename. Group teardown still reaches the
+command. A refusal is followed by a note with the policy.
+
+**Measured:** +8 ms per command (1.9–2.3 → 9.7–11 ms). The launcher candidate measured no faster and is
+rejected. Integration tests run each probed attack beside the ordinary work that must still pass.
