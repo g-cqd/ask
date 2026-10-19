@@ -7,7 +7,9 @@ B: SIGINT while a command runs. ask exits 130, and the command's backgrounded ch
 
 Usage: Scripts/probe-agent-run.py .build/release/ask
 """
-import json, os, signal, subprocess, sys, tempfile, threading, time
+import json
+import re
+import socket, os, signal, subprocess, sys, tempfile, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 ASK = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask")
@@ -25,8 +27,10 @@ def turn(blocks, stop, input_tokens=1):
             events += [{"type": "content_block_start", "index": i, "content_block": {"type": "text", "text": ""}},
                        {"type": "content_block_delta", "index": i, "delta": {"type": "text_delta", "text": block[1]}}]
         else:
-            events += [{"type": "content_block_start", "index": i, "content_block": {"type": "tool_use", "id": block[1], "name": "bash", "input": {}}},
-                       {"type": "content_block_delta", "index": i, "delta": {"type": "input_json_delta", "partial_json": json.dumps({"command": block[2]})}}]
+            # ("tool", id, command) calls bash; ("call", id, name, arguments) calls any tool.
+            name, arguments = ("bash", {"command": block[2]}) if block[0] == "tool" else (block[2], block[3])
+            events += [{"type": "content_block_start", "index": i, "content_block": {"type": "tool_use", "id": block[1], "name": name, "input": {}}},
+                       {"type": "content_block_delta", "index": i, "delta": {"type": "input_json_delta", "partial_json": json.dumps(arguments)}}]
         events.append({"type": "content_block_stop", "index": i})
     events += [{"type": "message_delta", "delta": {"stop_reason": stop}, "usage": {"output_tokens": 5}},
                {"type": "message_stop"}]
@@ -91,7 +95,7 @@ def probe_round_trip():
         first, second = server.requests[0]["body"], server.requests[1]["body"]
         results.append(check("system is the canonical line", first["system"] == [{"type": "text", "text": CANONICAL}], first["system"]))
         results.append(check("prompt leads the first user message", "You are ask" in first["messages"][0]["content"][0]["text"]))
-        results.append(check("tools offered", [t["name"] for t in first["tools"]] == ["read", "write", "edit", "bash"]))
+        results.append(check("tools offered", [t["name"] for t in first["tools"]] == ["read", "write", "edit", "bash", "wait", "job_input", "job_stop"]))
         last = second["messages"][-1]["content"][0]
         results.append(check("tool result sent back", last["type"] == "tool_result" and "probe-ok" in last["content"], last))
         results.append(check("user-agent is ask", server.requests[0]["headers"].get("user-agent") == "ask"))
@@ -269,7 +273,76 @@ def probe_compaction():
     return all(results)
 
 
+def free_port():
+    probe = socket.socket()
+    probe.bind(("127.0.0.1", 0))
+    port = probe.getsockname()[1]
+    probe.close()
+    return port
+
+
+def accepts(port):
+    try:
+        socket.create_connection(("127.0.0.1", port), timeout=1).close()
+        return True
+    except OSError:
+        return False
+
+
+def tool_results(server):
+    """Every tool result the model was sent, by call id, from the last request."""
+    blocks = [b for m in server.requests[-1]["body"]["messages"] for b in m["content"]]
+    return {b["tool_use_id"]: b["content"] for b in blocks if b["type"] == "tool_result"}
+
+
+def probe_jobs():
+    print("F: a server run as a job: yielded, waited on, used, stopped; a long output kept in a file")
+    project, state, port = tempfile.mkdtemp(), tempfile.mkdtemp(), free_port()
+    server = Server([
+        turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
+        turn([("call", "t2", "wait", {"job": "job-1", "port_open": port, "timeout_seconds": 20})], "tool_use"),
+        turn([("tool", "t3", f"curl -s http://127.0.0.1:{port}/ | head -c 200")], "tool_use"),
+        turn([("tool", "t4", "seq 1 1500000")], "tool_use"),
+        turn([("call", "t5", "job_stop", {"job": "job-1"})], "tool_use"),
+        turn([("text", "Done.")], "end_turn")])
+    run = subprocess.run([ASK, "-p", "Serve, check, stop."], cwd=project, env=environment(state, server.url),
+                         capture_output=True, text=True, timeout=120)
+    results = [check("exit 0", run.returncode == 0, run.stderr[-300:]), check("six requests", len(server.requests) == 6, len(server.requests))]
+    if len(server.requests) == 6:
+        got = tool_results(server)
+        results += [check("bash yielded the server as job-1", "still running as job-1 after 1 s" in got.get("t1", ""), got.get("t1")),
+                    check("wait saw the port open", f"[port {port} accepts connections]" in got.get("t2", ""), got.get("t2")),
+                    check("the server answered", "Directory listing" in got.get("t3", ""), got.get("t3")),
+                    check("job_stop stopped it", got.get("t5", "").startswith("[job-1 stopped]"), got.get("t5"))]
+        named = re.search(r"\[whole output in (.+?)\]", got.get("t4", ""))
+        if check("the long output names its file", named is not None, got.get("t4", "")[-200:]):
+            whole = open(named.group(1)).read()
+            results.append(check("the file holds the whole output, middle included",
+                                 whole == "".join(f"{n}\n" for n in range(1, 1_500_001)), len(whole)))
+            results.append(check("and the result itself was cut", "750000\n" not in got["t4"]))
+    results.append(check("the port is closed afterwards", not accepts(port)))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_jobs_end_with_ask():
+    print("G: a job left running when -p ends is stopped with it")
+    project, state, port = tempfile.mkdtemp(), tempfile.mkdtemp(), free_port()
+    server = Server([
+        turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
+        turn([("call", "t2", "wait", {"job": "job-1", "port_open": port, "timeout_seconds": 20})], "tool_use"),
+        turn([("text", "Left it running.")], "end_turn")])
+    run = subprocess.run([ASK, "-p", "Serve and leave it."], cwd=project, env=environment(state, server.url),
+                         capture_output=True, text=True, timeout=120)
+    got = tool_results(server) if len(server.requests) == 3 else {}
+    results = [check("exit 0", run.returncode == 0, run.stderr[-300:]),
+               check("the server was up during the run", f"[port {port} accepts connections]" in got.get("t2", ""), got),
+               check("and is gone once ask has exited", not accepts(port))]
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
