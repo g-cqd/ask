@@ -5,16 +5,21 @@ internal import Foundation
 /// `ask models codex`: explicitly refresh the selected account's catalog, not pi's static model list.
 struct ModelsCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "models", abstract: "List a connection's available models. Currently supports codex.")
+        commandName: "models",
+        abstract: "List a connection's available models. Supports codex and named Codex connections.")
 
-    @Argument(help: "The connection to query. Currently: codex.") var connection = ProviderSettings.codex
+    @Argument(help: "The connection to query: codex or a named Codex registration.") var connection = ProviderSettings
+        .codex
 
     func run() async throws {
-        guard connection == ProviderSettings.codex else {
-            throw ValidationError("Catalog discovery currently supports codex; other connections still accept --model.")
+        let record = connection == ProviderSettings.codex ? nil : try NamedConnections.named(connection)
+        guard record == nil || record?.provider == .codex else {
+            throw ValidationError(
+                "Catalog discovery currently supports Codex connections; other providers still accept --model.")
         }
         do {
-            let snapshot = try await ModelDiscovery.codex(environment: ProcessInfo.processInfo.environment)
+            let snapshot =
+                try await ModelDiscovery.codex(environment: ProcessInfo.processInfo.environment, connection: record)
                 .models(now: Date().timeIntervalSince1970, refresh: true)
             for notice in snapshot.notices { FileHandle.standardError.write(Data("ask: \(notice)\n".utf8)) }
             print("MODEL                         CONTEXT       OUTPUT")

@@ -2,7 +2,9 @@ internal import AskAI
 internal import Foundation
 
 /// Signs in to Codex, by browser (the default) or by a code typed at a link, and stores the credentials.
-func codexLogin(device: Bool, file: CredentialFile) async {
+func codexLogin(device: Bool, file: CredentialFile, connection: ConnectionRecord? = nil, replaceAccount: Bool = false)
+    async
+{
     let transport = URLSessionTransport()
     do {
         let credentials: CodexCredentials
@@ -19,7 +21,11 @@ func codexLogin(device: Bool, file: CredentialFile) async {
                         return await Task.detached { readLine(strippingNewline: true) }.value
                     })
         }
-        try file.saveCodex(credentials)
+        if let connection {
+            try NamedConnections.registry().saveCodex(credentials, for: connection, replaceAccount: replaceAccount)
+        } else {
+            try file.saveCodex(credentials)
+        }
         print("Signed in to Codex. Credentials: \(file.url.path)")
     } catch {
         fail("ask: sign-in failed: \(error)", code: 77)
