@@ -90,6 +90,7 @@ One component for `/` and `@`, attached to the input and not floating:
 - **The mouse wheel must scroll the transcript, not move the selection.** In the alternate screen, kitty turns the
   wheel into Up and Down keys unless mouse reporting is on, and the prototype's pickers were driven by it until it was.
 - Attachments become chips in the input. In the one-row input they sit inline before the text.
+- Rows are clickable once the mouse is supported (roadmap 0051, TerminalKit 0016); a click selects as Enter does, and Enter stays the way.
 
 ## Names that collide
 
