@@ -1,0 +1,185 @@
+{
+ "data": [
+  {
+   "id": "minimax/minimax-m3.1-flash:free",
+   "name": "MiniMax: MiniMax M3.1 Flash (free)",
+   "context_length": 1000000,
+   "architecture": {
+    "modality": "text+image+video->text"
+   },
+   "pricing": {},
+   "top_provider": {
+    "context_length": 1000000,
+    "max_completion_tokens": 524288,
+    "is_moderated": false
+   },
+   "supported_parameters": [
+    "include_reasoning",
+    "max_tokens",
+    "reasoning"
+   ],
+   "description": "(trimmed)"
+  },
+  {
+   "id": "~unbiased/pareto-latest",
+   "name": "Pareto Latest",
+   "context_length": 1048576,
+   "architecture": {
+    "modality": "text+image->text"
+   },
+   "pricing": {},
+   "top_provider": {
+    "context_length": 1048576,
+    "max_completion_tokens": 131072,
+    "is_moderated": false
+   },
+   "supported_parameters": [
+    "max_tokens",
+    "temperature",
+    "tool_choice"
+   ],
+   "description": "(trimmed)"
+  },
+  {
+   "id": "~deepseek/deepseek-pro-latest",
+   "name": "DeepSeek: DeepSeek Pro Latest",
+   "context_length": 1048576,
+   "architecture": {
+    "modality": "text->text"
+   },
+   "pricing": {},
+   "top_provider": {
+    "context_length": 1048576,
+    "max_completion_tokens": 393216,
+    "is_moderated": false
+   },
+   "supported_parameters": [
+    "frequency_penalty",
+    "include_reasoning",
+    "logit_bias"
+   ],
+   "description": "(trimmed)"
+  },
+  {
+   "id": "nvidia/nemotron-3.5-super-vl",
+   "name": "NVIDIA: Nemotron 3.5 Super VL",
+   "context_length": 1048576,
+   "architecture": {
+    "modality": "text+image+video->text"
+   },
+   "pricing": {},
+   "top_provider": {
+    "context_length": 262144,
+    "max_completion_tokens": 235929,
+    "is_moderated": false
+   },
+   "supported_parameters": [
+    "frequency_penalty",
+    "include_reasoning",
+    "logit_bias"
+   ],
+   "description": "(trimmed)"
+  },
+  {
+   "id": "stepfun/step-5-preview",
+   "name": "StepFun: Step 5 Preview",
+   "context_length": 1048576,
+   "architecture": {
+    "modality": "text+image+video->text"
+   },
+   "pricing": {},
+   "top_provider": {
+    "context_length": 1000000,
+    "max_completion_tokens": 64000,
+    "is_moderated": false
+   },
+   "supported_parameters": [
+    "frequency_penalty",
+    "include_reasoning",
+    "logit_bias"
+   ],
+   "description": "(trimmed)"
+  },
+  {
+   "id": "typesafe/jev-router",
+   "name": "TypeSafe: Jev Router",
+   "context_length": 1000000,
+   "architecture": {
+    "modality": "text+image+file+audio+video->text"
+   },
+   "pricing": {},
+   "top_provider": {
+    "context_length": null,
+    "max_completion_tokens": null,
+    "is_moderated": false
+   },
+   "supported_parameters": [
+    "frequency_penalty",
+    "include_reasoning",
+    "logit_bias"
+   ],
+   "description": "(trimmed)"
+  },
+  {
+   "id": "deepseek/deepseek-v4.1-flash-1017",
+   "name": "DeepSeek: DeepSeek V4.1 Flash 1017",
+   "context_length": 1048576,
+   "architecture": {
+    "modality": "text+image->text"
+   },
+   "pricing": {},
+   "top_provider": {
+    "context_length": 1048576,
+    "max_completion_tokens": 393216,
+    "is_moderated": false
+   },
+   "supported_parameters": [
+    "frequency_penalty",
+    "include_reasoning",
+    "logit_bias"
+   ],
+   "description": "(trimmed)"
+  },
+  {
+   "id": "elorian/glimpse",
+   "name": "Elorian: Glimpse",
+   "context_length": 262144,
+   "architecture": {
+    "modality": "text+image+video->text"
+   },
+   "pricing": {},
+   "top_provider": {
+    "context_length": 262144,
+    "max_completion_tokens": 256000,
+    "is_moderated": false
+   },
+   "supported_parameters": [
+    "frequency_penalty",
+    "include_reasoning",
+    "logit_bias"
+   ],
+   "description": "(trimmed)"
+  },
+  {
+   "id": "xingchen-agi/xing4.0-29b-a4b:free",
+   "name": "XingChen: Xing4.0 29B A4B (free)",
+   "context_length": 262144,
+   "architecture": {
+    "modality": "text->text"
+   },
+   "pricing": {},
+   "top_provider": {
+    "context_length": 262144,
+    "max_completion_tokens": 235929,
+    "is_moderated": false
+   },
+   "supported_parameters": [
+    "frequency_penalty",
+    "include_reasoning",
+    "max_tokens"
+   ],
+   "description": "(trimmed)"
+  }
+ ],
+ "total_count": 468
+}

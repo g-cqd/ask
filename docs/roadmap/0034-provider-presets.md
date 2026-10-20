@@ -20,8 +20,14 @@ and the context windows of known models are filled in where the provider's catal
 Twenty-four presets from pi's catalogue, each resolving from its key variable with no `providers.json`; an entry of the
 same name overrides only what it gives; an unknown name lists the presets and which still need their variable.
 
+## Done (diary 55, ADR-0056)
+
+Explicit `ask models NAME` listing and cached context windows. Live public-list verification: OpenRouter (model and
+route windows), Hugging Face (minimum known live-route window), NVIDIA (limits unknown). Runs consume the selected
+entry locally and user-stated limits win. No static model/context table was added.
+
 ## Still owed
 
-- Context windows of known models, from each provider's catalog.
+- Authenticated list/window checks for the other presets. Google's OpenAI list root returned 404 and needs its own adapter.
 - `opencode` and `opencode-go`, which need an `x-opencode-session` header per conversation.
 - `ant-ling`, whose endpoint answers only HTML to unauthenticated requests.
