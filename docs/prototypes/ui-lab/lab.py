@@ -20,12 +20,13 @@ SURFACES = ['off', 'subtle', 'normal', 'strong']
 STROKES = {'subtle': (0.22, 1.4), 'normal': (0.35, 2.0), 'strong': (0.45, 2.6)}
 SURFACE_K = [0.0, 0.6, 1.0, 1.6]
 BOTTOMS = ['roomy', 'tight', 'flush']
-DENSITIES = ['compact', 'aerial', 'custom']
+DENSITIES = ['pixel', 'aerial', 'custom']
 PADS = [0, 0.5, 1, 2]            # rows of padding inside a block; 0.5 is drawn with half-block glyphs and shared with the neighbour
 # Every block, and the input, has the same inner padding. What differs is how blocks are separated and how much
-# chrome sits at the bottom: compact separates with pixel hairlines (no row), aerial with a block-line row.
+# chrome sits at the bottom: pixel separates with 1 px hairlines (no row), aerial with a block-line row. 'pixel' is the setup
+# the owner settled on: one row of padding, a roomy bottom. A flush bottom and half-row padding were tried and rejected.
 DENSITY_PRESETS = {
-    'compact': dict(sep=0, bottom=2, pad=0.5),
+    'pixel': dict(sep=0, bottom=0, pad=1),
     'aerial': dict(sep=1, bottom=0, pad=1),
 }
 
@@ -211,7 +212,7 @@ def png(w, h, raw):
 
 
 SETTING_ROWS = [
-    ('Density', 'density', DENSITIES, 'compact: blocks separated by 1px hairlines, flush bottom. aerial: blocks separated by a block-line row, roomy bottom. Both pad every block the same. Changing a single setting below makes it custom.'),
+    ('Preset', 'density', DENSITIES, 'pixel: blocks separated by 1px hairlines, one row of padding, roomy bottom. aerial: the same, with a block-line row between blocks instead of a hairline. Changing any single setting below makes it custom.'),
     ('Theme source', 'theme', THEME_SOURCES, 'terminal: derive everything from your terminal\'s own background, foreground and ANSI colours. light / dark: fixed presets.'),
     ('Accent', 'accent', list(ACCENTS), 'Which ANSI colour is the accent (focus bar, chips, selection).'),
     ('Surfaces', 'surface', SURFACES, 'How far each kind of block differs from the page. off (the default): nothing is painted, and hierarchy comes from spacing and type; the terminal\'s own background and transparency are untouched.'),
@@ -251,10 +252,11 @@ class Lab:
         self.variant, self.theme, self.sep, self.thick = variant, 'terminal', 0, 1
         self.status_mode = 0
         self.gfx = False
-        self.accent, self.surface, self.bottom, self.paint = 'blue', 0, 2, 0
-        self.density, self.pad = 'compact', 0.5
+        self.accent, self.surface, self.bottom, self.paint = 'blue', 0, 0, 0
+        self.density, self.pad = 'pixel', 1
         self.stroke = 'subtle'
         self.strokes = []           # vertical strokes drawn this frame: the lab asserts there is one at a boundary
+        self.img_clip, self.placed, self.phase = None, [], 'page'   # rows an open popup hides from images; every placement, for tests
         self.term = None            # colours read from the terminal (OSC 10/11/4), or None
         self.rescan = False         # set when the terminal says its colour scheme changed
         self.retheme()
@@ -351,8 +353,18 @@ class Lab:
         self.cache[key] = ident
         return ident
 
-    def place(self, ident, x, y, xoff=0, yoff=0):
-        self.out.append(f'\033[{y+1};{x+1}H\033_Ga=p,i={ident},C=1,z=1,q=2,X={xoff},Y={yoff}\033\\')
+    def place(self, ident, x, y, xoff=0, yoff=0, rows=1):
+        """Place an image at a cell. Images sit above the text layer, so one under an open popup would show through it:
+        rows inside the popup are skipped, and a tall image that runs into it is cropped (kitty's source-rect height)."""
+        crop, visible = '', rows
+        if self.img_clip is not None:
+            top, bottom = self.img_clip
+            if top <= y < bottom:
+                return
+            if y < top < y + rows:
+                crop, visible = f',h={(top - y) * self.ch}', top - y
+        self.placed.append((y, visible, self.phase))
+        self.out.append(f'\033[{y+1};{x+1}H\033_Ga=p,i={ident},C=1,z=1,q=2,X={xoff},Y={yoff}{crop}\033\\')
 
     def rgba(self, name):
         h = self.col(name).lstrip('#')
@@ -361,12 +373,12 @@ class Lab:
     def px_hline(self, x, y, w, color='line', yoff=0):
         wpx, t = w * self.cw, self.thick
         raw = (b'\0' + self.rgba(color) * wpx) * t
-        self.place(self.image(('h', wpx, t, self.col(color)), wpx, t, raw), x, y, 0, yoff)
+        self.place(self.image(('h', wpx, t, self.col(color)), wpx, t, raw), x, y, 0, yoff, 1)
 
     def px_vline(self, x, y, h, color='line'):
         t, hpx = self.thick, h * self.ch
         raw = (b'\0' + self.rgba(color) * t) * hpx
-        self.place(self.image(('v', hpx, t, self.col(color)), t, hpx, raw), x, y, self.cw // 2)
+        self.place(self.image(('v', hpx, t, self.col(color)), t, hpx, raw), x, y, self.cw // 2, 0, h)
 
     def px_scrollbar(self, x, y, rows, start_px, size_px, edge=False):
         """Track and thumb as pixels. `edge`: the track is the last pixel column of the cell, flush with what follows."""
@@ -379,7 +391,7 @@ class Lab:
             row_track, row_thumb, wpx, xoff = clear * 2 + track + clear * 2, clear + thumb * 3 + clear, 5, max(0, self.cw - 6)
         lines = [b'\0' + (row_thumb if start_px <= r < start_px + size_px else row_track) for r in range(hpx)]
         key = ('s', hpx, start_px, size_px, wpx, self.col('line'), self.col('accent'))
-        self.place(self.image(key, wpx, hpx, b''.join(lines)), x, y, xoff)
+        self.place(self.image(key, wpx, hpx, b''.join(lines)), x, y, xoff, 0, rows)
 
     # ---------- separators ----------
     def sep_rows(self):
@@ -662,12 +674,17 @@ class Lab:
         self.thick = 2 if int(self.thick) == 2 else 1
         self.retheme()
 
+    def popup_extent(self, bottom):
+        """(top row, height) of the open popup when it ends just above row `bottom`."""
+        n = len(SETTING_ROWS) if self.modal == 'settings' else max(4, len(self.matches()[:7]))
+        h = self.sep_rows() + 1 + n
+        return max(2, bottom - h), h
+
     def draw_settings(self, bottom):
         self.xlim = self.w
         sr = self.sep_rows()
         n = len(SETTING_ROWS)
-        h = sr + 1 + n
-        top = max(2, bottom - h)
+        top, h = self.popup_extent(bottom)
         body = top + sr
         for r in range(top, bottom):
             self.fill(0, r, self.w, 'panel')
@@ -733,8 +750,7 @@ class Lab:
         rows = self.matches()[:7]
         self.selected = min(self.selected, max(0, len(rows) - 1))
         sr = self.sep_rows()
-        h = sr + 1 + max(4, len(rows))
-        top = max(2, bottom - h)
+        top, h = self.popup_extent(bottom)
         body = top + sr
         for r in range(top, bottom):
             self.fill(0, r, self.w, 'panel')
@@ -772,7 +788,7 @@ class Lab:
         self.gfx = self.gfx_ok()
         self.out = ['\033[?25l' + ('' if self.theme == 'terminal' and self.term else '\033]11;' + self.col('base') + '\033\\')] + (['\033_Ga=d,d=a,q=2\033\\'] if self.gfx else [])
         self.grid = [[' '] * self.w for _ in range(self.h)]
-        self.strokes = []
+        self.strokes, self.placed, self.phase, self.img_clip = [], [], 'page', None
         self.clip_y, self.xlim = self.h, self.w
         for r in range(self.h):
             self.fill(0, r, self.w, 'base')
@@ -789,6 +805,10 @@ class Lab:
         side = self.variant == 3 and self.w >= 108
         ws_y = rule_y - 1 if (self.bottom == 0 and not side) else None
         self.bottom_y = ws_y if ws_y is not None else rule_y
+        self.img_clip = None
+        if self.modal:
+            top_, _h = self.popup_extent(rule_y)
+            self.img_clip = (top_, rule_y)
         vp_y0, vp_y1 = 2, (ws_y if ws_y is not None else rule_y)
         vp_right = self.w - (30 if side else 0)
         vp_h = vp_y1 - vp_y0
@@ -849,7 +869,9 @@ class Lab:
         self.draw_input(in_y)
         self.draw_status(status_y)
         if self.modal:
+            self.img_clip, self.phase = None, 'popup'          # the popup's own strokes are drawn, nothing under it
             self.draw_popup(rule_y)
+            self.phase = 'page'
 
         # lab strip (not part of the product UI)
         self.xlim = self.w
@@ -867,7 +889,7 @@ class Lab:
         if self.sep == 0 and self.gfx:
             t, hpx = self.thick, rows * self.ch
             raw = (b'\0' + self.rgba('line') * t) * hpx
-            self.place(self.image(('e', hpx, t, self.col('line')), t, hpx, raw), x, y, self.cw - t)
+            self.place(self.image(('e', hpx, t, self.col('line')), t, hpx, raw), x, y, self.cw - t, 0, rows)
         elif self.sep != 3:
             for r in range(y, y + rows):
                 self.put(x, r, '▕', 'line', 'base')
@@ -1012,7 +1034,7 @@ class Lab:
             self.theme = THEME_SOURCES[(THEME_SOURCES.index(self.theme) + 1) % 3]
             self.retheme()
         elif k == 'z':
-            self.set_setting('density', 1 if self.density == 'compact' else 0, DENSITIES)
+            self.set_setting('density', 1 if self.density == 'pixel' else 0, DENSITIES)
         elif k == 'v':
             self.bottom = (self.bottom + 1) % 3
             self.density = self.matching_density()
@@ -1290,19 +1312,19 @@ def check():
     app.render((140, 45), (16, 30))
     assert app.strokes == [('s', 139)]
     # 3d. Compact and aerial are different designs, not one with the knobs turned.
-    compact, aerial = Lab(2), Lab(2)
-    compact.force_gfx = aerial.force_gfx = True
+    pixel, aerial = Lab(2), Lab(2)
+    pixel.force_gfx = aerial.force_gfx = True
     aerial.set_setting('density', 1, DENSITIES)
-    out_c, out_a = compact.render((120, 42), (16, 30)), aerial.render((120, 42), (16, 30))
-    assert compact.density == 'compact' and aerial.density == 'aerial' and compact.pad == 0.5 and aerial.pad == 1
-    rows_c, rows_a = compact.build(100), aerial.build(100)
-    n_blocks = len(compact.blocks(100))
+    out_c, out_a = pixel.render((120, 42), (16, 30)), aerial.render((120, 42), (16, 30))
+    assert pixel.density == 'pixel' and aerial.density == 'aerial' and pixel.pad == aerial.pad == 1 and pixel.bottom == aerial.bottom == 0
+    rows_c, rows_a = pixel.build(100), aerial.build(100)
+    n_blocks = len(pixel.blocks(100))
     assert sum(ln.edge for ln in rows_c) == n_blocks - 1 and not any(ln.role == 'sep' for ln in rows_c)   # pixel hairlines, mid-boundary
     assert sum(ln.role == 'sep' for ln in rows_a) == n_blocks - 1 and not any(ln.edge for ln in rows_a)   # block-line rows
-    assert out_c.count('a=p') > out_a.count('a=p')                      # compact separates with pixels, aerial with glyphs
-    assert any('▁' in ''.join(r) for r in aerial.grid) and not any('▁' in ''.join(r) for r in compact.grid)
-    assert (42 - compact.bottom_y) < (42 - aerial.bottom_y)               # aerial's bottom section is roomier
-    for app in (compact, aerial):                                          # and neither spends a row on empty margin
+    assert out_c.count('a=p') > out_a.count('a=p')                      # pixel separates with hairlines, aerial with glyphs
+    assert any('▁' in ''.join(r) for r in aerial.grid) and not any('▁' in ''.join(r) for r in pixel.grid)
+    assert (42 - pixel.bottom_y) < (42 - aerial.bottom_y)                 # a block-line row costs a row; a hairline does not
+    for app in (pixel, aerial):                                          # and neither spends a row on empty margin
         assert ''.join(app.grid[2]).strip() != '', 'content starts directly under the header'
         assert not hasattr(app, 'margin') and not hasattr(app, 'breath')
     # Aerial keeps the bottom rows still when thinking is expanded, like the other densities.
@@ -1362,6 +1384,26 @@ def check():
     settings.retheme()
     swatches = settings.render((120, 42))
     assert settings.pal['accent'] and f"48;2;{hex_rgb(settings.pal['accent'])[0]};" in swatches, 'the settings swatches still preview colours'
+    # 3g. Nothing under a popup shows through it. Strokes are images above the text layer, so a hairline or a scrollbar
+    #     behind an open popup would be drawn across it (the settings panel showed exactly that).
+    for modal in ('settings', 'refs', 'commands', 'agents', 'tasks', 'permission'):
+        for variant in (2, 3):
+            for pad in PADS:
+                for bottom in range(3):
+                    app = Lab(variant)
+                    app.pad, app.bottom, app.force_gfx, app.modal, app.trigger = pad, bottom, True, modal, None
+                    app.render((120, 42), (16, 30))
+                    bottom_row = app.in_y - app.sep_rows()
+                    top, _ = app.popup_extent(bottom_row)
+                    page = [(y, v) for y, v, phase in app.placed if phase == 'page']
+                    assert page, 'there are strokes to test against'
+                    assert all(y + v <= top or y >= bottom_row for y, v in page), (modal, variant, pad, bottom, top, page)
+                    assert any(phase == 'popup' for _, _, phase in app.placed), 'the popup draws its own strokes'
+    # 3h. The defaults are the owner's settled setup: nothing painted, the terminal's own background, pixel hairlines at 1px,
+    #     subtle strokes, one row of padding, a roomy bottom, chips, the Surfaces layout.
+    app = Lab(2)
+    assert (app.surface, app.paint, app.sep, app.thick, app.stroke, app.pad, app.bottom, app.status_mode, app.variant, app.density) == \
+        (0, 0, 0, 1, 'subtle', 1, 0, 0, 2, 'pixel')
     # 4. Reading earlier output: expanding must not move the viewport offset.
     app = Lab()
     app.render((100, 28))
@@ -1431,15 +1473,15 @@ def check():
     app = Lab()
     app.browse = True
     app.key('s')
-    assert app.modal == 'settings' and app.density == 'compact'
+    assert app.modal == 'settings' and app.density == 'pixel'
     change(app, 'density', +1)
     assert app.density == 'aerial' and app.sep == 1 and app.bottom == 0 and app.pad == 1
     change(app, 'density', -1)
-    assert app.density == 'compact' and app.sep == 0 and app.bottom == 2 and app.pad == 0.5
+    assert app.density == 'pixel' and app.sep == 0 and app.bottom == 0 and app.pad == 1
     change(app, 'pad', +1)                          # one single change makes it custom ...
-    assert app.density == 'custom' and app.pad == 1
+    assert app.density == 'custom' and app.pad == 2
     change(app, 'pad', -1)                          # ... and returning to the preset's values returns to the preset
-    assert app.density == 'compact'
+    assert app.density == 'pixel'
     change(app, 'theme', +1)
     assert app.theme == 'light' and app.pal['base'] == '#ffffff'
     change(app, 'accent', +1)
