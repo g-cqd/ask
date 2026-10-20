@@ -25,6 +25,7 @@ public enum SessionReplay {
             pending.removeAll()
         }
         for entry in entries {
+            if case .destination = entry.payload { continue }
             if case .toolResult(let id, let content, let isError) = entry.payload,
                 let index = pending.firstIndex(where: { $0.id == id })
             {
@@ -45,6 +46,7 @@ public enum SessionReplay {
         _ payload: SessionPayload, calls: inout [(id: String, name: String, input: JSONObject)]
     ) -> [Step] {
         switch payload {
+            case .destination: return []
             case .user(let text) where text == AgentLoop.continuationPrompt: return [.event(.continuedAtOutputLimit)]
             case .user(let text): return [.prompt(text)]
             case .assistant(let text): return [.event(.model(.textDelta(index: 0, text)))]

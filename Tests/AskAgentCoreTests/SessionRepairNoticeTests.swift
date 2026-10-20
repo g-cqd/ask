@@ -9,7 +9,7 @@ import Testing
 @Suite("A repaired session says so, and what was repaired")
 struct SessionRepairNoticeTests {
     private let directory = FileManager.default.temporaryDirectory.appending(path: "ask-repair-\(UUID().uuidString)")
-    private let header = "{\"type\":\"session\",\"version\":1}\n"
+    private let header = "{\"type\":\"session\",\"version\":2}\n"
     private let entry = "{\"id\":\"a\",\"payload\":{\"kind\":\"user\",\"text\":\"x\"},\"type\":\"entry\"}\n"
 
     private func recorder(_ text: String) throws -> SessionRecorder {
