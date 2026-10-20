@@ -56,7 +56,7 @@ struct ModelsCommand: AsyncParsableCommand {
         let snapshot = try await ProviderModelDiscovery.catalog(for: listing, environment: environment)
             .models(now: now, refresh: true)
         ModelTable.print(snapshot, defaultFirst: false)
-        print("No default: the provider does not say which model it prefers. Name one with --model.")
+        print("No default chosen from list order. Name a model with --model or configuration.")
     }
 
     /// The connection's own names, below the server's list, so what `--model` accepts is in one place.
