@@ -10,6 +10,10 @@ extension Transcript.Item {
     func contentText(folded: Bool) -> String {
         switch self {
             case .user(let text), .assistant(let text), .notice(let text, _): return text
+            case .thinking(let text):
+                let body = Transcript.kept(text)
+                let header = Self.thinkingHeader(body: body, folded: folded)
+                return body.isEmpty || folded ? header : header + "\n" + body
             case .tool(let name, let summary, let status, let output):
                 let header = Self.toolHeader(
                     name: name, summary: summary, status: status, output: output, folded: folded)
@@ -27,6 +31,14 @@ extension Transcript.Item {
         if !folded { return "▾ " + body }
         let count = TranscriptContent.hardLines(of: output).count
         return "▸ \(body) · \(count) \(count == 1 ? "line" : "lines")"
+    }
+
+    /// The one line a thinking block starts with: `▸ thinking · 3 lines` folded, `▾ thinking` open.
+    static func thinkingHeader(body: String, folded: Bool) -> String {
+        guard !body.isEmpty else { return "▸ thinking" }
+        if !folded { return "▾ thinking" }
+        let count = TranscriptContent.hardLines(of: body).count
+        return "▸ thinking · \(count) \(count == 1 ? "line" : "lines")"
     }
 
     /// What follows a tool's summary, and how it is styled.

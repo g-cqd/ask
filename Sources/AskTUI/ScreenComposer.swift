@@ -170,21 +170,29 @@ public struct ScreenComposer: Sendable {
                 }
                 let header = Transcript.Item.toolHeader(
                     name: name, summary: summary, status: status, output: output, folded: folded)
-                let head = rows(header, width: columns, col: 0, style: style)
-                guard !output.isEmpty, !folded else { return head }
-                // The body is hard lines 1 and on, drawn two columns in, dim: what the tool returned, not the tool's own line.
-                let body = TextWrap.rows(output, width: columns - 2)
-                    .map { row in
-                        Line(
-                            text: "  " + row.text, style: Style(dim: true),
-                            source: Source(block: block, line: row.line + 1, offset: row.offset, col: 2, text: row.text)
-                        )
-                    }
-                return head + body
+                return rows(header, width: columns, col: 0, style: style)
+                    + (folded ? [] : body(of: output, block: block, columns: columns, style: Style(dim: true)))
+            case .thinking(let text):
+                let kept = Transcript.kept(text)
+                let style = Style(dim: true, italic: true)
+                let header = Transcript.Item.thinkingHeader(body: kept, folded: folded)
+                return rows(header, width: columns, col: 0, style: style)
+                    + (folded ? [] : body(of: kept, block: block, columns: columns, style: style))
             case .notice(let text, let isError):
                 let style = isError ? Style(fg: .indexed(1)) : Style(dim: true)
                 return rows(text, width: columns, col: 0, style: style)
         }
+    }
+
+    /// A foldable block's body: hard lines 1 and on, drawn two columns in. What the block holds, not its own header line.
+    private static func body(of text: String, block: Int, columns: Int, style: Style) -> [Line] {
+        guard !text.isEmpty else { return [] }
+        return TextWrap.rows(text, width: columns - 2)
+            .map { row in
+                Line(
+                    text: "  " + row.text, style: style,
+                    source: Source(block: block, line: row.line + 1, offset: row.offset, col: 2, text: row.text))
+            }
     }
 
     /// Writes a whole row, the text then blanks to the edge, unless the row already holds exactly this.
