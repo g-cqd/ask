@@ -40,7 +40,7 @@ roadmap. `Scripts/analyzers.sh` adds unused code, duplicated code and retain cyc
 probed by breaking it.
 
 **The four budgets are measured**, by `Scripts/measure-budgets.py` against the release binary on a PTY.
-Idle memory is currently **over** its budget, and the action-to-action figure is provisional
+Idle memory is within its 24 MiB budget (about 9 MiB measured; [ADR-0038](docs/adr/0038-the-idle-memory-budget-is-24-mib.md)), and the action-to-action figure is provisional
 ([roadmap 0007](docs/roadmap/0007-re-derive-the-action-budget.md)). **CI has never run**: GitHub refuses to start
 the jobs for a billing reason, so the gates are enforced by `Scripts/quality.sh` and the git hooks, not by CI.
 
@@ -56,7 +56,7 @@ While the agent is working, Enter queues **steering** after its current response
 Esc aborts and returns unsent messages to the editor alongside your draft.
 A prompt can be several lines: paste keeps its line breaks, Shift-Enter or Ctrl-J starts a new line, and Up/Down, Home/End,
 Ctrl-A/E/U/K work on the current line. A message is accepted only once it
-is recorded in the session ([ADR-0037](docs/adr/0037-queued-input-is-acknowledged-only-after-it-is-persisted.md)).
+is recorded in the session ([ADR-0040](docs/adr/0040-queued-input-is-acknowledged-only-after-it-is-persisted.md)).
 
 ## Sandbox
 
@@ -96,7 +96,7 @@ machine (ADR-0024, ADR-0027).
 Twenty-four services are known by name and need only their key variable (`--provider groq` with `GROQ_API_KEY`), as in
 pi. `ask login spettro` and `ask login mistral-vibe` sign in by browser and store the key they are issued;
 `ask login codex` signs in to a ChatGPT subscription (a browser, or `--device` for a code typed at a link), and
-`ask --provider codex --model ID` uses it. `api: "openai-responses"` points an entry at any server speaking the
+`ask --provider codex` uses it with the first model your account lists (`ask models codex` shows them; `--model ID` chooses). `api: "openai-responses"` points an entry at any server speaking the
 Responses API. Browser sign-in, inference and a read/write tool loop have been verified with a real ChatGPT account
 ([live results](docs/diary/2026-10-20-27.md)); direct OpenAI-account use remains unverified. Model availability depends on
 your account; the installed pi catalog is not proof that Codex accepts a model. `ask logout [NAME]` forgets one sign-in, or all. For Ollama, start it with `OLLAMA_CONTEXT_LENGTH=32768`: its default context is sized

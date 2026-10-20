@@ -9,6 +9,7 @@ extension CredentialFileError: CustomStringConvertible {
             case .damaged(let path):
                 "\(path) is not valid credentials; repair it, or run `ask logout` to remove it and sign in again"
             case .io(let path, let code): "\(path): \(String(cString: strerror(code)).lowercased())"
+            case .locked(let path): "another ask is saving credentials in \(path) and did not finish; try again"
         }
     }
 }

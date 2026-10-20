@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-20
 ---
 
-# 0037 — Queued input is acknowledged only after it is persisted
+# 0040 — Queued input is acknowledged only after it is persisted
 
 ## Context
 
@@ -20,7 +20,7 @@ Release tests cover tool batches, pauses, FIFO and priority, failure, cancellati
 failure. Controller tests place input in the completion race and acknowledge messages during abort.
 Real-PTY probes J–L check actual provider requests, the archive and the returned draft.
 A live Haiku run produced `STEERED_OK`, then `FOLLOWUP_OK`, with three user entries, each recorded once.
-The measured costs and counterfactuals are in diary 28.
+The measured costs and counterfactuals are in diary 31.
 
 ## Decision
 
@@ -49,4 +49,4 @@ Messages are ordinary persisted user entries, so replay, compaction and reload n
 Pending input is in memory, not a crash-durable draft. Explicit quit discards it. A command in progress is not
 an agent turn: submitted prompts stay in the editor, and other busy commands still refuse.
 The editor now renders hard newlines in returned input; creating and navigating multi-line prompts is the next
-unit (0045), not claimed complete here.
+unit (0049), not claimed complete here.

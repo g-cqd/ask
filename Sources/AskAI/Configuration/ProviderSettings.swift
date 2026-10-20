@@ -84,16 +84,17 @@ public struct ProviderSettings: Sendable, Equatable {
     ///   - provider: the name given on the command line, if any; else the file's default; else `anthropic`.
     ///   - model: the model given on the command line, if any; else the entry's default or first model.
     ///   - environment: where `$NAME` keys are read.
+    ///   - catalog: models discovered for this connection; used for Codex defaults and limits, never another provider's.
     ///   - storedKeys: reads the keys sign-ins stored, by provider name. Called only when nothing else gives a preset a
     ///     key, so a damaged credential file blocks only the providers that need it.
     /// - Returns: the provider, with its endpoint and key, and the model.
     /// - Throws: a ``ProviderSettingsError`` naming what cannot be honoured.
     public func resolve(
-        provider: String?, model: String?, environment: [String: String],
+        provider: String?, model: String?, environment: [String: String], catalog: [CatalogModel] = [],
         storedKeys: () throws(CredentialFileError) -> [String: String] = { [:] }
     ) throws(ProviderSettingsError) -> ResolvedModel {
         let name = provider ?? defaultProvider ?? Self.anthropic
-        if let builtIn = try builtIn(name, model: model) { return builtIn }
+        if let builtIn = try builtIn(name, model: model, catalog: catalog) { return builtIn }
         let preset = ProviderPreset.named(name)
         guard let entry = entries[name] ?? (preset != nil ? Entry() : nil) else {
             throw .unknownProvider(name, known: known(environment: environment, stored: (try? storedKeys()) ?? [:]))
@@ -127,13 +128,18 @@ public struct ProviderSettings: Sendable, Equatable {
     /// The built-in provider called `name`, if there is one; nil for anything a file or a preset names.
     /// - Throws: ``ProviderSettingsError/reservedName(_:)`` when the file defines a built-in name, and
     ///   ``ProviderSettingsError/noModel(provider:)`` for a built-in provider that needs a model named.
-    private func builtIn(_ name: String, model: String?) throws(ProviderSettingsError) -> ResolvedModel? {
+    private func builtIn(_ name: String, model: String?, catalog: [CatalogModel]) throws(ProviderSettingsError)
+        -> ResolvedModel?
+    {
         for reserved in [Self.anthropic, Self.codex] where entries[reserved] != nil { throw .reservedName(reserved) }
         switch name {
             case Self.anthropic: return ResolvedModel(provider: .anthropic, model: model ?? Self.anthropicDefaultModel)
             case Self.codex:
-                guard let model else { throw .noModel(provider: name) }
-                return ResolvedModel(provider: .codex, model: model)
+                guard let chosen = model ?? catalog.first?.id else { throw .noModel(provider: name) }
+                let listed = catalog.first { $0.id == chosen }
+                return ResolvedModel(
+                    provider: .codex, model: chosen, contextWindow: listed?.contextWindow,
+                    maxOutputTokens: listed?.maxOutputTokens)
             default: return nil
         }
     }
