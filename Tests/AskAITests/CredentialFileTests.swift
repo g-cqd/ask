@@ -39,7 +39,10 @@ struct CredentialFileTests {
         newer.accessToken = "sk-ant-oat-B"
         try file.saveClaude(newer)
         #expect(try file.loadClaude() == newer)
-        #expect(try FileManager.default.contentsOfDirectory(atPath: directory.path) == ["credentials.json"])
+        // The save lock's file stays: unlinking a lock file lets a waiter and a newcomer hold different files.
+        let names = try FileManager.default.contentsOfDirectory(atPath: directory.path).sorted()
+        #expect(names == ["credentials.json", "credentials.json.write.lock"])
+        #expect(try mode(directory.appending(path: "credentials.json.write.lock")) == 0o600)
     }
 
     @Test(arguments: [0o640, 0o604, 0o644])
