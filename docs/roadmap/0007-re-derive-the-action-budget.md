@@ -1,6 +1,6 @@
 ---
-status: not-started
-blocked-by: ["0009"]
+status: done
+blocked-by: []
 date: 2026-10-18
 ---
 
@@ -81,3 +81,10 @@ TerminalKit 0007 landed. At 120×40:
 
 The cell grids are no longer the lever; the rest is code and libraries mapped at launch. The question
 for the re-derivation stands: state the window size, and decide whether RSS or footprint is the budget.
+
+## Done (2026-10-20, ADR-0053, diary 48)
+
+The action is a tool call to its result on screen, for an in-process tool: 2.5–2.9 ms median, the same fresh and after
+500 turns. Budget 5 ms. `Scripts/measure-action.py` measures it (with the next request and a sandboxed `bash` command);
+`Scripts/measure-budgets.py` uses it. The old figure is gone from `Budget`, the harness, AGENTS.md and the README.
+A 20 ms sleep in `read` made the harness fail, so it can.
