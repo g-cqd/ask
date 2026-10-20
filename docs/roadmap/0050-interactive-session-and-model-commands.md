@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-20
 ---
@@ -38,7 +38,18 @@ Damage is reported, reading never rewrites it, and the first later change preser
 Real-PTY P checks two archives, ambiguous/unknown/missing/locked selection, exact next-request context,
 history, usage, both locks, current-session reselection and damaged-session recovery. O checks the running-job guard.
 
-## Still owed
+## Delivered — /model (2026-10-20, ADR-0042, diary 37)
 
-- `/model`: show and change the current model using existing provider resolution/catalogs, with explicit
-  run-local provenance and coherent configuration refresh and binary reload.
+`/model` shows the model and its source; `/model MODEL` and `/model PROVIDER MODEL` choose one for this run;
+`/model --reset` returns to the configuration. A choice replaces provider and model together as a top layer named
+`/model (this run)`, is adopted only if the whole configuration resolves, is never written to a file, and survives
+`/reload` (the replacement and its self-check get the same hidden arguments). Real-PTY Q checks requests, labels,
+provenance, refusals, a file edit, a reload and a reset.
+
+## Still owed, and not claimed by this entry
+
+- A model **list** to choose from. Codex's account catalog (0038) and named connections (0047) own discovery; today
+  `/model` takes an id you already know.
+- Remembering a choice in the session archive, so a resumed session starts on the model it last used.
+- A pre-flight check that an Anthropic or signed-out Codex account may use the model; the first request says so.
+- A picker for `/resume` (it prints a list), and `/new` / `/resume` while a turn is running (refused by design).
