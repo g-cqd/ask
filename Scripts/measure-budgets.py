@@ -15,15 +15,17 @@ Method, and why:
                   (the synchronised-output close, ESC[?2026l, after the byte appears).
                   Includes read, decode, layout, diff and write. Frame-based, because a
                   diff renderer sends only what changed, never a repeated prompt.
-  action delay    Enter -> the end of the frame that shows the submitted prompt in the
-                  transcript. The child runs with empty, temporary configuration, so
-                  the run it starts fails at once as signed out: no request is ever
-                  sent with the user's credentials.
+  action delay    a model's tool call fully received -> the end of the frame that shows
+                  the tool finished, for `read` of a small file: ask's own work between the
+                  model asking and the user seeing (ADR-0053). Measured by
+                  Scripts/measure-action.py against a fake model server on the same clock,
+                  with isolated configuration: no request is sent with the user's
+                  credentials, and none leaves the machine.
 
 Every figure is the median of N runs, with the spread reported, never the best run.
 Percentiles matter because users feel the tail; an average hides it.
 """
-import json, os, pty, select, statistics, subprocess, sys, tempfile, time
+import importlib.util, json, os, pty, select, statistics, subprocess, sys, tempfile, time
 
 BINARY = sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask"
 RUNS = int(sys.argv[2]) if len(sys.argv) > 2 else 15
@@ -32,7 +34,6 @@ PROMPT = b"ask> "
 ISOLATED_CONFIG = tempfile.mkdtemp(prefix="ask-budget-config-")
 ISOLATED_STATE = tempfile.mkdtemp(prefix="ask-budget-state-")
 FRAME_END = b"\x1b[?2026l"
-SUBMITTED = "› x".encode()
 
 
 def spawn():
@@ -138,16 +139,7 @@ def one_run():
             return None
         input_ms = (got[0] - t1) * 1000.0
 
-        # action delay: Enter -> the end of the frame that shows the submitted prompt
-        drain(fd)
-        t2 = time.time()
-        os.write(fd, b"\r")
-        got2 = read_frame_showing(fd, SUBMITTED, 5.0)
-        if got2 is None:
-            return None
-        action_ms = (got2[0] - t2) * 1000.0
-
-        return cold_ms, idle_kb, input_ms, action_ms
+        return cold_ms, idle_kb, input_ms
     finally:
         try:
             os.write(fd, b"\x03")
@@ -164,6 +156,17 @@ def one_run():
             pass
 
 
+def action_probe():
+    """Scripts/measure-action.py, loaded as a module and pointed at the same binary."""
+    here = os.path.dirname(os.path.abspath(__file__))
+    spec = importlib.util.spec_from_file_location("measure_action", os.path.join(here, "measure-action.py"))
+    module = importlib.util.module_from_spec(spec)
+    saved, sys.argv = sys.argv, [sys.argv[0], BINARY]
+    spec.loader.exec_module(module)
+    sys.argv = saved
+    return module
+
+
 def load_budgets():
     """Read the budgets from the binary itself, so there is exactly one definition of them."""
     try:
@@ -176,10 +179,13 @@ def load_budgets():
 
 def main():
     runs = []
+    action = action_probe()
     for i in range(RUNS):
         r = one_run()
-        if r:
-            runs.append(r)
+        # The action runs in its own process, against a fake model server (ADR-0053).
+        shown = action.one_run("read") if r else None
+        if r and shown:
+            runs.append(r + (shown[0],))
     if not runs:
         print("no successful runs — the binary never reached its prompt", file=sys.stderr)
         return 1
@@ -222,9 +228,8 @@ def main():
         print("  OVER BUDGET: %s" % ", ".join(failed))
         return 1
     print("  All four within budget.")
-    print("  The action-to-action figure measures Enter producing the next prompt in a program")
-    print("  with no agent in it — a trivial action, not yet the one a user feels. Re-derive it")
-    print("  when the agent loop lands.")
+    print("  The action is a tool call to its result on screen, for an in-process tool; see")
+    print("  Scripts/measure-action.py for the next request and a sandboxed bash command.")
     return 0
 
 
