@@ -14,10 +14,12 @@ struct UIConfigurationTests {
             """
             {
               // the mouse belongs to the terminal here
-              ui: { mouse: false, copyOnSelect: false, tools: 'open', scrollLines: 5, },
+              ui: { mouse: false, copyOnSelect: false, tools: 'open', thinking: 'folded', scrollLines: 5, },
             }
             """)
-        #expect(file.ui == UISection(mouse: false, copyOnSelect: false, foldTools: false, scrollLines: 5))
+        #expect(
+            file.ui
+                == UISection(mouse: false, copyOnSelect: false, foldTools: false, foldThinking: true, scrollLines: 5))
         #expect(file.sets("ui") && !ConfigurationFile().sets("ui"))
     }
 
@@ -26,11 +28,20 @@ struct UIConfigurationTests {
         #expect(try parse("{ui: {tools: 'open'}}").ui?.foldTools == false)
     }
 
+    @Test func `thinking and tools are set apart`() throws {
+        let file = try parse("{ui: {thinking: 'open', tools: 'folded'}}")
+        #expect(file.ui?.foldThinking == false && file.ui?.foldTools == true)
+        #expect(
+            throws: ConfigurationError.outOfRange(
+                path: "c.json", key: "ui.thinking", reason: "is \"hidden\": use \"folded\" or \"open\"")
+        ) { try parse("{ui: {thinking: 'hidden'}}") }
+    }
+
     @Test func `an unknown key, a bad choice or a number below one is refused, naming the key`() {
         // A key ADR-0046 lists but that nothing reads yet is refused too, so a file never promises what is not there.
         #expect(
-            throws: ConfigurationError.unknownKey(path: "c.json", key: "ui.thinking", known: ConfigurationFile.keys)
-        ) { try parse("{ui: {thinking: 'open'}}") }
+            throws: ConfigurationError.unknownKey(path: "c.json", key: "ui.images", known: ConfigurationFile.keys)
+        ) { try parse("{ui: {images: 'open'}}") }
         #expect(
             throws: ConfigurationError.outOfRange(
                 path: "c.json", key: "ui.tools", reason: "is \"hidden\": use \"folded\" or \"open\"")
@@ -78,5 +89,6 @@ struct UIConfigurationTests {
         #expect(UISection().description == "defaults")
         #expect(UISection(mouse: false, scrollLines: 4).description == "mouse off, scrollLines 4")
         #expect(UISection(foldTools: true).description == "tools folded")
+        #expect(UISection(foldThinking: false).description == "thinking open")
     }
 }

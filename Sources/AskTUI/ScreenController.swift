@@ -43,6 +43,7 @@ public struct ScreenController: Sendable {
         self.commands = Self.builtIn + commands
         self.options = options
         state.transcript.setToolsFoldedByDefault(options.foldTools)
+        state.transcript.setThinkingFoldedByDefault(options.foldThinking)
     }
 
     /// Applies terminal input. `pageRows` is how far Page Up and Page Down scroll.
@@ -62,6 +63,7 @@ public struct ScreenController: Sendable {
                 // A question waiting for y, a or n takes the keys first (roadmap 0019).
                 if state.pendingApproval != nil { return answer(key) }
                 if isToggleToolOutput(key) { return toggleAllToolOutput() }
+                if isToggleThinking(key) { return toggleAllThinking() }
                 clearSelection()
                 return edit(key)
             case .mouse(let mouse):
@@ -81,6 +83,7 @@ public struct ScreenController: Sendable {
         switch update {
             case .userPrompt(let text): state.transcript.addUser(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
+            case .thinkingText(let text): state.transcript.addThinkingText(text)
             case .toolStarted(let name, let summary): state.transcript.startTool(name: name, summary: summary)
             case .toolFinished(let status, let output): state.transcript.finishTool(status, output: output)
             case .notice(let text, let isError): state.transcript.addNotice(text, isError: isError)

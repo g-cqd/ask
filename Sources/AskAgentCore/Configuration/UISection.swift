@@ -7,26 +7,35 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var copyOnSelect: Bool?
     /// `ui.tools`: whether a tool's output starts folded to one line. `true` is `"folded"`, `false` is `"open"`.
     public var foldTools: Bool?
+    /// `ui.thinking`: whether the model's reasoning starts folded to one line. `true` is `"folded"`, `false` is `"open"`.
+    public var foldThinking: Bool?
     /// `ui.scrollLines`: how many lines one wheel step scrolls.
     public var scrollLines: Int?
 
-    public init(mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, scrollLines: Int? = nil) {
+    public init(
+        mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
+        scrollLines: Int? = nil
+    ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
         self.foldTools = foldTools
+        self.foldThinking = foldThinking
         self.scrollLines = scrollLines
     }
 
-    public var isEmpty: Bool { mouse == nil && copyOnSelect == nil && foldTools == nil && scrollLines == nil }
+    public var isEmpty: Bool {
+        mouse == nil && copyOnSelect == nil && foldTools == nil && foldThinking == nil && scrollLines == nil
+    }
 
     /// The keys, in the order they are shown.
-    public static let keys = ["mouse", "copyOnSelect", "tools", "scrollLines"]
+    public static let keys = ["mouse", "copyOnSelect", "tools", "thinking", "scrollLines"]
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: UISection) -> UISection {
         UISection(
             mouse: section.mouse ?? mouse, copyOnSelect: section.copyOnSelect ?? copyOnSelect,
-            foldTools: section.foldTools ?? foldTools, scrollLines: section.scrollLines ?? scrollLines)
+            foldTools: section.foldTools ?? foldTools, foldThinking: section.foldThinking ?? foldThinking,
+            scrollLines: section.scrollLines ?? scrollLines)
     }
 
     public var description: String {
@@ -34,6 +43,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         if let mouse { parts.append("mouse \(mouse ? "on" : "off")") }
         if let copyOnSelect { parts.append("copyOnSelect \(copyOnSelect ? "on" : "off")") }
         if let foldTools { parts.append("tools \(foldTools ? "folded" : "open")") }
+        if let foldThinking { parts.append("thinking \(foldThinking ? "folded" : "open")") }
         if let scrollLines { parts.append("scrollLines \(scrollLines)") }
         return parts.isEmpty ? "defaults" : parts.joined(separator: ", ")
     }

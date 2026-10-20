@@ -9,6 +9,7 @@ extension RunSettings {
         let defaults = ScreenOptions()
         return ScreenOptions(
             mouse: ui.mouse ?? defaults.mouse, copyOnSelect: ui.copyOnSelect ?? defaults.copyOnSelect,
-            foldTools: ui.foldTools ?? defaults.foldTools, scrollLines: ui.scrollLines ?? defaults.scrollLines)
+            foldTools: ui.foldTools ?? defaults.foldTools,
+            foldThinking: ui.foldThinking ?? defaults.foldThinking, scrollLines: ui.scrollLines ?? defaults.scrollLines)
     }
 }

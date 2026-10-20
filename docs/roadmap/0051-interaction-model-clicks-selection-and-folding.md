@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: ["0015"]
 date: 2026-10-20
 decision: ADR-0044
@@ -14,22 +14,23 @@ policy and the meaning of each click are ask's (ADR-0044).
 
 ## What ask has today
 
-Nothing of it (checked in the source, diary 40): no mouse reporting is enabled, no clipboard is written, the screen discloses and
-folds nothing, and the prompt is capped by a hard-coded six rows with its own editor instead of the kit's text types. The
-prototype in `docs/prototypes/ui-lab/` simulates thinking and tool blocks that expand, but has no clicks, selection or folding
-beyond keys; it cannot answer any question here.
+The real transcript now has mouse selection, highlighting, clipboard writes, wheel scrolling and thinking/tool folds. Header clicks
+open individual blocks; Ctrl+T and Ctrl+O change their separate defaults. Five `ui.*` keys configure these policies. Scripted-provider
+PTY probes cover live runs and resumed sessions (diaries 50–55). Images, long code, runner clicks and bounded input remain owed; the
+old screen's leading glyphs still need to follow the prototype's no-icons rule.
 
 ## What TerminalKit has now (2026-10-20)
 
-None of it is in ask yet: ask's pin of TerminalKit is unchanged and nothing here consumes any of it.
+ask pins `ad1c072` and consumes the regions, pointer recognizer, content selection, row provenance, drag controller, clipboard plan and
+fold store.
 
 | Mechanism | State in TerminalKit | Where |
 |---|---|---|
 | Terminal facts (mouse, OSC 52, graphics, native-selection keys) | measured in four terminals | ADR-0028 |
 | Regions and clicks: a click with a count, drags, wheel steps, over regions the host names | built, tested against four real terminals' streams, zero allocations | ADR-0029, roadmap 0016 |
-| Selection: content-anchored, mapped from cells, highlighted, read back; double and triple click | model built, **not painted, no drag controller** | ADR-0030, roadmap 0017 |
+| Selection: content-anchored, mapped from cells, highlighted, read back; double and triple click | model and drag controller built; ask paints the spans | ADR-0030, roadmap 0017 |
 | Clipboard: a plan from what each terminal does (OSC 52, the pasteboard, WezTerm's doubled first write) | built, ask performs it | ADR-0030 |
-| Folding: a placeholder-carrying block, per-block state with a default, a scroll that does not move the reader | model built, **not drawn, no images** | ADR-0031, roadmap 0018 |
+| Folding: a placeholder-carrying block, per-block state with a default, a scroll that does not move the reader | model built; ask draws thinking/tool folds; images remain | ADR-0031, roadmap 0018 |
 | A bounded input that scrolls by display row | **not started** | roadmap 0019 |
 
 What ask must supply to use them: a stable identity for every block it draws, a record of what each row shows (the provenance a selection
@@ -74,7 +75,7 @@ The defaults are decided in ADR-0046: the first three by the owner, the rest on 
 |---|---|---|
 | `ui.mouse` | on, off (off gives the terminal its own selection back) | on |
 | `ui.copyOnSelect` | on, off | on |
-| `ui.thinking`, `ui.tools` | folded, shown | folded |
+| `ui.thinking`, `ui.tools` | folded, open | folded |
 | `ui.images` | show, placeholder, never | placeholder |
 | `ui.codeFoldLines` | lines above which a code block starts folded, capped at half the viewport | 20 |
 | `ui.promptRows` | the most rows the input takes before it scrolls inside itself, capped at a third of the viewport | 6 |
@@ -104,9 +105,15 @@ The keys for features that do not exist yet (`ui.thinking`, `ui.images`, `ui.cod
 checks, with a negative control). It is an emulator, not a physical terminal: the real-terminal probe in "Done when" is still owed for
 kitty, Ghostty, WezTerm and Terminal.app, tmux and ssh.
 
+## Thinking in the screen (2026-10-20, diary 55)
+
+`ui.thinking` is implemented. Live reasoning and recorded thinking replay through the same folded-block layout; signatures and redacted
+data are never shown. A fake-provider PTY probe runs a read tool, opens thinking and output, copies the output, and resumes the session.
+Changed reasoning costs about 2.9 ms for a folded 400-line block; unchanged frames remain about 11 µs (details and limits in diary 55).
+
 ## Open questions
 
-- What a copy contains when the selection crosses a **fold** or an image: the placeholder, or what is inside (TerminalKit 0017).
+- Tool and thinking selections copy what is **shown**, so crossing a fold copies its placeholder. Images still need their copy policy.
 - Whether fold state is persisted in the session, which changes the closed session payload (roadmap 0027), or is per run.
 - Wrapped lines in the input: Up and Down move between hard lines only, which 0049 still owes, and a bounded input needs
   display rows (TerminalKit 0019). Whether ask adopts the kit's text types first or the kit grows them first.

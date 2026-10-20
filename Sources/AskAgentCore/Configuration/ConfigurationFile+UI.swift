@@ -1,5 +1,5 @@
 extension ConfigurationFile {
-    /// The `ui` object: four keys, and nothing else.
+    /// The `ui` keys the screen implements; unknown keys are refused.
     // @dl:accept -- three key tables decoded the same way; the tables are the data, and the walk is already shared
     struct UIDecoded: Decodable {
         var section = UISection()
@@ -10,10 +10,16 @@ extension ConfigurationFile {
                     case "mouse": section.mouse = try container.decode(Bool.self, forKey: key)
                     case "copyOnSelect": section.copyOnSelect = try container.decode(Bool.self, forKey: key)
                     case "scrollLines": section.scrollLines = try container.decode(Int.self, forKey: key)
-                    case "tools":
+                    case "tools", "thinking":
                         let name = try container.decode(String.self, forKey: key)
-                        guard name == "folded" || name == "open" else { throw BadValue(key: "ui.tools", value: name) }
-                        section.foldTools = name == "folded"
+                        guard name == "folded" || name == "open" else {
+                            throw BadValue(key: "ui." + key.stringValue, value: name)
+                        }
+                        if key.stringValue == "tools" {
+                            section.foldTools = name == "folded"
+                        } else {
+                            section.foldThinking = name == "folded"
+                        }
                     default: throw UnknownKey(key: "ui." + key.stringValue)
                 }
             }

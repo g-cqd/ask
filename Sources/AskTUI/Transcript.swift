@@ -16,6 +16,8 @@ public struct Transcript: Sendable, Equatable {
         case assistant(String)
         /// A tool call. `output` is what it returned, shown when the block is unfolded.
         case tool(name: String, summary: String, status: ToolStatus, output: String)
+        /// What the model reasoned before answering, kept so it can be opened (ADR-0046: `ui.thinking`).
+        case thinking(String)
         case notice(String, isError: Bool)
     }
 
@@ -27,6 +29,8 @@ public struct Transcript: Sendable, Equatable {
     private(set) var folds = FoldStore<Int>()
     /// Whether a tool block with output starts folded, unless the user chose (ADR-0046: `ui.tools`).
     public private(set) var toolsFoldedByDefault = true
+    /// Whether a thinking block starts folded, unless the user chose.
+    public private(set) var thinkingFoldedByDefault = true
     /// The most lines of one tool's output kept; the rest is said, not stored, so one huge output cannot slow every frame.
     static let outputLineLimit = 400
 
@@ -42,6 +46,15 @@ public struct Transcript: Sendable, Equatable {
     }
 
     public mutating func addUser(_ text: String) { append(.user(text)) }
+
+    /// Appends streamed reasoning, continuing the current thinking block when it is the last item.
+    public mutating func addThinkingText(_ text: String) {
+        if case .thinking(let existing) = items.last {
+            replaceLast(.thinking(existing + text))
+        } else {
+            append(.thinking(text))
+        }
+    }
 
     /// Appends streamed assistant text, continuing the current assistant item when it is the last one.
     public mutating func addAssistantText(_ text: String) {
@@ -80,31 +93,54 @@ public struct Transcript: Sendable, Equatable {
 
     // MARK: - Folding
 
-    /// Whether the item at `index` can fold: a tool that returned something.
+    /// Whether the item at `index` can fold: a tool that returned something, or reasoning that says something.
     public func isFoldable(_ index: Int) -> Bool {
-        guard items.indices.contains(index), case .tool(_, _, _, let output) = items[index] else { return false }
-        return !output.isEmpty
+        guard items.indices.contains(index) else { return false }
+        switch items[index] {
+            case .tool(_, _, _, let output): return !output.isEmpty
+            case .thinking(let text): return !Self.kept(text).isEmpty
+            default: return false
+        }
+    }
+
+    /// Whether blocks of the item's kind start folded: tools and thinking are set apart.
+    private func foldsByDefault(_ index: Int) -> Bool {
+        if case .thinking = items[index] { return thinkingFoldedByDefault }
+        return toolsFoldedByDefault
     }
 
     /// Whether the item is folded to its placeholder. Only a foldable item ever is.
     public func isFolded(_ index: Int) -> Bool {
-        isFoldable(index) && folds.isFolded(index, default: toolsFoldedByDefault)
+        isFoldable(index) && folds.isFolded(index, default: foldsByDefault(index))
     }
 
     /// Flips one block and says which way it went, or nil if it cannot fold.
     @discardableResult
     public mutating func toggleFold(_ index: Int) -> Bool? {
         guard isFoldable(index) else { return nil }
-        let folded = folds.toggle(index, default: toolsFoldedByDefault)
+        let folded = folds.toggle(index, default: foldsByDefault(index))
         revisions[index] = bump()
         return folded
     }
 
-    /// Sets what tool blocks do until the user chooses, and forgets those choices so the setting reaches every block.
+    /// Sets what tool blocks do until the user chooses, and forgets the choices made for tool blocks so it reaches every one.
     public mutating func setToolsFoldedByDefault(_ folded: Bool) {
         toolsFoldedByDefault = folded
-        folds.clearChoices()
-        for index in revisions.indices { revisions[index] = bump() }
+        forgetChoices { if case .thinking = $0 { false } else { true } }
+    }
+
+    /// Sets what thinking blocks do until the user chooses, and forgets the choices made for them.
+    public mutating func setThinkingFoldedByDefault(_ folded: Bool) {
+        thinkingFoldedByDefault = folded
+        forgetChoices { if case .thinking = $0 { true } else { false } }
+    }
+
+    /// Forgets the choices for the items `matches` accepts, and has them laid out again.
+    private mutating func forgetChoices(where matches: (Item) -> Bool) {
+        for index in items.indices where matches(items[index]) {
+            folds.clearChoice(for: index)
+            revisions[index] = bump()
+        }
     }
 
     public mutating func addNotice(_ text: String, isError: Bool) { append(.notice(text, isError: isError)) }
