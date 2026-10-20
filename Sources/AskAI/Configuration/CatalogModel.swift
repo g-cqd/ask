@@ -58,7 +58,10 @@ public struct CatalogModel: Codable, Sendable, Equatable {
         (2 ... 24).contains(level.utf8.count) && level.utf8.allSatisfy { $0 >= 97 && $0 <= 122 }
     }
 
+    /// A model id: a plain word that may also contain `/` and `:`, and one leading `~`, which the real lists use (`org/model`,
+    /// `model:free`, OpenRouter's `~vendor/model-latest`). It goes into a JSON body and onto a terminal and never into a path.
     static func validID(_ id: String) -> Bool {
-        PlainToken.word(id, length: 1 ... 128, lowercase: false)
+        PlainToken.word(
+            id.hasPrefix("~") ? String(id.dropFirst()) : id, length: 1 ... 128, lowercase: false, marks: "/:")
     }
 }
