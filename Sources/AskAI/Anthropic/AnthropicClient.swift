@@ -7,6 +7,9 @@ public struct AnthropicClient: Sendable {
     public enum Auth: Sendable, Equatable {
         /// A Claude subscription access token (`sk-ant-oat…`).
         case subscription(accessToken: String)
+        /// A plain bearer token, as a gateway in front of the API expects (`ANTHROPIC_AUTH_TOKEN`): `Authorization: Bearer`
+        /// and nothing that identifies a subscription.
+        case bearer(String)
         case apiKey(String)
     }
 
@@ -73,6 +76,7 @@ public struct AnthropicClient: Sendable {
         switch auth {
             case .subscription(let token):
                 headers += [("authorization", "Bearer \(token)"), ("anthropic-beta", oauthBetas)]
+            case .bearer(let token): headers.append(("authorization", "Bearer \(token)"))
             case .apiKey(let key):
                 headers.append(("x-api-key", key))
         }
