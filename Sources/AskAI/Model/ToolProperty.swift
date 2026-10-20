@@ -10,6 +10,8 @@ public struct ToolProperty: Sendable {
     let isRequired: Bool
     private let constraints: [Constraint]
     private let type: String
+    /// A whole schema, written as given, for a property the simple constructors cannot describe.
+    private let schema: [UInt8]?
 
     private enum Constraint: Sendable {
         case minLength(Int)
@@ -17,11 +19,20 @@ public struct ToolProperty: Sendable {
         case maximum(Int)
     }
 
-    private init(_ name: String, type: String, isRequired: Bool = true, constraints: [Constraint] = []) {
+    private init(
+        _ name: String, type: String, isRequired: Bool = true, constraints: [Constraint] = [], schema: [UInt8]? = nil
+    ) {
         self.name = name
         self.type = type
         self.isRequired = isRequired
         self.constraints = constraints
+        self.schema = schema
+    }
+
+    /// A property whose schema is `json`, compact JSON written verbatim: an object with its own properties.
+    /// - Precondition: `json` is valid, compact JSON; it is spliced into the tool's schema unchanged.
+    public static func schema(_ name: String, _ json: String) -> ToolProperty {
+        ToolProperty(name, type: "object", schema: Array(json.utf8))
     }
 
     /// A string, optionally with a minimum length.
@@ -41,11 +52,15 @@ public struct ToolProperty: Sendable {
 
     /// This property, which the model may leave out.
     public var optional: ToolProperty {
-        ToolProperty(name, type: type, isRequired: false, constraints: constraints)
+        ToolProperty(name, type: type, isRequired: false, constraints: constraints, schema: schema)
     }
 
     /// Writes this property's schema: its type, then its constraints in the order given.
     func writeSchema(into writer: inout JSONStreamWriter) {
+        if let schema {
+            writer.raw(schema)
+            return
+        }
         writer.object { writer in
             writer.field("type", type)
             for constraint in constraints {
