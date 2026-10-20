@@ -9,6 +9,8 @@ struct ConfigurationSource: Sendable {
     let providersPath: String
     let flags: Flags
     let environment: [String: String]
+    /// A resumed session pins its destination unless the launch flags explicitly override it.
+    var resumedDestination: SessionDestination?
 
     /// The flags the user gave; nil for one not given.
     struct Flags: Sendable {
@@ -70,14 +72,17 @@ struct ConfigurationSource: Sendable {
         let result = try loader.load(
             model: flags.model, provider: flags.provider, maxTurns: flags.maxTurns, compactAt: flags.compactAt)
         let providers = try ProviderSettings.load(from: providersPath)
+        let pinned = flags.provider == nil ? resumedDestination : nil
+        let selected = try pinned.map { try SessionRouting.pinnedProvider($0, environment: environment) }
         let discovered = try await ModelDiscovery.resolve(
-            providers: providers, provider: result.configuration.provider.value,
-            model: result.configuration.model.value,
+            providers: providers, provider: selected ?? result.configuration.provider.value,
+            model: flags.model ?? pinned?.model ?? result.configuration.model.value,
             environment: environment, allowNetwork: allowNetwork)
         let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections(result.configuration.sandbox.value)
         return RunSettings(
             configuration: result.configuration, model: discovered.model, sandbox: sandbox, applied: result.applied,
             notices: result.notices + discovered.notices
+                + (pinned.map { ["Resuming recorded destination \(selected ?? $0.name)/\($0.model)."] } ?? [])
                 + (flags.noSandbox
                     ? ["The sandbox is off (--no-sandbox): ask's own files and your secret stores are not protected."]
                     : []))

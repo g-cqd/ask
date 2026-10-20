@@ -62,8 +62,13 @@ extension AgentConversation {
     func reExecute() -> Never {
         guard let target = reloadTarget.withLock({ $0 }), let startup else { fail("ask: nothing to reload.", code: 70) }
         var arguments = [target.path]
-        if let path = session.withLock({ $0?.path }) { arguments += ["--resume", path] }
-        arguments += source.flags.arguments
+        var flags = source.flags
+        if let path = session.withLock({ $0?.path }) {
+            arguments += ["--resume", path]
+            // A reload inherits recorded routing; it must not turn an old launch flag into fresh consent.
+            flags.provider = nil
+        }
+        arguments += flags.arguments
         arguments += [
             "--reloaded-from", startup.summary, "--reload-started", String(Int(Date().timeIntervalSince1970 * 1_000))
         ]

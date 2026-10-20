@@ -61,13 +61,16 @@ private final class PrintRenderer: Sendable {
 
 /// Runs `prompt` to completion. SIGINT and SIGTERM abort the run, so a running command's whole process group
 /// is stopped, and then exit with 128 + the signal.
-func runPrompt(_ prompt: String, source: ConfigurationSource, settings: RunSettings, session choice: SessionChoice)
+func runPrompt(
+    _ prompt: String, source: ConfigurationSource, settings: RunSettings, resumed: SessionRecorder?,
+    startupNotices: [String]
+)
     async
 {
     let model = settings.model
-    for line in settings.description { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
+    for line in startupNotices + settings.description { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     let transport = URLSessionTransport()
-    await requireSignIn(for: model.provider, transport: transport)
+    await requireSignIn(for: model, transport: transport)
     let workingDirectory = FileManager.default.currentDirectoryPath
     let jobs = JobTable()
     let loop: AgentLoop
@@ -81,7 +84,7 @@ func runPrompt(_ prompt: String, source: ConfigurationSource, settings: RunSetti
     }
     let directory = SessionDirectory(project: workingDirectory)
     let session: SessionRecorder
-    if let resumed = choice.open(in: directory, note: { FileHandle.standardError.write(Data("ask: \($0)\n".utf8)) }) {
+    if let resumed {
         session = resumed
     } else {
         do {
@@ -91,6 +94,8 @@ func runPrompt(_ prompt: String, source: ConfigurationSource, settings: RunSetti
             fail("ask: cannot create a session: \(error)", code: 73)
         }
     }
+    do { try session.select(SessionRouting.destination(model), explicitlySelected: source.flags.provider != nil) } catch
+    { fail("ask: \(error)", code: 78) }
     let sessionPath = session.path
     let renderer = PrintRenderer()
 
