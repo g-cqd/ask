@@ -634,7 +634,93 @@ def probe_multiline():
     return all(results)
 
 
+def probe_new_session():
+    print("N: /new releases the old session and starts the next one lazily, with no old context or usage")
+    project = tempfile.mkdtemp()
+    server = agent.Server([agent.turn([("text", "ORIGINAL SESSION ANSWER")], "end_turn"),
+                           agent.turn([("text", "FRESH SESSION ANSWER")], "end_turn")])
+    screen = Screen(server.url, project)
+    results = [check("screen ready", screen.until("ask>"))]
+    screen.type("/new\r")
+    results.append(check("an unused session is not claimed to be saved", screen.until("New session. It will be saved when you send a prompt.")))
+    results.append(check("new before the first prompt creates no session", not agent.sessions(screen.state)))
+    screen.until_status("ready")
+    screen.type("First session canary\r")
+    results.append(check("original turn finished", screen.until("ORIGINAL SESSION ANSWER")))
+    screen.until_status("ready")
+    paths = agent.sessions(screen.state)
+    original = paths[0] if paths else None
+    before = open(original, "rb").read() if original else b""
+    screen.type("/new\r")
+    results.append(check("new session announced", screen.until("New session. The previous one is saved.")))
+    results.append(check("old transcript and usage are gone",
+                         "ORIGINAL SESSION ANSWER" not in screen.screen.text() and "out 5" not in screen.status()))
+    results.append(check("no empty session was created", agent.sessions(screen.state) == paths))
+    released = False
+    if original:
+        with open(original, "rb") as file:
+            try:
+                fcntl.flock(file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                released = True
+            except BlockingIOError:
+                pass
+    results.append(check("the old writer lock is released", released))
+    screen.until_status("ready")
+    screen.type("Fresh canary\r")
+    results.append(check("the next prompt runs normally", screen.until("FRESH SESSION ANSWER")))
+    screen.until_status("ready")
+    requests = [r["body"]["messages"] for r in server.requests]
+    results.append(check("the new request contains no old exchange",
+                         len(requests) == 2 and "First session canary" not in json.dumps(requests[1])
+                         and "ORIGINAL SESSION ANSWER" not in json.dumps(requests[1]), requests))
+    files = agent.sessions(screen.state)
+    results.append(check("the second prompt created its own session", len(files) == 2, files))
+    results.append(check("the old file is unchanged", original and open(original, "rb").read() == before))
+    results.append(check("only new usage is shown", "out 5" in screen.status() and "out 10" not in screen.status(), screen.status()))
+    screen.type("/quit\r")
+    results.append(check("same process exits cleanly", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_session_job_guard():
+    print("O: a session switch refuses running jobs and bad arguments without changing the session")
+    project = tempfile.mkdtemp()
+    port = agent.free_port()
+    server = agent.Server([
+        agent.turn([("call", "start", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1",
+                                             "yield_seconds": 1})], "tool_use"),
+        agent.turn([("call", "wait", "wait", {"job": "job-1", "port_open": port, "timeout_seconds": 20})], "tool_use"),
+        agent.turn([("text", "BACKGROUND READY")], "end_turn"),
+        agent.turn([("text", "ORIGINAL CONTEXT KEPT")], "end_turn")])
+    screen = Screen(server.url, project)
+    screen.until("ask>")
+    screen.type("Start a background job\r")
+    results = [check("the background job is serving", screen.until("BACKGROUND READY") and agent.accepts(port))]
+    screen.until_status("ready")
+    files = agent.sessions(screen.state)
+    before = open(files[0], "rb").read() if files else b""
+    screen.type("/new extra\r")
+    results.append(check("bad arguments are rejected", screen.until("Usage: /new (no arguments).")))
+    screen.until_status("ready")
+    screen.type("/new\r")
+    results.append(check("the running job blocks the switch", screen.until("Cannot switch sessions while jobs are running (job-1).")))
+    results.append(check("the job was not stopped", agent.accepts(port)))
+    results.append(check("the archive is unchanged", files and open(files[0], "rb").read() == before))
+    results.append(check("no extra session appeared", agent.sessions(screen.state) == files))
+    screen.until_status("ready")
+    screen.type("Continue the same session\r")
+    results.append(check("the old conversation still works", screen.until("ORIGINAL CONTEXT KEPT")))
+    last = server.requests[-1]["body"]["messages"]
+    results.append(check("the original context was retained", "Start a background job" in json.dumps(last)))
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("exit stops the process's jobs", screen.finish() == 0 and not agent.accepts(port)))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

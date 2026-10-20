@@ -71,6 +71,10 @@ public struct ScreenController: Sendable {
                 pending.removeAll { $0.id == id }
                 state.transcript.addUser(text)
             case .returnQueuedPrompts: returningInput = true
+            case .clearConversation:
+                state.transcript.removeAll()
+                state.detail = ""
+                state.scrollback = 0
             case .runEnded: return endRun()
         }
         return []

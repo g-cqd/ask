@@ -19,11 +19,11 @@ final class AgentConversation: Conversation {
     // Internal rather than private: the command handlers live in AgentConversation+Commands.swift.
     let source: ConfigurationSource
     private let makeLoop: @Sendable (RunSettings) throws -> AgentLoop
-    private let directory: SessionDirectory
+    let directory: SessionDirectory
     let current: Mutex<Current>
     let session = Mutex<SessionRecorder?>(nil)
     let usage = Mutex(UsageTotals())
-    private let promptInput = Mutex<PromptQueue?>(nil)
+    let promptInput = Mutex<PromptQueue?>(nil)
     /// Jobs outlive turns, not a reload: `/reload` refuses while any run, or stops them when told to.
     let jobs: JobTable
     /// The build that is running, to tell when a newer one appears.
