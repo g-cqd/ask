@@ -1,0 +1,29 @@
+{
+ "object": "list",
+ "data": [
+  {
+   "id": "01-ai/yi-large",
+   "object": "model",
+   "created": 735790403,
+   "owned_by": "01-ai"
+  },
+  {
+   "id": "adept/fuyu-8b",
+   "object": "model",
+   "created": 735790403,
+   "owned_by": "adept"
+  },
+  {
+   "id": "ai21labs/jamba-1.5-large-instruct",
+   "object": "model",
+   "created": 735790403,
+   "owned_by": "ai21labs"
+  },
+  {
+   "id": "aisingapore/sea-lion-7b-instruct",
+   "object": "model",
+   "created": 735790403,
+   "owned_by": "aisingapore"
+  }
+ ]
+}
