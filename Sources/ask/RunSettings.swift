@@ -61,7 +61,8 @@ struct RunSettings: Equatable {
             "sandbox   " + (sandbox.isUnrestricted ? "off (--no-sandbox)" : "on")
                 + (sandbox.isUnrestricted || c.sandbox.value.isEmpty
                     ? "" : ", \(c.sandbox.value)  [\(c.sandbox.source)]"),
-            "          writes: \(writes), network: \(sandbox.isUnrestricted ? "any" : sandbox.network.description)",
+            "          writes: \(writes), reads: \(reads), network: "
+                + (sandbox.isUnrestricted ? "any" : sandbox.network.description),
             "user file     \(userFile)  \(standing(userFile))",
             "project file  \(projectFile)  \(standing(projectFile))"
         ] + notices.map { "note: \($0)" }
@@ -70,7 +71,7 @@ struct RunSettings: Equatable {
     /// Lines for the user at startup: which configuration files apply, what was ignored, and a strict sandbox.
     var description: [String] {
         (applied.isEmpty ? [] : ["Configuration from " + applied.joined(separator: ", ") + "."]) + notices
-            + (strictTag == nil ? [] : ["Sandbox: writes \(writes); network \(sandbox.network)."])
+            + (strictTag == nil ? [] : ["Sandbox: writes \(writes); reads \(reads); network \(sandbox.network)."])
     }
 
     /// Where the sandbox allows writing, in words.
@@ -78,6 +79,14 @@ struct RunSettings: Equatable {
         guard case .roots(let roots) = sandbox.write else { return "anywhere" }
         return (roots.isEmpty ? "nowhere" : "only under " + roots.joined(separator: ", "))
             + " and temporary directories"
+    }
+
+    /// Where the sandbox allows reading, in words.
+    var reads: String {
+        guard case .roots = sandbox.read else { return "anywhere but the protected paths" }
+        return configuration.sandbox.value.read == [.workspace]
+            ? "only the workspace, the system and developer tools"
+            : "only under chosen paths, the system and developer tools"
     }
 
     /// What the status line shows at its left: the model, and the sandbox when it is not ask's default.
@@ -90,6 +99,9 @@ struct RunSettings: Equatable {
         if case .roots(let roots) = sandbox.write {
             let canonicalWorkspace = CanonicalPath.of(workspace, relativeTo: "/") ?? workspace
             parts.append(roots == [canonicalWorkspace] ? "workspace only" : "writes limited")
+        }
+        if case .roots = sandbox.read {
+            parts.append(configuration.sandbox.value.read == [.workspace] ? "reads workspace" : "reads limited")
         }
         if sandbox.network != .any { parts.append(sandbox.network == .none ? "no network" : "localhost only") }
         return parts.isEmpty ? nil : "sandbox: " + parts.joined(separator: ", ")
