@@ -1,6 +1,8 @@
 import AskTUI
 import Benchmark
+import TerminalKitCodecs
 import TerminalKitIO
+import TerminalKitInput
 import TerminalKitRender
 import TerminalKitStyle
 
@@ -59,6 +61,27 @@ let benchmarks: @Sendable () -> Void = {
             for iteration in benchmark.scaledIterations {
                 state.editor.paste(iteration % 2 == 0 ? "x" : "y")
                 blackHole(frame(state, composer: &composer, front: &front, back: &back))
+            }
+        }
+        // The cost of editing a long multi-line prompt (n = 100 lines of 60 characters): a vertical move and a
+        // typed character, each of which finds line boundaries in the whole text.
+        Benchmark("editor/\(columns)x\(rows) Up and Down in a 100-line prompt") { benchmark in
+            var editor = PromptEditor()
+            editor.paste((0 ..< 100).map { _ in String(repeating: "word ", count: 12) }.joined(separator: "\n"))
+            for _ in 0 ..< 50 { _ = editor.apply(KeyEvent(keyCode: Key.up.rawValue)) }
+            benchmark.startMeasurement()
+            for iteration in benchmark.scaledIterations {
+                let key = iteration % 2 == 0 ? Key.up : Key.down
+                blackHole(editor.apply(KeyEvent(keyCode: key.rawValue)))
+            }
+        }
+        Benchmark("editor/\(columns)x\(rows) typing a character mid-prompt in a 100-line prompt") { benchmark in
+            var editor = PromptEditor()
+            editor.paste((0 ..< 100).map { _ in String(repeating: "word ", count: 12) }.joined(separator: "\n"))
+            for _ in 0 ..< 50 { _ = editor.apply(KeyEvent(keyCode: Key.up.rawValue)) }
+            benchmark.startMeasurement()
+            for iteration in benchmark.scaledIterations {
+                blackHole(editor.apply(KeyEvent(keyCode: iteration % 2 == 0 ? 0x78 : 0x7F)))
             }
         }
         Benchmark("rows/\(columns)x\(rows) rewrite every row unchanged") { benchmark in

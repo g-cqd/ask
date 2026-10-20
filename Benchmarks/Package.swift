@@ -41,6 +41,8 @@ let package = Package(
             dependencies: [
                 .product(name: "Benchmark", package: "package-benchmark"),
                 .product(name: "AskTUI", package: "ask"),
+                .product(name: "TerminalKitCodecs", package: "TerminalKit"),
+                .product(name: "TerminalKitInput", package: "TerminalKit"),
                 .product(name: "TerminalKitRender", package: "TerminalKit"),
                 .product(name: "TerminalKitStyle", package: "TerminalKit"),
                 .product(name: "TerminalKitIO", package: "TerminalKit")

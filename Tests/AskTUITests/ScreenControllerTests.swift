@@ -95,6 +95,6 @@ struct ScreenControllerTests {
     @Test func `a paste lands in the editor`() {
         var controller = ScreenController(label: "m")
         _ = controller.handle(.paste("a\nb"), pageRows: 10)
-        #expect(controller.state.editor.text == "a b")
+        #expect(controller.state.editor.text == "a\nb")
     }
 }

@@ -563,7 +563,7 @@ def probe_abort_queue():
     results.append(check("the editor holds both unsent messages and the draft on separate lines",
                          editor == ["ask> Unsent steering", "", "Unsent followup", "", "draft"], editor))
     results.append(check("nothing was automatically requested after abort", len(server.requests) == 1))
-    screen.type("\x15Recovered\r")
+    screen.type("\x15\x7f" * 4 + "\x15Recovered\r")  # Ctrl-U and Backspace clear the five restored lines, one by one
     results.append(check("the editor can submit another prompt", screen.until("RECOVERED AFTER ABORT")))
     screen.until_status("ready")
     screen.type("/quit\r")
@@ -599,7 +599,42 @@ def probe_failed_queue():
     return all(results)
 
 
+def probe_multiline():
+    print("M: a multi-line prompt: pasted, typed, edited by line, submitted whole")
+    project = tempfile.mkdtemp()
+    server = agent.Server([agent.turn([("text", "Got all four lines.")], "end_turn")])
+    screen = Screen(server.url, project)
+    results = [check("prompt drawn", screen.until("ask>"))]
+    screen.type("\x1b[200~alpha\nbeta\x1b[201~")  # a bracketed paste: its newline is not Enter
+    screen.type("\x0agamma")  # Ctrl-J
+    screen.type("\x1b[13;2udelta")  # Shift-Enter as a terminal reports it (CSI u)
+    results.append(check("every line is on its own row",
+                         screen.until("delta") and [l for l in screen.screen.text().split("\n") if l][-4:]
+                         == ["ask> alpha", "beta", "gamma", "delta"], screen.screen.text()[-200:]))
+    screen.type("\x1b[A\x1b[A")  # Up, Up: from "delta" to "beta", column 5 clamped to 4
+    screen.type("\x15BETA")  # Ctrl-U deletes the line's start, then replace it
+    results.append(check("the middle line is edited in place", screen.until("BETA")))
+    results.append(check("nothing was sent yet", len(server.requests) == 0))
+    screen.type("\r")
+    results.append(check("the answer arrives", screen.until("Got all four lines.")))
+    results.append(check("the transcript shows the prompt on four rows",
+                         all(t in screen.screen.text() for t in ["› alpha", "  BETA", "  gamma", "  delta"])))
+    wanted = "alpha\nBETA\ngamma\ndelta"
+    blocks = [b.get("text") for m in (server.requests[0]["body"]["messages"] if server.requests else [])
+              for b in m["content"]]
+    results.append(check("the provider received the exact text, newlines intact", wanted in blocks, blocks))
+    files = agent.sessions(screen.state)
+    users = [r["payload"]["text"] for r in map(json.loads, open(files[0]))
+             if r.get("type") == "entry" and r["payload"]["kind"] == "user"] if files else []
+    results.append(check("the session recorded the same text", users == [wanted], users))
+    screen.until_status("ready")
+    screen.type("\x15/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
