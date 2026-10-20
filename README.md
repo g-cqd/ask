@@ -40,8 +40,8 @@ roadmap. `Scripts/analyzers.sh` adds unused code, duplicated code and retain cyc
 probed by breaking it.
 
 **The four budgets are measured**, by `Scripts/measure-budgets.py` against the release binary on a PTY.
-Idle memory is within its 24 MiB budget (about 9 MiB measured; [ADR-0038](docs/adr/0038-the-idle-memory-budget-is-24-mib.md)), and the action-to-action figure is provisional
-([roadmap 0007](docs/roadmap/0007-re-derive-the-action-budget.md)). **CI has never run**: GitHub refuses to start
+Idle memory is within its 24 MiB budget (about 9 MiB measured; [ADR-0038](docs/adr/0038-the-idle-memory-budget-is-24-mib.md)), and the action, a tool call to its result on screen, measures about 2.6 ms against 5 ms
+([ADR-0053](docs/adr/0053-the-action-budget-is-a-tool-call-to-its-result-on-screen.md)). **CI has never run**: GitHub refuses to start
 the jobs for a billing reason, so the gates are enforced by `Scripts/quality.sh` and the git hooks, not by CI.
 
 ## Commands
