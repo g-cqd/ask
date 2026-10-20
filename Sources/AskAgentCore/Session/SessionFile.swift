@@ -106,6 +106,21 @@ public struct SessionFile: ~Copyable {
         }
     }
 
+    /// Records the strict sandbox the session now runs under, and persists it. Undone if it cannot be persisted.
+    /// - Throws: an I/O error; the session keeps the sandbox it had.
+    public mutating func recordSandbox(_ section: SandboxSection) throws(SessionFileError) {
+        let checkpoint = tree.checkpoint
+        let record = SandboxSection(write: section.write, network: section.network)
+        tree.recordSandbox(record)
+        do throws(SessionFileError) {
+            try persist(
+                try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(forSandbox: record) })
+        } catch {
+            tree.rewind(to: checkpoint)
+            throw error
+        }
+    }
+
     // MARK: - Persistence
 
     private mutating func persistEntry(_ id: EntryID, undoingTo checkpoint: SessionTree.Checkpoint)

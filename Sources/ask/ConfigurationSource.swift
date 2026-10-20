@@ -11,6 +11,8 @@ struct ConfigurationSource: Sendable {
     let environment: [String: String]
     /// The directory ask was started in: what a `workspace` write scope means.
     let workspace: String
+    /// The strict sandbox the session being continued recorded: a narrowing layer below the flags.
+    var sessionSandbox: SandboxSection?
 
     /// The flags the user gave; nil for one not given.
     struct Flags: Sendable {
@@ -82,6 +84,13 @@ struct ConfigurationSource: Sendable {
         return policy
     }
 
+    /// This source for continuing `session`: its recorded strict sandbox becomes a layer below the flags, or none.
+    func resuming(_ session: SessionRecorder?) -> ConfigurationSource {
+        var next = self
+        next.sessionSandbox = session?.sandbox
+        return next
+    }
+
     /// The source for the current directory with no flags: what the configuration commands read.
     static var here: ConfigurationSource {
         ConfigurationSource(workingDirectory: FileManager.default.currentDirectoryPath, flags: Flags())
@@ -93,6 +102,15 @@ struct ConfigurationSource: Sendable {
         var result = try loader.load(
             model: flags.model, provider: flags.provider, maxTurns: flags.maxTurns, compactAt: flags.compactAt,
             network: flags.network, write: flags.write)
+        if let record = sessionSandbox, !flags.noSandbox {
+            let before = result.configuration.sandbox
+            result.configuration = result.configuration.applying(
+                session: record, flaggedNetwork: flags.network != nil, flaggedWrite: flags.write != nil)
+            if result.configuration.sandbox != before {
+                result.notices.append(
+                    "Keeping this session's sandbox (\(record)); --network and --write change it.")
+            }
+        }
         if let selected = flags.selected {
             result.configuration = result.configuration.applying(
                 selectedProvider: selected.provider, model: selected.model, command: "/model")

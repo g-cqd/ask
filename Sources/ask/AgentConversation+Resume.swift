@@ -6,7 +6,7 @@ internal import System
 
 extension AgentConversation {
     /// Opens the replacement before releasing the old writer, so lookup/open/lock failure changes nothing.
-    func resumeSession(arguments: String, update: @Sendable (ConversationUpdate) -> Void) {
+    func resumeSession(arguments: String, update: @Sendable (ConversationUpdate) -> Void) async {
         guard !arguments.isEmpty else {
             listSessions(update: update)
             return
@@ -28,6 +28,7 @@ extension AgentConversation {
                 return
             }
             activateSession(replacement, update: update)
+            await adoptSandbox(of: replacement, update: update)
             if let notice = replacement.repairNotice { update(.notice(notice, isError: false)) }
             update(.notice("Resumed session \((replacement.path as NSString).lastPathComponent)", isError: false))
         } catch SessionFileError.inUse {
