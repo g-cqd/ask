@@ -45,27 +45,15 @@ public struct ModelCatalogFile: Sendable {
     public func save(_ models: [CatalogModel], scope: ModelCatalogScope, now: Double) throws {
         guard now.isFinite, Self.valid(models) else { throw ModelCatalogError.cache(path: url.path) }
         let bytes: [UInt8]
-        let directory = url.deletingLastPathComponent()
         do {
             bytes = try AemiJSON.JSONEncoder()
                 .encodeToBytes(Stored(version: 1, scope: scope, fetchedAt: now, models: models))
             guard bytes.count <= Self.byteLimit else { throw ModelCatalogError.cache(path: url.path) }
             try FileManager.default.createDirectory(
-                at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
-            // @dl:accept -- the POSIX atomic-file dance matches credential storage, but a replaceable catalog has distinct validation and failure semantics
+                at: url.deletingLastPathComponent(), withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700])
+            try AtomicFile.replace(url, with: bytes)
         } catch { throw ModelCatalogError.cache(path: url.path) }
-        let temporary = directory.appending(path: ".models-\(UUID().uuidString).json")
-        let descriptor = open(temporary.path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
-        guard descriptor >= 0 else { throw ModelCatalogError.cache(path: url.path) }
-        // @dl:accept -- secure create/write/rename is the same BSD API sequence; do not couple disposable cache writes to credential transactions
-        defer { unlink(temporary.path) }
-        // The buffer belongs to bytes and remains alive for this synchronous write.
-        let written = bytes.withUnsafeBytes { unsafe Darwin.write(descriptor, $0.baseAddress, $0.count) }
-        let flushed = fsync(descriptor)
-        close(descriptor)
-        guard written == bytes.count, flushed == 0, rename(temporary.path, url.path) == 0 else {
-            throw ModelCatalogError.cache(path: url.path)
-        }
     }
 
     private static let byteLimit = 2 << 20
