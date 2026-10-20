@@ -27,4 +27,27 @@ struct PlainTokenTests {
         #expect(!PlainToken.matches("ab", length: 3 ... 5, extra: ""))
         #expect(PlainToken.matches("abc", length: 3 ... 3, extra: ""))
     }
+
+    @Test func `a word starts with a letter or a digit and may carry dots, underscores and hyphens after`() {
+        for word in ["a", "A", "0", "gpt-6.1_sol", "9lives", "Some-Model.v2"] {
+            #expect(PlainToken.word(word, length: 1 ... 32, lowercase: false), "\(word)")
+        }
+        for word in [".hidden", "_x", "-flag", "--flag", "a b", "a/b", "é", ""] {
+            #expect(!PlainToken.word(word, length: 1 ... 32, lowercase: false), "\(word.debugDescription)")
+        }
+    }
+
+    @Test func `lower-case mode refuses a capital anywhere, not only at the start`() {
+        #expect(PlainToken.word("fast-2", length: 1 ... 32, lowercase: true))
+        for word in ["Fast", "fAst", "fasT", "FAST"] {
+            #expect(!PlainToken.word(word, length: 1 ... 32, lowercase: true), "\(word)")
+            #expect(PlainToken.word(word, length: 1 ... 32, lowercase: false), "\(word)")
+        }
+    }
+
+    @Test func `a word is bounded in length on both sides`() {
+        #expect(!PlainToken.word("abcd", length: 1 ... 3, lowercase: false))
+        #expect(!PlainToken.word("ab", length: 3 ... 5, lowercase: false))
+        #expect(PlainToken.word("abc", length: 3 ... 3, lowercase: true))
+    }
 }

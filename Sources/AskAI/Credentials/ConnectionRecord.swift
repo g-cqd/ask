@@ -22,9 +22,6 @@ public struct ConnectionRecord: Codable, Sendable, Equatable {
     /// A lower-case CLI name, never a path. Existing configured names are checked separately for collisions.
     public static func canonical(_ name: String) -> String? {
         let value = name.lowercased()
-        guard PlainToken.matches(value, length: 1 ... 64, extra: "._-"),
-            let first = value.utf8.first, (first >= 97 && first <= 122) || (first >= 48 && first <= 57)
-        else { return nil }
-        return value
+        return PlainToken.word(value, length: 1 ... 64, lowercase: true) ? value : nil
     }
 }
