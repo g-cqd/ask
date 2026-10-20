@@ -7,7 +7,7 @@ internal import Foundation
 struct ConfigurationSource: Sendable {
     let loader: ConfigurationLoader
     let providersPath: String
-    let flags: Flags
+    var flags: Flags
     let environment: [String: String]
 
     /// The flags the user gave; nil for one not given.
@@ -18,6 +18,8 @@ struct ConfigurationSource: Sendable {
         var compactAt: Int?
         /// `--no-sandbox`: the user turned ask's protections off for this run.
         var noSandbox = false
+        /// The model chosen with `/model`; above every other layer, for this process and the ones a reload starts.
+        var selected: ModelSelection?
 
         /// The flags as they were given, to pass to a replacement process.
         var arguments: [String] {
@@ -27,6 +29,9 @@ struct ConfigurationSource: Sendable {
             if let maxTurns { arguments += ["--max-turns", String(maxTurns)] }
             if let compactAt { arguments += ["--compact-at", String(compactAt)] }
             if noSandbox { arguments.append("--no-sandbox") }
+            if let selected {
+                arguments += ["--selected-provider", selected.provider, "--selected-model", selected.model]
+            }
             return arguments
         }
     }
@@ -67,8 +72,12 @@ struct ConfigurationSource: Sendable {
     /// Reads every layer and resolves the model, all or nothing.
     /// - Throws: a ``ConfigurationError`` or a ``ProviderSettingsError``, naming the file.
     func load(allowNetwork: Bool = true) async throws -> RunSettings {
-        let result = try loader.load(
+        var result = try loader.load(
             model: flags.model, provider: flags.provider, maxTurns: flags.maxTurns, compactAt: flags.compactAt)
+        if let selected = flags.selected {
+            result.configuration = result.configuration.applying(
+                selectedProvider: selected.provider, model: selected.model, command: "/model")
+        }
         let providers = try ProviderSettings.load(from: providersPath)
         let discovered = try await ModelDiscovery.resolve(
             providers: providers, provider: result.configuration.provider.value,
