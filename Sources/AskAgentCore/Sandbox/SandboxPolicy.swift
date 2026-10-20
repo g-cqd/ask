@@ -5,8 +5,27 @@
 /// list needs a deny-default Seatbelt base and arrives with the strict modes.
 public struct SandboxPolicy: Sendable, Equatable {
     /// How far the network reaches, from nowhere to anywhere. Ordered, so the narrower of two is the lesser.
-    public enum Network: Int, Sendable, Equatable, Comparable {
+    public enum Network: Int, Sendable, Equatable, Comparable, CustomStringConvertible {
         case none, localhost, any
+
+        /// The spelling a configuration file and the `--network` flag use.
+        public var description: String {
+            switch self {
+                case .none: "none"
+                case .localhost: "localhost"
+                case .any: "any"
+            }
+        }
+
+        /// The level a configuration file or flag names, or nil for anything else.
+        public init?(named name: String) {
+            switch name {
+                case "none": self = .none
+                case "localhost": self = .localhost
+                case "any": self = .any
+                default: return nil
+            }
+        }
 
         public static func < (left: Network, right: Network) -> Bool { left.rawValue < right.rawValue }
     }

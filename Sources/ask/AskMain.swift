@@ -51,6 +51,19 @@ struct Ask: AsyncParsableCommand {
         help: "Turn off ask's protections for this run: its own files and your secret stores become reachable.")
     var noSandbox = false
 
+    @Option(
+        help: ArgumentHelp(
+            "How far commands may reach the network: none, localhost or any. Replaces config.json's sandbox.network.",
+            valueName: "level"))
+    var network: String?
+
+    @Option(
+        help: ArgumentHelp(
+            "Where commands and tools may write: workspace (this directory), anywhere, or one directory. "
+                + "Replaces config.json's sandbox.write.",
+            valueName: "scope"))
+    var write: String?
+
     @Flag(name: .customLong("self-check"), help: .hidden)
     var selfCheck = false
 
@@ -78,8 +91,27 @@ struct Ask: AsyncParsableCommand {
         if continueLatest, resume != nil { throw ValidationError("Use --continue or --resume, not both.") }
         if let maxTurns, maxTurns < 1 { throw ValidationError("--max-turns must be at least 1.") }
         if let compactAt, compactAt < 0 { throw ValidationError("--compact-at must be 0 or more.") }
+        if noSandbox, network != nil || write != nil {
+            throw ValidationError("--no-sandbox turns the sandbox off; --network and --write need it on.")
+        }
+        if let network, SandboxPolicy.Network(named: network) == nil {
+            throw ValidationError("--network must be none, localhost or any.")
+        }
+        if let write, !["workspace", "anywhere"].contains(write), !write.hasPrefix("/"), !write.hasPrefix("~/") {
+            throw ValidationError("--write must be workspace, anywhere, or an absolute path (or one starting with ~/).")
+        }
         if (selectedProvider == nil) != (selectedModel == nil) {
             throw ValidationError("--selected-provider and --selected-model go together.")
+        }
+    }
+
+    /// `--write` as a setting.
+    private var writeSetting: WriteSetting? {
+        switch write {
+            case nil: nil
+            case "workspace": .workspace
+            case "anywhere": .anywhere
+            case let path?: .paths([path])
         }
     }
 
@@ -97,6 +129,7 @@ struct Ask: AsyncParsableCommand {
             workingDirectory: FileManager.default.currentDirectoryPath,
             flags: .init(
                 model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt, noSandbox: noSandbox,
+                network: network.flatMap(SandboxPolicy.Network.init(named:)), write: writeSetting,
                 selected: selectedProvider.flatMap { provider in
                     selectedModel.map { ModelSelection(provider: provider, model: $0) }
                 }))

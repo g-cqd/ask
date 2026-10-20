@@ -215,7 +215,7 @@ func runInteractive(
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.
         let exit = try await runInteractiveScreen(
-            conversation: conversation, label: modelLabel(settings.model), history: conversation.history(),
+            conversation: conversation, label: settings.label, history: conversation.history(),
             notices: notices + settings.description + describe(files), beforeSignalExit: { jobs.terminateAllNow() })
         await jobs.stopAll()
         // The terminal is already restored: replace this process with the new build, resuming this session.
