@@ -25,6 +25,57 @@ struct CodexCatalogClientTests {
         #expect(models.first?.maxOutputTokens == nil)
     }
 
+    @Test func `the recorded catalog reports each model's reasoning levels and default, in the server's order`()
+        async throws
+    {
+        let path = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .appending(path: "Fixtures/Codex/models.json")
+        let models = try await read(String(decoding: Data(contentsOf: path), as: UTF8.self))
+        let byID = Dictionary(uniqueKeysWithValues: models.map { ($0.id, $0) })
+        let full = ["low", "medium", "high", "xhigh", "max", "ultra"]
+        #expect(byID["gpt-6.1-sol"]?.reasoningLevels == full)
+        #expect(byID["gpt-6.1-sol"]?.defaultReasoningLevel == "low")
+        #expect(byID["gpt-6-sol"]?.defaultReasoningLevel == "medium")
+        // The luna models stop at max, and none of the nine offers an "off".
+        #expect(byID["gpt-6-luna"]?.reasoningLevels == ["low", "medium", "high", "xhigh", "max"])
+        #expect(byID["gpt-5.6-luna"]?.reasoningLevels == ["low", "medium", "high", "xhigh", "max"])
+        #expect(models.allSatisfy { !$0.reasoningLevels.contains("none") && !$0.reasoningLevels.contains("off") })
+    }
+
+    @Test func `levels may be objects or plain strings, and dirty or repeated names are dropped`() async throws {
+        let json =
+            #"{"models":[{"slug":"a","supported_reasoning_levels":[{"effort":"low","description":"d"},"medium",{"effort":"low"},{"effort":"Bad Level"},{"effort":"has space"},{"effort":"HIGH"},"Max","hi-gh","hi_gh","hi[gh",{"effort":""},{"nope":1},7,null,"hi\u0000gh","xhigh"]}]}"#
+        let models = try await read(json)
+        #expect(models.first?.reasoningLevels == ["low", "medium", "xhigh"])
+    }
+
+    @Test func `a very long level name or a very long list cannot grow the catalog`() async throws {
+        let long = String(repeating: "a", count: 25)
+        let letters = Array("abcdefghijklmnopqrstuvwxyz")
+        var names: [String] = []
+        for index in 0 ..< 40 {
+            let first = String(letters[index % 26])
+            let second = String(letters[index / 26])
+            names.append("l" + first + second)
+        }
+        let many = names.map { #"{"effort":"\#($0)"}"# }.joined(separator: ",")
+        let models = try await read(
+            #"{"models":[{"slug":"a","supported_reasoning_levels":[{"effort":"\#(long)"},"ok"]},{"slug":"b","supported_reasoning_levels":[\#(many)]}]}"#
+        )
+        #expect(models.first?.reasoningLevels == ["ok"])
+        #expect(models.last?.reasoningLevels == Array(names.prefix(16)), "the first 16 valid names, in order")
+    }
+
+    @Test func `a default that is not one of the reported levels is ignored, and no levels is unknown`() async throws {
+        let models = try await read(
+            #"{"models":[{"slug":"a","default_reasoning_level":"turbo","supported_reasoning_levels":[{"effort":"low"}]},{"slug":"b","default_reasoning_level":"low"},{"slug":"c"}]}"#
+        )
+        #expect(models[0].defaultReasoningLevel == nil)
+        #expect(models[1].reasoningLevels.isEmpty, "not reported is not the same as none")
+        #expect(models[1].defaultReasoningLevel == nil, "a default with no list to belong to is not trusted")
+        #expect(models[2].reasoningLevels.isEmpty && models[2].defaultReasoningLevel == nil)
+    }
+
     @Test func `the request carries the version query and only the access credential`() async throws {
         let transport = SequencedTransport([.json(200, #"{"models":[{"slug":"m"}]}"#)])
         _ = try await CodexCatalogClient(transport: transport).models(credentials: Self.credentials)

@@ -22,16 +22,19 @@ struct ModelsCommand: AsyncParsableCommand {
                 try await ModelDiscovery.codex(environment: ProcessInfo.processInfo.environment, connection: record)
                 .models(now: Date().timeIntervalSince1970, refresh: true)
             for notice in snapshot.notices { FileHandle.standardError.write(Data("ask: \(notice)\n".utf8)) }
-            print("MODEL                         CONTEXT       OUTPUT")
+            print("MODEL                         CONTEXT       OUTPUT        REASONING")
             for (index, model) in snapshot.models.enumerated() {
                 let id = (index == 0 ? "* " : "  ") + model.id
                 let context = model.contextWindow.map(String.init) ?? "unknown"
                 let output = model.maxOutputTokens.map(String.init) ?? "unknown"
                 print(
                     id.padding(toLength: Swift.max(30, id.count + 1), withPad: " ", startingAt: 0)
-                        + context.padding(toLength: 14, withPad: " ", startingAt: 0) + output)
+                        + context.padding(toLength: 14, withPad: " ", startingAt: 0)
+                        + output.padding(toLength: 14, withPad: " ", startingAt: 0) + model.reasoningDescription)
             }
-            print("* default when no model is configured; limits are reported by this account's catalog.")
+            print(
+                "* default model when none is configured. REASONING: the levels this account reports; * marks the server's default."
+            )
         } catch { fail("ask: \(error)", code: ModelDiscovery.exitCode(for: error)) }
     }
 }
