@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["0045"]
+blocked-by: []
 date: 2026-10-20
 ---
 
@@ -8,7 +8,8 @@ date: 2026-10-20
 
 The user approved multiple registrations/accounts of the same provider, and asked for a refined design before the
 storage and CLI become fixed. This is the proposed direction, not a claim that the commands below already exist.
-Implementation follows the credential-transaction probes in 0045. Catalog discovery in 0038 is the first independent
+Credential transactions (0045, ADR-0039) are done. Still owed here from it: keep top-level records this version does not know
+when saving, and a refresh lock per connection. Catalog discovery in 0038 is the first independent
 slice and must already reject cache reuse across accounts/endpoints.
 
 ## Three identities, one selected destination
