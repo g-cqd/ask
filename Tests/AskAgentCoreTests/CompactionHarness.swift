@@ -27,6 +27,7 @@ struct CompactionHarness {
     func kinds(_ file: SessionRecorder) -> [String] {
         file.tree.entries.map {
             switch $0.payload {
+                case .destination: "destination"
                 case .user: "user"
                 case .assistant: "assistant"
                 case .response: "response"

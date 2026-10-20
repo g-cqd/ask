@@ -8,8 +8,8 @@ internal import AemiJSON
 ///
 /// Pure: bytes in, bytes out. File placement, locking and fsync policy belong to the caller.
 public enum SessionLog {
-    /// The only format version this build reads or writes.
-    public static let formatVersion = 1
+    /// The writer version. Version 1 remains readable; version 2 protects routing from older readers.
+    public static let formatVersion = 2
 
     /// Ceilings checked before parsing, so a hostile archive cannot exhaust memory in the decoder.
     public struct Limits: Sendable, Equatable {
@@ -85,7 +85,7 @@ public enum SessionLog {
             try recovery.consume(line, number: index + 1, isFinal: false)
         }
         if !finalLine.isEmpty { try recovery.consume(finalLine, number: lines.count + 1, isFinal: true) }
-        return RecoveredSession(tree: recovery.tree, issues: recovery.issues)
+        return RecoveredSession(tree: recovery.tree, issues: recovery.issues, formatVersion: recovery.version)
     }
 
     /// Loads a log only if it is undamaged. For validation and tests; sessions open with ``recover(_:limits:)``.
@@ -109,6 +109,7 @@ public enum SessionLog {
         let decoder = AemiJSON.JSONDecoder()
         var tree = SessionTree()
         var issues: [SessionLogIssue] = []
+        var version = SessionLog.formatVersion
         private var headerSeen = false
         private var missingHeaderReported = false
         /// Spliced-out compactions, mapped to the parent their children now attach to.
@@ -139,7 +140,8 @@ public enum SessionLog {
                     issues.append(.malformedLine(line: line))
                     return
                 }
-                guard version == formatVersion else { throw .unsupportedVersion(version) }
+                guard version == 1 || version == SessionLog.formatVersion else { throw .unsupportedVersion(version) }
+                self.version = version
                 headerSeen = true
                 return
             }

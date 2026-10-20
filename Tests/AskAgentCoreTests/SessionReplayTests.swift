@@ -73,6 +73,20 @@ struct SessionReplayTests {
             ])
     }
 
+    @Test func `routing inserted between a tool call and its result is invisible to replay and context`() {
+        let asked = response([.toolCall(id: "call", name: "read", input: .empty)])
+        let payloads: [SessionPayload] = [
+            .user("Go"), .response(asked), .toolResult(callID: "call", content: "ok", isError: false)
+        ]
+        var routed = payloads
+        routed.insert(
+            .destination(
+                SessionDestination(connectionID: "stable", authorizationID: "grant", name: "renamed", model: "model")),
+            at: 2)
+        #expect(SessionReplay.steps(entries(routed)) == SessionReplay.steps(entries(payloads)))
+        #expect(RequestContext(entries(routed)) == RequestContext(entries(payloads)))
+    }
+
     @Test func `a compaction replays as one, and its usage and a response's count toward the totals`() {
         let steps = SessionReplay.steps(entries([.user("Go."), .compaction(summary: "S", firstKept: EntryID("e0"))]))
         #expect(steps.last == .event(.compacted(summary: "S", usage: TokenUsage())))
