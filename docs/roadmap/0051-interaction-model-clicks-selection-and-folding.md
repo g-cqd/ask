@@ -49,16 +49,19 @@ Rows marked **owner** are their examples; rows marked **proposed** are mine, to 
    the placeholder carries its own hint in text (`ctrl+t to expand`, as in the prototype).
 5. **Every fold leaves a placeholder** (ADR-0044), and it says what is inside: the kind and the size.
 
-## Settings (proposed keys in the layered configuration, roadmap 0039)
+## Settings (keys in the layered configuration, roadmap 0039)
+
+The defaults are decided in ADR-0046: the first three by the owner, the rest on evidence, for the owner to overrule.
 
 | Key | Values | Default |
 |---|---|---|
-| `ui.mouse` | on, off (off gives the terminal its own selection back) | open |
-| `ui.copyOnSelect` | on, off | **on** (owner) |
-| `ui.thinking`, `ui.tools` | folded, shown | open |
-| `ui.images` | show, placeholder, never | open |
-| `ui.codeFoldLines` | number of lines above which a code block starts folded | open |
-| `ui.promptRows` | the most rows the input takes before it scrolls inside itself | 6 today, a constant |
+| `ui.mouse` | on, off (off gives the terminal its own selection back) | on |
+| `ui.copyOnSelect` | on, off | on |
+| `ui.thinking`, `ui.tools` | folded, shown | folded |
+| `ui.images` | show, placeholder, never | placeholder |
+| `ui.codeFoldLines` | lines above which a code block starts folded, capped at half the viewport | 20 |
+| `ui.promptRows` | the most rows the input takes before it scrolls inside itself, capped at a third of the viewport | 6 |
+| `ui.scrollLines` | lines one wheel step scrolls | 3 |
 
 ## Open questions
 
@@ -74,9 +77,9 @@ Rows marked **owner** are their examples; rows marked **proposed** are mine, to 
 
 1. List every region the screen draws, in both layouts of roadmap 0015, and give each a target, an action identity, a key and a
    placeholder where it can fold. The table above is its start.
-2. Run TerminalKit's probes (its 0016, 0017) in kitty, ghostty, wezterm and Terminal.app and record what they find in an ADR:
-   mouse reports, OSC 52, the bypass modifier, tmux.
-3. Settle the conventions and defaults above in an ADR with the owner, before any component is built.
+2. ~~Run TerminalKit's probes~~ **Done** (TerminalKit ADR-0028): mouse reports, OSC 52, the bypass key and image cost in kitty, Ghostty,
+   WezTerm and Terminal.app. tmux and ssh are still unprobed.
+3. Settle the conventions with the owner in an ADR, before any component is built. The defaults are settled (ADR-0046).
 4. Build in the order the dependencies fall: regions and clicks, then selection and the clipboard, then folding, then the input.
 
 ## Done when

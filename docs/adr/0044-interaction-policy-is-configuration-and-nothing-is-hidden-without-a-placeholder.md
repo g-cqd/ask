@@ -41,3 +41,8 @@ source, diary 40). The prompt's row limit is a constant, `maximumPromptRows`, in
 
 Which components are clickable, what each does, whether every click has a key, the key names and defaults other than copy on
 release, hover, and anything about how the kit draws a selection. Those are roadmap 0051 and TerminalKit 0016 to 0019.
+
+## Update (2026-10-20)
+
+The defaults this ADR left open are decided in ADR-0046, from a probe of four terminals (TerminalKit ADR-0028) and a count of code
+blocks, prompts and images in local agent sessions (`docs/research/ui-content-sizes-2026-10.md`).
