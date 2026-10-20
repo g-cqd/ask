@@ -60,6 +60,12 @@ struct Ask: AsyncParsableCommand {
     @Option(name: .customLong("reload-started"), help: .hidden)
     var reloadStarted: Int?
 
+    @Option(name: .customLong("selected-provider"), help: .hidden)
+    var selectedProvider: String?
+
+    @Option(name: .customLong("selected-model"), help: .hidden)
+    var selectedModel: String?
+
     @Flag(name: [.short, .customLong("continue")], help: "Continue the session written last in this project.")
     var continueLatest = false
 
@@ -72,6 +78,9 @@ struct Ask: AsyncParsableCommand {
         if continueLatest, resume != nil { throw ValidationError("Use --continue or --resume, not both.") }
         if let maxTurns, maxTurns < 1 { throw ValidationError("--max-turns must be at least 1.") }
         if let compactAt, compactAt < 0 { throw ValidationError("--compact-at must be 0 or more.") }
+        if (selectedProvider == nil) != (selectedModel == nil) {
+            throw ValidationError("--selected-provider and --selected-model go together.")
+        }
     }
 
     private var session: SessionChoice {
@@ -87,7 +96,10 @@ struct Ask: AsyncParsableCommand {
         let source = ConfigurationSource(
             workingDirectory: FileManager.default.currentDirectoryPath,
             flags: .init(
-                model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt, noSandbox: noSandbox))
+                model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt, noSandbox: noSandbox,
+                selected: selectedProvider.flatMap { provider in
+                    selectedModel.map { ModelSelection(provider: provider, model: $0) }
+                }))
         let settings: RunSettings
         do { settings = try await source.load(allowNetwork: !selfCheck) } catch {
             fail("ask: \(error)", code: ModelDiscovery.exitCode(for: error))
