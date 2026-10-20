@@ -1,8 +1,9 @@
 /// What a run may touch: the network, where it may write, and the paths it may neither read nor write (ADR-0035).
 ///
 /// Policies narrow and never widen. The effective policy for a call is the intersection of the layers it sits in,
-/// and only the user, by flag or configuration, ever makes one wider. Reading is a deny list for now; an allow
-/// list needs a deny-default Seatbelt base and arrives with the strict modes.
+/// and only the user, by flag or configuration, ever makes one wider. Reading is a deny list unless `read` names
+/// roots: then only those, the system's own directories and scratch space can be read (roadmap 0042), and commands
+/// run on a deny-default Seatbelt base (``SeatbeltBase``).
 public struct SandboxPolicy: Sendable, Equatable {
     /// How far the network reaches, from nowhere to anywhere. Ordered, so the narrower of two is the lesser.
     public enum Network: Int, Sendable, Equatable, Comparable, CustomStringConvertible {
@@ -32,6 +33,8 @@ public struct SandboxPolicy: Sendable, Equatable {
 
     public var network: Network
     public var write: PathScope
+    /// Where reading is allowed besides ``systemReadRoots``. `anywhere` keeps reading a deny list.
+    public var read: PathScope
     /// Paths that may not be read. Everything here is also unwritable: a path that cannot be read but could be
     /// moved away, or replaced, protects nothing.
     public private(set) var denyRead: [SandboxRule]
@@ -40,11 +43,12 @@ public struct SandboxPolicy: Sendable, Equatable {
 
     /// A policy. `denyRead` is added to `denyWrite`.
     public init(
-        network: Network = .any, write: PathScope = .anywhere, denyRead: [SandboxRule] = [],
-        denyWrite: [SandboxRule] = []
+        network: Network = .any, write: PathScope = .anywhere, read: PathScope = .anywhere,
+        denyRead: [SandboxRule] = [], denyWrite: [SandboxRule] = []
     ) {
         self.network = network
         self.write = write
+        self.read = read
         self.denyRead = denyRead
         self.denyWrite = denyWrite + denyRead.filter { !denyWrite.contains($0) }
     }
@@ -59,7 +63,8 @@ public struct SandboxPolicy: Sendable, Equatable {
     public func intersecting(_ other: SandboxPolicy) -> SandboxPolicy {
         SandboxPolicy(
             network: Swift.min(network, other.network), write: write.intersecting(other.write),
-            denyRead: Self.union(denyRead, other.denyRead), denyWrite: Self.union(denyWrite, other.denyWrite))
+            read: read.intersecting(other.read), denyRead: Self.union(denyRead, other.denyRead),
+            denyWrite: Self.union(denyWrite, other.denyWrite))
     }
 
     private static func union(_ left: [SandboxRule], _ right: [SandboxRule]) -> [SandboxRule] {
@@ -77,7 +82,10 @@ public struct SandboxPolicy: Sendable, Equatable {
         }
         switch capability {
             case .read:
-                return Self.refusal(.read, by: denyRead, for: canonical, verb: "read") ?? .allowed
+                if let refused = Self.refusal(.read, by: denyRead, for: canonical, verb: "read") { return refused }
+                return read.contains(canonical)
+                    || Self.systemReadRoots.contains { SandboxRule($0, .subpath).matches(canonical) }
+                    ? .allowed : .denied(.read, "\(canonical) is outside the places this run may read.")
             case .write:
                 if let refused = Self.refusal(.write, by: denyWrite, for: canonical, verb: "written") { return refused }
                 return write.contains(canonical)
@@ -86,6 +94,14 @@ public struct SandboxPolicy: Sendable, Equatable {
                 return .allowed
         }
     }
+
+    /// What a restricted-read run can always read: the system, the developer tools it ships with, Homebrew, and scratch
+    /// space. Canonical spellings (`/etc` is `/private/etc`). Probed with SwiftPM, git, Python, curl, cc and make.
+    // @dl:accept -- a table of paths: the list is the data, and it matches other string tables only as literals
+    public static let systemReadRoots = [
+        "/bin", "/sbin", "/usr", "/System", "/Library", "/private/etc", "/private/var/db", "/dev", "/opt/homebrew",
+        "/Applications/Xcode.app", "/private/tmp", "/private/var/folders"
+    ]
 
     /// The refusal for `canonical` when one of `rules` covers it, naming the rule.
     private static func refusal(

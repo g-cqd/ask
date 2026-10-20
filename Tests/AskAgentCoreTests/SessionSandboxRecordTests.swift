@@ -68,16 +68,18 @@ struct SessionSandboxRecordTests {
     @Test func `resuming narrows the configuration by the session's record, except where a flag spoke`() {
         let files = Configuration.defaults.applying(
             ConfigurationFile(sandbox: SandboxSection(network: .localhost)), from: .file("/u"))
-        let resumed = files.applying(session: strict, flaggedNetwork: false, flaggedWrite: false)
+        let resumed = files.applying(session: strict, flaggedNetwork: false, flaggedWrite: false, flaggedRead: false)
         #expect(resumed.sandbox.value.network == SandboxPolicy.Network.none)
         #expect(resumed.sandbox.value.write == strict.write)
         #expect(resumed.sandbox.source == .session)
-        let flagged = files.applying(session: strict, flaggedNetwork: true, flaggedWrite: true)
+        let flagged = files.applying(session: strict, flaggedNetwork: true, flaggedWrite: true, flaggedRead: true)
         #expect(flagged == files, "a flag is the user widening; the record does not override it")
-        let wider = files.applying(session: SandboxSection(network: .any), flaggedNetwork: false, flaggedWrite: false)
+        let wider = files.applying(
+            session: SandboxSection(network: .any), flaggedNetwork: false, flaggedWrite: false, flaggedRead: false)
         #expect(wider == files, "a record never widens the files either")
         #expect(Configuration.Source.session.description == "this session's record")
-        let again = resumed.applying(session: resumed.sandbox.value, flaggedNetwork: false, flaggedWrite: false)
+        let again = resumed.applying(
+            session: resumed.sandbox.value, flaggedNetwork: false, flaggedWrite: false, flaggedRead: false)
         #expect(again.sandbox.value.write == strict.write, "resuming its own record does not grow it")
     }
 

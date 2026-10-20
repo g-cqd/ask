@@ -958,6 +958,7 @@ def probe_strict_label():
     results = []
     for arguments, wanted in [(("--write", "workspace", "--network", "none"), "sandbox: workspace only, no network"),
                               (("--network", "localhost"), "sandbox: localhost only"),
+                              (("--read", "workspace"), "sandbox: reads workspace"),
                               (("--no-sandbox",), "no sandbox"),
                               ((), None)]:
         screen = Screen(server.url, project, arguments=arguments)

@@ -84,7 +84,7 @@ struct SandboxStrictConfigurationTests {
         let flagged = configuration.applying(
             model: nil, provider: nil, maxTurns: nil, compactAt: nil, network: .any, write: .anywhere)
         #expect(flagged.sandbox.value.network == .any && flagged.sandbox.value.write == [.anywhere])
-        #expect(flagged.sandbox.source == .flag("network/write"))
+        #expect(flagged.sandbox.source == .flag("network/write/read"))
         let untouched = configuration.applying(model: nil, provider: nil, maxTurns: nil, compactAt: nil)
         #expect(untouched.sandbox == configuration.sandbox)
     }
