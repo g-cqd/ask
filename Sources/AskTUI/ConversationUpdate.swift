@@ -19,6 +19,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case promptAccepted(id: Int, text: String)
     /// The run failed: return any unacknowledged messages to the editor when it ends.
     case returnQueuedPrompts
+    /// Replaces the active conversation: clear its transcript, usage display and scrollback, keeping the draft.
+    case clearConversation
     /// The run is over, however it ended.
     case runEnded
 }

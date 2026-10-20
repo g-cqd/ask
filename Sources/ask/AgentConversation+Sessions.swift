@@ -1,0 +1,45 @@
+internal import AskAgentCore
+internal import AskTUI
+internal import AskTools
+internal import Synchronization
+
+extension AgentConversation {
+    /// Leaves the current session intact on disk. A new file is created only when a prompt needs it.
+    func newSession(arguments: String, update: @Sendable (ConversationUpdate) -> Void) {
+        guard arguments.isEmpty else {
+            update(.notice("Usage: /new (no arguments).", isError: true))
+            return
+        }
+        guard maySwitchSession(update: update) else { return }
+        let hadSession = session.withLock { $0 != nil }
+        activateSession(nil, update: update)
+        let note =
+            hadSession
+            ? "New session. The previous one is saved." : "New session. It will be saved when you send a prompt."
+        update(.notice(note, isError: false))
+    }
+
+    /// Sessions do not own processes: refuse to carry a running job into another conversation silently.
+    func maySwitchSession(update: @Sendable (ConversationUpdate) -> Void) -> Bool {
+        let running = jobs.running
+        guard running.isEmpty else {
+            update(
+                .notice(
+                    "Cannot switch sessions while jobs are running (\(running.joined(separator: ", "))). Stop them first.",
+                    isError: true))
+            return false
+        }
+        return true
+    }
+
+    /// Called only between runs, once a replacement has been opened successfully. Releasing the old recorder
+    /// also releases its writer lock. Learned window state must not carry over from another session.
+    func activateSession(_ replacement: SessionRecorder?, update: @Sendable (ConversationUpdate) -> Void) {
+        session.withLock { $0 = replacement }
+        promptInput.withLock { $0 = nil }
+        usage.withLock { $0 = UsageTotals() }
+        current.withLock { $0.loop = nil }
+        update(.clearConversation)
+        for item in history() { update(item) }
+    }
+}

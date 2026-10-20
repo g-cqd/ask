@@ -11,6 +11,7 @@ extension AgentConversation {
             SlashCommand(
                 name: "config", summary: "Read the configuration again and show every setting and its source."),
             SlashCommand(name: "compact", summary: "Summarise the conversation now, keeping the recent messages."),
+            SlashCommand(name: "new", summary: "Start a new session; the previous session stays saved."),
             SlashCommand(
                 name: "reload", summary: "Switch to a newly built ask, keeping this session. /reload now stops jobs.")
         ]
@@ -23,6 +24,7 @@ extension AgentConversation {
             switch name {
                 case "config": await self.showConfiguration(update: update)
                 case "compact": await self.compact(update: update)
+                case "new": self.newSession(arguments: arguments, update: update)
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))
             }
