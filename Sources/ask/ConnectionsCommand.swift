@@ -5,7 +5,10 @@ internal import AskAI
 struct ConnectionsCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "connections", abstract: "List named subscription connections.",
-        subcommands: [RenameConnectionCommand.self, RemoveConnectionCommand.self])
+        subcommands: [
+            RenameConnectionCommand.self, RemoveConnectionCommand.self, AliasConnectionCommand.self,
+            UnaliasConnectionCommand.self, DefaultModelCommand.self
+        ])
 
     func run() throws {
         let registry = NamedConnections.registry()
