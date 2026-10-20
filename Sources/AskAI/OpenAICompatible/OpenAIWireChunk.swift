@@ -66,7 +66,7 @@ struct OpenAIWireChunk: Decodable, Sendable {
         /// llama.cpp's context size, sent with a refusal for length.
         var nCtx: Int?
         /// Seconds until a usage limit lifts, which ChatGPT's backend sends (`resets_in_seconds`).
-        let resetsIn: LenientInt?
+        let resetsIn: Lenient<Int>?
 
         enum CodingKeys: String, CodingKey {
             case message, type, code

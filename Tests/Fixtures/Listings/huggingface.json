@@ -1,0 +1,80 @@
+{
+ "object": "list",
+ "data": [
+  {
+   "id": "Qwen/Qwen3.8-27B",
+   "object": "model",
+   "owned_by": "Qwen",
+   "providers": [
+    {
+     "provider": "novita",
+     "status": "live",
+     "context_length": 1000000
+    },
+    {
+     "provider": "cerebras",
+     "status": "live",
+     "context_length": 65536
+    },
+    {
+     "provider": "featherless-ai",
+     "status": "live"
+    },
+    {
+     "provider": "ovhcloud",
+     "status": "live",
+     "context_length": 262144
+    },
+    {
+     "provider": "deepinfra",
+     "status": "live",
+     "context_length": 262144
+    }
+   ]
+  },
+  {
+   "id": "swiss-ai/Apertus-v1.5-70B",
+   "object": "model",
+   "owned_by": "swiss-ai",
+   "providers": [
+    {
+     "provider": "featherless-ai",
+     "status": "live"
+    },
+    {
+     "provider": "publicai",
+     "status": "live"
+    }
+   ]
+  },
+  {
+   "id": "deepseek-ai/DeepSeek-V4.1-Flash-1017",
+   "object": "model",
+   "owned_by": "deepseek-ai",
+   "providers": [
+    {
+     "provider": "novita",
+     "status": "live",
+     "context_length": 1048576
+    },
+    {
+     "provider": "baseten",
+     "status": "live",
+     "context_length": 1048576
+    }
+   ]
+  },
+  {
+   "id": "meta-models/Muse-Spark-Open-816B-A42B",
+   "object": "model",
+   "owned_by": "meta-models",
+   "providers": [
+    {
+     "provider": "baseten",
+     "status": "live",
+     "context_length": 1048576
+    }
+   ]
+  }
+ ]
+}

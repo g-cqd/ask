@@ -67,7 +67,9 @@ enum ModelDiscovery {
                 ]
             )
         }
-        guard initial.provider == .codex else { return (initial, notices + announcement(initial)) }
+        guard initial.provider == .codex else {
+            return try withListedLimits(initial, environment: environment, resolve: resolve, notices: notices)
+        }
         do {
             guard
                 let cached = try codex(environment: environment, connection: connection)
@@ -78,6 +80,23 @@ enum ModelDiscovery {
             let chosen = try resolve(cached.models)
             return (chosen, notices + cached.notices + announcement(chosen))
         } catch { return (initial, notices + ["Model catalog not used for the explicit model: \(error)"]) }
+    }
+
+    /// The run's model with the limits its provider's cached list states, when there is a fresh one. Never a network: the list is
+    /// fetched by `ask models NAME`, and a run that has none simply knows no window until the provider's refusal says one. Only
+    /// the run's own model is read from the list: it can hold hundreds, and reading them all cost 2 ms of the start (diary 55).
+    private static func withListedLimits(
+        _ initial: ResolvedModel, environment: [String: String], resolve: ([CatalogModel]) throws -> ResolvedModel,
+        notices: [String]
+    ) throws -> (model: ResolvedModel, notices: [String]) {
+        let listed: CatalogModel?
+        do {
+            listed = try ProviderModelDiscovery.catalog(for: initial, environment: environment)?
+                .cachedModel(initial.model, now: Date().timeIntervalSince1970)
+        } catch { return (initial, notices + ["Model list not used: \(error)"] + announcement(initial)) }
+        guard let listed else { return (initial, notices + announcement(initial)) }
+        let chosen = try resolve([listed])
+        return (chosen, notices + announcement(chosen))
     }
 
     /// Says which server model an alias stood for, so a run never hides what it sent.
