@@ -47,6 +47,7 @@ extension ScreenController {
                 let update = selector.endDrag()
                 return copyIfCommitted(update)
             case .click(_, let cell, .left, _, let count):
+                if count == 1, toggleFold(atRow: cell.row) { return [] }
                 let content = count >= 2 ? TranscriptContent(state.transcript) : TranscriptContent()
                 let update = selector.click(
                     row: cell.row, col: cell.col, count: count, rows: frame.rows, content: content)
@@ -68,6 +69,38 @@ extension ScreenController {
             let text = selector.selection?.text(in: TranscriptContent(state.transcript)), !text.isEmpty
         else { return [] }
         return [.copy(text)]
+    }
+
+    /// Opens or closes the tool block whose header is on `row`, keeping the reader where they were. Returns whether a block was there.
+    private mutating func toggleFold(atRow row: Int) -> Bool {
+        // Only the header (hard line 0) is the target: a click in the body is for selecting.
+        guard let source = frame.rows.provenance(atRow: row), source.line == 0,
+            state.transcript.isFoldable(source.block)
+        else { return false }
+        let item = state.transcript.items[source.block]
+        let wasFolded = state.transcript.isFolded(source.block)
+        let before = ScreenComposer.lines(for: item, folded: wasFolded, block: source.block, columns: frame.columns)
+            .count
+        state.transcript.toggleFold(source.block)
+        let after = ScreenComposer.lines(for: item, folded: !wasFolded, block: source.block, columns: frame.columns)
+            .count
+        // Scrolled back, the lines below the header grew or shrank, so the view moves by as much and the header stays on its row.
+        // At the bottom the view follows the end, as it does for streaming.
+        if state.scrollback > 0 { state.scrollback = Swift.max(0, state.scrollback + after - before) }
+        // Positions inside a body that just closed no longer exist.
+        selector.clear()
+        return true
+    }
+
+    /// Ctrl+O: what a keyboard has for the click, and for the mouse being off. It flips every tool block at once.
+    func isToggleToolOutput(_ key: KeyEvent) -> Bool {
+        key.keyCode == 0x0F || (key.modifiers.contains(.ctrl) && key.keyCode == 0x6F)
+    }
+
+    mutating func toggleAllToolOutput() -> [Effect] {
+        state.transcript.setToolsFoldedByDefault(!state.transcript.toolsFoldedByDefault)
+        clearSelection()
+        return []
     }
 
     /// Drops the selection and any drag in progress, such as when the user types or the conversation is cleared.

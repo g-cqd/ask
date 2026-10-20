@@ -57,7 +57,7 @@ struct ScreenControllerTests {
         controller.handle(.notice("done", isError: false))
         #expect(
             controller.state.transcript.items == [
-                .assistant("Reading."), .tool(name: "read", summary: "a.swift", status: .succeeded),
+                .assistant("Reading."), .tool(name: "read", summary: "a.swift", status: .succeeded, output: ""),
                 .notice("done", isError: false)
             ])
     }

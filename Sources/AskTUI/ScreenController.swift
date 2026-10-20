@@ -41,6 +41,7 @@ public struct ScreenController: Sendable {
         state = ScreenState(label: label)
         self.commands = Self.builtIn + commands
         self.options = options
+        state.transcript.setToolsFoldedByDefault(options.foldTools)
     }
 
     /// Applies terminal input. `pageRows` is how far Page Up and Page Down scroll.
@@ -57,6 +58,7 @@ public struct ScreenController: Sendable {
                     state.scrollback = Swift.max(0, state.scrollback - Swift.max(1, pageRows))
                     return []
                 }
+                if isToggleToolOutput(key) { return toggleAllToolOutput() }
                 clearSelection()
                 return edit(key)
             case .mouse(let mouse):
@@ -77,7 +79,7 @@ public struct ScreenController: Sendable {
             case .userPrompt(let text): state.transcript.addUser(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
             case .toolStarted(let name, let summary): state.transcript.startTool(name: name, summary: summary)
-            case .toolFinished(let status): state.transcript.finishTool(status)
+            case .toolFinished(let status, let output): state.transcript.finishTool(status, output: output)
             case .notice(let text, let isError): state.transcript.addNotice(text, isError: isError)
             case .requestExit(let exit): state.exitRequest = exit
             case .label(let text): state.label = text

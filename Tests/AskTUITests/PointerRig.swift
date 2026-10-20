@@ -17,12 +17,16 @@ struct PointerRig {
     let frames: FrameBox
     var clock = ContinuousClock.now
 
-    init(columns: Int = 30, rows: Int = 12, options: ScreenOptions = ScreenOptions(), lines: [String] = []) {
+    init(
+        columns: Int = 30, rows: Int = 12, options: ScreenOptions = ScreenOptions(), lines: [String] = [],
+        updates: [ConversationUpdate] = []
+    ) {
         frames = FrameBox()
         controller = ScreenController(label: "m", options: options)
         composer = ScreenComposer(frames: frames)
         buffer = ScreenBuffer(columns: columns, rows: rows)
         for line in lines { controller.handle(.notice(line, isError: false)) }
+        for update in updates { controller.handle(update) }
         draw()
     }
 
@@ -62,5 +66,11 @@ struct PointerRig {
     /// The columns of a row drawn inverse.
     func inverse(row: Int) -> [Int] {
         (0 ..< buffer.columns).filter { buffer[row, $0].style.inverse }
+    }
+
+    /// What a row shows, as text, trailing blanks dropped.
+    func text(row: Int) -> String {
+        String((0 ..< buffer.columns).compactMap { buffer[row, $0].isContinuation ? nil : buffer[row, $0].character })
+            .replacing(/\s+$/, with: "")
     }
 }

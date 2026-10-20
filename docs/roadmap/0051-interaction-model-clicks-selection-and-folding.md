@@ -87,6 +87,12 @@ provenance, the frame reaches the mouse through a box, the controller owns the p
 `ScreenOptions` carries the ADR-0046 defaults. **Not yet:** folding and its clicks, any region but the transcript, the `ui.*` keys,
 a timer for autoscroll, a key to copy when copy-on-select is off, feedback that a copy happened, and the real-terminal probe.
 
+## What landed next (2026-10-20, diary 51)
+
+A tool's output folds to `▸ bash ls ✓ · 3 lines` and opens on a click on its header or with Ctrl+O; the view keeps the header on its row
+while scrolled back; a selection reads what is shown. **Not yet:** thinking blocks (the agent does not send them), long code blocks and
+images, the `ui.*` keys, a key to open one block, and a run against the real agent.
+
 ## Open questions
 
 - What a copy contains when the selection crosses a **fold** or an image: the placeholder, or what is inside (TerminalKit 0017).
