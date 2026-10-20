@@ -53,7 +53,7 @@ struct RunSettings: Equatable {
             return FileManager.default.fileExists(atPath: path) ? "(ignored)" : "(none)"
         }
         let c = configuration
-        return [
+        var lines = [
             row("provider", c.provider.value ?? "(the default)", c.provider.source),
             row("model", c.model.value ?? "(the provider's default)", c.model.source),
             row("maxTurns", String(c.maxTurns.value), c.maxTurns.source),
@@ -62,10 +62,13 @@ struct RunSettings: Equatable {
                 + (sandbox.isUnrestricted || c.sandbox.value.isEmpty
                     ? "" : ", \(c.sandbox.value)  [\(c.sandbox.source)]"),
             "          writes: \(writes), reads: \(reads), network: "
-                + (sandbox.isUnrestricted ? "any" : sandbox.network.description),
-            "user file     \(userFile)  \(standing(userFile))",
-            "project file  \(projectFile)  \(standing(projectFile))"
-        ] + notices.map { "note: \($0)" }
+                + (sandbox.isUnrestricted ? "any" : sandbox.network.description)
+        ]
+        // Only when a file set something: the defaults are in ADR-0046.
+        if !c.ui.value.isEmpty { lines.append(row("ui", c.ui.value.description, c.ui.source)) }
+        lines.append("user file     \(userFile)  \(standing(userFile))")
+        lines.append("project file  \(projectFile)  \(standing(projectFile))")
+        return lines + notices.map { "note: \($0)" }
     }
 
     /// Lines for the user at startup: which configuration files apply, what was ignored, and a strict sandbox.

@@ -38,13 +38,15 @@ public struct Configuration: Sendable, Equatable {
     public var maxTurns: Setting<Int>
     public var compactAt: Setting<Int>
     public var sandbox: Setting<SandboxSection>
+    public var ui: Setting<UISection>
 
     /// Built-in defaults only.
     public static let defaults = Configuration(
         model: Setting(value: nil, source: .defaults), provider: Setting(value: nil, source: .defaults),
         maxTurns: Setting(value: 100, source: .defaults),
         compactAt: Setting(value: AgentSettings.defaultCompactAtTokens, source: .defaults),
-        sandbox: Setting(value: SandboxSection(), source: .defaults))
+        sandbox: Setting(value: SandboxSection(), source: .defaults), ui: Setting(value: UISection(), source: .defaults)
+    )
 
     /// `self` with every key `file` sets replaced, attributed to `source`.
     public func applying(_ file: ConfigurationFile, from source: Source) -> Configuration {
@@ -56,6 +58,7 @@ public struct Configuration: Sendable, Equatable {
         if let section = file.sandbox {
             next.sandbox = Setting(value: next.sandbox.value.layered(with: section), source: source)
         }
+        if let section = file.ui { next.ui = Setting(value: next.ui.value.layered(with: section), source: source) }
         return next
     }
 
@@ -145,6 +148,7 @@ extension Configuration {
         compare("maxTurns", previous.maxTurns, maxTurns)
         compare("compactAt", previous.compactAt, compactAt)
         compare("sandbox", previous.sandbox, sandbox)
+        compare("ui", previous.ui, ui)
         return lines
     }
 

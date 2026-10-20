@@ -12,20 +12,22 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var maxTurns: Int?
     public var compactAt: Int?
     public var sandbox: SandboxSection?
+    public var ui: UISection?
 
     /// The keys ask knows, in the order `ask config` shows them.
-    public static let keys = ["model", "provider", "maxTurns", "compactAt", "sandbox"]
+    public static let keys = ["model", "provider", "maxTurns", "compactAt", "sandbox", "ui"]
 
     /// A file with these values.
     public init(
         model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil,
-        sandbox: SandboxSection? = nil
+        sandbox: SandboxSection? = nil, ui: UISection? = nil
     ) {
         self.model = model
         self.provider = provider
         self.maxTurns = maxTurns
         self.compactAt = compactAt
         self.sandbox = sandbox
+        self.ui = ui
     }
 
     /// Whether the file sets the key `name`.
@@ -36,6 +38,7 @@ public struct ConfigurationFile: Sendable, Equatable {
             case "maxTurns": maxTurns != nil
             case "compactAt": compactAt != nil
             case "sandbox": sandbox != nil
+            case "ui": ui != nil
             default: false
         }
     }
@@ -72,6 +75,9 @@ public struct ConfigurationFile: Sendable, Equatable {
             throw .invalid(path: path, line: line, column: column, reason: reason(of: error))
         }
         try validateSandbox(file.sandbox, path: path, isProject: isProject)
+        if let lines = file.ui?.scrollLines, lines < 1 {
+            throw .outOfRange(path: path, key: "ui.scrollLines", reason: "must be at least 1")
+        }
         if let turns = file.maxTurns, turns < 1 {
             throw .outOfRange(path: path, key: "maxTurns", reason: "must be at least 1")
         }
@@ -140,7 +146,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         return (line, column)
     }
 
-    private struct UnknownKey: Error { let key: String }
+    struct UnknownKey: Error { let key: String }
 
     /// A write or read scope: "workspace", "anywhere", or a list of paths.
     private static func scope(_ container: KeyedDecodingContainer<Key>, _ key: Key, name: String) throws -> PathSetting
@@ -155,18 +161,20 @@ public struct ConfigurationFile: Sendable, Equatable {
         }
     }
     /// A string that is not one of the key's choices.
-    private struct BadValue: Error {
+    struct BadValue: Error {
         let key: String
         let value: String
 
         var reason: String {
-            key == "sandbox.network"
-                ? "is \"\(value)\": use \"none\", \"localhost\" or \"any\""
-                : "is \"\(value)\": use \"workspace\", \"anywhere\" or a list of paths"
+            switch key {
+                case "sandbox.network": "is \"\(value)\": use \"none\", \"localhost\" or \"any\""
+                case "ui.tools": "is \"\(value)\": use \"folded\" or \"open\""
+                default: "is \"\(value)\": use \"workspace\", \"anywhere\" or a list of paths"
+            }
         }
     }
 
-    private struct Key: CodingKey {
+    struct Key: CodingKey {
         var stringValue: String
         var intValue: Int? { nil }
         init(stringValue: String) { self.stringValue = stringValue }
@@ -174,19 +182,19 @@ public struct ConfigurationFile: Sendable, Equatable {
     }
 
     /// Calls `body` with each key of the object being decoded, and the container to read its value from.
-    private static func eachKey(
+    static func eachKey(
         of decoder: any Decoder, _ body: (Key, KeyedDecodingContainer<Key>) throws -> Void
     ) throws {
         let container = try decoder.container(keyedBy: Key.self)
-        // @dl:accept -- the walk both key tables share; the analyzer matches it against their closing lines
+        // @dl:accept -- the walk the key tables share; the analyzer matches it against their closing lines
         for key in container.allKeys { try body(key, container) }
     }
 
     /// The `sandbox` object: its two lists, and nothing else.
+    // @dl:accept -- three key tables decoded the same way; the tables are the data, and the walk is already shared
     private struct SandboxDecoded: Decodable {
         var section = SandboxSection()
         init(from decoder: any Decoder) throws {
-            // @dl:accept -- two key tables decoded the same way; the tables are the data, and the walk is already shared
             try ConfigurationFile.eachKey(of: decoder) { key, container in
                 switch key.stringValue {
                     case "allowRead": section.allowRead = try container.decode([String].self, forKey: key)
@@ -205,16 +213,19 @@ public struct ConfigurationFile: Sendable, Equatable {
         }
     }
 
+    // @dl:accept -- three key tables decoded the same way; the tables are the data, and the walk is already shared
     private struct Decoded: Decodable {
         var file = ConfigurationFile()
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
                 switch key.stringValue {
                     case "model": file.model = try container.decode(String.self, forKey: key)
+                    // @dl:accept -- the key tables are the data, and the walk over them is already shared
                     case "provider": file.provider = try container.decode(String.self, forKey: key)
                     case "maxTurns": file.maxTurns = try container.decode(Int.self, forKey: key)
                     case "compactAt": file.compactAt = try container.decode(Int.self, forKey: key)
                     case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
+                    case "ui": file.ui = try container.decode(UIDecoded.self, forKey: key).section
                     default: throw UnknownKey(key: key.stringValue)
                 }
             }
