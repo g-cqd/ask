@@ -11,4 +11,5 @@ Codex's refresh runs under a lock beside the credential file, with a second look
 refresh token is single use. `ClaudeAccess` has the same read, refresh, save shape and no lock, so two asks finding the
 credentials expired could both refresh. First probe whether Claude's refresh tokens are single use: with a real
 subscription, refresh the same token twice and see whether the second is refused. If they are, `CredentialLock` is
-already there to use; if not, record that and close this entry.
+already there to use; if not, record that and close this entry. (Since ADR-0039, `CredentialLock.acquire` takes a lock name, and
+Claude's refresh already saves only if nothing changed meanwhile. What is still missing is exclusion across the network call.)
