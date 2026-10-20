@@ -672,7 +672,44 @@ def probe_strict_sandbox():
     return all(results)
 
 
+def probe_session_sandbox():
+    print("O: a session records its strict sandbox; resuming keeps it unless the user's flags change it")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+
+    def run(*arguments):
+        target = Server([])
+        reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo \" curl=$?\""
+        server = Server([turn([("tool", "reach", reach)], "tool_use"), turn([("text", "Done.")], "end_turn")])
+        process = subprocess.run([ASK, "-p", "Reach.", *arguments], cwd=project, env=environment(state, server.url),
+                                 capture_output=True, text=True, timeout=120)
+        got = tool_results(server).get("reach", "") if len(server.requests) == 2 else ""
+        server.httpd.shutdown()
+        target.httpd.shutdown()
+        return process, got
+
+    def records(path):
+        return [json.loads(line) for line in open(path) if '"type":"sandbox"' in line]
+
+    process, got = run("--network", "none")
+    files = sessions(state)
+    results = [check("a strict run has no network", "curl=7" in got, got),
+               check("and records its sandbox in the session", len(files) == 1 and records(files[0]) == [{"network": "none", "type": "sandbox", "write": []}],
+                     records(files[0]) if files else files)]
+    process, got = run("--continue")
+    results += [check("continuing without flags keeps the session's sandbox", "curl=7" in got, got),
+                check("and says so", "Keeping this session's sandbox" in process.stderr, process.stderr[-300:]),
+                check("without recording it again", len(records(files[0])) == 1, records(files[0]))]
+    process, got = run("--continue", "--network", "localhost")
+    results += [check("the user's flag widens a resumed session", "HTTP 200 curl=0" in got, got),
+                check("and the session now records that", records(files[0])[-1]["network"] == "localhost", records(files[0]))]
+    process, got = run()
+    fresh = [f for f in sessions(state) if f != files[0]]
+    results += [check("a new session is not narrowed by another one's record", "HTTP 200 curl=0" in got, got),
+                check("and a default run records nothing", len(fresh) == 1 and records(fresh[0]) == [], fresh)]
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session() & probe_nested_sandbox() & probe_strict_sandbox()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session() & probe_nested_sandbox() & probe_strict_sandbox() & probe_session_sandbox()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

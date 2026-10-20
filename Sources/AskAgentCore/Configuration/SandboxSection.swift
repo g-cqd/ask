@@ -42,7 +42,8 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
         SandboxSection(
             allowRead: section.allowRead.isEmpty ? allowRead : section.allowRead,
             denyRead: denyRead + section.denyRead.filter { !denyRead.contains($0) },
-            write: write + section.write,
+            // A scope already present narrows nothing more; keeping it once stops a resumed record from growing.
+            write: write + section.write.filter { !write.contains($0) },
             network: Self.lower(network, section.network))
     }
 

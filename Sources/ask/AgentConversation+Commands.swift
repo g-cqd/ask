@@ -27,8 +27,8 @@ extension AgentConversation {
             switch name {
                 case "config": await self.showConfiguration(update: update)
                 case "compact": await self.compact(update: update)
-                case "new": self.newSession(arguments: arguments, update: update)
-                case "resume": self.resumeSession(arguments: arguments, update: update)
+                case "new": await self.newSession(arguments: arguments, update: update)
+                case "resume": await self.resumeSession(arguments: arguments, update: update)
                 case "model": await self.model(arguments: arguments, update: update)
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))

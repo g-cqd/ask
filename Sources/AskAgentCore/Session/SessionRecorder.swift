@@ -42,6 +42,19 @@ public final class SessionRecorder: Sendable {
         file.withLock { body($0.tree) }
     }
 
+    /// The strict sandbox the session last recorded, read without copying the tree out.
+    public var sandbox: SandboxSection? { file.withLock { $0.tree.sandbox } }
+
+    /// Records the strict sandbox the session now runs under, unless it is already the one recorded.
+    /// - Throws: whatever the file throws; nothing is recorded then.
+    public func recordSandbox(_ section: SandboxSection) throws(SessionFileError) {
+        let record = SandboxSection(write: section.write, network: section.network)
+        try file.withLock { (file: inout SessionFile) throws(SessionFileError) in
+            guard file.tree.sandbox != record else { return }
+            try file.recordSandbox(record)
+        }
+    }
+
     /// The session as recorded so far.
     public var tree: SessionTree { file.withLock { $0.tree } }
 

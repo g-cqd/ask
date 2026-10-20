@@ -115,6 +115,7 @@ final class AgentConversation: Conversation {
                 await self.refreshSettings(update: update)
                 let loop = try self.agentLoop()
                 let recorder = try self.recorder()
+                try self.current.withLock { $0.settings }.record(in: recorder)
                 try await loop.run(prompt, in: recorder, input: input) { self.deliver($0, to: update) }
             } catch {
                 self.report(error, to: update)
@@ -195,6 +196,9 @@ func runInteractive(
     let directory = SessionDirectory(project: workingDirectory)
     var notices: [String] = []
     let resumed = choice.open(in: directory) { notices.append($0) }
+    // A resumed session keeps the strict sandbox it recorded, and later reloads must keep it too.
+    let settings = await settings.resuming(resumed, from: source)
+    let source = source.resuming(resumed)
     if let resumed { notices.append("Resumed session \((resumed.path as NSString).lastPathComponent)") }
     if let reloaded {
         let now = Int(Date().timeIntervalSince1970 * 1_000)

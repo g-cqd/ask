@@ -40,6 +40,7 @@ public enum SessionLog {
     public static func snapshot(_ tree: SessionTree) throws(SessionLogError) -> [UInt8] {
         var bytes = try encode(.header(version: formatVersion))
         for entry in tree.entries { bytes += try encode(.entry(entry)) }
+        if let sandbox = tree.sandbox { bytes += try encode(.sandbox(sandbox)) }
         bytes += try encode(.leaf(tree.leaf))
         return bytes
     }
@@ -58,6 +59,12 @@ public enum SessionLog {
     /// - Throws: ``SessionLogError/encodingFailed``.
     public static func line(forLeaf leaf: EntryID?) throws(SessionLogError) -> [UInt8] {
         try encode(.leaf(leaf))
+    }
+
+    /// One newline-terminated record saying the session now runs under `sandbox`'s strict settings.
+    /// - Throws: ``SessionLogError/encodingFailed``.
+    public static func line(forSandbox sandbox: SandboxSection) throws(SessionLogError) -> [UInt8] {
+        try encode(.sandbox(SandboxSection(write: sandbox.write, network: sandbox.network)))
     }
 
     /// Loads a log, repairing damage and reporting each repair. The default way to open a session.
@@ -151,6 +158,7 @@ public enum SessionLog {
                 case .header: break
                 case .entry(let entry): restore(entry, line: line)
                 case .leaf(let id): select(id, line: line)
+                case .sandbox(let section): tree.recordSandbox(section)
             }
         }
 

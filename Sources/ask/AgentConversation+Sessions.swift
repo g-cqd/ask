@@ -5,7 +5,7 @@ internal import Synchronization
 
 extension AgentConversation {
     /// Leaves the current session intact on disk. A new file is created only when a prompt needs it.
-    func newSession(arguments: String, update: @Sendable (ConversationUpdate) -> Void) {
+    func newSession(arguments: String, update: @Sendable (ConversationUpdate) -> Void) async {
         guard arguments.isEmpty else {
             update(.notice("Usage: /new (no arguments).", isError: true))
             return
@@ -13,10 +13,17 @@ extension AgentConversation {
         guard maySwitchSession("new", update: update) else { return }
         let hadSession = session.withLock { $0 != nil }
         activateSession(nil, update: update)
+        await adoptSandbox(of: nil, update: update)
         let note =
             hadSession
             ? "New session. The previous one is saved." : "New session. It will be saved when you send a prompt."
         update(.notice(note, isError: false))
+    }
+
+    /// Makes the sandbox `session` recorded, or none, the layer below the flags, and reads the settings again.
+    func adoptSandbox(of session: SessionRecorder?, update: @Sendable (ConversationUpdate) -> Void) async {
+        sourceState.withLock { $0 = $0.resuming(session) }
+        await refreshSettings(update: update)
     }
 
     /// Sessions do not own processes: refuse to carry a running job into another conversation silently.
