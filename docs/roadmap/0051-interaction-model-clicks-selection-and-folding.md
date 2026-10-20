@@ -19,6 +19,23 @@ folds nothing, and the prompt is capped by a hard-coded six rows with its own ed
 prototype in `docs/prototypes/ui-lab/` simulates thinking and tool blocks that expand, but has no clicks, selection or folding
 beyond keys; it cannot answer any question here.
 
+## What TerminalKit has now (2026-10-20)
+
+None of it is in ask yet: ask's pin of TerminalKit is unchanged and nothing here consumes any of it.
+
+| Mechanism | State in TerminalKit | Where |
+|---|---|---|
+| Terminal facts (mouse, OSC 52, graphics, native-selection keys) | measured in four terminals | ADR-0028 |
+| Regions and clicks: a click with a count, drags, wheel steps, over regions the host names | built, tested against four real terminals' streams, zero allocations | ADR-0029, roadmap 0016 |
+| Selection: content-anchored, mapped from cells, highlighted, read back; double and triple click | model built, **not painted, no drag controller** | ADR-0030, roadmap 0017 |
+| Clipboard: a plan from what each terminal does (OSC 52, the pasteboard, WezTerm's doubled first write) | built, ask performs it | ADR-0030 |
+| Folding: a placeholder-carrying block, per-block state with a default, a scroll that does not move the reader | model built, **not drawn, no images** | ADR-0031, roadmap 0018 |
+| A bounded input that scrolls by display row | **not started** | roadmap 0019 |
+
+What ask must supply to use them: a stable identity for every block it draws, a record of what each row shows (the provenance a selection
+needs, every frame), and the placeholder text for anything it folds. The terminal's facts also bear on ask's settings: Terminal.app needs the
+pasteboard (`ui.copyOnSelect` must run `pbcopy` there), and the status bar can name the key that returns the terminal's own selection.
+
 ## The owner's examples, and what is proposed
 
 Rows marked **owner** are their examples; rows marked **proposed** are mine, to be accepted, changed or dropped.
