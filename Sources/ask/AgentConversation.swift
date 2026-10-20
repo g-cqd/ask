@@ -235,7 +235,8 @@ func runInteractive(
         // stops them gracefully below.
         let exit = try await runInteractiveScreen(
             conversation: conversation, label: settings.label, history: conversation.history(),
-            notices: notices + settings.description + describe(files), beforeSignalExit: { jobs.terminateAllNow() })
+            notices: notices + settings.description + describe(files), options: settings.screenOptions,
+            beforeSignalExit: { jobs.terminateAllNow() })
         await jobs.stopAll()
         // The terminal is already restored: replace this process with the new build, resuming this session.
         if exit == .reload { conversation.reExecute() }
