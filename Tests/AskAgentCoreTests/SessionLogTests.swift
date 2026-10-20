@@ -86,7 +86,7 @@ struct SessionLogTests {
         var tree = SessionTree()
         _ = try tree.append(.user("hi"))
         let expected = """
-            {"type":"session","version":1}
+            {"type":"session","version":2}
             {"id":"0","payload":{"kind":"user","text":"hi"},"type":"entry"}
             {"id":"0","type":"leaf"}
 

@@ -6,11 +6,11 @@ struct WirePayload: Codable {
     let value: SessionPayload
 
     private enum CodingKeys: String, CodingKey {
-        case kind, text, summary, firstKept, blocks, id, model, stopReason, usage, callID, content, isError
+        case kind, text, summary, firstKept, blocks, id, model, stopReason, usage, callID, content, isError, destination
     }
 
     private enum Kind: String, Codable {
-        case user, assistant, compaction, response
+        case user, assistant, compaction, response, destination
         case toolResult = "tool_result"
     }
 
@@ -19,6 +19,7 @@ struct WirePayload: Codable {
     init(from decoder: any Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         switch try container.decode(Kind.self, forKey: .kind) {
+            case .destination: value = .destination(try container.decode(SessionDestination.self, forKey: .destination))
             case .user: value = .user(try container.decode(String.self, forKey: .text))
             case .assistant: value = .assistant(try container.decode(String.self, forKey: .text))
             case .compaction:
@@ -45,6 +46,10 @@ struct WirePayload: Codable {
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         switch value {
+            // @dl:accept -- routing is explicitly encoded as session data, like the log envelope, not as Swift's synthesized enum format
+            case .destination(let destination):
+                try container.encode(Kind.destination, forKey: .kind)
+                try container.encode(destination, forKey: .destination)
             case .user(let text):
                 try container.encode(Kind.user, forKey: .kind)
                 try container.encode(text, forKey: .text)

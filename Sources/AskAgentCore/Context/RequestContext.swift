@@ -35,6 +35,7 @@ public struct RequestContext: Sendable, Equatable {
 
     private mutating func add(_ payload: SessionPayload) {
         switch payload {
+            case .destination: break
             case .user(let text): addUser(.text(text))
             case .compaction(let summary, _): addUser(.text(Self.summaryPrefix + summary))
             case .assistant(let text): addAssistant([.text(text)])
