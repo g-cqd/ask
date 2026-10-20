@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by:
 date: 2026-10-19
 decision: ADR-0035
@@ -33,7 +33,8 @@ builds and runs confined to its workspace and localhost; a trusted project narro
 
 ## Still owed
 
-- **A read allow-list** on a deny-default Seatbelt base. Probe what SwiftPM, git and the toolchains read first.
+- ~~A read allow-list~~: delivered, opt-in (ADR-0047, diary 43). `sandbox.read` / `--read`; a deny-default base
+  under which SwiftPM, git (with its includes), Python, curl, cc, make and rg run.
 - ~~The policy recorded in the session~~: delivered (ADR-0045, diary 41). A resumed session keeps its strict
   sandbox below the flags; `/new` drops it.
 
