@@ -8,6 +8,7 @@ C: Ctrl-C at an idle prompt quits, exit 0, with the terminal restored (the teard
 Usage: Scripts/probe-interactive.py .build/release/ask
 """
 import json
+import subprocess
 import shutil
 import importlib.util, os, pty, select, signal, struct, sys, tempfile, time, fcntl, termios
 
@@ -972,7 +973,31 @@ def probe_strict_label():
     return all(results)
 
 
+def probe_resume_strict():
+    print("S: /resume adopts a session's recorded sandbox and /new drops it")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    server = agent.Server([agent.turn([("text", "Strict session answer.")], "end_turn")])
+    made = subprocess.run([ASK, "-p", "Start strict.", "--network", "none", "--write", "workspace"], cwd=project,
+                          env=agent.environment(state, server.url), capture_output=True, text=True, timeout=60)
+    files = agent.sessions(state)
+    results = [check("a strict session exists", made.returncode == 0 and len(files) == 1, made.stderr[-300:])]
+    screen = Screen(server.url, project, state)
+    screen.until("ask>")
+    results.append(check("a fresh screen is not strict", "sandbox" not in screen.status(), screen.status()))
+    screen.type("/resume " + os.path.basename(files[0]) + "\r")
+    results.append(check("resuming adopts the recorded sandbox", screen.until_status("sandbox: workspace only, no network"), screen.status()))
+    results.append(check("and says so", screen.until("Keeping this session's sandbox")))
+    screen.until_status("ready")
+    screen.type("/new\r")
+    results.append(check("/new drops it", screen.until("New session.")  # /new clears the transcript, so its own line is gone
+                         and screen.until_status("ready") and "sandbox" not in screen.status(), screen.status()))
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection() & probe_strict_label()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection() & probe_strict_label() & probe_resume_strict()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

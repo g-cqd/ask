@@ -12,6 +12,8 @@ public struct Configuration: Sendable, Equatable {
         case flag(String)
         /// A command the user ran in this process, such as `/model`; nothing was written to a file.
         case command(String)
+        /// The strict sandbox a resumed session recorded (roadmap 0042).
+        case session
 
         public var description: String {
             switch self {
@@ -20,6 +22,7 @@ public struct Configuration: Sendable, Equatable {
                 case .environment(let name): "$\(name)"
                 case .flag(let name): "--\(name)"
                 case .command(let name): "\(name) (this run)"
+                case .session: "this session's record"
             }
         }
     }
@@ -88,6 +91,18 @@ public struct Configuration: Sendable, Equatable {
         var next = self
         next.provider = Setting(value: provider, source: .command(command))
         next.model = Setting(value: model, source: .command(command))
+        return next
+    }
+
+    /// `self` narrowed by the strict sandbox a resumed session recorded, except for what a flag set: a flag is the
+    /// user widening on purpose. The record only ever narrows; the source changes only when it did.
+    public func applying(session record: SandboxSection, flaggedNetwork: Bool, flaggedWrite: Bool) -> Configuration {
+        let narrowed = sandbox.value.layered(
+            with: SandboxSection(
+                write: flaggedWrite ? [] : record.write, network: flaggedNetwork ? nil : record.network))
+        guard narrowed != sandbox.value else { return self }
+        var next = self
+        next.sandbox = Setting(value: narrowed, source: .session)
         return next
     }
 
