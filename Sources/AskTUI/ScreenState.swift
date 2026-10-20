@@ -14,6 +14,8 @@ public struct ScreenState: Sendable, Equatable {
     public var exitRequest: ScreenExit?
     /// Shown at the right of the status line, such as token usage; empty for none.
     public var detail = ""
+    /// A question waiting for y, a or n: while it waits, those keys answer it and nothing is typed.
+    public var pendingApproval: PendingApproval?
     /// How many wrapped lines the transcript is scrolled up from the bottom.
     public var scrollback = 0
     /// What the user has selected with the pointer, anchored in the conversation so it survives scrolling and streaming.

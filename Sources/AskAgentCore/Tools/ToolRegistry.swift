@@ -40,11 +40,15 @@ public struct ToolRegistry: Sendable {
         do {
             if let request = try SandboxRequest.in(input) {
                 switch request.applied(to: context.sandbox, workingDirectory: context.workingDirectory) {
-                    case .narrowed(let policy):
-                        context = ToolContext(
-                            workingDirectory: context.workingDirectory, outputDirectory: context.outputDirectory,
-                            sandbox: policy)
+                    case .narrowed(let policy): context = context.with(policy)
                     case .refused(let asked):
+                        // Only the user widens: an approver asks them; without one the call is refused.
+                        let question = SandboxApproval(tool: name, input: input, asked: asked, request: request)
+                        if let approve = context.approve, await approve(question) {
+                            context = context.with(
+                                request.granted(over: context.sandbox, workingDirectory: context.workingDirectory))
+                            break
+                        }
                         return .error(
                             "This call asked for " + asked.joined(separator: " and ")
                                 + ". Only the user can widen the sandbox: run it within what is allowed, or ask the user."
