@@ -59,7 +59,6 @@ public struct CatalogModel: Codable, Sendable, Equatable {
     }
 
     static func validID(_ id: String) -> Bool {
-        guard PlainToken.matches(id, length: 1 ... 128, extra: "._-"), let first = id.utf8.first else { return false }
-        return (first >= 48 && first <= 57) || (first >= 65 && first <= 90) || (first >= 97 && first <= 122)
+        PlainToken.word(id, length: 1 ... 128, lowercase: false)
     }
 }

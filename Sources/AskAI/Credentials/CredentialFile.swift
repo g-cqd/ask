@@ -213,19 +213,8 @@ public struct CredentialFile: Sendable {
 
     /// Writes `stored` as a new owner-only file and renames it into place, so a crash leaves the old file or the new.
     private func write(_ stored: StoredCredentials) throws(CredentialFileError) {
-        let directory = url.deletingLastPathComponent()
         guard let bytes = try? stored.encoded() else { throw .damaged(path: url.path) }
-        let temporary = directory.appending(path: ".credentials-\(UUID().uuidString).json")
-        let descriptor = open(temporary.path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
-        guard descriptor >= 0 else { throw .io(path: temporary.path, errno: errno) }
-        let written = bytes.withUnsafeBytes { unsafe Darwin.write(descriptor, $0.baseAddress, $0.count) }
-        let flushed = fsync(descriptor)
-        close(descriptor)
-        guard written == bytes.count, flushed == 0, rename(temporary.path, url.path) == 0 else {
-            let failure = errno
-            unlink(temporary.path)
-            throw .io(path: url.path, errno: failure)
-        }
+        do { try AtomicFile.replace(url, with: bytes) } catch { throw .io(path: url.path, errno: error.code) }
     }
 
     /// Deletes the whole file, every provider's credentials. Nothing stored is not an error.
