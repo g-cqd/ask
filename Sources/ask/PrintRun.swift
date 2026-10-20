@@ -64,6 +64,10 @@ private final class PrintRenderer: Sendable {
 func runPrompt(_ prompt: String, source: ConfigurationSource, settings: RunSettings, session choice: SessionChoice)
     async
 {
+    let directory = SessionDirectory(project: FileManager.default.currentDirectoryPath)
+    let resumed = choice.open(in: directory, note: { FileHandle.standardError.write(Data("ask: \($0)\n".utf8)) })
+    // A resumed session keeps the strict sandbox it recorded, below the flags (roadmap 0042).
+    let settings = await settings.resuming(resumed, from: source)
     let model = settings.model
     for line in settings.description { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     let transport = URLSessionTransport()
@@ -79,9 +83,8 @@ func runPrompt(_ prompt: String, source: ConfigurationSource, settings: RunSetti
     } catch {
         fail("ask: \(error)", code: 70)
     }
-    let directory = SessionDirectory(project: workingDirectory)
     let session: SessionRecorder
-    if let resumed = choice.open(in: directory, note: { FileHandle.standardError.write(Data("ask: \($0)\n".utf8)) }) {
+    if let resumed {
         session = resumed
     } else {
         do {
@@ -90,6 +93,9 @@ func runPrompt(_ prompt: String, source: ConfigurationSource, settings: RunSetti
         } catch {
             fail("ask: cannot create a session: \(error)", code: 73)
         }
+    }
+    do { try settings.record(in: session) } catch {
+        fail("ask: cannot record the session's sandbox: \(error)", code: 73)
     }
     let sessionPath = session.path
     let renderer = PrintRenderer()
