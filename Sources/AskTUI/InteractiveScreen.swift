@@ -201,6 +201,8 @@ private final class ScreenSession {
                 case .runCommand(let name, let arguments):
                     let sink = sink
                     run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }
+                case .answerApproval(let id, let choice):
+                    conversation.answer(approval: id, with: choice)
                 case .cancelRun:
                     run?.cancel()
                 case .copy(let text):

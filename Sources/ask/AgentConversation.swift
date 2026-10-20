@@ -20,7 +20,9 @@ final class AgentConversation: Conversation {
     /// Where settings are read from; `/model` replaces it with one carrying the run's selection.
     let sourceState: Mutex<ConfigurationSource>
     var source: ConfigurationSource { sourceState.withLock { $0 } }
-    private let makeLoop: @Sendable (RunSettings) throws -> AgentLoop
+    private let makeLoop: @Sendable (RunSettings, SandboxApprover?) throws -> AgentLoop
+    /// Approval questions waiting for an answer, the grants for this session, and where to ask (roadmap 0019).
+    let approvals = Mutex(Approvals())
     let directory: SessionDirectory
     let current: Mutex<Current>
     let session = Mutex<SessionRecorder?>(nil)
@@ -51,7 +53,8 @@ final class AgentConversation: Conversation {
     ///   - makeLoop: builds the loop for some settings, on the first prompt and after a change.
     init(
         directory: SessionDirectory, resumed: SessionRecorder? = nil, settings: RunSettings,
-        source: ConfigurationSource, jobs: JobTable, makeLoop: @escaping @Sendable (RunSettings) throws -> AgentLoop
+        source: ConfigurationSource, jobs: JobTable,
+        makeLoop: @escaping @Sendable (RunSettings, SandboxApprover?) throws -> AgentLoop
     ) {
         sourceState = Mutex(source)
         self.jobs = jobs
@@ -112,6 +115,8 @@ final class AgentConversation: Conversation {
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
         let input = PromptQueue()
         promptInput.withLock { $0 = input }
+        // Approval questions during this run go to this run's screen updates.
+        approvals.withLock { $0.ask = update }
         return Task {
             do {
                 await self.refreshSettings(update: update)
@@ -151,7 +156,7 @@ final class AgentConversation: Conversation {
     func agentLoop() throws -> AgentLoop {
         try current.withLock { current throws -> AgentLoop in
             if let existing = current.loop { return existing }
-            let created = try makeLoop(current.settings)
+            let created = try makeLoop(current.settings, { [weak self] in await self?.approve($0) ?? false })
             current.loop = created
             return created
         }
@@ -221,10 +226,10 @@ func runInteractive(
         let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(
             directory: directory, resumed: resumed, settings: settings, source: source, jobs: jobs,
-            makeLoop: { settings in
+            makeLoop: { settings, approve in
                 try makeLoop(
                     settings, workingDirectory: workingDirectory, instructions: files, jobs: jobs,
-                    transport: URLSessionTransport())
+                    transport: URLSessionTransport(), approve: approve)
             })
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.

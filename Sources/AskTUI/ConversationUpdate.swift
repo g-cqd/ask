@@ -22,6 +22,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case returnQueuedPrompts
     /// Replaces the active conversation: clear its transcript, usage display and scrollback, keeping the draft.
     case clearConversation
+    /// A tool call asks for more than the sandbox allows: ask the user, and send the answer to ``Conversation/answer(approval:with:)``.
+    case askApproval(id: Int, question: String)
     /// The run is over, however it ended.
     case runEnded
 }
