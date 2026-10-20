@@ -12,8 +12,8 @@ python3 docs/prototypes/ui-lab/lab.py --check  # the self-test, no terminal need
 `Esc` switches between typing and browse keys. `s` (browse) or `/theme` (typing) opens the settings; the rest of the
 keys are listed in the top row. Settings are saved to `/tmp/ask-ui-lab/settings.json` (`LAB_SETTINGS` overrides).
 
-What `--check` pins (and what it forbids: any leading bar or icon, and any painted background while surfaces are off): contrast on real terminal palettes, the bottom rows not moving when thinking is expanded, a
-padding above and below every kind of block and the input (in whole rows, or half a row shared with the neighbour), a
-tint per kind with text readable on all of them, quiet strokes that never vanish against a tint, one stroke (not two)
-between the transcript and the sidebar, compact and aerial being different designs, the `/` and `@` rules, routing to a session, the settings round trip.
-What it cannot show: how any of this behaves in ask's own input, or on a terminal other than kitty.
+What `--check` pins: that nothing is ever painted (no background escape code, in any layout, popup or terminal), that text colours
+are readable on the terminal's own background, one block model with the same padding in every layout (and the input), no leading
+icon or bar, one stroke (not two) between the transcript and the sidebar, nothing under a popup, the `/` and `@` rules, routing
+to a session, and the settings round trip. What it cannot show: that the hierarchy by type reads well, how any of this behaves
+in ask's own input, or how it looks on a terminal other than kitty.
