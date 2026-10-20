@@ -21,6 +21,8 @@ public enum AgentEvent: Sendable, Equatable {
     case compacted(summary: String, usage: TokenUsage)
     /// Compaction was due but no summary could be made; the run continues on the whole context.
     case compactionFailed(String)
+    /// A queued user message has been persisted and will enter the next request.
+    case promptAccepted(QueuedPrompt)
     /// The run ended because the model stopped calling tools.
     case finished(StopReason?)
 }

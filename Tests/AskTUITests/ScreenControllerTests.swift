@@ -21,17 +21,17 @@ struct ScreenControllerTests {
         #expect(controller.state.transcript.items == [.user("fix it")])
     }
 
-    @Test func `a second prompt while a turn runs is refused with a notice, not queued silently`() {
+    @Test func `a second prompt while a turn runs is visibly queued instead of refused`() {
         var controller = ScreenController(label: "m")
         type("one", into: &controller)
         _ = controller.handle(key(0x0D), pageRows: 10)
         type("two", into: &controller)
-        #expect(controller.handle(key(0x0D), pageRows: 10).isEmpty)
+        #expect(controller.handle(key(0x0D), pageRows: 10) == [.queuePrompt(id: 0, text: "two", followUp: false)])
         guard case .notice(let text, false) = controller.state.transcript.items.last else {
             Issue.record("expected a notice")
             return
         }
-        #expect(text.contains("Esc"))
+        #expect(text.contains("Queued steering"))
     }
 
     @Test func `escape and Ctrl-C abort a running turn; idle, Ctrl-C and Ctrl-D quit`() {
@@ -95,6 +95,6 @@ struct ScreenControllerTests {
     @Test func `a paste lands in the editor`() {
         var controller = ScreenController(label: "m")
         _ = controller.handle(.paste("a\nb"), pageRows: 10)
-        #expect(controller.state.editor.text == "a b")
+        #expect(controller.state.editor.text == "a\nb")
     }
 }

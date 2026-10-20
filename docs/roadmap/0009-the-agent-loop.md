@@ -90,9 +90,19 @@ Still owed for full runs: resume, compaction, steering, jobs and waits.
 Delivered since this entry's last progress note: the interactive screen (0013), resume (0029), compaction (0030),
 jobs and waits (0031), configuration and reload (0039, 0041), slash commands, and the sandbox (0017, 0018).
 
-Two things keep it open, both named in its own "Done when" and in "Steering and abort":
+At that audit two things kept it open, named in its own "Done when" and in "Steering and abort":
 - **Steering and follow-up messages.** A message typed while a turn runs is refused today ("a turn is still running").
   It should queue and enter after the current turn (steering) or after the run (follow-up), and abort should return
   queued messages to the editor.
 - **The budget.** `0007` has not re-derived the action-to-action budget against a real action, which this entry
   makes a condition of being done.
+
+## Steering and follow-ups delivered (2026-10-20, ADR-0040)
+
+Enter during a run queues steering after the current response and all its tools; `/follow-up TEXT` (or
+modified Alt+Enter) waits until the agent finishes. Each is persisted once and acknowledged then. Abort or
+failure returns only unsent messages alongside the draft. Completion races and late acknowledgments are tested;
+real-PTY probes J–L inspect requests and archives, and a live Haiku run follows both kinds of input.
+
+Only **0007's re-derived action budget** now keeps this entry open. Multi-line editing and interactive
+session/model commands have their own units, 0049 and 0050.

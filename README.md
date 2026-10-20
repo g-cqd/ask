@@ -46,10 +46,19 @@ the jobs for a billing reason, so the gates are enforced by `Scripts/quality.sh`
 
 ## Commands
 
-Type `/help` in the screen. `/config` shows the settings and re-reads the files, `/compact` summarises the
+Type `/help` in the screen. `/new` starts a fresh conversation, leaving the old session saved; stop background jobs first.
+`/model` shows the model; `/model MODEL` or `/model PROVIDER MODEL` chooses one for this run, `/model --reset` undoes it.
+`/resume` lists sessions; `/resume NAME`, a unique prefix or a path switches to one without leaving the screen. `/config` shows the settings and re-reads the files, `/compact` summarises the
 conversation now, `/quit` leaves. To develop ask with ask: build it (ask can run `swift build` for you), then type
 `/reload`. ask checks the new binary starts, then replaces itself with it, keeping the session
 ([ADR-0034](docs/adr/0034-reload-is-a-checked-re-exec-between-turns.md)).
+
+While the agent is working, Enter queues **steering** after its current response and tools.
+`/follow-up TEXT` queues a message after it finishes; Alt+Enter is a shortcut on terminals that report it.
+Esc aborts and returns unsent messages to the editor alongside your draft.
+A prompt can be several lines: paste keeps its line breaks, Shift-Enter or Ctrl-J starts a new line, and Up/Down, Home/End,
+Ctrl-A/E/U/K work on the current line. A message is accepted only once it
+is recorded in the session ([ADR-0040](docs/adr/0040-queued-input-is-acknowledged-only-after-it-is-persisted.md)).
 
 ## Sandbox
 
@@ -58,7 +67,12 @@ command runs under macOS Seatbelt with the same one. ask's own files (`~/.config
 off limits, as are `~/.aws`, `~/.gnupg`, Keychains, `~/.netrc` and ssh private keys. A refused command says so, and the
 model is told, so it does not look for a way round. `ask --no-sandbox` turns this off for one run. A `sandbox`
 section in your own `config.json` lifts a secret store (`allowRead: ['~/.aws']`) or hides more (`denyRead`); a project's
-file may only hide more. It costs about 8 ms per command ([ADR-0035](docs/adr/0035-the-sandbox-protects-ask-and-the-secret-stores-by-default.md)).
+file may only hide more. Stricter modes: `write: 'workspace'` (or a list of paths) keeps writes in the project and
+temporary directories, `network: 'localhost'` or `'none'` limits the network, and `read: 'workspace'` makes reading an allow-list (the
+workspace, the system, developer tools and git's config; anything else through `allowRead`). Any file may narrow these; only
+`--write`, `--read` and `--network` widen them, and the status line says when the sandbox is strict. SwiftPM needs
+`--disable-sandbox` inside ask's sandbox; ask's still applies. It costs about 8 ms per command ([ADR-0035](docs/adr/0035-the-sandbox-protects-ask-and-the-secret-stores-by-default.md),
+[ADR-0043](docs/adr/0043-strict-sandbox-modes-narrow-in-files-and-widen-only-by-flag.md)).
 
 ## Configuration
 

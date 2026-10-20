@@ -67,6 +67,7 @@ func runPrompt(
 )
     async
 {
+    let directory = SessionDirectory(project: FileManager.default.currentDirectoryPath)
     let model = settings.model
     for line in startupNotices + settings.description { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     let transport = URLSessionTransport()
@@ -82,7 +83,6 @@ func runPrompt(
     } catch {
         fail("ask: \(error)", code: 70)
     }
-    let directory = SessionDirectory(project: workingDirectory)
     let session: SessionRecorder
     if let resumed {
         session = resumed
@@ -94,8 +94,14 @@ func runPrompt(
             fail("ask: cannot create a session: \(error)", code: 73)
         }
     }
-    do { try session.select(SessionRouting.destination(model), explicitlySelected: source.flags.provider != nil) } catch
-    { fail("ask: \(error)", code: 78) }
+    do {
+        try session.select(
+            SessionRouting.destination(model),
+            explicitlySelected: source.flags.provider != nil || source.flags.selected != nil)
+    } catch { fail("ask: \(error)", code: 78) }
+    do { try settings.record(in: session) } catch {
+        fail("ask: cannot record the session's sandbox: \(error)", code: 73)
+    }
     let sessionPath = session.path
     let renderer = PrintRenderer()
 

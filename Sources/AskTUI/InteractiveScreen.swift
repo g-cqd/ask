@@ -166,7 +166,7 @@ private final class ScreenSession {
             case .input(let inputEvent):
                 effects = controller.handle(inputEvent, pageRows: Swift.max(1, rows - 3))
             case .update(let update):
-                controller.handle(update)
+                effects = controller.handle(update)
                 if update == .runEnded {
                     run = nil
                     if let requested = controller.state.exitRequest {
@@ -189,6 +189,8 @@ private final class ScreenSession {
                 case .startRun(let prompt):
                     let sink = sink
                     run = conversation.start(prompt) { sink.yield(.update($0)) }
+                case .queuePrompt(let id, let text, let followUp):
+                    conversation.enqueue(text, id: id, followUp: followUp)
                 case .runCommand(let name, let arguments):
                     let sink = sink
                     run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }

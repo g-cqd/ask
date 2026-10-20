@@ -29,6 +29,16 @@ struct SelfCheckTests {
         #expect(await SelfCheck.run(path) == .passed("ask self-check ok"))
     }
 
+    @Test func `the arguments a reload will pass are the arguments the check runs with`() async throws {
+        let path = try build(
+            #"[ "$1 $2 $3 $4 $5" = "--self-check --selected-provider local --selected-model a/b:c" ] && echo "ask self-check ok" || exit 9"#
+        )
+        let outcome = await SelfCheck.run(
+            path, arguments: ["--selected-provider", "local", "--selected-model", "a/b:c"])
+        #expect(outcome == .passed("ask self-check ok"))
+        #expect(await SelfCheck.run(path) == .failed("it exited 9"), "without them the same build fails")
+    }
+
     @Test func `a build that exits non-zero fails, with its code and what it said on standard error`() async throws {
         let path = try build(#"echo "config.json:3:13: unexpected ']'" >&2; exit 78"#)
         #expect(await SelfCheck.run(path) == .failed("it exited 78: config.json:3:13: unexpected ']'"))

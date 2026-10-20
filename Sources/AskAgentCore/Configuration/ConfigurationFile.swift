@@ -65,6 +65,8 @@ public struct ConfigurationFile: Sendable, Equatable {
             file = try decoder.decode(Decoded.self, from: bytes).file
         } catch let unknown as UnknownKey {
             throw .unknownKey(path: path, key: unknown.key, known: keys)
+        } catch let bad as BadValue {
+            throw .outOfRange(path: path, key: bad.key, reason: bad.reason)
         } catch {
             let (line, column) = position(of: error, in: bytes)
             throw .invalid(path: path, line: line, column: column, reason: reason(of: error))
@@ -84,7 +86,16 @@ public struct ConfigurationFile: Sendable, Equatable {
         _ section: SandboxSection?, path: String, isProject: Bool
     ) throws(ConfigurationError) {
         guard let section else { return }
-        for (key, entries) in [("sandbox.allowRead", section.allowRead), ("sandbox.denyRead", section.denyRead)] {
+        func paths(_ settings: [PathSetting]) -> [String] {
+            settings.flatMap { setting -> [String] in
+                if case .paths(let paths) = setting { return paths }
+                return []
+            }
+        }
+        for (key, entries) in [
+            ("sandbox.allowRead", section.allowRead), ("sandbox.denyRead", section.denyRead),
+            ("sandbox.write", paths(section.write)), ("sandbox.read", paths(section.read))
+        ] {
             for entry in entries where !(entry.hasPrefix("/") || entry == "~" || entry.hasPrefix("~/")) {
                 throw .outOfRange(
                     path: path, key: key, reason: "has \"\(entry)\": use an absolute path, or one starting with ~/")
@@ -131,6 +142,30 @@ public struct ConfigurationFile: Sendable, Equatable {
 
     private struct UnknownKey: Error { let key: String }
 
+    /// A write or read scope: "workspace", "anywhere", or a list of paths.
+    private static func scope(_ container: KeyedDecodingContainer<Key>, _ key: Key, name: String) throws -> PathSetting
+    {
+        guard let one = try? container.decode(String.self, forKey: key) else {
+            return .paths(try container.decode([String].self, forKey: key))
+        }
+        switch one {
+            case "workspace": return .workspace
+            case "anywhere": return .anywhere
+            default: throw BadValue(key: name, value: one)
+        }
+    }
+    /// A string that is not one of the key's choices.
+    private struct BadValue: Error {
+        let key: String
+        let value: String
+
+        var reason: String {
+            key == "sandbox.network"
+                ? "is \"\(value)\": use \"none\", \"localhost\" or \"any\""
+                : "is \"\(value)\": use \"workspace\", \"anywhere\" or a list of paths"
+        }
+    }
+
     private struct Key: CodingKey {
         var stringValue: String
         var intValue: Int? { nil }
@@ -156,6 +191,14 @@ public struct ConfigurationFile: Sendable, Equatable {
                 switch key.stringValue {
                     case "allowRead": section.allowRead = try container.decode([String].self, forKey: key)
                     case "denyRead": section.denyRead = try container.decode([String].self, forKey: key)
+                    case "write": section.write = [try ConfigurationFile.scope(container, key, name: "sandbox.write")]
+                    case "read": section.read = [try ConfigurationFile.scope(container, key, name: "sandbox.read")]
+                    case "network":
+                        let name = try container.decode(String.self, forKey: key)
+                        guard let level = SandboxPolicy.Network(named: name) else {
+                            throw BadValue(key: "sandbox.network", value: name)
+                        }
+                        section.network = level
                     default: throw UnknownKey(key: "sandbox." + key.stringValue)
                 }
             }
