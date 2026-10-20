@@ -44,7 +44,9 @@ Ledger: `docs/diary/2026-10-20-55.md`, including failed and inconclusive probes.
 6. Keep credential-free, owner-only caches beside the credentials as `models-NAME.json`, fresh for one day, scoped by the
    exact provider name, endpoint and whether a bearer key was supplied. This is **not account scope**: there is no account
    identifier in this protocol, and changing one nonempty key to another does not invalidate the cache. Refresh explicitly
-   after switching keys or gateway routing headers. Unsafe filename names list without caching.
+   after switching keys or gateway routing headers. Unsafe filename names list without caching. Addresses containing
+   user information, a query or a fragment also list without caching, with a notice: the address itself might carry a
+   credential, so it must not be copied into a cache. This includes harmless query parameters; no secret-name guess is made.
 7. Ordinary runs read only their selected entry from a fresh cache and never fetch or repair it. User-stated limits win
    field by field. Bad cache data is reported but does not refuse an otherwise valid explicit model. The full-cache read
    still validates all entries; the selected-entry read validates the header and selected entry, leaving intact models
