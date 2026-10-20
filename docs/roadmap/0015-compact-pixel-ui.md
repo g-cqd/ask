@@ -74,15 +74,39 @@ TerminalKit, and no terminal other than kitty was tried.
 - **The table holds.** A 1 px hairline and a pixel-positioned scrollbar thumb cost **no row and no column** (checked by
   zooming a screenshot). With glyph separators each costs a row: the bottom stack is **4 / 3 / 2 rows** with pixel
   lines and **5 / 4 / 3** with glyph rules, for the roomy / tight / flush densities below.
-- **Padding is inside a block's own surface**, not a margin between blocks. A message, an agent group and a diff each
-  open and close with one padded row in their own background, and the gap between blocks is zero. Two surfaced blocks
-  that touch would merge into one panel, so in pixel mode a hairline at the top edge of the second separates them for
-  free. The character layout has no equivalent and needs another answer, or the blocks must not touch.
-- **Two densities, chosen by the owner, not one design with a slider.** *Compact* separates with pixels, has no side
-  margin, and ends in a flush bottom. *Aerial* separates with glyph rules, has a side margin, a blank row between blocks
-  and under the header, and a roomy bottom (work strip, two-row input, status). Aerial answers the touching-blocks
-  question with a blank row. They are presets over individual settings, and changing one setting makes the density
-  `custom`. Compact needs pixels to be compact: without them its separators cost rows.
+- **One block model, for every block.** Yours, the assistant's output, thinking, tool calls (and the agent group and
+  diff inside them) and the input are all blocks: the same padding above and below the content **inside the block's own
+  surface**, its own tint, and its own edge bar. A first version padded only some of them, which read as inconsistent.
+  Tints are derived from the terminal's palette: yours leans to the accent, output is neutral, thinking leans magenta,
+  tool calls lean cyan. With surfaces off they collapse to the page and only the bars distinguish the kinds. Strengths
+  are capped so the best possible text keeps 7.5:1; the first draft let a yellow accent make a tint so bright that even
+  white text failed.
+- **Padding is not free, and the lab measured it.** In a transcript of mostly one-line blocks (collapsed thinking and
+  tool calls), real content rows visible at 120 x 42:
+
+  | Padding | Content rows visible |
+  |---|---|
+  | none | 38 of 38 (100%) |
+  | **half row, shared with the neighbour** | **22 of 36 (61%)** |
+  | one full row | 17 of 36 (47%) |
+  | aerial (one row, block-line rows, roomy bottom) | 14 of 33 (42%) |
+
+  A half row is drawn with half-block glyphs (`▀` over `▄`) in one boundary row that holds the bottom half-pad of the
+  block above and the top half-pad of the block below, so a one-line block costs two rows, not three. It needs no pixel
+  support, so it also works where compact cannot use hairlines. Margins and blank rows between blocks were tried and
+  removed: they spend content space on nothing (a *breathing room* setting and a *side margin* setting are gone).
+- **Separation is the only thing that varies by density.** Compact separates blocks with a 1 px hairline exactly where
+  two tints meet (no row). Aerial separates them with a block-line row (`▁`), which costs a row. Neither uses a margin.
+  The character layout has no hairline, so its answer is the aerial one or no separator at all, which 0015 still has to
+  choose.
+- **Two densities, chosen by the owner, not one design with a slider.** *Compact*: half-row padding, pixel hairlines,
+  flush bottom. *Aerial*: one-row padding, block-line rows, roomy bottom (work strip, input, status). They are presets
+  over individual settings, and changing one setting makes the density `custom`.
+- **Strokes are quiet.** Hairlines, rules, the scrollbar track and the thinking and tool bars share one stroke colour,
+  with three levels (`subtle` by default, `normal`, `strong`). Subtle is 1.85:1 against the page on the owner's
+  terminal, against 3.5:1 for the first version, and every level keeps a minimum contrast against **every** block tint, so
+  a hairline between two tinted blocks never vanishes (the level ordering is tested, and a control fails when `subtle` is
+  made as loud as `strong`).
 - **A boundary has one stroke.** With a sidebar, the divider *is* the scrollbar track and the thumb rides on it. Two
   adjacent strokes read as a double border (the first Workbench drawing had exactly that), and a test now fails on it.
 - **The bottom section can be nearly flat.** Roomy is a work strip, a two-row input, a status bar. Tight drops the strip
@@ -106,8 +130,8 @@ TerminalKit, and no terminal other than kitty was tried.
 
 **Settings worth keeping** (proposed, not decided; they would join the configuration of roadmap 0039): density
 (`compact`, `aerial`, `custom`), theme source (`terminal`, `light`, `dark`), accent (an ANSI colour), surface strength,
-background (`terminal default` or `painted`), separator style, pixel thickness, transcript spacing, block padding, side
-margin, breathing room, bottom section, status style, layout.
+background (`terminal default` or `painted`), separator style, pixel thickness, stroke visibility, block padding (none,
+half row, one row, two rows), bottom section, status style, layout.
 
 **Still undecided**
 
