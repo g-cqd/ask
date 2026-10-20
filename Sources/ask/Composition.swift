@@ -7,15 +7,20 @@ internal import AskTools
 internal import Foundation
 
 /// Auth for each request: `ANTHROPIC_API_KEY` when set, else the stored subscription, refreshed as needed.
-func requestAuth(transport: URLSessionTransport) -> @Sendable () async throws -> AnthropicClient.Auth {
-    if let key = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !key.isEmpty {
+func requestAuth(transport: URLSessionTransport, connection: ConnectionRecord? = nil)
+    -> @Sendable () async throws -> AnthropicClient.Auth
+{
+    if connection == nil, let key = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !key.isEmpty {
         return { .apiKey(key) }
     }
-    let access = ClaudeAccess(file: .standard(), client: ClaudeAuthClient(transport: transport))
+    let access = ClaudeAccess(
+        file: NamedConnections.file(for: connection), client: ClaudeAuthClient(transport: transport),
+        connection: connection)
     return {
         do {
             return try await access.auth(now: Date().timeIntervalSince1970)
         } catch ClaudeAccessError.signedOut {
+            if let connection { throw ConnectionError.signInRequired(name: connection.name, provider: .anthropic) }
             throw NotSignedIn()
         }
     }
@@ -42,16 +47,21 @@ func describe(_ files: [ProjectInstructions.File]) -> [String] {
 
 /// Fails fast, before any work, when there is no way to authenticate: exit 77 with what to do. A configured provider has no
 /// sign-in to check.
-func requireSignIn(for provider: ResolvedModel.Provider, transport: URLSessionTransport) async {
+func requireSignIn(for model: ResolvedModel, transport: URLSessionTransport) async {
     do {
-        switch provider {
-            case .anthropic: _ = try await requestAuth(transport: transport)()
+        switch model.provider {
+            case .anthropic: _ = try await requestAuth(transport: transport, connection: model.connection)()
             case .codex:
-                let access = CodexAccess(file: .standard(), client: CodexAuthClient(transport: transport))
+                let access = CodexAccess(
+                    file: NamedConnections.file(for: model.connection), client: CodexAuthClient(transport: transport),
+                    connection: model.connection)
                 _ = try await access.credentials(now: Date().timeIntervalSince1970)
             case .openAICompatible, .openAIResponses: return
         }
     } catch {
+        if let connection = model.connection, case CodexAccessError.signedOut = error {
+            fail("ask: \(ConnectionError.signInRequired(name: connection.name, provider: .codex))", code: 77)
+        }
         fail("ask: \(error)", code: 77)
     }
 }
@@ -63,11 +73,14 @@ func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> 
             ClaudeProvider(
                 client: AnthropicClient(
                     transport: transport,
-                    endpoint: AnthropicClient.endpoint(environment: ProcessInfo.processInfo.environment)),
-                auth: requestAuth(transport: transport))
+                    endpoint: AnthropicClient.endpoint(
+                        environment: resolved.connection == nil ? ProcessInfo.processInfo.environment : [:])),
+                auth: requestAuth(transport: transport, connection: resolved.connection))
         case .codex:
             CodexProvider(
-                access: CodexAccess(file: .standard(), client: CodexAuthClient(transport: transport)),
+                access: CodexAccess(
+                    file: NamedConnections.file(for: resolved.connection),
+                    client: CodexAuthClient(transport: transport), connection: resolved.connection),
                 transport: transport, session: UUID().uuidString)
         case .openAICompatible(_, let baseURL, let apiKey, let headers):
             OpenAICompatibleProvider(
@@ -81,6 +94,7 @@ func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> 
 
 /// How the model is named to the user: `model`, or `provider/model` for a configured provider.
 func modelLabel(_ resolved: ResolvedModel) -> String {
+    if let connection = resolved.connection { return "\(connection.name)/\(resolved.model)" }
     switch resolved.provider {
         case .openAICompatible(let name, _, _, _), .openAIResponses(let name, _, _, _):
             return "\(name)/\(resolved.model)"

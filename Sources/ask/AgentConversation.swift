@@ -22,6 +22,8 @@ final class AgentConversation: Conversation {
     private let directory: SessionDirectory
     let current: Mutex<Current>
     let session = Mutex<SessionRecorder?>(nil)
+    /// Launch consent is consumed once, not reused to authorize an account replacement later in this process.
+    private let destinationSelected = Mutex(false)
     let usage = Mutex(UsageTotals())
     /// Jobs outlive turns, not a reload: `/reload` refuses while any run, or stops them when told to.
     let jobs: JobTable
@@ -143,12 +145,21 @@ final class AgentConversation: Conversation {
 
     /// The session, created on the first prompt so that opening and closing ask leaves no empty sessions.
     func recorder() throws -> SessionRecorder {
-        try session.withLock { existing throws -> SessionRecorder in
-            if let existing { return existing }
-            try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
-            let created = SessionRecorder(try SessionFile.create(at: FilePath(directory.newSessionPath())))
-            existing = created
-            return created
+        let destination = current.withLock { SessionRouting.destination($0.settings.model) }
+        return try destinationSelected.withLock { selected in
+            try session.withLock { existing throws -> SessionRecorder in
+                let recorder: SessionRecorder
+                if let existing {
+                    recorder = existing
+                } else {
+                    try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
+                    recorder = SessionRecorder(try SessionFile.create(at: FilePath(directory.newSessionPath())))
+                }
+                try recorder.select(destination, explicitlySelected: !selected && source.flags.provider != nil)
+                selected = true
+                existing = recorder
+                return recorder
+            }
         }
     }
 
@@ -175,12 +186,12 @@ final class AgentConversation: Conversation {
 
 /// The interactive screen in the working directory.
 func runInteractive(
-    source: ConfigurationSource, settings: RunSettings, session choice: SessionChoice, reloaded: ReloadNotice?
+    source: ConfigurationSource, settings: RunSettings, resumed: SessionRecorder?, startupNotices: [String],
+    reloaded: ReloadNotice?
 ) async {
     let workingDirectory = FileManager.default.currentDirectoryPath
     let directory = SessionDirectory(project: workingDirectory)
-    var notices: [String] = []
-    let resumed = choice.open(in: directory) { notices.append($0) }
+    var notices = startupNotices
     if let resumed { notices.append("Resumed session \((resumed.path as NSString).lastPathComponent)") }
     if let reloaded {
         let now = Int(Date().timeIntervalSince1970 * 1_000)

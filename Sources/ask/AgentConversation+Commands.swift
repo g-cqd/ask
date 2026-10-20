@@ -47,7 +47,8 @@ extension AgentConversation {
         }
         do {
             await refreshSettings(update: update)
-            try await agentLoop().compactNow(in: recorder) { self.deliver($0, to: update) }
+            let checked = try self.recorder()
+            try await agentLoop().compactNow(in: checked) { self.deliver($0, to: update) }
         } catch {
             report(error, to: update)
         }
