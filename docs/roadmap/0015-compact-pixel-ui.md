@@ -134,3 +134,5 @@ layout (`standard`, `workbench`).
 
 - What the character layout does about the row a block line costs, since padding already spends rows.
 - Whether bold and italic carry the hierarchy in the fonts the owner's terminals use: nothing tests that they render.
+- Clicks, selection and folding: the prototype has none of them. They are roadmap 0051 (the study across the screen) and
+  TerminalKit 0016 to 0019 (the mechanisms), and both layouts here must offer the same clickable regions.
