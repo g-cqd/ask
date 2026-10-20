@@ -950,7 +950,29 @@ def probe_model_selection():
     return all(results)
 
 
+def probe_strict_label():
+    print("R: the status line says when the sandbox is strict, or off")
+    project = tempfile.mkdtemp()
+    server = agent.Server([])
+    results = []
+    for arguments, wanted in [(("--write", "workspace", "--network", "none"), "sandbox: workspace only, no network"),
+                              (("--network", "localhost"), "sandbox: localhost only"),
+                              (("--no-sandbox",), "no sandbox"),
+                              ((), None)]:
+        screen = Screen(server.url, project, arguments=arguments)
+        screen.until("ask>")
+        status = screen.status()
+        if wanted:
+            results.append(check(f"{' '.join(arguments)}: the status line says '{wanted}'", wanted in status, status))
+        else:
+            results.append(check("the default sandbox adds nothing to the status line", "sandbox" not in status, status))
+        screen.type("/quit\r")
+        results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection() & probe_strict_label()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

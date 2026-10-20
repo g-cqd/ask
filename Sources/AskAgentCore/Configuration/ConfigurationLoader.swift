@@ -36,10 +36,13 @@ public struct ConfigurationLoader: Sendable {
     ///   - provider: the `--provider` flag, if given.
     ///   - maxTurns: the `--max-turns` flag, if given.
     ///   - compactAt: the `--compact-at` flag, if given.
+    ///   - network: the `--network` flag, if given.
+    ///   - write: the `--write` flag, if given.
     /// - Returns: the new configuration and what it was made from.
     /// - Throws: ``ConfigurationError`` for any file that exists, applies, and is not valid.
     public func load(
-        model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil
+        model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil,
+        network: SandboxPolicy.Network? = nil, write: WriteSetting? = nil
     ) throws(ConfigurationError) -> Result {
         var configuration = Configuration.defaults
         var applied: [String] = []
@@ -63,7 +66,8 @@ public struct ConfigurationLoader: Sendable {
         }
         configuration = configuration.applying(environment: environment, problems: &notices)
         configuration = configuration.applying(
-            model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt)
+            model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt, network: network,
+            write: write)
         return Result(configuration: configuration, applied: applied, notices: notices)
     }
 }

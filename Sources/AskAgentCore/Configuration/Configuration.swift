@@ -51,13 +51,7 @@ public struct Configuration: Sendable, Equatable {
         if let turns = file.maxTurns { next.maxTurns = Setting(value: turns, source: source) }
         if let compactAt = file.compactAt { next.compactAt = Setting(value: compactAt, source: source) }
         if let section = file.sandbox {
-            // What may be read is replaced by the file that names it (only the user's file can); what is kept
-            // unreadable accumulates across layers, since every layer may narrow.
-            let before = next.sandbox.value
-            let merged = SandboxSection(
-                allowRead: section.allowRead.isEmpty ? before.allowRead : section.allowRead,
-                denyRead: before.denyRead + section.denyRead.filter { !before.denyRead.contains($0) })
-            next.sandbox = Setting(value: merged, source: source)
+            next.sandbox = Setting(value: next.sandbox.value.layered(with: section), source: source)
         }
         return next
     }
@@ -97,11 +91,19 @@ public struct Configuration: Sendable, Equatable {
         return next
     }
 
-    /// `self` with the flags the user gave. A nil flag was not given.
+    /// `self` with the flags the user gave. A nil flag was not given. `network` and `write` replace what the files
+    /// set rather than narrowing it: a flag is the user, and only the user widens the sandbox.
     public func applying(
-        model: String?, provider: String?, maxTurns: Int?, compactAt: Int?
+        model: String?, provider: String?, maxTurns: Int?, compactAt: Int?, network: SandboxPolicy.Network? = nil,
+        write: WriteSetting? = nil
     ) -> Configuration {
         var next = self
+        if network != nil || write != nil {
+            var section = next.sandbox.value
+            if let network { section.network = network }
+            if let write { section.write = [write] }
+            next.sandbox = Setting(value: section, source: .flag("network/write"))
+        }
         if let model { next.model = Setting(value: model, source: .flag("model")) }
         if let provider { next.provider = Setting(value: provider, source: .flag("provider")) }
         if let maxTurns { next.maxTurns = Setting(value: maxTurns, source: .flag("max-turns")) }
