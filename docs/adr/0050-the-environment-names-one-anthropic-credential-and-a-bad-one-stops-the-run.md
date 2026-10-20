@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-20
 ---
 
-# 0044 — The environment names one Anthropic credential, and a bad one stops the run
+# 0050 — The environment names one Anthropic credential, and a bad one stops the run
 
 ## Context
 
@@ -14,7 +14,7 @@ token allowed to contain.
 
 ## The probes
 
-Ledger in `docs/diary/2026-10-20-39.md`.
+Ledger in `docs/diary/2026-10-20-45.md`.
 
 - **What order does pi use?** Read from pi-ai's own provider code: a stored credential, then `ANTHROPIC_AUTH_TOKEN` sent as
   `Authorization: Bearer` with no key header, then `ANTHROPIC_OAUTH_TOKEN` and `ANTHROPIC_API_KEY` as keys. Read, not run.
@@ -33,7 +33,7 @@ Ledger in `docs/diary/2026-10-20-39.md`.
 4. **A set variable that is not a plain token refuses the run** (exit 77) before any request, and the run does **not** fall through to a
    lower variable: sending a credential the user did not choose is the worse failure. A plain token is 1 to 4096 characters of visible
    ASCII (no space, no control character, nothing outside ASCII). The message names the variable and never the value.
-5. **A named connection ignores the environment** (ADR-0040), and `ANTHROPIC_BASE_URL` keeps its existing rule (ADR-0024): honoured over
+5. **A named connection ignores the environment** (ADR-0048), and `ANTHROPIC_BASE_URL` keeps its existing rule (ADR-0024): honoured over
    https, or over http to this machine, so a bearer token cannot be sent unencrypted to another host.
 
 ## Consequences

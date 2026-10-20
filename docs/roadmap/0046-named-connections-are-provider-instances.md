@@ -91,7 +91,7 @@ it must not claim that a stored token is accepted by a server. A future `--json`
 - Deferred generic provider plugins, quota scheduling, account pools and TUI pickers. First make two explicit named
   connections work correctly through the CLI and existing provider seam.
 
-## Done (diary 31, ADR-0040)
+## Done (diary 44, ADR-0048)
 
 Registration, per-connection credentials, locks and catalogs; `ask login codex|claude --name`, `ask connections` with `rename` and
 `remove`, `ask models NAME`, `ask logout NAME`; stable ids with an authorization identity; reserved names; sessions that record
@@ -102,7 +102,7 @@ file left unchanged.
 ## Still owed
 
 - A named Claude sign-in, and **probing the OAuth account chooser**, which this entry required. A real browser sign-in with
-  `--name` is done (diary 31, probes 136-139) but the user has one account, so it registered *the same* ChatGPT account as the
+  `--name` is done (diary 44, probes 136-139) but the user has one account, so it registered *the same* ChatGPT account as the
   default, as a separate grant: the chooser question is still open, and a second sign-in does not by itself give a second
   account. Consider warning when a new sign-in lands on an account another connection already holds.
 - Whether Claude's refresh response identifies the account (the Codex one is checked).

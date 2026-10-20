@@ -41,4 +41,4 @@ against a process holding the lock. Every rule has a test that was seen to fail 
 Keeping top-level records this version does not know (nothing new is stored yet, so an older ask dropping them has no
 consequence today), and a refresh lock per connection (there is one Codex connection). Also not required here: a test that cancelling a lock wait closes its descriptor.
 
-A live refresh through the new save was verified on the real server (diary 31, probe 138).
+A live refresh through the new save was verified on the real server (diary 44, probe 138).
