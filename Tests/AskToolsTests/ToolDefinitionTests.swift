@@ -5,7 +5,8 @@ internal import Testing
 
 @testable import AskTools
 
-/// What the model is told about each tool did not change when the schemas stopped being hand-written JSON.
+/// What the model is told about each tool, byte for byte: the schemas as they were hand-written, plus the `sandbox`
+/// argument a call may narrow itself with (roadmap 0019).
 ///
 /// The expected strings are the schemas as they were written by hand, byte for byte. A provider caches the tool
 /// list as part of the prompt, so a schema that moved even by a space would cost every user a cache miss.
@@ -18,28 +19,28 @@ struct ToolDefinitionTests {
     @Test func `read`() {
         #expect(
             schema(ReadTool())
-                == #"{"type":"object","properties":{"path":{"type":"string"},"offset":{"type":"integer","minimum":1},"limit":{"type":"integer","minimum":1}},"required":["path"]}"#
+                == #"{"type":"object","properties":{"path":{"type":"string"},"offset":{"type":"integer","minimum":1},"limit":{"type":"integer","minimum":1},"sandbox":{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}},"required":["path"]}"#
         )
     }
 
     @Test func `write`() {
         #expect(
             schema(WriteTool())
-                == #"{"type":"object","properties":{"path":{"type":"string"},"content":{"type":"string"}},"required":["path","content"]}"#
+                == #"{"type":"object","properties":{"path":{"type":"string"},"content":{"type":"string"},"sandbox":{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}},"required":["path","content"]}"#
         )
     }
 
     @Test func `edit`() {
         #expect(
             schema(EditTool())
-                == #"{"type":"object","properties":{"path":{"type":"string"},"old_text":{"type":"string","minLength":1},"new_text":{"type":"string"},"replace_all":{"type":"boolean"}},"required":["path","old_text","new_text"]}"#
+                == #"{"type":"object","properties":{"path":{"type":"string"},"old_text":{"type":"string","minLength":1},"new_text":{"type":"string"},"replace_all":{"type":"boolean"},"sandbox":{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}},"required":["path","old_text","new_text"]}"#
         )
     }
 
     @Test func `bash`() {
         #expect(
             schema(BashTool())
-                == #"{"type":"object","properties":{"command":{"type":"string"},"timeout_seconds":{"type":"integer","minimum":1,"maximum":600},"yield_seconds":{"type":"integer","minimum":1,"maximum":600}},"required":["command"]}"#
+                == #"{"type":"object","properties":{"command":{"type":"string"},"timeout_seconds":{"type":"integer","minimum":1,"maximum":600},"yield_seconds":{"type":"integer","minimum":1,"maximum":600},"sandbox":{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}},"required":["command"]}"#
         )
     }
 }

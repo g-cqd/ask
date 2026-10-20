@@ -19,6 +19,7 @@ public struct ReadTool: ArgumentTool {
         ToolProperty.integer("offset", minimum: 1).optional
         ToolProperty.integer("limit", minimum: 1).optional
         // @dl:accept -- the file tools share a tool's shape: a schema, an empty init, and a run that asks the sandbox first
+        SandboxRequest.property
     }
 
     public init() {}

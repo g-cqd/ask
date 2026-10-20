@@ -16,6 +16,7 @@ public struct WriteTool: ArgumentTool {
     ) {
         ToolProperty.string("path")
         ToolProperty.string("content")
+        SandboxRequest.property
     }
 
     public init() {}

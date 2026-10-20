@@ -787,7 +787,58 @@ def probe_read_allowlist():
         shutil.rmtree(base, ignore_errors=True)
 
 
+def probe_call_sandbox():
+    print("U: a tool call narrows its own sandbox; asking for more than the run allows is refused")
+    # Outside /private/var/folders, which every sandbox keeps writable and readable as scratch.
+    base = "/Users/Shared/ask-callsb-" + uuid.uuid4().hex
+    project, elsewhere, state = os.path.join(base, "project"), os.path.join(base, "elsewhere"), tempfile.mkdtemp()
+    os.makedirs(os.path.join(project, "sub"))
+    os.makedirs(elsewhere)
+    open(os.path.join(elsewhere, "notes.txt"), "w").write("ELSEWHERE-NOTES")
+
+    def run(calls, *arguments):
+        target = Server([])
+        reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo \" curl=$?\""
+        calls = [(c[0], c[1], c[2], {**c[3], "command": reach} if c[3].get("command") == "REACH" else c[3]) for c in calls]
+        server = Server([turn([c], "tool_use") for c in calls] + [turn([("text", "Done.")], "end_turn")])
+        process = subprocess.run([ASK, "-p", "Work.", *arguments], cwd=project, env=environment(state, server.url),
+                                 capture_output=True, text=True, timeout=180)
+        got = tool_results(server) if len(server.requests) == len(calls) + 1 else {}
+        tools = server.requests[0]["body"].get("tools", []) if server.requests else []
+        server.httpd.shutdown()
+        target.httpd.shutdown()
+        return process, got, tools
+
+    try:
+        process, got, tools = run([
+            ("call", "open", "bash", {"command": "REACH"}),
+            ("call", "closed", "bash", {"command": "REACH", "sandbox": {"network": "none"}}),
+            ("call", "inside", "bash", {"command": "echo in > sub/a.txt && cat sub/a.txt", "sandbox": {"write": ["sub"]}}),
+            ("call", "beside", "bash", {"command": "echo out > b.txt", "sandbox": {"write": ["sub"]}}),
+            ("call", "far", "read", {"path": os.path.join(elsewhere, "notes.txt"), "sandbox": {"read": ["."]}}),
+            ("call", "near", "read", {"path": os.path.join(elsewhere, "notes.txt")})])
+        bash = next((t for t in tools if t["name"] == "bash"), {})
+        results = [
+            check("the run finishes", process.returncode == 0 and len(got) == 6, f"{process.returncode} {process.stderr[-300:]}"),
+            check("the model is told it may narrow a call", "sandbox" in json.dumps(bash.get("input_schema", {})), bash),
+            check("the run reaches a local server", "HTTP 200 curl=0" in got.get("open", ""), got.get("open")),
+            check("a call narrowed to no network cannot", "curl=7" in got.get("closed", ""), got.get("closed")),
+            check("a call narrowed to sub writes there", got.get("inside", "").startswith("in\n"), got.get("inside")),
+            check("and cannot write beside it", "Operation not permitted" in got.get("beside", "")
+                  and not os.path.exists(os.path.join(project, "b.txt")), got.get("beside")),
+            check("the read tool narrowed to the workspace cannot read elsewhere",
+                  "outside the places this run may read" in got.get("far", "") and "ELSEWHERE" not in got.get("far", ""), got.get("far")),
+            check("which the run itself can", got.get("near", "").startswith("ELSEWHERE-NOTES"), got.get("near"))]
+        process, got, _ = run([("call", "wider", "bash", {"command": "REACH", "sandbox": {"network": "any"}})], "--network", "localhost")
+        results.append(check("asking for more than --network localhost is refused, saying who can widen it",
+                             "network any (this run allows localhost)" in got.get("wider", "")
+                             and "Only the user can widen the sandbox" in got.get("wider", ""), got.get("wider")))
+        return all(results)
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session() & probe_nested_sandbox() & probe_strict_sandbox() & probe_session_sandbox() & probe_read_allowlist()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session() & probe_nested_sandbox() & probe_strict_sandbox() & probe_session_sandbox() & probe_read_allowlist() & probe_call_sandbox()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
