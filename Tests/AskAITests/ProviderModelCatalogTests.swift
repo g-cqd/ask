@@ -83,6 +83,26 @@ struct ProviderModelCatalogTests {
         }
     }
 
+    @Test(arguments: [
+        "https://user:fixture-secret@example.test/v1", "https://fixture-secret@example.test/v1",
+        "https://example.test/v1?api_key=fixture-secret", "https://example.test/v1#fixture-secret"
+    ])
+    func `an address that could carry a credential lists without caching the address`(_ address: String) async throws {
+        try await withCache { cache in
+            let transport = SequencedTransport([.json(200, Self.list)])
+            let base = try #require(URL(string: address))
+            let target = catalog(transport, cache: cache, base: base)
+            let snapshot = try await target.models(now: 10)
+            #expect(snapshot.models.count == 2)
+            #expect(snapshot.notices.count == 1)
+            #expect(snapshot.notices.first?.contains("not cached") == true)
+            #expect(snapshot.notices.allSatisfy { !$0.contains("fixture-secret") })
+            #expect(!FileManager.default.fileExists(atPath: cache.url.path))
+            let cached = try target.cached(now: 11)
+            #expect(cached == nil)
+        }
+    }
+
     @Test(arguments: [401, 403, 404, 429, 500])
     func `a refusal names the status, not the body, and leaves the cache as it was`(_ status: Int) async throws {
         try await withCache { cache in

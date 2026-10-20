@@ -2,8 +2,8 @@ public import Foundation
 
 /// The models an OpenAI-compatible provider lists at `GET {baseURL}/models`, kept in a cache so a run starts without a request.
 ///
-/// It describes what the service says about its models (the windows a run's compaction needs) and never chooses one: no service
-/// says which of its models is the default, so the list is shown in the order it came and the user names the model.
+/// It describes what the service says about its models (the windows a run's compaction needs) and never chooses one: list order
+/// is not taken as a default preference, so the user names the model.
 public struct ProviderModelCatalog: Sendable {
     /// What a key stands for in the cache's scope. A key names no account, so a catalog is one per provider and endpoint, and
     /// whether a key was sent.
@@ -17,6 +17,7 @@ public struct ProviderModelCatalog: Sendable {
     private let apiKey: String?
     private let headers: [String: String]
     private let cache: ModelCatalogFile?
+    private let cacheDisabled: Bool
     private let transport: any HTTPTransport
 
     /// A catalog of the provider `name`.
@@ -25,7 +26,8 @@ public struct ProviderModelCatalog: Sendable {
     ///   - baseURL: the API root the provider's requests go under; the list is its `models`.
     ///   - apiKey: sent as a bearer token when there is one. A service that lists without a key is asked without.
     ///   - headers: the extra headers the provider's own requests carry.
-    ///   - cache: where the list is kept, or nil to keep none.
+    ///   - cache: where the list is kept, or nil to keep none. An address with user information, a query or a fragment
+    ///     is not cached: any of those can carry a credential, and the cache must not copy it.
     ///   - transport: what sends the request.
     public init(
         name: String, baseURL: URL, apiKey: String?, headers: [String: String], cache: ModelCatalogFile?,
@@ -35,7 +37,10 @@ public struct ProviderModelCatalog: Sendable {
         self.url = baseURL.appending(path: "models")
         self.apiKey = apiKey.flatMap { $0.isEmpty ? nil : $0 }
         self.headers = headers
-        self.cache = cache
+        let sensitiveAddress =
+            baseURL.user != nil || baseURL.password != nil || baseURL.query != nil || baseURL.fragment != nil
+        self.cacheDisabled = cache != nil && sensitiveAddress
+        self.cache = sensitiveAddress ? nil : cache
         self.transport = transport
     }
 
@@ -48,7 +53,7 @@ public struct ProviderModelCatalog: Sendable {
         return CatalogSnapshot(models: models, notices: [])
     }
 
-    /// One model's entry in a fresh cached list, without a network and without reading the rest of the list.
+    /// One model's entry in a fresh cached list, without a network or decoding the other model descriptors.
     /// - Parameters:
     ///   - id: the model's id, as the provider lists it.
     ///   - now: wall time in seconds since 1970.
@@ -65,7 +70,12 @@ public struct ProviderModelCatalog: Sendable {
     /// - Returns: the models and notices the caller must show: a cache that could not be used or saved, and entries left out.
     /// - Throws: a ``ModelCatalogError`` or the transport's error. A failed download leaves the cache as it was.
     public func models(now: Double, refresh: Bool = false) async throws -> CatalogSnapshot {
-        var notices: [String] = []
+        var notices =
+            cacheDisabled
+            ? [
+                "Model list not cached: its address has user information, a query or a fragment that might contain a credential."
+            ]
+            : []
         if !refresh {
             do { if let current = try cached(now: now) { return current } } catch let error as ModelCatalogError {
                 notices.append("Cached catalog not used: \(error)")
