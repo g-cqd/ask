@@ -13,12 +13,12 @@ struct CodexAccessTests {
     private let file = CredentialFile(
         url: FileManager.default.temporaryDirectory.appending(
             path: "ask-access-\(UUID().uuidString)/ask/credentials.json"))
-    private static let claims = #"{"https://api.openai.com/auth":{"chatgpt_account_id":"acct_a"}}"#
-    private static let freshAccess = [
+    static let claims = #"{"https://api.openai.com/auth":{"chatgpt_account_id":"acct_a"}}"#
+    static let freshAccess = [
         Base64URL.encode(Array(#"{"alg":"none"}"#.utf8)), Base64URL.encode(Array(claims.utf8)), "fresh"
     ]
     .joined(separator: ".")
-    private static let tokens = #"{"access_token":"\#(freshAccess)","refresh_token":"rt-2","expires_in":3600}"#
+    static let tokens = #"{"access_token":"\#(freshAccess)","refresh_token":"rt-2","expires_in":3600}"#
     private let expired = CodexCredentials(
         accessToken: "old", refreshToken: "rt-1", expiresAt: 100, accountID: "acct_a")
     private let valid = CodexCredentials(

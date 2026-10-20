@@ -25,9 +25,16 @@ struct CredentialFileErrorDescriptionTests {
         #expect(text.lowercased().contains("permission denied"))
     }
 
+    @Test func `a lock another ask holds names the lock file and says to try again`() {
+        let text = CredentialFileError.locked(path: "/p/credentials.json.write.lock").description
+        #expect(text.contains("/p/credentials.json.write.lock"))
+        #expect(text.contains("try again"))
+    }
+
     @Test func `no description is the Swift enum dump`() {
         for error in [
-            CredentialFileError.exposed(path: "/p", mode: 0o666), .damaged(path: "/p"), .io(path: "/p", errno: 2)
+            CredentialFileError.exposed(path: "/p", mode: 0o666), .damaged(path: "/p"), .io(path: "/p", errno: 2),
+            .locked(path: "/p")
         ] {
             #expect(!"\(error)".contains("CredentialFileError"))
             #expect(!"\(error)".contains("path:"))
