@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: ["0046"]
 date: 2026-10-20
 ---
@@ -28,3 +28,16 @@ Probe stale catalogs, changed account identities, alias/raw-id collisions and mi
 the final wire schema. Add create/list/update/remove CLI paths only after the underlying resolve/save behavior has
 red/green tests. Session records keep the resolved raw id as well as the local label so a later alias edit cannot
 retroactively change what a recorded request meant.
+
+## Done (diary 39, ADR-0043)
+
+Per-connection aliases and a default model: `ask connections alias|unalias|default`, shown by `ask models NAME`; resolved with the
+server's id sent and recorded, the stated limits winning, nothing hidden, nothing chained, damage refused. Verified on the real
+account and by `Scripts/probe-connections.py`.
+
+## Still owed
+
+- A reasoning level per alias (roadmap 0043, the thinking setting).
+- Aliases for the default `codex` and `anthropic` connections, and a picker in the screen (the `/model` work on another branch).
+- Whether a model that disappears from the account's catalog should be reported on use.
+
