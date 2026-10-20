@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-20
 ---
@@ -90,6 +90,21 @@ it must not claim that a stored token is accepted by a server. A future `--json`
   embedding secret-free metadata in a credential envelope also has migration/older-writer implications to probe.
 - Deferred generic provider plugins, quota scheduling, account pools and TUI pickers. First make two explicit named
   connections work correctly through the CLI and existing provider seam.
+
+## Done (diary 31, ADR-0040)
+
+Registration, per-connection credentials, locks and catalogs; `ask login codex|claude --name`, `ask connections` with `rename` and
+`remove`, `ask models NAME`, `ask logout NAME`; stable ids with an authorization identity; reserved names; sessions that record
+their destination and resume by it (format 2, with version 1 still read); unknown credential records preserved; a newer
+registration schema refused. Verified offline on the release binary with synthetic credentials, and against a real credentials
+file left unchanged.
+
+## Still owed
+
+- A real browser sign-in with `--name`, a named Claude sign-in, and **probing the OAuth account chooser**, which this entry
+  required and nothing has done. Without it, signing in as a second account may reuse the browser's current ChatGPT session.
+- Whether Claude's refresh response identifies the account (the Codex one is checked).
+- A `--json` listing, an interface picker, and named connections for key-based providers: deliberately not built.
 
 ## Acceptance
 
