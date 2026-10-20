@@ -78,6 +78,13 @@ TerminalKit, and no terminal other than kitty was tried.
   open and close with one padded row in their own background, and the gap between blocks is zero. Two surfaced blocks
   that touch would merge into one panel, so in pixel mode a hairline at the top edge of the second separates them for
   free. The character layout has no equivalent and needs another answer, or the blocks must not touch.
+- **Two densities, chosen by the owner, not one design with a slider.** *Compact* separates with pixels, has no side
+  margin, and ends in a flush bottom. *Aerial* separates with glyph rules, has a side margin, a blank row between blocks
+  and under the header, and a roomy bottom (work strip, two-row input, status). Aerial answers the touching-blocks
+  question with a blank row. They are presets over individual settings, and changing one setting makes the density
+  `custom`. Compact needs pixels to be compact: without them its separators cost rows.
+- **A boundary has one stroke.** With a sidebar, the divider *is* the scrollbar track and the thumb rides on it. Two
+  adjacent strokes read as a double border (the first Workbench drawing had exactly that), and a test now fails on it.
 - **The bottom section can be nearly flat.** Roomy is a work strip, a two-row input, a status bar. Tight drops the strip
   (its counts are already in the status bar). Flush is a one-row input with its chips inline, then the status bar.
 - **Kitty turns the mouse wheel into Up and Down keys** in the alternate screen unless mouse reporting is enabled, so
@@ -97,12 +104,13 @@ TerminalKit, and no terminal other than kitty was tried.
   page**. Painting the base fixes that, but kitty treats an explicit background equal to the default as the default,
   so a painted base must differ by one unit. Both modes need to exist, as a setting.
 
-**Settings worth keeping** (proposed, not decided; they would join the configuration of roadmap 0039): theme source
-(`terminal`, `light`, `dark`), accent (an ANSI colour), surface strength, background (`terminal default` or
-`painted`), separator style, pixel thickness, transcript spacing, bottom density, status style, layout.
+**Settings worth keeping** (proposed, not decided; they would join the configuration of roadmap 0039): density
+(`compact`, `aerial`, `custom`), theme source (`terminal`, `light`, `dark`), accent (an ANSI colour), surface strength,
+background (`terminal default` or `painted`), separator style, pixel thickness, transcript spacing, block padding, side
+margin, breathing room, bottom section, status style, layout.
 
 **Still undecided**
 
-- Which of the three bottom densities is the default.
+- Which density is the default, and which bottom section each one gets.
 - What separates two touching blocks in the character layout.
 - Whether `terminal` is the right default theme source on a terminal that does not answer the colour query.
