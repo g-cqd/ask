@@ -23,7 +23,16 @@ model is named. Observed on one real account.
 Codex reasoning levels: each model's levels and default as the account reports them, kept in the catalog cache, shown by
 `ask models`. None of the nine models offers an "off". Setting a level is roadmap 0043's.
 
+## Done (diary 55, ADR-0056)
+
+`ask models NAME` reads an OpenAI-compatible provider's list, using its configured address, key and headers. Limits are
+cached for a day and reach the next run without a network request; stated limits win. Verified live on the public
+OpenRouter, Hugging Face router and NVIDIA lists, and on the release binary against a local fake server. Unlike Codex,
+these lists report no default marker, so no model is chosen from their order. A configured model or `--model` is still
+required. Spettro's field spelling has a synthetic test, not a live authenticated check.
+
 ## Still owed
 
-- Spettro and every preset with a list endpoint, each probed with its own key first.
+- Spettro and the remaining authenticated presets, each probed with its own key first; Google's nonstandard list root.
+- Provider-declared defaults, where one can be observed; never infer a preference from an unordered list.
 - Per-connection registrations and aliases (0047).
