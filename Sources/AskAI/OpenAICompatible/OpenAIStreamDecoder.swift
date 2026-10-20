@@ -43,8 +43,11 @@ public struct OpenAIStreamDecoder: ModelEventDecoding {
             let message = error.message ?? ""
             let kind = ProviderFailure.Kind(openAIType: error.type, status: status, code: code, message: message)
             let window = error.nCtx ?? ProviderFailure.Kind.contextWindow(describedIn: message)
+            let resets = kind == .usageLimit ? error.resetsIn?.value.flatMap(ProviderFailure.sensibleReset) : nil
             throw .provider(
-                ProviderFailure(kind: kind, message: message, contextWindow: kind == .contextOverflow ? window : nil))
+                ProviderFailure(
+                    kind: kind, message: message, contextWindow: kind == .contextOverflow ? window : nil,
+                    resetsInSeconds: resets))
         }
         if !started {
             started = true
