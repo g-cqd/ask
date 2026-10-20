@@ -99,7 +99,9 @@ struct ModelAliasesTests {
         #expect(value.aliases.isEmpty)
     }
 
-    @Test(arguments: ["", "has space", "-lead", "a/b", "é", String(repeating: "m", count: 129)])
+    @Test(arguments: [
+        "", "has space", "-lead", "/lead", ":lead", "~~lead", "a\nb", "a\"b", "é", String(repeating: "m", count: 129)
+    ])
     func `a model id that is not a plain id is refused, as an alias target and as a default`(_ model: String) {
         var value = ModelAliases()
         #expect(throws: ModelAliasError.invalidModel) { try value.set("fast", to: model) }
