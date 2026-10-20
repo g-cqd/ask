@@ -53,12 +53,13 @@ def sample(config, state, cwd):
     started = time.monotonic()
     pid, fd = pty.fork()
     if pid == 0:
+        # Set the size before exec: changing it from the parent races ask's first terminal-size read.
+        fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 120, 0, 0))
         os.environ.update(TERM='xterm-kitty', TERM_PROGRAM='kitty', XDG_CONFIG_HOME=str(config), XDG_STATE_HOME=str(state))
         os.chdir(cwd)
         os.execv(BINARY, [BINARY, '--provider', 'probe', '--model', MODEL])
         os._exit(127)
     try:
-        fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 120, 0, 0))
         deadline = started + 10
         output = b''
         while time.monotonic() < deadline:
@@ -73,7 +74,7 @@ def sample(config, state, cwd):
             output += chunk
             if b'ask> ' in output:
                 return (time.monotonic() - started) * 1000
-        raise RuntimeError('no prompt within 10 s; this is an incomplete sample, not a latency')
+        raise RuntimeError('no prompt within 10 s; incomplete sample, not a latency; tail=%r' % output[-400:])
     finally:
         try:
             os.kill(pid, signal.SIGKILL)
