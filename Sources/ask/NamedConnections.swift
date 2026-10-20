@@ -16,6 +16,12 @@ enum NamedConnections {
             ?? .standard(environment: environment)
     }
 
+    static func aliases(
+        for record: ConnectionRecord, environment: [String: String] = ProcessInfo.processInfo.environment
+    ) -> ModelAliasFile {
+        registry(environment: environment).aliases(for: record)
+    }
+
     static func reserved() throws -> [String] {
         try ProviderSettings.load(from: askConfigDirectory() + "/providers.json").configuredNames
     }

@@ -20,6 +20,8 @@ public enum ProviderSettingsError: Error, Sendable, Equatable, CustomStringConve
     case credentials(CredentialFileError)
     /// The endpoint may not be used (ADR-0024).
     case refusedEndpoint(provider: String, reason: String)
+    /// The connection's aliases cannot be used for this request.
+    case alias(ModelAliasError)
 
     public var description: String {
         switch self {
@@ -42,6 +44,7 @@ public enum ProviderSettingsError: Error, Sendable, Equatable, CustomStringConve
             case .incomplete(let provider, let field):
                 "provider \"\(provider)\" in providers.json needs \"\(field)\""
             case .credentials(let error): "the stored credentials cannot be used: \(error)"
+            case .alias(let error): "model alias: \(error)"
             case .refusedEndpoint(let provider, let reason): "provider \"\(provider)\" was refused: \(reason)"
         }
     }
