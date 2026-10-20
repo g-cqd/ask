@@ -71,7 +71,8 @@ file may only hide more. Stricter modes: `write: 'workspace'` (or a list of path
 temporary directories, `network: 'localhost'` or `'none'` limits the network, and `read: 'workspace'` makes reading an allow-list (the
 workspace, the system, developer tools and git's config; anything else through `allowRead`). Any file may narrow these; only
 `--write`, `--read` and `--network` widen them, and the status line says when the sandbox is strict. SwiftPM needs
-`--disable-sandbox` inside ask's sandbox; ask's still applies. It costs about 8 ms per command ([ADR-0035](docs/adr/0035-the-sandbox-protects-ask-and-the-secret-stores-by-default.md),
+`--disable-sandbox` inside ask's sandbox; ask's still applies. The model can narrow a single command or file
+operation further with a `sandbox` argument; it cannot widen one (ADR-0054). It costs about 8 ms per command ([ADR-0035](docs/adr/0035-the-sandbox-protects-ask-and-the-secret-stores-by-default.md),
 [ADR-0043](docs/adr/0043-strict-sandbox-modes-narrow-in-files-and-widen-only-by-flag.md)).
 
 ## Configuration
