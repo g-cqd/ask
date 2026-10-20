@@ -73,7 +73,8 @@ the previous settings stay ([ADR-0032](docs/adr/0032-configuration-is-json-or-js
 
 ## Providers
 
-Claude is built in (`ask login`, or `ANTHROPIC_API_KEY`). Any server that speaks OpenAI chat completions (llama.cpp,
+Claude is built in (`ask login`, or an environment variable: `ANTHROPIC_AUTH_TOKEN` as a bearer token for a gateway, then
+`ANTHROPIC_OAUTH_TOKEN`, then `ANTHROPIC_API_KEY`; the first one set is used, and one that is not a plain token stops the run). Any server that speaks OpenAI chat completions (llama.cpp,
 MLX, Ollama, LM Studio, vLLM, hosted gateways) is configuration, in `~/.config/ask/providers.json`, in the shape pi's
 `models.json` uses:
 
