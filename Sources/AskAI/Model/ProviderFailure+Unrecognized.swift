@@ -22,6 +22,7 @@ extension ProviderFailure {
             case text(String)
             case object(Inner)
 
+            // @dl:accept -- each of these decodes its own two wire shapes (a sentence or an object, a number or a string); a generic union would hide which shapes each accepts
             init(from decoder: any Decoder) throws {
                 let container = try decoder.singleValueContainer()
                 if let text = try? container.decode(String.self) {
