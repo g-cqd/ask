@@ -1,5 +1,6 @@
 internal import TerminalKitCodecs
 public import TerminalKitInput
+internal import TerminalKitText
 
 /// The screen's behaviour as a pure state machine: events in, state and effects out. The driver performs the
 /// effects; tests drive this directly.
@@ -10,6 +11,8 @@ public struct ScreenController: Sendable {
         case queuePrompt(id: Int, text: String, followUp: Bool)
         case runCommand(name: String, arguments: String)
         case cancelRun
+        /// Put this text on the clipboard.
+        case copy(String)
         case quit
     }
 
@@ -20,6 +23,11 @@ public struct ScreenController: Sendable {
     var nextPromptID = 0
     var acceptsInput = false
     var returningInput = false
+    let options: ScreenOptions
+    /// What the last frame drew, set by the driver before it hands over a mouse event.
+    var frame = FrameGeometry()
+    var pointer = PointerRecognizer<Int>()
+    var selector = SelectionController<Int>()
 
     /// What `/help` and `/quit` are, always present.
     static let builtIn = [
@@ -29,13 +37,16 @@ public struct ScreenController: Sendable {
     ]
 
     /// A controller showing `label` in the status line, answering `commands` besides the built-in ones.
-    public init(label: String, commands: [SlashCommand] = []) {
+    public init(label: String, commands: [SlashCommand] = [], options: ScreenOptions = ScreenOptions()) {
         state = ScreenState(label: label)
         self.commands = Self.builtIn + commands
+        self.options = options
     }
 
     /// Applies terminal input. `pageRows` is how far Page Up and Page Down scroll.
-    public mutating func handle(_ event: InputEvent, pageRows: Int) -> [Effect] {
+    public mutating func handle(
+        _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant = .now
+    ) -> [Effect] {
         switch event {
             case .key(let key):
                 if key.keyCode == Key.pageUp.rawValue {
@@ -46,8 +57,12 @@ public struct ScreenController: Sendable {
                     state.scrollback = Swift.max(0, state.scrollback - Swift.max(1, pageRows))
                     return []
                 }
+                clearSelection()
                 return edit(key)
+            case .mouse(let mouse):
+                return handle(mouse: mouse, at: now)
             case .paste(let text):
+                clearSelection()
                 state.editor.paste(text)
                 return []
             default:
@@ -73,6 +88,7 @@ public struct ScreenController: Sendable {
             case .returnQueuedPrompts: returningInput = true
             case .clearConversation:
                 state.transcript.removeAll()
+                clearSelection()
                 state.detail = ""
                 state.scrollback = 0
             case .runEnded: return endRun()
