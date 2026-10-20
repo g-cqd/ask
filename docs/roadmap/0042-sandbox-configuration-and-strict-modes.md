@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by:
 date: 2026-10-19
 decision: ADR-0035
@@ -24,3 +24,10 @@ section's `allowRead` and `denyRead` are reachable.
 
 A run confined to its workspace and localhost can build a Swift package (or says exactly which path it needed),
 and a probe on the real binary shows each key narrowing and nothing widening from a project.
+
+## Found first (2026-10-20, diary 38)
+
+SwiftPM compiles an uncached manifest inside its own `sandbox-exec`, which cannot nest in ask's: under the default
+sandbox already shipping, a new or edited `Package.swift` failed to build. The model is now told, in the system prompt
+and on that failure, to use `--disable-sandbox`, which leaves ask's sandbox in force (probed). Any strict mode must
+keep that working: the "Done when" build has to use the flag.
