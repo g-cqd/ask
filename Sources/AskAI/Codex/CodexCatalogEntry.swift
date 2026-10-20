@@ -9,6 +9,25 @@ struct CodexCatalogEntry: Decodable {
         case inputModalities = "input_modalities"
         case contextWindow = "context_window"
         case maxOutputTokens = "max_output_tokens"
+        case reasoningLevels = "supported_reasoning_levels"
+        case defaultLevel = "default_reasoning_level"
+    }
+
+    /// One reported level, tolerating both shapes seen or assumed: `{"effort": "low", ...}` and `"low"`. Anything else is
+    /// nothing, so one odd element cannot cost the rest of the list.
+    private struct Level: Decodable {
+        let name: String?
+
+        init(from decoder: any Decoder) throws {
+            if let single = try? decoder.singleValueContainer(), let text = try? single.decode(String.self) {
+                name = text
+                return
+            }
+            let keyed = try? decoder.container(keyedBy: Key.self)
+            name = try? keyed?.decode(String.self, forKey: .effort)
+        }
+
+        private enum Key: String, CodingKey { case effort }
     }
 
     init(from decoder: any Decoder) throws {
@@ -28,8 +47,17 @@ struct CodexCatalogEntry: Decodable {
         }
         let context = try? fields?.decode(Int.self, forKey: .contextWindow)
         let output = try? fields?.decode(Int.self, forKey: .maxOutputTokens)
+        var levels: [String] = []
+        for level in (try? fields?.decode([Level].self, forKey: .reasoningLevels)) ?? [] {
+            guard let name = level.name, CatalogModel.validLevel(name), !levels.contains(name),
+                levels.count < CatalogModel.levelLimit
+            else { continue }
+            levels.append(name)
+        }
+        let standard = try? fields?.decode(String.self, forKey: .defaultLevel)
         model = CatalogModel(
             id: id, contextWindow: context.flatMap { $0 > 0 ? $0 : nil },
-            maxOutputTokens: output.flatMap { $0 > 0 ? $0 : nil })
+            maxOutputTokens: output.flatMap { $0 > 0 ? $0 : nil }, reasoningLevels: levels,
+            defaultReasoningLevel: standard.flatMap { levels.contains($0) ? $0 : nil })
     }
 }
