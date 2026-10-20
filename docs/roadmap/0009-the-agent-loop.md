@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: 
 date: 2026-10-18
 ---
@@ -106,3 +106,9 @@ real-PTY probes J–L inspect requests and archives, and a live Haiku run follow
 
 Only **0007's re-derived action budget** now keeps this entry open. Multi-line editing and interactive
 session/model commands have their own units, 0049 and 0050.
+
+## Done (2026-10-20)
+
+0007 re-derived the action budget against a real action (ADR-0053), the last condition this entry set. Steering and
+follow-ups landed earlier (ADR-0040). Further loop work has its own entries (0027 extension points, 0032 background
+summaries, 0043 search tools).

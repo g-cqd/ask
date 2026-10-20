@@ -39,6 +39,7 @@ Scripts/roadmap.sh open         # the open roadmap entries, read from their fron
 ask --provider NAME --model ID  # a provider from ~/.config/ask/providers.json (ADR-0027)
 swift test -c release --enable-testable-imports   # tests, without re-linting
 python3 Scripts/measure-budgets.py .build/release/ask 12   # the four budgets
+python3 Scripts/measure-action.py .build/release/ask 10 500  # the action, in detail, after 500 turns
 ```
 
 Build and test in **release, always**. A debug build measures a program nobody ships.
@@ -97,8 +98,8 @@ runs so background load cancels out of the ratio.
 **Never trade correctness for speed.** `-Ounchecked` is banned: it strips the bounds and overflow checks
 `StrictMemorySafety` depends on. Speed comes from doing less work.
 
-The action-to-action budget is **provisional** — it measures a trivial action in a program with no
-agent. Re-derive it when the agent loop lands, and do not let the stale number survive that change.
+The action-to-action budget is a tool call to its result on screen, for an in-process tool (ADR-0053):
+`Scripts/measure-action.py` measures it, with the next request and a sandboxed `bash` command beside it.
 
 ## Package strictness
 
