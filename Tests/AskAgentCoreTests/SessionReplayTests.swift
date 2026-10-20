@@ -39,9 +39,23 @@ struct SessionReplayTests {
                 .event(.responded(asked)),
                 .event(.toolStarted(id: "t1", name: "read", input: input)),
                 .event(.toolFinished(id: "t1", name: "read", output: ToolOutput("one\ntwo"))),
+                .event(.model(.thinkingDelta(index: 0, "hm"))),
                 .event(.model(.textDelta(index: 1, "Done."))),
                 .event(.responded(answered))
             ])
+    }
+
+    @Test func `replay shows thinking text but not its signature or redacted data`() {
+        let recorded = response([
+            .thinking(text: "visible reasoning", signature: "private signature"), .redactedThinking(data: "opaque"),
+            .text("answer")
+        ])
+        let deltas = SessionReplay.steps(entries([.response(recorded)]))
+            .compactMap { step -> ModelEvent? in
+                guard case .event(.model(let event)) = step else { return nil }
+                return event
+            }
+        #expect(deltas == [.thinkingDelta(index: 0, "visible reasoning"), .textDelta(index: 2, "answer")])
     }
 
     @Test func `a call the run never answered replays as interrupted, and ask's continuation as a notice`() throws {

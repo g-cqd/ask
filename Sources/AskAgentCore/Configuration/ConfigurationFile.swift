@@ -168,7 +168,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         var reason: String {
             switch key {
                 case "sandbox.network": "is \"\(value)\": use \"none\", \"localhost\" or \"any\""
-                case "ui.tools": "is \"\(value)\": use \"folded\" or \"open\""
+                case "ui.tools", "ui.thinking": "is \"\(value)\": use \"folded\" or \"open\""
                 default: "is \"\(value)\": use \"workspace\", \"anywhere\" or a list of paths"
             }
         }

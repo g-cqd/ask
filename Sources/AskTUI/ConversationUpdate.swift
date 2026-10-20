@@ -7,6 +7,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case userPrompt(String)
     case assistantText(String)
     case toolStarted(name: String, summary: String)
+    /// More of the model's reasoning, shown as a block that starts folded.
+    case thinkingText(String)
     /// The tool ended; `output` is what it returned, kept so the block can be opened.
     case toolFinished(Transcript.ToolStatus, output: String = "")
     case notice(String, isError: Bool)

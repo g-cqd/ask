@@ -97,6 +97,17 @@ extension ScreenController {
         key.keyCode == 0x0F || (key.modifiers.contains(.ctrl) && key.keyCode == 0x6F)
     }
 
+    /// Ctrl+T: the same for thinking blocks.
+    func isToggleThinking(_ key: KeyEvent) -> Bool {
+        key.keyCode == 0x14 || (key.modifiers.contains(.ctrl) && key.keyCode == 0x74)
+    }
+
+    mutating func toggleAllThinking() -> [Effect] {
+        state.transcript.setThinkingFoldedByDefault(!state.transcript.thinkingFoldedByDefault)
+        clearSelection()
+        return []
+    }
+
     mutating func toggleAllToolOutput() -> [Effect] {
         state.transcript.setToolsFoldedByDefault(!state.transcript.toolsFoldedByDefault)
         clearSelection()

@@ -187,6 +187,7 @@ final class AgentConversation: Conversation {
     static func update(for event: AgentEvent) -> ConversationUpdate? {
         switch event {
             case .model(.textDelta(_, let text)): return .assistantText(text)
+            case .model(.thinkingDelta(_, let text)): return .thinkingText(text)
             case .promptAccepted(let prompt): return .promptAccepted(id: prompt.id, text: prompt.text)
             case .toolStarted(_, let name, let input):
                 return .toolStarted(name: name, summary: toolSummary(name: name, input: input))

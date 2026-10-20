@@ -6,13 +6,19 @@ public struct ScreenOptions: Sendable, Equatable {
     public var copyOnSelect: Bool
     /// Whether a tool's output starts folded to one line (ADR-0046: `ui.tools`). A click or Ctrl+O opens it.
     public var foldTools: Bool
+    /// Whether the model's reasoning starts folded to one line (ADR-0046: `ui.thinking`). A click or Ctrl+T opens it.
+    public var foldThinking: Bool
     /// How many lines one wheel step scrolls. Terminals send different numbers of steps for one gesture (TerminalKit ADR-0028).
     public var scrollLines: Int
 
-    public init(mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, scrollLines: Int = 3) {
+    public init(
+        mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
+        scrollLines: Int = 3
+    ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
         self.foldTools = foldTools
+        self.foldThinking = foldThinking
         self.scrollLines = Swift.max(1, scrollLines)
     }
 }
