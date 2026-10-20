@@ -92,17 +92,20 @@ public struct ProviderSettings: Sendable, Equatable {
     ///   - environment: where `$NAME` keys are read.
     ///   - catalog: models discovered for this connection; used for Codex defaults and limits, never another provider's.
     ///   - connection: the selected named registration, already loaded from ask's user-only registry.
+    ///   - aliases: that connection's local model names and default; ignored for anything but a named connection.
     ///   - storedKeys: reads the keys sign-ins stored, by provider name. Called only when nothing else gives a preset a
     ///     key, so a damaged credential file blocks only the providers that need it.
     /// - Returns: the provider, with its endpoint and key, and the model.
     /// - Throws: a ``ProviderSettingsError`` naming what cannot be honoured.
     public func resolve(
         provider: String?, model: String?, environment: [String: String], catalog: [CatalogModel] = [],
-        connection: ConnectionRecord? = nil,
+        connection: ConnectionRecord? = nil, aliases: ModelAliases = .empty,
         storedKeys: () throws(CredentialFileError) -> [String: String] = { [:] }
     ) throws(ProviderSettingsError) -> ResolvedModel {
         let name = selectedProvider(provider)
-        if let connection { return try named(connection, name: name, model: model, catalog: catalog) }
+        if let connection {
+            return try named(connection, name: name, model: model, catalog: catalog, aliases: aliases)
+        }
         if let builtIn = try builtIn(name, model: model, catalog: catalog) { return builtIn }
         let preset = ProviderPreset.named(name)
         guard let entry = entries[name] ?? (preset != nil ? Entry() : nil) else {
@@ -135,7 +138,9 @@ public struct ProviderSettings: Sendable, Equatable {
     }
 
     /// A registration must identify exactly the selected name and must not shadow configured or built-in authority.
-    private func named(_ connection: ConnectionRecord, name: String, model: String?, catalog: [CatalogModel])
+    private func named(
+        _ connection: ConnectionRecord, name: String, model: String?, catalog: [CatalogModel], aliases: ModelAliases
+    )
         throws(ProviderSettingsError) -> ResolvedModel
     {
         guard name.lowercased() == connection.name, !connection.removed,
@@ -143,10 +148,15 @@ public struct ProviderSettings: Sendable, Equatable {
             ProviderPreset.named(connection.name) == nil,
             ![Self.anthropic, Self.codex, "claude"].contains(connection.name)
         else { throw .reservedName(name) }
-        guard var resolved = try builtIn(connection.provider.rawValue, model: model, catalog: catalog) else {
-            throw .unknownProvider(name, known: [])
-        }
+        let choice: ModelChoice?
+        do { choice = try aliases.choice(requested: model, catalog: catalog) } catch { throw .alias(error) }
+        guard var resolved = try builtIn(connection.provider.rawValue, model: choice?.model ?? model, catalog: catalog)
+        else { throw .unknownProvider(name, known: []) }
         resolved.connection = connection
+        resolved.alias = choice?.alias
+        // What the user stated about an alias is theirs and wins; what they did not state is still the server's.
+        resolved.contextWindow = choice?.contextWindow ?? resolved.contextWindow
+        resolved.maxOutputTokens = choice?.maxOutputTokens ?? resolved.maxOutputTokens
         return resolved
     }
 

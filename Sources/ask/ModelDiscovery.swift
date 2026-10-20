@@ -28,9 +28,19 @@ enum ModelDiscovery {
             notices = listing.notices
             connection = listing.records.first { $0.name == selected.lowercased() }
         }
+        var aliases = ModelAliases.empty
+        if let connection {
+            do { aliases = try NamedConnections.aliases(for: connection, environment: environment).load() } catch {
+                // A damaged file refuses a run that relies on it (the default model would silently change), but not one that
+                // names a server model outright.
+                guard model != nil else { throw error }
+                notices.append("Aliases not used: \(error)")
+            }
+        }
         let resolve: ([CatalogModel]) throws -> ResolvedModel = { catalog in
             try providers.resolve(
                 provider: provider, model: model, environment: environment, catalog: catalog, connection: connection,
+                aliases: aliases,
                 storedKeys: { () throws(CredentialFileError) in
                     try CredentialFile.standard(environment: environment).loadKeys().mapValues(\.key)
                 })
@@ -57,22 +67,29 @@ enum ModelDiscovery {
                 ]
             )
         }
-        guard initial.provider == .codex else { return (initial, notices) }
+        guard initial.provider == .codex else { return (initial, notices + announcement(initial)) }
         do {
             guard
                 let cached = try codex(environment: environment, connection: connection)
                     .cached(now: Date().timeIntervalSince1970)
             else {
-                return (initial, notices)
+                return (initial, notices + announcement(initial))
             }
-            return (try resolve(cached.models), notices + cached.notices)
+            let chosen = try resolve(cached.models)
+            return (chosen, notices + cached.notices + announcement(chosen))
         } catch { return (initial, notices + ["Model catalog not used for the explicit model: \(error)"]) }
+    }
+
+    /// Says which server model an alias stood for, so a run never hides what it sent.
+    private static func announcement(_ resolved: ResolvedModel) -> [String] {
+        guard let alias = resolved.alias, let connection = resolved.connection else { return [] }
+        return ["Using \(connection.name)/\(alias), which is \(resolved.model)."]
     }
 
     static func exitCode(for error: any Error) -> Int32 {
         if case ConnectionError.signInRequired = error { return 77 }
         if error is ConfigurationError || error is ProviderSettingsError || error is ConnectionError
-            || error is SessionDestinationError
+            || error is SessionDestinationError || error is ModelAliasError
         {
             return 78
         }
