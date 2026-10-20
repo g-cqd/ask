@@ -17,14 +17,17 @@ internal import System
 /// is reported; an invalid one is reported once and the previous settings stay.
 final class AgentConversation: Conversation {
     // Internal rather than private: the command handlers live in AgentConversation+Commands.swift.
-    let source: ConfigurationSource
+    /// Where settings are read from; `/model` replaces it with one carrying the run's selection.
+    let sourceState: Mutex<ConfigurationSource>
+    var source: ConfigurationSource { sourceState.withLock { $0 } }
     private let makeLoop: @Sendable (RunSettings) throws -> AgentLoop
-    private let directory: SessionDirectory
+    let directory: SessionDirectory
     let current: Mutex<Current>
     let session = Mutex<SessionRecorder?>(nil)
     /// Launch consent is consumed once, not reused to authorize an account replacement later in this process.
     private let destinationSelected = Mutex(false)
     let usage = Mutex(UsageTotals())
+    let promptInput = Mutex<PromptQueue?>(nil)
     /// Jobs outlive turns, not a reload: `/reload` refuses while any run, or stops them when told to.
     let jobs: JobTable
     /// The build that is running, to tell when a newer one appears.
@@ -50,7 +53,7 @@ final class AgentConversation: Conversation {
         directory: SessionDirectory, resumed: SessionRecorder? = nil, settings: RunSettings,
         source: ConfigurationSource, jobs: JobTable, makeLoop: @escaping @Sendable (RunSettings) throws -> AgentLoop
     ) {
-        self.source = source
+        sourceState = Mutex(source)
         self.jobs = jobs
         self.makeLoop = makeLoop
         self.directory = directory
@@ -99,15 +102,26 @@ final class AgentConversation: Conversation {
         return updates + [.status(usage.withLock { $0.summary })]
     }
 
+    func enqueue(_ text: String, id: Int, followUp: Bool) {
+        promptInput.withLock { $0 }?
+            .append(
+                QueuedPrompt(
+                    id: id, text: text, delivery: followUp ? .followUp : .steering))
+    }
+
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
-        Task {
+        let input = PromptQueue()
+        promptInput.withLock { $0 = input }
+        return Task {
             do {
                 await self.refreshSettings(update: update)
                 let loop = try self.agentLoop()
                 let recorder = try self.recorder()
-                try await loop.run(prompt, in: recorder) { self.deliver($0, to: update) }
+                try self.current.withLock { $0.settings }.record(in: recorder)
+                try await loop.run(prompt, in: recorder, input: input) { self.deliver($0, to: update) }
             } catch {
                 self.report(error, to: update)
+                update(.returnQueuedPrompts)
             }
             update(.runEnded)
         }
@@ -155,7 +169,9 @@ final class AgentConversation: Conversation {
                     try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
                     recorder = SessionRecorder(try SessionFile.create(at: FilePath(directory.newSessionPath())))
                 }
-                try recorder.select(destination, explicitlySelected: !selected && source.flags.provider != nil)
+                try recorder.select(
+                    destination,
+                    explicitlySelected: source.flags.selected != nil || (!selected && source.flags.provider != nil))
                 selected = true
                 existing = recorder
                 return recorder
@@ -166,6 +182,7 @@ final class AgentConversation: Conversation {
     static func update(for event: AgentEvent) -> ConversationUpdate? {
         switch event {
             case .model(.textDelta(_, let text)): return .assistantText(text)
+            case .promptAccepted(let prompt): return .promptAccepted(id: prompt.id, text: prompt.text)
             case .toolStarted(_, let name, let input):
                 return .toolStarted(name: name, summary: toolSummary(name: name, input: input))
             case .toolFinished(_, _, let output):
@@ -212,7 +229,7 @@ func runInteractive(
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.
         let exit = try await runInteractiveScreen(
-            conversation: conversation, label: modelLabel(settings.model), history: conversation.history(),
+            conversation: conversation, label: settings.label, history: conversation.history(),
             notices: notices + settings.description + describe(files), beforeSignalExit: { jobs.terminateAllNow() })
         await jobs.stopAll()
         // The terminal is already restored: replace this process with the new build, resuming this session.

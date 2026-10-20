@@ -20,14 +20,17 @@ public enum SelfCheck {
     /// Runs `executable --self-check`.
     /// - Parameters:
     ///   - executable: the new build.
+    ///   - arguments: what follows `--self-check`: the flags the replacement process will be started with, so the
+    ///     check loads the configuration it will really run on.
     ///   - timeout: how long it gets.
     ///   - clock: what the timeout is measured on.
     /// - Returns: the outcome. Never throws: every way it can go wrong is a ``Outcome/failed(_:)``.
     public static func run(
-        _ executable: String, timeout: Duration = defaultTimeout, clock: any Clock<Duration> = ContinuousClock()
+        _ executable: String, arguments: [String] = [], timeout: Duration = defaultTimeout,
+        clock: any Clock<Duration> = ContinuousClock()
     ) async -> Outcome {
         await withTaskGroup(of: Outcome?.self) { group in
-            group.addTask { await execute(executable) }
+            group.addTask { await execute(executable, arguments: arguments) }
             group.addTask {
                 // A cancelled sleep is the check finishing first.
                 guard (try? await clock.sleep(for: timeout)) != nil else { return nil }
@@ -39,11 +42,12 @@ public enum SelfCheck {
         }
     }
 
-    private static func execute(_ executable: String) async -> Outcome {
+    private static func execute(_ executable: String, arguments: [String]) async -> Outcome {
         let options = JobProcess.groupOptions(graceSeconds: 1)
         do {
             let result = try await Subprocess.run(
-                .path(FilePath(executable)), arguments: ["--self-check"], platformOptions: options, input: .none,
+                .path(FilePath(executable)), arguments: .init(["--self-check"] + arguments), platformOptions: options,
+                input: .none,
                 output: .string(limit: 16 << 10), error: .string(limit: 16 << 10))
             if Task.isCancelled { return .failed("the check was cancelled") }
             let out = result.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines)

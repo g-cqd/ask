@@ -11,6 +11,9 @@ public struct SessionTree: Sendable, Equatable {
     public private(set) var entries: [SessionEntry] = []
     /// The selected entry, or nil when the next append starts a new root.
     public private(set) var leaf: EntryID?
+    /// The strict sandbox the session last ran under, or nil when none was recorded (roadmap 0042). Metadata, not
+    /// conversation: it is no entry, so it never reaches a model and never breaks the parent chain.
+    public private(set) var sandbox: SandboxSection?
     private var positions: [EntryID: Int] = [:]
     private var nextOrdinal = 0
 
@@ -95,10 +98,16 @@ public struct SessionTree: Sendable, Equatable {
         fileprivate let count: Int
         fileprivate let leaf: EntryID?
         fileprivate let nextOrdinal: Int
+        fileprivate let sandbox: SandboxSection?
     }
 
     /// The current position, for ``rewind(to:)``.
-    var checkpoint: Checkpoint { Checkpoint(count: entries.count, leaf: leaf, nextOrdinal: nextOrdinal) }
+    var checkpoint: Checkpoint {
+        Checkpoint(count: entries.count, leaf: leaf, nextOrdinal: nextOrdinal, sandbox: sandbox)
+    }
+
+    /// Records the strict sandbox this session now runs under; the latest record wins.
+    public mutating func recordSandbox(_ section: SandboxSection) { sandbox = section }
 
     /// Undoes every change since `checkpoint`. Only appends and checkouts exist, so this is exact.
     /// - Complexity: O(entries added since the checkpoint).
@@ -107,6 +116,7 @@ public struct SessionTree: Sendable, Equatable {
         entries.removeSubrange(checkpoint.count...)
         leaf = checkpoint.leaf
         nextOrdinal = checkpoint.nextOrdinal
+        sandbox = checkpoint.sandbox
     }
 
     /// Selects an existing entry, or nil to start a new root. Nothing is removed.
