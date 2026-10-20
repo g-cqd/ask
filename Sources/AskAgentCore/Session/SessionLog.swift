@@ -64,7 +64,7 @@ public enum SessionLog {
     /// One newline-terminated record saying the session now runs under `sandbox`'s strict settings.
     /// - Throws: ``SessionLogError/encodingFailed``.
     public static func line(forSandbox sandbox: SandboxSection) throws(SessionLogError) -> [UInt8] {
-        try encode(.sandbox(SandboxSection(write: sandbox.write, network: sandbox.network)))
+        try encode(.sandbox(sandbox.strict))
     }
 
     /// Loads a log, repairing damage and reporting each repair. The default way to open a session.

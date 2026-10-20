@@ -26,6 +26,8 @@ struct ConfigurationSource: Sendable {
         var network: SandboxPolicy.Network?
         /// `--write`: where writing is allowed, replacing what the files say.
         var write: PathSetting?
+        /// `--read`: where reading is allowed, replacing what the files say.
+        var read: PathSetting?
         /// The model chosen with `/model`; above every other layer, for this process and the ones a reload starts.
         var selected: ModelSelection?
 
@@ -38,11 +40,13 @@ struct ConfigurationSource: Sendable {
             if let compactAt { arguments += ["--compact-at", String(compactAt)] }
             if noSandbox { arguments.append("--no-sandbox") }
             if let network { arguments += ["--network", network.description] }
-            switch write {
-                case .anywhere?: arguments += ["--write", "anywhere"]
-                case .workspace?: arguments += ["--write", "workspace"]
-                case .paths(let paths)?: arguments += ["--write"] + paths.prefix(1)
-                case nil: break
+            for (flag, setting) in [("--write", write), ("--read", read)] {
+                switch setting {
+                    case .anywhere?: arguments += [flag, "anywhere"]
+                    case .workspace?: arguments += [flag, "workspace"]
+                    case .paths(let paths)?: arguments += [flag] + paths.prefix(1)
+                    case nil: break
+                }
             }
             if let selected {
                 arguments += ["--selected-provider", selected.provider, "--selected-model", selected.model]
@@ -80,7 +84,13 @@ struct ConfigurationSource: Sendable {
             }
             .reduce(SandboxPolicy.unrestricted) { $0.intersecting($1) }
         policy.network = section.network ?? .any
-        policy.write = section.writeScope(workspace: workspace, home: homes.last ?? NSHomeDirectory())
+        let home = homes.last ?? NSHomeDirectory()
+        policy.write = section.writeScope(workspace: workspace, home: home)
+        policy.read = section.readScope(
+            workspace: workspace, home: home,
+            // Every home's: the account's holds the toolchains, $HOME the configuration a command's `~` finds.
+            always: homes.flatMap(Self.developerReads(home:))
+                + section.allowRead.map { SandboxSection.expand($0, home: home) })
         return policy
     }
 
@@ -101,11 +111,12 @@ struct ConfigurationSource: Sendable {
     func load(allowNetwork: Bool = true) async throws -> RunSettings {
         var result = try loader.load(
             model: flags.model, provider: flags.provider, maxTurns: flags.maxTurns, compactAt: flags.compactAt,
-            network: flags.network, write: flags.write)
+            network: flags.network, write: flags.write, read: flags.read)
         if let record = sessionSandbox, !flags.noSandbox {
             let before = result.configuration.sandbox
             result.configuration = result.configuration.applying(
-                session: record, flaggedNetwork: flags.network != nil, flaggedWrite: flags.write != nil)
+                session: record, flaggedNetwork: flags.network != nil, flaggedWrite: flags.write != nil,
+                flaggedRead: flags.read != nil)
             if result.configuration.sandbox != before {
                 result.notices.append(
                     "Keeping this session's sandbox (\(record)); --network and --write change it.")

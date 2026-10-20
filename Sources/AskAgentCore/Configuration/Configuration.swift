@@ -96,10 +96,13 @@ public struct Configuration: Sendable, Equatable {
 
     /// `self` narrowed by the strict sandbox a resumed session recorded, except for what a flag set: a flag is the
     /// user widening on purpose. The record only ever narrows; the source changes only when it did.
-    public func applying(session record: SandboxSection, flaggedNetwork: Bool, flaggedWrite: Bool) -> Configuration {
+    public func applying(
+        session record: SandboxSection, flaggedNetwork: Bool, flaggedWrite: Bool, flaggedRead: Bool
+    ) -> Configuration {
         let narrowed = sandbox.value.layered(
             with: SandboxSection(
-                write: flaggedWrite ? [] : record.write, network: flaggedNetwork ? nil : record.network))
+                write: flaggedWrite ? [] : record.write, read: flaggedRead ? [] : record.read,
+                network: flaggedNetwork ? nil : record.network))
         guard narrowed != sandbox.value else { return self }
         var next = self
         next.sandbox = Setting(value: narrowed, source: .session)
@@ -110,14 +113,15 @@ public struct Configuration: Sendable, Equatable {
     /// set rather than narrowing it: a flag is the user, and only the user widens the sandbox.
     public func applying(
         model: String?, provider: String?, maxTurns: Int?, compactAt: Int?, network: SandboxPolicy.Network? = nil,
-        write: PathSetting? = nil
+        write: PathSetting? = nil, read: PathSetting? = nil
     ) -> Configuration {
         var next = self
-        if network != nil || write != nil {
+        if network != nil || write != nil || read != nil {
             var section = next.sandbox.value
             if let network { section.network = network }
             if let write { section.write = [write] }
-            next.sandbox = Setting(value: section, source: .flag("network/write"))
+            if let read { section.read = [read] }
+            next.sandbox = Setting(value: section, source: .flag("network/write/read"))
         }
         if let model { next.model = Setting(value: model, source: .flag("model")) }
         if let provider { next.provider = Setting(value: provider, source: .flag("provider")) }

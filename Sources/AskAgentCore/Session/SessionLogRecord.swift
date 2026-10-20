@@ -16,7 +16,7 @@ extension SessionLogRecord: Codable {
     private enum CodingKeys: String, CodingKey { case type, version, id, parent, payload }
     /// The sandbox record's own key set, so every other line matches no more keys than before. It repeats `type` so
     /// the record is written through one container: one encoder, one keyed container.
-    private enum SandboxKeys: String, CodingKey { case type, write, network }
+    private enum SandboxKeys: String, CodingKey { case type, write, read, network }
     private enum Kind: String, Codable { case session, entry, leaf, sandbox }
 
     /// A write or read scope on the wire: `"workspace"`, `"anywhere"`, or an array of paths.
@@ -73,7 +73,9 @@ extension SessionLogRecord: Codable {
                     }
                 self = .sandbox(
                     SandboxSection(
-                        write: try fields.decode([WireScope].self, forKey: .write).map(\.setting), network: network))
+                        write: try fields.decode([WireScope].self, forKey: .write).map(\.setting),
+                        read: try fields.decodeIfPresent([WireScope].self, forKey: .read)?.map(\.setting) ?? [],
+                        network: network))
         }
     }
 
@@ -83,6 +85,8 @@ extension SessionLogRecord: Codable {
             var fields = encoder.container(keyedBy: SandboxKeys.self)
             try fields.encode(Kind.sandbox, forKey: .type)
             try fields.encode(section.write.map(WireScope.init), forKey: .write)
+            // Absent when unset, so a session without a read scope writes the record as before.
+            if !section.read.isEmpty { try fields.encode(section.read.map(WireScope.init), forKey: .read) }
             try fields.encodeIfPresent(section.network?.description, forKey: .network)
             return
         }

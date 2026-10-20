@@ -709,7 +709,78 @@ def probe_session_sandbox():
     return all(results)
 
 
+def probe_read_allowlist():
+    print("P: reads confined to the workspace, the system and developer tools; git includes followed; Swift builds")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    # Outside /private/var/folders, which a restricted read keeps readable as scratch.
+    base = "/Users/Shared/ask-read-" + uuid.uuid4().hex
+    home, elsewhere = os.path.join(base, "home"), os.path.join(base, "elsewhere")
+    config = os.path.join(home, ".config")
+    for directory in [os.path.join(config, "ask"), elsewhere, os.path.join(project, "Sources", "hello")]:
+        os.makedirs(directory)
+    open(os.path.join(config, "ask", "config.json"), "w").write("{sandbox: {read: 'workspace', write: 'workspace', network: 'localhost'}}")
+    open(os.path.join(home, "notes.txt"), "w").write("PRIVATE-NOTES")
+    open(os.path.join(home, ".gitconfig"), "w").write(f'[include]\n\tpath = "{elsewhere}/included.gitconfig"\n')
+    open(os.path.join(elsewhere, "included.gitconfig"), "w").write("[user]\n\tname = Included Name\n\temail = i@example.com\n")
+    open(os.path.join(project, "Package.swift"), "w").write(
+        "// swift-tools-version: 6.0\nimport PackageDescription\n// nonce " + uuid.uuid4().hex
+        + "\nlet package = Package(name: \"hello\", targets: [.executableTarget(name: \"hello\")])\n")
+    open(os.path.join(project, "Sources", "hello", "main.swift"), "w").write('print("read-build-ok")\n')
+    open(os.path.join(project, "file.txt"), "w").write("workspace-text")
+    notes = os.path.join(home, "notes.txt")
+
+    def run(*arguments, calls):
+        target = Server([])
+        reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo \" curl=$?\""
+        calls = [c if c[2] != "REACH" else (c[0], c[1], reach) for c in calls]
+        server = Server([turn([c], "tool_use") for c in calls] + [turn([("text", "Done.")], "end_turn")])
+        env = environment(state, server.url, config)
+        env["HOME"] = home
+        process = subprocess.run([ASK, "-p", "Work.", *arguments], cwd=project, env=env, capture_output=True,
+                                 text=True, timeout=600)
+        got = tool_results(server) if len(server.requests) == len(calls) + 1 else {}
+        server.httpd.shutdown()
+        target.httpd.shutdown()
+        return process, got
+
+    calls = [("tool", "inside", "cat file.txt"),
+             ("tool", "notes", f"cat '{notes}'"),
+             ("call", "tool", "read", {"path": notes}),
+             ("tool", "git", "git init -q . && git add file.txt && git -c commit.gpgsign=false commit -qm m && git log -1 --format=%an"),
+             ("tool", "reach", "REACH"),
+             ("tool", "build", "swift build --disable-sandbox 2>&1 | tail -1 && .build/debug/hello")]
+    try:
+        process, got = run(calls=calls)
+        results = [
+            check("the run finishes", process.returncode == 0 and len(got) == 6, f"{process.returncode} {process.stderr[-300:]}"),
+            check("it says reads are restricted", "reads only the workspace" in process.stderr, process.stderr[:500]),
+            check("the workspace is readable", got.get("inside", "").startswith("workspace-text"), got.get("inside")),
+            check("the rest of the home is not, to bash", "Operation not permitted" in got.get("notes", "") and "PRIVATE" not in got.get("notes", ""), got.get("notes")),
+            check("nor to the read tool, saying why", "outside the places this run may read" in got.get("tool", ""), got.get("tool")),
+            check("git commits, reading a config the global one includes", got.get("git", "").startswith("Included Name"), got.get("git")),
+            check("localhost answers", "HTTP 200 curl=0" in got.get("reach", ""), got.get("reach")),
+            check("a fresh Swift package builds and runs", "read-build-ok" in got.get("build", "") and "[exit 0]" in got.get("build", ""), got.get("build", "")[-400:])]
+        os.makedirs(os.path.join(project, ".ask"), exist_ok=True)
+        open(os.path.join(project, ".ask", "config.json"), "w").write("{sandbox: {read: 'anywhere'}}")
+        master, slave = pty.openpty()
+        env = environment(state, "http://127.0.0.1:9", config)
+        env["HOME"] = home
+        subprocess.run([ASK, "trust"], cwd=project, env=env, stdin=slave, capture_output=True, text=True, timeout=60)
+        os.close(slave)
+        os.close(master)
+        process, got = run(calls=[("tool", "notes", f"cat '{notes}'")])
+        results.append(check("a trusted project cannot widen reading", "PRIVATE" not in got.get("notes", "") and "Operation not permitted" in got.get("notes", ""), got.get("notes")))
+        process, got = run("--read", "anywhere", calls=[("tool", "notes", f"cat '{notes}'")])
+        results.append(check("the user's flag widens it", got.get("notes", "").startswith("PRIVATE-NOTES"), got.get("notes")))
+        process, got = run("--continue", calls=[("tool", "notes", f"cat '{notes}'")])
+        # A record only narrows (ADR-0045): the widening was the flag's, for that run; the files restrict again.
+        results.append(check("continuing without the flag is restricted again", "PRIVATE" not in got.get("notes", "") and "Operation not permitted" in got.get("notes", ""), got.get("notes")))
+        return all(results)
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session() & probe_nested_sandbox() & probe_strict_sandbox() & probe_session_sandbox()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session() & probe_nested_sandbox() & probe_strict_sandbox() & probe_session_sandbox() & probe_read_allowlist()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

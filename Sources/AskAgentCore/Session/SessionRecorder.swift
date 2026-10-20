@@ -48,7 +48,7 @@ public final class SessionRecorder: Sendable {
     /// Records the strict sandbox the session now runs under, unless it is already the one recorded.
     /// - Throws: whatever the file throws; nothing is recorded then.
     public func recordSandbox(_ section: SandboxSection) throws(SessionFileError) {
-        let record = SandboxSection(write: section.write, network: section.network)
+        let record = section.strict
         try file.withLock { (file: inout SessionFile) throws(SessionFileError) in
             guard file.tree.sandbox != record else { return }
             try file.recordSandbox(record)

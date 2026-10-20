@@ -17,6 +17,12 @@ extension SandboxPolicy {
             let where_ = roots.isEmpty ? "nowhere but" : roots.joined(separator: ", ") + " and"
             sentences.append("Writes are allowed only under \(where_) temporary directories.")
         }
+        if case .roots(let roots) = read {
+            let where_ = roots.isEmpty ? "" : roots.joined(separator: ", ") + ", "
+            sentences.append(
+                "Reads are allowed only under \(where_)temporary directories, and the system's and developer tools' "
+                    + "own directories; add a path with sandbox.allowRead if a task needs it.")
+        }
         switch network {
             case .any: break
             case .localhost: sentences.append("The network reaches only this machine.")

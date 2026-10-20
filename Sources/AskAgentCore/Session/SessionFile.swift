@@ -110,7 +110,7 @@ public struct SessionFile: ~Copyable {
     /// - Throws: an I/O error; the session keeps the sandbox it had.
     public mutating func recordSandbox(_ section: SandboxSection) throws(SessionFileError) {
         let checkpoint = tree.checkpoint
-        let record = SandboxSection(write: section.write, network: section.network)
+        let record = section.strict
         tree.recordSandbox(record)
         do throws(SessionFileError) {
             try persist(
