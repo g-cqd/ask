@@ -139,14 +139,14 @@ public struct ScreenComposer: Sendable {
         transcriptLines.update(width: columns, revisions: transcript.revisions) { index in
             let item = transcript.items[index]
             if hard.count <= index { hard.append(contentsOf: repeatElement([], count: index + 1 - hard.count)) }
-            hard[index] = TranscriptContent.hardLines(of: item.contentText)
-            return Self.lines(for: item, block: index, columns: columns)
+            hard[index] = TranscriptContent.hardLines(of: transcript.contentText(at: index))
+            return Self.lines(for: item, folded: transcript.isFolded(index), block: index, columns: columns)
         }
         hard.removeLast(Swift.max(0, hard.count - transcript.items.count))
         hardLines = hard
     }
 
-    static func lines(for item: Transcript.Item, block: Int = 0, columns: Int) -> [Line] {
+    static func lines(for item: Transcript.Item, folded: Bool = false, block: Int = 0, columns: Int) -> [Line] {
         func rows(_ text: String, width: Int, col: Int, style: Style, prefix: (Int) -> String = { _ in "" }) -> [Line] {
             TextWrap.rows(text, width: width).enumerated()
                 .map { number, row in
@@ -161,15 +161,26 @@ public struct ScreenComposer: Sendable {
                     + rows(text, width: columns - 2, col: 2, style: Style(bold: true)) { $0 == 0 ? "› " : "  " }
             case .assistant(let text):
                 return rows(text, width: columns, col: 0, style: .default)
-            case .tool(let name, let summary, let status):
-                let mark = Transcript.Item.toolMark(status)
+            case .tool(let name, let summary, let status, let output):
                 let style: Style
                 switch status {
                     case .running: style = Style(dim: true)
                     case .succeeded: style = Style(fg: .indexed(2), dim: true)
                     case .failed: style = Style(fg: .indexed(1))
                 }
-                return rows("▸ \(name) \(summary)\(mark.text)", width: columns, col: 0, style: style)
+                let header = Transcript.Item.toolHeader(
+                    name: name, summary: summary, status: status, output: output, folded: folded)
+                let head = rows(header, width: columns, col: 0, style: style)
+                guard !output.isEmpty, !folded else { return head }
+                // The body is hard lines 1 and on, drawn two columns in, dim: what the tool returned, not the tool's own line.
+                let body = TextWrap.rows(output, width: columns - 2)
+                    .map { row in
+                        Line(
+                            text: "  " + row.text, style: Style(dim: true),
+                            source: Source(block: block, line: row.line + 1, offset: row.offset, col: 2, text: row.text)
+                        )
+                    }
+                return head + body
             case .notice(let text, let isError):
                 let style = isError ? Style(fg: .indexed(1)) : Style(dim: true)
                 return rows(text, width: columns, col: 0, style: style)

@@ -187,7 +187,7 @@ final class AgentConversation: Conversation {
                 return .toolStarted(name: name, summary: toolSummary(name: name, input: input))
             case .toolFinished(_, _, let output):
                 let last = output.content.split(separator: "\n").last.map(String.init) ?? ""
-                return .toolFinished(output.isError ? .failed(last) : .succeeded)
+                return .toolFinished(output.isError ? .failed(last) : .succeeded, output: output.content)
             case .repaired(let repairs):
                 return .notice("Repaired the context before this turn: \(repairs)", isError: false)
             case .compacted, .compactionFailed:
