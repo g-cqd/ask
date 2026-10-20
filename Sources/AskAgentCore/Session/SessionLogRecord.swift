@@ -19,11 +19,11 @@ extension SessionLogRecord: Codable {
     private enum SandboxKeys: String, CodingKey { case type, write, network }
     private enum Kind: String, Codable { case session, entry, leaf, sandbox }
 
-    /// A write scope on the wire: `"workspace"`, `"anywhere"`, or an array of paths.
-    private struct WireWrite: Codable {
-        let setting: WriteSetting
+    /// A write or read scope on the wire: `"workspace"`, `"anywhere"`, or an array of paths.
+    private struct WireScope: Codable {
+        let setting: PathSetting
 
-        init(_ setting: WriteSetting) { self.setting = setting }
+        init(_ setting: PathSetting) { self.setting = setting }
 
         init(from decoder: any Decoder) throws {
             let container = try decoder.singleValueContainer()
@@ -73,7 +73,7 @@ extension SessionLogRecord: Codable {
                     }
                 self = .sandbox(
                     SandboxSection(
-                        write: try fields.decode([WireWrite].self, forKey: .write).map(\.setting), network: network))
+                        write: try fields.decode([WireScope].self, forKey: .write).map(\.setting), network: network))
         }
     }
 
@@ -82,7 +82,7 @@ extension SessionLogRecord: Codable {
             // @dl:accept -- explicit coding keeps the session format ours (ADR-0013); one container per record (AemiJSON #4)
             var fields = encoder.container(keyedBy: SandboxKeys.self)
             try fields.encode(Kind.sandbox, forKey: .type)
-            try fields.encode(section.write.map(WireWrite.init), forKey: .write)
+            try fields.encode(section.write.map(WireScope.init), forKey: .write)
             try fields.encodeIfPresent(section.network?.description, forKey: .network)
             return
         }

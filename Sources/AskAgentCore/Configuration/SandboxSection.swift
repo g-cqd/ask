@@ -9,13 +9,13 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
     public var denyRead: [String]
     /// Where commands and tools may write, one entry per layer that set it. They are intersected, so every layer
     /// narrows; empty means anywhere.
-    public var write: [WriteSetting]
+    public var write: [PathSetting]
     /// How far the network reaches; nil for ask's default, anywhere. A layer can only lower it.
     public var network: SandboxPolicy.Network?
 
     /// A section with these settings.
     public init(
-        allowRead: [String] = [], denyRead: [String] = [], write: [WriteSetting] = [],
+        allowRead: [String] = [], denyRead: [String] = [], write: [PathSetting] = [],
         network: SandboxPolicy.Network? = nil
     ) {
         self.allowRead = allowRead

@@ -25,7 +25,7 @@ struct ConfigurationSource: Sendable {
         /// `--network`: how far the network reaches, replacing what the files say.
         var network: SandboxPolicy.Network?
         /// `--write`: where writing is allowed, replacing what the files say.
-        var write: WriteSetting?
+        var write: PathSetting?
         /// The model chosen with `/model`; above every other layer, for this process and the ones a reload starts.
         var selected: ModelSelection?
 
