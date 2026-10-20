@@ -13,6 +13,7 @@ public struct ScreenController: Sendable {
         case cancelRun
         /// Put this text on the clipboard.
         case copy(String)
+        case answerApproval(id: Int, ApprovalChoice)
         case quit
     }
 
@@ -58,6 +59,8 @@ public struct ScreenController: Sendable {
                     state.scrollback = Swift.max(0, state.scrollback - Swift.max(1, pageRows))
                     return []
                 }
+                // A question waiting for y, a or n takes the keys first (roadmap 0019).
+                if state.pendingApproval != nil { return answer(key) }
                 if isToggleToolOutput(key) { return toggleAllToolOutput() }
                 clearSelection()
                 return edit(key)
@@ -93,7 +96,10 @@ public struct ScreenController: Sendable {
                 clearSelection()
                 state.detail = ""
                 state.scrollback = 0
-            case .runEnded: return endRun()
+            case .askApproval(let id, let question): ask(id: id, question: question)
+            case .runEnded:
+                state.pendingApproval = nil
+                return endRun()
         }
         return []
     }
@@ -154,7 +160,7 @@ public struct ScreenController: Sendable {
         return [effect]
     }
 
-    private mutating func abort() -> [Effect] {
+    mutating func abort() -> [Effect] {
         returningInput = true
         state.transcript.addNotice("Aborting…", isError: false)
         return [.cancelRun]

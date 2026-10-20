@@ -111,7 +111,7 @@ func modelLabel(_ resolved: ResolvedModel) -> String {
 /// live in `jobs`, which the caller stops when ask exits.
 func makeLoop(
     _ run: RunSettings, workingDirectory: String, instructions files: [ProjectInstructions.File], jobs: JobTable,
-    transport: URLSessionTransport
+    transport: URLSessionTransport, approve: SandboxApprover? = nil
 ) throws -> AgentLoop {
     let resolved = run.model
     let limits = run.limits
@@ -126,7 +126,8 @@ func makeLoop(
             for: resolved, workingDirectory: workingDirectory, instructions: files, limits: limits, sandbox: sandbox),
         context: ToolContext(
             workingDirectory: workingDirectory,
-            outputDirectory: SessionDirectory(project: workingDirectory).path + "/output", sandbox: sandbox))
+            outputDirectory: SessionDirectory(project: workingDirectory).path + "/output", sandbox: sandbox,
+            approve: approve))
 }
 
 /// The run's settings, with the reply limit, compaction threshold and kept tail sized to the model's window.

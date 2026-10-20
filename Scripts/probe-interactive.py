@@ -1056,7 +1056,74 @@ def probe_model_and_destination():
     return all(results)
 
 
+def probe_sandbox_approval():
+    print("V: a call asking for more than the sandbox allows is put to the user: once, for the session, or no")
+    project = tempfile.mkdtemp()
+    target = agent.Server([])
+    reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo ' curl='$?"
+    never = "/Users/Shared/ask-approval-never"
+    calls = [("call", f"w{n}", "bash", {"command": reach, "sandbox": {"network": "any"}}) for n in range(3)]
+    calls.append(("call", "o", "bash", {"command": f"echo x > {never}", "sandbox": {"write": ["/Users/Shared"]}}))
+    server = agent.Server([agent.turn([c], "tool_use") for c in calls] + [agent.turn([("text", "All done.")], "end_turn")])
+    screen = Screen(server.url, project, arguments=("--network", "localhost", "--write", "workspace"))
+
+    def wait(condition, seconds=15):
+        end = time.time() + seconds
+        while time.time() < end and not condition():
+            screen.until("\x00", 0.05)
+        return condition()
+
+    questions = lambda: screen.screen.text().count("Allow it?")
+    result = lambda n: json.dumps(server.requests[n]["body"]["messages"][-1]) if len(server.requests) > n else ""
+    screen.until("ask>")
+    screen.type("Go\r")
+    results = [check("the question names the call and what it asks for",
+                     wait(lambda: questions() == 1) and "asks for network any (this run allows localhost)" in screen.screen.text()
+                     and "y once" in screen.screen.text(), screen.screen.text()[-600:])]
+    screen.type("y")
+    results.append(check("y runs it, under what it asked for", wait(lambda: "HTTP 200 curl=0" in result(1)), result(1)[-200:]))
+    results.append(check("once is not remembered: the same request asks again", wait(lambda: questions() == 2)))
+    screen.type("a")
+    results.append(check("a runs it and allows it for the session",
+                         wait(lambda: "HTTP 200 curl=0" in result(2)) and "Allowed for this session." in screen.screen.text()))
+    results.append(check("a request the session grant covers runs without asking",
+                         wait(lambda: "HTTP 200 curl=0" in result(3))
+                         and screen.screen.text().count("network any (this run allows localhost). Allow it?") == 2,
+                         (questions(), result(3)[-200:])))
+    results.append(check("a larger request asks", wait(lambda: questions() == 3) and "asks for writing under /Users/Shared" in screen.screen.text()))
+    screen.type("n")
+    results.append(check("n refuses it, saying who can widen the sandbox",
+                         wait(lambda: "Only the user can widen the sandbox" in result(4)) and not os.path.exists(never), result(4)[-300:]))
+    screen.until("All done.", 15)
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    target.httpd.shutdown()
+    return all(results)
+
+def probe_approval_abort():
+    print("W: aborting the turn while a question waits answers no, and nothing hangs")
+    project = tempfile.mkdtemp()
+    marker = os.path.join(project, "ran.txt")
+    server = agent.Server([agent.turn([("call", "w", "bash", {"command": f"echo ran > {marker}", "sandbox": {"network": "any"}})], "tool_use"),
+                           agent.turn([("text", "After abort.")], "end_turn")])
+    screen = Screen(server.url, project, arguments=("--network", "localhost"))
+    screen.until("ask>")
+    screen.type("Go\r")
+    results = [check("the question waits", screen.until("Allow it?"))]
+    screen.type("\x03")
+    results.append(check("Ctrl-C aborts the turn instead", screen.until("Aborted.", 10) and screen.until_status("ready")))
+    results.append(check("and the call did not run", not os.path.exists(marker)))
+    results.append(check("the question no longer waits: keys type again",
+                         (screen.type("hello"), screen.until("ask> hello", 5))[1]))
+    screen.type("\x15/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection() & probe_strict_label() & probe_resume_strict() & probe_model_and_destination()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection() & probe_strict_label() & probe_resume_strict() & probe_model_and_destination() & probe_sandbox_approval() & probe_approval_abort()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
