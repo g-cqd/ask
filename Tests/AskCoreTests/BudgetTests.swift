@@ -19,11 +19,19 @@ struct BudgetTests {
     }
 
     @Test func `the measured baseline itself passes`() {
-        // The exact numbers measured on the development machine. A budget the current code fails is
-        // a budget that will be raised on the first bad day rather than defended.
+        // The numbers measured on the development machine (diary 48 for the action: a read tool's result on screen,
+        // p95 over a fresh session and one of 500 turns). A budget the current code fails is a budget that will be
+        // raised on the first bad day rather than defended.
         #expect(
             Budget.isWithinBudget(
-                coldStart: 11.06, idleMemoryMebibytes: 5712.0 / 1024, inputDelay: 0.12, action: 0.05))
+                coldStart: 11.06, idleMemoryMebibytes: 5712.0 / 1024, inputDelay: 0.12, action: 3.06))
+    }
+
+    @Test func `the action budget is the real action's, not the old trivial one`() {
+        // The old figure measured Enter redrawing a prompt (0.05 ms against 2 ms). A tool call to its result on screen
+        // measures about 2.6 ms, so the old 2 ms budget would fail the shipping binary on every run.
+        #expect(Budget.actionToActionMilliseconds == 5)
+        #expect(!Budget.isWithinBudget(coldStart: 5, idleMemoryMebibytes: 5, inputDelay: 0.12, action: 5.01))
     }
 
     @Test func `a cold start over budget fails`() {
