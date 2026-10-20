@@ -10,9 +10,9 @@ public enum ModelCatalogError: Error, Sendable, Equatable, CustomStringConvertib
             case .refused(let status):
                 "the model catalog was refused (HTTP \(status)); pass --model to choose explicitly"
             case .invalidResponse: "the model catalog is not a valid response; pass --model to choose explicitly"
-            case .noModels: "the model catalog lists no usable text models; pass --model to choose explicitly"
+            case .noModels: "the model catalog lists no usable models; pass --model to choose explicitly"
             case .cache(let path):
-                "cannot read or save the model catalog at \(path); run `ask models codex` to refresh it"
+                "cannot read or save the model catalog at \(path); run `ask models NAME` for that provider to refresh it"
         }
     }
 }
