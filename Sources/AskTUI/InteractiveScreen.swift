@@ -16,6 +16,7 @@ internal import TerminalKitRender
 ///   - label: shown at the left of the status line.
 ///   - history: a resumed session's conversation, shown before anything else.
 ///   - notices: shown after the history, such as which instruction files apply.
+///   - options: how the pointer behaves: whether it is reported, whether a selection is copied, how far the wheel scrolls.
 ///   - beforeSignalExit: runs when a shutdown signal is about to end the process, after the terminal is
 ///     restored: the last chance to stop child processes.
 /// - Returns: why the screen closed.
@@ -23,12 +24,13 @@ internal import TerminalKitRender
 @discardableResult
 public func runInteractiveScreen(
     conversation: any Conversation, label: String, history: [ConversationUpdate] = [], notices: [String] = [],
-    beforeSignalExit: @escaping @Sendable () -> Void = {}
+    options: ScreenOptions = ScreenOptions(), beforeSignalExit: @escaping @Sendable () -> Void = {}
 ) async throws -> ScreenExit {
     // Frames and the session's own escape sequences share one terminal, so their writes take turns.
     let connection = SerializedConnection(POSIXTerminalConnection())
-    let terminal = TerminalSession(connection: connection, modes: .fullScreen, keyboardProtocol: .probe)
-    let renderer = try makeRenderer(on: connection)
+    let terminal = TerminalSession(connection: connection, modes: modes(for: options), keyboardProtocol: .probe)
+    let frames = FrameBox()
+    let renderer = try makeRenderer(on: connection, frames: frames)
     let shutdown = SignalShutdown(
         session: terminal, stopRendering: { renderer.halt() },
         onExit: { code in
@@ -40,36 +42,33 @@ public func runInteractiveScreen(
     try signals.start()
     defer { signals.stop() }
     return try await runInteractiveScreen(
-        on: ScreenTerminal(connection: connection, session: terminal, renderer: renderer),
-        conversation: conversation, label: label, opening: openingUpdates(history: history, notices: notices),
-        resizes: resizes)
-}
-
-/// What the screen draws on and with: the terminal, its mode session, and the thread that draws frames.
-private struct ScreenTerminal {
-    let connection: any TerminalConnection
-    let session: TerminalSession
-    let renderer: RenderLoop<ScreenComposer>
+        on: ScreenTerminal(
+            connection: connection, session: terminal, renderer: renderer, frames: frames,
+            clipboard: ScreenClipboard(
+                connection: connection, environment: ProcessInfo.processInfo.environment,
+                pasteboard: ScreenClipboard.pbcopy)),
+        conversation: conversation, label: label, options: options,
+        opening: openingUpdates(history: history, notices: notices), resizes: resizes)
 }
 
 /// The screen over an injected connection, so every exit path is drivable from a test.
 @discardableResult
 func runInteractiveScreen(
     on connection: any TerminalConnection, conversation: any Conversation, label: String,
-    history: [ConversationUpdate] = [], notices: [String] = [], resizes: AsyncStream<Void>
+    history: [ConversationUpdate] = [], notices: [String] = [], options: ScreenOptions = ScreenOptions(),
+    environment: [String: String] = [:], pasteboard: @escaping @Sendable (String) -> Void = { _ in },
+    resizes: AsyncStream<Void>
 ) async throws -> ScreenExit {
     let connection = SerializedConnection(connection)
-    let terminal = TerminalSession(connection: connection, modes: .fullScreen, keyboardProtocol: .probe)
+    let terminal = TerminalSession(connection: connection, modes: modes(for: options), keyboardProtocol: .probe)
+    let frames = FrameBox()
     return try await runInteractiveScreen(
-        on: ScreenTerminal(connection: connection, session: terminal, renderer: try makeRenderer(on: connection)),
-        conversation: conversation, label: label, opening: openingUpdates(history: history, notices: notices),
-        resizes: resizes)
-}
-
-/// A render loop drawing the screen at the terminal's size. It idles until the first state is submitted.
-private func makeRenderer(on connection: any TerminalConnection) throws -> RenderLoop<ScreenComposer> {
-    let size = try connection.getSize()
-    return RenderLoop(connection: connection, columns: size.columns, rows: size.rows, composer: ScreenComposer())
+        on: ScreenTerminal(
+            connection: connection, session: terminal, renderer: try makeRenderer(on: connection, frames: frames),
+            frames: frames,
+            clipboard: ScreenClipboard(connection: connection, environment: environment, pasteboard: pasteboard)),
+        conversation: conversation, label: label, options: options,
+        opening: openingUpdates(history: history, notices: notices), resizes: resizes)
 }
 
 /// The screen inside a terminal session: TerminalKit enters its modes (alternate screen, hidden cursor,
@@ -78,13 +77,14 @@ private func makeRenderer(on connection: any TerminalConnection) throws -> Rende
 ///
 /// The last frame is drawn before the terminal is restored, on a normal exit and on an error.
 private func runInteractiveScreen(
-    on screen: ScreenTerminal, conversation: any Conversation, label: String, opening: [ConversationUpdate],
-    resizes: AsyncStream<Void>
+    on screen: ScreenTerminal, conversation: any Conversation, label: String, options: ScreenOptions,
+    opening: [ConversationUpdate], resizes: AsyncStream<Void>
 ) async throws -> ScreenExit {
     let exit: ScreenExit
     do {
         try screen.session.enter()
-        let session = ScreenSession(screen, conversation: conversation, label: label, opening: opening)
+        let session = ScreenSession(
+            screen, conversation: conversation, label: label, options: options, opening: opening)
         exit = try await session.run(resizes: resizes)
     } catch {
         await screen.renderer.finish()
@@ -108,6 +108,8 @@ private final class ScreenSession {
     private let input: InputSource
     private let conversation: any Conversation
     private var controller: ScreenController
+    private let frames: FrameBox
+    private var clipboard: ScreenClipboard
     /// The screen's height, for paging; the render loop knows its own.
     private var rows: Int
     private var run: Task<Void, Never>?
@@ -116,7 +118,8 @@ private final class ScreenSession {
     private var exit = ScreenExit.quit
 
     fileprivate init(
-        _ screen: ScreenTerminal, conversation: any Conversation, label: String, opening: [ConversationUpdate]
+        _ screen: ScreenTerminal, conversation: any Conversation, label: String, options: ScreenOptions,
+        opening: [ConversationUpdate]
     ) {
         terminal = screen.session
         renderer = screen.renderer
@@ -124,7 +127,9 @@ private final class ScreenSession {
         input = InputSource(connection: screen.connection, escapeIsUnambiguous: screen.session.escapeIsUnambiguous)
         self.conversation = conversation
         rows = (try? screen.connection.getSize().rows) ?? 24
-        controller = ScreenController(label: label, commands: conversation.commands)
+        frames = screen.frames
+        clipboard = screen.clipboard
+        controller = ScreenController(label: label, commands: conversation.commands, options: options)
         for update in opening { controller.handle(update) }
         (events, sink) = AsyncStream<ScreenEvent>.makeStream()
     }
@@ -164,6 +169,8 @@ private final class ScreenSession {
                 input.escapeIsUnambiguous = terminal.escapeIsUnambiguous
                 return true
             case .input(let inputEvent):
+                // A click means what was drawn, so it is resolved against the newest frame.
+                if case .mouse = inputEvent { controller.frame = frames.load() }
                 effects = controller.handle(inputEvent, pageRows: Swift.max(1, rows - 3))
             case .update(let update):
                 effects = controller.handle(update)
@@ -196,6 +203,8 @@ private final class ScreenSession {
                     run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }
                 case .cancelRun:
                     run?.cancel()
+                case .copy(let text):
+                    clipboard.copy(text)
                 case .quit:
                     run?.cancel()
                     // A cancelled run stops its tools' processes before it ends; wait for that.

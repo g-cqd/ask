@@ -80,6 +80,13 @@ The defaults are decided in ADR-0046: the first three by the owner, the rest on 
 | `ui.promptRows` | the most rows the input takes before it scrolls inside itself, capped at a third of the viewport | 6 |
 | `ui.scrollLines` | lines one wheel step scrolls | 3 |
 
+## What landed (2026-10-20, diary 50)
+
+The transcript selects, highlights, copies and scrolls with the pointer (TerminalKit 0016 and 0017 in a real screen): rows carry
+provenance, the frame reaches the mouse through a box, the controller owns the pointer, `ScreenClipboard` performs the kit's plan, and
+`ScreenOptions` carries the ADR-0046 defaults. **Not yet:** folding and its clicks, any region but the transcript, the `ui.*` keys,
+a timer for autoscroll, a key to copy when copy-on-select is off, feedback that a copy happened, and the real-terminal probe.
+
 ## Open questions
 
 - What a copy contains when the selection crosses a **fold** or an image: the placeholder, or what is inside (TerminalKit 0017).
