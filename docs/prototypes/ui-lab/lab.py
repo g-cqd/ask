@@ -19,7 +19,7 @@ ACCENTS = {'blue': 4, 'cyan': 6, 'magenta': 5, 'green': 2, 'yellow': 3}
 STROKES = {'subtle': (0.22, 1.4), 'normal': (0.35, 2.0), 'strong': (0.45, 2.6)}
 BOTTOMS = ['roomy', 'tight', 'flush']
 PADS = [0, 1]                    # rows of padding above and below the content of every block: none, or one block row
-LAYOUTS = ['flat', 'surfaces', 'workbench']     # flat: spacing only. surfaces: spacing and separators. workbench: adds a sidebar
+LAYOUTS = ['standard', 'workbench']             # standard: spacing and a separator between blocks. workbench: adds a sidebar
 # The ANSI colour numbers used when the terminal does not report its own colours (so light and dark terminals both work).
 ANSI_FALLBACK = dict(fg='ansi:39', muted='ansi:2;39', faint='ansi:2;39', line='ansi:2;39', good='ansi:32', warn='ansi:33', bad='ansi:31')
 ANSI_ACCENT = {'blue': 'ansi:34', 'cyan': 'ansi:36', 'magenta': 'ansi:35', 'green': 'ansi:32', 'yellow': 'ansi:33'}
@@ -169,9 +169,9 @@ SETTING_ROWS = [
     ('Strokes', 'stroke', list(STROKES), 'How visible lines and the scrollbar track are. subtle keeps just enough contrast with your terminal\'s background to find the edge.'),
     ('Block padding', 'pad', ['none', '1 block'], 'One blank row above and below the content of every block: yours, the assistant\'s, thinking, tool calls, and the input.'),
     ('Bottom section', 'bottom', BOTTOMS, 'roomy: work strip, two-row input, status. tight: no work strip. flush: one-row input with its chips inline, then status.'),
-    ('Layout', 'variant', LAYOUTS, 'flat: spacing only. surfaces: spacing and a separator between blocks. workbench: surfaces plus a sidebar of tasks, agents and context.'),
+    ('Layout', 'layout', LAYOUTS, 'standard: one column, blocks spaced and separated. workbench: standard plus a sidebar of tasks, agents and context.'),
 ]
-SAVED = ['accent', 'pad', 'sep', 'thick', 'stroke', 'bottom', 'variant']
+SAVED = ['accent', 'pad', 'sep', 'thick', 'stroke', 'bottom', 'layout']
 
 
 INNER = 2          # columns of padding inside a block, left and right of its text
@@ -190,8 +190,8 @@ KINDS = ('user', 'out', 'think', 'tool')       # the kinds of block. Nothing is 
 
 
 class Lab:
-    def __init__(self, variant=1):
-        self.variant, self.sep, self.thick = variant, 0, 1
+    def __init__(self, layout='standard'):
+        self.layout, self.sep, self.thick = layout, 0, 1
         self.gfx = False
         self.accent, self.bottom, self.pad = 'blue', 0, 1
         self.stroke = 'subtle'
@@ -405,14 +405,13 @@ class Lab:
 
     def build(self, tw):
         """The transcript as rows. One rule for every kind of block, in every layout: the same padding above and below.
-        Flat leaves it at that; surfaces and workbench also separate a block from the one above it, with a pixel line
+        Every block is also separated from the one above it, with a pixel line
         (no row) or a block-line row. Never a margin, never a background."""
-        separated = self.variant >= 2
         pixel = self.sep == 0 and self.gfx
         rows = []
         for i, (kind, lines) in enumerate(self.blocks(tw)):
             edge = False
-            if i > 0 and separated:
+            if i > 0:
                 if self.sep_rows():
                     rows.append(Line([], role='sep'))
                 elif pixel:
@@ -518,7 +517,7 @@ class Lab:
         v = getattr(self, attr)
         if attr == 'pad':
             return PADS.index(v) if v in PADS else 1
-        if attr in ('variant', 'thick'):
+        if attr == 'thick':
             return v - 1
         if isinstance(v, str):
             return options.index(v)
@@ -526,13 +525,11 @@ class Lab:
 
     def set_setting(self, attr, i, options):
         i %= len(options)
-        if attr == 'variant':
-            self.variant = i + 1
-        elif attr == 'thick':
+        if attr == 'thick':
             self.thick = i + 1
         elif attr == 'pad':
             self.pad = PADS[i]
-        elif attr in ('accent', 'stroke'):
+        elif attr in ('accent', 'stroke', 'layout'):
             setattr(self, attr, options[i])
         else:
             setattr(self, attr, i)
@@ -552,7 +549,10 @@ class Lab:
         self.bottom = int(self.bottom) % 3
         self.pad = 1 if self.pad not in PADS else self.pad
         self.stroke = self.stroke if self.stroke in STROKES else 'subtle'
-        self.variant = min(3, max(1, int(self.variant)))
+        legacy = data.get('variant')             # older files: 1 flat, 2 surfaces, 3 workbench. Flat and surfaces are one layout now.
+        if 'layout' not in data and legacy in (1, 2, 3):
+            self.layout = 'workbench' if legacy == 3 else 'standard'
+        self.layout = self.layout if self.layout in LAYOUTS else 'standard'
         self.thick = 2 if int(self.thick) == 2 else 1
         self.retheme()
 
@@ -686,7 +686,7 @@ class Lab:
         in_y = status_y - in_rows
         rule_y = in_y - sr
         self.in_y, self.in_rows = in_y, in_rows
-        side = self.variant == 3 and self.w >= 108
+        side = self.layout == 'workbench' and self.w >= 108
         ws_y = rule_y - 1 if (self.bottom == 0 and not side) else None
         self.bottom_y = ws_y if ws_y is not None else rule_y
         self.img_clip = None
@@ -763,8 +763,8 @@ class Lab:
 
         # the lab's own strip (not part of the product UI): reverse video, so it paints nothing either
         self.xlim = self.w
-        names = ['1 Flat', '2 Surfaces', '3 Workbench']
-        shown = '  '.join(('[' + n + ']') if i + 1 == self.variant else n for i, n in enumerate(names))
+        names = ['1 Standard', '2 Workbench']
+        shown = '  '.join(('[' + n + ']') if LAYOUTS[i] == self.layout else n for i, n in enumerate(names))
         sep = SEPS[self.sep] if self.sep or self.gfx else 'block line (this terminal has no pixel lines)'
         text = f' LAB  {shown} │ s settings   b separators  x thickness  v bottom   r rescan colours │ Esc: browse keys │ {sep} '
         self.put(0, 0, ' ' * self.w, 'fg', None, True, rev=True)
@@ -899,8 +899,8 @@ class Lab:
             return False
         if k in ('\x1b', '\r', '\n'):
             self.browse = False
-        elif k in '123':
-            self.variant = int(k)
+        elif k in ('1', '2'):
+            self.layout = LAYOUTS[int(k) - 1]
         elif k == 'b':
             self.sep = 1 - self.sep
         elif k == 'x':
@@ -1059,7 +1059,7 @@ def check():
     app.term = TERMS['solarized-dark']
     app.retheme()
     fallback = Lab()
-    for variant in (1, 2, 3):
+    for layout in LAYOUTS:
         for sep in (0, 1):
             for pad in PADS:
                 for bottom in range(3):
@@ -1067,22 +1067,21 @@ def check():
                         for modal in (None, 'refs', 'commands', 'settings', 'agents', 'permission'):
                             for shape in ((80, 30), (110, 34), (140, 45))[:2 if modal else 3]:
                                 for who in (app, fallback):
-                                    who.variant, who.sep, who.pad, who.bottom = variant, sep, pad, bottom
+                                    who.layout, who.sep, who.pad, who.bottom = layout, sep, pad, bottom
                                     who.force_gfx, who.modal, who.trigger = gfx, modal, None
                                     out = who.render(shape, (16, 30) if gfx else None)
-                                    assert '\x1b[48' not in out, ('a background was painted', variant, sep, pad, bottom, modal)
+                                    assert '\x1b[48' not in out, ('a background was painted', layout, sep, pad, bottom, modal)
                                     assert who is app or '38;2;' not in out, 'ANSI fallback must not use truecolour'
                                     count += 1
     assert app.pal['accent'].startswith('#') and fallback.pal['accent'].startswith('ansi:')
     assert not hasattr(Line([]), 'bg'), 'a Line has no background to paint'
     # 3. One block model in every layout: the same padding above and below every kind of block (yours, output, thinking, tool
-    #    calls). Flat is that and nothing more; surfaces and workbench also separate a block from the one above it, with a pixel
-    #    line (no row) or a block-line row.
+    #    calls), and a separator between a block and the one above it, as a pixel line (no row) or a block-line row.
     shapes = {}
-    for variant in (1, 2, 3):
+    for layout in LAYOUTS:
         for pad in PADS:
             for gfx in (False, True):
-                app = Lab(variant)
+                app = Lab(layout)
                 app.pad, app.force_gfx, app.gfx = pad, gfx, gfx
                 blocks = app.blocks(100)
                 assert {kind for kind, _ in blocks} == set(KINDS)
@@ -1094,25 +1093,23 @@ def check():
                     r = by_block[i]
                     lead = next(j for j, ln in enumerate(r) if ln.role == 'content')
                     trail = next(j for j, ln in enumerate(reversed(r)) if ln.role == 'content')
-                    assert lead == pad and trail == pad, (variant, kind, pad, lead, trail)
+                    assert lead == pad and trail == pad, (layout, kind, pad, lead, trail)
                 pads = sum(ln.role == 'pad' for ln in rows)
                 seps = sum(ln.role == 'sep' for ln in rows)
                 edges = sum(ln.edge for ln in rows)
-                content = sum(ln.role == 'content' for ln in rows)
-                shapes[(variant, pad, gfx)] = (pads, content)
-                if variant == 1:
-                    assert seps == 0 and edges == 0, 'flat has spacing, not separators'
-                elif gfx:
+                shapes[(layout, pad, gfx)] = (pads, sum(ln.role == 'content' for ln in rows), seps, edges)
+                if gfx:
                     assert seps == 0 and edges == len(blocks) - 1, 'a pixel line separates blocks and costs no row'
                 else:
                     assert seps == len(blocks) - 1 and edges == 0, 'a block-line row separates blocks'
-    for pad in PADS:                                           # flat spaces exactly like surfaces
+    for pad in PADS:                                           # the sidebar changes the width, never the spacing
         for gfx in (False, True):
-            assert shapes[(1, pad, gfx)] == shapes[(2, pad, gfx)] == shapes[(3, pad, gfx)], (pad, gfx)
+            assert shapes[('standard', pad, gfx)] == shapes[('workbench', pad, gfx)], (pad, gfx)
+    assert LAYOUTS == ['standard', 'workbench'], 'flat and surfaces are one layout'
     # The input is a block too: the same padding, in every bottom section.
     for pad in PADS:
         for bottom in range(3):
-            app = Lab(2)
+            app = Lab()
             app.pad, app.bottom = pad, bottom
             app.render((120, 42))
             assert app.in_rows == 2 * pad + (1 if bottom == 2 else 2), (pad, bottom, app.in_rows)
@@ -1120,24 +1117,24 @@ def check():
                 assert ''.join(app.grid[r]).strip() == '', (pad, bottom, r)       # padding rows are empty
             assert any('Review cancellation' in ''.join(app.grid[r]) for r in range(app.in_y + pad, app.in_y + app.in_rows - pad))
     # No leading bar and no leading icon anywhere: the transcript, the input, the pickers, the status bar, the sidebar.
-    for variant in (1, 2, 3):
+    for layout in LAYOUTS:
         for pad in PADS:
             for sep in (0, 1):
                 for bottom in range(3):
                     for modal in (None, 'refs', 'settings', 'agents'):
-                        app = Lab(variant)
+                        app = Lab(layout)
                         app.pad, app.sep, app.bottom = pad, sep, bottom
                         app.thinking = app.tools = bool(bottom % 2)
                         app.force_gfx, app.modal, app.trigger = sep == 0, modal, None
                         app.render((120, 42), (16, 30) if sep == 0 else None)
                         icons = set('▸▾◆›↪⠹●▲✓○')
-                        assert not (icons & set(''.join(''.join(r) for r in app.grid[1:]))), (variant, pad, sep, bottom, modal)
-                        assert not (set('▌▏') & set(''.join(''.join(r) for r in app.grid[1:-1]))), (variant, pad, sep, bottom, modal)
+                        assert not (icons & set(''.join(''.join(r) for r in app.grid[1:]))), (layout, pad, sep, bottom, modal)
+                        assert not (set('▌▏') & set(''.join(''.join(r) for r in app.grid[1:-1]))), (layout, pad, sep, bottom, modal)
     # 4. Expanding thinking or tools never changes the input, status or work rows, in every bottom section.
     for bottom in range(3):
         for sep in (0, 1):
-            for variant in (1, 3):
-                app = Lab(variant)
+            for layout in LAYOUTS:
+                app = Lab(layout)
                 app.sep, app.bottom, app.force_gfx = sep, bottom, sep == 0
                 app.draft, app.cursor = 'half typed @re', 8
                 cell = (16, 30) if sep == 0 else None
@@ -1146,11 +1143,11 @@ def check():
                 app.key('\x14')
                 app.key('\x0f')
                 app.render((120, 42), cell)
-                assert before == [''.join(r) for r in app.grid[app.bottom_y:]], (bottom, sep, variant)
+                assert before == [''.join(r) for r in app.grid[app.bottom_y:]], (bottom, sep, layout)
                 assert app.draft == 'half typed @re' and app.cursor == 8
     heights = []
     for bottom in range(3):
-        app = Lab(1)
+        app = Lab()
         app.bottom, app.force_gfx = bottom, True
         app.render((120, 42), (16, 30))
         heights.append(42 - app.bottom_y)
@@ -1166,7 +1163,7 @@ def check():
     # 5. Workbench draws ONE stroke between the transcript and the sidebar: the divider is the scrollbar track.
     for sep in (0, 1):
         for overflow in (True, False):
-            app = Lab(3)
+            app = Lab('workbench')
             app.sep, app.force_gfx = sep, sep == 0
             if not overflow:
                 full = app.build
@@ -1181,28 +1178,28 @@ def check():
                 assert ('X=14,Y=0\x1b' in out) if overflow else ('X=15,Y=0\x1b' in out), 'the track sits on the cell edge'
             else:
                 assert all(app.grid[y][boundary] in '▕▐▗▝' for y in range(3, 38)), (sep, overflow)
-    app = Lab(2)
+    app = Lab()
     app.force_gfx = True
     app.render((140, 45), (16, 30))
     assert app.strokes == [('s', 139)]
     # 6. Nothing under a popup shows through it. Strokes are images above the text layer, so a line behind an open popup would
     #    be drawn across it (the settings panel showed exactly that).
     for modal in ('settings', 'refs', 'commands', 'agents', 'tasks', 'permission'):
-        for variant in (2, 3):
+        for layout in LAYOUTS:
             for pad in PADS:
                 for bottom in range(3):
-                    app = Lab(variant)
+                    app = Lab(layout)
                     app.pad, app.bottom, app.force_gfx, app.modal, app.trigger = pad, bottom, True, modal, None
                     app.render((120, 42), (16, 30))
                     bottom_row = app.in_y - app.sep_rows()
                     top, _ = app.popup_extent(bottom_row)
                     page = [(y, v) for y, v, phase in app.placed if phase == 'page']
                     assert page, 'there are strokes to test against'
-                    assert all(y + v <= top or y >= bottom_row for y, v in page), (modal, variant, pad, bottom, top, page)
+                    assert all(y + v <= top or y >= bottom_row for y, v in page), (modal, layout, pad, bottom, top, page)
                     assert any(phase == 'popup' for _, _, phase in app.placed), 'the popup draws its own strokes'
     # 7. The defaults are the owner's settled setup.
-    app = Lab(2)
-    assert (app.sep, app.thick, app.stroke, app.pad, app.bottom, app.variant) == (0, 1, 'subtle', 1, 0, 2)
+    app = Lab()
+    assert (app.sep, app.thick, app.stroke, app.pad, app.bottom, app.layout) == (0, 1, 'subtle', 1, 0, 'standard')
     # 5. '/' is for commands and skills, '@' for files, agents and sessions; '$' is not a trigger.
     app = Lab()
     app.draft, app.cursor, app.chips = '', 0, []
@@ -1265,7 +1262,7 @@ def check():
     app.browse = True
     app.key('s')
     assert app.modal == 'settings'
-    assert [r[1] for r in SETTING_ROWS] == ['accent', 'sep', 'thick', 'stroke', 'pad', 'bottom', 'variant']
+    assert [r[1] for r in SETTING_ROWS] == ['accent', 'sep', 'thick', 'stroke', 'pad', 'bottom', 'layout']
     change(app, 'accent', +1)
     assert app.accent == 'cyan' and app.pal['accent'] != app.pal['fg']
     change(app, 'sep', +1)
@@ -1283,10 +1280,18 @@ def check():
     other = Lab()
     other.restore(snap)
     assert other.snapshot() == snap and other.pal == app.pal
-    other.restore({'accent': 'bogus', 'sep': 3, 'bottom': -5, 'variant': 9, 'pad': 9, 'stroke': 'x', 'theme': 'dark', 'surface': 3,
+    other.restore({'accent': 'bogus', 'sep': 3, 'bottom': -5, 'layout': 'bogus', 'pad': 9, 'stroke': 'x', 'theme': 'dark', 'surface': 3,
                    'paint': 1, 'density': 'aerial', 'status_mode': 1, 'margin': 4})
-    assert other.accent == 'blue' and other.sep == 1 and other.pad in PADS and other.variant == 3 and 0 <= other.bottom <= 2
+    assert other.accent == 'blue' and other.sep == 1 and other.pad in PADS and other.layout == 'standard' and 0 <= other.bottom <= 2
     assert not hasattr(other, 'surface') and not hasattr(other, 'theme') and not hasattr(other, 'density')
+    # older files had three layouts: flat and surfaces became standard, workbench stayed workbench
+    for legacy, expected in ((1, 'standard'), (2, 'standard'), (3, 'workbench'), (9, 'standard')):
+        old = Lab()
+        old.restore({'variant': legacy})
+        assert old.layout == expected, (legacy, old.layout)
+    new = Lab()
+    new.restore({'layout': 'workbench', 'variant': 1})
+    assert new.layout == 'workbench', 'a current file wins over the legacy key'
     app.key('\x1b')
     assert app.modal is None
     app = Lab()
@@ -1316,7 +1321,7 @@ def main():
     if args.check:
         check()
         return
-    app = Lab(2)          # Surfaces: the layout where blocks are spaced; with surfaces off nothing is painted
+    app = Lab()
     path = os.environ.get('LAB_SETTINGS', '/tmp/ask-ui-lab/settings.json')
     try:
         with open(path) as f:
