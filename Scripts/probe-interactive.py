@@ -706,6 +706,13 @@ def probe_session_job_guard():
     screen.type("/new\r")
     results.append(check("the running job blocks the switch", screen.until("Cannot switch sessions while jobs are running (job-1).")))
     results.append(check("the job was not stopped", agent.accepts(port)))
+    screen.until_status("ready")
+    target = os.path.join(project, "other-session.jsonl")
+    shutil.copyfile(files[0], target)
+    screen.type("/resume " + target + "\r")
+    results.append(check("resume also refuses to carry the job into another session", screen.until("/resume: Cannot switch sessions while jobs are running")))
+    screen.until_status("ready")
+    results.append(check("the refused resume retained the current writer lock", not can_lock_session(files[0])))
     results.append(check("the archive is unchanged", files and open(files[0], "rb").read() == before))
     results.append(check("no extra session appeared", agent.sessions(screen.state) == files))
     screen.until_status("ready")
@@ -720,7 +727,107 @@ def probe_session_job_guard():
     return all(results)
 
 
+def can_lock_session(path):
+    with open(path, "rb") as file:
+        try:
+            fcntl.flock(file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except BlockingIOError:
+            return False
+
+
+def probe_resume_sessions():
+    print("P: /resume lists and switches sessions transactionally; refusal preserves the current one")
+    project = tempfile.mkdtemp()
+    server = agent.Server([agent.turn([("text", text)], "end_turn") for text in [
+        "FIRST ARCHIVE ANSWER", "SECOND ARCHIVE ANSWER", "B AFTER REFUSAL", "A AFTER RESUME", "AFTER REPAIR"]])
+    screen = Screen(server.url, project)
+    screen.until("ask>")
+    screen.type("/resume\r")
+    available = screen.until("No sessions in this project yet.")
+    results = [check("an empty list is reported without creating a session", available and not agent.sessions(screen.state), screen.screen.text())]
+    if not available:
+        screen.type("/quit\r")
+        screen.finish()
+        server.httpd.shutdown()
+        return False
+    screen.until_status("ready")
+    screen.type("A first canary\r")
+    results.append(check("session A answered", screen.until("FIRST ARCHIVE ANSWER")))
+    screen.until_status("ready")
+    a = agent.sessions(screen.state)[0]
+    screen.type("/new\r")
+    screen.until("New session. The previous one is saved.")
+    screen.until_status("ready")
+    screen.type("B second canary\r")
+    results.append(check("session B answered", screen.until("SECOND ARCHIVE ANSWER")))
+    screen.until_status("ready")
+    b = next(path for path in agent.sessions(screen.state) if path != a)
+    a_bytes = open(a, "rb").read()
+    screen.type("/resume\r")
+    results.append(check("the list includes both session names", screen.until(os.path.basename(a)) and screen.until(os.path.basename(b))))
+    screen.until_status("ready")
+    results.append(check("listing made no provider request", len(server.requests) == 2))
+    ambiguous = os.path.commonprefix([os.path.basename(a), os.path.basename(b)])
+    screen.type("/resume " + ambiguous + "\r")
+    results.append(check("an ambiguous prefix is refused", screen.until("Cannot resume " + ambiguous + ":")))
+    screen.until_status("ready")
+    screen.type("/resume definitely-absent\r")
+    results.append(check("unknown selection is refused", screen.until("Cannot resume definitely-absent:")))
+    screen.until_status("ready")
+    missing = os.path.join(project, "missing.jsonl")
+    screen.type("/resume " + missing + "\r")
+    results.append(check("opening a missing file is refused", screen.until("Cannot resume " + missing + ":")))
+    screen.until_status("ready")
+    with open(a, "rb") as locked:
+        fcntl.flock(locked.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        screen.type("/resume " + os.path.basename(a) + "\r")
+        results.append(check("another writer is refused", screen.until("this session is open in another ask")))
+        screen.until_status("ready")
+    screen.type("Continue B after refusals\r")
+    results.append(check("B remains usable", screen.until("B AFTER REFUSAL")))
+    screen.until_status("ready")
+    kept = server.requests[-1]["body"]["messages"]
+    results.append(check("refusals retained B, not A", "B second canary" in json.dumps(kept) and "A first canary" not in json.dumps(kept)))
+    b_bytes = open(b, "rb").read()
+    screen.type("/resume " + os.path.basename(a) + "\r")
+    results.append(check("A is resumed in place", screen.until("Resumed session " + os.path.basename(a))))
+    screen.until_status("ready")
+    results.append(check("only A's history is drawn", "FIRST ARCHIVE ANSWER" in screen.screen.text()
+                         and "SECOND ARCHIVE ANSWER" not in screen.screen.text() and "B AFTER REFUSAL" not in screen.screen.text()))
+    results.append(check("A's usage replaces B's usage", "out 5" in screen.status() and "out 10" not in screen.status(), screen.status()))
+    results.append(check("B is unlocked and A is locked", can_lock_session(b) and not can_lock_session(a)))
+    results.append(check("switching only reads the target archive", open(a, "rb").read() == a_bytes))
+    screen.type("/resume " + a + "\r")
+    results.append(check("selecting the current session is a no-op", screen.until("Already using session " + os.path.basename(a))))
+    screen.until_status("ready")
+    results.append(check("reselecting does not double-count usage", "out 5" in screen.status() and "out 10" not in screen.status(), screen.status()))
+    screen.type("Continue A now\r")
+    results.append(check("A continues", screen.until("A AFTER RESUME")))
+    screen.until_status("ready")
+    last = server.requests[-1]["body"]["messages"]
+    results.append(check("the actual request carries A, not B", "A first canary" in json.dumps(last) and "B second canary" not in json.dumps(last)))
+    results.append(check("A usage accumulates from its own history", "out 10" in screen.status(), screen.status()))
+    results.append(check("B's file was not changed by A's turn", open(b, "rb").read() == b_bytes))
+    damaged = os.path.join(os.path.dirname(a), "damaged-probe.jsonl")
+    original = open(a, "rb").read() + b'{"id":"torn'
+    open(damaged, "wb").write(original)
+    screen.type("/resume damaged-probe\r")
+    results.append(check("damage on interactive resume is reported", screen.until("mid-write and was dropped.") and "session file had a problem" in screen.screen.text(), screen.screen.text()))
+    results.append(check("a repaired read does not rewrite the file", open(damaged, "rb").read() == original))
+    screen.until_status("ready")
+    screen.type("Continue after repair\r")
+    results.append(check("the repaired session continues", screen.until("AFTER REPAIR")))
+    screen.until_status("ready")
+    results.append(check("the first change preserves the damaged bytes", os.path.exists(damaged + ".damaged")
+                         and open(damaged + ".damaged", "rb").read() == original))
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

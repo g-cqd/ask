@@ -10,7 +10,7 @@ extension AgentConversation {
             update(.notice("Usage: /new (no arguments).", isError: true))
             return
         }
-        guard maySwitchSession(update: update) else { return }
+        guard maySwitchSession("new", update: update) else { return }
         let hadSession = session.withLock { $0 != nil }
         activateSession(nil, update: update)
         let note =
@@ -20,12 +20,12 @@ extension AgentConversation {
     }
 
     /// Sessions do not own processes: refuse to carry a running job into another conversation silently.
-    func maySwitchSession(update: @Sendable (ConversationUpdate) -> Void) -> Bool {
+    func maySwitchSession(_ command: String, update: @Sendable (ConversationUpdate) -> Void) -> Bool {
         let running = jobs.running
         guard running.isEmpty else {
             update(
                 .notice(
-                    "Cannot switch sessions while jobs are running (\(running.joined(separator: ", "))). Stop them first.",
+                    "/\(command): Cannot switch sessions while jobs are running (\(running.joined(separator: ", "))). Stop them first.",
                     isError: true))
             return false
         }
