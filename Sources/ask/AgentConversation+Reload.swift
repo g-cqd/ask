@@ -43,7 +43,7 @@ extension AgentConversation {
             return
         }
         update(.notice("Checking the new build (\(latest.summary))…", isError: false))
-        if case .failed(let reason) = await SelfCheck.run(latest.path) {
+        if case .failed(let reason) = await SelfCheck.run(latest.path, arguments: source.flags.arguments) {
             update(
                 .notice(
                     "Not reloading: the new build failed its self-check: \(reason). Staying on the running build.",

@@ -17,7 +17,9 @@ internal import System
 /// is reported; an invalid one is reported once and the previous settings stay.
 final class AgentConversation: Conversation {
     // Internal rather than private: the command handlers live in AgentConversation+Commands.swift.
-    let source: ConfigurationSource
+    /// Where settings are read from; `/model` replaces it with one carrying the run's selection.
+    let sourceState: Mutex<ConfigurationSource>
+    var source: ConfigurationSource { sourceState.withLock { $0 } }
     private let makeLoop: @Sendable (RunSettings) throws -> AgentLoop
     let directory: SessionDirectory
     let current: Mutex<Current>
@@ -49,7 +51,7 @@ final class AgentConversation: Conversation {
         directory: SessionDirectory, resumed: SessionRecorder? = nil, settings: RunSettings,
         source: ConfigurationSource, jobs: JobTable, makeLoop: @escaping @Sendable (RunSettings) throws -> AgentLoop
     ) {
-        self.source = source
+        sourceState = Mutex(source)
         self.jobs = jobs
         self.makeLoop = makeLoop
         self.directory = directory
