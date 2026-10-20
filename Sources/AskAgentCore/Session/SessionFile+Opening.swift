@@ -59,7 +59,7 @@ extension SessionFile {
         }
         return SessionFile(
             path: path, tree: recovered.tree, issues: recovered.issues, durability: durability, appender: nil,
-            lock: lock, writeRecord: writeRecord)
+            lock: lock, writeRecord: writeRecord, formatVersion: recovered.formatVersion)
     }
 
     /// Writes the active branch to a new file. Never overwrites.

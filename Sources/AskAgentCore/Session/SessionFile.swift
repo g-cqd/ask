@@ -35,6 +35,8 @@ public struct SessionFile: ~Copyable {
     public let issues: [SessionLogIssue]
     /// The flush applied to every change.
     public let durability: Durability
+    /// The session format currently on disk, before any pending upgrade.
+    public private(set) var formatVersion: Int
     private var appender: FileDescriptor?
     private var lock: SessionLock
     private var needsRewrite: Bool
@@ -47,7 +49,7 @@ public struct SessionFile: ~Copyable {
     init(
         path: FilePath, tree: SessionTree, issues: [SessionLogIssue], durability: Durability,
         appender: FileDescriptor?, lock: consuming SessionLock,
-        writeRecord: @escaping RecordWriter = SessionFileIO.writeAll
+        writeRecord: @escaping RecordWriter = SessionFileIO.writeAll, formatVersion: Int = SessionLog.formatVersion
     ) {
         self.lock = lock
         self.writeRecord = writeRecord
@@ -56,7 +58,8 @@ public struct SessionFile: ~Copyable {
         self.issues = issues
         self.durability = durability
         self.appender = appender
-        self.needsRewrite = !issues.isEmpty
+        self.formatVersion = formatVersion
+        self.needsRewrite = !issues.isEmpty || formatVersion < SessionLog.formatVersion
     }
 
     deinit {
@@ -147,7 +150,7 @@ public struct SessionFile: ~Copyable {
         return descriptor
     }
 
-    /// Writes ``tree`` beside the file, keeps the current file as a damaged copy, then swaps atomically.
+    /// Writes ``tree`` beside the file, preserving a damaged original or an upgrade's versioned original, then swaps atomically.
     private mutating func rewrite() throws(SessionFileError) {
         let temporary = FilePath(path.string + ".tmp")
         let snapshot = try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(tree) }
@@ -164,19 +167,22 @@ public struct SessionFile: ~Copyable {
         }
         // The replacement is locked before it takes the session's name, so the name is never unlocked.
         let replacementLock = try SessionLock.adopt(descriptor)
-        try preserveDamagedOriginal()
+        let suffix =
+            issues.isEmpty && formatVersion < SessionLog.formatVersion ? ".version-\(formatVersion)" : ".damaged"
+        try preserveOriginal(suffix: suffix)
         guard rename(temporary.string, path.string) == 0 else { throw .io(.rename, errno: errno) }
         lock = replacementLock
+        formatVersion = SessionLog.formatVersion
         try SessionFileIO.flushDirectory(of: path, durability)
         if let appender { _ = try? appender.close() }
         appender = nil
         needsRewrite = false
     }
 
-    /// Hard-links the current file to the first free `<name>.damaged[-n]`. Nothing to keep if it is gone.
-    private func preserveDamagedOriginal() throws(SessionFileError) {
+    /// Hard-links the current file to the first free versioned or damaged backup. Nothing to keep if it is gone.
+    private func preserveOriginal(suffix base: String) throws(SessionFileError) {
         for attempt in 1 ... 1_000 {
-            let suffix = attempt == 1 ? ".damaged" : ".damaged-\(attempt)"
+            let suffix = attempt == 1 ? base : base + "-\(attempt)"
             if link(path.string, path.string + suffix) == 0 { return }
             switch errno {
                 case EEXIST: continue

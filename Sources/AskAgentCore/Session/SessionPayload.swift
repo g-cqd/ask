@@ -2,6 +2,8 @@ public import AskAI
 
 /// Content retained in a session, independent of a provider's wire format.
 public enum SessionPayload: Sendable, Equatable {
+    /// Routing metadata, never part of a model's input or replayed as a prompt.
+    case destination(SessionDestination)
     /// A user turn.
     case user(String)
     /// An assistant turn of plain text.

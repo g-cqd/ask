@@ -7,11 +7,13 @@ internal import System
 /// borrow cannot cross into it. Appends happen under the lock; readers get a copy of the tree.
 public final class SessionRecorder: Sendable {
     private let file: Mutex<SessionFile>
+    private let openedFormatVersion: Int
     /// The repairs made when the session was opened. Empty for an undamaged file.
     public let issues: [SessionLogIssue]
 
     /// Takes ownership of `file`.
     public init(_ file: consuming sending SessionFile) {
+        openedFormatVersion = file.formatVersion
         issues = file.issues
         self.file = Mutex(file)
     }
@@ -19,12 +21,18 @@ public final class SessionRecorder: Sendable {
     /// A sentence telling the user what was wrong with the session file and what was done, or nil when nothing was.
     /// The repair is in memory; the original is kept beside the file, as `.damaged`, when the first change is made.
     public var repairNotice: String? {
-        guard !issues.isEmpty else { return nil }
+        let upgrade =
+            openedFormatVersion < SessionLog.formatVersion
+            ? "Session format \(openedFormatVersion) will be upgraded on its first change."
+                + (issues.isEmpty ? " The original is kept as .version-\(openedFormatVersion)." : "")
+            : nil
+        guard !issues.isEmpty else { return upgrade }
         let shown = issues.prefix(3).map(\.explanation)
         let more = issues.count > shown.count ? ", and \(issues.count - shown.count) more" : ""
         let count = issues.count == 1 ? "a problem" : "\(issues.count) problems"
         return "The session file had \(count), repaired as it was opened: " + shown.joined(separator: "; ") + more
             + ". The original is kept as a .damaged copy once anything is added."
+            + (upgrade.map { " " + $0 } ?? "")
     }
 
     /// Appends `payload` and persists it before returning.
@@ -44,6 +52,19 @@ public final class SessionRecorder: Sendable {
 
     /// The session as recorded so far.
     public var tree: SessionTree { file.withLock { $0.tree } }
+
+    /// The last destination recorded on the active branch, without copying the session tree.
+    public var destination: SessionDestination? { reading { $0.destination } }
+
+    /// Records routing before any history is sent. An unapproved change refuses without appending anything.
+    public func select(_ destination: SessionDestination, explicitlySelected: Bool) throws {
+        try file.withLock { file in
+            let previous = file.tree.destination
+            try destination.check(
+                replacing: previous, hasHistory: !file.tree.entries.isEmpty, explicitlySelected: explicitlySelected)
+            if destination != previous { try file.append(.destination(destination)) }
+        }
+    }
 
     /// Where the session lives.
     public var path: String { file.withLock { $0.path.string } }

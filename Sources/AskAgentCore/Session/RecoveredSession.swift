@@ -4,4 +4,12 @@ public struct RecoveredSession: Sendable, Equatable {
     public let tree: SessionTree
     /// The repairs, in line order. Empty for an undamaged log.
     public let issues: [SessionLogIssue]
+    /// The header version read; missing-header recovery uses this build's writer version.
+    public let formatVersion: Int
+
+    init(tree: SessionTree, issues: [SessionLogIssue], formatVersion: Int = SessionLog.formatVersion) {
+        self.tree = tree
+        self.issues = issues
+        self.formatVersion = formatVersion
+    }
 }
