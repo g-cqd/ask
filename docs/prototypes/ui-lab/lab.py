@@ -17,6 +17,13 @@ ACCENTS = {'blue': 4, 'cyan': 6, 'magenta': 5, 'green': 2, 'yellow': 3}
 SURFACES = ['off', 'subtle', 'normal', 'strong']
 SURFACE_K = [0.0, 0.6, 1.0, 1.6]
 BOTTOMS = ['roomy', 'tight', 'flush']
+DENSITIES = ['compact', 'aerial', 'custom']
+# compact: pixels do the separating and nothing else costs a cell. aerial: glyph rules, margins and blank rows.
+DENSITY_PRESETS = {
+    'compact': dict(sep=0, tight=True, bottom=2, pad=1, margin=0, breath=0),
+    'aerial': dict(sep=1, tight=False, bottom=0, pad=1, margin=3, breath=1),
+}
+MARGINS = [0, 2, 3, 4]
 
 
 def hex_rgb(h):
@@ -168,6 +175,7 @@ def png(w, h, raw):
 
 
 SETTING_ROWS = [
+    ('Density', 'density', DENSITIES, 'compact: pixel hairlines, no margins, flush bottom. aerial: glyph rules, side margins, blank rows between blocks, roomy bottom. Changing any single setting below makes it custom.'),
     ('Theme source', 'theme', THEME_SOURCES, 'terminal: derive everything from your terminal\'s own background, foreground and ANSI colours. light / dark: fixed presets.'),
     ('Accent', 'accent', list(ACCENTS), 'Which ANSI colour is the accent (focus bar, chips, selection).'),
     ('Surfaces', 'surface', SURFACES, 'How far panels, the input and bars differ from the background. off: lines and the accent only.'),
@@ -175,11 +183,14 @@ SETTING_ROWS = [
     ('Separators', 'sep', SEPS, 'pixel line is 1 or 2 real pixels (kitty graphics) and costs no row. The others are glyphs and cost one row each.'),
     ('Line thickness', 'thick', ['1px', '2px'], 'Pixel separators and the scrollbar only.'),
     ('Transcript spacing', 'tight', ['tight', 'airy'], 'A blank row between blocks, or none.'),
+    ('Block padding', 'pad', ['none', '1 row', '2 rows'], 'Rows of padding inside a block, above and below its text, in its own background.'),
+    ('Side margin', 'margin', ['0', '2', '3', '4'], 'Columns of space left and right of the transcript. Scrollbar and bars keep the edge.'),
+    ('Breathing room', 'breath', ['off', 'on'], 'A blank row under the header and above the bottom section.'),
     ('Bottom section', 'bottom', BOTTOMS, 'roomy: work strip, two-row input, status. tight: no work strip. flush: one-row input with inline chips, then status.'),
     ('Status bar', 'status_mode', ['chips', 'line'], 'Coloured chips with a context meter, or one plain line.'),
     ('Layout', 'variant', ['flat', 'surfaces', 'workbench'], 'flat: markers only. surfaces: your messages on a band. workbench: adds the task and agent sidebar.'),
 ]
-SAVED = ['theme', 'accent', 'surface', 'paint', 'sep', 'thick', 'tight', 'bottom', 'status_mode', 'variant']
+SAVED = ['theme', 'accent', 'surface', 'paint', 'density', 'pad', 'margin', 'breath', 'sep', 'thick', 'tight', 'bottom', 'status_mode', 'variant']
 BRACKET = {'terminal': '', }
 
 
@@ -193,6 +204,8 @@ class Lab:
         self.variant, self.theme, self.sep, self.thick = variant, 'terminal', 0, 1
         self.tight, self.status_mode = True, 0
         self.accent, self.surface, self.bottom, self.paint = 'blue', 2, 2, 0
+        self.density, self.pad, self.margin, self.breath = 'compact', 1, 0, 0
+        self.strokes = []           # vertical strokes drawn this frame: the lab asserts there is one at a boundary
         self.term = None            # colours read from the terminal (OSC 10/11/4), or None
         self.rescan = False         # set when the terminal says its colour scheme changed
         self.retheme()
@@ -298,17 +311,18 @@ class Lab:
         raw = (b'\0' + self.rgba(color) * t) * hpx
         self.place(self.image(('v', hpx, t, self.col(color)), t, hpx, raw), x, y, self.cw // 2)
 
-    def px_scrollbar(self, x, y, rows, start_px, size_px):
+    def px_scrollbar(self, x, y, rows, start_px, size_px, edge=False):
+        """Track and thumb as pixels. `edge`: the track is the last pixel column of the cell, flush with what follows."""
         hpx = rows * self.ch
         track, thumb = self.rgba('line'), self.rgba('accent')
         clear = bytes(4)
-        row_track = clear * 2 + track + clear * 2
-        row_thumb = clear + thumb * 3 + clear
-        lines = []
-        for r in range(hpx):
-            lines.append(b'\0' + (row_thumb if start_px <= r < start_px + size_px else row_track))
-        key = ('s', hpx, start_px, size_px, self.col('line'), self.col('accent'))
-        self.place(self.image(key, 5, hpx, b''.join(lines)), x, y, max(0, self.cw - 6))
+        if edge:
+            row_track, row_thumb, wpx, xoff = clear + track + clear, thumb * 3, 3, self.cw - 2
+        else:
+            row_track, row_thumb, wpx, xoff = clear * 2 + track + clear * 2, clear + thumb * 3 + clear, 5, max(0, self.cw - 6)
+        lines = [b'\0' + (row_thumb if start_px <= r < start_px + size_px else row_track) for r in range(hpx)]
+        key = ('s', hpx, start_px, size_px, wpx, self.col('line'), self.col('accent'))
+        self.place(self.image(key, wpx, hpx, b''.join(lines)), x, y, xoff)
 
     # ---------- separators ----------
     def sep_rows(self):
@@ -340,12 +354,12 @@ class Lab:
         band = 'panel' if self.variant >= 2 else None
 
         def user(text):
-            if band:
-                L.append(Line([], band, ('▌', 'accent'), edge=bool(L) and L[-1].bg is not None))   # padding inside, above
+            for k in range(self.pad if band else 0):                  # padding inside the block, above
+                L.append(Line([], band, ('▌', 'accent'), edge=(k == 0 and bool(L) and L[-1].bg is not None)))
             for t in wrap(text, tw - 3):
                 L.append(Line([(' ' + t, 'fg', None, False)], band, ('▌' if band else '›', 'accent')))
-            if band:
-                L.append(Line([], band, ('▌', 'accent')))          # padding inside the block, below
+            for _ in range(self.pad if band else 0):                  # padding inside the block, below
+                L.append(Line([], band, ('▌', 'accent')))
 
         def assistant(text):
             for t in wrap(text, n):
@@ -358,16 +372,19 @@ class Lab:
                     L.append(Line([('  ' + fit(t, n - 2), 'faint', None, False)], gutter=('▏', 'line')))
 
         def block(rows):
-            """A surfaced block: its own background and edge bar, one padded row above and below inside it."""
+            """A surfaced block: its own background and edge bar, `pad` padded rows above and below inside it."""
             if self.variant < 2:
                 for spans, bg in rows:
                     L.append(Line([('  ' + spans[0][0],) + spans[0][1:]] + spans[1:], bg))
                 return
             touching = bool(L) and L[-1].bg is not None       # directly under another surfaced block
-            L.append(Line([], 'panel', ('▌', 'line'), edge=touching))
-            for spans, bg in rows:
-                L.append(Line([(' ' + spans[0][0],) + spans[0][1:]] + spans[1:], bg or 'panel', ('▌', 'line')))
-            L.append(Line([], 'panel', ('▌', 'line')))
+            for k in range(self.pad):
+                L.append(Line([], 'panel', ('▌', 'line'), edge=(k == 0 and touching)))
+            for k, (spans, bg) in enumerate(rows):
+                L.append(Line([(' ' + spans[0][0],) + spans[0][1:]] + spans[1:], bg or 'panel', ('▌', 'line'),
+                              edge=(k == 0 and self.pad == 0 and touching)))
+            for _ in range(self.pad):
+                L.append(Line([], 'panel', ('▌', 'line')))
 
         def agents():
             block([
@@ -406,16 +423,15 @@ class Lab:
         L.append(Line([('⠹ Working…', 'faint', None, False)]))
         return L
 
-    def draw_line(self, ln, y, w):
+    def draw_line(self, ln, y, w, x0=0):
         bg = ln.bg or 'base'
         if ln.edge and self.sep == 0 and self.gfx:
-            self.px_hline(0, y, w)
+            self.px_hline(x0, y, w)
         if ln.bg:
-            self.fill(0, y, w, bg)
+            self.fill(x0, y, w, bg)
         if ln.gutter:
-            self.put(0, y, ln.gutter[0], ln.gutter[1], bg, True)
-        x = 0 if ln.gutter and ln.gutter[0] in '▌›' and False else 0
-        x = 2 if ln.gutter and ln.gutter[0] in '▌›▏' else 0
+            self.put(x0, y, ln.gutter[0], ln.gutter[1], bg, True)
+        x = x0 + (2 if ln.gutter and ln.gutter[0] in '▌›▏' else 0)
         for text, fg, sbg, bold in ln.spans:
             self.put(x, y, text, fg, sbg or bg, bold)
             x += width(text)
@@ -504,6 +520,8 @@ class Lab:
             return v - 1
         if attr == 'tight':
             return 0 if v else 1
+        if attr == 'margin':
+            return MARGINS.index(v) if v in MARGINS else 0
         if isinstance(v, str):
             return options.index(v)
         return int(v)
@@ -516,12 +534,28 @@ class Lab:
             self.thick = i + 1
         elif attr == 'tight':
             self.tight = i == 0
+        elif attr == 'margin':
+            self.margin = MARGINS[i]
+        elif attr == 'density':
+            self.density = options[i]
+            if options[i] in DENSITY_PRESETS:
+                for key, value in DENSITY_PRESETS[options[i]].items():
+                    setattr(self, key, value)
         elif attr in ('theme', 'accent'):
             setattr(self, attr, options[i])
         else:
             setattr(self, attr, i)
         if attr in ('theme', 'accent', 'surface', 'paint'):
             self.retheme()
+        if attr in ('sep', 'tight', 'bottom', 'pad', 'margin', 'breath'):
+            self.density = self.matching_density()
+
+    def matching_density(self):
+        now = dict(sep=self.sep, tight=self.tight, bottom=self.bottom, pad=self.pad, margin=self.margin, breath=self.breath)
+        for name, preset in DENSITY_PRESETS.items():
+            if now == preset:
+                return name
+        return 'custom'
 
     def snapshot(self):
         return {k: getattr(self, k) for k in SAVED}
@@ -534,6 +568,10 @@ class Lab:
         self.accent = self.accent if self.accent in ACCENTS else 'blue'
         self.surface = min(3, max(0, int(self.surface)))
         self.sep, self.bottom, self.paint = int(self.sep) % 4, int(self.bottom) % 3, int(self.paint) % 2
+        self.pad, self.breath = min(2, max(0, int(self.pad))), int(self.breath) % 2
+        self.margin = self.margin if self.margin in MARGINS else 0
+        self.tight = bool(self.tight)
+        self.density = self.matching_density()
         self.variant = min(3, max(1, int(self.variant)))
         self.thick = 2 if int(self.thick) == 2 else 1
         self.retheme()
@@ -648,6 +686,7 @@ class Lab:
         self.gfx = self.gfx_ok()
         self.out = ['\033[?25l' + ('' if self.theme == 'terminal' and self.term else '\033]11;' + self.col('base') + '\033\\')] + (['\033_Ga=d,d=a,q=2\033\\'] if self.gfx else [])
         self.grid = [[' '] * self.w for _ in range(self.h)]
+        self.strokes = []
         self.clip_y, self.xlim = self.h, self.w
         for r in range(self.h):
             self.fill(0, r, self.w, 'base')
@@ -662,21 +701,26 @@ class Lab:
         side = self.variant == 3 and self.w >= 108
         ws_y = rule_y - 1 if (self.bottom == 0 and not side) else None
         self.bottom_y = ws_y if ws_y is not None else rule_y
-        vp_y0, vp_y1 = 2, (ws_y if ws_y is not None else rule_y)
+        vp_y0, vp_y1 = 2 + self.breath, (ws_y if ws_y is not None else rule_y) - self.breath
         vp_right = self.w - (30 if side else 0)
         vp_h = vp_y1 - vp_y0
 
         # transcript viewport: the only region expansion may touch
         self.clip_y, self.xlim = vp_y1, vp_right - 1
-        lines = self.build(vp_right - 1)
+        m = self.margin
+        text_w = vp_right - 1 - 2 * m
+        lines = self.build(text_w)
         total = len(lines)
         self.scroll = max(0, min(self.scroll, max(0, total - vp_h)))
         start = max(0, total - vp_h - self.scroll)
         for i, ln in enumerate(lines[start:start + vp_h]):
-            self.draw_line(ln, vp_y0 + i, vp_right - 1)
+            self.draw_line(ln, vp_y0 + i, text_w, m)
         self.xlim = vp_right
+        # One stroke at the boundary. With a sidebar it is the divider *and* the scrollbar track: the thumb rides on it.
         if total > vp_h:
-            self.draw_scrollbar(vp_right - 1, vp_y0, vp_h, total, start)
+            self.draw_scrollbar(vp_right - 1, vp_y0, vp_h, total, start, edge=side)
+        elif side:
+            self.draw_divider(vp_right - 1, vp_y0, vp_h)
         if self.scroll > 0:
             pill = f' ↓ {self.scroll} lines below · End '
             self.put(vp_right - 1 - width(pill) - 1, vp_y1 - 1, pill, 'accentfg', 'accent', True)
@@ -696,9 +740,8 @@ class Lab:
         # sidebar or work strip
         if side:
             sx = vp_right
-            for r in range(vp_y0, rule_y):
+            for r in range(vp_y0, vp_y1):
                 self.fill(sx, r, 30, 'panel')
-            self.vrule(sx, vp_y0, rule_y - vp_y0, 'panel')
             self.xlim = self.w
             rows = [('TASKS', 'faint', True), ('✓ Trace event path', 'good', False), ('● Review cancellation', 'fg', True), ('▲ Verify restoration', 'warn', True), ('○ Summarize findings', 'faint', False), ('', 'fg', False),
                     ('AGENTS', 'faint', True), ('◆ reviewer      running', 'fg', False), ('◆ test-runner   approval', 'warn', False), ('', 'fg', False),
@@ -726,17 +769,29 @@ class Lab:
         names = ['1 Flat', '2 Surfaces', '3 Workbench']
         shown = '  '.join(('[' + n + ']') if i + 1 == self.variant else n for i, n in enumerate(names))
         sep = SEPS[self.sep] + ('' if self.sep != 0 or self.gfx else ' (n/a→eighth)')
-        text = f' LAB  {shown} │ s settings   b x d v m l quick cycle   r rescan colours │ Esc: browse keys │ {self.theme} · {BOTTOMS[self.bottom]} bottom '
+        text = f' LAB  {shown} │ s settings   z density  b x d v m l quick cycle │ Esc: browse keys │ {self.density} · {self.theme} '
         self.put(0, 0, ' ' * self.w, '#ffffff', '#000000')
         self.put(0, 0, fit(text, self.w), '#ffffff', '#000000', True)
         return ''.join(self.out)
 
-    def draw_scrollbar(self, x, y, rows, total, start):
+    def draw_divider(self, x, y, rows):
+        """The boundary stroke when there is nothing to scroll: the same line the scrollbar track would be."""
+        self.strokes.append(('d', x))
+        if self.sep == 0 and self.gfx:
+            t, hpx = self.thick, rows * self.ch
+            raw = (b'\0' + self.rgba('line') * t) * hpx
+            self.place(self.image(('e', hpx, t, self.col('line')), t, hpx, raw), x, y, self.cw - t)
+        elif self.sep != 3:
+            for r in range(y, y + rows):
+                self.put(x, r, '▕', 'line', 'base')
+
+    def draw_scrollbar(self, x, y, rows, total, start, edge=False):
+        self.strokes.append(('s', x))
         if self.sep == 0 and self.gfx:
             hpx = rows * self.ch
             size = max(8, int(hpx * rows / total))
             top = int((hpx - size) * (start / max(1, total - rows)))
-            self.px_scrollbar(x, y, rows, top, size)
+            self.px_scrollbar(x, y, rows, top, size, edge)
             return
         if self.sep == 3:
             half = 2 * rows
@@ -861,17 +916,22 @@ class Lab:
             self.variant = int(k)
         elif k == 'b':
             self.sep = (self.sep + 1) % 4
+            self.density = self.matching_density()
         elif k == 'x':
             self.thick = 3 - self.thick
         elif k == 'd':
             self.tight = not self.tight
+            self.density = self.matching_density()
         elif k == 'm':
             self.status_mode = 1 - self.status_mode
         elif k == 'l':
             self.theme = THEME_SOURCES[(THEME_SOURCES.index(self.theme) + 1) % 3]
             self.retheme()
+        elif k == 'z':
+            self.set_setting('density', 1 if self.density == 'compact' else 0, DENSITIES)
         elif k == 'v':
             self.bottom = (self.bottom + 1) % 3
+            self.density = self.matching_density()
         elif k == 'r':
             self.rescan = True
         elif k == 's':
@@ -1092,6 +1152,69 @@ def check():
             assert a.spans or b.spans or a.bg or b.bg
     flat = Lab(1).build(100)
     assert all(ln.spans for ln in flat if ln.gutter and ln.gutter[0] == '›')
+    # 3c. Workbench draws ONE stroke between the transcript and the sidebar: the divider is the scrollbar track.
+    for sep in range(4):
+        for overflow in (True, False):
+            app = Lab(3)
+            app.sep, app.force_gfx = sep, sep == 0
+            if not overflow:
+                full = app.build
+                app.build = lambda tw, full=full: full(tw)[:10]
+            cell = (16, 30) if sep == 0 else None
+            out = app.render((140, 45), cell)
+            boundary = 140 - 30 - 1
+            assert len(app.strokes) == 1 and app.strokes[0][1] == boundary, (sep, overflow, app.strokes)
+            assert app.strokes[0][0] == ('s' if overflow else 'd')
+            for y in range(3, 40):             # no second border: nothing drawn at either side of it but the one glyph column
+                assert app.grid[y][boundary + 1] != '│' and app.grid[y][boundary - 1] != '│', (sep, y)
+            if sep == 0:
+                assert ('X=14\x1b' in out) if overflow else ('X=15\x1b' in out), 'the track sits on the cell edge'
+            elif sep != 3:
+                assert all(app.grid[y][boundary] in '▕▐▗▝' for y in range(4, 38)), (sep, overflow)
+    # The same boundary without a sidebar keeps the scrollbar inside the edge column, and draws no divider.
+    app = Lab(2)
+    app.force_gfx = True
+    app.render((140, 45), (16, 30))
+    assert app.strokes == [('s', 139)]
+    # 3d. Compact and aerial are different designs, not one with the knobs turned.
+    compact, aerial = Lab(2), Lab(2)
+    compact.force_gfx = aerial.force_gfx = True
+    aerial.set_setting('density', 1, DENSITIES)
+    out_c, out_a = compact.render((120, 42), (16, 30)), aerial.render((120, 42), (16, 30))
+    assert compact.density == 'compact' and aerial.density == 'aerial'
+    assert out_c.count('a=p') > out_a.count('a=p')                      # compact separates with pixels, aerial with glyphs
+    assert any('▁' in ''.join(r) for r in aerial.grid) and not any('▁' in ''.join(r) for r in compact.grid)
+    assert (42 - compact.bottom_y) < (42 - aerial.bottom_y)               # aerial's bottom section is roomier
+    for y in range(3, aerial.bottom_y - 1):                               # the margin is empty in aerial, used in compact
+        assert ''.join(aerial.grid[y][:aerial.margin]).strip() == '', y
+    assert any(compact.grid[y][0] != ' ' for y in range(3, compact.bottom_y))
+    assert ''.join(aerial.grid[2]).strip() == '' and ''.join(compact.grid[2]).strip() != ''   # breathing room under the header
+    gaps = lambda app: sum(1 for ln in app.build(100) if not ln.spans and ln.bg is None and not ln.gutter)
+    assert gaps(aerial) > 0 and gaps(compact) == 0                         # blank rows between blocks
+    # padding rows are configurable and always inside the block
+    for pad in (0, 1, 2):
+        app = Lab(2)
+        app.pad = pad
+        runs, run = [], []
+        for ln in app.build(100) + [Line([])]:
+            if ln.gutter and ln.gutter[0] == '▌':
+                run.append(ln)
+            elif run:
+                runs.append(run)
+                run = []
+        for r in runs:
+            lead = len(r) - len(list(__import__('itertools').dropwhile(lambda l: not l.spans, r)))
+            trail = len(r) - len(list(__import__('itertools').dropwhile(lambda l: not l.spans, r[::-1])))
+            assert lead == pad and trail == pad, (pad, lead, trail)
+    # Aerial keeps the bottom rows still when thinking is expanded, like the other densities.
+    app = Lab(2)
+    app.set_setting('density', 1, DENSITIES)
+    app.draft, app.cursor = 'half typed', 4
+    app.render((120, 42))
+    before = [''.join(r) for r in app.grid[app.bottom_y:]]
+    app.key('\x14')
+    app.render((120, 42))
+    assert before == [''.join(r) for r in app.grid[app.bottom_y:]] and app.draft == 'half typed'
     # 4. Reading earlier output: expanding must not move the viewport offset.
     app = Lab()
     app.render((100, 28))
@@ -1150,25 +1273,40 @@ def check():
     assert not app.rescan
     app.key('\x1b[?997;1n')
     assert app.rescan
-    # 7. Settings: panel opens, changes apply live, snapshot round-trips, '/theme' opens it from the input.
+    # 7. Settings: panel opens, changes apply live, snapshot round-trips.
+    def row(attr):
+        return [r[1] for r in SETTING_ROWS].index(attr)
+
+    def change(app, attr, delta):
+        app.selected = row(attr)
+        app.key('\x1b[C' if delta > 0 else '\x1b[D')
+
     app = Lab()
     app.browse = True
     app.key('s')
-    assert app.modal == 'settings'
-    app.key('\x1b[C')
+    assert app.modal == 'settings' and app.density == 'compact'
+    change(app, 'density', +1)
+    assert app.density == 'aerial' and app.sep == 1 and app.margin == 3 and not app.tight and app.bottom == 0 and app.breath == 1
+    change(app, 'density', -1)
+    assert app.density == 'compact' and app.sep == 0 and app.margin == 0 and app.tight and app.bottom == 2 and app.breath == 0
+    change(app, 'margin', +1)                       # one single change makes it custom ...
+    assert app.density == 'custom' and app.margin == 2
+    change(app, 'margin', -1)                       # ... and returning to the preset's values returns to the preset
+    assert app.density == 'compact'
+    change(app, 'theme', +1)
     assert app.theme == 'light' and app.pal['base'] == '#ffffff'
-    app.key('\x1b[B')
-    app.key('\x1b[C')
+    change(app, 'accent', +1)
     assert app.accent == 'cyan'
-    app.key('\x1b[B')
-    app.key('\x1b[D')
+    change(app, 'surface', -1)
     assert app.surface == 1
     snap = app.snapshot()
     other = Lab()
     other.restore(snap)
     assert other.snapshot() == snap and other.pal == app.pal
-    other.restore({'theme': 'bogus', 'accent': 'bogus', 'surface': 99, 'sep': 99, 'bottom': -5, 'variant': 9})
+    other.restore({'theme': 'bogus', 'accent': 'bogus', 'surface': 99, 'sep': 99, 'bottom': -5, 'variant': 9,
+                   'pad': 9, 'margin': 7, 'breath': 5, 'density': 'bogus'})
     assert other.theme == 'terminal' and 0 <= other.surface <= 3 and 0 <= other.bottom <= 2
+    assert other.pad <= 2 and other.margin in MARGINS and other.density in DENSITIES
     app.key('\x1b')
     assert app.modal is None
     app = Lab()
