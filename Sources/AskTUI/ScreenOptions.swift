@@ -4,12 +4,15 @@ public struct ScreenOptions: Sendable, Equatable {
     public var mouse: Bool
     /// Whether a finished selection is copied at once. Off keeps it highlighted and does not copy it.
     public var copyOnSelect: Bool
+    /// Whether a tool's output starts folded to one line (ADR-0046: `ui.tools`). A click or Ctrl+O opens it.
+    public var foldTools: Bool
     /// How many lines one wheel step scrolls. Terminals send different numbers of steps for one gesture (TerminalKit ADR-0028).
     public var scrollLines: Int
 
-    public init(mouse: Bool = true, copyOnSelect: Bool = true, scrollLines: Int = 3) {
+    public init(mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, scrollLines: Int = 3) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
+        self.foldTools = foldTools
         self.scrollLines = Swift.max(1, scrollLines)
     }
 }

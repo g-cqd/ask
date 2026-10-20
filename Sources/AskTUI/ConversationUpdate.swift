@@ -7,7 +7,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case userPrompt(String)
     case assistantText(String)
     case toolStarted(name: String, summary: String)
-    case toolFinished(Transcript.ToolStatus)
+    /// The tool ended; `output` is what it returned, kept so the block can be opened.
+    case toolFinished(Transcript.ToolStatus, output: String = "")
     case notice(String, isError: Bool)
     /// The left of the status line, such as the model, when it changes.
     case label(String)

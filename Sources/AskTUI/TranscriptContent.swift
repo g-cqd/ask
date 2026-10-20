@@ -14,7 +14,7 @@ struct TranscriptContent: SelectableContent {
     init(blocks: [[String]] = []) { self.blocks = blocks }
 
     init(_ transcript: Transcript) {
-        blocks = transcript.items.map { Self.hardLines(of: $0.contentText) }
+        blocks = transcript.items.indices.map { Self.hardLines(of: transcript.contentText(at: $0)) }
     }
 
     /// The lines of `text` as `TextWrap` sees them: tabs expanded, split at line feeds.
