@@ -18,8 +18,12 @@ ADR-0030 already uses. Probe each preset's list endpoint first: OpenRouter and H
 Codex only: the account's live catalog (`ask models codex`), an account-scoped cache, and a default chosen from it when no
 model is named. Observed on one real account.
 
+## Done (diary 39)
+
+Codex reasoning levels: each model's levels and default as the account reports them, kept in the catalog cache, shown by
+`ask models`. None of the nine models offers an "off". Setting a level is roadmap 0043's.
+
 ## Still owed
 
 - Spettro and every preset with a list endpoint, each probed with its own key first.
-- Codex reasoning levels, which the catalog reports as objects.
 - Per-connection registrations and aliases (0047).
