@@ -827,7 +827,130 @@ def probe_resume_sessions():
     return all(results)
 
 
+def until_after(screen, marker, needle, seconds=15):
+    """Reads until `marker` is on screen and `needle` appears below its last occurrence, so output from an earlier
+    command cannot satisfy the wait, nor can a marker that has not been drawn yet."""
+    end = time.time() + seconds
+    while time.time() < end:
+        text = screen.screen.text()
+        if screen.output.endswith(FRAME_END) and marker in text and needle in text.rsplit(marker, 1)[-1]:
+            return True
+        screen.until("\x00", 0.05)
+    return False
+
+
+def probe_model_selection():
+    print("Q: /model is run-local, atomic, pinned to its provider, and survives reload without losing reset")
+    project, config, binary_dir = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(config, "ask"))
+    config_path = os.path.join(config, "ask", "config.json")
+    settings = {"model": "file-model", "provider": "anthropic", "maxTurns": 3}
+    open(config_path, "w").write(json.dumps(settings))
+    # \"keyless\" names a variable that does not exist (ASK_ variables are removed from the probe's environment);
+    # \"local\" needs no key and a loopback address, so it resolves.
+    open(os.path.join(config, "ask", "providers.json"), "w").write(json.dumps({"providers": {
+        "keyless": {"api": "openai-completions", "baseUrl": "http://127.0.0.1:9/v1", "apiKey": "$ASK_PROBE_MISSING",
+                    "models": [{"id": "m"}]},
+        "local": {"api": "openai-completions", "baseUrl": "http://127.0.0.1:9/v1", "models": [{"id": "local-default"}]}}}))
+    binary = install_build(binary_dir)
+    server = agent.Server([agent.turn([("text", text)], "end_turn") for text in [
+        "BASE MODEL ANSWER", "PICKED MODEL ANSWER", "MODEL AFTER REFUSAL", "RESET MODEL ANSWER"]])
+    screen = Screen(server.url, project, config=config, binary=binary, arguments=("--model", "flag-model"))
+    screen.until("ask>")
+    screen.type("/model\r")
+    found = screen.until("Current model: flag-model")
+    results = [check("the current model is reported without a request", found and not server.requests, screen.screen.text())]
+    if not found:
+        screen.type("/quit\r")
+        screen.finish()
+        server.httpd.shutdown()
+        return False
+    screen.until_status("ready")
+    screen.type("Original request\r")
+    results.append(check("the original model runs", screen.until("BASE MODEL ANSWER")))
+    screen.until_status("ready")
+    chosen = "vendor/model:tag"
+    before = open(config_path, "rb").read()
+    screen.type("/model " + chosen + "\r")
+    results.append(check("a model id with slashes is not misread as a provider", screen.until("Model selected for this run: " + chosen)))
+    results.append(check("selecting did not rewrite configuration", open(config_path, "rb").read() == before))
+    screen.until_status("ready")
+    screen.type("/config\r")
+    results.append(check("configuration reports command provenance", screen.until("[/model (this run)]")))
+    screen.until_status("ready")
+    settings.update(provider="unconfigured-file-provider", model="changed-file-model", maxTurns=7)
+    open(config_path, "w").write(json.dumps(settings))
+    screen.type("Request after config changed\r")
+    results.append(check("the choice survives prompt-time configuration reload", screen.until("PICKED MODEL ANSWER")))
+    screen.until_status("ready")
+    results.append(check("the request uses the selected id", len(server.requests) == 2 and server.requests[1]["body"]["model"] == chosen))
+    screen.type("/config\r")
+    results.append(check("unrelated configuration still reloads", screen.until("maxTurns  7")))
+    screen.until_status("ready")
+    for arguments in ["missing-provider any-model", "keyless any-model"]:
+        screen.type("/model " + arguments + "\r")
+        results.append(check("failed selection is nonfatal: " + arguments, screen.until("Model not changed (" + arguments + "):")))
+        screen.until_status("ready")
+    marker = "› /config after-refusals"  # unique: an older /config's report cannot satisfy the waits below
+    screen.type("/config after-refusals\r")
+    results.append(check("after refusals the live configuration still loads and keeps the choice",
+                         until_after(screen, marker, "project file")
+                         and "[/model (this run)]" in screen.screen.text().rsplit(marker, 1)[-1]
+                         and "Configuration not reloaded" not in screen.screen.text().rsplit(marker, 1)[-1],
+                         screen.screen.text()))
+    screen.until_status("ready")
+    screen.type("/model local local-model\r")
+    results.append(check("a provider and model switch together", screen.until("Model selected for this run: local-model"), screen.screen.text()))
+    results.append(check("the status label names the provider", screen.until_status("local/local-model")))
+    screen.until_status("ready")
+    screen.type("/model " + chosen + "\r")
+    results.append(check("a bare id keeps the provider now in force", screen.until("local/" + chosen)))
+    screen.until_status("ready")
+    screen.type("/model anthropic " + chosen + "\r")
+    results.append(check("and the provider can be named again", screen.until('provider: "local" → "anthropic" (/model (this run))')))
+    screen.until_status("ready")
+    screen.type("/model one two three\r")
+    results.append(check("bad command syntax is refused", screen.until("Usage: /model [PROVIDER] MODEL"), screen.screen.text()))
+    screen.until_status("ready")
+    results.append(check("commands made no model requests", len(server.requests) == 2))
+    screen.type("Request after refusals\r")
+    results.append(check("the previous model remains usable", screen.until("MODEL AFTER REFUSAL")))
+    screen.until_status("ready")
+    results.append(check("failed selections retained the chosen model", server.requests[-1]["body"]["model"] == chosen))
+    files = agent.sessions(screen.state)
+    original_path = files[0] if files else None
+    original_pid = screen.pid
+    install_build(binary_dir)
+    results.append(check("the replacement binary is noticed", screen.until("A new ask binary appeared.")))
+    screen.type("/reload\r")
+    results.append(check("reload checks the effective model, not the invalid file provider",
+                         screen.until("Reloaded ask: built ", 30)))
+    results.append(check("reload keeps the selected model and process", chosen in screen.status() and screen.pid == original_pid))
+    screen.until_status("ready")
+    screen.type("/config\r")
+    results.append(check("reload kept command rather than CLI provenance", screen.until("[/model (this run)]")))
+    screen.until_status("ready")
+    settings["provider"] = "anthropic"
+    open(config_path, "w").write(json.dumps(settings))
+    saved = open(config_path, "rb").read()
+    screen.type("/model --reset\r")
+    results.append(check("reset after reload restores the original CLI flag", screen.until("Model selection reset to configuration: flag-model")))
+    screen.until_status("ready")
+    screen.type("Request after reset\r")
+    results.append(check("the reset model runs", screen.until("RESET MODEL ANSWER")))
+    screen.until_status("ready")
+    results.append(check("the actual request uses the original flag", server.requests[-1]["body"]["model"] == "flag-model"))
+    results.append(check("reset did not save a setting", open(config_path, "rb").read() == saved))
+    results.append(check("model changes kept the same archive", agent.sessions(screen.state) == [original_path]))
+    payloads = [r["payload"] for r in map(json.loads, open(original_path)) if r.get("type") == "entry"] if original_path else []
+    results.append(check("only the four real prompts were persisted", len([p for p in payloads if p["kind"] == "user"]) == 4))
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

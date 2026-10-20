@@ -10,6 +10,8 @@ public struct Configuration: Sendable, Equatable {
         case file(String)
         case environment(String)
         case flag(String)
+        /// A command the user ran in this process, such as `/model`; nothing was written to a file.
+        case command(String)
 
         public var description: String {
             switch self {
@@ -17,6 +19,7 @@ public struct Configuration: Sendable, Equatable {
                 case .file(let path): path
                 case .environment(let name): "$\(name)"
                 case .flag(let name): "--\(name)"
+                case .command(let name): "\(name) (this run)"
             }
         }
     }
@@ -82,6 +85,15 @@ public struct Configuration: Sendable, Equatable {
         if let tokens = whole("ASK_COMPACT_AT", atLeast: 0) {
             next.compactAt = Setting(value: tokens, source: .environment("ASK_COMPACT_AT"))
         }
+        return next
+    }
+
+    /// `self` with the provider and model the user chose while ask was running. Both are replaced together: a
+    /// model id means nothing without the provider that serves it.
+    public func applying(selectedProvider provider: String, model: String, command: String) -> Configuration {
+        var next = self
+        next.provider = Setting(value: provider, source: .command(command))
+        next.model = Setting(value: model, source: .command(command))
         return next
     }
 
