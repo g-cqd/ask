@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-20
 ---
 
-# 0040 — Named connections are registered destinations with stable identities
+# 0048 — Named connections are registered destinations with stable identities
 
 ## Context
 
@@ -14,7 +14,7 @@ this records what was built and what the probes said. Credential transactions (A
 
 ## The probes
 
-Ledger in `docs/diary/2026-10-20-31.md`.
+Ledger in `docs/diary/2026-10-20-44.md`.
 
 - **Does the credential envelope keep records it does not know?** **REFUTED**: any save dropped them. Fixed by keeping each
   unknown value as its source bytes (AemiJSON container spans), so a 20-digit integer, a 25-digit decimal and `1e-100`
@@ -63,7 +63,7 @@ Ledger in `docs/diary/2026-10-20-31.md`.
   exercised only with synthetic credentials and no network.
 - Idle memory is about 0.3 MiB higher (9160 to 9488 KiB, non-overlapping ranges), consistent with a binary 250 KB larger.
 
-## Addendum (diary 31, probes 136-139)
+## Addendum (diary 44, probes 136-139)
 
 A real browser sign-in with `--name` has since been run: it registered, stored, listed and read its own catalog. It registered the
 *same* ChatGPT account as the default (a separate grant), because the user has one account; the account chooser is still
