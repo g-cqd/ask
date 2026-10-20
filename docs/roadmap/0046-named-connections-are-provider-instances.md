@@ -101,8 +101,10 @@ file left unchanged.
 
 ## Still owed
 
-- A real browser sign-in with `--name`, a named Claude sign-in, and **probing the OAuth account chooser**, which this entry
-  required and nothing has done. Without it, signing in as a second account may reuse the browser's current ChatGPT session.
+- A named Claude sign-in, and **probing the OAuth account chooser**, which this entry required. A real browser sign-in with
+  `--name` is done (diary 31, probes 136-139) but the user has one account, so it registered *the same* ChatGPT account as the
+  default, as a separate grant: the chooser question is still open, and a second sign-in does not by itself give a second
+  account. Consider warning when a new sign-in lands on an account another connection already holds.
 - Whether Claude's refresh response identifies the account (the Codex one is checked).
 - A `--json` listing, an interface picker, and named connections for key-based providers: deliberately not built.
 

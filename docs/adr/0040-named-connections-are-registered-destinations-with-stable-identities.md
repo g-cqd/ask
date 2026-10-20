@@ -62,3 +62,9 @@ Ledger in `docs/diary/2026-10-20-31.md`.
 - **Not verified:** a real browser sign-in with `--name`, a named Claude sign-in, and the OAuth account chooser. All were
   exercised only with synthetic credentials and no network.
 - Idle memory is about 0.3 MiB higher (9160 to 9488 KiB, non-overlapping ranges), consistent with a binary 250 KB larger.
+
+## Addendum (diary 31, probes 136-139)
+
+A real browser sign-in with `--name` has since been run: it registered, stored, listed and read its own catalog. It registered the
+*same* ChatGPT account as the default (a separate grant), because the user has one account; the account chooser is still
+unprobed. A live token refresh through the locked compare-and-replace save also worked. The list above is otherwise unchanged.
