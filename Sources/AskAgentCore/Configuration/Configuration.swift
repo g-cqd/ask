@@ -10,6 +10,10 @@ public struct Configuration: Sendable, Equatable {
         case file(String)
         case environment(String)
         case flag(String)
+        /// A command the user ran in this process, such as `/model`; nothing was written to a file.
+        case command(String)
+        /// The strict sandbox a resumed session recorded (roadmap 0042).
+        case session
 
         public var description: String {
             switch self {
@@ -17,6 +21,8 @@ public struct Configuration: Sendable, Equatable {
                 case .file(let path): path
                 case .environment(let name): "$\(name)"
                 case .flag(let name): "--\(name)"
+                case .command(let name): "\(name) (this run)"
+                case .session: "this session's record"
             }
         }
     }
@@ -48,13 +54,7 @@ public struct Configuration: Sendable, Equatable {
         if let turns = file.maxTurns { next.maxTurns = Setting(value: turns, source: source) }
         if let compactAt = file.compactAt { next.compactAt = Setting(value: compactAt, source: source) }
         if let section = file.sandbox {
-            // What may be read is replaced by the file that names it (only the user's file can); what is kept
-            // unreadable accumulates across layers, since every layer may narrow.
-            let before = next.sandbox.value
-            let merged = SandboxSection(
-                allowRead: section.allowRead.isEmpty ? before.allowRead : section.allowRead,
-                denyRead: before.denyRead + section.denyRead.filter { !before.denyRead.contains($0) })
-            next.sandbox = Setting(value: merged, source: source)
+            next.sandbox = Setting(value: next.sandbox.value.layered(with: section), source: source)
         }
         return next
     }
@@ -85,11 +85,44 @@ public struct Configuration: Sendable, Equatable {
         return next
     }
 
-    /// `self` with the flags the user gave. A nil flag was not given.
+    /// `self` with the provider and model the user chose while ask was running. Both are replaced together: a
+    /// model id means nothing without the provider that serves it.
+    public func applying(selectedProvider provider: String, model: String, command: String) -> Configuration {
+        var next = self
+        next.provider = Setting(value: provider, source: .command(command))
+        next.model = Setting(value: model, source: .command(command))
+        return next
+    }
+
+    /// `self` narrowed by the strict sandbox a resumed session recorded, except for what a flag set: a flag is the
+    /// user widening on purpose. The record only ever narrows; the source changes only when it did.
     public func applying(
-        model: String?, provider: String?, maxTurns: Int?, compactAt: Int?
+        session record: SandboxSection, flaggedNetwork: Bool, flaggedWrite: Bool, flaggedRead: Bool
+    ) -> Configuration {
+        let narrowed = sandbox.value.layered(
+            with: SandboxSection(
+                write: flaggedWrite ? [] : record.write, read: flaggedRead ? [] : record.read,
+                network: flaggedNetwork ? nil : record.network))
+        guard narrowed != sandbox.value else { return self }
+        var next = self
+        next.sandbox = Setting(value: narrowed, source: .session)
+        return next
+    }
+
+    /// `self` with the flags the user gave. A nil flag was not given. `network` and `write` replace what the files
+    /// set rather than narrowing it: a flag is the user, and only the user widens the sandbox.
+    public func applying(
+        model: String?, provider: String?, maxTurns: Int?, compactAt: Int?, network: SandboxPolicy.Network? = nil,
+        write: PathSetting? = nil, read: PathSetting? = nil
     ) -> Configuration {
         var next = self
+        if network != nil || write != nil || read != nil {
+            var section = next.sandbox.value
+            if let network { section.network = network }
+            if let write { section.write = [write] }
+            if let read { section.read = [read] }
+            next.sandbox = Setting(value: section, source: .flag("network/write/read"))
+        }
         if let model { next.model = Setting(value: model, source: .flag("model")) }
         if let provider { next.provider = Setting(value: provider, source: .flag("provider")) }
         if let maxTurns { next.maxTurns = Setting(value: maxTurns, source: .flag("max-turns")) }

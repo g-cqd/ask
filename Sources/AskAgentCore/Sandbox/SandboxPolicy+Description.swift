@@ -17,11 +17,21 @@ extension SandboxPolicy {
             let where_ = roots.isEmpty ? "nowhere but" : roots.joined(separator: ", ") + " and"
             sentences.append("Writes are allowed only under \(where_) temporary directories.")
         }
+        if case .roots(let roots) = read {
+            let where_ = roots.isEmpty ? "" : roots.joined(separator: ", ") + ", "
+            sentences.append(
+                "Reads are allowed only under \(where_)temporary directories, and the system's and developer tools' "
+                    + "own directories; add a path with sandbox.allowRead if a task needs it.")
+        }
         switch network {
             case .any: break
             case .localhost: sentences.append("The network reaches only this machine.")
             case .none: sentences.append("There is no network access.")
         }
+        // SwiftPM compiles a manifest it has not cached inside its own sandbox, which cannot nest in this one.
+        sentences.append(
+            "Programs cannot start their own sandbox inside this one: run SwiftPM as swift build --disable-sandbox "
+                + "(also test, run, package); this sandbox still applies.")
         return "Sandbox: " + sentences.joined(separator: " ")
             + " Only the user can change this; do not try to get around it, and say so if a task needs it."
     }

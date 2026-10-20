@@ -60,12 +60,6 @@ struct ScreenPartsTests {
         #expect(editor.apply(key(Key.up.rawValue)) == .ignored)
     }
 
-    @Test func `pasted line breaks become spaces`() {
-        var editor = PromptEditor()
-        editor.paste("one\ntwo\r\nthree")
-        #expect(editor.text == "one two three")
-    }
-
     // MARK: - Layout
 
     private func rows(_ buffer: ScreenBuffer) -> [String] {

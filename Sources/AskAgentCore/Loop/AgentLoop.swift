@@ -74,13 +74,20 @@ public struct AgentLoop: Sendable {
     }
 
     /// Runs `prompt` to completion in `session`, reporting each step to `events`.
+    /// Queued steering enters after a response and all its tool results; follow-ups enter only when the run
+    /// would finish. One message enters per boundary, with steering first. Unsent input remains queued on failure.
+    /// - Parameters:
+    ///   - prompt: the initial user message.
+    ///   - session: where completed work is persisted.
+    ///   - input: messages queued while this run is in flight; nil for a run without interactive input.
+    ///   - events: completed steps, including acknowledgments of persisted queued messages.
     /// - Throws: an ``AgentError``. Cancelling the task aborts the run as ``AgentError/cancelled``.
     public func run(
-        _ prompt: String, in session: SessionRecorder, events: (AgentEvent) -> Void
+        _ prompt: String, in session: SessionRecorder, input: PromptQueue? = nil, events: (AgentEvent) -> Void
     ) async throws(AgentError) {
         try record(.user(prompt), in: session)
         var watch = WindowWatch()
-        for _ in 0 ..< settings.maximumTurns {
+        for turn in 0 ..< settings.maximumTurns {
             if compactionDue(session, contextFull: watch.contextFull) {
                 try await compact(session, contextFull: watch.contextFull, events: events)
             }
@@ -102,11 +109,23 @@ public struct AgentLoop: Sendable {
             if filled { learnedWindow.learn(Self.contextTokens(of: response)) }
             try watch.observe(filled: filled)
             let calls = Self.toolCalls(in: response)
+            let continuing: Bool
             if calls.isEmpty {
-                guard try continuesWithoutCalls(response, filled: filled, in: session, events: events) else { return }
+                continuing = try continuesWithoutCalls(response, filled: filled, in: session, events: events)
+            } else {
+                try await runTurn(calls, in: session, events: events)
+                continuing = true
+            }
+            guard !Task.isCancelled else { throw .cancelled }
+            if try acceptInput(
+                input, finished: !continuing, atLimit: turn + 1 == settings.maximumTurns, in: session, events: events)
+            {
                 continue
             }
-            try await runTurn(calls, in: session, events: events)
+            if !continuing {
+                events(.finished(response.stopReason))
+                return
+            }
         }
         throw .turnLimit(settings.maximumTurns)
     }
@@ -138,7 +157,6 @@ public struct AgentLoop: Sendable {
             case .pauseTurn:
                 return true
             default:
-                events(.finished(response.stopReason))
                 return false
         }
     }
