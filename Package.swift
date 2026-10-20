@@ -78,7 +78,7 @@ let package = Package(
         .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "ac898fde3cc9ca26451e18308901c8e51f28ea0b"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "31b0229cba844dd98ea5517d97da1609888a0502"),
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "001c0a99a64e58a226e5851fedf1324a5fa2470c"),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "639caad90b0a8409185a712f32f9dea795e6470c"),
