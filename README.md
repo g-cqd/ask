@@ -47,6 +47,7 @@ the jobs for a billing reason, so the gates are enforced by `Scripts/quality.sh`
 ## Commands
 
 Type `/help` in the screen. `/new` starts a fresh conversation, leaving the old session saved; stop background jobs first.
+`/model` shows the model; `/model MODEL` or `/model PROVIDER MODEL` chooses one for this run, `/model --reset` undoes it.
 `/resume` lists sessions; `/resume NAME`, a unique prefix or a path switches to one without leaving the screen. `/config` shows the settings and re-reads the files, `/compact` summarises the
 conversation now, `/quit` leaves. To develop ask with ask: build it (ask can run `swift build` for you), then type
 `/reload`. ask checks the new binary starts, then replaces itself with it, keeping the session
