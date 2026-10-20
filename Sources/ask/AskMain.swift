@@ -15,7 +15,8 @@ struct Ask: AsyncParsableCommand {
         commandName: "ask",
         abstract: "A terminal coding agent: reliable, fast, light.",
         subcommands: [
-            Login.self, Logout.self, ModelsCommand.self, Sessions.self, ConfigCommand.self, TrustCommand.self,
+            Login.self, Logout.self, ModelsCommand.self, ConnectionsCommand.self, Sessions.self, ConfigCommand.self,
+            TrustCommand.self,
             UntrustCommand.self
         ])
 
@@ -32,7 +33,7 @@ struct Ask: AsyncParsableCommand {
 
     @Option(
         help:
-            "The provider: \"anthropic\", or a name from ~/.config/ask/providers.json. Default: config.json, else the file's default."
+            "The connection: a registered name, built-in anthropic/codex, or providers.json entry. Default: config.json, else the file's default."
     )
     var provider: String?
 
@@ -84,10 +85,18 @@ struct Ask: AsyncParsableCommand {
             FileHandle.standardOutput.write(Data(try Budget.reportJSON()))
             return
         }
-        let source = ConfigurationSource(
+        var startupNotices: [String] = []
+        let restored =
+            selfCheck
+            ? nil
+            : session.open(
+                in: SessionDirectory(project: FileManager.default.currentDirectoryPath),
+                note: { startupNotices.append($0) })
+        var source = ConfigurationSource(
             workingDirectory: FileManager.default.currentDirectoryPath,
             flags: .init(
                 model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt, noSandbox: noSandbox))
+        source.resumedDestination = restored?.destination
         let settings: RunSettings
         do { settings = try await source.load(allowNetwork: !selfCheck) } catch {
             fail("ask: \(error)", code: ModelDiscovery.exitCode(for: error))
@@ -98,10 +107,12 @@ struct Ask: AsyncParsableCommand {
         }
         let reloaded = reloadedFrom.map { ReloadNotice(from: $0, startedMilliseconds: reloadStarted ?? 0) }
         if let prompt {
-            await runPrompt(prompt, source: source, settings: settings, session: session)
+            await runPrompt(
+                prompt, source: source, settings: settings, resumed: restored, startupNotices: startupNotices)
             return
         }
-        await runInteractive(source: source, settings: settings, session: session, reloaded: reloaded)
+        await runInteractive(
+            source: source, settings: settings, resumed: restored, startupNotices: startupNotices, reloaded: reloaded)
     }
 }
 
@@ -113,12 +124,30 @@ struct Login: AsyncParsableCommand {
 
     @Argument(help: "Which sign-in to run.") var provider: LoginTarget = .claude
     @Flag(help: "For codex: sign in with a code typed at a link, on a machine with no browser.") var device = false
+    @Option(help: "Register a separate named codex or claude connection, without replacing the default account.")
+    var name: String?
+    @Flag(help: "Authorize replacing the remote account bound to this named connection.") var replaceAccount = false
 
     func run() async throws {
-        let file = CredentialFile.standard()
+        let connection: ConnectionRecord?
+        if let name {
+            let kind: ConnectionKind
+            switch provider {
+                case .codex: kind = .codex
+                case .claude: kind = .anthropic
+                default: throw ValidationError("Named sign-ins currently support codex and claude.")
+            }
+            connection = try NamedConnections.registry()
+                .register(name: name, provider: kind, reserved: NamedConnections.reserved())
+        } else {
+            guard !replaceAccount else { throw ValidationError("--replace-account requires --name.") }
+            connection = nil
+        }
+        let file = NamedConnections.file(for: connection)
         switch provider {
-            case .claude: await claudeLogin(file: file)
-            case .codex: await codexLogin(device: device, file: file)
+            case .claude: await claudeLogin(file: file, connection: connection)
+            case .codex:
+                await codexLogin(device: device, file: file, connection: connection, replaceAccount: replaceAccount)
             case .spettro:
                 let flow: SpettroSignIn
                 do {
@@ -132,14 +161,18 @@ struct Login: AsyncParsableCommand {
         }
     }
 
-    private func claudeLogin(file: CredentialFile) async {
+    private func claudeLogin(file: CredentialFile, connection: ConnectionRecord?) async {
         let pending = PendingSignIn.begin()
         print("Open this URL and sign in:\n\n  \(pending.url)\n\nThen paste the code it shows (code#state):")
         guard let pasted = readLine(strippingNewline: true) else { fail("ask: no code entered.", code: 66) }
         do {
             let credentials = try await ClaudeAuthClient(transport: URLSessionTransport())
                 .complete(pending, pasted: pasted, now: Date().timeIntervalSince1970)
-            try file.saveClaude(credentials)
+            if let connection {
+                try NamedConnections.registry().saveClaude(credentials, for: connection, replaceAccount: replaceAccount)
+            } else {
+                try file.saveClaude(credentials)
+            }
             print("Signed in\(credentials.accountEmail.map { " as \($0)" } ?? ""). Credentials: \(file.url.path)")
         } catch {
             fail("ask: sign-in failed: \(error)", code: 77)
@@ -151,16 +184,31 @@ struct Login: AsyncParsableCommand {
 struct Logout: ParsableCommand {
     static let configuration = CommandConfiguration(abstract: "Forget stored credentials.")
 
-    @Argument(help: "Forget only this sign-in. Default: all of them.") var provider: LoginTarget?
+    @Argument(help: "Forget only this sign-in. Default: all of them.") var provider: String?
 
     func run() throws {
         let file = CredentialFile.standard()
         do {
-            switch provider {
-                case nil: try file.remove()
-                case .claude?: try file.removeClaude()
-                case .codex?: try file.removeCodex()
-                case let target?: try target.keyName.map { try file.removeKey(for: $0) }
+            if let name = provider {
+                if let target = LoginTarget(rawValue: name) {
+                    switch target {
+                        case .claude: try file.removeClaude()
+                        case .codex: try file.removeCodex()
+                        default: try target.keyName.map { try file.removeKey(for: $0) }
+                    }
+                } else {
+                    try NamedConnections.registry().signOut(NamedConnections.named(name))
+                }
+            } else {
+                try file.remove()
+                let listing = try NamedConnections.registry().list()
+                NamedConnections.report(listing.notices)
+                for record in listing.records { try NamedConnections.registry().signOut(record) }
+                if !listing.notices.isEmpty {
+                    fail(
+                        "ask: readable connections were signed out, but unreadable registrations could not be changed; see the notices above",
+                        code: 78)
+                }
             }
         } catch { fail("ask: \(error)", code: 78) }
         print("Signed out.")
