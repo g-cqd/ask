@@ -6,17 +6,20 @@ internal import AskAgentCore
 internal import AskTools
 internal import Foundation
 
-/// Auth for each request: `ANTHROPIC_API_KEY` when set, else the stored subscription, refreshed as needed.
+/// Auth for each request: the environment's credential when it names one (`ANTHROPIC_AUTH_TOKEN`, then `ANTHROPIC_OAUTH_TOKEN`,
+/// then `ANTHROPIC_API_KEY`), else the stored subscription, refreshed as needed. A named connection ignores the environment.
 func requestAuth(transport: URLSessionTransport, connection: ConnectionRecord? = nil)
     -> @Sendable () async throws -> AnthropicClient.Auth
 {
-    if connection == nil, let key = ProcessInfo.processInfo.environment["ANTHROPIC_API_KEY"], !key.isEmpty {
-        return { .apiKey(key) }
-    }
     let access = ClaudeAccess(
         file: NamedConnections.file(for: connection), client: ClaudeAuthClient(transport: transport),
         connection: connection)
     return {
+        if connection == nil,
+            let auth = try AnthropicEnvironmentAuth.resolve(environment: ProcessInfo.processInfo.environment)
+        {
+            return auth
+        }
         do {
             return try await access.auth(now: Date().timeIntervalSince1970)
         } catch ClaudeAccessError.signedOut {

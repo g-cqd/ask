@@ -131,4 +131,30 @@ struct AnthropicClientTests {
             _ = try await events(AnthropicClient(transport: transport), auth: .apiKey("k"))
         }
     }
+
+    @Test func `a bearer token sends Authorization and nothing that names a subscription or an API key`() async throws {
+        let transport = ScriptedTransport(status: 200, chunks: turn)
+        _ = try await events(AnthropicClient(transport: transport), auth: .bearer("gateway-token"))
+        let headers = Dictionary(
+            uniqueKeysWithValues: try #require(transport.sent).headers.map { ($0.name.lowercased(), $0.value) })
+        #expect(headers["authorization"] == "Bearer gateway-token")
+        #expect(headers["x-api-key"] == nil)
+        #expect(headers["anthropic-beta"] == nil, "a gateway token is not a subscription token")
+        #expect(headers["anthropic-version"] == "2023-06-01")
+    }
+
+    @Test func `the other two kinds still send what they did`() async throws {
+        let sub = ScriptedTransport(status: 200, chunks: turn)
+        _ = try await events(AnthropicClient(transport: sub), auth: .subscription(accessToken: "sk-ant-oat-1"))
+        let subHeaders = Dictionary(
+            uniqueKeysWithValues: try #require(sub.sent).headers.map { ($0.name.lowercased(), $0.value) })
+        #expect(subHeaders["authorization"] == "Bearer sk-ant-oat-1")
+        #expect(subHeaders["anthropic-beta"] == AnthropicClient.oauthBetas)
+        let key = ScriptedTransport(status: 200, chunks: turn)
+        _ = try await events(AnthropicClient(transport: key), auth: .apiKey("sk-ant-api-1"))
+        let keyHeaders = Dictionary(
+            uniqueKeysWithValues: try #require(key.sent).headers.map { ($0.name.lowercased(), $0.value) })
+        #expect(keyHeaders["x-api-key"] == "sk-ant-api-1")
+        #expect(keyHeaders["authorization"] == nil)
+    }
 }
