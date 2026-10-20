@@ -19,7 +19,14 @@ public struct ClaudeAccess: Sendable {
         guard credentials.needsRefresh(now: now) else { return .subscription(accessToken: credentials.accessToken) }
         let refreshed: ClaudeCredentials
         do { refreshed = try await client.refresh(credentials, now: now) } catch { throw .refreshFailed(error) }
-        do { try file.saveClaude(refreshed) } catch { throw .storage(error) }
-        return .subscription(accessToken: refreshed.accessToken)
+        let kept: Bool
+        do { kept = try file.saveClaude(refreshed, ifStill: credentials) } catch { throw .storage(error) }
+        if kept { return .subscription(accessToken: refreshed.accessToken) }
+        // The user signed out, or in again, while the response was on its way: what they did last stands.
+        let latest: ClaudeCredentials?
+        do { latest = try file.loadClaude() } catch { throw .storage(error) }
+        guard let latest else { throw .signedOut }
+        guard !latest.needsRefresh(now: now) else { throw .changedDuringRefresh }
+        return .subscription(accessToken: latest.accessToken)
     }
 }

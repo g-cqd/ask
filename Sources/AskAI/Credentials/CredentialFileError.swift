@@ -10,4 +10,6 @@ public enum CredentialFileError: Error, Sendable, Equatable {
     case damaged(path: String)
     /// A system call failed.
     case io(path: String, errno: Int32)
+    /// Another ask held the short lock that serialises saves for longer than this one waited.
+    case locked(path: String)
 }

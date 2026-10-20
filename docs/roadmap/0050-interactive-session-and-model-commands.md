@@ -4,7 +4,7 @@ blocked-by: []
 date: 2026-10-20
 ---
 
-# 0046 — Interactive session and model commands
+# 0050 — Interactive session and model commands
 
 The screen can resume only at launch and choose its model only through configuration or flags.
 Make the active conversation switchable without leaving ask: `/new`, `/resume` and `/model`.

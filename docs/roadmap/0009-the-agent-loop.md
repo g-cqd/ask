@@ -97,7 +97,7 @@ At that audit two things kept it open, named in its own "Done when" and in "Stee
 - **The budget.** `0007` has not re-derived the action-to-action budget against a real action, which this entry
   makes a condition of being done.
 
-## Steering and follow-ups delivered (2026-10-20, ADR-0037)
+## Steering and follow-ups delivered (2026-10-20, ADR-0040)
 
 Enter during a run queues steering after the current response and all its tools; `/follow-up TEXT` (or
 modified Alt+Enter) waits until the agent finishes. Each is persisted once and acknowledged then. Abort or
@@ -105,4 +105,4 @@ failure returns only unsent messages alongside the draft. Completion races and l
 real-PTY probes J–L inspect requests and archives, and a live Haiku run follows both kinds of input.
 
 Only **0007's re-derived action budget** now keeps this entry open. Multi-line editing and interactive
-session/model commands have their own units, 0045 and 0046.
+session/model commands have their own units, 0049 and 0050.

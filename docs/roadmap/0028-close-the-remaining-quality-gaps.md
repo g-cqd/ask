@@ -30,7 +30,8 @@ Found by the 2026-10-19 audit (`docs/diary/2026-10-19-02.md`), each with the pro
    30-45 KiB lower, four interleaved rounds.
 7. **The idle-memory budget is already exceeded on main.** 8208–8264 KiB against 8192 KiB, before this work
    (diary probe 18), so `ask --budgets` reports OVER BUDGET and the CI `budgets` job should be red. Roadmap
-   0007 owns re-deriving the budgets; this entry only records that nobody is currently told.
+   0007 owns re-deriving the budgets; this entry only records that nobody is currently told. *Resolved 2026-10-20 by ADR-0038:
+   the limit is 24 MiB; the overrun above is no longer a failure.*
 8. **deadwood's `dead-store` rule was wrong on 13 of 13 findings here.** Two causes, fixed with tests on branch
    `fix/dead-store-false-positives` of g-cqd/deadwood, not yet released: a binding with no initialiser is not a
    store, and shorthand `if let x` reads the `x` it shadows. When a release carries it, bump the pin in
