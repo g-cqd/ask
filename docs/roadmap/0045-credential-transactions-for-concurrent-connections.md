@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-20
 ---
@@ -29,3 +29,15 @@ Use a generation or compare-and-replace check inside the short write transaction
 refresh was awaiting the server; pin that rule with an explicitly gated response, not a sleep. Choose the precise
 on-disk envelope and lock names after these probes, then record the decision in an ADR. No dependency or generic
 storage framework is justified merely by adding another account.
+
+## Done (diary 30, ADR-0039)
+
+A short save lock, one transaction for every writer, compare-and-replace for a refresh's save, a bounded wait that reports
+`locked`, locks released on deallocation and on death. Probed with a second process and `SIGKILL`; the real binary verified
+against a process holding the lock. Every rule has a test that was seen to fail when the rule was removed.
+
+## Moved to 0046, where the schema is decided
+
+Keeping top-level records this version does not know (nothing new is stored yet, so an older ask dropping them has no
+consequence today), and a refresh lock per connection (there is one Codex connection). Also unverified and not required here: a
+live refresh through the new save, and a test that cancelling a lock wait closes its descriptor.
