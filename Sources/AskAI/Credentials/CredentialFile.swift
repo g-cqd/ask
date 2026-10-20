@@ -118,25 +118,25 @@ public struct CredentialFile: Sendable {
     /// A file that cannot be read as credentials stops the transaction before `change` runs, so a damaged file is never
     /// overwritten. With `creating` false, a directory that does not exist yet is not made: there is nothing to change.
     /// `change` must not start another transaction: the lock is not reentrant.
-    private func transact<T>(creating: Bool, _ change: (inout Stored) -> (result: T, write: Bool))
+    private func transact<T>(creating: Bool, _ change: (inout StoredCredentials) -> (result: T, write: Bool))
         throws(CredentialFileError) -> T
     {
         if creating {
             try prepareDirectory()
         } else if !FileManager.default.fileExists(atPath: url.deletingLastPathComponent().path) {
-            var empty = Stored()
+            var empty = StoredCredentials()
             return change(&empty).result
         }
         let lock = try takeLock()
         defer { lock.release() }
-        var stored = try read() ?? Stored()
+        var stored = try read() ?? StoredCredentials()
         let outcome = change(&stored)
         if outcome.write { try write(stored) }
         return outcome.result
     }
 
     /// Stores `value` in the record at `record`, creating the file if there is none.
-    private func save<T>(_ record: WritableKeyPath<Stored, T?>, _ value: T) throws(CredentialFileError) {
+    private func save<T>(_ record: WritableKeyPath<StoredCredentials, T?>, _ value: T) throws(CredentialFileError) {
         try transact(creating: true) {
             $0[keyPath: record] = value
             return ((), true)
@@ -144,7 +144,7 @@ public struct CredentialFile: Sendable {
     }
 
     /// Empties the record at `record`. Nothing stored is not an error, and makes nothing.
-    private func clear<T>(_ record: WritableKeyPath<Stored, T?>) throws(CredentialFileError) {
+    private func clear<T>(_ record: WritableKeyPath<StoredCredentials, T?>) throws(CredentialFileError) {
         try transact(creating: false) {
             guard $0[keyPath: record] != nil else { return ((), false) }
             $0[keyPath: record] = nil
@@ -153,7 +153,9 @@ public struct CredentialFile: Sendable {
     }
 
     /// Replaces the record at `record` only while it is still `expected`; false, and nothing written, when it is not.
-    private func replace<T: Equatable>(_ record: WritableKeyPath<Stored, T?>, with value: T, ifStill expected: T)
+    private func replace<T: Equatable>(
+        _ record: WritableKeyPath<StoredCredentials, T?>, with value: T, ifStill expected: T
+    )
         throws(CredentialFileError) -> Bool
     {
         try transact(creating: false) { stored in
@@ -187,7 +189,7 @@ public struct CredentialFile: Sendable {
     // MARK: - The file
 
     /// What the file holds, or nil when there is no file.
-    private func read() throws(CredentialFileError) -> Stored? {
+    private func read() throws(CredentialFileError) -> StoredCredentials? {
         var status = stat()
         guard stat(url.path, &status) == 0 else {
             if errno == ENOENT { return nil }
@@ -196,14 +198,14 @@ public struct CredentialFile: Sendable {
         let mode = Int(status.st_mode) & 0o777
         guard mode & 0o077 == 0 else { throw .exposed(path: url.path, mode: mode) }
         guard let bytes = try? Data(contentsOf: url) else { throw .io(path: url.path, errno: errno) }
-        guard let stored = try? AemiJSON.JSONDecoder().decode(Stored.self, from: [UInt8](bytes)) else {
+        guard let stored = try? AemiJSON.JSONDecoder().decode(StoredCredentials.self, from: [UInt8](bytes)) else {
             throw .damaged(path: url.path)
         }
         return stored
     }
 
     /// Writes `stored` as a new owner-only file and renames it into place, so a crash leaves the old file or the new.
-    private func write(_ stored: Stored) throws(CredentialFileError) {
+    private func write(_ stored: StoredCredentials) throws(CredentialFileError) {
         let directory = url.deletingLastPathComponent()
         var encoder = AemiJSON.JSONEncoder()
         encoder.options.keyOrder = .sorted
@@ -228,13 +230,5 @@ public struct CredentialFile: Sendable {
         let lock = try takeLock()
         defer { lock.release() }
         guard unlink(url.path) == 0 || errno == ENOENT else { throw .io(path: url.path, errno: errno) }
-    }
-
-    /// The file's shape: Claude's credentials where they always were, and other providers' keys beside them, so a
-    /// file written before keys existed still reads.
-    private struct Stored: Codable {
-        var claude: ClaudeCredentials?
-        var keys: [String: StoredKey]?
-        var codex: CodexCredentials?
     }
 }
