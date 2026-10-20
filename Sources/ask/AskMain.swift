@@ -64,6 +64,13 @@ struct Ask: AsyncParsableCommand {
             valueName: "scope"))
     var write: String?
 
+    @Option(
+        help: ArgumentHelp(
+            "Where commands and tools may read: workspace (this directory, the system and developer tools), "
+                + "anywhere, or one directory. Replaces config.json's sandbox.read.",
+            valueName: "scope"))
+    var read: String?
+
     @Flag(name: .customLong("self-check"), help: .hidden)
     var selfCheck = false
 
@@ -91,23 +98,26 @@ struct Ask: AsyncParsableCommand {
         if continueLatest, resume != nil { throw ValidationError("Use --continue or --resume, not both.") }
         if let maxTurns, maxTurns < 1 { throw ValidationError("--max-turns must be at least 1.") }
         if let compactAt, compactAt < 0 { throw ValidationError("--compact-at must be 0 or more.") }
-        if noSandbox, network != nil || write != nil {
-            throw ValidationError("--no-sandbox turns the sandbox off; --network and --write need it on.")
+        if noSandbox, network != nil || write != nil || read != nil {
+            throw ValidationError("--no-sandbox turns the sandbox off; --network, --write and --read need it on.")
         }
         if let network, SandboxPolicy.Network(named: network) == nil {
             throw ValidationError("--network must be none, localhost or any.")
         }
-        if let write, !["workspace", "anywhere"].contains(write), !write.hasPrefix("/"), !write.hasPrefix("~/") {
-            throw ValidationError("--write must be workspace, anywhere, or an absolute path (or one starting with ~/).")
+        for (flag, value) in [("--write", write), ("--read", read)] {
+            if let value, !["workspace", "anywhere"].contains(value), !value.hasPrefix("/"), !value.hasPrefix("~/") {
+                throw ValidationError(
+                    "\(flag) must be workspace, anywhere, or an absolute path (or one starting with ~/).")
+            }
         }
         if (selectedProvider == nil) != (selectedModel == nil) {
             throw ValidationError("--selected-provider and --selected-model go together.")
         }
     }
 
-    /// `--write` as a setting.
-    private var writeSetting: PathSetting? {
-        switch write {
+    /// `--write` or `--read` as a setting.
+    private static func scope(_ value: String?) -> PathSetting? {
+        switch value {
             case nil: nil
             case "workspace": .workspace
             case "anywhere": .anywhere
@@ -129,7 +139,8 @@ struct Ask: AsyncParsableCommand {
             workingDirectory: FileManager.default.currentDirectoryPath,
             flags: .init(
                 model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt, noSandbox: noSandbox,
-                network: network.flatMap(SandboxPolicy.Network.init(named:)), write: writeSetting,
+                network: network.flatMap(SandboxPolicy.Network.init(named:)), write: Self.scope(write),
+                read: Self.scope(read),
                 selected: selectedProvider.flatMap { provider in
                     selectedModel.map { ModelSelection(provider: provider, model: $0) }
                 }))

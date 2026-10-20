@@ -18,7 +18,7 @@ extension RunSettings {
     func record(in session: SessionRecorder) throws(SessionFileError) {
         let section = configuration.sandbox.value
         guard !sandbox.isUnrestricted else { return }
-        guard session.sandbox != nil || !section.write.isEmpty || section.network != nil else { return }
+        guard session.sandbox != nil || !section.strict.isEmpty else { return }
         try session.recordSandbox(section)
     }
 }
