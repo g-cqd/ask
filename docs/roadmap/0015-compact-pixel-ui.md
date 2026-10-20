@@ -74,13 +74,22 @@ TerminalKit, and no terminal other than kitty was tried.
 - **The table holds.** A 1 px hairline and a pixel-positioned scrollbar thumb cost **no row and no column** (checked by
   zooming a screenshot). With glyph separators each costs a row: the bottom stack is **4 / 3 / 2 rows** with pixel
   lines and **5 / 4 / 3** with glyph rules, for the roomy / tight / flush densities below.
-- **One block model, for every block.** Yours, the assistant's output, thinking, tool calls (and the agent group and
-  diff inside them) and the input are all blocks: the same padding above and below the content **inside the block's own
-  surface**, its own tint, and its own edge bar. A first version padded only some of them, which read as inconsistent.
-  Tints are derived from the terminal's palette: yours leans to the accent, output is neutral, thinking leans magenta,
-  tool calls lean cyan. With surfaces off they collapse to the page and only the bars distinguish the kinds. Strengths
-  are capped so the best possible text keeps 7.5:1; the first draft let a yellow accent make a tint so bright that even
-  white text failed.
+- **One block model, for every block, with no leading decoration.** Yours, the assistant's output, thinking, tool calls
+  (and the agent group and diff inside them) and the input are all blocks: the same padding above and below, text inset by
+  two columns, and nothing at the start of a line. The first versions had a painted bar at the left of each block and
+  icons (`▸`, `◆`, `›`, `↪`); the owner was not convinced by either, and asked that **spacing carry the hierarchy**.
+  What carries it now: your messages are bold; thinking is faint italic; tool calls are muted with the agent names bold;
+  output is plain; the expand hint is text at the right edge (`ctrl+t to expand`), not an arrow at the left; routing to
+  another session is words (`to render-review`) and a warning-coloured chip, not a glyph. A test fails if any of
+  `▌ ▏ ▸ ▾ ◆ › ↪ ⠹` appears in the transcript, the input or a picker.
+- **Unpainted by default.** With surfaces off (the default) the only backgrounds are the terminal's own default and the
+  diff's red and green, which are meaning. Chips, the work strip, the status chips and picker selections lose their fills
+  and become coloured text. The terminal's opacity, blur and wallpaper are untouched. Surfaces can be turned back on, and
+  then each kind of block has its own tint (yours leans to the accent, thinking magenta, tool calls cyan, output neutral),
+  capped so the best possible text keeps 7.5:1 (a yellow accent once made a tint so bright that white text failed).
+  A test asserts the set of backgrounds in the emitted escape codes; four controls fail it (surfaces on by default, chips
+  painting, a leading icon, and a leak found by the test itself: backgrounds that equal the page colour were being painted
+  as a one-unit-nudged colour, which would have turned transparency off in the very mode meant to keep it).
 - **Padding is not free, and the lab measured it.** In a transcript of mostly one-line blocks (collapsed thinking and
   tool calls), real content rows visible at 120 x 42:
 
@@ -102,7 +111,7 @@ TerminalKit, and no terminal other than kitty was tried.
 - **Two densities, chosen by the owner, not one design with a slider.** *Compact*: half-row padding, pixel hairlines,
   flush bottom. *Aerial*: one-row padding, block-line rows, roomy bottom (work strip, input, status). They are presets
   over individual settings, and changing one setting makes the density `custom`.
-- **Strokes are quiet.** Hairlines, rules, the scrollbar track and the thinking and tool bars share one stroke colour,
+- **Strokes are quiet.** Hairlines, rules and the scrollbar track share one stroke colour,
   with three levels (`subtle` by default, `normal`, `strong`). Subtle is 1.85:1 against the page on the owner's
   terminal, against 3.5:1 for the first version, and every level keeps a minimum contrast against **every** block tint, so
   a hairline between two tinted blocks never vanishes (the level ordering is tested, and a control fails when `subtle` is
@@ -129,8 +138,8 @@ TerminalKit, and no terminal other than kitty was tried.
   so a painted base must differ by one unit. Both modes need to exist, as a setting.
 
 **Settings worth keeping** (proposed, not decided; they would join the configuration of roadmap 0039): density
-(`compact`, `aerial`, `custom`), theme source (`terminal`, `light`, `dark`), accent (an ANSI colour), surface strength,
-background (`terminal default` or `painted`), separator style, pixel thickness, stroke visibility, block padding (none,
+(`compact`, `aerial`, `custom`), theme source (`terminal`, `light`, `dark`), accent (an ANSI colour), surface strength (off by default),
+background (`terminal default` or `painted`, which matters only with surfaces on), separator style, pixel thickness, stroke visibility, block padding (none,
 half row, one row, two rows), bottom section, status style, layout.
 
 **Still undecided**
