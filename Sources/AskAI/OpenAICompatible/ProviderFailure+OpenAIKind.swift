@@ -3,7 +3,9 @@ extension ProviderFailure.Kind {
     /// differently (`rate_limit_exceeded`, `server_error`, `invalid_request_error`), so a type is matched by what it
     /// contains.
     private static let byTypeName: [(fragments: [String], kind: ProviderFailure.Kind)] = [
-        (["rate_limit", "quota"], .rateLimited), (["overloaded"], .overloaded), (["server_error", "internal"], .server),
+        // First: "insufficient_quota" also contains "quota", and a usage limit is not a rate limit.
+        (["usage_limit", "insufficient_quota"], .usageLimit), (["rate_limit", "quota"], .rateLimited),
+        (["overloaded"], .overloaded), (["server_error", "internal"], .server),
         (["authentication", "invalid_api_key"], .authentication), (["permission"], .permission),
         (["not_found"], .notFound), (["invalid_request"], .invalidRequest)
     ]

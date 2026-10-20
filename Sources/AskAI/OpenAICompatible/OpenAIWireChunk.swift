@@ -19,7 +19,7 @@ struct OpenAIWireChunk: Decodable, Sendable {
     /// The error a payload carries at its top level, as vLLM sends it.
     var topLevelError: ErrorBody? {
         guard object == "error" else { return nil }
-        return ErrorBody(message: message, type: type, code: code)
+        return ErrorBody(message: message, type: type, code: code, resetsIn: nil)
     }
 
     struct Choice: Decodable, Sendable {
@@ -65,10 +65,23 @@ struct OpenAIWireChunk: Decodable, Sendable {
         let code: Code?
         /// llama.cpp's context size, sent with a refusal for length.
         var nCtx: Int?
+        /// Seconds until a usage limit lifts, which ChatGPT's backend sends (`resets_in_seconds`).
+        let resetsIn: Seconds?
 
         enum CodingKeys: String, CodingKey {
             case message, type, code
             case nCtx = "n_ctx"
+            case resetsIn = "resets_in_seconds"
+        }
+    }
+
+    /// A count of seconds that is whatever the server sent it as: a number that is not a whole one, a string or a list is nil
+    /// here, not a reason to lose the rest of the error.
+    struct Seconds: Decodable, Sendable {
+        let value: Int?
+
+        init(from decoder: any Decoder) throws {
+            value = try? decoder.singleValueContainer().decode(Int.self)
         }
     }
 
