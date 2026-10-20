@@ -3,18 +3,18 @@ status: accepted
 date: 2026-10-20
 ---
 
-# 0043 — A connection keeps its own model names, apart from what the server lists
+# 0049 — A connection keeps its own model names, apart from what the server lists
 
 ## Context
 
-A named connection (ADR-0040) can offer many models, and a user wants short names of their own and a default, without retyping ids
+A named connection (ADR-0048) can offer many models, and a user wants short names of their own and a default, without retyping ids
 such as `gpt-6.1-sol`. Two kinds of fact must stay apart: what the **server reports** (the catalog, ADR-0037: observed, expires,
 refreshed) and what the **user chose** (names, a default, limits they state), which a refresh must never erase. Numbers: this ADR is
 0043 because the `sandbox-strict` branch claims 0040 to 0042.
 
 ## The probes
 
-Ledger in `docs/diary/2026-10-20-39.md`.
+Ledger in `docs/diary/2026-10-20-45.md`.
 
 - **Does it work on the real account?** On the user's real `work` connection: an alias and a default were added, `ask models work`
   listed the live catalog with the aliases below it, a run with no `--model` printed `Using work/fast, which is gpt-6-luna.`, and the

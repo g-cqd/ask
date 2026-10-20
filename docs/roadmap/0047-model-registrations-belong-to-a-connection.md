@@ -29,7 +29,7 @@ the final wire schema. Add create/list/update/remove CLI paths only after the un
 red/green tests. Session records keep the resolved raw id as well as the local label so a later alias edit cannot
 retroactively change what a recorded request meant.
 
-## Done (diary 39, ADR-0043)
+## Done (diary 45, ADR-0049)
 
 Per-connection aliases and a default model: `ask connections alias|unalias|default`, shown by `ask models NAME`; resolved with the
 server's id sent and recorded, the stated limits winning, nothing hidden, nothing chained, damage refused. Verified on the real

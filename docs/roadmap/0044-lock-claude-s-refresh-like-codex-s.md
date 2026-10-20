@@ -16,7 +16,7 @@ Claude's refresh already saves only if nothing changed meanwhile. What is still 
 
 ## How to run the probe (two named Claude connections, one account)
 
-A named Claude connection (ADR-0040) makes the question testable with a single account: two sign-ins are two separate grants.
+A named Claude connection (ADR-0048) makes the question testable with a single account: two sign-ins are two separate grants.
 Commands, in fish, from the repository:
 
 ```fish
@@ -32,7 +32,7 @@ Each login prints a URL; open it, sign in, paste the `code#state` it shows. Then
    older grants; if it does, that is the finding, and `ask login claude` repairs the default.
 3. Mark one connection's access token expired in its own credential file and run `ask --provider claude-a --print x`: ask must
    refresh on the real server. The other connection and the default must be left intact, and the file mode stays 0600.
-4. Whether the refresh response identifies the account (ADR-0040 checks that for Codex only).
+4. Whether the refresh response identifies the account (ADR-0048 checks that for Codex only).
 5. Whether the **spent** refresh token is refused when presented a second time. Refused: the tokens are single use and the lock
    across the refresh is needed. Accepted: record that and close this entry.
 
