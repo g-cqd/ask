@@ -6,29 +6,24 @@ Pixel lines use the kitty graphics protocol when available and fall back to glyp
 """
 import argparse, base64, fcntl, json, math, os, re, select, shutil, struct, sys, termios, time, tty, unicodedata, zlib
 
+# Only used to fill an ANSI colour the terminal did not report; the lab never paints a background.
 PRESETS = {
     'light': dict(base='#ffffff', fg='#111111',
                   ansi={1: '#b3261e', 2: '#1b6636', 3: '#8a5a00', 4: '#154b85', 5: '#8a2f8f', 6: '#0b6b73', 8: '#6c7787'}),
     'dark': dict(base='#0e1217', fg='#f0f3f8',
                  ansi={1: '#ff9d9d', 2: '#8ee0ae', 3: '#f2c777', 4: '#8fc0ff', 5: '#e0a8ff', 6: '#7fe0e8', 8: '#66748a'}),
 }
-THEME_SOURCES = ['terminal', 'light', 'dark']
 ACCENTS = {'blue': 4, 'cyan': 6, 'magenta': 5, 'green': 2, 'yellow': 3}
-SURFACES = ['off', 'subtle', 'normal', 'strong']
 # How visible hairlines, rules and the scrollbar track are: (share of the foreground in the stroke, least contrast it keeps
-# against EVERY block tint, so a hairline between two tinted blocks never vanishes).
+# against the terminal's own background).
 STROKES = {'subtle': (0.22, 1.4), 'normal': (0.35, 2.0), 'strong': (0.45, 2.6)}
-SURFACE_K = [0.0, 0.6, 1.0, 1.6]
 BOTTOMS = ['roomy', 'tight', 'flush']
-DENSITIES = ['pixel', 'aerial', 'custom']
-PADS = [0, 0.5, 1, 2]            # rows of padding inside a block; 0.5 is drawn with half-block glyphs and shared with the neighbour
-# Every block, and the input, has the same inner padding. What differs is how blocks are separated and how much
-# chrome sits at the bottom: pixel separates with 1 px hairlines (no row), aerial with a block-line row. 'pixel' is the setup
-# the owner settled on: one row of padding, a roomy bottom. A flush bottom and half-row padding were tried and rejected.
-DENSITY_PRESETS = {
-    'pixel': dict(sep=0, bottom=0, pad=1),
-    'aerial': dict(sep=1, bottom=0, pad=1),
-}
+PADS = [0, 1]                    # rows of padding above and below the content of every block: none, or one block row
+LAYOUTS = ['flat', 'surfaces', 'workbench']     # flat: spacing only. surfaces: spacing and separators. workbench: adds a sidebar
+# The ANSI colour numbers used when the terminal does not report its own colours (so light and dark terminals both work).
+ANSI_FALLBACK = dict(fg='ansi:39', muted='ansi:2;39', faint='ansi:2;39', line='ansi:2;39', good='ansi:32', warn='ansi:33', bad='ansi:31')
+ANSI_ACCENT = {'blue': 'ansi:34', 'cyan': 'ansi:36', 'magenta': 'ansi:35', 'green': 'ansi:32', 'yellow': 'ansi:33'}
+HEX_FOR_IMAGES = dict(line='#7f7f7f', accent='#4a90e2')       # pixel strokes cannot use an ANSI colour
 
 
 def hex_rgb(h):
@@ -43,14 +38,6 @@ def rgb_hex(c):
 def blend(a, b, t):
     ca, cb = hex_rgb(a), hex_rgb(b)
     return rgb_hex([ca[i] * (1 - t) + cb[i] * t for i in range(3)])
-
-
-def nudge(h):
-    """One unit lighter (or darker on a light colour). Kitty and others treat an explicit background equal to the
-    default as the default, so it stays translucent; one unit apart it is painted. Invisible to the eye."""
-    c = hex_rgb(h)
-    step = 1 if sum(c) < 384 else -1
-    return rgb_hex([v + step for v in c])
 
 
 def luminance(h):
@@ -79,57 +66,21 @@ def ensure(color, base, minimum, fg):
     return target
 
 
-# The backgrounds text can sit on. Every text colour is kept readable on all of them, not only on the base.
-TINTS = ['base', 'panel', 'input', 'bar', 'userbg', 'outbg', 'thinkbg', 'toolbg']
-
-
-def stroke_color(color, tints, minimum, fg):
-    for name in TINTS:
-        color = ensure(color, tints[name], minimum, fg)
-    return color
-
-
-def derive(base, fg, ansi, accent='blue', surface=2, stroke='subtle'):
-    """Every colour the UI uses, derived from the terminal's own base, foreground and ANSI palette.
-
-    Each kind of block has its own tint: yours leans to the accent, the assistant's output is neutral, thinking leans
-    magenta and tool calls lean cyan. With surfaces off they all collapse to the base and only the bars distinguish them.
-    """
+def derive(base, fg, ansi, accent='blue', stroke='subtle'):
+    """The text colours, derived from the terminal's own background, foreground and ANSI palette. Nothing here is a
+    background: the lab never paints one, so hierarchy rests on these colours, on type and on spacing."""
     fallback = PRESETS['dark' if luminance(base) < 0.4 else 'light']['ansi']
     pick = lambda i: ansi.get(i) or fallback[i]
-    k = SURFACE_K[surface]
-    acc = pick(ACCENTS[accent])
-    extreme = '#ffffff' if luminance(base) < 0.4 else '#000000'
-
-    def tint(color, alpha):
-        """A background leaning to `color`, never so strong that the best possible text (white or black) loses 7.5:1."""
-        for _ in range(30):
-            candidate = blend(base, color, alpha)
-            if contrast(extreme, candidate) >= 7.5:
-                return candidate
-            alpha *= 0.9
-        return base
-    tints = dict(
-        base=base, panel=tint(fg, 0.045 * k), input=tint(fg, 0.065 * k), bar=tint(fg, 0.10 * k),
-        userbg=tint(acc, 0.15 * k), outbg=tint(fg, 0.04 * k),
-        thinkbg=tint(pick(5), 0.13 * k), toolbg=tint(pick(6), 0.13 * k))
-
-    def readable(color, minimum):
-        for name in TINTS:
-            color = ensure(color, tints[name], minimum, fg)
-        return color
-    acc = readable(acc, 4.5)
-    good, warn, bad = (readable(pick(i), 4.5) for i in (2, 3, 1))
-    pal = dict(tints)
-    pal.update(
-        fg=readable(fg, 7.0), muted=readable(blend(fg, base, 0.22), 5.0), faint=readable(blend(fg, base, 0.40), 4.5),
-        line=stroke_color(blend(base, fg, STROKES[stroke][0]), tints, STROKES[stroke][1], fg), raised=blend(base, acc, 0.20),
-        accent=acc, accentfg=base, good=good, warn=warn, bad=bad,
-        addbg=blend(base, good, 0.16), delbg=blend(base, bad, 0.16), warnbg=blend(base, warn, 0.18))
-    return pal
+    share, least = STROKES[stroke]
+    return dict(
+        base=base, fg=ensure(fg, base, 7.0, fg),
+        muted=ensure(blend(fg, base, 0.22), base, 5.0, fg), faint=ensure(blend(fg, base, 0.40), base, 4.5, fg),
+        line=ensure(blend(base, fg, share), base, least, fg),
+        accent=ensure(pick(ACCENTS[accent]), base, 4.5, fg),
+        good=ensure(pick(2), base, 4.5, fg), warn=ensure(pick(3), base, 4.5, fg), bad=ensure(pick(1), base, 4.5, fg))
 
 
-SEPS = ['pixel line', 'eighth-block', 'box line', 'background only']
+SEPS = ['pixel line', 'block line']       # block line (an eighth-block glyph) is what terminals without pixels get
 DATA = {
     'commands': [('/model', 'Switch provider and model', 'SETTING', 'Local UI action. No model request.'),
                  ('/review', 'Review the working diff', 'PROMPT', 'Expands a saved prompt into your draft.'),
@@ -140,7 +91,7 @@ DATA = {
                  ('/agents', 'Open agent activity', 'VIEW', 'Inspect child agents without changing them.'),
                  ('/sessions', 'Open active sessions', 'VIEW', 'Sessions you can address with @ and talk to directly.'),
                  ('/tasks', 'Open task list', 'VIEW', 'Inspect work without changing it.'),
-                 ('/theme', 'Tune colours, separators and density', 'SETTING', 'Opens the settings panel. Changes apply live.'),
+                 ('/theme', 'Tune the accent, lines, padding and layout', 'SETTING', 'Opens the settings panel. Changes apply live.'),
                  ('/clear', 'Start a new conversation', 'ACTION', 'The current conversation stays in history.')],
     'refs': [('docs/rendering.md:42-58', 'Rendering ownership and cancellation', 'FILE', '42  A frame has exactly one owner.\n43  Input never waits for composition.\n44  Stop the renderer before restoration.'),
              ('src/ScreenSession.swift', 'Event application and frame submission', 'FILE', 'The event loop applies an update,\nthen submits state. The render thread\ntakes the newest revision.'),
@@ -212,48 +163,37 @@ def png(w, h, raw):
 
 
 SETTING_ROWS = [
-    ('Preset', 'density', DENSITIES, 'pixel: blocks separated by 1px hairlines, one row of padding, roomy bottom. aerial: the same, with a block-line row between blocks instead of a hairline. Changing any single setting below makes it custom.'),
-    ('Theme source', 'theme', THEME_SOURCES, 'terminal: derive everything from your terminal\'s own background, foreground and ANSI colours. light / dark: fixed presets.'),
-    ('Accent', 'accent', list(ACCENTS), 'Which ANSI colour is the accent (focus bar, chips, selection).'),
-    ('Surfaces', 'surface', SURFACES, 'How far each kind of block differs from the page. off (the default): nothing is painted, and hierarchy comes from spacing and type; the terminal\'s own background and transparency are untouched.'),
-    ('Background', 'paint', ['terminal default', 'painted'], 'terminal default: keeps your terminal\'s opacity, blur and wallpaper, but on a translucent terminal the surfaces can look darker than the page. painted: every cell is drawn, so surfaces always match; transparency is lost.'),
-    ('Separators', 'sep', SEPS, 'pixel line is 1 or 2 real pixels (kitty graphics) and costs no row. The others are glyphs and cost one row each.'),
-    ('Line thickness', 'thick', ['1px', '2px'], 'Pixel separators and the scrollbar only.'),
-    ('Strokes', 'stroke', list(STROKES), 'How visible hairlines, rules and the scrollbar track are. subtle keeps just enough contrast against every block to find the edge.'),
-    ('Block padding', 'pad', ['none', '½ row', '1 row', '2 rows'], 'Padding above and below the content inside every block: yours, the assistant\'s, thinking, tool calls, and the input. ½ row is drawn with half-block glyphs and shared between neighbours, so a one-line block costs 2 rows, not 3.'),
-    ('Bottom section', 'bottom', BOTTOMS, 'roomy: work strip, two-row input, status. tight: no work strip. flush: one-row input with inline chips, then status.'),
-    ('Status bar', 'status_mode', ['chips', 'line'], 'Coloured chips with a context meter, or one plain line.'),
-    ('Layout', 'variant', ['flat', 'surfaces', 'workbench'], 'flat: markers only. surfaces: your messages on a band. workbench: adds the task and agent sidebar.'),
+    ('Accent', 'accent', list(ACCENTS), 'Which of your terminal\'s ANSI colours is the accent: the focus, the mode, selections. It colours text only.'),
+    ('Separators', 'sep', SEPS, 'pixel line: a real 1 or 2 pixel line between blocks, costing no row (kitty graphics). block line: an eighth-block glyph row, for terminals without pixels.'),
+    ('Line thickness', 'thick', ['1px', '2px'], 'Pixel lines and the scrollbar only.'),
+    ('Strokes', 'stroke', list(STROKES), 'How visible lines and the scrollbar track are. subtle keeps just enough contrast with your terminal\'s background to find the edge.'),
+    ('Block padding', 'pad', ['none', '1 block'], 'One blank row above and below the content of every block: yours, the assistant\'s, thinking, tool calls, and the input.'),
+    ('Bottom section', 'bottom', BOTTOMS, 'roomy: work strip, two-row input, status. tight: no work strip. flush: one-row input with its chips inline, then status.'),
+    ('Layout', 'variant', LAYOUTS, 'flat: spacing only. surfaces: spacing and a separator between blocks. workbench: surfaces plus a sidebar of tasks, agents and context.'),
 ]
-SAVED = ['theme', 'accent', 'surface', 'paint', 'density', 'pad', 'sep', 'thick', 'stroke', 'bottom', 'status_mode', 'variant']
-BRACKET = {'terminal': '', }
+SAVED = ['accent', 'pad', 'sep', 'thick', 'stroke', 'bottom', 'variant']
 
 
 INNER = 2          # columns of padding inside a block, left and right of its text
 
 
 class Line:
-    """One row of the transcript. role: 'content', 'pad' (padding inside a block), 'half' (the shared half-row between two
-    blocks) or 'sep' (a block-line row). No leading bar and no leading icon: hierarchy is spacing, tint and type."""
-    def __init__(self, spans, bg=None, edge=False, role='content', block=-1, halves=None, right=None, italic=False):
-        self.spans, self.bg, self.edge, self.role, self.block = spans, bg, edge, role, block
-        self.halves = halves        # role 'half': (tint of the block above or None, tint of the block below or None)
+    """One row of the transcript. role: 'content', 'pad' (a blank row of padding inside a block) or 'sep' (a block-line row).
+    There is no background, no leading bar and no leading icon: hierarchy is spacing, type and colour."""
+    def __init__(self, spans, edge=False, role='content', block=-1, right=None, italic=False):
+        self.spans, self.edge, self.role, self.block = spans, edge, role, block
         self.right = right          # text aligned to the right edge, such as "ctrl+t to expand"
         self.italic = italic
 
 
-#: kind of block -> its tint (painted only when surfaces are on).
-KINDS = {'user': 'userbg', 'out': 'outbg', 'think': 'thinkbg', 'tool': 'toolbg'}
-UNPAINTED = {'raised', 'warnbg', 'accent'}      # fills that disappear when surfaces are off; diff tints are meaning, and stay
+KINDS = ('user', 'out', 'think', 'tool')       # the kinds of block. Nothing is painted behind any of them.
 
 
 class Lab:
     def __init__(self, variant=1):
-        self.variant, self.theme, self.sep, self.thick = variant, 'terminal', 0, 1
-        self.status_mode = 0
+        self.variant, self.sep, self.thick = variant, 0, 1
         self.gfx = False
-        self.accent, self.surface, self.bottom, self.paint = 'blue', 0, 0, 0
-        self.density, self.pad = 'pixel', 1
+        self.accent, self.bottom, self.pad = 'blue', 0, 1
         self.stroke = 'subtle'
         self.strokes = []           # vertical strokes drawn this frame: the lab asserts there is one at a boundary
         self.img_clip, self.placed, self.phase = None, [], 'page'   # rows an open popup hides from images; every placement, for tests
@@ -278,50 +218,37 @@ class Lab:
 
     # ---------- colour and drawing primitives ----------
     def retheme(self):
-        source = self.theme
-        if source == 'terminal' and self.term:
-            self.pal = derive(self.term['base'], self.term['fg'], self.term['ansi'], self.accent, self.surface, self.stroke)
-            self.theme_note = 'terminal colours (OSC 10/11/4)'
+        if self.term:
+            self.pal = derive(self.term['base'], self.term['fg'], self.term['ansi'], self.accent, self.stroke)
+            self.theme_note = 'your terminal\'s colours (OSC 10/11/4)'
         else:
-            preset = PRESETS['light' if source == 'light' else 'dark']
-            self.pal = derive(preset['base'], preset['fg'], preset['ansi'], self.accent, self.surface, self.stroke)
-            self.theme_note = ('terminal colours unavailable, using the dark preset' if source == 'terminal'
-                               else f'{source} preset')
+            # The terminal did not say. Plain ANSI colours adapt to a light or a dark terminal without guessing a palette.
+            self.pal = dict(ANSI_FALLBACK, accent=ANSI_ACCENT[self.accent], base='#000000')
+            self.theme_note = 'the terminal did not report its colours: using ANSI colours'
 
     def col(self, name):
         return self.pal.get(name, name)
 
-    def native(self):
-        """True when the terminal's own colours are in charge: its default background and foreground are used as is."""
-        return self.theme == 'terminal' and bool(self.term) and self.paint == 0
-
     def bg_code(self, name):
-        color = self.col(name)
-        if self.native() and color == self.pal['base']:
-            return '\033[49m'          # the terminal's own background: keeps its opacity, blur and wallpaper
-        if color == self.pal['base']:
-            color = nudge(color)       # painted, not "the default background"
-        return self.rgb(color, True)
+        return '\033[49m'              # never painted: the terminal's own background, its opacity, blur and wallpaper
 
     def fg_code(self, name):
-        if name == 'fg' and self.native() and self.pal['fg'] == self.term['fg']:
+        value = self.col(name)
+        if value.startswith('ansi:'):
+            return '\033[' + value[5:] + 'm'
+        if name == 'fg' and self.term and value == self.term['fg']:
             return '\033[39m'
-        return self.rgb(self.col(name))
+        return self.rgb(value)
 
     @staticmethod
     def rgb(hexcolor, bg=False):
         h = hexcolor.lstrip('#')
         return '\033[%d;2;%d;%d;%dm' % (48 if bg else 38, int(h[:2], 16), int(h[2:4], 16), int(h[4:], 16))
 
-    def unpainted(self):
-        """Surfaces off: no painted background anywhere except the diff's red and green."""
-        return self.surface == 0
-
-    def put(self, x, y, text, fg='fg', bg='base', bold=False, rev=False, italic=False, raw=False):
-        if self.surface == 0 and bg in UNPAINTED and not raw:
-            if fg == 'accentfg':
-                fg, bold = 'accent', True
-            bg = 'base'
+    def put(self, x, y, text, fg='fg', bg=None, bold=False, rev=False, italic=False, raw=False):
+        """Draw text. `bg` is accepted and ignored: nothing in this UI is ever painted behind the text."""
+        if fg == 'accentfg':
+            fg, bold = 'accent', True
         if y < 0 or y >= min(self.h, self.clip_y) or x >= self.xlim or not text:
             return
         text = fit(text, self.xlim - x)
@@ -367,7 +294,8 @@ class Lab:
         self.out.append(f'\033[{y+1};{x+1}H\033_Ga=p,i={ident},C=1,z=1,q=2,X={xoff},Y={yoff}{crop}\033\\')
 
     def rgba(self, name):
-        h = self.col(name).lstrip('#')
+        value = self.col(name)
+        h = (HEX_FOR_IMAGES.get(name, '#7f7f7f') if value.startswith('ansi:') else value).lstrip('#')
         return bytes([int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16), 255])
 
     def px_hline(self, x, y, w, color='line', yoff=0):
@@ -394,27 +322,26 @@ class Lab:
         self.place(self.image(key, wpx, hpx, b''.join(lines)), x, y, xoff, 0, rows)
 
     # ---------- separators ----------
+    def pixel(self):
+        """True when separators are real pixel lines: chosen, and the terminal can draw them."""
+        return self.sep == 0 and self.gfx
+
     def sep_rows(self):
-        return 0 if (self.sep == 3 or (self.sep == 0 and self.gfx)) else 1
+        """Rows a separator costs: none as a pixel line, one as a block-line row."""
+        return 0 if self.pixel() else 1
 
     def rule(self, y, x, w, color='line'):
-        if self.sep == 3:
-            return
-        if self.sep == 0 and self.gfx:
+        if self.pixel():
             self.px_hline(x, y, w, color)
-        elif self.sep == 2:
-            self.put(x, y, '─' * w, color, 'base')
         else:
-            self.put(x, y, '▁' * w, color, 'base')
+            self.put(x, y, '▁' * w, color)
 
-    def vrule(self, x, y, h, bg='base', color='line'):
-        if self.sep == 3:
-            return
-        if self.sep == 0 and self.gfx:
+    def vrule(self, x, y, h, bg=None, color='line'):
+        if self.pixel():
             self.px_vline(x, y, h, color)
         else:
             for r in range(y, y + h):
-                self.put(x, r, '│', color, bg)
+                self.put(x, r, '│', color)
 
     # ---------- transcript ----------
     def blocks(self, tw):
@@ -453,9 +380,9 @@ class Lab:
 
         def diff():
             add('tool', Line([span('src/RenderLoop.swift', 'muted', True), span('   +2 −1', 'faint')]))
-            add('tool', Line([span('− try pipeline.flush()', 'bad')], 'delbg'))
-            add('tool', Line([span('+ try halt()  // finish before restore', 'good')], 'addbg'))
-            add('tool', Line([span('+ terminal.leave()', 'good')], 'addbg'))
+            add('tool', Line([span('− try pipeline.flush()', 'bad')]))
+            add('tool', Line([span('+ try halt()  // finish before restore', 'good')]))
+            add('tool', Line([span('+ terminal.leave()', 'good')]))
 
         topics = ['Where does a frame get its state?', 'Which state is shared between input and rendering?',
                   'What happens to a frame in flight on resize?', 'Does the status line ever block input?',
@@ -477,70 +404,42 @@ class Lab:
         return out
 
     def build(self, tw):
-        """The transcript as rows. One rule for every kind of block: the same padding, its own tint when surfaces are on, and
-        a separator from the block above, drawn as a pixel hairline (no row) or a block-line row, never a margin."""
-        surfaced = self.variant >= 2
+        """The transcript as rows. One rule for every kind of block, in every layout: the same padding above and below.
+        Flat leaves it at that; surfaces and workbench also separate a block from the one above it, with a pixel line
+        (no row) or a block-line row. Never a margin, never a background."""
+        separated = self.variant >= 2
         pixel = self.sep == 0 and self.gfx
         rows = []
-        blocks = self.blocks(tw)
-        if surfaced and self.pad == 0.5:
-            # Half-row padding: one boundary row between neighbours holds the bottom half-pad of the block above and the
-            # top half-pad of the block below. Each block keeps padding on both sides; a one-line block costs two rows.
-            tints = [KINDS[kind] for kind, _ in blocks]
-            for i, (kind, lines) in enumerate(blocks):
-                rows.append(Line([], role='half', halves=(tints[i - 1] if i else None, tints[i]), edge=(i > 0 and pixel)))
-                for ln in lines:
-                    ln.bg, ln.block = ln.bg or tints[i], i
-                    rows.append(ln)
-            rows.append(Line([], role='half', halves=(tints[-1], None)))
-            return rows
-        for i, (kind, lines) in enumerate(blocks):
-            tint = KINDS[kind] if surfaced else None
+        for i, (kind, lines) in enumerate(self.blocks(tw)):
             edge = False
-            if i > 0 and surfaced:
+            if i > 0 and separated:
                 if self.sep_rows():
                     rows.append(Line([], role='sep'))
                 elif pixel:
                     edge = True
-            pad = int(self.pad) if surfaced else 0
-            for k in range(pad):
-                rows.append(Line([], tint, edge=(edge and k == 0), role='pad', block=i))
+            for k in range(self.pad):
+                rows.append(Line([], edge=(edge and k == 0), role='pad', block=i))
             for j, ln in enumerate(lines):
-                ln.bg, ln.block = ln.bg or tint, i
-                ln.edge = edge and pad == 0 and j == 0
+                ln.block = i
+                ln.edge = edge and self.pad == 0 and j == 0
                 rows.append(ln)
-            for _ in range(pad):
-                rows.append(Line([], tint, role='pad', block=i))
+            for _ in range(self.pad):
+                rows.append(Line([], role='pad', block=i))
         return rows
 
     def draw_line(self, ln, y, w, x0=0):
-        if ln.role == 'half':
-            upper, lower = ln.halves
-            if not self.unpainted():                 # unpainted: the boundary is simply space
-                if upper is None:                    # top of the first block: the lower half is the block
-                    self.put(x0, y, '▄' * w, lower, 'base')
-                elif lower is None:                  # bottom of the last block
-                    self.put(x0, y, '▀' * w, upper, 'base')
-                else:
-                    self.put(x0, y, '▀' * w, upper, lower)
-            if ln.edge:                              # a pixel hairline exactly where the two blocks meet
-                self.px_hline(x0, y, w, yoff=(self.ch - self.thick) // 2)
-            return
         if ln.role == 'sep':
-            self.put(x0, y, ('─' if self.sep == 2 else '▁') * w, 'line', 'base')
+            self.put(x0, y, '▁' * w, 'line')
             return
-        bg = ln.bg or 'base'
         if ln.edge and self.sep == 0 and self.gfx:
             self.px_hline(x0, y, w)
-        if ln.bg:
-            self.fill(x0, y, w, bg)
         x = x0 + INNER
-        for text, fg, sbg, bold in ln.spans:
-            self.put(x, y, text, fg, sbg or bg, bold, italic=ln.italic)
+        for text, fg, _, bold in ln.spans:
+            self.put(x, y, text, fg, None, bold, italic=ln.italic)
             x += width(text)
         if ln.right:
             text, fg = ln.right
-            self.put(x0 + w - INNER - width(text), y, text, fg, bg, italic=ln.italic)
+            self.put(x0 + w - INNER - width(text), y, text, fg, None, italic=ln.italic)
 
     # ---------- chrome ----------
     def chip(self, x, y, text, fg, bg, bold=False, raw=False):
@@ -548,32 +447,32 @@ class Lab:
         return x + width(text)
 
     def draw_status(self, y):
+        """Status as text: the mode, who a draft goes to, model, branch, work, and the context meter. Colour and weight carry
+        it; nothing is painted and nothing leads with an icon."""
         self.xlim = self.w
-        self.fill(0, y, self.w, 'bar')
-        mode = (' BROWSE ', 'warn', 'warnbg') if self.browse else (' INPUT ', 'accentfg', 'accent')
+        mode = ('BROWSE', 'warn') if self.browse else ('INPUT', 'accent')
         meter_cells, ratio = 12, 0.42
         fill8 = int(ratio * meter_cells * 8)
         bar = '█' * (fill8 // 8) + (BAR[fill8 % 8] if fill8 % 8 else '')
         bar = bar + ' ' * (meter_cells - width(bar))
-        right = f' 42%  114k/272k  $0.18 '
+        right = '  42%  114k/272k  $0.18'
         ctx_w = 4 + meter_cells + width(right)
-        if self.status_mode == 0:
-            x = self.chip(0, y, mode[0], mode[1], mode[2], True)
-            parts = ([(f' to {self.route()} ', 'warn', 'warnbg')] if self.route() else []) + [(' gpt-5.5 · high ', 'fg', 'raised'), (' git:main +3 ', 'muted', 'panel'),
-                     (' ● 2 working ', 'good', 'panel'), (' ▲ 1 approval ', 'warn', 'warnbg')]
-            for text, fg, bg in parts:
-                if x + width(text) + 1 + ctx_w > self.w:
-                    break
-                x = self.chip(x + 1, y, text, fg, bg, bg == 'warnbg')
-            if x + ctx_w <= self.w:
-                cx = self.w - ctx_w
-                self.put(cx, y, 'ctx ', 'faint', 'bar')
-                self.put(cx + 4, y, bar, 'accent', 'raised')
-                self.put(cx + 4 + meter_cells, y, right, 'fg', 'bar')
-        else:
-            line = f'{mode[0].strip().lower()} · gpt-5.5 high · git:main +3 · 2 working · 1 approval            ctx 42% · 114k/272k'
-            self.put(1, y, fit(line, self.w - 2), 'muted', 'bar')
-            self.put(1, y, mode[0].strip().lower(), 'accent', 'bar', True)
+        x = INNER
+        self.put(x, y, mode[0], mode[1], None, True)
+        x += width(mode[0])
+        parts = ([(f'to {self.route()}', 'warn', True)] if self.route() else []) + [
+            ('gpt-5.5 · high', 'fg', False), ('git:main +3', 'muted', False), ('2 working', 'good', False), ('1 approval', 'warn', True)]
+        for text, fg, bold in parts:
+            if x + 3 + width(text) + ctx_w > self.w:
+                break
+            x += 3
+            self.put(x, y, text, fg, None, bold)
+            x += width(text)
+        if x + ctx_w <= self.w:
+            cx = self.w - ctx_w
+            self.put(cx, y, 'ctx ', 'faint')
+            self.put(cx + 4, y, bar, 'accent')
+            self.put(cx + 4 + meter_cells, y, right, 'fg')
 
     def draw_input(self, in_y):
         """The input is a block like the others: padding, text inset by INNER, and no leading bar or prompt glyph."""
@@ -618,10 +517,8 @@ class Lab:
     def setting_index(self, attr, options):
         v = getattr(self, attr)
         if attr == 'pad':
-            return PADS.index(v) if v in PADS else 2
-        if attr == 'variant':
-            return v - 1
-        if attr == 'thick':
+            return PADS.index(v) if v in PADS else 1
+        if attr in ('variant', 'thick'):
             return v - 1
         if isinstance(v, str):
             return options.index(v)
@@ -635,41 +532,26 @@ class Lab:
             self.thick = i + 1
         elif attr == 'pad':
             self.pad = PADS[i]
-        elif attr == 'density':
-            self.density = options[i]
-            if options[i] in DENSITY_PRESETS:
-                for key, value in DENSITY_PRESETS[options[i]].items():
-                    setattr(self, key, value)
-        elif attr in ('theme', 'accent', 'stroke'):
+        elif attr in ('accent', 'stroke'):
             setattr(self, attr, options[i])
         else:
             setattr(self, attr, i)
-        if attr in ('theme', 'accent', 'surface', 'paint', 'stroke'):
+        if attr in ('accent', 'stroke'):
             self.retheme()
-        if attr in ('sep', 'bottom', 'pad'):
-            self.density = self.matching_density()
-
-    def matching_density(self):
-        now = dict(sep=self.sep, bottom=self.bottom, pad=self.pad)
-        for name, preset in DENSITY_PRESETS.items():
-            if now == preset:
-                return name
-        return 'custom'
 
     def snapshot(self):
         return {k: getattr(self, k) for k in SAVED}
 
     def restore(self, data):
+        """Load saved settings, ignoring anything this version does not have (older files had themes, surfaces, presets)."""
         for k in SAVED:
             if k in data:
                 setattr(self, k, data[k])
-        self.theme = self.theme if self.theme in THEME_SOURCES else 'terminal'
         self.accent = self.accent if self.accent in ACCENTS else 'blue'
-        self.surface = min(3, max(0, int(self.surface)))
-        self.sep, self.bottom, self.paint = int(self.sep) % 4, int(self.bottom) % 3, int(self.paint) % 2
-        self.pad = self.pad if self.pad in PADS else 1
+        self.sep = 0 if self.sep == 0 else 1             # older files had four separator styles; anything but pixel is a block line
+        self.bottom = int(self.bottom) % 3
+        self.pad = 1 if self.pad not in PADS else self.pad
         self.stroke = self.stroke if self.stroke in STROKES else 'subtle'
-        self.density = self.matching_density()
         self.variant = min(3, max(1, int(self.variant)))
         self.thick = 2 if int(self.thick) == 2 else 1
         self.retheme()
@@ -710,16 +592,19 @@ class Lab:
         for j, line in enumerate(wrap(note, self.w - px - 2)[:3]):
             self.put(px, body + 1 + j, line, 'fg' if j == 0 else 'muted', 'panel', j == 0)
         sw = body + 5
-        if sw < bottom:
+        if sw < bottom:                       # the colours as they are used: words, never fills
             x = px
-            for text, fg, bg in ((' accent ', 'accentfg', 'accent'), (' good ', 'good', 'addbg'), (' warn ', 'warn', 'warnbg'),
-                                 (' bad ', 'bad', 'delbg'), (' bar ', 'fg', 'bar'), (' input ', 'fg', 'input'), (' selected ', 'fg', 'raised')):
+            for text, fg, bold in (('accent', 'accent', True), ('good', 'good', False), ('warn', 'warn', True), ('bad', 'bad', False),
+                                   ('fg', 'fg', False), ('muted', 'muted', False), ('faint', 'faint', False)):
                 if x + width(text) < self.w - 1:
-                    x = self.chip(x, sw, text, fg, bg, raw=True) + 1
-        if sw + 2 < bottom:
-            self.put(px, sw + 2, fit('colours: ' + self.theme_note, self.w - px - 2), 'muted', 'panel')
-        if sw + 3 < bottom and self.term:
-            self.put(px, sw + 3, fit(f"terminal background {self.term['base']}  foreground {self.term['fg']}", self.w - px - 2), 'faint', 'panel')
+                    self.put(x, sw, text, fg, None, bold)
+                    x += width(text) + 3
+            if sw + 1 < bottom:
+                self.rule(sw + 1, px, min(24, self.w - px - 2)) if self.pixel() else self.put(px, sw + 1, '▁' * min(24, self.w - px - 2), 'line')
+        if sw + 3 < bottom:
+            self.put(px, sw + 3, fit('colours: ' + self.theme_note, self.w - px - 2), 'muted')
+        if sw + 4 < bottom and self.term:
+            self.put(px, sw + 4, fit(f"terminal background {self.term['base']}  foreground {self.term['fg']}", self.w - px - 2), 'faint')
 
     def settings_key(self, k):
         n = len(SETTING_ROWS)
@@ -786,7 +671,7 @@ class Lab:
         self.w, self.h = size or shutil.get_terminal_size((120, 42))
         self.cw, self.ch = cell if cell else (0, 0)
         self.gfx = self.gfx_ok()
-        self.out = ['\033[?25l' + ('' if self.theme == 'terminal' and self.term else '\033]11;' + self.col('base') + '\033\\')] + (['\033_Ga=d,d=a,q=2\033\\'] if self.gfx else [])
+        self.out = ['\033[?25l'] + (['\033_Ga=d,d=a,q=2\033\\'] if self.gfx else [])
         self.grid = [[' '] * self.w for _ in range(self.h)]
         self.strokes, self.placed, self.phase, self.img_clip = [], [], 'page', None
         self.clip_y, self.xlim = self.h, self.w
@@ -797,8 +682,7 @@ class Lab:
             return ''.join(self.out)
         sr = self.sep_rows()
         status_y = self.h - 1
-        ipad = math.ceil(self.pad)                                    # the input is a block too: same padding (a half row is a row)
-        in_rows = 2 * ipad + (1 if self.bottom == 2 else 2)
+        in_rows = 2 * self.pad + (1 if self.bottom == 2 else 2)       # the input is a block too: the same padding
         in_y = status_y - in_rows
         rule_y = in_y - sr
         self.in_y, self.in_rows = in_y, in_rows
@@ -829,41 +713,45 @@ class Lab:
         elif side:
             self.draw_divider(vp_right - 1, vp_y0, vp_h)
         if self.scroll > 0:
-            pill = f' ↓ {self.scroll} lines below · End '
-            self.put(vp_right - 1 - width(pill) - 1, vp_y1 - 1, pill, 'accentfg', 'accent', True)
+            pill = f'{self.scroll} lines below · End'
+            self.put(vp_right - 1 - width(pill) - INNER, vp_y1 - 1, pill, 'accent', None, True)
         self.clip_y = self.h
 
-        # header
+        # header: text only
         self.xlim = self.w
-        self.fill(0, 1, self.w, 'bar')
-        x = self.chip(0, 1, ' ask ', 'accentfg', 'accent', True)
-        self.put(x + 1, 1, 'render-loop', 'fg', 'bar', True)
-        self.put(x + 14, 1, 'git:main', 'muted', 'bar')
+        self.put(INNER, 1, 'ask', 'accent', None, True)
+        self.put(INNER + 5, 1, 'render-loop', 'fg', None, True)
+        self.put(INNER + 19, 1, 'git:main', 'muted')
         right = 'gpt-5.5 · high · edits ask first'
-        self.put(self.w - width(right) - 1, 1, right, 'muted', 'bar')
-        if self.sep == 0 and self.gfx:
+        self.put(self.w - width(right) - INNER, 1, right, 'muted')
+        if self.pixel():
             self.px_hline(0, 2, self.w)
 
-        # sidebar or work strip
+        # sidebar or work strip: words and colour, no icons, no fills
         if side:
             sx = vp_right
-            for r in range(vp_y0, vp_y1):
-                self.fill(sx, r, 30, 'panel')
             self.xlim = self.w
-            rows = [('TASKS', 'faint', True), ('✓ Trace event path', 'good', False), ('● Review cancellation', 'fg', True), ('▲ Verify restoration', 'warn', True), ('○ Summarize findings', 'faint', False), ('', 'fg', False),
-                    ('AGENTS', 'faint', True), ('reviewer      running', 'fg', False), ('test-runner   approval', 'warn', False), ('', 'fg', False),
-                    ('CONTEXT', 'faint', True), ('2 files · 1 skill', 'muted', False), ('42%  114k/272k', 'muted', False)]
-            for i, (text, fg, bold) in enumerate(rows):
-                self.put(sx + 2, vp_y0 + i, fit(text, 27), fg, 'panel', bold)
+            rows = [('TASKS', None, 'faint', True), ('Trace event path', 'done', 'good', False), ('Review cancellation', 'running', 'fg', True),
+                    ('Verify restoration', 'approval', 'warn', True), ('Summarize findings', 'queued', 'faint', False), ('', None, 'fg', False),
+                    ('AGENTS', None, 'faint', True), ('reviewer', 'running', 'fg', False), ('test-runner', 'approval', 'warn', True), ('', None, 'fg', False),
+                    ('CONTEXT', None, 'faint', True), ('2 files · 1 skill', None, 'muted', False), ('42%  114k/272k', None, 'muted', False)]
+            for i, (label, state, fg, bold) in enumerate(rows):
+                if vp_y0 + i >= vp_y1:
+                    break
+                self.put(sx + INNER + 1, vp_y0 + i, fit(label, 19), fg if label.isupper() or not state else 'fg', None, bold if label.isupper() else False)
+                if state:
+                    self.put(sx + 30 - INNER - width(state), vp_y0 + i, state, fg, None, bold)
         elif ws_y is not None:
             self.xlim = self.w
-            self.fill(0, ws_y, self.w, 'raised')
-            x = self.chip(0, ws_y, ' WORK ', 'accentfg', 'accent', True)
-            for text, fg in (('✓ 1 done', 'good'), ('● 1 running', 'fg'), ('▲ 1 approval', 'warn')):
-                x = self.chip(x + 1, ws_y, text, fg, 'raised', fg == 'warn')
-            tail = 'reviewer ●   test-runner ▲   Esc, then a / t / p'
-            if self.w - width(tail) - 1 > x:
-                self.put(self.w - width(tail) - 1, ws_y, tail, 'muted', 'raised')
+            self.put(INNER, ws_y, 'WORK', 'accent', None, True)
+            x = INNER + 4
+            for text, fg, bold in (('1 done', 'good', False), ('1 running', 'fg', False), ('1 approval', 'warn', True)):
+                x += 3
+                self.put(x, ws_y, text, fg, None, bold)
+                x += width(text)
+            tail = 'reviewer   test-runner   Esc, then a / t / p'
+            if self.w - width(tail) - INNER > x:
+                self.put(self.w - width(tail) - INNER, ws_y, tail, 'muted')
 
         self.rule(rule_y, 0, self.w)
         self.draw_input(in_y)
@@ -873,14 +761,14 @@ class Lab:
             self.draw_popup(rule_y)
             self.phase = 'page'
 
-        # lab strip (not part of the product UI)
+        # the lab's own strip (not part of the product UI): reverse video, so it paints nothing either
         self.xlim = self.w
         names = ['1 Flat', '2 Surfaces', '3 Workbench']
         shown = '  '.join(('[' + n + ']') if i + 1 == self.variant else n for i, n in enumerate(names))
-        sep = SEPS[self.sep] + ('' if self.sep != 0 or self.gfx else ' (n/a→eighth)')
-        text = f' LAB  {shown} │ s settings   z density  b x v m l quick cycle │ Esc: browse keys │ {self.density} · {self.theme} '
-        self.put(0, 0, ' ' * self.w, '#ffffff', '#000000')
-        self.put(0, 0, fit(text, self.w), '#ffffff', '#000000', True)
+        sep = SEPS[self.sep] if self.sep or self.gfx else 'block line (this terminal has no pixel lines)'
+        text = f' LAB  {shown} │ s settings   b separators  x thickness  v bottom   r rescan colours │ Esc: browse keys │ {sep} '
+        self.put(0, 0, ' ' * self.w, 'fg', None, True, rev=True)
+        self.put(0, 0, fit(text, self.w), 'fg', None, True, rev=True)
         return ''.join(self.out)
 
     def draw_divider(self, x, y, rows):
@@ -890,9 +778,9 @@ class Lab:
             t, hpx = self.thick, rows * self.ch
             raw = (b'\0' + self.rgba('line') * t) * hpx
             self.place(self.image(('e', hpx, t, self.col('line')), t, hpx, raw), x, y, self.cw - t, 0, rows)
-        elif self.sep != 3:
+        else:
             for r in range(y, y + rows):
-                self.put(x, r, '▕', 'line', 'base')
+                self.put(x, r, '▕', 'line')
 
     def draw_scrollbar(self, x, y, rows, total, start, edge=False):
         self.strokes.append(('s', x))
@@ -901,16 +789,6 @@ class Lab:
             size = max(8, int(hpx * rows / total))
             top = int((hpx - size) * (start / max(1, total - rows)))
             self.px_scrollbar(x, y, rows, top, size, edge)
-            return
-        if self.sep == 3:
-            half = 2 * rows
-            size = max(1, round(half * rows / total))
-            top = round((half - size) * (start / max(1, total - rows)))
-            for r in range(rows):
-                lo, hi = 2 * r, 2 * r + 2
-                cover = max(0, min(hi, top + size) - max(lo, top))
-                glyph = '▐' if cover == 2 else ('▗' if cover == 1 and top > lo else '▝' if cover == 1 else '▕')
-                self.put(x, y + r, glyph, 'accent' if cover else 'line', 'base')
             return
         half = 2 * rows
         size = max(1, round(half * rows / total))
@@ -1024,20 +902,11 @@ class Lab:
         elif k in '123':
             self.variant = int(k)
         elif k == 'b':
-            self.sep = (self.sep + 1) % 4
-            self.density = self.matching_density()
+            self.sep = 1 - self.sep
         elif k == 'x':
             self.thick = 3 - self.thick
-        elif k == 'm':
-            self.status_mode = 1 - self.status_mode
-        elif k == 'l':
-            self.theme = THEME_SOURCES[(THEME_SOURCES.index(self.theme) + 1) % 3]
-            self.retheme()
-        elif k == 'z':
-            self.set_setting('density', 1 if self.density == 'pixel' else 0, DENSITIES)
         elif k == 'v':
             self.bottom = (self.bottom + 1) % 3
-            self.density = self.matching_density()
         elif k == 'r':
             self.rescan = True
         elif k == 's':
@@ -1166,66 +1035,107 @@ TERMS = {
 
 
 def check():
-    # 1. Contrast holds on real terminal themes, including low-contrast ones, for every accent and surface level.
-    palettes = dict(TERMS, **{n: PRESETS[n] for n in PRESETS})
-    n_pal = 0
-    for name, t in palettes.items():
+    n_pal = count = 0
+    assert PADS == [0, 1], 'block padding goes up to one block and no further'
+    assert len(dict((r[1], r) for r in SETTING_ROWS)['pad'][2]) == len(PADS)
+    # 1. Text colours are readable on the terminal's own background, on real terminal palettes (including Solarized, whose own
+    #    foreground is low-contrast), for every accent; strokes keep their level and stay quieter than text.
+    for name, t in dict(TERMS, **{n: PRESETS[n] for n in PRESETS}).items():
         for accent in ACCENTS:
-            for surface in range(4):
-                pal = derive(t['base'], t['fg'], t['ansi'], accent, surface)
-                where = (name, accent, surface)
-                for bgname in TINTS:                      # readable on every background text can sit on, not only the base
-                    assert contrast(pal['fg'], pal[bgname]) >= 7.0, (bgname,) + where
-                    assert contrast(pal['muted'], pal[bgname]) >= 5.0, (bgname,) + where
-                    for key in ('faint', 'accent', 'good', 'warn', 'bad'):
-                        assert contrast(pal[key], pal[bgname]) >= 4.5, (key, bgname) + where
-                kind_tints = {pal[KINDS[kind]] for kind in KINDS}
-                assert (len(kind_tints) == 4) == (surface > 0) and (len(kind_tints) == 1) == (surface == 0), where
-                assert contrast(pal['accentfg'], pal['accent']) >= 4.5, where
-                for level, (_, least) in STROKES.items():
-                    sp = derive(t['base'], t['fg'], t['ansi'], accent, surface, level)
-                    for bgname in TINTS:
-                        assert contrast(sp['line'], sp[bgname]) >= least - 0.01, (level, bgname) + where
-                    assert contrast(sp['line'], sp['base']) < contrast(sp['fg'], sp['base'])     # a stroke is never as loud as text
-                lines = [contrast(derive(t['base'], t['fg'], t['ansi'], accent, surface, lv)['line'], t['base']) for lv in STROKES]
-                assert lines[0] < lines[1] < lines[2], ('subtle < normal < strong', lines) + where
-                for key, bg in (('good', 'addbg'), ('bad', 'delbg'), ('warn', 'warnbg')):
-                    assert contrast(pal[key], pal[bg]) >= 3.5, (key, bg) + where
-                assert contrast(pal['accent'], pal['raised']) >= 3.0, where
-                assert (pal['panel'] == pal['base']) == (surface == 0), where
+            levels = []
+            for level, (_, least) in STROKES.items():
+                pal = derive(t['base'], t['fg'], t['ansi'], accent, level)
+                assert contrast(pal['fg'], pal['base']) >= 7.0 and contrast(pal['muted'], pal['base']) >= 5.0, (name, accent)
+                for key in ('faint', 'accent', 'good', 'warn', 'bad'):
+                    assert contrast(pal[key], pal['base']) >= 4.5, (key, name, accent, level)
+                assert contrast(pal['line'], pal['base']) >= least - 0.01, (level, name, accent)
+                assert contrast(pal['line'], pal['base']) < contrast(pal['fg'], pal['base'])     # a stroke is never as loud as text
+                levels.append(contrast(pal['line'], pal['base']))
                 n_pal += 1
-    # 2. Rendering matrix.
+            assert levels[0] < levels[1] < levels[2], ('subtle < normal < strong', levels, name, accent)
+    # 2. NOTHING IS EVER PAINTED. No background escape code is emitted, in any layout, separator, padding, bottom section or
+    #    popup, with the terminal's colours or without (plain ANSI colours, no truecolour at all).
     app = Lab()
     app.term = TERMS['solarized-dark']
     app.retheme()
-    count = 0
+    fallback = Lab()
     for variant in (1, 2, 3):
-        for sep in range(4):
-            for pad in (0, 0.5, 1, 2):
-                for status in (0, 1):
-                    for bottom in range(3):
-                        for gfx in (False, True):
-                            for modal in (None, 'refs', 'commands', 'settings'):
-                                for shape in ((80, 30), (110, 34), (140, 45))[:2 if modal else 3]:
-                                    app.variant, app.sep, app.pad, app.status_mode, app.bottom = variant, sep, pad, status, bottom
-                                    app.force_gfx, app.modal, app.trigger = gfx, modal, None
-                                    assert app.render(shape, (16, 30) if gfx else None)
+        for sep in (0, 1):
+            for pad in PADS:
+                for bottom in range(3):
+                    for gfx in (False, True):
+                        for modal in (None, 'refs', 'commands', 'settings', 'agents', 'permission'):
+                            for shape in ((80, 30), (110, 34), (140, 45))[:2 if modal else 3]:
+                                for who in (app, fallback):
+                                    who.variant, who.sep, who.pad, who.bottom = variant, sep, pad, bottom
+                                    who.force_gfx, who.modal, who.trigger = gfx, modal, None
+                                    out = who.render(shape, (16, 30) if gfx else None)
+                                    assert '\x1b[48' not in out, ('a background was painted', variant, sep, pad, bottom, modal)
+                                    assert who is app or '38;2;' not in out, 'ANSI fallback must not use truecolour'
                                     count += 1
-    for theme in THEME_SOURCES:
-        for accent in ACCENTS:
-            for surface in range(4):
-                app.theme, app.accent, app.surface, app.modal = theme, accent, surface, None
-                app.retheme()
-                assert app.render((120, 40))
-                count += 1
-    assert 'terminal colours unavailable' in (lambda a: (setattr(a, 'theme', 'terminal'), a.retheme(), a.theme_note)[-1])(Lab())
-    app = Lab()
-    app.force_gfx = True
-    out = app.render((120, 42), (16, 30))
-    assert 'a=p' in out and 'a=t' in out
-    # 3. Expanding thinking or tools never changes the input, status or work rows, in every bottom density.
+    assert app.pal['accent'].startswith('#') and fallback.pal['accent'].startswith('ansi:')
+    assert not hasattr(Line([]), 'bg'), 'a Line has no background to paint'
+    # 3. One block model in every layout: the same padding above and below every kind of block (yours, output, thinking, tool
+    #    calls). Flat is that and nothing more; surfaces and workbench also separate a block from the one above it, with a pixel
+    #    line (no row) or a block-line row.
+    shapes = {}
+    for variant in (1, 2, 3):
+        for pad in PADS:
+            for gfx in (False, True):
+                app = Lab(variant)
+                app.pad, app.force_gfx, app.gfx = pad, gfx, gfx
+                blocks = app.blocks(100)
+                assert {kind for kind, _ in blocks} == set(KINDS)
+                rows = app.build(100)
+                by_block = {}
+                for ln in rows:
+                    by_block.setdefault(ln.block, []).append(ln)
+                for i, (kind, _) in enumerate(blocks):
+                    r = by_block[i]
+                    lead = next(j for j, ln in enumerate(r) if ln.role == 'content')
+                    trail = next(j for j, ln in enumerate(reversed(r)) if ln.role == 'content')
+                    assert lead == pad and trail == pad, (variant, kind, pad, lead, trail)
+                pads = sum(ln.role == 'pad' for ln in rows)
+                seps = sum(ln.role == 'sep' for ln in rows)
+                edges = sum(ln.edge for ln in rows)
+                content = sum(ln.role == 'content' for ln in rows)
+                shapes[(variant, pad, gfx)] = (pads, content)
+                if variant == 1:
+                    assert seps == 0 and edges == 0, 'flat has spacing, not separators'
+                elif gfx:
+                    assert seps == 0 and edges == len(blocks) - 1, 'a pixel line separates blocks and costs no row'
+                else:
+                    assert seps == len(blocks) - 1 and edges == 0, 'a block-line row separates blocks'
+    for pad in PADS:                                           # flat spaces exactly like surfaces
+        for gfx in (False, True):
+            assert shapes[(1, pad, gfx)] == shapes[(2, pad, gfx)] == shapes[(3, pad, gfx)], (pad, gfx)
+    # The input is a block too: the same padding, in every bottom section.
+    for pad in PADS:
+        for bottom in range(3):
+            app = Lab(2)
+            app.pad, app.bottom = pad, bottom
+            app.render((120, 42))
+            assert app.in_rows == 2 * pad + (1 if bottom == 2 else 2), (pad, bottom, app.in_rows)
+            for r in list(range(app.in_y, app.in_y + pad)) + list(range(app.in_y + app.in_rows - pad, app.in_y + app.in_rows)):
+                assert ''.join(app.grid[r]).strip() == '', (pad, bottom, r)       # padding rows are empty
+            assert any('Review cancellation' in ''.join(app.grid[r]) for r in range(app.in_y + pad, app.in_y + app.in_rows - pad))
+    # No leading bar and no leading icon anywhere: the transcript, the input, the pickers, the status bar, the sidebar.
+    for variant in (1, 2, 3):
+        for pad in PADS:
+            for sep in (0, 1):
+                for bottom in range(3):
+                    for modal in (None, 'refs', 'settings', 'agents'):
+                        app = Lab(variant)
+                        app.pad, app.sep, app.bottom = pad, sep, bottom
+                        app.thinking = app.tools = bool(bottom % 2)
+                        app.force_gfx, app.modal, app.trigger = sep == 0, modal, None
+                        app.render((120, 42), (16, 30) if sep == 0 else None)
+                        icons = set('▸▾◆›↪⠹●▲✓○')
+                        assert not (icons & set(''.join(''.join(r) for r in app.grid[1:]))), (variant, pad, sep, bottom, modal)
+                        assert not (set('▌▏') & set(''.join(''.join(r) for r in app.grid[1:-1]))), (variant, pad, sep, bottom, modal)
+    # 4. Expanding thinking or tools never changes the input, status or work rows, in every bottom section.
     for bottom in range(3):
-        for sep in (0, 1, 3):
+        for sep in (0, 1):
             for variant in (1, 3):
                 app = Lab(variant)
                 app.sep, app.bottom, app.force_gfx = sep, bottom, sep == 0
@@ -1238,154 +1148,45 @@ def check():
                 app.render((120, 42), cell)
                 assert before == [''.join(r) for r in app.grid[app.bottom_y:]], (bottom, sep, variant)
                 assert app.draft == 'half typed @re' and app.cursor == 8
-    # flush is the tightest: fewer bottom rows than tight than roomy
     heights = []
     for bottom in range(3):
         app = Lab(1)
-        app.sep, app.bottom, app.force_gfx = 0, bottom, True
+        app.bottom, app.force_gfx = bottom, True
         app.render((120, 42), (16, 30))
         heights.append(42 - app.bottom_y)
-    assert heights[0] > heights[1] > heights[2], heights
-    # 3b. One rule for every kind of block (yours, output, thinking, tool calls): the same padding above and below, inside
-    #     its own tint. Whole rows are inside the block; a half row is one shared boundary row between neighbours.
-    for variant in (2, 3):
-        for pad in PADS:
-            app = Lab(variant)
-            app.pad, app.sep = pad, 3                       # background only: no separator rows
-            blocks = app.blocks(100)
-            assert {kind for kind, _ in blocks} == {'user', 'out', 'think', 'tool'}
-            rows = app.build(100)
-            if pad == 0.5:
-                half = [i for i, ln in enumerate(rows) if ln.role == 'half']
-                assert len(half) == len(blocks) + 1 and half[0] == 0 and half[-1] == len(rows) - 1
-                tints = [KINDS[k] for k, _ in blocks]
-                assert [rows[i].halves for i in half] == [(None, tints[0])] + list(zip(tints, tints[1:])) + [(tints[-1], None)]
-                for a_, b_ in zip(rows, rows[1:]):          # a content row never touches another block's content row
-                    assert not (a_.role == 'content' and b_.role == 'content' and a_.block != b_.block)
-                continue
-            assert all(ln.bg is not None for ln in rows), 'a blank margin row between blocks'
-            by_block = {}
-            for ln in rows:
-                by_block.setdefault(ln.block, []).append(ln)
-            for i, (kind, _) in enumerate(blocks):
-                r = by_block[i]
-                lead = next(j for j, ln in enumerate(r) if ln.role == 'content')
-                trail = next(j for j, ln in enumerate(reversed(r)) if ln.role == 'content')
-                assert lead == pad and trail == pad, (kind, pad, lead, trail)
-                assert all(ln.bg == KINDS[kind] for ln in r if ln.role == 'pad'), kind
-    flat = Lab(1).build(100)
-    assert all(ln.role == 'content' and ln.bg in (None, 'addbg', 'delbg') for ln in flat), 'flat has no surfaces, so no padding'
-    # The input is a block too: the same padding, inside its own surface, in every bottom section.
-    for pad in PADS:
-        for bottom in range(3):
-            app = Lab(2)
-            app.pad, app.bottom = pad, bottom
-            app.render((120, 42))
-            flush = bottom == 2
-            ip = math.ceil(pad)
-            assert app.in_rows == 2 * ip + (1 if flush else 2), (pad, bottom, app.in_rows)
-            for r in list(range(app.in_y, app.in_y + ip)) + list(range(app.in_y + app.in_rows - ip, app.in_y + app.in_rows)):
-                assert ''.join(app.grid[r]).strip() == '', (pad, bottom, r)   # padding rows are empty: no bar, no glyph
-            assert any('Review cancellation' in ''.join(app.grid[r]) for r in range(app.in_y + ip, app.in_y + app.in_rows - ip))
-    # 3c. Workbench draws ONE stroke between the transcript and the sidebar: the divider is the scrollbar track.
-    for sep in range(4):
+    assert heights[0] > heights[1] > heights[2], heights                 # roomy > tight > flush
+    # Reading earlier output: expanding must not move the viewport offset.
+    app = Lab()
+    app.render((100, 28))
+    assert len(app.build(99)) - (28 - 2 - 2 - 3 - 1) >= 7
+    app.scroll = 7
+    app.key('\x14')
+    app.render((100, 28))
+    assert app.scroll == 7
+    # 5. Workbench draws ONE stroke between the transcript and the sidebar: the divider is the scrollbar track.
+    for sep in (0, 1):
         for overflow in (True, False):
             app = Lab(3)
             app.sep, app.force_gfx = sep, sep == 0
             if not overflow:
                 full = app.build
                 app.build = lambda tw, full=full: full(tw)[:10]
-            cell = (16, 30) if sep == 0 else None
-            out = app.render((140, 45), cell)
+            out = app.render((140, 45), (16, 30) if sep == 0 else None)
             boundary = 140 - 30 - 1
             assert len(app.strokes) == 1 and app.strokes[0][1] == boundary, (sep, overflow, app.strokes)
             assert app.strokes[0][0] == ('s' if overflow else 'd')
-            for y in range(3, 40):             # no second border: nothing drawn at either side of it but the one glyph column
+            for y in range(3, 40):
                 assert app.grid[y][boundary + 1] != '│' and app.grid[y][boundary - 1] != '│', (sep, y)
             if sep == 0:
                 assert ('X=14,Y=0\x1b' in out) if overflow else ('X=15,Y=0\x1b' in out), 'the track sits on the cell edge'
-            elif sep != 3:
-                assert all(app.grid[y][boundary] in '▕▐▗▝' for y in range(4, 38)), (sep, overflow)
-    # The same boundary without a sidebar keeps the scrollbar inside the edge column, and draws no divider.
+            else:
+                assert all(app.grid[y][boundary] in '▕▐▗▝' for y in range(3, 38)), (sep, overflow)
     app = Lab(2)
     app.force_gfx = True
     app.render((140, 45), (16, 30))
     assert app.strokes == [('s', 139)]
-    # 3d. Compact and aerial are different designs, not one with the knobs turned.
-    pixel, aerial = Lab(2), Lab(2)
-    pixel.force_gfx = aerial.force_gfx = True
-    aerial.set_setting('density', 1, DENSITIES)
-    out_c, out_a = pixel.render((120, 42), (16, 30)), aerial.render((120, 42), (16, 30))
-    assert pixel.density == 'pixel' and aerial.density == 'aerial' and pixel.pad == aerial.pad == 1 and pixel.bottom == aerial.bottom == 0
-    rows_c, rows_a = pixel.build(100), aerial.build(100)
-    n_blocks = len(pixel.blocks(100))
-    assert sum(ln.edge for ln in rows_c) == n_blocks - 1 and not any(ln.role == 'sep' for ln in rows_c)   # pixel hairlines, mid-boundary
-    assert sum(ln.role == 'sep' for ln in rows_a) == n_blocks - 1 and not any(ln.edge for ln in rows_a)   # block-line rows
-    assert out_c.count('a=p') > out_a.count('a=p')                      # pixel separates with hairlines, aerial with glyphs
-    assert any('▁' in ''.join(r) for r in aerial.grid) and not any('▁' in ''.join(r) for r in pixel.grid)
-    assert (42 - pixel.bottom_y) < (42 - aerial.bottom_y)                 # a block-line row costs a row; a hairline does not
-    for app in (pixel, aerial):                                          # and neither spends a row on empty margin
-        assert ''.join(app.grid[2]).strip() != '', 'content starts directly under the header'
-        assert not hasattr(app, 'margin') and not hasattr(app, 'breath')
-    # Aerial keeps the bottom rows still when thinking is expanded, like the other densities.
-    app = Lab(2)
-    app.set_setting('density', 1, DENSITIES)
-    app.draft, app.cursor = 'half typed', 4
-    app.render((120, 42))
-    before = [''.join(r) for r in app.grid[app.bottom_y:]]
-    app.key('\x14')
-    app.render((120, 42))
-    assert before == [''.join(r) for r in app.grid[app.bottom_y:]] and app.draft == 'half typed'
-    # 3e. Hierarchy is spacing, tint and type: no leading bar and no leading icon, anywhere in the transcript, the input or
-    #     the pickers (the status bar's meter and the sidebar's status words are not blocks).
-    banned = set('▌▏▸▾◆›↪⠹')
-    for variant in (1, 2, 3):
-        for pad in PADS:
-            for sep in range(4):
-                for surface in (0, 2):
-                    for bottom in range(3):
-                        for modal in (None, 'refs', 'commands', 'settings', 'agents'):
-                            app = Lab(variant)
-                            app.pad, app.sep, app.surface, app.bottom = pad, sep, surface, bottom
-                            app.thinking = app.tools = bool(bottom % 2)
-                            app.force_gfx, app.modal, app.trigger = sep == 0, modal, None
-                            app.retheme()
-                            app.render((120, 42), (16, 30) if sep == 0 else None)
-                            text = ''.join(''.join(row) for row in app.grid[1:-1])
-                            assert not (banned & set(text)), (variant, pad, sep, surface, bottom, modal, banned & set(text))
-    # 3f. Surfaces off (the default): nothing is painted. The only backgrounds are the terminal's own default, and the
-    #     diff's red and green, which are meaning. Chips, strips, selections and bars lose their fills too.
-    allowed = set()
-    probe = Lab(2)
-    probe.term = TERMS['kitty-default']
-    probe.retheme()
-    for name in ('addbg', 'delbg'):
-        allowed.add(tuple(hex_rgb(probe.pal[name])))
-    assert Lab().surface == 0, 'surfaces are off by default'
-    for variant in (1, 2, 3):
-        for bottom in range(3):
-            for status in (0, 1):
-                for modal in (None, 'refs', 'commands', 'agents', 'permission'):
-                    app = Lab(variant)
-                    app.term, app.bottom, app.status_mode, app.modal, app.trigger = TERMS['kitty-default'], bottom, status, modal, None
-                    app.retheme()
-                    out = app.render((120, 42))
-                    painted = {tuple(int(g) for g in m) for m in re.findall(r'\x1b\[48;2;(\d+);(\d+);(\d+)m', out)}
-                    extra = painted - allowed
-                    extra.discard((0, 0, 0))     # the lab's own strip on row 0 is painted black: prototype chrome, not the UI
-                    assert not extra, (variant, bottom, status, modal, sorted(extra)[:3])
-                    assert '\x1b[49m' in out
-    surfaced = Lab(2)
-    surfaced.term, surfaced.surface = TERMS['kitty-default'], 2
-    surfaced.retheme()
-    assert re.search(r'\x1b\[48;2;', surfaced.render((120, 42))), 'surfaces on paint again'
-    settings = Lab(2)
-    settings.term, settings.modal = TERMS['kitty-default'], 'settings'
-    settings.retheme()
-    swatches = settings.render((120, 42))
-    assert settings.pal['accent'] and f"48;2;{hex_rgb(settings.pal['accent'])[0]};" in swatches, 'the settings swatches still preview colours'
-    # 3g. Nothing under a popup shows through it. Strokes are images above the text layer, so a hairline or a scrollbar
-    #     behind an open popup would be drawn across it (the settings panel showed exactly that).
+    # 6. Nothing under a popup shows through it. Strokes are images above the text layer, so a line behind an open popup would
+    #    be drawn across it (the settings panel showed exactly that).
     for modal in ('settings', 'refs', 'commands', 'agents', 'tasks', 'permission'):
         for variant in (2, 3):
             for pad in PADS:
@@ -1399,19 +1200,9 @@ def check():
                     assert page, 'there are strokes to test against'
                     assert all(y + v <= top or y >= bottom_row for y, v in page), (modal, variant, pad, bottom, top, page)
                     assert any(phase == 'popup' for _, _, phase in app.placed), 'the popup draws its own strokes'
-    # 3h. The defaults are the owner's settled setup: nothing painted, the terminal's own background, pixel hairlines at 1px,
-    #     subtle strokes, one row of padding, a roomy bottom, chips, the Surfaces layout.
+    # 7. The defaults are the owner's settled setup.
     app = Lab(2)
-    assert (app.surface, app.paint, app.sep, app.thick, app.stroke, app.pad, app.bottom, app.status_mode, app.variant, app.density) == \
-        (0, 0, 0, 1, 'subtle', 1, 0, 0, 2, 'pixel')
-    # 4. Reading earlier output: expanding must not move the viewport offset.
-    app = Lab()
-    app.render((100, 28))
-    assert len(app.build(99)) - (28 - 2 - 2 - 3 - 1) >= 7
-    app.scroll = 7
-    app.key('\x14')
-    app.render((100, 28))
-    assert app.scroll == 7
+    assert (app.sep, app.thick, app.stroke, app.pad, app.bottom, app.variant) == (0, 1, 'subtle', 1, 0, 2)
     # 5. '/' is for commands and skills, '@' for files, agents and sessions; '$' is not a trigger.
     app = Lab()
     app.draft, app.cursor, app.chips = '', 0, []
@@ -1462,7 +1253,7 @@ def check():
     assert not app.rescan
     app.key('\x1b[?997;1n')
     assert app.rescan
-    # 7. Settings: panel opens, changes apply live, snapshot round-trips.
+    # 8. Settings: the panel opens, changes apply live, the snapshot round-trips, older files load.
     def row(attr):
         return [r[1] for r in SETTING_ROWS].index(attr)
 
@@ -1473,29 +1264,29 @@ def check():
     app = Lab()
     app.browse = True
     app.key('s')
-    assert app.modal == 'settings' and app.density == 'pixel'
-    change(app, 'density', +1)
-    assert app.density == 'aerial' and app.sep == 1 and app.bottom == 0 and app.pad == 1
-    change(app, 'density', -1)
-    assert app.density == 'pixel' and app.sep == 0 and app.bottom == 0 and app.pad == 1
-    change(app, 'pad', +1)                          # one single change makes it custom ...
-    assert app.density == 'custom' and app.pad == 2
-    change(app, 'pad', -1)                          # ... and returning to the preset's values returns to the preset
-    assert app.density == 'pixel'
-    change(app, 'theme', +1)
-    assert app.theme == 'light' and app.pal['base'] == '#ffffff'
+    assert app.modal == 'settings'
+    assert [r[1] for r in SETTING_ROWS] == ['accent', 'sep', 'thick', 'stroke', 'pad', 'bottom', 'variant']
     change(app, 'accent', +1)
-    assert app.accent == 'cyan'
-    change(app, 'surface', +1)
-    assert app.surface == 1
+    assert app.accent == 'cyan' and app.pal['accent'] != app.pal['fg']
+    change(app, 'sep', +1)
+    assert app.sep == 1
+    change(app, 'pad', -1)
+    assert app.pad == 0
+    change(app, 'pad', +1)
+    assert app.pad == 1
+    change(app, 'pad', +1)
+    assert app.pad == 0, 'padding goes up to one block and wraps'
+    assert PADS == [0, 1]
+    change(app, 'stroke', +1)
+    assert app.stroke == 'normal'
     snap = app.snapshot()
     other = Lab()
     other.restore(snap)
     assert other.snapshot() == snap and other.pal == app.pal
-    other.restore({'theme': 'bogus', 'accent': 'bogus', 'surface': 99, 'sep': 99, 'bottom': -5, 'variant': 9,
-                   'pad': 9, 'margin': 7, 'breath': 5, 'tight': 'x', 'density': 'bogus'})
-    assert other.theme == 'terminal' and 0 <= other.surface <= 3 and 0 <= other.bottom <= 2
-    assert other.pad in PADS and other.density in DENSITIES
+    other.restore({'accent': 'bogus', 'sep': 3, 'bottom': -5, 'variant': 9, 'pad': 9, 'stroke': 'x', 'theme': 'dark', 'surface': 3,
+                   'paint': 1, 'density': 'aerial', 'status_mode': 1, 'margin': 4})
+    assert other.accent == 'blue' and other.sep == 1 and other.pad in PADS and other.variant == 3 and 0 <= other.bottom <= 2
+    assert not hasattr(other, 'surface') and not hasattr(other, 'theme') and not hasattr(other, 'density')
     app.key('\x1b')
     assert app.modal is None
     app = Lab()
@@ -1510,22 +1301,12 @@ def check():
     app.browse = True
     app.key('p')
     assert app.matches()[0][0] == 'Deny'
-    # 8b. Painted cells never equal the terminal's own background, or a translucent terminal drops them.
-    app = Lab()
-    app.term = TERMS['kitty-default']
-    app.paint = 1
-    app.retheme()
-    out = app.render((120, 40))
-    assert '\x1b[49m' not in out and '48;2;0;0;0m' not in out and '48;2;1;1;1m' in out
-    assert nudge('#000000') == '#010101' and nudge('#ffffff') == '#fefefe' and nudge('#fdf6e3') == '#fcf5e2'
-    app.paint = 0
-    app.retheme()
-    assert '\x1b[49m' in app.render((120, 40))
     # 9. OSC reply parsing.
     assert parse_colors(b'\x1b]10;rgb:dddd/dddd/dddd\x1b\\\x1b]11;rgb:0000/0000/0000\x1b\\\x1b]4;1;rgb:cc/00/00\x1b\\') == {'ansi': {1: '#cc0000'}, 'fg': '#dddddd', 'base': '#000000'}
     assert parse_colors(b'\x1b[?62;c') is None
-    print(f'PASS: {n_pal} palettes meet contrast, {count} renders, bottom-row invariance in 3 densities, '
-          'commands/skills under /, files/agents/sessions under @, routing, settings, /theme, rescan.')
+    print(f'PASS: {n_pal} palettes meet contrast, {count} renders and none paints a background, one block model in every layout, '
+          'no leading icon or bar, one stroke at the sidebar, nothing under a popup, commands/skills under /, files/agents/sessions '
+          'under @, routing, settings, rescan.')
 
 
 def main():
