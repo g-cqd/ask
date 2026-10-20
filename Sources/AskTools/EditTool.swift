@@ -28,6 +28,7 @@ public struct EditTool: ArgumentTool {
         ToolProperty.string("old_text", minLength: 1)
         ToolProperty.string("new_text")
         ToolProperty.boolean("replace_all").optional
+        SandboxRequest.property
     }
 
     public init() {}

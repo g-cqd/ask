@@ -49,6 +49,7 @@ public struct BashTool: ArgumentTool {
         ToolProperty.string("command")
         ToolProperty.integer("timeout_seconds", minimum: 1, maximum: 600).optional
         ToolProperty.integer("yield_seconds", minimum: 1, maximum: 600).optional
+        SandboxRequest.property
     }
 
     private let access: JobAccess
