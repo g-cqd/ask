@@ -12,6 +12,9 @@ public protocol Conversation: Sendable {
     /// Until then the screen owns a copy, which it starts after normal completion or restores on failure.
     func enqueue(_ text: String, id: Int, followUp: Bool)
 
+    /// The user's answer to the question ``ConversationUpdate/askApproval(id:question:)`` asked.
+    func answer(approval id: Int, with choice: ApprovalChoice)
+
     /// The commands this conversation understands, beyond the screen's own `/help` and `/quit`.
     var commands: [SlashCommand] { get }
 
@@ -29,6 +32,9 @@ public protocol Conversation: Sendable {
 extension Conversation {
     /// No in-flight input; the screen starts unacknowledged messages after the current run ends.
     public func enqueue(_ text: String, id: Int, followUp: Bool) {}
+
+    /// Never asks, so never answered.
+    public func answer(approval id: Int, with choice: ApprovalChoice) {}
 
     /// No commands of its own.
     public var commands: [SlashCommand] { [] }
