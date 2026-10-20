@@ -35,13 +35,15 @@ public enum Budget {
     /// reintroduces a round trip through the allocator, not to describe what is already imperceptible.
     public static let inputDelayMilliseconds: Double = 2
 
-    /// One action to its visible result, in milliseconds.
+    /// One action to its visible result, in milliseconds: the model's tool call fully received to the frame showing
+    /// that tool finished, for a tool that runs in process (`read` of a small file). It is ask's own work between
+    /// the model asking and the user seeing: parsing the stream, recording the response and the result, running the
+    /// tool, drawing (ADR-0053).
     ///
-    /// Measured 0.05 ms — but read the caveat, because this number currently describes a trivial
-    /// action. It measures Enter producing the next prompt in a program with no agent in it. When
-    /// the agent loop lands, this budget has to be re-derived against a real action, and the stale
-    /// number must not survive the change.
-    public static let actionToActionMilliseconds: Double = 2
+    /// Measured 2.5–2.9 ms median, 3.1 ms p95, the same fresh and after 500 turns. The next request leaves about
+    /// 1.5 ms later (4.0–4.5 ms, growing slightly with history). A sandboxed `bash` command adds its spawn,
+    /// about 16 ms in all. Budget set at 5 ms.
+    public static let actionToActionMilliseconds: Double = 5
 
     /// Whether a measurement is inside budget.
     ///
