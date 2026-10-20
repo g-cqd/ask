@@ -16,6 +16,8 @@ public struct ResolvedModel: Sendable, Equatable {
 
     public let provider: Provider
     public let model: String
+    /// A named subscription registration; nil retains the legacy default provider behavior.
+    public var connection: ConnectionRecord?
     /// The model's context window in tokens, when the settings say.
     public var contextWindow: Int?
     /// The longest reply the model allows, when the settings say.

@@ -1,4 +1,3 @@
-internal import AemiJSON
 internal import Darwin
 public import Foundation
 
@@ -35,7 +34,9 @@ public struct CredentialFile: Sendable {
     /// The stored Claude credentials, or nil when there are none.
     /// - Throws: ``CredentialFileError/exposed(path:mode:)`` or ``CredentialFileError/damaged(path:)``, so a
     ///   problem is never mistaken for being signed out.
-    public func loadClaude() throws(CredentialFileError) -> ClaudeCredentials? { try read()?.claude }
+    public func loadClaude(connection: ConnectionRecord? = nil) throws(CredentialFileError) -> ClaudeCredentials? {
+        try load(\.claude, connection: connection)
+    }
 
     /// Stores Claude credentials, replacing any, and keeping every other provider's.
     /// - Throws: ``CredentialFileError/io(path:errno:)``, or ``CredentialFileError/damaged(path:)`` when the file
@@ -47,24 +48,30 @@ public struct CredentialFile: Sendable {
     /// Stores `credentials` only if the stored ones are still `expected`.
     /// - Returns: false when they changed or were removed meanwhile, and nothing was written.
     /// - Throws: as ``saveClaude(_:)``.
-    public func saveClaude(_ credentials: ClaudeCredentials, ifStill expected: ClaudeCredentials)
+    public func saveClaude(
+        _ credentials: ClaudeCredentials, ifStill expected: ClaudeCredentials, connection: ConnectionRecord? = nil
+    )
         throws(CredentialFileError) -> Bool
     {
-        try replace(\.claude, with: credentials, ifStill: expected)
+        try replace(\.claude, with: credentials, ifStill: expected, connection: connection)
     }
 
     /// Stores `credentials` only if the stored ones are still `expected`.
     /// - Returns: false when they changed or were removed meanwhile, and nothing was written.
     /// - Throws: as ``saveClaude(_:)``.
-    public func saveCodex(_ credentials: CodexCredentials, ifStill expected: CodexCredentials)
+    public func saveCodex(
+        _ credentials: CodexCredentials, ifStill expected: CodexCredentials, connection: ConnectionRecord? = nil
+    )
         throws(CredentialFileError) -> Bool
     {
-        try replace(\.codex, with: credentials, ifStill: expected)
+        try replace(\.codex, with: credentials, ifStill: expected, connection: connection)
     }
 
     /// The stored Codex credentials, or nil when there are none.
     /// - Throws: as ``loadClaude()``.
-    public func loadCodex() throws(CredentialFileError) -> CodexCredentials? { try read()?.codex }
+    public func loadCodex(connection: ConnectionRecord? = nil) throws(CredentialFileError) -> CodexCredentials? {
+        try load(\.codex, connection: connection)
+    }
 
     /// Stores Codex credentials, replacing any, whole, and keeping every other provider's.
     /// - Throws: as ``saveClaude(_:)``.
@@ -118,7 +125,7 @@ public struct CredentialFile: Sendable {
     /// A file that cannot be read as credentials stops the transaction before `change` runs, so a damaged file is never
     /// overwritten. With `creating` false, a directory that does not exist yet is not made: there is nothing to change.
     /// `change` must not start another transaction: the lock is not reentrant.
-    private func transact<T>(creating: Bool, _ change: (inout StoredCredentials) -> (result: T, write: Bool))
+    func transact<T>(creating: Bool, _ change: (inout StoredCredentials) -> (result: T, write: Bool))
         throws(CredentialFileError) -> T
     {
         if creating {
@@ -154,12 +161,13 @@ public struct CredentialFile: Sendable {
 
     /// Replaces the record at `record` only while it is still `expected`; false, and nothing written, when it is not.
     private func replace<T: Equatable>(
-        _ record: WritableKeyPath<StoredCredentials, T?>, with value: T, ifStill expected: T
+        _ record: WritableKeyPath<StoredCredentials, T?>, with value: T, ifStill expected: T,
+        connection: ConnectionRecord?
     )
         throws(CredentialFileError) -> Bool
     {
         try transact(creating: false) { stored in
-            guard stored[keyPath: record] == expected else { return (false, false) }
+            guard matches(connection, stored), stored[keyPath: record] == expected else { return (false, false) }
             stored[keyPath: record] = value
             return (true, true)
         }
@@ -189,7 +197,7 @@ public struct CredentialFile: Sendable {
     // MARK: - The file
 
     /// What the file holds, or nil when there is no file.
-    private func read() throws(CredentialFileError) -> StoredCredentials? {
+    func read() throws(CredentialFileError) -> StoredCredentials? {
         var status = stat()
         guard stat(url.path, &status) == 0 else {
             if errno == ENOENT { return nil }
@@ -198,18 +206,15 @@ public struct CredentialFile: Sendable {
         let mode = Int(status.st_mode) & 0o777
         guard mode & 0o077 == 0 else { throw .exposed(path: url.path, mode: mode) }
         guard let bytes = try? Data(contentsOf: url) else { throw .io(path: url.path, errno: errno) }
-        guard let stored = try? AemiJSON.JSONDecoder().decode(StoredCredentials.self, from: [UInt8](bytes)) else {
-            throw .damaged(path: url.path)
-        }
-        return stored
+        do { return try StoredCredentials(decoding: [UInt8](bytes)) } catch StoredCredentials.FormatError.newerVersion {
+            throw .newerFormat(path: url.path)
+        } catch { throw .damaged(path: url.path) }
     }
 
     /// Writes `stored` as a new owner-only file and renames it into place, so a crash leaves the old file or the new.
     private func write(_ stored: StoredCredentials) throws(CredentialFileError) {
         let directory = url.deletingLastPathComponent()
-        var encoder = AemiJSON.JSONEncoder()
-        encoder.options.keyOrder = .sorted
-        guard let bytes = try? encoder.encodeToBytes(stored) else { throw .damaged(path: url.path) }
+        guard let bytes = try? stored.encoded() else { throw .damaged(path: url.path) }
         let temporary = directory.appending(path: ".credentials-\(UUID().uuidString).json")
         let descriptor = open(temporary.path, O_WRONLY | O_CREAT | O_EXCL | O_CLOEXEC, 0o600)
         guard descriptor >= 0 else { throw .io(path: temporary.path, errno: errno) }
