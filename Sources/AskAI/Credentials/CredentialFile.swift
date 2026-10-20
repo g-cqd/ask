@@ -6,11 +6,19 @@ public import Foundation
 ///
 /// The directory is created 0700 and the file 0600. A save writes a new file beside the old one and renames
 /// it into place, so a crash leaves the old credentials or the new ones, never a mixture.
+///
+/// Every change is one transaction under a short lock shared by every ask process: read the file, change one record,
+/// write. Without it two saves read the same file and the later erases the earlier (eight concurrent saves kept one or
+/// two). A read takes no lock and writes nothing: a rename is whole, so a reader sees the old file or the new one.
 public struct CredentialFile: Sendable {
     public let url: URL
+    let lockWait: Duration
 
-    /// The file at `url`.
-    public init(url: URL) { self.url = url }
+    /// The file at `url`, waiting up to `lockWait` for another ask's save to finish.
+    public init(url: URL, lockWait: Duration = .seconds(5)) {
+        self.url = url
+        self.lockWait = lockWait
+    }
 
     /// `$XDG_CONFIG_HOME/ask/credentials.json` when that is an absolute path, else
     /// `~/.config/ask/credentials.json`.
@@ -20,6 +28,7 @@ public struct CredentialFile: Sendable {
     ) -> CredentialFile {
         let configured = environment["XDG_CONFIG_HOME"].flatMap { $0.hasPrefix("/") ? $0 : nil }
         let base = URL(fileURLWithPath: configured ?? home + "/.config", isDirectory: true)
+        // @dl:accept -- Claude's and Codex's public accessors are twins over different credential types; a protocol to share them would cost more than it saves
         return CredentialFile(url: base.appending(path: "ask/credentials.json"))
     }
 
@@ -32,9 +41,25 @@ public struct CredentialFile: Sendable {
     /// - Throws: ``CredentialFileError/io(path:errno:)``, or ``CredentialFileError/damaged(path:)`` when the file
     ///   cannot be read, which is never overwritten.
     public func saveClaude(_ credentials: ClaudeCredentials) throws(CredentialFileError) {
-        var stored = try read() ?? Stored()
-        stored.claude = credentials
-        try write(stored)
+        try save(\.claude, credentials)
+    }
+
+    /// Stores `credentials` only if the stored ones are still `expected`.
+    /// - Returns: false when they changed or were removed meanwhile, and nothing was written.
+    /// - Throws: as ``saveClaude(_:)``.
+    public func saveClaude(_ credentials: ClaudeCredentials, ifStill expected: ClaudeCredentials)
+        throws(CredentialFileError) -> Bool
+    {
+        try replace(\.claude, with: credentials, ifStill: expected)
+    }
+
+    /// Stores `credentials` only if the stored ones are still `expected`.
+    /// - Returns: false when they changed or were removed meanwhile, and nothing was written.
+    /// - Throws: as ``saveClaude(_:)``.
+    public func saveCodex(_ credentials: CodexCredentials, ifStill expected: CodexCredentials)
+        throws(CredentialFileError) -> Bool
+    {
+        try replace(\.codex, with: credentials, ifStill: expected)
     }
 
     /// The stored Codex credentials, or nil when there are none.
@@ -44,17 +69,13 @@ public struct CredentialFile: Sendable {
     /// Stores Codex credentials, replacing any, whole, and keeping every other provider's.
     /// - Throws: as ``saveClaude(_:)``.
     public func saveCodex(_ credentials: CodexCredentials) throws(CredentialFileError) {
-        var stored = try read() ?? Stored()
-        stored.codex = credentials
-        try write(stored)
+        try save(\.codex, credentials)
     }
 
     /// Removes Codex's credentials, keeping every other provider's. Nothing stored is not an error.
     /// - Throws: as ``saveClaude(_:)``.
     public func removeCodex() throws(CredentialFileError) {
-        guard var stored = try read(), stored.codex != nil else { return }
-        stored.codex = nil
-        try write(stored)
+        try clear(\.codex)
     }
 
     /// The key a provider's sign-in stored, or nil when there is none.
@@ -64,17 +85,20 @@ public struct CredentialFile: Sendable {
     /// Stores `key` for `provider`, replacing its previous one and keeping every other provider's credentials.
     /// - Throws: as ``saveClaude(_:)``.
     public func saveKey(_ key: StoredKey, for provider: String) throws(CredentialFileError) {
-        var stored = try read() ?? Stored()
-        stored.keys = (stored.keys ?? [:]).merging([provider: key]) { _, new in new }
-        try write(stored)
+        try transact(creating: true) {
+            $0.keys = ($0.keys ?? [:]).merging([provider: key]) { _, new in new }
+            return ((), true)
+        }
     }
 
     /// Removes `provider`'s key, keeping every other provider's credentials. Nothing stored is not an error.
     /// - Throws: as ``saveClaude(_:)``.
     public func removeKey(for provider: String) throws(CredentialFileError) {
-        guard var stored = try read(), stored.keys?[provider] != nil else { return }
-        stored.keys?[provider] = nil
-        try write(stored)
+        try transact(creating: false) {
+            guard $0.keys?[provider] != nil else { return ((), false) }
+            $0.keys?[provider] = nil
+            return ((), true)
+        }
     }
 
     /// Every stored key, by provider.
@@ -84,9 +108,80 @@ public struct CredentialFile: Sendable {
     /// Removes Claude's credentials, keeping every other provider's. Nothing stored is not an error.
     /// - Throws: as ``saveClaude(_:)``.
     public func removeClaude() throws(CredentialFileError) {
-        guard var stored = try read(), stored.claude != nil else { return }
-        stored.claude = nil
-        try write(stored)
+        try clear(\.claude)
+    }
+
+    // MARK: - Transactions
+
+    /// Runs one change under the save lock: read what is stored, let `change` alter it, and write it back if `change` says so.
+    ///
+    /// A file that cannot be read as credentials stops the transaction before `change` runs, so a damaged file is never
+    /// overwritten. With `creating` false, a directory that does not exist yet is not made: there is nothing to change.
+    /// `change` must not start another transaction: the lock is not reentrant.
+    private func transact<T>(creating: Bool, _ change: (inout Stored) -> (result: T, write: Bool))
+        throws(CredentialFileError) -> T
+    {
+        if creating {
+            try prepareDirectory()
+        } else if !FileManager.default.fileExists(atPath: url.deletingLastPathComponent().path) {
+            var empty = Stored()
+            return change(&empty).result
+        }
+        let lock = try takeLock()
+        defer { lock.release() }
+        var stored = try read() ?? Stored()
+        let outcome = change(&stored)
+        if outcome.write { try write(stored) }
+        return outcome.result
+    }
+
+    /// Stores `value` in the record at `record`, creating the file if there is none.
+    private func save<T>(_ record: WritableKeyPath<Stored, T?>, _ value: T) throws(CredentialFileError) {
+        try transact(creating: true) {
+            $0[keyPath: record] = value
+            return ((), true)
+        }
+    }
+
+    /// Empties the record at `record`. Nothing stored is not an error, and makes nothing.
+    private func clear<T>(_ record: WritableKeyPath<Stored, T?>) throws(CredentialFileError) {
+        try transact(creating: false) {
+            guard $0[keyPath: record] != nil else { return ((), false) }
+            $0[keyPath: record] = nil
+            return ((), true)
+        }
+    }
+
+    /// Replaces the record at `record` only while it is still `expected`; false, and nothing written, when it is not.
+    private func replace<T: Equatable>(_ record: WritableKeyPath<Stored, T?>, with value: T, ifStill expected: T)
+        throws(CredentialFileError) -> Bool
+    {
+        try transact(creating: false) { stored in
+            guard stored[keyPath: record] == expected else { return (false, false) }
+            stored[keyPath: record] = value
+            return (true, true)
+        }
+    }
+
+    private func takeLock() throws(CredentialFileError) -> CredentialLock {
+        do { return try CredentialLock.acquireBlocking(beside: url, wait: lockWait, name: "write") } catch {
+            switch error {
+                case .timedOut, .cancelled: throw .locked(path: CredentialLock.path(beside: url, name: "write"))
+                case .io(let failure): throw failure
+            }
+        }
+    }
+
+    /// Makes the 0700 directory the file and its locks live in.
+    private func prepareDirectory() throws(CredentialFileError) {
+        let directory = url.deletingLastPathComponent()
+        do {
+            try FileManager.default.createDirectory(
+                at: directory.deletingLastPathComponent(), withIntermediateDirectories: true)
+        } catch {
+            throw .io(path: directory.deletingLastPathComponent().path, errno: EACCES)
+        }
+        if mkdir(directory.path, 0o700) != 0, errno != EEXIST { throw .io(path: directory.path, errno: errno) }
     }
 
     // MARK: - The file
@@ -110,13 +205,6 @@ public struct CredentialFile: Sendable {
     /// Writes `stored` as a new owner-only file and renames it into place, so a crash leaves the old file or the new.
     private func write(_ stored: Stored) throws(CredentialFileError) {
         let directory = url.deletingLastPathComponent()
-        do {
-            try FileManager.default.createDirectory(
-                at: directory.deletingLastPathComponent(), withIntermediateDirectories: true)
-        } catch {
-            throw .io(path: directory.deletingLastPathComponent().path, errno: EACCES)
-        }
-        if mkdir(directory.path, 0o700) != 0, errno != EEXIST { throw .io(path: directory.path, errno: errno) }
         var encoder = AemiJSON.JSONEncoder()
         encoder.options.keyOrder = .sorted
         guard let bytes = try? encoder.encodeToBytes(stored) else { throw .damaged(path: url.path) }
@@ -136,6 +224,9 @@ public struct CredentialFile: Sendable {
     /// Deletes the whole file, every provider's credentials. Nothing stored is not an error.
     /// - Throws: ``CredentialFileError/io(path:errno:)``.
     public func remove() throws(CredentialFileError) {
+        guard FileManager.default.fileExists(atPath: url.deletingLastPathComponent().path) else { return }
+        let lock = try takeLock()
+        defer { lock.release() }
         guard unlink(url.path) == 0 || errno == ENOENT else { throw .io(path: url.path, errno: errno) }
     }
 
