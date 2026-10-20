@@ -112,10 +112,20 @@ public struct BashTool: ArgumentTool {
 
     /// When a sandboxed command's output says something was not permitted, a line saying the sandbox may be why and
     /// what it protects, so the model does not retry the same thing or hunt for a way round it. Nothing otherwise.
+    ///
+    /// A program that starts its own sandbox (SwiftPM, for a manifest it has not cached) fails differently: Seatbelt
+    /// does not nest. That is named as such, since no protected path was touched and the way out is a flag.
     static func sandboxNote(for job: Job, output: String) -> String {
+        guard !job.sandbox.isUnrestricted else { return "" }
+        if output.contains("sandbox_apply: Operation not permitted") { return nestedSandboxNote }
         guard output.contains("Operation not permitted"), let summary = job.sandbox.summary else { return "" }
         return "[This command ran in a sandbox, which may be why it was refused. \(summary)]\n"
     }
+
+    static let nestedSandboxNote =
+        "[A program in this command tried to start its own macOS sandbox, which cannot run inside ask's. "
+        + "For SwiftPM, add --disable-sandbox (swift build, test, run, package); ask's sandbox still applies to "
+        + "everything the command runs.]\n"
 
     static func body(_ text: String) -> String { text.isEmpty ? "" : (text.hasSuffix("\n") ? text : text + "\n") }
 }

@@ -8,6 +8,7 @@ B: SIGINT while a command runs. ask exits 130, and the command's backgrounded ch
 Usage: Scripts/probe-agent-run.py .build/release/ask
 """
 import json
+import uuid
 import pty
 import re
 import socket, os, signal, subprocess, sys, tempfile, threading, time
@@ -549,7 +550,37 @@ def probe_damaged_session():
                 check("the repaired session carries both exchanges", entry_kinds(files[0]) == ["user", "response"] * 2, entry_kinds(files[0]))])
 
 
+def probe_nested_sandbox():
+    print("M: SwiftPM under ask's sandbox: a fresh manifest fails as a nested sandbox, --disable-sandbox builds")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(project, "Sources", "hello"))
+    # A nonce makes the manifest new to SwiftPM's user cache, which is what made the earlier research pass.
+    open(os.path.join(project, "Package.swift"), "w").write(
+        "// swift-tools-version: 6.0\nimport PackageDescription\n// nonce " + uuid.uuid4().hex
+        + "\nlet package = Package(name: \"hello\", targets: [.executableTarget(name: \"hello\")])\n")
+    open(os.path.join(project, "Sources", "hello", "main.swift"), "w").write('print("built-under-ask")\n')
+    server = Server([
+        turn([("tool", "t1", "swift build 2>&1 | tail -3; exit ${PIPESTATUS[0]}")], "tool_use"),
+        turn([("tool", "t2", "swift build --disable-sandbox 2>&1 | tail -1 && .build/debug/hello")], "tool_use"),
+        turn([("text", "Done.")], "end_turn")])
+    run = subprocess.run([ASK, "-p", "Build it."], cwd=project, env=environment(state, server.url),
+                         capture_output=True, text=True, timeout=600)
+    got = tool_results(server) if len(server.requests) == 3 else {}
+    prompt = json.dumps(server.requests[0]["body"]["messages"][0]) if server.requests else ""
+    server.httpd.shutdown()
+    return all([
+        check("the run finishes", run.returncode == 0 and len(got) == 2, f"{run.returncode} {run.stderr[-300:]}"),
+        check("the system prompt says how to build SwiftPM packages", "swift build --disable-sandbox" in prompt),
+        check("a fresh manifest fails because the sandboxes cannot nest",
+              "sandbox_apply: Operation not permitted" in got.get("t1", ""), got.get("t1", "")[-400:]),
+        check("and the model is told so, not that it touched a protected path",
+              "tried to start its own macOS sandbox" in got.get("t1", "")
+              and "which may be why it was refused" not in got.get("t1", ""), got.get("t1", "")[-400:]),
+        check("--disable-sandbox builds and runs under ask's sandbox",
+              "built-under-ask" in got.get("t2", "") and "[exit 0]" in got.get("t2", ""), got.get("t2", "")[-400:])])
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session() & probe_nested_sandbox()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

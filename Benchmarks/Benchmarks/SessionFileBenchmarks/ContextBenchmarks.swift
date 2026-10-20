@@ -79,4 +79,10 @@ func bashBenchmarks() {
         benchmark in
         for _ in benchmark.scaledIterations { blackHole(await BashTool().run(echo, in: protected)) }
     }
+    // A sandboxed command printing about 1 MiB: what scanning the output for a refusal costs on top of the spawn.
+    let large = try! JSONObject(validating: Array(#"{"command":"yes x | head -c 1048576"}"#.utf8))
+    Benchmark("tools/bash 1 MiB output sandboxed", configuration: .init(maxDuration: .seconds(5), maxIterations: 100)) {
+        benchmark in
+        for _ in benchmark.scaledIterations { blackHole(await BashTool().run(large, in: protected)) }
+    }
 }
