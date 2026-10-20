@@ -99,7 +99,7 @@ Two accounts of one provider can be signed in at once as named connections: `ask
 `ask --provider work`, `ask models work`, `ask connections` (with `rename` and `remove`) and `ask logout work`. Each has its own
 credentials and model list; a session remembers which connection it used and resumes on it, and ask never moves a prompt to
 another account on its own. Verified offline with synthetic credentials; a real browser sign-in with `--name` has not been
-tried ([ADR-0040](docs/adr/0040-named-connections-are-registered-destinations-with-stable-identities.md)). For Ollama, start it with `OLLAMA_CONTEXT_LENGTH=32768`: its default context is sized
+tried ([ADR-0048](docs/adr/0040-named-connections-are-registered-destinations-with-stable-identities.md)). For Ollama, start it with `OLLAMA_CONTEXT_LENGTH=32768`: its default context is sized
 from memory and can be 4,096 tokens. Measured local set-ups: `docs/research/local-models-2026-10.md`.
 
 ## Roadmap
