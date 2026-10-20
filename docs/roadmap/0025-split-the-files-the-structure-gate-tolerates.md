@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-19
 decision: ADR-0021
@@ -21,6 +21,11 @@ underneath it would have made that work unmergeable.
 `AskTUI.swift` was split on 2026-10-19 (diary 09): it was not in the other branch's way. `AskMain.swift`,
 `PrintRun.swift` and `InteractiveScreen.swift` are all edited on `robust-runs`, and `TerminalTeardownTests.swift`
 too, so they wait for it to land.
+
+## Done — `AskMain.swift` (2026-10-20, diary 46)
+
+Split as planned into `Ask.swift`, `Login.swift` and `Logout.swift` while merging the connections work, which pushed it
+past the 250-line ceiling; its baseline entry is gone. Three files remain.
 
 ## Done when
 
