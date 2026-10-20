@@ -6,7 +6,7 @@ import Testing
 struct ScreenOptionsTests {
     @Test func `the defaults are the ones the owner chose`() {
         let options = ScreenOptions()
-        #expect(options.mouse && options.copyOnSelect && options.foldTools)
+        #expect(options.mouse && options.copyOnSelect && options.foldTools && options.foldThinking)
         #expect(options.scrollLines == 3)
     }
 

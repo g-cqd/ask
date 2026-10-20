@@ -57,6 +57,7 @@ public enum SessionReplay {
                 for (index, block) in response.blocks.enumerated() {
                     switch block {
                         case .text(let text): steps.append(.event(.model(.textDelta(index: index, text))))
+                        case .thinking(let text, _): steps.append(.event(.model(.thinkingDelta(index: index, text))))
                         case .toolCall(let id, let name, let input): calls.append((id, name, input))
                         default: break
                     }
