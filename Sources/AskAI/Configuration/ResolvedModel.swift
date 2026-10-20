@@ -23,6 +23,7 @@ public struct ResolvedModel: Sendable, Equatable {
     /// The model's context window in tokens, when the settings say.
     public var contextWindow: Int?
     /// The longest reply the model allows, when the settings say.
+    // @dl:accept -- two plain value types that hold the same optional limits share a shape, not behaviour; a base type would only be a name for it
     public var maxOutputTokens: Int?
 
     /// A resolved provider and model, with what is known of the model's limits.
