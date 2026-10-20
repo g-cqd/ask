@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-20
 ---
@@ -18,3 +18,18 @@ never silently move pending messages into a different session.
 Real-PTY probes switch to a new session, return to an old one, refuse a locked or unknown session without losing
 the current one, and change the model observed by the fake provider on the next request. Model choices should
 use the catalog work (0038) where available, not duplicate its discovery.
+
+## Delivered — /new (2026-10-20, ADR-0041)
+
+Starts a new conversation without leaving ask. It releases the old writer lock and leaves the old file
+unchanged, clears context/usage/learned-window state, preserves the editor draft, and creates no new file
+until the next prompt. Running jobs and bad arguments refuse without changing the active conversation.
+Real-PTY N/O inspect archives, requests, writer locking and the job's continued operation.
+The screen's busy boundary refuses switches while a turn or queued input is active.
+
+## Still owed
+
+- `/resume`: list/select an existing session, open its writer lock before releasing the current one, replay
+  its history and usage, and retain the active session on lookup/open/lock failure.
+- `/model`: show and change the current model using existing provider resolution/catalogs, with explicit
+  run-local provenance and coherent configuration refresh and binary reload.
