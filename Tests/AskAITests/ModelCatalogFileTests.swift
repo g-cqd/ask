@@ -48,6 +48,8 @@ struct ModelCatalogFileTests {
         try withFile { file in
             try file.save(Self.models, scope: Self.scope, now: 10)
             for scope in [
+                ModelCatalogScope(
+                    provider: "codex", accountID: "account-a", endpoint: Self.scope.endpoint, connectionID: UUID()),
                 ModelCatalogScope(provider: "codex", accountID: "account-b", endpoint: Self.scope.endpoint),
                 ModelCatalogScope(provider: "other", accountID: "account-a", endpoint: Self.scope.endpoint),
                 ModelCatalogScope(

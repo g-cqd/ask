@@ -3,12 +3,17 @@ public struct CodexModelCatalog: Sendable {
     private let credentials: CredentialFile
     private let cache: ModelCatalogFile
     private let transport: any HTTPTransport
+    private let connection: ConnectionRecord?
 
     /// Discovery using only ask's own credentials and a replaceable catalog file.
-    public init(credentials: CredentialFile, cache: ModelCatalogFile, transport: any HTTPTransport) {
+    public init(
+        credentials: CredentialFile, cache: ModelCatalogFile, transport: any HTTPTransport,
+        connection: ConnectionRecord? = nil
+    ) {
         self.credentials = credentials
         self.cache = cache
         self.transport = transport
+        self.connection = connection
     }
 
     /// A fresh local snapshot for the current account, without refreshing tokens or using a network.
@@ -16,7 +21,7 @@ public struct CodexModelCatalog: Sendable {
     /// - Returns: nil when signed out or without a matching fresh cache.
     /// - Throws: a credential-file or cache error; nothing is rewritten.
     public func cached(now: Double) throws -> CatalogSnapshot? {
-        guard let current = try credentials.loadCodex(),
+        guard let current = try credentials.loadCodex(connection: connection),
             let models = try cache.load(scope: scope(for: current), now: now)
         else { return nil }
         return CatalogSnapshot(models: models, notices: [])
@@ -35,8 +40,16 @@ public struct CodexModelCatalog: Sendable {
                 notices.append("Cached catalog not used: \(error)")
             }
         }
-        let current = try await CodexAccess(file: credentials, client: CodexAuthClient(transport: transport))
+        let current: CodexCredentials
+        do {
+            current = try await CodexAccess(
+                file: credentials, client: CodexAuthClient(transport: transport), connection: connection
+            )
             .credentials(now: now)
+        } catch CodexAccessError.signedOut {
+            if let connection { throw ConnectionError.signInRequired(name: connection.name, provider: .codex) }
+            throw CodexAccessError.signedOut
+        }
         let models = try await CodexCatalogClient(transport: transport).models(credentials: current)
         do { try cache.save(models, scope: scope(for: current), now: now) } catch {
             notices.append("Downloaded model catalog could not be cached: \(error)")
@@ -46,6 +59,7 @@ public struct CodexModelCatalog: Sendable {
 
     private func scope(for credentials: CodexCredentials) -> ModelCatalogScope {
         ModelCatalogScope(
-            provider: ProviderSettings.codex, accountID: credentials.accountID, endpoint: CodexCatalogClient.endpoint)
+            provider: ProviderSettings.codex, accountID: credentials.accountID, endpoint: CodexCatalogClient.endpoint,
+            connectionID: connection?.id)
     }
 }
