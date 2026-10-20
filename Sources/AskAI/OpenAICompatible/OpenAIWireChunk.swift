@@ -66,22 +66,12 @@ struct OpenAIWireChunk: Decodable, Sendable {
         /// llama.cpp's context size, sent with a refusal for length.
         var nCtx: Int?
         /// Seconds until a usage limit lifts, which ChatGPT's backend sends (`resets_in_seconds`).
-        let resetsIn: Seconds?
+        let resetsIn: LenientInt?
 
         enum CodingKeys: String, CodingKey {
             case message, type, code
             case nCtx = "n_ctx"
             case resetsIn = "resets_in_seconds"
-        }
-    }
-
-    /// A count of seconds that is whatever the server sent it as: a number that is not a whole one, a string or a list is nil
-    /// here, not a reason to lose the rest of the error.
-    struct Seconds: Decodable, Sendable {
-        let value: Int?
-
-        init(from decoder: any Decoder) throws {
-            value = try? decoder.singleValueContainer().decode(Int.self)
         }
     }
 
