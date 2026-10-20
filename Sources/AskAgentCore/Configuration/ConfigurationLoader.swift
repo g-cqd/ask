@@ -42,7 +42,7 @@ public struct ConfigurationLoader: Sendable {
     /// - Throws: ``ConfigurationError`` for any file that exists, applies, and is not valid.
     public func load(
         model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil,
-        network: SandboxPolicy.Network? = nil, write: WriteSetting? = nil
+        network: SandboxPolicy.Network? = nil, write: PathSetting? = nil
     ) throws(ConfigurationError) -> Result {
         var configuration = Configuration.defaults
         var applied: [String] = []
