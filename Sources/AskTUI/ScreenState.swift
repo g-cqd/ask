@@ -16,6 +16,8 @@ public struct ScreenState: Sendable, Equatable {
     public var detail = ""
     /// How many wrapped lines the transcript is scrolled up from the bottom.
     public var scrollback = 0
+    /// What the user has selected with the pointer, anchored in the conversation so it survives scrolling and streaming.
+    var selection: ContentSelection<Int>?
 
     /// A screen with nothing in it yet.
     public init(label: String) { self.label = label }
