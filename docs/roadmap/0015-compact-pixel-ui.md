@@ -92,9 +92,11 @@ were built and rejected; they are listed because they would otherwise be tried a
 - **Strokes are quiet and tunable.** One stroke colour for lines, the scrollbar track and the sidebar divider, at three
   levels (`subtle` by default, `normal`, `strong`), plus a thickness (1 or 2 px). Subtle keeps at least 1.4:1 against the
   terminal's background and is never as loud as text.
-- **Three layouts, one spacing.** *Flat* is the spacing and nothing else. *Surfaces* is the same spacing plus a separator
-  between blocks. *Workbench* adds a sidebar of tasks, agents and context. The names predate the decision not to paint;
-  nothing is painted in any of them.
+- **Two layouts: standard and workbench.** *Flat* and *surfaces* were merged at the owner's decision. With nothing painted,
+  "surfaces" was only "flat plus a separator between blocks", so there is one single-column layout, with the spacing and the
+  separators, and *workbench*, which is that plus a sidebar of tasks, agents and context. The sidebar changes the width and
+  never the spacing, and a test fails if it does. Saved settings from the three-layout version migrate: flat and surfaces
+  become standard, workbench stays workbench.
 - **A roomy bottom by default** (work strip, input, status). *Rejected:* the flush bottom with half-row padding, called
   "compact", which the owner described as bad. Tight and flush remain as settings.
 
@@ -126,10 +128,9 @@ were built and rejected; they are listed because they would otherwise be tried a
 
 **Settings worth keeping** (proposed, not decided; they would join the configuration of roadmap 0039): accent (an ANSI
 colour), separators (`pixel line`, `block line`), line thickness, strokes, block padding (`none`, `1 block`), bottom section,
-layout.
+layout (`standard`, `workbench`).
 
 **Still undecided**
 
-- Whether *flat* should differ from *surfaces* by more than the separators, or the two should merge.
 - What the character layout does about the row a block line costs, since padding already spends rows.
 - Whether bold and italic carry the hierarchy in the fonts the owner's terminals use: nothing tests that they render.
