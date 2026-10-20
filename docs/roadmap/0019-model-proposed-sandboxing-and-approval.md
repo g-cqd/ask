@@ -34,6 +34,6 @@ run allows is refused, naming it. 0013 (the interactive screen) has landed, so t
 
 ## Still owed
 
-- **The approval prompt**: a widening request in the screen asks the user, naming exactly what would be allowed, once or
-  for the session. Under `-p` it stays refused; the flags of ADR-0043 are the way to widen there.
+- ~~The approval prompt~~: delivered (ADR-0055, diary 52): y once, a for this session (in memory), n or Esc no;
+  Ctrl-C still aborts. Under `-p` a widening stays refused.
 - **Session-wide narrowing by the model** ("sandbox everything from now on"); undoing it is a widening.
