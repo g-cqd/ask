@@ -108,14 +108,17 @@ TerminalKit, and no terminal other than kitty was tried.
   two tints meet (no row). Aerial separates them with a block-line row (`▁`), which costs a row. Neither uses a margin.
   The character layout has no hairline, so its answer is the aerial one or no separator at all, which 0015 still has to
   choose.
-- **Two densities, chosen by the owner, not one design with a slider.** *Compact*: half-row padding, pixel hairlines,
-  flush bottom. *Aerial*: one-row padding, block-line rows, roomy bottom (work strip, input, status). They are presets
-  over individual settings, and changing one setting makes the density `custom`.
-- **Strokes are quiet.** Hairlines, rules and the scrollbar track share one stroke colour,
-  with three levels (`subtle` by default, `normal`, `strong`). Subtle is 1.85:1 against the page on the owner's
-  terminal, against 3.5:1 for the first version, and every level keeps a minimum contrast against **every** block tint, so
-  a hairline between two tinted blocks never vanishes (the level ordering is tested, and a control fails when `subtle` is
-  made as loud as `strong`).
+- **The owner's settled setup, and what was rejected.** Compact (half-row padding, flush bottom) was tried and the owner
+  rejected it ("the compact density is shit"). The setup they chose, from the settings panel, is the `pixel` preset: surfaces
+  off, the terminal's own background, 1 px pixel hairlines between blocks, subtle strokes, **one row** of padding, a roomy
+  bottom (work strip, input, status), chips, the Surfaces layout. It costs content space (47% of the rows in the lab's
+  transcript, against 61% for half rows), and they chose it anyway. Half-row padding and the flush and tight bottoms remain
+  as settings, but belong to no preset. The other preset, `aerial`, is the same with a block-line row between blocks instead
+  of a hairline. Presets are values over individual settings, and changing one makes the preset `custom`.
+- **Strokes must not show through a popup.** Hairlines and the scrollbar are images above the text layer, so ones behind an
+  open popup were drawn across it; the owner's screenshot of the settings panel showed lines through its rows. Placements
+  inside a popup are now skipped and a tall one is cropped. A test searches every popup, layout and padding for a stroke
+  overlapping it, and a control (clipping disabled) fails it.
 - **A boundary has one stroke.** With a sidebar, the divider *is* the scrollbar track and the thumb rides on it. Two
   adjacent strokes read as a double border (the first Workbench drawing had exactly that), and a test now fails on it.
 - **The bottom section can be nearly flat.** Roomy is a work strip, a two-row input, a status bar. Tight drops the strip
