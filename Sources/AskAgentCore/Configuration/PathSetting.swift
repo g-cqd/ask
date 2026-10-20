@@ -1,6 +1,6 @@
-/// One configuration layer's write scope (roadmap 0042): everywhere, the project being worked on, or some paths.
-/// Each layer that sets one narrows the ones below; see ``SandboxSection/writeScope(workspace:home:)``.
-public enum WriteSetting: Sendable, Equatable, CustomStringConvertible {
+/// One configuration layer's scope for writing or reading (roadmap 0042): everywhere, the project being worked on, or
+/// some paths. Each layer that sets one narrows the ones below; see ``SandboxSection/writeScope(workspace:home:)``.
+public enum PathSetting: Sendable, Equatable, CustomStringConvertible {
     case anywhere
     /// The working directory ask was started in.
     case workspace
@@ -15,7 +15,7 @@ public enum WriteSetting: Sendable, Equatable, CustomStringConvertible {
         }
     }
 
-    /// Where this setting allows writing, for a run in `workspace` with the home directory `home`.
+    /// Where this setting allows writing or reading, for a run in `workspace` with the home directory `home`.
     func scope(workspace: String, home: String) -> PathScope {
         func canonical(_ path: String) -> String { CanonicalPath.of(path, relativeTo: "/") ?? path }
         switch self {

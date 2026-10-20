@@ -106,7 +106,7 @@ struct Ask: AsyncParsableCommand {
     }
 
     /// `--write` as a setting.
-    private var writeSetting: WriteSetting? {
+    private var writeSetting: PathSetting? {
         switch write {
             case nil: nil
             case "workspace": .workspace
