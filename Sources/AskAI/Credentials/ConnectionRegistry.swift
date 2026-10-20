@@ -75,6 +75,12 @@ public struct ConnectionRegistry: Sendable {
             url: directory.appending(path: record.id.uuidString.lowercased()).appending(path: "credentials.json"))
     }
 
+    /// The alias file in this registration's own folder, which a rename does not move.
+    public func aliases(for record: ConnectionRecord) -> ModelAliasFile {
+        ModelAliasFile(
+            url: directory.appending(path: record.id.uuidString.lowercased()).appending(path: "aliases.json"))
+    }
+
     /// Renames a registration, retaining its id, credentials, authorization identity and cache location.
     public func rename(_ record: ConnectionRecord, to name: String, reserved: [String] = []) throws {
         let name = try availableName(name, reserved: reserved)

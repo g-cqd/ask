@@ -18,6 +18,8 @@ public struct ResolvedModel: Sendable, Equatable {
     public let model: String
     /// A named subscription registration; nil retains the legacy default provider behavior.
     public var connection: ConnectionRecord?
+    /// The alias the user typed, when the model came from one; `model` is then the server's id.
+    public var alias: String?
     /// The model's context window in tokens, when the settings say.
     public var contextWindow: Int?
     /// The longest reply the model allows, when the settings say.

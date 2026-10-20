@@ -32,9 +32,27 @@ struct ModelsCommand: AsyncParsableCommand {
                         + context.padding(toLength: 14, withPad: " ", startingAt: 0)
                         + output.padding(toLength: 14, withPad: " ", startingAt: 0) + model.reasoningDescription)
             }
+            if let record { try printAliases(of: record) }
             print(
                 "* default model when none is configured. REASONING: the levels this account reports; * marks the server's default."
             )
         } catch { fail("ask: \(error)", code: ModelDiscovery.exitCode(for: error)) }
+    }
+
+    /// The connection's own names, below the server's list, so what `--model` accepts is in one place.
+    private func printAliases(of record: ConnectionRecord) throws {
+        let aliases: ModelAliases
+        do { aliases = try NamedConnections.aliases(for: record).load() } catch {
+            FileHandle.standardError.write(Data("ask: aliases not shown: \(error)\n".utf8))
+            return
+        }
+        guard !aliases.aliases.isEmpty || aliases.defaultModel != nil else { return }
+        print("\nALIASES (yours, on \(record.name))")
+        for (name, alias) in aliases.aliases.sorted(by: { $0.key < $1.key }) {
+            let limits = [alias.contextWindow.map { "context \($0)" }, alias.maxOutputTokens.map { "max output \($0)" }]
+                .compactMap { $0 }.joined(separator: ", ")
+            print("  \(name) is \(alias.model)" + (limits.isEmpty ? "" : " (\(limits), as you stated)"))
+        }
+        if let model = aliases.defaultModel { print("  default: \(model)") }
     }
 }
