@@ -34,7 +34,8 @@ builds and runs confined to its workspace and localhost; a trusted project narro
 ## Still owed
 
 - **A read allow-list** on a deny-default Seatbelt base. Probe what SwiftPM, git and the toolchains read first.
-- **The policy recorded in the session**, so a resumed session keeps its sandbox when the flags differ.
+- ~~The policy recorded in the session~~: delivered (ADR-0045, diary 41). A resumed session keeps its strict
+  sandbox below the flags; `/new` drops it.
 
 ## Found first (2026-10-20, diary 38)
 
