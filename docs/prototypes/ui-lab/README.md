@@ -13,6 +13,7 @@ python3 docs/prototypes/ui-lab/lab.py --check  # the self-test, no terminal need
 keys are listed in the top row. Settings are saved to `/tmp/ask-ui-lab/settings.json` (`LAB_SETTINGS` overrides).
 
 What `--check` pins: contrast on real terminal palettes, the bottom rows not moving when thinking is expanded, a
-padded row above and below every surfaced block, one stroke (not two) between the transcript and the sidebar, compact
-and aerial being different designs, the `/` and `@` rules, routing to a session, the settings round trip.
+padding above and below every kind of block and the input (in whole rows, or half a row shared with the neighbour), a
+tint per kind with text readable on all of them, quiet strokes that never vanish against a tint, one stroke (not two)
+between the transcript and the sidebar, compact and aerial being different designs, the `/` and `@` rules, routing to a session, the settings round trip.
 What it cannot show: how any of this behaves in ask's own input, or on a terminal other than kitty.
