@@ -25,7 +25,7 @@ public struct SeatbeltProfile: Sendable, Equatable {
 
     /// Compiles `policy`.
     public init(_ policy: SandboxPolicy) {
-        var lines = ["(version 1)", "(allow default)"]
+        var lines = ["(version 1)"]
         var parameters: [Parameter] = []
 
         /// Names `value` as a new parameter and returns the profile's reference to it.
@@ -37,29 +37,44 @@ public struct SeatbeltProfile: Sendable, Equatable {
         func clause(_ rule: SandboxRule, _ prefix: String) -> String {
             "(\(rule.kind == .subpath ? "subpath" : "literal") \(parameter(prefix, rule.path)))"
         }
+        /// One rule, `(head clause clause …)`, or nothing when there are no clauses.
+        func rule(_ head: String, _ clauses: [String]) {
+            if !clauses.isEmpty { lines.append("(\(head) " + clauses.joined(separator: " ") + ")") }
+        }
+        /// The clauses a set of roots becomes, each a parameter named with `prefix`.
+        func roots(_ paths: [String], _ prefix: String, _ kind: String = "subpath") -> [String] {
+            paths.map { "(\(kind) \(parameter(prefix, $0)))" }
+        }
 
-        switch policy.network {
-            case .any: break
-            case .none: lines.append("(deny network*)")
-            case .localhost:
-                lines += ["(deny network*)", "(allow network* (remote ip \"localhost:*\"))"]
+        if case .roots(let readable) = policy.read {
+            // Restricted reads: deny by default, then what any process needs, then the policy's allowances.
+            lines += SeatbeltBase.lines
+            rule("allow file-read*", roots(readable, "R"))
+            switch policy.network {
+                case .any: lines.append("(allow network*)")
+                case .localhost: lines.append("(allow network* (remote ip \"localhost:*\"))")
+                case .none: break
+            }
+            if case .roots(let writable) = policy.write {
+                rule("allow file-write*", roots(writable, "W") + Self.scratchWrites)
+            } else {
+                lines.append("(allow file-write*)")
+            }
+        } else {
+            lines.append("(allow default)")
+            switch policy.network {
+                case .any: break
+                case .none: lines.append("(deny network*)")
+                case .localhost: lines += ["(deny network*)", "(allow network* (remote ip \"localhost:*\"))"]
+            }
+            if case .roots(let writable) = policy.write {
+                lines.append("(deny file-write*)")
+                rule("allow file-write*", roots(writable, "W") + Self.scratchWrites)
+            }
         }
-        if case .roots(let roots) = policy.write {
-            let allowed = roots.map { "(subpath \(parameter("W", $0)))" } + Self.scratchWrites
-            lines += ["(deny file-write*)", "(allow file-write* " + allowed.joined(separator: " ") + ")"]
-        }
-        if !policy.denyWrite.isEmpty {
-            lines.append("(deny file-write* " + policy.denyWrite.map { clause($0, "DW") }.joined(separator: " ") + ")")
-        }
-        if !policy.denyRead.isEmpty {
-            lines.append("(deny file-read* " + policy.denyRead.map { clause($0, "DR") }.joined(separator: " ") + ")")
-        }
-        let ancestors = policy.guardedAncestors
-        if !ancestors.isEmpty {
-            lines.append(
-                "(deny file-write-unlink "
-                    + ancestors.map { "(literal \(parameter("A", $0)))" }.joined(separator: " ") + ")")
-        }
+        rule("deny file-write*", policy.denyWrite.map { clause($0, "DW") })
+        rule("deny file-read*", policy.denyRead.map { clause($0, "DR") })
+        rule("deny file-write-unlink", roots(policy.guardedAncestors, "A", "literal"))
         text = lines.joined(separator: "\n") + "\n"
         self.parameters = parameters
     }

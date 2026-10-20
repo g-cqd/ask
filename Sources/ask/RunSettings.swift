@@ -14,6 +14,8 @@ struct RunSettings: Equatable {
     var applied: [String]
     /// Notices from loading: an ignored project file, an ignored environment value.
     var notices: [String]
+    /// The directory ask was started in, which a `workspace` write scope means.
+    var workspace: String
 
     var limits: RunLimits {
         RunLimits(
@@ -36,7 +38,7 @@ struct RunSettings: Equatable {
         if differs(from: previous) { updates.append(.notice("Configuration reloaded.", isError: false)) }
         for line in lines { updates.append(.notice("  " + line, isError: false)) }
         for line in fresh { updates.append(.notice(line, isError: false)) }
-        if model != previous.model { updates.append(.label(modelLabel(model))) }
+        if label != previous.label { updates.append(.label(label)) }
         return updates
     }
 
@@ -57,14 +59,51 @@ struct RunSettings: Equatable {
             row("maxTurns", String(c.maxTurns.value), c.maxTurns.source),
             row("compactAt", String(c.compactAt.value), c.compactAt.source),
             "sandbox   " + (sandbox.isUnrestricted ? "off (--no-sandbox)" : "on")
-                + (c.sandbox.value.isEmpty ? "" : ", \(c.sandbox.value)  [\(c.sandbox.source)]"),
+                + (sandbox.isUnrestricted || c.sandbox.value.isEmpty
+                    ? "" : ", \(c.sandbox.value)  [\(c.sandbox.source)]"),
+            "          writes: \(writes), reads: \(reads), network: "
+                + (sandbox.isUnrestricted ? "any" : sandbox.network.description),
             "user file     \(userFile)  \(standing(userFile))",
             "project file  \(projectFile)  \(standing(projectFile))"
         ] + notices.map { "note: \($0)" }
     }
 
-    /// Lines for the user at startup: which configuration files apply, and what was ignored.
+    /// Lines for the user at startup: which configuration files apply, what was ignored, and a strict sandbox.
     var description: [String] {
         (applied.isEmpty ? [] : ["Configuration from " + applied.joined(separator: ", ") + "."]) + notices
+            + (strictTag == nil ? [] : ["Sandbox: writes \(writes); reads \(reads); network \(sandbox.network)."])
+    }
+
+    /// Where the sandbox allows writing, in words.
+    var writes: String {
+        guard case .roots(let roots) = sandbox.write else { return "anywhere" }
+        return (roots.isEmpty ? "nowhere" : "only under " + roots.joined(separator: ", "))
+            + " and temporary directories"
+    }
+
+    /// Where the sandbox allows reading, in words.
+    var reads: String {
+        guard case .roots = sandbox.read else { return "anywhere but the protected paths" }
+        return configuration.sandbox.value.read == [.workspace]
+            ? "only the workspace, the system and developer tools"
+            : "only under chosen paths, the system and developer tools"
+    }
+
+    /// What the status line shows at its left: the model, and the sandbox when it is not ask's default.
+    var label: String { modelLabel(model) + (strictTag.map { " · " + $0 } ?? "") }
+
+    /// A short word for a sandbox that differs from the default, or nil: strict modes and `--no-sandbox` both show.
+    var strictTag: String? {
+        if sandbox.isUnrestricted { return "no sandbox" }
+        var parts: [String] = []
+        if case .roots(let roots) = sandbox.write {
+            let canonicalWorkspace = CanonicalPath.of(workspace, relativeTo: "/") ?? workspace
+            parts.append(roots == [canonicalWorkspace] ? "workspace only" : "writes limited")
+        }
+        if case .roots = sandbox.read {
+            parts.append(configuration.sandbox.value.read == [.workspace] ? "reads workspace" : "reads limited")
+        }
+        if sandbox.network != .any { parts.append(sandbox.network == .none ? "no network" : "localhost only") }
+        return parts.isEmpty ? nil : "sandbox: " + parts.joined(separator: ", ")
     }
 }

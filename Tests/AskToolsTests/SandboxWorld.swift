@@ -10,8 +10,16 @@ struct SandboxWorld {
     let state: String
     let policy: SandboxPolicy
 
-    init(extraDenyRead: [String] = [], allowRead: [String] = []) throws {
-        let made = FileManager.default.temporaryDirectory.appending(path: "ask-sandbox-\(UUID().uuidString)")
+    /// A world with these extra protections and allowances, relative to its home.
+    /// - Parameters:
+    ///   - extraDenyRead: directories under the home kept unreadable as well.
+    ///   - allowRead: default protections lifted, relative to the home.
+    ///   - outsideScratch: put the home in /Users/Shared rather than the temporary directory, which a
+    ///     restricted-read policy keeps readable as scratch space; the caller removes it.
+    /// - Throws: when the directories or files cannot be made.
+    init(extraDenyRead: [String] = [], allowRead: [String] = [], outsideScratch: Bool = false) throws {
+        let base = outsideScratch ? URL(filePath: "/Users/Shared") : FileManager.default.temporaryDirectory
+        let made = base.appending(path: "ask-sandbox-\(UUID().uuidString)")
         for directory in [".config/ask", ".local/state/ask/sessions", ".aws", ".ssh", "work", "elsewhere"] {
             try FileManager.default.createDirectory(
                 atPath: made.path + "/" + directory, withIntermediateDirectories: true)

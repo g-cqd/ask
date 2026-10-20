@@ -79,4 +79,18 @@ func bashBenchmarks() {
         benchmark in
         for _ in benchmark.scaledIterations { blackHole(await BashTool().run(echo, in: protected)) }
     }
+    // The same call with reads restricted: a deny-default base profile of about 60 rules (roadmap 0042).
+    var readRestricted = protected.sandbox
+    readRestricted.read = .roots([FileManager.default.temporaryDirectory.path])
+    let restricted = ToolContext(workingDirectory: FileManager.default.temporaryDirectory.path, sandbox: readRestricted)
+    Benchmark("tools/bash echo, reads restricted", configuration: .init(maxDuration: .seconds(3), maxIterations: 300)) {
+        benchmark in
+        for _ in benchmark.scaledIterations { blackHole(await BashTool().run(echo, in: restricted)) }
+    }
+    // A sandboxed command printing about 1 MiB: what scanning the output for a refusal costs on top of the spawn.
+    let large = try! JSONObject(validating: Array(#"{"command":"yes x | head -c 1048576"}"#.utf8))
+    Benchmark("tools/bash 1 MiB output sandboxed", configuration: .init(maxDuration: .seconds(5), maxIterations: 100)) {
+        benchmark in
+        for _ in benchmark.scaledIterations { blackHole(await BashTool().run(large, in: protected)) }
+    }
 }

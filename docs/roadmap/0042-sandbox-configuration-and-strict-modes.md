@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by:
 date: 2026-10-19
 decision: ADR-0035
@@ -24,3 +24,23 @@ section's `allowRead` and `denyRead` are reachable.
 
 A run confined to its workspace and localhost can build a Swift package (or says exactly which path it needed),
 and a probe on the real binary shows each key narrowing and nothing widening from a project.
+
+## Delivered — write scope and network (2026-10-20, ADR-0043, diary 39)
+
+`sandbox.write` (workspace, anywhere, paths) and `sandbox.network` (none, localhost, any): every file narrows, only
+`--write`/`--network` widen. Shown at startup, in `ask config` and on the status line. Probe N: a Swift package
+builds and runs confined to its workspace and localhost; a trusted project narrows and cannot widen.
+
+## Still owed
+
+- ~~A read allow-list~~: delivered, opt-in (ADR-0047, diary 43). `sandbox.read` / `--read`; a deny-default base
+  under which SwiftPM, git (with its includes), Python, curl, cc, make and rg run.
+- ~~The policy recorded in the session~~: delivered (ADR-0045, diary 41). A resumed session keeps its strict
+  sandbox below the flags; `/new` drops it.
+
+## Found first (2026-10-20, diary 38)
+
+SwiftPM compiles an uncached manifest inside its own `sandbox-exec`, which cannot nest in ask's: under the default
+sandbox already shipping, a new or edited `Package.swift` failed to build. The model is now told, in the system prompt
+and on that failure, to use `--disable-sandbox`, which leaves ask's sandbox in force (probed). Any strict mode must
+keep that working: the "Done when" build has to use the flag.

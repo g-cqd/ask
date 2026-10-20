@@ -8,6 +8,8 @@ B: SIGINT while a command runs. ask exits 130, and the command's backgrounded ch
 Usage: Scripts/probe-agent-run.py .build/release/ask
 """
 import json
+import shutil
+import uuid
 import pty
 import re
 import socket, os, signal, subprocess, sys, tempfile, threading, time
@@ -107,8 +109,10 @@ def probe_round_trip():
         results.append(check("user-agent is ask", server.requests[0]["headers"].get("user-agent") == "ask"))
     files = sessions(state)
     if check("one session file", len(files) == 1, files):
-        kinds = [json.loads(l)["payload"]["kind"] for l in open(files[0]) if '"type":"entry"' in l]
+        kinds = entry_kinds(files[0])
         results.append(check("session records the run", kinds == ["user", "response", "tool_result", "response"], kinds))
+        results.append(check("and where it was sent, once, first", all_kinds(files[0])[:1] == ["destination"]
+                             and all_kinds(files[0]).count("destination") == 1, all_kinds(files[0])))
     server.httpd.shutdown()
     return all(results)
 
@@ -143,13 +147,18 @@ def probe_interrupt():
         os.kill(child, signal.SIGKILL)
     files = sessions(state)
     if files:
-        kinds = [json.loads(l)["payload"]["kind"] for l in open(files[0]) if '"type":"entry"' in l]
+        kinds = entry_kinds(files[0])
         results.append(check("aborted result recorded", kinds == ["user", "response", "tool_result"], kinds))
     server.httpd.shutdown()
     return all(results)
 
 
 def entry_kinds(path):
+    """The conversation's entries by kind. A session's destination (ADR-0048) is where it was sent, not conversation."""
+    return [k for k in all_kinds(path) if k != "destination"]
+
+
+def all_kinds(path):
     return [json.loads(l)["payload"]["kind"] for l in open(path) if '"type":"entry"' in l]
 
 
@@ -549,7 +558,236 @@ def probe_damaged_session():
                 check("the repaired session carries both exchanges", entry_kinds(files[0]) == ["user", "response"] * 2, entry_kinds(files[0]))])
 
 
+def probe_nested_sandbox():
+    print("M: SwiftPM under ask's sandbox: a fresh manifest fails as a nested sandbox, --disable-sandbox builds")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(project, "Sources", "hello"))
+    # A nonce makes the manifest new to SwiftPM's user cache, which is what made the earlier research pass.
+    open(os.path.join(project, "Package.swift"), "w").write(
+        "// swift-tools-version: 6.0\nimport PackageDescription\n// nonce " + uuid.uuid4().hex
+        + "\nlet package = Package(name: \"hello\", targets: [.executableTarget(name: \"hello\")])\n")
+    open(os.path.join(project, "Sources", "hello", "main.swift"), "w").write('print("built-under-ask")\n')
+    server = Server([
+        turn([("tool", "t1", "swift build 2>&1 | tail -3; exit ${PIPESTATUS[0]}")], "tool_use"),
+        turn([("tool", "t2", "swift build --disable-sandbox 2>&1 | tail -1 && .build/debug/hello")], "tool_use"),
+        turn([("text", "Done.")], "end_turn")])
+    run = subprocess.run([ASK, "-p", "Build it."], cwd=project, env=environment(state, server.url),
+                         capture_output=True, text=True, timeout=600)
+    got = tool_results(server) if len(server.requests) == 3 else {}
+    prompt = json.dumps(server.requests[0]["body"]["messages"][0]) if server.requests else ""
+    server.httpd.shutdown()
+    return all([
+        check("the run finishes", run.returncode == 0 and len(got) == 2, f"{run.returncode} {run.stderr[-300:]}"),
+        check("the system prompt says how to build SwiftPM packages", "swift build --disable-sandbox" in prompt),
+        check("a fresh manifest fails because the sandboxes cannot nest",
+              "sandbox_apply: Operation not permitted" in got.get("t1", ""), got.get("t1", "")[-400:]),
+        check("and the model is told so, not that it touched a protected path",
+              "tried to start its own macOS sandbox" in got.get("t1", "")
+              and "which may be why it was refused" not in got.get("t1", ""), got.get("t1", "")[-400:]),
+        check("--disable-sandbox builds and runs under ask's sandbox",
+              "built-under-ask" in got.get("t2", "") and "[exit 0]" in got.get("t2", ""), got.get("t2", "")[-400:])])
+
+
+def probe_strict_sandbox():
+    print("N: strict modes: writes confined to the workspace, the network to localhost; a project only narrows")
+    project, state, home = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    config = os.path.join(home, ".config")
+    os.makedirs(os.path.join(config, "ask"))
+    os.makedirs(os.path.join(project, ".ask"))
+    os.makedirs(os.path.join(project, "Sources", "hello"))
+    user_file, project_file = os.path.join(config, "ask", "config.json"), os.path.join(project, ".ask", "config.json")
+    open(user_file, "w").write("{sandbox: {write: 'workspace', network: 'localhost'}}")
+    open(os.path.join(project, "Package.swift"), "w").write(
+        "// swift-tools-version: 6.0\nimport PackageDescription\n// nonce " + uuid.uuid4().hex
+        + "\nlet package = Package(name: \"hello\", targets: [.executableTarget(name: \"hello\")])\n")
+    open(os.path.join(project, "Sources", "hello", "main.swift"), "w").write('print("strict-build-ok")\n')
+    # Not under the temporary home: that is inside /private/var/folders, which strict mode keeps writable as scratch.
+    away = "/Users/Shared/ask-strict-" + uuid.uuid4().hex
+    os.makedirs(away)
+    outside = os.path.join(away, "outside.txt")
+    scratch = "/tmp/ask-strict-" + uuid.uuid4().hex
+
+    def run(*arguments, calls):
+        server = Server([turn([call], "tool_use") for call in calls] + [turn([("text", "Done.")], "end_turn")])
+        target = Server([])  # what curl reaches: a separate local server, so it never consumes a scripted turn
+        env = environment(state, server.url, config)
+        env["HOME"] = home
+        # curl 7 means no connection could be made; a body keeps the fake server's request handling happy.
+        reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo \" curl=$?\""
+        calls_with_url = [c if c[2] != "REACH" else (c[0], c[1], reach) for c in calls]
+        server.responses = [turn([c], "tool_use") for c in calls_with_url] + [turn([("text", "Done.")], "end_turn")]
+        process = subprocess.run([ASK, "-p", "Work.", *arguments], cwd=project, env=env, capture_output=True,
+                                 text=True, timeout=600)
+        got = tool_results(server) if len(server.requests) == len(calls) + 1 else {}
+        server.httpd.shutdown()
+        target.httpd.shutdown()
+        return process, got
+
+    def ask(*arguments, stdin=None):
+        env = environment(state, "http://127.0.0.1:9", config)
+        env["HOME"] = home
+        return subprocess.run([ASK, *arguments], cwd=project, env=env, stdin=stdin, capture_output=True, text=True,
+                              timeout=60)
+
+    calls = [("tool", "inside", "echo in > inside.txt && cat inside.txt"),
+             ("tool", "outside", f"echo out > '{outside}'"),
+             ("call", "tool", "write", {"path": outside, "content": "x"}),
+             ("tool", "scratch", f"echo tmp > '{scratch}' && cat '{scratch}'"),
+             ("tool", "reach", "REACH"),
+             ("tool", "build", "swift build --disable-sandbox 2>&1 | tail -1 && .build/debug/hello")]
+    process, got = run(calls=calls)
+    shown = ask("config")
+    results = [
+        check("the run finishes", process.returncode == 0 and len(got) == 6, f"{process.returncode} {process.stderr[-300:]}"),
+        check("it says, at the start, that the sandbox is strict",
+              "Sandbox: writes only under" in process.stderr and "network localhost" in process.stderr, process.stderr[:400]),
+        check("writing in the workspace works", got.get("inside", "").startswith("in\n"), got.get("inside")),
+        check("bash cannot write outside it", "Operation not permitted" in got.get("outside", "") and not os.path.exists(outside), got.get("outside")),
+        check("nor can the write tool, saying why", "outside the places this run may write" in got.get("tool", ""), got.get("tool")),
+        check("temporary directories stay writable", got.get("scratch", "").startswith("tmp\n"), got.get("scratch")),
+        check("localhost is reachable", "HTTP 200 curl=0" in got.get("reach", ""), got.get("reach")),
+        check("a Swift package builds and runs, confined to the workspace and localhost",
+              "strict-build-ok" in got.get("build", "") and "[exit 0]" in got.get("build", ""), got.get("build", "")[-400:]),
+        check("ask config shows the strict modes and their source",
+              "write workspace, network localhost" in shown.stdout and "network: localhost" in shown.stdout, shown.stdout)]
+    # A trusted project may narrow the network to none, and may not widen anything.
+    open(project_file, "w").write("{sandbox: {network: 'none'}}")
+    master, slave = pty.openpty()
+    trusted = ask("trust", stdin=slave)
+    os.close(slave)
+    os.close(master)
+    process, got = run(calls=[("tool", "reach", "REACH")])
+    results += [check("the project file is trusted", trusted.returncode == 0, trusted.stderr),
+                check("a project narrows the network to none: no connection at all", "curl=7" in got.get("reach", ""), got.get("reach"))]
+    open(project_file, "w").write("{sandbox: {network: 'any', write: 'anywhere'}}")
+    master, slave = pty.openpty()
+    ask("trust", stdin=slave)
+    os.close(slave)
+    os.close(master)
+    process, got = run(calls=[("tool", "outside", f"echo out > '{outside}'"), ("tool", "reach", "REACH")])
+    results += [check("a project cannot widen writing", "Operation not permitted" in got.get("outside", "") and not os.path.exists(outside), got.get("outside")),
+                check("and the network stays the user's localhost", "HTTP 200 curl=0" in got.get("reach", ""), got.get("reach")),
+                check("and says the sandbox is still strict", "network localhost" in process.stderr, process.stderr[:400])]
+    # Only the user widens: flags replace what the files say.
+    process, got = run("--write", "anywhere", "--network", "any", calls=[("tool", "outside", f"echo out > '{outside}' && cat '{outside}'")])
+    results += [check("the user's flags widen it", got.get("outside", "").startswith("out\n") and "Sandbox: writes" not in process.stderr, f"{got.get('outside')} {process.stderr[:300]}")]
+    bad = ask("-p", "x", "--no-sandbox", "--network", "none")
+    results.append(check("--no-sandbox with a strict flag is refused", bad.returncode != 0 and "need it on" in bad.stderr, bad.stderr))
+    if os.path.exists(scratch):
+        os.remove(scratch)
+    shutil.rmtree(away, ignore_errors=True)
+    return all(results)
+
+
+def probe_session_sandbox():
+    print("O: a session records its strict sandbox; resuming keeps it unless the user's flags change it")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+
+    def run(*arguments):
+        target = Server([])
+        reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo \" curl=$?\""
+        server = Server([turn([("tool", "reach", reach)], "tool_use"), turn([("text", "Done.")], "end_turn")])
+        process = subprocess.run([ASK, "-p", "Reach.", *arguments], cwd=project, env=environment(state, server.url),
+                                 capture_output=True, text=True, timeout=120)
+        got = tool_results(server).get("reach", "") if len(server.requests) == 2 else ""
+        server.httpd.shutdown()
+        target.httpd.shutdown()
+        return process, got
+
+    def records(path):
+        return [json.loads(line) for line in open(path) if '"type":"sandbox"' in line]
+
+    process, got = run("--network", "none")
+    files = sessions(state)
+    results = [check("a strict run has no network", "curl=7" in got, got),
+               check("and records its sandbox in the session", len(files) == 1 and records(files[0]) == [{"network": "none", "type": "sandbox", "write": []}],
+                     records(files[0]) if files else files)]
+    process, got = run("--continue")
+    results += [check("continuing without flags keeps the session's sandbox", "curl=7" in got, got),
+                check("and says so", "Keeping this session's sandbox" in process.stderr, process.stderr[-300:]),
+                check("without recording it again", len(records(files[0])) == 1, records(files[0]))]
+    process, got = run("--continue", "--network", "localhost")
+    results += [check("the user's flag widens a resumed session", "HTTP 200 curl=0" in got, got),
+                check("and the session now records that", records(files[0])[-1]["network"] == "localhost", records(files[0]))]
+    process, got = run()
+    fresh = [f for f in sessions(state) if f != files[0]]
+    results += [check("a new session is not narrowed by another one's record", "HTTP 200 curl=0" in got, got),
+                check("and a default run records nothing", len(fresh) == 1 and records(fresh[0]) == [], fresh)]
+    return all(results)
+
+
+def probe_read_allowlist():
+    print("P: reads confined to the workspace, the system and developer tools; git includes followed; Swift builds")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    # Outside /private/var/folders, which a restricted read keeps readable as scratch.
+    base = "/Users/Shared/ask-read-" + uuid.uuid4().hex
+    home, elsewhere = os.path.join(base, "home"), os.path.join(base, "elsewhere")
+    config = os.path.join(home, ".config")
+    for directory in [os.path.join(config, "ask"), elsewhere, os.path.join(project, "Sources", "hello")]:
+        os.makedirs(directory)
+    open(os.path.join(config, "ask", "config.json"), "w").write("{sandbox: {read: 'workspace', write: 'workspace', network: 'localhost'}}")
+    open(os.path.join(home, "notes.txt"), "w").write("PRIVATE-NOTES")
+    open(os.path.join(home, ".gitconfig"), "w").write(f'[include]\n\tpath = "{elsewhere}/included.gitconfig"\n')
+    open(os.path.join(elsewhere, "included.gitconfig"), "w").write("[user]\n\tname = Included Name\n\temail = i@example.com\n")
+    open(os.path.join(project, "Package.swift"), "w").write(
+        "// swift-tools-version: 6.0\nimport PackageDescription\n// nonce " + uuid.uuid4().hex
+        + "\nlet package = Package(name: \"hello\", targets: [.executableTarget(name: \"hello\")])\n")
+    open(os.path.join(project, "Sources", "hello", "main.swift"), "w").write('print("read-build-ok")\n')
+    open(os.path.join(project, "file.txt"), "w").write("workspace-text")
+    notes = os.path.join(home, "notes.txt")
+
+    def run(*arguments, calls):
+        target = Server([])
+        reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo \" curl=$?\""
+        calls = [c if c[2] != "REACH" else (c[0], c[1], reach) for c in calls]
+        server = Server([turn([c], "tool_use") for c in calls] + [turn([("text", "Done.")], "end_turn")])
+        env = environment(state, server.url, config)
+        env["HOME"] = home
+        process = subprocess.run([ASK, "-p", "Work.", *arguments], cwd=project, env=env, capture_output=True,
+                                 text=True, timeout=600)
+        got = tool_results(server) if len(server.requests) == len(calls) + 1 else {}
+        server.httpd.shutdown()
+        target.httpd.shutdown()
+        return process, got
+
+    calls = [("tool", "inside", "cat file.txt"),
+             ("tool", "notes", f"cat '{notes}'"),
+             ("call", "tool", "read", {"path": notes}),
+             ("tool", "git", "git init -q . && git add file.txt && git -c commit.gpgsign=false commit -qm m && git log -1 --format=%an"),
+             ("tool", "reach", "REACH"),
+             ("tool", "build", "swift build --disable-sandbox 2>&1 | tail -1 && .build/debug/hello")]
+    try:
+        process, got = run(calls=calls)
+        results = [
+            check("the run finishes", process.returncode == 0 and len(got) == 6, f"{process.returncode} {process.stderr[-300:]}"),
+            check("it says reads are restricted", "reads only the workspace" in process.stderr, process.stderr[:500]),
+            check("the workspace is readable", got.get("inside", "").startswith("workspace-text"), got.get("inside")),
+            check("the rest of the home is not, to bash", "Operation not permitted" in got.get("notes", "") and "PRIVATE" not in got.get("notes", ""), got.get("notes")),
+            check("nor to the read tool, saying why", "outside the places this run may read" in got.get("tool", ""), got.get("tool")),
+            check("git commits, reading a config the global one includes", got.get("git", "").startswith("Included Name"), got.get("git")),
+            check("localhost answers", "HTTP 200 curl=0" in got.get("reach", ""), got.get("reach")),
+            check("a fresh Swift package builds and runs", "read-build-ok" in got.get("build", "") and "[exit 0]" in got.get("build", ""), got.get("build", "")[-400:])]
+        os.makedirs(os.path.join(project, ".ask"), exist_ok=True)
+        open(os.path.join(project, ".ask", "config.json"), "w").write("{sandbox: {read: 'anywhere'}}")
+        master, slave = pty.openpty()
+        env = environment(state, "http://127.0.0.1:9", config)
+        env["HOME"] = home
+        subprocess.run([ASK, "trust"], cwd=project, env=env, stdin=slave, capture_output=True, text=True, timeout=60)
+        os.close(slave)
+        os.close(master)
+        process, got = run(calls=[("tool", "notes", f"cat '{notes}'")])
+        results.append(check("a trusted project cannot widen reading", "PRIVATE" not in got.get("notes", "") and "Operation not permitted" in got.get("notes", ""), got.get("notes")))
+        process, got = run("--read", "anywhere", calls=[("tool", "notes", f"cat '{notes}'")])
+        results.append(check("the user's flag widens it", got.get("notes", "").startswith("PRIVATE-NOTES"), got.get("notes")))
+        process, got = run("--continue", calls=[("tool", "notes", f"cat '{notes}'")])
+        # A record only narrows (ADR-0045): the widening was the flag's, for that run; the files restrict again.
+        results.append(check("continuing without the flag is restricted again", "PRIVATE" not in got.get("notes", "") and "Operation not permitted" in got.get("notes", ""), got.get("notes")))
+        return all(results)
+    finally:
+        shutil.rmtree(base, ignore_errors=True)
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session() & probe_nested_sandbox() & probe_strict_sandbox() & probe_session_sandbox() & probe_read_allowlist()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

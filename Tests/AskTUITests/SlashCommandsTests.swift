@@ -36,7 +36,9 @@ struct SlashCommandsTests {
         #expect(!controller.state.running)
         #expect(
             notices(controller) == [
-                "/help  List the commands.", "/quit  Leave ask, stopping a running turn first.",
+                "/help  List commands. While busy: Enter steers; Alt+Enter queues a follow-up.",
+                "/quit  Leave ask, stopping a running turn first.",
+                "/follow-up  Queue a message after the agent finishes: /follow-up TEXT.",
                 "/config  Show the settings."
             ])
     }

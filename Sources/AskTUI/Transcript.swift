@@ -24,6 +24,13 @@ public struct Transcript: Sendable, Equatable {
     /// An empty transcript.
     public init() {}
 
+    /// Removes the conversation while keeping revisions monotonic. A renderer that skipped the empty frame
+    /// must not mistake the next item's revision for the old item's.
+    public mutating func removeAll() {
+        items.removeAll(keepingCapacity: true)
+        revisions.removeAll(keepingCapacity: true)
+    }
+
     public mutating func addUser(_ text: String) { append(.user(text)) }
 
     /// Appends streamed assistant text, continuing the current assistant item when it is the last one.

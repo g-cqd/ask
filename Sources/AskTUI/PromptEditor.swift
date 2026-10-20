@@ -2,7 +2,9 @@ public import TerminalKitCodecs
 internal import TerminalKitInput
 internal import TerminalKitText
 
-/// The text being typed, with a cursor, and the familiar line-editing keys.
+/// The text being typed, with a cursor, and the familiar line-editing keys. The text may span several lines
+/// (separated by `\n`): Shift-Enter or Ctrl-J starts one, a paste keeps its own, and Up, Down, Home, End,
+/// Ctrl-A, Ctrl-E, Ctrl-U and Ctrl-K work on the line the cursor is on.
 public struct PromptEditor: Sendable, Equatable {
     /// What a key did, beyond editing.
     public enum Outcome: Sendable, Equatable {
@@ -17,6 +19,9 @@ public struct PromptEditor: Sendable, Equatable {
     public private(set) var text = ""
     /// The cursor, as a count of characters before it.
     public private(set) var cursor = 0
+    /// The column Up and Down aim for, kept across a line too short to hold it; nil when the last key was not a
+    /// vertical move.
+    private var goalColumn: Int?
 
     /// An empty editor.
     public init() {}
@@ -24,6 +29,11 @@ public struct PromptEditor: Sendable, Equatable {
     /// Applies one key.
     public mutating func apply(_ key: KeyEvent) -> Outcome {
         let code = key.keyCode
+        if code != Key.up.rawValue, code != Key.down.rawValue { goalColumn = nil }
+        if code == 0x0D, key.modifiers.contains(.shift) {
+            insert("\n")
+            return .edited
+        }
         if key.modifiers.contains(.ctrl), let scalar = Unicode.Scalar(code), scalar.isASCII {
             return control(UInt32(scalar.value & 0x1F))
         }
@@ -32,8 +42,10 @@ public struct PromptEditor: Sendable, Equatable {
             case 0x1B: return .escape
             case Key.left.rawValue: move(to: cursor - 1)
             case Key.right.rawValue: move(to: cursor + 1)
-            case Key.home.rawValue: move(to: 0)
-            case Key.end.rawValue: move(to: text.count)
+            case Key.home.rawValue: move(to: lineStart())
+            case Key.end.rawValue: move(to: lineEnd())
+            case Key.up.rawValue: return moveVertically(by: -1)
+            case Key.down.rawValue: return moveVertically(by: 1)
             default:
                 let inserted =
                     key.associatedText.isEmpty ? Unicode.Scalar(code).map { String(Character($0)) } : key.associatedText
@@ -43,31 +55,43 @@ public struct PromptEditor: Sendable, Equatable {
         return .edited
     }
 
-    /// Inserts pasted text at the cursor. Line breaks become spaces: the prompt is one message.
+    /// Inserts pasted text at the cursor, keeping its line breaks (every kind becomes `\n`).
     public mutating func paste(_ pasted: String) {
-        insert(pasted.replacing("\r\n", with: " ").replacing("\n", with: " ").replacing("\r", with: " "))
+        goalColumn = nil
+        insert(pasted.replacing("\r\n", with: "\n").replacing("\r", with: "\n"))
+    }
+
+    /// Returns unsent input to the editor without flattening its message boundaries.
+    mutating func restore(_ text: String) {
+        goalColumn = nil
+        self.text = text
+        cursor = text.count
     }
 
     private mutating func control(_ code: UInt32) -> Outcome {
         switch code {
             case 0x03: return .interrupt
             case 0x04: return text.isEmpty ? .endOfInput : delete(forward: true)
-            case 0x0D, 0x0A:
+            case 0x0A: insert("\n")
+            case 0x0D:
                 let submitted = text
                 guard submitted.contains(where: { !$0.isWhitespace }) else { return .ignored }
                 text = ""
                 cursor = 0
                 return .submitted(submitted)
             case 0x7F, 0x08: return delete(forward: false)
-            case 0x01: move(to: 0)
-            case 0x05: move(to: text.count)
+            case 0x01: move(to: lineStart())
+            case 0x05: move(to: lineEnd())
             case 0x02: move(to: cursor - 1)
             case 0x06: move(to: cursor + 1)
-            case 0x15:  // Ctrl-U: delete to the start
-                text.removeSubrange(text.startIndex ..< index(cursor))
-                cursor = 0
-            case 0x0B:  // Ctrl-K: delete to the end
-                text.removeSubrange(index(cursor)...)
+            case 0x15:  // Ctrl-U: delete to the start of the line
+                let start = lineStart()
+                text.removeSubrange(index(start) ..< index(cursor))
+                cursor = start
+            case 0x0B:  // Ctrl-K: delete to the end of the line, or the line break when already there
+                let end = lineEnd()
+                let upTo = end == cursor ? Swift.min(end + 1, text.count) : end
+                text.removeSubrange(index(cursor) ..< index(upTo))
             case 0x17: deleteWordBackward()
             default: return .ignored
         }
@@ -90,10 +114,51 @@ public struct PromptEditor: Sendable, Equatable {
     private mutating func deleteWordBackward() {
         var start = cursor
         let characters = Array(text)
-        while start > 0, characters[start - 1] == " " { start -= 1 }
-        while start > 0, characters[start - 1] != " " { start -= 1 }
+        while start > 0, characters[start - 1] == " " || characters[start - 1] == "\n" { start -= 1 }
+        while start > 0, characters[start - 1] != " ", characters[start - 1] != "\n" { start -= 1 }
         text.removeSubrange(index(start) ..< index(cursor))
         cursor = start
+    }
+
+    /// Where the cursor's line begins, as a character offset.
+    private func lineStart() -> Int { lineStart(in: Array(text)) }
+
+    private func lineStart(in characters: [Character]) -> Int {
+        var start = cursor
+        while start > 0, characters[start - 1] != "\n" { start -= 1 }
+        return start
+    }
+
+    /// Where the cursor's line ends: the offset of its line break, or the end of the text.
+    private func lineEnd() -> Int { lineEnd(in: Array(text)) }
+
+    private func lineEnd(in characters: [Character]) -> Int {
+        var end = cursor
+        while end < characters.count, characters[end] != "\n" { end += 1 }
+        return end
+    }
+
+    /// Moves to the same column on the line above or below, or reports that there is none.
+    private mutating func moveVertically(by step: Int) -> Outcome {
+        let characters = Array(text)
+        var start = lineStart(in: characters)
+        let column = goalColumn ?? cursor - start
+        if step < 0 {
+            guard start > 0 else { return .ignored }
+            start -= 1
+            while start > 0, characters[start - 1] != "\n" { start -= 1 }
+        } else {
+            var end = lineEnd(in: characters)
+            guard end < characters.count else { return .ignored }
+            end += 1
+            start = end
+        }
+        var end = start
+        while end < characters.count, characters[end] != "\n" { end += 1 }
+        let target = Swift.min(start + column, end)
+        move(to: target)
+        goalColumn = column
+        return .edited
     }
 
     private mutating func move(to position: Int) { cursor = Swift.min(Swift.max(0, position), text.count) }

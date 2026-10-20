@@ -8,6 +8,7 @@ C: Ctrl-C at an idle prompt quits, exit 0, with the terminal restored (the teard
 Usage: Scripts/probe-interactive.py .build/release/ask
 """
 import json
+import subprocess
 import shutil
 import importlib.util, os, pty, select, signal, struct, sys, tempfile, time, fcntl, termios
 
@@ -442,7 +443,7 @@ def probe_reload_binary():
     results.append(check("the next prompt works in the new process", screen.until("Answer 2.", 30)))
     screen.until_status("ready")
     files = agent.sessions(state)
-    kinds = [json.loads(l)["payload"]["kind"] for l in open(files[0]) if '"type":"entry"' in l] if len(files) == 1 else files
+    kinds = agent.entry_kinds(files[0]) if len(files) == 1 else files  # without the destination record (ADR-0048)
     results.append(check("one session file holds both runs", kinds == ["user", "response", "user", "response"], kinds))
     if len(server.requests) >= 2:
         texts = [b.get("text", "") for m in server.requests[1]["body"]["messages"] for b in m["content"]]
@@ -494,7 +495,568 @@ def probe_reload_refused():
     return all(results)
 
 
+def probe_steering():
+    print("J: steering after the whole tool batch; a follow-up only after the agent finishes")
+    project = tempfile.mkdtemp()
+    server = agent.Server([
+        agent.turn([("call", "gate1", "wait", {"file_exists": "release-one"}),
+                    ("tool", "batch", "echo batch-finished > batch.txt")], "tool_use"),
+        agent.turn([("call", "gate2", "wait", {"file_exists": "release-two"})], "tool_use"),
+        agent.turn([("text", "BASE WORK FINISHED")], "end_turn"),
+        agent.turn([("text", "FOLLOWUP ANSWER")], "end_turn")])
+    screen = Screen(server.url, project)
+    results = [check("initial prompt drawn", screen.until("ask>"))]
+    screen.type("Start the work\r")
+    results.append(check("first gate is running", screen.until("release-one")))
+    screen.type("Later please\x1b[13;3u")  # CSI-u Alt+Enter, independent of legacy ESC/Enter ambiguity
+    results.append(check("follow-up visibly queued", screen.until("Queued follow-up: Later please")))
+    screen.type("Change direction\r")
+    results.append(check("steering visibly queued", screen.until("Queued steering: Change direction")))
+    open(os.path.join(project, "release-one"), "w").close()
+    results.append(check("the next turn has reached its gate", screen.until("release-two")))
+    if len(server.requests) >= 2:
+        blocks = server.requests[1]["body"]["messages"][-1]["content"]
+        results.append(check("both tool results precede steering in the actual request",
+                             [b["type"] for b in blocks] == ["tool_result", "tool_result", "text"]
+                             and blocks[-1]["text"] == "Change direction", blocks))
+        results.append(check("the follow-up has not entered yet",
+                             "Later please" not in json.dumps(server.requests[1]["body"]["messages"])))
+    else:
+        results.append(check("second request exists", False, len(server.requests)))
+    results.append(check("the rest of the tool batch was not skipped", os.path.exists(os.path.join(project, "batch.txt"))))
+    open(os.path.join(project, "release-two"), "w").close()
+    results.append(check("the follow-up is answered", screen.until("FOLLOWUP ANSWER")))
+    results.append(check("the run is ready", screen.until_status("ready")))
+    results.append(check("four requests, with the follow-up only on the last",
+                         len(server.requests) == 4
+                         and "Later please" not in json.dumps(server.requests[2]["body"]["messages"])
+                         and server.requests[3]["body"]["messages"][-1]["content"][-1]["text"] == "Later please",
+                         len(server.requests)))
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    files = agent.sessions(screen.state)
+    prompts = [r["payload"]["text"] for r in map(json.loads, open(files[0]))
+               if r.get("type") == "entry" and r["payload"]["kind"] == "user"] if files else []
+    results.append(check("each queued prompt was persisted once, in delivery order",
+                         prompts == ["Start the work", "Change direction", "Later please"], prompts))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_abort_queue():
+    print("K: abort returns unsent input alongside the draft, without persisting or running it")
+    project = tempfile.mkdtemp()
+    server = agent.Server([
+        agent.turn([("call", "gate", "wait", {"file_exists": "never-created"})], "tool_use"),
+        agent.turn([("text", "RECOVERED AFTER ABORT")], "end_turn")])
+    screen = Screen(server.url, project)
+    screen.until("ask>")
+    screen.type("Start\r")
+    results = [check("waiting in a tool", screen.until("never-created"))]
+    screen.type("Unsent steering\r")
+    results.append(check("steering queued", screen.until("Queued steering: Unsent steering")))
+    screen.type("/follow-up Unsent followup\r")
+    results.append(check("follow-up queued without a modified Enter key", screen.until("Queued follow-up: Unsent followup")))
+    screen.type("draft\x1b")
+    results.append(check("abort ends the run", screen.until_status("ready")))
+    lines = screen.screen.text().splitlines()
+    editor = lines[lines.index(next(line for line in lines if " · ready" in line)) + 1:]
+    results.append(check("the editor holds both unsent messages and the draft on separate lines",
+                         editor == ["ask> Unsent steering", "", "Unsent followup", "", "draft"], editor))
+    results.append(check("nothing was automatically requested after abort", len(server.requests) == 1))
+    screen.type("\x15\x7f" * 4 + "\x15Recovered\r")  # Ctrl-U and Backspace clear the five restored lines, one by one
+    results.append(check("the editor can submit another prompt", screen.until("RECOVERED AFTER ABORT")))
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    files = agent.sessions(screen.state)
+    prompts = [r["payload"]["text"] for r in map(json.loads, open(files[0]))
+               if r.get("type") == "entry" and r["payload"]["kind"] == "user"] if files else []
+    results.append(check("unsent messages never entered the session", prompts == ["Start", "Recovered"], prompts))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_failed_queue():
+    print("L: a failed stream returns queued input rather than automatically starting it")
+    project = tempfile.mkdtemp()
+    server = agent.Server([
+        agent.turn([("call", "gate", "wait", {"file_exists": "release"})], "tool_use"),
+        b'event: message_stop\ndata: {"type":"message_stop"}\n\n'])
+    screen = Screen(server.url, project)
+    screen.until("ask>")
+    screen.type("Start\r")
+    results = [check("waiting in a tool", screen.until("release"))]
+    screen.type("Unsent followup\x1b[13;3u")
+    results.append(check("follow-up queued", screen.until("Queued follow-up: Unsent followup")))
+    open(os.path.join(project, "release"), "w").close()
+    results.append(check("failed stream ends the run", screen.until_status("ready")))
+    lines = screen.screen.text().splitlines()
+    results.append(check("unsent input is back in the editor", lines[-1] == "ask> Unsent followup", lines[-1]))
+    results.append(check("no automatic third request", len(server.requests) == 2, len(server.requests)))
+    screen.type("\x15/quit\r")  # clear the restored prompt first
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_multiline():
+    print("M: a multi-line prompt: pasted, typed, edited by line, submitted whole")
+    project = tempfile.mkdtemp()
+    server = agent.Server([agent.turn([("text", "Got all four lines.")], "end_turn")])
+    screen = Screen(server.url, project)
+    results = [check("prompt drawn", screen.until("ask>"))]
+    screen.type("\x1b[200~alpha\nbeta\x1b[201~")  # a bracketed paste: its newline is not Enter
+    screen.type("\x0agamma")  # Ctrl-J
+    screen.type("\x1b[13;2udelta")  # Shift-Enter as a terminal reports it (CSI u)
+    results.append(check("every line is on its own row",
+                         screen.until("delta") and [l for l in screen.screen.text().split("\n") if l][-4:]
+                         == ["ask> alpha", "beta", "gamma", "delta"], screen.screen.text()[-200:]))
+    screen.type("\x1b[A\x1b[A")  # Up, Up: from "delta" to "beta", column 5 clamped to 4
+    screen.type("\x15BETA")  # Ctrl-U deletes the line's start, then replace it
+    results.append(check("the middle line is edited in place", screen.until("BETA")))
+    results.append(check("nothing was sent yet", len(server.requests) == 0))
+    screen.type("\r")
+    results.append(check("the answer arrives", screen.until("Got all four lines.")))
+    results.append(check("the transcript shows the prompt on four rows",
+                         all(t in screen.screen.text() for t in ["› alpha", "  BETA", "  gamma", "  delta"])))
+    wanted = "alpha\nBETA\ngamma\ndelta"
+    blocks = [b.get("text") for m in (server.requests[0]["body"]["messages"] if server.requests else [])
+              for b in m["content"]]
+    results.append(check("the provider received the exact text, newlines intact", wanted in blocks, blocks))
+    files = agent.sessions(screen.state)
+    users = [r["payload"]["text"] for r in map(json.loads, open(files[0]))
+             if r.get("type") == "entry" and r["payload"]["kind"] == "user"] if files else []
+    results.append(check("the session recorded the same text", users == [wanted], users))
+    screen.until_status("ready")
+    screen.type("\x15/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_new_session():
+    print("N: /new releases the old session and starts the next one lazily, with no old context or usage")
+    project = tempfile.mkdtemp()
+    server = agent.Server([agent.turn([("text", "ORIGINAL SESSION ANSWER")], "end_turn"),
+                           agent.turn([("text", "FRESH SESSION ANSWER")], "end_turn")])
+    screen = Screen(server.url, project)
+    results = [check("screen ready", screen.until("ask>"))]
+    screen.type("/new\r")
+    results.append(check("an unused session is not claimed to be saved", screen.until("New session. It will be saved when you send a prompt.")))
+    results.append(check("new before the first prompt creates no session", not agent.sessions(screen.state)))
+    screen.until_status("ready")
+    screen.type("First session canary\r")
+    results.append(check("original turn finished", screen.until("ORIGINAL SESSION ANSWER")))
+    screen.until_status("ready")
+    paths = agent.sessions(screen.state)
+    original = paths[0] if paths else None
+    before = open(original, "rb").read() if original else b""
+    screen.type("/new\r")
+    results.append(check("new session announced", screen.until("New session. The previous one is saved.")))
+    results.append(check("old transcript and usage are gone",
+                         "ORIGINAL SESSION ANSWER" not in screen.screen.text() and "out 5" not in screen.status()))
+    results.append(check("no empty session was created", agent.sessions(screen.state) == paths))
+    released = False
+    if original:
+        with open(original, "rb") as file:
+            try:
+                fcntl.flock(file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                released = True
+            except BlockingIOError:
+                pass
+    results.append(check("the old writer lock is released", released))
+    screen.until_status("ready")
+    screen.type("Fresh canary\r")
+    results.append(check("the next prompt runs normally", screen.until("FRESH SESSION ANSWER")))
+    screen.until_status("ready")
+    requests = [r["body"]["messages"] for r in server.requests]
+    results.append(check("the new request contains no old exchange",
+                         len(requests) == 2 and "First session canary" not in json.dumps(requests[1])
+                         and "ORIGINAL SESSION ANSWER" not in json.dumps(requests[1]), requests))
+    files = agent.sessions(screen.state)
+    results.append(check("the second prompt created its own session", len(files) == 2, files))
+    results.append(check("the old file is unchanged", original and open(original, "rb").read() == before))
+    results.append(check("only new usage is shown", "out 5" in screen.status() and "out 10" not in screen.status(), screen.status()))
+    screen.type("/quit\r")
+    results.append(check("same process exits cleanly", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_session_job_guard():
+    print("O: a session switch refuses running jobs and bad arguments without changing the session")
+    project = tempfile.mkdtemp()
+    port = agent.free_port()
+    server = agent.Server([
+        agent.turn([("call", "start", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1",
+                                             "yield_seconds": 1})], "tool_use"),
+        agent.turn([("call", "wait", "wait", {"job": "job-1", "port_open": port, "timeout_seconds": 20})], "tool_use"),
+        agent.turn([("text", "BACKGROUND READY")], "end_turn"),
+        agent.turn([("text", "ORIGINAL CONTEXT KEPT")], "end_turn")])
+    screen = Screen(server.url, project)
+    screen.until("ask>")
+    screen.type("Start a background job\r")
+    results = [check("the background job is serving", screen.until("BACKGROUND READY") and agent.accepts(port))]
+    screen.until_status("ready")
+    files = agent.sessions(screen.state)
+    before = open(files[0], "rb").read() if files else b""
+    screen.type("/new extra\r")
+    results.append(check("bad arguments are rejected", screen.until("Usage: /new (no arguments).")))
+    screen.until_status("ready")
+    screen.type("/new\r")
+    results.append(check("the running job blocks the switch", screen.until("Cannot switch sessions while jobs are running (job-1).")))
+    results.append(check("the job was not stopped", agent.accepts(port)))
+    screen.until_status("ready")
+    target = os.path.join(project, "other-session.jsonl")
+    shutil.copyfile(files[0], target)
+    screen.type("/resume " + target + "\r")
+    results.append(check("resume also refuses to carry the job into another session", screen.until("/resume: Cannot switch sessions while jobs are running")))
+    screen.until_status("ready")
+    results.append(check("the refused resume retained the current writer lock", not can_lock_session(files[0])))
+    results.append(check("the archive is unchanged", files and open(files[0], "rb").read() == before))
+    results.append(check("no extra session appeared", agent.sessions(screen.state) == files))
+    screen.until_status("ready")
+    screen.type("Continue the same session\r")
+    results.append(check("the old conversation still works", screen.until("ORIGINAL CONTEXT KEPT")))
+    last = server.requests[-1]["body"]["messages"]
+    results.append(check("the original context was retained", "Start a background job" in json.dumps(last)))
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("exit stops the process's jobs", screen.finish() == 0 and not agent.accepts(port)))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def can_lock_session(path):
+    with open(path, "rb") as file:
+        try:
+            fcntl.flock(file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+            return True
+        except BlockingIOError:
+            return False
+
+
+def probe_resume_sessions():
+    print("P: /resume lists and switches sessions transactionally; refusal preserves the current one")
+    project = tempfile.mkdtemp()
+    server = agent.Server([agent.turn([("text", text)], "end_turn") for text in [
+        "FIRST ARCHIVE ANSWER", "SECOND ARCHIVE ANSWER", "B AFTER REFUSAL", "A AFTER RESUME", "AFTER REPAIR"]])
+    screen = Screen(server.url, project)
+    screen.until("ask>")
+    screen.type("/resume\r")
+    available = screen.until("No sessions in this project yet.")
+    results = [check("an empty list is reported without creating a session", available and not agent.sessions(screen.state), screen.screen.text())]
+    if not available:
+        screen.type("/quit\r")
+        screen.finish()
+        server.httpd.shutdown()
+        return False
+    screen.until_status("ready")
+    screen.type("A first canary\r")
+    results.append(check("session A answered", screen.until("FIRST ARCHIVE ANSWER")))
+    screen.until_status("ready")
+    a = agent.sessions(screen.state)[0]
+    screen.type("/new\r")
+    screen.until("New session. The previous one is saved.")
+    screen.until_status("ready")
+    screen.type("B second canary\r")
+    results.append(check("session B answered", screen.until("SECOND ARCHIVE ANSWER")))
+    screen.until_status("ready")
+    b = next(path for path in agent.sessions(screen.state) if path != a)
+    a_bytes = open(a, "rb").read()
+    screen.type("/resume\r")
+    results.append(check("the list includes both session names", screen.until(os.path.basename(a)) and screen.until(os.path.basename(b))))
+    screen.until_status("ready")
+    results.append(check("listing made no provider request", len(server.requests) == 2))
+    ambiguous = os.path.commonprefix([os.path.basename(a), os.path.basename(b)])
+    screen.type("/resume " + ambiguous + "\r")
+    results.append(check("an ambiguous prefix is refused", screen.until("Cannot resume " + ambiguous + ":")))
+    screen.until_status("ready")
+    screen.type("/resume definitely-absent\r")
+    results.append(check("unknown selection is refused", screen.until("Cannot resume definitely-absent:")))
+    screen.until_status("ready")
+    missing = os.path.join(project, "missing.jsonl")
+    screen.type("/resume " + missing + "\r")
+    results.append(check("opening a missing file is refused", screen.until("Cannot resume " + missing + ":")))
+    screen.until_status("ready")
+    with open(a, "rb") as locked:
+        fcntl.flock(locked.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        screen.type("/resume " + os.path.basename(a) + "\r")
+        results.append(check("another writer is refused", screen.until("this session is open in another ask")))
+        screen.until_status("ready")
+    screen.type("Continue B after refusals\r")
+    results.append(check("B remains usable", screen.until("B AFTER REFUSAL")))
+    screen.until_status("ready")
+    kept = server.requests[-1]["body"]["messages"]
+    results.append(check("refusals retained B, not A", "B second canary" in json.dumps(kept) and "A first canary" not in json.dumps(kept)))
+    b_bytes = open(b, "rb").read()
+    screen.type("/resume " + os.path.basename(a) + "\r")
+    results.append(check("A is resumed in place", screen.until("Resumed session " + os.path.basename(a))))
+    screen.until_status("ready")
+    results.append(check("only A's history is drawn", "FIRST ARCHIVE ANSWER" in screen.screen.text()
+                         and "SECOND ARCHIVE ANSWER" not in screen.screen.text() and "B AFTER REFUSAL" not in screen.screen.text()))
+    results.append(check("A's usage replaces B's usage", "out 5" in screen.status() and "out 10" not in screen.status(), screen.status()))
+    results.append(check("B is unlocked and A is locked", can_lock_session(b) and not can_lock_session(a)))
+    results.append(check("switching only reads the target archive", open(a, "rb").read() == a_bytes))
+    screen.type("/resume " + a + "\r")
+    results.append(check("selecting the current session is a no-op", screen.until("Already using session " + os.path.basename(a))))
+    screen.until_status("ready")
+    results.append(check("reselecting does not double-count usage", "out 5" in screen.status() and "out 10" not in screen.status(), screen.status()))
+    screen.type("Continue A now\r")
+    results.append(check("A continues", screen.until("A AFTER RESUME")))
+    screen.until_status("ready")
+    last = server.requests[-1]["body"]["messages"]
+    results.append(check("the actual request carries A, not B", "A first canary" in json.dumps(last) and "B second canary" not in json.dumps(last)))
+    results.append(check("A usage accumulates from its own history", "out 10" in screen.status(), screen.status()))
+    results.append(check("B's file was not changed by A's turn", open(b, "rb").read() == b_bytes))
+    damaged = os.path.join(os.path.dirname(a), "damaged-probe.jsonl")
+    original = open(a, "rb").read() + b'{"id":"torn'
+    open(damaged, "wb").write(original)
+    screen.type("/resume damaged-probe\r")
+    results.append(check("damage on interactive resume is reported", screen.until("mid-write and was dropped.") and "session file had a problem" in screen.screen.text(), screen.screen.text()))
+    results.append(check("a repaired read does not rewrite the file", open(damaged, "rb").read() == original))
+    screen.until_status("ready")
+    screen.type("Continue after repair\r")
+    results.append(check("the repaired session continues", screen.until("AFTER REPAIR")))
+    screen.until_status("ready")
+    results.append(check("the first change preserves the damaged bytes", os.path.exists(damaged + ".damaged")
+                         and open(damaged + ".damaged", "rb").read() == original))
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def until_after(screen, marker, needle, seconds=15):
+    """Reads until `marker` is on screen and `needle` appears below its last occurrence, so output from an earlier
+    command cannot satisfy the wait, nor can a marker that has not been drawn yet."""
+    end = time.time() + seconds
+    while time.time() < end:
+        text = screen.screen.text()
+        if screen.output.endswith(FRAME_END) and marker in text and needle in text.rsplit(marker, 1)[-1]:
+            return True
+        screen.until("\x00", 0.05)
+    return False
+
+
+def probe_model_selection():
+    print("Q: /model is run-local, atomic, pinned to its provider, and survives reload without losing reset")
+    project, config, binary_dir = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(config, "ask"))
+    config_path = os.path.join(config, "ask", "config.json")
+    settings = {"model": "file-model", "provider": "anthropic", "maxTurns": 3}
+    open(config_path, "w").write(json.dumps(settings))
+    # \"keyless\" names a variable that does not exist (ASK_ variables are removed from the probe's environment);
+    # \"local\" needs no key and a loopback address, so it resolves.
+    open(os.path.join(config, "ask", "providers.json"), "w").write(json.dumps({"providers": {
+        "keyless": {"api": "openai-completions", "baseUrl": "http://127.0.0.1:9/v1", "apiKey": "$ASK_PROBE_MISSING",
+                    "models": [{"id": "m"}]},
+        "local": {"api": "openai-completions", "baseUrl": "http://127.0.0.1:9/v1", "models": [{"id": "local-default"}]}}}))
+    binary = install_build(binary_dir)
+    server = agent.Server([agent.turn([("text", text)], "end_turn") for text in [
+        "BASE MODEL ANSWER", "PICKED MODEL ANSWER", "MODEL AFTER REFUSAL", "RESET MODEL ANSWER"]])
+    screen = Screen(server.url, project, config=config, binary=binary, arguments=("--model", "flag-model"))
+    screen.until("ask>")
+    screen.type("/model\r")
+    found = screen.until("Current model: flag-model")
+    results = [check("the current model is reported without a request", found and not server.requests, screen.screen.text())]
+    if not found:
+        screen.type("/quit\r")
+        screen.finish()
+        server.httpd.shutdown()
+        return False
+    screen.until_status("ready")
+    screen.type("Original request\r")
+    results.append(check("the original model runs", screen.until("BASE MODEL ANSWER")))
+    screen.until_status("ready")
+    chosen = "vendor/model:tag"
+    before = open(config_path, "rb").read()
+    screen.type("/model " + chosen + "\r")
+    results.append(check("a model id with slashes is not misread as a provider", screen.until("Model selected for this run: " + chosen)))
+    results.append(check("selecting did not rewrite configuration", open(config_path, "rb").read() == before))
+    screen.until_status("ready")
+    screen.type("/config\r")
+    results.append(check("configuration reports command provenance", screen.until("[/model (this run)]")))
+    screen.until_status("ready")
+    settings.update(provider="unconfigured-file-provider", model="changed-file-model", maxTurns=7)
+    open(config_path, "w").write(json.dumps(settings))
+    screen.type("Request after config changed\r")
+    results.append(check("the choice survives prompt-time configuration reload", screen.until("PICKED MODEL ANSWER")))
+    screen.until_status("ready")
+    results.append(check("the request uses the selected id", len(server.requests) == 2 and server.requests[1]["body"]["model"] == chosen))
+    screen.type("/config\r")
+    results.append(check("unrelated configuration still reloads", screen.until("maxTurns  7")))
+    screen.until_status("ready")
+    for arguments in ["missing-provider any-model", "keyless any-model"]:
+        screen.type("/model " + arguments + "\r")
+        results.append(check("failed selection is nonfatal: " + arguments, screen.until("Model not changed (" + arguments + "):")))
+        screen.until_status("ready")
+    marker = "› /config after-refusals"  # unique: an older /config's report cannot satisfy the waits below
+    screen.type("/config after-refusals\r")
+    results.append(check("after refusals the live configuration still loads and keeps the choice",
+                         until_after(screen, marker, "project file")
+                         and "[/model (this run)]" in screen.screen.text().rsplit(marker, 1)[-1]
+                         and "Configuration not reloaded" not in screen.screen.text().rsplit(marker, 1)[-1],
+                         screen.screen.text()))
+    screen.until_status("ready")
+    screen.type("/model local local-model\r")
+    results.append(check("a provider and model switch together", screen.until("Model selected for this run: local-model"), screen.screen.text()))
+    results.append(check("the status label names the provider", screen.until_status("local/local-model")))
+    screen.until_status("ready")
+    screen.type("/model " + chosen + "\r")
+    results.append(check("a bare id keeps the provider now in force", screen.until("local/" + chosen)))
+    screen.until_status("ready")
+    screen.type("/model anthropic " + chosen + "\r")
+    results.append(check("and the provider can be named again", screen.until('provider: "local" → "anthropic" (/model (this run))')))
+    screen.until_status("ready")
+    screen.type("/model one two three\r")
+    results.append(check("bad command syntax is refused", screen.until("Usage: /model [PROVIDER] MODEL"), screen.screen.text()))
+    screen.until_status("ready")
+    results.append(check("commands made no model requests", len(server.requests) == 2))
+    screen.type("Request after refusals\r")
+    results.append(check("the previous model remains usable", screen.until("MODEL AFTER REFUSAL")))
+    screen.until_status("ready")
+    results.append(check("failed selections retained the chosen model", server.requests[-1]["body"]["model"] == chosen))
+    files = agent.sessions(screen.state)
+    original_path = files[0] if files else None
+    original_pid = screen.pid
+    install_build(binary_dir)
+    results.append(check("the replacement binary is noticed", screen.until("A new ask binary appeared.")))
+    screen.type("/reload\r")
+    results.append(check("reload checks the effective model, not the invalid file provider",
+                         screen.until("Reloaded ask: built ", 30)))
+    results.append(check("reload keeps the selected model and process", chosen in screen.status() and screen.pid == original_pid))
+    screen.until_status("ready")
+    screen.type("/config\r")
+    results.append(check("reload kept command rather than CLI provenance", screen.until("[/model (this run)]")))
+    screen.until_status("ready")
+    settings["provider"] = "anthropic"
+    open(config_path, "w").write(json.dumps(settings))
+    saved = open(config_path, "rb").read()
+    screen.type("/model --reset\r")
+    results.append(check("reset after reload restores the original CLI flag", screen.until("Model selection reset to configuration: flag-model")))
+    screen.until_status("ready")
+    screen.type("Request after reset\r")
+    results.append(check("the reset model runs", screen.until("RESET MODEL ANSWER")))
+    screen.until_status("ready")
+    results.append(check("the actual request uses the original flag", server.requests[-1]["body"]["model"] == "flag-model"))
+    results.append(check("reset did not save a setting", open(config_path, "rb").read() == saved))
+    results.append(check("model changes kept the same archive", agent.sessions(screen.state) == [original_path]))
+    payloads = [r["payload"] for r in map(json.loads, open(original_path)) if r.get("type") == "entry"] if original_path else []
+    results.append(check("only the four real prompts were persisted", len([p for p in payloads if p["kind"] == "user"]) == 4))
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_strict_label():
+    print("R: the status line says when the sandbox is strict, or off")
+    project = tempfile.mkdtemp()
+    server = agent.Server([])
+    results = []
+    for arguments, wanted in [(("--write", "workspace", "--network", "none"), "sandbox: workspace only, no network"),
+                              (("--network", "localhost"), "sandbox: localhost only"),
+                              (("--read", "workspace"), "sandbox: reads workspace"),
+                              (("--no-sandbox",), "no sandbox"),
+                              ((), None)]:
+        screen = Screen(server.url, project, arguments=arguments)
+        screen.until("ask>")
+        status = screen.status()
+        if wanted:
+            results.append(check(f"{' '.join(arguments)}: the status line says '{wanted}'", wanted in status, status))
+        else:
+            results.append(check("the default sandbox adds nothing to the status line", "sandbox" not in status, status))
+        screen.type("/quit\r")
+        results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_resume_strict():
+    print("S: /resume adopts a session's recorded sandbox and /new drops it")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    server = agent.Server([agent.turn([("text", "Strict session answer.")], "end_turn")])
+    made = subprocess.run([ASK, "-p", "Start strict.", "--network", "none", "--write", "workspace"], cwd=project,
+                          env=agent.environment(state, server.url), capture_output=True, text=True, timeout=60)
+    files = agent.sessions(state)
+    results = [check("a strict session exists", made.returncode == 0 and len(files) == 1, made.stderr[-300:])]
+    screen = Screen(server.url, project, state)
+    screen.until("ask>")
+    results.append(check("a fresh screen is not strict", "sandbox" not in screen.status(), screen.status()))
+    screen.type("/resume " + os.path.basename(files[0]) + "\r")
+    results.append(check("resuming adopts the recorded sandbox", screen.until_status("sandbox: workspace only, no network"), screen.status()))
+    results.append(check("and says so", screen.until("Keeping this session's sandbox")))
+    screen.until_status("ready")
+    screen.type("/new\r")
+    results.append(check("/new drops it", screen.until("New session.")  # /new clears the transcript, so its own line is gone
+                         and screen.until_status("ready") and "sandbox" not in screen.status(), screen.status()))
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
+def probe_model_and_destination():
+    print("T: in a resumed session /model overrides the recorded destination; /resume goes back to a session's own")
+    project, state, config = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(config, "ask"))
+    # Another provider, at a port nothing listens on: a request sent there never reaches the fake Anthropic server.
+    open(os.path.join(config, "ask", "providers.json"), "w").write(json.dumps({"providers": {
+        "local": {"api": "openai-completions", "baseUrl": "http://127.0.0.1:9/v1", "models": [{"id": "local-x"}]}}}))
+    server = agent.Server([agent.turn([("text", f"ANSWER {n}")], "end_turn") for n in range(1, 7)])
+    env = agent.environment(state, server.url, config)
+    for model in ("alpha-model", "beta-model"):
+        subprocess.run([ASK, "-p", "Start " + model, "--model", model], cwd=project, env=env, capture_output=True,
+                       text=True, timeout=60)
+    by_model = {}
+    for path in agent.sessions(state):
+        first = next(json.loads(l) for l in open(path) if '"kind":"destination"' in l)
+        by_model[first["payload"]["destination"]["model"]] = path
+    results = [check("two sessions recorded on two models", sorted(by_model) == ["alpha-model", "beta-model"], by_model)]
+    screen = Screen(server.url, project, state, config=config, arguments=("--resume", by_model.get("alpha-model", "")))
+    screen.until("ask>")
+    sent = lambda: server.requests[-1]["body"]["model"]
+    screen.type("Continue alpha\r")
+    results.append(check("a resumed session goes where it was sent", screen.until("ANSWER 3") and sent() == "alpha-model", sent()))
+    screen.until_status("ready")
+    screen.type("/model gamma-model\r")
+    screen.until("Model selected for this run: gamma-model")
+    screen.until_status("ready")
+    screen.type("Now on gamma\r")
+    results.append(check("/model overrides the recorded destination, as the user's consent",
+                         screen.until("ANSWER 4") and sent() == "gamma-model", (sent(), screen.screen.text()[-600:])))
+    screen.until_status("ready")
+    screen.type("/model local local-x\r")
+    screen.until("Model selected for this run: local-x")
+    screen.until_status("local/local-x · ready")
+    before = len(server.requests)
+    screen.type("Now elsewhere\r")
+    # Refused connections are retried for about 15 s; the run's last line says it gave up.
+    screen.until("ask: the request did not complete", 40)
+    screen.until_status("ready")
+    results.append(check("/model to another provider leaves the recorded provider too",
+                         len(server.requests) == before and "local/local-x" in screen.status(),
+                         (len(server.requests) - before, screen.status())))
+    # The choice is the user's consent to move a session with history (ADR-0048): the move is recorded, not refused.
+    moved = [json.loads(l)["payload"]["destination"] for l in open(by_model["alpha-model"]) if '"kind":"destination"' in l]
+    results.append(check("and the session records the move as consented", moved[-1:] and moved[-1]["name"] == "local"
+                         and "destination" not in screen.screen.text().lower().split("now elsewhere")[-1], moved))
+    screen.type("/resume " + os.path.basename(by_model.get("beta-model", "")) + "\r")
+    screen.until("Resumed session")
+    screen.until_status("beta-model · ready")  # the command has ended: a prompt typed earlier stays in the editor
+    screen.type("Continue beta\r")
+    results.append(check("/resume goes back to that session's own model, dropping this run's choice",
+                         screen.until("ANSWER 5") and sent() == "beta-model", (sent(), screen.screen.text()[-900:])))
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection() & probe_strict_label() & probe_resume_strict() & probe_model_and_destination()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

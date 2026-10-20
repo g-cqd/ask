@@ -81,7 +81,8 @@ struct TerminalTeardownTests {
         let enabledAt = try #require(Self.firstIndex(of: enable, in: output))
         let disabledAt = try #require(Self.firstIndex(of: disable, in: output, after: enabledAt))
         #expect(enabledAt < disabledAt)
-        #expect(conversation.prompts == ["one two"], "the paste is one prompt, submitted by the Enter after it")
+        #expect(
+            conversation.prompts == ["one\ntwo"], "the paste is one two-line prompt, submitted by the Enter after it")
     }
 
     private static func firstIndex(of needle: [UInt8], in haystack: [UInt8], after start: Int = 0) -> Int? {
