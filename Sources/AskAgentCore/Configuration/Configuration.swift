@@ -110,7 +110,7 @@ public struct Configuration: Sendable, Equatable {
     /// set rather than narrowing it: a flag is the user, and only the user widens the sandbox.
     public func applying(
         model: String?, provider: String?, maxTurns: Int?, compactAt: Int?, network: SandboxPolicy.Network? = nil,
-        write: WriteSetting? = nil
+        write: PathSetting? = nil
     ) -> Configuration {
         var next = self
         if network != nil || write != nil {
