@@ -12,4 +12,8 @@ public enum CredentialFileError: Error, Sendable, Equatable {
     case io(path: String, errno: Int32)
     /// Another ask held the short lock that serialises saves for longer than this one waited.
     case locked(path: String)
+    /// The selected registration was removed or authenticated as another identity after it was selected.
+    case connectionChanged(path: String)
+    /// Registration metadata needs a newer writer; interpreting and rewriting it would be unsafe.
+    case newerFormat(path: String)
 }

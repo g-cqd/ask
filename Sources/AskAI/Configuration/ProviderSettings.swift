@@ -53,6 +53,12 @@ public struct ProviderSettings: Sendable, Equatable {
         let providers: [String: Entry]?
     }
 
+    /// Destination names explicitly configured by the user, for registration collision checks.
+    public var configuredNames: [String] { entries.keys.sorted() }
+
+    /// The selected destination before model resolution.
+    public func selectedProvider(_ override: String?) -> String { override ?? defaultProvider ?? Self.anthropic }
+
     let defaultProvider: String?
     let entries: [String: Entry]
 
@@ -85,15 +91,18 @@ public struct ProviderSettings: Sendable, Equatable {
     ///   - model: the model given on the command line, if any; else the entry's default or first model.
     ///   - environment: where `$NAME` keys are read.
     ///   - catalog: models discovered for this connection; used for Codex defaults and limits, never another provider's.
+    ///   - connection: the selected named registration, already loaded from ask's user-only registry.
     ///   - storedKeys: reads the keys sign-ins stored, by provider name. Called only when nothing else gives a preset a
     ///     key, so a damaged credential file blocks only the providers that need it.
     /// - Returns: the provider, with its endpoint and key, and the model.
     /// - Throws: a ``ProviderSettingsError`` naming what cannot be honoured.
     public func resolve(
         provider: String?, model: String?, environment: [String: String], catalog: [CatalogModel] = [],
+        connection: ConnectionRecord? = nil,
         storedKeys: () throws(CredentialFileError) -> [String: String] = { [:] }
     ) throws(ProviderSettingsError) -> ResolvedModel {
-        let name = provider ?? defaultProvider ?? Self.anthropic
+        let name = selectedProvider(provider)
+        if let connection { return try named(connection, name: name, model: model, catalog: catalog) }
         if let builtIn = try builtIn(name, model: model, catalog: catalog) { return builtIn }
         let preset = ProviderPreset.named(name)
         guard let entry = entries[name] ?? (preset != nil ? Entry() : nil) else {
@@ -123,6 +132,22 @@ public struct ProviderSettings: Sendable, Equatable {
                 ? .openAIResponses(name: name, baseURL: url, apiKey: key, headers: headers)
                 : .openAICompatible(name: name, baseURL: url, apiKey: key, headers: headers),
             model: chosen, contextWindow: listed?.contextWindow, maxOutputTokens: listed?.maxTokens)
+    }
+
+    /// A registration must identify exactly the selected name and must not shadow configured or built-in authority.
+    private func named(_ connection: ConnectionRecord, name: String, model: String?, catalog: [CatalogModel])
+        throws(ProviderSettingsError) -> ResolvedModel
+    {
+        guard name.lowercased() == connection.name, !connection.removed,
+            !configuredNames.contains(where: { $0.lowercased() == connection.name }),
+            ProviderPreset.named(connection.name) == nil,
+            ![Self.anthropic, Self.codex, "claude"].contains(connection.name)
+        else { throw .reservedName(name) }
+        guard var resolved = try builtIn(connection.provider.rawValue, model: model, catalog: catalog) else {
+            throw .unknownProvider(name, known: [])
+        }
+        resolved.connection = connection
+        return resolved
     }
 
     /// The built-in provider called `name`, if there is one; nil for anything a file or a preset names.

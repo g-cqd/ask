@@ -8,12 +8,17 @@ public struct CodexAccess: Sendable {
     private let file: CredentialFile
     private let client: CodexAuthClient
     private let lockWait: Duration
+    private let connection: ConnectionRecord?
 
     /// Access backed by `file`, refreshing through `client`, waiting up to `lockWait` for another process's refresh.
-    public init(file: CredentialFile, client: CodexAuthClient, lockWait: Duration = .seconds(30)) {
+    public init(
+        file: CredentialFile, client: CodexAuthClient, lockWait: Duration = .seconds(30),
+        connection: ConnectionRecord? = nil
+    ) {
         self.file = file
         self.client = client
         self.lockWait = lockWait
+        self.connection = connection
     }
 
     /// Credentials good for a request made at `now` (seconds since 1970).
@@ -29,8 +34,11 @@ public struct CodexAccess: Sendable {
         guard current.needsRefresh(now: now) else { return current }
         let fresh: CodexCredentials
         do { fresh = try await client.refresh(current, now: now) } catch { throw .refreshFailed(error) }
+        if connection != nil, fresh.accountID != current.accountID { throw .accountChanged }
         let kept: Bool
-        do { kept = try file.saveCodex(fresh, ifStill: current) } catch { throw .storage(error) }
+        do { kept = try file.saveCodex(fresh, ifStill: current, connection: connection) } catch {
+            throw .storage(error)
+        }
         if kept { return fresh }
         // The user signed out, or in again, while the response was on its way: what they did last stands.
         guard let latest = try load() else { throw .signedOut }
@@ -39,7 +47,7 @@ public struct CodexAccess: Sendable {
     }
 
     private func load() throws(CodexAccessError) -> CodexCredentials? {
-        do { return try file.loadCodex() } catch { throw .storage(error) }
+        do { return try file.loadCodex(connection: connection) } catch { throw .storage(error) }
     }
 
     private func take() async throws(CodexAccessError) -> CredentialLock {
