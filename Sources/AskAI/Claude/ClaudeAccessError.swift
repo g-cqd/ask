@@ -6,4 +6,6 @@ public enum ClaudeAccessError: Error, Sendable, Equatable {
     case storage(CredentialFileError)
     /// The credentials expired and could not be refreshed. `invalid_grant` means signing in again.
     case refreshFailed(ClaudeAuthError)
+    /// The sign-in was replaced while a refresh was waiting for the server, and the replacement itself needs refreshing.
+    case changedDuringRefresh
 }
