@@ -25,6 +25,17 @@ section's `allowRead` and `denyRead` are reachable.
 A run confined to its workspace and localhost can build a Swift package (or says exactly which path it needed),
 and a probe on the real binary shows each key narrowing and nothing widening from a project.
 
+## Delivered — write scope and network (2026-10-20, ADR-0043, diary 39)
+
+`sandbox.write` (workspace, anywhere, paths) and `sandbox.network` (none, localhost, any): every file narrows, only
+`--write`/`--network` widen. Shown at startup, in `ask config` and on the status line. Probe N: a Swift package
+builds and runs confined to its workspace and localhost; a trusted project narrows and cannot widen.
+
+## Still owed
+
+- **A read allow-list** on a deny-default Seatbelt base. Probe what SwiftPM, git and the toolchains read first.
+- **The policy recorded in the session**, so a resumed session keeps its sandbox when the flags differ.
+
 ## Found first (2026-10-20, diary 38)
 
 SwiftPM compiles an uncached manifest inside its own `sandbox-exec`, which cannot nest in ask's: under the default
