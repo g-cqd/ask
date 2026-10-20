@@ -12,6 +12,8 @@ public enum CodexAccessError: Error, Sendable, Equatable, CustomStringConvertibl
     case lockUnavailable
     /// The sign-in was replaced while a refresh was waiting for the server, and the replacement itself needs refreshing.
     case changedDuringRefresh
+    /// A named connection's refresh must not change the remote account receiving its history.
+    case accountChanged
 
     // @dl:accept -- describing an error enum case by case is the shape of every one; the sentences are its own
     public var description: String {
@@ -20,6 +22,7 @@ public enum CodexAccessError: Error, Sendable, Equatable, CustomStringConvertibl
             case .storage(let error): "the stored Codex credentials cannot be used: \(error)"
             case .refreshFailed(let error): "the Codex sign-in could not be refreshed: \(error)"
             case .lockUnavailable: "another ask is refreshing the Codex sign-in and did not finish; try again"
+            case .accountChanged: "the refresh returned another account; sign in to the selected named connection again"
             case .changedDuringRefresh: "the Codex sign-in changed while it was being refreshed; run the command again"
         }
     }
