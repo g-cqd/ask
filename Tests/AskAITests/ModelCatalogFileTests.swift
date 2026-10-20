@@ -77,6 +77,21 @@ struct ModelCatalogFileTests {
         }
     }
 
+    @Test func `reasoning levels round trip, and a cache written before they existed still loads`() throws {
+        try withFile { file in
+            let model = CatalogModel(
+                id: "m", contextWindow: 8192, reasoningLevels: ["low", "high"], defaultReasoningLevel: "low")
+            try file.save([model], scope: Self.scope, now: 10)
+            #expect(try file.load(scope: Self.scope, now: 11) == [model])
+            let text = try String(contentsOf: file.url, encoding: .utf8)
+            let legacy = text.replacingOccurrences(of: #","reasoningLevels":["low","high"]"#, with: "")
+                .replacingOccurrences(of: #","defaultReasoningLevel":"low""#, with: "")
+            #expect(!legacy.contains("reasoningLevels"), "the legacy text really lacks the new fields")
+            try Data(legacy.utf8).write(to: file.url)
+            #expect(try file.load(scope: Self.scope, now: 11) == [CatalogModel(id: "m", contextWindow: 8192)])
+        }
+    }
+
     @Test func `an explicit save replaces the previous catalog whole`() throws {
         try withFile { file in
             try file.save(Self.models, scope: Self.scope, now: 10)
@@ -90,6 +105,7 @@ struct ModelCatalogFileTests {
         try withFile { file in
             for models in [
                 [], [CatalogModel(id: "bad\nname")], [CatalogModel(id: "ok", contextWindow: -1)],
+                [CatalogModel(id: "ok", reasoningLevels: ["Bad Level"])],
                 [CatalogModel(id: "ok", maxOutputTokens: 0)], [CatalogModel(id: "ok"), CatalogModel(id: "ok")]
             ] {
                 #expect(throws: ModelCatalogError.cache(path: file.url.path)) {

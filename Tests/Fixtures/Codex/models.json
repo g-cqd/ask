@@ -7,7 +7,28 @@
       "visibility": "list",
       "supported_in_api": true,
       "context_window": 500000,
-      "max_context_window": 872000
+      "max_context_window": 872000,
+      "default_reasoning_level": "low",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low"
+        },
+        {
+          "effort": "medium"
+        },
+        {
+          "effort": "high"
+        },
+        {
+          "effort": "xhigh"
+        },
+        {
+          "effort": "max"
+        },
+        {
+          "effort": "ultra"
+        }
+      ]
     },
     {
       "slug": "gpt-6-astra",
@@ -16,7 +37,28 @@
       "visibility": "list",
       "supported_in_api": true,
       "context_window": 272000,
-      "max_context_window": 872000
+      "max_context_window": 872000,
+      "default_reasoning_level": "low",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low"
+        },
+        {
+          "effort": "medium"
+        },
+        {
+          "effort": "high"
+        },
+        {
+          "effort": "xhigh"
+        },
+        {
+          "effort": "max"
+        },
+        {
+          "effort": "ultra"
+        }
+      ]
     },
     {
       "slug": "gpt-6-sol",
@@ -25,7 +67,28 @@
       "visibility": "list",
       "supported_in_api": true,
       "context_window": 272000,
-      "max_context_window": 872000
+      "max_context_window": 872000,
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low"
+        },
+        {
+          "effort": "medium"
+        },
+        {
+          "effort": "high"
+        },
+        {
+          "effort": "xhigh"
+        },
+        {
+          "effort": "max"
+        },
+        {
+          "effort": "ultra"
+        }
+      ]
     },
     {
       "slug": "gpt-reserve",
@@ -34,7 +97,25 @@
       "visibility": "hide",
       "supported_in_api": true,
       "context_window": 272000,
-      "max_context_window": 872000
+      "max_context_window": 872000,
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low"
+        },
+        {
+          "effort": "medium"
+        },
+        {
+          "effort": "high"
+        },
+        {
+          "effort": "xhigh"
+        },
+        {
+          "effort": "max"
+        }
+      ]
     },
     {
       "slug": "gpt-6-luna",
@@ -43,7 +124,25 @@
       "visibility": "list",
       "supported_in_api": true,
       "context_window": 272000,
-      "max_context_window": 872000
+      "max_context_window": 872000,
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low"
+        },
+        {
+          "effort": "medium"
+        },
+        {
+          "effort": "high"
+        },
+        {
+          "effort": "xhigh"
+        },
+        {
+          "effort": "max"
+        }
+      ]
     },
     {
       "slug": "gpt-5.6-sol",
@@ -52,7 +151,28 @@
       "visibility": "list",
       "supported_in_api": true,
       "context_window": 272000,
-      "max_context_window": 872000
+      "max_context_window": 872000,
+      "default_reasoning_level": "low",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low"
+        },
+        {
+          "effort": "medium"
+        },
+        {
+          "effort": "high"
+        },
+        {
+          "effort": "xhigh"
+        },
+        {
+          "effort": "max"
+        },
+        {
+          "effort": "ultra"
+        }
+      ]
     },
     {
       "slug": "gpt-5.6-terra",
@@ -61,7 +181,28 @@
       "visibility": "list",
       "supported_in_api": true,
       "context_window": 272000,
-      "max_context_window": 872000
+      "max_context_window": 872000,
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low"
+        },
+        {
+          "effort": "medium"
+        },
+        {
+          "effort": "high"
+        },
+        {
+          "effort": "xhigh"
+        },
+        {
+          "effort": "max"
+        },
+        {
+          "effort": "ultra"
+        }
+      ]
     },
     {
       "slug": "gpt-5.6-luna",
@@ -70,7 +211,25 @@
       "visibility": "list",
       "supported_in_api": true,
       "context_window": 272000,
-      "max_context_window": 872000
+      "max_context_window": 872000,
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low"
+        },
+        {
+          "effort": "medium"
+        },
+        {
+          "effort": "high"
+        },
+        {
+          "effort": "xhigh"
+        },
+        {
+          "effort": "max"
+        }
+      ]
     },
     {
       "slug": "codex-auto-review",
@@ -79,7 +238,25 @@
       "visibility": "hide",
       "supported_in_api": true,
       "context_window": 272000,
-      "max_context_window": 872000
+      "max_context_window": 872000,
+      "default_reasoning_level": "medium",
+      "supported_reasoning_levels": [
+        {
+          "effort": "low"
+        },
+        {
+          "effort": "medium"
+        },
+        {
+          "effort": "high"
+        },
+        {
+          "effort": "xhigh"
+        },
+        {
+          "effort": "max"
+        }
+      ]
     }
   ]
 }
