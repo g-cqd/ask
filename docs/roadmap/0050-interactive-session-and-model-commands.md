@@ -27,9 +27,18 @@ until the next prompt. Running jobs and bad arguments refuse without changing th
 Real-PTY N/O inspect archives, requests, writer locking and the job's continued operation.
 The screen's busy boundary refuses switches while a turn or queued input is active.
 
+## Delivered — /resume (2026-10-20, diary 36)
+
+With no argument, lists up to 20 project sessions with their first prompt and marks the current one.
+A name, unique prefix or path opens that session before releasing the current writer, then replaces the
+transcript and usage. Selecting the current session is a no-op. Lookup, open and lock failure leave the
+active session usable. Running jobs refuse a switch, while listing remains available.
+Damage is reported, reading never rewrites it, and the first later change preserves the damaged original.
+
+Real-PTY P checks two archives, ambiguous/unknown/missing/locked selection, exact next-request context,
+history, usage, both locks, current-session reselection and damaged-session recovery. O checks the running-job guard.
+
 ## Still owed
 
-- `/resume`: list/select an existing session, open its writer lock before releasing the current one, replay
-  its history and usage, and retain the active session on lookup/open/lock failure.
 - `/model`: show and change the current model using existing provider resolution/catalogs, with explicit
   run-local provenance and coherent configuration refresh and binary reload.
