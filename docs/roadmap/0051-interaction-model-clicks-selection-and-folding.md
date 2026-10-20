@@ -98,6 +98,12 @@ images, the `ui.*` keys, a key to open one block, and a run against the real age
 `ui.mouse`, `ui.copyOnSelect`, `ui.tools` and `ui.scrollLines` are configuration keys, layered, shown by `ask config`, and read at startup.
 The keys for features that do not exist yet (`ui.thinking`, `ui.images`, `ui.codeFoldLines`, `ui.promptRows`) are refused until they do.
 
+## What was run (2026-10-20, diary 54)
+
+`Scripts/probe-pointer.py` drives the built binary in a pty with real mouse reports and reads the screen and the OSC 52 copies back (15
+checks, with a negative control). It is an emulator, not a physical terminal: the real-terminal probe in "Done when" is still owed for
+kitty, Ghostty, WezTerm and Terminal.app, tmux and ssh.
+
 ## Open questions
 
 - What a copy contains when the selection crosses a **fold** or an image: the placeholder, or what is inside (TerminalKit 0017).
