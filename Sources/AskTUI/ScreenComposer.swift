@@ -47,7 +47,7 @@ public struct ScreenComposer: Sendable {
     }
 
     static let prompt = "ask> "
-    static let maximumPromptRows = 6
+    private var input = PromptLayout()
 
     /// Every transcript item's wrapped lines, end to end, rebuilt from the first item whose revision changed.
     private var transcriptLines = LayoutCache<Line>()
@@ -75,15 +75,19 @@ public struct ScreenComposer: Sendable {
     /// - Returns: where the cursor belongs: in the prompt, at the editor's cursor.
     public mutating func compose(_ state: ScreenState, into buffer: inout ScreenBuffer) -> (row: Int, column: Int) {
         let (columns, rows) = (buffer.columns, buffer.rows)
+        guard columns > 0, rows > 0 else {
+            transcriptRows = 0
+            frames?.store(FrameGeometry(columns: columns))
+            return (0, 0)
+        }
         if shownSize != (columns, rows) {
             shown = Array(repeating: nil, count: rows)
             shownSize = (columns, rows)
         }
-        let editor = promptLines(state.editor, columns: columns)
-        let promptRows = Swift.min(editor.lines.count, Self.maximumPromptRows, Swift.max(1, rows - 1))
-        let firstPromptLine = Swift.max(
-            0, Swift.min(editor.cursorLine - promptRows + 1, editor.lines.count - promptRows))
-        let transcriptRows = Swift.max(0, rows - promptRows - 1)
+        let editor = input.frame(state.editor, columns: columns, screenRows: rows, maximumRows: state.promptRows)
+        let promptRows = editor.lines.count
+        let statusRows = rows > 1 ? 1 : 0
+        let transcriptRows = rows - promptRows - statusRows
         self.transcriptRows = transcriptRows
 
         updateTranscriptLines(state.transcript, columns: columns)
@@ -120,14 +124,14 @@ public struct ScreenComposer: Sendable {
             .store(
                 FrameGeometry(rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count))
 
-        write(Self.statusLine(for: state), row: transcriptRows, into: &buffer)
-
-        for offset in 0 ..< promptRows {
-            write(
-                Line(text: editor.lines[firstPromptLine + offset], style: .default), row: transcriptRows + 1 + offset,
-                into: &buffer)
+        if statusRows > 0 {
+            write(Self.statusLine(for: state, input: editor.indicator), row: transcriptRows, into: &buffer)
         }
-        return (transcriptRows + 1 + editor.cursorLine - firstPromptLine, editor.cursorColumn)
+        let promptStart = transcriptRows + statusRows
+        for offset in 0 ..< promptRows {
+            write(Line(text: editor.lines[offset], style: .default), row: promptStart + offset, into: &buffer)
+        }
+        return (promptStart + editor.cursor.row, editor.cursor.column)
     }
 
     // MARK: - Lines
