@@ -28,6 +28,7 @@ import tempfile
 import threading
 import time
 import importlib.util
+import math
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -161,7 +162,7 @@ def agent_screen():
 def summary(values):
     values = sorted(values)
     quartiles = statistics.quantiles(values, n=4)
-    return f"p50 {statistics.median(values):7.2f} ms  [p25 {quartiles[0]:.2f} – p75 {quartiles[2]:.2f}]  p95 {values[int(len(values) * 0.95) - 1]:.2f}"
+    return f"p50 {statistics.median(values):7.2f} ms  [p25 {quartiles[0]:.2f} – p75 {quartiles[2]:.2f}]  p95 {values[math.ceil(len(values) * 0.95) - 1]:.2f}"
 
 
 if __name__ == "__main__":
