@@ -37,8 +37,7 @@ public struct ProviderModelCatalog: Sendable {
         self.url = baseURL.appending(path: "models")
         self.apiKey = apiKey.flatMap { $0.isEmpty ? nil : $0 }
         self.headers = headers
-        let sensitiveAddress =
-            baseURL.user != nil || baseURL.password != nil || baseURL.query != nil || baseURL.fragment != nil
+        let sensitiveAddress = !ModelCatalogCachePolicy.permits(baseURL)
         self.cacheDisabled = cache != nil && sensitiveAddress
         self.cache = sensitiveAddress ? nil : cache
         self.transport = transport
@@ -76,10 +75,10 @@ public struct ProviderModelCatalog: Sendable {
                 "Model list not cached: its address has user information, a query or a fragment that might contain a credential."
             ]
             : []
-        if !refresh {
-            do { if let current = try cached(now: now) { return current } } catch let error as ModelCatalogError {
-                notices.append("Cached catalog not used: \(error)")
-            }
+        if let current = try ModelCatalogCachePolicy.reuse(
+            unless: refresh, notices: &notices, read: { try cached(now: now) })
+        {
+            return current
         }
         var request = HTTPRequest.account("GET", url)
         if let apiKey { request.headers.append(("authorization", "Bearer \(apiKey)")) }
