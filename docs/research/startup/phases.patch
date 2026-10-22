@@ -1,0 +1,136 @@
+diff --git a/Sources/ask/AgentConversation.swift b/Sources/ask/AgentConversation.swift
+index 5706f81..35fc684 100644
+--- a/Sources/ask/AgentConversation.swift
++++ b/Sources/ask/AgentConversation.swift
+@@ -213,6 +213,7 @@ func runInteractive(
+     source: ConfigurationSource, settings: RunSettings, resumed: SessionRecorder?, startupNotices: [String],
+     reloaded: ReloadNotice?
+ ) async {
++    StartupProbe.mark("screen.begin")
+     let workingDirectory = FileManager.default.currentDirectoryPath
+     let directory = SessionDirectory(project: workingDirectory)
+     var notices = startupNotices
+@@ -226,6 +227,7 @@ func runInteractive(
+     let jobs = JobTable()
+     do {
+         let files = instructionFiles(workingDirectory: workingDirectory)
++        StartupProbe.mark("screen.instructions")
+         let conversation = AgentConversation(
+             directory: directory, resumed: resumed, settings: settings, source: source, jobs: jobs,
+             makeLoop: { settings, approve, narrowing in
+@@ -233,6 +235,7 @@ func runInteractive(
+                     settings, instructions: files, jobs: jobs,
+                     transport: URLSessionTransport(), approve: approve, narrowing: narrowing)
+             })
++        StartupProbe.mark("screen.before_ui")
+         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
+         // stops them gracefully below.
+         let exit = try await runInteractiveScreen(
+diff --git a/Sources/ask/Ask.swift b/Sources/ask/Ask.swift
+index 3579427..5b8b9f9 100644
+--- a/Sources/ask/Ask.swift
++++ b/Sources/ask/Ask.swift
+@@ -11,14 +11,17 @@ internal import Foundation
+ 
+ @main
+ struct Ask: AsyncParsableCommand {
+-    static let configuration = CommandConfiguration(
+-        commandName: "ask",
+-        abstract: "A terminal coding agent: reliable, fast, light.",
+-        subcommands: [
+-            Login.self, Logout.self, ModelsCommand.self, ConnectionsCommand.self, Sessions.self, ConfigCommand.self,
+-            TrustCommand.self,
+-            UntrustCommand.self
+-        ])
++    static let configuration: CommandConfiguration = {
++        StartupProbe.mark("arguments")
++        return CommandConfiguration(
++            commandName: "ask",
++            abstract: "A terminal coding agent: reliable, fast, light.",
++            subcommands: [
++                Login.self, Logout.self, ModelsCommand.self, ConnectionsCommand.self, Sessions.self, ConfigCommand.self,
++                TrustCommand.self,
++                UntrustCommand.self
++            ])
++    }()
+ 
+     @Flag(help: "Print the four performance budgets as JSON and exit. Read by Scripts/measure-budgets.py.")
+     var budgets = false
+@@ -96,6 +99,7 @@ struct Ask: AsyncParsableCommand {
+     var resume: String?
+ 
+     func validate() throws {
++        StartupProbe.mark("validated")
+         if continueLatest, resume != nil { throw ValidationError("Use --continue or --resume, not both.") }
+         if let maxTurns, maxTurns < 1 { throw ValidationError("--max-turns must be at least 1.") }
+         if let compactAt, compactAt < 0 { throw ValidationError("--compact-at must be 0 or more.") }
+@@ -132,6 +136,7 @@ struct Ask: AsyncParsableCommand {
+     }
+ 
+     func run() async throws {
++        StartupProbe.mark("run")
+         if budgets {
+             FileHandle.standardOutput.write(Data(try Budget.reportJSON()))
+             return
+diff --git a/Sources/ask/ConfigurationSource.swift b/Sources/ask/ConfigurationSource.swift
+index 0e120b1..9ec16d0 100644
+--- a/Sources/ask/ConfigurationSource.swift
++++ b/Sources/ask/ConfigurationSource.swift
+@@ -113,9 +113,11 @@ struct ConfigurationSource: Sendable {
+     /// Reads every layer and resolves the model, all or nothing.
+     /// - Throws: a ``ConfigurationError`` or a ``ProviderSettingsError``, naming the file.
+     func load(allowNetwork: Bool = true) async throws -> RunSettings {
++        StartupProbe.mark("config.begin")
+         var result = try loader.load(
+             model: flags.model, provider: flags.provider, maxTurns: flags.maxTurns, compactAt: flags.compactAt,
+             network: flags.network, write: flags.write, read: flags.read)
++        StartupProbe.mark("config.layers")
+         if let record = sessionSandbox, !flags.noSandbox {
+             let before = result.configuration.sandbox
+             result.configuration = result.configuration.applying(
+@@ -131,6 +133,7 @@ struct ConfigurationSource: Sendable {
+                 selectedProvider: selected.provider, model: selected.model, command: "/model")
+         }
+         let providers = try ProviderSettings.load(from: providersPath)
++        StartupProbe.mark("config.providers")
+         // A flag or a /model choice is the user's say; otherwise a resumed session stays where it was sent (ADR-0048).
+         let pinned = flags.provider == nil && flags.selected == nil ? resumedDestination : nil
+         let selected = try pinned.map { try SessionRouting.pinnedProvider($0, environment: environment) }
+@@ -139,7 +142,9 @@ struct ConfigurationSource: Sendable {
+             // A /model choice, then --model, then the resumed session's model, then the configuration.
+             model: flags.selected?.model ?? flags.model ?? pinned?.model ?? result.configuration.model.value,
+             environment: environment, allowNetwork: allowNetwork)
++        StartupProbe.mark("config.model")
+         let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections(result.configuration.sandbox.value)
++        StartupProbe.mark("config.policy")
+         return RunSettings(
+             configuration: result.configuration, model: discovered.model, sandbox: sandbox, applied: result.applied,
+             notices: result.notices + discovered.notices
+diff --git a/Sources/ask/StartupProbe.swift b/Sources/ask/StartupProbe.swift
+new file mode 100644
+index 0000000..a0501e1
+--- /dev/null
++++ b/Sources/ask/StartupProbe.swift
+@@ -0,0 +1,22 @@
++internal import Darwin
++internal import Foundation
++
++/// Temporary startup sampling, not a shipping implementation.
++enum StartupProbe {
++    static let begin = ContinuousClock.now
++    static func mark(_ phase: String) {
++        let elapsed = begin.duration(to: .now).components
++        let nanos = elapsed.seconds * 1_000_000_000 + elapsed.attoseconds / 1_000_000_000
++        var usage = rusage()
++        var cpuNumber: UInt = 0
++        // SAFETY: both C calls borrow initialized stack values and retain neither pointer.
++        _ = unsafe getrusage(RUSAGE_SELF, &usage)
++        let cpuResult = unsafe pthread_cpu_number_np(&cpuNumber)
++        let cpu = (Int64(usage.ru_utime.tv_sec) + Int64(usage.ru_stime.tv_sec)) * 1_000_000
++            + Int64(usage.ru_utime.tv_usec) + Int64(usage.ru_stime.tv_usec)
++        let qos = qos_class_self().rawValue
++        let priority = Task.currentPriority.rawValue
++        FileHandle.standardError.write(
++            Data("TRACE \(phase) \(nanos) \(cpu) \(cpuNumber) \(qos) \(priority) \(cpuResult)\n".utf8))
++    }
++}
