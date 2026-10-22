@@ -10,15 +10,18 @@ public struct ScreenOptions: Sendable, Equatable {
     public var foldThinking: Bool
     /// How many lines one wheel step scrolls. Terminals send different numbers of steps for one gesture (TerminalKit ADR-0028).
     public var scrollLines: Int
+    /// The most display rows the input may take, also capped to a third of the terminal (ADR-0046).
+    public var promptRows: Int
 
     public init(
         mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
-        scrollLines: Int = 3
+        scrollLines: Int = 3, promptRows: Int = 6
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
         self.foldTools = foldTools
         self.foldThinking = foldThinking
         self.scrollLines = Swift.max(1, scrollLines)
+        self.promptRows = Swift.max(1, promptRows)
     }
 }

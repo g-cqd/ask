@@ -15,14 +15,15 @@ policy and the meaning of each click are ask's (ADR-0044).
 ## What ask has today
 
 The real transcript now has mouse selection, highlighting, clipboard writes, wheel scrolling and thinking/tool folds. Header clicks
-open individual blocks; Ctrl+T and Ctrl+O change their separate defaults. Five `ui.*` keys configure these policies. Scripted-provider
-PTY probes cover live runs and resumed sessions (diaries 50–55). Images, long code, runner clicks and bounded input remain owed.
+open individual blocks; Ctrl+T and Ctrl+O change their separate defaults. Six `ui.*` keys configure interaction and bounded input.
+Scripted-provider PTY probes cover live runs, resumed sessions and wrapped-input editing. Images, long code, runner clicks and input
+pointer interactions remain owed.
 The real screen now follows the prototype's no-leading-icons and terminal-default-background rules (diary 2026-10-22 (2)).
 
-## What TerminalKit has now (2026-10-20)
+## What TerminalKit has now (2026-10-22)
 
-ask pins `ad1c072` and consumes the regions, pointer recognizer, content selection, row provenance, drag controller, clipboard plan and
-fold store.
+ask pins `99b3017` and consumes the regions, pointer recognizer, content selection, row provenance, drag controller, clipboard plan,
+fold store, input display map and bounded viewport.
 
 | Mechanism | State in TerminalKit | Where |
 |---|---|---|
@@ -31,7 +32,7 @@ fold store.
 | Selection: content-anchored, mapped from cells, highlighted, read back; double and triple click | model and drag controller built; ask paints the spans | ADR-0030, roadmap 0017 |
 | Clipboard: a plan from what each terminal does (OSC 52, the pasteboard, WezTerm's doubled first write) | built, ask performs it | ADR-0030 |
 | Folding: a placeholder-carrying block, per-block state with a default, a scroll that does not move the reader | model built; ask draws thinking/tool folds; images remain | ADR-0031, roadmap 0018 |
-| A bounded input that scrolls by display row | **not started** | roadmap 0019 |
+| A bounded input that scrolls by display row | map/viewport built; ask uses them for display and keyboard navigation; input pointer work remains | ADR-0032, roadmap 0019 |
 
 What ask must supply to use them: a stable identity for every block it draws, a record of what each row shows (the provenance a selection
 needs, every frame), and the placeholder text for anything it folds. The terminal's facts also bear on ask's settings: Terminal.app needs the
@@ -123,12 +124,19 @@ Leading user/disclosure glyphs and the painted status surface are gone from the 
 placeholders say their kind and size; only selected text is inverse. `/help` names the fold shortcuts. Both PTY probes and the existing
 turn/resume/multiline regressions pass against these exact strings. Layout switching and pixel separators are still separate work.
 
+## Bounded input (2026-10-22, ADR-0059; diary 2026-10-22 (6))
+
+`ui.promptRows` is implemented, default 6 and capped at a third of the terminal. TerminalKit owns source-to-cell mapping and the
+viewport; ask owns the prefix, requested cap and status cue. Up/Down cross wrapped rows and use the new width after resize; Ctrl-X
+clears the whole unsent draft. A real-binary PTY probe checks complete submitted/recorded source for ASCII, wide text and tab stops.
+Input clicks, wheel scrolling and selection remain unimplemented. Roadmap 0049 retains the physical Shift-Enter check.
+
 ## Open questions
 
 - Tool and thinking selections copy what is **shown**, so crossing a fold copies its placeholder. Images still need their copy policy.
 - Whether fold state is persisted in the session, which changes the closed session payload (roadmap 0027), or is per run.
-- Wrapped lines in the input: Up and Down move between hard lines only, which 0049 still owes, and a bounded input needs
-  display rows (TerminalKit 0019). Whether ask adopts the kit's text types first or the kit grows them first.
+- Input pointer interactions: how wheel/selection share the display-row map while preserving an editable source cursor and a visible
+  clipping cue (TerminalKit 0019). The map-first adoption order is settled in TerminalKit ADR-0032 and ask ADR-0059.
 - Hover, which costs any-motion reporting.
 - What a **runner** is in the list: background jobs (roadmap 0031), subagents (0027), or both, and which description each has.
 - How the character layout (no pixels) gives the same click regions as the pixel layout. It must, since they share one contract.

@@ -45,11 +45,12 @@ public struct ScreenController: Sendable {
         self.options = options
         state.transcript.setToolsFoldedByDefault(options.foldTools)
         state.transcript.setThinkingFoldedByDefault(options.foldThinking)
+        state.promptRows = options.promptRows
     }
 
     /// Applies terminal input. `pageRows` is how far Page Up and Page Down scroll.
     public mutating func handle(
-        _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant = .now
+        _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant = .now, columns: Int? = nil
     ) -> [Effect] {
         switch event {
             case .key(let key):
@@ -67,7 +68,7 @@ public struct ScreenController: Sendable {
                 if isToggleToolOutput(key) { return toggleAllToolOutput() }
                 if isToggleThinking(key) { return toggleAllThinking() }
                 clearSelection()
-                return edit(key)
+                return edit(key, columns: columns)
             case .mouse(let mouse):
                 return handle(mouse: mouse, at: now)
             case .paste(let text):
@@ -109,8 +110,9 @@ public struct ScreenController: Sendable {
         return []
     }
 
-    private mutating func edit(_ key: KeyEvent) -> [Effect] {
-        switch state.editor.apply(key) {
+    private mutating func edit(_ key: KeyEvent, columns: Int?) -> [Effect] {
+        let indent = columns.map { PromptLayout.prefix(columns: $0).count } ?? 0
+        switch state.editor.apply(key, columns: columns, firstRowIndent: indent) {
             case .submitted(let line):
                 return submit(line, followUp: key.modifiers.contains(.alt))
             case .escape:
