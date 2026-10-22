@@ -8,7 +8,7 @@ extension AgentConversation {
     /// current run's questions go.
     struct Approvals {
         var nextID = 0
-        var waiting: [Int: (request: SandboxRequest, answer: CheckedContinuation<Bool, Never>)] = [:]
+        var waiting: [Int: (request: SandboxRequest?, answer: CheckedContinuation<Bool, Never>)] = [:]
         /// Requests the user allowed for the session; a later request they contain is not asked again.
         var grants: [SandboxRequest] = []
         var ask: (@Sendable (ConversationUpdate) -> Void)?
@@ -17,7 +17,9 @@ extension AgentConversation {
     /// Asks the user about `approval`, unless a grant for the session covers it. Cancelling the run answers no.
     func approve(_ approval: SandboxApproval) async -> Bool {
         let grants = approvals.withLock { $0.grants }
-        if approval.request.isCovered(by: grants, workingDirectory: source.workspace) { return true }
+        if let request = approval.request, request.isCovered(by: grants, workingDirectory: source.workspace) {
+            return true
+        }
         let question =
             "\(approval.tool) \(toolSummary(name: approval.tool, input: approval.input)) asks for "
             + approval.asked.joined(separator: " and ") + ". Allow it?"

@@ -35,8 +35,9 @@ public struct ToolRegistry: Sendable {
         guard let tool = tools[name] else {
             return .error("No tool is named \(name). Available: \(order.joined(separator: ", ")).")
         }
-        // A call may narrow its own sandbox, never widen it (roadmap 0019).
+        // The session's narrowing applies to every call, and a call may narrow further, never widen (roadmap 0019).
         var context = context
+        if let session = context.narrowing?.policy { context = context.with(context.sandbox.intersecting(session)) }
         do {
             if let request = try SandboxRequest.in(input) {
                 switch request.applied(to: context.sandbox, workingDirectory: context.workingDirectory) {
