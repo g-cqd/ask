@@ -153,3 +153,6 @@ The terminal stack comes from **TerminalKit**, its own repository — see
 
 Aemi publishes no tags, so `ask` depends on it by pinned revision, as Atelier already does. TerminalKit
 has no GitHub remote yet, which blocks a shipping dependency on it.
+## License
+
+[MIT](LICENSE).
