@@ -123,6 +123,8 @@ QUIT, FOLLOW = 20, 21
 
 t = with_help("ghostty")
 check("the screen shows /help where the probe expects it", t.lines()[QUIT].startswith("/quit  Leave ask"), t.lines()[QUIT])
+check("the user prompt has no leading marker", t.lines()[18] == "/help")
+check("the status has no painted inverse surface", t.inverse(ROWS - 2) == [])
 raw = bytes(t.raw)
 check("the terminal is asked for mouse reports", b"\x1b[?1000h" in raw and b"\x1b[?1006h" in raw)
 
@@ -195,8 +197,8 @@ for _ in range(6):
 t.pump(0.5)
 t.repaint()
 rows = t.lines()
-check("the wheel scrolls back to the start of the conversation", rows[1].startswith("› /help"), str(rows[:3]))
-known = ("› /help", "/help  ", "/quit  ", "/follow-up  ", "/config  ", "/compact  ", "/new  ", "/model  ", "/resume  ", "/reload  ")
+check("the wheel scrolls back to the start of the conversation", rows[1].startswith("/help"), str(rows[:3]))
+known = ("/help", "/help  ", "/quit  ", "/follow-up  ", "/config  ", "/compact  ", "/new  ", "/model  ", "/resume  ", "/reload  ")
 malformed = [row for row in rows[: ROWS - 2] if row and not row.startswith(known)]
 check("every row after the scroll is a whole line", malformed == [], str(malformed))
 for _ in range(20):
