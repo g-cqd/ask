@@ -85,9 +85,16 @@ It costs about 8 ms per command ([ADR-0035](docs/adr/0035-the-sandbox-protects-a
 ## Configuration
 
 Settings live in `config.json`, JSON or JSON5 (comments, unquoted keys, trailing commas), in `~/.config/ask/` and
-in a project's `.ask/`. The keys are `model`, `provider`, `maxTurns` and `compactAt`. Layers apply lowest first:
+in a project's `.ask/`. The keys are `model`, `provider`, `thinking`, `maxTurns` and `compactAt`. Layers apply lowest first:
 built-in defaults, the user file, the project file, `ASK_*` environment variables, flags. `ask config` shows each
 value and where it came from.
+
+`thinking` (`--thinking`, `ASK_THINKING`) asks for `off`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max`; unset and
+`default` change nothing. ask sends only what the model's own list says it accepts (`ask models anthropic` shows each
+Claude model's modes and efforts), refuses a level the model lacks instead of picking another, and says when a server
+could still refuse a level it cannot check ([ADR-0059](docs/adr/0059-thinking-is-a-request-the-model-s-own-metadata-must-allow.md)).
+Chat-completions servers have no verified field, so an explicit level is refused there. Checked against the real Claude and
+Codex accounts with tiny requests only; no quality, cost or latency benefit is claimed.
 
 A project's file is text from a repository, so it is ignored until you run `ask trust` in that project, at a
 terminal, and ignored again if it changes. Edits are picked up at the next prompt; a broken edit is reported and

@@ -1,0 +1,203 @@
+internal import AemiJSON
+internal import Foundation
+internal import Testing
+
+@testable import AskAI
+
+/// One-off, opt-in live probe. Delete before the normal quality gate. Reports only statuses, sanitized errors and counts,
+/// never credentials, message contents or reasoning text. A separate opt-in permits one normal ClaudeAccess refresh;
+/// this is not a test of concurrent refresh safety (roadmap 0044).
+struct TempThinkingProbe {
+    struct Thinking: Encodable {
+        let type: String
+        var budget_tokens: Int?
+        var display: String?
+    }
+    struct Effort: Encodable { let effort: String; var summary: String? }
+    struct Text: Encodable { let type = "text"; let text: String }
+    struct User: Encodable { let role = "user"; let content = "Reply exactly OK." }
+    struct ClaudeBody: Encodable {
+        var model = ProviderSettings.anthropicDefaultModel
+        let stream = true
+        let system = [Text(text: AnthropicRequestEncoder.canonicalSystemLine)]
+        let messages = [User()]
+        let max_tokens: Int
+        let thinking: Thinking
+        var output_config: Effort?
+    }
+    struct InputText: Encodable { let type = "input_text"; let text = "Reply exactly OK." }
+    struct Input: Encodable { let role = "user"; let content = [InputText()] }
+    struct CodexBody: Encodable {
+        let model: String
+        let stream = true
+        let store = false
+        let instructions = "Reply concisely."
+        let input = [Input()]
+        let reasoning: Effort
+    }
+    struct Envelope: Decodable {
+        struct Failure: Decodable { let type: String?; let message: String? }
+        struct Usage: Decodable {
+            struct Detail: Decodable { let reasoning_tokens: Int?; let thinking_tokens: Int? }
+            let input_tokens: Int?
+            let output_tokens: Int?
+            let output_tokens_details: Detail?
+        }
+        struct Response: Decodable { let usage: Usage?; let error: Failure? }
+        struct Block: Decodable { let type: String? }
+        let error: Failure?
+        let usage: Usage?
+        let response: Response?
+        let content_block: Block?
+    }
+    struct Report: Encodable {
+        let provider: String
+        let variant: String
+        let status: Int
+        var errorType: String?
+        var message: String?
+        var input: Int?
+        var output: Int?
+        var reasoning: Int?
+        var thinkingBlocks = 0
+    }
+
+    func send<T: Encodable>(
+        _ body: T, url: URL, headers: [(name: String, value: String)], token: String,
+        provider: String, variant: String
+    ) async throws -> Report {
+        try await sendRaw(
+            AemiJSON.JSONEncoder().encodeToBytes(body), url: url, headers: headers, token: token,
+            provider: provider, variant: variant).report
+    }
+
+    func sendRaw(
+        _ body: [UInt8], url: URL, headers: [(name: String, value: String)], token: String,
+        provider: String, variant: String
+    ) async throws -> (report: Report, message: AssembledResponse?) {
+        let request = HTTPRequest(url: url, method: "POST", headers: headers, body: body)
+        let result = try await URLSessionTransport().collecting(request, limit: 1 << 20)
+        var secrets = [token]
+        if let sent = try? AemiJSON.parse(body) {
+            for message in sent.root["messages"].array ?? [] {
+                for block in message["content"].array ?? [] {
+                    if let signature = block["signature"].string { secrets.append(signature) }
+                    if let data = block["data"].string { secrets.append(data) }
+                }
+            }
+        }
+        var report = Report(provider: provider, variant: variant, status: result.status)
+        let raw = String(decoding: result.body, as: UTF8.self)
+        let records = result.status == 200
+            ? raw.split(separator: "\n").filter { $0.hasPrefix("data: ") }.map { String($0.dropFirst(6)) }
+            : [raw]
+        for record in records {
+            guard let event = try? AemiJSON.JSONDecoder().decode(Envelope.self, from: Array(record.utf8)) else { continue }
+            if let failure = event.error ?? event.response?.error {
+                report.errorType = failure.type
+                if result.status == 400, failure.type == "invalid_request_error" {
+                    report.message = failure.message.map { message in
+                        let redacted = secrets.filter { !$0.isEmpty }.reduce(message) {
+                            $0.replacingOccurrences(of: $1, with: "[redacted]")
+                        }
+                        return String(redacted.prefix(600))
+                    }
+                }
+            }
+            if let usage = event.usage ?? event.response?.usage {
+                report.input = usage.input_tokens ?? report.input
+                report.output = usage.output_tokens ?? report.output
+                report.reasoning = usage.output_tokens_details?.reasoning_tokens ?? usage.output_tokens_details?.thinking_tokens ?? report.reasoning
+            }
+            if event.content_block?.type == "thinking" { report.thinkingBlocks += 1 }
+        }
+        let encoded = try AemiJSON.JSONEncoder().encodeToBytes(report)
+        print("THINKING_PROBE " + String(decoding: encoded, as: UTF8.self))
+        var message: AssembledResponse?
+        if result.status == 200, provider == "claude" {
+            var framing = SSEDecoder()
+            var frames: [SSEEvent] = []
+            try framing.feed(result.body.span, into: &frames)
+            var events: [ModelEvent] = []
+            for frame in frames { try AnthropicStreamDecoder().decode(frame, into: &events) }
+            var assembler = ResponseAssembler()
+            for event in events { try assembler.apply(event) }
+            message = try assembler.finish()
+        }
+        return (report, message)
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_THINKING_PROBE"] == "1"))
+    func controls() async throws {
+        let file = CredentialFile.standard()
+        let now = Date().timeIntervalSince1970
+        var claudeAuth: AnthropicClient.Auth?
+        if let current = try file.loadClaude() {
+            if !current.needsRefresh(now: now) { claudeAuth = .subscription(accessToken: current.accessToken) }
+            else if ProcessInfo.processInfo.environment["ASK_REFRESH_CLAUDE_PROBE"] == "1" {
+                do {
+                    claudeAuth = try await ClaudeAccess(file: file, client: ClaudeAuthClient(transport: URLSessionTransport()))
+                        .auth(now: now)
+                    print("THINKING_PROBE claude=normal-owner-refresh-completed")
+                } catch {
+                    print("THINKING_PROBE claude=owner-refresh-failed; not repeated; error-type=\(type(of: error))")
+                }
+            }
+        }
+        if case .subscription(let token)? = claudeAuth {
+            let auth = AnthropicClient.Auth.subscription(accessToken: token)
+            let modelsReply = try await URLSessionTransport().collecting(
+                HTTPRequest(url: URL(string: "https://api.anthropic.com/v1/models")!, method: "GET", headers: AnthropicClient.headers(for: auth), body: []), limit: 2 << 20)
+            print("THINKING_PROBE claude-model-list-status=\(modelsReply.status)")
+            if modelsReply.status == 200 {
+                try AtomicFile.replace(
+                    URL(fileURLWithPath: NSHomeDirectory() + "/Library/Caches/ask-mutation/anthropic-models-live.json"), with: modelsReply.body)
+                let root = try AemiJSON.parse(modelsReply.body).root
+                print("THINKING_PROBE claude-model-count=\(root["data"].count) has_more=\(root["has_more"].bool ?? false)")
+                print("THINKING_PROBE claude-model-list-keys=\(root.object.map { Array($0.keys).sorted() } ?? [])")
+                for entry in root["data"].array ?? [] where entry["id"].string == "claude-sonnet-5-5" || entry["id"].string == "claude-sonnet-4-6" {
+                    print("THINKING_PROBE model=\(entry["id"].string ?? "?") keys=\(entry.object.map { Array($0.keys).sorted() } ?? [])")
+                    if entry["capabilities"].exists {
+                        let caps = try JSONValue(entry["capabilities"]).encodedBytes()
+                        print("THINKING_PROBE capabilities=" + String(decoding: caps, as: UTF8.self).replacingOccurrences(of: token, with: "[redacted]"))
+                    }
+                }
+            }
+            if ProcessInfo.processInfo.environment["ASK_MODEL_METADATA_ONLY_PROBE"] == "1" { return }
+            let cases: [(String, ClaudeBody)] = [
+                ("invalid", ClaudeBody(max_tokens: 64, thinking: Thinking(type: "not_a_mode"))),
+                ("disabled", ClaudeBody(max_tokens: 64, thinking: Thinking(type: "disabled"))),
+                ("budget", ClaudeBody(max_tokens: 1100, thinking: Thinking(type: "enabled", budget_tokens: 1024))),
+                ("adaptive-low", ClaudeBody(max_tokens: 128, thinking: Thinking(type: "adaptive"), output_config: Effort(effort: "low"))),
+                ("adaptive-high", ClaudeBody(max_tokens: 128, thinking: Thinking(type: "adaptive"), output_config: Effort(effort: "high"))),
+                ("between-tools", ClaudeBody(max_tokens: 128, thinking: Thinking(type: "between_tools"))),
+                ("bad-budget", ClaudeBody(max_tokens: 128, thinking: Thinking(type: "enabled", budget_tokens: 1))),
+                ("bad-effort", ClaudeBody(max_tokens: 128, thinking: Thinking(type: "adaptive"), output_config: Effort(effort: "not_an_effort"))),
+                ("adaptive-xhigh", ClaudeBody(max_tokens: 128, thinking: Thinking(type: "adaptive", display: "summarized"), output_config: Effort(effort: "xhigh"))),
+                ("adaptive-max", ClaudeBody(max_tokens: 128, thinking: Thinking(type: "adaptive", display: "summarized"), output_config: Effort(effort: "max"))),
+                ("older-disabled", ClaudeBody(model: "claude-sonnet-4-6", max_tokens: 128, thinking: Thinking(type: "disabled"))),
+                ("older-between-tools", ClaudeBody(model: "claude-sonnet-4-6", max_tokens: 128, thinking: Thinking(type: "between_tools")))
+            ]
+            for (variant, body) in cases {
+                _ = try await send(
+                    body, url: AnthropicClient.endpoint, headers: AnthropicClient.headers(for: auth), token: token,
+                    provider: "claude", variant: variant)
+            }
+        } else { print("THINKING_PROBE claude=absent-or-stale; no refresh attempted") }
+        let current = try await CodexAccess(file: file, client: CodexAuthClient(transport: URLSessionTransport()))
+            .credentials(now: now)
+        let models = try await CodexCatalogClient(transport: URLSessionTransport()).models(credentials: current)
+        let model = try #require(models.first)
+        print("THINKING_PROBE codex-model=\(model.id) levels=\(model.reasoningLevels.joined(separator: ","))")
+        let headers = [
+            (name: "content-type", value: "application/json"), (name: "accept", value: "text/event-stream"),
+            (name: "authorization", value: "Bearer " + current.accessToken),
+            (name: "chatgpt-account-id", value: current.accountID), (name: "originator", value: CodexOAuth.originator)
+        ]
+        for effort in ["not_an_effort", "none", "minimal", "low", "medium", "high", "xhigh", "max", "ultra"] {
+            _ = try await send(
+                CodexBody(model: model.id, reasoning: Effort(effort: effort, summary: effort == "none" ? nil : "auto")), url: URL(string: "https://chatgpt.com/backend-api/codex/responses")!,
+                headers: headers, token: current.accessToken, provider: "codex", variant: effort)
+        }
+    }
+}
