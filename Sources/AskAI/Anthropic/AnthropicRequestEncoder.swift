@@ -32,6 +32,7 @@ public enum AnthropicRequestEncoder {
             request.systemPrompt, in: withoutForeignReasoning(request.messages))
         let marks = caching ? [promptEnd, conversationEnd(messages)].compactMap { $0 } : []
         return JSONStreamWriter.streamingRequest(model: request.model, maxTokens: request.maxTokens) { writer in
+            encodeThinking(request.thinking, into: &writer)
             writer.key("system")
             writer.array { $0.typed("text", "text", canonicalSystemLine) }
             writer.key("messages")

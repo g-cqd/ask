@@ -61,6 +61,9 @@ public struct AnthropicClient: Sendable {
 
     /// Sends `request` and streams the response's events. The stream throws an ``AnthropicClientError``.
     public func stream(_ request: ModelRequest, auth: Auth) -> AsyncThrowingStream<ModelEvent, any Error> {
+        if let problem = request.thinking?.anthropicProblem(maximumTokens: request.maxTokens) {
+            return problem.failedStream
+        }
         let http = HTTPRequest(
             url: endpoint, method: "POST", headers: Self.headers(for: auth),
             body: AnthropicRequestEncoder.encode(request))

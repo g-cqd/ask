@@ -1,4 +1,5 @@
 internal import AemiJSON
+public import AskAI
 internal import Foundation
 
 /// One `config.json`: JSON or JSON5 in a file named `.json` (ADR-0030). Every key is optional; a key that is
@@ -9,21 +10,23 @@ internal import Foundation
 public struct ConfigurationFile: Sendable, Equatable {
     public var model: String?
     public var provider: String?
+    public var thinking: ThinkingLevel?
     public var maxTurns: Int?
     public var compactAt: Int?
     public var sandbox: SandboxSection?
     public var ui: UISection?
 
     /// The keys ask knows, in the order `ask config` shows them.
-    public static let keys = ["model", "provider", "maxTurns", "compactAt", "sandbox", "ui"]
+    public static let keys = ["model", "provider", "thinking", "maxTurns", "compactAt", "sandbox", "ui"]
 
     /// A file with these values.
     public init(
         model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil,
-        sandbox: SandboxSection? = nil, ui: UISection? = nil
+        sandbox: SandboxSection? = nil, ui: UISection? = nil, thinking: ThinkingLevel? = nil
     ) {
         self.model = model
         self.provider = provider
+        self.thinking = thinking
         self.maxTurns = maxTurns
         self.compactAt = compactAt
         self.sandbox = sandbox
@@ -35,6 +38,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         switch name {
             case "model": model != nil
             case "provider": provider != nil
+            case "thinking": thinking != nil
             case "maxTurns": maxTurns != nil
             case "compactAt": compactAt != nil
             case "sandbox": sandbox != nil
@@ -167,6 +171,7 @@ public struct ConfigurationFile: Sendable, Equatable {
 
         var reason: String {
             switch key {
+                case "thinking": "must be one of: \(ThinkingLevel.choices)"
                 case "sandbox.network": "is \"\(value)\": use \"none\", \"localhost\" or \"any\""
                 case "ui.tools", "ui.thinking": "is \"\(value)\": use \"folded\" or \"open\""
                 default: "is \"\(value)\": use \"workspace\", \"anywhere\" or a list of paths"
@@ -222,6 +227,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "model": file.model = try container.decode(String.self, forKey: key)
                     // @dl:accept -- the key tables are the data, and the walk over them is already shared
                     case "provider": file.provider = try container.decode(String.self, forKey: key)
+                    case "thinking": file.thinking = try ConfigurationFile.decodeThinking(container, key: key)
                     case "maxTurns": file.maxTurns = try container.decode(Int.self, forKey: key)
                     case "compactAt": file.compactAt = try container.decode(Int.self, forKey: key)
                     case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
