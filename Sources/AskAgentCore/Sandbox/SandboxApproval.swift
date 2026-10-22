@@ -8,11 +8,11 @@ public struct SandboxApproval: Sendable, Equatable {
     public let input: JSONObject
     /// What the call asked for beyond the run, in words: `network any (this run allows localhost)`.
     public let asked: [String]
-    /// The request itself, which a grant for the session remembers.
-    public let request: SandboxRequest
+    /// The request a session grant remembers; nil for an operation (such as reset) that must always ask.
+    public let request: SandboxRequest?
 
-    /// A question about `request`.
-    public init(tool: String, input: JSONObject, asked: [String], request: SandboxRequest) {
+    /// A question about `request`, or an operation with no reusable grant.
+    public init(tool: String, input: JSONObject, asked: [String], request: SandboxRequest?) {
         self.tool = tool
         self.input = input
         self.asked = asked

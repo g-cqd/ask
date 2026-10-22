@@ -49,6 +49,8 @@ extension AgentConversation {
     /// also releases its writer lock. Learned window state must not carry over from another session.
     func activateSession(_ replacement: SessionRecorder?, update: @Sendable (ConversationUpdate) -> Void) {
         session.withLock { $0 = replacement }
+        // The model's narrowing belongs to the conversation it was made in.
+        narrowing.policy = nil
         promptInput.withLock { $0 = nil }
         usage.withLock { $0 = UsageTotals() }
         current.withLock { $0.loop = nil }

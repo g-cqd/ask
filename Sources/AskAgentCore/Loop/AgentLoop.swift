@@ -188,8 +188,13 @@ public struct AgentLoop: Sendable {
     func request(for context: [SessionEntry], events: (AgentEvent) -> Void) -> ModelRequest {
         let built = RequestContext(context)
         if !built.repairs.isEmpty { events(.repaired(built.repairs)) }
+        var prompt = settings.systemPrompt
+        if let session = self.context.narrowing?.policy, let active = self.context.sandbox.intersecting(session).summary
+        {
+            prompt.append("Current session policy (instead of the earlier sandbox description): \(active)")
+        }
         return ModelRequest(
-            model: settings.model, maxTokens: budget.maximumTokens, systemPrompt: settings.systemPrompt,
+            model: settings.model, maxTokens: budget.maximumTokens, systemPrompt: prompt,
             messages: built.messages, tools: tools.definitions)
     }
 

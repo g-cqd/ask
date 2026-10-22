@@ -10,6 +10,19 @@ public struct SandboxRequest: Sendable, Equatable {
     public var write: [String]?
     public var read: [String]?
 
+    /// A request for these, any of them absent.
+    public init(network: SandboxPolicy.Network? = nil, write: [String]? = nil, read: [String]? = nil) {
+        self.network = network
+        self.write = write
+        self.read = read
+    }
+
+    /// Whether a call's input asks, with `"reset": true`, to undo the session's narrowing.
+    public static func resets(_ input: JSONObject) -> Bool {
+        struct Reset: Decodable { let reset: Bool? }
+        return (try? AemiJSON.JSONDecoder().decode(Reset.self, from: input.bytes))?.reset == true
+    }
+
     /// The request in a call's input, under the key `sandbox`; nil when the call has none.
     /// - Throws: ``SandboxRequestError`` when the key is present and not a request.
     public static func `in`(_ input: JSONObject) throws(SandboxRequestError) -> SandboxRequest? {
