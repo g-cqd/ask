@@ -177,14 +177,13 @@ struct PointerSelectionTests {
         #expect(!output.contains("line number 10"), "a row that did not change was rewritten")
     }
 
-    @Test func `selecting inside one row dirties that row and no other`() {
+    @Test func `selection dirties its rows and the status instructions but no other transcript rows`() {
         var rig = PointerRig(lines: Self.long)
         rig.buffer.dirty.clear()
         rig.drag(from: (4, 0), to: (4, 3))
-        // Only the selected row changed on screen: the press and the drag moved nothing else.
-        #expect(rig.buffer.dirty.dirtyRanges(columns: 30).map(\.row) == [4])
+        #expect(Set(rig.buffer.dirty.dirtyRanges(columns: 30).map(\.row)) == [4, 10])
         rig.buffer.dirty.clear()
-        rig.drag(from: (4, 0), to: (6, 3))  // extending to two more rows touches rows 4 to 6 only
-        #expect(Set(rig.buffer.dirty.dirtyRanges(columns: 30).map(\.row)).isSubset(of: [4, 5, 6]))
+        rig.drag(from: (4, 0), to: (6, 3))
+        #expect(Set(rig.buffer.dirty.dirtyRanges(columns: 30).map(\.row)).isSubset(of: [4, 5, 6, 10]))
     }
 }
