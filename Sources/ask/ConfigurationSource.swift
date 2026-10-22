@@ -22,6 +22,7 @@ struct ConfigurationSource: Sendable {
         var provider: String?
         var maxTurns: Int?
         var compactAt: Int?
+        var thinking: ThinkingLevel?
         /// `--no-sandbox`: the user turned ask's protections off for this run.
         var noSandbox = false
         /// `--network`: how far the network reaches, replacing what the files say.
@@ -40,6 +41,7 @@ struct ConfigurationSource: Sendable {
             if let provider { arguments += ["--provider", provider] }
             if let maxTurns { arguments += ["--max-turns", String(maxTurns)] }
             if let compactAt { arguments += ["--compact-at", String(compactAt)] }
+            if let thinking { arguments += ["--thinking", thinking.rawValue] }
             if noSandbox { arguments.append("--no-sandbox") }
             if let network { arguments += ["--network", network.description] }
             for (flag, setting) in [("--write", write), ("--read", read)] {
@@ -115,7 +117,7 @@ struct ConfigurationSource: Sendable {
     func load(allowNetwork: Bool = true) async throws -> RunSettings {
         var result = try loader.load(
             model: flags.model, provider: flags.provider, maxTurns: flags.maxTurns, compactAt: flags.compactAt,
-            network: flags.network, write: flags.write, read: flags.read)
+            network: flags.network, write: flags.write, read: flags.read, thinking: flags.thinking)
         if let record = sessionSandbox, !flags.noSandbox {
             let before = result.configuration.sandbox
             result.configuration = result.configuration.applying(
@@ -139,14 +141,17 @@ struct ConfigurationSource: Sendable {
             // A /model choice, then --model, then the resumed session's model, then the configuration.
             model: flags.selected?.model ?? flags.model ?? pinned?.model ?? result.configuration.model.value,
             environment: environment, allowNetwork: allowNetwork)
+        let thinking = try ThinkingDiscovery.resolve(
+            result.configuration.thinking.value, model: discovered.model, environment: environment)
         let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections(result.configuration.sandbox.value)
         return RunSettings(
-            configuration: result.configuration, model: discovered.model, sandbox: sandbox, applied: result.applied,
-            notices: result.notices + discovered.notices
+            configuration: result.configuration, model: thinking.model, sandbox: sandbox, applied: result.applied,
+            notices: result.notices + discovered.notices + thinking.notices
                 + (pinned.map { ["Resuming recorded destination \(selected ?? $0.name)/\($0.model)."] } ?? [])
                 + (flags.noSandbox
                     ? ["The sandbox is off (--no-sandbox): ask's own files and your secret stores are not protected."]
                     : []),
-            workspace: workspace)
+            workspace: workspace, thinking: thinking.control, thinkingStatus: thinking.status,
+            thinkingPending: thinking.pending)
     }
 }

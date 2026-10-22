@@ -37,6 +37,12 @@ struct Ask: AsyncParsableCommand {
     )
     var provider: String?
 
+    @Option(
+        help:
+            "Requested thinking: \(ThinkingLevel.choices). Unset preserves provider defaults; unsupported controls are not remapped."
+    )
+    var thinking: String?
+
     @Option(help: "The most model requests one prompt may make before ask stops it. Default: config.json, else 100.")
     var maxTurns: Int?
 
@@ -99,6 +105,9 @@ struct Ask: AsyncParsableCommand {
         if continueLatest, resume != nil { throw ValidationError("Use --continue or --resume, not both.") }
         if let maxTurns, maxTurns < 1 { throw ValidationError("--max-turns must be at least 1.") }
         if let compactAt, compactAt < 0 { throw ValidationError("--compact-at must be 0 or more.") }
+        if let thinking, ThinkingLevel(rawValue: thinking) == nil {
+            throw ValidationError("--thinking must be one of: \(ThinkingLevel.choices).")
+        }
         if noSandbox, network != nil || write != nil || read != nil {
             throw ValidationError("--no-sandbox turns the sandbox off; --network, --write and --read need it on.")
         }
@@ -146,7 +155,8 @@ struct Ask: AsyncParsableCommand {
         var source = ConfigurationSource(
             workingDirectory: FileManager.default.currentDirectoryPath,
             flags: .init(
-                model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt, noSandbox: noSandbox,
+                model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt,
+                thinking: thinking.flatMap(ThinkingLevel.init(rawValue:)), noSandbox: noSandbox,
                 network: network.flatMap(SandboxPolicy.Network.init(named:)), write: Self.scope(write),
                 read: Self.scope(read),
                 selected: selectedProvider.flatMap { provider in
