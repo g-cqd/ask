@@ -73,7 +73,10 @@ workspace, the system, developer tools and git's config; anything else through `
 `--write`, `--read` and `--network` widen them, and the status line says when the sandbox is strict. SwiftPM needs
 `--disable-sandbox` inside ask's sandbox; ask's still applies. The model can narrow a single command or file
 operation further with a `sandbox` argument. If it asks for more, the screen asks you: y once, a for this session,
-n no (ADR-0054, ADR-0055); `ask -p` refuses. It costs about 8 ms per command ([ADR-0035](docs/adr/0035-the-sandbox-protects-ask-and-the-secret-stores-by-default.md),
+n no (ADR-0054, ADR-0055); `ask -p` refuses. `narrow_sandbox` applies a narrowing to all later calls in the current
+conversation; undoing it (`reset: true`) needs approval. Stop running jobs first. This extra layer survives `/model`
+and configuration changes but is in memory only: `/new`, `/resume`, restart and `/reload` drop it (ADR-0057).
+It costs about 8 ms per command ([ADR-0035](docs/adr/0035-the-sandbox-protects-ask-and-the-secret-stores-by-default.md),
 [ADR-0043](docs/adr/0043-strict-sandbox-modes-narrow-in-files-and-widen-only-by-flag.md)).
 
 ## Configuration
