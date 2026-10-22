@@ -130,6 +130,7 @@ private final class ScreenSession {
         frames = screen.frames
         clipboard = screen.clipboard
         controller = ScreenController(label: label, commands: conversation.commands, options: options)
+        controller.state.nativeSelectionHint = options.mouse ? screen.clipboard.nativeSelectionHint : ""
         for update in opening { controller.handle(update) }
         (events, sink) = AsyncStream<ScreenEvent>.makeStream()
     }
@@ -206,7 +207,7 @@ private final class ScreenSession {
                 case .cancelRun:
                     run?.cancel()
                 case .copy(let text):
-                    clipboard.copy(text)
+                    controller.state.clipboardNotice = clipboard.copy(text)
                 case .quit:
                     run?.cancel()
                     // A cancelled run stops its tools' processes before it ends; wait for that.

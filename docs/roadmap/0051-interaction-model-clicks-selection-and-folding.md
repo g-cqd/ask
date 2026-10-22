@@ -58,8 +58,8 @@ Rows marked **owner** are their examples; rows marked **proposed** are mine, to 
 
 1. **One action, one identity.** Each interactive component has an action identity, and the click, the key and the slash command
    all invoke it, so the three cannot drift. TerminalKit may offer the keyboard path to the same identity (its 0016).
-2. **A drag is a selection and a click is an action.** A click on selected text does not trigger the component under it. What a
-   click inside an existing selection does is open.
+2. **A drag is a selection and a click is an action.** A click on selected text clears it without triggering the component underneath
+   (ADR-0056). Ctrl+C copies and consumes a selection; Escape clears it before aborting.
 3. **Disclosure is per block, with a default and a command** (Pi's shape, research note on terminal agent UIs): fold one without
    folding all. Fold state belongs to the block, survives scrolling and resizing, and **expanding a block must not move what
    the reader is reading** (diary 35). Whether it survives reload and resume is open.
@@ -110,6 +110,12 @@ kitty, Ghostty, WezTerm and Terminal.app, tmux and ssh.
 `ui.thinking` is implemented. Live reasoning and recorded thinking replay through the same folded-block layout; signatures and redacted
 data are never shown. A fake-provider PTY probe runs a read tool, opens thinking and output, copies the output, and resumes the session.
 Changed reasoning costs about 2.9 ms for a folded 400-line block; unchanged frames remain about 11 µs (details and limits in diary 55).
+
+## Selection controls (2026-10-22, ADR-0056; diary 2026-10-22 (1))
+
+Copy-on-select off has Ctrl+C; Escape clears first; a click inside selected text cannot open the fold underneath it. The status explains
+these controls, reports copy requests/failures without claiming acknowledgement, and names the terminal's native-selection bypass.
+The real-binary pointer probe now has 20 passing checks. Host pasteboard completion reporting and sustained edge autoscroll remain owed.
 
 ## Open questions
 

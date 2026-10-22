@@ -120,9 +120,7 @@ public struct ScreenComposer: Sendable {
             .store(
                 FrameGeometry(rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count))
 
-        let activity = state.running ? "\(state.label) · working… (esc to abort)" : "\(state.label) · ready"
-        let status = state.detail.isEmpty ? activity : activity + " · " + state.detail
-        write(Line(text: status, style: Style(dim: true, inverse: true)), row: transcriptRows, into: &buffer)
+        write(Self.statusLine(for: state), row: transcriptRows, into: &buffer)
 
         for offset in 0 ..< promptRows {
             write(
