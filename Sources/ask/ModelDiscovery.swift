@@ -118,7 +118,7 @@ enum ModelDiscovery {
     static func exitCode(for error: any Error) -> Int32 {
         if case ConnectionError.signInRequired = error { return 77 }
         if error is ConfigurationError || error is ProviderSettingsError || error is ConnectionError
-            || error is SessionDestinationError || error is ModelAliasError
+            || error is SessionDestinationError || error is ModelAliasError || error is ThinkingError
         {
             return 78
         }

@@ -8,15 +8,19 @@ public struct ModelRequest: Sendable, Equatable {
     public var systemPrompt: [String]
     public var messages: [ModelMessage]
     public var tools: [ToolDefinition]
+    /// A provider-compatible control selected from the requested level and observed capabilities; nil preserves defaults.
+    public var thinking: ThinkingControl?
 
     /// A request with these fields.
     public init(
-        model: String, maxTokens: Int, systemPrompt: [String], messages: [ModelMessage], tools: [ToolDefinition]
+        model: String, maxTokens: Int, systemPrompt: [String], messages: [ModelMessage], tools: [ToolDefinition],
+        thinking: ThinkingControl? = nil
     ) {
         self.model = model
         self.maxTokens = maxTokens
         self.systemPrompt = systemPrompt
         self.messages = messages
         self.tools = tools
+        self.thinking = thinking
     }
 }

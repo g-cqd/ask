@@ -107,25 +107,38 @@ func makeLoop(
     let resolved = run.model
     let limits = run.limits
     let sandbox = run.sandbox
+    let agent = settings(
+        for: resolved, workingDirectory: workingDirectory, instructions: files, limits: limits, sandbox: sandbox,
+        thinking: run.thinking)
     return AgentLoop(
-        provider: makeProvider(resolved, transport: transport),
+        provider: deferringThinking(makeProvider(resolved, transport: transport), run: run, limit: agent.maximumTokens),
         tools: try ToolRegistry(
             FileTools.all + [
                 BashTool(jobs: jobs), WaitTool(jobs: jobs), JobInputTool(jobs: jobs), JobStopTool(jobs: jobs),
                 NarrowSandboxTool(jobs: jobs)
             ]),
-        settings: settings(
-            for: resolved, workingDirectory: workingDirectory, instructions: files, limits: limits, sandbox: sandbox),
+        settings: agent,
         context: ToolContext(
             workingDirectory: workingDirectory,
             outputDirectory: SessionDirectory(project: workingDirectory).path + "/output", sandbox: sandbox,
             approve: approve, narrowing: narrowing))
 }
 
+/// The provider, with a control still to be looked up wrapped to look it up before the first request, not at startup.
+private func deferringThinking(_ provider: any ModelProvider, run: RunSettings, limit: Int) -> any ModelProvider {
+    guard run.thinkingPending else { return provider }
+    let level = run.configuration.thinking.value
+    let model = run.model
+    let environment = ProcessInfo.processInfo.environment
+    return DeferredThinkingProvider(inner: provider) {
+        try await ThinkingDiscovery.lookup(level, model: model, environment: environment, maximumTokens: limit)
+    }
+}
+
 /// The run's settings, with the reply limit, compaction threshold and kept tail sized to the model's window.
 private func settings(
     for resolved: ResolvedModel, workingDirectory: String, instructions files: [ProjectInstructions.File],
-    limits: RunLimits, sandbox: SandboxPolicy
+    limits: RunLimits, sandbox: SandboxPolicy, thinking: ThinkingControl?
 ) -> AgentSettings {
     let budget = ContextBudget(
         contextWindow: resolved.contextWindow, maxOutputTokens: resolved.maxOutputTokens,
@@ -135,7 +148,7 @@ private func settings(
         systemPrompt: [instructions(workingDirectory: workingDirectory, sandbox: sandbox)]
             + ProjectInstructions.promptBlocks(files),
         maximumTurns: limits.maximumTurns, compactAtTokens: budget.compactAtTokens,
-        keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes)
+        keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes, thinking: thinking)
 }
 
 /// `ask --self-check`: starts everything a run starts, without a network, so a reload can tell a build that works

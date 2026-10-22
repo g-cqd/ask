@@ -1,3 +1,5 @@
+public import AskAI
+
 /// Loads the layers of ask's configuration from disk and reports what it found (ADR-0031).
 ///
 /// Everything is read and validated before anything is returned, so a caller either gets a whole new
@@ -39,11 +41,13 @@ public struct ConfigurationLoader: Sendable {
     ///   - network: the `--network` flag, if given.
     ///   - write: the `--write` flag, if given.
     ///   - read: the `--read` flag, if given.
+    ///   - thinking: the `--thinking` flag, if given; default explicitly resets a lower layer.
     /// - Returns: the new configuration and what it was made from.
     /// - Throws: ``ConfigurationError`` for any file that exists, applies, and is not valid.
     public func load(
         model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil,
-        network: SandboxPolicy.Network? = nil, write: PathSetting? = nil, read: PathSetting? = nil
+        network: SandboxPolicy.Network? = nil, write: PathSetting? = nil, read: PathSetting? = nil,
+        thinking: ThinkingLevel? = nil
     ) throws(ConfigurationError) -> Result {
         var configuration = Configuration.defaults
         var applied: [String] = []
@@ -68,7 +72,7 @@ public struct ConfigurationLoader: Sendable {
         configuration = configuration.applying(environment: environment, problems: &notices)
         configuration = configuration.applying(
             model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt, network: network,
-            write: write, read: read)
+            write: write, read: read, thinking: thinking)
         return Result(configuration: configuration, applied: applied, notices: notices)
     }
 }

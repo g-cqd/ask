@@ -1,4 +1,4 @@
-internal import AskAI
+public import AskAI
 
 /// What a run uses besides its tools.
 public struct AgentSettings: Sendable, Equatable {
@@ -15,6 +15,8 @@ public struct AgentSettings: Sendable, Equatable {
     public var keepRecentBytes: Int
     /// How much tool output one turn may add, in bytes, shared by its calls; nil for no limit beyond the tools' own.
     public var toolOutputBytes: Int?
+    /// The provider-compatible control; every normal and compaction request carries it unchanged.
+    public var thinking: ThinkingControl?
 
     /// The default threshold: Anthropic's own default trigger for server-side compaction.
     public static let defaultCompactAtTokens = 150_000
@@ -28,11 +30,14 @@ public struct AgentSettings: Sendable, Equatable {
     ///   - compactAtTokens: the prompt size that triggers compaction, or nil.
     ///   - keepRecentBytes: how much recent text a compaction keeps; about 20,000 tokens by default.
     ///   - toolOutputBytes: how much tool output one turn may add, or nil.
+    ///   - thinking: the concrete control chosen from user policy and provider metadata, or nil for defaults.
     public init(
         model: String, maximumTokens: Int, systemPrompt: [String], maximumTurns: Int,
-        compactAtTokens: Int? = defaultCompactAtTokens, keepRecentBytes: Int = 80_000, toolOutputBytes: Int? = nil
+        compactAtTokens: Int? = defaultCompactAtTokens, keepRecentBytes: Int = 80_000, toolOutputBytes: Int? = nil,
+        thinking: ThinkingControl? = nil
     ) {
         self.toolOutputBytes = toolOutputBytes
+        self.thinking = thinking
         self.model = model
         self.maximumTokens = maximumTokens
         self.systemPrompt = systemPrompt

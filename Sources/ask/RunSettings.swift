@@ -16,6 +16,11 @@ struct RunSettings: Equatable {
     var notices: [String]
     /// The directory ask was started in, which a `workspace` write scope means.
     var workspace: String
+    /// The concrete control and its evidence status; the configuration retains the separately requested level.
+    var thinking: ThinkingControl? = nil
+    var thinkingStatus = "provider defaults; no control sent"
+    /// The control is looked up before the first request, because no descriptor was cached at load.
+    var thinkingPending = false
 
     var limits: RunLimits {
         RunLimits(
@@ -26,6 +31,8 @@ struct RunSettings: Equatable {
     /// Whether a run built for `other` would behave differently: its layers or its model changed.
     func differs(from other: RunSettings) -> Bool {
         configuration != other.configuration || model != other.model || sandbox != other.sandbox
+            || thinking != other.thinking || thinkingStatus != other.thinkingStatus
+            || thinkingPending != other.thinkingPending
     }
 
     /// What the screen is told when these settings replace `previous`: nothing when nothing changed; a heading
@@ -56,6 +63,7 @@ struct RunSettings: Equatable {
         var lines = [
             row("provider", c.provider.value ?? "(the default)", c.provider.source),
             row("model", c.model.value ?? "(the provider's default)", c.model.source),
+            row("thinking", c.thinking.value.rawValue + " (\(thinkingStatus))", c.thinking.source),
             row("maxTurns", String(c.maxTurns.value), c.maxTurns.source),
             row("compactAt", String(c.compactAt.value), c.compactAt.source),
             "sandbox   " + (sandbox.isUnrestricted ? "off (--no-sandbox)" : "on")
@@ -75,6 +83,7 @@ struct RunSettings: Equatable {
     var description: [String] {
         (applied.isEmpty ? [] : ["Configuration from " + applied.joined(separator: ", ") + "."]) + notices
             + (strictTag == nil ? [] : ["Sandbox: writes \(writes); reads \(reads); network \(sandbox.network)."])
+            + (thinkingTag.map { ["\($0) (\(thinkingStatus))."] } ?? [])
     }
 
     /// Where the sandbox allows writing, in words.
@@ -93,7 +102,7 @@ struct RunSettings: Equatable {
     }
 
     /// What the status line shows at its left: the model, and the sandbox when it is not ask's default.
-    var label: String { modelLabel(model) + (strictTag.map { " · " + $0 } ?? "") }
+    var label: String { ([modelLabel(model)] + [thinkingTag, strictTag].compactMap { $0 }).joined(separator: " · ") }
 
     /// A short word for a sandbox that differs from the default, or nil: strict modes and `--no-sandbox` both show.
     var strictTag: String? {

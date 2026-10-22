@@ -21,6 +21,9 @@ public struct OpenAICompatibleClient: Sendable {
 
     /// Sends `request` and streams the response's events. The stream throws an ``OpenAICompatibleError``.
     public func stream(_ request: ModelRequest) -> AsyncThrowingStream<ModelEvent, any Error> {
-        endpoint.stream(OpenAIRequestEncoder.encode(request), decoder: OpenAIStreamDecoder.self)
+        guard request.thinking == nil else {
+            return ThinkingError.unsupportedProtocol("OpenAI chat completions").failedStream
+        }
+        return endpoint.stream(OpenAIRequestEncoder.encode(request), decoder: OpenAIStreamDecoder.self)
     }
 }
