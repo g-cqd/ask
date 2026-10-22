@@ -172,6 +172,17 @@ check(
 )
 t.close()
 
+t = with_help("ghostty", config="{ ui: { copyOnSelect: false } }")
+t.drag((7, QUIT), (15, QUIT))
+check("copy-on-select off keeps the highlight without copying", t.copies() == [] and t.inverse(QUIT) == list(range(7, 16)))
+check("the status explains keyboard copy", "ctrl+c copy" in t.lines()[ROWS - 2])
+t.type("\x03")
+check("Ctrl+C explicitly copies and consumes the selection", t.copies() == ["Leave ask"] and t.inverse(QUIT) == [])
+check("the status reports the terminal copy request", "Copy sent to terminal" in t.lines()[ROWS - 2])
+t.type("x")
+check("copy did not quit the screen", t.lines()[ROWS - 1] == "ask> x")
+t.close()
+
 t = with_help("ghostty", config="{ ui: { mouse: false } }")
 check("ui.mouse false: the terminal is never asked for reports", b"\x1b[?1000h" not in bytes(t.raw))
 t.drag((7, QUIT), (15, QUIT))

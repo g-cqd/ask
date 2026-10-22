@@ -20,6 +20,10 @@ public struct ScreenState: Sendable, Equatable {
     public var scrollback = 0
     /// What the user has selected with the pointer, anchored in the conversation so it survives scrolling and streaming.
     var selection: ContentSelection<Int>?
+    /// Feedback from the last copy request. It reports routing or failure, never an unconfirmed clipboard acknowledgement.
+    var clipboardNotice = ""
+    /// Names the native-selection bypass while mouse reporting is enabled (ADR-0046).
+    var nativeSelectionHint = ""
 
     /// A screen with nothing in it yet.
     public init(label: String) { self.label = label }
