@@ -27,18 +27,16 @@ extension Transcript.Item {
         name: String, summary: String, status: Transcript.ToolStatus, output: String, folded: Bool
     ) -> String {
         let body = "\(name) \(summary)\(toolMark(status).text)".replacing("\n", with: " ")
-        guard !output.isEmpty else { return "▸ " + body }
-        if !folded { return "▾ " + body }
+        guard !output.isEmpty, folded else { return body }
         let count = TranscriptContent.hardLines(of: output).count
-        return "▸ \(body) · \(count) \(count == 1 ? "line" : "lines")"
+        return "\(body) · \(count) \(count == 1 ? "line" : "lines")"
     }
 
-    /// The one line a thinking block starts with: `▸ thinking · 3 lines` folded, `▾ thinking` open.
+    /// The one line a thinking block starts with: `thinking · 3 lines` folded, `thinking` open.
     static func thinkingHeader(body: String, folded: Bool) -> String {
-        guard !body.isEmpty else { return "▸ thinking" }
-        if !folded { return "▾ thinking" }
+        guard !body.isEmpty, folded else { return "thinking" }
         let count = TranscriptContent.hardLines(of: body).count
-        return "▸ thinking · \(count) \(count == 1 ? "line" : "lines")"
+        return "thinking · \(count) \(count == 1 ? "line" : "lines")"
     }
 
     /// What follows a tool's summary, and how it is styled.

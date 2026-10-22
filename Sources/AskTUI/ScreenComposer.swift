@@ -145,18 +145,18 @@ public struct ScreenComposer: Sendable {
     }
 
     static func lines(for item: Transcript.Item, folded: Bool = false, block: Int = 0, columns: Int) -> [Line] {
-        func rows(_ text: String, width: Int, col: Int, style: Style, prefix: (Int) -> String = { _ in "" }) -> [Line] {
-            TextWrap.rows(text, width: width).enumerated()
-                .map { number, row in
+        func rows(_ text: String, width: Int, col: Int, style: Style) -> [Line] {
+            TextWrap.rows(text, width: width)
+                .map { row in
                     Line(
-                        text: prefix(number) + row.text, style: style,
+                        text: row.text, style: style,
                         source: Source(block: block, line: row.line, offset: row.offset, col: col, text: row.text))
                 }
         }
         switch item {
             case .user(let text):
                 return [Line(text: "", style: .default)]
-                    + rows(text, width: columns - 2, col: 2, style: Style(bold: true)) { $0 == 0 ? "› " : "  " }
+                    + rows(text, width: columns, col: 0, style: Style(bold: true))
             case .assistant(let text):
                 return rows(text, width: columns, col: 0, style: .default)
             case .tool(let name, let summary, let status, let output):
@@ -216,9 +216,7 @@ public struct ScreenComposer: Sendable {
         }
         let used = Swift.min(buffer.columns, UnicodeWidth.displayWidth(of: line.text))
         if used < buffer.columns {
-            // An inverse line (the status bar) stays inverse to the edge; anything else pads with blanks.
-            let padding = line.style.inverse ? line.style : .default
-            buffer.fill(row: row, col: used, width: buffer.columns - used, height: 1, cell: Cell(style: padding))
+            buffer.fill(row: row, col: used, width: buffer.columns - used, height: 1, cell: .empty)
         }
     }
 }
