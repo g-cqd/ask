@@ -15,17 +15,17 @@ struct ToolFoldingTests {
 
     @Test func `a tool with output starts as one line that says how much is inside`() {
         let rig = PointerRig(updates: Self.ls)
-        #expect(rig.text(row: 9) == "▸ bash ls ✓ · 3 lines")
+        #expect(rig.text(row: 9) == "bash ls ✓ · 3 lines")
         #expect(rig.text(row: 8) == "")
     }
 
     @Test func `a click on the header opens it, and another closes it`() {
         var rig = PointerRig(updates: Self.ls)
         rig.click(row: 9, col: 3)
-        #expect(rig.text(row: 6) == "▾ bash ls ✓")
+        #expect(rig.text(row: 6) == "bash ls ✓")
         #expect([7, 8, 9].map { rig.text(row: $0) } == ["  alpha", "  beta", "  gamma"])
         rig.click(row: 6, col: 3)
-        #expect(rig.text(row: 9) == "▸ bash ls ✓ · 3 lines")
+        #expect(rig.text(row: 9) == "bash ls ✓ · 3 lines")
         #expect(rig.text(row: 8) == "")
     }
 
@@ -40,25 +40,25 @@ struct ToolFoldingTests {
         var rig = PointerRig(updates: Self.ls)
         rig.click(row: 9, col: 3)
         rig.click(row: 8, col: 4)
-        #expect(rig.text(row: 6) == "▾ bash ls ✓")
+        #expect(rig.text(row: 6) == "bash ls ✓")
     }
 
     @Test func `a tool that returned nothing has nothing to fold`() {
         var rig = PointerRig(updates: [.toolStarted(name: "bash", summary: "true"), .toolFinished(.succeeded)])
-        #expect(rig.text(row: 9) == "▸ bash true ✓")
+        #expect(rig.text(row: 9) == "bash true ✓")
         rig.click(row: 9, col: 3)
-        #expect(rig.text(row: 9) == "▸ bash true ✓")
+        #expect(rig.text(row: 9) == "bash true ✓")
         #expect(!rig.controller.state.transcript.isFoldable(0))
     }
 
     @Test func `a running tool shows no count until it has returned`() {
         let rig = PointerRig(updates: [.toolStarted(name: "bash", summary: "sleep 9")])
-        #expect(rig.text(row: 9) == "▸ bash sleep 9 …")
+        #expect(rig.text(row: 9) == "bash sleep 9 …")
     }
 
     @Test func `with folding off a tool's output is shown from the start`() {
         let rig = PointerRig(options: ScreenOptions(foldTools: false), updates: Self.ls)
-        #expect(rig.text(row: 6) == "▾ bash ls ✓")
+        #expect(rig.text(row: 6) == "bash ls ✓")
         #expect(rig.text(row: 9) == "  gamma")
     }
 
@@ -103,14 +103,14 @@ struct ToolFoldingTests {
         var rig = PointerRig(updates: updates)
         rig.mouse(.scrollUp, .press, row: 3, col: 3)
         rig.mouse(.scrollUp, .press, row: 3, col: 3)
-        guard let header = (0 ..< 10).first(where: { rig.text(row: $0).hasPrefix("▸ bash") }) else {
+        guard let header = (0 ..< 10).first(where: { rig.text(row: $0).hasPrefix("bash") }) else {
             Issue.record("the header is not on screen")
             return
         }
         rig.click(row: header, col: 3)
-        #expect(rig.text(row: header) == "▾ bash ls ✓", "the header moved")
+        #expect(rig.text(row: header) == "bash ls ✓", "the header moved")
         rig.click(row: header, col: 3)
-        #expect(rig.text(row: header) == "▸ bash ls ✓ · 3 lines", "the header moved back")
+        #expect(rig.text(row: header) == "bash ls ✓ · 3 lines", "the header moved back")
     }
 
     @Test func `at the bottom, opening a block grows upward and the end stays in view`() {
@@ -125,14 +125,14 @@ struct ToolFoldingTests {
     @Test func `a folded block copies as the line that is shown`() {
         var rig = PointerRig(updates: Self.ls)
         let effects = rig.drag(from: (9, 0), to: (9, 20))
-        #expect(effects == [.copy("▸ bash ls ✓ · 3 lines")])
+        #expect(effects == [.copy("bash ls ✓ · 3 lines")])
     }
 
     @Test func `a selection across a folded block reads its placeholder and not what is inside`() {
         var rig = PointerRig(updates: Self.ls + [.notice("after", isError: false)])
         // Rows: the folded header, then the notice; the body (alpha, beta, gamma) is not drawn and must not be read.
         let effects = rig.drag(from: (8, 0), to: (9, 4))
-        #expect(effects == [.copy("▸ bash ls ✓ · 3 lines\nafter")])
+        #expect(effects == [.copy("bash ls ✓ · 3 lines\nafter")])
     }
 
     @Test func `an open block copies its body, one line each`() {
