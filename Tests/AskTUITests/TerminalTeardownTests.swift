@@ -131,11 +131,12 @@ struct TerminalTeardownTests {
 
     @Test func `a submitted prompt reaches the conversation and the screen`() async throws {
         let connection = MockTerminalConnection()
-        connection.feedInput(Array("hi\r".utf8))
+        let prompt = "transcript evidence 739"
+        connection.feedInput(Array((prompt + "\r").utf8))
         let conversation = RecordingConversation()
         try await Self.run(connection, conversation: conversation)
-        #expect(conversation.prompts == ["hi"])
-        #expect(String(decoding: connection.writtenOutput, as: UTF8.self).contains("› hi"))
+        #expect(conversation.prompts == [prompt])
+        #expect(String(decoding: connection.writtenOutput, as: UTF8.self).contains(prompt))
     }
 
     @Test func `Ctrl-C mid-turn cancels the run, and the screen waits for it to stop`() async throws {

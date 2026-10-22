@@ -32,14 +32,13 @@ struct PointerSelectionTests {
         #expect(rig.inverse(row: 9) == Array(0 ..< 6))
     }
 
-    @Test func `a prompt is selected without its marker, and its highlight starts after it`() {
+    @Test func `a prompt begins at column zero and its selection matches the text`() {
         var rig = PointerRig()
         rig.controller.handle(.userPrompt("hello world"))
         rig.draw()
-        // Rows: a blank, then "› hello world" on row 9 of 12 (transcript rows 0 to 9).
-        let effects = rig.drag(from: (9, 2), to: (9, 6))
+        let effects = rig.drag(from: (9, 0), to: (9, 4))
         #expect(effects == [.copy("hello")])
-        #expect(rig.inverse(row: 9) == [2, 3, 4, 5, 6])
+        #expect(rig.inverse(row: 9) == [0, 1, 2, 3, 4])
     }
 
     @Test func `with copy on select off the selection is kept and nothing is copied`() {
