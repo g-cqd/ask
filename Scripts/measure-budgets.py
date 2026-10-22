@@ -39,6 +39,9 @@ FRAME_END = b"\x1b[?2026l"
 def spawn():
     pid, fd = pty.fork()
     if pid == 0:
+        # ask reads its size immediately: setting it in the parent races exec and the first frame.
+        import fcntl, struct, termios
+        fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", 40, 120, 0, 0))
         os.environ["TERM"] = "xterm-kitty"
         os.environ["TERM_PROGRAM"] = "kitty"
         # Never the user's credentials or sessions: Enter starts a run, which must fail as signed out. The
@@ -48,12 +51,6 @@ def spawn():
         os.environ.pop("ANTHROPIC_API_KEY", None)
         os.execv(BINARY, [BINARY])
         os._exit(127)
-    # Keep the window a sane size; a 1x1 PTY would make the app's own logic degenerate.
-    try:
-        import fcntl, struct, termios
-        fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack("HHHH", 40, 120, 0, 0))
-    except Exception:
-        pass
     return pid, fd
 
 
