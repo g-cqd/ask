@@ -62,6 +62,7 @@ public struct ScreenController: Sendable {
                 }
                 // A question waiting for y, a or n takes the keys first (roadmap 0019).
                 if state.pendingApproval != nil { return answer(key) }
+                if let effects = selectionKey(key) { return effects }
                 if isToggleToolOutput(key) { return toggleAllToolOutput() }
                 if isToggleThinking(key) { return toggleAllThinking() }
                 clearSelection()

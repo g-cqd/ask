@@ -19,10 +19,31 @@ struct ScreenClipboard {
         self.pasteboard = pasteboard
     }
 
-    mutating func copy(_ text: String) {
+    /// The measured bypass key for this terminal, or the configuration switch when the terminal is unknown.
+    var nativeSelectionHint: String {
+        writer.identity.nativeSelectionKey.map { "\($0): native selection" } ?? "native selection: ui.mouse false"
+    }
+
+    /// Reports what was requested, not an acknowledgement from the terminal or completion of the host's pasteboard command.
+    @discardableResult
+    mutating func copy(_ text: String) -> String {
         let plan = writer.plan(copying: text)
-        if let bytes = plan.terminal { try? connection.write(bytes) }
-        if plan.usePasteboard { pasteboard(text) }
+        var failure: String?
+        if let bytes = plan.terminal {
+            do { try connection.write(bytes) } catch { failure = String(describing: error) }
+        }
+        if plan.usePasteboard {
+            pasteboard(text)
+            if let failure { return "Terminal copy failed: \(failure); host copy queued" }
+            return plan.terminal == nil ? "Host copy queued" : "Copy sent to terminal; host copy queued"
+        }
+        if let failure { return "Copy failed: \(failure)" }
+        switch plan.outcome {
+            case .terminal: return "Copy sent to terminal"
+            case .tooLarge: return "Copy too large for this terminal"
+            case .nothing: return "Nothing selected"
+            default: return "Copy unavailable on this connection"
+        }
     }
 
     /// macOS's pasteboard, through `pbcopy`, off the caller's thread: a copy never waits for it.

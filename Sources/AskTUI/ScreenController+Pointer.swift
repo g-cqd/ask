@@ -32,6 +32,7 @@ extension ScreenController {
                     case .left, .right: break
                 }
             case .dragBegan(let target, let origin, .left, _) where target == Self.transcriptTarget:
+                state.clipboardNotice = ""
                 _ = selector.beginDrag(row: origin.row, col: origin.col, rows: frame.rows)
             case .dragBegan:
                 break
@@ -47,6 +48,10 @@ extension ScreenController {
                 let update = selector.endDrag()
                 return copyIfCommitted(update)
             case .click(_, let cell, .left, _, let count):
+                if count == 1, isSelected(cell) {
+                    selector.clear()
+                    return []
+                }
                 if count == 1, toggleFold(atRow: cell.row) { return [] }
                 let content = count >= 2 ? TranscriptContent(state.transcript) : TranscriptContent()
                 let update = selector.click(
@@ -116,6 +121,7 @@ extension ScreenController {
 
     /// Drops the selection and any drag in progress, such as when the user types or the conversation is cleared.
     mutating func clearSelection() {
+        state.clipboardNotice = ""
         selector.clear()
         pointer.reset()
         state.selection = nil
