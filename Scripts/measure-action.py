@@ -114,7 +114,7 @@ def one_run(tool):
         os.chdir(project)
         os.execve(BINARY, arguments, agent.environment(state, server.url))
     screen = b""
-    mark = ("▸ read note.txt ✓" if tool == "read" else "▸ bash echo ok ✓").encode()
+    mark = ("read note.txt ✓" if tool == "read" else "bash echo ok ✓").encode()
     shown = None
     try:
         deadline = time.monotonic() + 15
