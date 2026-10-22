@@ -7,11 +7,12 @@ struct ScreenOptionsTests {
     @Test func `the defaults are the ones the owner chose`() {
         let options = ScreenOptions()
         #expect(options.mouse && options.copyOnSelect && options.foldTools && options.foldThinking)
-        #expect(options.scrollLines == 3)
+        #expect(options.scrollLines == 3 && options.promptRows == 6)
     }
 
     @Test func `a wheel step scrolls at least one line`() {
         #expect(ScreenOptions(scrollLines: 0).scrollLines == 1)
         #expect(ScreenOptions(scrollLines: -4).scrollLines == 1)
+        #expect(ScreenOptions(promptRows: 0).promptRows == 1)
     }
 }

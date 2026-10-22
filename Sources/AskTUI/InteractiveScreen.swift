@@ -112,6 +112,7 @@ private final class ScreenSession {
     private var clipboard: ScreenClipboard
     /// The screen's height, for paging; the render loop knows its own.
     private var rows: Int
+    private var columns: Int
     private var run: Task<Void, Never>?
     private let events: AsyncStream<ScreenEvent>
     private let sink: AsyncStream<ScreenEvent>.Continuation
@@ -126,7 +127,9 @@ private final class ScreenSession {
         connection = screen.connection
         input = InputSource(connection: screen.connection, escapeIsUnambiguous: screen.session.escapeIsUnambiguous)
         self.conversation = conversation
-        rows = (try? screen.connection.getSize().rows) ?? 24
+        let size = try? screen.connection.getSize()
+        rows = size?.rows ?? 24
+        columns = Swift.max(1, size?.columns ?? 80)
         frames = screen.frames
         clipboard = screen.clipboard
         controller = ScreenController(label: label, commands: conversation.commands, options: options)
@@ -172,7 +175,7 @@ private final class ScreenSession {
             case .input(let inputEvent):
                 // A click means what was drawn, so it is resolved against the newest frame.
                 if case .mouse = inputEvent { controller.frame = frames.load() }
-                effects = controller.handle(inputEvent, pageRows: Swift.max(1, rows - 3))
+                effects = controller.handle(inputEvent, pageRows: Swift.max(1, rows - 3), columns: columns)
             case .update(let update):
                 effects = controller.handle(update)
                 if update == .runEnded {
@@ -185,6 +188,7 @@ private final class ScreenSession {
             case .resize:
                 if let size = try? connection.getSize() {
                     rows = size.rows
+                    columns = Swift.max(1, size.columns)
                     renderer.resize(columns: size.columns, rows: size.rows)
                     render(full: true)
                     return true

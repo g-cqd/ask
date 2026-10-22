@@ -161,20 +161,20 @@ struct MultilineEditorTests {
     @Test func `a tall prompt scrolls to keep the cursor visible`() {
         var state = ScreenState(label: "m")
         state.editor.paste((1 ... 10).map { "line \($0)" }.joined(separator: "\n"))
-        var buffer = ScreenBuffer(columns: 20, rows: 12)
+        var buffer = ScreenBuffer(columns: 20, rows: 18)
         var composer = ScreenComposer()
         let cursor = composer.compose(state, into: &buffer)
         #expect(Array(rows(buffer).suffix(6)) == (5 ... 10).map { "line \($0)" })
-        #expect(cursor.row == 11)
+        #expect(cursor.row == 17)
         for _ in 0 ..< 9 { _ = state.editor.apply(key(up)) }
         _ = composer.compose(state, into: &buffer)
-        #expect(rows(buffer)[6] == "ask> line 1", "the viewport follows the cursor back to the top")
+        #expect(rows(buffer)[12] == "ask> line 1", "the viewport follows the cursor back to the top")
     }
 
     @Test func `an empty line in the prompt is drawn, not skipped`() {
         var state = ScreenState(label: "m")
         state.editor.paste("a\n\nb")
-        var buffer = ScreenBuffer(columns: 20, rows: 6)
+        var buffer = ScreenBuffer(columns: 20, rows: 9)
         var composer = ScreenComposer()
         _ = composer.compose(state, into: &buffer)
         #expect(Array(rows(buffer).suffix(3)) == ["ask> a", "", "b"])

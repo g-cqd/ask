@@ -15,6 +15,7 @@ struct PointerRig {
     var composer: ScreenComposer
     var buffer: ScreenBuffer
     let frames: FrameBox
+    var cursor = (row: 0, column: 0)
     var clock = ContinuousClock.now
 
     init(
@@ -32,7 +33,7 @@ struct PointerRig {
 
     /// Draws the controller's state, as the render thread would, and shows the mouse that frame.
     mutating func draw() {
-        _ = composer.compose(controller.state, into: &buffer)
+        cursor = composer.compose(controller.state, into: &buffer)
         controller.frame = frames.load()
     }
 

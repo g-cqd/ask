@@ -6,6 +6,8 @@ internal import TerminalKitText
 public struct ScreenState: Sendable, Equatable {
     public var transcript = Transcript()
     public var editor = PromptEditor()
+    /// The requested input height; layout also caps it to a third of the screen (ADR-0046).
+    public var promptRows = ScreenOptions().promptRows
     /// Shown at the left of the status line, such as the model.
     public var label: String
     /// Whether a run is in progress: the status line says so and how to abort it.

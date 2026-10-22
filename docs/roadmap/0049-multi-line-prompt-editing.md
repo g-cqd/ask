@@ -6,12 +6,10 @@ date: 2026-10-20
 
 # 0049 — Multi-line prompt editing
 
-Pasted line breaks still become spaces, and the editor has no newline key. Returned queued input can now
-contain newlines and the composer draws them, but that is not a complete multi-line editor.
-
 Preserve line breaks in bracketed paste, insert one with Shift+Enter where the terminal reports it and with
 a portable alternative, and make up/down and line-boundary editing work across hard and wrapped lines.
-Enter submits the whole prompt as one message. Keep the cursor visible within the six-row editor viewport.
+Enter submits the whole prompt as one message. Keep the cursor visible within the bounded editor viewport:
+six requested display rows by default, capped at a third of the terminal (ADR-0046/0059).
 
 ## Done when
 
@@ -27,13 +25,19 @@ Measure the input/render path before and after in release.
 - Up and Down move between lines and remember the wanted column across a short one; Home, End, Ctrl-A, Ctrl-E,
   Ctrl-U and Ctrl-K work on the line (Ctrl-K at a line's end joins the next); Ctrl-W treats a line break as a space.
 - The prompt draws one row per line and scrolls within its six rows to keep the cursor visible.
-- Returned unsent input (ADR-0040) keeps its lines. Ctrl-U now clears a line, not the prompt, so a restored
-  multi-line draft takes one Ctrl-U and Backspace per line to clear.
+- Returned unsent input (ADR-0040) keeps its lines. Ctrl-U clears a line, not the prompt.
+
+## Implemented (2026-10-22, diary 6)
+
+- Up/Down follow TerminalKit's wrapped display rows, retaining the wanted cell column and snapping before wide graphemes. The driver
+  passes width and updates it after resize. Home/End and the line-editing controls remain hard-line operations.
+- Ctrl-X clears the entire draft without submitting it.
+- `ui.promptRows` tunes the requested height. The shared layout/viewport clips display rows, never source text; the status row names a
+  clipped range, even behind a long model label on narrow terminals. Empty/tiny buffers have explicit boundary tests.
+- The input PTY probe checks ASCII, wide text, tabs, resize, the two-row setting, exact API text and recorded session text. The earlier
+  multiline and queue-recovery probes still pass. Release cold-layout, cached-frame, navigation and shipping-budget costs are recorded.
 
 ## Still owed
 
-- **Up and Down across wrapped lines.** They move between hard lines only; a long line that wraps on screen is one
-  line to the editor, because the editor does not know the terminal width. Needs the layout's width passed in.
-- A key that clears the whole prompt.
 - A real terminal check of Shift-Enter: the probe sends it as the CSI-u sequence a keyboard-protocol terminal
   reports, not from a physical key. Ctrl-J has no such dependence.

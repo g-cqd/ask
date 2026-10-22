@@ -75,8 +75,8 @@ public struct ConfigurationFile: Sendable, Equatable {
             throw .invalid(path: path, line: line, column: column, reason: reason(of: error))
         }
         try validateSandbox(file.sandbox, path: path, isProject: isProject)
-        if let lines = file.ui?.scrollLines, lines < 1 {
-            throw .outOfRange(path: path, key: "ui.scrollLines", reason: "must be at least 1")
+        for (key, count) in [("ui.scrollLines", file.ui?.scrollLines), ("ui.promptRows", file.ui?.promptRows)] {
+            if let count, count < 1 { throw .outOfRange(path: path, key: key, reason: "must be at least 1") }
         }
         if let turns = file.maxTurns, turns < 1 {
             throw .outOfRange(path: path, key: "maxTurns", reason: "must be at least 1")

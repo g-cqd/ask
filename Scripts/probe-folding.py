@@ -46,13 +46,13 @@ def thinking_turn():
 
 
 class Terminal:
-    def __init__(self, project, environment, resume=False):
+    def __init__(self, project, environment, resume=False, columns=100, rows=30):
         self.pid, self.fd = pty.fork()
         if self.pid == 0:
-            fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", 30, 100, 0, 0))
+            fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", rows, columns, 0, 0))
             os.chdir(project)
             os.execve(BINARY, [BINARY] + (["--continue"] if resume else []), environment)
-        self.screen = pyte.Screen(100, 30)
+        self.screen = pyte.Screen(columns, rows)
         self.stream = pyte.ByteStream(self.screen)
         self.raw = bytearray()
 
@@ -75,6 +75,11 @@ class Terminal:
         os.kill(self.pid, signal.SIGWINCH)
         self.until(lambda: b"\x1b[1;1H" in bytes(self.raw)[start:]
                    and bytes(self.raw)[start:].endswith(b"\x1b[?2026l"))
+
+    def resize(self, columns, rows):
+        self.screen.resize(rows, columns)
+        fcntl.ioctl(self.fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, columns, 0, 0))
+        self.repaint()
 
     def draw(self, action):
         frames = bytes(self.raw).count(b"\x1b[?2026l")

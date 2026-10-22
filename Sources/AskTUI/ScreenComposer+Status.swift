@@ -1,10 +1,10 @@
 internal import TerminalKitStyle
 
 extension ScreenComposer {
-    /// Selection instructions and copy routing take priority over usage details, so a narrow status line still explains the action.
-    static func statusLine(for state: ScreenState) -> Line {
+    /// Clipping takes the first cells on narrow terminals; selection/copy instructions still precede usage details.
+    static func statusLine(for state: ScreenState, input: String = "") -> Line {
         let activity = state.running ? "\(state.label) · working… (esc to abort)" : "\(state.label) · ready"
-        var status = activity
+        var status = input.isEmpty ? activity : input + " · " + activity
         if state.selection != nil { status += " · ctrl+c copy · esc clear" }
         if !state.clipboardNotice.isEmpty {
             status += " · " + state.clipboardNotice
