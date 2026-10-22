@@ -1123,7 +1123,103 @@ def probe_approval_abort():
     return all(results)
 
 
+def probe_session_narrowing_screen():
+    print("Y: undoing the session's narrowing asks; /model keeps it and /new drops it")
+    project = tempfile.mkdtemp()
+    target = agent.Server([])
+    reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo ' curl='$?"
+    steps = [("call", "n1", "narrow_sandbox", {"sandbox": {"network": "none"}}), ("call", "b1", "bash", {"command": reach}),
+             ("call", "r", "narrow_sandbox", {"reset": True}), ("call", "b2", "bash", {"command": reach})]
+    server = agent.Server([agent.turn([c], "tool_use") for c in steps] + [agent.turn([("text", "First done.")], "end_turn"),
+                           agent.turn([("call", "n2", "narrow_sandbox", {"sandbox": {"network": "none"}})], "tool_use"),
+                           agent.turn([("text", "Narrowed again.")], "end_turn"),
+                           agent.turn([("call", "b3", "bash", {"command": reach})], "tool_use"),
+                           agent.turn([("text", "Still narrowed.")], "end_turn"),
+                           agent.turn([("call", "b4", "bash", {"command": reach})], "tool_use"),
+                           agent.turn([("text", "New done.")], "end_turn")])
+    screen = Screen(server.url, project)
+
+    def wait(condition, seconds=15):
+        end = time.time() + seconds
+        while time.time() < end and not condition():
+            screen.until("\x00", 0.05)
+        return condition()
+
+    result = lambda n: json.dumps(server.requests[n]["body"]["messages"][-1]) if len(server.requests) > n else ""
+    screen.until("ask>")
+    screen.type("Go\r")
+    results = [check("narrowed, a call cannot connect", wait(lambda: "curl=7" in result(2)), result(2)[-200:]),
+               check("reset asks the user", wait(lambda: "Allow it?" in screen.screen.text()) and "narrowing" in screen.screen.text())]
+    screen.type("y")
+    results.append(check("y restores the run's sandbox", wait(lambda: "HTTP 200 curl=0" in result(4)), result(4)[-200:]))
+    screen.until("First done.")
+    screen.until_status("ready")
+    screen.type("Narrow\r")
+    screen.until("Narrowed again.")
+    screen.until_status("ready")
+    screen.type("/model narrowed-model\r")
+    screen.until("Model selected for this run: narrowed-model")
+    screen.until_status("ready")
+    screen.type("Try after rebuilding the loop\r")
+    results.append(check("/model rebuilds the loop without losing the narrowing",
+                         wait(lambda: "curl=7" in result(8)), result(8)[-200:]))
+    screen.until("Still narrowed.")
+    screen.until_status("ready")
+    screen.type("/new\r")
+    screen.until("New session.")
+    screen.until_status("ready")
+    screen.type("Reach\r")
+    results.append(check("/new drops the narrowing", wait(lambda: "HTTP 200 curl=0" in result(10)), result(10)[-200:]))
+    screen.until("New done.")
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    target.httpd.shutdown()
+    return all(results)
+
+
+def probe_reset_ignores_unrelated_grants():
+    print("Z: a remembered write grant is not permission to undo a network narrowing")
+    project = tempfile.mkdtemp()
+    target = agent.Server([])
+    reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo ' curl='$?"
+    steps = [("call", "grant", "bash", {"command": "echo granted", "sandbox": {"write": ["/Users/Shared"]}}),
+             ("call", "narrow", "narrow_sandbox", {"sandbox": {"network": "none"}}),
+             ("call", "reset", "narrow_sandbox", {"reset": True}),
+             ("call", "reach", "bash", {"command": reach})]
+    server = agent.Server([agent.turn([c], "tool_use") for c in steps]
+                          + [agent.turn([("text", "Reset refused.")], "end_turn")])
+    screen = Screen(server.url, project, arguments=("--write", "workspace"))
+
+    def wait(condition, seconds=15):
+        end = time.time() + seconds
+        while time.time() < end and not condition():
+            screen.until("\x00", 0.05)
+        return condition()
+
+    result = lambda n: json.dumps(server.requests[n]["body"]["messages"][-1]) if len(server.requests) > n else ""
+    screen.until("ask>")
+    screen.type("Go\r")
+    results = [check("a widening asks first", screen.until("Allow it?"))]
+    screen.type("a")
+    results.append(check("the write grant is remembered", wait(lambda: "granted" in result(1))))
+    results.append(check("reset still asks separately",
+                         wait(lambda: screen.screen.text().count("Allow it?") == 2)
+                         and "narrowing" in screen.screen.text(), screen.screen.text()[-600:]))
+    screen.type("n")
+    results.append(check("no keeps the narrowing", wait(lambda: "Only the user can widen" in result(3)), result(3)[-200:]))
+    results.append(check("and a later call cannot connect", wait(lambda: "curl=7" in result(4)), result(4)[-200:]))
+    screen.until("Reset refused.")
+    screen.until_status("ready")
+    screen.type("\x15/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    server.httpd.shutdown()
+    target.httpd.shutdown()
+    return all(results)
+
+
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection() & probe_strict_label() & probe_resume_strict() & probe_model_and_destination() & probe_sandbox_approval() & probe_approval_abort()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection() & probe_strict_label() & probe_resume_strict() & probe_model_and_destination() & probe_sandbox_approval() & probe_approval_abort() & probe_session_narrowing_screen() & probe_reset_ignores_unrelated_grants()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

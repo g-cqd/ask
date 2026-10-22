@@ -103,7 +103,7 @@ def probe_round_trip():
         first, second = server.requests[0]["body"], server.requests[1]["body"]
         results.append(check("system is the canonical line", first["system"] == [{"type": "text", "text": CANONICAL}], first["system"]))
         results.append(check("prompt leads the first user message", "You are ask" in first["messages"][0]["content"][0]["text"]))
-        results.append(check("tools offered", [t["name"] for t in first["tools"]] == ["read", "write", "edit", "bash", "wait", "job_input", "job_stop"]))
+        results.append(check("tools offered", [t["name"] for t in first["tools"]] == ["read", "write", "edit", "bash", "wait", "job_input", "job_stop", "narrow_sandbox"]))
         last = second["messages"][-1]["content"][0]
         results.append(check("tool result sent back", last["type"] == "tool_result" and "probe-ok" in last["content"], last))
         results.append(check("user-agent is ask", server.requests[0]["headers"].get("user-agent") == "ask"))
@@ -838,7 +838,32 @@ def probe_call_sandbox():
         shutil.rmtree(base, ignore_errors=True)
 
 
+def probe_session_narrowing():
+    print("X: the model narrows the whole session; under -p undoing it is refused")
+    project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
+    target = Server([])
+    reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo ' curl='$?"
+    calls = [("call", "before", "bash", {"command": reach}),
+             ("call", "narrow", "narrow_sandbox", {"sandbox": {"network": "none"}}),
+             ("call", "after", "bash", {"command": reach}),
+             ("call", "reset", "narrow_sandbox", {"reset": True}),
+             ("call", "still", "bash", {"command": reach})]
+    server = Server([turn([c], "tool_use") for c in calls] + [turn([("text", "Done.")], "end_turn")])
+    process = subprocess.run([ASK, "-p", "Work."], cwd=project, env=environment(state, server.url), capture_output=True,
+                             text=True, timeout=180)
+    got = tool_results(server) if len(server.requests) == len(calls) + 1 else {}
+    server.httpd.shutdown()
+    target.httpd.shutdown()
+    return all([
+        check("the run finishes", process.returncode == 0 and len(got) == 5, f"{process.returncode} {process.stderr[-300:]}"),
+        check("before narrowing the network is reachable", "HTTP 200 curl=0" in got.get("before", ""), got.get("before")),
+        check("narrow_sandbox says what every later call runs under", "From now on every call runs under: network none" in got.get("narrow", ""), got.get("narrow")),
+        check("a later call, with no sandbox argument of its own, cannot connect", "curl=7" in got.get("after", ""), got.get("after")),
+        check("undoing it under -p is refused", "Only the user can widen the sandbox" in got.get("reset", ""), got.get("reset")),
+        check("and the session stays narrowed", "curl=7" in got.get("still", ""), got.get("still"))])
+
+
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session() & probe_nested_sandbox() & probe_strict_sandbox() & probe_session_sandbox() & probe_read_allowlist() & probe_call_sandbox()
+    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session() & probe_nested_sandbox() & probe_strict_sandbox() & probe_session_sandbox() & probe_read_allowlist() & probe_call_sandbox() & probe_session_narrowing()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
