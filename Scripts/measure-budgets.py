@@ -7,8 +7,8 @@ latency reports the flattering number, so every figure here is taken from outsid
 over a PTY, by another process.
 
 Method, and why:
-  cold start      spawn -> the prompt is actually on the terminal's output stream.
-                  Wall time from the fork to seeing "ask> " in the PTY master.
+  cold start      before fork -> the complete frame showing the prompt in the PTY master.
+                  Includes process creation and exec, not just work after the parent resumes.
   idle memory     RSS of the child once it is up and idle. Sampled after the
                   prompt appears, not before.
   input delay     write one byte, then wait for the end of the frame that shows it
@@ -25,12 +25,13 @@ Method, and why:
 Every figure is the median of N runs, with the spread reported, never the best run.
 Percentiles matter because users feel the tail; an average hides it.
 """
-import importlib.util, json, os, pty, select, statistics, subprocess, sys, tempfile, time
+import importlib.util, json, math, os, pty, select, statistics, subprocess, sys, tempfile, time
 
 BINARY = sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask"
 RUNS = int(sys.argv[2]) if len(sys.argv) > 2 else 15
 
-PROMPT = b"ask> "
+# A diff need not write the already-blank cell after '>'; require the closing frame, not that byte.
+PROMPT = b"ask>"
 ISOLATED_CONFIG = tempfile.mkdtemp(prefix="ask-budget-config-")
 ISOLATED_STATE = tempfile.mkdtemp(prefix="ask-budget-state-")
 FRAME_END = b"\x1b[?2026l"
@@ -48,39 +49,20 @@ def spawn():
         # directories are made in the parent: work in the child before exec would be timed as ask's cold start.
         os.environ["XDG_CONFIG_HOME"] = ISOLATED_CONFIG
         os.environ["XDG_STATE_HOME"] = ISOLATED_STATE
-        os.environ.pop("ANTHROPIC_API_KEY", None)
+        for key in list(os.environ):
+            if key.startswith(("ASK_", "ANTHROPIC_", "OPENAI_", "CODEX_")):
+                os.environ.pop(key)
         os.execv(BINARY, [BINARY])
         os._exit(127)
     return pid, fd
 
 
-def read_until(fd, needle, deadline_s):
-    """Read from the PTY until `needle` appears, or the deadline passes."""
-    end = time.time() + deadline_s
-    buf = b""
-    while time.time() < end:
-        remaining = end - time.time()
-        r, _, _ = select.select([fd], [], [], max(0.005, min(0.25, remaining)))
-        if not r:
-            continue
-        try:
-            chunk = os.read(fd, 65536)
-        except OSError:
-            return None
-        if not chunk:
-            return None
-        buf += chunk
-        if needle in buf:
-            return time.time(), buf
-    return None
-
-
 def read_frame_showing(fd, token, deadline_s):
     """Read until a frame that shows `token` has ended: `token`, then the synchronised-output close."""
-    end = time.time() + deadline_s
+    end = time.monotonic() + deadline_s
     buf = b""
-    while time.time() < end:
-        r, _, _ = select.select([fd], [], [], max(0.005, min(0.25, end - time.time())))
+    while time.monotonic() < end:
+        r, _, _ = select.select([fd], [], [], max(0.005, min(0.25, end - time.monotonic())))
         if not r:
             continue
         try:
@@ -92,7 +74,7 @@ def read_frame_showing(fd, token, deadline_s):
         buf += chunk
         at = buf.find(token)
         if at >= 0 and buf.find(FRAME_END, at) >= 0:
-            return time.time(), buf
+            return time.monotonic(), buf
     return None
 
 
@@ -116,10 +98,10 @@ def rss_kb(pid):
 
 
 def one_run():
+    t0 = time.monotonic()
     pid, fd = spawn()
     try:
-        t0 = time.time()
-        hit = read_until(fd, PROMPT, 10.0)
+        hit = read_frame_showing(fd, PROMPT, 10.0)
         if hit is None:
             return None
         cold_ms = (hit[0] - t0) * 1000.0
@@ -129,7 +111,7 @@ def one_run():
 
         # input delay: one byte, to the end of the frame that shows it
         drain(fd)
-        t1 = time.time()
+        t1 = time.monotonic()
         os.write(fd, b"x")
         got = read_frame_showing(fd, b"x", 5.0)
         if got is None:
@@ -175,7 +157,7 @@ def load_budgets():
 
 
 def main():
-    runs = []
+    runs, incomplete = [], []
     action = action_probe()
     for i in range(RUNS):
         r = one_run()
@@ -183,6 +165,9 @@ def main():
         shown = action.one_run("read") if r else None
         if r and shown:
             runs.append(r + (shown[0],))
+        else:
+            incomplete.append(i + 1)
+            print("  run %d incomplete (%s)" % (i + 1, "action" if r else "startup/input"), file=sys.stderr)
     if not runs:
         print("no successful runs — the binary never reached its prompt", file=sys.stderr)
         return 1
@@ -191,7 +176,7 @@ def main():
         vals = sorted(r[idx] * scale for r in runs)
         med = statistics.median(vals)
         print("    %-22s median %8.2f %-4s  p95 %8.2f  min %8.2f  max %8.2f"
-              % (NAMES[idx], med, unit, vals[int(len(vals) * 0.95) - 1], vals[0], vals[-1]))
+              % (NAMES[idx], med, unit, vals[math.ceil(len(vals) * 0.95) - 1], vals[0], vals[-1]))
 
     NAMES = ["cold start", "idle memory", "input delay", "action-to-action"]
     print("ask — four budgets, %d runs, release build, measured externally over a PTY" % len(runs))
@@ -221,8 +206,13 @@ def main():
         print("  %-22s %12.2f %12.2f   %s" % (name, med, limit, "ok" if ok else "OVER BUDGET"))
 
     print()
+    if incomplete:
+        print("  INCOMPLETE: %d of %d runs; no green budget result (%s)." %
+              (len(incomplete), RUNS, ", ".join(map(str, incomplete))))
     if failed:
         print("  OVER BUDGET: %s" % ", ".join(failed))
+        return 1
+    if incomplete:
         return 1
     print("  All four within budget.")
     print("  The action is a tool call to its result on screen, for an in-process tool; see")

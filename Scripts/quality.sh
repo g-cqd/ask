@@ -48,6 +48,10 @@ printf '==> static analyzers (deadwood, dolly, arcleak)\n'
 # finish in well under a second, which is why they run before the tests rather than after.
 Scripts/analyzers.sh || fail "static analyzer findings"
 
+printf '==> measurement harness guards (Python standard library)\n'
+need python3 "Install Python 3 to run the external measurement guards."
+python3 Scripts/test-measurements.py || fail "measurement harness guards"
+
 printf '==> build and test (release)\n'
 # Explicit testability for optimized tests (ADR-0006). Benchmark/shipping binaries are built
 # separately with `swift build -c release`; do not treat a testable build as byte-identical.
