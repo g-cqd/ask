@@ -11,18 +11,10 @@ struct CodexProvider: ModelProvider {
 
     func stream(_ request: ModelRequest) -> AsyncThrowingStream<ModelEvent, any Error> {
         let (access, transport, session) = (access, transport, session)
-        return AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    let credentials = try await access.credentials(now: Date().timeIntervalSince1970)
-                    let client = ResponsesClient.codex(transport: transport, credentials: credentials, session: session)
-                    for try await event in client.stream(request) { continuation.yield(event) }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            continuation.onTermination = { _ in task.cancel() }
+        return ModelStream.after {
+            let credentials = try await access.credentials(now: Date().timeIntervalSince1970)
+            let client = ResponsesClient.codex(transport: transport, credentials: credentials, session: session)
+            return client.stream(request)
         }
     }
 }
