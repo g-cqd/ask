@@ -31,6 +31,7 @@ private func frame(
 
 let benchmarks: @Sendable () -> Void = {
     registerThinkingBenchmarks()
+    registerInputBenchmarks()
     Benchmark.defaultConfiguration = .init(
         metrics: [.wallClock, .cpuTotal], maxDuration: .seconds(2), maxIterations: 2_000)
     print(

@@ -55,10 +55,13 @@ conversation now, `/quit` leaves. To develop ask with ask: build it (ask can run
 
 While the agent is working, Enter queues **steering** after its current response and tools.
 `/follow-up TEXT` queues a message after it finishes; Alt+Enter is a shortcut on terminals that report it.
-Esc aborts and returns unsent messages to the editor alongside your draft.
-A prompt can be several lines: paste keeps its line breaks, Shift-Enter or Ctrl-J starts a new line, and Up/Down, Home/End,
-Ctrl-A/E/U/K work on the current line. A message is accepted only once it
-is recorded in the session ([ADR-0040](docs/adr/0040-queued-input-is-acknowledged-only-after-it-is-persisted.md)).
+Esc clears a selection first; otherwise it aborts and returns unsent messages alongside your draft.
+A prompt can be several lines: paste keeps its line breaks, Shift-Enter or Ctrl-J starts a new line, and Up/Down follow wrapped display
+rows. Home/End and Ctrl-A/E/U/K work on the hard line; **Ctrl-X clears the entire draft**. The input scrolls inside six display rows,
+capped at a third of the terminal; a clipped draft shows its visible row range in the status line. Set `ui.promptRows` in `config.json`
+to change the requested limit, for example `{ "ui": { "promptRows": 3 } }`. The full draft is submitted, never just the visible slice.
+A message is accepted only once it is recorded in the session
+([ADR-0040](docs/adr/0040-queued-input-is-acknowledged-only-after-it-is-persisted.md)).
 
 ## Sandbox
 

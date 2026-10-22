@@ -1,0 +1,104 @@
+#!/usr/bin/env python3
+"""Probe bounded input, visual-row editing and resize through the real binary and a local fake provider.
+
+ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-input.py .build/release/ask
+
+Reuses the folding probe's PTY/emulator harness. No window, real credentials or host clipboard writes.
+"""
+import importlib.util
+import json
+import os
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+spec = importlib.util.spec_from_file_location("fold_probe", os.path.join(HERE, "probe-folding.py"))
+probe = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(probe)
+checks = []
+
+
+def check(label, condition):
+    probe.check(label, condition)
+    checks.append(label)
+
+
+def paste(terminal, text):
+    terminal.draw(lambda: terminal.send(b"\x1b[200~" + text.encode() + b"\x1b[201~"))
+
+
+def scenario(label, draft, expected, width, height, changed=None, clear_first=False):
+    with tempfile.TemporaryDirectory() as root:
+        project, config, state = root + "/project", root + "/config", root + "/state"
+        os.makedirs(project)
+        os.makedirs(config + "/ask")
+        with open(config + "/ask/config.json", "w") as file:
+            json.dump({"ui": {"promptRows": 2}}, file)
+        server = probe.agent.Server([probe.agent.turn([("text", "CAPTURED")], "end_turn")])
+        environment = probe.agent.environment(state, server.url, config=config)
+        environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")
+        for key in ("SSH_TTY", "SSH_CONNECTION", "TMUX", "KITTY_WINDOW_ID"):
+            environment.pop(key, None)
+        terminal = None
+        try:
+            terminal = probe.Terminal(project, environment, columns=width, rows=height)
+            terminal.until(lambda: "ask>" in terminal.text())
+            if clear_first:
+                paste(terminal, "\n".join(f"line {n}" for n in range(1, 11)))
+                check(label + ": configured two-row limit has a visible clipping cue",
+                      terminal.screen.display[height - 3].startswith("input 9–10 of 10"))
+                terminal.draw(lambda: terminal.send(b"\x18"))
+                check(label + ": Ctrl+X clears every hard line without submitting",
+                      not server.requests and terminal.screen.display[height - 1].rstrip() == "ask>"
+                      and "line 10" not in terminal.text())
+            paste(terminal, draft)
+            check(label + ": a bracketed paste is not a submission", not server.requests)
+            if changed:
+                width, height = changed
+                terminal.resize(width, height)
+                check(label + ": resize preserves a bounded viewport", terminal.screen.display[height - 3].startswith("input "))
+            terminal.draw(lambda: terminal.send(b"\x1b[A"))
+            wanted_column = 7
+            check(label + ": Up moves to the previous display row at the wanted cell",
+                  terminal.screen.cursor.y == height - 2 and terminal.screen.cursor.x == wanted_column)
+            terminal.draw(lambda: terminal.send(b"X"))
+            start = len(terminal.raw)
+            terminal.send(b"\r")
+            terminal.until(lambda: bool(server.requests) and b"CAPTURED" in bytes(terminal.raw)[start:])
+            terminal.repaint()
+            body = server.requests[0]["body"]
+            texts = [block.get("text") for message in body.get("messages", []) for block in message.get("content", [])]
+            check(label + ": the provider receives the complete edited source text", expected in texts)
+            files = probe.agent.sessions(state)
+            users = []
+            for path in files:
+                with open(path) as archive:
+                    for line in archive:
+                        record = json.loads(line)
+                        if record.get("type") == "entry" and record["payload"].get("kind") == "user":
+                            users.append(record["payload"]["text"])
+            check(label + ": the session records that same text exactly once", users == [expected])
+        except AssertionError:
+            if terminal:
+                print(terminal.text(), file=sys.stderr)
+                print(f"cursor=({terminal.screen.cursor.x},{terminal.screen.cursor.y})", file=sys.stderr)
+            raise
+        finally:
+            if terminal:
+                terminal.close()
+            server.httpd.shutdown()
+            server.httpd.server_close()
+
+
+def main():
+    draft = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
+    scenario("ASCII", draft, draft[:42] + "X" + draft[42:], 20, 12, clear_first=True)
+    scenario("wide", "日本語abcdef", "日X本語abcdef", 10, 9)
+    # The tab at display column 7 ends at stop 8; nine letters put the final caret at column 7 on the next row.
+    scenario("tabs", "日\tabcdefghi", "日X\tabcdefghi", 10, 9)
+    scenario("resized", draft, draft[:52] + "X" + draft[52:], 20, 12, changed=(10, 9))
+    print(f"{len(checks)} checks passed")
+
+
+if __name__ == "__main__":
+    main()

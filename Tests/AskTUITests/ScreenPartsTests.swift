@@ -117,11 +117,11 @@ struct ScreenPartsTests {
     @Test func `a long prompt wraps and the cursor follows it`() {
         var state = ScreenState(label: "m")
         state.editor.paste(String(repeating: "x", count: 20))
-        var buffer = ScreenBuffer(columns: 10, rows: 6)
+        var buffer = ScreenBuffer(columns: 10, rows: 9)
         var composer = ScreenComposer()
         let cursor = composer.compose(state, into: &buffer)
         #expect(Array(rows(buffer).suffix(3)) == ["ask> xxxxx", "xxxxxxxxxx", "xxxxx"])
-        #expect(cursor.row == 5 && cursor.column == 5)
+        #expect(cursor.row == 8 && cursor.column == 5)
     }
 
     @Test func `composing an unchanged screen again writes nothing`() {
