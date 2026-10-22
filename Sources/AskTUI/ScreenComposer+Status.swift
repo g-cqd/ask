@@ -12,6 +12,6 @@ extension ScreenComposer {
             status += " · " + state.nativeSelectionHint
         }
         if !state.detail.isEmpty { status += " · " + state.detail }
-        return Line(text: status, style: Style(dim: true, inverse: true))
+        return Line(text: status, style: Style(dim: true))
     }
 }

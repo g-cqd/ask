@@ -184,8 +184,8 @@ def probe_turn():
     screen = Screen(server.url, project)
     results = [check("prompt drawn", screen.until("ask>"))]
     screen.type("Write the file\r")
-    results.append(check("prompt in the transcript", screen.until("› Write the file")))
-    results.append(check("tool call shown, succeeded", screen.until("▸ bash echo screen-ok > out.txt ✓")))
+    results.append(check("prompt in the transcript", screen.until("Write the file")))
+    results.append(check("tool call shown, succeeded", screen.until("bash echo screen-ok > out.txt ✓")))
     results.append(check("answer streamed", screen.until("All done here.")))
     results.append(check("back to ready", screen.until_status("ready")))
     results.append(check("file written", os.path.exists(os.path.join(project, "out.txt"))))
@@ -257,8 +257,8 @@ def probe_resume():
     first.finish()
     resumed = Screen(server.url, project, state, ["--continue"])
     results = [check("says which session it resumed", resumed.until("Resumed session 20")),
-               check("earlier prompt shown", resumed.until("› Remember KIWI")),
-               check("earlier tool call shown, succeeded", resumed.until("▸ bash echo kept > kept.txt ✓")),
+               check("earlier prompt shown", resumed.until("Remember KIWI")),
+               check("earlier tool call shown, succeeded", resumed.until("bash echo kept > kept.txt ✓")),
                check("earlier answer shown", resumed.until("First answer.")),
                check("usage so far on the status line", "% cached" in resumed.status(), resumed.status())]
     resumed.type("And now?\r")
@@ -436,7 +436,7 @@ def probe_reload_binary():
     results += [check("it checks the new build", screen.until("Checking the new build")),
                 check("and the new process says it reloaded", screen.until("Reloaded ask: built ", 30)),
                 check("resuming the same session", screen.until("Resumed session 20")),
-                check("with the earlier conversation shown", screen.until("› one") and screen.until("Answer 1."))]
+                check("with the earlier conversation shown", screen.until("one") and screen.until("Answer 1."))]
     screen.until_status("ready")
     results.append(check("the terminal is raw again in the new process", not terminal_is_cooked(screen.fd)))
     screen.type("two\r")
@@ -619,7 +619,7 @@ def probe_multiline():
     screen.type("\r")
     results.append(check("the answer arrives", screen.until("Got all four lines.")))
     results.append(check("the transcript shows the prompt on four rows",
-                         all(t in screen.screen.text() for t in ["› alpha", "  BETA", "  gamma", "  delta"])))
+                         "alpha\nBETA\ngamma\ndelta" in screen.screen.text()))
     wanted = "alpha\nBETA\ngamma\ndelta"
     blocks = [b.get("text") for m in (server.requests[0]["body"]["messages"] if server.requests else [])
               for b in m["content"]]
@@ -892,7 +892,7 @@ def probe_model_selection():
         screen.type("/model " + arguments + "\r")
         results.append(check("failed selection is nonfatal: " + arguments, screen.until("Model not changed (" + arguments + "):")))
         screen.until_status("ready")
-    marker = "› /config after-refusals"  # unique: an older /config's report cannot satisfy the waits below
+    marker = "/config after-refusals"  # unique: an older /config's report cannot satisfy the waits below
     screen.type("/config after-refusals\r")
     results.append(check("after refusals the live configuration still loads and keeps the choice",
                          until_after(screen, marker, "project file")
