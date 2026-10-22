@@ -79,7 +79,7 @@ func runPrompt(
     for line in describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     do {
         loop = try makeLoop(
-            settings, workingDirectory: workingDirectory, instructions: files, jobs: jobs, transport: transport)
+            settings, instructions: files, jobs: jobs, transport: transport)
     } catch {
         fail("ask: \(error)", code: 70)
     }

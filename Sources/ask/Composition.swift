@@ -110,9 +110,10 @@ func modelLabel(_ resolved: ResolvedModel) -> String {
 /// The agent loop with the tools, rooted at `workingDirectory`, following `instructions` after ask's own. Jobs
 /// live in `jobs`, which the caller stops when ask exits.
 func makeLoop(
-    _ run: RunSettings, workingDirectory: String, instructions files: [ProjectInstructions.File], jobs: JobTable,
-    transport: URLSessionTransport, approve: SandboxApprover? = nil
+    _ run: RunSettings, instructions files: [ProjectInstructions.File], jobs: JobTable,
+    transport: URLSessionTransport, approve: SandboxApprover? = nil, narrowing: SessionNarrowing = SessionNarrowing()
 ) throws -> AgentLoop {
+    let workingDirectory = run.workspace
     let resolved = run.model
     let limits = run.limits
     let sandbox = run.sandbox
@@ -120,14 +121,15 @@ func makeLoop(
         provider: makeProvider(resolved, transport: transport),
         tools: try ToolRegistry(
             FileTools.all + [
-                BashTool(jobs: jobs), WaitTool(jobs: jobs), JobInputTool(jobs: jobs), JobStopTool(jobs: jobs)
+                BashTool(jobs: jobs), WaitTool(jobs: jobs), JobInputTool(jobs: jobs), JobStopTool(jobs: jobs),
+                NarrowSandboxTool(jobs: jobs)
             ]),
         settings: settings(
             for: resolved, workingDirectory: workingDirectory, instructions: files, limits: limits, sandbox: sandbox),
         context: ToolContext(
             workingDirectory: workingDirectory,
             outputDirectory: SessionDirectory(project: workingDirectory).path + "/output", sandbox: sandbox,
-            approve: approve))
+            approve: approve, narrowing: narrowing))
 }
 
 /// The run's settings, with the reply limit, compaction threshold and kept tail sized to the model's window.
@@ -152,7 +154,7 @@ private func settings(
 func checkSelf(_ settings: RunSettings) {
     do {
         _ = try makeLoop(
-            settings, workingDirectory: FileManager.default.currentDirectoryPath, instructions: [], jobs: JobTable(),
+            settings, instructions: [], jobs: JobTable(),
             transport: URLSessionTransport())
     } catch {
         fail("ask: \(error)", code: 70)

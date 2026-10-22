@@ -2,7 +2,7 @@
 """The action-to-action budget's real action (roadmap 0007): the model asks for a tool, ask runs it, and the result
 is on screen and the next request is on its way.
 
-Usage: Scripts/measure-action.py .build/release/ask [runs] [history-turns]
+Usage: Scripts/measure-action.py .build/release/ask [runs] [history-turns] [narrow|warm]
 
 One process, one clock. A fake Anthropic server answers with a tool call and notes when it finished sending; a PTY
 reader notes when the frame showing the tool's ✓ is drawn; the server notes when the next request arrives. Measured:
@@ -12,6 +12,8 @@ reader notes when the frame showing the tool's ✓ is drawn; the server notes wh
 
 for `read` of a small file (in-process: ask's own work) and for `bash echo` (adds the sandboxed spawn). Isolated
 configuration and state, no credentials. With history-turns, every run resumes a session of that many turns.
+With narrow, the model first narrows the session to network none; timing starts at the subsequent tool response.
+With warm, a distinct read runs first instead, for a matched warm-transport control without session narrowing.
 """
 import fcntl
 import json
@@ -37,6 +39,8 @@ sys.argv = saved
 BINARY = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask")
 RUNS = int(sys.argv[2]) if len(sys.argv) > 2 else 15
 HISTORY = int(sys.argv[3]) if len(sys.argv) > 3 else 0
+NARROW = len(sys.argv) > 4 and sys.argv[4] == "narrow"
+WARM = len(sys.argv) > 4 and sys.argv[4] == "warm"
 FRAME_END = b"\x1b[?2026l"
 
 
@@ -92,7 +96,14 @@ def one_run(tool):
     project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
     open(os.path.join(project, "note.txt"), "w").write("a small file\n")
     call = ("call", "t1", "read", {"path": "note.txt"}) if tool == "read" else ("tool", "t1", "echo ok")
-    server = TimedServer([agent.turn([call], "tool_use"), agent.turn([("text", "Finished.")], "end_turn")])
+    responses = [agent.turn([call], "tool_use"), agent.turn([("text", "Finished.")], "end_turn")]
+    offset = int(NARROW or WARM)
+    if NARROW:
+        responses.insert(0, agent.turn([("call", "n", "narrow_sandbox", {"sandbox": {"network": "none"}})], "tool_use"))
+    elif WARM:
+        open(os.path.join(project, "warm.txt"), "w").write("warm transport\n")
+        responses.insert(0, agent.turn([("call", "warm", "read", {"path": "warm.txt"})], "tool_use"))
+    server = TimedServer(responses)
     arguments = [BINARY]
     if HISTORY:
         arguments += ["--resume", history_file(state, os.path.realpath(project), HISTORY)]
@@ -123,11 +134,11 @@ def one_run(tool):
                 if tail.endswith(FRAME_END) and mark.decode() in emulator.text():
                     shown = now
                     break
-        while len(server.arrived) < 2 and time.monotonic() < deadline:
+        while len(server.arrived) < offset + 2 and time.monotonic() < deadline:
             time.sleep(0.005)
-        if shown is None or len(server.sent) < 1 or len(server.arrived) < 2:
+        if shown is None or len(server.sent) < offset + 1 or len(server.arrived) < offset + 2:
             return None
-        return (shown - server.sent[0]) * 1000, (server.arrived[1] - server.sent[0]) * 1000
+        return (shown - server.sent[offset]) * 1000, (server.arrived[offset + 1] - server.sent[offset]) * 1000
     finally:
         try:
             os.write(fd, b"\x03")
@@ -154,7 +165,8 @@ def summary(values):
 
 
 if __name__ == "__main__":
-    print(f"ask — the action: a tool call to its result on screen and the next request; {RUNS} runs, history {HISTORY} turns")
+    mode = "narrowed" if NARROW else "warm control" if WARM else "unchanged"
+    print(f"ask — the action: a tool call to its result on screen and the next request; {RUNS} runs, history {HISTORY} turns, session {mode}")
     for tool in ("read", "bash"):
         results = [r for r in (one_run(tool) for _ in range(RUNS)) if r]
         if len(results) < max(4, RUNS // 2):
