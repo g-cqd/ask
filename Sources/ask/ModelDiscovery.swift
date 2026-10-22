@@ -122,7 +122,11 @@ enum ModelDiscovery {
         {
             return 78
         }
-        if error is CodexAccessError || error is CredentialFileError { return 77 }
+        if error is CodexAccessError || error is CredentialFileError || error is ClaudeAccessError
+            || error is AnthropicEnvironmentAuthError || error is NotSignedIn
+        {
+            return 77
+        }
         if case ModelCatalogError.refused(status: 401) = error { return 77 }
         return 69
     }
