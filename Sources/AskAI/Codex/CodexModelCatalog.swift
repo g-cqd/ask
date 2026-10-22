@@ -24,6 +24,7 @@ public struct CodexModelCatalog: Sendable {
         guard let current = try credentials.loadCodex(connection: connection),
             let models = try cache.load(scope: scope(for: current), now: now)
         else { return nil }
+        // @dl:accept -- the cache return shape is shared, but Codex must load its account identity before naming its scope; key-based discovery has no credential-owner read
         return CatalogSnapshot(models: models, notices: [])
     }
 
