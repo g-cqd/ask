@@ -32,7 +32,8 @@ public struct ScreenController: Sendable {
 
     /// What `/help` and `/quit` are, always present.
     static let builtIn = [
-        SlashCommand(name: "help", summary: "List commands. While busy: Enter steers; Alt+Enter queues a follow-up."),
+        SlashCommand(
+            name: "help", summary: "List commands; Ctrl+T thinking, Ctrl+O tools. Enter steers; Alt+Enter queues."),
         SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first."),
         SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT.")
     ]

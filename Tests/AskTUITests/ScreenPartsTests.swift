@@ -83,7 +83,7 @@ struct ScreenPartsTests {
         var buffer = ScreenBuffer(columns: 20, rows: 6)
         var composer = ScreenComposer()
         let cursor = composer.compose(state, into: &buffer)
-        #expect(rows(buffer) == ["", "", "› hi", "hello there", "model · ready", "ask>"])
+        #expect(rows(buffer) == ["", "", "hi", "hello there", "model · ready", "ask>"])
         #expect(cursor.row == 5 && cursor.column == 5)
     }
 
@@ -106,12 +106,12 @@ struct ScreenPartsTests {
         var buffer = ScreenBuffer(columns: 40, rows: 3)
         var composer = ScreenComposer()
         _ = composer.compose(state, into: &buffer)
-        #expect(rows(buffer)[0] == "▸ bash ls …")
+        #expect(rows(buffer)[0] == "bash ls …")
         #expect(rows(buffer)[1] == "m · working… (esc to abort)")
         state.transcript.finishTool(.failed("exit 1"))
         state.running = false
         _ = composer.compose(state, into: &buffer)
-        #expect(rows(buffer)[0] == "▸ bash ls ✗ exit 1")
+        #expect(rows(buffer)[0] == "bash ls ✗ exit 1")
     }
 
     @Test func `a long prompt wraps and the cursor follows it`() {

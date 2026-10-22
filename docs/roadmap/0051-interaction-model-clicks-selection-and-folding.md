@@ -16,8 +16,8 @@ policy and the meaning of each click are ask's (ADR-0044).
 
 The real transcript now has mouse selection, highlighting, clipboard writes, wheel scrolling and thinking/tool folds. Header clicks
 open individual blocks; Ctrl+T and Ctrl+O change their separate defaults. Five `ui.*` keys configure these policies. Scripted-provider
-PTY probes cover live runs and resumed sessions (diaries 50–55). Images, long code, runner clicks and bounded input remain owed; the
-old screen's leading glyphs still need to follow the prototype's no-icons rule.
+PTY probes cover live runs and resumed sessions (diaries 50–55). Images, long code, runner clicks and bounded input remain owed.
+The real screen now follows the prototype's no-leading-icons and terminal-default-background rules (diary 2026-10-22 (2)).
 
 ## What TerminalKit has now (2026-10-20)
 
@@ -116,6 +116,12 @@ Changed reasoning costs about 2.9 ms for a folded 400-line block; unchanged fram
 Copy-on-select off has Ctrl+C; Escape clears first; a click inside selected text cannot open the fold underneath it. The status explains
 these controls, reports copy requests/failures without claiming acknowledgement, and names the terminal's native-selection bypass.
 The real-binary pointer probe now has 20 passing checks. Host pasteboard completion reporting and sustained edge autoscroll remain owed.
+
+## Text-only hierarchy (2026-10-22, diary 2026-10-22 (2))
+
+Leading user/disclosure glyphs and the painted status surface are gone from the real screen. User text starts at column zero; fold
+placeholders say their kind and size; only selected text is inverse. `/help` names the fold shortcuts. Both PTY probes and the existing
+turn/resume/multiline regressions pass against these exact strings. Layout switching and pixel separators are still separate work.
 
 ## Open questions
 
