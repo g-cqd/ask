@@ -90,7 +90,8 @@ public struct ProviderSettings: Sendable, Equatable {
     ///   - provider: the name given on the command line, if any; else the file's default; else `anthropic`.
     ///   - model: the model given on the command line, if any; else the entry's default or first model.
     ///   - environment: where `$NAME` keys are read.
-    ///   - catalog: models discovered for this connection; used for Codex defaults and limits, never another provider's.
+    ///   - catalog: models discovered for the selected provider: Codex defaults and limits, or an OpenAI-compatible
+    ///     provider's windows, which never choose a model and never outrank what an entry states. Never another provider's.
     ///   - connection: the selected named registration, already loaded from ask's user-only registry.
     ///   - aliases: that connection's local model names and default; ignored for anything but a named connection.
     ///   - storedKeys: reads the keys sign-ins stored, by provider name. Called only when nothing else gives a preset a
@@ -107,34 +108,21 @@ public struct ProviderSettings: Sendable, Equatable {
             return try named(connection, name: name, model: model, catalog: catalog, aliases: aliases)
         }
         if let builtIn = try builtIn(name, model: model, catalog: catalog) { return builtIn }
-        let preset = ProviderPreset.named(name)
-        guard let entry = entries[name] ?? (preset != nil ? Entry() : nil) else {
-            throw .unknownProvider(name, known: known(environment: environment, stored: (try? storedKeys()) ?? [:]))
-        }
-        let api = entry.api ?? (preset != nil ? Self.openAICompletions : nil)
-        guard let api else { throw .incomplete(provider: name, field: "api") }
-        guard api == Self.openAICompletions || api == Self.openAIResponses else {
-            throw .unsupportedAPI(provider: name, api: api)
-        }
-        guard let baseURL = entry.baseUrl ?? preset?.address(environment: environment) else {
-            throw .incomplete(provider: name, field: "baseUrl")
-        }
-        guard let chosen = model ?? entry.defaultModel ?? entry.models?.first?.id else {
+        let target = try target(name, environment: environment, storedKeys: storedKeys)
+        guard let chosen = model ?? target.entry.defaultModel ?? target.entry.models?.first?.id else {
             throw .noModel(provider: name)
         }
-        let key = try credential(of: name, entry: entry, preset: preset, environment: environment, stored: storedKeys)
-        let trimmed = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL
-        guard let url = URL(string: trimmed) else { throw .refusedEndpoint(provider: name, reason: "it is not a URL") }
-        if let reason = EndpointPolicy.refusal(for: url, carriesCredential: key != nil) {
-            throw .refusedEndpoint(provider: name, reason: reason)
-        }
-        let listed = entry.models?.first { $0.id == chosen }
-        let headers = entry.headers ?? [:]
+        let (url, key) = try endpoint(of: target, environment: environment, storedKeys: storedKeys)
+        // What the user wrote beside the model wins; what they did not write is what the provider's list says.
+        let stated = target.entry.models?.first { $0.id == chosen }
+        let listed = catalog.first { $0.id == chosen }
+        let headers = target.entry.headers ?? [:]
         return ResolvedModel(
-            provider: api == Self.openAIResponses
+            provider: target.api == Self.openAIResponses
                 ? .openAIResponses(name: name, baseURL: url, apiKey: key, headers: headers)
                 : .openAICompatible(name: name, baseURL: url, apiKey: key, headers: headers),
-            model: chosen, contextWindow: listed?.contextWindow, maxOutputTokens: listed?.maxTokens)
+            model: chosen, contextWindow: stated?.contextWindow ?? listed?.contextWindow,
+            maxOutputTokens: stated?.maxTokens ?? listed?.maxOutputTokens)
     }
 
     /// A registration must identify exactly the selected name and must not shadow configured or built-in authority.
@@ -181,7 +169,7 @@ public struct ProviderSettings: Sendable, Equatable {
 
     /// The key to send: the entry's own, else the preset's variable, else the key a sign-in stored. A preset that
     /// has none is an error, never a request without a key. An entry that is no preset may have no key at all.
-    private func credential(
+    func credential(
         of name: String, entry: Entry, preset: ProviderPreset?, environment: [String: String],
         stored: () throws(CredentialFileError) -> [String: String]
     ) throws(ProviderSettingsError) -> String? {
@@ -196,7 +184,7 @@ public struct ProviderSettings: Sendable, Equatable {
     }
 
     /// Every provider name that resolves, in order; a preset with no key yet says what would give it one.
-    private func known(environment: [String: String], stored: [String: String]) -> [String] {
+    func known(environment: [String: String], stored: [String: String]) -> [String] {
         let presets = ProviderPreset.all.filter { entries[$0.name] == nil }
             .map { preset in
                 let fromVariable = preset.keyVariable.map { !(environment[$0] ?? "").isEmpty } ?? false
