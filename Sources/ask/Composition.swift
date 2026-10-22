@@ -11,21 +11,11 @@ internal import Foundation
 func requestAuth(transport: URLSessionTransport, connection: ConnectionRecord? = nil)
     -> @Sendable () async throws -> AnthropicClient.Auth
 {
-    let access = ClaudeAccess(
-        file: NamedConnections.file(for: connection), client: ClaudeAuthClient(transport: transport),
-        connection: connection)
+    let authorization = AnthropicAuthorization(
+        file: NamedConnections.file(for: connection), connection: connection, transport: transport)
     return {
-        if connection == nil,
-            let auth = try AnthropicEnvironmentAuth.resolve(environment: ProcessInfo.processInfo.environment)
-        {
-            return auth
-        }
-        do {
-            return try await access.auth(now: Date().timeIntervalSince1970)
-        } catch ClaudeAccessError.signedOut {
-            if let connection { throw ConnectionError.signInRequired(name: connection.name, provider: .anthropic) }
-            throw NotSignedIn()
-        }
+        try await authorization.auth(
+            environment: ProcessInfo.processInfo.environment, now: Date().timeIntervalSince1970)
     }
 }
 

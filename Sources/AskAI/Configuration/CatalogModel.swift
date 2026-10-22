@@ -8,17 +8,23 @@ public struct CatalogModel: Codable, Sendable, Equatable {
     public let reasoningLevels: [String]
     /// The level the server uses when none is asked for, when it reported one of ``reasoningLevels``.
     public let defaultReasoningLevel: String?
+    /// Whether the provider explicitly reports thinking support; nil is unknown, not false.
+    public let supportsThinking: Bool?
+    /// The modes the provider explicitly reports as supported. Empty is unknown unless ``supportsThinking`` is false.
+    public let thinkingModes: [ThinkingMode]
 
     /// A catalog entry; an absent limit is unknown, not an invented default.
     public init(
         id: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil, reasoningLevels: [String] = [],
-        defaultReasoningLevel: String? = nil
+        defaultReasoningLevel: String? = nil, supportsThinking: Bool? = nil, thinkingModes: [ThinkingMode] = []
     ) {
         self.id = id
         self.contextWindow = contextWindow
         self.maxOutputTokens = maxOutputTokens
         self.reasoningLevels = reasoningLevels
         self.defaultReasoningLevel = defaultReasoningLevel
+        self.supportsThinking = supportsThinking
+        self.thinkingModes = thinkingModes
     }
 
     /// The levels for a person: the default marked with `*`, or `unknown` when the server did not say.
@@ -31,7 +37,7 @@ public struct CatalogModel: Codable, Sendable, Equatable {
     static let levelLimit = 16
 
     private enum CodingKeys: String, CodingKey {
-        case id, contextWindow, maxOutputTokens, reasoningLevels, defaultReasoningLevel
+        case id, contextWindow, maxOutputTokens, reasoningLevels, defaultReasoningLevel, supportsThinking, thinkingModes
     }
 
     /// Reads a catalog written before reasoning levels existed: the missing fields are unknown.
@@ -42,6 +48,8 @@ public struct CatalogModel: Codable, Sendable, Equatable {
         maxOutputTokens = try values.decodeIfPresent(Int.self, forKey: .maxOutputTokens)
         reasoningLevels = try values.decodeIfPresent([String].self, forKey: .reasoningLevels) ?? []
         defaultReasoningLevel = try values.decodeIfPresent(String.self, forKey: .defaultReasoningLevel)
+        supportsThinking = try values.decodeIfPresent(Bool.self, forKey: .supportsThinking)
+        thinkingModes = try values.decodeIfPresent([ThinkingMode].self, forKey: .thinkingModes) ?? []
     }
 
     /// Whether an untrusted descriptor is safe to use in a request and as a terminal label.
@@ -50,6 +58,7 @@ public struct CatalogModel: Codable, Sendable, Equatable {
             && reasoningLevels.count <= Self.levelLimit && reasoningLevels.allSatisfy(Self.validLevel)
             && Set(reasoningLevels).count == reasoningLevels.count
             && (defaultReasoningLevel.map { reasoningLevels.contains($0) } ?? true)
+            && Set(thinkingModes).count == thinkingModes.count
     }
 
     /// A reasoning effort name: 2 to 24 lower-case ASCII letters, which is what every provider uses and nothing that can
