@@ -1,29 +1,48 @@
 internal import AskAI
 internal import Foundation
 
-/// A model list as a table: what the server states, and `unknown` for what it does not.
+/// A model list as a table: what the server reports, and `unknown` for what it does not.
 enum ModelTable {
-    /// Prints `snapshot`'s notices to standard error and its models to standard output.
-    /// - Parameters:
-    ///   - snapshot: the models and the notices about how they were read.
-    ///   - defaultFirst: whether the first model is the server's choice of default, so it is marked `*`. Only Codex's list says so.
+    /// Prints notices to standard error and descriptors to standard output. Only Codex's priority order chooses a default.
     static func print(_ snapshot: CatalogSnapshot, defaultFirst: Bool) {
-        for notice in snapshot.notices { FileHandle.standardError.write(Data("ask: \(notice)\n".utf8)) }
-        let reasoning = snapshot.models.contains { !$0.reasoningLevels.isEmpty }
-        Swift.print(
-            "MODEL".padding(toLength: 32, withPad: " ", startingAt: 0)
-                + "CONTEXT".padding(toLength: 14, withPad: " ", startingAt: 0)
-                + "OUTPUT" + (reasoning ? "        REASONING" : ""))
-        for (index, model) in snapshot.models.enumerated() {
-            let id = (defaultFirst ? (index == 0 ? "* " : "  ") : "") + model.id
-            let context = model.contextWindow.map(String.init) ?? "unknown"
-            let output = model.maxOutputTokens.map(String.init) ?? "unknown"
-            Swift.print(
-                id.padding(toLength: Swift.max(32, id.count + 1), withPad: " ", startingAt: 0)
-                    + context.padding(toLength: 14, withPad: " ", startingAt: 0)
-                    + (reasoning
-                        ? output.padding(toLength: 14, withPad: " ", startingAt: 0) + model.reasoningDescription
-                        : output))
+        NamedConnections.report(snapshot.notices)
+        let efforts = snapshot.models.contains { !$0.reasoningLevels.isEmpty }
+        let modes = snapshot.models.contains { $0.supportsThinking != nil || !$0.thinkingModes.isEmpty }
+        var headers = ["MODEL", "CONTEXT", "OUTPUT"]
+        var widths = [32, 14, 14]
+        if efforts {
+            headers.append("REASONING")
+            widths.append(44)
         }
+        if modes {
+            headers.append("THINKING MODES")
+            widths.append(0)
+        }
+        Swift.print(row(headers, widths: widths))
+        for (index, model) in snapshot.models.enumerated() {
+            let mark = defaultFirst ? (index == 0 ? "* " : "  ") : ""
+            var columns = [
+                mark + model.id, model.contextWindow.map(String.init) ?? "unknown",
+                model.maxOutputTokens.map(String.init) ?? "unknown"
+            ]
+            if efforts { columns.append(model.reasoningDescription) }
+            if modes { columns.append(thinkingModes(model)) }
+            Swift.print(row(columns, widths: widths))
+        }
+    }
+
+    private static func row(_ columns: [String], widths: [Int]) -> String {
+        columns.enumerated()
+            .map { index, value in
+                index == columns.count - 1
+                    ? value
+                    : value.padding(toLength: Swift.max(widths[index], value.count + 1), withPad: " ", startingAt: 0)
+            }
+            .joined()
+    }
+
+    private static func thinkingModes(_ model: CatalogModel) -> String {
+        if model.supportsThinking == false { return "none" }
+        return model.thinkingModes.isEmpty ? "unknown" : model.thinkingModes.map(\.rawValue).joined(separator: " ")
     }
 }

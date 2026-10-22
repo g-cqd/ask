@@ -8,7 +8,7 @@ struct ModelsCommand: AsyncParsableCommand {
         commandName: "models",
         abstract: "List the models a connection or provider offers, with the limits it states.")
 
-    @Argument(help: "codex, a registered Codex connection, or a provider: a preset or a providers.json entry.")
+    @Argument(help: "codex, anthropic (or claude), a named connection, or an OpenAI-compatible provider.")
     var connection = ProviderSettings.codex
 
     func run() async throws {
@@ -16,10 +16,14 @@ struct ModelsCommand: AsyncParsableCommand {
         do {
             let now = Date().timeIntervalSince1970
             if let record = try registered(connection, environment: environment) {
-                guard record.provider == .codex else { throw ValidationError("Only Codex connections list models.") }
-                try await show(codex: record, now: now)
+                switch record.provider {
+                    case .codex: try await show(codex: record, now: now)
+                    case .anthropic: try await show(anthropic: record, environment: environment, now: now)
+                }
             } else if connection == ProviderSettings.codex {
                 try await show(codex: nil, now: now)
+            } else if [ProviderSettings.anthropic, "claude"].contains(connection) {
+                try await show(anthropic: nil, environment: environment, now: now)
             } else {
                 try await show(provider: connection, environment: environment, now: now)
             }
@@ -41,6 +45,19 @@ struct ModelsCommand: AsyncParsableCommand {
         ModelTable.print(snapshot, defaultFirst: true)
         if let record { try printAliases(of: record) }
         print("* default model when none is configured.")
+    }
+
+    private func show(anthropic record: ConnectionRecord?, environment: [String: String], now: Double) async throws {
+        if record == nil, let problem = AnthropicClient.endpointProblem(environment: environment) {
+            NamedConnections.report([problem])
+        }
+        let snapshot = try await AnthropicModelDiscovery.catalog(environment: environment, connection: record)
+            .models(now: now, refresh: true)
+        ModelTable.print(snapshot, defaultFirst: false)
+        if let record { try printAliases(of: record) }
+        print(
+            "Catalog order chooses no default; ask's built-in fallback is \(ProviderSettings.anthropicDefaultModel)."
+        )
     }
 
     private func show(provider name: String, environment: [String: String], now: Double) async throws {

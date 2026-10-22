@@ -1,0 +1,179 @@
+{
+  "data": [
+    {
+      "id": "claude-sonnet-5-5",
+      "type": "model",
+      "max_input_tokens": 1000000,
+      "max_tokens": 128000,
+      "capabilities": {
+        "thinking": {
+          "supported": true,
+          "types": {
+            "enabled": {
+              "supported": false
+            },
+            "adaptive": {
+              "supported": true
+            },
+            "disabled": {
+              "supported": false
+            },
+            "between_tools": {
+              "supported": true
+            }
+          }
+        },
+        "effort": {
+          "supported": true,
+          "low": {
+            "supported": true
+          },
+          "medium": {
+            "supported": true
+          },
+          "high": {
+            "supported": true
+          },
+          "xhigh": {
+            "supported": true
+          },
+          "max": {
+            "supported": true
+          }
+        }
+      }
+    },
+    {
+      "id": "claude-sonnet-4-6",
+      "type": "model",
+      "max_input_tokens": 1000000,
+      "max_tokens": 128000,
+      "capabilities": {
+        "thinking": {
+          "supported": true,
+          "types": {
+            "enabled": {
+              "supported": true
+            },
+            "adaptive": {
+              "supported": true
+            },
+            "disabled": {
+              "supported": true
+            },
+            "between_tools": {
+              "supported": false
+            }
+          }
+        },
+        "effort": {
+          "supported": true,
+          "low": {
+            "supported": true
+          },
+          "medium": {
+            "supported": true
+          },
+          "high": {
+            "supported": true
+          },
+          "xhigh": {
+            "supported": false
+          },
+          "max": {
+            "supported": true
+          }
+        }
+      }
+    },
+    {
+      "id": "claude-opus-4-5-20251101",
+      "type": "model",
+      "max_input_tokens": 200000,
+      "max_tokens": 64000,
+      "capabilities": {
+        "thinking": {
+          "supported": true,
+          "types": {
+            "enabled": {
+              "supported": true
+            },
+            "adaptive": {
+              "supported": false
+            },
+            "disabled": {
+              "supported": true
+            },
+            "between_tools": {
+              "supported": false
+            }
+          }
+        },
+        "effort": {
+          "supported": true,
+          "low": {
+            "supported": true
+          },
+          "medium": {
+            "supported": true
+          },
+          "high": {
+            "supported": true
+          },
+          "xhigh": {
+            "supported": false
+          },
+          "max": {
+            "supported": false
+          }
+        }
+      }
+    },
+    {
+      "id": "claude-haiku-4-5-20251001",
+      "type": "model",
+      "max_input_tokens": 200000,
+      "max_tokens": 64000,
+      "capabilities": {
+        "thinking": {
+          "supported": true,
+          "types": {
+            "enabled": {
+              "supported": true
+            },
+            "adaptive": {
+              "supported": false
+            },
+            "disabled": {
+              "supported": true
+            },
+            "between_tools": {
+              "supported": false
+            }
+          }
+        },
+        "effort": {
+          "supported": false,
+          "low": {
+            "supported": false
+          },
+          "medium": {
+            "supported": false
+          },
+          "high": {
+            "supported": false
+          },
+          "xhigh": {
+            "supported": false
+          },
+          "max": {
+            "supported": false
+          }
+        }
+      }
+    }
+  ],
+  "has_more": false,
+  "first_id": "claude-sonnet-5-5",
+  "last_id": "claude-haiku-4-5-20251001"
+}
