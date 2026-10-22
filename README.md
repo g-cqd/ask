@@ -114,6 +114,12 @@ Responses API. Browser sign-in, inference and a read/write tool loop have been v
 ([live results](docs/diary/2026-10-20-27.md)); direct OpenAI-account use remains unverified. Model availability depends on
 your account; the installed pi catalog is not proof that Codex accepts a model. `ask logout [NAME]` forgets one sign-in, or all.
 
+`ask models NAME` also refreshes an OpenAI-compatible provider's model list and reported limits. The next run uses cached
+limits for up to a day without fetching; limits stated in `providers.json` win. These lists do not declare a preferred
+model, so choose one with `--model` or configuration. Verified live for the public OpenRouter, Hugging Face router and
+NVIDIA lists; authenticated lists on other presets remain unverified, and NVIDIA reports no windows. Key-based caches
+are endpoint-scoped, not account-scoped: refresh after changing keys or routing headers.
+
 Two accounts of one provider can be signed in at once as named connections: `ask login codex --name work`, then
 `ask --provider work`, `ask models work`, `ask connections` (with `rename` and `remove`) and `ask logout work`. Each has its own
 credentials and model list; a session remembers which connection it used and resumes on it, and ask never moves a prompt to
