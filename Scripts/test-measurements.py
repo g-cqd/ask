@@ -8,6 +8,7 @@ from pathlib import Path
 import struct
 import sys
 import termios
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -23,6 +24,7 @@ def load(name):
 
 budgets = load('measure-budgets')
 action = load('measure-action')
+startup = load('measure-startup')
 
 
 class ReachedExec(Exception):
@@ -107,6 +109,43 @@ class MeasurementTests(unittest.TestCase):
     def test_p95_uses_nearest_rank_in_a_small_sample(self):
         # With 12 samples p95 is the last, not the second-to-last (91.7th percentile).
         self.assertIn('p95 12.00', action.summary(list(range(1, 13))))
+
+    def test_startup_summary_keeps_nearest_rank_and_empty_cohorts(self):
+        self.assertEqual(startup.stats(list(range(1, 13)))['p95'], 12)
+        self.assertIsNone(startup.stats([]))
+
+    def test_only_complete_untraced_unchanged_cohorts_can_certify_a_budget(self):
+        good = dict(error=None, phases=[])
+        self.assertTrue(startup.shipping_cohort([good]))
+        for rows, changed, traced in [([], False, False), ([good], True, False), ([good], False, True),
+                                      ([dict(error='missing frame', phases=[])], False, False),
+                                      ([dict(error=None, phases=[dict(phase='arguments')])], False, False)]:
+            with self.subTest(rows=rows, changed=changed, traced=traced):
+                self.assertFalse(startup.shipping_cohort(rows, changed, traced))
+
+    def test_phase_markers_decode_sampled_cpu_and_requested_priority(self):
+        raw = b'\x1b[0mTRACE arguments 123 456 4 21 25 0\r\n'
+        self.assertEqual(startup.phases(raw), [dict(
+            phase='arguments', wall_ns=123, cpu_us=456, cpu_number=4,
+            requested_qos=21, task_priority=25, cpu_query_status=0)])
+
+    def fake_startup(self, frame):
+        # A real isolated PTY, but no ask binary, sleep or latency assertion. The fake blocks on input until reaped.
+        program = 'import os; os.write(1, ' + repr(frame) + '); os.read(0, 1)'
+        with tempfile.TemporaryDirectory(prefix='ask-measurement-test-') as directory:
+            return startup.sample(sys.executable, directory, startup.isolated_environment(Path(directory)),
+                                  arguments=('-c', program))
+
+    def test_a_real_prompt_frame_without_a_blank_is_measurable(self):
+        row = self.fake_startup(b'\x1b[?2026hask>\x1b[40;6H\x1b[?2026l')
+        self.assertIsNone(row['error'])
+        self.assertIsNotNone(row['cold_ms'])
+        self.assertEqual(row['exit_code'], -9, 'the probe deliberately stops and reaps only its own child')
+
+    def test_a_failed_phase_query_is_retained_not_certified(self):
+        row = self.fake_startup(b'TRACE arguments 123 456 4 21 25 5\nask>\x1b[?2026l')
+        self.assertEqual(row['error'], 'phase probe reported a query error')
+        self.assertIn('TRACE arguments', row['output_tail'])
 
 
 if __name__ == '__main__':
