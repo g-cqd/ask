@@ -1,0 +1,81 @@
+internal import AemiJSON
+internal import Foundation
+internal import Testing
+
+@testable import AskAI
+
+/// Opt-in diagnostic only: no tool is executed, and no response/signature text is printed. Delete before normal gates.
+struct TempThinkingContinuationProbe {
+    func blocks(_ response: AssembledResponse) -> [RequestBlock] {
+        response.blocks.compactMap {
+            switch $0 {
+                case .text(let text): .text(text)
+                case .thinking(let text, let signature): .thinking(text: text, signature: signature)
+                case .redactedThinking(let data): .redactedThinking(data: data)
+                case .toolCall(let id, let name, let input): .toolCall(id: id, name: name, input: input)
+                case .unrecognized: nil
+            }
+        }
+    }
+
+    func request(
+        _ messages: [ModelMessage], mode: String, effort: String?, token: String, variant: String,
+        tools: [ToolDefinition] = []
+    ) async throws -> (report: TempThinkingProbe.Report, message: AssembledResponse?) {
+        let base = ModelRequest(model: "claude-sonnet-5-5", maxTokens: 2048, systemPrompt: [], messages: messages, tools: tools)
+        let root = JSONValue(try AemiJSON.parse(AnthropicRequestEncoder.encode(base, caching: false)).root)
+        guard case .object(var object) = root else { throw ModelCatalogError.invalidResponse }
+        object["thinking"] = mode == "adaptive"
+            ? .object(["type": .string(mode), "display": .string("summarized")])
+            : .object(["type": .string(mode)])
+        if let effort { object["output_config"] = .object(["effort": .string(effort)]) }
+        return try await TempThinkingProbe().sendRaw(
+            JSONValue.object(object).encodedBytes(), url: AnthropicClient.endpoint,
+            headers: AnthropicClient.headers(for: .subscription(accessToken: token)), token: token,
+            provider: "claude", variant: variant)
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_THINKING_CONTINUATION_PROBE"] == "1"))
+    func continuation() async throws {
+        let auth = try await ClaudeAccess(file: .standard(), client: ClaudeAuthClient(transport: URLSessionTransport()))
+            .auth(now: Date().timeIntervalSince1970)
+        guard case .subscription(let token) = auth else { throw ClaudeAccessError.signedOut }
+        let user = ModelMessage(role: .user, blocks: [.text("What is 731 * 829? Reply with only the integer.")])
+        let first = try await request([user], mode: "adaptive", effort: "max", token: token, variant: "continuation-first-max")
+        #expect(first.report.status == 200)
+        let response = try #require(first.message)
+        let signed = response.blocks.filter { if case .thinking(_, let signature) = $0 { !signature.isEmpty } else { false } }.count
+        print("THINKING_CONTINUATION signed-block-count=\(signed)")
+        #expect(signed > 0, "Without a signed thinking block this is not a binding test")
+        let transcript = [user, ModelMessage(role: .assistant, blocks: blocks(response)), ModelMessage(role: .user, blocks: [.text("Now reply exactly OK.")])]
+        let low = try await request(transcript, mode: "adaptive", effort: "low", token: token, variant: "continuation-max-to-low")
+        #expect(low.report.status == 200)
+        let off = try await request(transcript, mode: "between_tools", effort: nil, token: token, variant: "continuation-max-to-between-tools")
+        #expect(off.report.status == 200)
+
+        let tool = ToolDefinition(
+            name: "echo", description: "Echo text; this test returns a fixture, not a process or file operation.",
+            inputSchema: try JSONObject(validating: Array(#"{"type":"object","properties":{"text":{"type":"string"}},"required":["text"],"additionalProperties":false}"#.utf8)))
+        var history = [ModelMessage(role: .user, blocks: [.text("Call echo with text FIRST. Wait for its result. Then call echo with text SECOND. Wait for that result, then reply OK.")])]
+        var calls = 0
+        var updates = 0
+        for step in 0 ..< 3 {
+            let turn = try await request(history, mode: "between_tools", effort: nil, token: token,
+                                         variant: "between-tools-round-\(step)", tools: [tool])
+            #expect(turn.report.status == 200)
+            let answer = try #require(turn.message)
+            updates += turn.report.thinkingBlocks
+            history.append(ModelMessage(role: .assistant, blocks: blocks(answer)))
+            var results: [RequestBlock] = []
+            for case .toolCall(let id, let name, _) in answer.blocks {
+                #expect(name == "echo")
+                calls += 1
+                results.append(.toolResult(id: id, content: "OK", isError: false))
+            }
+            if results.isEmpty { break }
+            history.append(ModelMessage(role: .user, blocks: results))
+        }
+        print("THINKING_CONTINUATION between-tools calls=\(calls) thinking-updates=\(updates)")
+        #expect(calls == 2)
+    }
+}
