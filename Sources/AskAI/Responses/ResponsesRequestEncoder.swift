@@ -23,6 +23,7 @@ public enum ResponsesRequestEncoder {
             limitField: dialect.sendsOutputLimit ? "max_output_tokens" : nil
         ) { writer in
             writer.field("store", false)
+            encodeThinking(request.thinking, into: &writer)
             let instructions =
                 request.systemPrompt.isEmpty
                 ? dialect.fallbackInstructions : request.systemPrompt.joined(separator: "\n\n")

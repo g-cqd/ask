@@ -27,7 +27,8 @@ public struct ResponsesClient: Sendable {
 
     /// Sends `request` and streams the response's events. The stream throws an ``OpenAICompatibleError``.
     public func stream(_ request: ModelRequest) -> AsyncThrowingStream<ModelEvent, any Error> {
-        endpoint.stream(
+        if let problem = request.thinking?.responsesProblem { return problem.failedStream }
+        return endpoint.stream(
             ResponsesRequestEncoder.encode(request, dialect: dialect),
             decoder: ResponsesStreamDecoder.self)
     }

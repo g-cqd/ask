@@ -1,3 +1,5 @@
+public import AskAI
+
 /// ask's effective settings, and where each came from.
 ///
 /// Layers, lowest to highest: built-in defaults, the user's `config.json`, a trusted project's
@@ -35,6 +37,7 @@ public struct Configuration: Sendable, Equatable {
 
     public var model: Setting<String?>
     public var provider: Setting<String?>
+    public var thinking: Setting<ThinkingLevel>
     public var maxTurns: Setting<Int>
     public var compactAt: Setting<Int>
     public var sandbox: Setting<SandboxSection>
@@ -43,6 +46,7 @@ public struct Configuration: Sendable, Equatable {
     /// Built-in defaults only.
     public static let defaults = Configuration(
         model: Setting(value: nil, source: .defaults), provider: Setting(value: nil, source: .defaults),
+        thinking: Setting(value: .providerDefault, source: .defaults),
         maxTurns: Setting(value: 100, source: .defaults),
         compactAt: Setting(value: AgentSettings.defaultCompactAtTokens, source: .defaults),
         sandbox: Setting(value: SandboxSection(), source: .defaults), ui: Setting(value: UISection(), source: .defaults)
@@ -53,6 +57,7 @@ public struct Configuration: Sendable, Equatable {
         var next = self
         if let model = file.model { next.model = Setting(value: model, source: source) }
         if let provider = file.provider { next.provider = Setting(value: provider, source: source) }
+        if let thinking = file.thinking { next.thinking = Setting(value: thinking, source: source) }
         if let turns = file.maxTurns { next.maxTurns = Setting(value: turns, source: source) }
         if let compactAt = file.compactAt { next.compactAt = Setting(value: compactAt, source: source) }
         if let section = file.sandbox {
@@ -62,7 +67,7 @@ public struct Configuration: Sendable, Equatable {
         return next
     }
 
-    /// `self` with `ASK_MODEL`, `ASK_PROVIDER`, `ASK_MAX_TURNS` and `ASK_COMPACT_AT` applied. A number that is
+    /// `self` with `ASK_MODEL`, `ASK_PROVIDER`, `ASK_THINKING`, `ASK_MAX_TURNS` and `ASK_COMPACT_AT` applied. A number that is
     /// not a whole number in range is ignored, and named in `problems`.
     public func applying(environment: [String: String], problems: inout [String]) -> Configuration {
         var next = self
@@ -78,6 +83,13 @@ public struct Configuration: Sendable, Equatable {
         if let model = text("ASK_MODEL") { next.model = Setting(value: model, source: .environment("ASK_MODEL")) }
         if let provider = text("ASK_PROVIDER") {
             next.provider = Setting(value: provider, source: .environment("ASK_PROVIDER"))
+        }
+        if let name = text("ASK_THINKING") {
+            if let level = ThinkingLevel(rawValue: name) {
+                next.thinking = Setting(value: level, source: .environment("ASK_THINKING"))
+            } else {
+                problems.append("$ASK_THINKING is not a thinking level; use \(ThinkingLevel.choices); ignored")
+            }
         }
         if let turns = whole("ASK_MAX_TURNS", atLeast: 1) {
             next.maxTurns = Setting(value: turns, source: .environment("ASK_MAX_TURNS"))
@@ -116,7 +128,7 @@ public struct Configuration: Sendable, Equatable {
     /// set rather than narrowing it: a flag is the user, and only the user widens the sandbox.
     public func applying(
         model: String?, provider: String?, maxTurns: Int?, compactAt: Int?, network: SandboxPolicy.Network? = nil,
-        write: PathSetting? = nil, read: PathSetting? = nil
+        write: PathSetting? = nil, read: PathSetting? = nil, thinking: ThinkingLevel? = nil
     ) -> Configuration {
         var next = self
         if network != nil || write != nil || read != nil {
@@ -124,10 +136,12 @@ public struct Configuration: Sendable, Equatable {
             if let network { section.network = network }
             if let write { section.write = [write] }
             if let read { section.read = [read] }
+            // @dl:accept -- a heterogeneous per-key layer table with distinct origins; erasing value types to build a runtime table would lose its checks
             next.sandbox = Setting(value: section, source: .flag("network/write/read"))
         }
         if let model { next.model = Setting(value: model, source: .flag("model")) }
         if let provider { next.provider = Setting(value: provider, source: .flag("provider")) }
+        if let thinking { next.thinking = Setting(value: thinking, source: .flag("thinking")) }
         if let maxTurns { next.maxTurns = Setting(value: maxTurns, source: .flag("max-turns")) }
         if let compactAt { next.compactAt = Setting(value: compactAt, source: .flag("compact-at")) }
         return next
@@ -145,6 +159,7 @@ extension Configuration {
         }
         compare("model", previous.model, model)
         compare("provider", previous.provider, provider)
+        compare("thinking", previous.thinking, thinking)
         compare("maxTurns", previous.maxTurns, maxTurns)
         compare("compactAt", previous.compactAt, compactAt)
         compare("sandbox", previous.sandbox, sandbox)
