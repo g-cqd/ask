@@ -1,9 +1,14 @@
 ---
-status: accepted
+status: superseded
+superseded-by: ADR-0062
 date: 2026-10-19
 ---
 
 # 0033 — Reasoning belongs to the protocol that issued it
+
+> Superseded by ADR-0062 for the ChatGPT Codex backend: replay was probed live and is now sent inside the tool loop
+> (decisions 2, 4 and 5 below). The provenance marker, the Anthropic rule and the decoder's rule still stand; other Responses
+> servers still send no reasoning.
 
 ## Context
 

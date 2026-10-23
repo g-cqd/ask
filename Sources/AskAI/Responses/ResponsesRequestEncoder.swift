@@ -8,8 +8,8 @@ internal import AemiJSON
 ///   the same turn, because a result must follow the call it answers;
 /// - an assistant turn is its text, and each tool call its own `function_call` item, in the order the model wrote
 ///   them; a call and its result are matched by `call_id`;
-/// - reasoning is not sent back yet, and no item carries an `id`, so a server that pairs reasoning items with the item
-///   that followed them has nothing to pair (ADR-0033);
+/// - a call carries no item `id`. Reasoning the server sealed is sent back verbatim, with its own id, in order before the
+///   call it preceded, only for a dialect that replays it and only within the tool loop in progress (ADR-0062);
 /// - `store` is false: ask keeps the conversation, the server need not.
 public enum ResponsesRequestEncoder {
     /// The request body.
@@ -29,8 +29,11 @@ public enum ResponsesRequestEncoder {
                 ? dialect.fallbackInstructions : request.systemPrompt.joined(separator: "\n\n")
             if let instructions { writer.field("instructions", instructions) }
             writer.key("input")
+            let window = dialect.replaysReasoning ? promptIndex(request.messages) + 1 : Int.max
             writer.array { writer in
-                for message in request.messages { encode(message, into: &writer) }
+                for (index, message) in request.messages.enumerated() {
+                    encode(message, replaying: index >= window, into: &writer)
+                }
             }
             if !request.tools.isEmpty {
                 writer.key("tools")
@@ -46,7 +49,7 @@ public enum ResponsesRequestEncoder {
 
     // MARK: - Items
 
-    private static func encode(_ message: ModelMessage, into writer: inout JSONStreamWriter) {
+    private static func encode(_ message: ModelMessage, replaying: Bool, into writer: inout JSONStreamWriter) {
         switch message.role {
             case .user:
                 for case .toolResult(let id, let content, _) in message.blocks {
@@ -64,12 +67,13 @@ public enum ResponsesRequestEncoder {
                         writer.array { $0.typed("input_text", "text", text.joined(separator: "\n\n")) }
                     }
                 }
-            case .assistant: encodeAssistant(message.blocks, into: &writer)
+            case .assistant: encodeAssistant(message.blocks, replaying: replaying, into: &writer)
         }
     }
 
     /// Text and calls in the order the model produced them; a run of text blocks is one item.
-    private static func encodeAssistant(_ blocks: [RequestBlock], into writer: inout JSONStreamWriter) {
+    private static func encodeAssistant(_ blocks: [RequestBlock], replaying: Bool, into writer: inout JSONStreamWriter)
+    {
         var run: [String] = []
         func flush(_ writer: inout JSONStreamWriter) {
             guard !run.isEmpty else { return }
@@ -92,7 +96,12 @@ public enum ResponsesRequestEncoder {
                         // The protocol carries arguments as a JSON document inside a string.
                         $0.field("arguments", String(decoding: input.bytes, as: UTF8.self))
                     }
-                case .thinking, .redactedThinking, .toolResult: break
+                case .thinking(_, let signature):
+                    if replaying, let item = replayable(signature) {
+                        flush(&writer)
+                        writer.raw(item)
+                    }
+                case .redactedThinking, .toolResult: break
             }
         }
         flush(&writer)
