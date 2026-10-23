@@ -1,0 +1,23 @@
+internal import CryptoKit
+internal import Foundation
+internal import Testing
+
+@testable import AskAI
+
+struct TempAgyLiveProbe {
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_AGY_PROBE"] == "1"))
+    func live() async throws {
+        let environment = ProcessInfo.processInfo.environment
+        let path = try #require(AgyBinary.locate(environment: environment, home: NSHomeDirectory()) { FileManager.default.isReadableFile(atPath: $0) })
+        let size = (try FileManager.default.attributesOfItem(atPath: path)[.size] as? NSNumber)?.intValue ?? 0
+        let started = ContinuousClock.now
+        let found = try AgyClientSecret.candidates(inFileAt: URL(filePath: path))
+        let scan = ContinuousClock.now - started
+        let exact = found.filter { $0.utf8.count == 35 }.count
+        print("AGY_PROBE path=\(path) bytes=\(size) candidates=\(found.count) exact35=\(exact) scan=\(scan)")
+        let verifyStart = ContinuousClock.now
+        let secret = try await AgyClientSecret.verified(found, transport: URLSessionTransport())
+        let digest = secret.map { SHA256.hash(data: Data($0.utf8)).prefix(4).map { String(format: "%02x", $0) }.joined() } ?? "none"
+        print("AGY_PROBE verified=\(secret != nil) sha256[:8]=\(digest) verify=\(ContinuousClock.now - verifyStart)")
+    }
+}
