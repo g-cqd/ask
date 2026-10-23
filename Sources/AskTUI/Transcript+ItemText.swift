@@ -1,7 +1,7 @@
 extension Transcript {
     /// The text a selection can take from the item at `index`: what is shown, so a folded block copies as its placeholder line.
     func contentText(at index: Int) -> String {
-        items[index].contentText(folded: isFolded(index))
+        shownCode(at: index)?.text ?? items[index].contentText(folded: isFolded(index))
     }
 }
 

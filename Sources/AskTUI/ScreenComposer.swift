@@ -141,10 +141,11 @@ public struct ScreenComposer: Sendable {
     private mutating func updateTranscriptLines(_ transcript: Transcript, columns: Int) {
         var hard = hardLines
         transcriptLines.update(width: columns, revisions: transcript.revisions) { index in
-            let item = transcript.items[index]
             if hard.count <= index { hard.append(contentsOf: repeatElement([], count: index + 1 - hard.count)) }
-            hard[index] = TranscriptContent.hardLines(of: transcript.contentText(at: index))
-            return Self.lines(for: item, folded: transcript.isFolded(index), block: index, columns: columns)
+            // Found once per layout: the hard lines a selection reads and the rows drawn come from the same folds.
+            let shown = transcript.shownCode(at: index)
+            hard[index] = TranscriptContent.hardLines(of: shown?.text ?? transcript.contentText(at: index))
+            return Self.lines(in: transcript, at: index, shown: shown, columns: columns)
         }
         hard.removeLast(Swift.max(0, hard.count - transcript.items.count))
         hardLines = hard

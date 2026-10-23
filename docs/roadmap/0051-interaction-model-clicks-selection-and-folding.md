@@ -16,7 +16,7 @@ policy and the meaning of each click are ask's (ADR-0044).
 
 The real transcript now has mouse selection, highlighting, clipboard writes, wheel scrolling and thinking/tool folds. Header clicks
 open individual blocks; Ctrl+T and Ctrl+O change their separate defaults. Six `ui.*` keys configure interaction and bounded input.
-Scripted-provider PTY probes cover live runs, resumed sessions and wrapped-input editing. Images, long code, runner clicks and input
+Scripted-provider PTY probes cover live runs, resumed sessions and wrapped-input editing. Images, runner clicks and input
 pointer interactions remain owed.
 The real screen now follows the prototype's no-leading-icons and terminal-default-background rules (diary 2026-10-22 (2)).
 
@@ -136,6 +136,12 @@ Input clicks, wheel scrolling and selection remain unimplemented. Roadmap 0049 r
 A drag held at the top or bottom edge keeps scrolling on a 50 ms timer, though the terminal reports no motion, and the selection follows
 each line that comes into view. A step waits for the frame that shows the last scroll. The held-drag PTY check fails against a binary
 whose timer is disabled. Real-terminal feel (rate, trackpad) still needs a warned physical check.
+
+## Long code (2026-10-22, ADR-0063; diary 2026-10-22 (12))
+
+A fenced block longer than `ui.codeFoldLines` (default 20, never more than half the screen) starts folded inside its reply as
+`code · swift · 34 lines`. A click on it opens it, a click on the opening fence folds it, Ctrl+G flips every block, and `ui.code` sets
+the start. A selection reads what is shown. **Images** are not started: ask has no image content to draw, so `ui.images` stays refused.
 
 ## Open questions
 
