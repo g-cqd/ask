@@ -1,0 +1,336 @@
+internal import AemiJSON
+internal import Foundation
+internal import Testing
+
+@testable import AskAI
+
+/// One-off, opt-in live probe of Responses reasoning replay on the ChatGPT Codex backend (roadmap 0040). Delete before the
+/// normal gate. Prints only statuses, field presence, lengths and token counts: never credentials, reasoning text,
+/// message text or sealed content. Uses ask's own Codex credential owner.
+struct TempReplayProbe {
+    static let url = URL(string: "https://chatgpt.com/backend-api/codex/responses")!
+
+    struct Turn {
+        var status = 0
+        var error: String?
+        var items: [JSON] = []
+        var input: Int?
+        var output: Int?
+        var reasoning: Int?
+        var cached: Int?
+        var text = ""
+        var seconds = 0.0
+    }
+
+    static func q(_ text: String) -> String {
+        var out = "\""
+        for scalar in text.unicodeScalars {
+            switch scalar {
+                case "\"": out += "\\\""
+                case "\\": out += "\\\\"
+                case "\n": out += "\\n"
+                default:
+                    if scalar.value < 0x20 { out += String(format: "\\u%04x", scalar.value) } else { out.unicodeScalars.append(scalar) }
+            }
+        }
+        return out + "\""
+    }
+
+    static let tool =
+        #"{"type":"function","name":"calc","description":"Multiply two integers and return the product.","parameters":{"type":"object","properties":{"a":{"type":"integer"},"b":{"type":"integer"}},"required":["a","b"]}}"#
+
+    func send(
+        model: String, input: [String], include: Bool, credentials: CodexCredentials, session: String, effort: String = "high",
+        tool: String = TempReplayProbe.tool, parallel: Bool = true
+    ) async throws -> Turn {
+        let headers: [(name: String, value: String)] = [
+            ("content-type", "application/json"), ("accept", "text/event-stream"),
+            ("authorization", "Bearer " + credentials.accessToken), ("chatgpt-account-id", credentials.accountID),
+            ("originator", CodexOAuth.originator), ("OpenAI-Beta", "responses=experimental"), ("session-id", session),
+            ("x-client-request-id", session)
+        ]
+        var body = #"{"model":\#(Self.q(model)),"stream":true,"store":false,"instructions":"You are a careful assistant. Use the calc tool for any multiplication.","#
+        body += #""input":[\#(input.joined(separator: ","))],"tools":[\#(tool)],"tool_choice":"auto","parallel_tool_calls":\#(parallel),"#
+        body += #""prompt_cache_key":\#(Self.q(session)),"reasoning":{"effort":\#(Self.q(effort)),"summary":"auto"}"#
+        if include { body += #","include":["reasoning.encrypted_content"]"# }
+        body += "}"
+        let started = ContinuousClock.now
+        defer { }
+        let reply = try await URLSessionTransport().collecting(
+            HTTPRequest(url: Self.url, method: "POST", headers: headers, body: Array(body.utf8)), limit: 4 << 20)
+        var turn = Turn(status: reply.status)
+        let elapsed = ContinuousClock.now - started
+        turn.seconds = Double(elapsed.components.seconds) + Double(elapsed.components.attoseconds) / 1e18
+        let raw = String(decoding: reply.body, as: UTF8.self)
+        if reply.status != 200 {
+            let root = (try? AemiJSON.parse(reply.body))?.root
+            let shape = "type=\(root?["error"]["type"].string ?? "-") code=\(root?["error"]["code"].string ?? "-") param=\(root?["error"]["param"].string ?? "-")"
+            print("REPLAY_PROBE error shape: \(shape)")
+            let message = root?["error"]["message"].string ?? "(no message)"
+            // The only long strings in a 400 are echoes of what was sent; strip anything that looks sealed.
+            turn.error = String(message.prefix(400))
+            return turn
+        }
+        for line in raw.split(separator: "\n") where line.hasPrefix("data: ") {
+            guard let event = try? AemiJSON.parse(Array(line.dropFirst(6).utf8)) else { continue }
+            let root = event.root
+            switch root["type"].string {
+                case "response.output_item.done": turn.items.append(root["item"])
+                case "response.output_text.delta": turn.text += root["delta"].string ?? ""
+                case "response.completed", "response.incomplete":
+                    let usage = root["response"]["usage"]
+                    turn.input = usage["input_tokens"].int
+                    turn.output = usage["output_tokens"].int
+                    turn.reasoning = usage["output_tokens_details"]["reasoning_tokens"].int
+                    turn.cached = usage["input_tokens_details"]["cached_tokens"].int
+                case "response.failed", "error":
+                    turn.error = String((root["response"]["error"]["message"].string ?? root["message"].string ?? "failed").prefix(300))
+                default: break
+            }
+        }
+        return turn
+    }
+
+    func describe(_ label: String, _ turn: Turn) {
+        var line = "REPLAY_PROBE \(label): status=\(turn.status)"
+        if let error = turn.error { line += " error=\"\(error)\"" }
+        let kinds = turn.items.map { $0["type"].string ?? "?" }.joined(separator: ",")
+        if !turn.items.isEmpty { line += " items=[\(kinds)]" }
+        for item in turn.items where item["type"].string == "reasoning" {
+            line += " reasoning(id=\(item["id"].string != nil) sealed=\(item["encrypted_content"].string?.count ?? -1) summary=\(item["summary"].array?.count ?? -1))"
+        }
+        for item in turn.items where item["type"].string == "function_call" {
+            line += " call(id=\(item["id"].string != nil) status=\(item["status"].string ?? "-"))"
+        }
+        line += " in=\(turn.input.map(String.init) ?? "-") out=\(turn.output.map(String.init) ?? "-") reasoningTokens=\(turn.reasoning.map(String.init) ?? "-") cached=\(turn.cached.map(String.init) ?? "-") textChars=\(turn.text.count)"
+        print(line)
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_REPLAY_PROBE"] == "1"))
+    func replay() async throws {
+        let file = CredentialFile.standard()
+        let credentials = try await CodexAccess(file: file, client: CodexAuthClient(transport: URLSessionTransport()))
+            .credentials(now: Date().timeIntervalSince1970)
+        let models = try await CodexCatalogClient(transport: URLSessionTransport()).models(credentials: credentials)
+        let names = models.map(\.id)
+        print("REPLAY_PROBE models=\(names.joined(separator: ","))")
+        let primary = ProcessInfo.processInfo.environment["ASK_REPLAY_MODEL"] ?? "gpt-6.1-sol"
+        let other = ProcessInfo.processInfo.environment["ASK_REPLAY_OTHER_MODEL"] ?? "gpt-6-luna"
+        let session = UUID().uuidString
+        let effortUnderTest = ProcessInfo.processInfo.environment["ASK_REPLAY_EFFORT"] ?? "xhigh"
+        let user = #"{"role":"user","content":[{"type":"input_text","text":"Among the numbers 17, 29, 41 and 53, find the pair whose product is closest to 1000. Think it through, then use the calc tool to compute that pair\u0027s exact product, then state it."}]}"#
+
+        // 1. Does the server accept the include option, and what does a reasoning item look like?
+        let withoutInclude = try await send(model: primary, input: [user], include: false, credentials: credentials, session: session, effort: effortUnderTest)
+        describe("turn1 without include", withoutInclude)
+        let first = try await send(model: primary, input: [user], include: true, credentials: credentials, session: session, effort: effortUnderTest)
+        describe("turn1 with include", first)
+        guard let reasoning = first.items.first(where: { $0["type"].string == "reasoning" }),
+            let call = first.items.first(where: { $0["type"].string == "function_call" })
+        else {
+            print("REPLAY_PROBE no reasoning item and function call in the first turn; later cases cannot run")
+            return
+        }
+        let callID = call["call_id"].string ?? ""
+        let name = call["name"].string ?? "calc"
+        let arguments = call["arguments"].string ?? "{}"
+        let parsed = (try? AemiJSON.parse(Array(arguments.utf8)))?.root
+        let product = (parsed?["a"].int ?? 0) * (parsed?["b"].int ?? 0)
+        let output = #"{"type":"function_call_output","call_id":\#(Self.q(callID)),"output":"\#(product)"}"#
+        let plainCall = #"{"type":"function_call","call_id":\#(Self.q(callID)),"name":\#(Self.q(name)),"arguments":\#(Self.q(arguments))}"#
+        let rawReasoning = String(decoding: try reasoning.encodedBytes(), as: UTF8.self)
+        let rawCall = String(decoding: try call.encodedBytes(), as: UTF8.self)
+        var noIDReasoning = rawReasoning
+        if let id = reasoning["id"].string { noIDReasoning = rawReasoning.replacingOccurrences(of: "\"id\":\(Self.q(id)),", with: "").replacingOccurrences(of: ",\"id\":\(Self.q(id))", with: "") }
+        let idRemoved = noIDReasoning != rawReasoning
+
+        // 2. Second turn: what each shape of history does.
+        describe("turn2 baseline: no reasoning, call without id (ask today)", try await send(model: primary, input: [user, plainCall, output], include: true, credentials: credentials, session: session, effort: effortUnderTest))
+        describe("turn2 reasoning verbatim + call verbatim", try await send(model: primary, input: [user, rawReasoning, rawCall, output], include: true, credentials: credentials, session: session, effort: effortUnderTest))
+        describe("turn2 reasoning verbatim + call without id", try await send(model: primary, input: [user, rawReasoning, plainCall, output], include: true, credentials: credentials, session: session, effort: effortUnderTest))
+        if idRemoved {
+            describe("turn2 reasoning WITHOUT id + call without id", try await send(model: primary, input: [user, noIDReasoning, plainCall, output], include: true, credentials: credentials, session: session, effort: effortUnderTest))
+        } else { print("REPLAY_PROBE could not construct the id-less variant; skipped") }
+        describe("turn2 reasoning verbatim but no call/output after it", try await send(model: primary, input: [user, rawReasoning], include: true, credentials: credentials, session: session, effort: effortUnderTest))
+        describe("turn2 reasoning verbatim, then the user's next message instead of a call", try await send(model: primary, input: [user, rawReasoning, #"{"role":"user","content":[{"type":"input_text","text":"Reply with the single word ok."}]}"#], include: true, credentials: credentials, session: session, effort: effortUnderTest))
+
+        // 3. Is the sealed content verified? Change one character of it.
+        if let sealed = reasoning["encrypted_content"].string, sealed.count > 20 {
+            var chars = Array(sealed)
+            chars[chars.count / 2] = chars[chars.count / 2] == "A" ? "B" : "A"
+            let tampered = rawReasoning.replacingOccurrences(of: sealed, with: String(chars))
+            describe("turn2 sealed content altered by one character", try await send(model: primary, input: [user, tampered, rawCall, output], include: true, credentials: credentials, session: session, effort: effortUnderTest))
+        }
+
+        // 4. Another model's reasoning.
+        if names.contains(other), other != primary {
+            describe("turn2 reasoning from \(primary) replayed to \(other)", try await send(model: other, input: [user, rawReasoning, rawCall, output], include: true, credentials: credentials, session: session, effort: effortUnderTest))
+            describe("turn2 \(other) baseline (no reasoning)", try await send(model: other, input: [user, plainCall, output], include: true, credentials: credentials, session: session, effort: effortUnderTest))
+        } else { print("REPLAY_PROBE other model \(other) not in this account's catalog; cross-model case skipped") }
+    }
+
+    /// Paired comparison on identical first turns: no reasoning, all reasoning items verbatim with the call verbatim, and
+    /// all reasoning items verbatim with a call that has no id (ask's own shape). Reports counts and whether the answer
+    /// contains the right product; never the text.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_REPLAY_BENEFIT"] == "1"))
+    func benefit() async throws {
+        let file = CredentialFile.standard()
+        let credentials = try await CodexAccess(file: file, client: CodexAuthClient(transport: URLSessionTransport()))
+            .credentials(now: Date().timeIntervalSince1970)
+        let model = ProcessInfo.processInfo.environment["ASK_REPLAY_MODEL"] ?? "gpt-6.1-sol"
+        let effort = ProcessInfo.processInfo.environment["ASK_REPLAY_EFFORT"] ?? "xhigh"
+        let rounds = Int(ProcessInfo.processInfo.environment["ASK_REPLAY_ROUNDS"] ?? "") ?? 5
+        let user = #"{"role":"user","content":[{"type":"input_text","text":"Among the numbers 17, 29, 41 and 53, find the pair whose product is closest to 1000. Think it through, then use the calc tool to compute that pair\u0027s exact product, then state it."}]}"#
+        var rows: [String: [(input: Int, output: Int, reasoning: Int, right: Bool, seconds: Double)]] = [:]
+        for round in 1...rounds {
+            let session = UUID().uuidString
+            let first = try await send(model: model, input: [user], include: true, credentials: credentials, session: session, effort: effort)
+            let reasoning = first.items.filter { $0["type"].string == "reasoning" }
+            guard first.status == 200, !reasoning.isEmpty, let call = first.items.first(where: { $0["type"].string == "function_call" }) else {
+                print("REPLAY_BENEFIT round \(round): first turn had no reasoning plus call (status \(first.status)); skipped"); continue
+            }
+            let callID = call["call_id"].string ?? ""
+            let arguments = call["arguments"].string ?? "{}"
+            let parsed = (try? AemiJSON.parse(Array(arguments.utf8)))?.root
+            let a = parsed?["a"].int ?? 0, b = parsed?["b"].int ?? 0
+            let output = #"{"type":"function_call_output","call_id":\#(Self.q(callID)),"output":"\#(a * b)"}"#
+            let plain = #"{"type":"function_call","call_id":\#(Self.q(callID)),"name":\#(Self.q(call["name"].string ?? "calc")),"arguments":\#(Self.q(arguments))}"#
+            let sealed = try reasoning.map { String(decoding: try $0.encodedBytes(), as: UTF8.self) }
+            let rawCall = String(decoding: try call.encodedBytes(), as: UTF8.self)
+            let arms: [(String, [String])] = [
+                ("A none", [user, plain, output]), ("B all+call-verbatim", [user] + sealed + [rawCall, output]),
+                ("C all+call-without-id", [user] + sealed + [plain, output])
+            ]
+            for (name, input) in arms {
+                let turn = try await send(model: model, input: input, include: true, credentials: credentials, session: session, effort: effort)
+                let right = turn.text.contains(String(a * b))
+                print("REPLAY_BENEFIT round \(round) first(call \(a)x\(b), reasoning items \(reasoning.count), reasoningTokens \(first.reasoning ?? -1)) arm \(name): status=\(turn.status) in=\(turn.input ?? -1) out=\(turn.output ?? -1) reasoningTokens=\(turn.reasoning ?? -1) cached=\(turn.cached ?? -1) seconds=\(String(format: "%.2f", turn.seconds)) answeredProduct=\(right) items=[\(turn.items.map { $0["type"].string ?? "?" }.joined(separator: ","))]\(turn.error.map { " error=\($0)" } ?? "")")
+                if turn.status == 200, turn.error == nil { rows[name, default: []].append((turn.input ?? 0, turn.output ?? 0, turn.reasoning ?? 0, right, turn.seconds)) }
+            }
+        }
+        for (name, values) in rows.sorted(by: { $0.key < $1.key }) {
+            func median(_ numbers: [Int]) -> Int { numbers.sorted()[numbers.count / 2] }
+            print("REPLAY_BENEFIT summary \(name): n=\(values.count) medianIn=\(median(values.map(\.input))) medianOut=\(median(values.map(\.output))) medianReasoning=\(median(values.map(\.reasoning))) correct=\(values.filter(\.right).count) medianSeconds=\(String(format: "%.2f", values.map(\.seconds).sorted()[values.count / 2]))")
+        }
+    }
+
+    /// A real sequential tool loop that needs reasoning at each step: a binary search for a hidden number through a `check` tool.
+    /// Replay on and off over the same secrets. Never prints text.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_REPLAY_LOOP"] == "1"))
+    func loop() async throws {
+        let file = CredentialFile.standard()
+        let credentials = try await CodexAccess(file: file, client: CodexAuthClient(transport: URLSessionTransport()))
+            .credentials(now: Date().timeIntervalSince1970)
+        let model = ProcessInfo.processInfo.environment["ASK_REPLAY_MODEL"] ?? "gpt-6.1-sol"
+        let effort = ProcessInfo.processInfo.environment["ASK_REPLAY_EFFORT"] ?? "xhigh"
+        let rounds = Int(ProcessInfo.processInfo.environment["ASK_REPLAY_ROUNDS"] ?? "") ?? 4
+        let check = #"{"type":"function","name":"check","description":"Compare a guess with the secret integer. Answers higher, lower or correct.","parameters":{"type":"object","properties":{"guess":{"type":"integer"}},"required":["guess"]}}"#
+        let user = #"{"role":"user","content":[{"type":"input_text","text":"Find the secret integer between 1 and 1000. Call the check tool with a guess; it answers higher, lower or correct. Use as few guesses as you can. When it says correct, state the number."}]}"#
+        let secrets = [637, 218, 904, 451, 73, 799]
+        struct Total { var requests = 0, input = 0, output = 0, reasoning = 0, cached = 0, seconds = 0.0, right = false, failed = false }
+        var totals: [String: [Total]] = [:]
+        for round in 1...rounds {
+            let secret = secrets[(round - 1) % secrets.count]
+            for replay in (round % 2 == 1 ? [false, true] : [true, false]) {
+                let session = UUID().uuidString
+                var history = [user]
+                var total = Total()
+                steps: for _ in 0..<18 {
+                    let turn = try await send(model: model, input: history, include: true, credentials: credentials, session: session, effort: effort, tool: check)
+                    if turn.status != 200 || turn.error != nil { total.failed = true; break steps }
+                    total.requests += 1
+                    total.input += turn.input ?? 0
+                    total.output += turn.output ?? 0
+                    total.reasoning += turn.reasoning ?? 0
+                    total.cached += turn.cached ?? 0
+                    total.seconds += turn.seconds
+                    let calls = turn.items.filter { $0["type"].string == "function_call" }
+                    if replay { for item in turn.items where item["type"].string == "reasoning" { history.append(String(decoding: try item.encodedBytes(), as: UTF8.self)) } }
+                    if calls.isEmpty { total.right = turn.text.contains(String(secret)); break steps }
+                    for call in calls {
+                        let id = call["call_id"].string ?? ""
+                        let arguments = call["arguments"].string ?? "{}"
+                        let guess = (try? AemiJSON.parse(Array(arguments.utf8)))?.root["guess"].int ?? 0
+                        let answer = guess == secret ? "correct" : (guess < secret ? "higher" : "lower")
+                        history.append(#"{"type":"function_call","call_id":\#(Self.q(id)),"name":"check","arguments":\#(Self.q(arguments))}"#)
+                        history.append(#"{"type":"function_call_output","call_id":\#(Self.q(id)),"output":"\#(answer)"}"#)
+                    }
+                }
+                let label = replay ? "replay" : "none"
+                print("REPLAY_LOOP round \(round) \(label): requests=\(total.requests) in=\(total.input) out=\(total.output) reasoningTokens=\(total.reasoning) cached=\(total.cached) seconds=\(String(format: "%.1f", total.seconds)) right=\(total.right) failed=\(total.failed)")
+                totals[label, default: []].append(total)
+            }
+        }
+        for (label, values) in totals.sorted(by: { $0.key < $1.key }) {
+            func med(_ numbers: [Double]) -> Double { numbers.sorted()[numbers.count / 2] }
+            print("REPLAY_LOOP summary \(label): n=\(values.count) medianRequests=\(med(values.map { Double($0.requests) })) medianIn=\(med(values.map { Double($0.input) })) medianOut=\(med(values.map { Double($0.output) })) medianReasoning=\(med(values.map { Double($0.reasoning) })) medianCached=\(med(values.map { Double($0.cached) })) medianSeconds=\(String(format: "%.1f", med(values.map(\.seconds)))) right=\(values.filter(\.right).count) failed=\(values.filter(\.failed).count)")
+        }
+    }
+
+    /// Sequential steps that each need thought: three pair-product puzzles, one calc call each, parallel calls off.
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_REPLAY_PUZZLES"] == "1"))
+    func puzzles() async throws {
+        let file = CredentialFile.standard()
+        let credentials = try await CodexAccess(file: file, client: CodexAuthClient(transport: URLSessionTransport()))
+            .credentials(now: Date().timeIntervalSince1970)
+        let model = ProcessInfo.processInfo.environment["ASK_REPLAY_MODEL"] ?? "gpt-6.1-sol"
+        let effort = ProcessInfo.processInfo.environment["ASK_REPLAY_EFFORT"] ?? "xhigh"
+        let rounds = Int(ProcessInfo.processInfo.environment["ASK_REPLAY_ROUNDS"] ?? "") ?? 3
+        let user = #"{"role":"user","content":[{"type":"input_text","text":"Solve three puzzles one after another, calling the calc tool once per puzzle and waiting for its result before starting the next. Puzzle 1: among 17, 29, 41, 53 pick the pair whose product is closest to 1000. Puzzle 2: among 13, 37, 61, 89 pick the pair whose product is closest to 2000. Puzzle 3: among 23, 47, 71, 97 pick the pair whose product is closest to 3000. Use calc to get each chosen pair's exact product. Finally state the sum of the three products."}]}"#
+        struct Total { var requests = 0, input = 0, output = 0, reasoning = 0, items = 0, seconds = 0.0, right = false, failed = false }
+        var totals: [String: [Total]] = [:]
+        for round in 1...rounds {
+            for replay in (round % 2 == 1 ? [false, true] : [true, false]) {
+                let session = UUID().uuidString
+                var history = [user]
+                var total = Total()
+                steps: for _ in 0..<12 {
+                    let turn = try await send(model: model, input: history, include: true, credentials: credentials, session: session, effort: effort, parallel: false)
+                    if turn.status != 200 || turn.error != nil { total.failed = true; break steps }
+                    total.requests += 1
+                    total.input += turn.input ?? 0
+                    total.output += turn.output ?? 0
+                    total.reasoning += turn.reasoning ?? 0
+                    total.seconds += turn.seconds
+                    let reasoningItems = turn.items.filter { $0["type"].string == "reasoning" }
+                    total.items += reasoningItems.count
+                    let calls = turn.items.filter { $0["type"].string == "function_call" }
+                    if replay { for item in reasoningItems { history.append(String(decoding: try item.encodedBytes(), as: UTF8.self)) } }
+                    if calls.isEmpty { total.right = turn.text.contains("6495") || turn.text.contains("6,495"); break steps }
+                    for call in calls {
+                        let id = call["call_id"].string ?? ""
+                        let arguments = call["arguments"].string ?? "{}"
+                        let parsed = (try? AemiJSON.parse(Array(arguments.utf8)))?.root
+                        let product = (parsed?["a"].int ?? 0) * (parsed?["b"].int ?? 0)
+                        history.append(#"{"type":"function_call","call_id":\#(Self.q(id)),"name":"calc","arguments":\#(Self.q(arguments))}"#)
+                        history.append(#"{"type":"function_call_output","call_id":\#(Self.q(id)),"output":"\#(product)"}"#)
+                    }
+                }
+                let label = replay ? "replay" : "none"
+                print("REPLAY_PUZZLES round \(round) \(label): requests=\(total.requests) reasoningItems=\(total.items) in=\(total.input) out=\(total.output) reasoningTokens=\(total.reasoning) seconds=\(String(format: "%.1f", total.seconds)) right=\(total.right) failed=\(total.failed)")
+                totals[label, default: []].append(total)
+            }
+        }
+        for (label, values) in totals.sorted(by: { $0.key < $1.key }) {
+            func med(_ numbers: [Double]) -> Double { numbers.sorted()[numbers.count / 2] }
+            print("REPLAY_PUZZLES summary \(label): n=\(values.count) medianRequests=\(med(values.map { Double($0.requests) })) medianItems=\(med(values.map { Double($0.items) })) medianIn=\(med(values.map { Double($0.input) })) medianOut=\(med(values.map { Double($0.output) })) medianReasoning=\(med(values.map { Double($0.reasoning) })) medianSeconds=\(String(format: "%.1f", med(values.map(\.seconds)))) right=\(values.filter(\.right).count) failed=\(values.filter(\.failed).count)")
+        }
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_REPLAY_SHAPE"] == "1"))
+    func shape() async throws {
+        let file = CredentialFile.standard()
+        let credentials = try await CodexAccess(file: file, client: CodexAuthClient(transport: URLSessionTransport()))
+            .credentials(now: Date().timeIntervalSince1970)
+        let user = #"{"role":"user","content":[{"type":"input_text","text":"Among the numbers 17, 29, 41 and 53, find the pair whose product is closest to 1000. Think it through, then use the calc tool to compute that pair\u0027s exact product, then state it."}]}"#
+        let session = UUID().uuidString
+        let first = try await send(model: "gpt-6.1-sol", input: [user], include: false, credentials: credentials, session: session, effort: "xhigh")
+        guard let reasoning = first.items.first(where: { $0["type"].string == "reasoning" }), let sealed = reasoning["encrypted_content"].string else { print("REPLAY_PROBE shape: no reasoning"); return }
+        let raw = String(decoding: try reasoning.encodedBytes(), as: UTF8.self)
+        var chars = Array(sealed); chars[chars.count / 2] = chars[chars.count / 2] == "A" ? "B" : "A"
+        describe("shape: altered sealed content", try await send(model: "gpt-6.1-sol", input: [user, raw.replacingOccurrences(of: sealed, with: String(chars))], include: false, credentials: credentials, session: session))
+        describe("shape: truncated sealed content", try await send(model: "gpt-6.1-sol", input: [user, raw.replacingOccurrences(of: sealed, with: String(sealed.prefix(40)))], include: false, credentials: credentials, session: session))
+        describe("shape: sealed content replaced by text", try await send(model: "gpt-6.1-sol", input: [user, raw.replacingOccurrences(of: sealed, with: "not-sealed-content")], include: false, credentials: credentials, session: session))
+        describe("shape: no sealed content, id only", try await send(model: "gpt-6.1-sol", input: [user, #"{"type":"reasoning","id":"\#(reasoning["id"].string ?? "")","summary":[]}"#], include: false, credentials: credentials, session: session))
+    }
+}
