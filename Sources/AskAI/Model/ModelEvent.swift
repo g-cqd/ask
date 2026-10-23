@@ -20,4 +20,6 @@ public enum ModelEvent: Sendable, Equatable {
     case messageStopped
     /// An event or delta this decoder does not know. Reported so new protocol features are visible.
     case unrecognized(event: String, type: String)
+    /// Something the provider layer did that the person should be told, such as a repaired request. Not part of the response.
+    case notice(String)
 }

@@ -7,11 +7,18 @@ public struct ResponsesDialect: Sendable, Equatable {
     /// Instructions to send when ask has none, for a server that insists on some.
     public var fallbackInstructions: String?
 
+    /// Whether the reasoning the server sealed earlier in the current tool loop is sent back (ADR-0061).
+    public var replaysReasoning: Bool
+
     /// A dialect with these differences.
-    public init(sendsOutputLimit: Bool = true, promptCacheKey: String? = nil, fallbackInstructions: String? = nil) {
+    public init(
+        sendsOutputLimit: Bool = true, promptCacheKey: String? = nil, fallbackInstructions: String? = nil,
+        replaysReasoning: Bool = false
+    ) {
         self.sendsOutputLimit = sendsOutputLimit
         self.promptCacheKey = promptCacheKey
         self.fallbackInstructions = fallbackInstructions
+        self.replaysReasoning = replaysReasoning
     }
 
     /// The plain API: OpenAI's and llama.cpp's.
