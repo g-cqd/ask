@@ -39,7 +39,8 @@ ask already has slash commands (`/help`, `/quit`, `/follow-up`, `/config`, `/com
 7. **Drawing:** a title row and up to seven matches (fewer on a short screen: `(rows - 6) / 2`), directly above the
    prompt, below the status line, taking rows from the transcript, which stays bottom-aligned and keeps at least a row. The
    title says what the list is, `N of M` when the matches do not all fit, and the keys, as many as the width allows. The
-   chosen row is bold and in colour; nothing is filled, marked or started with an icon. An approval question hides it.
+   chosen row is bold and in colour; nothing is filled, marked or started with an icon. An approval question hides it. The screen's order is transcript, the runners list when open (roadmap 0051), the status line, the picker, the prompt; the
+   runners list takes its rows first and the picker is sized from what remains.
 8. **The pointer:** the picker's rows are outside the transcript region, so a click there does nothing and the wheel
    scrolls the transcript as it does everywhere (the prototype's wheel rule, held by construction). Clicking a row is not
    built.
