@@ -52,11 +52,18 @@ This is an association, not a demonstrated cause: the one experiment that tried 
 own manipulation check (the main thread saw QoS 21 in every arm), and a slow performance-core cohort from an earlier,
 heavily loaded run is still unexplained.
 
+## Startup CPU (diary 2026-10-23 (13), ADR-0065)
+
+Delivered: a bare launch skips ArgumentParser's reflection, saving a median 0.9-1.1 ms of CPU per launch (about 7%), with
+guards that keep it the same launch as a parsed empty command line. Five other levers were measured and refuted (chained
+fixups, async main, library count, page faults, a size-optimised build). A profile of 60 launches puts 26% of samples in the
+loader resolving ask's 2,020 imported symbols and 24% in system initializers that any Foundation program pays.
+
 ## Still owed
 
 - Decide, with the owner, how budget verification should treat the efficiency-core share (ADR-0038 set the budgets):
   report it beside the median, require it to be low, or leave the budget as is. Nothing was relaxed.
-- Cut startup CPU, since the penalty scales with it: about 6-17 ms precede the CLI marker; ArgumentParser about 1.8 ms;
-  policy construction about 0.8 ms. Probe each with the fixed-cohort tool before changing code.
+- The loader's symbol resolution is the largest ask-specific cost left. Find how many of the 2,020 imports come from code a
+  bare launch never reaches before deciding whether a smaller binary surface is worth its complexity.
 - Run a QoS intervention that really reaches the process (for example `taskpolicy`), compare terminal launches with the
-  harness's, and sample the memory-pressure warning level, which the campaign never reached.
+  harness's, and sample the memory-pressure warning level, which no cohort has reached.
