@@ -208,5 +208,32 @@ t.repaint()
 check("the wheel brings the end back", t.lines()[ROWS - 3].startswith("/reload  "), t.lines()[ROWS - 3])
 t.close()
 
+t = with_help("ghostty", helps=4)
+before = len(t.copies())
+t.mouse(0, 5, 12, wait=0.1)
+t.mouse(32, 5, 0, wait=0.1)
+t.mouse(0, 5, 0, release=True, wait=0.4)
+brief = t.copies()[before:]
+check("a drag at the edge that is released at once copies only a little", len(brief) == 1 and brief[0].count("\n") < 25, str(brief))
+t.close()
+
+t = with_help("ghostty", helps=4)
+before = len(t.copies())
+t.mouse(0, 5, 12, wait=0.1)
+t.mouse(32, 5, 0, wait=0.1)
+t.pump(2.5)  # the button is held still: a terminal reports no motion, so only the timer can scroll
+check("a held drag shows no copy before release", t.copies()[before:] == [])
+t.mouse(0, 5, 0, release=True, wait=0.5)
+held = t.copies()[before:]
+check(
+    "a drag held still at the top edge scrolls to the start and selects everything it passed",
+    len(held) == 1 and held[0].startswith("/help") and held[0].count("/quit") >= 3
+    and held[0].count("\n") >= brief[0].count("\n") + 8,
+    f"held lines={held[0].count(chr(10)) + 1 if held else 0} quits={held[0].count('/quit') if held else 0}; brief lines={brief[0].count(chr(10)) + 1}",
+)
+t.repaint()
+check("the screen is left scrolled to the start", t.lines()[1].startswith("/help"), str(t.lines()[:3]))
+t.close()
+
 print(f"\n{sum(results)} of {len(results)} checks passed")
 sys.exit(0 if all(results) else 1)

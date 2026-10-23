@@ -29,6 +29,7 @@ public struct ScreenController: Sendable {
     var frame = FrameGeometry()
     var pointer = PointerRecognizer<Int>()
     var selector = SelectionController<Int>()
+    var autoscroll = DragAutoscroll()
 
     /// What `/help` and `/quit` are, always present.
     static let builtIn = [

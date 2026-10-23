@@ -122,7 +122,9 @@ public struct ScreenComposer: Sendable {
         }
         frames?
             .store(
-                FrameGeometry(rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count))
+                FrameGeometry(
+                    rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count,
+                    scrollback: state.scrollback))
 
         if statusRows > 0 {
             write(Self.statusLine(for: state, input: editor.indicator), row: transcriptRows, into: &buffer)

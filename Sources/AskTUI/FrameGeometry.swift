@@ -9,4 +9,6 @@ struct FrameGeometry: Sendable {
     var columns = 0
     /// How many wrapped lines the whole transcript has, so a scroll can stop at the top.
     var totalLines = 0
+    /// The scroll position this frame was drawn at. A timer step waits until the frame it sees matches the position it asked for.
+    var scrollback = 0
 }
