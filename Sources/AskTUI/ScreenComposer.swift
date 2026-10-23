@@ -89,7 +89,9 @@ public struct ScreenComposer: Sendable {
         let statusRows = rows > 1 ? 1 : 0
         let panel = Self.runnerRows(for: state, available: Swift.max(0, rows - promptRows - statusRows - 1))
         let status = Self.status(for: state, input: editor.indicator)
-        let transcriptRows = rows - promptRows - statusRows - panel.count
+        let pickerLines = Self.pickerLines(
+            for: state, columns: columns, rows: rows - promptRows - statusRows - panel.count - 1)
+        let transcriptRows = rows - promptRows - statusRows - panel.count - pickerLines.count
         self.transcriptRows = transcriptRows
 
         updateTranscriptLines(state.transcript, columns: columns)
@@ -131,7 +133,7 @@ public struct ScreenComposer: Sendable {
 
         for (offset, line) in panel.enumerated() { write(line, row: transcriptRows + offset, into: &buffer) }
         if statusRows > 0 { write(status.line, row: transcriptRows + panel.count, into: &buffer) }
-        let promptStart = transcriptRows + panel.count + statusRows
+        let promptStart = writePicker(pickerLines, from: transcriptRows + panel.count + statusRows, into: &buffer)
         for offset in 0 ..< promptRows {
             write(Line(text: editor.lines[offset], style: .default), row: promptStart + offset, into: &buffer)
         }
@@ -203,7 +205,7 @@ public struct ScreenComposer: Sendable {
     }
 
     /// Writes a whole row, the text then blanks to the edge, unless the row already holds exactly this.
-    private mutating func write(
+    mutating func write(
         _ line: Line, highlight: Range<Int>? = nil, row: Int, into buffer: inout ScreenBuffer
     ) {
         let now = Shown(text: line.text, style: line.style, highlight: highlight)

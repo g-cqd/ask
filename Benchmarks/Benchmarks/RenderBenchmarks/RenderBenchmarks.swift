@@ -33,6 +33,7 @@ let benchmarks: @Sendable () -> Void = {
     registerThinkingBenchmarks()
     registerInputBenchmarks()
     registerCodeBenchmarks()
+    registerPickerBenchmarks()
     Benchmark.defaultConfiguration = .init(
         metrics: [.wallClock, .cpuTotal], maxDuration: .seconds(2), maxIterations: 2_000)
     print(

@@ -22,6 +22,10 @@ public struct ScreenState: Sendable, Equatable {
     public var runnersOpen = false
     /// A question waiting for y, a or n: while it waits, those keys answer it and nothing is typed.
     public var pendingApproval: PendingApproval?
+    /// The command picker, while the draft's first word is a slash and something matches (roadmap 0048); nil otherwise.
+    var picker: CompletionPicker?
+    /// Where the word the user closed the picker on starts. It stays closed until the cursor leaves that word.
+    var pickerDismissedAt: Int?
     /// How many wrapped lines the transcript is scrolled up from the bottom.
     public var scrollback = 0
     /// What the user has selected with the pointer, anchored in the conversation so it survives scrolling and streaming.

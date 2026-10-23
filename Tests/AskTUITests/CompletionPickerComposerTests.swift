@@ -1,0 +1,144 @@
+import TerminalKitCodecs
+import TerminalKitInput
+import TerminalKitRender
+import TerminalKitStyle
+import TerminalKitText
+import Testing
+
+@testable import AskTUI
+
+/// How the picker is drawn: between the status line and the prompt, taking rows from the transcript, in text only (a bold choice,
+/// no fill, no leading icon), and never so tall that the transcript disappears.
+@Suite("The picker is drawn above the prompt, in text, and the transcript gives way to it")
+struct CompletionPickerComposerTests {
+    private static let commands = commandTable(
+        """
+        config | Show the settings.
+        compact | Compact the conversation.
+        reload | Reload the binary.
+        """)
+
+    private func rows(_ buffer: ScreenBuffer) -> [String] {
+        (0 ..< buffer.rows)
+            .map { row in
+                var text = ""
+                for column in 0 ..< buffer.columns {
+                    let cell = buffer[row, column]
+                    if !cell.isContinuation { text.append(cell.character) }
+                }
+                while text.hasSuffix(" ") { text.removeLast() }
+                return text
+            }
+    }
+
+    private func screen(
+        typing text: String, commands: [SlashCommand] = commands, rows: Int = 20
+    ) -> (ScreenController, Int) {
+        var controller = ScreenController(label: "m", commands: commands)
+        for scalar in text.unicodeScalars {
+            _ = controller.handle(.key(KeyEvent(keyCode: scalar.value)), pageRows: rows - 3)
+        }
+        return (controller, rows)
+    }
+
+    @Test func `the picker sits between the status line and the prompt`() throws {
+        var (controller, height) = screen(typing: "/co")
+        controller.handle(.notice("older line", isError: false))
+        var buffer = ScreenBuffer(columns: 60, rows: height)
+        var composer = ScreenComposer()
+        let cursor = composer.compose(controller.state, into: &buffer)
+        let shown = rows(buffer)
+        let status = try #require(shown.lastIndex { $0.hasPrefix("m ·") })
+        #expect(
+            shown.last == "ask> /co" && status == height - 1 - 4 - 1,
+            "status, then the title and three matches, then the prompt")
+        #expect(shown[status + 1].hasPrefix("commands") && shown[status + 1].contains("Esc"))
+        #expect(shown[status + 2].hasPrefix("/config") && shown[status + 2].contains("Show the settings."))
+        #expect(shown[status + 3].hasPrefix("/compact") && shown[status + 4].hasPrefix("/help"))
+        #expect(cursor.row == height - 1 && cursor.column == 8)
+        #expect(composer.transcriptRows == status)
+    }
+
+    @Test func `the choice is bold and nothing is painted, filled or marked`() throws {
+        var (controller, height) = screen(typing: "/co")
+        _ = controller.handle(.key(KeyEvent(keyCode: Key.down.rawValue)), pageRows: height - 3)
+        var buffer = ScreenBuffer(columns: 60, rows: height)
+        var composer = ScreenComposer()
+        _ = composer.compose(controller.state, into: &buffer)
+        let shown = rows(buffer)
+        let first = try #require(shown.firstIndex { $0.hasPrefix("/config") })
+        #expect(!buffer[first, 0].style.bold && buffer[first + 1, 0].style.bold, "the second match is the choice")
+        for row in (first - 1) ..< (first + 4) {
+            for column in 0 ..< 60 {
+                let style = buffer[row, column].style
+                #expect(style.bg == .default && !style.inverse, "painted cell at \(row),\(column)")
+            }
+        }
+        #expect(shown[first + 1].first == "/", "nothing starts a row but its text")
+    }
+
+    @Test func `the title counts the choice when there are more matches than rows`() throws {
+        let many = (0 ..< 12).map { SlashCommand(name: "cmd\($0)", summary: "Command \($0).") }
+        var (controller, height) = screen(typing: "/cmd", commands: many)
+        for _ in 0 ..< 9 { _ = controller.handle(.key(KeyEvent(keyCode: Key.down.rawValue)), pageRows: height - 3) }
+        var buffer = ScreenBuffer(columns: 70, rows: height)
+        var composer = ScreenComposer()
+        _ = composer.compose(controller.state, into: &buffer)
+        let shown = rows(buffer)
+        let title = try #require(shown.first { $0.hasPrefix("commands") })
+        #expect(title.contains("10 of 12"))
+        #expect(shown.contains { $0.hasPrefix("/cmd9") } && !shown.contains { $0.hasPrefix("/cmd0") })
+        #expect(shown.filter { $0.hasPrefix("/cmd") }.count == 7)
+    }
+
+    @Test func `it never takes the last transcript row, even where rows are scarce`() {
+        var (controller, height) = screen(typing: "/", rows: 12)
+        controller.handle(.notice("still here", isError: false))
+        var buffer = ScreenBuffer(columns: 50, rows: height)
+        var composer = ScreenComposer()
+        _ = composer.compose(controller.state, into: &buffer)
+        #expect(composer.transcriptRows >= 1)
+        #expect(rows(buffer).contains("still here"))
+        #expect(rows(buffer).last == "ask> /")
+    }
+
+    @Test func `it is hidden while an approval question waits, and back when it is answered`() {
+        var (controller, height) = screen(typing: "/co")
+        controller.handle(.askApproval(id: 1, question: "bash wants network. Allow it?"))
+        var buffer = ScreenBuffer(columns: 60, rows: height)
+        var composer = ScreenComposer()
+        _ = composer.compose(controller.state, into: &buffer)
+        #expect(!rows(buffer).contains { $0.hasPrefix("commands") })
+    }
+
+    @Test func `rows are cut to the width, wide text included, and a tiny width does not crash`() throws {
+        let wide = [SlashCommand(name: "wide", summary: String(repeating: "日本語", count: 20))]
+        let (controller, _) = screen(typing: "/w", commands: wide)
+        let picker = try #require(controller.state.picker)
+        // Every width, so every way a cut can land inside a two-cell character is tried: the builder relies on the cut never overshooting.
+        for columns in 1 ... 60 {
+            let lines = ScreenComposer.pickerLines(picker, columns: columns, rows: 8)
+            #expect(!lines.isEmpty)
+            for line in lines {
+                #expect(UnicodeWidth.displayWidth(of: line.text) <= columns, "\(line.text) at \(columns)")
+            }
+        }
+        #expect(ScreenComposer.pickerLines(picker, columns: 40, rows: 1).isEmpty, "a title alone is not a picker")
+        #expect(ScreenComposer.pickerLines(picker, columns: 0, rows: 8).isEmpty)
+    }
+
+    @Test func `closing it gives the rows back to the transcript`() {
+        var (controller, height) = screen(typing: "/co")
+        for index in 1 ... 30 { controller.handle(.notice("line \(index)", isError: false)) }
+        var buffer = ScreenBuffer(columns: 60, rows: height)
+        var composer = ScreenComposer()
+        _ = composer.compose(controller.state, into: &buffer)
+        let withPicker = composer.transcriptRows
+        _ = controller.handle(.key(KeyEvent(keyCode: 0x1B)), pageRows: height - 3)
+        _ = composer.compose(controller.state, into: &buffer)
+        #expect(composer.transcriptRows == withPicker + 4, "the title and three matches")
+        #expect(
+            rows(buffer)[composer.transcriptRows - 1] == "line 30",
+            "the newest line stays at the bottom of the transcript")
+    }
+}
