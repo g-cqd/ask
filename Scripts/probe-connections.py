@@ -92,6 +92,32 @@ run(['connections', 'unalias', 'work', 'fast'], 0)
 run(['connections', 'unalias', 'work', 'fast'], 1, lambda s: 'no alias named' in s)
 run(['connections', 'default', 'work'], 64)  # neither a model nor --clear: a usage error
 
+# --- an alias's thinking level: how it ranks, and how an older build is kept out -------------------------------------------
+def config_report(extra):
+    q = subprocess.run([binary, 'config'], cwd=root, env=env | extra, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=20)
+    assert q.returncode == 0, q.stderr
+    return ''.join(l for l in q.stdout.splitlines(True) if l.startswith('thinking'))
+
+
+run(['connections', 'alias', 'work', 'think', 'gpt-6-sol', '--thinking-level', 'xhigh'], 0,
+    lambda s: 'work/think is gpt-6-sol, thinking xhigh.' in s)
+run(['connections', 'alias', 'work', 'bad', 'm', '--thinking-level', 'ultra'], 64, lambda s: '--thinking-level must be one of' in s)
+assert json.loads((work_dir / 'aliases.json').read_text())['version'] == 2, 'a level must make the file one an older build refuses'
+chosen = {'ASK_PROVIDER': 'work', 'ASK_MODEL': 'think'}
+row = config_report(chosen)
+assert row.startswith('thinking') and 'xhigh' in row and '[alias work/think]' in row, row
+print('PASS an alias level is applied and its origin named:', row.strip()[:110], flush=True)
+row = config_report(chosen | {'ASK_THINKING': 'low'})
+assert 'low' in row and '$ASK_THINKING' in row and 'xhigh' not in row, row
+print('PASS ASK_THINKING outranks the alias level:', row.strip()[:110], flush=True)
+row = config_report({'ASK_PROVIDER': 'work', 'ASK_MODEL': 'gpt-6-sol'})
+assert 'alias' not in row, row
+print('PASS the same model typed directly carries no alias level:', row.strip()[:110], flush=True)
+run(['connections', 'unalias', 'work', 'think'], 0)
+saved = json.loads((work_dir / 'aliases.json').read_text())
+assert saved['version'] == 1 and 'thinking' not in json.dumps(saved), saved
+print('PASS with no level left the file is version 1 again', flush=True)
+
 # --- a rename keeps the aliases; a damaged file refuses a run that relies on it, not one that names a model ---------------
 run(['connections', 'default', 'work', 'deep'], 0)
 run(['connections', 'rename', 'work', 'employer'], 0)
