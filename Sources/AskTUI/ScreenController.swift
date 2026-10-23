@@ -34,7 +34,8 @@ public struct ScreenController: Sendable {
     /// What `/help` and `/quit` are, always present.
     static let builtIn = [
         SlashCommand(
-            name: "help", summary: "List commands; Ctrl+T thinking, Ctrl+O tools. Enter steers; Alt+Enter queues."),
+            name: "help",
+            summary: "List commands; Ctrl+T thinking, Ctrl+O tools, Ctrl+G code. Enter steers; Alt+Enter queues."),
         SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first."),
         SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT.")
     ]
@@ -46,6 +47,8 @@ public struct ScreenController: Sendable {
         self.options = options
         state.transcript.setToolsFoldedByDefault(options.foldTools)
         state.transcript.setThinkingFoldedByDefault(options.foldThinking)
+        state.transcript.setCodeFoldedByDefault(options.foldCode)
+        state.transcript.setCodeFoldLines(options.codeFoldLines)
         state.promptRows = options.promptRows
     }
 
@@ -68,6 +71,7 @@ public struct ScreenController: Sendable {
                 if let effects = selectionKey(key) { return effects }
                 if isToggleToolOutput(key) { return toggleAllToolOutput() }
                 if isToggleThinking(key) { return toggleAllThinking() }
+                if isToggleCode(key) { return toggleAllCode() }
                 clearSelection()
                 return edit(key, columns: columns)
             case .mouse(let mouse):

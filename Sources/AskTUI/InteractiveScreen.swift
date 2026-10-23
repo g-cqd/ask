@@ -136,6 +136,7 @@ private final class ScreenSession {
         clipboard = screen.clipboard
         controller = ScreenController(label: label, commands: conversation.commands, options: options)
         controller.state.nativeSelectionHint = options.mouse ? screen.clipboard.nativeSelectionHint : ""
+        controller.setScreenRows(rows)
         for update in opening { controller.handle(update) }
         (events, sink) = AsyncStream<ScreenEvent>.makeStream()
     }
@@ -197,6 +198,7 @@ private final class ScreenSession {
             case .resize:
                 if let size = try? connection.getSize() {
                     rows = size.rows
+                    controller.setScreenRows(size.rows)
                     columns = Swift.max(1, size.columns)
                     renderer.resize(columns: size.columns, rows: size.rows)
                     render(full: true)
