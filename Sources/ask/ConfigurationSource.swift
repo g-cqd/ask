@@ -141,6 +141,12 @@ struct ConfigurationSource: Sendable {
             // A /model choice, then --model, then the resumed session's model, then the configuration.
             model: flags.selected?.model ?? flags.model ?? pinned?.model ?? result.configuration.model.value,
             environment: environment, allowNetwork: allowNetwork)
+        if let level = discovered.model.thinking, let alias = discovered.model.alias,
+            let connection = discovered.model.connection
+        {
+            result.configuration = result.configuration.applying(
+                aliasThinking: level, alias: "\(connection.name)/\(alias)")
+        }
         let thinking = try ThinkingDiscovery.resolve(
             result.configuration.thinking.value, model: discovered.model, environment: environment)
         let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections(result.configuration.sandbox.value)
