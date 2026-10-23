@@ -6,7 +6,7 @@ internal import Testing
 /// What ask sends to a Responses server, byte for byte.
 ///
 /// Items, not messages: a user turn is `input_text`, an assistant turn is plain text, a call is a `function_call` and
-/// its result a `function_call_output`, both keyed by `call_id`. Reasoning is not sent back yet (ADR-0033), and nothing
+/// its result a `function_call_output`, both keyed by `call_id`. Reasoning is sent back only to a dialect that replays it, inside the tool loop in progress (ADR-0061), and no call
 /// carries an item `id`, so OpenAI has no pairing to check. llama.cpp accepted this shape (diary 22); OpenAI has not
 /// been tried.
 @Suite("Requests are encoded as Responses API items")
