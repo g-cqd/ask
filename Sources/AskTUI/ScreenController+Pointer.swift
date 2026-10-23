@@ -79,19 +79,22 @@ extension ScreenController {
         return [.copy(text)]
     }
 
-    /// Opens or closes the tool block whose header is on `row`, keeping the reader where they were. Returns whether a block was there.
+    /// Opens or closes the block whose header is on `row`, keeping the reader where they were. Returns whether a block was there.
+    /// A header is a tool's or thinking block's first line, or a long code block's placeholder or opening fence.
     private mutating func toggleFold(atRow row: Int) -> Bool {
-        // Only the header (hard line 0) is the target: a click in the body is for selecting.
-        guard let source = frame.rows.provenance(atRow: row), source.line == 0,
-            state.transcript.isFoldable(source.block)
+        // Only a header is the target: a click in a body is for selecting.
+        guard let source = frame.rows.provenance(atRow: row), state.transcript.items.indices.contains(source.block)
         else { return false }
-        let item = state.transcript.items[source.block]
-        let wasFolded = state.transcript.isFolded(source.block)
-        let before = ScreenComposer.lines(for: item, folded: wasFolded, block: source.block, columns: frame.columns)
-            .count
-        state.transcript.toggleFold(source.block)
-        let after = ScreenComposer.lines(for: item, folded: !wasFolded, block: source.block, columns: frame.columns)
-            .count
+        let block = source.block
+        let before = ScreenComposer.lines(in: state.transcript, at: block, columns: frame.columns).count
+        if source.line == 0, state.transcript.isFoldable(block) {
+            state.transcript.toggleFold(block)
+        } else if let fence = state.transcript.codeFence(toggledByLine: source.line, at: block) {
+            state.transcript.toggleCodeFold(fence, at: block)
+        } else {
+            return false
+        }
+        let after = ScreenComposer.lines(in: state.transcript, at: block, columns: frame.columns).count
         // Scrolled back, the lines below the header grew or shrank, so the view moves by as much and the header stays on its row.
         // At the bottom the view follows the end, as it does for streaming.
         if state.scrollback > 0 { state.scrollback = Swift.max(0, state.scrollback + after - before) }
@@ -101,13 +104,15 @@ extension ScreenController {
     }
 
     /// Ctrl+O: what a keyboard has for the click, and for the mouse being off. It flips every tool block at once.
-    func isToggleToolOutput(_ key: KeyEvent) -> Bool {
-        key.keyCode == 0x0F || (key.modifiers.contains(.ctrl) && key.keyCode == 0x6F)
-    }
+    func isToggleToolOutput(_ key: KeyEvent) -> Bool { Self.isControl(key, "o") }
 
     /// Ctrl+T: the same for thinking blocks.
-    func isToggleThinking(_ key: KeyEvent) -> Bool {
-        key.keyCode == 0x14 || (key.modifiers.contains(.ctrl) && key.keyCode == 0x74)
+    func isToggleThinking(_ key: KeyEvent) -> Bool { Self.isControl(key, "t") }
+
+    /// Ctrl and a letter, as a legacy terminal sends it (the control byte) or a keyboard-protocol terminal does (letter plus modifier).
+    static func isControl(_ key: KeyEvent, _ letter: Character) -> Bool {
+        guard let code = letter.asciiValue.map(UInt32.init) else { return false }
+        return key.keyCode == code & 0x1F || (key.modifiers.contains(.ctrl) && key.keyCode == code)
     }
 
     mutating func toggleAllThinking() -> [Effect] {
