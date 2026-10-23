@@ -20,6 +20,8 @@ public struct ResolvedModel: Sendable, Equatable {
     public var connection: ConnectionRecord?
     /// The alias the user typed, when the model came from one; `model` is then the server's id.
     public var alias: String?
+    /// The thinking level that alias carries, when it carries one.
+    public var thinking: ThinkingLevel?
     /// The model's context window in tokens, when the settings say.
     public var contextWindow: Int?
     /// The longest reply the model allows, when the settings say.

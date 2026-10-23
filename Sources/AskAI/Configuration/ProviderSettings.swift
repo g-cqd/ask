@@ -142,6 +142,7 @@ public struct ProviderSettings: Sendable, Equatable {
         else { throw .unknownProvider(name, known: []) }
         resolved.connection = connection
         resolved.alias = choice?.alias
+        resolved.thinking = choice?.thinking
         // What the user stated about an alias is theirs and wins; what they did not state is still the server's.
         resolved.contextWindow = choice?.contextWindow ?? resolved.contextWindow
         resolved.maxOutputTokens = choice?.maxOutputTokens ?? resolved.maxOutputTokens
