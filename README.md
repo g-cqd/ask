@@ -29,7 +29,10 @@ someone remembered a different command. See [Building](#building).
 
 ## The screen
 
-Type `/help` for the command list.
+Type `/` at the start of a prompt to see the commands, narrowed as you type. Up and Down choose, **Enter or Tab inserts the
+choice without sending it** (a second Enter runs it), and Esc closes the list and keeps what you typed. A command typed in full runs on
+Enter as before, and a path such as `/etc/hosts` is still a prompt
+([ADR-0067](docs/adr/0067-the-command-picker-is-derived-from-the-draft-and-inserts-without-sending.md)). `/help` lists them too.
 
 | Command | |
 |---|---|

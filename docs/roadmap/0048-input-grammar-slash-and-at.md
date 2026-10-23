@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-20
 ---
@@ -7,7 +7,7 @@ date: 2026-10-20
 # 0048 — The input grammar: `/` for commands, `@` for things you point at
 
 People arrive knowing two sigils. This entry fixes what each one means in ask, so the screen has one picker, one set
-of rules, and nothing new to learn. It is a design with a prototype behind it, not a feature: nothing here is built.
+of rules, and nothing new to learn. It began as a design with a prototype behind it; the `/` picker for commands is now built (below), and the rest is not.
 
 ## The rule
 
@@ -114,3 +114,20 @@ ranking, the wheel, and a negative control for each of the contrast and padding 
 
 It is a simulation: no real sessions exist, no transport exists, and none of it has run inside ask's own input. It
 was tried in kitty only.
+
+## The `/` command picker (2026-10-23, ADR-0067, diary 2026-10-23 (16))
+
+Built: typing a slash at the start of a prompt lists the commands above the prompt, filtered as you type (a name's prefix first, then
+a name containing it, then a summary), and Up and Down move the choice. **Enter and Tab insert the choice and never send it**; Escape
+closes the list and keeps the text. The list is derived from the draft after every key, takes rows from the transcript, and is drawn in
+text only (a bold choice, nothing filled or marked). A path, a `//` escape, a slash that is not the first word, a name typed in full, and a
+screen under 12 rows all leave the keys as they were. The wheel scrolls the transcript, not the list.
+
+Decided differently from the prototype's letter, for the owner to overrule (ADR-0067): a name typed in full closes the list so `/quit` and
+Enter still runs it, instead of costing a second Enter; and a command is offered only as the first word, because that is where
+`SlashInput` makes it run.
+
+**Still owed:** `@` (files first, then agents and sessions), skills in the `/` list (which is where the mid-prompt `/` and the `SKILL` and
+`PROJECT` labels return), a detail pane, clicking a row, and promoting the trigger and ranking to TerminalKit once `@` is a second
+consumer. Agent and session addressing still need the transport ADR below before any code. The rules in "Done when" that need things
+that do not exist yet (a skill grants nothing; a dead session is refused; an agent's message arrives untrusted) are not testable yet.
