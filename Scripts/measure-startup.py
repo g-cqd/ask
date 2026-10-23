@@ -43,6 +43,34 @@ def shipping_cohort(rows, changed=False, traced=False):
     return bool(rows) and not changed and not traced and all(not r['error'] and not r['phases'] for r in rows)
 
 
+def core_class(cpu_number, efficiency_cpus):
+    """`efficiency` when the sampled logical CPU is among the host's first `efficiency_cpus`, else `performance`.
+
+    Host assumption, checked by hand on one Apple-silicon machine through IORegistry: logical CPUs
+    0..efficiency-1 are the efficiency cores. Re-check it with `ioreg` before trusting it elsewhere."""
+    return 'efficiency' if cpu_number < efficiency_cpus else 'performance'
+
+
+def by_core(rows, efficiency_cpus):
+    """Cold-frame statistics by the core the process was on at its first phase marker. Only rows that completed
+    and carry the marker count; the totals show how many were left out, so nothing is dropped silently."""
+    groups, left_out = {}, 0
+    for row in rows:
+        marker = next((m for m in row['phases'] if m['phase'] == 'arguments'), None)
+        if row['error'] or marker is None or row['cold_ms'] is None:
+            left_out += 1
+            continue
+        groups.setdefault(core_class(marker['cpu_number'], efficiency_cpus), []).append(row['cold_ms'])
+    return dict(left_out=left_out, efficiency_cpus=efficiency_cpus,
+                groups={k: dict(count=len(v), **stats(v)) for k, v in sorted(groups.items())})
+
+
+def efficiency_cpu_count():
+    """Logical CPUs in the efficiency level (`hw.perflevel1`), or 0 when the host has no such level."""
+    out = subprocess.run(['/usr/sbin/sysctl', '-n', 'hw.perflevel1.logicalcpu'], capture_output=True, text=True)
+    return int(out.stdout) if out.returncode == 0 and out.stdout.strip().isdigit() else 0
+
+
 def phases(raw):
     names = ('wall_ns', 'cpu_us', 'cpu_number', 'requested_qos', 'task_priority', 'cpu_query_status')
     return [dict(phase=m[0].decode(), **dict(zip(names, map(int, m[1:])))) for m in TRACE.findall(raw)]
@@ -203,6 +231,8 @@ def main():
             summary = dict(completed=len(good), failed=len(rows) - len(good))
             for field in ('cold_ms', 'post_fork_ms', 'fork_ms', 'lifetime_cpu_ms'):
                 summary[field] = stats([r[field] for r in good])
+            if any(r['phases'] for r in rows):
+                summary['by_starting_core'] = by_core(rows, efficiency_cpu_count())
             result['summaries'][name] = summary
             print(name, json.dumps(summary, sort_keys=True))
         save(args.output, result)
