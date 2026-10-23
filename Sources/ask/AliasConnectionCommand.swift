@@ -14,6 +14,17 @@ struct AliasConnectionCommand: ParsableCommand {
     @Option(name: .customLong("context"), help: "A context window to use for this alias instead of the server's.")
     var context: Int?
     @Option(name: .customLong("max-output"), help: "A longest reply to use for this alias.") var maxOutput: Int?
+    // Not `--thinking`: the root command has that option, and ArgumentParser gives it to the root, silently dropping it here.
+    @Option(
+        name: .customLong("thinking-level"),
+        help: "A thinking level for this alias: \(ThinkingLevel.choices). --thinking and ASK_THINKING still win.")
+    var thinking: String?
+
+    func validate() throws {
+        if let thinking, ThinkingLevel(rawValue: thinking) == nil {
+            throw ValidationError("--thinking-level must be one of: \(ThinkingLevel.choices).")
+        }
+    }
 
     func run() throws {
         let record = try NamedConnections.named(name)
@@ -24,7 +35,9 @@ struct AliasConnectionCommand: ParsableCommand {
                 .cached(now: Date().timeIntervalSince1970))??
                 .models.map(\.id) ?? []) : []
         try NamedConnections.aliases(for: record)
-            .set(alias, to: model, contextWindow: context, maxOutputTokens: maxOutput, known: known)
-        print("\(record.name)/\(alias.lowercased()) is \(model).")
+            .set(
+                alias, to: model, contextWindow: context, maxOutputTokens: maxOutput,
+                thinking: thinking.flatMap(ThinkingLevel.init(rawValue:)), known: known)
+        print("\(record.name)/\(alias.lowercased()) is \(model)" + (thinking.map { ", thinking \($0)" } ?? "") + ".")
     }
 }
