@@ -16,6 +16,8 @@ public struct Configuration: Sendable, Equatable {
         case command(String)
         /// The strict sandbox a resumed session recorded (roadmap 0042).
         case session
+        /// A connection's model alias, named `connection/alias`.
+        case alias(String)
 
         public var description: String {
             switch self {
@@ -25,6 +27,7 @@ public struct Configuration: Sendable, Equatable {
                 case .flag(let name): "--\(name)"
                 case .command(let name): "\(name) (this run)"
                 case .session: "this session's record"
+                case .alias(let name): "alias \(name)"
             }
         }
     }

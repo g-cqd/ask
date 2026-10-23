@@ -84,7 +84,7 @@ struct ModelAliasFileTests {
         try await withFile { file in
             try FileManager.default.createDirectory(
                 at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true)
-            let bytes = Data(#"{"version":2,"aliases":{},"extra":{"keep":true}}"#.utf8)
+            let bytes = Data(#"{"version":3,"aliases":{},"extra":{"keep":true}}"#.utf8)
             try bytes.write(to: file.url)
             #expect(throws: ModelAliasError.newerFormat(path: file.url.path)) { try file.load() }
             #expect(throws: ModelAliasError.newerFormat(path: file.url.path)) {
