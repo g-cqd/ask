@@ -37,7 +37,10 @@ account and by `Scripts/probe-connections.py`.
 
 ## Still owed
 
-- A reasoning level per alias (roadmap 0043, the thinking setting).
 - Aliases for the default `codex` and `anthropic` connections, and a picker in the screen (the `/model` work on another branch).
 - Whether a model that disappears from the account's catalog should be reported on use.
 
+## Done (2026-10-23, ADR-0063)
+
+A thinking level per alias: `ask connections alias NAME ALIAS MODEL --thinking-level LEVEL`, ranked above the files and below
+`ASK_THINKING` and `--thinking`, stored so that an older build refuses the file instead of dropping the level.

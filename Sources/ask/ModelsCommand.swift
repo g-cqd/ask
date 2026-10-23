@@ -86,8 +86,11 @@ struct ModelsCommand: AsyncParsableCommand {
         guard !aliases.aliases.isEmpty || aliases.defaultModel != nil else { return }
         print("\nALIASES (yours, on \(record.name))")
         for (name, alias) in aliases.aliases.sorted(by: { $0.key < $1.key }) {
-            let limits = [alias.contextWindow.map { "context \($0)" }, alias.maxOutputTokens.map { "max output \($0)" }]
-                .compactMap { $0 }.joined(separator: ", ")
+            let limits = [
+                alias.contextWindow.map { "context \($0)" }, alias.maxOutputTokens.map { "max output \($0)" },
+                alias.thinking.map { "thinking \($0)" }
+            ]
+            .compactMap { $0 }.joined(separator: ", ")
             print("  \(name) is \(alias.model)" + (limits.isEmpty ? "" : " (\(limits), as you stated)"))
         }
         if let model = aliases.defaultModel { print("  default: \(model)") }
