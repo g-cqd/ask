@@ -9,6 +9,9 @@ public struct ProviderFailure: Error, Sendable, Equatable {
         /// The account has used what its plan allows. Unlike a rate limit, sending the request again soon cannot succeed: the
         /// provider lifts it at a set time, often hours away.
         case usageLimit
+        /// The server could not verify reasoning the request sent back. The same request cannot succeed; one without that
+        /// reasoning can.
+        case rejectedReasoning
         /// A kind this decoder does not know, kept verbatim.
         case other(String)
     }

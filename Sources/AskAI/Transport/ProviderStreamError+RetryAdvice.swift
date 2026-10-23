@@ -10,13 +10,7 @@ extension ProviderStreamError: RetryAdvice {
         }
     }
 
-    public var isContextOverflow: Bool {
-        switch self {
-            case .status(_, let failure?, _): failure.kind == .contextOverflow
-            case .stream(let failure): failure.providerFailure?.kind == .contextOverflow
-            default: false
-        }
-    }
+    public var isContextOverflow: Bool { reportedKind == .contextOverflow }
 
     public var reportedContextWindow: Int? {
         switch self {
