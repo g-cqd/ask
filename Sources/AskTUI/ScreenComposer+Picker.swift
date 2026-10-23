@@ -9,13 +9,6 @@ extension ScreenComposer {
         return pickerLines(picker, columns: columns, rows: rows)
     }
 
-    /// Writes `lines` from `row` down.
-    /// - Returns: the row after the last one, where the prompt begins.
-    mutating func writePicker(_ lines: [Line], from row: Int, into buffer: inout ScreenBuffer) -> Int {
-        for (offset, line) in lines.enumerated() { write(line, row: row + offset, into: &buffer) }
-        return row + lines.count
-    }
-
     /// The picker's rows, a title and then the matches in view, drawn in text only: the choice is bold and in colour, and nothing is
     /// filled or marked (ADR-0044, the prototype's decisions). Nothing when there are not two rows to spend on it.
     /// - Parameters:

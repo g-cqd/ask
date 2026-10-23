@@ -127,6 +127,52 @@ struct CompletionPickerComposerTests {
         #expect(ScreenComposer.pickerLines(picker, columns: 0, rows: 8).isEmpty)
     }
 
+    @Test func `an open runners list sits above the status line and the picker below it`() throws {
+        var (controller, height) = screen(typing: "/co")
+        controller.handle(
+            .runners([RunnerInfo(name: "job-1", detail: "npm run dev"), RunnerInfo(name: "job-2", detail: "tail -f")]))
+        controller.state.runnersOpen = true
+        controller.handle(.notice("older", isError: false))
+        var buffer = ScreenBuffer(columns: 60, rows: height)
+        var composer = ScreenComposer()
+        let cursor = composer.compose(controller.state, into: &buffer)
+        let shown = rows(buffer)
+        let first = try #require(shown.firstIndex { $0.hasPrefix("job-1") })
+        #expect(
+            shown[first + 1].hasPrefix("job-2") && shown[first + 2].contains("· ready"),
+            "the runners, then the status line")
+        #expect(shown[first + 3].hasPrefix("commands") && shown[first + 4].hasPrefix("/config"), "then the picker")
+        #expect(shown.last == "ask> /co" && composer.transcriptRows == first && cursor.row == height - 1)
+    }
+
+    @Test func `a full runners list and the picker together still leave the transcript a row`() {
+        var (controller, height) = screen(typing: "/", rows: 12)
+        controller.handle(.runners((1 ... 9).map { RunnerInfo(name: "job-\($0)", detail: "work") }))
+        controller.state.runnersOpen = true
+        controller.handle(.notice("still here", isError: false))
+        var buffer = ScreenBuffer(columns: 50, rows: height)
+        var composer = ScreenComposer()
+        _ = composer.compose(controller.state, into: &buffer)
+        #expect(composer.transcriptRows >= 1 && rows(buffer).last == "ask> /")
+    }
+
+    @Test func `the transcript keeps a row at every screen height that offers a picker, with any number of runners`() {
+        // The budget passed to the picker never binds with today's caps (five runner rows, at most seven matches), so this pins the
+        // invariant itself: if either cap grows, a screen too small for both fails here and not in a terminal.
+        for height in 12 ... 30 {
+            for runners in [0, 1, 5, 9] {
+                var (controller, _) = screen(typing: "/", rows: height)
+                controller.handle(.runners((0 ..< runners).map { RunnerInfo(name: "job-\($0)", detail: "work") }))
+                controller.state.runnersOpen = runners > 0
+                var buffer = ScreenBuffer(columns: 40, rows: height)
+                var composer = ScreenComposer()
+                _ = composer.compose(controller.state, into: &buffer)
+                #expect(composer.transcriptRows >= 1, "height \(height), \(runners) runners")
+                #expect(rows(buffer).last == "ask> /", "height \(height), \(runners) runners")
+            }
+        }
+    }
+
     @Test func `closing it gives the rows back to the transcript`() {
         var (controller, height) = screen(typing: "/co")
         for index in 1 ... 30 { controller.handle(.notice("line \(index)", isError: false)) }
