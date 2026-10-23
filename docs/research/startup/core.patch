@@ -1,0 +1,44 @@
+diff --git a/Sources/ask/Ask.swift b/Sources/ask/Ask.swift
+index a066915..a0df0c9 100644
+--- a/Sources/ask/Ask.swift
++++ b/Sources/ask/Ask.swift
+@@ -11,7 +11,9 @@ internal import Foundation
+ 
+ @main
+ struct Ask: AsyncParsableCommand {
+-    static let configuration = CommandConfiguration(
++    static let configuration: CommandConfiguration = {
++        StartupProbe.mark("arguments")
++        return CommandConfiguration(
+         commandName: "ask",
+         abstract: "A terminal coding agent: reliable, fast, light.",
+         subcommands: [
+@@ -19,6 +21,7 @@ struct Ask: AsyncParsableCommand {
+             TrustCommand.self,
+             UntrustCommand.self
+         ])
++    }()
+ 
+     @Flag(help: "Print the four performance budgets as JSON and exit. Read by Scripts/measure-budgets.py.")
+     var budgets = false
+diff --git a/Sources/ask/StartupProbe.swift b/Sources/ask/StartupProbe.swift
+new file mode 100644
+index 0000000..0cacc52
+--- /dev/null
++++ b/Sources/ask/StartupProbe.swift
+@@ -0,0 +1,15 @@
++internal import Darwin
++internal import Foundation
++
++/// Temporary research overlay: starting core of the process. Not shipping code.
++enum StartupProbe {
++    static func mark(_ phase: String) {
++        var cpuNumber: UInt = 0
++        let status = unsafe pthread_cpu_number_np(&cpuNumber)  // SAFETY: borrows one stack value for the call.
++        var usage = rusage()
++        _ = unsafe getrusage(RUSAGE_SELF, &usage)  // SAFETY: as above.
++        let cpu = (Int64(usage.ru_utime.tv_sec) + Int64(usage.ru_stime.tv_sec)) * 1_000_000
++            + Int64(usage.ru_utime.tv_usec) + Int64(usage.ru_stime.tv_usec)
++        FileHandle.standardError.write(Data("TRACE \(phase) 0 \(cpu) \(cpuNumber) \(qos_class_self().rawValue) 0 \(status)\n".utf8))
++    }
++}

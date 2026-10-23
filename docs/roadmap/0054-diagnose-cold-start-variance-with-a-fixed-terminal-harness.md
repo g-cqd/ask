@@ -41,11 +41,22 @@ pressure repeat measured 16.92/16.14 ms, with large tails retained. Most traced 
 marker; model lookup/policy and frame output do not explain the whole range. No unique hardware mechanism or
 application regression is established, and no runtime optimization is adopted.
 
+## Found, not fixed (diary 2026-10-22 (09))
+
+Slow cohorts are slow because the process uses more CPU, and the share of launches that begin on an **efficiency core**
+predicts the cohort median (Spearman +0.93 over 25 cohorts). Efficiency-core starts took about 24 ms against 12.5-13.7 ms on
+performance cores, in both paced and burst launches, replicated in a second run of 300 launches. Host load, page-ins and
+the two performance clusters do not explain it. On the latest main a paced cohort measured 13.32 ms (within budget).
+
+This is an association, not a demonstrated cause: the one experiment that tried to set the QoS of the launch failed its
+own manipulation check (the main thread saw QoS 21 in every arm), and a slow performance-core cohort from an earlier,
+heavily loaded run is still unexplained.
+
 ## Still owed
 
-The cause is not found. The final shipping cohort at unchanged runtime sources measured cold p50 31.01 ms (28.59-33.03,
-20 of 20 complete): over 25 ms with a tight spread. A same-artifact paced/burst cohort at the same pressure level
-passed at 13.98 ms, and a generic fixed-work control rules out a plain idle-gap slowdown (diary 2026-10-22 (05)).
-Untested candidates: page-cache/dyld state of the binary and frameworks after idle under memory pressure, dyld
-work specific to ask, and worker-thread startup. Probe each with the fixed-cohort tool before changing code. Do not
-relax the 25 ms limit, and do not call the method's delivery a budget pass.
+- Decide, with the owner, how budget verification should treat the efficiency-core share (ADR-0038 set the budgets):
+  report it beside the median, require it to be low, or leave the budget as is. Nothing was relaxed.
+- Cut startup CPU, since the penalty scales with it: about 6-17 ms precede the CLI marker; ArgumentParser about 1.8 ms;
+  policy construction about 0.8 ms. Probe each with the fixed-cohort tool before changing code.
+- Run a QoS intervention that really reaches the process (for example `taskpolicy`), compare terminal launches with the
+  harness's, and sample the memory-pressure warning level, which the campaign never reached.

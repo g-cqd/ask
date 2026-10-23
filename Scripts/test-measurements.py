@@ -123,6 +123,23 @@ class MeasurementTests(unittest.TestCase):
             with self.subTest(rows=rows, changed=changed, traced=traced):
                 self.assertFalse(startup.shipping_cohort(rows, changed, traced))
 
+    def test_core_class_boundary_and_a_host_without_efficiency_cores(self):
+        self.assertEqual(startup.core_class(3, 4), 'efficiency')
+        self.assertEqual(startup.core_class(4, 4), 'performance')
+        self.assertEqual(startup.core_class(0, 0), 'performance', 'no efficiency level: nothing is efficiency')
+
+    def test_by_core_groups_by_first_marker_and_reports_what_it_left_out(self):
+        def row(core, cold, error=None, phases=True):
+            marker = [dict(phase='arguments', cpu_number=core)] if phases else []
+            return dict(cold_ms=cold, error=error, phases=marker)
+        rows = [row(1, 24.0), row(2, 26.0), row(5, 12.0), row(8, 14.0), row(9, 13.0),
+                row(6, 99.0, error='missing frame'), row(0, 50.0, phases=False)]
+        report = startup.by_core(rows, 4)
+        self.assertEqual(report['left_out'], 2)
+        self.assertEqual({k: v['count'] for k, v in report['groups'].items()}, dict(efficiency=2, performance=3))
+        self.assertEqual(report['groups']['efficiency']['p50'], 25.0)
+        self.assertEqual(report['groups']['performance']['p50'], 13.0)
+
     def test_phase_markers_decode_sampled_cpu_and_requested_priority(self):
         raw = b'\x1b[0mTRACE arguments 123 456 4 21 25 0\r\n'
         self.assertEqual(startup.phases(raw), [dict(

@@ -55,7 +55,8 @@ cannot accidentally change both through these options.
 
 ## Phase overlay — never a shipping result
 
-`phases.patch` is a small source overlay for `Sources/ask`: CLI-configuration entry, validation, run, configuration
+**`phases.patch` no longer applies** after the thinking-level work changed `ConfigurationSource.swift`; it is kept as a record of the
+phase markers, and `core.patch` (starting core only) is the current, applying overlay. `phases.patch` is a small source overlay for `Sources/ask`: CLI-configuration entry, validation, run, configuration
 layers/providers/model/policy, instruction discovery and the call into the screen. It writes to stderr:
 
 ```text
@@ -102,7 +103,12 @@ Diaries 2026-10-22 (04) and (05) record the failed marker assumption, clock boun
 percentile correction, phase/cadence cohorts, controls and rejected entry/priority experiments. Application sources
 were restored byte-for-byte; no runtime optimization or OS policy change was adopted.
 
-**The cause of the slow cohorts is not identified.** The same artifact passed (13.98 ms) and failed (31-31.5 ms)
+**Efficiency-core starts are the strongest known factor, not a proven cause.** With `docs/research/startup/core.patch`
+applied (it records the starting core; regenerate it if it stops applying) the tool reports cold time by starting
+core. See diary 2026-10-22 (09): about 24 ms on an efficiency core, 12.5-13.7 ms on a performance core, share predicting
+cohort medians. Always read a failing cohort's efficiency-core share before attributing it to the code.
+
+**An earlier note stays true for the other factors:** The same artifact passed (13.98 ms) and failed (31-31.5 ms)
 in cohorts at the same coarse memory-pressure level, and a generic fixed-work control shows only an 8-10% idle-gap
 penalty. Do not attribute a slow cohort to cadence, load, QoS or core type from this tool alone; record the cohort,
 keep its exit status, and compare against a control taken in the same period.
