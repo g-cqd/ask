@@ -1,6 +1,6 @@
 internal import Foundation
 internal import TerminalKitIO
-public import TerminalKitInput
+internal import TerminalKitInput
 internal import TerminalKitRender
 
 /// Runs the interactive screen on the terminal until the user quits, then restores the terminal.
@@ -114,6 +114,8 @@ private final class ScreenSession {
     private var rows: Int
     private var columns: Int
     private var run: Task<Void, Never>?
+    /// Ticks while a drag is held at an edge, because a held button reports no motion.
+    private var autoscroll = AutoscrollTimer()
     private let events: AsyncStream<ScreenEvent>
     private let sink: AsyncStream<ScreenEvent>.Continuation
     private var exit = ScreenExit.quit
@@ -156,6 +158,7 @@ private final class ScreenSession {
             watching?.cancel()
             input.stop()
         }
+        defer { autoscroll.stop() }
         render(full: true)
         for await event in events {
             guard await handle(event) else { return exit }
@@ -184,6 +187,12 @@ private final class ScreenSession {
                         exit = requested
                         return false
                     }
+                }
+            case .tick:
+                controller.frame = frames.load()
+                guard controller.tick() else {
+                    syncAutoscroll()
+                    return true
                 }
             case .resize:
                 if let size = try? connection.getSize() {
@@ -219,8 +228,14 @@ private final class ScreenSession {
                     return false
             }
         }
+        syncAutoscroll()
         render()
         return true
+    }
+
+    private func syncAutoscroll() {
+        let sink = sink
+        autoscroll.update(wanted: controller.isAutoscrolling) { sink.yield(.tick) }
     }
 
     /// Hands the render thread the screen as it is now. It draws the newest state it finds, so a burst of events is
@@ -229,12 +244,4 @@ private final class ScreenSession {
         if full { renderer.redraw() }
         renderer.submit(controller.state)
     }
-}
-
-/// Everything the screen's loop reacts to, merged into one stream so state has a single owner.
-private enum ScreenEvent: Sendable {
-    case input(InputEvent)
-    case update(ConversationUpdate)
-    case resize
-    case inputEnded
 }

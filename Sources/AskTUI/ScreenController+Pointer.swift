@@ -38,12 +38,15 @@ extension ScreenController {
                 break
             case .dragMoved(let cell):
                 let update = selector.drag(row: cell.row, col: cell.col, rows: frame.rows, scrollableRows: scrollable)
+                autoscroll = DragAutoscroll(
+                    request: update.scroll, row: cell.row, col: cell.col, extendedAt: state.scrollback)
                 switch update.scroll {
                     case .up: scroll(by: 1)
                     case .down: scroll(by: -1)
                     case nil: break
                 }
             case .dragEnded:
+                autoscroll.request = nil
                 // Into a local first: `self` is read before an argument is evaluated, so the copy would see the old selection.
                 let update = selector.endDrag()
                 return copyIfCommitted(update)
@@ -64,7 +67,7 @@ extension ScreenController {
     }
 
     /// Scrolls the transcript up by `lines`, or down for a negative number, and no further than its ends.
-    private mutating func scroll(by lines: Int) {
+    mutating func scroll(by lines: Int) {
         let furthest = Swift.max(0, frame.totalLines - frame.transcriptRows)
         state.scrollback = Swift.max(0, Swift.min(state.scrollback + lines, Swift.max(furthest, state.scrollback)))
     }
@@ -124,6 +127,7 @@ extension ScreenController {
         state.clipboardNotice = ""
         selector.clear()
         pointer.reset()
+        autoscroll.request = nil
         state.selection = nil
     }
 }
