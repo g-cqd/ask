@@ -49,6 +49,15 @@ struct PointerRig {
         return effects
     }
 
+    /// One timer step as the driver takes it: the newest frame, then the tick, then a new frame.
+    @discardableResult
+    mutating func tick() -> Bool {
+        controller.frame = frames.load()
+        let changed = controller.tick()
+        draw()
+        return changed
+    }
+
     /// A press, a move and a release: the gesture of a drag.
     @discardableResult
     mutating func drag(from: (row: Int, col: Int), to: (row: Int, col: Int)) -> [ScreenController.Effect] {

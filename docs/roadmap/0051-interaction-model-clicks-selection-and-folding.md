@@ -87,7 +87,7 @@ The defaults are decided in ADR-0046: the first three by the owner, the rest on 
 The transcript selects, highlights, copies and scrolls with the pointer (TerminalKit 0016 and 0017 in a real screen): rows carry
 provenance, the frame reaches the mouse through a box, the controller owns the pointer, `ScreenClipboard` performs the kit's plan, and
 `ScreenOptions` carries the ADR-0046 defaults. **Not yet:** folding and its clicks, any region but the transcript, the `ui.*` keys,
-a timer for autoscroll, a key to copy when copy-on-select is off, feedback that a copy happened, and the real-terminal probe.
+a key to copy when copy-on-select is off, feedback that a copy happened, and the real-terminal probe.
 
 ## What landed next (2026-10-20, diary 51)
 
@@ -116,7 +116,7 @@ Changed reasoning costs about 2.9 ms for a folded 400-line block; unchanged fram
 
 Copy-on-select off has Ctrl+C; Escape clears first; a click inside selected text cannot open the fold underneath it. The status explains
 these controls, reports copy requests/failures without claiming acknowledgement, and names the terminal's native-selection bypass.
-The real-binary pointer probe now has 20 passing checks. Host pasteboard completion reporting and sustained edge autoscroll remain owed.
+The real-binary pointer probe now has 20 passing checks. Host pasteboard completion reporting remained owed (edge autoscroll followed; see below).
 
 ## Text-only hierarchy (2026-10-22, diary 2026-10-22 (2))
 
@@ -130,6 +130,12 @@ turn/resume/multiline regressions pass against these exact strings. Layout switc
 viewport; ask owns the prefix, requested cap and status cue. Up/Down cross wrapped rows and use the new width after resize; Ctrl-X
 clears the whole unsent draft. A real-binary PTY probe checks complete submitted/recorded source for ASCII, wide text and tab stops.
 Input clicks, wheel scrolling and selection remain unimplemented. Roadmap 0049 retains the physical Shift-Enter check.
+
+## Edge autoscroll (2026-10-22, ADR-0061)
+
+A drag held at the top or bottom edge keeps scrolling on a 50 ms timer, though the terminal reports no motion, and the selection follows
+each line that comes into view. A step waits for the frame that shows the last scroll. The held-drag PTY check fails against a binary
+whose timer is disabled. Real-terminal feel (rate, trackpad) still needs a warned physical check.
 
 ## Open questions
 
