@@ -19,7 +19,7 @@ public struct ScreenController: Sendable {
 
     public internal(set) var state: ScreenState
     /// The commands the screen answers itself (`/help`, `/quit`) and those the conversation runs.
-    private let commands: [SlashCommand]
+    let commands: [SlashCommand]
     var pending: [Pending] = []
     var nextPromptID = 0
     var acceptsInput = false
@@ -58,6 +58,17 @@ public struct ScreenController: Sendable {
     public mutating func handle(
         _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant = .now, columns: Int? = nil
     ) -> [Effect] {
+        let effects = route(event, pageRows: pageRows, at: now, columns: columns)
+        switch event {
+            case .key, .paste: refreshPicker(screenRows: pageRows + 3)
+            default: break
+        }
+        return effects
+    }
+
+    private mutating func route(
+        _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant, columns: Int?
+    ) -> [Effect] {
         switch event {
             case .key(let key):
                 if key.keyCode == Key.pageUp.rawValue {
@@ -74,6 +85,7 @@ public struct ScreenController: Sendable {
                 if isToggleToolOutput(key) { return toggleAllToolOutput() }
                 if isToggleThinking(key) { return toggleAllThinking() }
                 if isToggleCode(key) { return toggleAllCode() }
+                if let effects = pickerKey(key, screenRows: pageRows + 3) { return effects }
                 clearSelection()
                 return edit(key, columns: columns)
             case .mouse(let mouse):
