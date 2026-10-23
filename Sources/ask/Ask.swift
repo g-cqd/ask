@@ -125,60 +125,24 @@ struct Ask: AsyncParsableCommand {
         }
     }
 
-    /// `--write` or `--read` as a setting.
-    private static func scope(_ value: String?) -> PathSetting? {
-        switch value {
-            case nil: nil
-            case "workspace": .workspace
-            case "anywhere": .anywhere
-            case let path?: .paths([path])
-        }
+    /// What this command line asks for, as plain values (see ``LaunchRequest``).
+    private var request: LaunchRequest {
+        LaunchRequest(
+            budgets: budgets, prompt: prompt, model: model, provider: provider, thinking: thinking, maxTurns: maxTurns,
+            compactAt: compactAt, noSandbox: noSandbox, network: network, write: write, read: read,
+            selfCheck: selfCheck, reloadedFrom: reloadedFrom, reloadStarted: reloadStarted,
+            selectedProvider: selectedProvider, selectedModel: selectedModel, continueLatest: continueLatest,
+            resume: resume)
     }
 
-    private var session: SessionChoice {
-        if let resume { return .named(resume) }
-        return continueLatest ? .latest : .new
-    }
+    func run() async throws { try await request.run() }
 
-    func run() async throws {
-        if budgets {
-            FileHandle.standardOutput.write(Data(try Budget.reportJSON()))
-            return
-        }
-        var startupNotices: [String] = []
-        let restored =
-            selfCheck
-            ? nil
-            : session.open(
-                in: SessionDirectory(project: FileManager.default.currentDirectoryPath),
-                note: { startupNotices.append($0) })
-        var source = ConfigurationSource(
-            workingDirectory: FileManager.default.currentDirectoryPath,
-            flags: .init(
-                model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt,
-                thinking: thinking.flatMap(ThinkingLevel.init(rawValue:)), noSandbox: noSandbox,
-                network: network.flatMap(SandboxPolicy.Network.init(named:)), write: Self.scope(write),
-                read: Self.scope(read),
-                selected: selectedProvider.flatMap { provider in
-                    selectedModel.map { ModelSelection(provider: provider, model: $0) }
-                }))
-        source = source.resuming(restored)
-        let settings: RunSettings
-        do { settings = try await source.load(allowNetwork: !selfCheck) } catch {
-            fail("ask: \(error)", code: ModelDiscovery.exitCode(for: error))
-        }
-        if selfCheck {
-            checkSelf(settings)
-            return
-        }
-        let reloaded = reloadedFrom.map { ReloadNotice(from: $0, startedMilliseconds: reloadStarted ?? 0) }
-        if let prompt {
-            await runPrompt(
-                prompt, source: source, settings: settings, resumed: restored, startupNotices: startupNotices)
-            return
-        }
-        await runInteractive(
-            source: source, settings: settings, resumed: restored, startupNotices: startupNotices, reloaded: reloaded)
+    /// A bare `ask` has nothing to parse: every option is its default, so the request is made directly and
+    /// ArgumentParser's reflection over the command tree is never paid for (ADR-0065, roadmap 0054).
+    /// Anything else goes through the parser exactly as before.
+    static func main() async {
+        guard CommandLine.arguments.count == 1 else { return await main(nil) }
+        do { try await LaunchRequest().run() } catch { exit(withError: error) }
     }
 }
 
