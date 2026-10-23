@@ -131,13 +131,9 @@ public struct ScreenComposer: Sendable {
                     scrollback: state.scrollback, statusRow: transcriptRows + panel.count, runnerColumns: status.runners
                 ))
 
-        for (offset, line) in panel.enumerated() { write(line, row: transcriptRows + offset, into: &buffer) }
-        if statusRows > 0 { write(status.line, row: transcriptRows + panel.count, into: &buffer) }
-        let promptStart = writePicker(pickerLines, from: transcriptRows + panel.count + statusRows, into: &buffer)
-        for offset in 0 ..< promptRows {
-            write(Line(text: editor.lines[offset], style: .default), row: promptStart + offset, into: &buffer)
-        }
-        return (promptStart + editor.cursor.row, editor.cursor.column)
+        return writeBottom(
+            panel: panel, status: statusRows > 0 ? status.line : nil, picker: pickerLines, editor: editor,
+            from: transcriptRows, into: &buffer)
     }
 
     // MARK: - Lines

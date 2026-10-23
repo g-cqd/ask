@@ -43,7 +43,9 @@ struct CompletionPickerControllerTests {
     @Test func `a slash at the start of a prompt opens every command`() {
         var screen = controller()
         type("/", into: &screen)
-        #expect(names(screen) == ["help", "quit", "follow-up", "config", "compact", "reload"])
+        #expect(
+            names(screen) == (ScreenController.builtIn + Self.commands).map(\.name),
+            "the screen's own and the conversation's")
         #expect(screen.state.picker?.selected == 0)
     }
 
@@ -84,7 +86,7 @@ struct CompletionPickerControllerTests {
         #expect(screen.state.picker?.selected == 1)
         press(Key.up.rawValue, into: &screen)
         press(Key.up.rawValue, into: &screen)
-        #expect(screen.state.picker?.selected == 5, "Up from the first wraps to the last")
+        #expect(screen.state.picker?.selected == names(screen).count - 1, "Up from the first wraps to the last")
         press(Key.down.rawValue, into: &screen)
         #expect(screen.state.picker?.selected == 0, "Down from the last wraps to the first")
         press(Key.down.rawValue, into: &screen)
