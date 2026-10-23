@@ -23,7 +23,7 @@ public struct Transcript: Sendable, Equatable {
 
     public private(set) var items: [Item] = []
     /// Bumped whenever an item changes, so layouts can cache each item's wrapped lines.
-    public private(set) var revisions: [Int] = []
+    public internal(set) var revisions: [Int] = []
     private var nextRevision = 0
     /// Which tool blocks the user opened or closed, over the default for the kind (TerminalKit roadmap 0018).
     private(set) var folds = FoldStore<Int>()
@@ -31,6 +31,12 @@ public struct Transcript: Sendable, Equatable {
     public private(set) var toolsFoldedByDefault = true
     /// Whether a thinking block starts folded, unless the user chose.
     public private(set) var thinkingFoldedByDefault = true
+    /// Which long code blocks the user opened or closed, over ``codeFoldedByDefault``.
+    var codeFolds = FoldStore<CodeBlockID>()
+    /// Whether a long code block starts folded, unless the user chose (`ui.code`).
+    public internal(set) var codeFoldedByDefault = true
+    /// A code block with more lines than this can fold (ADR-0046: `ui.codeFoldLines`, never more than half the screen).
+    public internal(set) var codeFoldLines = 20
     /// The most lines of one tool's output kept; the rest is said, not stored, so one huge output cannot slow every frame.
     static let outputLineLimit = 400
 
@@ -43,6 +49,7 @@ public struct Transcript: Sendable, Equatable {
         items.removeAll(keepingCapacity: true)
         revisions.removeAll(keepingCapacity: true)
         folds.clearChoices()
+        codeFolds.clearChoices()
     }
 
     public mutating func addUser(_ text: String) { append(.user(text)) }
@@ -155,7 +162,7 @@ public struct Transcript: Sendable, Equatable {
         revisions[revisions.count - 1] = bump()
     }
 
-    private mutating func bump() -> Int {
+    mutating func bump() -> Int {
         nextRevision += 1
         return nextRevision
     }

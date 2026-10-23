@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-23
 ---
 
-# 0063 — An alias may carry a thinking level, and the file version says so
+# 0064 — An alias may carry a thinking level, and the file version says so
 
 ## Context
 
@@ -21,7 +21,7 @@ does not understand, and an option name the parser might route to the wrong comm
   silently. The option is `--thinking-level`; the probe now checks the level is stored. (A manual test also created a real alias
   `x` on the real `work` connection before this was understood; it was removed at once and the real file checked byte for byte.)
 - **Does each rule fail without its test?** 14 deliberate faults (11 in the library, 3 in the command wiring), each killed against
-  a baseline proven green first; one first attempt did not compile and was redone (diary 2026-10-23-12).
+  a baseline proven green first; one first attempt did not compile and was redone (diary 2026-10-23-14).
 
 ## Decision
 

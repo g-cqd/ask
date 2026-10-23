@@ -12,10 +12,14 @@ public struct ScreenOptions: Sendable, Equatable {
     public var scrollLines: Int
     /// The most display rows the input may take, also capped to a third of the terminal (ADR-0046).
     public var promptRows: Int
+    /// Whether a long code block starts folded to one line (`ui.code`). A click or Ctrl+G opens it.
+    public var foldCode: Bool
+    /// A code block with more lines than this is long (ADR-0046: `ui.codeFoldLines`); the screen also caps it at half its height.
+    public var codeFoldLines: Int
 
     public init(
         mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
-        scrollLines: Int = 3, promptRows: Int = 6
+        scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -23,5 +27,7 @@ public struct ScreenOptions: Sendable, Equatable {
         self.foldThinking = foldThinking
         self.scrollLines = Swift.max(1, scrollLines)
         self.promptRows = Swift.max(1, promptRows)
+        self.foldCode = foldCode
+        self.codeFoldLines = Swift.max(1, codeFoldLines)
     }
 }

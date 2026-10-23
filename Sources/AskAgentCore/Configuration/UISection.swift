@@ -13,10 +13,14 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var scrollLines: Int?
     /// `ui.promptRows`: the requested maximum display rows of the scrolling prompt.
     public var promptRows: Int?
+    /// `ui.code`: whether a long code block starts folded to one line. `true` is `"folded"`, `false` is `"open"`.
+    public var foldCode: Bool?
+    /// `ui.codeFoldLines`: a code block with more lines than this starts folded (never more than half the screen).
+    public var codeFoldLines: Int?
 
     public init(
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
-        scrollLines: Int? = nil, promptRows: Int? = nil
+        scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -24,22 +28,27 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.foldThinking = foldThinking
         self.scrollLines = scrollLines
         self.promptRows = promptRows
+        self.foldCode = foldCode
+        self.codeFoldLines = codeFoldLines
     }
 
     public var isEmpty: Bool {
         mouse == nil && copyOnSelect == nil && foldTools == nil && foldThinking == nil && scrollLines == nil
-            && promptRows == nil
+            && promptRows == nil && foldCode == nil && codeFoldLines == nil
     }
 
     /// The keys, in the order they are shown.
-    public static let keys = ["mouse", "copyOnSelect", "tools", "thinking", "scrollLines", "promptRows"]
+    public static let keys = [
+        "mouse", "copyOnSelect", "tools", "thinking", "scrollLines", "promptRows", "code", "codeFoldLines"
+    ]
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: UISection) -> UISection {
         UISection(
             mouse: section.mouse ?? mouse, copyOnSelect: section.copyOnSelect ?? copyOnSelect,
             foldTools: section.foldTools ?? foldTools, foldThinking: section.foldThinking ?? foldThinking,
-            scrollLines: section.scrollLines ?? scrollLines, promptRows: section.promptRows ?? promptRows)
+            scrollLines: section.scrollLines ?? scrollLines, promptRows: section.promptRows ?? promptRows,
+            foldCode: section.foldCode ?? foldCode, codeFoldLines: section.codeFoldLines ?? codeFoldLines)
     }
 
     public var description: String {
@@ -50,6 +59,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         if let foldThinking { parts.append("thinking \(foldThinking ? "folded" : "open")") }
         if let scrollLines { parts.append("scrollLines \(scrollLines)") }
         if let promptRows { parts.append("promptRows \(promptRows)") }
+        if let foldCode { parts.append("code \(foldCode ? "folded" : "open")") }
+        if let codeFoldLines { parts.append("codeFoldLines \(codeFoldLines)") }
         return parts.isEmpty ? "defaults" : parts.joined(separator: ", ")
     }
 }
