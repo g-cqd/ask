@@ -14,7 +14,9 @@ extension ProviderFailure.Kind {
     /// type's name, then the HTTP status. A status that says nothing keeps the provider's own name for the error.
     init(openAIType type: String?, status: Int?, code: String? = nil, message: String = "") {
         let named = type?.lowercased() ?? ""
-        if named.contains("exceed_context_size") || code == "context_length_exceeded"
+        if code == "invalid_encrypted_content" {
+            self = .rejectedReasoning
+        } else if named.contains("exceed_context_size") || code == "context_length_exceeded"
             || Self.describesContextOverflow(message)
         {
             self = .contextOverflow
