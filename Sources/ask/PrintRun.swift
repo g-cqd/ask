@@ -34,6 +34,9 @@ private final class PrintRenderer: Sendable {
             case .toolFinished(_, _, let output):
                 let first = output.content.split(separator: "\n").last.map(String.init) ?? ""
                 write(output.isError ? "  ✗ \(first)\n" : "  ✓\n", to: .standardError)
+            case .model(.notice(let text)):
+                endLine()
+                write("ask: \(text)\n", to: .standardError)
             case .repaired(let repairs):
                 write("ask: repaired the context: \(repairs)\n", to: .standardError)
             case .continuedAtOutputLimit:
