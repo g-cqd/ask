@@ -11,6 +11,7 @@ extension RunSettings {
             mouse: ui.mouse ?? defaults.mouse, copyOnSelect: ui.copyOnSelect ?? defaults.copyOnSelect,
             foldTools: ui.foldTools ?? defaults.foldTools,
             foldThinking: ui.foldThinking ?? defaults.foldThinking, scrollLines: ui.scrollLines ?? defaults.scrollLines,
-            promptRows: ui.promptRows ?? defaults.promptRows)
+            promptRows: ui.promptRows ?? defaults.promptRows, foldCode: ui.foldCode ?? defaults.foldCode,
+            codeFoldLines: ui.codeFoldLines ?? defaults.codeFoldLines)
     }
 }
