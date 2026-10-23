@@ -87,7 +87,9 @@ public struct ScreenComposer: Sendable {
         let editor = input.frame(state.editor, columns: columns, screenRows: rows, maximumRows: state.promptRows)
         let promptRows = editor.lines.count
         let statusRows = rows > 1 ? 1 : 0
-        let transcriptRows = rows - promptRows - statusRows
+        let panel = Self.runnerRows(for: state, available: Swift.max(0, rows - promptRows - statusRows - 1))
+        let status = Self.status(for: state, input: editor.indicator)
+        let transcriptRows = rows - promptRows - statusRows - panel.count
         self.transcriptRows = transcriptRows
 
         updateTranscriptLines(state.transcript, columns: columns)
@@ -124,12 +126,12 @@ public struct ScreenComposer: Sendable {
             .store(
                 FrameGeometry(
                     rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count,
-                    scrollback: state.scrollback))
+                    scrollback: state.scrollback, statusRow: transcriptRows + panel.count, runnerColumns: status.runners
+                ))
 
-        if statusRows > 0 {
-            write(Self.statusLine(for: state, input: editor.indicator), row: transcriptRows, into: &buffer)
-        }
-        let promptStart = transcriptRows + statusRows
+        for (offset, line) in panel.enumerated() { write(line, row: transcriptRows + offset, into: &buffer) }
+        if statusRows > 0 { write(status.line, row: transcriptRows + panel.count, into: &buffer) }
+        let promptStart = transcriptRows + panel.count + statusRows
         for offset in 0 ..< promptRows {
             write(Line(text: editor.lines[offset], style: .default), row: promptStart + offset, into: &buffer)
         }

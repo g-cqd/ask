@@ -11,4 +11,7 @@ struct FrameGeometry: Sendable {
     var totalLines = 0
     /// The scroll position this frame was drawn at. A timer step waits until the frame it sees matches the position it asked for.
     var scrollback = 0
+    /// The status line's row, and the columns its runner count covers, so a click on the count opens the list.
+    var statusRow = 0
+    var runnerColumns: Range<Int>?
 }
