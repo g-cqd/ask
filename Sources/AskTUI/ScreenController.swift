@@ -32,12 +32,14 @@ public struct ScreenController: Sendable {
     var autoscroll = DragAutoscroll()
 
     /// What `/help` and `/quit` are, always present.
+    // @dl:accept -- a table of command names and summaries beside the conversation's own table; the entries are the data
     static let builtIn = [
         SlashCommand(
             name: "help",
             summary: "List commands; Ctrl+T thinking, Ctrl+O tools, Ctrl+G code. Enter steers; Alt+Enter queues."),
         SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first."),
-        SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT.")
+        SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT."),
+        SlashCommand(name: "tasks", summary: "Show or hide the background jobs that are running.")
     ]
 
     /// A controller showing `label` in the status line, answering `commands` besides the built-in ones.
@@ -98,6 +100,7 @@ public struct ScreenController: Sendable {
             case .requestExit(let exit): state.exitRequest = exit
             case .label(let text): state.label = text
             case .status(let text): state.detail = text
+            case .runners(let list): setRunners(list)
             case .promptAccepted(let id, let text):
                 pending.removeAll { $0.id == id }
                 state.transcript.addUser(text)
@@ -149,6 +152,7 @@ public struct ScreenController: Sendable {
                         }
                         return []
                     case "quit": return [.quit]
+                    case "tasks": return toggleRunners(announcing: true)
                     case "follow-up": return submitPrompt(arguments, followUp: true)
                     default:
                         guard !busy() else { return [] }

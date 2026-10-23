@@ -16,7 +16,7 @@ policy and the meaning of each click are ask's (ADR-0044).
 
 The real transcript now has mouse selection, highlighting, clipboard writes, wheel scrolling and thinking/tool folds. Header clicks
 open individual blocks; Ctrl+T and Ctrl+O change their separate defaults. Six `ui.*` keys configure interaction and bounded input.
-Scripted-provider PTY probes cover live runs, resumed sessions and wrapped-input editing. Images, runner clicks and input
+Scripted-provider PTY probes cover live runs, resumed sessions and wrapped-input editing. Images and input
 pointer interactions remain owed.
 The real screen now follows the prototype's no-leading-icons and terminal-default-background rules (diary 2026-10-22 (2)).
 
@@ -142,6 +142,11 @@ whose timer is disabled. Real-terminal feel (rate, trackpad) still needs a warne
 A fenced block longer than `ui.codeFoldLines` (default 20, never more than half the screen) starts folded inside its reply as
 `code · swift · 34 lines`. A click on it opens it, a click on the opening fence folds it, Ctrl+G flips every block, and `ui.code` sets
 the start. A selection reads what is shown. **Images** are not started: ask has no image content to draw, so `ui.images` stays refused.
+
+## Runners (2026-10-23, ADR-0066; diary 2026-10-23 (15))
+
+The status line counts running background jobs (`· 2 jobs`); a click on the count or `/tasks` opens a read-only list above it. Subagents
+will use the same `RunnerInfo` seam when roadmap 0027 builds them. Stopping or focusing a runner from the list is not decided.
 
 ## Open questions
 
