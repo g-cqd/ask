@@ -7,12 +7,17 @@ internal import TerminalKitText
 extension ScreenController {
     /// The one region the pointer acts on: the transcript. The prompt and the status line are not content.
     private static let transcriptTarget = 0
+    /// The status line, which acts only on its runner count.
+    private static let statusTarget = 1
 
     mutating func handle(mouse event: MouseEvent, at now: ContinuousClock.Instant) -> [Effect] {
         guard options.mouse else { return [] }
         var regions = RegionMap<Int>()
         regions.add(
             Self.transcriptTarget, at: CellRect(row: 0, col: 0, rows: frame.transcriptRows, cols: frame.columns))
+        if frame.runnerColumns != nil {
+            regions.add(Self.statusTarget, at: CellRect(row: frame.statusRow, col: 0, rows: 1, cols: frame.columns))
+        }
         // Collected first: acting on an event changes the controller, which the recognizer is part of.
         var events: [PointerEvent<Int>] = []
         pointer.handle(event, at: now, in: regions) { events.append($0) }
@@ -50,6 +55,10 @@ extension ScreenController {
                 // Into a local first: `self` is read before an argument is evaluated, so the copy would see the old selection.
                 let update = selector.endDrag()
                 return copyIfCommitted(update)
+            // Any count: a second click inside the double-click time is the user closing what the first opened, not selecting a word.
+            case .click(let target, let cell, .left, _, _) where target == Self.statusTarget:
+                guard frame.runnerColumns?.contains(cell.col) == true else { return [] }
+                return toggleRunners()
             case .click(_, let cell, .left, _, let count):
                 if count == 1, isSelected(cell) {
                     selector.clear()

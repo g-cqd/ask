@@ -39,6 +39,7 @@ struct SlashCommandsTests {
                 "/help  List commands; Ctrl+T thinking, Ctrl+O tools, Ctrl+G code. Enter steers; Alt+Enter queues.",
                 "/quit  Leave ask, stopping a running turn first.",
                 "/follow-up  Queue a message after the agent finishes: /follow-up TEXT.",
+                "/tasks  Show or hide the background jobs that are running.",
                 "/config  Show the settings."
             ])
     }

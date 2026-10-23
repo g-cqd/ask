@@ -16,6 +16,10 @@ public struct ScreenState: Sendable, Equatable {
     public var exitRequest: ScreenExit?
     /// Shown at the right of the status line, such as token usage; empty for none.
     public var detail = ""
+    /// What is running beside the conversation, newest list from the composition root.
+    public var runners: [RunnerInfo] = []
+    /// Whether the list of `runners` is open above the status line. It closes by itself when nothing is running.
+    public var runnersOpen = false
     /// A question waiting for y, a or n: while it waits, those keys answer it and nothing is typed.
     public var pendingApproval: PendingApproval?
     /// How many wrapped lines the transcript is scrolled up from the bottom.
