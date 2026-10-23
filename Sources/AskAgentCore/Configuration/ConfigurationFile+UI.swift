@@ -12,15 +12,16 @@ extension ConfigurationFile {
                     case "copyOnSelect": section.copyOnSelect = try container.decode(Bool.self, forKey: key)
                     case "scrollLines": section.scrollLines = try container.decode(Int.self, forKey: key)
                     case "promptRows": section.promptRows = try container.decode(Int.self, forKey: key)
-                    case "tools", "thinking":
+                    case "codeFoldLines": section.codeFoldLines = try container.decode(Int.self, forKey: key)
+                    case "tools", "thinking", "code":
                         let name = try container.decode(String.self, forKey: key)
                         guard name == "folded" || name == "open" else {
                             throw BadValue(key: "ui." + key.stringValue, value: name)
                         }
-                        if key.stringValue == "tools" {
-                            section.foldTools = name == "folded"
-                        } else {
-                            section.foldThinking = name == "folded"
+                        switch key.stringValue {
+                            case "tools": section.foldTools = name == "folded"
+                            case "thinking": section.foldThinking = name == "folded"
+                            default: section.foldCode = name == "folded"
                         }
                     default: throw UnknownKey(key: "ui." + key.stringValue)
                 }
