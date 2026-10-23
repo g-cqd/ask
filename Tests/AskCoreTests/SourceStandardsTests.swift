@@ -40,6 +40,7 @@ struct SourceStandardsTests {
     @Test(arguments: SourceStandardsTests.banned)
     func `the banned construct is absent from the sources`(construct: (name: String, alternatives: String)) throws {
         let offenders = try SourceStandards.occurrences(of: construct.name, in: SourceStandards.sources)
+            .filter { !Self.isPermitted(construct.name, at: $0) }
         #expect(
             offenders.isEmpty,
             """
@@ -47,6 +48,23 @@ struct SourceStandardsTests {
             Found at: \(offenders.isEmpty ? "" : offenders.joined(separator: "\n  "))
             """
         )
+    }
+
+    /// The one place raw arguments may be read. ADR-0065: a bare `ask` has nothing to parse, so the entry point checks
+    /// that there are no arguments and skips ArgumentParser's reflection, which cost about 1 ms of CPU per launch.
+    /// Everything else, including every option, is still parsed by ArgumentParser (ADR-0015).
+    private static let rawArgumentsPermittedIn = "Sources/ask/Ask.swift:"
+
+    private static func isPermitted(_ construct: String, at location: String) -> Bool {
+        construct == "CommandLine.arguments" && location.hasPrefix(rawArgumentsPermittedIn)
+    }
+
+    @Test func `the exception for raw arguments is the single bare-launch check and nothing wider`() throws {
+        let uses = try SourceStandards.occurrences(of: "CommandLine.arguments", in: SourceStandards.sources)
+        #expect(uses.count == 1 && uses.allSatisfy { $0.hasPrefix(Self.rawArgumentsPermittedIn) }, "found: \(uses)")
+        let ask = try String(
+            contentsOf: SourceStandards.repositoryRoot.appending(path: "Sources/ask/Ask.swift"), encoding: .utf8)
+        #expect(ask.contains("guard CommandLine.arguments.count == 1 else"), "only the count is read, never the values")
     }
 
     // MARK: - Escapes that must be justified in writing
