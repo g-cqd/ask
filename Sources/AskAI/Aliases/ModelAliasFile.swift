@@ -42,14 +42,17 @@ public struct ModelAliasFile: Sendable {
     ///   - model: the server's model id.
     ///   - contextWindow: a window the user states, or nil.
     ///   - maxOutputTokens: a reply limit the user states, or nil.
+    ///   - thinking: a thinking level for this alias, or nil.
     ///   - known: the model ids this account lists, when known.
     /// - Throws: a ``ModelAliasError``; a damaged file is never overwritten.
     public func set(
-        _ name: String, to model: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil, known: [String] = []
+        _ name: String, to model: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil,
+        thinking: ThinkingLevel? = nil, known: [String] = []
     ) throws(ModelAliasError) {
         try update(creating: true) { (aliases: inout ModelAliases) throws(ModelAliasError) in
             try aliases.set(
-                name, to: model, contextWindow: contextWindow, maxOutputTokens: maxOutputTokens, known: known)
+                name, to: model, contextWindow: contextWindow, maxOutputTokens: maxOutputTokens, thinking: thinking,
+                known: known)
         }
     }
 
