@@ -113,6 +113,37 @@ struct ClaudeRefreshSaveFailureTests {
         #expect(!access.rotationIsUnsaved)
     }
 
+    @Test
+    func
+        `a second ask process is refused while the first holds a rotation it could not save, and recovers when it does`()
+        async throws
+    {
+        // The limit ADR-0082 does not remove: the held pair lives in the first process's memory, and the file still holds the spent token.
+        try file.saveClaude(credentials("OLD"))
+        let first = ClaudeAccess(
+            file: file, client: ClaudeAuthClient(transport: SequencedTransport([.json(200, Self.tokens("NEW"))])))
+        let held = try holdingTheSaveLock()
+        _ = try await first.auth(now: 5_000)
+        held.release()
+        let second = ClaudeAccess(
+            file: file, client: ClaudeAuthClient(transport: SequencedTransport([.json(400, Self.spent)])))
+        do {
+            _ = try await second.auth(now: 5_000)
+            Issue.record("the spent token was accepted")
+        } catch {
+            guard case .refreshFailed = error else {
+                Issue.record("expected a refused refresh, got \(error)")
+                return
+            }
+        }
+        #expect(try file.loadClaude()?.refreshToken == "sk-ant-ort-OLD", "a refused refresh leaves the file as it was")
+        _ = try await first.auth(now: 5_000)  // the first process's next call saves what it held
+        let recovered = try await second.auth(now: 5_000)
+        #expect(
+            token(recovered) == "sk-ant-oat-NEW",
+            "and the second process can use what the first saved, with nothing sent")
+    }
+
     @Test func `a refresh that is saved the first time holds nothing back`() async throws {
         try file.saveClaude(credentials("OLD"))
         let transport = SequencedTransport([.json(200, Self.tokens("NEW"))])
