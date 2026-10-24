@@ -8,23 +8,42 @@ extension ScreenController {
     /// must not take Enter.
     static let pickerMinimumRows = 12
 
-    /// Brings the picker in line with the draft.
-    ///
-    /// It is open for a command-shaped word that starts the draft, when something matches, unless the name is already typed in full
-    /// (nothing is left to insert, so Enter runs it as it always did) or the user closed it on this word.
-    mutating func refreshPicker(screenRows: Int) {
+    /// Brings the picker in line with the draft: the command picker for a command word that starts it, the file picker for an `@` word
+    /// anywhere, none otherwise.
+    /// - Returns: asking for the project's files, when an `@` word needs a listing that is missing or old.
+    mutating func refreshPicker(screenRows: Int, at now: ContinuousClock.Instant) -> [Effect] {
+        guard screenRows >= Self.pickerMinimumRows else { return closePicker() }
+        if let trigger = commandTrigger() {
+            refreshCommandPicker(trigger, screenRows: screenRows)
+            return []
+        }
+        if let trigger = fileTrigger() { return refreshFilePicker(trigger, screenRows: screenRows, at: now) }
+        return closePicker()
+    }
+
+    /// Closes the picker and forgets that the user ever closed one: the cursor is in no word it could belong to.
+    private mutating func closePicker() -> [Effect] {
+        state.picker = nil
+        state.pickerDismissedAt = nil
+        return []
+    }
+
+    /// The command word the cursor is in, if there is one: command-shaped, and the first word of the draft.
+    private func commandTrigger() -> CompletionTrigger? {
         let text = state.editor.text
         // A command word can only start a draft that starts with a slash: checking that first keeps an ordinary keystroke, in a
         // draft of any length, from walking the draft to look for a trigger (measured: 6 KB draft, 65 to about 36 microseconds).
-        guard screenRows >= Self.pickerMinimumRows, text.first(where: { !$0.isWhitespace }) == "/",
+        guard text.first(where: { !$0.isWhitespace }) == "/",
             let trigger = CompletionTrigger.at(cursor: state.editor.cursor, in: text, sigils: ["/"]),
             text.prefix(trigger.range.lowerBound).allSatisfy(\.isWhitespace),
             trigger.query.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") })
-        else {
-            state.picker = nil
-            state.pickerDismissedAt = nil
-            return
-        }
+        else { return nil }
+        return trigger
+    }
+
+    /// Opens, narrows or closes the command picker for `trigger`. It stays closed for a name typed in full (nothing is left to insert, so
+    /// Enter runs it as it always did), for no match, and for a word the user closed it on.
+    private mutating func refreshCommandPicker(_ trigger: CompletionTrigger, screenRows: Int) {
         let matches = PickerRanking.rank(commands, query: trigger.query)
         guard state.pickerDismissedAt != trigger.range.lowerBound, !matches.isEmpty,
             !commands.contains(where: { $0.name == trigger.query })
@@ -32,9 +51,15 @@ extension ScreenController {
             state.picker = nil
             return
         }
-        var picker = CompletionPicker(
-            kind: .commands, trigger: trigger, matches: matches.map(PickerRow.init),
-            capacity: CompletionPicker.capacity(screenRows: screenRows))
+        install(
+            CompletionPicker(
+                kind: .commands, trigger: trigger, matches: matches.map(PickerRow.init),
+                capacity: CompletionPicker.capacity(screenRows: screenRows)))
+    }
+
+    /// Shows `picker`, keeping the choice when it is the same word with the same query.
+    mutating func install(_ picker: CompletionPicker) {
+        var picker = picker
         if let old = state.picker { picker.keepChoice(from: old) }
         state.picker = picker
     }
@@ -42,6 +67,8 @@ extension ScreenController {
     /// What an open picker does with `key`, or nil when the key is the editor's.
     mutating func pickerKey(_ key: KeyEvent, screenRows: Int) -> [Effect]? {
         guard screenRows >= Self.pickerMinimumRows, var picker = state.picker else { return nil }
+        // A picker with nothing to choose yet (the files are still being listed) only answers Escape; every other key is the editor's.
+        if picker.matches.isEmpty, key.keyCode != 0x1B { return nil }
         switch key.keyCode {
             case Key.up.rawValue: picker.move(-1)
             case Key.down.rawValue: picker.move(1)

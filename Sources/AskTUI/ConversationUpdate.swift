@@ -28,6 +28,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case askApproval(id: Int, question: String)
     /// Everything running beside the conversation, replacing the last list. The status line counts them and `/tasks` lists them.
     case runners([RunnerInfo])
+    /// The project's files for the `@` picker, answering ``ScreenController/Effect/indexFiles``.
+    case files(ProjectFiles)
     /// The run is over, however it ended.
     case runEnded
 }

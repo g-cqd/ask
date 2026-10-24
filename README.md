@@ -34,6 +34,11 @@ choice without sending it** (a second Enter runs it), and Esc closes the list an
 Enter as before, and a path such as `/etc/hosts` is still a prompt
 ([ADR-0067](docs/adr/0067-the-command-picker-is-derived-from-the-draft-and-inserts-without-sending.md)). `/help` lists them too.
 
+Type `@` at the start of a word to point at a file: the project's files are listed (git's own list, so `.gitignore` applies, and only
+what the sandbox lets ask read), narrowed as you type, with the same keys. **Enter or Tab inserts `@path`** and nothing is sent or
+attached; add `:12-30` for a line range. The model reads the file itself, under the sandbox
+([ADR-0069](docs/adr/0069-the-file-picker-inserts-a-path-and-lists-only-what-ask-may-read.md)).
+
 | Command | |
 |---|---|
 | `/new` | fresh conversation; the old session stays saved (stop background jobs first) |
