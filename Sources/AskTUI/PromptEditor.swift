@@ -65,6 +65,13 @@ public struct PromptEditor: Sendable, Equatable {
         return .edited
     }
 
+    /// Puts the cursor at a character offset, as a click does. What the last Up or Down remembered is forgotten.
+    public mutating func place(cursor offset: Int) {
+        goalColumn = nil
+        goalWidth = nil
+        move(to: offset)
+    }
+
     /// Inserts pasted text at the cursor, keeping its line breaks (every kind becomes `\n`).
     public mutating func paste(_ pasted: String) {
         goalColumn = nil

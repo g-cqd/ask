@@ -19,4 +19,9 @@ struct FrameGeometry: Sendable {
     var pickerFirstRow = 0
     var pickerWindow = 0 ..< 0
     var pickerTrigger: CompletionTrigger?
+    /// The input as drawn: its first screen row, how many rows, the draft's display row at the top, and the map from cell to text.
+    var promptRow = 0
+    var promptRows = 0
+    var promptTop = 0
+    var prompt: InputLayout?
 }
