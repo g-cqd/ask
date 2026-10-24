@@ -1,0 +1,45 @@
+import Foundation
+func med(_ runs: Int = 15, _ f: () -> Int) -> (Double, Int) {
+    var ts: [Double] = []; var r = 0
+    for _ in 0 ..< runs { let s = DispatchTime.now().uptimeNanoseconds; r = f(); ts.append(Double(DispatchTime.now().uptimeNanoseconds - s) / 1e6) }
+    ts.sort(); return (ts[ts.count / 2], r)
+}
+// The same 642 files, read once into memory: matching cost alone, no I/O.
+var blobs: [Data] = []
+for root in ["/Users/me/Developer/ask/Sources", "/Users/me/Developer/ask/Tests"] {
+    for case let p as String in FileManager.default.enumerator(atPath: root)! where p.hasSuffix(".swift") {
+        blobs.append(try! Data(contentsOf: URL(filePath: root + "/" + p)))
+    }
+}
+let strings = blobs.map { String(decoding: $0, as: UTF8.self) }
+print("files", blobs.count, "bytes", blobs.reduce(0) { $0 + $1.count })
+
+let re = try! NSRegularExpression(pattern: #"func\s+\w+\(.*async"#)
+let a = med { strings.reduce(0) { $0 + re.numberOfMatches(in: $1, range: NSRange($1.startIndex..., in: $1)) } }
+print("NSRegularExpression, in memory:   \(String(format: "%6.2f", a.0)) ms  matches \(a.1)")
+
+// Prefilter in Swift SIMD (compiles to NEON): candidate positions of the first byte 'f' of 'func', 16 bytes per step.
+func simdCandidates(_ d: Data) -> Int {
+    d.withUnsafeBytes { raw in
+        let b = raw.bindMemory(to: UInt8.self); var n = 0, i = 0
+        let needle = SIMD16<UInt8>(repeating: UInt8(ascii: "f"))
+        while i + 16 <= b.count {
+            let v = UnsafeRawPointer(b.baseAddress! + i).loadUnaligned(as: SIMD16<UInt8>.self)
+            let m = v .== needle
+            if any(m) { for k in 0 ..< 16 where m[k] { n += 1 } }
+            i += 16
+        }
+        return n
+    }
+}
+let b = med { blobs.reduce(0) { $0 + simdCandidates($1) } }
+print("Swift SIMD16 byte prefilter:      \(String(format: "%6.2f", b.0)) ms  candidates \(b.1)")
+func memchrCandidates(_ d: Data) -> Int {
+    d.withUnsafeBytes { raw in
+        var n = 0; var p = raw.baseAddress!; var left = raw.count
+        while left > 0, let q = memchr(p, Int32(UInt8(ascii: "f")), left) { n += 1; let adv = UnsafeRawPointer(q) - UnsafeRawPointer(p) + 1; p += adv; left -= adv }
+        return n
+    }
+}
+let c = med { blobs.reduce(0) { $0 + memchrCandidates($1) } }
+print("libc memchr loop (NEON in libc):  \(String(format: "%6.2f", c.0)) ms  candidates \(c.1)")

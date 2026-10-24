@@ -1,0 +1,11 @@
+@inline(never) public func candidates(_ b: UnsafeBufferPointer<UInt8>) -> Int {
+    var n = 0, i = 0
+    let needle = SIMD16<UInt8>(repeating: 102)
+    while i + 16 <= b.count {
+        let v = UnsafeRawPointer(b.baseAddress! + i).loadUnaligned(as: SIMD16<UInt8>.self)
+        let m = v .== needle
+        if any(m) { for k in 0 ..< 16 where m[k] { n += 1 } }
+        i += 16
+    }
+    return n
+}
