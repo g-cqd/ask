@@ -28,3 +28,9 @@ Decode `tool_calls[].extra_content.google.thought_signature` in the wire chunk a
 `skip_thought_signature_validator` only for Gemini 3 or later on this preset, only on the first call of a turn, never over a real signature.
 The storage choice is shared with roadmap 0052 (a provenance marker on the thinking block, ADR-0033, or a field on the call) and should be
 decided once. Other OpenAI-compatible presets do not take `extra_content` and must not change.
+
+## Update (2026-10-24)
+
+The same rule is now **confirmed live on Cloud Code** (Gemini 3: a replayed call without a signature is refused with 400, the sentinel is
+accepted; ADR-0080). That is a different endpoint from this preset's OpenAI-compatible one, so it does not settle this entry: the probe
+above still needs a `GEMINI_API_KEY`, which the owner does not have.

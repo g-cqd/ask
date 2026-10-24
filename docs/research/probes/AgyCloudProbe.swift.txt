@@ -1,0 +1,182 @@
+internal import AemiJSON
+internal import Foundation
+internal import Testing
+
+@testable import AskAI
+
+/// One-off, opt-in live probe of Cloud Code onboarding and the model list with ask's own honest identity (roadmap 0052). Prints
+/// statuses, key names, booleans, tier ids, model ids and limits: never a token or the project id.
+struct TempAgyCloudProbe {
+    static let base = "https://daily-cloudcode-pa.googleapis.com"
+
+    static func post(_ path: String, _ body: String, token: String, agent: String) async throws -> (Int, [UInt8], [(name: String, value: String)]) {
+        let request = HTTPRequest(
+            url: URL(string: base + path)!, method: "POST",
+            headers: [("authorization", "Bearer " + token), ("content-type", "application/json"), ("accept", "application/json"), ("user-agent", agent)],
+            body: Array(body.utf8))
+        let reply = try await URLSessionTransport().send(request)
+        let bytes = try await reply.collect(limit: 1 << 20)
+        return (reply.status, bytes, reply.headers.map { (name: $0.key, value: $0.value) })
+    }
+
+    static func keys(_ node: JSON) -> [String] {
+        var names: [String] = []
+        node.forEachMember { name, _ in names.append(String(name)) }
+        return names.sorted()
+    }
+
+    static func shape(_ bytes: [UInt8]) -> String {
+        guard let root = try? AemiJSON.parse(bytes).root else { return "(not JSON, \(bytes.count) bytes)" }
+        if root["error"].isObject {
+            let error = root["error"]
+            return "error status=\(error["status"].string ?? "-") code=\(error["code"].int.map(String.init) ?? "-") message=\"\(String((error["message"].string ?? "").prefix(220)))\""
+        }
+        return "ok"
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_AGY_CLOUD_PROBE"] == "1"))
+    func probe() async throws {
+        let file = CredentialFile.standard()
+        var credentials = try #require(try file.loadAgy())
+        let now = Date().timeIntervalSince1970
+        if credentials.expiresAt <= now + 60 {
+            let renewed = try await AgyAuthClient(transport: URLSessionTransport()).refresh(credentials, secret: try #require(credentials.clientSecret), now: now)
+            _ = try file.saveAgy(renewed, ifStill: credentials)
+            credentials = renewed
+            print("CLOUD_PROBE refreshed the access token first")
+        }
+        let token = credentials.accessToken
+        let honest = "ask/0 (Antigravity subscription connector)"
+        let platform = "DARWIN_ARM64"
+        let variants: [(String, String)] = [
+            ("A honest UA, pi's metadata (ideType ANTIGRAVITY)", #"{"metadata":{"ideType":"ANTIGRAVITY","ideVersion":"0","pluginVersion":"0","platform":"\#(platform)","ideName":"ask"},"mode":"FULL_ELIGIBILITY_CHECK"}"#),
+            ("B honest UA, no ideType", #"{"metadata":{"ideVersion":"0","pluginVersion":"0","platform":"\#(platform)","ideName":"ask"},"mode":"FULL_ELIGIBILITY_CHECK"}"#),
+            ("C honest UA, empty metadata", #"{"metadata":{}}"#)
+        ]
+        var project: String?
+        for (label, body) in variants {
+            let (status, bytes, _) = try await Self.post("/v1internal:loadCodeAssist", body, token: token, agent: honest)
+            var line = "CLOUD_PROBE loadCodeAssist \(label): status=\(status) \(Self.shape(bytes))"
+            if let root = try? AemiJSON.parse(bytes).root, !root["error"].isObject {
+                let keys = Self.keys(root)
+                let projectValue = root["cloudaicompanionProject"]
+                let id = projectValue.string ?? projectValue["id"].string
+                line += " keys=\(keys) projectPresent=\(id != nil) projectKind=\(projectValue.string != nil ? "string" : (projectValue.isObject ? "object" : "none"))"
+                line += " currentTier=\(root["currentTier"]["id"].string ?? "-") paidTier=\(root["paidTier"]["id"].string ?? "-")"
+                let reasons = (root["ineligibleTiers"].array ?? []).compactMap { $0["reasonCode"].string }
+                line += " ineligible=\(reasons)"
+                if project == nil { project = id }
+            }
+            print(line)
+        }
+        guard let project else { print("CLOUD_PROBE no project was returned to an honest identity; model list not attempted"); return }
+        let (status, bytes, _) = try await Self.post("/v1internal:fetchAvailableModels", #"{"project":"\#(project)"}"#, token: token, agent: honest)
+        print("CLOUD_PROBE fetchAvailableModels honest UA: status=\(status) \(Self.shape(bytes))")
+        if let root = try? AemiJSON.parse(bytes).root, !root["error"].isObject {
+            print("CLOUD_PROBE top-level keys=\(Self.keys(root))")
+            let models = root["models"]
+            let ids = Self.keys(models)
+            print("CLOUD_PROBE modelCount=\(ids.count) default=\(root["defaultAgentModelId"].string ?? "-")")
+            for id in ids {
+                let m = models[id]
+                print("CLOUD_PROBE model \(id): name=\(m["displayName"].string ?? "-") ctx=\(m["maxTokens"].int.map(String.init) ?? "-") out=\(m["maxOutputTokens"].int.map(String.init) ?? "-") thinking=\(m["supportsThinking"].bool ?? false) images=\(m["supportsImages"].bool ?? false) rec=\(m["recommended"].bool ?? false) disabled=\(m["disabled"].bool ?? false)")
+            }
+            let sorts = (root["agentModelSorts"].array ?? []).count
+            let tiered = Self.keys(root["tieredModelIds"]).count
+            print("CLOUD_PROBE agentModelSorts=\(sorts) tieredGroups=\(tiered)")
+        }
+    }
+
+    struct Turn {
+        var status = 0
+        var error = ""
+        var chunks = 0
+        var parts: [JSON] = []
+        var finish: String?
+        var usage: (input: Int, output: Int, thoughts: Int)?
+        var promptFeedback: String?
+    }
+
+    static func stream(model: String, project: String, token: String, contents: String, tools: String? = nil, agent: String) async throws -> Turn {
+        var request = #"{"contents":\#(contents),"generationConfig":{"thinkingConfig":{"includeThoughts":true}}"#
+        if let tools { request += #","tools":\#(tools),"toolConfig":{"functionCallingConfig":{"mode":"AUTO"}}"# }
+        request += "}"
+        let envelope = #"{"project":"\#(project)","requestId":"ask-\#(UUID().uuidString)","model":"\#(model)","userAgent":"\#(agent)","requestType":"agent","userPromptId":"\#(UUID().uuidString)","request":\#(request)}"#
+        let (status, bytes, _) = try await post("/v1internal:streamGenerateContent?alt=sse", envelope, token: token, agent: agent)
+        var turn = Turn(status: status)
+        let text = String(decoding: bytes, as: UTF8.self)
+        if ProcessInfo.processInfo.environment["ASK_AGY_PROBE_RAW"] == "1" { print("CLOUD_PROBE RAW[\(model)] bytes=\(bytes.count) head=\(text.prefix(500).replacingOccurrences(of: "\n", with: "⏎").replacingOccurrences(of: "\r", with: "␍"))") }
+        if status != 200 { turn.error = shape(bytes); return turn }
+        for line in text.split(whereSeparator: \.isNewline) where line.hasPrefix("data: ") {
+            guard let root = try? AemiJSON.parse(Array(line.dropFirst(6).utf8)).root else { continue }
+            turn.chunks += 1
+            let response = root["response"].isObject ? root["response"] : root
+            for candidate in response["candidates"].array ?? [] {
+                for part in candidate["content"]["parts"].array ?? [] { turn.parts.append(part) }
+                if let reason = candidate["finishReason"].string { turn.finish = reason }
+            }
+            let usage = response["usageMetadata"]
+            if usage.isObject { turn.usage = (usage["promptTokenCount"].int ?? 0, usage["candidatesTokenCount"].int ?? 0, usage["thoughtsTokenCount"].int ?? 0) }
+            if let block = response["promptFeedback"]["blockReason"].string { turn.promptFeedback = block }
+        }
+        return turn
+    }
+
+    static func describe(_ label: String, _ turn: Turn) {
+        var kinds: [String] = []
+        for part in turn.parts {
+            var k = part["functionCall"].isObject ? "functionCall" : (part["thought"].bool == true ? "thought" : (part["text"].string != nil ? "text" : "other"))
+            if part["thoughtSignature"].string != nil { k += "+signature" }
+            kinds.append(k)
+        }
+        let u = turn.usage.map { "in=\($0.input) out=\($0.output) thoughts=\($0.thoughts)" } ?? "usage=none"
+        print("CLOUD_PROBE \(label): status=\(turn.status) chunks=\(turn.chunks) parts=\(kinds) finish=\(turn.finish ?? "-") \(u)\(turn.error.isEmpty ? "" : " " + turn.error)")
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_AGY_STREAM_PROBE"] == "1"))
+    func streaming() async throws {
+        let file = CredentialFile.standard()
+        var credentials = try #require(try file.loadAgy())
+        let now = Date().timeIntervalSince1970
+        if credentials.expiresAt <= now + 60 {
+            let renewed = try await AgyAuthClient(transport: URLSessionTransport()).refresh(credentials, secret: try #require(credentials.clientSecret), now: now)
+            _ = try file.saveAgy(renewed, ifStill: credentials)
+            credentials = renewed
+        }
+        let token = credentials.accessToken
+        let agent = "ask/0 (Antigravity subscription connector)"
+        let (_, loaded, _) = try await Self.post("/v1internal:loadCodeAssist", #"{"metadata":{}}"#, token: token, agent: agent)
+        let root = try AemiJSON.parse(loaded).root
+        let project = try #require(root["cloudaicompanionProject"].string)
+
+        let userText = #"[{"role":"user","parts":[{"text":"Reply with exactly the single word: OK"}]}]"#
+        let tools = #"[{"functionDeclarations":[{"name":"calc","description":"Multiply two integers and return the product.","parameters":{"type":"OBJECT","properties":{"a":{"type":"INTEGER"},"b":{"type":"INTEGER"}},"required":["a","b"]}}]}]"#
+        let ask = #"{"role":"user","parts":[{"text":"Use the calc tool to multiply 17 by 53, then tell me the product."}]}"#
+        let models = (ProcessInfo.processInfo.environment["ASK_AGY_PROBE_MODELS"] ?? "gemini-3-flash,gemini-2.5-pro,claude-sonnet-5-5-low,gpt-oss-120b-medium").split(separator: ",").map(String.init)
+        for model in models {
+            let plain = try await Self.stream(model: model, project: project, token: token, contents: userText, agent: agent)
+            Self.describe("\(model) plain text", plain)
+            guard plain.status == 200 else { continue }
+            let first = try await Self.stream(model: model, project: project, token: token, contents: "[\(ask)]", tools: tools, agent: agent)
+            Self.describe("\(model) tool round 1", first)
+            guard let call = first.parts.first(where: { $0["functionCall"].isObject }) else { continue }
+            let rawCall = String(decoding: try call.encodedBytes(), as: UTF8.self)
+            var stripped = rawCall
+            if let signature = call["thoughtSignature"].string {
+                stripped = rawCall.replacingOccurrences(of: ",\"thoughtSignature\":\"\(signature)\"", with: "").replacingOccurrences(of: "\"thoughtSignature\":\"\(signature)\",", with: "")
+                print("CLOUD_PROBE \(model) call carried a signature of \(signature.count) characters; stripped variant differs=\(stripped != rawCall)")
+            }
+            let sentinel = stripped.replacingOccurrences(of: "{\"functionCall\"", with: "{\"thoughtSignature\":\"skip_thought_signature_validator\",\"functionCall\"")
+            let callID = call["functionCall"]["id"].string
+            print("CLOUD_PROBE \(model) functionCall carries an id=\(callID != nil) keys=\(Self.keys(call["functionCall"]))")
+            let idField = callID.map { #""id":"\#($0)","# } ?? ""
+            let result = #"{"role":"user","parts":[{"functionResponse":{\#(idField)"name":"calc","response":{"result":901}}}]}"#
+            func round2(_ part: String) -> String { "[\(ask),{\"role\":\"model\",\"parts\":[\(part)]},\(result)]" }
+            Self.describe("\(model) round 2 verbatim call", try await Self.stream(model: model, project: project, token: token, contents: round2(rawCall), tools: tools, agent: agent))
+            if stripped != rawCall || call["thoughtSignature"].string == nil {
+                Self.describe("\(model) round 2 call without any signature", try await Self.stream(model: model, project: project, token: token, contents: round2(stripped), tools: tools, agent: agent))
+                Self.describe("\(model) round 2 call with the validator-skip sentinel", try await Self.stream(model: model, project: project, token: token, contents: round2(sentinel), tools: tools, agent: agent))
+            }
+        }
+    }
+}
