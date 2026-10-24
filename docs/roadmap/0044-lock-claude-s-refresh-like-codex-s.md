@@ -1,8 +1,8 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-20
-decision: ADR-0036
+decision: ADR-0067
 ---
 
 # 0044 — Refresh Claude's credentials under the same lock
@@ -38,3 +38,10 @@ Each login prints a URL; open it, sign in, paste the `code#state` it shows. Then
 
 Not yet run. A usage-limit 429 is inconclusive, not a failure.
 
+## Done (2026-10-24, ADR-0067, diary 2026-10-24-16)
+
+Probed on a disposable named connection: Claude's refresh token **is single use** (a refresh rotates it, the spent one is refused with
+`400 invalid_grant`), and of two refreshes sent together exactly one succeeds. `ClaudeAccess` now refreshes under its own lock with a
+second look, as Codex's does, and a named connection is held to its account because the refresh response names it.
+
+Not exercised: a real two-process race through the `ask` binary, and the second named grant (only `claude-a` was used).
