@@ -35,7 +35,7 @@ before the URL is shown and kept with the credentials, the paste is validated, a
 killed. **A real sign-in has been done** with the owner's account (userinfo, tokeninfo and a refresh checked; Google does not rotate the
 refresh token).
 
-## Done (2026-10-24, ADR-0080, diary 2026-10-24-29)
+## Done (2026-10-24, ADR-0080, diary 2026-10-24-33)
 
 Probed live with the owner's account and **ask's own identity**: onboarding (`loadCodeAssist`), the model list, and streaming on Gemini 3,
 Claude and GPT-OSS all work without the first-party `antigravity/cli/` claim (the open identity question is closed in ask's favour; what it
