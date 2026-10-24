@@ -87,6 +87,11 @@ public struct ScreenController: Sendable {
                     state.scrollback = Swift.max(0, state.scrollback - Swift.max(1, pageRows))
                     return []
                 }
+                // End goes to the end of the conversation when there is no draft for it to go to the end of (ADR-0072).
+                if key.keyCode == Key.end.rawValue, state.scrollback > 0, state.editor.text.isEmpty {
+                    state.scrollback = 0
+                    return []
+                }
                 // A question waiting for y, a or n takes the keys first (roadmap 0019).
                 if state.pendingApproval != nil { return answer(key) }
                 if let effects = selectionKey(key) { return effects }
@@ -107,9 +112,13 @@ public struct ScreenController: Sendable {
         }
     }
 
-    /// Applies an update from the running conversation.
+    /// Applies an update from the running conversation. A reader who has scrolled back stays on what they were reading (ADR-0072).
     @discardableResult
     public mutating func handle(_ update: ConversationUpdate) -> [Effect] {
+        holdingView { $0.apply(update) }
+    }
+
+    private mutating func apply(_ update: ConversationUpdate) -> [Effect] {
         switch update {
             case .userPrompt(let text): state.transcript.addUser(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
