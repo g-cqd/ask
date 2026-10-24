@@ -1,0 +1,28 @@
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":""}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":"The sea sh"}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":"immered"}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":" under"}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":" the"}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":" golden af"}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":"ternoon sun. Its"}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":" waves wh"}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":"ispered sec"}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":"rets as"}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":" they r"}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":"olled g"}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":"ently onto the shore."}]}}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":4,"totalTokenCount":24},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":""}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":20,"candidatesTokenCount":43,"totalTokenCount":63},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+

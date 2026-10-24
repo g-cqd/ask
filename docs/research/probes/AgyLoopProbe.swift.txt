@@ -1,0 +1,104 @@
+internal import AemiJSON
+internal import Foundation
+internal import Testing
+
+@testable import AskAI
+
+/// One-off, opt-in: a real tool loop through AgyRequestEncoder and AgyStreamDecoder. Prints statuses, block kinds and counts; never a token or the project.
+struct TempAgyLoopProbe {
+    static func send(_ request: ModelRequest, project: String, token: String) async throws -> (status: Int, response: AssembledResponse?, error: String) {
+        let body = try AgyRequestEncoder.encode(request, project: project, requestID: "ask-" + UUID().uuidString, promptID: UUID().uuidString)
+        let http = HTTPRequest(
+            url: URL(string: "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse")!, method: "POST",
+            headers: [("authorization", "Bearer " + token), ("content-type", "application/json"), ("accept", "text/event-stream"), ("user-agent", AgyCloud.userAgent)], body: body)
+        let reply = try await URLSessionTransport().send(http)
+        let bytes = try await reply.collect(limit: 4 << 20)
+        guard reply.status == 200 else {
+            let failure = AgyStreamDecoder.failure(inErrorBody: bytes)
+            return (reply.status, nil, "\(failure?.kind as Any) \(failure?.message ?? "")".prefix(200).description)
+        }
+        var framer = SSEDecoder(), decoder = AgyStreamDecoder(), assembler = ResponseAssembler()
+        var frames: [SSEEvent] = [], events: [ModelEvent] = []
+        try framer.feed(bytes.span, into: &frames)
+        for frame in frames { try decoder.decode(frame, into: &events) }
+        try decoder.finish(into: &events)
+        for event in events { try assembler.apply(event) }
+        return (200, try assembler.finish(), "")
+    }
+
+    static func blocks(_ response: AssembledResponse) -> [RequestBlock] {
+        response.blocks.compactMap {
+            switch $0 {
+                case .text(let t): .text(t)
+                case .thinking(let t, let s): .thinking(text: t, signature: s)
+                case .toolCall(let id, let name, let input): .toolCall(id: id, name: name, input: input)
+                default: nil
+            }
+        }
+    }
+
+    static func kinds(_ blocks: [RequestBlock]) -> String {
+        blocks.map { block -> String in
+            switch block {
+                case .text: "text"
+                case .thinking(let t, let s): "thinking(\(t.isEmpty ? "empty" : "text"),\(ReasoningProvenance.isForeign(s) ? "marked" : (s.isEmpty ? "nosig" : "plain")))"
+                case .redactedThinking: "redacted"
+                case .toolCall(_, let n, _): "call(\(n))"
+                case .toolResult: "result"
+            }
+        }.joined(separator: " ")
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_AGY_LOOP"] == "1"))
+    func loop() async throws {
+        let file = CredentialFile.standard()
+        var credentials = try #require(try file.loadAgy())
+        let now = Date().timeIntervalSince1970
+        if credentials.expiresAt <= now + 60 {
+            let renewed = try await AgyAuthClient(transport: URLSessionTransport()).refresh(credentials, secret: try #require(credentials.clientSecret), now: now)
+            _ = try file.saveAgy(renewed, ifStill: credentials)
+            credentials = renewed
+        }
+        let dir = NSHomeDirectory() + "/Library/Caches/ask-mutation/agy/"
+        let project = try #require(try AemiJSON.parse(Array(try Data(contentsOf: URL(fileURLWithPath: dir + "load-code-assist-ask-identity.json")))).root["cloudaicompanionProject"].string)
+        let toolsJSON = try AemiJSON.parse(Array(try Data(contentsOf: URL(fileURLWithPath: dir + "ask-tools.json")))).root
+        var tools: [ToolDefinition] = []
+        for tool in toolsJSON.array ?? [] {
+            tools.append(ToolDefinition(name: tool["name"].string!, description: tool["description"].string!, inputSchema: try JSONObject(validating: try tool["input_schema"].encodedBytes())))
+        }
+        let token = credentials.accessToken
+        let prompt = ModelMessage(role: .user, blocks: [.text("Use the read tool to read /etc/hostname, then tell me the first word of what it contains.")])
+        let system = ["You are ask, a coding agent. Use the tools to read files."]
+        func ask(_ model: String, _ messages: [ModelMessage], max: Int = 4000) -> ModelRequest {
+            ModelRequest(model: model, maxTokens: max, systemPrompt: system, messages: messages, tools: tools)
+        }
+        var history: [String: [ModelMessage]] = [:]
+        for model in ["gemini-3-flash", "claude-sonnet-5-5-low", "gpt-oss-120b-medium", "gemini-3.5-flash-lite"] {
+            let first = try await Self.send(ask(model, [prompt]), project: project, token: token)
+            print("LOOP \(model) round1: status=\(first.status) \(first.error)")
+            guard let response = first.response else { continue }
+            let assistant = Self.blocks(response)
+            print("LOOP \(model) round1 blocks: \(Self.kinds(assistant)) stop=\(String(describing: response.stopReason)) usage=\(response.usage)")
+            guard case .toolCall(let id, _, _)? = assistant.last(where: { if case .toolCall = $0 { true } else { false } }) else { continue }
+            let messages = [prompt, ModelMessage(role: .assistant, blocks: assistant), ModelMessage(role: .user, blocks: [.toolResult(id: id, content: "myhost\n", isError: false)])]
+            history[model] = messages
+            let second = try await Self.send(ask(model, messages), project: project, token: token)
+            print("LOOP \(model) round2 (result): status=\(second.status) \(second.error) blocks=\(second.response.map { Self.kinds(Self.blocks($0)) } ?? "-") stop=\(String(describing: second.response?.stopReason))")
+            if let text = second.response?.blocks.compactMap({ if case .text(let t) = $0 { t } else { nil } }).joined() { print("LOOP \(model) answer: \(text.prefix(80).replacingOccurrences(of: "\n", with: " "))") }
+            let errored = [prompt, ModelMessage(role: .assistant, blocks: assistant), ModelMessage(role: .user, blocks: [.toolResult(id: id, content: "No such file: /etc/hostname", isError: true)])]
+            let third = try await Self.send(ask(model, errored), project: project, token: token)
+            print("LOOP \(model) round2 (error result): status=\(third.status) \(third.error) stop=\(String(describing: third.response?.stopReason))")
+        }
+        // A history from one Gemini model replayed to another: the carrier is another model's, so the sentinel must stand in.
+        if let messages = history["gemini-3-flash"] {
+            let cross = try await Self.send(ask("gemini-3.5-flash-lite", messages), project: project, token: token)
+            print("LOOP cross-model gemini-3-flash history -> gemini-3.5-flash-lite: status=\(cross.status) \(cross.error) stop=\(String(describing: cross.response?.stopReason))")
+            // The same history with its carrier removed, to the same model: the sentinel alone.
+            let bare = messages.map { m in ModelMessage(role: m.role, blocks: m.blocks.filter { if case .thinking = $0 { false } else { true } }) }
+            let sentinel = try await Self.send(ask("gemini-3-flash", bare), project: project, token: token)
+            print("LOOP gemini-3-flash history without its signature: status=\(sentinel.status) \(sentinel.error) stop=\(String(describing: sentinel.response?.stopReason))")
+        }
+        let huge = try await Self.send(ask("gemini-3-flash", [prompt], max: 200_000), project: project, token: token)
+        print("LOOP maxOutputTokens 200000 on gemini-3-flash (limit 65536): status=\(huge.status) \(huge.error)")
+    }
+}

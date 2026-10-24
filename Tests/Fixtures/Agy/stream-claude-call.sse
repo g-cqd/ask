@@ -1,0 +1,6 @@
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":""}]}}],"usageMetadata":{"promptTokenCount":408,"candidatesTokenCount":16,"totalTokenCount":424},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"calc","args":{"a":17,"b":53},"id":"toolu_vrtx_016J7m5JCVqQ8Eq4i6xe8MVB"}}]}}],"usageMetadata":{"promptTokenCount":408,"candidatesTokenCount":16,"totalTokenCount":424},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":""}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":408,"candidatesTokenCount":67,"totalTokenCount":475},"modelVersion":"claude-sonnet-5-5-low","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
