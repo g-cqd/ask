@@ -4,3 +4,6 @@
 *.xcodeproj
 .DS_Store
 __pycache__/
+
+# TLC writes its explored-state files here; they are empty and not worth keeping.
+docs/formal/states/
