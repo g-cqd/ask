@@ -3,9 +3,12 @@ internal import TerminalKitText
 /// Edge autoscroll (roadmap 0051). A drag held at an edge scrolls one line a tick, and the selection follows the newly shown line.
 extension ScreenController {
     /// Whether the driver should be ticking: a drag is held at an edge and either more transcript lies that way or the line that
-    /// last scrolled into view is not yet in the selection.
+    /// last scrolled into view is not yet in the selection. A drag selecting in the input ticks while it is held at an edge with more
+    /// rows of the draft that way.
     var isAutoscrolling: Bool {
-        guard options.mouse, selector.isDragging, let request = autoscroll.request else { return false }
+        guard options.mouse else { return false }
+        if inputDrag.isActive { return inputDrag.request != nil }
+        guard selector.isDragging, let request = autoscroll.request else { return false }
         return canScroll(request) || autoscroll.extendedAt != state.scrollback
     }
 
@@ -20,6 +23,7 @@ extension ScreenController {
     /// that scrolled into view and never over a position it has not seen; a frame still being drawn makes it wait for the next tick.
     /// - Returns: whether the transcript or the selection changed, so the screen should be drawn.
     mutating func tick() -> Bool {
+        if inputDrag.isActive { return stepInputDrag() }
         guard isAutoscrolling, let request = autoscroll.request, frame.scrollback == state.scrollback else {
             return false
         }
