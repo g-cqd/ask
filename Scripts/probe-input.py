@@ -27,7 +27,7 @@ def paste(terminal, text):
     terminal.draw(lambda: terminal.send(b"\x1b[200~" + text.encode() + b"\x1b[201~"))
 
 
-def scenario(label, draft, expected, width, height, changed=None, clear_first=False, click=None, select=None, taps=None, shifted=None):
+def scenario(label, draft, expected, width, height, changed=None, clear_first=False, click=None, select=None, taps=None, shifted=None, wheeled=None):
     with tempfile.TemporaryDirectory() as root:
         project, config, state = root + "/project", root + "/config", root + "/state"
         os.makedirs(project)
@@ -62,6 +62,18 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
                 terminal.draw(lambda: terminal.send(f"\x1b[<0;{column + 1};{row + 1}M\x1b[<0;{column + 1};{row + 1}m".encode()))
                 check(label + ": a click puts the cursor on the clicked cell",
                       (terminal.screen.cursor.x, terminal.screen.cursor.y) == (column, row))
+            elif wheeled:
+                for _ in range(wheeled):
+                    terminal.send(f"\x1b[<64;5;{height}M".encode())
+                    terminal.pump()
+                terminal.repaint()
+                rows = [terminal.screen.display[row].rstrip() for row in (height - 2, height - 1)]
+                check(label + ": the wheel scrolls the input's window by rows", rows == ["line 6", "line 7"])
+                check(label + ": the cursor is hidden while it is out of the window", terminal.screen.cursor.hidden)
+                check(label + ": and nothing was submitted", not server.requests)
+                terminal.draw(lambda: terminal.send(b"Y"))
+                check(label + ": a key brings the window and the cursor back",
+                      not terminal.screen.cursor.hidden and terminal.screen.display[height - 1].rstrip() == "line 10Y")
             elif shifted:
                 steps, copied = shifted
                 terminal.draw(lambda: terminal.send(b"\x01" + b"\x1b[1;2C" * steps))
@@ -141,6 +153,8 @@ def main():
     scenario("double click", "hello world", "X world", 40, 12, taps=((7, 11), 2, "hello"))
     scenario("triple click", "ab cd\nef gh", "ab cd\nX", 40, 12, taps=((7, 11), 3, "ef gh"))
     scenario("shift and arrows", "hello world", "X world", 40, 12, shifted=(5, "hello"))
+    ten = "\n".join(f"line {n}" for n in range(1, 11))
+    scenario("wheel", ten, ten + "YX", 40, 12, wheeled=3)
     print(f"{len(checks)} checks passed")
 
 

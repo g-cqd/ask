@@ -57,6 +57,9 @@ public struct ScreenComposer: Sendable {
     private var shown: [Shown?] = []
     private var shownSize = (columns: -1, rows: -1)
 
+    /// Whether the last frame showed the cursor: not while the wheel has scrolled the input's window away from it.
+    public private(set) var cursorIsVisible = true
+
     /// The rows the transcript took in the last frame, from the top: everything above the status line.
     public private(set) var transcriptRows = 0
 
@@ -86,7 +89,8 @@ public struct ScreenComposer: Sendable {
         }
         let editor = input.frame(
             state.editor, columns: columns, screenRows: rows, maximumRows: state.promptRows,
-            selection: state.inputSelection)
+            selection: state.inputSelection, scrollTop: state.promptScroll)
+        cursorIsVisible = editor.cursorVisible
         let promptRows = editor.lines.count
         let statusRows = rows > 1 ? 1 : 0
         let panel = Self.runnerRows(for: state, available: Swift.max(0, rows - promptRows - statusRows - 1))

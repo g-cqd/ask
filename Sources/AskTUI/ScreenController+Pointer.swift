@@ -44,12 +44,8 @@ extension ScreenController {
     private mutating func act(on event: PointerEvent<Int>) -> [Effect] {
         let scrollable = 0 ..< frame.transcriptRows
         switch event {
-            case .wheel(_, _, let direction, _):
-                switch direction {
-                    case .up: scroll(by: options.scrollLines)
-                    case .down: scroll(by: -options.scrollLines)
-                    case .left, .right: break
-                }
+            case .wheel(let target, _, let direction, _):
+                wheel(direction, over: target)
             case .dragBegan(let target, let origin, .left, _) where target == Self.transcriptTarget:
                 state.clipboardNotice = ""
                 _ = selector.beginDrag(row: origin.row, col: origin.col, rows: frame.rows)
@@ -105,6 +101,16 @@ extension ScreenController {
                 break
         }
         return []
+    }
+
+    /// One step of the wheel: over a tall input it scrolls the input's window; anywhere else it scrolls the transcript.
+    private mutating func wheel(_ direction: WheelDirection, over target: Int?) {
+        if target == Self.promptTarget, scrollInput(direction) { return }
+        switch direction {
+            case .up: scroll(by: options.scrollLines)
+            case .down: scroll(by: -options.scrollLines)
+            case .left, .right: break
+        }
     }
 
     /// Scrolls the transcript up by `lines`, or down for a negative number, and no further than its ends.
@@ -182,6 +188,7 @@ extension ScreenController {
         autoscroll.request = nil
         state.selection = nil
         state.inputSelection = nil
+        state.promptScroll = nil
         inputDrag = InputDrag()
         inputAnchor = nil
     }

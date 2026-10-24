@@ -51,6 +51,7 @@ extension ScreenController {
         guard state.pendingApproval == nil, let offsets = inputOffsets(at: cell) else { return }
         selector.clear()
         state.inputSelection = nil
+        state.promptScroll = nil
         inputDrag = InputDrag(
             isActive: true, anchorBefore: offsets.before, anchorAfter: offsets.after, headBefore: offsets.before,
             headAfter: offsets.after, press: cell)
@@ -137,6 +138,7 @@ extension ScreenController {
 
     mutating func extendInputSelection(_ key: KeyEvent, columns: Int?) {
         let anchor = inputAnchor ?? state.editor.cursor
+        state.promptScroll = nil
         selector.clear()
         state.selection = nil
         state.clipboardNotice = ""
