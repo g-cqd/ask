@@ -5,12 +5,15 @@ internal import Synchronization
 /// The jobs of one ask process, shared by `bash`, `wait`, `job_input` and `job_stop` (ADR-0027).
 ///
 /// Jobs belong to the process, not to a turn: a server started in one turn is waited on in the next. ask
-/// stops them all when it exits by any path it can see; a SIGKILL of ask is the one it cannot (diary 12).
+/// stops them all when it exits by any path it can see; a SIGKILL of ask is the one it cannot, and the ``JobWatchdog`` covers it
+/// (ADR-0077).
 public final class JobTable: Sendable {
     private let jobs = Mutex<[String: Job]>([:])
     private let counter = Atomic<Int>(0)
     private let observers = Mutex<[Int: AsyncStream<[JobSummary]>.Continuation]>([:])
     private let nextObserver = Atomic<Int>(0)
+    /// Stops the jobs' groups if ask is killed, which nothing in ask can observe (ADR-0077).
+    let watchdog = JobWatchdog()
     /// Distinguishes this process's output files from another ask's in the same directory.
     private let filePrefix: String
 
@@ -37,7 +40,7 @@ public final class JobTable: Sendable {
         let job = Job.start(
             Job.Launch(
                 id: id, command: command, workingDirectory: context.workingDirectory, outputPath: path,
-                keepsInputOpen: keepsInputOpen, keeping: keeping, sandbox: context.sandbox),
+                keepsInputOpen: keepsInputOpen, keeping: keeping, sandbox: context.sandbox, watchdog: watchdog),
             observe: observe)
         jobs.withLock { $0[id] = job }
         notifyObservers()
