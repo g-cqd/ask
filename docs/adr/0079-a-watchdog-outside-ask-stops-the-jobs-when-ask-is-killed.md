@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-24
 ---
 
-# 0077 — A watchdog outside ask stops the jobs when ask is killed
+# 0079 — A watchdog outside ask stops the jobs when ask is killed
 
 ## Context
 
