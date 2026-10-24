@@ -10,6 +10,8 @@ struct PromptLayout: Sendable {
         /// The display row of the draft that is the first one drawn, and the whole map, so a click maps back to the text.
         var top: Int
         var layout: InputLayout
+        /// Whether the cursor is inside the window. It is not after the wheel has scrolled the window away from it.
+        var cursorVisible = true
         /// The cells of each drawn row that are selected, or nil; empty when nothing is selected.
         var highlights: [Range<Int>?]
     }
@@ -23,7 +25,8 @@ struct PromptLayout: Sendable {
     }
 
     mutating func frame(
-        _ editor: PromptEditor, columns: Int, screenRows: Int, maximumRows: Int, selection: Range<Int>? = nil
+        _ editor: PromptEditor, columns: Int, screenRows: Int, maximumRows: Int, selection: Range<Int>? = nil,
+        scrollTop: Int? = nil
     ) -> Frame {
         let prefix = Self.prefix(columns: columns)
         let layout: InputLayout
@@ -34,7 +37,8 @@ struct PromptLayout: Sendable {
             cache = (editor.text, columns, layout)
         }
         let cap = min(max(1, maximumRows), max(1, screenRows / 3), max(1, screenRows - 1))
-        let viewport = InputViewport(layout: layout, cursorOffset: editor.cursor, maximumRows: cap, firstRow: firstRow)
+        let viewport = Window(
+            layout: layout, cursorOffset: editor.cursor, cap: cap, firstRow: firstRow, scrollTop: scrollTop)
         firstRow = viewport.visibleRows.lowerBound
         let lines = viewport.visibleRows.map { row in (row == 0 ? prefix : "") + layout.rows[row] }
         let indicator =
@@ -47,7 +51,33 @@ struct PromptLayout: Sendable {
             : viewport.visibleRows.map { Self.highlight(row: $0, of: layout, prefix: prefix, selection: selection) }
         return Frame(
             lines: lines, cursor: viewport.cursor, indicator: indicator, top: firstRow, layout: layout,
-            highlights: highlights)
+            cursorVisible: viewport.cursorVisible, highlights: highlights)
+    }
+
+    /// The rows to draw: the kit's window, which keeps the cursor in view, or, after the wheel, a window the user put somewhere else.
+    private struct Window {
+        var visibleRows: Range<Int>
+        var cursor: InputLayout.Position
+        var cursorVisible: Bool
+        var rowsAbove: Int
+        var rowsBelow: Int
+
+        init(layout: InputLayout, cursorOffset: Int, cap: Int, firstRow: Int, scrollTop: Int?) {
+            guard let scrollTop else {
+                let kit = InputViewport(
+                    layout: layout, cursorOffset: cursorOffset, maximumRows: cap, firstRow: firstRow)
+                (visibleRows, cursor, cursorVisible) = (kit.visibleRows, kit.cursor, true)
+                (rowsAbove, rowsBelow) = (kit.rowsAbove, kit.rowsBelow)
+                return
+            }
+            let height = Swift.min(layout.rows.count, cap)
+            let first = Swift.min(Swift.max(0, scrollTop), layout.rows.count - height)
+            visibleRows = first ..< first + height
+            let position = layout.position(at: cursorOffset)
+            cursorVisible = visibleRows.contains(position.row)
+            cursor = InputLayout.Position(row: position.row - first, column: position.column)
+            (rowsAbove, rowsBelow) = (first, layout.rows.count - visibleRows.upperBound)
+        }
     }
 
     /// The cells of display row `row` a selection of characters covers: from where it starts on that row, or the row's first cell, to

@@ -38,6 +38,8 @@ public struct ScreenState: Sendable, Equatable {
     var selection: ContentSelection<Int>?
     /// What is selected in the draft, as character offsets, while a selection in the input exists.
     var inputSelection: Range<Int>?
+    /// The display row of the draft the wheel put at the top of the input, or nil while the window follows the cursor.
+    var promptScroll: Int?
     /// Feedback from the last copy request. It reports routing or failure, never an unconfirmed clipboard acknowledgement.
     var clipboardNotice = ""
     /// Names the native-selection bypass while mouse reporting is enabled (ADR-0046).
