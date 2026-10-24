@@ -53,3 +53,14 @@ place a secret lives, and that is a decision for its own record.
 Unit tests on both accessors: the request goes ahead, the next call saves and sends no second refresh, a refresh while the file still
 cannot be written starts from the held token, a lock that frees up in the middle of that refresh lets one step bring the file up to
 date, and a sign-in made meanwhile is not overwritten. Fourteen compiling mutants, all caught by named assertions.
+
+## Addendum (2026-10-24, from the second analysis pass)
+
+A TLA+ model of the fix (`ask-formal-report/tla/CredentialRefreshFixed.tla`) found one case this record does not state: **a second ask
+process is refused while the first holds a rotation it could not save.** The held pair is in the first process's memory and the file
+still holds the spent token, so the second process reads it, offers it, and gets `invalid_grant` (`refreshFailed`). Confirmed with the real
+code in `ClaudeRefreshSaveFailureTests`: the refusal leaves the file as it was, and once the first process's next call saves its pair the
+second process uses it with nothing sent. It is rare (it needs a failed save and a second process in the same stretch) and it clears
+itself. Lifting it would mean the first process writing the pair somewhere a second one can read, which is the second place for a secret
+this decision declined; or holding the refresh lock until saved, which would make every other ask wait for a lock held by a failing disk.
+Neither is taken.

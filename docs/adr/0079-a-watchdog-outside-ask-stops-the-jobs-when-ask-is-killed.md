@@ -50,3 +50,13 @@ later ones 1 µs. A session that never starts a job pays nothing: no pipe, no th
 Unit tests with real processes (the pipe closed as the kernel closes it), mutants on the registration, the shell's script and the
 spawn, and a real-binary probe that starts a job with `ask -p`, holds the model's next answer, sends SIGKILL to ask and looks at the
 job (`Scripts/probe-job-watchdog.py`, with a control that shows the job surviving without the watchdog).
+
+## Addendum (2026-10-24, from the second analysis pass)
+
+A TLA+ model of the watchdog (`ask-formal-report/tla/JobWatchdog.tla`) shows the one way it can signal a process that is not an ask job:
+the job's leader exits, another process takes its pid and leads a group, and ask is killed by SIGKILL before `Job.finish` has released the
+old pid; the shell then stops the new group. Without pid reuse the model holds. The window is the time between a leader's exit and the
+release (microseconds, and POSIX keeps a pid reserved while its group still has members), and it needs ask killed inside it and the pid
+reused inside it. It is not tested, because pid allocation cannot be steered. If it ever matters, the shell can compare the leader's
+start time recorded at registration with the one `ps` reports before it signals. Not done: the cost is a second field on every line of
+the protocol and a `ps` per group, for a case that needs three independent rarities to line up.

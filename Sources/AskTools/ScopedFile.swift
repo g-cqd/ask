@@ -1,3 +1,4 @@
+internal import AskAI
 internal import AskAgentCore
 internal import Darwin
 internal import Foundation
@@ -54,9 +55,12 @@ enum ScopedFile {
     ///   - url: the file, as resolved by the first check.
     ///   - path: the name to show in a failure.
     ///   - context: where the sandbox is.
+    ///   - flush: how a descriptor is made durable; only tests give one, to see when and to make it fail.
     /// - Throws: a ``ToolFailure`` if the write is protected, or cannot be done.
-    static func write(_ bytes: [UInt8], to url: URL, shownAs path: String, in context: ToolContext) throws(ToolFailure)
-    {
+    static func write(
+        _ bytes: [UInt8], to url: URL, shownAs path: String, in context: ToolContext,
+        flush: (Int32) -> Int32 = FileFlush.barrier
+    ) throws(ToolFailure) {
         let name = url.lastPathComponent
         var missing: [String] = []
         var base = url.deletingLastPathComponent().path
@@ -81,13 +85,13 @@ enum ScopedFile {
             directory = next
         }
         try verify(directory, for: .write, appending: name, shownAs: path, in: context)
-        try replace(name, in: directory, with: bytes, shownAs: path)
+        try replace(name, in: directory, with: bytes, shownAs: path, flush: flush)
     }
 
     /// Writes `bytes` beside `name` under a name of its own, then renames it over `name`, keeping the permissions of what it replaces.
-    private static func replace(_ name: String, in directory: Int32, with bytes: [UInt8], shownAs path: String)
-        throws(ToolFailure)
-    {
+    private static func replace(
+        _ name: String, in directory: Int32, with bytes: [UInt8], shownAs path: String, flush: (Int32) -> Int32
+    ) throws(ToolFailure) {
         let temporary = ".ask-write-\(UUID().uuidString)"
         let file = openat(directory, temporary, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o666)
         guard file >= 0 else { throw ToolFailure("Cannot write \(path): \(String(cString: strerror(errno))).") }
@@ -106,10 +110,21 @@ enum ScopedFile {
         }
         var existing = stat()
         if fstatat(directory, name, &existing, AT_SYMLINK_NOFOLLOW) == 0 { fchmod(file, existing.st_mode & 0o7777) }
+        // Before the rename, so the new name never reaches the disk ahead of the bytes it names.
+        guard flush(file) == 0 else {
+            let failure = String(cString: strerror(errno))
+            unlinkat(directory, temporary, 0)
+            throw ToolFailure("Cannot write \(path): its bytes could not be flushed (\(failure)).")
+        }
         guard renameat(directory, temporary, directory, name) == 0 else {
             let failure = String(cString: strerror(errno))
             unlinkat(directory, temporary, 0)
             throw ToolFailure("Cannot write \(path): \(failure).")
+        }
+        // After it, so the new name is on the disk before the model is told the file is written. The file is in place and stays.
+        guard flush(directory) == 0 else {
+            throw ToolFailure(
+                "Cannot write \(path): the directory could not be flushed (\(String(cString: strerror(errno)))).")
         }
     }
 
