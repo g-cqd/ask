@@ -7,6 +7,9 @@ struct PromptLayout: Sendable {
         var lines: [String]
         var cursor: InputLayout.Position
         var indicator: String
+        /// The display row of the draft that is the first one drawn, and the whole map, so a click maps back to the text.
+        var top: Int
+        var layout: InputLayout
     }
 
     private var cache: (text: String, columns: Int, layout: InputLayout)?
@@ -33,6 +36,6 @@ struct PromptLayout: Sendable {
         let indicator =
             viewport.rowsAbove > 0 || viewport.rowsBelow > 0
             ? "input \(firstRow + 1)–\(viewport.visibleRows.upperBound) of \(layout.rows.count)" : ""
-        return Frame(lines: lines, cursor: viewport.cursor, indicator: indicator)
+        return Frame(lines: lines, cursor: viewport.cursor, indicator: indicator, top: firstRow, layout: layout)
     }
 }

@@ -11,12 +11,19 @@ extension ScreenController {
     private static let statusTarget = 1
     /// The rows of the picker's matches, which a click chooses from.
     private static let pickerTarget = 2
+    /// The input, where a click puts the cursor.
+    private static let promptTarget = 3
 
     mutating func handle(mouse event: MouseEvent, at now: ContinuousClock.Instant) -> [Effect] {
         guard options.mouse else { return [] }
         var regions = RegionMap<Int>()
         regions.add(
             Self.transcriptTarget, at: CellRect(row: 0, col: 0, rows: frame.transcriptRows, cols: frame.columns))
+        if frame.prompt != nil, frame.promptRows > 0 {
+            regions.add(
+                Self.promptTarget,
+                at: CellRect(row: frame.promptRow, col: 0, rows: frame.promptRows, cols: frame.columns))
+        }
         if frame.runnerColumns != nil {
             regions.add(Self.statusTarget, at: CellRect(row: frame.statusRow, col: 0, rows: 1, cols: frame.columns))
         }
@@ -70,6 +77,8 @@ extension ScreenController {
             case .click(let target, let cell, .left, _, _) where target == Self.statusTarget:
                 guard frame.runnerColumns?.contains(cell.col) == true else { return [] }
                 return toggleRunners()
+            case .click(let target, let cell, .left, _, _) where target == Self.promptTarget:
+                placeCursor(at: cell)
             case .click(_, let cell, .left, _, let count):
                 if count == 1, isSelected(cell) {
                     selector.clear()
