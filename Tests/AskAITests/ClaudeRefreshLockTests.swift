@@ -3,7 +3,7 @@ internal import Testing
 
 @testable import AskAI
 
-/// Claude's refresh token is single use (probed live on a disposable named connection, diary 2026-10-24-16): a refresh rotates
+/// Claude's refresh token is single use (probed live on a disposable named connection, diary 2026-10-24-22): a refresh rotates
 /// it, the spent one is refused with HTTP 400 `invalid_grant`, and of two refreshes of one token sent at once exactly one succeeds.
 /// So two asks that both find the credentials expired must refresh once between them, under a lock, as Codex's do (ADR-0036).
 struct ClaudeRefreshLockTests {

@@ -20,9 +20,9 @@ and a live run through the agent loop is recorded. Probe first whether a connect
 discovered client secret, and what that secret's exposure costs.
 
 Probed: **a connection cannot be made without the secret** (the token endpoint refuses the client), and the owner accepts its
-exposure (ADR-0066).
+exposure (ADR-0072).
 
-## Done (2026-10-23, ADR-0066, diary 2026-10-23-15)
+## Done (2026-10-23, ADR-0072, diary 2026-10-23-21)
 
 The client secret is found in the user's installed `agy` (1.4.2 and 1.4.6, the same value) and confirmed with Google's token endpoint;
 18 deliberate faults killed. `agy` was upgraded from 1.4.2 to 1.4.6 with `agy update` (the old binary is kept in
