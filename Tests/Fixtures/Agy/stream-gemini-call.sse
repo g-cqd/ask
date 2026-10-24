@@ -1,0 +1,6 @@
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":""}]}}],"usageMetadata":{"promptTokenCount":76,"totalTokenCount":76},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thoughtSignature":"c2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0","functionCall":{"name":"calc","args":{"b":53,"a":17},"id":"call_1218103"}}]}}],"usageMetadata":{"promptTokenCount":76,"candidatesTokenCount":18,"totalTokenCount":94},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":""}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":76,"candidatesTokenCount":18,"totalTokenCount":94},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+

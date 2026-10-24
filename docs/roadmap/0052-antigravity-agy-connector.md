@@ -48,12 +48,18 @@ Onboarding and the model list: `AgyCloudClient.account` (project and tiers) and 
 marks none; the server's default reported when listed), against a fixture reduced from a live body, 34 faults killed. Not wired to
 `ask models` or a cache, and no request is streamed yet.
 
+## Done (2026-10-24, ADR-0090, diary 2026-10-24-45)
+
+The stream decoder and the request encoder: a Gemini 3 signature stored in a thinking block of its own, bound to the model, with the sentinel
+for the rest; ids on every call and result; the real tool schemas as `parametersJsonSchema`. A live tool loop through both on four models, 81
+faults killed. Nothing sends a request through them yet.
+
 ## Still owed, in order
 
 1. **Access for requests**: refresh when expiring (rediscover the secret on `invalid_client`; a lock is optional since the refresh token is
    not rotated) and named connections (ADR-0048), which come with a provider implementation.
-2. ~~Onboarding and the model list~~ done above. The **streaming protocol** (`streamGenerateContent`) remains, probed with a signed-in
-   account before any code relies on it (ADR-0080 holds the first probes).
+2. ~~Onboarding, the model list, the stream decoder and encoder~~ done above. The **client** that sends a request through `ProviderStream`, the
+   **provider** and a connection kind remain.
 3. **The client identity.** pi found the backend gates the full model catalog and model routing on a User-Agent starting with
    `antigravity/cli/`. ask identifies itself honestly elsewhere (ADR-0007). First live probe: does an honest identity work, and what
    does it cost in catalog and routing? If it costs something, the owner chooses, and the choice gets its own record.

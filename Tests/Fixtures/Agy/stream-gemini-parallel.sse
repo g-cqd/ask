@@ -1,0 +1,8 @@
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":""}]}}],"usageMetadata":{"promptTokenCount":88,"totalTokenCount":88},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thoughtSignature":"c2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0","functionCall":{"name":"calc","args":{"a":2,"b":3},"id":"call_1252418"}}]}}],"usageMetadata":{"promptTokenCount":88,"candidatesTokenCount":16,"totalTokenCount":104},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"calc","args":{"b":5,"a":4},"id":"call_1252421"}}]}}],"usageMetadata":{"promptTokenCount":88,"candidatesTokenCount":32,"totalTokenCount":120},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":""}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":88,"candidatesTokenCount":32,"totalTokenCount":120},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
