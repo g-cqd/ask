@@ -27,7 +27,7 @@ def paste(terminal, text):
     terminal.draw(lambda: terminal.send(b"\x1b[200~" + text.encode() + b"\x1b[201~"))
 
 
-def scenario(label, draft, expected, width, height, changed=None, clear_first=False, click=None):
+def scenario(label, draft, expected, width, height, changed=None, clear_first=False, click=None, select=None):
     with tempfile.TemporaryDirectory() as root:
         project, config, state = root + "/project", root + "/config", root + "/state"
         os.makedirs(project)
@@ -62,6 +62,15 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
                 terminal.draw(lambda: terminal.send(f"\x1b[<0;{column + 1};{row + 1}M\x1b[<0;{column + 1};{row + 1}m".encode()))
                 check(label + ": a click puts the cursor on the clicked cell",
                       (terminal.screen.cursor.x, terminal.screen.cursor.y) == (column, row))
+            elif select:
+                (start, end), copied = select[:2], select[2]
+                terminal.send(f"\x1b[<0;{start[0] + 1};{start[1] + 1}M\x1b[<32;{end[0] + 1};{end[1] + 1}M".encode())
+                terminal.send(f"\x1b[<0;{end[0] + 1};{end[1] + 1}m".encode())
+                terminal.until(lambda: bool(terminal.copies()))
+                terminal.repaint()
+                check(label + ": a drag in the input copies exactly the dragged text", terminal.copies()[-1] == copied)
+                inverse = [col for col in range(width) if terminal.screen.buffer[start[1]][col].reverse]
+                check(label + ": and highlights it", bool(inverse) and inverse[0] == start[0])
             else:
                 terminal.draw(lambda: terminal.send(b"\x1b[A"))
                 wanted_column = 7
@@ -106,6 +115,7 @@ def main():
     scenario("click", "hello world", "helloX world", 40, 12, click=(10, 11))
     wrapped = "0123456789abcdefghijklmnopqrstuvwxyzABCD"
     scenario("click on a wrapped row", wrapped, wrapped[:19] + "X" + wrapped[19:], 20, 12, click=(4, 10))
+    scenario("select", "hello world", "hX world", 40, 12, select=((6, 11), (9, 11), "ello"))
     print(f"{len(checks)} checks passed")
 
 
