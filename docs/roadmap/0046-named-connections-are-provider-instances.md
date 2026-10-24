@@ -107,6 +107,8 @@ file left unchanged.
   account. Consider warning when a new sign-in lands on an account another connection already holds.
 - ~~Whether Claude's refresh response identifies the account~~ **Yes**: the address and organisation, probed live (ADR-0074); a named
   connection is now held to its account on refresh.
+- ~~Two connections of one account look like two accounts~~ **Said**: `ask login` prints a one-line notice naming the other holders and
+  `ask connections` appends `(same account as …)`; never an id or address, never a refusal (diary 2026-10-24-31).
 - A `--json` listing, an interface picker, and named connections for key-based providers: deliberately not built.
 
 ## Acceptance

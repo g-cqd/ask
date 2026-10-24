@@ -63,6 +63,9 @@ struct Login: AsyncParsableCommand {
                 try file.saveClaude(credentials)
             }
             print("Signed in\(credentials.accountEmail.map { " as \($0)" } ?? ""). Credentials: \(file.url.path)")
+            if let email = credentials.accountEmail {
+                NamedConnections.reportSharedAccount(.claude(email), connection: connection)
+            }
         } catch {
             fail("ask: sign-in failed: \(error)", code: 77)
         }
