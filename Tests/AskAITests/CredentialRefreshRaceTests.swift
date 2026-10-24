@@ -44,18 +44,21 @@ struct CredentialRefreshRaceTests {
         #expect(try file.loadCodex() == newLogin, "the older grant's refreshed pair must not replace the new login")
     }
 
-    @Test func `a refreshed pair that cannot be saved is reported and never used`() async throws {
+    @Test func `a refreshed pair that cannot be saved is used and held, and the file is left as it was`() async throws {
+        // Roadmap 0045 asked for the opposite (reported, never used) on the premise that the old file stays valid. For a single-use
+        // token it does not once the server has accepted the refresh (ADR-0082), so the pair is the only usable copy.
         let directory = file.url.deletingLastPathComponent().path
         defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory) }
         let result = try await refreshing {
             try FileManager.default.setAttributes([.posixPermissions: 0o500], ofItemAtPath: directory)
         }
-        guard case .failure(.storage) = result else {
-            Issue.record("expected a storage error, got \(result)")
+        guard case .success(let used) = result else {
+            Issue.record("expected the refreshed credentials to be used, got \(result)")
             return
         }
+        #expect(used.refreshToken == "rt-2")
         try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory)
-        #expect(try file.loadCodex() == expired, "the old credentials are intact when the new ones could not be saved")
+        #expect(try file.loadCodex() == expired, "nothing was written, so the file is exactly what it was")
     }
 
     @Test func `the same rule holds for Claude`() async throws {
