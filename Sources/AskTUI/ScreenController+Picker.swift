@@ -64,6 +64,16 @@ extension ScreenController {
         state.picker = picker
     }
 
+    /// A click on the picker's match `index`, as the last frame drew it: the same as choosing it and pressing Enter. Nothing happens when
+    /// the list has moved on since that frame, because the click meant a row that is no longer there, or while a question has the keys.
+    mutating func clickPicker(match index: Int) {
+        guard var picker = state.picker, state.pendingApproval == nil, picker.trigger == frame.pickerTrigger,
+            picker.matches.indices.contains(index)
+        else { return }
+        picker.choose(index)
+        _ = accept(picker)
+    }
+
     /// What an open picker does with `key`, or nil when the key is the editor's.
     mutating func pickerKey(_ key: KeyEvent, screenRows: Int) -> [Effect]? {
         guard screenRows >= Self.pickerMinimumRows, var picker = state.picker else { return nil }
@@ -85,7 +95,7 @@ extension ScreenController {
     }
 
     /// Puts the chosen command in the draft where the word was. Nothing is sent: a second Enter runs it.
-    private mutating func accept(_ picker: CompletionPicker) -> [Effect] {
+    mutating func accept(_ picker: CompletionPicker) -> [Effect] {
         if picker.matches.indices.contains(picker.selected) {
             state.editor.replace(picker.trigger.range, with: picker.matches[picker.selected].insertion)
         }

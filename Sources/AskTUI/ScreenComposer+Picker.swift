@@ -17,19 +17,20 @@ extension ScreenComposer {
     ///   - rows: the most rows it may take.
     /// - Returns: the title row and the matches in view, or nothing when there is no room.
     static func pickerLines(_ picker: CompletionPicker, columns: Int, rows: Int) -> [Line] {
-        let shown = Swift.min(picker.visible.count, rows - 1)
         guard columns > 0, rows >= 1 else { return [] }
         // Nothing to choose yet, because the files are still being listed: the title alone says so.
         if picker.matches.isEmpty {
             return [Line(text: title(for: picker, shown: 0, columns: columns), style: Style(dim: true))]
         }
+        let range = window(of: picker, rows: rows)
+        let shown = range.count
         guard shown >= 1 else { return [] }
-        let start = Swift.min(Swift.max(picker.firstVisible, picker.selected - shown + 1), picker.selected)
-        let window = picker.matches[start ..< Swift.min(picker.matches.count, start + shown)]
-        let labels = window.map(\.label)
+        let start = range.lowerBound
+        let matches = picker.matches[range]
+        let labels = matches.map(\.label)
         let labelWidth = Swift.min(24, labels.map { UnicodeWidth.displayWidth(of: $0) }.max() ?? 0)
         var lines = [Line(text: title(for: picker, shown: shown, columns: columns), style: Style(dim: true))]
-        for (offset, row) in window.enumerated() {
+        for (offset, row) in matches.enumerated() {
             let label = labels[offset]
             let padding = String(
                 repeating: " ", count: Swift.max(0, labelWidth - UnicodeWidth.displayWidth(of: label)) + 2)
@@ -40,6 +41,15 @@ extension ScreenComposer {
                     style: chosen ? Style(fg: .indexed(6), bold: true) : .default))
         }
         return lines
+    }
+
+    /// The matches that are drawn in `rows` rows: the window the picker scrolls in, cut to leave a row for the title and to keep the
+    /// choice in view. Empty when none are drawn. A click maps a row back to a match through this same range.
+    static func window(of picker: CompletionPicker, rows: Int) -> Range<Int> {
+        let shown = Swift.min(picker.visible.count, rows - 1)
+        guard shown >= 1 else { return 0 ..< 0 }
+        let start = Swift.min(Swift.max(picker.firstVisible, picker.selected - shown + 1), picker.selected)
+        return start ..< Swift.min(picker.matches.count, start + shown)
     }
 
     /// What the list is, how far down it the choice is when it does not all fit, and the keys, as many as the width has room for.
