@@ -34,6 +34,7 @@ public struct ScreenController: Sendable {
     var pointer = PointerRecognizer<Int>()
     var selector = SelectionController<Int>()
     var autoscroll = DragAutoscroll()
+    var inputDrag = InputDrag()
     /// The number of the latest copy, for dropping a late result of an earlier one.
     var copyGeneration = 0
 
@@ -94,6 +95,7 @@ public struct ScreenController: Sendable {
                 }
                 // A question waiting for y, a or n takes the keys first (roadmap 0019).
                 if state.pendingApproval != nil { return answer(key) }
+                if let effects = inputSelectionKey(key) { return effects }
                 if let effects = selectionKey(key) { return effects }
                 if isToggleToolOutput(key) { return toggleAllToolOutput() }
                 if isToggleThinking(key) { return toggleAllThinking() }
@@ -104,6 +106,7 @@ public struct ScreenController: Sendable {
             case .mouse(let mouse):
                 return handle(mouse: mouse, at: now)
             case .paste(let text):
+                removeInputSelection()
                 clearSelection()
                 state.editor.paste(text)
                 return []

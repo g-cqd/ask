@@ -24,10 +24,11 @@ extension ScreenComposer {
             status += " · " + segment
             runners = start ..< start + UnicodeWidth.displayWidth(of: segment)
         }
-        if state.selection != nil { status += " · ctrl+c copy · esc clear" }
+        let selecting = state.selection != nil || state.inputSelection != nil
+        if selecting { status += " · ctrl+c copy · esc clear" }
         if !state.clipboardNotice.isEmpty {
             status += " · " + state.clipboardNotice
-        } else if state.selection == nil, !state.nativeSelectionHint.isEmpty {
+        } else if !selecting, !state.nativeSelectionHint.isEmpty {
             status += " · " + state.nativeSelectionHint
         }
         if !state.detail.isEmpty { status += " · " + state.detail }
