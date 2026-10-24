@@ -28,10 +28,17 @@ The client secret is found in the user's installed `agy` (1.4.2 and 1.4.6, the s
 18 deliberate faults killed. `agy` was upgraded from 1.4.2 to 1.4.6 with `agy update` (the old binary is kept in
 `~/Library/Caches/ask-mutation/agy/`).
 
+## Done (2026-10-24, ADR-0068, diary 2026-10-24-17)
+
+`ask login agy` and `ask logout agy` exist, for the default account: the authorize URL equals the shipped CLI's, the secret is confirmed
+before the URL is shown and kept with the credentials, the paste is validated, and a fake code gets Google's real refusal. 42 faults
+killed. **A real code has not been exchanged yet.**
+
 ## Still owed, in order
 
-1. **The sign-in**, which needs the owner's browser: authorize URL with PKCE and the CLI's scopes, a pasted code, the exchange with the
-   verified secret, stored as a connection (ADR-0048, ADR-0039). Decide where the verified secret lives between sign-in and refresh.
+1. **A real sign-in**, which needs the owner's browser: run `.build/release/ask login agy`, open the URL, paste the code it shows into that
+   prompt within a few minutes. Then the refresh (rediscover the secret on `invalid_client`; is Google's refresh token rotated, which
+   decides the lock) and named connections (ADR-0048), which come with a provider implementation.
 2. **Onboarding** (`loadCodeAssist`: project and tier), the **model list** (`fetchAvailableModels`, ADR-0037), and the **streaming
    protocol** (`streamGenerateContent`), each probed with a signed-in account before any code relies on it.
 3. **The client identity.** pi found the backend gates the full model catalog and model routing on a User-Agent starting with
