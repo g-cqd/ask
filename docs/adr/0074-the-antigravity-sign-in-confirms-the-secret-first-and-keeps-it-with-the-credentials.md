@@ -17,7 +17,13 @@ refresh, and what the sign-in is allowed to be before there is any inference. No
   parameters in the same order and the same values for all but the per-run challenge (43 characters) and state (22). **CONFIRMED.**
 - **Does the exchange work as far as it can without an account?** A well-formed fake code, through ask's own request with a real
   verifier and the confirmed secret, gets Google's own HTTP 400 `invalid_grant`, reported as what to do. **CONFIRMED** to that point.
-  A successful exchange was **not** observed.
+  A successful exchange was **not** observed in that probe; it was later, with the owner's real account (next bullet).
+- **Does a real sign-in work?** The owner ran `ask login agy` in a terminal and pasted the code. Google's userinfo answers for the token
+  with the stored address, verified; its tokeninfo names the Antigravity client as the audience, all seven requested scopes granted
+  (two more aliases reported), offline access. **CONFIRMED.**
+- **Does a refresh work, and is the refresh token rotated?** Refreshed through `AgyAuthClient` with the stored secret: HTTP 200, a new
+  access token (about 55 minutes), the **same** refresh token, the secret kept, saved with compare-and-replace and read back equal, and
+  the new token still names the same account. **Not rotated** (one observation): unlike Claude's and Codex's it is not single use.
 - **Do the failure paths leave nothing behind?** A binary with no secret, a decoy Google rejects, an override that is not a file, a
   paste that is not a code, a refused code: each exits 77 and no credential file exists. **CONFIRMED** on the real binary.
 - **Do the rules fail without their tests?** 30 deliberate faults in the sign-in layer (27 killed first time; three gaps closed and
@@ -44,9 +50,10 @@ refresh, and what the sign-in is allowed to be before there is any inference. No
 
 ## Consequences
 
-- `ask login agy` works as far as a real code, and `ask logout agy` forgets the record. Nothing can use the credentials yet.
+- `ask login agy` works end to end with a real account, and `ask logout agy` forgets the record. Nothing can use the credentials yet.
 - The credential file now holds an application secret next to tokens. Google's own installed-application guidance, as the owner
   states it, treats it as not secret; the file is owner-only regardless.
-- Google may or may not rotate refresh tokens; that is unknown until a real refresh runs, and decides whether Antigravity's
-  refresh needs the lock Claude's and Codex's have (ADR-0073). Plan for the lock.
-- Not covered: a real sign-in end to end, the refresh, onboarding, the model list, streaming, and the client-identity question.
+- Google did not rotate the refresh token in the one refresh observed, so a race between two asks would not spend a token and
+  the lock of ADR-0073 is not needed for correctness. A lock still avoids duplicate requests and is cheap; whether to add it is open,
+  and one observation is not a guarantee.
+- Not covered: onboarding, the model list, streaming, the client-identity question, and rediscovering the secret on `invalid_client`.
