@@ -13,19 +13,26 @@ extension SessionFile {
     public static func create(
         at path: FilePath, durability: Durability = .barrier
     ) throws(SessionFileError) -> SessionFile {
-        try begin(SessionTree(), at: path, durability: durability)
+        try begin(SessionTree(), at: path, durability: durability, calls: .system)
     }
 
     /// Writes `tree` as a new file at `path`, which must not exist, and opens it for appending.
     static func begin(
-        _ tree: SessionTree, at path: FilePath, durability: Durability
+        _ tree: SessionTree, at path: FilePath, durability: Durability, calls: SessionFileCalls
     ) throws(SessionFileError) -> SessionFile {
         let descriptor = try SessionFileIO.writeExclusively(
             try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(tree) },
             to: path, durability: durability)
-        let lock = try SessionLock.adopt(try SessionFileIO.io(.lock) { try descriptor.duplicate() })
+        let lock: SessionLock
+        do {
+            lock = try calls.adopt(try SessionFileIO.io(.lock) { try descriptor.duplicate() })
+        } catch {
+            // The duplicate is closed by whoever failed to adopt it; this descriptor is ours, and nothing else would close it.
+            _ = try? descriptor.close()
+            throw error
+        }
         return SessionFile(
-            path: path, tree: tree, issues: [], durability: durability, appender: descriptor, lock: lock)
+            path: path, tree: tree, issues: [], durability: durability, appender: descriptor, lock: lock, calls: calls)
     }
 
     /// Opens a session for writing, repairing damage in memory. Never writes until the first change.
@@ -40,13 +47,23 @@ extension SessionFile {
     public static func open(
         at path: FilePath, durability: Durability = .barrier, limits: SessionLog.Limits = .standard
     ) throws(SessionFileError) -> SessionFile {
-        try open(at: path, durability: durability, limits: limits, writeRecord: SessionFileIO.writeAll)
+        try open(at: path, durability: durability, limits: limits, calls: .system)
     }
 
     /// ``open(at:durability:limits:)`` with the record write replaced, so tests can fail it.
     static func open(
         at path: FilePath, durability: Durability, limits: SessionLog.Limits = .standard,
         writeRecord: @escaping RecordWriter
+    ) throws(SessionFileError) -> SessionFile {
+        var calls = SessionFileCalls.system
+        calls.writeRecord = writeRecord
+        return try open(at: path, durability: durability, limits: limits, calls: calls)
+    }
+
+    /// ``open(at:durability:limits:)`` with system calls replaced, so tests can fail them.
+    static func open(
+        at path: FilePath, durability: Durability, limits: SessionLog.Limits = .standard,
+        calls: SessionFileCalls
     ) throws(SessionFileError) -> SessionFile {
         // Locked before reading, so no other writer can append between what we read and what we write.
         let lock = try SessionLock.acquire(path)
@@ -59,7 +76,7 @@ extension SessionFile {
         }
         return SessionFile(
             path: path, tree: recovered.tree, issues: recovered.issues, durability: durability, appender: nil,
-            lock: lock, writeRecord: writeRecord, formatVersion: recovered.formatVersion)
+            lock: lock, calls: calls, formatVersion: recovered.formatVersion)
     }
 
     /// Writes the active branch to a new file. Never overwrites.
@@ -69,6 +86,6 @@ extension SessionFile {
     public borrowing func fork(to destination: FilePath) throws(SessionFileError) -> SessionFile {
         let forked: SessionTree
         do { forked = try tree.fork() } catch { throw .tree(error) }
-        return try Self.begin(forked, at: destination, durability: durability)
+        return try Self.begin(forked, at: destination, durability: durability, calls: calls)
     }
 }
