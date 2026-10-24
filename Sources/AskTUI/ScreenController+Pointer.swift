@@ -53,8 +53,15 @@ extension ScreenController {
             case .dragBegan(let target, let origin, .left, _) where target == Self.transcriptTarget:
                 state.clipboardNotice = ""
                 _ = selector.beginDrag(row: origin.row, col: origin.col, rows: frame.rows)
+            case .dragBegan(let target, let origin, .left, _) where target == Self.promptTarget:
+                state.clipboardNotice = ""
+                beginInputDrag(at: origin)
             case .dragBegan:
                 break
+            case .dragMoved(let cell) where inputDrag.isActive:
+                moveInputDrag(to: cell)
+            case .dragEnded where inputDrag.isActive:
+                return endInputDrag()
             case .dragMoved(let cell):
                 let update = selector.drag(row: cell.row, col: cell.col, rows: frame.rows, scrollableRows: scrollable)
                 autoscroll = DragAutoscroll(
@@ -167,5 +174,7 @@ extension ScreenController {
         pointer.reset()
         autoscroll.request = nil
         state.selection = nil
+        state.inputSelection = nil
+        inputDrag = InputDrag()
     }
 }

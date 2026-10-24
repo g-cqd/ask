@@ -88,7 +88,7 @@ Long output folds to one line you can open: click the line (or press Ctrl-T for 
 blocks longer than 20 lines, never more than half the screen) and it opens in place. `ui.thinking`, `ui.tools` and `ui.code` choose
 `"folded"` or `"open"` at the start; `ui.codeFoldLines` sets the length. A selection copies what is shown.
 
-A click in the input puts the cursor there.
+A click in the input puts the cursor there; a drag there selects text, which typing replaces and Backspace deletes.
 
 Background jobs are counted in the status line (`· 2 jobs`). Click the count, or type `/tasks`, to list what is running.
 
