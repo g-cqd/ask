@@ -16,6 +16,7 @@ struct Logout: ParsableCommand {
                     switch target {
                         case .claude: try file.removeClaude()
                         case .codex: try file.removeCodex()
+                        case .agy: try file.removeAgy()
                         default: try target.keyName.map { try file.removeKey(for: $0) }
                     }
                 } else {

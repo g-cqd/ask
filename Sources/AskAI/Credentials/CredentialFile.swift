@@ -143,7 +143,7 @@ public struct CredentialFile: Sendable {
     }
 
     /// Stores `value` in the record at `record`, creating the file if there is none.
-    private func save<T>(_ record: WritableKeyPath<StoredCredentials, T?>, _ value: T) throws(CredentialFileError) {
+    func save<T>(_ record: WritableKeyPath<StoredCredentials, T?>, _ value: T) throws(CredentialFileError) {
         try transact(creating: true) {
             $0[keyPath: record] = value
             return ((), true)
@@ -151,7 +151,7 @@ public struct CredentialFile: Sendable {
     }
 
     /// Empties the record at `record`. Nothing stored is not an error, and makes nothing.
-    private func clear<T>(_ record: WritableKeyPath<StoredCredentials, T?>) throws(CredentialFileError) {
+    func clear<T>(_ record: WritableKeyPath<StoredCredentials, T?>) throws(CredentialFileError) {
         try transact(creating: false) {
             guard $0[keyPath: record] != nil else { return ((), false) }
             $0[keyPath: record] = nil
@@ -160,7 +160,7 @@ public struct CredentialFile: Sendable {
     }
 
     /// Replaces the record at `record` only while it is still `expected`; false, and nothing written, when it is not.
-    private func replace<T: Equatable>(
+    func replace<T: Equatable>(
         _ record: WritableKeyPath<StoredCredentials, T?>, with value: T, ifStill expected: T,
         connection: ConnectionRecord?
     )
