@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-20
 ---
@@ -7,7 +7,7 @@ date: 2026-10-20
 # 0048 — The input grammar: `/` for commands, `@` for things you point at
 
 People arrive knowing two sigils. This entry fixes what each one means in ask, so the screen has one picker, one set
-of rules, and nothing new to learn. It is a design with a prototype behind it, not a feature: nothing here is built.
+of rules, and nothing new to learn. It began as a design with a prototype behind it; the `/` picker for commands is now built (below), and the rest is not.
 
 ## The rule
 
@@ -114,3 +114,34 @@ ranking, the wheel, and a negative control for each of the contrast and padding 
 
 It is a simulation: no real sessions exist, no transport exists, and none of it has run inside ask's own input. It
 was tried in kitty only.
+
+## The `/` command picker (2026-10-23, ADR-0067, diary 2026-10-23 (16))
+
+Built: typing a slash at the start of a prompt lists the commands above the prompt, filtered as you type (a name's prefix first, then
+a name containing it, then a summary), and Up and Down move the choice. **Enter and Tab insert the choice and never send it**; Escape
+closes the list and keeps the text. The list is derived from the draft after every key, takes rows from the transcript, and is drawn in
+text only (a bold choice, nothing filled or marked). A path, a `//` escape, a slash that is not the first word, a name typed in full, and a
+screen under 12 rows all leave the keys as they were. The wheel scrolls the transcript, not the list.
+
+Decided differently from the prototype's letter, for the owner to overrule (ADR-0067): a name typed in full closes the list so `/quit` and
+Enter still runs it, instead of costing a second Enter; and a command is offered only as the first word, because that is where
+`SlashInput` makes it run.
+
+## The `@` file picker (2026-10-23, ADR-0069, diary 2026-10-23 (18))
+
+Built: `@` at the start of a word lists the project's files (git's list, or a bounded walk outside git, filtered through the sandbox's
+read policy; a file ask may not read is counted in the title and never named), ranked path prefix, name prefix, name contains, path
+contains. It is the `/` picker with different rows: **Enter and Tab insert `@path ` and never send**, a `:12-30` after the path is kept,
+a name with whitespace is inserted quoted, and a path typed in full closes the list. The listing is made off the input path and asked
+for again once it is ten seconds old. **Not built, and not decided by this:** attaching the file at send time (the "resolved at send
+time" above), which would change the agent loop and the closed session payload.
+
+## Clicking a row (2026-10-23, ADR-0070, diary 2026-10-23 (19))
+
+Built: a left click on a match row of either list inserts it, exactly as Enter would (trailing space, a file's line range kept, nothing
+sent). The title, the status line, the prompt and the transcript are not targets; the wheel over the list still scrolls the transcript;
+a click on a list that has since changed, or while a question waits, does nothing. Rows are found from what the last frame drew.
+
+**Still owed:** `@` for agents and sessions, skills in the `/` list (which is where the mid-prompt `/` and the `SKILL` and
+`PROJECT` labels return), a detail pane, and promoting the trigger and ranking to TerminalKit (`@` is now the second consumer). Agent and session addressing still need the transport ADR below before any code. The rules in "Done when" that need things
+that do not exist yet (a skill grants nothing; a dead session is refused; an agent's message arrives untrusted) are not testable yet.

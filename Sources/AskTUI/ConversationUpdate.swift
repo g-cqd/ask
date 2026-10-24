@@ -26,6 +26,10 @@ public enum ConversationUpdate: Sendable, Equatable {
     case clearConversation
     /// A tool call asks for more than the sandbox allows: ask the user, and send the answer to ``Conversation/answer(approval:with:)``.
     case askApproval(id: Int, question: String)
+    /// Everything running beside the conversation, replacing the last list. The status line counts them and `/tasks` lists them.
+    case runners([RunnerInfo])
+    /// The project's files for the `@` picker, answering ``ScreenController/Effect/indexFiles``.
+    case files(ProjectFiles)
     /// The run is over, however it ended.
     case runEnded
 }

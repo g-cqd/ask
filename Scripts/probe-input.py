@@ -27,7 +27,7 @@ def paste(terminal, text):
     terminal.draw(lambda: terminal.send(b"\x1b[200~" + text.encode() + b"\x1b[201~"))
 
 
-def scenario(label, draft, expected, width, height, changed=None, clear_first=False):
+def scenario(label, draft, expected, width, height, changed=None, clear_first=False, click=None):
     with tempfile.TemporaryDirectory() as root:
         project, config, state = root + "/project", root + "/config", root + "/state"
         os.makedirs(project)
@@ -57,10 +57,16 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
                 width, height = changed
                 terminal.resize(width, height)
                 check(label + ": resize preserves a bounded viewport", terminal.screen.display[height - 3].startswith("input "))
-            terminal.draw(lambda: terminal.send(b"\x1b[A"))
-            wanted_column = 7
-            check(label + ": Up moves to the previous display row at the wanted cell",
-                  terminal.screen.cursor.y == height - 2 and terminal.screen.cursor.x == wanted_column)
+            if click:
+                column, row = click
+                terminal.draw(lambda: terminal.send(f"\x1b[<0;{column + 1};{row + 1}M\x1b[<0;{column + 1};{row + 1}m".encode()))
+                check(label + ": a click puts the cursor on the clicked cell",
+                      (terminal.screen.cursor.x, terminal.screen.cursor.y) == (column, row))
+            else:
+                terminal.draw(lambda: terminal.send(b"\x1b[A"))
+                wanted_column = 7
+                check(label + ": Up moves to the previous display row at the wanted cell",
+                      terminal.screen.cursor.y == height - 2 and terminal.screen.cursor.x == wanted_column)
             terminal.draw(lambda: terminal.send(b"X"))
             start = len(terminal.raw)
             terminal.send(b"\r")
@@ -97,6 +103,9 @@ def main():
     # The tab at display column 7 ends at stop 8; nine letters put the final caret at column 7 on the next row.
     scenario("tabs", "日\tabcdefghi", "日X\tabcdefghi", 10, 9)
     scenario("resized", draft, draft[:52] + "X" + draft[52:], 20, 12, changed=(10, 9))
+    scenario("click", "hello world", "helloX world", 40, 12, click=(10, 11))
+    wrapped = "0123456789abcdefghijklmnopqrstuvwxyzABCD"
+    scenario("click on a wrapped row", wrapped, wrapped[:19] + "X" + wrapped[19:], 20, 12, click=(4, 10))
     print(f"{len(checks)} checks passed")
 
 

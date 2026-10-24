@@ -14,13 +14,17 @@ public struct ScreenController: Sendable {
         /// Put this text on the clipboard.
         case copy(String)
         case answerApproval(id: Int, ApprovalChoice)
+        /// List the project's files for the `@` picker; the answer is ``ConversationUpdate/files(_:)``.
+        case indexFiles
         case quit
     }
 
     public internal(set) var state: ScreenState
     /// The commands the screen answers itself (`/help`, `/quit`) and those the conversation runs.
-    private let commands: [SlashCommand]
+    let commands: [SlashCommand]
     var pending: [Pending] = []
+    /// The screen's height as of the last key, which sizes the picker when a file listing arrives between keys.
+    var pickerScreenRows = 0
     var nextPromptID = 0
     var acceptsInput = false
     var returningInput = false
@@ -30,14 +34,18 @@ public struct ScreenController: Sendable {
     var pointer = PointerRecognizer<Int>()
     var selector = SelectionController<Int>()
     var autoscroll = DragAutoscroll()
+    /// The number of the latest copy, for dropping a late result of an earlier one.
+    var copyGeneration = 0
 
     /// What `/help` and `/quit` are, always present.
+    // @dl:accept -- a table of command names and summaries beside the conversation's own table; the entries are the data
     static let builtIn = [
         SlashCommand(
             name: "help",
             summary: "List commands; Ctrl+T thinking, Ctrl+O tools, Ctrl+G code. Enter steers; Alt+Enter queues."),
         SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first."),
-        SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT.")
+        SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT."),
+        SlashCommand(name: "tasks", summary: "Show or hide the background jobs that are running.")
     ]
 
     /// A controller showing `label` in the status line, answering `commands` besides the built-in ones.
@@ -56,6 +64,19 @@ public struct ScreenController: Sendable {
     public mutating func handle(
         _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant = .now, columns: Int? = nil
     ) -> [Effect] {
+        var effects = route(event, pageRows: pageRows, at: now, columns: columns)
+        switch event {
+            case .key, .paste:
+                pickerScreenRows = pageRows + 3
+                effects += refreshPicker(screenRows: pickerScreenRows, at: now)
+            default: break
+        }
+        return effects
+    }
+
+    private mutating func route(
+        _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant, columns: Int?
+    ) -> [Effect] {
         switch event {
             case .key(let key):
                 if key.keyCode == Key.pageUp.rawValue {
@@ -72,6 +93,7 @@ public struct ScreenController: Sendable {
                 if isToggleToolOutput(key) { return toggleAllToolOutput() }
                 if isToggleThinking(key) { return toggleAllThinking() }
                 if isToggleCode(key) { return toggleAllCode() }
+                if let effects = pickerKey(key, screenRows: pageRows + 3) { return effects }
                 clearSelection()
                 return edit(key, columns: columns)
             case .mouse(let mouse):
@@ -98,6 +120,8 @@ public struct ScreenController: Sendable {
             case .requestExit(let exit): state.exitRequest = exit
             case .label(let text): state.label = text
             case .status(let text): state.detail = text
+            case .runners(let list): setRunners(list)
+            case .files(let list): return receive(files: list)
             case .promptAccepted(let id, let text):
                 pending.removeAll { $0.id == id }
                 state.transcript.addUser(text)
@@ -149,6 +173,7 @@ public struct ScreenController: Sendable {
                         }
                         return []
                     case "quit": return [.quit]
+                    case "tasks": return toggleRunners(announcing: true)
                     case "follow-up": return submitPrompt(arguments, followUp: true)
                     default:
                         guard !busy() else { return [] }
