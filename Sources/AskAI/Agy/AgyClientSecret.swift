@@ -109,12 +109,8 @@ public enum AgyClientSecret {
             ("client_id", AgyOAuth.clientID), ("client_secret", candidate), ("grant_type", "authorization_code"),
             ("code", "not-a-real-code"), ("redirect_uri", AgyOAuth.redirectURI)
         ]
-        let allowed = CharacterSet(charactersIn: "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-._~")
-        let body = fields.map { "\($0.0)=\($0.1.addingPercentEncoding(withAllowedCharacters: allowed) ?? "")" }
-            .joined(separator: "&")
-        return HTTPRequest(
-            url: URL(string: AgyOAuth.tokenURL)!, method: "POST",
-            headers: [("content-type", "application/x-www-form-urlencoded"), ("accept", "application/json")],
-            body: Array(body.utf8))
+        return HTTPRequest.account(
+            "POST", URL(string: AgyOAuth.tokenURL)!, contentType: "application/x-www-form-urlencoded",
+            body: Array(FormEncoding.query(fields).utf8))
     }
 }
