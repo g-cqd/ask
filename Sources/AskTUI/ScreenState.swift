@@ -22,7 +22,13 @@ public struct ScreenState: Sendable, Equatable {
     public var runnersOpen = false
     /// A question waiting for y, a or n: while it waits, those keys answer it and nothing is typed.
     public var pendingApproval: PendingApproval?
-    /// The command picker, while the draft's first word is a slash and something matches (roadmap 0048); nil otherwise.
+    /// The project's files for the `@` picker; nil until the first listing arrives (roadmap 0048).
+    var files: ProjectFiles?
+    /// When ``files`` arrived, so a listing that has aged is asked for again.
+    var filesLoadedAt: ContinuousClock.Instant?
+    /// Whether a listing was asked for and has not arrived.
+    var filesLoading = false
+    /// The picker for the word under the cursor: commands for a slash that starts the draft, files for an `@`; nil otherwise.
     var picker: CompletionPicker?
     /// Where the word the user closed the picker on starts. It stays closed until the cursor leaves that word.
     var pickerDismissedAt: Int?

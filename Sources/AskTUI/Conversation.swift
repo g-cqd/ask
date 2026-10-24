@@ -18,6 +18,10 @@ public protocol Conversation: Sendable {
     /// The commands this conversation understands, beyond the screen's own `/help` and `/quit`.
     var commands: [SlashCommand] { get }
 
+    /// The project's files, listed for the `@` picker: relative to the working directory, only what ask may read, bounded. Asked for when
+    /// an `@` first appears and again once the listing is old, off the input path.
+    func projectFiles() async -> ProjectFiles
+
     /// Starts anything that reports on its own while the screen is open, such as a new build appearing, until the
     /// returned task is cancelled. Nil when there is nothing to watch.
     func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>?
@@ -38,6 +42,9 @@ extension Conversation {
 
     /// No commands of its own.
     public var commands: [SlashCommand] { [] }
+
+    /// No files to offer.
+    public func projectFiles() async -> ProjectFiles { ProjectFiles() }
 
     /// Nothing to watch.
     public func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>? { nil }
