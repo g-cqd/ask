@@ -1,6 +1,6 @@
 internal import Darwin
 
-/// The watchdog's process: a shell, in a session of its own, reading the pipe (ADR-0077).
+/// The watchdog's process: a shell, in a session of its own, reading the pipe (ADR-0079).
 extension JobWatchdog {
     /// What the shell runs. Each line is `+GROUP` or `-GROUP`, written only by ask. End of input stops the groups still listed.
     /// A group is stopped as ask stops a job: SIGTERM to the group, two seconds, then SIGKILL.

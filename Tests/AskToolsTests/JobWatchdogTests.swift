@@ -7,7 +7,7 @@ import Testing
 @testable import AskTools
 
 /// A job outlives ask when ask is killed with SIGKILL, which nothing in ask can observe. A small process outside ask watches a pipe
-/// ask holds, and when the pipe closes it stops every group still registered (ADR-0077). These tests close the pipe as the kernel
+/// ask holds, and when the pipe closes it stops every group still registered (ADR-0079). These tests close the pipe as the kernel
 /// does when ask dies, and look at real processes. Nothing here waits for a time to pass: each wait is for an event.
 @Suite("A job does not outlive a killed ask", .timeLimit(.minutes(1)))
 struct JobWatchdogTests {

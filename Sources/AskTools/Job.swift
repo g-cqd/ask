@@ -90,7 +90,7 @@ public final class Job: Sendable {
         var keeping: Int
         /// What the command may touch.
         var sandbox: SandboxPolicy
-        /// Stops the job's group if ask is killed (ADR-0077).
+        /// Stops the job's group if ask is killed (ADR-0079).
         var watchdog: JobWatchdog?
     }
 

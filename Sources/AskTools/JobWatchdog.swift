@@ -1,7 +1,7 @@
 internal import Darwin
 internal import Synchronization
 
-/// Stops the jobs' process groups if ask is killed in a way it cannot see (ADR-0077).
+/// Stops the jobs' process groups if ask is killed in a way it cannot see (ADR-0079).
 ///
 /// ask stops every job on each exit it can observe: the end of `-p`, closing the screen, SIGTERM and SIGINT. A SIGKILL, or a crash, is
 /// not one of them, and a job runs in its own session, so it would outlive ask for good. This holds one end of a pipe whose other end is

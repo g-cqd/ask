@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe the job watchdog (ADR-0077) through the real binary: a job must not outlive an ask that is killed with SIGKILL.
+"""Probe the job watchdog (ADR-0079) through the real binary: a job must not outlive an ask that is killed with SIGKILL.
 
 Scripts/probe-job-watchdog.py .build/release/ask [--control OLDER_BINARY]
 
