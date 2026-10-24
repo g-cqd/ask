@@ -1,0 +1,10 @@
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":""}]}}],"usageMetadata":{"promptTokenCount":9,"totalTokenCount":9},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":"The endless"}]}}],"usageMetadata":{"promptTokenCount":9,"candidatesTokenCount":2,"totalTokenCount":11},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":" blue ocean whispers secrets to the shore. Gentle waves crash against the golden sand under"}]}}],"usageMetadata":{"promptTokenCount":9,"candidatesTokenCount":18,"totalTokenCount":27},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"text":" the warm sun."}]}}],"usageMetadata":{"promptTokenCount":9,"candidatesTokenCount":22,"totalTokenCount":31},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thoughtSignature":"c2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0dXJlc2lnbmF0","text":""}]},"finishReason":"STOP"}],"usageMetadata":{"promptTokenCount":9,"candidatesTokenCount":22,"totalTokenCount":31},"modelVersion":"gemini-3-flash","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+

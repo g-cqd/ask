@@ -1,0 +1,26 @@
+data: {"response":{"candidates":[{"content":{"role":"model"}}],"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":"We need"}]}}],"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":" to call"}]}}],"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":" the calc tool"}]}}],"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":" with a"}]}}],"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":"=17"}]}}],"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":", b=53"}]}}],"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":". Then"}]}}],"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":" respond"}]}}],"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":" with product"}]}}],"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"thought":true,"text":"."}]}}],"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"candidates":[{"content":{"role":"model","parts":[{"functionCall":{"name":"calc","args":{"a":17,"b":53},"id":"call_e30d7c8502564a9496691952"}}]},"finishReason":"STOP"}],"modelVersion":"gpt-oss-120b-medium","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
+data: {"response":{"usageMetadata":{"promptTokenCount":142,"candidatesTokenCount":55,"totalTokenCount":197,"cachedContentTokenCount":64},"modelVersion":"gpt-oss-120b-medium","createTime":"2026-10-24T21:17:08Z","responseId":"resp-test-1"},"traceId":"trace-test","metadata":{}}
+
