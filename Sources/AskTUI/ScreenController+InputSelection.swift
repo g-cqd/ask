@@ -21,6 +21,32 @@ extension ScreenController {
         return (before, isBreak ? before : before + 1)
     }
 
+    /// A double click takes the run of like characters under the cell and a triple click the whole hard line, by the rules the
+    /// transcript's selection uses (letters, digits and `_` together, spaces together, anything else together). The cursor goes to the
+    /// end of what was taken, and it is copied if `ui.copyOnSelect` is on. An empty line has nothing to take.
+    mutating func selectInput(at cell: CellPosition, count: Int) -> [Effect] {
+        guard state.pendingApproval == nil, let before = inputOffsets(at: cell)?.before else { return [] }
+        dropSelections()
+        let lines = state.editor.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        var start = 0
+        var index = 0
+        while index < lines.count - 1, before >= start + lines[index].count + 1 {
+            start += lines[index].count + 1
+            index += 1
+        }
+        let content = TranscriptContent(blocks: [lines])
+        let position = ContentPosition(block: 0, line: index, offset: before - start)
+        let taken =
+            count == 2
+            ? ContentSelection.word(at: position, in: content) : ContentSelection.line(at: position, in: content)
+        guard let taken else { return [] }
+        let range = start + taken.anchor.offset ..< start + taken.head.offset
+        state.inputSelection = range
+        state.editor.place(cursor: range.upperBound)
+        guard options.copyOnSelect, let text = selectedInputText, !text.isEmpty else { return [] }
+        return [.copy(text)]
+    }
+
     mutating func beginInputDrag(at cell: CellPosition) {
         guard state.pendingApproval == nil, let offsets = inputOffsets(at: cell) else { return }
         selector.clear()
