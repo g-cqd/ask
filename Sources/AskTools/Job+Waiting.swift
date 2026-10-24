@@ -15,7 +15,7 @@ extension Job {
         return await withTaskCancellationHandler {
             await withCheckedContinuation { continuation in
                 let immediate: WaitResult? = state.withLock { state in
-                    if let needle, !needle.isEmpty, state.unread.kept.firstRange(of: needle) != nil { return .found }
+                    if let needle, state.unread.contains(needle) { return .found }
                     if state.status != .running { return .ended }
                     if Task.isCancelled { return .cancelled }
                     // Seeded with the end of all recent output, shown or not, so a text that began before the wait

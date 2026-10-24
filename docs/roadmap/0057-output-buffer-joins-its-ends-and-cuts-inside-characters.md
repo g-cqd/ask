@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-24
 ---
@@ -21,3 +21,11 @@ Search the head and the tail as two runs, with the carry the streaming path alre
 a scalar boundary, losing at most three bytes of the budget. Remove the four `withKnownIssue` wrappers when the fixes land.
 
 `OutputBuffer(keeping: 0)` traps on `% keeping`; unreachable while the only caller passes a constant, so not fixed here.
+
+## Progress
+
+- **The join (2026-10-24, diary 2026-10-24 (35)): done.** `OutputBuffer.contains(_:)` searches the head and the tail as two runs where bytes
+  were omitted, and the stream as one where nothing was; `wait` uses it. The "carry the streaming path keeps" turned out not to be needed:
+  the immediate check only has to be right about what the buffer holds, and the streaming path already covers text that arrives later.
+  A text whose first bytes were dropped is, correctly, not found.
+- **The cuts: not done yet.**
