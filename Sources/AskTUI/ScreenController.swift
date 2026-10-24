@@ -30,6 +30,8 @@ public struct ScreenController: Sendable {
     var pointer = PointerRecognizer<Int>()
     var selector = SelectionController<Int>()
     var autoscroll = DragAutoscroll()
+    /// The number of the latest copy, for dropping a late result of an earlier one.
+    var copyGeneration = 0
 
     /// What `/help` and `/quit` are, always present.
     // @dl:accept -- a table of command names and summaries beside the conversation's own table; the entries are the data
