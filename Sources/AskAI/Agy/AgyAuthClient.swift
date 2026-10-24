@@ -2,7 +2,7 @@ internal import AemiJSON
 internal import Foundation
 
 /// Completes Antigravity sign-ins and refreshes credentials against Google's token endpoint, with the client secret already
-/// confirmed (ADR-0072).
+/// confirmed (ADR-0073).
 public struct AgyAuthClient: Sendable {
     private let transport: any HTTPTransport
 

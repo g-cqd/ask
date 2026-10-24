@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-23
 ---
 
-# 0072 — The Antigravity client secret is read from the user's `agy` and confirmed by Google
+# 0073 — The Antigravity client secret is read from the user's `agy` and confirmed by Google
 
 ## Context
 
@@ -11,7 +11,7 @@ Roadmap 0052 asks for an Antigravity connector. Its sign-in is a Google OAuth au
 and Google's token endpoint refuses that client without its secret. The secret identifies the application, not a user. The
 owner decided that using it is acceptable, stating that Google itself does not treat an installed application's secret as
 secret, and allowed upgrading the installed `agy` if useful. pi-integrations already finds it by scanning the installed binary; the
-evidence rule says its code is run against edge cases before anything is adopted (diary 2026-10-23-21).
+evidence rule says its code is run against edge cases before anything is adopted (diary 2026-10-23-22).
 
 ## The probes
 

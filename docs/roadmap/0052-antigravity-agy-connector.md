@@ -20,15 +20,15 @@ and a live run through the agent loop is recorded. Probe first whether a connect
 discovered client secret, and what that secret's exposure costs.
 
 Probed: **a connection cannot be made without the secret** (the token endpoint refuses the client), and the owner accepts its
-exposure (ADR-0072).
+exposure (ADR-0073).
 
-## Done (2026-10-23, ADR-0072, diary 2026-10-23-21)
+## Done (2026-10-23, ADR-0073, diary 2026-10-23-22)
 
 The client secret is found in the user's installed `agy` (1.4.2 and 1.4.6, the same value) and confirmed with Google's token endpoint;
 18 deliberate faults killed. `agy` was upgraded from 1.4.2 to 1.4.6 with `agy update` (the old binary is kept in
 `~/Library/Caches/ask-mutation/agy/`).
 
-## Done (2026-10-24, ADR-0074, diary 2026-10-24-23)
+## Done (2026-10-24, ADR-0075, diary 2026-10-24-24)
 
 `ask login agy` and `ask logout agy` exist, for the default account: the authorize URL equals the shipped CLI's, the secret is confirmed
 before the URL is shown and kept with the credentials, the paste is validated, and a fake code gets Google's real refusal. 42 faults
