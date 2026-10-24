@@ -4,12 +4,12 @@ blocked-by: ["owner decisions, see the report"]
 date: 2026-10-24
 ---
 
-# 0058 — A safe regex for ask, and possibly `AemiRegex`
+# 0059 — A safe regex for ask, and possibly `AemiRegex`
 
 Today `ask` has one runtime regex use (three short patterns on a refusal message in `ProviderFailure+Overflow.swift`) and two test helpers,
 all in Swift `Regex`. The owner asked for a Sendable, safe `NSRegularExpression` wrapper to remove it, and asked what a vector kernel and a
 standalone `AemiRegex` would need. The answer, with measurements, is `docs/research/aemiregex-requirements-2026-10.md`; the probe ledger is
-diary 2026-10-24-38.
+diary 2026-10-24-39.
 
 ## Done
 

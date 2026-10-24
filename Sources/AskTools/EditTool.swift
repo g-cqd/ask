@@ -36,7 +36,7 @@ public struct EditTool: ArgumentTool {
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         guard !arguments.oldText.isEmpty else { return .error("old_text must not be empty.") }
         let url = try FileTools.authorized(arguments.path, for: [.read, .write], in: context)
-        let text = try FileTools.text(at: url, shownAs: arguments.path)
+        let text = try FileTools.text(at: url, shownAs: arguments.path, in: context)
         // Exact UTF-8 bytes, not canonically equivalent characters: the model must reproduce what the file holds,
         // and an edit must never land on text written differently from what it quoted.
         let pieces = ByteSearch.split(Array(text.utf8), on: Array(arguments.oldText.utf8))
@@ -55,7 +55,7 @@ public struct EditTool: ArgumentTool {
             editedBytes += piece
         }
         let edited = String(decoding: editedBytes, as: UTF8.self)
-        try FileTools.write(edited, to: url, shownAs: arguments.path)
+        try FileTools.write(edited, to: url, shownAs: arguments.path, in: context)
         return ToolOutput("Replaced \(count) occurrence\(count == 1 ? "" : "s") in \(arguments.path).")
     }
 }

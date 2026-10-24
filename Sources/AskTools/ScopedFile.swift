@@ -1,0 +1,133 @@
+internal import AskAgentCore
+internal import Darwin
+internal import Foundation
+
+/// File access that a swapped directory or link cannot redirect between the sandbox's check and the use (roadmap 0058, ADR-0085).
+///
+/// `FileTools.authorized` resolves a path and asks the policy about the result, and the tool then used that path by name. A job the
+/// sandbox lets write in the workspace can rename a directory away and put a link to a protected one in its place after the check
+/// and before the use: measured, 2 of 6,000 writes landed in ask's configuration directory. The cure is not a better check but not
+/// looking the name up twice: open the object, ask the kernel where it really is (`F_GETPATH`), authorize that, and use only the
+/// descriptor. Writing works relative to a directory descriptor verified the same way, one component at a time, never following a
+/// link. Used when the policy restricts anything; with nothing restricted there is nothing to redirect around.
+enum ScopedFile {
+    /// The whole contents of the file at `url`, read through one descriptor whose real location the policy has agreed to.
+    /// - Parameters:
+    ///   - url: the file, as resolved by the first check.
+    ///   - path: the name to show in a failure.
+    ///   - limit: the most bytes a file may have.
+    ///   - context: where the sandbox is.
+    /// - Returns: the bytes.
+    /// - Throws: a ``ToolFailure`` for a missing, unreadable, oversized or protected file.
+    static func read(_ url: URL, shownAs path: String, limit: Int, in context: ToolContext) throws(ToolFailure)
+        -> [UInt8]
+    {
+        let descriptor = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        guard descriptor >= 0 else {
+            throw ToolFailure(errno == ENOENT ? "No file at \(path)." : "Cannot read \(path).")
+        }
+        defer { close(descriptor) }
+        try verify(descriptor, for: .read, appending: nil, shownAs: path, in: context)
+        var info = stat()
+        guard fstat(descriptor, &info) == 0, info.st_mode & S_IFMT == S_IFREG else {
+            throw ToolFailure("Cannot read \(path).")
+        }
+        let size = Int(info.st_size)
+        guard size <= limit else { throw ToolFailure("\(path) is \(size) bytes, over the \(limit)-byte limit.") }
+        var bytes = [UInt8](repeating: 0, count: size)
+        var filled = 0
+        while filled < size {
+            let count = bytes.withUnsafeMutableBytes {
+                unsafe Darwin.read(descriptor, $0.baseAddress! + filled, size - filled)
+            }
+            if count < 0, errno == EINTR { continue }
+            guard count > 0 else { break }  // The file shrank while being read: what was there is what there is.
+            filled += count
+        }
+        bytes.removeLast(size - filled)
+        return bytes
+    }
+
+    /// Replaces or creates the file at `url` with `bytes`, atomically, creating its directories, without ever naming a directory twice.
+    /// - Parameters:
+    ///   - bytes: what the file is to hold.
+    ///   - url: the file, as resolved by the first check.
+    ///   - path: the name to show in a failure.
+    ///   - context: where the sandbox is.
+    /// - Throws: a ``ToolFailure`` if the write is protected, or cannot be done.
+    static func write(_ bytes: [UInt8], to url: URL, shownAs path: String, in context: ToolContext) throws(ToolFailure)
+    {
+        let name = url.lastPathComponent
+        var missing: [String] = []
+        var base = url.deletingLastPathComponent().path
+        var directory = open(base, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+        // The deepest directory that exists; what lies below it is made one component at a time.
+        while directory < 0, errno == ENOENT, base != "/" {
+            missing.insert((base as NSString).lastPathComponent, at: 0)
+            base = (base as NSString).deletingLastPathComponent
+            directory = open(base, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+        }
+        guard directory >= 0 else { throw ToolFailure("Cannot write \(path): \(String(cString: strerror(errno))).") }
+        defer { close(directory) }
+        for component in missing {
+            try verify(directory, for: .write, appending: component, shownAs: path, in: context)
+            if mkdirat(directory, component, 0o777) != 0, errno != EEXIST {
+                throw ToolFailure("Cannot write \(path): \(String(cString: strerror(errno))).")
+            }
+            // A link put there since is not followed: it fails, and nothing is written.
+            let next = openat(directory, component, O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC)
+            guard next >= 0 else { throw ToolFailure("Cannot write \(path): a directory on its way was replaced.") }
+            close(directory)
+            directory = next
+        }
+        try verify(directory, for: .write, appending: name, shownAs: path, in: context)
+        try replace(name, in: directory, with: bytes, shownAs: path)
+    }
+
+    /// Writes `bytes` beside `name` under a name of its own, then renames it over `name`, keeping the permissions of what it replaces.
+    private static func replace(_ name: String, in directory: Int32, with bytes: [UInt8], shownAs path: String)
+        throws(ToolFailure)
+    {
+        let temporary = ".ask-write-\(UUID().uuidString)"
+        let file = openat(directory, temporary, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o666)
+        guard file >= 0 else { throw ToolFailure("Cannot write \(path): \(String(cString: strerror(errno))).") }
+        defer { close(file) }
+        var written = 0
+        while written < bytes.count {
+            let count = bytes.withUnsafeBytes {
+                unsafe Darwin.write(file, $0.baseAddress! + written, bytes.count - written)
+            }
+            if count < 0, errno == EINTR { continue }
+            guard count > 0 else {
+                unlinkat(directory, temporary, 0)
+                throw ToolFailure("Cannot write \(path): \(String(cString: strerror(errno))).")
+            }
+            written += count
+        }
+        var existing = stat()
+        if fstatat(directory, name, &existing, AT_SYMLINK_NOFOLLOW) == 0 { fchmod(file, existing.st_mode & 0o7777) }
+        guard renameat(directory, temporary, directory, name) == 0 else {
+            let failure = String(cString: strerror(errno))
+            unlinkat(directory, temporary, 0)
+            throw ToolFailure("Cannot write \(path): \(failure).")
+        }
+    }
+
+    /// Refuses unless the policy allows `capability` at the real location of `descriptor`, with `name` below it when given.
+    private static func verify(
+        _ descriptor: Int32, for capability: SandboxCapability, appending name: String?, shownAs path: String,
+        in context: ToolContext
+    ) throws(ToolFailure) {
+        var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
+        guard fcntl(descriptor, F_GETPATH, &buffer) == 0 else {
+            throw ToolFailure("Sandbox: \(path) cannot be resolved to a real location. Only the user can change this.")
+        }
+        let real = String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+        let target = name.map { real + "/" + $0 } ?? real
+        if case .denied(_, let why) = context.sandbox.authorize(
+            capability, path: target, relativeTo: context.workingDirectory)
+        {
+            throw ToolFailure("Sandbox: \(why) Only the user can change this.")
+        }
+    }
+}

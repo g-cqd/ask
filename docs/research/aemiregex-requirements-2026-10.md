@@ -2,7 +2,7 @@
 
 Written at the owner's request after a Swift `Regex` measurement. Evidence is labelled **observed** (a probe ran here, archived in
 `docs/research/probes/`), **read** (source or documentation read, nothing run) or **open** (not probed). Nothing here is built. Diary
-2026-10-24-38 holds the probe ledger.
+2026-10-24-39 holds the probe ledger.
 
 ## 1. What was asked, and what the evidence says about each part
 

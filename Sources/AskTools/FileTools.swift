@@ -15,8 +15,9 @@ public enum FileTools {
     }
 
     /// The file to touch for `path`, once the sandbox agrees (ADR-0035): the policy is asked for each capability the
-    /// tool needs, and the path is then used in its canonical form, so a link swapped in after the check cannot
-    /// redirect what the check approved. With nothing restricted the path is used as given and nothing is looked up.
+    /// tool needs, and the path is then used in its canonical form. That narrows what a link swapped in later can do but does not
+    /// end it, so `text` and `write` open the object and check where it really is before using it (``ScopedFile``, ADR-0085).
+    /// With nothing restricted the path is used as given and nothing is looked up.
     /// - Throws: a ``ToolFailure`` that names the capability and the path, and says only the user can change it.
     static func authorized(
         _ path: String, for capabilities: [SandboxCapability], in context: ToolContext
@@ -35,7 +36,32 @@ public enum FileTools {
     }
 
     /// The file's text, or the error output explaining why it cannot be had.
-    static func text(at url: URL, shownAs path: String) throws(ToolFailure) -> String {
+    ///
+    /// Under a policy that restricts anything the file is opened once and checked where it really is (``ScopedFile``); with nothing
+    /// restricted it is read by name, as there is nothing to be redirected around.
+    /// - Parameters:
+    ///   - url: the file, as ``authorized(_:for:in:)`` resolved it.
+    ///   - path: the name to show in a failure.
+    ///   - context: where the sandbox is.
+    ///   - between: runs after the path was authorized and before it is used; only tests give one, to change the file system there.
+    /// - Returns: the text.
+    /// - Throws: a ``ToolFailure`` for a missing, protected, oversized, binary or unreadable file.
+    static func text(
+        at url: URL, shownAs path: String, in context: ToolContext, between: () -> Void = {}
+    ) throws(ToolFailure) -> String {
+        between()
+        let bytes =
+            context.sandbox.isUnrestricted
+            ? try unscopedBytes(at: url, shownAs: path)
+            : try ScopedFile.read(url, shownAs: path, limit: maximumFileBytes, in: context)
+        // On an array, not through Data's iterator: the NUL scan is then a plain loop the compiler vectorizes.
+        guard !bytes.contains(0), let text = String(validating: bytes, as: UTF8.self) else {
+            throw ToolFailure("\(path) looks binary (\(bytes.count) bytes); it was not read as text.")
+        }
+        return text
+    }
+
+    private static func unscopedBytes(at url: URL, shownAs path: String) throws(ToolFailure) -> [UInt8] {
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path) else {
             throw ToolFailure("No file at \(path).")
         }
@@ -44,16 +70,26 @@ public enum FileTools {
             throw ToolFailure("\(path) is \(size) bytes, over the \(maximumFileBytes)-byte limit.")
         }
         guard let data = try? Data(contentsOf: url) else { throw ToolFailure("Cannot read \(path).") }
-        // On an array, not through Data's iterator: the NUL scan is then a plain loop the compiler vectorizes.
-        let bytes = [UInt8](data)
-        guard !bytes.contains(0), let text = String(validating: bytes, as: UTF8.self) else {
-            throw ToolFailure("\(path) looks binary (\(data.count) bytes); it was not read as text.")
-        }
-        return text
+        return [UInt8](data)
     }
 
-    /// Writes atomically. Foundation's atomic write keeps a replaced file's permissions; a test guards that.
-    static func write(_ text: String, to url: URL, shownAs path: String) throws(ToolFailure) {
+    /// Writes atomically. Foundation's atomic write keeps a replaced file's permissions; a test guards that, and so that
+    /// ``ScopedFile`` keeps them too.
+    /// - Parameters:
+    ///   - text: what the file is to hold.
+    ///   - url: the file, as ``authorized(_:for:in:)`` resolved it.
+    ///   - path: the name to show in a failure.
+    ///   - context: where the sandbox is.
+    ///   - between: runs after the path was authorized and before it is used; only tests give one, to change the file system there.
+    /// - Throws: a ``ToolFailure`` if the write is protected or cannot be done.
+    static func write(
+        _ text: String, to url: URL, shownAs path: String, in context: ToolContext, between: () -> Void = {}
+    ) throws(ToolFailure) {
+        between()
+        guard context.sandbox.isUnrestricted else {
+            try ScopedFile.write(Array(text.utf8), to: url, shownAs: path, in: context)
+            return
+        }
         do {
             try FileManager.default.createDirectory(
                 at: url.deletingLastPathComponent(), withIntermediateDirectories: true)

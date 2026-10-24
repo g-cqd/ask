@@ -23,7 +23,7 @@ public struct WriteTool: ArgumentTool {
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         let url = try FileTools.authorized(arguments.path, for: [.write], in: context)
-        try FileTools.write(arguments.content, to: url, shownAs: arguments.path)
+        try FileTools.write(arguments.content, to: url, shownAs: arguments.path, in: context)
         return ToolOutput("Wrote \(arguments.content.utf8.count) bytes to \(arguments.path).")
     }
 }
