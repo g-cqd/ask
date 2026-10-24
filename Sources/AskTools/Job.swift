@@ -134,8 +134,8 @@ public final class Job: Sendable {
                     }
                     for try await buffer in execution.standardOutput {
                         let bytes = buffer.bytes.withUnsafeBytes { Array($0) }
+                        self.received(bytes)  // held first: an observer that acts on `bytes` finds them in the buffer
                         observe(bytes)
-                        self.received(bytes)
                     }
                     group.cancelAll()
                 }
