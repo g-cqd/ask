@@ -35,6 +35,8 @@ public struct ScreenController: Sendable {
     var selector = SelectionController<Int>()
     var autoscroll = DragAutoscroll()
     var inputDrag = InputDrag()
+    /// Where a selection made with the keyboard began, while one is being made.
+    var inputAnchor: Int?
     /// The number of the latest copy, for dropping a late result of an earlier one.
     var copyGeneration = 0
 
@@ -95,11 +97,7 @@ public struct ScreenController: Sendable {
                 }
                 // A question waiting for y, a or n takes the keys first (roadmap 0019).
                 if state.pendingApproval != nil { return answer(key) }
-                if let effects = inputSelectionKey(key) { return effects }
-                if let effects = selectionKey(key) { return effects }
-                if isToggleToolOutput(key) { return toggleAllToolOutput() }
-                if isToggleThinking(key) { return toggleAllThinking() }
-                if isToggleCode(key) { return toggleAllCode() }
+                if let effects = selectionOrToggleKey(key, columns: columns) { return effects }
                 if let effects = pickerKey(key, screenRows: pageRows + 3) { return effects }
                 clearSelection()
                 return edit(key, columns: columns)
@@ -113,6 +111,21 @@ public struct ScreenController: Sendable {
             default:
                 return []
         }
+    }
+
+    /// The keys that belong to a selection or to a fold, before the editor: Shift with a cursor key, what a selection in the input or the
+    /// transcript takes, and the three toggles. Nil when the key is none of them.
+    private mutating func selectionOrToggleKey(_ key: KeyEvent, columns: Int?) -> [Effect]? {
+        if Self.isSelectingMove(key) {
+            extendInputSelection(key, columns: columns)
+            return []
+        }
+        if let effects = inputSelectionKey(key) { return effects }
+        if let effects = selectionKey(key) { return effects }
+        if isToggleToolOutput(key) { return toggleAllToolOutput() }
+        if isToggleThinking(key) { return toggleAllThinking() }
+        if isToggleCode(key) { return toggleAllCode() }
+        return nil
     }
 
     /// Applies an update from the running conversation. A reader who has scrolled back stays on what they were reading (ADR-0072).
