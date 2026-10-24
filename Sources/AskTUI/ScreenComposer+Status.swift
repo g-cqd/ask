@@ -26,6 +26,7 @@ extension ScreenComposer {
         }
         let selecting = state.selection != nil || state.inputSelection != nil
         if selecting { status += " · ctrl+c copy · esc clear" }
+        if state.inputSelection != nil { status += " · ctrl+x cut" }
         if !state.clipboardNotice.isEmpty {
             status += " · " + state.clipboardNotice
         } else if !selecting, !state.nativeSelectionHint.isEmpty {

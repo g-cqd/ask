@@ -165,6 +165,7 @@ a line, by the transcript's rules (ADR-0077; diary 2026-10-24 (26)). Shift with 
 2026-10-24 (27)).
 The wheel over a draft taller than the input's window scrolls the window, one row a step, hiding the cursor while it is out of view (ADR-0086;
 diary 2026-10-24 (40)).
+Ctrl-X cuts a selection in the input and still clears the draft when nothing is selected (ADR-0088; diary 2026-10-24 (42)).
 
 ## Open questions
 

@@ -27,7 +27,7 @@ def paste(terminal, text):
     terminal.draw(lambda: terminal.send(b"\x1b[200~" + text.encode() + b"\x1b[201~"))
 
 
-def scenario(label, draft, expected, width, height, changed=None, clear_first=False, click=None, select=None, taps=None, shifted=None, wheeled=None):
+def scenario(label, draft, expected, width, height, changed=None, clear_first=False, click=None, select=None, taps=None, shifted=None, wheeled=None, cut=None):
     with tempfile.TemporaryDirectory() as root:
         project, config, state = root + "/project", root + "/config", root + "/state"
         os.makedirs(project)
@@ -62,6 +62,18 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
                 terminal.draw(lambda: terminal.send(f"\x1b[<0;{column + 1};{row + 1}M\x1b[<0;{column + 1};{row + 1}m".encode()))
                 check(label + ": a click puts the cursor on the clicked cell",
                       (terminal.screen.cursor.x, terminal.screen.cursor.y) == (column, row))
+            elif cut:
+                (start, end), copied = cut[:2], cut[2]
+                terminal.send(f"\x1b[<0;{start[0] + 1};{start[1] + 1}M\x1b[<32;{end[0] + 1};{end[1] + 1}M".encode())
+                terminal.send(f"\x1b[<0;{end[0] + 1};{end[1] + 1}m".encode())
+                terminal.until(lambda: bool(terminal.copies()))
+                copies = len(terminal.copies())
+                terminal.send(b"\x18")
+                terminal.until(lambda: len(terminal.copies()) > copies)
+                check(label + ": control X puts exactly the selection on the clipboard", terminal.copies()[-1] == copied)
+                terminal.repaint()
+                check(label + ": and takes it out of the draft",
+                      terminal.screen.display[height - 1].rstrip() == "ask> h world" and "ctrl+x" not in terminal.text())
             elif wheeled:
                 for _ in range(wheeled):
                     terminal.send(f"\x1b[<64;5;{height}M".encode())
@@ -155,6 +167,7 @@ def main():
     scenario("shift and arrows", "hello world", "X world", 40, 12, shifted=(5, "hello"))
     ten = "\n".join(f"line {n}" for n in range(1, 11))
     scenario("wheel", ten, ten + "YX", 40, 12, wheeled=3)
+    scenario("cut", "hello world", "hX world", 40, 12, cut=((6, 11), (9, 11), "ello"))
     print(f"{len(checks)} checks passed")
 
 
