@@ -3,8 +3,7 @@ internal import TerminalKitIO
 internal import TerminalKitInput
 internal import TerminalKitRender
 
-/// The screen while it is open: the one place that owns the controller, merges input, conversation updates and resizes into one stream,
-/// performs what the controller asks for, and hands the render thread the newest state.
+/// One open screen: the controller that owns its state, the render thread that draws it, and the loop that applies every event.
 final class ScreenSession {
     private let terminal: TerminalSession
     private let renderer: RenderLoop<ScreenComposer>
@@ -108,42 +107,46 @@ final class ScreenSession {
                     render(full: true)
                     return true
                 }
+            case .copied(let notice, let failed, let generation):
+                controller.finishCopy(notice, failed: failed, generation: generation)
             case .inputEnded:
                 effects = [.quit]
         }
-        guard await perform(effects) else { return false }
+        for effect in effects where await !perform(effect) {
+            return false
+        }
         syncAutoscroll()
         render()
         return true
     }
 
-    /// Does what the controller asked for. Returns false when the screen should close.
-    private func perform(_ effects: [ScreenController.Effect]) async -> Bool {
-        for effect in effects {
-            switch effect {
-                case .startRun(let prompt):
-                    let sink = sink
-                    run = conversation.start(prompt) { sink.yield(.update($0)) }
-                case .queuePrompt(let id, let text, let followUp):
-                    conversation.enqueue(text, id: id, followUp: followUp)
-                case .runCommand(let name, let arguments):
-                    let sink = sink
-                    run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }
-                case .answerApproval(let id, let choice):
-                    conversation.answer(approval: id, with: choice)
-                case .indexFiles:
-                    let (sink, conversation) = (sink, conversation)
-                    Task { sink.yield(.update(.files(await conversation.projectFiles()))) }
-                case .cancelRun:
-                    run?.cancel()
-                case .copy(let text):
-                    controller.state.clipboardNotice = clipboard.copy(text)
-                case .quit:
-                    run?.cancel()
-                    // A cancelled run stops its tools' processes before it ends; wait for that.
-                    await run?.value
-                    return false
-            }
+    /// Carries out one effect of the controller. Returns false when the screen should close.
+    private func perform(_ effect: ScreenController.Effect) async -> Bool {
+        let sink = sink
+        switch effect {
+            case .startRun(let prompt):
+                run = conversation.start(prompt) { sink.yield(.update($0)) }
+            case .queuePrompt(let id, let text, let followUp):
+                conversation.enqueue(text, id: id, followUp: followUp)
+            case .runCommand(let name, let arguments):
+                run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }
+            case .answerApproval(let id, let choice):
+                conversation.answer(approval: id, with: choice)
+            case .indexFiles:
+                let conversation = conversation
+                Task { sink.yield(.update(.files(await conversation.projectFiles()))) }
+            case .cancelRun:
+                run?.cancel()
+            case .copy(let text):
+                let generation = controller.beginCopy()
+                controller.state.clipboardNotice = clipboard.copy(text) {
+                    sink.yield(.copied(notice: $0, failed: $1, generation: generation))
+                }
+            case .quit:
+                run?.cancel()
+                // A cancelled run stops its tools' processes before it ends; wait for that.
+                await run?.value
+                return false
         }
         return true
     }

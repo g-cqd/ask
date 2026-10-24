@@ -46,7 +46,7 @@ public func runInteractiveScreen(
             connection: connection, session: terminal, renderer: renderer, frames: frames,
             clipboard: ScreenClipboard(
                 connection: connection, environment: ProcessInfo.processInfo.environment,
-                pasteboard: ScreenClipboard.pbcopy)),
+                pasteboard: HostPasteboard.pbcopy)),
         conversation: conversation, label: label, options: options,
         opening: openingUpdates(history: history, notices: notices), resizes: resizes)
 }
@@ -56,7 +56,8 @@ public func runInteractiveScreen(
 func runInteractiveScreen(
     on connection: any TerminalConnection, conversation: any Conversation, label: String,
     history: [ConversationUpdate] = [], notices: [String] = [], options: ScreenOptions = ScreenOptions(),
-    environment: [String: String] = [:], pasteboard: @escaping @Sendable (String) -> Void = { _ in },
+    environment: [String: String] = [:],
+    pasteboard: @escaping @Sendable (String) async -> PasteboardResult = { _ in .copied },
     resizes: AsyncStream<Void>
 ) async throws -> ScreenExit {
     let connection = SerializedConnection(connection)
