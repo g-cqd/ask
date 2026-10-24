@@ -7,6 +7,7 @@ Reuses the folding probe's PTY/emulator harness; no window, credentials or clipb
 runs against a binary that predates the picker and must show NO picker: a probe that cannot fail is not a probe.
 """
 import importlib.util
+import json
 import os
 import sys
 import tempfile
@@ -71,11 +72,17 @@ def press(terminal, data):
 class Session:
     """One ask in a PTY against a fake provider, torn down on exit."""
 
-    def __init__(self, binary, turns, columns=100, height=30):
+    def __init__(self, binary, turns, columns=100, height=30, prepare=None, settings=None):
         self.root = tempfile.TemporaryDirectory()
         project, config, state = self.root.name + "/project", self.root.name + "/config", self.root.name + "/state"
         os.makedirs(project)
         os.makedirs(config + "/ask")
+        self.project = os.path.realpath(project)
+        if settings is not None:
+            with open(config + "/ask/config.json", "w") as file:
+                json.dump(settings(self.project), file)
+        if prepare is not None:
+            prepare(self.project)
         self.server = probe.agent.Server(turns)
         environment = probe.agent.environment(state, self.server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")

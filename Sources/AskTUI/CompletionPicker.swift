@@ -6,17 +6,21 @@ struct CompletionPicker: Sendable, Equatable {
     /// What the rows are, which names the list and decides what a choice means.
     enum Kind: Sendable, Equatable {
         case commands
+        case files
 
         /// The word that titles the list.
         var title: String {
             switch self {
                 case .commands: "commands"
+                case .files: "files"
             }
         }
     }
 
     /// What is being listed.
     let kind: Kind
+    /// What to say beside the name: that the files are still being listed, how many the sandbox hid, that matches were cut.
+    let caption: String
     /// The word the matches are for.
     let trigger: CompletionTrigger
     /// Every command that matches, best first.
@@ -29,8 +33,9 @@ struct CompletionPicker: Sendable, Equatable {
     let capacity: Int
 
     /// A picker over `matches`, the first chosen.
-    init(kind: Kind, trigger: CompletionTrigger, matches: [PickerRow], capacity: Int) {
+    init(kind: Kind, trigger: CompletionTrigger, matches: [PickerRow], capacity: Int, caption: String = "") {
         self.kind = kind
+        self.caption = caption
         self.trigger = trigger
         self.matches = matches
         self.capacity = Swift.max(1, capacity)
