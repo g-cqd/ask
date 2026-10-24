@@ -42,7 +42,7 @@ Two parts of "done when" are only partly met:
   that gap; ADR-0029 records the options.
 - **The cut-middle check** used 10.9 MB of `seq` output rather than a log file.
 
-## Closed (2026-10-24, ADR-0077)
+## Closed (2026-10-24, ADR-0079)
 
 "Killing ask leaves no job running" now holds for SIGKILL and a crash as well: a small shell outside ask watches a pipe ask holds, and
 stops each listed job's group (SIGTERM, two seconds, SIGKILL) when the pipe closes. Proven with the real binary: a job started by

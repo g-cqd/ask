@@ -160,7 +160,9 @@ wheel for its own window are not done.
 ## Selection in the input (2026-10-23, ADR-0076; diary 2026-10-24 (25))
 
 A drag in the input selects its text: highlight, cursor following the dragged end, copy on release, replace by typing or a paste, delete
-by Backspace, and a timer step when held at the first or last drawn row of a tall draft. Word and line selection and keyboard selection are not done.
+by Backspace, and a timer step when held at the first or last drawn row of a tall draft. A double click takes a word and a triple click
+a line, by the transcript's rules (ADR-0077; diary 2026-10-24 (26)). Shift with an arrow, Home or End selects from the keyboard (ADR-0078; diary
+2026-10-24 (27)).
 
 ## Open questions
 
