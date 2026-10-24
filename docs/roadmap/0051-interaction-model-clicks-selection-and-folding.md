@@ -50,7 +50,7 @@ Rows marked **owner** are their examples; rows marked **proposed** are mine, to 
 | Image | show it, or fold it to its placeholder | | **owner** (folding), proposed (the click) |
 | Long code block | show it, or fold it to its placeholder | | **owner** (folding), proposed (the click) |
 | "N approval" in the status bar | open the approval request | `p` (the prototype's) | proposed |
-| "N lines below" indicator | scroll to the end | `End` | proposed |
+| "N lines below" indicator | scroll to the end | `End` on an empty draft | **built** (ADR-0072); the view also holds while text arrives |
 | A row in a picker (`/`, `@`) | select it, as Enter does | `Enter` | proposed |
 | An attached reference in the input | remove or edit it | | proposed |
 | Sidebar sections (workbench) | focus a section | | proposed |

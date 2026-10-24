@@ -49,6 +49,10 @@ attached; add `:12-30` for a line range. The model reads the file itself, under 
 | `/compact` | summarise the conversation now |
 | `/quit` | leave |
 
+Scroll back with the wheel or Page Up and the screen stays on what you were reading while more text arrives below it; the status
+line says how many lines are below (`12 lines below`). Click that count, press End with an empty draft, or press Page Down to return to
+the end ([ADR-0072](docs/adr/0072-the-view-holds-while-text-arrives-below-and-the-status-line-counts-it.md)).
+
 While the agent is working, Enter queues **steering** after its current
 response and tools. `/follow-up TEXT` queues a message for when it finishes;
 Alt+Enter is a shortcut on terminals that report it. Esc aborts and returns
