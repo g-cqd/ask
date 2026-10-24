@@ -26,7 +26,7 @@ public struct ReadTool: ArgumentTool {
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         let url = try FileTools.authorized(arguments.path, for: [.read], in: context)
-        let text = try FileTools.text(at: url, shownAs: arguments.path)
+        let text = try FileTools.text(at: url, shownAs: arguments.path, in: context)
         guard arguments.offset != nil || arguments.limit != nil else { return ToolOutput(text) }
         let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
         let first = Swift.max(1, arguments.offset ?? 1)

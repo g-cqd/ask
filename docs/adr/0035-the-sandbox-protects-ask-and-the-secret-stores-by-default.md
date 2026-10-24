@@ -66,6 +66,7 @@ paid once per command, off the input path.
 - **A path check and its use are two steps.** The tools use the canonical path they checked, which narrows the
   window, but a link swapped in between could still redirect a write until the file tools run in a sandboxed
   helper. `bash` is not exposed: Seatbelt checks at the operation.
+  **Closed by ADR-0085** for `read`, `write` and `edit`: they no longer look the name up twice.
 - **Network, write scope and read allow-lists** exist in the policy and the compiler and are tested, but nothing
   configures them yet: roadmap 0042.
 - **Seatbelt does not nest** (ADR-0020): `ask --sandbox`, ask sandboxed as a whole, would make `sandbox-exec`
