@@ -44,7 +44,7 @@ public enum ClaudeOAuth {
         let text = pasted.trimmingCharacters(in: .whitespacesAndNewlines)
         // No check that `expectedState` is nonempty is needed: a parsed state is never empty.
         guard !text.isEmpty, text.utf16.count <= 4_096 else { return nil }
-        let parsed = hasScheme(text) ? fromURL(text) : fromToken(text)
+        let parsed = PastedAuthorization.hasScheme(text) ? fromURL(text) : fromToken(text)
         guard let parsed, parsed.state == expectedState else { return nil }
         return parsed.code
     }
@@ -57,16 +57,6 @@ public enum ClaudeOAuth {
         length.contains(text.count) && text.allSatisfy(tokenCharacters.contains)
     }
 
-    private static func hasScheme(_ text: String) -> Bool {
-        guard let colon = text.firstIndex(of: ":"), let first = text.first, first.isASCII, first.isLetter else {
-            return false
-        }
-        return text[text.index(after: text.startIndex) ..< colon]
-            .allSatisfy {
-                $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "+" || $0 == "." || $0 == "-")
-            }
-    }
-
     private static func fromURL(_ text: String) -> (code: String, state: String?)? {
         guard let url = URLComponents(string: text), url.scheme?.lowercased() == "https",
             url.host?.lowercased() == "platform.claude.com", url.port == nil || url.port == 443,
@@ -76,14 +66,11 @@ public enum ClaudeOAuth {
         var fragment = URLComponents()
         fragment.percentEncodedQuery = url.percentEncodedFragment
         let items = (url.queryItems ?? []) + (fragment.queryItems ?? [])
-        func values(_ name: String) -> [String] { items.filter { $0.name == name }.map { $0.value ?? "" } }
-        let codes = values("code")
-        let states = values("state")
-        guard codes.count == 1, states.count <= 1, values("error").isEmpty,
-            isToken(codes[0][...], length: 10 ... 200)
+        guard let picked = PastedAuthorization.codeAndState(in: items),
+            isToken(picked.code[...], length: 10 ... 200)
         else { return nil }
-        if let state = states.first, !isToken(state[...], length: 1 ... 200) { return nil }
-        return (codes[0], states.first)
+        if let state = picked.state, !isToken(state[...], length: 1 ... 200) { return nil }
+        return picked
     }
 
     /// Exactly one maximal run of token characters and `#` that is `code#state`, or one bare code.

@@ -55,8 +55,7 @@ public enum CodexOAuth {
     /// The token is not verified: it is read only for the routing claim, from a token the server has just issued over TLS,
     /// and never to decide trust.
     public static func accountID(inAccessToken token: String) -> String? {
-        let parts = token.split(separator: ".", omittingEmptySubsequences: false)
-        guard parts.count == 3, let bytes = Base64URL.decode(String(parts[1])),
+        guard let bytes = JWTPayload.bytes(of: token),
             let claims = try? AemiJSON.JSONDecoder().decode(Claims.self, from: bytes),
             let id = claims.auth?.accountID,
             PlainToken.matches(id, length: 1 ... 128, extra: "._-")

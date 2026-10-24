@@ -34,9 +34,9 @@ public enum ClaudeToken {
         guard let token = try? AemiJSON.JSONDecoder().decode(TokenBody.self, from: body), token.isSound else {
             throw .invalidResponse
         }
-        let margin = Swift.min(300, token.expiresIn / 10)
         return ClaudeCredentials(
-            accessToken: token.accessToken, refreshToken: token.refreshToken, expiresAt: now + token.expiresIn - margin,
+            accessToken: token.accessToken, refreshToken: token.refreshToken,
+            expiresAt: TokenSanity.renewal(from: now, lifetime: token.expiresIn),
             refreshExpiresAt: token.refreshTokenExpiresIn.map { now + $0 }, accountEmail: token.account?.emailAddress,
             organizationName: token.organization?.name, scopes: token.scope)
     }
@@ -76,12 +76,8 @@ public enum ClaudeToken {
         /// The checks the working implementation applies: bearer tokens of sane size without whitespace, and
         /// positive, finite lifetimes that fit a date.
         var isSound: Bool {
-            func validToken(_ value: String) -> Bool {
-                !value.isEmpty && value.utf16.count <= 16_384 && !value.contains(where: \.isWhitespace)
-            }
-            func validLifetime(_ seconds: Double) -> Bool { seconds > 0 && seconds.isFinite && seconds <= 8.64e12 }
-            return validToken(accessToken) && validToken(refreshToken) && tokenType.lowercased() == "bearer"
-                && validLifetime(expiresIn) && (refreshTokenExpiresIn.map(validLifetime) ?? true)
+            TokenSanity.isToken(accessToken) && TokenSanity.isToken(refreshToken) && tokenType.lowercased() == "bearer"
+                && TokenSanity.isLifetime(expiresIn) && (refreshTokenExpiresIn.map(TokenSanity.isLifetime) ?? true)
         }
     }
 }
