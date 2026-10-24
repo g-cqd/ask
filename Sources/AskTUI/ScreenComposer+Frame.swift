@@ -7,7 +7,8 @@ public import TerminalKitRender
 extension ScreenComposer: FrameComposer {
     public mutating func compose(_ state: ScreenState, into pipeline: RenderPipeline) {
         let cursor = compose(state, into: &pipeline.buffer)
-        (pipeline.cursorRow, pipeline.cursorCol) = (cursor.row, cursor.column)
+        // A cursor that is not on screen is hidden, not drawn somewhere it is not.
+        (pipeline.cursorRow, pipeline.cursorCol) = cursorIsVisible ? (cursor.row, cursor.column) : (nil, nil)
         pipeline.scrollRegion = 0 ..< transcriptRows
     }
 }
