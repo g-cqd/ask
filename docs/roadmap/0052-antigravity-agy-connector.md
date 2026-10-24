@@ -35,6 +35,13 @@ before the URL is shown and kept with the credentials, the paste is validated, a
 killed. **A real sign-in has been done** with the owner's account (userinfo, tokeninfo and a refresh checked; Google does not rotate the
 refresh token).
 
+## Done (2026-10-24, ADR-0080, diary 2026-10-24-29)
+
+Probed live with the owner's account and **ask's own identity**: onboarding (`loadCodeAssist`), the model list, and streaming on Gemini 3,
+Claude and GPT-OSS all work without the first-party `antigravity/cli/` claim (the open identity question is closed in ask's favour; what it
+costs in catalog size is unmeasured). The reported thought-signature rule is **confirmed live** for Gemini 3 (missing: 400; sentinel: 200),
+and a tool result must carry the call's id for Claude and GPT-OSS. Nothing is built from this yet.
+
 ## Still owed, in order
 
 1. **Access for requests**: refresh when expiring (rediscover the secret on `invalid_client`; a lock is optional since the refresh token is
@@ -48,7 +55,7 @@ refresh token).
 
 Nothing past the secret is known to work.
 
-## Thought signatures for the inference step (reported 2026-10-24, not yet probed)
+## Thought signatures for the inference step (reported 2026-10-24; points 1 and 3 confirmed live, see ADR-0080)
 
 From the pi-integrations fix `704928a` (`src/domains/agy/thought-signature.ts`; tests `test/agy/stream.test.ts`: "Gemini 3 function call
 without a usable signature…", "a real signature…", "models that are not Gemini 3…"), read, not run. Each line is a claim to probe with a
