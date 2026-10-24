@@ -99,19 +99,7 @@ public struct ScreenComposer: Sendable {
         let end = Swift.max(0, flat.count - state.scrollback)
         let start = Swift.max(0, end - transcriptRows)
         let visible = flat[start ..< end]
-        var map = RowMap<Int>()
-        map.reset(rowCount: rows)
-        for row in 0 ..< transcriptRows {
-            let index = row - (transcriptRows - visible.count)
-            let line = index >= 0 ? visible[visible.startIndex + index] : Line(text: "", style: .default)
-            if let source = line.source {
-                map.set(
-                    row: row,
-                    to: RowProvenance(
-                        block: source.block, ordinal: source.block, line: source.line, firstOffset: source.offset,
-                        col: source.col, text: source.text))
-            }
-        }
+        let map = Self.provenance(of: visible, rows: rows, transcriptRows: transcriptRows)
         var highlights = [Range<Int>?](repeating: nil, count: transcriptRows)
         if let selection = state.selection {
             for span in map.highlights(of: selection, in: TranscriptContent(blocks: hardLines))
@@ -128,7 +116,9 @@ public struct ScreenComposer: Sendable {
             .store(
                 FrameGeometry(
                     rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count,
-                    scrollback: state.scrollback, statusRow: transcriptRows + panel.count, runnerColumns: status.runners
+                    scrollback: state.scrollback, statusRow: transcriptRows + panel.count,
+                    runnerColumns: status.runners,
+                    promptRow: rows - promptRows, promptRows: promptRows, promptTop: editor.top, prompt: editor.layout
                 )
                 .withPicker(state: state, firstRow: transcriptRows + panel.count + statusRows + 1, rows: pickerRows)
             )
@@ -136,6 +126,22 @@ public struct ScreenComposer: Sendable {
         return writeBottom(
             panel: panel, status: statusRows > 0 ? status.line : nil, picker: pickerLines, editor: editor,
             from: transcriptRows, into: &buffer)
+    }
+
+    /// Which content each transcript row shows, for mapping a cell back to the conversation.
+    private static func provenance(of visible: ArraySlice<Line>, rows: Int, transcriptRows: Int) -> RowMap<Int> {
+        var map = RowMap<Int>()
+        map.reset(rowCount: rows)
+        for row in 0 ..< transcriptRows {
+            let index = row - (transcriptRows - visible.count)
+            guard index >= 0, let source = visible[visible.startIndex + index].source else { continue }
+            map.set(
+                row: row,
+                to: RowProvenance(
+                    block: source.block, ordinal: source.block, line: source.line, firstOffset: source.offset,
+                    col: source.col, text: source.text))
+        }
+        return map
     }
 
     // MARK: - Lines
