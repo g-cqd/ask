@@ -24,7 +24,7 @@ extension ScreenController {
                 Self.promptTarget,
                 at: CellRect(row: frame.promptRow, col: 0, rows: frame.promptRows, cols: frame.columns))
         }
-        if frame.runnerColumns != nil {
+        if frame.runnerColumns != nil || frame.belowColumns != nil {
             regions.add(Self.statusTarget, at: CellRect(row: frame.statusRow, col: 0, rows: 1, cols: frame.columns))
         }
         if !frame.pickerWindow.isEmpty {
@@ -75,6 +75,10 @@ extension ScreenController {
                 return []
             // Any count: a second click inside the double-click time is the user closing what the first opened, not selecting a word.
             case .click(let target, let cell, .left, _, _) where target == Self.statusTarget:
+                if frame.belowColumns?.contains(cell.col) == true {
+                    state.scrollback = 0
+                    return []
+                }
                 guard frame.runnerColumns?.contains(cell.col) == true else { return [] }
                 return toggleRunners()
             case .click(let target, let cell, .left, _, _) where target == Self.promptTarget:
