@@ -28,7 +28,7 @@ The client secret is found in the user's installed `agy` (1.4.2 and 1.4.6, the s
 18 deliberate faults killed. `agy` was upgraded from 1.4.2 to 1.4.6 with `agy update` (the old binary is kept in
 `~/Library/Caches/ask-mutation/agy/`).
 
-## Done (2026-10-24, ADR-0068, diary 2026-10-24-17)
+## Done (2026-10-24, ADR-0074, diary 2026-10-24-23)
 
 `ask login agy` and `ask logout agy` exist, for the default account: the authorize URL equals the shipped CLI's, the secret is confirmed
 before the URL is shown and kept with the credentials, the paste is validated, and a fake code gets Google's real refusal. 42 faults

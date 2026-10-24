@@ -3,13 +3,13 @@ status: accepted
 date: 2026-10-24
 ---
 
-# 0068 — The Antigravity sign-in confirms the secret first and keeps it with the credentials
+# 0074 — The Antigravity sign-in confirms the secret first and keeps it with the credentials
 
 ## Context
 
-ADR-0066 settled where the client secret comes from. Left open: how the sign-in uses it, where it lives between a sign-in and a
+ADR-0072 settled where the client secret comes from. Left open: how the sign-in uses it, where it lives between a sign-in and a
 refresh, and what the sign-in is allowed to be before there is any inference. No account is needed to probe most of this (diary
-2026-10-24-17); the one step that does (a real code for a real account) needs the owner's browser and has not run.
+2026-10-24-23); the one step that does (a real code for a real account) needs the owner's browser and has not run.
 
 ## The probes
 
@@ -48,5 +48,5 @@ refresh, and what the sign-in is allowed to be before there is any inference. No
 - The credential file now holds an application secret next to tokens. Google's own installed-application guidance, as the owner
   states it, treats it as not secret; the file is owner-only regardless.
 - Google may or may not rotate refresh tokens; that is unknown until a real refresh runs, and decides whether Antigravity's
-  refresh needs the lock Claude's and Codex's have (ADR-0067). Plan for the lock.
+  refresh needs the lock Claude's and Codex's have (ADR-0073). Plan for the lock.
 - Not covered: a real sign-in end to end, the refresh, onboarding, the model list, streaming, and the client-identity question.
