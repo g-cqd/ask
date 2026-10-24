@@ -14,6 +14,8 @@ struct FrameGeometry: Sendable {
     /// The status line's row, and the columns its runner count covers, so a click on the count opens the list.
     var statusRow = 0
     var runnerColumns: Range<Int>?
+    /// The columns of "N lines below" in the status line, when it is there, so a click on it goes to the end.
+    var belowColumns: Range<Int>?
     /// The picker's matches as drawn: the row of the first, which matches they are, and the word they were for, so a click on a row
     /// means the match the user saw, and means nothing if the list has since moved on.
     var pickerFirstRow = 0

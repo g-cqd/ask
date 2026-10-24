@@ -2,12 +2,21 @@ internal import TerminalKitStyle
 internal import TerminalKitText
 
 extension ScreenComposer {
-    /// The status line and where its runner count sits, for a click. Clipping takes the first cells on narrow terminals; selection
-    /// and copy instructions still precede usage details.
-    static func status(for state: ScreenState, input: String = "") -> (line: Line, runners: Range<Int>?) {
+    /// The status line and where its clickable parts sit. Clipping takes the first cells on narrow terminals; the lines below the reader
+    /// and the runner count follow the activity, and selection and copy instructions precede usage details.
+    static func status(
+        for state: ScreenState, input: String = ""
+    ) -> (line: Line, runners: Range<Int>?, below: Range<Int>?) {
         let activity = state.running ? "\(state.label) · working… (esc to abort)" : "\(state.label) · ready"
         var status = input.isEmpty ? activity : input + " · " + activity
         var runners: Range<Int>?
+        var below: Range<Int>?
+        if state.scrollback > 0 {
+            let start = UnicodeWidth.displayWidth(of: status + " · ")
+            let segment = "\(state.scrollback) \(state.scrollback == 1 ? "line" : "lines") below"
+            status += " · " + segment
+            below = start ..< start + UnicodeWidth.displayWidth(of: segment)
+        }
         if !state.runners.isEmpty {
             let count = state.runners.count
             let start = UnicodeWidth.displayWidth(of: status + " · ")
@@ -22,7 +31,7 @@ extension ScreenComposer {
             status += " · " + state.nativeSelectionHint
         }
         if !state.detail.isEmpty { status += " · " + state.detail }
-        return (Line(text: status, style: Style(dim: true)), runners)
+        return (Line(text: status, style: Style(dim: true)), runners, below)
     }
 
     /// The rows of the open runner list: one per runner, then how many more did not fit. Empty when it is closed.
