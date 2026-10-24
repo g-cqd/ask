@@ -1,0 +1,330 @@
+{
+ "agentModelSorts": [
+  {
+   "displayName": "Recommended",
+   "groups": [
+    {
+     "modelIds": [
+      "claude-opus-5-5-low",
+      "claude-opus-5-5-medium",
+      "claude-opus-5-5-high",
+      "claude-sonnet-5-5-low",
+      "claude-sonnet-5-5-medium",
+      "claude-sonnet-5-5-high",
+      "gpt-oss-120b-medium"
+     ]
+    }
+   ]
+  }
+ ],
+ "audioTranscriptionModelIds": [
+  "models/proactive-observer-v10"
+ ],
+ "commandModelIds": [
+  "gemini-3-flash"
+ ],
+ "commitMessageModelIds": [
+  "gemini-3.5-flash-lite"
+ ],
+ "defaultAgentModelId": "claude-opus-5-5-low",
+ "imageGenerationModelIds": [
+  "gemini-3.1-flash-image"
+ ],
+ "models": {
+  "chat_20706": {
+   "addCursorToFindReplaceTarget": true,
+   "apiProvider": "API_PROVIDER_INTERNAL",
+   "isInternal": true,
+   "maxTokens": 16384,
+   "model": "MODEL_CHAT_20706",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "promptTemplaterType": "PROMPT_TEMPLATER_TYPE_CHATML",
+   "requiresLeadInGeneration": true,
+   "supportsCumulativeContext": true,
+   "supportsEstimateTokenCounter": true,
+   "tabJumpPrintLineRange": true,
+   "toolFormatterType": "TOOL_FORMATTER_TYPE_XML"
+  },
+  "chat_23310": {
+   "apiProvider": "API_PROVIDER_INTERNAL",
+   "isInternal": true,
+   "maxTokens": 32768,
+   "model": "MODEL_CHAT_23310",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "promptTemplaterType": "PROMPT_TEMPLATER_TYPE_CHATML",
+   "requiresLeadInGeneration": true,
+   "supportsCumulativeContext": true,
+   "supportsEstimateTokenCounter": true,
+   "toolFormatterType": "TOOL_FORMATTER_TYPE_XML"
+  },
+  "claude-opus-5-5-high": {
+   "apiProvider": "API_PROVIDER_ANTHROPIC_VERTEX",
+   "displayName": "Claude Opus 5.5 (High)",
+   "maxOutputTokens": 128000,
+   "maxTokens": 1000000,
+   "model": "MODEL_PLACEHOLDER_M402",
+   "modelProvider": "MODEL_PROVIDER_ANTHROPIC",
+   "recommended": true,
+   "supportsAdaptiveThinking": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "tagTitle": "New",
+   "thinkingLevel": 3,
+   "vertexModelId": "claude-opus-5-5@default"
+  },
+  "claude-opus-5-5-low": {
+   "apiProvider": "API_PROVIDER_ANTHROPIC_VERTEX",
+   "displayName": "Claude Opus 5.5 (Low)",
+   "maxOutputTokens": 128000,
+   "maxTokens": 1000000,
+   "model": "MODEL_PLACEHOLDER_M400",
+   "modelProvider": "MODEL_PROVIDER_ANTHROPIC",
+   "recommended": true,
+   "supportsAdaptiveThinking": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "tagTitle": "New",
+   "thinkingLevel": 1,
+   "vertexModelId": "claude-opus-5-5@default"
+  },
+  "claude-opus-5-5-medium": {
+   "apiProvider": "API_PROVIDER_ANTHROPIC_VERTEX",
+   "displayName": "Claude Opus 5.5 (Medium)",
+   "maxOutputTokens": 128000,
+   "maxTokens": 1000000,
+   "model": "MODEL_PLACEHOLDER_M401",
+   "modelProvider": "MODEL_PROVIDER_ANTHROPIC",
+   "recommended": true,
+   "supportsAdaptiveThinking": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "tagTitle": "New",
+   "thinkingLevel": 2,
+   "vertexModelId": "claude-opus-5-5@default"
+  },
+  "claude-sonnet-5-5-high": {
+   "apiProvider": "API_PROVIDER_ANTHROPIC_VERTEX",
+   "displayName": "Claude Sonnet 5.5 (High)",
+   "maxOutputTokens": 128000,
+   "maxTokens": 1000000,
+   "model": "MODEL_PLACEHOLDER_M405",
+   "modelProvider": "MODEL_PROVIDER_ANTHROPIC",
+   "recommended": true,
+   "supportsAdaptiveThinking": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "tagTitle": "New",
+   "thinkingLevel": 3,
+   "vertexModelId": "claude-sonnet-5-5@default"
+  },
+  "claude-sonnet-5-5-low": {
+   "apiProvider": "API_PROVIDER_ANTHROPIC_VERTEX",
+   "displayName": "Claude Sonnet 5.5 (Low)",
+   "maxOutputTokens": 128000,
+   "maxTokens": 1000000,
+   "model": "MODEL_PLACEHOLDER_M403",
+   "modelProvider": "MODEL_PROVIDER_ANTHROPIC",
+   "recommended": true,
+   "supportsAdaptiveThinking": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "tagTitle": "New",
+   "thinkingLevel": 1,
+   "vertexModelId": "claude-sonnet-5-5@default"
+  },
+  "claude-sonnet-5-5-medium": {
+   "apiProvider": "API_PROVIDER_ANTHROPIC_VERTEX",
+   "displayName": "Claude Sonnet 5.5 (Medium)",
+   "maxOutputTokens": 128000,
+   "maxTokens": 1000000,
+   "model": "MODEL_PLACEHOLDER_M404",
+   "modelProvider": "MODEL_PROVIDER_ANTHROPIC",
+   "recommended": true,
+   "supportsAdaptiveThinking": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "tagTitle": "New",
+   "thinkingLevel": 2,
+   "vertexModelId": "claude-sonnet-5-5@default"
+  },
+  "gemini-2.5-flash": {
+   "apiProvider": "API_PROVIDER_GOOGLE_GEMINI",
+   "displayName": "Gemini 3.5 Flash Lite",
+   "maxOutputTokens": 65535,
+   "maxTokens": 1048576,
+   "minThinkingBudget": 128,
+   "model": "MODEL_GOOGLE_GEMINI_2_5_FLASH",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "recommended": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "supportsVideo": true,
+   "thinkingLevel": 1
+  },
+  "gemini-2.5-flash-lite": {
+   "apiProvider": "API_PROVIDER_GOOGLE_GEMINI",
+   "displayName": "Gemini 3.5 Flash Lite",
+   "maxOutputTokens": 65535,
+   "maxTokens": 1048576,
+   "minThinkingBudget": 128,
+   "model": "MODEL_GOOGLE_GEMINI_2_5_FLASH_LITE",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "recommended": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "supportsVideo": true,
+   "thinkingLevel": 1
+  },
+  "gemini-2.5-flash-thinking": {
+   "apiProvider": "API_PROVIDER_GOOGLE_GEMINI",
+   "displayName": "Gemini 3.5 Flash Lite",
+   "maxOutputTokens": 65535,
+   "maxTokens": 1048576,
+   "minThinkingBudget": 128,
+   "model": "MODEL_GOOGLE_GEMINI_2_5_FLASH_THINKING",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "recommended": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "supportsVideo": true,
+   "thinkingLevel": 1
+  },
+  "gemini-2.5-pro": {
+   "apiProvider": "API_PROVIDER_GOOGLE_GEMINI",
+   "displayName": "Gemini 2.5 Pro",
+   "maxOutputTokens": 65535,
+   "maxTokens": 1048576,
+   "minThinkingBudget": 128,
+   "model": "MODEL_GOOGLE_GEMINI_2_5_PRO",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "recommended": true,
+   "requiresImageOutputOutsideFunctionResponses": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "thinkingBudget": 1024
+  },
+  "gemini-3-flash": {
+   "apiProvider": "API_PROVIDER_GOOGLE_GEMINI",
+   "displayName": "Gemini 3 Flash",
+   "maxOutputTokens": 65536,
+   "maxTokens": 1048576,
+   "minThinkingBudget": 128,
+   "model": "MODEL_PLACEHOLDER_M18",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "recommended": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "supportsVideo": true,
+   "thinkingBudget": -1
+  },
+  "gemini-3.1-flash-image": {
+   "apiProvider": "API_PROVIDER_GOOGLE_GEMINI",
+   "displayName": "Gemini 3.1 Flash Image",
+   "maxOutputTokens": 65536,
+   "maxTokens": 65536,
+   "model": "MODEL_PLACEHOLDER_M21",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "supportsImages": true
+  },
+  "gemini-3.1-flash-lite": {
+   "apiProvider": "API_PROVIDER_GOOGLE_GEMINI",
+   "displayName": "Gemini 3.1 Flash Lite",
+   "maxOutputTokens": 65535,
+   "maxTokens": 1048576,
+   "minThinkingBudget": 128,
+   "model": "MODEL_PLACEHOLDER_M50",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "recommended": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "supportsVideo": true,
+   "thinkingLevel": 1
+  },
+  "gemini-3.5-flash-lite": {
+   "apiProvider": "API_PROVIDER_GOOGLE_GEMINI",
+   "displayName": "Gemini 3.5 Flash Lite",
+   "maxOutputTokens": 65535,
+   "maxTokens": 1048576,
+   "minThinkingBudget": 128,
+   "model": "MODEL_PLACEHOLDER_M198",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "recommended": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "supportsVideo": true,
+   "thinkingLevel": 1
+  },
+  "gemini-3.8-flash-tiered": {
+   "apiProvider": "API_PROVIDER_GOOGLE_GEMINI",
+   "maxOutputTokens": 65536,
+   "maxTokens": 1048576,
+   "minThinkingBudget": 32,
+   "model": "MODEL_PLACEHOLDER_M322",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "recommended": true,
+   "supportsImages": true,
+   "supportsThinking": true,
+   "supportsVideo": true,
+   "thinkingBudget": -1
+  },
+  "gpt-oss-120b-medium": {
+   "apiProvider": "API_PROVIDER_OPENAI_VERTEX",
+   "displayName": "GPT-OSS 120B (Medium)",
+   "maxOutputTokens": 32768,
+   "maxTokens": 131072,
+   "model": "MODEL_OPENAI_GPT_OSS_120B_MEDIUM",
+   "modelProvider": "MODEL_PROVIDER_OPENAI",
+   "recommended": true,
+   "supportsThinking": true,
+   "tagTitle": "Notice",
+   "thinkingBudget": 8192,
+   "vertexModelId": "openai/gpt-oss-120b-maas"
+  },
+  "tab_flash_lite_preview": {
+   "apiProvider": "API_PROVIDER_GOOGLE_GEMINI",
+   "maxOutputTokens": 4096,
+   "maxTokens": 16384,
+   "model": "MODEL_PLACEHOLDER_M19",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "requiresLeadInGeneration": true,
+   "supportsCumulativeContext": true,
+   "supportsEstimateTokenCounter": true,
+   "toolFormatterType": "TOOL_FORMATTER_TYPE_XML"
+  },
+  "tab_jump_flash_lite_preview": {
+   "addCursorToFindReplaceTarget": true,
+   "apiProvider": "API_PROVIDER_GOOGLE_GEMINI",
+   "maxOutputTokens": 4096,
+   "maxTokens": 16384,
+   "model": "MODEL_PLACEHOLDER_M28",
+   "modelProvider": "MODEL_PROVIDER_GOOGLE",
+   "requiresLeadInGeneration": true,
+   "requiresNoXmlToolExamples": true,
+   "supportsCumulativeContext": true,
+   "supportsEstimateTokenCounter": true,
+   "tabJumpPrintLineRange": true,
+   "toolFormatterType": "TOOL_FORMATTER_TYPE_XML"
+  }
+ },
+ "mqueryModelIds": [
+  "gemini-3.5-flash-lite"
+ ],
+ "tabModelIds": [
+  "chat_20706",
+  "chat_23310"
+ ],
+ "tieredModelIds": {
+  "flash": [
+   "gemini-3.8-flash-tiered"
+  ],
+  "flashLite": [
+   "gemini-3.5-flash-lite"
+  ],
+  "pro": [
+   "gemini-3.8-flash-tiered"
+  ]
+ },
+ "webSearchModelIds": [
+  "gemini-3.5-flash-lite"
+ ]
+}
