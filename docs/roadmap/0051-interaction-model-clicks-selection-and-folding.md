@@ -16,8 +16,8 @@ policy and the meaning of each click are ask's (ADR-0044).
 
 The real transcript now has mouse selection, highlighting, clipboard writes, wheel scrolling and thinking/tool folds. Header clicks
 open individual blocks; Ctrl+T and Ctrl+O change their separate defaults. Six `ui.*` keys configure interaction and bounded input.
-Scripted-provider PTY probes cover live runs, resumed sessions and wrapped-input editing. Images, runner clicks and input
-pointer interactions remain owed.
+Scripted-provider PTY probes cover live runs, resumed sessions and wrapped-input editing. Images and selection
+inside the input remain owed.
 The real screen now follows the prototype's no-leading-icons and terminal-default-background rules (diary 2026-10-22 (2)).
 
 ## What TerminalKit has now (2026-10-22)
@@ -116,7 +116,7 @@ Changed reasoning costs about 2.9 ms for a folded 400-line block; unchanged fram
 
 Copy-on-select off has Ctrl+C; Escape clears first; a click inside selected text cannot open the fold underneath it. The status explains
 these controls, reports copy requests/failures without claiming acknowledgement, and names the terminal's native-selection bypass.
-The real-binary pointer probe now has 20 passing checks. Host pasteboard completion reporting remained owed (edge autoscroll followed; see below).
+The real-binary pointer probe now has 20 passing checks. Host pasteboard completion reporting was owed here and followed (see below).
 
 ## Text-only hierarchy (2026-10-22, diary 2026-10-22 (2))
 
@@ -142,6 +142,21 @@ whose timer is disabled. Real-terminal feel (rate, trackpad) still needs a warne
 A fenced block longer than `ui.codeFoldLines` (default 20, never more than half the screen) starts folded inside its reply as
 `code · swift · 34 lines`. A click on it opens it, a click on the opening fence folds it, Ctrl+G flips every block, and `ui.code` sets
 the start. A selection reads what is shown. **Images** are not started: ask has no image content to draw, so `ui.images` stays refused.
+
+## Runners (2026-10-23, ADR-0066; diary 2026-10-23 (15))
+
+The status line counts running background jobs (`· 2 jobs`); a click on the count or `/tasks` opens a read-only list above it. Subagents
+will use the same `RunnerInfo` seam when roadmap 0027 builds them. Stopping or focusing a runner from the list is not decided.
+
+## Host copy completion (2026-10-23, ADR-0068; diary 2026-10-23 (17))
+
+A copy that goes to the host pasteboard says *pending* until the command exits, then *copied* or *failed* with why; the terminal route stays
+*sent*. The session glue has no end-to-end test (it would overwrite the user's clipboard).
+
+## Input clicks (2026-10-23, ADR-0071; diary 2026-10-23 (20))
+
+A click in the input puts the cursor on the clicked character, by the map the input was drawn with. Selecting inside the input and a
+wheel for its own window are not done.
 
 ## Open questions
 

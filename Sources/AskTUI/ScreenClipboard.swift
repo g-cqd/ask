@@ -1,4 +1,3 @@
-internal import Foundation
 internal import TerminalKitIO
 internal import TerminalKitInput
 
@@ -8,11 +7,11 @@ internal import TerminalKitInput
 struct ScreenClipboard {
     private var writer: ClipboardWriter
     private let connection: any TerminalConnection
-    private let pasteboard: @Sendable (String) -> Void
+    private let pasteboard: @Sendable (String) async -> PasteboardResult
 
     init(
         connection: any TerminalConnection, environment: [String: String],
-        pasteboard: @escaping @Sendable (String) -> Void
+        pasteboard: @escaping @Sendable (String) async -> PasteboardResult
     ) {
         writer = ClipboardWriter(environment: environment)
         self.connection = connection
@@ -24,18 +23,32 @@ struct ScreenClipboard {
         writer.identity.nativeSelectionKey.map { "\($0): native selection" } ?? "native selection: ui.mouse false"
     }
 
-    /// Reports what was requested, not an acknowledgement from the terminal or completion of the host's pasteboard command.
-    @discardableResult
-    mutating func copy(_ text: String) -> String {
+    /// Performs the copy and says what is known now. A terminal write that did not fail is reported as *sent*, never acknowledged: OSC 52
+    /// has no reply. The host pasteboard command is observed: `finished` is called once, later, with what happened to it.
+    /// - Parameters:
+    ///   - text: What to copy.
+    ///   - finished: The final notice and whether it is a failure, for a copy that went to the host pasteboard.
+    /// - Returns: the notice to show at once.
+    mutating func copy(_ text: String, finished: @escaping @Sendable (_ notice: String, _ failed: Bool) -> Void)
+        -> String
+    {
         let plan = writer.plan(copying: text)
         var failure: String?
         if let bytes = plan.terminal {
             do { try connection.write(bytes) } catch { failure = String(describing: error) }
         }
+        let terminal =
+            plan.terminal == nil ? nil : (failure.map { "Terminal copy failed: \($0)" } ?? "Copy sent to terminal")
         if plan.usePasteboard {
-            pasteboard(text)
-            if let failure { return "Terminal copy failed: \(failure); host copy queued" }
-            return plan.terminal == nil ? "Host copy queued" : "Copy sent to terminal; host copy queued"
+            let pasteboard = pasteboard
+            Task {
+                let result = await pasteboard(text)
+                switch result {
+                    case .copied: finished(Self.say(terminal, "copied to host clipboard"), false)
+                    case .failed(let reason): finished(Self.say(terminal, "host copy failed: \(reason)"), true)
+                }
+            }
+            return Self.say(terminal, "host copy pending")
         }
         if let failure { return "Copy failed: \(failure)" }
         switch plan.outcome {
@@ -46,16 +59,8 @@ struct ScreenClipboard {
         }
     }
 
-    /// macOS's pasteboard, through `pbcopy`, off the caller's thread: a copy never waits for it.
-    static let pbcopy: @Sendable (String) -> Void = { text in
-        Task.detached {
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: "/usr/bin/pbcopy")
-            let pipe = Pipe()
-            process.standardInput = pipe
-            guard (try? process.run()) != nil else { return }
-            try? pipe.fileHandleForWriting.write(contentsOf: Data(text.utf8))
-            try? pipe.fileHandleForWriting.close()
-        }
+    /// `terminal; host`, or the host part alone with its first letter capitalised.
+    private static func say(_ terminal: String?, _ host: String) -> String {
+        terminal.map { "\($0); \(host)" } ?? host.prefix(1).uppercased() + host.dropFirst()
     }
 }

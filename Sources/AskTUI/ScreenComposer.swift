@@ -87,7 +87,11 @@ public struct ScreenComposer: Sendable {
         let editor = input.frame(state.editor, columns: columns, screenRows: rows, maximumRows: state.promptRows)
         let promptRows = editor.lines.count
         let statusRows = rows > 1 ? 1 : 0
-        let transcriptRows = rows - promptRows - statusRows
+        let panel = Self.runnerRows(for: state, available: Swift.max(0, rows - promptRows - statusRows - 1))
+        let status = Self.status(for: state, input: editor.indicator)
+        let pickerRows = rows - promptRows - statusRows - panel.count - 1
+        let pickerLines = Self.pickerLines(for: state, columns: columns, rows: pickerRows)
+        let transcriptRows = rows - promptRows - statusRows - panel.count - pickerLines.count
         self.transcriptRows = transcriptRows
 
         updateTranscriptLines(state.transcript, columns: columns)
@@ -95,19 +99,7 @@ public struct ScreenComposer: Sendable {
         let end = Swift.max(0, flat.count - state.scrollback)
         let start = Swift.max(0, end - transcriptRows)
         let visible = flat[start ..< end]
-        var map = RowMap<Int>()
-        map.reset(rowCount: rows)
-        for row in 0 ..< transcriptRows {
-            let index = row - (transcriptRows - visible.count)
-            let line = index >= 0 ? visible[visible.startIndex + index] : Line(text: "", style: .default)
-            if let source = line.source {
-                map.set(
-                    row: row,
-                    to: RowProvenance(
-                        block: source.block, ordinal: source.block, line: source.line, firstOffset: source.offset,
-                        col: source.col, text: source.text))
-            }
-        }
+        let map = Self.provenance(of: visible, rows: rows, transcriptRows: transcriptRows)
         var highlights = [Range<Int>?](repeating: nil, count: transcriptRows)
         if let selection = state.selection {
             for span in map.highlights(of: selection, in: TranscriptContent(blocks: hardLines))
@@ -124,16 +116,32 @@ public struct ScreenComposer: Sendable {
             .store(
                 FrameGeometry(
                     rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count,
-                    scrollback: state.scrollback))
+                    scrollback: state.scrollback, statusRow: transcriptRows + panel.count,
+                    runnerColumns: status.runners,
+                    promptRow: rows - promptRows, promptRows: promptRows, promptTop: editor.top, prompt: editor.layout
+                )
+                .withPicker(state: state, firstRow: transcriptRows + panel.count + statusRows + 1, rows: pickerRows)
+            )
 
-        if statusRows > 0 {
-            write(Self.statusLine(for: state, input: editor.indicator), row: transcriptRows, into: &buffer)
+        return writeBottom(
+            panel: panel, status: statusRows > 0 ? status.line : nil, picker: pickerLines, editor: editor,
+            from: transcriptRows, into: &buffer)
+    }
+
+    /// Which content each transcript row shows, for mapping a cell back to the conversation.
+    private static func provenance(of visible: ArraySlice<Line>, rows: Int, transcriptRows: Int) -> RowMap<Int> {
+        var map = RowMap<Int>()
+        map.reset(rowCount: rows)
+        for row in 0 ..< transcriptRows {
+            let index = row - (transcriptRows - visible.count)
+            guard index >= 0, let source = visible[visible.startIndex + index].source else { continue }
+            map.set(
+                row: row,
+                to: RowProvenance(
+                    block: source.block, ordinal: source.block, line: source.line, firstOffset: source.offset,
+                    col: source.col, text: source.text))
         }
-        let promptStart = transcriptRows + statusRows
-        for offset in 0 ..< promptRows {
-            write(Line(text: editor.lines[offset], style: .default), row: promptStart + offset, into: &buffer)
-        }
-        return (promptStart + editor.cursor.row, editor.cursor.column)
+        return map
     }
 
     // MARK: - Lines
@@ -201,7 +209,7 @@ public struct ScreenComposer: Sendable {
     }
 
     /// Writes a whole row, the text then blanks to the edge, unless the row already holds exactly this.
-    private mutating func write(
+    mutating func write(
         _ line: Line, highlight: Range<Int>? = nil, row: Int, into buffer: inout ScreenBuffer
     ) {
         let now = Shown(text: line.text, style: line.style, highlight: highlight)
