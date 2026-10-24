@@ -16,8 +16,22 @@ public struct ScreenState: Sendable, Equatable {
     public var exitRequest: ScreenExit?
     /// Shown at the right of the status line, such as token usage; empty for none.
     public var detail = ""
+    /// What is running beside the conversation, newest list from the composition root.
+    public var runners: [RunnerInfo] = []
+    /// Whether the list of `runners` is open above the status line. It closes by itself when nothing is running.
+    public var runnersOpen = false
     /// A question waiting for y, a or n: while it waits, those keys answer it and nothing is typed.
     public var pendingApproval: PendingApproval?
+    /// The project's files for the `@` picker; nil until the first listing arrives (roadmap 0048).
+    var files: ProjectFiles?
+    /// When ``files`` arrived, so a listing that has aged is asked for again.
+    var filesLoadedAt: ContinuousClock.Instant?
+    /// Whether a listing was asked for and has not arrived.
+    var filesLoading = false
+    /// The picker for the word under the cursor: commands for a slash that starts the draft, files for an `@`; nil otherwise.
+    var picker: CompletionPicker?
+    /// Where the word the user closed the picker on starts. It stays closed until the cursor leaves that word.
+    var pickerDismissedAt: Int?
     /// How many wrapped lines the transcript is scrolled up from the bottom.
     public var scrollback = 0
     /// What the user has selected with the pointer, anchored in the conversation so it survives scrolling and streaming.

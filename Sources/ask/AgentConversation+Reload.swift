@@ -6,14 +6,30 @@ internal import Synchronization
 
 /// Reloading ask into a newer build of itself (ADR-0033).
 extension AgentConversation {
-    /// Tells the screen, once, that a new executable appeared beside the running one.
+    /// What the screen is told while it is open: which background jobs are running, whenever that changes, and, once, that a new
+    /// executable appeared beside the running one.
     func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>? {
-        guard let startup else { return nil }
+        let startup = startup
+        let jobs = jobs
         return Task {
-            // The first event is "a build appeared", not "a build is finished": /reload's self-check decides that.
-            for await _ in BinaryWatcher.changes(since: startup) {
-                update(.notice("A new ask binary appeared. /reload checks it and switches to it.", isError: false))
-                break
+            await withTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    for await list in jobs.changes() {
+                        update(.runners(list.map { RunnerInfo(name: $0.id, detail: $0.command) }))
+                    }
+                }
+                if let startup {
+                    group.addTask {
+                        // The first event is "a build appeared", not "a build is finished": /reload's self-check decides that.
+                        for await _ in BinaryWatcher.changes(since: startup) {
+                            update(
+                                .notice(
+                                    "A new ask binary appeared. /reload checks it and switches to it.", isError: false))
+                            break
+                        }
+                    }
+                }
+                await group.waitForAll()
             }
         }
     }

@@ -29,7 +29,16 @@ someone remembered a different command. See [Building](#building).
 
 ## The screen
 
-Type `/help` for the command list.
+Type `/` at the start of a prompt to see the commands, narrowed as you type. Up and Down choose, **Enter or Tab inserts the
+choice without sending it** (a second Enter runs it), and Esc closes the list and keeps what you typed. A click on a row does what Enter does
+([ADR-0070](docs/adr/0070-a-click-on-a-picker-row-is-the-choice-and-enter-in-one-gesture.md)). A command typed in full runs on
+Enter as before, and a path such as `/etc/hosts` is still a prompt
+([ADR-0067](docs/adr/0067-the-command-picker-is-derived-from-the-draft-and-inserts-without-sending.md)). `/help` lists them too.
+
+Type `@` at the start of a word to point at a file: the project's files are listed (git's own list, so `.gitignore` applies, and only
+what the sandbox lets ask read), narrowed as you type, with the same keys. **Enter or Tab inserts `@path`** and nothing is sent or
+attached; add `:12-30` for a line range. The model reads the file itself, under the sandbox
+([ADR-0069](docs/adr/0069-the-file-picker-inserts-a-path-and-lists-only-what-ask-may-read.md)).
 
 | Command | |
 |---|---|
@@ -74,6 +83,10 @@ in `config.json` to change the requested limit, for example
 Long output folds to one line you can open: click the line (or press Ctrl-T for thinking, Ctrl-O for tool output, Ctrl-G for code
 blocks longer than 20 lines, never more than half the screen) and it opens in place. `ui.thinking`, `ui.tools` and `ui.code` choose
 `"folded"` or `"open"` at the start; `ui.codeFoldLines` sets the length. A selection copies what is shown.
+
+A click in the input puts the cursor there.
+
+Background jobs are counted in the status line (`· 2 jobs`). Click the count, or type `/tasks`, to list what is running.
 
 ## Sandbox
 

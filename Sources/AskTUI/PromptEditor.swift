@@ -65,11 +65,30 @@ public struct PromptEditor: Sendable, Equatable {
         return .edited
     }
 
+    /// Puts the cursor at a character offset, as a click does. What the last Up or Down remembered is forgotten.
+    public mutating func place(cursor offset: Int) {
+        goalColumn = nil
+        goalWidth = nil
+        move(to: offset)
+    }
+
     /// Inserts pasted text at the cursor, keeping its line breaks (every kind becomes `\n`).
     public mutating func paste(_ pasted: String) {
         goalColumn = nil
         goalWidth = nil
         insert(pasted.replacing("\r\n", with: "\n").replacing("\r", with: "\n"))
+    }
+
+    /// Puts `replacement` where the characters in `range` were, and a space after it unless one already follows, with the cursor
+    /// after that space. How a picker's choice gets into the draft.
+    mutating func replace(_ range: Range<Int>, with replacement: String) {
+        goalColumn = nil
+        goalWidth = nil
+        let lower = index(range.lowerBound)
+        let upper = index(Swift.min(range.upperBound, text.count))
+        let spaceFollows = upper < text.endIndex && text[upper] == " "
+        text.replaceSubrange(lower ..< upper, with: spaceFollows ? replacement : replacement + " ")
+        cursor = range.lowerBound + replacement.count + 1
     }
 
     /// Returns unsent input to the editor without flattening its message boundaries.
