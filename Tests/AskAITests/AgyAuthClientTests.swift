@@ -3,7 +3,7 @@ internal import Testing
 
 @testable import AskAI
 
-/// Completing a sign-in and refreshing it against Google's token endpoint, with the secret already confirmed (ADR-0066).
+/// Completing a sign-in and refreshing it against Google's token endpoint, with the secret already confirmed (ADR-0072).
 struct AgyAuthClientTests {
     private static let secret = "GOCSPX-" + String(repeating: "s", count: 28)
     private static let code = "4/0AeaYSHDqabcdefghij"
