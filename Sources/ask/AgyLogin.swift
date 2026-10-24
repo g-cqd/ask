@@ -1,7 +1,7 @@
 internal import AskAI
 internal import Foundation
 
-/// `ask login agy`: the Antigravity sign-in, for the user's own Google account (ADR-0066).
+/// `ask login agy`: the Antigravity sign-in, for the user's own Google account (ADR-0072).
 ///
 /// The application's client secret is found in the installed `agy` and confirmed with Google before any URL is shown, so nobody
 /// is asked to sign in only to be refused afterwards. The secret is never printed.
