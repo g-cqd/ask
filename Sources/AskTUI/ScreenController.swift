@@ -14,6 +14,8 @@ public struct ScreenController: Sendable {
         /// Put this text on the clipboard.
         case copy(String)
         case answerApproval(id: Int, ApprovalChoice)
+        /// List the project's files for the `@` picker; the answer is ``ConversationUpdate/files(_:)``.
+        case indexFiles
         case quit
     }
 
@@ -21,6 +23,8 @@ public struct ScreenController: Sendable {
     /// The commands the screen answers itself (`/help`, `/quit`) and those the conversation runs.
     let commands: [SlashCommand]
     var pending: [Pending] = []
+    /// The screen's height as of the last key, which sizes the picker when a file listing arrives between keys.
+    var pickerScreenRows = 0
     var nextPromptID = 0
     var acceptsInput = false
     var returningInput = false
@@ -58,9 +62,11 @@ public struct ScreenController: Sendable {
     public mutating func handle(
         _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant = .now, columns: Int? = nil
     ) -> [Effect] {
-        let effects = route(event, pageRows: pageRows, at: now, columns: columns)
+        var effects = route(event, pageRows: pageRows, at: now, columns: columns)
         switch event {
-            case .key, .paste: refreshPicker(screenRows: pageRows + 3)
+            case .key, .paste:
+                pickerScreenRows = pageRows + 3
+                effects += refreshPicker(screenRows: pickerScreenRows, at: now)
             default: break
         }
         return effects
@@ -113,6 +119,7 @@ public struct ScreenController: Sendable {
             case .label(let text): state.label = text
             case .status(let text): state.detail = text
             case .runners(let list): setRunners(list)
+            case .files(let list): return receive(files: list)
             case .promptAccepted(let id, let text):
                 pending.removeAll { $0.id == id }
                 state.transcript.addUser(text)

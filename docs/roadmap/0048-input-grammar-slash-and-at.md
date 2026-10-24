@@ -127,7 +127,15 @@ Decided differently from the prototype's letter, for the owner to overrule (ADR-
 Enter still runs it, instead of costing a second Enter; and a command is offered only as the first word, because that is where
 `SlashInput` makes it run.
 
-**Still owed:** `@` (files first, then agents and sessions), skills in the `/` list (which is where the mid-prompt `/` and the `SKILL` and
-`PROJECT` labels return), a detail pane, clicking a row, and promoting the trigger and ranking to TerminalKit once `@` is a second
-consumer. Agent and session addressing still need the transport ADR below before any code. The rules in "Done when" that need things
+## The `@` file picker (2026-10-23, ADR-0069, diary 2026-10-23 (18))
+
+Built: `@` at the start of a word lists the project's files (git's list, or a bounded walk outside git, filtered through the sandbox's
+read policy; a file ask may not read is counted in the title and never named), ranked path prefix, name prefix, name contains, path
+contains. It is the `/` picker with different rows: **Enter and Tab insert `@path ` and never send**, a `:12-30` after the path is kept,
+a name with whitespace is inserted quoted, and a path typed in full closes the list. The listing is made off the input path and asked
+for again once it is ten seconds old. **Not built, and not decided by this:** attaching the file at send time (the "resolved at send
+time" above), which would change the agent loop and the closed session payload.
+
+**Still owed:** `@` for agents and sessions, skills in the `/` list (which is where the mid-prompt `/` and the `SKILL` and
+`PROJECT` labels return), a detail pane, clicking a row, and promoting the trigger and ranking to TerminalKit (`@` is now the second consumer). Agent and session addressing still need the transport ADR below before any code. The rules in "Done when" that need things
 that do not exist yet (a skill grants nothing; a dead session is refused; an agent's message arrives untrusted) are not testable yet.

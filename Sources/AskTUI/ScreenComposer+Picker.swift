@@ -18,7 +18,12 @@ extension ScreenComposer {
     /// - Returns: the title row and the matches in view, or nothing when there is no room.
     static func pickerLines(_ picker: CompletionPicker, columns: Int, rows: Int) -> [Line] {
         let shown = Swift.min(picker.visible.count, rows - 1)
-        guard columns > 0, shown >= 1 else { return [] }
+        guard columns > 0, rows >= 1 else { return [] }
+        // Nothing to choose yet, because the files are still being listed: the title alone says so.
+        if picker.matches.isEmpty {
+            return [Line(text: title(for: picker, shown: 0, columns: columns), style: Style(dim: true))]
+        }
+        guard shown >= 1 else { return [] }
         let start = Swift.min(Swift.max(picker.firstVisible, picker.selected - shown + 1), picker.selected)
         let window = picker.matches[start ..< Swift.min(picker.matches.count, start + shown)]
         let labels = window.map(\.label)
@@ -40,12 +45,16 @@ extension ScreenComposer {
     /// What the list is, how far down it the choice is when it does not all fit, and the keys, as many as the width has room for.
     private static func title(for picker: CompletionPicker, shown: Int, columns: Int) -> String {
         let name = picker.kind.title
-        let position = picker.matches.count > shown ? " \(picker.selected + 1) of \(picker.matches.count)" : ""
-        let options = [
-            "\(name)\(position) · Enter or Tab inserts · Esc closes",
-            "\(name)\(position) · Enter inserts · Esc closes",
-            "\(name)\(position)", name
-        ]
+        let position =
+            picker.matches.count > shown && shown > 0 ? " \(picker.selected + 1) of \(picker.matches.count)" : ""
+        let heading = name + position + (picker.caption.isEmpty ? "" : " · " + picker.caption)
+        let options =
+            picker.matches.isEmpty
+            ? [heading, name]
+            : [
+                heading + " · Enter or Tab inserts · Esc closes", heading + " · Enter inserts · Esc closes", heading,
+                name + position, name
+            ]
         return clipped(options.first { UnicodeWidth.displayWidth(of: $0) <= columns } ?? name, to: columns)
     }
 
