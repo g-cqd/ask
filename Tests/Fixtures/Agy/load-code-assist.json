@@ -1,0 +1,22 @@
+{
+ "allowedTiers": [
+  {
+   "id": "free-tier",
+   "name": "Antigravity"
+  },
+  {
+   "id": "standard-tier",
+   "name": "Antigravity"
+  }
+ ],
+ "cloudaicompanionProject": "ask-test-project-1",
+ "currentTier": {
+  "id": "free-tier",
+  "name": "Antigravity"
+ },
+ "gcpManaged": false,
+ "paidTier": {
+  "id": "g1-pro-tier",
+  "name": "Google AI Pro"
+ }
+}

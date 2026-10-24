@@ -42,12 +42,18 @@ Claude and GPT-OSS all work without the first-party `antigravity/cli/` claim (th
 costs in catalog size is unmeasured). The reported thought-signature rule is **confirmed live** for Gemini 3 (missing: 400; sentinel: 200),
 and a tool result must carry the call's id for Claude and GPT-OSS. Nothing is built from this yet.
 
+## Done (2026-10-24, ADR-0087, diary 2026-10-24-41)
+
+Onboarding and the model list: `AgyCloudClient.account` (project and tiers) and `.models` (a conservative chat filter over a list that
+marks none; the server's default reported when listed), against a fixture reduced from a live body, 34 faults killed. Not wired to
+`ask models` or a cache, and no request is streamed yet.
+
 ## Still owed, in order
 
 1. **Access for requests**: refresh when expiring (rediscover the secret on `invalid_client`; a lock is optional since the refresh token is
    not rotated) and named connections (ADR-0048), which come with a provider implementation.
-2. **Onboarding** (`loadCodeAssist`: project and tier), the **model list** (`fetchAvailableModels`, ADR-0037), and the **streaming
-   protocol** (`streamGenerateContent`), each probed with a signed-in account before any code relies on it.
+2. ~~Onboarding and the model list~~ done above. The **streaming protocol** (`streamGenerateContent`) remains, probed with a signed-in
+   account before any code relies on it (ADR-0080 holds the first probes).
 3. **The client identity.** pi found the backend gates the full model catalog and model routing on a User-Agent starting with
    `antigravity/cli/`. ask identifies itself honestly elsewhere (ADR-0007). First live probe: does an honest identity work, and what
    does it cost in catalog and routing? If it costs something, the owner chooses, and the choice gets its own record.
