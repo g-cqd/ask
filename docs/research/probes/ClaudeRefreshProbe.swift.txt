@@ -1,0 +1,114 @@
+internal import CryptoKit
+internal import Foundation
+internal import Testing
+
+@testable import AskAI
+
+/// One-off, opt-in live probe of Claude's refresh behaviour on the disposable named connection `claude-a` only (roadmap 0044).
+/// Prints statuses, error codes, booleans and 4-byte hash prefixes: never a token, an address or a response body.
+struct TempClaudeRefreshProbe {
+    static func tag(_ token: String) -> String {
+        SHA256.hash(data: Data(token.utf8)).prefix(3).map { String(format: "%02x", $0) }.joined()
+    }
+
+    enum Outcome {
+        case granted(ClaudeCredentials)
+        case refused(Int, String?)
+        case failed(String)
+    }
+
+    static func raw(_ refreshToken: String) async -> Outcome {
+        let request = HTTPRequest.account(
+            "POST", URL(string: ClaudeOAuth.tokenEndpoint)!, body: ClaudeToken.refreshBody(refreshToken: refreshToken))
+        do {
+            let reply = try await URLSessionTransport().collecting(request)
+            return .granted(
+                try ClaudeToken.credentials(status: reply.status, body: reply.body, now: Date().timeIntervalSince1970))
+        } catch let error as ClaudeAuthError {
+            if case .tokenEndpoint(let status, let code) = error { return .refused(status, code) }
+            return .failed("\(error)".prefix(40).description)
+        } catch { return .failed("transport") }
+    }
+
+    static func say(_ step: String, _ outcome: Outcome, against old: String? = nil, stored: ClaudeCredentials? = nil) {
+        switch outcome {
+            case .granted(let new):
+                var line =
+                    "CLAUDE_PROBE \(step): 200 refreshTag=\(tag(new.refreshToken)) accessTag=\(tag(new.accessToken))"
+                if let old { line += " refreshRotated=\(new.refreshToken != old)" }
+                line += " accountInResponse=\(new.accountEmail != nil) orgInResponse=\(new.organizationName != nil)"
+                if let stored, let email = new.accountEmail {
+                    line += " sameAccountAsStored=\(email == stored.accountEmail)"
+                }
+                line += " refreshExpiryInResponse=\(new.refreshExpiresAt != nil)"
+                print(line)
+            case .refused(let status, let code): print("CLAUDE_PROBE \(step): \(status) code=\(code ?? "none")")
+            case .failed(let why): print("CLAUDE_PROBE \(step): failed \(why)")
+        }
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_CLAUDE_REFRESH_PROBE"] == "1"))
+    func refresh() async throws {
+        let base = CredentialFile.standard().url.deletingLastPathComponent().appending(path: "connections")
+        let registry = ConnectionRegistry(directory: base)
+        let record = try #require(try registry.list().records.first { $0.name == "claude-a" })
+        let file = registry.credentials(for: record)
+        var current = try #require(try file.loadClaude(connection: record))
+        let now = Date().timeIntervalSince1970
+        print(
+            "CLAUDE_PROBE state: file mode ok, accessExpiresInSeconds=\(Int(current.expiresAt - now)) refreshExpiryKnown=\(current.refreshExpiresAt != nil) hasEmail=\(current.accountEmail != nil) refreshTag=\(Self.tag(current.refreshToken))"
+        )
+
+        /// Keep the newest valid credentials on disk, merged with what the response omitted.
+        func keep(_ new: ClaudeCredentials) throws {
+            var merged = new
+            merged.accountEmail = new.accountEmail ?? current.accountEmail
+            merged.organizationName = new.organizationName ?? current.organizationName
+            if try file.saveClaude(merged, ifStill: current, connection: record) {
+                current = merged
+            } else {
+                print("CLAUDE_PROBE save: not kept (changed meanwhile)")
+            }
+        }
+
+        let spent = current.refreshToken
+        let storedBefore = current
+        // 1. A normal refresh.
+        let first = await Self.raw(spent)
+        Self.say("1 refresh with the stored token", first, against: spent, stored: storedBefore)
+        guard case .granted(let r1) = first else { return }
+        try keep(r1)
+        // 2. Present the token just spent a second time.
+        let again = await Self.raw(spent)
+        Self.say("2 the spent token presented again", again, against: spent, stored: storedBefore)
+        if case .granted(let r2) = again { try keep(r2) }
+        // 3. Is the newest token still good after that?
+        let third = await Self.raw(current.refreshToken)
+        Self.say("3 the newest token after step 2", third, against: current.refreshToken)
+        guard case .granted(let r3) = third else {
+            print("CLAUDE_PROBE claude-a is no longer usable; it is disposable")
+            return
+        }
+        try keep(r3)
+        // 4. Two refreshes of the same token at once, as two asks would send.
+        let token = current.refreshToken
+        async let a = Self.raw(token)
+        async let b = Self.raw(token)
+        let (ra, rb) = await (a, b)
+        Self.say("4a concurrent refresh, first", ra, against: token)
+        Self.say("4b concurrent refresh, second", rb, against: token)
+        // Whatever survives is kept, so claude-a stays usable.
+        for outcome in [ra, rb] {
+            if case .granted(let granted) = outcome {
+                let check = await Self.raw(granted.refreshToken)
+                Self.say(
+                    "5 refresh with a token a concurrent refresh returned (\(Self.tag(granted.refreshToken)))", check,
+                    against: granted.refreshToken)
+                if case .granted(let live) = check {
+                    try keep(live)
+                    break
+                }
+            }
+        }
+    }
+}
