@@ -3,6 +3,21 @@
 Date 2026-10-24. Branch `formal-models`, from `bdc84df`. Everything here is in `docs/formal/`, `Tests/`, `docs/roadmap/0056`,
 `docs/roadmap/0057` and `docs/diary/2026-10-24-29.md`. No production code was changed.
 
+## Status (2026-10-24, after the fixes)
+
+| # | Fault | Status |
+|---|---|---|
+| 1 | A failed save after a refresh signs the user out | **Fixed**, roadmap 0056, ADR-0082, diary 34. The rotated pair is kept in memory and saved on the next call. Not covered: ask exiting first |
+| 2 | `wait` finds text never printed | **Fixed**, roadmap 0057, ADR-0083, diary 35. The real binary answered `found` before and times out now |
+| 3 | Byte cuts show U+FFFD | **Fixed**, roadmap 0057, ADR-0083, diary 36, and a related fault found while fixing it (a whole stream decoded in two parts) |
+| 4 | `OutputBuffer(keeping: 0)` traps | **Fixed**, diary 36 |
+| 5 | `SessionFile.begin` leaks a descriptor when the lock fails | **Confirmed and fixed**, ADR-0084, diary 37 |
+| 6 | `.damaged` backups pile up after failed renames | **Confirmed and fixed**, ADR-0084, diary 37 |
+| 7 | A record stays on disk after a failed flush | **Confirmed and kept by design** (ADR-0013), pinned and documented, ADR-0084 |
+
+The known-issue wrappers named below are gone: their tests now assert the fixed behaviour. The text under each heading is the report as
+written, before the fixes.
+
 ## Summary
 
 Three faults confirmed, one of them a user-visible sign-out. Each has a model that shows it, a test that reproduces it in ask's
