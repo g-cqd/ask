@@ -90,7 +90,8 @@ blocks longer than 20 lines, never more than half the screen) and it opens in pl
 
 A click in the input puts the cursor there.
 
-Background jobs are counted in the status line (`· 2 jobs`). Click the count, or type `/tasks`, to list what is running.
+Background jobs are counted in the status line (`· 2 jobs`). Click the count, or type `/tasks`, to list what is running. A job does not outlive ask, even when ask is killed with SIGKILL: a small watchdog process stops it
+([ADR-0077](docs/adr/0077-a-watchdog-outside-ask-stops-the-jobs-when-ask-is-killed.md)).
 
 ## Sandbox
 
