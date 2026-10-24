@@ -37,7 +37,7 @@ struct CompletionPickerControllerTests {
     }
 
     private func names(_ controller: ScreenController) -> [String] {
-        controller.state.picker?.matches.map(\.name) ?? []
+        controller.state.picker?.matches.map { String($0.label.dropFirst()) } ?? []
     }
 
     @Test func `a slash at the start of a prompt opens every command`() {
@@ -220,7 +220,7 @@ struct CompletionPickerControllerTests {
         type("/cmd", into: &screen, pageRows: 17)
         for _ in 0 ..< 9 { press(Key.down.rawValue, into: &screen, pageRows: 17) }
         let picker = try #require(screen.state.picker)
-        #expect(picker.selected == 9 && picker.visible.contains { $0.name == "cmd9" })
+        #expect(picker.selected == 9 && picker.visible.contains { $0.label == "/cmd9" })
         #expect(picker.visible.count == 7 && picker.firstVisible == 3)
     }
 }

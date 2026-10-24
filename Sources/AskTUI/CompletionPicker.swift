@@ -3,10 +3,24 @@
 /// The picker is derived from the draft after every key, so it cannot disagree with it; what it keeps is the choice, which survives
 /// typing that does not change the query, and the first row of the window it scrolls in.
 struct CompletionPicker: Sendable, Equatable {
+    /// What the rows are, which names the list and decides what a choice means.
+    enum Kind: Sendable, Equatable {
+        case commands
+
+        /// The word that titles the list.
+        var title: String {
+            switch self {
+                case .commands: "commands"
+            }
+        }
+    }
+
+    /// What is being listed.
+    let kind: Kind
     /// The word the matches are for.
     let trigger: CompletionTrigger
     /// Every command that matches, best first.
-    private(set) var matches: [SlashCommand]
+    private(set) var matches: [PickerRow]
     /// The chosen match.
     private(set) var selected = 0
     /// The first match the window shows.
@@ -15,14 +29,15 @@ struct CompletionPicker: Sendable, Equatable {
     let capacity: Int
 
     /// A picker over `matches`, the first chosen.
-    init(trigger: CompletionTrigger, matches: [SlashCommand], capacity: Int) {
+    init(kind: Kind, trigger: CompletionTrigger, matches: [PickerRow], capacity: Int) {
+        self.kind = kind
         self.trigger = trigger
         self.matches = matches
         self.capacity = Swift.max(1, capacity)
     }
 
     /// The matches the window shows.
-    var visible: ArraySlice<SlashCommand> {
+    var visible: ArraySlice<PickerRow> {
         matches[firstVisible ..< Swift.min(matches.count, firstVisible + capacity)]
     }
 
