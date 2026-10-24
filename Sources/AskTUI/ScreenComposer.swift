@@ -84,7 +84,9 @@ public struct ScreenComposer: Sendable {
             shown = Array(repeating: nil, count: rows)
             shownSize = (columns, rows)
         }
-        let editor = input.frame(state.editor, columns: columns, screenRows: rows, maximumRows: state.promptRows)
+        let editor = input.frame(
+            state.editor, columns: columns, screenRows: rows, maximumRows: state.promptRows,
+            selection: state.inputSelection)
         let promptRows = editor.lines.count
         let statusRows = rows > 1 ? 1 : 0
         let panel = Self.runnerRows(for: state, available: Swift.max(0, rows - promptRows - statusRows - 1))
