@@ -105,7 +105,7 @@ file left unchanged.
   `--name` is done (diary 44, probes 136-139) but the user has one account, so it registered *the same* ChatGPT account as the
   default, as a separate grant: the chooser question is still open, and a second sign-in does not by itself give a second
   account. Consider warning when a new sign-in lands on an account another connection already holds.
-- ~~Whether Claude's refresh response identifies the account~~ **Yes**: the address and organisation, probed live (ADR-0067); a named
+- ~~Whether Claude's refresh response identifies the account~~ **Yes**: the address and organisation, probed live (ADR-0073); a named
   connection is now held to its account on refresh.
 - A `--json` listing, an interface picker, and named connections for key-based providers: deliberately not built.
 
