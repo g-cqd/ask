@@ -27,7 +27,7 @@ def paste(terminal, text):
     terminal.draw(lambda: terminal.send(b"\x1b[200~" + text.encode() + b"\x1b[201~"))
 
 
-def scenario(label, draft, expected, width, height, changed=None, clear_first=False, click=None, select=None):
+def scenario(label, draft, expected, width, height, changed=None, clear_first=False, click=None, select=None, taps=None):
     with tempfile.TemporaryDirectory() as root:
         project, config, state = root + "/project", root + "/config", root + "/state"
         os.makedirs(project)
@@ -62,6 +62,15 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
                 terminal.draw(lambda: terminal.send(f"\x1b[<0;{column + 1};{row + 1}M\x1b[<0;{column + 1};{row + 1}m".encode()))
                 check(label + ": a click puts the cursor on the clicked cell",
                       (terminal.screen.cursor.x, terminal.screen.cursor.y) == (column, row))
+            elif taps:
+                (column, row), count, copied = taps
+                for _ in range(count):
+                    terminal.send(f"\x1b[<0;{column + 1};{row + 1}M\x1b[<0;{column + 1};{row + 1}m".encode())
+                    terminal.pump()
+                terminal.until(lambda: bool(terminal.copies()))
+                terminal.repaint()
+                check(label + ": copies exactly the word or line taken", terminal.copies()[-1] == copied)
+                check(label + ": and highlights it", any(cell.reverse for cell in terminal.screen.buffer[row].values()))
             elif select:
                 (start, end), copied = select[:2], select[2]
                 terminal.send(f"\x1b[<0;{start[0] + 1};{start[1] + 1}M\x1b[<32;{end[0] + 1};{end[1] + 1}M".encode())
@@ -116,6 +125,8 @@ def main():
     wrapped = "0123456789abcdefghijklmnopqrstuvwxyzABCD"
     scenario("click on a wrapped row", wrapped, wrapped[:19] + "X" + wrapped[19:], 20, 12, click=(4, 10))
     scenario("select", "hello world", "hX world", 40, 12, select=((6, 11), (9, 11), "ello"))
+    scenario("double click", "hello world", "X world", 40, 12, taps=((7, 11), 2, "hello"))
+    scenario("triple click", "ab cd\nef gh", "ab cd\nX", 40, 12, taps=((7, 11), 3, "ef gh"))
     print(f"{len(checks)} checks passed")
 
 
