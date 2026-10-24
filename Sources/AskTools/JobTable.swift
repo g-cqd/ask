@@ -6,13 +6,13 @@ internal import Synchronization
 ///
 /// Jobs belong to the process, not to a turn: a server started in one turn is waited on in the next. ask
 /// stops them all when it exits by any path it can see; a SIGKILL of ask is the one it cannot, and the ``JobWatchdog`` covers it
-/// (ADR-0077).
+/// (ADR-0079).
 public final class JobTable: Sendable {
     private let jobs = Mutex<[String: Job]>([:])
     private let counter = Atomic<Int>(0)
     private let observers = Mutex<[Int: AsyncStream<[JobSummary]>.Continuation]>([:])
     private let nextObserver = Atomic<Int>(0)
-    /// Stops the jobs' groups if ask is killed, which nothing in ask can observe (ADR-0077).
+    /// Stops the jobs' groups if ask is killed, which nothing in ask can observe (ADR-0079).
     let watchdog = JobWatchdog()
     /// Distinguishes this process's output files from another ask's in the same directory.
     private let filePrefix: String

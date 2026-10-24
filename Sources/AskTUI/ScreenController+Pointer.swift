@@ -88,7 +88,8 @@ extension ScreenController {
                 }
                 guard frame.runnerColumns?.contains(cell.col) == true else { return [] }
                 return toggleRunners()
-            case .click(let target, let cell, .left, _, _) where target == Self.promptTarget:
+            case .click(let target, let cell, .left, _, let count) where target == Self.promptTarget:
+                if count >= 2 { return selectInput(at: cell, count: count) }
                 placeCursor(at: cell)
             case .click(_, let cell, .left, _, let count):
                 if count == 1, isSelected(cell) {
@@ -169,12 +170,19 @@ extension ScreenController {
 
     /// Drops the selection and any drag in progress, such as when the user types or the conversation is cleared.
     mutating func clearSelection() {
+        dropSelections()
+        pointer.reset()
+    }
+
+    /// Drops both selections but leaves the pointer's memory of its last click alone: a click that changes the selection is part of a
+    /// double or triple click, and forgetting it would make the next click a first one again.
+    mutating func dropSelections() {
         state.clipboardNotice = ""
         selector.clear()
-        pointer.reset()
         autoscroll.request = nil
         state.selection = nil
         state.inputSelection = nil
         inputDrag = InputDrag()
+        inputAnchor = nil
     }
 }

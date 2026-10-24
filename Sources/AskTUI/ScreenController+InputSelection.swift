@@ -21,6 +21,32 @@ extension ScreenController {
         return (before, isBreak ? before : before + 1)
     }
 
+    /// A double click takes the run of like characters under the cell and a triple click the whole hard line, by the rules the
+    /// transcript's selection uses (letters, digits and `_` together, spaces together, anything else together). The cursor goes to the
+    /// end of what was taken, and it is copied if `ui.copyOnSelect` is on. An empty line has nothing to take.
+    mutating func selectInput(at cell: CellPosition, count: Int) -> [Effect] {
+        guard state.pendingApproval == nil, let before = inputOffsets(at: cell)?.before else { return [] }
+        dropSelections()
+        let lines = state.editor.text.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        var start = 0
+        var index = 0
+        while index < lines.count - 1, before >= start + lines[index].count + 1 {
+            start += lines[index].count + 1
+            index += 1
+        }
+        let content = TranscriptContent(blocks: [lines])
+        let position = ContentPosition(block: 0, line: index, offset: before - start)
+        let taken =
+            count == 2
+            ? ContentSelection.word(at: position, in: content) : ContentSelection.line(at: position, in: content)
+        guard let taken else { return [] }
+        let range = start + taken.anchor.offset ..< start + taken.head.offset
+        state.inputSelection = range
+        state.editor.place(cursor: range.upperBound)
+        guard options.copyOnSelect, let text = selectedInputText, !text.isEmpty else { return [] }
+        return [.copy(text)]
+    }
+
     mutating func beginInputDrag(at cell: CellPosition) {
         guard state.pendingApproval == nil, let offsets = inputOffsets(at: cell) else { return }
         selector.clear()
@@ -99,6 +125,27 @@ extension ScreenController {
     }
 
     // MARK: - Keys
+
+    /// Shift with an arrow, Home or End: the cursor moves as that key would move it, and the selection runs from where the cursor was
+    /// when the first of them was pressed to where it is now. Ctrl and Alt change what these keys mean, so they are not selections.
+    static func isSelectingMove(_ key: KeyEvent) -> Bool {
+        guard key.modifiers.contains(.shift), key.modifiers.isDisjoint(with: [.ctrl, .alt, .super, .meta]) else {
+            return false
+        }
+        return [Key.left, .right, .up, .down, .home, .end].contains { $0.rawValue == key.keyCode }
+    }
+
+    mutating func extendInputSelection(_ key: KeyEvent, columns: Int?) {
+        let anchor = inputAnchor ?? state.editor.cursor
+        selector.clear()
+        state.selection = nil
+        state.clipboardNotice = ""
+        let indent = columns.map { PromptLayout.prefix(columns: $0).count } ?? 0
+        _ = state.editor.apply(key, columns: columns, firstRowIndent: indent)
+        let head = state.editor.cursor
+        inputAnchor = anchor
+        state.inputSelection = anchor == head ? nil : Swift.min(anchor, head) ..< Swift.max(anchor, head)
+    }
 
     /// A selection in the input takes Ctrl+C (copy, then clear) and Escape (clear) before the editor, deletes on Backspace, and is
     /// replaced by typing; any other key just drops it. Nil when there is no selection, or the key goes on to the editor.
