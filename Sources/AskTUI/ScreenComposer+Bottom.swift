@@ -30,7 +30,10 @@ extension ScreenComposer {
             next += 1
         }
         for (offset, text) in editor.lines.enumerated() {
-            write(Line(text: text, style: .default), row: next + offset, into: &buffer)
+            write(
+                Line(text: text, style: .default),
+                highlight: editor.highlights.isEmpty ? nil : editor.highlights[offset], row: next + offset,
+                into: &buffer)
         }
         return (next + editor.cursor.row, editor.cursor.column)
     }
