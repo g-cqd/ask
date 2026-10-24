@@ -12,7 +12,8 @@ public import System
 ///   `<name>.damaged` (then `-2`, `-3`, …), by hard link and atomic rename. At every instant a complete
 ///   session file exists, and damaged bytes are never discarded. Appending instead would glue the new record
 ///   onto a torn fragment and corrupt it.
-/// - A failed append marks the file for the same rewrite, so a half-written record is never appended to.
+/// - A failed append marks the file for the same rewrite, so a half-written record is never appended to. What the failed append wrote
+///   may be on disk; it is not discarded, and the rewrite keeps that file as the damaged copy.
 /// - It is the session's only writer: creating and opening take an exclusive lock that is held until the file
 ///   closes, and carried over to the replacement file across a rewrite (``SessionLock``, ADR-0024).
 ///
@@ -40,19 +41,20 @@ public struct SessionFile: ~Copyable {
     private var appender: FileDescriptor?
     private var lock: SessionLock
     private var needsRewrite: Bool
-    private let writeRecord: RecordWriter
+    /// Internal for the opening extension, which passes it on to a fork.
+    let calls: SessionFileCalls
 
-    /// Writes one record to the append descriptor. Only tests replace it, to make that write fail.
+    /// Writes one record to the append descriptor. Only tests replace it (through ``SessionFileCalls``), to make that write fail.
     typealias RecordWriter = ([UInt8], FileDescriptor) throws(SessionFileError) -> Void
 
     /// Internal for the opening extension only; sessions are made by ``create(at:durability:)`` and ``open(at:durability:limits:)``.
     init(
         path: FilePath, tree: SessionTree, issues: [SessionLogIssue], durability: Durability,
         appender: FileDescriptor?, lock: consuming SessionLock,
-        writeRecord: @escaping RecordWriter = SessionFileIO.writeAll, formatVersion: Int = SessionLog.formatVersion
+        calls: SessionFileCalls = .system, formatVersion: Int = SessionLog.formatVersion
     ) {
         self.lock = lock
-        self.writeRecord = writeRecord
+        self.calls = calls
         self.path = path
         self.tree = tree
         self.issues = issues
@@ -147,8 +149,8 @@ public struct SessionFile: ~Copyable {
         }
         let descriptor = try openAppender()
         do {
-            try writeRecord(record, descriptor)
-            try SessionFileIO.flush(descriptor, durability)
+            try calls.writeRecord(record, descriptor)
+            try calls.flush(descriptor, durability)
         } catch {
             // Part of the record may be on disk. Never append after it; rewrite from memory next time.
             needsRewrite = true
@@ -175,17 +177,17 @@ public struct SessionFile: ~Copyable {
         }
         do {
             try SessionFileIO.writeAll(snapshot, to: descriptor)
-            try SessionFileIO.flush(descriptor, durability)
+            try calls.flush(descriptor, durability)
         } catch {
             _ = try? descriptor.close()
             throw error
         }
         // The replacement is locked before it takes the session's name, so the name is never unlocked.
-        let replacementLock = try SessionLock.adopt(descriptor)
+        let replacementLock = try calls.adopt(descriptor)
         let suffix =
             issues.isEmpty && formatVersion < SessionLog.formatVersion ? ".version-\(formatVersion)" : ".damaged"
         try preserveOriginal(suffix: suffix)
-        guard rename(temporary.string, path.string) == 0 else { throw .io(.rename, errno: errno) }
+        guard calls.rename(temporary.string, path.string) == 0 else { throw .io(.rename, errno: errno) }
         lock = replacementLock
         formatVersion = SessionLog.formatVersion
         try SessionFileIO.flushDirectory(of: path, durability)
@@ -194,17 +196,29 @@ public struct SessionFile: ~Copyable {
         needsRewrite = false
     }
 
-    /// Hard-links the current file to the first free versioned or damaged backup. Nothing to keep if it is gone.
+    /// Hard-links the current file to the first free versioned or damaged backup. Nothing to keep if it is gone, and nothing more to
+    /// do if an earlier attempt already linked this very file: a rewrite that failed to rename is tried again, and the same bytes
+    /// must not be kept once for each try.
     private func preserveOriginal(suffix base: String) throws(SessionFileError) {
         for attempt in 1 ... 1_000 {
             let suffix = attempt == 1 ? base : base + "-\(attempt)"
             if link(path.string, path.string + suffix) == 0 { return }
             switch errno {
-                case EEXIST: continue
+                case EEXIST:
+                    if Self.isSameFile(path.string, path.string + suffix) { return }
+                    continue
                 case ENOENT: return
                 default: throw .io(.link, errno: errno)
             }
         }
         throw .io(.link, errno: EEXIST)
+    }
+
+    /// Whether two names are one file: the same device and inode.
+    private static func isSameFile(_ first: String, _ second: String) -> Bool {
+        var one = stat()
+        var other = stat()
+        guard stat(first, &one) == 0, stat(second, &other) == 0 else { return false }
+        return one.st_dev == other.st_dev && one.st_ino == other.st_ino
     }
 }
