@@ -126,6 +126,27 @@ extension ScreenController {
 
     // MARK: - Keys
 
+    /// Shift with an arrow, Home or End: the cursor moves as that key would move it, and the selection runs from where the cursor was
+    /// when the first of them was pressed to where it is now. Ctrl and Alt change what these keys mean, so they are not selections.
+    static func isSelectingMove(_ key: KeyEvent) -> Bool {
+        guard key.modifiers.contains(.shift), key.modifiers.isDisjoint(with: [.ctrl, .alt, .super, .meta]) else {
+            return false
+        }
+        return [Key.left, .right, .up, .down, .home, .end].contains { $0.rawValue == key.keyCode }
+    }
+
+    mutating func extendInputSelection(_ key: KeyEvent, columns: Int?) {
+        let anchor = inputAnchor ?? state.editor.cursor
+        selector.clear()
+        state.selection = nil
+        state.clipboardNotice = ""
+        let indent = columns.map { PromptLayout.prefix(columns: $0).count } ?? 0
+        _ = state.editor.apply(key, columns: columns, firstRowIndent: indent)
+        let head = state.editor.cursor
+        inputAnchor = anchor
+        state.inputSelection = anchor == head ? nil : Swift.min(anchor, head) ..< Swift.max(anchor, head)
+    }
+
     /// A selection in the input takes Ctrl+C (copy, then clear) and Escape (clear) before the editor, deletes on Backspace, and is
     /// replaced by typing; any other key just drops it. Nil when there is no selection, or the key goes on to the editor.
     mutating func inputSelectionKey(_ key: KeyEvent) -> [Effect]? {
