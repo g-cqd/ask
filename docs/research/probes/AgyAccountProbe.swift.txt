@@ -1,0 +1,58 @@
+internal import AemiJSON
+internal import CryptoKit
+internal import Foundation
+internal import Testing
+
+@testable import AskAI
+
+/// One-off, opt-in live check of the real Antigravity sign-in. Prints booleans, counts and a 3-byte hash prefix: never a token,
+/// a secret or an address.
+struct TempAgyAccountProbe {
+    static func tag(_ text: String) -> String {
+        SHA256.hash(data: Data(text.utf8)).prefix(3).map { String(format: "%02x", $0) }.joined()
+    }
+
+    static func form(_ url: String, _ fields: [(String, String)]) async throws -> (Int, JSON?) {
+        let request = HTTPRequest.account(
+            "POST", URL(string: url)!, contentType: "application/x-www-form-urlencoded", body: Array(FormEncoding.query(fields).utf8))
+        let reply = try await URLSessionTransport().collecting(request)
+        return (reply.status, try? AemiJSON.parse(reply.body).root)
+    }
+
+    static func userinfo(_ token: String) async throws -> (Int, JSON?) {
+        let request = HTTPRequest(
+            url: URL(string: "https://openidconnect.googleapis.com/v1/userinfo")!, method: "GET",
+            headers: [("authorization", "Bearer " + token), ("accept", "application/json")], body: [])
+        let reply = try await URLSessionTransport().collecting(request)
+        return (reply.status, try? AemiJSON.parse(reply.body).root)
+    }
+
+    @Test(.enabled(if: ProcessInfo.processInfo.environment["ASK_LIVE_AGY_ACCOUNT_PROBE"] == "1"))
+    func account() async throws {
+        let file = CredentialFile.standard()
+        let stored = try #require(try file.loadAgy())
+        let secret = try #require(stored.clientSecret)
+        let now = Date().timeIntervalSince1970
+        print("AGY_ACCOUNT state: accessLeft=\(Int(stored.expiresAt - now))s refreshTag=\(Self.tag(stored.refreshToken)) scopesStored=\(stored.scopes?.split(separator: " ").count ?? 0)")
+
+        let (infoStatus, info) = try await Self.userinfo(stored.accessToken)
+        print("AGY_ACCOUNT userinfo: status=\(infoStatus) emailMatchesStored=\(info?["email"].string == stored.accountEmail) emailVerified=\(info?["email_verified"].bool ?? false)")
+
+        let (tokenStatus, tokenInfo) = try await Self.form("https://oauth2.googleapis.com/tokeninfo", [("access_token", stored.accessToken)])
+        let granted = Set((tokenInfo?["scope"].string ?? "").split(separator: " ").map(String.init))
+        let asked = Set(AgyOAuth.scopes)
+        print("AGY_ACCOUNT tokeninfo: status=\(tokenStatus) audienceIsAntigravityClient=\(tokenInfo?["aud"].string == AgyOAuth.clientID) grantedCount=\(granted.count) allRequestedGranted=\(asked.isSubset(of: granted)) extraGranted=\(granted.subtracting(asked).count) offline=\(tokenInfo?["access_type"].string ?? "?")")
+
+        let renewed = try await AgyAuthClient(transport: URLSessionTransport()).refresh(stored, secret: secret, now: now)
+        print("AGY_ACCOUNT refresh: ok refreshRotated=\(renewed.refreshToken != stored.refreshToken) refreshTag=\(Self.tag(renewed.refreshToken)) accessChanged=\(renewed.accessToken != stored.accessToken) newLifetime=\(Int(renewed.expiresAt - now))s emailKept=\(renewed.accountEmail == stored.accountEmail) scopesKept=\(renewed.scopes == stored.scopes) secretKept=\(renewed.clientSecret == stored.clientSecret)")
+        let kept = try file.saveAgy(renewed, ifStill: stored)
+        print("AGY_ACCOUNT save: kept=\(kept) reloadedEqual=\(try file.loadAgy() == renewed)")
+
+        let (after, afterInfo) = try await Self.userinfo(renewed.accessToken)
+        print("AGY_ACCOUNT userinfo after refresh: status=\(after) sameAccount=\(afterInfo?["email"].string == stored.accountEmail)")
+        if renewed.refreshToken != stored.refreshToken {
+            let (status, body) = try await Self.form(AgyOAuth.tokenURL, [("grant_type", "refresh_token"), ("client_id", AgyOAuth.clientID), ("client_secret", secret), ("refresh_token", stored.refreshToken)])
+            print("AGY_ACCOUNT spent refresh token presented again: status=\(status) error=\(body?["error"].string ?? "none")")
+        }
+    }
+}
