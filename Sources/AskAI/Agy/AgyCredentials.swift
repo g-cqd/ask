@@ -9,7 +9,7 @@ public struct AgyCredentials: Sendable, Equatable, Codable {
     public var accountEmail: String?
     public var projectID: String?
     public var tierID: String?
-    /// The application's client secret, found in the user's `agy` and confirmed by Google (ADR-0072), kept so a refresh need not
+    /// The application's client secret, found in the user's `agy` and confirmed by Google (ADR-0073), kept so a refresh need not
     /// find it again. Nil in a record an older build wrote.
     public var clientSecret: String?
 
