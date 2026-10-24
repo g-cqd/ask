@@ -30,12 +30,25 @@ struct OutputBuffer: Sendable {
         }
     }
 
-    /// The kept bytes in order, head then tail, without the omission marker: for searching.
-    var kept: [UInt8] { head + tail[tailStart...] + tail[..<tailStart] }
+    /// The kept bytes in order, head then tail, without the omission marker. Where bytes were omitted the two are not adjacent in the
+    /// stream, so this is for counting and comparing the ends, not for searching: use ``contains(_:)``.
+    var kept: [UInt8] { head + orderedTail }
+
+    private var orderedTail: [UInt8] { Array(tail[tailStart...] + tail[..<tailStart]) }
+
+    /// Whether the stream the buffer holds contains `needle` as one run of bytes. Where nothing was omitted the head and the tail are
+    /// the stream; where bytes were omitted they are two runs with a gap, and a text cannot span a gap it never crossed.
+    /// - Parameter needle: the bytes to look for; empty is never found.
+    /// - Returns: whether the stream holds those bytes in a row.
+    func contains(_ needle: [UInt8]) -> Bool {
+        guard !needle.isEmpty else { return false }
+        if omitted == 0 { return kept.firstRange(of: needle) != nil }
+        return head.firstRange(of: needle) != nil || orderedTail.firstRange(of: needle) != nil
+    }
 
     /// The kept text, with a marker where bytes were omitted.
     var text: String {
-        let ordered = Array(tail[tailStart...] + tail[..<tailStart])
+        let ordered = orderedTail
         let start = String(decoding: head, as: UTF8.self)
         guard omitted > 0 else { return start + String(decoding: ordered, as: UTF8.self) }
         return start + "\n[… \(omitted) bytes omitted …]\n" + String(decoding: ordered, as: UTF8.self)

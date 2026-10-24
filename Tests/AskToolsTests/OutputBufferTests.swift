@@ -36,14 +36,35 @@ struct OutputBufferTests {
         #expect(pieces.kept == whole.kept && pieces.omitted == whole.omitted)
     }
 
-    @Test func `text printed across the omitted middle is not found by searching what was kept`() {
+    @Test func `text printed across the omitted middle is not found`() {
         // The stream is `abRe` + 8 bytes that were dropped + `adcd`: it never contains `Read`.
         let stream = "abRe" + "zzzzzzzz" + "adcd"
         let kept = buffer(stream, keeping: 4)
         #expect(!stream.contains("Read"))
-        withKnownIssue("kept joins the head and the tail, so `Read` appears where bytes were dropped") {
-            #expect(!String(decoding: kept.kept, as: UTF8.self).contains("Read"))
-        }
+        #expect(
+            !kept.contains(Array("Read".utf8)), "the head and the tail are not adjacent, so a text cannot span them")
+    }
+
+    @Test func `text inside the head, or inside the tail, is found whether or not bytes were omitted`() {
+        let kept = buffer("Head" + "zzzzzzzz" + "Tail", keeping: 4)
+        #expect(kept.omitted == 8)
+        #expect(
+            kept.contains(Array("Head".utf8)) && kept.contains(Array("ead".utf8)) && kept.contains(Array("Tail".utf8)))
+        #expect(!kept.contains(Array("zz".utf8)), "what was dropped is not there to find")
+    }
+
+    @Test
+    func `text across the join of a stream nothing was omitted from is found, because there the join is the stream`() {
+        let whole = buffer("abReadcd", keeping: 4)
+        #expect(whole.omitted == 0 && whole.contains(Array("Read".utf8)))
+        let shorter = buffer("abRead", keeping: 4)
+        #expect(shorter.contains(Array("Read".utf8)))
+    }
+
+    @Test func `a needle that is empty is never found, and one longer than either end is found only whole`() {
+        let kept = buffer("abcd" + "zz" + "wxyz", keeping: 4)
+        #expect(!kept.contains([]))
+        #expect(!kept.contains(Array("abcdw".utf8)) && kept.contains(Array("abcd".utf8)))
     }
 
     @Test func `a stream of valid UTF-8 is not shown with replacement characters where it was cut`() {
