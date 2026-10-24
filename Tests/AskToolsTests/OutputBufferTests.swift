@@ -68,10 +68,42 @@ struct OutputBufferTests {
     }
 
     @Test func `a stream of valid UTF-8 is not shown with replacement characters where it was cut`() {
-        // Each `é` is two bytes; keeping 3 bytes at each end cuts one in the middle.
+        // Each `é` is two bytes; keeping 3 bytes at each end cuts one in the middle of each end.
         let kept = buffer(String(repeating: "é", count: 10), keeping: 3)
-        withKnownIssue("the cut falls inside a character and the text shows U+FFFD") {
-            #expect(!kept.text.contains("\u{FFFD}"))
+        #expect(!kept.text.contains("\u{FFFD}"))
+        #expect(kept.text.hasPrefix("é\n[… ") && kept.text.hasSuffix(" bytes omitted …]\né"))
+    }
+
+    @Test func `the count in the marker is every byte the text does not show, the cut characters' bytes included`() {
+        let kept = buffer(String(repeating: "é", count: 10), keeping: 3)  // 20 bytes; shows `é` and `é`, 4 bytes
+        let marker = kept.text.split(separator: "\n")[1]
+        #expect(marker == "[… 16 bytes omitted …]")
+    }
+
+    @Test
+    func `a stream nothing was omitted from is shown whole, even when a character straddles the head and the tail`() {
+        // Six bytes, keeping 3 at each end: nothing is dropped, and the second `é` is split between the head and the tail.
+        let whole = buffer("ééé", keeping: 3)
+        #expect(whole.omitted == 0)
+        #expect(whole.text == "ééé")
+    }
+
+    @Test func `a stream of bytes that are not text is cut without a crash`() {
+        var binary = OutputBuffer(keeping: 4)
+        binary.append(Array(repeating: 0x80, count: 12) + [0xE2, 0x82])
+        #expect(binary.text.contains("omitted"))
+    }
+
+    @Test func `a buffer asked to keep nothing keeps nothing and counts everything, instead of stopping the process`()
+        async
+    {
+        await #expect(processExitsWith: .success) {
+            var empty = OutputBuffer(keeping: 0)
+            #expect(empty.isEmpty)
+            empty.append([1, 2, 3, 4])
+            empty.append([5])
+            #expect(empty.omitted == 5 && empty.kept.isEmpty && !empty.isEmpty)
+            #expect(empty.text == "\n[… 5 bytes omitted …]\n")
         }
     }
 }

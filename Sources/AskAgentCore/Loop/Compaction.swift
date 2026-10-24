@@ -81,12 +81,15 @@ public enum Compaction {
     static func clipped(_ text: String, toBytes bytes: Int, note: String = "omitted from this summary request")
         -> String
     {
-        let utf8 = text.utf8
-        guard utf8.count > bytes else { return text }
+        let total = text.utf8.count
+        guard total > bytes else { return text }
         let half = Swift.max(1, bytes / 2)
-        let head = String(decoding: utf8.prefix(half), as: UTF8.self)
-        let tail = String(decoding: utf8.suffix(half), as: UTF8.self)
-        return head + "\n[… \(utf8.count - 2 * half) bytes \(note) …]\n" + tail
+        // Each side is cut to a whole character, and the note counts every byte that is not shown. Only the two ends are copied.
+        let head = UTF8Cut.droppingPartialEnd(Array(text.utf8.prefix(half))[...])
+        let tail = UTF8Cut.droppingPartialStart(Array(text.utf8.suffix(half))[...])
+        let omitted = total - head.count - tail.count
+        return String(decoding: head, as: UTF8.self) + "\n[… \(omitted) bytes \(note) …]\n"
+            + String(decoding: tail, as: UTF8.self)
     }
 
     /// A summary made without the model, for when it wrote none: the user's words, earlier summaries, and each tool
