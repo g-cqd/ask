@@ -6,7 +6,9 @@ internal import Foundation
 struct Login: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         abstract: "Sign in to a provider.",
-        discussion: "claude, codex: a subscription. spettro, mistral-vibe: a browser sign-in that issues an API key.")
+        discussion:
+            "claude, codex: a subscription. agy: a Google account for Antigravity. spettro, mistral-vibe: a browser sign-in that issues an API key."
+    )
 
     @Argument(help: "Which sign-in to run.") var provider: LoginTarget = .claude
     @Flag(help: "For codex: sign in with a code typed at a link, on a machine with no browser.") var device = false
@@ -32,6 +34,7 @@ struct Login: AsyncParsableCommand {
         let file = NamedConnections.file(for: connection)
         switch provider {
             case .claude: await claudeLogin(file: file, connection: connection)
+            case .agy: await agyLogin(file: file)
             case .codex:
                 await codexLogin(device: device, file: file, connection: connection, replaceAccount: replaceAccount)
             case .spettro:
