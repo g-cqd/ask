@@ -62,7 +62,12 @@ public final class Job: Sendable {
     /// What the command is allowed to do; its output is explained against it when the sandbox refused something.
     let sandbox: SandboxPolicy
 
-    private init(id: String, command: String, outputPath: String?, keeping: Int, sandbox: SandboxPolicy) {
+    private let watchdog: JobWatchdog?
+
+    private init(
+        id: String, command: String, outputPath: String?, keeping: Int, sandbox: SandboxPolicy, watchdog: JobWatchdog?
+    ) {
+        self.watchdog = watchdog
         self.sandbox = sandbox
         self.keeping = keeping
         self.id = id
@@ -85,6 +90,8 @@ public final class Job: Sendable {
         var keeping: Int
         /// What the command may touch.
         var sandbox: SandboxPolicy
+        /// Stops the job's group if ask is killed (ADR-0077).
+        var watchdog: JobWatchdog?
     }
 
     /// Starts a job.
@@ -95,7 +102,7 @@ public final class Job: Sendable {
     static func start(_ launch: Launch, observe: @escaping @Sendable ([UInt8]) -> Void) -> Job {
         let job = Job(
             id: launch.id, command: launch.command, outputPath: launch.outputPath, keeping: launch.keeping,
-            sandbox: launch.sandbox)
+            sandbox: launch.sandbox, watchdog: launch.watchdog)
         let (input, feed) = AsyncStream<[UInt8]>.makeStream()
         if !launch.keepsInputOpen { feed.finish() }
         let file = launch.outputPath.flatMap(JobProcess.createFile)
@@ -117,6 +124,8 @@ public final class Job: Sendable {
                 configuration, input: .inputWriter, output: .sequence, error: .combinedWithOutput
             ) { execution in
                 self.state.withLock { $0.pid = execution.processIdentifier.value }
+                // The job leads its own session, so its group is its process id.
+                self.watchdog?.watch(execution.processIdentifier.value)
                 let writer = execution.standardInputWriter
                 try await withThrowingTaskGroup(of: Void.self) { group in
                     group.addTask {
@@ -177,6 +186,7 @@ public final class Job: Sendable {
     }
 
     private func finish(_ ending: JobStatus) {
+        if let pid = state.withLock({ $0.pid }) { watchdog?.release(pid) }
         let waiting: [CheckedContinuation<WaitResult, Never>] = state.withLock { state in
             state.status = ending
             state.input?.finish()

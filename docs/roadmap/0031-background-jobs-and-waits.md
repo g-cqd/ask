@@ -41,3 +41,10 @@ Two parts of "done when" are only partly met:
   screen, SIGTERM and SIGINT. It does not hold for SIGKILL, which ask cannot observe. A watchdog would close
   that gap; ADR-0029 records the options.
 - **The cut-middle check** used 10.9 MB of `seq` output rather than a log file.
+
+## Closed (2026-10-24, ADR-0077)
+
+"Killing ask leaves no job running" now holds for SIGKILL and a crash as well: a small shell outside ask watches a pipe ask holds, and
+stops each listed job's group (SIGTERM, two seconds, SIGKILL) when the pipe closes. Proven with the real binary: a job started by
+`ask -p` outlives a SIGKILLed ask on the previous binary and is gone within a moment on this one. Still not covered: a SIGKILL in the
+milliseconds before the shell has started, the shell itself being killed, and a background child that outlives its job's shell.
