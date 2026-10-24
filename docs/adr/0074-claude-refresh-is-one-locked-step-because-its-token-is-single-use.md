@@ -3,14 +3,14 @@ status: accepted
 date: 2026-10-24
 ---
 
-# 0073 — Claude's refresh is one locked step, because its token is single use
+# 0074 — Claude's refresh is one locked step, because its token is single use
 
 ## Context
 
 Roadmap 0044 asked first whether Claude's refresh tokens are single use, because the answer decides whether `ClaudeAccess` needs the
 lock `CodexAccess` has (ADR-0036). `ClaudeAccess` read, refreshed over the network and saved, with no exclusion across the call
 (ADR-0039 made the save itself safe). The owner signed in a disposable named connection, `claude-a`, so the probe could spend
-its grant without touching the real login. Diary 2026-10-24-22; the probe is archived in `docs/research/probes/ClaudeRefreshProbe.swift.txt`
+its grant without touching the real login. Diary 2026-10-24-23; the probe is archived in `docs/research/probes/ClaudeRefreshProbe.swift.txt`
 and printed only statuses, error codes, booleans and 3-byte hash prefixes.
 
 ## The probes
