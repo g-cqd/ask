@@ -183,5 +183,6 @@ extension ScreenController {
         state.selection = nil
         state.inputSelection = nil
         inputDrag = InputDrag()
+        inputAnchor = nil
     }
 }
