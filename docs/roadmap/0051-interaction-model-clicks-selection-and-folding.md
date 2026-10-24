@@ -16,8 +16,8 @@ policy and the meaning of each click are ask's (ADR-0044).
 
 The real transcript now has mouse selection, highlighting, clipboard writes, wheel scrolling and thinking/tool folds. Header clicks
 open individual blocks; Ctrl+T and Ctrl+O change their separate defaults. Six `ui.*` keys configure interaction and bounded input.
-Scripted-provider PTY probes cover live runs, resumed sessions and wrapped-input editing. Images and input
-pointer interactions remain owed.
+Scripted-provider PTY probes cover live runs, resumed sessions and wrapped-input editing. Images and selection
+inside the input remain owed.
 The real screen now follows the prototype's no-leading-icons and terminal-default-background rules (diary 2026-10-22 (2)).
 
 ## What TerminalKit has now (2026-10-22)
@@ -152,6 +152,11 @@ will use the same `RunnerInfo` seam when roadmap 0027 builds them. Stopping or f
 
 A copy that goes to the host pasteboard says *pending* until the command exits, then *copied* or *failed* with why; the terminal route stays
 *sent*. The session glue has no end-to-end test (it would overwrite the user's clipboard).
+
+## Input clicks (2026-10-23, ADR-0071; diary 2026-10-23 (20))
+
+A click in the input puts the cursor on the clicked character, by the map the input was drawn with. Selecting inside the input and a
+wheel for its own window are not done.
 
 ## Open questions
 
