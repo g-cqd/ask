@@ -22,6 +22,7 @@ Required regression gates, red before implementation:
 - Logout or replacement during a pending refresh wins: an old response cannot restore credentials the user removed.
 - Failed/cancelled/uncertain refresh is not automatically retried. Failed persistence is reported before a refreshed
   token is used for inference. The old file remains intact if the atomic save fails.
+  (Superseded for a refresh the server accepted: the old token is spent, so the rotated pair is used and held, ADR-0082.)
 - A process dying releases its locks. Cancellation closes lock descriptors. Nested locking cannot self-deadlock.
 - Reading legacy credentials never rewrites them. Damaged credentials are never silently overwritten.
 
