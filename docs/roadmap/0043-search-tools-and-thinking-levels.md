@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by:
 date: 2026-10-19
 ---
@@ -29,3 +29,11 @@ Providers differ: Anthropic's extended thinking with a budget, OpenAI's reasonin
 
 A probe shows each search tool returning what `rg` and `find` return on the same tree, capped, and refused on a
 protected path; and the thinking level changes the request the provider receives, per provider, on a fake server.
+
+## Update (2026-10-24, ADR-0081, diary 2026-10-24-30)
+
+- **Thinking level**: done as roadmap 0053.
+- **Search tools**: measured, and **not built**. In-process search is faster than `rg` only for plain literals (about 10 ms) and slower for
+  regex (28.9 ms and 173 ms against about 20 ms); the token saving is real only for unbounded searches (2 of 5 natural tasks), which the
+  existing 2,000-line / 50 KiB cap already bounds; three tool definitions would cost about 450 tokens on every request. A prompt sentence
+  did not help conclusively. Open: a larger experiment on shaping what a search returns.
