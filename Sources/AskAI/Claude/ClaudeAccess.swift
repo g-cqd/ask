@@ -1,6 +1,6 @@
 /// Request auth from stored Claude credentials, refreshing and saving them when they expire.
 ///
-/// The refresh token rotates and is single use (probed live, ADR-0067): the spent token is refused with `invalid_grant`, and of
+/// The refresh token rotates and is single use (probed live, ADR-0073): the spent token is refused with `invalid_grant`, and of
 /// two refreshes of one token sent together exactly one succeeds. So refreshing is one locked step, as Codex's is: take the lock
 /// every ask process shares, look again at what is stored (another process may have refreshed while this one waited), and only
 /// then refresh and save the whole replacement, only if what is stored is still what was refreshed. A failed refresh leaves what
