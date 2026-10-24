@@ -117,7 +117,7 @@ public struct ScreenComposer: Sendable {
                 FrameGeometry(
                     rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count,
                     scrollback: state.scrollback, statusRow: transcriptRows + panel.count,
-                    runnerColumns: status.runners,
+                    runnerColumns: status.runners, belowColumns: status.below,
                     promptRow: rows - promptRows, promptRows: promptRows, promptTop: editor.top, prompt: editor.layout
                 )
                 .withPicker(state: state, firstRow: transcriptRows + panel.count + statusRows + 1, rows: pickerRows)
