@@ -72,6 +72,15 @@ public struct PromptEditor: Sendable, Equatable {
         move(to: offset)
     }
 
+    /// Removes the characters in `range`, leaving the cursor where they were, as deleting a selection does.
+    mutating func remove(_ range: Range<Int>) {
+        goalColumn = nil
+        goalWidth = nil
+        let lower = Swift.min(range.lowerBound, text.count)
+        text.removeSubrange(index(lower) ..< index(Swift.min(range.upperBound, text.count)))
+        cursor = lower
+    }
+
     /// Inserts pasted text at the cursor, keeping its line breaks (every kind becomes `\n`).
     public mutating func paste(_ pasted: String) {
         goalColumn = nil
