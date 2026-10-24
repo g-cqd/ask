@@ -18,8 +18,18 @@ struct ClippedTextTests {
     @Test func `clipping valid UTF-8 text does not leave replacement characters`() {
         // Each `é` is two bytes, so a cut at ten bytes lands inside one.
         let clipped = Compaction.clipped(String(repeating: "é", count: 20), toBytes: 10)
-        withKnownIssue("the head and the tail are cut at bytes, not at characters, and show U+FFFD") {
-            #expect(!clipped.contains("\u{FFFD}"))
-        }
+        #expect(!clipped.contains("\u{FFFD}"))
+    }
+
+    @Test func `the note still counts every byte the head and the tail do not hold, the cut characters' included`() {
+        // 40 bytes, a cut at ten: halves of five bytes cut `é` in two, so each side shows two characters (four bytes).
+        let clipped = Compaction.clipped(String(repeating: "é", count: 20), toBytes: 10, note: "gone")
+        #expect(clipped == "éé\n[… 32 bytes gone …]\néé")
+    }
+
+    @Test func `a limit of one byte on text that starts with a wider character shows an empty head, not a broken one`()
+    {
+        let clipped = Compaction.clipped("éééé", toBytes: 2, note: "gone")
+        #expect(!clipped.contains("\u{FFFD}") && clipped.contains("bytes gone"))
     }
 }

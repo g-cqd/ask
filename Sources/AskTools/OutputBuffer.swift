@@ -1,3 +1,5 @@
+internal import AskAgentCore
+
 /// The first and the last `keeping` bytes of a stream, with a count of what fell between, so memory stays
 /// bounded however much a command prints.
 struct OutputBuffer: Sendable {
@@ -10,9 +12,14 @@ struct OutputBuffer: Sendable {
     /// An empty buffer keeping `keeping` bytes at each end.
     init(keeping: Int) { self.keeping = keeping }
 
-    var isEmpty: Bool { head.isEmpty }
+    var isEmpty: Bool { head.isEmpty && omitted == 0 }
 
     mutating func append(_ bytes: [UInt8]) {
+        // Keeping nothing keeps nothing: everything is counted as omitted, and the ring below is never indexed.
+        guard keeping > 0 else {
+            omitted += bytes.count
+            return
+        }
         var rest = bytes[...]
         if head.count < keeping {
             let taken = rest.prefix(keeping - head.count)
@@ -47,10 +54,17 @@ struct OutputBuffer: Sendable {
     }
 
     /// The kept text, with a marker where bytes were omitted.
+    ///
+    /// Where nothing was omitted the head and the tail are the stream and are decoded as one. Where bytes were omitted each side is cut
+    /// to a whole character, and the marker counts every byte the text does not show.
     var text: String {
+        guard omitted > 0 else { return String(decoding: kept, as: UTF8.self) }
         let ordered = orderedTail
-        let start = String(decoding: head, as: UTF8.self)
-        guard omitted > 0 else { return start + String(decoding: ordered, as: UTF8.self) }
-        return start + "\n[… \(omitted) bytes omitted …]\n" + String(decoding: ordered, as: UTF8.self)
+        let start = UTF8Cut.droppingPartialEnd(head[...])
+        let end = UTF8Cut.droppingPartialStart(ordered[...])
+        let shown = start.count + end.count
+        let dropped = omitted + head.count + ordered.count - shown
+        return String(decoding: start, as: UTF8.self) + "\n[… \(dropped) bytes omitted …]\n"
+            + String(decoding: end, as: UTF8.self)
     }
 }
