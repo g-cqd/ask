@@ -21,17 +21,17 @@ extension ScreenComposer {
         guard columns > 0, shown >= 1 else { return [] }
         let start = Swift.min(Swift.max(picker.firstVisible, picker.selected - shown + 1), picker.selected)
         let window = picker.matches[start ..< Swift.min(picker.matches.count, start + shown)]
-        let labels = window.map { "/" + $0.name }
+        let labels = window.map(\.label)
         let labelWidth = Swift.min(24, labels.map { UnicodeWidth.displayWidth(of: $0) }.max() ?? 0)
         var lines = [Line(text: title(for: picker, shown: shown, columns: columns), style: Style(dim: true))]
-        for (offset, command) in window.enumerated() {
+        for (offset, row) in window.enumerated() {
             let label = labels[offset]
             let padding = String(
                 repeating: " ", count: Swift.max(0, labelWidth - UnicodeWidth.displayWidth(of: label)) + 2)
             let chosen = start + offset == picker.selected
             lines.append(
                 Line(
-                    text: clipped(label + padding + command.summary, to: columns),
+                    text: clipped(row.detail.isEmpty ? label : label + padding + row.detail, to: columns),
                     style: chosen ? Style(fg: .indexed(6), bold: true) : .default))
         }
         return lines
@@ -39,13 +39,14 @@ extension ScreenComposer {
 
     /// What the list is, how far down it the choice is when it does not all fit, and the keys, as many as the width has room for.
     private static func title(for picker: CompletionPicker, shown: Int, columns: Int) -> String {
+        let name = picker.kind.title
         let position = picker.matches.count > shown ? " \(picker.selected + 1) of \(picker.matches.count)" : ""
         let options = [
-            "commands\(position) · Enter or Tab inserts · Esc closes",
-            "commands\(position) · Enter inserts · Esc closes",
-            "commands\(position)", "commands"
+            "\(name)\(position) · Enter or Tab inserts · Esc closes",
+            "\(name)\(position) · Enter inserts · Esc closes",
+            "\(name)\(position)", name
         ]
-        return clipped(options.first { UnicodeWidth.displayWidth(of: $0) <= columns } ?? "commands", to: columns)
+        return clipped(options.first { UnicodeWidth.displayWidth(of: $0) <= columns } ?? name, to: columns)
     }
 
     /// `text` cut to `columns` cells at a grapheme boundary, never wider.

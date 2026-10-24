@@ -33,7 +33,8 @@ extension ScreenController {
             return
         }
         var picker = CompletionPicker(
-            trigger: trigger, matches: matches, capacity: CompletionPicker.capacity(screenRows: screenRows))
+            kind: .commands, trigger: trigger, matches: matches.map(PickerRow.init),
+            capacity: CompletionPicker.capacity(screenRows: screenRows))
         if let old = state.picker { picker.keepChoice(from: old) }
         state.picker = picker
     }
@@ -59,7 +60,7 @@ extension ScreenController {
     /// Puts the chosen command in the draft where the word was. Nothing is sent: a second Enter runs it.
     private mutating func accept(_ picker: CompletionPicker) -> [Effect] {
         if picker.matches.indices.contains(picker.selected) {
-            state.editor.replace(picker.trigger.range, with: "/" + picker.matches[picker.selected].name)
+            state.editor.replace(picker.trigger.range, with: picker.matches[picker.selected].insertion)
         }
         state.picker = nil
         return []
