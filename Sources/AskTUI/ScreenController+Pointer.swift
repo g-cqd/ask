@@ -9,6 +9,8 @@ extension ScreenController {
     private static let transcriptTarget = 0
     /// The status line, which acts only on its runner count.
     private static let statusTarget = 1
+    /// The rows of the picker's matches, which a click chooses from.
+    private static let pickerTarget = 2
 
     mutating func handle(mouse event: MouseEvent, at now: ContinuousClock.Instant) -> [Effect] {
         guard options.mouse else { return [] }
@@ -17,6 +19,11 @@ extension ScreenController {
             Self.transcriptTarget, at: CellRect(row: 0, col: 0, rows: frame.transcriptRows, cols: frame.columns))
         if frame.runnerColumns != nil {
             regions.add(Self.statusTarget, at: CellRect(row: frame.statusRow, col: 0, rows: 1, cols: frame.columns))
+        }
+        if !frame.pickerWindow.isEmpty {
+            regions.add(
+                Self.pickerTarget,
+                at: CellRect(row: frame.pickerFirstRow, col: 0, rows: frame.pickerWindow.count, cols: frame.columns))
         }
         // Collected first: acting on an event changes the controller, which the recognizer is part of.
         var events: [PointerEvent<Int>] = []
@@ -55,6 +62,10 @@ extension ScreenController {
                 // Into a local first: `self` is read before an argument is evaluated, so the copy would see the old selection.
                 let update = selector.endDrag()
                 return copyIfCommitted(update)
+            // Any count: a second click is the same row, or no row at all once the first has closed the list.
+            case .click(let target, let cell, .left, _, _) where target == Self.pickerTarget:
+                clickPicker(match: frame.pickerWindow.lowerBound + cell.row - frame.pickerFirstRow)
+                return []
             // Any count: a second click inside the double-click time is the user closing what the first opened, not selecting a word.
             case .click(let target, let cell, .left, _, _) where target == Self.statusTarget:
                 guard frame.runnerColumns?.contains(cell.col) == true else { return [] }

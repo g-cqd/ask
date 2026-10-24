@@ -56,6 +56,10 @@ struct CompletionPicker: Sendable, Equatable {
         settle()
     }
 
+    /// Chooses match `index`, as a click on its row does. The row was in view to be clicked, so the window stays where it is. The caller
+    /// passes a match that exists.
+    mutating func choose(_ index: Int) { selected = index }
+
     /// Keeps `old`'s choice when this is the same word with the same query, as a keystroke that changed nothing the list depends on.
     mutating func keepChoice(from old: CompletionPicker) {
         guard old.trigger.range.lowerBound == trigger.range.lowerBound, old.trigger.query == trigger.query else {

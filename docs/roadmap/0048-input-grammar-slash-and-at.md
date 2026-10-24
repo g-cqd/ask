@@ -136,6 +136,12 @@ a name with whitespace is inserted quoted, and a path typed in full closes the l
 for again once it is ten seconds old. **Not built, and not decided by this:** attaching the file at send time (the "resolved at send
 time" above), which would change the agent loop and the closed session payload.
 
+## Clicking a row (2026-10-23, ADR-0070, diary 2026-10-23 (19))
+
+Built: a left click on a match row of either list inserts it, exactly as Enter would (trailing space, a file's line range kept, nothing
+sent). The title, the status line, the prompt and the transcript are not targets; the wheel over the list still scrolls the transcript;
+a click on a list that has since changed, or while a question waits, does nothing. Rows are found from what the last frame drew.
+
 **Still owed:** `@` for agents and sessions, skills in the `/` list (which is where the mid-prompt `/` and the `SKILL` and
-`PROJECT` labels return), a detail pane, clicking a row, and promoting the trigger and ranking to TerminalKit (`@` is now the second consumer). Agent and session addressing still need the transport ADR below before any code. The rules in "Done when" that need things
+`PROJECT` labels return), a detail pane, and promoting the trigger and ranking to TerminalKit (`@` is now the second consumer). Agent and session addressing still need the transport ADR below before any code. The rules in "Done when" that need things
 that do not exist yet (a skill grants nothing; a dead session is refused; an agent's message arrives untrusted) are not testable yet.
