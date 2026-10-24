@@ -1,0 +1,60 @@
+import Foundation
+
+func files(_ roots: [String]) -> [String] {
+    var out: [String] = []
+    for root in roots {
+        if let e = FileManager.default.enumerator(atPath: root) {
+            for case let p as String in e where p.hasSuffix(".swift") || p.hasSuffix(".md") || p.hasSuffix(".py") { out.append(root + "/" + p) }
+        }
+    }
+    return out
+}
+func time(_ label: String, runs: Int = 9, _ body: () -> Int) {
+    var ts: [Double] = []; var n = 0
+    for _ in 0 ..< runs { let t = DispatchTime.now().uptimeNanoseconds; n = body(); ts.append(Double(DispatchTime.now().uptimeNanoseconds - t) / 1e6) }
+    ts.sort(); print(String(format: "%-48@ median %7.2f ms  min %7.2f ms  matches %d", label as NSString, ts[ts.count / 2], ts[0], n))
+}
+let roots = ["/Users/me/Developer/ask/Sources", "/Users/me/Developer/ask/Tests"]
+let paths = files(roots)
+print("files:", paths.count)
+
+// A. enumerate + read every file (the floor for any in-process search)
+time("A  enumerate and read all files") { files(roots).reduce(0) { $0 + ((try? Data(contentsOf: URL(filePath: $1)))?.count ?? 0) > 0 ? $0 + 1 : $0 } }
+
+// B. literal search by byte comparison over Data
+func literal(_ needle: String) -> Int {
+    let n = Array(needle.utf8); var count = 0
+    for p in files(roots) {
+        guard let d = try? Data(contentsOf: URL(filePath: p)) else { continue }
+        d.withUnsafeBytes { raw in
+            let b = raw.bindMemory(to: UInt8.self); var i = 0
+            while i + n.count <= b.count {
+                if b[i] == n[0] && memcmp(b.baseAddress! + i, n, n.count) == 0 { count += 1 }
+                i += 1
+            }
+        }
+    }
+    return count
+}
+time("B  literal 'ProviderFailure' (memcmp scan)") { literal("ProviderFailure") }
+
+// C. regex per file with NSRegularExpression
+let re = try! NSRegularExpression(pattern: #"func\s+\w+\(.*async"#)
+time("C  regex func\\s+\\w+\\(.*async (NSRegularExpression)") {
+    var count = 0
+    for p in files(roots) {
+        guard let s = try? String(contentsOfFile: p, encoding: .utf8) else { continue }
+        count += re.numberOfMatches(in: s, range: NSRange(s.startIndex..., in: s))
+    }
+    return count
+}
+// D. same with Swift's Regex, line by line
+let swiftRegex = try! Regex(#"func\s+\w+\(.*async"#)
+time("D  regex func\\s+\\w+\\(.*async (Swift Regex, per line)", runs: 3) {
+    var count = 0
+    for p in files(roots) {
+        guard let s = try? String(contentsOfFile: p, encoding: .utf8) else { continue }
+        for line in s.split(separator: "\n", omittingEmptySubsequences: false) where (try? swiftRegex.firstMatch(in: line)) != nil { count += 1 }
+    }
+    return count
+}
