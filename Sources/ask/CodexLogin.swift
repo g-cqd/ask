@@ -27,6 +27,7 @@ func codexLogin(device: Bool, file: CredentialFile, connection: ConnectionRecord
             try file.saveCodex(credentials)
         }
         print("Signed in to Codex. Credentials: \(file.url.path)")
+        NamedConnections.reportSharedAccount(.codex(credentials.accountID), connection: connection)
     } catch {
         fail("ask: sign-in failed: \(error)", code: 77)
     }

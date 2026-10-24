@@ -130,4 +130,14 @@ assert (work_dir / 'aliases.json').read_text() == '{broken', 'a damaged file mus
 # --- a removed connection starts again with no aliases ---------------------------------------------------------------------
 run(['connections', 'remove', 'employer'], 0)
 run(['connections'], 0, lambda s: 'employer' not in s)
+
+# --- two connections of one account are said to be one account; a different account is not -------------------------------------
+profile('twin-a', 'account-shared')
+profile('twin-b', 'account-shared')
+code, out, err = (lambda p: (p.returncode, p.stdout, p.stderr))(subprocess.run([binary, 'connections'], cwd=root, env=env, stdin=subprocess.DEVNULL, capture_output=True, text=True, timeout=20))
+lines = {l.split()[0]: l for l in out.splitlines() if l.strip()}
+assert "same account as connection 'twin-b'" in lines['twin-a'] and "same account as connection 'twin-a'" in lines['twin-b'], out
+assert 'same account' not in lines['personal'], out
+assert 'account-shared' not in out and 'fixture-access' not in out, 'an account identity or token reached the listing'
+print('PASS connections: twins of one account name each other, a different account is not flagged, no identity is shown', flush=True)
 print('ROOT', root)

@@ -22,7 +22,24 @@ struct ConnectionsCommand: ParsableCommand {
                 case .codex: present = try file.loadCodex(connection: record) != nil
                 case .anthropic: present = try file.loadClaude(connection: record) != nil
             }
-            print("\(record.name)  \(record.provider.rawValue)  \(present ? "credentials stored" : "signed out")")
+            let shared = present ? try sharing(of: record, in: registry)?.summary : nil
+            print(
+                "\(record.name)  \(record.provider.rawValue)  \(present ? "credentials stored" : "signed out")"
+                    + (shared.map { "  (\($0))" } ?? ""))
         }
+    }
+
+    /// Which other sign-ins hold the same account as `record`, read from the stored credentials; the account itself is never shown.
+    private func sharing(of record: ConnectionRecord, in registry: ConnectionRegistry) throws -> AccountSharing? {
+        let file = registry.credentials(for: record)
+        let identity: AccountIdentity?
+        switch record.provider {
+            case .codex: identity = try file.loadCodex(connection: record).map { .codex($0.accountID) }
+            case .anthropic: identity = try file.loadClaude(connection: record)?.accountEmail.map { .claude($0) }
+        }
+        guard let identity else { return nil }
+        return AccountSharing(
+            connections: try registry.connections(as: identity, excluding: record),
+            defaultSignIn: (try? CredentialFile.standard().isSignedIn(as: identity)) ?? false)
     }
 }
