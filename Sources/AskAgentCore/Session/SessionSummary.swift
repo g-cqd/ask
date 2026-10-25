@@ -12,7 +12,7 @@ public struct SessionSummary: Sendable, Equatable {
         let prompts = tree.activeBranch()
             .compactMap { entry -> String? in
                 guard case .user(let text) = entry.payload, text != AgentLoop.continuationPrompt else { return nil }
-                return text
+                return SkillInvocation.shown(text)
             }
         firstPrompt = prompts.first
         self.prompts = prompts.count
