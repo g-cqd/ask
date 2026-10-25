@@ -13,12 +13,12 @@
 # Exit: 0 clean, 1 a tool found something, 2 a tool could not be installed or run.
 set -eu
 
-VERSION_DEADWOOD=0.10.2
-SHA_DEADWOOD=6a69fde41051a4dde558f3e2747addf85fcc7e0fa61479a35e5ececd3fb78ab2
-VERSION_DOLLY=0.10.3
-SHA_DOLLY=9ca8e0d236c3a273b5ef3351d04857b9ae191e63356da9919cfc800f0863deb6
-VERSION_ARCLEAK=0.11.0
-SHA_ARCLEAK=7829e2efd4c4cd91c947962c6052c5949d22551352e074aefcf43f41e547e139
+VERSION_DEADWOOD=0.11.1
+SHA_DEADWOOD=a1d994ed94fa90d099674d4ece67c4e8fb73feb3f7b1bb2729efd753e1e0fdff
+VERSION_DOLLY=0.11.0
+SHA_DOLLY=5e20c29c15e3c40a9d25fe873205230933cfe7bf97e7d229acb0ee0b63336701
+VERSION_ARCLEAK=0.12.0
+SHA_ARCLEAK=50c583159eb06ce26bc556473bd632b572da48f3da245f1c30c73bf5b9e88ae1
 
 # Outside the repository, so a verification worktree reuses the download instead of repeating it.
 CACHE="${ASK_ANALYZERS_DIR:-$HOME/Library/Caches/ask/analyzers}"
