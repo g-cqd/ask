@@ -70,3 +70,34 @@ from the start of the buffer) changes cost, not output, and is not caught.
 
 Not covered: that the child is a session leader (the mutant would have signalled the test runner itself, so it proves nothing here), and
 that closing reaches a grandchild.
+
+## Addendum (2026-10-25): the HTTP transport
+
+Roadmap 0067 phase 2. `HTTPMCPTransport` speaks the streamable HTTP transport over ask's existing `HTTPTransport` and `SSEDecoder`, so it is
+tested without a network and adds no dependency.
+
+1. **Every message is its own POST, made at once.** `send` returns before the reply is known, so a tool that takes a minute does not hold
+   up the cancel behind it (tested with a held reply and a second request).
+2. **Each kind of reply becomes messages.** `application/json` is one message, or each member of a batch; `text/event-stream` is its
+   `message` events however the network cut them (other events are ignored); `202` is nothing.
+3. **A request that cannot be answered is answered here**, with a made-up error (code -32000) carrying its id and the cause: an HTTP
+   error and the start of its body, a reply of another content type, or a reply that ended without the answer to *this* request. The
+   caller learns at once instead of at its timeout. A notification has nobody waiting, so a failure of one says nothing.
+4. **A session is the header the server sent.** `Mcp-Session-Id` is kept and sent back, `MCP-Protocol-Version` is sent once the handshake
+   has agreed one (the connection tells the transport: `negotiated(protocolVersion:)`, a no-op for a pipe), and closing sends `DELETE`
+   within a grace and does not mind a `405`. A `404` on a session ends the conversation; opening a new one is the caller's.
+5. **A named client.** Every request carries a `User-Agent` the caller names: Apple's documentation server sits behind Cloudflare, which
+   refused Python's default with `403` (probe above).
+6. **A credential is sent only where ADR-0024 allows it**: `https`, or `http` to this machine. Anything else is refused when the
+   transport is made, with a reason that does not repeat the address.
+
+Not done: the optional GET stream on which a server speaks unprompted, so `tools/list_changed` reaches a caller only on a reply stream;
+OAuth for a server that asks for it; resuming a dropped stream. Tests: 19 for the transport and one connection over it (80 in the
+target, six consecutive green runs). Compiling mutants, all caught: the accept header, the session header not sent, the version header
+not sent, a `404` that does not end the conversation, a failure announced for a notification, any event taken for a message, batches not
+split, no `DELETE`, the credential policy off, an unanswered event stream (caught by the test's time limit, weaker evidence), and
+any response counted as the answer (the first run of it survived; a test was added, then it was caught, also with a time limit).
+Against real servers (a throwaway test, not kept, run once each on 2026-10-25): Apple's documentation server over HTTP completed start,
+a 9-tool listing and a `search_docs` call in 0.8 s, with ask's own `User-Agent`; `rea` (`bunx rea-agents@6.5.0 mcp`) over stdio completed
+start and a 207-tool listing (689 KB of schemas) in 1.5 s and exited 0 on close, leaving no process of its own behind. The Xcode bridge
+was not run (it can raise a permission prompt in the owner's session).

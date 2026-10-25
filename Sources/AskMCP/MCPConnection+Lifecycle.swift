@@ -27,6 +27,7 @@ extension MCPConnection {
             await close()
             throw .unsupportedVersion(version)
         }
+        transport.negotiated(protocolVersion: version)
         // Written now and not queued: nothing else can be queued before the connection is started, so the order is safe, and the caller
         // can rely on the server having been told when this returns.
         do { try await transport.send(MCPWire.notification(method: "notifications/initialized")) } catch {
