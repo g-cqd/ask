@@ -187,6 +187,24 @@ def probe_d(binary):
     ])
 
 
+def probe_f(binary):
+    print("F: a tool the server marks destructive runs under -p, with no one to ask: naming the server was the consent")
+    victim = os.path.join(tempfile.mkdtemp(), "victim.txt")
+    open(victim, "w").write("data")
+    config, state, project = setup({"fx": {"command": "sh", "args": ["-c", f"exec python3 {FIXTURE}"]}})
+    server = Server([turn([("call", "b1", "mcp__fx__boom", {"path": victim})], "tool_use"),
+                     turn([("text", "Done.")], "end_turn")])
+    process = run(binary, "Delete it.", config, state, project, server)
+    server.httpd.shutdown()
+    got = tool_results(server) if len(server.requests) == 2 else {}
+    return all([
+        check("the run finishes", process.returncode == 0 and len(server.requests) == 2, f"{process.returncode} {process.stderr[-300:]}"),
+        check("the destructive tool was offered, marked", any(t["name"] == "mcp__fx__boom" for t in server.requests[0]["body"]["tools"])),
+        check("the call ran without a question", got.get("b1", "").startswith("deleted") and "gone" in got.get("b1", ""), got.get("b1", "")),
+        check("no approval was asked on stderr", "Allow it?" not in process.stderr, process.stderr[-300:]),
+    ])
+
+
 def wait_for(path, seconds=30):
     deadline = time.time() + seconds
     while time.time() < deadline:
@@ -244,6 +262,6 @@ if __name__ == "__main__":
     if CONTROL:
         ok = probe_a(CONTROL, control=True)
     else:
-        ok = all([probe_a(BINARY), probe_b(BINARY), probe_c(BINARY), probe_d(BINARY), probe_e(BINARY)])
+        ok = all([probe_a(BINARY), probe_b(BINARY), probe_c(BINARY), probe_d(BINARY), probe_e(BINARY), probe_f(BINARY)])
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

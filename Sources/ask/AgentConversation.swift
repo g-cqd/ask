@@ -18,7 +18,8 @@ final class AgentConversation: Conversation {
     /// Where settings are read from; `/model` replaces it with one carrying the run's selection.
     let sourceState: Mutex<ConfigurationSource>
     var source: ConfigurationSource { sourceState.withLock { $0 } }
-    private let makeLoop: @Sendable (RunSettings, SandboxApprover?, SessionNarrowing) throws -> AgentLoop
+    private let makeLoop:
+        @Sendable (RunSettings, SandboxApprover?, SessionNarrowing, DestructiveApprover?) throws -> AgentLoop
     /// The sandbox the model narrowed this conversation to; it outlives loop rebuilds, not /new or /resume.
     let narrowing = SessionNarrowing()
     /// Approval questions waiting for an answer, the grants for this session, and where to ask (roadmap 0019).
@@ -59,7 +60,10 @@ final class AgentConversation: Conversation {
     init(
         directory: SessionDirectory, resumed: SessionRecorder? = nil, settings: RunSettings,
         source: ConfigurationSource, jobs: JobTable, mcp: MCPHub,
-        makeLoop: @escaping @Sendable (RunSettings, SandboxApprover?, SessionNarrowing) throws -> AgentLoop
+        makeLoop:
+            @escaping @Sendable (
+                RunSettings, SandboxApprover?, SessionNarrowing, DestructiveApprover?
+            ) throws -> AgentLoop
     ) {
         sourceState = Mutex(source)
         self.jobs = jobs
@@ -169,7 +173,8 @@ final class AgentConversation: Conversation {
             if let existing = current.loop { return existing }
             mcp.apply(current.settings.configuration.mcp.value.servers)
             let created = try makeLoop(
-                current.settings, { [weak self] in await self?.approve($0) ?? false }, narrowing)
+                current.settings, { [weak self] in await self?.approve($0) ?? false }, narrowing,
+                { [weak self] in await self?.approveDestructive($0) ?? false })
             current.loop = created
             return created
         }
@@ -220,10 +225,11 @@ func runInteractive(
         let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(
             directory: directory, resumed: resumed, settings: settings, source: source, jobs: jobs, mcp: mcp,
-            makeLoop: { settings, approve, narrowing in
+            makeLoop: { settings, approve, narrowing, destructiveApprover in
                 try makeLoop(
                     settings, instructions: files, jobs: jobs,
-                    transport: URLSessionTransport(), approve: approve, narrowing: narrowing, live: mcp.live)
+                    transport: URLSessionTransport(), approve: approve, narrowing: narrowing, live: mcp.live,
+                    destructiveApprover: destructiveApprover)
             })
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.

@@ -13,7 +13,7 @@ ADR-0096 holds the decisions. Phases:
    server's own GET stream, which carries what it says unprompted (ADR-0108).
 3. **Integration** (done, ADR-0099): `mcp` in the user's config, a live tool registry, the host and hub, background connection, the sandbox
    rule, a watchdog for a killed ask (ADR-0102), project-level servers behind trust (ADR-0103), `${NAME}` in settings, results as text. A server with more than 16 tools and no `tools` list is searched, not listed (ADR-0100).
-4. **Surface** (done in part): notices and `/mcp`. Not done: progress in the transcript.
+4. **Surface** (done in part): notices, `/mcp` and the destructive-tool approval of ADR-0110. Not done: progress in the transcript.
 5. **Still open** (ordered by value):
-   - **Per-call approval** for a tool a server marks destructive (its hints are hints, not facts).
+   - **Approval of what a server does beyond its tools**, such as a tool the server does not mark destructive but that ask learns is (nothing today can learn that).
    - Resources, prompts, OAuth for remote servers, sampling (refused today).

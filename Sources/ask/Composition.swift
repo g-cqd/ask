@@ -136,7 +136,7 @@ func modelLabel(_ resolved: ResolvedModel) -> String {
 func makeLoop(
     _ run: RunSettings, instructions files: [ProjectInstructions.File], jobs: JobTable,
     transport: URLSessionTransport, approve: SandboxApprover? = nil, narrowing: SessionNarrowing = SessionNarrowing(),
-    live: LiveTools? = nil
+    live: LiveTools? = nil, destructiveApprover: DestructiveApprover? = nil
 ) throws -> AgentLoop {
     let workingDirectory = run.workspace
     let resolved = run.model
@@ -158,7 +158,8 @@ func makeLoop(
         context: ToolContext(
             workingDirectory: workingDirectory,
             outputDirectory: SessionDirectory(project: workingDirectory).path + "/output", sandbox: sandbox,
-            approve: approve, narrowing: narrowing, commandEnvironment: run.commandEnvironment))
+            approve: approve, narrowing: narrowing, commandEnvironment: run.commandEnvironment,
+            destructiveApprover: destructiveApprover))
 }
 
 /// The provider, with a control still to be looked up wrapped to look it up before the first request, not at startup.
