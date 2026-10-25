@@ -94,7 +94,7 @@ A click in the input puts the cursor there; a drag there selects text, a double 
 
 Skills (a directory with a `SKILL.md`, from any harness's skills directory) are listed to the model, which loads one with the `skill` tool when a task matches;
 `ask skills` shows what was found and `skills` in `config.json` sets `enabled`, `maxAdvertised` (default 32) and `sources`. A skill grants nothing, and a
-project's skills are not loaded yet. `/skill:name request` asks for one yourself, and the `/` picker lists them.
+project's skills load only after `ask trust --skills`, in a terminal, has trusted each file as it is. `/skill:name request` asks for one yourself, and the `/` picker lists them.
 
 MCP servers (a program ask starts, or a URL) are named under `mcp` in your own `config.json` and their tools are offered to the model as
 `mcp__<server>__<tool>`; `/mcp` shows which are connected. A server runs outside ask's sandbox, so naming one is the consent: a project's
