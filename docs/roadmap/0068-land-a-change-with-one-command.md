@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-25
 ---
@@ -30,6 +30,15 @@ rewrite the cross-references, rerun the gate, fast-forward, remove the worktree.
 A probe in a throwaway repository shows: eight concurrent claimants get eight distinct numbers; the next number accounts for a record that exists only on an
 unmerged branch; `land.sh` refuses a tree with a duplicated number and lands a clean one; and the claim ref is released when the record is merged.
 The probe is broken once on purpose (a script that takes the number without the ref) and shown to fail.
+
+## Implemented (ADR-0107)
+
+`Scripts/next-number.sh` scans branch trees, origin/main, all worktree files, and shared claims. `--claim` atomically reserves; publication releases claims on subsequent runs.
+`Scripts/land.sh` integrates local main and origin/main, checks duplicate numbers and new diary gaps, gates, checks moving refs, fast-forwards local main, and cleans up its own task only.
+Use `--keep` to retain the task worktree. Neither script pushes. The quality entry point runs the real duplicate-number check and throwaway workflow tests.
+
+The concurrent test was deliberately broken by deleting the expected-old ref argument and failed; restored code passes. Diary 2026-10-25-21 records the evidence.
+Still owed: full repository gate and an actual local landing with the script.
 
 ## Not claimed
 

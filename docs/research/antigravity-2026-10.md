@@ -21,8 +21,8 @@ An unknown has an **id** (`U1`…), what would settle it, what that costs, and w
 | The sign-in is Google OAuth with PKCE and a pasted code; the authorize URL equals the one the real `agy` 1.4.6 prints (nine parameters, same order and scopes) | O | ADR-0075 |
 | The application's client secret is one of three `GOCSPX-` strings in the `agy` binary, and Google accepts exactly one (`invalid_grant` against `invalid_client` for the others); it is identical in `agy` 1.4.2 and 1.4.6 | O | ADR-0073 |
 | All seven requested scopes are granted (two extra aliases); the token's audience is the Antigravity client; access is offline | O | ADR-0075 |
-| An access token lasts about 3,300 s and a refresh keeps the **same refresh token** (two observations) and the secret | O | ADR-0075, ADR-0105 |
-| A refresh through the shipping binary works end to end, with the record at mode 0600 and the other providers' records untouched | O | ADR-0105 |
+| An access token lasts about 3,300 s and a refresh keeps the **same refresh token** (two observations) and the secret | O | ADR-0075, ADR-0109 |
+| A refresh through the shipping binary works end to end, with the record at mode 0600 and the other providers' records untouched | O | ADR-0109 |
 | Cloud Code answers to ask's own identity for onboarding, the model list and streaming; the first-party `antigravity/cli/` identity was **never sent** | O | ADR-0080 |
 | The host is `daily-cloudcode-pa.googleapis.com`, the one `agy` itself calls; a production host `cloudcode-pa.googleapis.com` exists in the binary | O / R | ADR-0080 |
 
@@ -48,7 +48,7 @@ An unknown has an **id** (`U1`…), what would settle it, what that costs, and w
 | A replayed call with no signature is refused on two Gemini 3 models (HTTP 400 "Function call is missing a thought_signature"); the sentinel `skip_thought_signature_validator` and the real signature are both accepted | O | ADR-0080 |
 | Claude and GPT-OSS refuse a result without the call's id on `functionResponse` (400 `tool_use_id: Field required`) | O | ADR-0080 |
 | ask's eight real tool schemas, sent as `parametersJsonSchema`, are accepted on four models; `{output}` and `{error}` results are accepted | O | ADR-0090 |
-| A Gemini history with a signature replays to the same model, to another Gemini model (the sentinel stands in), after a resume in a new process, and to Claude and GPT-OSS (the carrier is dropped) | O | ADR-0090, ADR-0105, diary 2026-10-25-14 |
+| A Gemini history with a signature replays to the same model, to another Gemini model (the sentinel stands in), after a resume in a new process, and to Claude and GPT-OSS (the carrier is dropped) | O | ADR-0090, ADR-0109, diary 2026-10-25-14 |
 | `maxOutputTokens` 200,000 on a model that reports 65,536 is accepted | O | ADR-0090 |
 | Usage is cumulative per chunk (`promptTokenCount`, `candidatesTokenCount`, `totalTokenCount`); GPT-OSS also reports `cachedContentTokenCount`; `thoughtsTokenCount` was never present | O | ADR-0090 |
 | The server mints call ids by family: Gemini `call_<n>`, Claude `toolu_vrtx_…` | O | fixtures |
@@ -60,7 +60,7 @@ An unknown has an **id** (`U1`…), what would settle it, what that costs, and w
 | An HTTP error body is `{"error":{"code","message","status"}}` (seen for 400, 404 and 503) | O | ADR-0087, ADR-0090 |
 | A model list cached per project lets a run know its window: `gpt-oss-120b` resolved 131,072 and compacted at 85,197; a 1M model kept ask's own 150,000 | O | ADR-0098 |
 | The interactive screen shows the provider and model, a tool call, usage, a mid-session `/model` switch Gemini → Claude → Gemini, an abort ("Aborted. Results already known were kept.") and a clean Ctrl-C exit | O | diary 2026-10-25-14 |
-| Idle memory is about 56 KiB higher with the connector (six interleaved pairs); no consistent cold-start, input or action difference at load 8 to 15 | O | ADR-0105 |
+| Idle memory is about 56 KiB higher with the connector (six interleaved pairs); no consistent cold-start, input or action difference at load 8 to 15 | O | ADR-0109 |
 
 ## 2. What is not known
 
@@ -80,7 +80,7 @@ An unknown has an **id** (`U1`…), what would settle it, what that costs, and w
 | **U12** | Would the first-party identity change the catalog (pi reports 29 models against 23)? ask sees 20 entries, 15 kept | Which models ask can offer | Send `antigravity/cli/…` once and compare | **The owner**: it is a first-party identity claim, and the project decided not to make one (ADR-0080) | ask's own identity throughout |
 | **U13** | Does the production host differ from the daily host? | Whether the daily host can disappear | One `loadCodeAssist` and one list against it | Cheap | The daily host, as `agy` itself uses |
 | **U14** | How long does a refresh token live, and is it ever rotated or revoked (two observations of no rotation)? | A silent sign-out | Time, and the unsaved-rotation path already covers a rotation | Time | The unsaved-rotation notice (ADR-0091) covers a rotation that cannot be saved |
-| **U15** | The `invalid_client` rediscovery path against the real Google | It is the recovery from a changed secret | Cannot be made to happen without changing the secret | Not provokable | **S** only (ADR-0105) |
+| **U15** | The `invalid_client` rediscovery path against the real Google | It is the recovery from a changed secret | Cannot be made to happen without changing the secret | Not provokable | **S** only (ADR-0109) |
 | **U16** | Two processes refreshing at once | A wasted refresh, not a wrong one, by the compare-and-replace argument | Two `ask` runs started together with an expired token | Cheap | Argued, not run |
 | **U17** | Latency saved by storing the project, and the cost of reading the cache on an `agy` start | Whether the first request should fetch a list | Interleaved timing of `ask --provider agy` with and without both | Cheap; the network dominates | Not measured |
 | **U18** | What should a run do with a model the list does not name, or a first run with no list? | A 404 after a request, or a run with no window | A design choice, then a test | Small | The run goes ahead; the 404 is shown |
@@ -95,7 +95,7 @@ These look like facts in the code and are not: each is a decision, recorded so t
 
 - The list of chat models is **ask's rule** over a list that marks none (ADR-0087). The `tab_*` and image models answer; they are left out because
   of their limits and role, not because they cannot.
-- ask **chooses no model**: the server's own default is an Opus, and spending the person's quota is not ask's call (ADR-0105).
+- ask **chooses no model**: the server's own default is an Opus, and spending the person's quota is not ask's call (ADR-0109).
 - ask **refuses an explicit thinking level** because none of the fields that might carry one was probed (ADR-0090), not because the server refuses it.
 - The **identity string** is `ask/0 (…)`: the version is 0 because ask has none (roadmap 0070).
 - The sentinel goes on the **first call of every model turn**, as pi does, not only the current one (**U8**).
