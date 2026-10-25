@@ -127,7 +127,7 @@ struct CompletionPickerComposerTests {
         #expect(ScreenComposer.pickerLines(picker, columns: 0, rows: 8).isEmpty)
     }
 
-    @Test func `an open runners list sits above the status line and the picker below it`() throws {
+    @Test func `the status and picker sit above the input and the runner strip below it`() throws {
         var (controller, height) = screen(typing: "/co")
         controller.handle(
             .runners([RunnerInfo(name: "job-1", detail: "npm run dev"), RunnerInfo(name: "job-2", detail: "tail -f")]))
@@ -138,11 +138,11 @@ struct CompletionPickerComposerTests {
         let cursor = composer.compose(controller.state, into: &buffer)
         let shown = rows(buffer)
         let first = try #require(shown.firstIndex { $0.hasPrefix("job-1") })
-        #expect(
-            shown[first + 1].hasPrefix("job-2") && shown[first + 2].contains("· ready"),
-            "the runners, then the status line")
-        #expect(shown[first + 3].hasPrefix("commands") && shown[first + 4].hasPrefix("/config"), "then the picker")
-        #expect(shown.last == "ask> /co" && composer.transcriptRows == first && cursor.row == height - 1)
+        let status = composer.transcriptRows
+        #expect(shown[status].contains("· ready"))
+        #expect(shown[status + 1].hasPrefix("commands") && shown[status + 2].hasPrefix("/config"))
+        #expect(shown[first - 1] == "ask> /co" && shown[first + 1].hasPrefix("job-2"))
+        #expect(first == height - 2 && cursor.row == first - 1)
     }
 
     @Test func `a full runners list and the picker together still leave the transcript a row`() {
@@ -153,7 +153,7 @@ struct CompletionPickerComposerTests {
         var buffer = ScreenBuffer(columns: 50, rows: height)
         var composer = ScreenComposer()
         _ = composer.compose(controller.state, into: &buffer)
-        #expect(composer.transcriptRows >= 1 && rows(buffer).last == "ask> /")
+        #expect(composer.transcriptRows >= 1 && rows(buffer).contains("ask> /"))
     }
 
     @Test func `the transcript keeps a row at every screen height that offers a picker, with any number of runners`() {
@@ -168,7 +168,7 @@ struct CompletionPickerComposerTests {
                 var composer = ScreenComposer()
                 _ = composer.compose(controller.state, into: &buffer)
                 #expect(composer.transcriptRows >= 1, "height \(height), \(runners) runners")
-                #expect(rows(buffer).last == "ask> /", "height \(height), \(runners) runners")
+                #expect(rows(buffer).contains("ask> /"), "height \(height), \(runners) runners")
             }
         }
     }

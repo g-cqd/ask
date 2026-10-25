@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe the status line's job count and its list through the real binary, a PTY and a local fake provider.
+"""Probe the status count and the below-input runner strip with real jobs in a PTY and a local fake provider.
 
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-runners.py .build/release/ask
 
@@ -65,8 +65,10 @@ def main():
             terminal.repaint()
             check("a running job is counted in the status line", "ready · 1 job" in terminal.text())
             click_count(terminal, "1 job")
-            check("a click on the count opens the list of what runs", "job-1  " + command in terminal.text()
-                  and terminal.screen.display[status_row(terminal) - 1].startswith("job-1  exec python3"))
+            check("a click on the count opens the strip below the input", "job-1  " + command in terminal.text()
+                  and terminal.screen.display[status_row(terminal) + 1].startswith("ask>")
+                  and terminal.screen.display[status_row(terminal) + 2].startswith("job-1  exec python3"))
+            check("the strip states what the job is doing", "· running" in terminal.screen.display[-1])
             click_count(terminal, "1 job")
             check("another click closes it", "job-1  exec" not in terminal.text())
             terminal.draw(lambda: terminal.send(b"/tasks\r"))
@@ -74,6 +76,16 @@ def main():
             terminal.draw(lambda: terminal.send(b"/tasks\r"))
             check("and closes it", terminal.text().count("job-1  exec") == 0)
             terminal.draw(lambda: terminal.send(b"/tasks\r"))
+            terminal.draw(lambda: terminal.send(b"draft"))
+            row = status_row(terminal) + 1
+            # Click the start of the draft in the moved input, not the old last row.
+            terminal.draw(lambda: terminal.send(f"\x1b[<0;6;{row + 1}M\x1b[<0;6;{row + 1}m".encode()))
+            terminal.draw(lambda: terminal.send(b"X"))
+            check("the moved input is still clickable at the displayed cell", "ask> Xdraft" in terminal.text())
+            terminal.draw(lambda: terminal.send(b"\x1b"))
+            check("Esc closes the strip and keeps the draft", "job-1  exec" not in terminal.text()
+                  and terminal.screen.display[-1].startswith("ask> Xdraft"))
+            terminal.draw(lambda: terminal.send(b"\x18/tasks\r"))
             start = len(terminal.raw)
             terminal.send(b"Stop it\r")
             terminal.until(lambda: b"Stopped." in bytes(terminal.raw)[start:] and b"ready" in bytes(terminal.raw)[start:])
