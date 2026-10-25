@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: []
+blocked-by: ["0064"]
 date: 2026-10-24
 ---
 
@@ -21,21 +21,25 @@ the lane strip and the sidebar are views of it and cannot disagree.
 
 1. **The tree and the strip, jobs only.** The model above; a lane strip of one row per runner below the input, indented by depth, text only,
    taking rows from the transcript with a cap and `… N more`; it replaces ADR-0066's list above the status line (`/tasks` still opens it).
-2. **Focus.** Focus decides what the transcript shows and where the input sends. Down from an empty one-line draft moves a selection into the
-   strip; Up and Down move; Right expands and Left collapses; Enter focuses; Esc returns to main; `/agents` lists and `/agents NAME` focuses; a
-   click on a row focuses it. The route is always in text: `main › reviewer › explorer` in the status line and the target in the prompt label.
+2. **Focus** (the owner's refinement, 2026-10-24). Focus decides what the transcript shows and where the input sends. There is **one input slot**,
+   and it sends to the focused lane; a lane has no input of its own. **Down from an empty draft, or from the last line of a draft**, moves a
+   selection into the strip; Up and Down move; Right expands and Left collapses; **Enter on a selected lane focuses it**; **Esc returns focus to the
+   input, always, and from the input goes back to the main lane** (roadmap 0064: Esc never aborts); a **click on the input returns focus to it**;
+   `/agents` lists and `/agents NAME` focuses; a click on a row focuses it. The route is always in text: `main › reviewer › explorer` in the status line and the target in the prompt label.
    A job has no conversation to focus, so for jobs focus shows its output; for agents (0063) it shows the child's transcript.
 3. **Approvals follow the lane.** A question from a runner surfaces at the current focus, never waits unseen: the strip row says `waiting for
    approval`, the status line counts it, the answer keys are the existing ones, and the question names the lane.
 4. **The sidebar** (the *workbench* layout of 0015 and ADR-0046), built for the **character layout first**: the same tree, the same keys and
-   clicks, a divider that is also the scrollbar track. Pixel strokes come later and change only the divider; it does not wait for 0014 or 0003.
+   clicks, a divider that is also the scrollbar track. **Open by default in the workbench layout, and toggleable** (the owner's answer). Pixel strokes come later and change only the divider; it does not wait for 0014 or 0003.
 
 ## Rules that must hold, each with a failing test first
 
 - The strip, the sidebar and the status count are computed from one tree: a test changes the tree and checks all three.
 - Indentation shows depth for any depth; collapsing a node hides its descendants and keeps their count in the parent's row.
 - Nothing is sent to a runner that is not shown: the target is in the screen's text whenever the input would send anywhere but main.
-- Esc always returns to main; focus on a runner that ends returns to main with a notice, never to a blank lane.
+- Esc returns focus to the input from the strip or a focused lane, and from the input to the main lane, and does nothing at main; focus on a runner
+  that ends returns to main with a notice, never to a blank lane. A click on the input returns focus to it.
+- One input slot: nothing a lane shows has an input of its own, and what is in the draft goes to the focused lane.
 - A question from an unfocused runner is visible in the strip, the sidebar and the status line, and answering it from main works.
 - Every click has a key (ADR-0044's rule): focus, expand, collapse and return.
 - With no runners, the strip takes no rows and the screen is what it is today.
@@ -43,7 +47,7 @@ the lane strip and the sidebar are views of it and cannot disagree.
 ## Probes
 
 - A real PTY probe with real background jobs: the strip appears, a job's output can be focused and left, `/agents` lists, a click and the key
-  do the same thing, and the screen after Esc is the screen before.
+  do the same thing, and the screen after Esc, Esc is the screen before.
 - Cost: rows taken from the transcript, per-frame cost with 0, 5 and 50 runners, same harness before and after, with the machine's load noted.
 
 ## Done when
@@ -53,4 +57,4 @@ runners. Subagents (0063) then supply `agent` runners with no change to this UI.
 
 ## Not decided here
 
-The sidebar's width, whether it opens by itself when something runs, what "context" lists, and the lane-focus keys (proposed above).
+The sidebar's width, what "context" lists, and the key that toggles the sidebar.
