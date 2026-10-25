@@ -69,6 +69,7 @@ let package = Package(
         // Consumed by the Benchmarks package (ADR-0016).
         .library(name: "AskAgentCore", targets: ["AskAgentCore"]),
         .library(name: "AskAI", targets: ["AskAI"]),
+        .library(name: "AskMCP", targets: ["AskMCP"]),
         .library(name: "AskTools", targets: ["AskTools"]),
         .library(name: "AskTUI", targets: ["AskTUI"])
     ],
@@ -108,6 +109,16 @@ let package = Package(
             name: "AskAI",
             dependencies: [.product(name: "AemiJSON", package: "AemiJSON")],
             path: "Sources/AskAI",
+            swiftSettings: packageSettings
+        ),
+        // The Model Context Protocol client: JSON-RPC over a transport, no policy (ADR-0096). A leaf, like pi's `pi-mcp`.
+        .target(
+            name: "AskMCP",
+            dependencies: [
+                "AskAI", .product(name: "AemiJSON", package: "AemiJSON"),
+                .product(name: "Subprocess", package: "swift-subprocess")
+            ],
+            path: "Sources/AskMCP",
             swiftSettings: packageSettings
         ),
         .target(
@@ -162,6 +173,16 @@ let package = Package(
             name: "AskAITests",
             dependencies: ["AskAI"],
             path: "Tests/AskAITests",
+            swiftSettings: packageSettings
+        ),
+        .testTarget(
+            name: "AskMCPTests",
+            dependencies: [
+                "AskMCP", "AskAI", .product(name: "AemiJSON", package: "AemiJSON"),
+                .product(name: "AemiTesting", package: "aemi")
+            ],
+            path: "Tests/AskMCPTests",
+            exclude: ["Fixtures"],
             swiftSettings: packageSettings
         ),
         .testTarget(

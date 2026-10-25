@@ -12,6 +12,8 @@ public enum SkillDiscovery {
     public static let maximumDirectories = 600
     /// The most bytes of a skill file read.
     public static let maximumBytes = 256 << 10
+    /// How much of a file is read as text to find its head: its body is not needed to list it.
+    static let headBytes = 8 << 10
 
     /// - Parameters:
     ///   - workingDirectory: where the project is.
@@ -24,12 +26,17 @@ public enum SkillDiscovery {
     ) -> SkillCatalog {
         var catalog = SkillCatalog()
         var seenFiles = Set<String>()
+        var scannedRoots = Set<String>()
         var byName: [String: Skill] = [:]
         for root in roots(workingDirectory: workingDirectory, home: home, sources: sources, selection: selection) {
             let exists = isDirectory(root.path)
             catalog.roots.append(
                 SkillCatalog.Root(path: root.path, source: root.source, scope: root.scope, exists: exists))
-            guard exists else { continue }
+            // A directory already searched under another name (eight harness directories can be links to one) is not searched again.
+            guard exists, scannedRoots.insert(URL(fileURLWithPath: root.path).resolvingSymlinksInPath().path).inserted
+            else {
+                continue
+            }
             for candidate in candidates(in: root.path) {
                 let real = URL(fileURLWithPath: candidate.file).resolvingSymlinksInPath().path
                 guard seenFiles.insert(real).inserted else { continue }
@@ -71,7 +78,11 @@ public enum SkillDiscovery {
         }
         for (scope, paths) in [(SkillScope.user, \SkillSource.userRoots), (.bundled, \SkillSource.bundledRoots)] {
             for source in sources where selection.includes(source: source.id, scope: scope) {
-                roots += source[keyPath: paths].map { Root(path: home + "/" + $0, source: source.id, scope: scope) }
+                // An absolute root is used as it is (ask's own skills follow its configuration directory); any other is under the home directory.
+                roots += source[keyPath: paths]
+                    .map {
+                        Root(path: $0.hasPrefix("/") ? $0 : home + "/" + $0, source: source.id, scope: scope)
+                    }
             }
         }
         return roots

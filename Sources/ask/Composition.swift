@@ -141,16 +141,18 @@ func makeLoop(
     let resolved = run.model
     let limits = run.limits
     let sandbox = run.sandbox
+    let skills = SkillBook(run.configuration.skills.value, workingDirectory: workingDirectory)
     let agent = settings(
-        for: resolved, workingDirectory: workingDirectory, instructions: files, limits: limits, sandbox: sandbox,
-        thinking: run.thinking)
+        for: resolved, workingDirectory: workingDirectory,
+        followedBy: (skills.block.map { [$0] } ?? []) + ProjectInstructions.promptBlocks(files), limits: limits,
+        sandbox: sandbox, thinking: run.thinking)
     return AgentLoop(
         provider: deferringThinking(makeProvider(resolved, transport: transport), run: run, limit: agent.maximumTokens),
         tools: try ToolRegistry(
             FileTools.all + [
                 BashTool(jobs: jobs), WaitTool(jobs: jobs), JobInputTool(jobs: jobs), JobStopTool(jobs: jobs),
                 NarrowSandboxTool(jobs: jobs)
-            ]),
+            ] + (skills.tool.map { [$0] } ?? [])),
         settings: agent,
         context: ToolContext(
             workingDirectory: workingDirectory,
@@ -169,18 +171,18 @@ private func deferringThinking(_ provider: any ModelProvider, run: RunSettings, 
     }
 }
 
-/// The run's settings, with the reply limit, compaction threshold and kept tail sized to the model's window.
+/// The run's settings, with the reply limit, compaction threshold and kept tail sized to the model's window. ask's own instructions come first and `blocks`
+/// (the skills, then the project's instruction files) follow.
 private func settings(
-    for resolved: ResolvedModel, workingDirectory: String, instructions files: [ProjectInstructions.File],
-    limits: RunLimits, sandbox: SandboxPolicy, thinking: ThinkingControl?
+    for resolved: ResolvedModel, workingDirectory: String, followedBy blocks: [String], limits: RunLimits,
+    sandbox: SandboxPolicy, thinking: ThinkingControl?
 ) -> AgentSettings {
     let budget = ContextBudget(
         contextWindow: resolved.contextWindow, maxOutputTokens: resolved.maxOutputTokens,
         requestedCompactAt: limits.compactAtTokens)
     return AgentSettings(
         model: resolved.model, maximumTokens: budget.maximumTokens,
-        systemPrompt: [instructions(workingDirectory: workingDirectory, sandbox: sandbox)]
-            + ProjectInstructions.promptBlocks(files),
+        systemPrompt: [instructions(workingDirectory: workingDirectory, sandbox: sandbox)] + blocks,
         maximumTurns: limits.maximumTurns, compactAtTokens: budget.compactAtTokens,
         keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes, thinking: thinking)
 }
