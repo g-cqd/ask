@@ -42,6 +42,16 @@ public struct ProjectTrust: Sendable, Equatable {
         return known == Self.digest(bytes) ? .trusted : .changed
     }
 
+    /// Whether `path`, whose bytes have the SHA-256 `digest`, is trusted: the same question as ``standing(of:bytes:)`` for a caller that
+    /// has the digest already.
+    public func standing(of path: String, digest: String) -> Standing {
+        guard let known = entries[path] else { return .unknown }
+        return known == digest ? .trusted : .changed
+    }
+
+    /// Trusts `path` as its bytes were when they had the SHA-256 `digest`.
+    public mutating func trust(_ path: String, digest: String) { entries[path] = digest }
+
     /// Trusts `path` as it is now.
     public mutating func trust(_ path: String, bytes: [UInt8]) { entries[path] = Self.digest(bytes) }
 

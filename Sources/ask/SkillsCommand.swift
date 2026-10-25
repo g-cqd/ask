@@ -1,3 +1,4 @@
+// @dl:accept -- the commands share a shape
 internal import ArgumentParser
 internal import AskAgentCore
 internal import Foundation
@@ -45,7 +46,7 @@ struct SkillsCommand: ParsableCommand {
         let catalog = SkillDiscovery.discover(
             workingDirectory: FileManager.default.currentDirectoryPath, home: NSHomeDirectory(),
             sources: SkillSource.standard,
-            selection: selection)
+            selection: selection, trust: SkillBook.trust())
         for line in SkillReport(catalog: catalog, selection: selection, verbose: verbose).lines { print(line) }
     }
 }

@@ -43,9 +43,17 @@ final class SkillScratch {
         try FileManager.default.createSymbolicLink(atPath: full, withDestinationPath: target)
     }
 
-    func discover(_ tokens: [String] = []) -> SkillCatalog {
-        SkillDiscovery.discover(
-            workingDirectory: project, home: home, sources: SkillSource.fixture,
-            selection: SkillSelection(tokens: tokens, knownSources: SkillSource.fixtureIDs))
+    /// Discovery as the tests want it. A project's skills are trusted as they are unless `trusting` says otherwise, so a test about something else
+    /// is not about trust; the tests about trust pass a store of their own to ``SkillDiscovery``.
+    func discover(_ tokens: [String] = [], from directory: String? = nil, trusting: Bool = true) -> SkillCatalog {
+        let selection = SkillSelection(tokens: tokens, knownSources: SkillSource.fixtureIDs)
+        let first = SkillDiscovery.discover(
+            workingDirectory: directory ?? project, home: home, sources: SkillSource.fixture, selection: selection)
+        guard trusting, !first.untrusted.isEmpty else { return first }
+        var trust = ProjectTrust()
+        for item in first.untrusted { trust.trust(item.skill.realFile, digest: item.skill.digest) }
+        return SkillDiscovery.discover(
+            workingDirectory: directory ?? project, home: home, sources: SkillSource.fixture, selection: selection,
+            trust: trust)
     }
 }
