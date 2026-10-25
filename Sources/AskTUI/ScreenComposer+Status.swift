@@ -18,10 +18,11 @@ extension ScreenComposer {
             status += " · " + segment
             below = start ..< start + UnicodeWidth.displayWidth(of: segment)
         }
-        if !state.runners.isEmpty {
-            let count = state.runners.count
+        if state.runnerTree.activeCount > 0 {
+            let count = state.runnerTree.activeCount
+            let noun = state.runnerTree.activeJobCount == count ? "job" : "runner"
             let start = UnicodeWidth.displayWidth(of: status + " · ")
-            let segment = "\(count) \(count == 1 ? "job" : "jobs")"
+            let segment = "\(count) \(noun)\(count == 1 ? "" : "s")"
             status += " · " + segment
             runners = start ..< start + UnicodeWidth.displayWidth(of: segment)
         }
@@ -38,16 +39,21 @@ extension ScreenComposer {
     }
 
     /// The rows of the open runner list: one per runner, then how many more did not fit. Empty when it is closed.
-    static func runnerRows(for state: ScreenState, available: Int) -> [Line] {
+    static func runnerRows(for state: ScreenState, available: Int, columns: Int) -> [Line] {
         guard state.runnersOpen, !state.runners.isEmpty, available > 0 else { return [] }
         let capacity = Swift.min(5, available)
-        let shown = state.runners.count > capacity ? capacity - 1 : state.runners.count
-        var rows = state.runners.prefix(shown)
+        let tree = state.runnerTree.rows
+        let shown = tree.count > capacity ? capacity - 1 : tree.count
+        var rows = tree.prefix(shown)
             .map {
-                Line(text: "\($0.name)  " + $0.detail.replacing("\n", with: " "), style: Style(dim: true))
+                let indent = String(repeating: "  ", count: Swift.min($0.depth, Swift.max(0, columns / 2)))
+                let text =
+                    indent + $0.runner.name + "  " + $0.runner.detail.replacing("\n", with: " ")
+                    + " · " + $0.runner.state.rawValue
+                return Line(text: text, style: Style(dim: true))
             }
-        if shown < state.runners.count {
-            rows.append(Line(text: "… \(state.runners.count - shown) more", style: Style(dim: true)))
+        if shown < tree.count {
+            rows.append(Line(text: "… \(tree.count - shown) more", style: Style(dim: true)))
         }
         return rows
     }

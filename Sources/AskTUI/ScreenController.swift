@@ -184,7 +184,8 @@ public struct ScreenController: Sendable {
             case .submitted(let line):
                 return submit(line, followUp: key.modifiers.contains(.alt))
             case .escape:
-                // Esc is navigation only (roadmap 0064): the selection and the picker took it before this point; it never stops a turn.
+                // The selection and picker took Esc first. Next it closes the runner strip, never the draft or the turn.
+                state.runnersOpen = false
                 return []
             case .interrupt:
                 return interrupted(interrupt)

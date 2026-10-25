@@ -16,9 +16,14 @@ public struct ScreenState: Sendable, Equatable {
     public var exitRequest: ScreenExit?
     /// Shown at the right of the status line, such as token usage; empty for none.
     public var detail = ""
-    /// What is running beside the conversation, newest list from the composition root.
-    public var runners: [RunnerInfo] = []
-    /// Whether the list of `runners` is open above the status line. It closes by itself when nothing is running.
+    /// The newest runner snapshot. Its cached preorder and counts feed every view.
+    public private(set) var runnerTree = RunnerTree()
+    /// Updating the runners rebuilds the tree once, not once per frame.
+    public var runners: [RunnerInfo] {
+        get { runnerTree.runners }
+        set { runnerTree = RunnerTree(newValue) }
+    }
+    /// Whether the runner strip is open below the input. It closes by itself when no runners remain.
     public var runnersOpen = false
     /// A question waiting for y, a or n: while it waits, those keys answer it and nothing is typed.
     public var pendingApproval: PendingApproval?
