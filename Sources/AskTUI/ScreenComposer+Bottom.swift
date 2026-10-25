@@ -3,7 +3,7 @@ internal import TerminalKitStyle
 internal import TerminalKitText
 
 extension ScreenComposer {
-    /// Writes everything under the transcript, top to bottom: the runners list, the status line, the command picker and the prompt.
+    /// Writes everything under the transcript: status, picker, the one input, then the runner strip.
     /// - Parameters:
     ///   - panel: the open runners list, if any.
     ///   - status: the status line, or nil on a screen with no room for one.
@@ -17,10 +17,6 @@ extension ScreenComposer {
         into buffer: inout ScreenBuffer
     ) -> (row: Int, column: Int) {
         var next = row
-        for line in panel {
-            write(line, row: next, into: &buffer)
-            next += 1
-        }
         if let status {
             write(status, row: next, into: &buffer)
             next += 1
@@ -34,6 +30,9 @@ extension ScreenComposer {
                 Line(text: text, style: .default),
                 highlight: editor.highlights.isEmpty ? nil : editor.highlights[offset], row: next + offset,
                 into: &buffer)
+        }
+        for (offset, line) in panel.enumerated() {
+            write(line, row: next + editor.lines.count + offset, into: &buffer)
         }
         return (next + editor.cursor.row, editor.cursor.column)
     }
