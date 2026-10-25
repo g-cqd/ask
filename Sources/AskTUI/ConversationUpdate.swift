@@ -22,6 +22,9 @@ public enum ConversationUpdate: Sendable, Equatable {
     case promptAccepted(id: Int, text: String)
     /// The run failed: return any unacknowledged messages to the editor when it ends.
     case returnQueuedPrompts
+    /// Put a prompt back in the editor for rewriting, as after `/tree N`. An editor that already holds a draft keeps it, and the
+    /// prompt is shown in a notice instead (ADR-0093).
+    case fillDraft(String)
     /// Replaces the active conversation: clear its transcript, usage display and scrollback, keeping the draft.
     case clearConversation
     /// A tool call asks for more than the sandbox allows: ask the user, and send the answer to ``Conversation/answer(approval:with:)``.
