@@ -120,6 +120,10 @@ final class AgentConversation: Conversation {
         return Task {
             do {
                 await self.refreshSettings(update: update)
+                guard let prompt = self.expandingSkill(prompt, update: update) else {
+                    update(.runEnded)
+                    return
+                }
                 let loop = try self.agentLoop()
                 let recorder = try self.recorder()
                 try self.current.withLock { $0.settings }.record(in: recorder)

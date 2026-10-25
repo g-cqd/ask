@@ -94,7 +94,7 @@ A click in the input puts the cursor there; a drag there selects text, a double 
 
 Skills (a directory with a `SKILL.md`, from any harness's skills directory) are listed to the model, which loads one with the `skill` tool when a task matches;
 `ask skills` shows what was found and `skills` in `config.json` sets `enabled`, `maxAdvertised` (default 32) and `sources`. A skill grants nothing, and a
-project's skills are not loaded yet.
+project's skills are not loaded yet. `/skill:name request` asks for one yourself, and the `/` picker lists them.
 
 Background jobs are counted in the status line (`· 2 jobs`). Click the count, or type `/tasks`, to list what is running. A job does not outlive ask, even when ask is killed with SIGKILL: a small watchdog process stops it
 ([ADR-0079](docs/adr/0079-a-watchdog-outside-ask-stops-the-jobs-when-ask-is-killed.md)).
