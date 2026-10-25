@@ -12,6 +12,10 @@ extension ScreenComposer {
         if state.quitArmedAt != nil { status += " · press Ctrl+C again to quit" }
         if let lane = state.lane {
             status += " · main › \(lane.name) · esc returns"
+            // The question was put in main's transcript, which a lane hides: it leads the line so a narrow screen cuts the rest, not it.
+            if let pending = state.pendingApproval {
+                status = "\(pending.question)  y once · a for this session · n no · " + status
+            }
         }
         var runners: Range<Int>?
         var below: Range<Int>?
