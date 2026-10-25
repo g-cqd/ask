@@ -57,10 +57,16 @@ the end ([ADR-0072](docs/adr/0072-the-view-holds-while-text-arrives-below-and-th
 
 While the agent is working, Enter queues **steering** after its current
 response and tools. `/follow-up TEXT` queues a message for when it finishes;
-Alt+Enter is a shortcut on terminals that report it. Esc aborts and returns
-unsent messages to the editor alongside your draft. A message is accepted only
+Alt+Enter is a shortcut on terminals that report it. Ctrl+C with an empty
+input stops the turn and returns unsent messages to the editor. A message is accepted only
 once it is recorded in the session
 ([ADR-0040](docs/adr/0040-queued-input-is-acknowledged-only-after-it-is-persisted.md)).
+
+**Keys** ([ADR-0104](docs/adr/0104-escape-only-goes-back-and-control-c-is-a-ladder-that-never-quits-on-the-first-press.md)):
+Esc only goes back: it clears a selection and closes a list, and never stops a turn, quits, or clears what you typed. Ctrl+C is one step a press: it copies a
+selection; otherwise erases the draft; otherwise, with a turn running, stops it; otherwise the status line says `press Ctrl+C again to quit`, and a second
+press within two seconds quits (any other key cancels it). So with text typed during a turn, press Ctrl+C twice to erase it and stop. Ctrl+D on an empty,
+idle input still quits, and `/quit` always does.
 
 A prompt can be several lines: paste keeps its line breaks, Shift-Enter or
 Ctrl-J starts a new line, and Up/Down, Home/End, Ctrl-A/E/U/K edit the current
@@ -72,9 +78,8 @@ binary starts, then replaces itself with it, keeping the session
 
 While the agent is working, Enter queues **steering** after its current
 response and tools. `/follow-up TEXT` queues a message for when it finishes;
-Alt+Enter is a shortcut on terminals that report it. Esc clears a selection
-first; otherwise it aborts and returns unsent messages to the editor alongside
-your draft. A message is accepted only once it is recorded in the session
+Alt+Enter is a shortcut on terminals that report it. Ctrl+C with an empty
+input stops the turn and returns unsent messages to the editor. A message is accepted only once it is recorded in the session
 ([ADR-0040](docs/adr/0040-queued-input-is-acknowledged-only-after-it-is-persisted.md)).
 
 A prompt can be several lines: paste keeps its line breaks, Shift-Enter or

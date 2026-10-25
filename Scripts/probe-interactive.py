@@ -2,8 +2,8 @@
 """End-to-end probe of the interactive screen over a PTY, against a local fake Anthropic server.
 
 A: type a prompt; the screen shows it, the tool call, and the answer; the tool's effect is on disk.
-B: a command that runs until stopped; Esc aborts it, its backgrounded child dies, and the screen says so.
-C: Ctrl-C at an idle prompt quits, exit 0, with the terminal restored (the teardown bytes end the output).
+B: a command that runs until stopped; Esc leaves it alone, Ctrl-C stops it, its backgrounded child dies, and the screen says so.
+C: a double Ctrl-C at an idle prompt quits, exit 0, with the terminal restored (the teardown bytes end the output).
 
 Usage: Scripts/probe-interactive.py .build/release/ask
 """
@@ -189,14 +189,30 @@ def probe_turn():
     results.append(check("answer streamed", screen.until("All done here.")))
     results.append(check("back to ready", screen.until_status("ready")))
     results.append(check("file written", os.path.exists(os.path.join(project, "out.txt"))))
+    screen.type("abc")
+    screen.until("ask> abc")
     screen.type("\x03")
-    results.append(check("quits on Ctrl-C", screen.finish() == 0))
+    screen.until("\x00", 0.5)
+    results.append(check("Ctrl-C with text erases it and neither quits nor arms the quit",
+                         "ask> abc" not in screen.screen.text() and "again to quit" not in screen.screen.text()))
+    screen.type("\x03")
+    screen.until("press Ctrl+C again to quit")
+    screen.type("x")
+    screen.until("ask> x")
+    screen.until("\x00", 0.3)
+    results.append(check("another key disarms the quit", "again to quit" not in screen.screen.text()))
+    screen.type("\x03")
+    screen.until("\x00", 0.3)
+    screen.type("\x03")
+    results.append(check("the first Ctrl-C only says it will quit", screen.until("press Ctrl+C again to quit")))
+    screen.type("\x03")
+    results.append(check("a second Ctrl-C quits", screen.finish() == 0))
     server.httpd.shutdown()
     return all(results)
 
 
 def probe_abort():
-    print("B: Esc aborts a running command")
+    print("B: Ctrl-C stops a running command, and Esc does not")
     project = tempfile.mkdtemp()
     server = agent.Server([agent.turn([("tool", "t1", "sleep 300 & echo $! > child.pid; wait")], "tool_use")])
     screen = Screen(server.url, project)
@@ -209,6 +225,9 @@ def probe_abort():
     child = int(open(pid_file).read())
     results = [check("working shown", screen.until_status("working"))]
     screen.type("\x1b")
+    screen.until("\x00", 1.0)
+    results.append(check("Esc leaves the running command alone", "working" in screen.screen.text() and "Aborted" not in screen.screen.text()))
+    screen.type("\x03")
     results.append(check("abort reported", screen.until("Aborted. Results already known were kept.")))
     results.append(check("tool shown as stopped", screen.until("[aborted; the command and its children were stopped]")))
     results.append(check("back to ready", screen.until_status("ready")))
@@ -223,17 +242,17 @@ def probe_abort():
     results.append(check("backgrounded child stopped", not alive, f"pid {child}"))
     if alive:
         os.kill(child, signal.SIGKILL)
-    screen.type("\x03")
+    screen.type("\x03\x03")
     results.append(check("quits afterwards", screen.finish() == 0))
     server.httpd.shutdown()
     return all(results)
 
 
 def probe_quit():
-    print("C: idle Ctrl-C restores the terminal")
+    print("C: a double Ctrl-C when idle restores the terminal")
     screen = Screen("http://127.0.0.1:9", tempfile.mkdtemp())
     screen.until("ask>")
-    screen.type("\x03")
+    screen.type("\x03\x03")
     code = screen.finish()
     # Teardown: end of frame, cursor shown, then the reset ladder's first tier (leaves the alternate screen).
     results = [check("exit 0", code == 0, code),
@@ -253,7 +272,7 @@ def probe_resume():
     first.type("Remember KIWI\r")
     first.until("First answer.")
     first.until_status("ready")
-    first.type("\x03")
+    first.type("\x03\x03")
     first.finish()
     resumed = Screen(server.url, project, state, ["--continue"])
     results = [check("says which session it resumed", resumed.until("Resumed session 20")),
@@ -264,8 +283,8 @@ def probe_resume():
     resumed.type("And now?\r")
     results.append(check("new answer streamed", resumed.until("Second answer.")))
     resumed.until_status("ready")
-    resumed.type("\x03")
-    results.append(check("quits on Ctrl-C", resumed.finish() == 0))
+    resumed.type("\x03\x03")
+    results.append(check("quits on a double Ctrl-C", resumed.finish() == 0))
     if check("three requests", len(server.requests) == 3, len(server.requests)):
         texts = [b.get("text", "") for m in server.requests[2]["body"]["messages"] for b in m["content"]]
         results.append(check("the earlier exchange is sent again", "Remember KIWI" in texts
@@ -330,8 +349,8 @@ def probe_reload():
     open(user_file, "w").write("{maxTurns: 9, model: 'reloaded-model'}")
     turn("five", "Answer 5.")
     results.append(check("a fixed file reloads again, from the settings that were in force", screen.until("maxTurns: 7 → 9")))
-    screen.type("\x03")
-    results.append(check("quits on Ctrl-C", screen.finish() == 0))
+    screen.type("\x03\x03")
+    results.append(check("quits on a double Ctrl-C", screen.finish() == 0))
     server.httpd.shutdown()
     return all(results)
 
@@ -544,7 +563,7 @@ def probe_steering():
 
 
 def probe_abort_queue():
-    print("K: abort returns unsent input alongside the draft, without persisting or running it")
+    print("K: stopping returns unsent input to the editor, without persisting or running it")
     project = tempfile.mkdtemp()
     server = agent.Server([
         agent.turn([("call", "gate", "wait", {"file_exists": "never-created"})], "tool_use"),
@@ -558,13 +577,19 @@ def probe_abort_queue():
     screen.type("/follow-up Unsent followup\r")
     results.append(check("follow-up queued without a modified Enter key", screen.until("Queued follow-up: Unsent followup")))
     screen.type("draft\x1b")
-    results.append(check("abort ends the run", screen.until_status("ready")))
+    screen.until("\x00", 1.0)
+    results.append(check("Esc with a draft typed does not end the run", "working" in screen.screen.text() and "draft" in screen.screen.text()))
+    screen.type("\x03")
+    screen.until("\x00", 0.5)
+    results.append(check("the first Ctrl-C erases the draft", "draft" not in screen.screen.text() and "working" in screen.screen.text()))
+    screen.type("\x03")
+    results.append(check("the second stops the run", screen.until_status("ready")))
     lines = screen.screen.text().splitlines()
     editor = lines[lines.index(next(line for line in lines if " · ready" in line)) + 1:]
-    results.append(check("the editor holds both unsent messages and the draft on separate lines",
-                         editor == ["ask> Unsent steering", "", "Unsent followup", "", "draft"], editor))
+    results.append(check("the editor holds both unsent messages on separate lines",
+                         editor == ["ask> Unsent steering", "", "Unsent followup"], editor))
     results.append(check("nothing was automatically requested after abort", len(server.requests) == 1))
-    screen.type("\x15\x7f" * 4 + "\x15Recovered\r")  # Ctrl-U and Backspace clear the five restored lines, one by one
+    screen.type("\x18Recovered\r")  # Ctrl-X clears the restored lines at once
     results.append(check("the editor can submit another prompt", screen.until("RECOVERED AFTER ABORT")))
     screen.until_status("ready")
     screen.type("/quit\r")
