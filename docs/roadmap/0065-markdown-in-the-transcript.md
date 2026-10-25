@@ -72,8 +72,18 @@ Phase 0 measures it on the real corpus as the number to beat, and the differenti
    - *Links:* kitty is done (below). Still owed: Ghostty, WezTerm (its `cli get-text` needs the new instance's socket), iTerm2 and
      Terminal.app, with mouse reporting on and off, in a PTY probe as in TerminalKit ADR-0028 (Terminal.app ignored OSC 52, so it may ignore
      this too). Does a terminal that ignores OSC 8 still print the text?
-   - *Parser baseline:* swift-markdown on the corpus: MB/s, allocations per KB, linked size, p99 for one streamed delta into a 100 KB answer.
-     These are the numbers `AemiMarkdown` has to beat.
+   - *Parser baseline: done 2026-10-25* (`docs/research/probes/MarkdownBaselineProbe.swift.txt`): swift-markdown `392b73b` on swift-cmark `a7ecfef`
+     (gfm), release, the 19,846 assistant messages (12.4 MB), load average 7 to 10, M2 Pro. These are the numbers `AemiMarkdown` has to beat:
+     - **Throughput:** 10.3 MB/s parsing (p10 to p90 of five rounds: 1.19 to 1.47 s for the corpus), 8.5 MB/s with a walk over its 513,045 nodes.
+     - **Allocations:** 270 per KB of input (per message: p50 46, p95 570, max 6,563).
+     - **One message:** p50 8.8 µs, p95 243 µs, p99 796 µs, max 3.1 ms.
+     - **A 100 KB answer streamed in 40-byte deltas, reparsed in full each time** (a parser that is not incremental): 4.94 s of parsing in all; a
+       delta takes p50 1.7 ms, p95 4.3 ms, p99 4.5 ms, max 7.7 ms, growing with the prefix. That is a frame's budget gone to parsing, by the
+       end of a long answer, on every token.
+     - *Not measured:* linked size.
+     - **Goals for `AemiMarkdown`, to be met and measured, not assumed:** streaming cost per delta independent of the answer's length; no
+       allocation per node (a flat tape, reused buffers, a ceiling of a few per message that does not grow with the input); and a parse an order
+       of magnitude faster than the above.
    - *Glow:* done (above). Repeat the nested-quote and delimiter inputs against whichever parser is chosen.
    - *Atelier:* does its block scanner agree with CommonMark on the spec examples (oracle value), and does `AtelierLexers` need
      `AtelierSyntaxModel` for anything but `Language`?
