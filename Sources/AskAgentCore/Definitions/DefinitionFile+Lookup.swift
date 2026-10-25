@@ -3,7 +3,7 @@ extension DefinitionFile {
     public func value(_ keys: String...) -> DefinitionValue? {
         for key in keys {
             let wanted = key.canonicalKey
-            if let entry = entries.first(where: { $0.key.canonicalKey == wanted }) { return entry.value }
+            if let entry = entries.first(where: { $0.canonical == wanted }) { return entry.value }
         }
         return nil
     }
@@ -12,7 +12,7 @@ extension DefinitionFile {
     public func text(_ keys: String...) -> String? {
         for key in keys {
             let wanted = key.canonicalKey
-            if let text = entries.first(where: { $0.key.canonicalKey == wanted })?.value.scalar?.trimmingWhitespace(),
+            if let text = entries.first(where: { $0.canonical == wanted })?.value.scalar?.trimmingWhitespace(),
                 !text.isEmpty
             {
                 return text
@@ -24,7 +24,7 @@ extension DefinitionFile {
     /// The comment hint named `key`, if any (`# fallback_models: a, b`).
     public func hint(_ key: String) -> DefinitionValue? {
         let wanted = key.canonicalKey
-        return hints.first { $0.key.canonicalKey == wanted }?.value
+        return hints.first { $0.canonical == wanted }?.value
     }
 
     /// Records a comment as a hint when it reads as `key: value` or `key = value`.

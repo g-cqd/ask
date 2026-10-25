@@ -50,7 +50,7 @@ extension SkillDiscovery {
         }
         let bytes = [UInt8](data.prefix(maximumBytes))
         guard !bytes.contains(0) else { return .failure(Failure(reason: "is not text")) }
-        let head = DefinitionFile(parsing: String(decoding: bytes, as: UTF8.self))
+        let head = Self.readHead(bytes)
         var diagnostics = head.diagnostics
         if candidate.isBareFile, head.text("description") == nil {
             return .failure(Failure(reason: "a bare Markdown file with no description is not a skill"))
@@ -83,6 +83,14 @@ extension SkillDiscovery {
                 disallowedTools: ToolReference.parse(head.value("disallowed-tools")), models: ModelPreference(head),
                 otherKeys: head.entries.map(\.key).filter { !known.contains($0.canonicalKey) },
                 diagnostics: diagnostics, digest: ProjectTrust.digest(bytes)))
+    }
+
+    /// The file read for its head. A skill's body is never needed to find it, so only the first `headBytes` are read as text; a head that does not end
+    /// within them is read again whole. (Reading every body as lines was most of the time discovery took.)
+    static func readHead(_ bytes: [UInt8]) -> DefinitionFile {
+        guard bytes.count > headBytes else { return DefinitionFile(parsing: String(decoding: bytes, as: UTF8.self)) }
+        let head = DefinitionFile(parsing: String(decoding: bytes.prefix(headBytes), as: UTF8.self))
+        return head.isUnterminated ? DefinitionFile(parsing: String(decoding: bytes, as: UTF8.self)) : head
     }
 
     private static func isTrue(_ text: String?) -> Bool {
