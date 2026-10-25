@@ -1,0 +1,18 @@
+// swift-tools-version: 6.2
+import PackageDescription
+let package = Package(
+    name: "mdbase",
+    platforms: [.macOS(.v26)],
+    dependencies: [
+        .package(url: "https://github.com/swiftlang/swift-markdown.git", branch: "main"),
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "4f270e05473accace718446ee31c7b03d60a61ae"),
+    ],
+    targets: [
+        .executableTarget(
+            name: "mdbase",
+            dependencies: [
+                .product(name: "Markdown", package: "swift-markdown"),
+                .product(name: "CAemiTestKitMalloc", package: "aemi"),
+            ])
+    ]
+)
