@@ -25,7 +25,7 @@ milliseconds). Roadmap 0067 phases 3 and 4.
 3. **Tools are offered as `mcp__<server>__<tool>`** (ADR-0092 keeps these whole), after the built-in tools, in the order the servers
    and the tools were listed, so the prompt-cache prefix does not move. A name outside what providers accept is sanitised and takes a
    hash of the original, so it is the same every time and two tools never share one. A server's tool cannot take a built-in's name.
-4. **A server with more than 16 tools and no `tools` list offers none**, and says so, naming the key. Sixteen is a default
+4. **A server with more than 16 tools and no `tools` list offers none** *(superseded by ADR-0100: it is searched instead)*, and says so, naming the key. Sixteen is a default
    (`MCPHost.defaultMaximumDirectTools`), not a measurement; the cost it prevents is measured (ADR-0096). A `tools` list lets any server
    in. A search tool in front of a large server is the alternative and is not built.
 5. **Servers connect in the background.** The interactive screen starts them at launch, so they are connecting while the person types and

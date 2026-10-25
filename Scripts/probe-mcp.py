@@ -5,7 +5,8 @@ Scripts/probe-mcp.py .build/release/ask [--control OLDER_BINARY]
 
 A: a configured stdio server's tools are offered under mcp__<server>__<tool>, a call reaches it and its text comes back, and the
    server's process gets a minimal environment: ask's own API key is not in it.
-B: a server with more tools than ask offers whole offers none, and says so on stderr.
+B: a server with more tools than ask offers whole is searched, not listed: two tools stand in front of it, the model finds one by
+   words and calls it, and stderr says so.
 C: a server that cannot be started costs only itself: the run finishes, and says why.
 D: a project's own config file may not name a server: it is refused, and nothing is started.
 E: a server's process is gone when ask is.
@@ -42,6 +43,8 @@ for line in sys.stdin:
         r = {"protocolVersion": m["params"]["protocolVersion"], "capabilities": {"tools": {}}, "serverInfo": {"name": "many", "version": "1"}}
     elif m["method"] == "tools/list":
         r = {"tools": tools}
+    elif m["method"] == "tools/call":
+        r = {"content": [{"type": "text", "text": "called " + m["params"]["name"] + " with " + json.dumps(m["params"].get("arguments"))}]}
     else:
         r = {}
     print(json.dumps({"jsonrpc": "2.0", "id": m["id"], "result": r}), flush=True)
@@ -111,18 +114,26 @@ def probe_a(binary, control=False):
 
 
 def probe_b(binary):
-    print("B: more tools than ask offers whole")
+    print("B: more tools than ask offers whole are searched, not listed")
     script = os.path.join(tempfile.mkdtemp(), "many.py")
     open(script, "w").write(MANY)
     config, state, project = setup({"many": {"command": "python3", "args": [script]}})
-    server = Server([turn([("text", "Done.")], "end_turn")])
+    server = Server([turn([("call", "s1", "mcp_search", {"query": "t17"})], "tool_use"),
+                     turn([("call", "s2", "mcp_call", {"server": "many", "tool": "t17", "arguments": {"q": 1}})], "tool_use"),
+                     turn([("text", "Done.")], "end_turn")])
     process = run(binary, "Hi.", config, state, project, server)
     server.httpd.shutdown()
     names = [t["name"] for t in server.requests[0]["body"]["tools"]] if server.requests else []
+    got = tool_results(server) if len(server.requests) == 3 else {}
     return all([
-        check("the run finishes", process.returncode == 0, process.stderr[-300:]),
-        check("none of its 20 tools is offered", not any(n.startswith("mcp__") for n in names), names),
-        check("stderr says why and how to choose", "20 tools" in process.stderr and "mcp.many.tools" in process.stderr, process.stderr[-400:]),
+        check("the run finishes", process.returncode == 0 and len(server.requests) == 3, f"{process.returncode} {process.stderr[-300:]}"),
+        check("the two tools are offered and none of the server's 20", "mcp_search" in names and "mcp_call" in names
+              and not any(n.startswith("mcp__") for n in names), names),
+        check("the search finds the tool and shows its schema", "many / t17" in got.get("s1", "") and '"type": "object"' in got.get("s1", "").replace('"type":"object"', '"type": "object"'), got.get("s1")),
+        check("the search does not offer the others", "many / t3\n" not in got.get("s1", "") and "many / t18" not in got.get("s1", ""), got.get("s1")),
+        check("the call reaches the server with the arguments", got.get("s2") == 'called t17 with {"q": 1}', got.get("s2")),
+        check("stderr says why, and how to offer them whole", "20 tools" in process.stderr and "mcp_search" in process.stderr
+              and "mcp.many.tools" in process.stderr, process.stderr[-500:]),
     ])
 
 

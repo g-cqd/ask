@@ -98,7 +98,7 @@ project's skills are not loaded yet. `/skill:name request` asks for one yourself
 
 MCP servers (a program ask starts, or a URL) are named under `mcp` in your own `config.json` and their tools are offered to the model as
 `mcp__<server>__<tool>`; `/mcp` shows which are connected. A server runs outside ask's sandbox, so naming one is the consent: a project's
-file cannot, and a server with more than 16 tools offers none until `tools` lists the ones you want. See ADR-0099.
+file cannot, and a server with more than 16 tools is searched (`mcp_search`, `mcp_call`) instead of listed unless `tools` names the ones you want. See ADR-0099 and ADR-0100.
 
 Background jobs are counted in the status line (`· 2 jobs`). Click the count, or type `/tasks`, to list what is running. A job does not outlive ask, even when ask is killed with SIGKILL: a small watchdog process stops it
 ([ADR-0079](docs/adr/0079-a-watchdog-outside-ask-stops-the-jobs-when-ask-is-killed.md)).

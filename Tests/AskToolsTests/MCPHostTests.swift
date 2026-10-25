@@ -49,21 +49,6 @@ struct MCPHostTests {
         await host.stop()
     }
 
-    @Test func `a server with more tools than the limit and no list offers none, and says how to choose`() async throws
-    {
-        let names = (1 ... 5).map { "t\($0)" }
-        let host = world.host([world.setting("big")], ["big": FakeMCPServer(tools: names)], maximumDirectTools: 4)
-        host.start()
-        await host.waitUntilSettled()
-        #expect(world.offered.isEmpty)
-        guard case .skipped(let reason) = host.status[0].state else {
-            Issue.record("not skipped: \(host.status[0].state)")
-            return
-        }
-        #expect(reason.contains("5 tools") && reason.contains("tools"))
-        await host.stop()
-    }
-
     @Test func `a server with exactly as many tools as the limit is world.offered whole`() async throws {
         let names = (1 ... 4).map { "t\($0)" }
         let host = world.host([world.setting("edge")], ["edge": FakeMCPServer(tools: names)], maximumDirectTools: 4)
