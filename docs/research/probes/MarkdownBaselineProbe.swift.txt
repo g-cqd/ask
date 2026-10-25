@@ -1,0 +1,90 @@
+// Roadmap 0065, phase 0: what swift-markdown (cmark-gfm) costs on the real corpus. A scratch SwiftPM package, not part of ask:
+// copy this file to Sources/mdbase/main.swift and MarkdownBaselineProbe.Package.swift.txt to Package.swift, then
+//   swift build -c release && .build/release/mdbase corpus.ndjson
+// where corpus.ndjson holds one {"t": "<assistant message>"} per line, written from the session logs by the loop in
+// probe-markdown-constructs.py's `texts` (kept local, never committed). Allocations are counted with Aemi's CAemiTestKitMalloc.
+import CAemiTestKitMalloc
+import Foundation
+import Markdown
+
+// Baseline: swift-markdown (cmark-gfm) on the real corpus. Counts and times only.
+func now() -> UInt64 { clock_gettime_nsec_np(CLOCK_UPTIME_RAW) }
+func percentile(_ sorted: [Double], _ p: Double) -> Double { sorted.isEmpty ? 0 : sorted[min(sorted.count - 1, Int(Double(sorted.count) * p))] }
+
+guard CommandLine.arguments.count > 1,
+    let data = FileManager.default.contents(atPath: CommandLine.arguments[1])
+else { fatalError("usage: mdbase corpus.ndjson") }
+var messages: [String] = []
+for line in data.split(separator: UInt8(ascii: "\n")) {
+    if let object = try? JSONSerialization.jsonObject(with: Data(line)) as? [String: String], let t = object["t"] { messages.append(t) }
+}
+let totalBytes = messages.reduce(0) { $0 + $1.utf8.count }
+print("messages \(messages.count), \(totalBytes) bytes; counting available: \(adtk_malloc_counting_available())")
+
+struct NodeCounter: MarkupWalker {
+    var nodes = 0
+    mutating func defaultVisit(_ markup: any Markup) { nodes += 1; descendInto(markup) }
+}
+
+// 1. Whole messages. Three rounds; the median of the rounds' totals.
+var roundSeconds: [Double] = []
+var walkSeconds: [Double] = []
+var nodeTotal = 0
+for round in 0..<5 {
+    var t0 = now()
+    for m in messages { _ = Document(parsing: m) }
+    roundSeconds.append(Double(now() - t0) / 1e9)
+    t0 = now()
+    var nodes = 0
+    for m in messages {
+        var c = NodeCounter(); c.visit(Document(parsing: m)); nodes += c.nodes
+    }
+    walkSeconds.append(Double(now() - t0) / 1e9)
+    if round == 0 { nodeTotal = nodes }
+}
+roundSeconds.sort(); walkSeconds.sort()
+let mb = Double(totalBytes) / 1e6
+print(String(format: "parse only:      median %.3f s  (%.1f MB/s)  p10..p90 %.3f..%.3f s over 5 rounds", roundSeconds[2], mb / roundSeconds[2], roundSeconds[0], roundSeconds[4]))
+print(String(format: "parse + walk:    median %.3f s  (%.1f MB/s); %d nodes", walkSeconds[2], mb / walkSeconds[2], nodeTotal))
+
+// 2. Per message latency and allocations.
+var perMessage: [Double] = []
+var allocations: [UInt64] = []
+for m in messages {
+    let t0 = now()
+    let d = Document(parsing: m)
+    perMessage.append(Double(now() - t0))
+    _ = d
+}
+for m in messages.prefix(2000) {
+    adtk_malloc_count_begin()
+    let d = Document(parsing: m)
+    allocations.append(adtk_malloc_count_end())
+    _ = d
+}
+perMessage.sort()
+print(String(format: "per message: p50 %.1f us  p95 %.1f us  p99 %.1f us  max %.1f us", percentile(perMessage, 0.5) / 1e3, percentile(perMessage, 0.95) / 1e3, percentile(perMessage, 0.99) / 1e3, perMessage.last! / 1e3))
+let sortedAlloc = allocations.sorted()
+let allocTotal = allocations.reduce(0, +)
+let sampledBytes = messages.prefix(2000).reduce(0) { $0 + $1.utf8.count }
+print("allocations per message (first 2000): p50 \(sortedAlloc[sortedAlloc.count / 2]) p95 \(sortedAlloc[Int(Double(sortedAlloc.count) * 0.95)]) max \(sortedAlloc.last!); \(String(format: "%.1f", Double(allocTotal) / (Double(sampledBytes) / 1024))) per KB")
+
+// 3. One 100 KB answer streamed in 40-byte deltas, reparsed in full each time (what a parser that is not incremental costs).
+var answer = ""
+for m in messages where m.utf8.count > 400 && m.contains("\n") {
+    answer += m + "\n\n"
+    if answer.utf8.count >= 100_000 { break }
+}
+let bytes = Array(answer.utf8)
+var deltaNs: [Double] = []
+var offset = 0
+while offset < bytes.count {
+    offset = min(bytes.count, offset + 40)
+    let prefix = String(decoding: bytes[0..<offset], as: UTF8.self)
+    let t0 = now()
+    _ = Document(parsing: prefix)
+    deltaNs.append(Double(now() - t0))
+}
+let total = deltaNs.reduce(0, +) / 1e9
+deltaNs.sort()
+print(String(format: "stream %d bytes in %d deltas, full reparse each: total %.2f s; per delta p50 %.0f us  p95 %.0f us  p99 %.0f us  max %.0f us", bytes.count, deltaNs.count, total, percentile(deltaNs, 0.5) / 1e3, percentile(deltaNs, 0.95) / 1e3, percentile(deltaNs, 0.99) / 1e3, deltaNs.last! / 1e3))
