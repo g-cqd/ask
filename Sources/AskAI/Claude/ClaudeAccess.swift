@@ -31,6 +31,9 @@ public struct ClaudeAccess: Sendable {
     /// Whether the server has rotated the token and the file does not hold the new one yet.
     public var rotationIsUnsaved: Bool { unsaved.value != nil }
 
+    /// Why, while the rotation is unsaved: what the file said when it could not take the new pair. Nil once it is saved.
+    public var unsavedReason: String? { unsaved.value?.reason }
+
     /// Auth for a request made at `now` (seconds since 1970).
     /// - Throws: a ``ClaudeAccessError``. A failed refresh leaves the stored credentials as they were.
     public func auth(now: Double) async throws(ClaudeAccessError) -> AnthropicClient.Auth {
@@ -52,7 +55,7 @@ public struct ClaudeAccess: Sendable {
         let kept: Bool
         do { kept = try file.saveClaude(refreshed, ifStill: onFile, connection: connection) } catch {
             // The server has spent the token in the file; the replacement is the only usable copy, so keep it and go on.
-            unsaved.hold(refreshed, replacing: onFile)
+            unsaved.hold(refreshed, replacing: onFile, because: "\(error)")
             return .subscription(accessToken: refreshed.accessToken)
         }
         unsaved.clear()

@@ -72,6 +72,20 @@ struct CodexRefreshSaveFailureTests {
         #expect(try file.loadCodex() == later && !access.rotationIsUnsaved)
     }
 
+    @Test func `the reason the save failed is kept for as long as the pair is, and gone once it is saved`() async throws
+    {
+        try file.saveCodex(expired)
+        let transport = SequencedTransport([.json(200, CodexAccessTests.tokens), .json(400, Self.spent)])
+        let access = CodexAccess(file: file, client: CodexAuthClient(transport: transport))
+        #expect(access.unsavedReason == nil)
+        let held = try holdingTheSaveLock()
+        _ = try await access.credentials(now: 5_000)
+        #expect(access.unsavedReason?.isEmpty == false)
+        held.release()
+        _ = try await access.credentials(now: 5_000)
+        #expect(access.unsavedReason == nil)
+    }
+
     @Test func `a new sign-in made meanwhile is not overwritten by the held credentials`() async throws {
         try file.saveCodex(expired)
         let transport = SequencedTransport([.json(200, CodexAccessTests.tokens), .json(400, Self.spent)])

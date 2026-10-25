@@ -11,9 +11,14 @@ internal import Foundation
 func requestAuth(transport: URLSessionTransport, connection: ConnectionRecord? = nil)
     -> @Sendable () async throws -> AnthropicClient.Auth
 {
-    let authorization = AnthropicAuthorization(
-        file: NamedConnections.file(for: connection), connection: connection, transport: transport)
-    return {
+    requestAuth(
+        AnthropicAuthorization(
+            file: NamedConnections.file(for: connection), connection: connection, transport: transport))
+}
+
+/// ``requestAuth(transport:connection:)`` over an authorization the caller keeps, to ask it more than for auth.
+func requestAuth(_ authorization: AnthropicAuthorization) -> @Sendable () async throws -> AnthropicClient.Auth {
+    {
         try await authorization.auth(
             environment: ProcessInfo.processInfo.environment, now: Date().timeIntervalSince1970)
     }
@@ -63,18 +68,9 @@ func requireSignIn(for model: ResolvedModel, transport: URLSessionTransport) asy
 func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> any ModelProvider {
     switch resolved.provider {
         case .anthropic:
-            ClaudeProvider(
-                client: AnthropicClient(
-                    transport: transport,
-                    endpoint: AnthropicClient.endpoint(
-                        environment: resolved.connection == nil ? ProcessInfo.processInfo.environment : [:])),
-                auth: requestAuth(transport: transport, connection: resolved.connection))
+            claudeProvider(resolved, transport: transport)
         case .codex:
-            CodexProvider(
-                access: CodexAccess(
-                    file: NamedConnections.file(for: resolved.connection),
-                    client: CodexAuthClient(transport: transport), connection: resolved.connection),
-                transport: transport, session: UUID().uuidString)
+            codexProvider(resolved, transport: transport)
         case .openAICompatible(_, let baseURL, let apiKey, let headers):
             OpenAICompatibleProvider(
                 client: OpenAICompatibleClient(transport: transport, baseURL: baseURL, apiKey: apiKey, headers: headers)
@@ -83,6 +79,32 @@ func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> 
             ResponsesProvider(
                 client: ResponsesClient(transport: transport, baseURL: baseURL, apiKey: apiKey, headers: headers))
     }
+}
+
+/// Claude's provider, which says so once when a refreshed sign-in could not be saved (ADR-0091).
+private func claudeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> any ModelProvider {
+    let authorization = AnthropicAuthorization(
+        file: NamedConnections.file(for: resolved.connection), connection: resolved.connection, transport: transport)
+    let notice = RotationNotice(provider: "Claude")
+    return NoticingProvider(
+        base: ClaudeProvider(
+            client: AnthropicClient(
+                transport: transport,
+                endpoint: AnthropicClient.endpoint(
+                    environment: resolved.connection == nil ? ProcessInfo.processInfo.environment : [:])),
+            auth: requestAuth(authorization)),
+        notice: { notice.message(unsavedBecause: authorization.unsavedReason) })
+}
+
+/// Codex's provider, which says so once when a refreshed sign-in could not be saved (ADR-0091).
+private func codexProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> any ModelProvider {
+    let access = CodexAccess(
+        file: NamedConnections.file(for: resolved.connection), client: CodexAuthClient(transport: transport),
+        connection: resolved.connection)
+    let notice = RotationNotice(provider: "Codex")
+    return NoticingProvider(
+        base: CodexProvider(access: access, transport: transport, session: UUID().uuidString),
+        notice: { notice.message(unsavedBecause: access.unsavedReason) })
 }
 
 /// How the model is named to the user: `model`, or `provider/model` for a configured provider.
