@@ -44,4 +44,10 @@ public struct MCPServerSetting: Sendable, Equatable {
                 || byte == 0x2D || byte == 0x5F
         }
     }
+
+    /// Whether `value` names one of ask's environment variables as `${NAME}`: an opening followed, later, by a closing.
+    public static func referencesEnvironment(_ value: String) -> Bool {
+        guard let open = value.firstRange(of: "${") else { return false }
+        return value[open.upperBound...].contains("}")
+    }
 }
