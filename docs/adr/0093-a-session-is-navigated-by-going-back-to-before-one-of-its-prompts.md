@@ -43,3 +43,7 @@ listing's text), the recorder's persisted checkout, and the screen's draft rule;
 binary through a PTY with a fake provider (`Scripts/probe-tree.py`): a listing, going back, the prompt returned to the editor, a
 changed resend, and the request the provider then receives, which holds the first turn and the changed prompt and nothing of the
 set-aside one; with a control that does not know the command.
+
+## Addendum (2026-10-25)
+
+`/fork` is built: ADR-0094.

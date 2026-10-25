@@ -1,5 +1,5 @@
 internal import Synchronization
-internal import System
+public import System
 
 /// The one owner of an open session file, shareable with the task that runs the loop.
 ///
@@ -40,6 +40,19 @@ public final class SessionRecorder: Sendable {
     @discardableResult
     public func append(_ payload: SessionPayload) throws(SessionFileError) -> EntryID {
         try file.withLock { (file: inout SessionFile) throws(SessionFileError) -> EntryID in try file.append(payload) }
+    }
+
+    /// Forks the branch that ends at `leaf` into a new session at `destination`, and opens it. This session is not changed.
+    /// - Parameters:
+    ///   - leaf: the last entry to keep, or nil for a session that starts again from nothing.
+    ///   - destination: the new file; nothing is overwritten.
+    /// - Returns: the new session's recorder, which holds its own writer lock.
+    /// - Throws: whatever the fork throws; nothing is created then.
+    public func fork(upTo leaf: EntryID?, to destination: FilePath) throws(SessionFileError) -> SessionRecorder {
+        // The new recorder is made inside the lock, so the new file is never handed across it on its own.
+        try file.withLock { (file: inout SessionFile) throws(SessionFileError) -> SessionRecorder in
+            SessionRecorder(try file.fork(upTo: leaf, to: destination))
+        }
     }
 
     /// Selects an entry, or nil to start again from nothing, and persists the checkout. Nothing is removed: what follows stays in the

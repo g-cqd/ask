@@ -84,8 +84,27 @@ extension SessionFile {
     /// - Returns: the forked session, open at `destination`.
     /// - Throws: ``SessionFileError/alreadyExists`` or an I/O error.
     public borrowing func fork(to destination: FilePath) throws(SessionFileError) -> SessionFile {
-        let forked: SessionTree
-        do { forked = try tree.fork() } catch { throw .tree(error) }
-        return try Self.begin(forked, at: destination, durability: durability, calls: calls)
+        try fork(upTo: tree.leaf, to: destination)
+    }
+
+    /// Writes the branch that ends at `leaf` to a new file, as if the session had been left there. The original is not touched: its
+    /// selected entry and its file stay as they were. Never overwrites.
+    /// - Parameters:
+    ///   - leaf: the last entry to keep, or nil for a session that starts again from nothing.
+    ///   - destination: the new file.
+    /// - Returns: the forked session, open at `destination`, holding the strict sandbox the original recorded.
+    /// - Throws: ``SessionFileError/tree(_:)`` for an unknown entry, ``SessionFileError/alreadyExists``, or an I/O error.
+    public borrowing func fork(
+        upTo leaf: EntryID?, to destination: FilePath
+    ) throws(SessionFileError) -> sending SessionFile {
+        var branch = tree
+        var forked: SessionTree
+        do {
+            try branch.moveLeaf(to: leaf)
+            forked = try branch.fork()
+        } catch { throw .tree(error) }
+        if let sandbox = tree.sandbox { forked.recordSandbox(sandbox) }
+        // The real system calls, not the original's: a fork is a session of its own.
+        return try Self.begin(forked, at: destination, durability: durability, calls: .system)
     }
 }
