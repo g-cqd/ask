@@ -117,6 +117,26 @@ struct StdioTransportTests {
         #expect(transport.failure?.contains("longer than 65536") == true)
     }
 
+    @Test func `an observer is told the process's group when it starts and when it has ended`() async throws {
+        let observer = RecordingObserver()
+        let transport = StdioTransport(launch(), observer: observer)
+        let pid = try #require(await transport.waitUntilRunning())
+        #expect(observer.started == [pid] && observer.ended.isEmpty)
+        #expect(kill(pid, 0) == 0, "it is alive while it is watched")
+        await transport.close()
+        #expect(observer.ended == [pid])
+        #expect(kill(pid, 0) != 0, "and gone when it is told it has ended")
+    }
+
+    @Test func `an observer is not told of a program that never started`() async throws {
+        let observer = RecordingObserver()
+        let transport = StdioTransport(
+            StdioLaunch(executable: "/nonexistent/mcp-server", arguments: [], inheriting: [:]), observer: observer)
+        #expect(await transport.waitUntilRunning() == nil)
+        await transport.close()
+        #expect(observer.started.isEmpty && observer.ended.isEmpty)
+    }
+
     @Test func `a server that dies mid-call fails the call, and its exit is recorded`() async throws {
         let (connection, transport) = connect(launch("crash"))
         _ = try await connection.start()

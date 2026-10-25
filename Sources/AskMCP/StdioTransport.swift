@@ -21,6 +21,9 @@ public final class StdioTransport: MCPTransport {
 
     /// What the run learned, set once it ends.
     struct Outcome {
+        /// The process id once it has started, and whether it did: nil until known.
+        var pid: Int32?
+        var launched: Bool?
         var exit: Exit?
         var failure: String?
         var standardError: [UInt8] = []
@@ -40,9 +43,10 @@ public final class StdioTransport: MCPTransport {
     ///   - clock: what the grace is measured on.
     ///   - grace: how long a closed server has to leave on its own before it is stopped.
     ///   - maximumMessageBytes: the longest message a server may send; a longer one ends the conversation.
+    ///   - observer: told when the process starts and ends.
     public init(
         _ launch: StdioLaunch, clock: any Clock<Duration> = ContinuousClock(), grace: Duration = .seconds(2),
-        maximumMessageBytes: Int = 64 << 20
+        maximumMessageBytes: Int = 64 << 20, observer: (any StdioProcessObserver)? = nil
     ) {
         self.maximumMessageBytes = maximumMessageBytes
         self.clock = clock
@@ -51,11 +55,25 @@ public final class StdioTransport: MCPTransport {
         let (outbound, outboundSink) = AsyncStream.makeStream(of: [UInt8].self)
         self.incoming = incoming
         self.outboundSink = outboundSink
-        let shared = Shared(incoming: incomingSink)
+        let shared = Shared(incoming: incomingSink, observer: observer)
         self.shared = shared
         run = Task {
             await Self.drive(launch, outbound: outbound, shared: shared, maximumMessageBytes: maximumMessageBytes)
         }
+    }
+
+    /// Returns once the child has started or has failed to.
+    /// - Returns: its process id, or nil if the program could not be started.
+    public func waitUntilRunning() async -> Int32? {
+        await withCheckedContinuation { continuation in
+            let known = shared.waiting.withLock { waiters -> Bool in
+                if shared.outcome.withLock({ $0.launched != nil }) { return true }
+                waiters.append(continuation)
+                return false
+            }
+            if known { continuation.resume() }
+        }
+        return shared.outcome.withLock { $0.pid }
     }
 
     /// How the child ended, once it has.

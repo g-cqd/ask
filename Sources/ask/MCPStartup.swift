@@ -2,10 +2,11 @@ internal import AskAgentCore
 internal import AskTools
 internal import Foundation
 
-/// The MCP servers of `settings`, connecting (ADR-0099). With none configured this does nothing.
-func startMCPServers(_ settings: RunSettings) -> MCPHub {
+/// The MCP servers of `settings`, connecting (ADR-0099), and watched with the jobs so that ask being killed does not leave them (ADR-0102).
+/// With none configured this does nothing.
+func startMCPServers(_ settings: RunSettings, jobs: JobTable) -> MCPHub {
     let environment = ProcessInfo.processInfo.environment
-    let hub = MCPHub(environment: environment, transport: MCPHub.standardTransport(inheriting: environment))
+    let hub = MCPHub(environment: environment, transport: MCPHub.standardTransport(inheriting: environment, jobs: jobs))
     hub.apply(settings.configuration.mcp.value.servers)
     return hub
 }
