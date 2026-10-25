@@ -53,9 +53,22 @@ Phase 0 measures it on the real corpus as the number to beat, and the differenti
 ## Phases, each independently shippable
 
 0. **Evidence, in the diary; no product code.**
-   - *Corpus:* which constructs occur in assistant text. The 139 agent transcripts of TerminalKit ADR-0021 (and `ask`'s own sessions) give a frequency
-     table: headings, lists, tables, emphasis, links, bare URLs, fences and their languages, HTML, nesting depth, longest line. Scope is cut
-     by this table, not by taste.
+   - *Corpus: done 2026-10-25* (`docs/research/probe-markdown-constructs.py`, results in `markdown-constructs-2026-10-25.json`): 19,840 assistant
+     messages (7.5, 2.5 and 2.4 MB) from 1,227 Claude Code, Codex and Pi session logs, parsed with markdown-it-py. Counts only; no text kept.
+     - **Occurs a lot:** inline code (95,791 spans), strong (24,496), bullet lists (9,128), headings (h2 3,031, h3 1,220, h4 100; h1 46; none below),
+       fences (1,485; median 2 to 16 lines, p95 14 to 46, max 875), links (inline 2,553, bare 1,397), tables (906), rules (528), ordered lists (1,121).
+     - **Occurs a little:** emphasis (567), hard breaks (427), blockquotes (34, never nested), inline HTML (91), HTML blocks (9), math (10).
+     - **Never occurs:** images, task lists, strikethrough, footnotes, control bytes or ESC (0 of 19,840), Mermaid (0 of 1,485 fences).
+     - **Shapes that set limits:** list depth at most 4; token depth at most 9; a line up to 2,329 bytes; a message up to 58 KB; tables of 3 columns
+       (median), 4 to 6 (p95), 10 (max), and 5 to 7 rows with the header (median), 9 to 16 (p95), 38 (max): at 80 columns a 6-column table is the
+       ordinary hard case.
+     - **Fence languages:** 53 % have none (794 of 1,485); then rust 201, c 91, bash 87, swift 81, xml 57, sh 45, markdown 22, js 18, python 18.
+     - **Links are mostly not web links:** 2,227 of 3,959 targets are paths with no scheme (Codex writes `[file](/abs/path:42)`), 1,242 `http`,
+       476 `https`, 14 `mailto`. So the link rule must say what a path with a line number does (open in the editor, or copy), and `file:` is the
+       common case, not the exception.
+     - **Scope cut:** the first parser and renderer cover paragraphs, inline code, strong, emphasis, links (inline, bare, path), headings, lists
+       to depth 4, fences, tables, rules, blockquotes, hard breaks; HTML shows as literal text. Images, task lists, strikethrough, footnotes and
+       math parse without error and draw as plain text until a corpus says otherwise. Mermaid has no occurrence in this corpus (see 0066).
    - *Links:* kitty is done (below). Still owed: Ghostty, WezTerm (its `cli get-text` needs the new instance's socket), iTerm2 and
      Terminal.app, with mouse reporting on and off, in a PTY probe as in TerminalKit ADR-0028 (Terminal.app ignored OSC 52, so it may ignore
      this too). Does a terminal that ignores OSC 8 still print the text?

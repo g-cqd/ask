@@ -42,9 +42,10 @@ B and C are later, and only if A's coverage turns out to matter.
 ## Phases
 
 0. **Evidence, in the diary.**
-   - *Corpus:* how often assistant text and tool results contain a `mermaid` fence, and which diagram kinds (`flowchart`/`graph`,
-     `sequenceDiagram`, `classDiagram`, `stateDiagram`, `erDiagram`, `gantt`, `pie`, `journey`, `gitGraph`, `mindmap`), by count. The subset is
-     cut by this table.
+   - *Corpus, first reading (0065's census, 2026-10-25):* **0 of 1,485 fences in 19,840 assistant messages are `mermaid`.** These agents are not
+     asked for diagrams, so the corpus cannot size the demand: 0066 stays the owner's requirement, not a measured need. Still owed: tool results,
+     and which kinds (`flowchart`/`graph`, `sequenceDiagram`, `classDiagram`, `stateDiagram`, `erDiagram`, `gantt`, `pie`, `journey`, `gitGraph`,
+     `mindmap`) a model writes when asked for a diagram, from a probe with a few prompts. The subset is cut by that table.
    - *Prior art, run, not read:* the terminal Mermaid renderers that exist (for example `mermaid-ascii`, `mmdc` with a text exporter), against
      edge cases: wide characters, long labels, cycles, a hundred nodes, a deeply nested subgraph, an unterminated diagram, hostile labels with
      escape sequences. Same method as the glow probe in the diary of 2026-10-25.
