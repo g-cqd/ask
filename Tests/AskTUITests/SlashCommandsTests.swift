@@ -36,7 +36,7 @@ struct SlashCommandsTests {
         #expect(!controller.state.running)
         #expect(
             notices(controller) == [
-                "/help  List commands; Ctrl+T thinking, Ctrl+O tools, Ctrl+G code. Enter steers; Alt+Enter queues.",
+                "/help  List commands. Ctrl+C: erase, stop, quit (twice). Ctrl+T/O/G fold. Enter steers.",
                 "/quit  Leave ask, stopping a running turn first.",
                 "/follow-up  Queue a message after the agent finishes: /follow-up TEXT.",
                 "/tasks  Show or hide the background jobs that are running.",
@@ -63,7 +63,7 @@ struct SlashCommandsTests {
         var controller = ScreenController(label: "m", commands: [config])
         _ = submit("a prompt", to: &controller)
         #expect(submit("/config", to: &controller).isEmpty)
-        #expect(notices(controller).last?.contains("Esc") == true)
+        #expect(notices(controller).last?.contains("Ctrl+C") == true)
     }
 
     @Test func `a path or a doubled slash is a prompt`() {

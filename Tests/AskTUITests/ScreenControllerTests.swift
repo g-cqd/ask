@@ -34,17 +34,17 @@ struct ScreenControllerTests {
         #expect(text.contains("Queued steering"))
     }
 
-    @Test func `escape and Ctrl-C abort a running turn; idle, Ctrl-C and Ctrl-D quit`() {
+    @Test func `Ctrl-C stops a running turn, Ctrl-D quits only when idle, and Escape does neither`() {
         var controller = ScreenController(label: "m")
         #expect(controller.handle(key(0x1B), pageRows: 10).isEmpty)
         type("go", into: &controller)
         _ = controller.handle(key(0x0D), pageRows: 10)
-        #expect(controller.handle(key(0x1B), pageRows: 10) == [.cancelRun])
+        #expect(controller.handle(key(0x1B), pageRows: 10).isEmpty, "Escape does not stop a turn")
+        #expect(controller.state.running)
         #expect(controller.handle(key(0x03), pageRows: 10) == [.cancelRun])
         #expect(controller.handle(key(0x04), pageRows: 10).isEmpty, "Ctrl-D does not quit mid-turn")
         controller.handle(.runEnded)
         #expect(!controller.state.running)
-        #expect(controller.handle(key(0x03), pageRows: 10) == [.quit])
         #expect(controller.handle(key(0x04), pageRows: 10) == [.quit])
     }
 

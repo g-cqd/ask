@@ -7,8 +7,9 @@ extension ScreenComposer {
     static func status(
         for state: ScreenState, input: String = ""
     ) -> (line: Line, runners: Range<Int>?, below: Range<Int>?) {
-        let activity = state.running ? "\(state.label) · working… (esc to abort)" : "\(state.label) · ready"
+        let activity = state.running ? "\(state.label) · working… (ctrl+c to stop)" : "\(state.label) · ready"
         var status = input.isEmpty ? activity : input + " · " + activity
+        if state.quitArmedAt != nil { status += " · press Ctrl+C again to quit" }
         var runners: Range<Int>?
         var below: Range<Int>?
         if state.scrollback > 0 {

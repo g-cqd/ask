@@ -113,14 +113,15 @@ struct CompletionPickerControllerTests {
         #expect(screen.state.picker != nil)
     }
 
-    @Test func `Escape closes the picker before it aborts a running turn`() {
+    @Test func `Escape closes the picker and never stops a running turn`() {
         var screen = controller()
         type("a prompt", into: &screen)
         press(Key.enter.rawValue, into: &screen)
         #expect(screen.state.running)
         type("/co", into: &screen)
         #expect(press(0x1B, into: &screen).isEmpty, "the first Escape only closes the picker")
-        #expect(press(0x1B, into: &screen) == [.cancelRun])
+        #expect(press(0x1B, into: &screen).isEmpty, "the second Escape does nothing to the turn")
+        #expect(screen.state.running)
     }
 
     @Test func `an exact command name closes it, so Enter still runs it`() {
