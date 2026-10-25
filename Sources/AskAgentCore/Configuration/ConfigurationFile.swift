@@ -15,14 +15,17 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var compactAt: Int?
     public var sandbox: SandboxSection?
     public var ui: UISection?
+    public var skills: SkillsSection?
 
     /// The keys ask knows, in the order `ask config` shows them.
-    public static let keys = ["model", "provider", "thinking", "maxTurns", "compactAt", "sandbox", "ui"]
+    public static let keys = ["model", "provider", "thinking", "maxTurns", "compactAt", "sandbox", "ui", "skills"]
 
     /// A file with these values.
     public init(
         model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil,
-        sandbox: SandboxSection? = nil, ui: UISection? = nil, thinking: ThinkingLevel? = nil
+        // @dl:accept -- an initializer that takes every key; adding a section adds a parameter
+        sandbox: SandboxSection? = nil, ui: UISection? = nil, thinking: ThinkingLevel? = nil,
+        skills: SkillsSection? = nil
     ) {
         self.model = model
         self.provider = provider
@@ -31,6 +34,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         self.compactAt = compactAt
         self.sandbox = sandbox
         self.ui = ui
+        self.skills = skills
     }
 
     /// Whether the file sets the key `name`.
@@ -43,6 +47,7 @@ public struct ConfigurationFile: Sendable, Equatable {
             case "compactAt": compactAt != nil
             case "sandbox": sandbox != nil
             case "ui": ui != nil
+            case "skills": skills != nil
             default: false
         }
     }
@@ -79,6 +84,7 @@ public struct ConfigurationFile: Sendable, Equatable {
             throw .invalid(path: path, line: line, column: column, reason: reason(of: error))
         }
         try validateSandbox(file.sandbox, path: path, isProject: isProject)
+        try validateSkills(file.skills, path: path, isProject: isProject)
         for (key, count) in [
             ("ui.scrollLines", file.ui?.scrollLines), ("ui.promptRows", file.ui?.promptRows),
             ("ui.codeFoldLines", file.ui?.codeFoldLines)
@@ -235,6 +241,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "compactAt": file.compactAt = try container.decode(Int.self, forKey: key)
                     case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
                     case "ui": file.ui = try container.decode(UIDecoded.self, forKey: key).section
+                    case "skills": file.skills = try container.decode(SkillsDecoded.self, forKey: key).section
                     default: throw UnknownKey(key: key.stringValue)
                 }
             }

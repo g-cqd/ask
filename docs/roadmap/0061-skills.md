@@ -19,7 +19,11 @@ The model is told each skill's name, description and path; it loads the body onl
 
 **Phase 1 is built** (2026-10-25, ADR-0092, diary 2026-10-25 (3)): `ask skills` finds skills in every harness's directories, deduplicated by real path,
 reads them with a reader that cannot fail, and reports what it noticed; `ask skills --inspect FILE…` shows how any skill or agent file is read. Over
-the owner's 147 files none was rejected. Phases 2 to 5 are not started, so the model still sees no skill.
+the owner's 147 files none was rejected.
+
+**Phase 2 is built** (2026-10-25, ADR-0095, diary 2026-10-25 (6)): the system prompt lists up to `skills.maxAdvertised` (default **32**, the owner's choice) skills by
+name, and the `skill` tool loads one, with `from` narrowing and no path. Only the user's and bundled skills load: a project's wait for phase 4. Phases 3 to 5
+are not started.
 
 ## Phases, each independently shippable
 
