@@ -152,7 +152,7 @@ from.
 Commands inherit your environment except ask's known credential variables, `ANTHROPIC_*`, `ASK_*`, and variables referenced by provider keys or MCP headers/environment.
 In your user file, `environment: { pass: ['OPENAI_API_KEY'], withhold: ['MY_SERVICE_TOKEN', 'AWS_*'] }` explicitly passes a withheld key or withholds additional names.
 Withholding wins; projects may only add withholding. `/config` shows policy, never values. Unknown secrets remain inherited unless you withhold them.
-This removes direct inheritance, not every route to a credential: parent-environment inspection remains a known macOS sandbox exposure (roadmap 0072).
+ask also blanks those variables in its own process once it has read them, so a command cannot recover them from there either ([ADR-0112](docs/adr/0110-ask-blanks-the-credentials-it-has-read-from-its-own-environment.md)). A secret ask does not know about is still inherited unless you withhold it.
 
 `thinking` (`--thinking`, `ASK_THINKING`) asks for `off`, `minimal`, `low`,
 `medium`, `high`, `xhigh` or `max`. ask sends only what the model's own list

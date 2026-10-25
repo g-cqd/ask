@@ -20,12 +20,12 @@ func requestAuth(transport: URLSessionTransport, connection: ConnectionRecord? =
 func requestAuth(_ authorization: AnthropicAuthorization) -> @Sendable () async throws -> AnthropicClient.Auth {
     {
         try await authorization.auth(
-            environment: ProcessInfo.processInfo.environment, now: Date().timeIntervalSince1970)
+            environment: LaunchEnvironment.values, now: Date().timeIntervalSince1970)
     }
 }
 
 /// ask's configuration directory: `$XDG_CONFIG_HOME/ask` when that is absolute, else `~/.config/ask`.
-func askConfigDirectory(environment: [String: String] = ProcessInfo.processInfo.environment) -> String {
+func askConfigDirectory(environment: [String: String] = LaunchEnvironment.values) -> String {
     let base = environment["XDG_CONFIG_HOME"].flatMap { $0.hasPrefix("/") ? $0 : nil } ?? NSHomeDirectory() + "/.config"
     return base + "/ask"
 }
@@ -93,7 +93,7 @@ private func claudeProvider(_ resolved: ResolvedModel, transport: URLSessionTran
             client: AnthropicClient(
                 transport: transport,
                 endpoint: AnthropicClient.endpoint(
-                    environment: resolved.connection == nil ? ProcessInfo.processInfo.environment : [:])),
+                    environment: resolved.connection == nil ? LaunchEnvironment.values : [:])),
             auth: requestAuth(authorization)),
         notice: { notice.message(unsavedBecause: authorization.unsavedReason) })
 }
@@ -167,7 +167,7 @@ private func deferringThinking(_ provider: any ModelProvider, run: RunSettings, 
     guard run.thinkingPending else { return provider }
     let level = run.configuration.thinking.value
     let model = run.model
-    let environment = ProcessInfo.processInfo.environment
+    let environment = LaunchEnvironment.values
     return DeferredThinkingProvider(inner: provider) {
         try await ThinkingDiscovery.lookup(level, model: model, environment: environment, maximumTokens: limit)
     }
@@ -195,7 +195,7 @@ private func settings(
 func checkSelf(_ settings: RunSettings) {
     do {
         _ = try makeLoop(
-            settings, instructions: [], jobs: JobTable(),
+            settings, instructions: [], jobs: JobTable(environment: LaunchEnvironment.values),
             transport: URLSessionTransport())
     } catch {
         fail("ask: \(error)", code: 70)

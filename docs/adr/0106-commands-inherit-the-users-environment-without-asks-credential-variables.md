@@ -33,6 +33,8 @@ Diary 2026-10-25-20 records the red/green end-to-end probe, selected tests, muta
 A controlled clean-HOME comparison lost git's `GIT_CONFIG_GLOBAL` marker and gh's `GH_CONFIG_DIR` editor under a minimal environment; Swift's version command worked in both.
 Selective withholding preserves those workflow settings. This does not establish that an allow-list would make every development command fail.
 
+> **Update:** the residual exposure below was closed by [ADR-0110](0110-ask-blanks-the-credentials-it-has-read-from-its-own-environment.md). This record is otherwise unchanged.
+
 ## Consequences
 
 Normal development variables survive. A user can deliberately pass a provider key to a command, but a repository cannot request that permission.

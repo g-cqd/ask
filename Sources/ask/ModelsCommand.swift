@@ -12,7 +12,7 @@ struct ModelsCommand: AsyncParsableCommand {
     var connection = ProviderSettings.codex
 
     func run() async throws {
-        let environment = ProcessInfo.processInfo.environment
+        let environment = LaunchEnvironment.values
         do {
             let now = Date().timeIntervalSince1970
             if let record = try registered(connection, environment: environment) {
@@ -44,7 +44,7 @@ struct ModelsCommand: AsyncParsableCommand {
 
     private func show(codex record: ConnectionRecord?, now: Double) async throws {
         let snapshot =
-            try await ModelDiscovery.codex(environment: ProcessInfo.processInfo.environment, connection: record)
+            try await ModelDiscovery.codex(environment: LaunchEnvironment.values, connection: record)
             .models(now: now, refresh: true)
         ModelTable.print(snapshot, defaultFirst: true)
         if let record { try printAliases(of: record) }

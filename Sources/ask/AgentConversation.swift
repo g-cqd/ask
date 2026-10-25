@@ -218,7 +218,7 @@ func runInteractive(
         notices.append(
             "Reloaded ask: \(reloaded.from) → \(to), in \(Swift.max(0, now - reloaded.startedMilliseconds)) ms.")
     }
-    let jobs = JobTable()
+    let jobs = JobTable(environment: LaunchEnvironment.values)
     // Started now, not on the first prompt, so the servers are connecting while the person types.
     let mcp = startMCPServers(settings, jobs: jobs)
     do {
