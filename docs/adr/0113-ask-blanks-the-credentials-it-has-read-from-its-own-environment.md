@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-25
 ---
 
-# 0112 — ask blanks the credentials it has read from its own environment
+# 0113 — ask blanks the credentials it has read from its own environment
 
 ## Context
 
