@@ -27,6 +27,8 @@ public struct ResponseAssembler: Sendable {
     /// Applies one event.
     /// - Throws: a ``ResponseAssemblyError`` naming the first event out of order.
     public mutating func apply(_ event: ModelEvent) throws(ResponseAssemblyError) {
+        // Not part of the response, so it may come before it, in the middle of it, or after it (ADR-0091).
+        if case .notice = event { return }
         guard !stopped else { throw .eventAfterStop }
         if case .messageStarted(let id, let model, let usage) = event {
             guard response == nil else { throw .startedTwice }

@@ -26,6 +26,9 @@ public struct CodexAccess: Sendable {
     /// Whether the server has rotated the token and the file does not hold the new one yet.
     public var rotationIsUnsaved: Bool { unsaved.value != nil }
 
+    /// Why, while the rotation is unsaved: what the file said when it could not take the new pair. Nil once it is saved.
+    public var unsavedReason: String? { unsaved.value?.reason }
+
     /// Credentials good for a request made at `now` (seconds since 1970).
     /// - Parameter now: the time, in seconds since 1970.
     /// - Returns: the stored credentials, or their refreshed replacement.
@@ -45,7 +48,7 @@ public struct CodexAccess: Sendable {
         let kept: Bool
         do { kept = try file.saveCodex(fresh, ifStill: onFile, connection: connection) } catch {
             // The server has spent the token in the file; the replacement is the only usable copy, so keep it and go on.
-            unsaved.hold(fresh, replacing: onFile)
+            unsaved.hold(fresh, replacing: onFile, because: "\(error)")
             return fresh
         }
         unsaved.clear()

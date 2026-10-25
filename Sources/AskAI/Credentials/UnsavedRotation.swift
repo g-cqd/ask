@@ -11,6 +11,8 @@ final class UnsavedRotation<Credentials: Sendable & Equatable>: Sendable {
     struct Held: Sendable {
         let current: Credentials
         let stored: Credentials
+        /// Why the file could not take it, as it would be said to a person.
+        let reason: String
     }
 
     private let held = Mutex<Held?>(nil)
@@ -19,8 +21,8 @@ final class UnsavedRotation<Credentials: Sendable & Equatable>: Sendable {
     var value: Held? { held.withLock { $0 } }
 
     /// Holds `current`, which replaces `stored` as soon as the file can take it.
-    func hold(_ current: Credentials, replacing stored: Credentials) {
-        held.withLock { $0 = Held(current: current, stored: stored) }
+    func hold(_ current: Credentials, replacing stored: Credentials, because reason: String) {
+        held.withLock { $0 = Held(current: current, stored: stored, reason: reason) }
     }
 
     /// Lets go: the replacement was saved, or the user changed what is stored and what they did stands.
