@@ -45,6 +45,7 @@ attached; add `:12-30` for a line range. The model reads the file itself, under 
 | `/new` | fresh conversation; the old session stays saved (stop background jobs first) |
 | `/model` | show the model; `/model MODEL` or `/model PROVIDER MODEL` chooses one for this run, `/model --reset` undoes it |
 | `/resume` | list sessions; `/resume NAME`, a unique prefix or a path switches without leaving the screen |
+| `/tree` | list this session's prompts; `/tree N` goes back to before prompt N and puts it in the editor, so the next message branches from there ([ADR-0093](docs/adr/0093-a-session-is-navigated-by-going-back-to-before-one-of-its-prompts.md)) |
 | `/config` | show the settings and re-read the files |
 | `/compact` | summarise the conversation now |
 | `/quit` | leave |

@@ -42,6 +42,13 @@ public final class SessionRecorder: Sendable {
         try file.withLock { (file: inout SessionFile) throws(SessionFileError) -> EntryID in try file.append(payload) }
     }
 
+    /// Selects an entry, or nil to start again from nothing, and persists the checkout. Nothing is removed: what follows stays in the
+    /// session as another branch.
+    /// - Throws: ``SessionFileError/tree(_:)`` for an unknown entry, or an I/O error; nothing changes then.
+    public func moveLeaf(to id: EntryID?) throws(SessionFileError) {
+        try file.withLock { (file: inout SessionFile) throws(SessionFileError) in try file.moveLeaf(to: id) }
+    }
+
     /// Reads the session under the lock without copying it out: a copy alive at the next append would make
     /// that append copy the whole tree.
     /// - Parameter body: reads the tree.
