@@ -10,6 +10,14 @@ The owner wants the assistant's answer drawn as Markdown: colour, clickable link
 reliable, on by default, and switchable off. Atelier is a source of ideas. Nothing below is built; every number is a target, and every
 claim marked *unprobed* is an open question until phase 0 has run it.
 
+**Decided by the owner, 2026-10-25:**
+- The placement table below is right.
+- swift-markdown may be the parser, if phase 0 shows it wins.
+- Highlighted code comes from Atelier's lexers.
+- **A selection copies the Markdown source.**
+- All formatting adapts when the terminal is resized (section below).
+- Mermaid diagrams are their own entry, 0066.
+
 ## What exists today (read 2026-10-25)
 
 - `.assistant(text)` is wrapped by `TextWrap.rows` into `Line`s of **one style each** (`ScreenComposer.lines(for:)`, `.default`). No inline style
@@ -29,7 +37,7 @@ claim marked *unprobed* is an open question until phase 0 has run it.
     entry state (`LexState`), for the 20 languages of `Language`, plus plain text. A line-resumable lexer is what a streaming code block needs. It depends on
     `AtelierSyntaxModel`, `AtelierHighlighting` and `TerminalKitText`, so it is not yet usable from ask.
 
-## Where each part lives (proposed; the owner decides)
+## Where each part lives (decided 2026-10-25)
 
 | Part | Home | Why |
 |---|---|---|
@@ -39,8 +47,7 @@ claim marked *unprobed* is an open question until phase 0 has run it.
 | Line-resumable highlighting for fenced code | a promoted `AtelierLexers` (target of Aemi or its own package, then Atelier depends on it) | ask cannot depend on an app repository |
 | The `ui.markdown` key, selection policy, folds, wiring | ask (`AskAgentCore/Configuration`, `AskTUI`) | Policy |
 
-Rejected for now, to be probed rather than assumed: **swift-markdown (swiftlang, on cmark-gfm)**. It is a native API in the project's sense
-and the first thing to compare against. Its tree is allocated nodes, it is not incremental, and it has no limit on nesting that ask controls.
+**swift-markdown (swiftlang, on cmark-gfm)** is allowed and is the first thing to compare against: it is a native API in the project's sense. Its tree is allocated nodes, it is not incremental, and it has no limit on nesting that ask controls.
 Phase 0 measures it on the real corpus; if it wins on throughput, allocations and linked size, it is adopted and phase 1 shrinks to an adapter.
 
 ## Phases, each independently shippable
@@ -54,6 +61,7 @@ Phase 0 measures it on the real corpus; if it wins on throughput, allocations an
      still print the text?
    - *Parser:* swift-markdown against a hand-written scanner on the corpus: MB/s, allocations per KB, linked size, p99 for one streamed delta
      into a 100 KB answer.
+   - *Glow:* done (above). Repeat the nested-quote and delimiter inputs against whichever parser is chosen.
    - *Atelier:* does its block scanner agree with CommonMark on the spec examples (oracle value), and does `AtelierLexers` need
      `AtelierSyntaxModel` for anything but `Language`?
 1. **The parser.** CommonMark's blocks and inlines plus GFM tables, strikethrough, task lists and autolinks; HTML kept as literal text.
@@ -69,7 +77,7 @@ Phase 0 measures it on the real corpus; if it wins on throughput, allocations an
 2. **Hyperlinks in TerminalKit** (its roadmap, its ADR). A link id in the cell, a process-wide link table like `StyleTable`, OSC 8 emitted by
    the diff only where the link changes, a reset on every exit path of the reset ladder, and a rule for what happens when the table is full.
    Byte-exact tests, an oracle model, and the emulators of phase 0.
-3. **Rows with style runs, and the renderer.** `Line` gains runs (text plus style) while keeping `Source`; `TextWrap` wraps across runs;
+3. **Rows with style runs, and the renderer**, laid out for any width, tables included (section above). `Line` gains runs (text plus style) while keeping `Source`; `TextWrap` wraps across runs;
    the composer writes runs and highlights a selection across them; `Shown` compares runs. Then the renderer: headings, emphasis, inline
    code, lists with hanging indent, quotes, rules, tables (column widths from `UnicodeWidth`, wrapping or truncating by width), links, and
    code blocks with a language label, a gutter, and the existing fold. Colours come from the terminal's palette (`.indexed`), so the user's
@@ -79,15 +87,67 @@ Phase 0 measures it on the real corpus; if it wins on throughput, allocations an
      wants one. Off draws what ask draws today, byte for byte (a characterisation test written **before** the change, red against any drift).
    - *Non-terminals:* `ask -p` and a pipe stay raw.
    - *Streaming:* the open block is drawn as plain text until it closes, or its tail is styled, whichever phase 0's measurements show does not flicker.
-5. **Highlighted code.** The promoted lexers colour a fenced block by its info string, resuming per line, with a plain fallback for an
+5. **Highlighted code.** Atelier's lexers, promoted out of the app repository, colour a fenced block by its info string, resuming per line, with a plain fallback for an
    unknown or absent language.
 
-## Decisions owed (each needs an ADR before its phase)
+## Adapts to the terminal's size
 
-- **Copy.** Either a selection copies the Markdown source (what the model wrote; pasting into a file or a prompt works, but the screen and the
-  clipboard differ), or the visible text (what the user saw), except a code block, which copies its code alone. Hidden markers (`**`) also
-  break the identity between a drawn column and a source column that `Source` assumes (TerminalKit ADR-0030). A third option is to keep
-  markers visible and dim them. This needs the owner's choice before phase 3.
+Every drawn row is a function of the parsed records and the current width, never of an earlier width. Parsing happens once and knows no width.
+
+- **Layout is pure and cached by width.** The composer already re-lays-out when `columns` changes (`transcriptLines.update(width:revisions:)`);
+  the Markdown layout is what it calls. A resize costs O(rows laid out) and is bounded to the rows near the viewport first, the rest lazily.
+- **Tables** are the hard case. Each table record keeps its columns' minimum width (longest word) and natural width (longest cell), computed
+  once at parse time from `UnicodeWidth`. At layout time:
+  - if the natural widths fit, draw them exactly;
+  - if only the minimum widths fit, share the spare columns in proportion to natural width and wrap cells inside their columns;
+  - if even the minimums do not fit, fall back to one block per row (`header: value` lines), never a truncated grid that hides data.
+  - Wide characters never split across a column edge. Row separators and borders use box-drawing only if the terminal's widths for them are
+    known (`UnicodeWidth`; ambiguous-width characters are the risk, TerminalKit roadmap 0013).
+- **Code blocks** do not reflow: a line wider than the viewport is cut with a visible continuation mark, or wrapped with a hanging indent;
+  the choice is a phase 0 question, but the full text is always what copy returns.
+- **Lists, quotes, headings and rules** recompute indents and rule length from the width. A nesting deeper than the width allows stops
+  indenting and keeps a depth marker, so text never reaches zero columns.
+- **A resize does not move the reader.** `BlockHeights` and `ScrollAnchor` (TerminalKitText) keep the row at the top of the screen through a
+  change of heights; a width change is the same event as a fold, and a test drives it.
+- **Streaming and resizing meet**: a resize in the middle of a streamed answer lays out the parsed prefix and goes on.
+- **Tests:** one parameterized suite lays the same records out at every width from 1 to 200 and checks that no row is wider than the width,
+  no text is lost (the visible characters, in order, equal the source's), and the layout at width *w* does not depend on the widths before it.
+  A PTY probe resizes a live terminal during a stream.
+
+## Faster than what exists: what the first probes found
+
+Run on 2026-10-25 against glow 3.0.0 (diary 2026-10-25-01, `docs/research/markdown-renderers-2026-10.md`), not read from its source:
+
+- It is linear on ordinary text but slow: about 100 KB/s, with 16 ms of start-up (158 KB took 1.6 s).
+- Its output is **48 times the input** (a style reset around every space), where ask's cell diff writes only what changed.
+- A hundred bytes of nested quotes (`>` repeated 100 times) **did not finish in 30 seconds**: the time doubles with about every 8 levels
+  from depth 48. A model answer or a tool result can carry that. The parser's depth limit is not optional.
+- It writes a raw `ESC ] 52` (set the clipboard) from the Markdown through to the terminal. The sanitizer below is not optional either.
+- It draws a link as its text and then, again, its target underlined: a visible target is a known mitigation, and the one to adopt.
+
+## Leaning on Aemi (pinned revision `afc1be3` contains each of these)
+
+| Aemi tool | Use in the parser |
+|---|---|
+| `AemiKernels` SIMD (`indexOfAny5`, `indexOfControlOrAny5`, `indexOfNonASCII`, `firstInvalidUTF8`, `firstDisallowedText`, runtime-dispatched NEON/AVX2) | One validation pass at the boundary; one pass that finds ESC and other controls to neutralise; a jump to the next inline special character (there are about eleven; the kernel takes five, so phase 0 measures a table-driven scan and a request to Aemi for a wider kernel) |
+| `TapeSlot` (tag 4 bits, aux 28, offset 32; O(1) subtree skip) | The record format: a flat preorder tape with no node objects. Limits to design for: 16 tags (blocks and inlines need more kinds, so a second tape or an aux field), 28-bit aux, 4 GiB offsets |
+| `ByteBufferPool` | Reused input and output buffers across deltas |
+| `AemiUnicode` (case folding) | Link reference labels compare case-folded, as CommonMark requires |
+| `PercentCoding` | Normalising link destinations |
+| `InternedStrings` | Info strings (`swift`, `json`) and language names |
+| `ASCII`, `SWAR`, `CheckedMath` | Classification tables, word-at-a-time scans, checked offsets |
+| `AemiKernelsFuzz`, AemiJSON's fuzz target, `AemiTestKit` (`CAemiTestKitMalloc`) | The fuzz target and the allocation ceilings |
+| `Benchmarks/CKernels` method (ADR-0011) | The benchmark method: interleaved, median and p10 to p90, a control that can fail |
+
+ADR-0011 measured that Aemi's dispatcher loses about half its speed at 64 bytes: a Markdown line is about that long. The parser therefore
+scans a whole block or buffer per call, never a line per call. *A claim from that ADR, to be re-measured on this workload in phase 0.*
+
+## Decided and still owed
+
+- **Copy: decided, the Markdown source.** What it costs: a drawn column no longer equals a source column once markers (`**`, `[](...)`) are
+  hidden, and `Source` (TerminalKit ADR-0030) assumes it does. The renderer must carry, per row, a map from drawn columns to source offsets,
+  and a selection must copy the source range it covers (a half-selected `**bold**` copies the whole marked span, or only the text; an ADR
+  chooses before phase 3). `TranscriptContent` stays the item's own text, which is now exactly right.
 - **Link safety.** A model answer is untrusted text, and so are its links. Candidate rules, all to be probed:
   - a scheme allowlist (`https`, `http`, `mailto`, and `file` only if the owner asks);
   - control characters and spaces refused in a target (an OSC 8 target containing ESC or BEL can end the sequence early and inject another);
@@ -95,7 +155,7 @@ Phase 0 measures it on the real corpus; if it wins on throughput, allocations an
   - ESC, CSI and OSC sequences in any answer text made inert before the parser sees them (`TextSanitizer` exists in TerminalKitText; its
     coverage is unprobed);
   - a click opens a link only through a user action, never on render.
-- **Package boundaries**, per the table above; adding AemiMarkdown is an architectural decision (ADR-0005 style).
+- **Package boundary**: the table above is decided; the ADR that records it, and the Aemi pin change, come with phase 1.
 - **Images** stay alt text plus link until the graphics work of 0051 lands.
 
 ## Budgets and safety rails
@@ -109,5 +169,5 @@ Phase 0 measures it on the real corpus; if it wins on throughput, allocations an
 
 ## Not in scope
 
-Math, footnotes, front matter, HTML rendering, and a Markdown editor for the prompt (the composer's "highlighting, markdown" in diary
+Diagrams (0066), math, footnotes, front matter, HTML rendering, and a Markdown editor for the prompt (the composer's "highlighting, markdown" in diary
 2026-10-19-23 is a separate unit).
