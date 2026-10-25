@@ -193,7 +193,8 @@ check("ui.mouse false: a drag selects and copies nothing", t.copies() == [] and 
 t.close()
 
 t = with_help("ghostty", helps=4)
-for _ in range(10):
+# Enough wheel turns to reach the start however many commands /help lists: each command adds a line to each of the four listings.
+for _ in range(14):
     t.mouse(64, 40, 10)
 t.pump(0.5)
 t.repaint()
@@ -201,7 +202,7 @@ rows = t.lines()
 check("the wheel scrolls back to the start of the conversation", rows[1].startswith("/help"), str(rows[:3]))
 known = (
     "/help", "/help  ", "/quit  ", "/follow-up  ", "/tasks  ", "/config  ", "/compact  ", "/new  ", "/model  ", "/resume  ", "/tree  ",
-    "/fork  ", "/reload  ")
+    "/fork  ", "/mcp  ", "/reload  ")
 malformed = [row for row in rows[: ROWS - 2] if row and not row.startswith(known)]
 check("every row after the scroll is a whole line", malformed == [], str(malformed))
 for _ in range(20):

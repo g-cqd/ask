@@ -123,7 +123,8 @@ func modelLabel(_ resolved: ResolvedModel) -> String {
 /// live in `jobs`, which the caller stops when ask exits.
 func makeLoop(
     _ run: RunSettings, instructions files: [ProjectInstructions.File], jobs: JobTable,
-    transport: URLSessionTransport, approve: SandboxApprover? = nil, narrowing: SessionNarrowing = SessionNarrowing()
+    transport: URLSessionTransport, approve: SandboxApprover? = nil, narrowing: SessionNarrowing = SessionNarrowing(),
+    live: LiveTools? = nil
 ) throws -> AgentLoop {
     let workingDirectory = run.workspace
     let resolved = run.model
@@ -140,7 +141,7 @@ func makeLoop(
             FileTools.all + [
                 BashTool(jobs: jobs), WaitTool(jobs: jobs), JobInputTool(jobs: jobs), JobStopTool(jobs: jobs),
                 NarrowSandboxTool(jobs: jobs)
-            ] + (skills.tool.map { [$0] } ?? [])),
+            ] + (skills.tool.map { [$0] } ?? []), live: live),
         settings: agent,
         context: ToolContext(
             workingDirectory: workingDirectory,

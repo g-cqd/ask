@@ -124,7 +124,7 @@ let package = Package(
         .target(
             name: "AskTools",
             dependencies: [
-                "AskAgentCore", "AskAI", .product(name: "AemiKernel", package: "aemi"),
+                "AskAgentCore", "AskAI", "AskMCP", .product(name: "AemiKernel", package: "aemi"),
                 .product(name: "Subprocess", package: "swift-subprocess")
             ],
             path: "Sources/AskTools",
@@ -187,7 +187,9 @@ let package = Package(
         ),
         .testTarget(
             name: "AskToolsTests",
-            dependencies: ["AskTools", "AskAgentCore", "AskAI", .product(name: "AemiTesting", package: "aemi")],
+            dependencies: [
+                "AskTools", "AskAgentCore", "AskAI", "AskMCP", .product(name: "AemiTesting", package: "aemi")
+            ],
             path: "Tests/AskToolsTests",
             swiftSettings: packageSettings
         ),

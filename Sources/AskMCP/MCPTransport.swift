@@ -16,6 +16,10 @@ public protocol MCPTransport: Sendable {
     /// - Parameter protocolVersion: the version the server answered and this client accepted.
     func negotiated(protocolVersion: String)
 
+    /// What the transport knows about why the conversation ended or never began, in a few words: a program that could not be launched, the
+    /// last thing a server wrote to its standard error. Nil when it has nothing to add.
+    var diagnostic: String? { get }
+
     /// Ends the conversation: tells the server, waits a moment for it to leave, then makes it. Safe to call again.
     func close() async
 }
@@ -23,4 +27,7 @@ public protocol MCPTransport: Sendable {
 extension MCPTransport {
     /// Most transports have nothing to do with the version.
     public func negotiated(protocolVersion: String) {}
+
+    /// Most transports have nothing to add.
+    public var diagnostic: String? { nil }
 }

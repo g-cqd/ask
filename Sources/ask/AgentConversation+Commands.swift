@@ -21,6 +21,8 @@ extension AgentConversation {
                 name: "fork",
                 summary: "Continue in a new session: /fork, or /fork N from before prompt N. The original stays."),
             SlashCommand(
+                name: "mcp", summary: "Show the MCP servers: which are connected and how many tools each offers."),
+            SlashCommand(
                 name: "reload", summary: "Switch to a newly built ask, keeping this session. /reload now stops jobs.")
         ]
     }
@@ -37,6 +39,7 @@ extension AgentConversation {
                 case "tree": self.tree(arguments: arguments, update: update)
                 case "fork": await self.forkSession(arguments: arguments, update: update)
                 case "model": await self.model(arguments: arguments, update: update)
+                case "mcp": for line in MCPHub.report(self.mcp.status) { update(.notice(line, isError: false)) }
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))
             }

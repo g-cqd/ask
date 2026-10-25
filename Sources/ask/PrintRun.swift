@@ -78,11 +78,13 @@ func runPrompt(
     let workingDirectory = FileManager.default.currentDirectoryPath
     let jobs = JobTable()
     let loop: AgentLoop
+    let mcp = startMCPServers(settings)
     let files = instructionFiles(workingDirectory: workingDirectory)
     for line in describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     do {
+        await waitForMCPServers(mcp)
         loop = try makeLoop(
-            settings, instructions: files, jobs: jobs, transport: transport)
+            settings, instructions: files, jobs: jobs, transport: transport, live: mcp.live)
     } catch {
         fail("ask: \(error)", code: 70)
     }
@@ -122,6 +124,7 @@ func runPrompt(
     let result = await run.result
     // Jobs outlive turns, not ask: whatever ended the run, nothing it started keeps running.
     await jobs.stopAll()
+    await mcp.stop()
     signals.stop()
     FileHandle.standardError.write(Data("ask: tokens \(renderer.usageSummary)\nask: session \(sessionPath)\n".utf8))
     if let signal = interrupted.withLock({ $0 }) { Foundation.exit(128 + signal) }

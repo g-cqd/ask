@@ -64,6 +64,12 @@ public final class StdioTransport: MCPTransport {
     /// Why the run failed: the program could not be started, or the server was stopped for what it sent.
     public var failure: String? { shared.outcome.withLock { $0.failure } }
 
+    public var diagnostic: String? {
+        if let failure { return failure }
+        let lastLine = standardErrorTail.split(whereSeparator: \.isNewline).last.map(String.init)
+        return lastLine.flatMap { $0.isEmpty ? nil : $0 }
+    }
+
     /// The last few kilobytes the child wrote to standard error.
     public var standardErrorTail: String {
         shared.outcome.withLock { String(decoding: $0.standardError, as: UTF8.self) }
