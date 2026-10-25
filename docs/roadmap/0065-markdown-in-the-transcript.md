@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-25
 ---
@@ -85,8 +85,12 @@ Phase 0 measures it on the real corpus as the number to beat, and the differenti
        allocation per node (a flat tape, reused buffers, a ceiling of a few per message that does not grow with the input); and a parse an order
        of magnitude faster than the above.
    - *Glow:* done (above). Repeat the nested-quote and delimiter inputs against whichever parser is chosen.
-   - *Atelier:* does its block scanner agree with CommonMark on the spec examples (oracle value), and does `AtelierLexers` need
-     `AtelierSyntaxModel` for anything but `Language`?
+   - *Atelier, decided not to run:* its Markdown is a tree-sitter scanner for highlighting and `AemiMarkdown` is not built on it, so it is
+     not the oracle. The oracle is cmark-gfm (swift-cmark's `test/spec.txt` holds the GFM spec 0.29's 672 examples) and markdown-it-py. The part of
+     Atelier worth taking is `AtelierLexers` (phase 5); whether it needs `AtelierSyntaxModel` for more than `Language` is read then.
+   - *Owed, needs the owner at a terminal:* a click-and-hover check of OSC 8 in Ghostty, WezTerm, iTerm2 and Terminal.app (kitty shows a link to a script and the others were not tried), from a script that prints one link of each form. And a licence question for phase 1: the spec's examples are
+     CC BY-SA 4.0 (its own header); fixtures copied from them carry the attribution and the share-alike, and the alternative is to generate expected output from
+     cmark at test time instead of storing it.
 1. **The parser.** CommonMark's blocks and inlines plus GFM tables, strikethrough, task lists and autolinks; HTML kept as literal text.
    - *Output:* a flat `ContiguousArray` of block records and inline spans holding UTF-8 offsets into the borrowed source (`Span`). No node
      objects, no copy of the text.
