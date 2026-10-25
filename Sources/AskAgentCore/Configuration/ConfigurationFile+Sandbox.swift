@@ -1,0 +1,30 @@
+// @dl:accept -- each section validates its keys on its own; the key tables are the data
+extension ConfigurationFile {
+    /// The sandbox section's paths must be absolute or start with `~/`, and a project's file may not widen it.
+    static func validateSandbox(
+        _ section: SandboxSection?, path: String, isProject: Bool
+    ) throws(ConfigurationError) {
+        guard let section else { return }
+        func paths(_ settings: [PathSetting]) -> [String] {
+            settings.flatMap { setting -> [String] in
+                if case .paths(let paths) = setting { return paths }
+                return []
+            }
+        }
+        for (key, entries) in [
+            ("sandbox.allowRead", section.allowRead), ("sandbox.denyRead", section.denyRead),
+            ("sandbox.write", paths(section.write)), ("sandbox.read", paths(section.read))
+        ] {
+            for entry in entries where !(entry.hasPrefix("/") || entry == "~" || entry.hasPrefix("~/")) {
+                throw .outOfRange(
+                    path: path, key: key, reason: "has \"\(entry)\": use an absolute path, or one starting with ~/")
+            }
+        }
+        if isProject, !section.allowRead.isEmpty {
+            throw .outOfRange(
+                path: path, key: "sandbox.allowRead",
+                reason:
+                    "can only be set in your own config file: a project that could widen the sandbox would defeat it")
+        }
+    }
+}
