@@ -5,7 +5,7 @@ internal import Synchronization
 
 extension HTTPMCPTransport {
     /// The headers every request carries, in order.
-    private func requestHeaders() -> [(name: String, value: String)] {
+    func requestHeaders() -> [(name: String, value: String)] {
         var all: [(name: String, value: String)] = [
             ("Content-Type", "application/json"), ("Accept", "application/json, text/event-stream"),
             ("User-Agent", userAgent)
@@ -73,7 +73,7 @@ extension HTTPMCPTransport {
         if !answered { fail(requestID, "the server replied without answering") }
     }
 
-    private func deliverEvents(_ reply: HTTPStreamingResponse, requestID: Int?) async throws {
+    func deliverEvents(_ reply: HTTPStreamingResponse, requestID: Int?) async throws {
         var decoder = SSEDecoder(limits: .init(maximumEventBytes: Self.maximumMessageBytes))
         var answered = false
         for try await chunk in reply.body {
