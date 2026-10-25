@@ -167,6 +167,11 @@ Several agents work in this repository at once. To keep `main` the meeting point
 
 ## Commit discipline
 
+Before creating an ADR, diary or roadmap entry, reserve its number with `Scripts/next-number.sh adr|diary|roadmap --claim`.
+Diary claims are per day (`--date YYYY-MM-DD` when needed). Claims cover this clone's branches and worktrees, not separate clones.
+From a clean task worktree, `Scripts/land.sh` integrates, runs the full gate, fast-forwards local main and removes that task's worktree/branch; `--keep` retains it.
+It never pushes. A failed gate/conflict keeps the task intact. Inspect the owner before removing a stale `.git/ask-land.lock`.
+
 Atomic and buildable. The message states **why** — the diff already says what. Never mix a refactor
 and a behaviour change. Slice by behaviour, not by file type.
 
