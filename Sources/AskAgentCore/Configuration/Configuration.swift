@@ -47,6 +47,7 @@ public struct Configuration: Sendable, Equatable {
     public var ui: Setting<UISection>
     public var skills: Setting<SkillsSection>
     public var mcp: Setting<MCPSection>
+    public var environment: Setting<EnvironmentSection>
 
     /// Built-in defaults only.
     public static let defaults = Configuration(
@@ -56,7 +57,9 @@ public struct Configuration: Sendable, Equatable {
         compactAt: Setting(value: AgentSettings.defaultCompactAtTokens, source: .defaults),
         sandbox: Setting(value: SandboxSection(), source: .defaults),
         ui: Setting(value: UISection(), source: .defaults),
-        skills: Setting(value: SkillsSection(), source: .defaults), mcp: Setting(value: MCPSection(), source: .defaults)
+        skills: Setting(value: SkillsSection(), source: .defaults),
+        mcp: Setting(value: MCPSection(), source: .defaults),
+        environment: Setting(value: EnvironmentSection(), source: .defaults)
     )
 
     /// `self` with every key `file` sets replaced, attributed to `source`.
@@ -66,15 +69,21 @@ public struct Configuration: Sendable, Equatable {
         if let provider = file.provider { next.provider = Setting(value: provider, source: source) }
         if let thinking = file.thinking { next.thinking = Setting(value: thinking, source: source) }
         if let turns = file.maxTurns { next.maxTurns = Setting(value: turns, source: source) }
+        // @dl:accept -- heterogeneous per-key layering retains each section's type and origin; the table is the data
         if let compactAt = file.compactAt { next.compactAt = Setting(value: compactAt, source: source) }
         if let section = file.sandbox {
             next.sandbox = Setting(value: next.sandbox.value.layered(with: section), source: source)
         }
-        if let section = file.ui { next.ui = Setting(value: next.ui.value.layered(with: section), source: source) }
+        if let section = file.ui {
+            next.ui = Setting(value: next.ui.value.layered(with: section), source: source)
+        }
         if let section = file.skills {
             next.skills = Setting(value: next.skills.value.layered(with: section), source: source)
         }
         if let section = file.mcp { next.mcp = Setting(value: next.mcp.value.layered(with: section), source: source) }
+        if let section = file.environment {
+            next.environment = Setting(value: next.environment.value.layered(with: section), source: source)
+        }
         return next
     }
 
@@ -178,6 +187,7 @@ extension Configuration {
         compare("ui", previous.ui, ui)
         compare("skills", previous.skills, skills)
         compare("mcp", previous.mcp, mcp)
+        compare("environment", previous.environment, environment)
         return lines
     }
 

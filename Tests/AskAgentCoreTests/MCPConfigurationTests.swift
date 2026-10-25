@@ -89,9 +89,42 @@ struct MCPConfigurationTests {
         #expect(refusal("{mcp:{a:{command:'x',tools:['']}}}")?.hasPrefix("mcp.a.tools:") == true)
     }
 
-    @Test func `a project's file may not name a server, because naming one runs a program`() {
-        #expect(throws: ConfigurationError.self) { try parse("{mcp:{a:{command:'x'}}}", project: true) }
-        #expect(throws: ConfigurationError.self) { try parse("{mcp:{}}", project: true) }
+    @Test func `a project's file may name a server, because it is read only once it is trusted`() throws {
+        let file = try parse("{mcp:{a:{command:'x',args:['y']},b:{url:'https://h.test/m'}}}", project: true)
+        #expect(file.mcp?.servers.map(\.name) == ["a", "b"])
+    }
+
+    @Test func `a project's file may not read ask's environment into a server, where a repository could carry it away`()
+    {
+        for text in [
+            "{mcp:{a:{command:'x',env:{K:'${ANTHROPIC_API_KEY}'}}}}",
+            "{mcp:{a:{url:'https://h.test',headers:{Authorization:'Bearer ${TOKEN}'}}}}",
+            "{mcp:{a:{command:'x',env:{K:'prefix ${X} suffix'}}}}"
+        ] {
+            #expect(throws: ConfigurationError.self) { try parse(text, project: true) }
+            #expect(throws: Never.self) { try parse(text) }
+        }
+    }
+
+    @Test func `a project's literal values are fine, and so is a dollar sign that names nothing`() throws {
+        _ = try parse("{mcp:{a:{command:'x',env:{K:'plain',P:'costs $5',Q:'${unterminated'}}}}", project: true)
+    }
+
+    @Test
+    func
+        `what trusting a project would start is told in a line a server, with the command or the address and nothing it was given`()
+        throws
+    {
+        let file = try parse(
+            "{mcp:{a:{command:'bunx',args:['rea-agents@6.5.0','mcp'],env:{K:'secret'}},b:{url:'https://h.test/m?token=x',headers:{A:'secret'}},c:{command:'y',enabled:false}}}",
+            project: true)
+        let lines = try #require(file.mcp).consent
+        #expect(lines == ["a: runs bunx rea-agents@6.5.0 mcp", "b: connects to https://h.test/m", "c: runs y (off)"])
+        #expect(!lines.joined().contains("secret") && !lines.joined().contains("token"))
+    }
+
+    @Test func `a section with no servers has nothing to consent to`() {
+        #expect(MCPSection().consent.isEmpty)
     }
 
     @Test func `a later layer replaces a server of the same name whole, and adds the others`() {

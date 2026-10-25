@@ -40,6 +40,7 @@ public enum ProjectInstructions {
     }
 
     /// From the home directory (inclusive) down to `workingDirectory`, or only `workingDirectory` outside home.
+    // @dl:accept -- walking up from the working directory to home is the same walk for two different rules (instructions include home, skills stop below it)
     private static func directories(from workingDirectory: String, home: String) -> [String] {
         let start = URL(fileURLWithPath: workingDirectory).standardizedFileURL.path
         let top = URL(fileURLWithPath: home).standardizedFileURL.path

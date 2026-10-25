@@ -108,6 +108,14 @@ public struct PromptEditor: Sendable, Equatable {
         cursor = text.count
     }
 
+    /// Erases the whole draft.
+    mutating func clear() {
+        goalColumn = nil
+        goalWidth = nil
+        text.removeAll(keepingCapacity: true)
+        cursor = 0
+    }
+
     private mutating func control(_ code: UInt32) -> Outcome {
         switch code {
             case 0x03: return .interrupt

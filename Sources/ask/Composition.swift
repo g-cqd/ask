@@ -158,7 +158,7 @@ func makeLoop(
         context: ToolContext(
             workingDirectory: workingDirectory,
             outputDirectory: SessionDirectory(project: workingDirectory).path + "/output", sandbox: sandbox,
-            approve: approve, narrowing: narrowing))
+            approve: approve, narrowing: narrowing, commandEnvironment: run.commandEnvironment))
 }
 
 /// The provider, with a control still to be looked up wrapped to look it up before the first request, not at startup.

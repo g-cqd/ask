@@ -15,7 +15,7 @@ to take precedence over component actions.
 
 - With a selection, **Ctrl+C copies and clears it**. With no selection, Ctrl+C keeps its existing abort/quit meaning. Legacy control
   bytes and protocol-encoded Ctrl+C have the same meaning; no feature depends on Command or Option reporting.
-- With a selection, **Escape clears it** before it can abort a running turn. A subsequent Escape has its existing meaning.
+- With a selection, **Escape clears it** before it can abort a running turn. A subsequent Escape has its existing meaning. *(Since ADR-0104 that meaning is nothing: Escape no longer aborts a turn, and Ctrl+C with no selection is a ladder. The selection rules here stand.)*
 - A single click inside selected cells clears the selection and never activates the component underneath it. A click outside the
   selection can still activate that component. Double and triple clicks retain word and line selection.
 - A pending sandbox approval question retains its existing Ctrl+C abort contract. Copy never answers or bypasses a consent question.

@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-25
 ---
@@ -32,8 +32,19 @@ The first is the default to probe; it closes the exposure ask itself created wit
 
 ## Done when
 
-The probe exits 0 for the two stand-in secrets and still shows `HOME`; a configured pass-through variable reaches a command; and a session started with the key in the environment has no
-tool result containing it.
+The inheritance probe exits 0: known ask credential variables are withheld, an unknown stand-in is inherited by default and withheld when configured, `HOME` remains, and an explicit
+pass-through reaches the command. The stronger requirement that no tool result can contain the starting key remains open until parent-process inspection is addressed.
+
+## Implemented, not yet landed (ADR-0106)
+
+The launch path uses a filtered custom environment for ordinary and sandboxed jobs. Names come from actual authentication readers, presets, provider key references, and MCP
+header/environment references. `environment.pass` / `environment.withhold` configure exact exceptions and additional withholding; projects cannot pass credentials through.
+The fake-provider probe is green. See diary 2026-10-25-20 for mutations and validation.
+
+## Still owed
+
+A corrected local probe recovered the exact stand-in key from ask's parent environment using `sysctl(KERN_PROCARGS2)` even under the default sandbox. `ps` was blocked but this
+independent path was not. Inheritance filtering does not fix that exposure. Treat sandbox/process isolation as follow-up work, not a claim the filter already satisfies.
 
 ## Not claimed
 

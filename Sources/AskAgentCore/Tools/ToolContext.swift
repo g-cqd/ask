@@ -7,7 +7,7 @@ public struct ToolContext: Sendable, Equatable {
         left.workingDirectory == right.workingDirectory && left.outputDirectory == right.outputDirectory
             && left.sandbox == right.sandbox && left.runSandbox == right.runSandbox
             && (left.approve == nil) == (right.approve == nil)
-            && left.narrowing === right.narrowing
+            && left.narrowing === right.narrowing && left.commandEnvironment == right.commandEnvironment
     }
 
     /// Relative paths resolve against this directory.
@@ -24,6 +24,8 @@ public struct ToolContext: Sendable, Equatable {
     public let approve: SandboxApprover?
     /// The session-wide narrowing the model asked for, applied to every call; nil when the run offers none.
     public let narrowing: SessionNarrowing?
+    /// What of ask's own environment a command may inherit (ADR-0106). Everything by default, so a caller that wants protection says so.
+    public let commandEnvironment: CommandEnvironment
 
     /// A context rooted at `workingDirectory`.
     /// - Parameters:
@@ -32,9 +34,11 @@ public struct ToolContext: Sendable, Equatable {
     ///   - sandbox: what the tools may touch; nothing is restricted by default, so a caller that wants protection says so.
     ///   - approve: who grants a call more than `sandbox` allows; nil, the default, refuses.
     ///   - narrowing: where the model's session-wide narrowing is kept; nil offers none.
+    ///   - commandEnvironment: which of ask's variables a command is denied.
     public init(
         workingDirectory: String, outputDirectory: String? = nil, sandbox: SandboxPolicy = .unrestricted,
-        approve: SandboxApprover? = nil, narrowing: SessionNarrowing? = nil
+        approve: SandboxApprover? = nil, narrowing: SessionNarrowing? = nil,
+        commandEnvironment: CommandEnvironment = .inherit
     ) {
         self.workingDirectory = workingDirectory
         self.outputDirectory = outputDirectory
@@ -42,6 +46,7 @@ public struct ToolContext: Sendable, Equatable {
         self.runSandbox = sandbox
         self.approve = approve
         self.narrowing = narrowing
+        self.commandEnvironment = commandEnvironment
     }
 
     /// This context with `policy` for one call.

@@ -44,18 +44,23 @@ extension ConfigurationFile {
         }
     }
 
-    /// Whether each server is one thing or the other, with the keys that thing has, and named so a tool's name can carry it; and a
-    /// project's file names none, since naming one runs a program.
+    /// Whether each server is one thing or the other, with the keys that thing has, and named so a tool's name can carry it. A project's
+    /// file may name servers (it is read only once the person has trusted it, and trusting says what would start), but may not read ask's
+    /// environment into them: `${NAME}` in a project's file could carry a key to a server the repository chose.
     static func validateMCP(_ section: MCPSection?, path: String, isProject: Bool) throws(ConfigurationError) {
         guard let section else { return }
-        if isProject {
-            throw .outOfRange(
-                path: path, key: "mcp",
-                reason:
-                    "can only be set in your own config file: a server is a program, and a repository must not start one"
-            )
+        for server in section.servers {
+            try validate(server, path: path)
+            guard isProject else { continue }
+            for (part, values) in [("env", server.env), ("headers", server.headers)]
+            where values.values.contains(where: MCPServerSetting.referencesEnvironment) {
+                throw .outOfRange(
+                    path: path, key: "mcp.\(server.name).\(part)",
+                    reason:
+                        "uses ${NAME} in a project's file: that would read your environment into a server the repository chose; write the value, or name the server in your own config file"
+                )
+            }
         }
-        for server in section.servers { try validate(server, path: path) }
     }
 
     private static func validate(_ server: MCPServerSetting, path: String) throws(ConfigurationError) {
