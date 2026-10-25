@@ -60,7 +60,7 @@ struct ConfigurationSource: Sendable {
     }
 
     /// The source for the project at `workingDirectory`.
-    init(workingDirectory: String, flags: Flags, environment: [String: String] = ProcessInfo.processInfo.environment) {
+    init(workingDirectory: String, flags: Flags, environment: [String: String] = LaunchEnvironment.values) {
         let directory = askConfigDirectory(environment: environment)
         loader = ConfigurationLoader(project: workingDirectory, configDirectory: directory, environment: environment)
         providersPath = directory + "/providers.json"
@@ -149,6 +149,9 @@ struct ConfigurationSource: Sendable {
         }
         let thinking = try ThinkingDiscovery.resolve(
             result.configuration.thinking.value, model: discovered.model, environment: environment)
+        let commandEnvironment = CommandEnvironment(providers: providers, configuration: result.configuration)
+        // Everything that needed the credentials has read them: the snapshot keeps them, ask's own process does not (ADR-0112).
+        LaunchEnvironment.conceal(commandEnvironment)
         let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections(result.configuration.sandbox.value)
         return RunSettings(
             configuration: result.configuration, model: thinking.model, sandbox: sandbox, applied: result.applied,
@@ -159,6 +162,6 @@ struct ConfigurationSource: Sendable {
                     : []),
             workspace: workspace, thinking: thinking.control, thinkingStatus: thinking.status,
             thinkingPending: thinking.pending,
-            commandEnvironment: CommandEnvironment(providers: providers, configuration: result.configuration))
+            commandEnvironment: commandEnvironment)
     }
 }

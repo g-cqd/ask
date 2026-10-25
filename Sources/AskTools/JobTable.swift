@@ -23,8 +23,8 @@ public final class JobTable: Sendable {
     /// An empty table whose commands inherit ask's own environment, less what a run's policy withholds.
     public convenience init() { self.init(environment: ProcessInfo.processInfo.environment) }
 
-    /// An empty table whose commands inherit `environment`, which a test chooses.
-    init(environment: [String: String]) {
+    /// An empty table whose commands inherit `environment`: ask passes the one it was launched with, a test chooses its own.
+    public init(environment: [String: String]) {
         self.environment = environment
         filePrefix = "\(Int(Date().timeIntervalSince1970))-\(getpid())"
     }

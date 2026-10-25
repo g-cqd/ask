@@ -31,7 +31,7 @@ struct AliasConnectionCommand: ParsableCommand {
         // The cached list, when there is one, so an alias cannot hide a model the account offers.
         let known =
             record.provider == .codex
-            ? ((try? ModelDiscovery.codex(environment: ProcessInfo.processInfo.environment, connection: record)
+            ? ((try? ModelDiscovery.codex(environment: LaunchEnvironment.values, connection: record)
                 .cached(now: Date().timeIntervalSince1970))??
                 .models.map(\.id) ?? []) : []
         try NamedConnections.aliases(for: record)

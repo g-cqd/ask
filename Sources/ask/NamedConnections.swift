@@ -3,21 +3,21 @@ internal import Foundation
 
 /// Binds named registrations to ask's private config directory, never to a project-supplied credential path.
 enum NamedConnections {
-    static func registry(environment: [String: String] = ProcessInfo.processInfo.environment) -> ConnectionRegistry {
+    static func registry(environment: [String: String] = LaunchEnvironment.values) -> ConnectionRegistry {
         ConnectionRegistry(
             directory: CredentialFile.standard(environment: environment).url.deletingLastPathComponent()
                 .appending(path: "connections"))
     }
 
     static func file(
-        for connection: ConnectionRecord?, environment: [String: String] = ProcessInfo.processInfo.environment
+        for connection: ConnectionRecord?, environment: [String: String] = LaunchEnvironment.values
     ) -> CredentialFile {
         connection.map { registry(environment: environment).credentials(for: $0) }
             ?? .standard(environment: environment)
     }
 
     static func aliases(
-        for record: ConnectionRecord, environment: [String: String] = ProcessInfo.processInfo.environment
+        for record: ConnectionRecord, environment: [String: String] = LaunchEnvironment.values
     ) -> ModelAliasFile {
         registry(environment: environment).aliases(for: record)
     }
@@ -26,7 +26,7 @@ enum NamedConnections {
         try ProviderSettings.load(from: askConfigDirectory() + "/providers.json").configuredNames
     }
 
-    static func named(_ raw: String, environment: [String: String] = ProcessInfo.processInfo.environment) throws
+    static func named(_ raw: String, environment: [String: String] = LaunchEnvironment.values) throws
         -> ConnectionRecord
     {
         guard let name = ConnectionRecord.canonical(raw) else { throw ConnectionError.invalidName }

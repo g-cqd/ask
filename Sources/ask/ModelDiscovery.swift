@@ -14,7 +14,7 @@ enum ModelDiscovery {
     }
 
     /// The Antigravity account's list, kept in `models-agy.json` beside the credentials.
-    static func agy(environment: [String: String] = ProcessInfo.processInfo.environment) -> AgyModelCatalog {
+    static func agy(environment: [String: String] = LaunchEnvironment.values) -> AgyModelCatalog {
         let credentials = NamedConnections.file(for: nil, environment: environment)
         let transport = URLSessionTransport()
         return AgyModelCatalog(

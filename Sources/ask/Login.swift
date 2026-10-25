@@ -40,7 +40,7 @@ struct Login: AsyncParsableCommand {
             case .spettro:
                 let flow: SpettroSignIn
                 do {
-                    let base = ProcessInfo.processInfo.environment["SPETTRO_API_URL"] ?? SpettroSignIn.defaultBase
+                    let base = LaunchEnvironment.values["SPETTRO_API_URL"] ?? SpettroSignIn.defaultBase
                     flow = try SpettroSignIn(transport: URLSessionTransport(), base: base)
                 } catch { fail("ask: sign-in failed: \(error)", code: 77) }
                 await browserLogin(flow, keyName: SpettroSignIn.provider, file: file)

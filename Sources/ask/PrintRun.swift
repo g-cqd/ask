@@ -88,7 +88,7 @@ func runPrompt(
     let transport = URLSessionTransport()
     await requireSignIn(for: model, transport: transport)
     let workingDirectory = FileManager.default.currentDirectoryPath
-    let jobs = JobTable()
+    let jobs = JobTable(environment: LaunchEnvironment.values)
     let loop: AgentLoop
     let mcp = startMCPServers(settings, jobs: jobs)
     let files = instructionFiles(workingDirectory: workingDirectory)
