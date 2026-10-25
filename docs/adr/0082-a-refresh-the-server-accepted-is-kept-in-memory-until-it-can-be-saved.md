@@ -64,3 +64,7 @@ second process uses it with nothing sent. It is rare (it needs a failed save and
 itself. Lifting it would mean the first process writing the pair somewhere a second one can read, which is the second place for a secret
 this decision declined; or holding the refresh lock until saved, which would make every other ask wait for a lock held by a failing disk.
 Neither is taken.
+
+## Addendum (2026-10-25)
+
+The person is now told when this happens: once, with the reason, through the notice channel (ADR-0091).

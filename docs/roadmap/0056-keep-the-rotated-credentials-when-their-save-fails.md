@@ -25,3 +25,8 @@ The known-issue wrappers are gone, replaced by tests of the behaviour.
 
 Retrying inside the call was not chosen (ADR-0082): it only helps when the lock frees up within it, and the next call is a free
 retry. Returning the fresh token for the current request was chosen, which the original note had left as a separate choice.
+
+## Update (2026-10-25, ADR-0091)
+
+The one thing the fix left out is done: a notice, once per failure, naming the reason and what to expect (diary 2026-10-25 (02)). Still
+not covered: ask exiting before a later request saves the pair, and a second process seeing the spent token.

@@ -45,6 +45,20 @@ struct ClaudeRefreshSaveFailureTests {
         #expect(try file.loadClaude()?.refreshToken == "sk-ant-ort-OLD", "the file still holds the spent token")
     }
 
+    @Test func `the reason the save failed is kept for as long as the pair is, and gone once it is saved`() async throws
+    {
+        try file.saveClaude(credentials("OLD"))
+        let transport = SequencedTransport([.json(200, Self.tokens("NEW")), .json(400, Self.spent)])
+        let access = ClaudeAccess(file: file, client: ClaudeAuthClient(transport: transport))
+        #expect(access.unsavedReason == nil)
+        let held = try holdingTheSaveLock()
+        _ = try await access.auth(now: 5_000)
+        #expect(access.unsavedReason?.isEmpty == false)
+        held.release()
+        _ = try await access.auth(now: 5_000)
+        #expect(access.unsavedReason == nil)
+    }
+
     @Test func `the next call saves what could not be saved, and does not offer the spent token to the server`()
         async throws
     {
