@@ -8,8 +8,8 @@ public struct MCPServerStatus: Sendable, Equatable {
         case connecting
         /// Connected; `offered` of its `of` tools are offered to the model.
         case ready(offered: Int, of: Int)
-        /// Connected, and none of its tools are offered, and why.
-        case skipped(String)
+        /// Connected, with too many tools to list: they are reached through the two search tools.
+        case searchable(tools: Int)
         /// Not connected, and why.
         case failed(String)
     }
@@ -24,8 +24,14 @@ public struct MCPServerStatus: Sendable, Equatable {
     public var problem: String? {
         switch state {
             case .failed(let reason): "MCP server \(name) did not start: \(reason)"
-            case .skipped(let reason): "MCP server \(name) \(reason); none of its tools are offered"
-            case .off, .connecting, .ready: nil
+            case .off, .connecting, .ready, .searchable: nil
         }
+    }
+
+    /// What is worth saying about a server that works but not the plain way, or nil.
+    public var remark: String? {
+        guard case .searchable(let tools) = state else { return nil }
+        return "MCP server \(name) has \(tools) tools: they are searched with mcp_search and called with mcp_call. "
+            + "Name the ones you want in mcp.\(name).tools to offer them directly."
     }
 }

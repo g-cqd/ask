@@ -17,7 +17,7 @@ enum MCPReport {
             case .off: "off (enabled is false in the configuration)"
             case .connecting: "connecting…"
             case .ready(let offered, let total): "ready, \(offered) of \(total) tool\(total == 1 ? "" : "s") offered"
-            case .skipped(let reason): "connected, no tools offered: \(reason)"
+            case .searchable(let tools): "ready, \(tools) tools reachable through mcp_search and mcp_call"
             case .failed(let reason): "not connected: \(reason)"
         }
     }

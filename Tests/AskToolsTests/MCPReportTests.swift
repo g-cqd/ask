@@ -15,8 +15,8 @@ struct MCPReportTests {
         #expect(MCPReport.lines([status("a", .ready(offered: 3, of: 5))]) == ["a: ready, 3 of 5 tools offered"])
         #expect(MCPReport.lines([status("a", .ready(offered: 1, of: 1))]) == ["a: ready, 1 of 1 tool offered"])
         #expect(
-            MCPReport.lines([status("a", .skipped("has 40 tools"))]) == ["a: connected, no tools offered: has 40 tools"]
-        )
+            MCPReport.lines([status("a", .searchable(tools: 40))])
+                == ["a: ready, 40 tools reachable through mcp_search and mcp_call"])
         #expect(MCPReport.lines([status("a", .failed("no thanks"))]) == ["a: not connected: no thanks"])
     }
 
@@ -30,12 +30,19 @@ struct MCPReportTests {
         #expect(MCPReport.lines([]).count == 1 && MCPReport.lines([])[0].contains("\"mcp\""))
     }
 
-    @Test func `a failure and a skip are problems, and nothing else is`() {
+    @Test func `a failure is a problem, and nothing else is`() {
         #expect(status("a", .failed("boom")).problem == "MCP server a did not start: boom")
-        #expect(
-            status("a", .skipped("has 40 tools")).problem == "MCP server a has 40 tools; none of its tools are offered")
-        for state: MCPServerStatus.State in [.off, .connecting, .ready(offered: 1, of: 1)] {
+        for state: MCPServerStatus.State in [.off, .connecting, .ready(offered: 1, of: 1), .searchable(tools: 40)] {
             #expect(status("a", state).problem == nil)
+        }
+    }
+
+    @Test func `a searchable server has a remark that says how it is reached and how to offer its tools whole`() {
+        let remark = status("rea", .searchable(tools: 207)).remark
+        #expect(remark?.contains("207 tools") == true && remark?.contains("mcp_search") == true)
+        #expect(remark?.contains("mcp.rea.tools") == true)
+        for state: MCPServerStatus.State in [.off, .connecting, .ready(offered: 1, of: 1), .failed("x")] {
+            #expect(status("a", state).remark == nil)
         }
     }
 }
