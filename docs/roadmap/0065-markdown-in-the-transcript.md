@@ -91,16 +91,27 @@ Phase 0 measures it on the real corpus as the number to beat, and the differenti
    - *Owed, needs the owner at a terminal:* a click-and-hover check of OSC 8 in Ghostty, WezTerm, iTerm2 and Terminal.app (kitty shows a link to a script and the others were not tried), from a script that prints one link of each form. And a licence question for phase 1: the spec's examples are
      CC BY-SA 4.0 (its own header); fixtures copied from them carry the attribution and the share-alike, and the alternative is to generate expected output from
      cmark at test time instead of storing it.
-1. **The parser.** CommonMark's blocks and inlines plus GFM tables, strikethrough, task lists and autolinks; HTML kept as literal text.
-   - *Output:* a flat `ContiguousArray` of block records and inline spans holding UTF-8 offsets into the borrowed source (`Span`). No node
-     objects, no copy of the text.
-   - *Streaming:* closed blocks are final and never re-parsed; only the open tail is. The cost of a delta is O(delta plus the open block), not
-     O(answer); an answer streamed in 1-byte deltas must not be quadratic (a test counts bytes scanned).
-   - *Bounds:* nesting depth, line length, spans per block and table width are limited and the limit is visible in the output (a flat
-     fallback, never a drop). Explicit stack, no recursion. Input of any bytes yields output: invalid UTF-8, NUL, lone ESC and unterminated
-     constructs degrade to text. The known quadratic CommonMark cases (unmatched delimiters, nested brackets) get a work budget.
-   - *Gates:* the CommonMark spec examples as fixtures; a differential test against the oracle chosen in phase 0; a fuzz target
-     (`AemiKernelsFuzz` exists); an allocation ceiling per KB in every suite, as in TerminalKit ADR-0016; a benchmark with median and spread.
+1. **The parser: built, in `~/Developer/g-cqd/AemiMarkdown` (local; no remote yet), ADR-0001 there.** What is true now, from its diary
+   (`docs/diary/2026-10-25-01.md`), release, the 19,897 messages of phase 0, load average 6.9:
+   - **Conformance:** CommonMark 0.31.2, 652 of 652 examples; the GitHub extensions the corpus uses (tables, strikethrough, extended autolinks), 20 of 20;
+     a **ratchet** (a list of failing examples that can only shrink; it is empty) makes a regression or a stale list fail the suite. Footnotes, task
+     lists and the tag filter are not built.
+   - **Against swift-markdown (phase 0 baseline):**
+     - throughput **110 to 113 MB/s** against 10.3 (11x);
+     - one message p50 1.9 µs, p99 73 µs, against 8.8 µs and 796 µs;
+     - **43 allocations per KB** against 270;
+     - 100 KB of real answers streamed in 40-byte deltas, a snapshot after each: **0.010 s** against 4.94 s, per delta p50 3.2 µs and p99 11.9 µs
+       against 1.7 ms and 4.5 ms, **10 allocations per delta, not growing with the answer**;
+     - the worst shapes: one 100 KB paragraph costs p50 261 µs per delta (the open paragraph is parsed again, O(paragraph)), and one 100 KB code block
+       0.7 µs and 4 allocations (O(delta)).
+   - **Safety:** 2,000 random inputs, whole and in pieces, give well-formed tapes; nested quotes and lists 5,000 and 2,000 deep stay within the container
+     limit and say so (`diagnostics`); 16 pathological shapes stay within 3x work when the input doubles; control bytes and invalid UTF-8 are
+     reported; the hand-written HTML-tag and autolink scanners agree with the spec's grammars run by AemiRegex. Each of these tests was seen to fail under a mutation.
+   - **Still owed in this phase:** a remote for AemiMarkdown (and for AemiRegex) so ask can pin it; the set-scan kernel and SIMD skipping of plain text
+     (the scan is a byte table today, so the throughput is not the ceiling); a profile of the remaining allocations; incremental parsing of the open
+     leaf; DocC; the static analysers.
+   - **API as built:** `MarkdownParser` (`append`, `snapshot`, `finish`, `parse`), `MarkdownDocument` (`events`, `decode`, `diagnostics`),
+     `MarkdownExtensions` (tables, strikethrough, autolinks; all on by default, so `ui.markdown` can pass none), `MarkdownLimits`, `MarkdownEvent`.
 2. **Hyperlinks in TerminalKit** (its roadmap, its ADR). A link id in the cell, a process-wide link table like `StyleTable`, OSC 8 emitted by
    the diff only where the link changes, a reset on every exit path of the reset ladder, and a rule for what happens when the table is full.
    Byte-exact tests, an oracle model, and the emulators of phase 0.
