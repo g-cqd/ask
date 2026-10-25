@@ -16,7 +16,9 @@ struct ManualSelectionTests {
         #expect(effects == [.copy("alpha")])
         #expect(rig.controller.state.selection == nil)
         #expect(rig.controller.state.editor.text.isEmpty)
-        #expect(rig.controller.handle(.key(controlC), pageRows: 10) == [.quit])
+        #expect(
+            rig.controller.handle(.key(controlC), pageRows: 10) == [.armQuitTimer(generation: 1)],
+            "the next press only arms the quit")
     }
 
     @Test func `legacy control C copies during a run instead of aborting it`() {
@@ -28,13 +30,14 @@ struct ManualSelectionTests {
         #expect(rig.controller.handle(.key(controlC), pageRows: 10) == [.cancelRun])
     }
 
-    @Test func `escape clears the selection before it can abort a running turn`() {
+    @Test func `escape clears the selection and leaves a running turn alone`() {
         var rig = PointerRig(lines: ["alpha beta"])
         rig.drag(from: (9, 0), to: (9, 4))
         rig.controller.state.running = true
         #expect(rig.controller.handle(.key(escape), pageRows: 10).isEmpty)
         #expect(rig.controller.state.selection == nil)
-        #expect(rig.controller.handle(.key(escape), pageRows: 10) == [.cancelRun])
+        #expect(rig.controller.handle(.key(escape), pageRows: 10).isEmpty)
+        #expect(rig.controller.state.running)
     }
 
     @Test func `an approval question still gives control C its abort meaning`() {

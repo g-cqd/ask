@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-24
 ---
@@ -11,6 +11,9 @@ erases the input**, and **there must be a key combination for killing a tool cal
 else but not esc". Today (ADR-0056, ADR-0040 and the README): Esc clears a selection, then aborts a running turn; Ctrl+C copies a selection, then
 aborts a running turn, then quits when idle. This entry changes that, and the lane focus of 0062 depends on it, because **Esc has to mean
 "go back" everywhere**.
+
+**Built 2026-10-25 (ADR-0104, diary 2026-10-25 (17)):** Esc is inert in the editor, Ctrl+C is the ladder with the two-second quit window, the hints and README say so. **Not
+built:** Esc returning focus from a lane (rules 3 and 4 below: there are no lanes until 0062), a dedicated stop chord, and stopping only a tool.
 
 ## The key model
 
