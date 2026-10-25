@@ -8,7 +8,7 @@ date: 2026-10-25
 ADR-0096 holds the decisions. Phases:
 
 1. **Client and stdio transport** (done in this slice): `AskMCP`, tools only, tested against a scripted and a real server.
-2. **HTTP transport**: POST with `application/json` or `text/event-stream` replies, the `Mcp-Session-Id` header when a server sends one,
+2. **HTTP transport** (done in the second slice, against a played server; see the ADR's addendum): POST with `application/json` or `text/event-stream` replies, the `Mcp-Session-Id` header when a server sends one,
    a `User-Agent` of ask's own (Cloudflare refused the default one), `DELETE` to end a session (a server may answer `405`).
 3. **Integration**: configuration (`[mcp.<name>]`, command or url, env, project-level servers behind the trust prompt of ADR-0035's
    project rules), a registry that can change while a session runs (`tools/list_changed`), names `mcp__<server>__<tool>` (ADR-0092
