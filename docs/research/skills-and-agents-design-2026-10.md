@@ -1,5 +1,16 @@
 # Skills first, then agent lanes: the design, the evidence, and the questions
 
+> **Owner's answers, 2026-10-24** (the questions at the end are kept as asked; this is what was decided):
+> 0. Bundled skills: **yes**, the model may pick them with `from`. A directory in `from` stays user-only.
+> 1. Subagent defaults (read-only children, depth 1, `agents.enabled` user-level only): accepted.
+> 2. Models in other providers: as recommended (not followed unless that connection is configured and `agents.allowOtherProviders` is on).
+> 3. Comment hints and unresolved model or tool tokens: no fixed answer from the owner. **Use an available model, a very cheap one, to classify
+>    or parse the list against ask's own list** when the deterministic match fails. Recorded below as *model-assisted resolution*.
+> 4. Lane focus and keys: refined into the key model in roadmap 0064 and 0062 (Down from an empty draft or the last line; one input slot
+>    that sends to the focused lane; Esc returns to the input, then to main; Ctrl+C clears the input and does not quit; a separate stop).
+> 5. Sidebar: **open by default in the workbench layout, toggleable.**
+> 6. Child sessions: **separate files.**
+
 2026-10-24, from the owner's direction: **skills matter more than subagents; subagents are off by default; a subagent lane is focusable;
 agents and the subagents of subagents show below the input, as Claude Code's panel does, and as a tree in a sidebar too.** This note is the
 review of all of that. Nothing in it is built. The decisions are written as *proposed*, with the reason, so each can be accepted or
@@ -156,6 +167,26 @@ six harness formats). Every file has a frontmatter, 28 are TOML, and the **shape
 from other harnesses" is a real input, and that reading them permissively is most of the work. Whether ask loads another harness's agents at all
 is still the open question in 0063; if it does, they arrive through this parser with the same rules, and `tools`, `model`, `maxTurns`/`steps` and
 `effort`/`reasoningEffort` map onto ask's own limits and thinking level (roadmap 0053) where they match and are kept as notes where not.
+
+## Model-assisted resolution (owner's answer to question 3; roadmap 0061 phase 5 and 0063)
+
+When the deterministic reading fails (a model token that matches nothing on the active connection, a tool token that is in no alias row), ask
+may put the token list and **ask's own list** to a **very cheap model on the active connection** and take its classification. Proposed bounds:
+
+- **Deterministic first.** Aliases, display names, ids and the tool table decide whatever they can; the model sees only what they could not.
+- **It sees tokens and ids, never content.** The request holds the unmatched tokens and the list of candidate model ids or tool names. No skill
+  body, no project text, no conversation.
+- **It can only choose among ask's own list or answer "none".** Its output is validated against that list; anything else is "none". It cannot add
+  a tool, widen a permission, or name a model that is not in the catalog, so a wrong or hostile answer costs a worse match and nothing more.
+- **Cached by the question.** The answer is stored beside the credentials, keyed by the tokens and a hash of the candidate list, so it is asked
+  once per change and never at startup. A refresh of the catalog invalidates it.
+- **Lazy and optional.** Asked the first time a child needs a model or a tool list needs resolving, never on the startup path; offline, signed out,
+  or on failure it falls back to the parent's model and says so.
+- **Which model.** The cheapest the connection offers: `classifier.model` in the configuration if set, else the smallest known family on the active
+  connection (a table, one row per provider, `haiku`-class for Anthropic, `mini`-class for OpenAI-compatible and Codex). Not guessed from a model's name alone
+  when the catalog says otherwise. Whether it is on by default, or off until the user enables it, is **not yet decided**: it spends the user's tokens
+  on a call they did not type, however small.
+- **Skills do not need it:** a skill's tool list is only shown, so unmapped tokens are reported and nothing else. It matters for subagents (0063).
 
 ## The runner tree, lanes below the input, and the sidebar (roadmap 0062)
 

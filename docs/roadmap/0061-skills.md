@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-24
 ---
@@ -15,11 +15,17 @@ The Agent Skills form: a directory with `SKILL.md`, frontmatter with `name` and 
 The model is told each skill's name, description and path; it loads the body only when the task calls for it; the user can force one with
 `/skill:name args`. A skill **grants no permission**.
 
+## Progress
+
+**Phase 1 is built** (2026-10-25, ADR-0092, diary 2026-10-25 (3)): `ask skills` finds skills in every harness's directories, deduplicated by real path,
+reads them with a reader that cannot fail, and reports what it noticed; `ask skills --inspect FILE…` shows how any skill or agent file is read. Over
+the owner's 147 files none was rejected. Phases 2 to 5 are not started, so the model still sees no skill.
+
 ## Phases, each independently shippable
 
 1. **Discover and report.** Find skills in **every harness's locations** (the source table in the design note: `agents`, `ask`, `claude`, `codex`,
    `pi`, `opencode`, `vibe`, `copilot`, `agy`; user-level and project-level; bundled and plugin-cache directories only as the off-by-default
-   `bundled` source), **deduplicated by real path** (the owner's machine has eight of them as symlinks to one directory) and then by name;
+   `bundled` source, **which the model may select with `from`** by the owner's answer; a *directory* in `from` stays user-only), **deduplicated by real path** (the owner's machine has eight of them as symlinks to one directory) and then by name;
    parse them **permissively** (below); and show them: `ask skills` and `/skills` list name, source, trusted or not, diagnostics, unmapped tool
    tokens, and the estimated tokens the advertisement costs. No model-visible change yet.
 2. **Advertise and load.** Name, description and path in the system prompt, sorted by name (a stable cache prefix), capped with a visible
@@ -31,6 +37,10 @@ The model is told each skill's name, description and path; it loads the body onl
    `disable-model-invocation: true` hides a skill from the advertisement and keeps it reachable.
 4. **Trust.** Project skills load only for a trusted project (ADR-0032's mechanism, extended to the set of `SKILL.md` files by name and
    SHA-256); a changed skill is untrusted until looked at again; a project's configuration may turn skills off and never on.
+
+5. *(with 0063)* **Model-assisted resolution** of model and tool tokens the deterministic reading cannot match: a very cheap model on the active
+   connection classifies them against ask's own list, bounded as the design note says. Skills themselves do not need it, since their tool list is
+   only shown; it is built when subagents need a model or tool list resolved.
 
 ## Parsing: as permissive as possible (the contract is in the design note)
 
