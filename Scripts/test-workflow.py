@@ -162,6 +162,28 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("moved during the gate", p.stderr)
         self.assertTrue(task.exists())
 
+    def test_remote_moving_during_gate_is_refused(self):
+        task = self.task()
+        self.quality('git -C "../remote.git" fetch -q "$PWD" HEAD\n'
+                     'git -C "../remote.git" update-ref refs/heads/main FETCH_HEAD', root=task)
+        self.commit("gate simulates remote publication", root=task)
+        before = self.run_git("rev-parse", "HEAD")
+        p = self.invoke("land.py", root=task)
+        self.assertNotEqual(p.returncode, 0)
+        self.assertIn("moved during the gate", p.stderr)
+        self.assertEqual(self.run_git("rev-parse", "HEAD"), before)
+
+    def test_keep_retains_task_after_successful_landing(self):
+        task = self.task()
+        self.record("adr", "0002-task.md", root=task)
+        self.commit("task", root=task)
+        wanted = self.run_git("rev-parse", "HEAD", root=task)
+        p = self.invoke("land.py", "--keep", root=task)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual(self.run_git("rev-parse", "HEAD"), wanted)
+        self.assertTrue(task.exists())
+        self.assertEqual(self.run_git("rev-parse", "task"), wanted)
+
     def test_dirty_main_is_refused_and_other_lock_is_not_removed(self):
         task = self.task()
         (self.root / "uncommitted").write_text("x")
