@@ -24,3 +24,24 @@ behave on the same inputs (roadmap 0065, phase 0).
 
 Reproduce (the timings are one machine's, medians of 3): generate each input with a short script, write it to a file, run the command above
 with a timeout.
+
+## Hyperlinks (OSC 8) in real terminals, and in pi
+
+Probe: a kitty instance started with `--override allow_remote_control=yes --listen-on unix:/tmp/kp.sock` runs a script that prints one line with
+OSC 8 (ST terminator), one line with none, and one with `id=7` and a BEL terminator. `kitten @ --to unix:/tmp/kp.sock get-text --ansi --extent all`
+reads the screen back.
+
+| Line | Read back (ANSI) | Read back (plain) |
+|---|---|---|
+| `]8;;URL ST text ]8;; ST` | `]8;;URL ESC \ text ]8;; ESC \` | `text` |
+| no OSC 8 (control) | no `]8` | same text |
+| `]8;id=7;URL BEL text ]8;; BEL` | `]8;id=7;URL ESC \ text ]8;; ESC \` | `text` |
+
+So kitty keeps the target and the id for both terminators. Hover and click cannot be read this way. Traps met while probing: a background kitty
+started from the tool's shell kept the tool's pipes open until `start_new_session` and `DEVNULL` were used (there is no `setsid` on macOS);
+`wait --file` does not see a Unix socket (`--until "test -S PATH"` does); WezTerm's `cli` talks to the default instance, not to one started with
+`--always-new-process`, so its probe did not run.
+
+pi-tui 1.4.0 (`dist/components/markdown.js`, `terminal-image.js`, `utils.js`): with `hyperlinks` in its capability table, a link is OSC 8 around
+its text, target hidden; without, `text (url)` unless the text equals the target. The table is a list of terminals chosen by environment
+variables, with `tmux display -p '#{client_features}'` for tmux. A wrapped link is closed at the end of a row and re-opened on the next.
