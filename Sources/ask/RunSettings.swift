@@ -55,7 +55,7 @@ struct RunSettings: Equatable {
     /// `ask config` prints and `/config` shows.
     func report(userFile: String, projectFile: String) -> [String] {
         func row(_ name: String, _ value: String, _ source: Configuration.Source) -> String {
-            name.padding(toLength: 10, withPad: " ", startingAt: 0) + "\(value)  [\(source)]"
+            name.padding(toLength: max(10, name.count + 1), withPad: " ", startingAt: 0) + "\(value)  [\(source)]"
         }
         func standing(_ path: String) -> String {
             if applied.contains(path) { return "(applied)" }
