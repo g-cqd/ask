@@ -145,3 +145,8 @@ a click on a list that has since changed, or while a question waits, does nothin
 **Still owed:** `@` for agents and sessions, skills in the `/` list (which is where the mid-prompt `/` and the `SKILL` and
 `PROJECT` labels return), a detail pane, and promoting the trigger and ranking to TerminalKit (`@` is now the second consumer). Agent and session addressing still need the transport ADR below before any code. The rules in "Done when" that need things
 that do not exist yet (a skill grants nothing; a dead session is refused; an agent's message arrives untrusted) are not testable yet.
+
+## Where the rest went (2026-10-24)
+
+Skills in the `/` list are roadmap 0061; `@` for agents is roadmap 0063 and addressing another session stays here, behind the transport ADR. The
+lane strip and the sidebar that show agents are roadmap 0062.

@@ -136,3 +136,8 @@ layout (`standard`, `workbench`).
 - Whether bold and italic carry the hierarchy in the fonts the owner's terminals use: nothing tests that they render.
 - Clicks, selection and folding: the prototype has none of them. They are roadmap 0051 (the study across the screen) and
   TerminalKit 0016 to 0019 (the mechanisms), and both layouts here must offer the same clickable regions.
+
+## The sidebar, ahead of the pixels (2026-10-24)
+
+The owner wants the runner tree in the workbench sidebar. That is built for the character layout first, as roadmap 0062 step 4, and does not wait for
+0014 or 0003; the pixel stroke later replaces only the divider.
