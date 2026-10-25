@@ -22,6 +22,9 @@ public protocol Conversation: Sendable {
     /// an `@` first appears and again once the listing is old, off the input path.
     func projectFiles() async -> ProjectFiles
 
+    /// The skills the `/` picker offers, as commands named `skill:name` with their descriptions. Asked for once, when the picker first opens.
+    func skillCommands() async -> [SlashCommand]
+
     /// Starts anything that reports on its own while the screen is open, such as a new build appearing, until the
     /// returned task is cancelled. Nil when there is nothing to watch.
     func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>?
@@ -45,6 +48,9 @@ extension Conversation {
 
     /// No files to offer.
     public func projectFiles() async -> ProjectFiles { ProjectFiles() }
+
+    /// No skills to offer.
+    public func skillCommands() async -> [SlashCommand] { [] }
 
     /// Nothing to watch.
     public func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>? { nil }

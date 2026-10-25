@@ -135,6 +135,9 @@ final class ScreenSession {
             case .indexFiles:
                 let conversation = conversation
                 Task { sink.yield(.update(.files(await conversation.projectFiles()))) }
+            case .listSkills:
+                let conversation = conversation
+                Task { sink.yield(.update(.skills(await conversation.skillCommands()))) }
             case .cancelRun:
                 run?.cancel()
             case .copy(let text):
