@@ -53,3 +53,8 @@ provenance, refusals, a file edit, a reload and a reset.
 - Remembering a choice in the session archive, so a resumed session starts on the model it last used.
 - A pre-flight check that an Anthropic or signed-out Codex account may use the model; the first request says so.
 - A picker for `/resume` (it prints a list), and `/new` / `/resume` while a turn is running (refused by design).
+
+## Update (2026-10-25, ADR-0093)
+
+`/tree` and `/tree N` navigate the session's branches from the screen (ADR-0093), and `/fork` and `/fork N` continue it in a new
+session (ADR-0094, diary 2026-10-25 (05)).
