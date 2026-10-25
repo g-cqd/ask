@@ -52,6 +52,10 @@ printf '==> measurement harness guards (Python standard library)\n'
 need python3 "Install Python 3 to run the external measurement guards."
 python3 Scripts/test-measurements.py || fail "measurement harness guards"
 
+printf '==> documentation numbers and landing workflow guards\n'
+python3 Scripts/check-records.py || fail "duplicate documentation numbers"
+python3 -B Scripts/test-workflow.py || fail "landing workflow guards"
+
 printf '==> build and test (release)\n'
 # Explicit testability for optimized tests (ADR-0006). Benchmark/shipping binaries are built
 # separately with `swift build -c release`; do not treat a testable build as byte-identical.
