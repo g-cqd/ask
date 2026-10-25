@@ -23,6 +23,8 @@ public struct DefinitionFile: Sendable, Equatable {
     public internal(set) var body = ""
     /// What was noticed and tolerated.
     public internal(set) var diagnostics: [String] = []
+    /// Whether the head's closing fence was not found, so its end was guessed.
+    public internal(set) var isUnterminated = false
 
     /// Reads `text`. `isTOML` says the whole file is TOML, as Codex's and Vibe's agent files are (they have no fences).
     public init(parsing text: String, isTOML: Bool = false) {
@@ -42,6 +44,7 @@ public struct DefinitionFile: Sendable, Equatable {
         lines.removeSubrange(..<open)
         let close = lines.dropFirst().firstIndex { Self.isClose($0, for: fence) }
         let end = close ?? Self.unterminatedEnd(lines)
+        isUnterminated = close == nil
         if close == nil {
             diagnostics.append("the opening \(fence) has no closing line; the head was read up to the first blank line")
         }
@@ -62,8 +65,11 @@ public struct DefinitionFile: Sendable, Equatable {
     static func lines(of text: String) -> [String] {
         var text = Substring(text)
         if text.first == "\u{FEFF}" { text = text.dropFirst() }
-        return text.replacing("\r\n", with: "\n").replacing("\r", with: "\n")
-            .split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        // Almost no file has a carriage return, and replacing in a text that has none still walks all of it.
+        if text.utf8.contains(0x0D) { text = Substring(text.replacing("\r\n", with: "\n").replacing("\r", with: "\n")) }
+        // Split on the byte, not the character: finding grapheme boundaries across a whole file was most of the time reading one took.
+        return text.utf8.split(separator: 0x0A, omittingEmptySubsequences: false)
+            .map { String(decoding: $0, as: UTF8.self) }
     }
 
     private static func fence(_ line: String) -> String? {

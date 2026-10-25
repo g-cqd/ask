@@ -17,7 +17,7 @@ public struct ModelPreference: Sendable, Equatable {
     /// The preference in `file`: its `model` field, then any comment hint whose key mentions models.
     public init(_ file: DefinitionFile) {
         var words = Self.words(in: file.value("model", "models"))
-        for hint in file.hints where hint.key.canonicalKey.contains("model") { words += Self.words(in: hint.value) }
+        for hint in file.hints where hint.canonical.contains("model") { words += Self.words(in: hint.value) }
         var seen = Set<String>()
         var tokens: [String] = []
         var inherits = words.isEmpty

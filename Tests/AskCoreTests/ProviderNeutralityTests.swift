@@ -15,7 +15,7 @@ internal import Testing
 struct ProviderNeutralityTests {
     /// Directories that must not name a provider in code, by path fragment.
     private static let neutral = [
-        "/Sources/AskAgentCore/", "/Sources/AskTools/", "/Sources/AskTUI/", "/Sources/AskCore/",
+        "/Sources/AskAgentCore/", "/Sources/AskTools/", "/Sources/AskTUI/", "/Sources/AskCore/", "/Sources/AskMCP/",
         "/Sources/AskAI/Model/", "/Sources/AskAI/Transport/", "/Sources/AskAI/Support/"
     ]
 

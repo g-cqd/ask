@@ -26,7 +26,14 @@ public struct ProjectTrust: Sendable, Equatable {
 
     /// The SHA-256 of `bytes`, in lowercase hex.
     public static func digest(_ bytes: [UInt8]) -> String {
-        SHA256.hash(data: bytes).map { String(format: "%02x", $0) }.joined()
+        let digits = Array("0123456789abcdef")
+        var hex = ""
+        hex.reserveCapacity(64)
+        for byte in SHA256.hash(data: bytes) {
+            hex.append(digits[Int(byte >> 4)])
+            hex.append(digits[Int(byte & 0x0F)])
+        }
+        return hex
     }
 
     /// Whether the file at `path` with these `bytes` is trusted.
