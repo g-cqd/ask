@@ -7,13 +7,15 @@ internal import Foundation
 struct SkillBook {
     let block: String?
     let tool: SkillTool?
+    let catalog: SkillCatalog
+    let knownSources = SkillSource.standard.map(\.id)
 
     /// - Parameters:
     ///   - section: the `skills` configuration. Off means no block and no tool: the model is not told skills exist.
     ///   - workingDirectory: where the project is.
     init(_ section: SkillsSection, workingDirectory: String) {
         guard section.enabled != false else {
-            self.init(block: nil, tool: nil)
+            self.init(block: nil, tool: nil, catalog: SkillCatalog())
             return
         }
         let known = SkillSource.standard.map(\.id)
@@ -26,11 +28,13 @@ struct SkillBook {
         let block = SkillAdvertisement.block(
             for: catalog, limit: section.maxAdvertised ?? SkillsSection.defaultMaxAdvertised)
         self.init(
-            block: block, tool: catalog.skills.isEmpty ? nil : SkillTool(catalog: catalog, knownSources: known))
+            block: block, tool: catalog.skills.isEmpty ? nil : SkillTool(catalog: catalog, knownSources: known),
+            catalog: catalog)
     }
 
-    private init(block: String?, tool: SkillTool?) {
+    private init(block: String?, tool: SkillTool?, catalog: SkillCatalog) {
         self.block = block
         self.tool = tool
+        self.catalog = catalog
     }
 }

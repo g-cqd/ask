@@ -15,7 +15,10 @@ extension ScreenController {
         guard screenRows >= Self.pickerMinimumRows else { return closePicker() }
         if let trigger = commandTrigger() {
             refreshCommandPicker(trigger, screenRows: screenRows)
-            return []
+            // The skills are listed the first time a command picker could open, which is the first `/`, and never at launch.
+            guard !state.skillsRequested else { return [] }
+            state.skillsRequested = true
+            return [.listSkills]
         }
         if let trigger = fileTrigger() { return refreshFilePicker(trigger, screenRows: screenRows, at: now) }
         return closePicker()
@@ -29,24 +32,25 @@ extension ScreenController {
     }
 
     /// The command word the cursor is in, if there is one: command-shaped, and the first word of the draft.
-    private func commandTrigger() -> CompletionTrigger? {
+    func commandTrigger() -> CompletionTrigger? {
         let text = state.editor.text
         // A command word can only start a draft that starts with a slash: checking that first keeps an ordinary keystroke, in a
         // draft of any length, from walking the draft to look for a trigger (measured: 6 KB draft, 65 to about 36 microseconds).
         guard text.first(where: { !$0.isWhitespace }) == "/",
             let trigger = CompletionTrigger.at(cursor: state.editor.cursor, in: text, sigils: ["/"]),
             text.prefix(trigger.range.lowerBound).allSatisfy(\.isWhitespace),
-            trigger.query.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-") })
+            trigger.query.allSatisfy({ $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == ":") })
         else { return nil }
         return trigger
     }
 
     /// Opens, narrows or closes the command picker for `trigger`. It stays closed for a name typed in full (nothing is left to insert, so
     /// Enter runs it as it always did), for no match, and for a word the user closed it on.
-    private mutating func refreshCommandPicker(_ trigger: CompletionTrigger, screenRows: Int) {
-        let matches = PickerRanking.rank(commands, query: trigger.query)
+    mutating func refreshCommandPicker(_ trigger: CompletionTrigger, screenRows: Int) {
+        let offered = commands + (state.skills ?? [])
+        let matches = PickerRanking.rank(offered, query: trigger.query)
         guard state.pickerDismissedAt != trigger.range.lowerBound, !matches.isEmpty,
-            !commands.contains(where: { $0.name == trigger.query })
+            !offered.contains(where: { $0.name == trigger.query })
         else {
             state.picker = nil
             return
@@ -101,5 +105,14 @@ extension ScreenController {
         }
         state.picker = nil
         return []
+    }
+}
+
+extension ScreenController {
+    /// Takes the skills the conversation listed, and refreshes the command picker the user may be waiting on.
+    mutating func receive(skills: [SlashCommand]) {
+        state.skills = skills
+        guard pickerScreenRows >= Self.pickerMinimumRows, let trigger = commandTrigger() else { return }
+        refreshCommandPicker(trigger, screenRows: pickerScreenRows)
     }
 }
