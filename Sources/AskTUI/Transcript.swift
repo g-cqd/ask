@@ -43,6 +43,9 @@ public struct Transcript: Sendable, Equatable {
     /// An empty transcript.
     public init() {}
 
+    /// An empty transcript whose revisions cannot equal another transcript's, so a layout cache never mistakes one for the other.
+    init(revisionBase: Int) { nextRevision = revisionBase }
+
     /// Removes the conversation while keeping revisions monotonic. A renderer that skipped the empty frame
     /// must not mistake the next item's revision for the old item's.
     public mutating func removeAll() {
