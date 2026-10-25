@@ -54,6 +54,7 @@ func requireSignIn(for model: ResolvedModel, transport: URLSessionTransport) asy
                     file: NamedConnections.file(for: model.connection), client: CodexAuthClient(transport: transport),
                     connection: model.connection)
                 _ = try await access.credentials(now: Date().timeIntervalSince1970)
+            case .agy: _ = try await makeAgyAccess(transport: transport).session(now: Date().timeIntervalSince1970)
             case .openAICompatible, .openAIResponses: return
         }
     } catch {
@@ -71,6 +72,7 @@ func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> 
             claudeProvider(resolved, transport: transport)
         case .codex:
             codexProvider(resolved, transport: transport)
+        case .agy: agyProvider(transport: transport)
         case .openAICompatible(_, let baseURL, let apiKey, let headers):
             OpenAICompatibleProvider(
                 client: OpenAICompatibleClient(transport: transport, baseURL: baseURL, apiKey: apiKey, headers: headers)
@@ -107,6 +109,15 @@ private func codexProvider(_ resolved: ResolvedModel, transport: URLSessionTrans
         notice: { notice.message(unsavedBecause: access.unsavedReason) })
 }
 
+/// Antigravity's provider, which says so once when a refreshed sign-in could not be saved (ADR-0091).
+private func agyProvider(transport: URLSessionTransport) -> any ModelProvider {
+    let access = makeAgyAccess(transport: transport)
+    let notice = RotationNotice(provider: "Antigravity")
+    return NoticingProvider(
+        base: AgyProvider(access: access, client: AgyClient(transport: transport)),
+        notice: { notice.message(unsavedBecause: access.unsavedReason) })
+}
+
 /// How the model is named to the user: `model`, or `provider/model` for a configured provider.
 func modelLabel(_ resolved: ResolvedModel) -> String {
     if let connection = resolved.connection { return "\(connection.name)/\(resolved.model)" }
@@ -114,6 +125,7 @@ func modelLabel(_ resolved: ResolvedModel) -> String {
         case .openAICompatible(let name, _, _, _), .openAIResponses(let name, _, _, _):
             return "\(name)/\(resolved.model)"
         case .codex: return "codex/\(resolved.model)"
+        case .agy: return "agy/\(resolved.model)"
         case .anthropic: break
     }
     return resolved.model

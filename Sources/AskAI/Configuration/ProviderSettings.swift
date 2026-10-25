@@ -24,6 +24,8 @@ public struct ProviderSettings: Sendable, Equatable {
     public static let anthropic = "anthropic"
     /// The ChatGPT subscription's Codex backend, also built in.
     public static let codex = "codex"
+    /// The name of the built-in Antigravity provider.
+    public static let agy = "agy"
     /// The protocols a configured provider may name besides Anthropic's, which is built in.
     public static let openAICompletions = "openai-completions"
     public static let openAIResponses = "openai-responses"
@@ -134,7 +136,7 @@ public struct ProviderSettings: Sendable, Equatable {
         guard name.lowercased() == connection.name, !connection.removed,
             !configuredNames.contains(where: { $0.lowercased() == connection.name }),
             ProviderPreset.named(connection.name) == nil,
-            ![Self.anthropic, Self.codex, "claude"].contains(connection.name)
+            ![Self.anthropic, Self.codex, Self.agy, "claude"].contains(connection.name)
         else { throw .reservedName(name) }
         let choice: ModelChoice?
         do { choice = try aliases.choice(requested: model, catalog: catalog) } catch { throw .alias(error) }
@@ -155,17 +157,29 @@ public struct ProviderSettings: Sendable, Equatable {
     private func builtIn(_ name: String, model: String?, catalog: [CatalogModel]) throws(ProviderSettingsError)
         -> ResolvedModel?
     {
-        for reserved in [Self.anthropic, Self.codex] where entries[reserved] != nil { throw .reservedName(reserved) }
+        for reserved in [Self.anthropic, Self.codex, Self.agy] where entries[reserved] != nil {
+            throw .reservedName(reserved)
+        }
         switch name {
             case Self.anthropic: return ResolvedModel(provider: .anthropic, model: model ?? Self.anthropicDefaultModel)
             case Self.codex:
                 guard let chosen = model ?? catalog.first?.id else { throw .noModel(provider: name) }
-                let listed = catalog.first { $0.id == chosen }
-                return ResolvedModel(
-                    provider: .codex, model: chosen, contextWindow: listed?.contextWindow,
-                    maxOutputTokens: listed?.maxOutputTokens)
+                return Self.resolved(.codex, chosen, from: catalog)
+            case Self.agy:
+                guard let chosen = model else { throw .noModel(provider: name) }
+                return Self.resolved(.agy, chosen, from: catalog)
             default: return nil
         }
+    }
+
+    /// `chosen` on `provider`, with the limits the catalog states for it.
+    private static func resolved(_ provider: ResolvedModel.Provider, _ chosen: String, from catalog: [CatalogModel])
+        -> ResolvedModel
+    {
+        let listed = catalog.first { $0.id == chosen }
+        return ResolvedModel(
+            provider: provider, model: chosen, contextWindow: listed?.contextWindow,
+            maxOutputTokens: listed?.maxOutputTokens)
     }
 
     /// The key to send: the entry's own, else the preset's variable, else the key a sign-in stored. A preset that
@@ -194,7 +208,7 @@ public struct ProviderSettings: Sendable, Equatable {
                     .compactMap { $0 }
                 return "\(preset.name) (needs \(needs.joined(separator: " or ")))"
             }
-        return [Self.anthropic, Self.codex] + (entries.keys + presets).sorted()
+        return [Self.anthropic, Self.codex, Self.agy] + (entries.keys + presets).sorted()
     }
 
     /// `$NAME` or `${NAME}` from the environment, `$$…` as a literal `$…`, and anything else as written.

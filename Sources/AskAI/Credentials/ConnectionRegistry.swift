@@ -122,7 +122,9 @@ public struct ConnectionRegistry: Sendable {
 
     private func availableName(_ raw: String, reserved: [String]) throws -> String {
         guard let name = ConnectionRecord.canonical(raw) else { throw ConnectionError.invalidName }
-        let builtins = ["claude", ProviderSettings.anthropic, ProviderSettings.codex] + ProviderPreset.all.map(\.name)
+        let builtins =
+            ["claude", ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy]
+            + ProviderPreset.all.map(\.name)
         guard !(builtins + reserved).contains(where: { $0.lowercased() == name }) else {
             throw ConnectionError.nameInUse(name)
         }

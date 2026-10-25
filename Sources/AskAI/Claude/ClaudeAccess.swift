@@ -69,6 +69,7 @@ public struct ClaudeAccess: Sendable {
 
     /// What to use now: the rotated credentials not yet saved, or else what is stored.
     private func current() throws(ClaudeAccessError) -> ClaudeCredentials? {
+        // @dl:accept -- Claude's, Codex's and Antigravity's accessors are twins over different credential types and errors; a protocol to share them would cost more than it saves
         if let held = unsaved.value { return held.current }
         return try load()
     }
