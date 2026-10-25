@@ -15,6 +15,7 @@ enum SessionRouting {
         switch model.provider {
             case .anthropic: name = ProviderSettings.anthropic
             case .codex: name = ProviderSettings.codex
+            case .agy: name = ProviderSettings.agy
             case .openAICompatible(let value, _, _, _), .openAIResponses(let value, _, _, _): name = value
         }
         return SessionDestination(

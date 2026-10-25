@@ -25,7 +25,7 @@ func agyLogin(file: CredentialFile) async {
 }
 
 /// The verified secret of the `agy` this machine has.
-private func installedClientSecret(transport: URLSessionTransport) async throws -> String {
+func installedClientSecret(transport: URLSessionTransport) async throws -> String {
     let path = AgyBinary.locate(environment: ProcessInfo.processInfo.environment, home: NSHomeDirectory()) {
         candidate in
         var isDirectory: ObjCBool = false

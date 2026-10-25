@@ -31,7 +31,7 @@ extension ProviderSettings {
     ///   - provider: the name given on the command line, if any; else the file's default.
     ///   - environment: where `$NAME` keys and a preset's key variable are read.
     ///   - storedKeys: the keys sign-ins stored, called only when nothing else gives a preset a key.
-    /// - Returns: nil for a built-in provider (Anthropic and Codex have their own sign-in and catalogs).
+    /// - Returns: nil for a built-in provider (Anthropic, Codex and Antigravity have their own sign-in and catalogs).
     /// - Throws: a ``ProviderSettingsError`` naming what cannot be honoured. A preset with no key is an error, as it is for a
     ///   run: the list is never asked for without the key the provider's requests would carry.
     public func listing(
@@ -39,7 +39,7 @@ extension ProviderSettings {
         storedKeys: () throws(CredentialFileError) -> [String: String] = { [:] }
     ) throws(ProviderSettingsError) -> Listing? {
         let name = selectedProvider(provider)
-        if [Self.anthropic, Self.codex].contains(name) { return nil }
+        if [Self.anthropic, Self.codex, Self.agy].contains(name) { return nil }
         let target = try target(name, environment: environment, storedKeys: storedKeys)
         let (url, key) = try endpoint(of: target, environment: environment, storedKeys: storedKeys)
         return Listing(name: name, baseURL: url, apiKey: key, headers: target.entry.headers ?? [:])
