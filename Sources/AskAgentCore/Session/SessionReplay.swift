@@ -48,7 +48,7 @@ public enum SessionReplay {
         switch payload {
             case .destination: return []
             case .user(let text) where text == AgentLoop.continuationPrompt: return [.event(.continuedAtOutputLimit)]
-            case .user(let text): return [.prompt(text)]
+            case .user(let text): return [.prompt(SkillInvocation.shown(text))]
             case .assistant(let text): return [.event(.model(.textDelta(index: 0, text)))]
             case .compaction(let summary, _): return [.event(.compacted(summary: summary, usage: TokenUsage()))]
             case .toolResult: return []  // Its call is not in context: the request drops it too.

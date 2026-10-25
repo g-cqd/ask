@@ -62,6 +62,18 @@ private final class PrintRenderer: Sendable {
     private func write(_ text: String, to handle: FileHandle) { handle.write(Data(text.utf8)) }
 }
 
+/// `prompt`, or for `/skill:name request` the request with the skill after it. A skill that cannot be loaded ends the run with exit code 64 and
+/// says why, before anything is sent.
+private func expandingSkill(_ prompt: String, settings: RunSettings, workingDirectory: String) -> String {
+    guard SkillInvocation.asksForSkill(prompt) else { return prompt }
+    let book = SkillBook(settings.configuration.skills.value, workingDirectory: workingDirectory)
+    switch SkillInvocation.expand(prompt, catalog: book.catalog, knownSources: book.knownSources) {
+        case .prompt(let text): return text
+        case .notASkill: return prompt
+        case .failure(let reason): fail("ask: \(reason)", code: 64)
+    }
+}
+
 /// Runs `prompt` to completion. SIGINT and SIGTERM abort the run, so a running command's whole process group
 /// is stopped, and then exit with 128 + the signal.
 func runPrompt(
@@ -78,11 +90,13 @@ func runPrompt(
     let workingDirectory = FileManager.default.currentDirectoryPath
     let jobs = JobTable()
     let loop: AgentLoop
+    let mcp = startMCPServers(settings)
     let files = instructionFiles(workingDirectory: workingDirectory)
     for line in describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     do {
+        await waitForMCPServers(mcp)
         loop = try makeLoop(
-            settings, instructions: files, jobs: jobs, transport: transport)
+            settings, instructions: files, jobs: jobs, transport: transport, live: mcp.live)
     } catch {
         fail("ask: \(error)", code: 70)
     }
@@ -108,8 +122,9 @@ func runPrompt(
     let sessionPath = session.path
     let renderer = PrintRenderer()
 
+    let sent = expandingSkill(prompt, settings: settings, workingDirectory: workingDirectory)
     let run = Task<Void, any Error> {
-        try await loop.run(prompt, in: session) { renderer.render($0) }
+        try await loop.run(sent, in: session) { renderer.render($0) }
     }
     let interrupted = Mutex<Int32?>(nil)
     let signals = SignalHandler(
@@ -122,6 +137,7 @@ func runPrompt(
     let result = await run.result
     // Jobs outlive turns, not ask: whatever ended the run, nothing it started keeps running.
     await jobs.stopAll()
+    await mcp.stop()
     signals.stop()
     FileHandle.standardError.write(Data("ask: tokens \(renderer.usageSummary)\nask: session \(sessionPath)\n".utf8))
     if let signal = interrupted.withLock({ $0 }) { Foundation.exit(128 + signal) }

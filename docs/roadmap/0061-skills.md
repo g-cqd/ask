@@ -22,8 +22,10 @@ reads them with a reader that cannot fail, and reports what it noticed; `ask ski
 the owner's 147 files none was rejected.
 
 **Phase 2 is built** (2026-10-25, ADR-0095, diary 2026-10-25 (6)): the system prompt lists up to `skills.maxAdvertised` (default **32**, the owner's choice) skills by
-name, and the `skill` tool loads one, with `from` narrowing and no path. Only the user's and bundled skills load: a project's wait for phase 4. Phases 3 to 5
-are not started.
+name, and the `skill` tool loads one, with `from` narrowing and no path. Only the user's and bundled skills load: a project's wait for phase 4.
+
+**Phase 3 is built** (2026-10-25, ADR-0097, diary 2026-10-25 (9)): `/skill:name [--from …] request` (also in `ask -p`) and skills in the `/` picker. Queued messages
+are not expanded yet. Phases 4 and 5 are not started.
 
 ## Phases, each independently shippable
 

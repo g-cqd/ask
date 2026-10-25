@@ -28,6 +28,10 @@ public struct ScreenState: Sendable, Equatable {
     var filesLoadedAt: ContinuousClock.Instant?
     /// Whether a listing was asked for and has not arrived.
     var filesLoading = false
+    /// The skills for the `/` picker, as commands; nil until the first listing arrives (roadmap 0061).
+    var skills: [SlashCommand]?
+    /// Whether the skills were asked for. They are asked for once, when a command picker first opens, never at launch.
+    var skillsRequested = false
     /// The picker for the word under the cursor: commands for a slash that starts the draft, files for an `@`; nil otherwise.
     var picker: CompletionPicker?
     /// Where the word the user closed the picker on starts. It stays closed until the cursor leaves that word.
