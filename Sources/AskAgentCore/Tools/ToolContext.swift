@@ -27,7 +27,7 @@ public struct ToolContext: Sendable, Equatable {
     public let narrowing: SessionNarrowing?
     /// What of ask's own environment a command may inherit (ADR-0106). Everything by default, so a caller that wants protection says so.
     public let commandEnvironment: CommandEnvironment
-    /// Who is asked before a server's tool marked destructive runs; nil, the default, runs it unasked, as `ask -p` does (ADR-0110).
+    /// Who is asked before a server's tool marked destructive runs; nil, the default, runs it unasked, as `ask -p` does (ADR-0111).
     public let destructiveApprover: DestructiveApprover?
 
     /// A context rooted at `workingDirectory`.

@@ -13,6 +13,8 @@ extension ScreenController {
     private static let pickerTarget = 2
     /// The input, where a click puts the cursor.
     private static let promptTarget = 3
+    /// The runner strip's rows, where a click focuses a runner.
+    private static let stripTarget = 4
 
     mutating func handle(mouse event: MouseEvent, at now: ContinuousClock.Instant) -> [Effect] {
         guard options.mouse else { return [] }
@@ -26,6 +28,11 @@ extension ScreenController {
         }
         if frame.runnerColumns != nil || frame.belowColumns != nil {
             regions.add(Self.statusTarget, at: CellRect(row: frame.statusRow, col: 0, rows: 1, cols: frame.columns))
+        }
+        if !frame.stripIDs.isEmpty {
+            regions.add(
+                Self.stripTarget,
+                at: CellRect(row: frame.stripFirstRow, col: 0, rows: frame.stripIDs.count, cols: frame.columns))
         }
         if !frame.pickerWindow.isEmpty {
             regions.add(
@@ -84,6 +91,8 @@ extension ScreenController {
                 }
                 guard frame.runnerColumns?.contains(cell.col) == true else { return [] }
                 return toggleRunners()
+            case .click(let target, let cell, .left, _, _) where target == Self.stripTarget:
+                return clickStrip(row: cell.row - frame.stripFirstRow)
             case .click(let target, let cell, .left, _, let count) where target == Self.promptTarget:
                 if count >= 2 { return selectInput(at: cell, count: count) }
                 placeCursor(at: cell)

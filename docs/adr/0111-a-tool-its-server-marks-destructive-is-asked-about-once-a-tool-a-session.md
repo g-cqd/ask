@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-25
 ---
 
-# 0110 — A tool its server marks destructive is asked about, once a tool a session
+# 0111 — A tool its server marks destructive is asked about, once a tool a session
 
 ## Context
 
