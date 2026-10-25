@@ -56,4 +56,5 @@ provenance, refusals, a file edit, a reload and a reset.
 
 ## Update (2026-10-25, ADR-0093)
 
-`/tree` and `/tree N` navigate the session's branches from the screen. `/fork` is not built.
+`/tree` and `/tree N` navigate the session's branches from the screen (ADR-0093), and `/fork` and `/fork N` continue it in a new
+session (ADR-0094, diary 2026-10-25 (05)).

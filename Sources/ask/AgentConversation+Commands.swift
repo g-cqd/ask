@@ -7,6 +7,7 @@ internal import Synchronization
 /// The commands the screen offers beyond its own `/help` and `/quit`.
 extension AgentConversation {
     var commands: [SlashCommand] {
+        // @dl:accept -- a table of command names and summaries; the entries are the data, and they read alike because every command has a name and a sentence
         [
             SlashCommand(
                 name: "config", summary: "Read the configuration again and show every setting and its source."),
@@ -16,6 +17,9 @@ extension AgentConversation {
                 name: "model", summary: "Show the model, or choose one for this run: /model [PROVIDER] MODEL, --reset."),
             SlashCommand(name: "resume", summary: "List sessions, or switch with /resume NAME, PREFIX or PATH."),
             SlashCommand(name: "tree", summary: "List this session's prompts, or go back to before one: /tree N."),
+            SlashCommand(
+                name: "fork",
+                summary: "Continue in a new session: /fork, or /fork N from before prompt N. The original stays."),
             SlashCommand(
                 name: "reload", summary: "Switch to a newly built ask, keeping this session. /reload now stops jobs.")
         ]
@@ -31,6 +35,7 @@ extension AgentConversation {
                 case "new": await self.newSession(arguments: arguments, update: update)
                 case "resume": await self.resumeSession(arguments: arguments, update: update)
                 case "tree": self.tree(arguments: arguments, update: update)
+                case "fork": await self.forkSession(arguments: arguments, update: update)
                 case "model": await self.model(arguments: arguments, update: update)
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))
@@ -50,10 +55,7 @@ extension AgentConversation {
     /// Compacts at the user's request, whatever the context's size. Nothing is made up: with nothing recorded, or
     /// nothing before the recent messages, it says so.
     private func compact(update: @Sendable (ConversationUpdate) -> Void) async {
-        guard let recorder = session.withLock({ $0 }), !recorder.tree.entries.isEmpty else {
-            update(.notice("Nothing to compact yet.", isError: false))
-            return
-        }
+        guard recordedSession(orSay: "Nothing to compact yet.", update: update) != nil else { return }
         do {
             await refreshSettings(update: update)
             let checked = try self.recorder()

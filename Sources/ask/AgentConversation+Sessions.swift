@@ -32,6 +32,15 @@ extension AgentConversation {
         await refreshSettings(update: update)
     }
 
+    /// The open session if it has recorded anything; otherwise says `message` and returns nil.
+    func recordedSession(orSay message: String, update: @Sendable (ConversationUpdate) -> Void) -> SessionRecorder? {
+        guard let recorder = session.withLock({ $0 }), !recorder.tree.entries.isEmpty else {
+            update(.notice(message, isError: false))
+            return nil
+        }
+        return recorder
+    }
+
     /// Sessions do not own processes: refuse to carry a running job into another conversation silently.
     func maySwitchSession(_ command: String, update: @Sendable (ConversationUpdate) -> Void) -> Bool {
         let running = jobs.running
