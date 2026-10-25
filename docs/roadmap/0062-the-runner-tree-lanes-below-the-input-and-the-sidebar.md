@@ -13,7 +13,8 @@ questions: `docs/research/skills-and-agents-design-2026-10.md`.
 
 **Step 1 built** (2026-10-25, ADR-0105, diary 2026-10-25 (18)): the cached tree and capped below-input strip, status counts from the same tree, and Esc closes
 it without losing the draft. Real jobs remain roots; nested snapshots are tested. **Step 2 built** (ADR-0110, diary 2026-10-25 (27)): Down enters the strip, Enter or a click focuses a job and shows a snapshot of its output, Esc steps back,
-Left/Right collapse. `/agents` and live following are not built. Steps 3–4 (approvals, sidebar) are not built. The key ladder
+Left/Right collapse. `/agents` and live following are not built. **Step 3 built for main's questions** (ADR-0112, diary 2026-10-25 (29)): a question asked while a lane is shown leads the status line. A child's own question is not
+verified (none exist before 0063). Step 4 (sidebar) is not built. The key ladder
 of 0064 is built; its lane-return behavior will be implemented with step 2 here.
 
 ## One model, three views
