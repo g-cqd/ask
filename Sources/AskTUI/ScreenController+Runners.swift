@@ -3,6 +3,7 @@ extension ScreenController {
     mutating func setRunners(_ list: [RunnerInfo]) {
         state.runners = list
         if list.isEmpty { state.runnersOpen = false }
+        if let id = state.stripSelection, !list.contains(where: { $0.id == id }) { state.stripSelection = nil }
     }
 
     /// Opens or closes the list. With `announcing`, a command that finds nothing running says so instead of opening nothing.

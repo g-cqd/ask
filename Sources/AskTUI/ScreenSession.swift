@@ -142,6 +142,9 @@ final class ScreenSession {
                     try? await Task.sleep(for: ScreenController.quitWindow)
                     sink.yield(.quitWindowEnded(generation: generation))
                 }
+            case .readRunnerOutput(let id):
+                let conversation = conversation
+                Task { sink.yield(.update(.runnerOutput(id: id, text: await conversation.runnerOutput(id)))) }
             case .listSkills:
                 let conversation = conversation
                 Task { sink.yield(.update(.skills(await conversation.skillCommands()))) }

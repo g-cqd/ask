@@ -37,7 +37,7 @@ def click_count(terminal, label):
 
 def main():
     port = probe.agent.free_port()
-    command = f"exec python3 -m http.server {port} --bind 127.0.0.1"
+    command = f"exec python3 -u -m http.server {port} --bind 127.0.0.1"
     with tempfile.TemporaryDirectory() as root:
         project, config = root + "/project", root + "/config"
         os.makedirs(project)
@@ -85,6 +85,17 @@ def main():
             terminal.draw(lambda: terminal.send(b"\x1b"))
             check("Esc closes the strip and keeps the draft", "job-1  exec" not in terminal.text()
                   and terminal.screen.display[-1].startswith("ask> Xdraft"))
+            terminal.draw(lambda: terminal.send(b"\x18/tasks\r"))
+            terminal.draw(lambda: terminal.send(b"\x1b[B"))
+            terminal.draw(lambda: terminal.send(b"\r"))
+            terminal.until(lambda: "Serving HTTP on" in terminal.text())
+            check("Down then Enter shows the job's real output in place of the conversation",
+                  "Serving HTTP on" in terminal.text() and "Serving." not in terminal.text())
+            check("the status line says which lane is shown", "main › job-1 · esc returns" in terminal.text())
+            terminal.draw(lambda: terminal.send(b"\x1b"))
+            check("Esc returns to the conversation, with the strip still open",
+                  "Serving." in terminal.text() and "Serving HTTP on" not in terminal.text()
+                  and "job-1  exec" in terminal.text())
             terminal.draw(lambda: terminal.send(b"\x18/tasks\r"))
             start = len(terminal.raw)
             terminal.send(b"Stop it\r")

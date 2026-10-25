@@ -10,6 +10,9 @@ extension ScreenComposer {
         let activity = state.running ? "\(state.label) · working… (ctrl+c to stop)" : "\(state.label) · ready"
         var status = input.isEmpty ? activity : input + " · " + activity
         if state.quitArmedAt != nil { status += " · press Ctrl+C again to quit" }
+        if let lane = state.lane {
+            status += " · main › \(lane.name) · esc returns"
+        }
         var runners: Range<Int>?
         var below: Range<Int>?
         if state.scrollback > 0 {
@@ -38,23 +41,8 @@ extension ScreenComposer {
         return (Line(text: status, style: Style(dim: true)), runners, below)
     }
 
-    /// The rows of the open runner list: one per runner, then how many more did not fit. Empty when it is closed.
+    /// The rows of the open runner strip. Empty when it is closed.
     static func runnerRows(for state: ScreenState, available: Int, columns: Int) -> [Line] {
-        guard state.runnersOpen, !state.runners.isEmpty, available > 0 else { return [] }
-        let capacity = Swift.min(5, available)
-        let tree = state.runnerTree.rows
-        let shown = tree.count > capacity ? capacity - 1 : tree.count
-        var rows = tree.prefix(shown)
-            .map {
-                let indent = String(repeating: "  ", count: Swift.min($0.depth, Swift.max(0, columns / 2)))
-                let text =
-                    indent + $0.runner.name + "  " + $0.runner.detail.replacing("\n", with: " ")
-                    + " · " + $0.runner.state.rawValue
-                return Line(text: text, style: Style(dim: true))
-            }
-        if shown < tree.count {
-            rows.append(Line(text: "… \(tree.count - shown) more", style: Style(dim: true)))
-        }
-        return rows
+        RunnerStrip(state, available: available, columns: columns).lines
     }
 }

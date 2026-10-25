@@ -25,6 +25,9 @@ public protocol Conversation: Sendable {
     /// The skills the `/` picker offers, as commands named `skill:name` with their descriptions. Asked for once, when the picker first opens.
     func skillCommands() async -> [SlashCommand]
 
+    /// A runner's recent output, for the lane that shows it: bounded, the newest part, and never more than the runner wrote.
+    func runnerOutput(_ id: String) async -> String
+
     /// Starts anything that reports on its own while the screen is open, such as a new build appearing, until the
     /// returned task is cancelled. Nil when there is nothing to watch.
     func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>?
@@ -51,6 +54,9 @@ extension Conversation {
 
     /// No skills to offer.
     public func skillCommands() async -> [SlashCommand] { [] }
+
+    /// No runners, so no output.
+    public func runnerOutput(_ id: String) async -> String { "" }
 
     /// Nothing to watch.
     public func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>? { nil }
