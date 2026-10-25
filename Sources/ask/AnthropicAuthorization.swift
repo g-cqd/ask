@@ -14,6 +14,9 @@ struct AnthropicAuthorization: Sendable {
         access = ClaudeAccess(file: file, client: ClaudeAuthClient(transport: transport), connection: connection)
     }
 
+    /// Why a refreshed sign-in could not be saved, while it cannot (ADR-0082); nil otherwise.
+    var unsavedReason: String? { access.unsavedReason }
+
     /// Authorization without refreshing or writing; expired stored access is unavailable to a cache reader.
     func cached(environment: [String: String], now: Double) throws -> AnthropicClient.Auth? {
         if let supplied = try supplied(environment) { return supplied }

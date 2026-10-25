@@ -14,6 +14,17 @@ struct ResponseAssemblerTests {
     private let start = ModelEvent.messageStarted(
         id: "msg_1", model: "claude-x", usage: TokenUsage(input: 25, output: 1, cacheRead: 7))
 
+    @Test func `a notice is not part of the response, wherever it comes, even before the response started`() throws {
+        let response = try assemble([
+            .notice("before"), start, .notice("during"), .blockStarted(index: 0, .text), .notice("inside a block"),
+            .textDelta(index: 0, "hi"), .blockStopped(index: 0),
+            .messageDelta(stopReason: .endTurn, usage: TokenUsage()),
+            .notice("last"), .messageStopped
+        ])
+        #expect(response.blocks == [.text("hi")])
+        #expect(response.id == "msg_1")
+    }
+
     @Test func `a complete turn assembles its blocks in index order`() throws {
         let response = try assemble([
             start,
