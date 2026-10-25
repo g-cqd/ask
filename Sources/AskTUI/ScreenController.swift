@@ -16,6 +16,8 @@ public struct ScreenController: Sendable {
         case answerApproval(id: Int, ApprovalChoice)
         /// List the project's files for the `@` picker; the answer is ``ConversationUpdate/files(_:)``.
         case indexFiles
+        /// Read a runner's recent output for its lane; the answer is ``ConversationUpdate/runnerOutput(id:text:)``.
+        case readRunnerOutput(id: String)
         /// Tell the screen when the quit window closes: Ctrl+C was pressed on an empty, idle input and a second press within this long quits.
         case armQuitTimer(generation: Int)
         /// List the skills for the `/` picker; the answer is ``ConversationUpdate/skills(_:)``.
@@ -111,6 +113,7 @@ public struct ScreenController: Sendable {
                 if state.pendingApproval != nil { return answer(key) }
                 if let effects = selectionOrToggleKey(key, columns: columns) { return effects }
                 if let effects = pickerKey(key, screenRows: pageRows + 3) { return effects }
+                if let effects = stripKey(key) { return effects }
                 clearSelection()
                 return edit(key, columns: columns, interrupt: Interrupt(at: now, armedAt: armedAt))
             case .mouse(let mouse):
@@ -143,10 +146,10 @@ public struct ScreenController: Sendable {
     /// Applies an update from the running conversation. A reader who has scrolled back stays on what they were reading (ADR-0072).
     @discardableResult
     public mutating func handle(_ update: ConversationUpdate) -> [Effect] {
-        holdingView { $0.apply(update) }
+        deliver(update)
     }
 
-    private mutating func apply(_ update: ConversationUpdate) -> [Effect] {
+    mutating func apply(_ update: ConversationUpdate) -> [Effect] {
         switch update {
             case .userPrompt(let text): state.transcript.addUser(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
@@ -158,6 +161,7 @@ public struct ScreenController: Sendable {
             case .label(let text): state.label = text
             case .status(let text): state.detail = text
             case .runners(let list): setRunners(list)
+            case .runnerOutput: break
             case .files(let list): return receive(files: list)
             case .skills(let list): receive(skills: list)
             case .fillDraft(let text): fill(draft: text)
@@ -184,9 +188,7 @@ public struct ScreenController: Sendable {
             case .submitted(let line):
                 return submit(line, followUp: key.modifiers.contains(.alt))
             case .escape:
-                // The selection and picker took Esc first. Next it closes the runner strip, never the draft or the turn.
-                state.runnersOpen = false
-                return []
+                return escapePressed()
             case .interrupt:
                 return interrupted(interrupt)
             case .endOfInput:
@@ -198,6 +200,7 @@ public struct ScreenController: Sendable {
 
     /// A submitted line: a prompt, a command, or a command that does not exist.
     private mutating func submit(_ line: String, followUp: Bool) -> [Effect] {
+        leaveLane()
         switch SlashInput(line) {
             case .prompt(let text):
                 return submitPrompt(text, followUp: followUp)
@@ -221,26 +224,5 @@ public struct ScreenController: Sendable {
                         return begin(.runCommand(name: name, arguments: arguments))
                 }
         }
-    }
-
-    /// Says so, and returns true, when a turn is still running.
-    private mutating func busy() -> Bool {
-        guard state.running else { return false }
-        state.transcript.addNotice("A turn is still running; press Ctrl+C to stop it first.", isError: false)
-        return true
-    }
-
-    mutating func begin(_ effect: Effect) -> [Effect] {
-        if case .startRun = effect { acceptsInput = true } else { acceptsInput = false }
-        returningInput = false
-        state.running = true
-        state.scrollback = 0
-        return [effect]
-    }
-
-    mutating func abort() -> [Effect] {
-        returningInput = true
-        state.transcript.addNotice("Stopping…", isError: false)
-        return [.cancelRun]
     }
 }

@@ -12,7 +12,8 @@ it **before** any subagent exists, with jobs as the runners, so the whole UI is 
 questions: `docs/research/skills-and-agents-design-2026-10.md`.
 
 **Step 1 built** (2026-10-25, ADR-0105, diary 2026-10-25 (18)): the cached tree and capped below-input strip, status counts from the same tree, and Esc closes
-it without losing the draft. Real jobs remain roots; nested snapshots are tested. Steps 2–4 (focus/output, approvals and sidebar) are not built. The key ladder
+it without losing the draft. Real jobs remain roots; nested snapshots are tested. **Step 2 built** (ADR-0110, diary 2026-10-25 (27)): Down enters the strip, Enter or a click focuses a job and shows a snapshot of its output, Esc steps back,
+Left/Right collapse. `/agents` and live following are not built. Steps 3–4 (approvals, sidebar) are not built. The key ladder
 of 0064 is built; its lane-return behavior will be implemented with step 2 here.
 
 ## One model, three views
