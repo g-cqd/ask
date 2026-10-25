@@ -9,7 +9,8 @@ B: a server with more tools than ask offers whole is searched, not listed: two t
    words and calls it, and stderr says so.
 C: a server that cannot be started costs only itself: the run finishes, and says why.
 D: a project's own config file may not name a server: it is refused, and nothing is started.
-E: a server's process is gone when ask is.
+E: a server that ignores its input closing and SIGTERM is stopped when ask is killed with SIGKILL (ADR-0102); a control shows the
+   same server outliving a parent that dies without a watchdog.
 --control: a binary that predates the feature does not offer the tool; a probe that cannot fail is not a probe.
 """
 import importlib.util
@@ -170,10 +171,63 @@ def probe_d(binary):
     ])
 
 
+def wait_for(path, seconds=30):
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        if os.path.exists(path) and open(path).read().strip():
+            return int(open(path).read())
+        time.sleep(0.05)
+    raise AssertionError(f"{path} never appeared")
+
+
+def wait_gone(pid, seconds):
+    deadline = time.time() + seconds
+    while time.time() < deadline:
+        if not alive(pid):
+            return True
+        time.sleep(0.1)
+    return not alive(pid)
+
+
+def probe_e(binary):
+    print("E: a server that ignores everything is stopped when ask is killed")
+    work = tempfile.mkdtemp()
+    # The control: the same server, left by a parent that dies with no watchdog, stays: the probe can fail.
+    lone = os.path.join(work, "lone.pid")
+    parent = subprocess.Popen(["sh", "-c", f"echo $$ > {lone}; exec python3 {FIXTURE} stubborn"], stdin=subprocess.PIPE,
+                              start_new_session=True)
+    orphan = wait_for(lone)
+    parent.stdin.close()
+    time.sleep(1.5)
+    survived = alive(orphan)
+    os.kill(orphan, 9)
+    control = check("control: the stubborn server survives its input closing and SIGTERM", survived)
+    pidfile = os.path.join(work, "pid")
+    config, state, project = setup({"fx": {"command": "sh", "args": ["-c", f"echo $$ > {pidfile}; exec python3 {FIXTURE} stubborn"]}})
+    server = Server([turn([("call", "c1", "mcp__fx__echo", {"message": "hi"})], "tool_use"),
+                     turn([("tool", "b1", "sleep 120")], "tool_use"), turn([("text", "Done.")], "end_turn")])
+    env = environment(state, server.url, config)
+    process = subprocess.Popen([binary, "-p", "Use the server."], cwd=project, env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    pid = wait_for(pidfile)
+    deadline = time.time() + 30
+    while len(server.requests) < 2 and time.time() < deadline:
+        time.sleep(0.05)
+    running = alive(pid)
+    process.kill()
+    process.wait()
+    gone = wait_gone(pid, 8)
+    if not gone:
+        os.kill(pid, 9)
+    server.httpd.shutdown()
+    return all([control, check("the server was running while ask was", running),
+                check("ask was killed with SIGKILL, nothing it could handle", process.returncode == -9, process.returncode),
+                check("and the server is gone within the watchdog's grace", gone)])
+
+
 if __name__ == "__main__":
     if CONTROL:
         ok = probe_a(CONTROL, control=True)
     else:
-        ok = all([probe_a(BINARY), probe_b(BINARY), probe_c(BINARY), probe_d(BINARY)])
+        ok = all([probe_a(BINARY), probe_b(BINARY), probe_c(BINARY), probe_d(BINARY), probe_e(BINARY)])
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

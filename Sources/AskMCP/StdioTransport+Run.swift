@@ -8,8 +8,28 @@ extension StdioTransport {
     final class Shared: Sendable {
         let outcome = Mutex(Outcome())
         let incoming: AsyncStream<[UInt8]>.Continuation
+        let observer: (any StdioProcessObserver)?
+        /// Callers of ``StdioTransport/waitUntilRunning()``, resumed once it is known whether the child started.
+        let waiting = Mutex<[CheckedContinuation<Void, Never>]>([])
 
-        init(incoming: AsyncStream<[UInt8]>.Continuation) { self.incoming = incoming }
+        init(incoming: AsyncStream<[UInt8]>.Continuation, observer: (any StdioProcessObserver)?) {
+            self.incoming = incoming
+            self.observer = observer
+        }
+
+        /// Records whether the child started, and lets the waiters know. The observer is told first, so a waiter that returns can rely on it.
+        func launched(_ pid: Int32?) {
+            if let pid { observer?.started(group: pid) }
+            outcome.withLock {
+                $0.pid = pid
+                $0.launched = pid != nil
+            }
+            let resumed = waiting.withLock { waiters -> [CheckedContinuation<Void, Never>] in
+                defer { waiters = [] }
+                return waiters
+            }
+            for continuation in resumed { continuation.resume() }
+        }
     }
 
     /// Runs the child to its end: writes what is queued, splits what it prints into messages, keeps a little of what it complains of.
@@ -21,6 +41,7 @@ extension StdioTransport {
             let result = try await Subprocess.run(
                 configuration(launch), input: .inputWriter, output: .sequence, error: .sequence
             ) { execution in
+                shared.launched(execution.processIdentifier.value)
                 let writer = execution.standardInputWriter
                 // The writer ends when the transport is closed; the readers end when the child's pipes do. The writer is stopped when the
                 // readers are done, because a child that has gone will not take what is queued, and nothing else will end it.
@@ -57,8 +78,12 @@ extension StdioTransport {
                     case .signaled(let signal): .signalled(Int(signal))
                 }
             shared.outcome.withLock { $0.exit = exit }
+            if let pid = shared.outcome.withLock({ $0.pid }) { shared.observer?.ended(group: pid) }
         } catch {
             shared.outcome.withLock { $0.failure = String(describing: error) }
+            // Whatever ended it, the waiters learn that it is over; and a child that did start is still to be released.
+            if let pid = shared.outcome.withLock({ $0.pid }) { shared.observer?.ended(group: pid) }
+            if shared.outcome.withLock({ $0.launched }) == nil { shared.launched(nil) }
         }
     }
 
