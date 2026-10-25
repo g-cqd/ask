@@ -71,20 +71,20 @@ follows it knows its model's window and compacts before the server refuses. Live
 unsaved-rotation notice), `ask models agy`, and the name reserved through settings, sessions and composition. Live through the shipping binary
 on three model families, including a refresh, a multi-step Gemini 3 loop and a resumed session. 46 faults killed.
 
-## Still owed, in order
+## Still owed
 
-1. **Access for requests**: refresh when expiring (rediscover the secret on `invalid_client`; a lock is optional since the refresh token is
-   not rotated) and named connections (ADR-0048), which come with a provider implementation.
-2. ~~Onboarding, the model list, the stream decoder and encoder, the client and the provider~~ done above. **Still owed**: a
-   connection kind (`ask login agy --name`), a provoked length refusal, and what a first run with no cached list should do.
-3. **The client identity.** pi found the backend gates the full model catalog and model routing on a User-Agent starting with
-   `antigravity/cli/`. ask identifies itself honestly elsewhere (ADR-0007). First live probe: does an honest identity work, and what
-   does it cost in catalog and routing? If it costs something, the owner chooses, and the choice gets its own record.
-4. A live run through the agent loop, recorded.
+What is known and what is not is registered in `docs/research/antigravity-2026-10.md`, with an id per unknown (`U1`…`U22`). The work that follows from it:
 
-Nothing past the secret is known to work.
+1. **Probe where ask only guesses** (U1, U3, U6, U8, U11): roadmap 0069. The length refusal (U1) waits for the owner's approval of one large request.
+2. **A connection kind** (`ask login agy --name`, a second account, the account chooser of roadmap 0046): needs a second Google account (U21).
+3. **What a run with no cached list should do**, and whether a model the list does not name should be said before the request (U17, U18).
+4. **The owner's decisions**: the first-party identity and what it costs in catalog (U12, ADR-0080), whether the `tab_*` and image models may be chosen (U19), and whether the
+   subscription's terms allow this use at all (U22, which no probe can settle).
 
-## Thought signatures for the inference step (reported 2026-10-24; points 1 and 3 confirmed live, see ADR-0080)
+Not owed any more, and recorded above: access (refresh, secret rediscovery, onboarding stored), the client identity (ADR-0080: ask's own works), the model list, the stream, the
+provider, the cached list and the interactive screen.
+
+## Thought signatures for the inference step (reported 2026-10-24; points 1, 2, 3 and 5 confirmed and built, ADR-0080 and ADR-0090; point 4, a signature split across deltas, never observed: U8)
 
 From the pi-integrations fix `704928a` (`src/domains/agy/thought-signature.ts`; tests `test/agy/stream.test.ts`: "Gemini 3 function call
 without a usable signature…", "a real signature…", "models that are not Gemini 3…"), read, not run. Each line is a claim to probe with a
@@ -99,7 +99,7 @@ signed-in account before the encoder relies on it; none has been tried against t
    earlier value.
 5. Claude, Gemini 2.x and gpt-oss models get no change.
 
-**Decide before writing the encoder:** `RequestBlock.toolCall` has no place for a signature (only `.thinking(text:signature:)` does; checked in
+**Decided in ADR-0090** (the paragraph below is what was open when it was written): `RequestBlock.toolCall` has no place for a signature (only `.thinking(text:signature:)` does; checked in
 `Sources/AskAI/Model/RequestBlock.swift`). The option consistent with ADR-0033 is the provenance marker on the thinking block
 (`ask-foreign:gemini:{signature}`); that choice needs its own record. Tests first: foreign history gets the sentinel on the first call only; a
 same-model signature survives; other models are unchanged; a signature split across stream deltas is retained.

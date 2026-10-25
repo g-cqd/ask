@@ -176,10 +176,16 @@ requested change from the extra one.
 
 ## Current state
 
-Targets: `AskCore` (budgets, documentation layout, source standards), `AskAI` (`Model` and
-`Transport` are provider-neutral; `Anthropic` and `Claude` are the one provider so far), `AskAgentCore` (`Loop`,
-`Tools`, `Session`, `Context`), `AskTools`, `AskTUI` and the `ask` binary. Not built yet: a second provider and
-the codemode host. `docs/roadmap/` says what is owed and in what order; 0026 and 0027 hold the open questions
-about extending the provider seam and the loop.
+Targets: `AskCore` (budgets, documentation layout, source standards), `AskAI` (`Model` and `Transport` are provider-neutral;
+providers are Claude (a subscription or a key), Codex (the ChatGPT subscription, over the Responses protocol), Antigravity
+(Cloud Code) and any OpenAI-compatible or Responses server by configuration or preset), `AskAgentCore` (the loop, tools contract,
+sessions, compaction, hooks), `AskTools` (`read`, `write`, `edit`, `bash`, jobs, sandbox narrowing), `AskMCP` (an MCP client),
+`AskTUI` (the interactive screen) and the `ask` binary, which is the composition root and has **no tests** (roadmap 0028).
+Skills (0061) and MCP (0067) are in progress. Not built: the codemode host (0012), the extension host (0033), subagents (0063), a
+version and a release (0070); CI has never run (billing).
+
+`docs/roadmap/` says what is owed and in what order. What is *not known* is registered, with what would settle it, in
+`docs/research/` (`antigravity-2026-10.md`; the project-wide snapshot is `reassessment-2026-10-25.md`): read them before probing
+something that is already written down as a question.
 
 Read an entry's `status:` and `blocked-by:` before starting it.

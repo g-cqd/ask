@@ -47,9 +47,18 @@ Found by the 2026-10-19 audit (`docs/diary/2026-10-19-02.md`), each with the pro
 12. **`RetryPolicy.never` is public and unreferenced** on `robust-runs` (deadwood, `unused-public-api`), and that
     branch collides with the encoder refactor on `main` (`AnthropicRequestEncoder.swift`).
 13. **The bash tool passes the whole environment to commands**, including `ANTHROPIC_API_KEY`. Decide with the
-    sandbox work (0017-0022) whether to scrub it first.
+    sandbox work (0017-0022) whether to scrub it first. **Probed 2026-10-25: it does, and the value comes back to the provider in the tool result.**
+    Moved to its own entry, roadmap 0072, with a red probe.
 14. **`SessionFile.swift` is 246 of 250 lines**, with a 150-line struct body. The next change to it forces a
     split; do it deliberately, by behaviour (creating, opening, appending, forking), before then.
+
+## Update (2026-10-25)
+
+Item 2 now has numbers. `Sources/ask` is **3,301 lines in 65 files with no test target**, 11% of the 27,596 lines of source, against 2,086 tests everywhere else. Every provider
+and every new command has landed in it: ModelDiscovery's catalog glue, the composition root, the provider adapters, the login commands. The Antigravity limits glue could be checked only by a
+temporary line that printed the resolved window (diary 2026-10-25-10), and the composition of a provider is checked by live runs and by hand. What can move into a library target should
+(the resolution of a model and its limits from a cache is the first candidate: it has no I/O of its own once the catalog and the settings are given), and what stays in the executable should be
+argument parsing and wiring a person can see is wrong at a glance. Item 13 is roadmap 0072 and item 9 (CI) still needs the owner.
 
 ## Done when
 
