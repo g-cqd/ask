@@ -11,8 +11,12 @@ extension AgentConversation {
     func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>? {
         let startup = startup
         let jobs = jobs
+        let mcp = mcp
         return Task {
             await withTaskGroup(of: Void.self) { group in
+                group.addTask {
+                    for await line in mcp.notices { update(.notice(line, isError: false)) }
+                }
                 group.addTask {
                     for await list in jobs.changes() {
                         update(.runners(list.map { RunnerInfo(name: $0.id, detail: $0.command) }))

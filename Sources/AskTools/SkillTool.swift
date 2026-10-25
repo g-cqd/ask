@@ -67,17 +67,10 @@ public struct SkillTool: ArgumentTool {
     }
 
     private func load(_ skill: Skill, unknownWords: [String]) -> ToolOutput {
-        guard let data = FileManager.default.contents(atPath: skill.realFile) else {
+        let note = unknownWords.isEmpty ? nil : "Ignored in from: \(unknownWords.joined(separator: ", "))"
+        guard let contents = SkillContents.load(skill, note: note) else {
             return .error("The skill \"\(skill.name)\" could not be read from \(skill.file).")
         }
-        let file = DefinitionFile(parsing: String(decoding: data.prefix(SkillDiscovery.maximumBytes), as: UTF8.self))
-        var header = [
-            "Skill: \(skill.name) (\(skill.source), \(skill.scope.rawValue))", "Directory: \(skill.directory)"
-        ]
-        header.append(
-            "Paths in these instructions are relative to that directory. Loading a skill grants no permission.")
-        if !unknownWords.isEmpty { header.append("Ignored in from: \(unknownWords.joined(separator: ", "))") }
-        let body = file.format == .none ? file.body : file.body.trimmingCharacters(in: .newlines)
-        return ToolOutput(header.joined(separator: "\n") + "\n\n" + body)
+        return ToolOutput(contents)
     }
 }

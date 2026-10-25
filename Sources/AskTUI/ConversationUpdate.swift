@@ -33,6 +33,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case runners([RunnerInfo])
     /// The project's files for the `@` picker, answering ``ScreenController/Effect/indexFiles``.
     case files(ProjectFiles)
+    /// The skills for the `/` picker, as commands named `skill:name`, answering ``ScreenController/Effect/listSkills``.
+    case skills([SlashCommand])
     /// The run is over, however it ended.
     case runEnded
 }

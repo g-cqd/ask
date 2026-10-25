@@ -16,6 +16,8 @@ public struct ScreenController: Sendable {
         case answerApproval(id: Int, ApprovalChoice)
         /// List the project's files for the `@` picker; the answer is ``ConversationUpdate/files(_:)``.
         case indexFiles
+        /// List the skills for the `/` picker; the answer is ``ConversationUpdate/skills(_:)``.
+        case listSkills
         case quit
     }
 
@@ -44,6 +46,7 @@ public struct ScreenController: Sendable {
     // @dl:accept -- a table of command names and summaries beside the conversation's own table; the entries are the data
     static let builtIn = [
         SlashCommand(
+            // @dl:accept -- the built-in commands read like the conversation's: a name and a sentence each, as data
             name: "help",
             summary: "List commands; Ctrl+T thinking, Ctrl+O tools, Ctrl+G code. Enter steers; Alt+Enter queues."),
         SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first."),
@@ -147,6 +150,7 @@ public struct ScreenController: Sendable {
             case .status(let text): state.detail = text
             case .runners(let list): setRunners(list)
             case .files(let list): return receive(files: list)
+            case .skills(let list): receive(skills: list)
             case .fillDraft(let text): fill(draft: text)
             case .promptAccepted(let id, let text):
                 pending.removeAll { $0.id == id }

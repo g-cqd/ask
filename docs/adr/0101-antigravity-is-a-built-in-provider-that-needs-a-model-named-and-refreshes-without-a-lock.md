@@ -3,7 +3,7 @@ status: accepted
 date: 2026-10-25
 ---
 
-# 0097 — Antigravity is a built-in provider that needs a model named and refreshes without a lock
+# 0101 — Antigravity is a built-in provider that needs a model named and refreshes without a lock
 
 ## Context
 

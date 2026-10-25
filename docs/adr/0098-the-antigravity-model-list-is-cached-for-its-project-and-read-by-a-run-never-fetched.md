@@ -7,7 +7,7 @@ date: 2026-10-25
 
 ## Context
 
-ADR-0097 left a gap it named: a run did not know the model's window, so the loop used its 16,384-token reply cap and compacted only when
+ADR-0101 left a gap it named: a run did not know the model's window, so the loop used its 16,384-token reply cap and compacted only when
 a request was refused for length, and Cloud Code's wording for that refusal has never been seen. Nothing at startup may touch the network,
 so the answer is the one the other providers use: a list fetched by `ask models NAME`, kept, and read by the runs that follow.
 
@@ -45,4 +45,4 @@ so the answer is the one the other providers use: a list fetched by `ask models 
   different design, with a request's latency as its cost, and is not done.
 - Reading the cache costs one read of a small file and the stored sign-in. The default path (any other provider) never constructs it; the
   cost on an `agy` start was not measured.
-- Named connections, a second account, and the interactive screen with `agy` remain as ADR-0097 left them.
+- Named connections, a second account, and the interactive screen with `agy` remain as ADR-0101 left them.
