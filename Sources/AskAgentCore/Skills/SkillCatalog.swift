@@ -16,6 +16,9 @@ public struct SkillCatalog: Sendable, Equatable {
     public internal(set) var skipped: [String] = []
     public internal(set) var roots: [Root] = []
 
+    /// A catalog with nothing in it.
+    public init() {}
+
     /// The skills by name, as the advertisement lists them: a stable order that does not change with what is found first.
     public var byName: [Skill] { skills.sorted { $0.name.lowercased() < $1.name.lowercased() } }
 

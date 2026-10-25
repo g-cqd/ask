@@ -45,6 +45,11 @@ def first_text(requests):
     return "\n".join(block.get("text", "") for block in requests[0]["body"]["messages"][0]["content"])
 
 
+def prompt_text(requests):
+    """The user's message, which is the last block of the first message (the blocks before it are the instructions)."""
+    return requests[0]["body"]["messages"][0]["content"][-1].get("text", "")
+
+
 def tool_names(requests):
     return [tool["name"] for tool in requests[0]["body"]["tools"]]
 
@@ -105,6 +110,21 @@ open(secret, "w").write("TOP SECRET")
 done, requests = run({"sources": ["ask"]}, [call(name=secret, **{"from": os.path.dirname(secret)}), finish],
                      setup=lambda config, project: skill(config, "demo"))
 check("a path in name or from reads nothing", "TOP SECRET" not in json.dumps(requests[1]["body"]), tool_result(requests))
+
+# 7. /skill:name sends the request and the skill in one prompt, in print mode as in the screen.
+done, requests = run({"sources": ["ask"]}, [finish], prompt="/skill:demo why is it slow",
+                     setup=lambda config, project: skill(config, "demo", body="Measure first."))
+text = prompt_text(requests)
+check("/skill:name sends the typed line, then the skill", text.startswith("/skill:demo why is it slow\n\n--- skill demo (ask, user) ---")
+      and "Measure first." in text and text.rstrip().endswith("--- end of skill ---"), text[:300])
+done, requests = run({"sources": ["ask"]}, [finish], prompt="/skill:nope go", setup=lambda config, project: skill(config, "demo"))
+check("an unknown skill fails with exit 64 and sends nothing", done.returncode == 64 and not requests and "No skill is called" in done.stderr
+      and "demo" in done.stderr, (done.returncode, done.stderr))
+done, requests = run({"sources": ["ask"]}, [finish], prompt="/skill:quiet go",
+                     setup=lambda config, project: skill(config, "quiet", extra="disable-model-invocation: true\n", body="Only on request."))
+check("the user may invoke a skill the model may not", "Only on request." in prompt_text(requests))
+done, requests = run({"sources": ["ask"], "enabled": False}, [finish], prompt="/skill:demo go", setup=lambda config, project: skill(config, "demo"))
+check("with skills off the invocation fails too", done.returncode == 64 and not requests, (done.returncode, done.stderr))
 
 print(f"\n{sum(results)} of {len(results)} checks passed")
 sys.exit(0 if all(results) else 1)
