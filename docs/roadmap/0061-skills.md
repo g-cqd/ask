@@ -25,7 +25,10 @@ the owner's 147 files none was rejected.
 name, and the `skill` tool loads one, with `from` narrowing and no path. Only the user's and bundled skills load: a project's wait for phase 4.
 
 **Phase 3 is built** (2026-10-25, ADR-0097, diary 2026-10-25 (9)): `/skill:name [--from …] request` (also in `ask -p`) and skills in the `/` picker. Queued messages
-are not expanded yet. Phases 4 and 5 are not started.
+are not expanded yet.
+
+**Phase 4 is built** (2026-10-25, ADR-0101, diary 2026-10-25 (13)): a project's skill loads only when `ask trust --skills` has trusted its file as it is now, and is checked again
+when loaded. The picker lists a waiting skill, marked, which departs from the line below. Phase 5 is not started.
 
 ## Phases, each independently shippable
 

@@ -46,9 +46,9 @@ struct TerminalTeardownTests {
         #expect(Self.endsWith(connection.writtenOutput, Self.expectedSuffix))
     }
 
-    @Test func `quitting on Ctrl-C leaves the alternate screen and restores the cursor`() async throws {
+    @Test func `quitting on a second Ctrl-C leaves the alternate screen and restores the cursor`() async throws {
         let connection = MockTerminalConnection()
-        connection.feedInput([0x03])
+        connection.feedInput([0x03, 0x03])
         try await Self.run(connection)
         #expect(Self.endsWith(connection.writtenOutput, Self.expectedSuffix))
     }
