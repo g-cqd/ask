@@ -16,8 +16,18 @@ struct ProviderEndpoint: Sendable {
     ///   - apiKey: sent as a bearer token when there is one.
     ///   - headers: extra headers the server asks for.
     init(transport: any HTTPTransport, baseURL: URL, path: String, apiKey: String?, headers: [String: String]) {
+        self.init(transport: transport, url: baseURL.appending(path: path), apiKey: apiKey, headers: headers)
+    }
+
+    /// The endpoint at `url` exactly as given, for a protocol whose address has a query.
+    /// - Parameters:
+    ///   - transport: what sends the requests.
+    ///   - url: the whole address.
+    ///   - apiKey: sent as a bearer token when there is one.
+    ///   - headers: extra headers the server asks for; one named like a default replaces it.
+    init(transport: any HTTPTransport, url: URL, apiKey: String?, headers: [String: String]) {
         self.transport = transport
-        self.url = baseURL.appending(path: path)
+        self.url = url
         self.apiKey = apiKey
         self.headers = headers
     }
@@ -34,7 +44,10 @@ struct ProviderEndpoint: Sendable {
             ("content-type", "application/json"), ("accept", "text/event-stream"), ("user-agent", "ask")
         ]
         if let apiKey, !apiKey.isEmpty { fields.append(("authorization", "Bearer \(apiKey)")) }
-        fields += headers.sorted { $0.key < $1.key }.map { (name: $0.key, value: $0.value) }
+        for (name, value) in headers.sorted(by: { $0.key < $1.key }) {
+            fields.removeAll { $0.name == name.lowercased() }
+            fields.append((name: name, value: value))
+        }
         let http = HTTPRequest(url: url, method: "POST", headers: fields, body: body)
         return ProviderStream.events(http, over: transport, decoder: decoder, succeeds: { (200 ... 299).contains($0) })
     }

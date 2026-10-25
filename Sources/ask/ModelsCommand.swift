@@ -8,7 +8,7 @@ struct ModelsCommand: AsyncParsableCommand {
         commandName: "models",
         abstract: "List the models a connection or provider offers, with the limits it states.")
 
-    @Argument(help: "codex, anthropic (or claude), a named connection, or an OpenAI-compatible provider.")
+    @Argument(help: "codex, agy, anthropic (or claude), a named connection, or an OpenAI-compatible provider.")
     var connection = ProviderSettings.codex
 
     func run() async throws {
@@ -22,6 +22,8 @@ struct ModelsCommand: AsyncParsableCommand {
                 }
             } else if connection == ProviderSettings.codex {
                 try await show(codex: nil, now: now)
+            } else if connection == ProviderSettings.agy {
+                try await showAgy(now: now)
             } else if [ProviderSettings.anthropic, "claude"].contains(connection) {
                 try await show(anthropic: nil, environment: environment, now: now)
             } else {
@@ -32,7 +34,9 @@ struct ModelsCommand: AsyncParsableCommand {
 
     /// The registered connection called `name`, nil when none is: the name is then a provider's.
     private func registered(_ name: String, environment: [String: String]) throws -> ConnectionRecord? {
-        guard name != ProviderSettings.codex, let canonical = ConnectionRecord.canonical(name) else { return nil }
+        guard name != ProviderSettings.codex, name != ProviderSettings.agy,
+            let canonical = ConnectionRecord.canonical(name)
+        else { return nil }
         let listing = try NamedConnections.registry(environment: environment).list()
         NamedConnections.report(listing.notices)
         return listing.records.first { $0.name == canonical }

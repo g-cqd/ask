@@ -21,7 +21,7 @@ enum ModelDiscovery {
         let selected = providers.selectedProvider(provider)
         let connection: ConnectionRecord?
         var notices: [String] = []
-        if [ProviderSettings.anthropic, ProviderSettings.codex].contains(selected) {
+        if [ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy].contains(selected) {
             connection = nil
         } else {
             let listing = try NamedConnections.registry(environment: environment).list()
@@ -123,6 +123,7 @@ enum ModelDiscovery {
             return 78
         }
         if error is CodexAccessError || error is CredentialFileError || error is ClaudeAccessError
+            || error is AgyAccessError
             || error is AnthropicEnvironmentAuthError || error is NotSignedIn
         {
             return 77

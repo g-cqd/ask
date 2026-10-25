@@ -54,12 +54,19 @@ The stream decoder and the request encoder: a Gemini 3 signature stored in a thi
 for the rest; ids on every call and result; the real tool schemas as `parametersJsonSchema`. A live tool loop through both on four models, 81
 faults killed. Nothing sends a request through them yet.
 
+## Done (2026-10-25, ADR-0095, diary 2026-10-25-06)
+
+`ask --provider agy --model M` runs: the client, access (refresh with one secret search, onboarding stored with the credentials, the
+unsaved-rotation notice), `ask models agy`, and the name reserved through settings, sessions and composition. Live through the shipping binary
+on three model families, including a refresh, a multi-step Gemini 3 loop and a resumed session. 46 faults killed.
+
 ## Still owed, in order
 
 1. **Access for requests**: refresh when expiring (rediscover the secret on `invalid_client`; a lock is optional since the refresh token is
    not rotated) and named connections (ADR-0048), which come with a provider implementation.
-2. ~~Onboarding, the model list, the stream decoder and encoder~~ done above. The **client** that sends a request through `ProviderStream`, the
-   **provider** and a connection kind remain.
+2. ~~Onboarding, the model list, the stream decoder and encoder, the client and the provider~~ done above. **Still owed**: a cached catalog so the loop
+   knows the model's window (without it a too-long request depends on an unseen refusal), the interactive screen with `agy`, and a connection kind
+   (`ask login agy --name`).
 3. **The client identity.** pi found the backend gates the full model catalog and model routing on a User-Agent starting with
    `antigravity/cli/`. ask identifies itself honestly elsewhere (ADR-0007). First live probe: does an honest identity work, and what
    does it cost in catalog and routing? If it costs something, the owner chooses, and the choice gets its own record.

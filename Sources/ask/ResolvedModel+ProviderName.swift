@@ -6,6 +6,7 @@ extension ResolvedModel {
         switch provider {
             case .anthropic: ProviderSettings.anthropic
             case .codex: ProviderSettings.codex
+            case .agy: ProviderSettings.agy
             case .openAICompatible(let name, _, _, _), .openAIResponses(let name, _, _, _): name
         }
     }
