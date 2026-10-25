@@ -18,6 +18,7 @@ public final class HTTPMCPTransport: MCPTransport {
         var protocolVersion: String?
         var closed = false
         var tasks: [Int: Task<Void, Never>] = [:]
+        var listener: Task<Void, Never>?
         var finishedEarly: Set<Int> = []
         var nextTask = 0
     }
@@ -63,7 +64,33 @@ public final class HTTPMCPTransport: MCPTransport {
     }
 
     public func negotiated(protocolVersion: String) {
-        state.withLock { $0.protocolVersion = protocolVersion }
+        state.withLock { state in
+            state.protocolVersion = protocolVersion
+            // A server's stream is asked for once, after the handshake; a closed conversation asks for nothing.
+            guard state.listener == nil, !state.closed else { return }
+            state.listener = Task { [self] in await listen() }
+        }
+    }
+
+    /// The server's own stream: the GET of the streamable HTTP transport, on which a server sends messages unprompted (ADR-0108).
+    /// A server that has none answers 405; one that has one may end it at any time; neither is a failure, and the conversation carries
+    /// on over its POSTs. What the stream carries is delivered like any reply.
+    private func listen() async {
+        // A conversation that closed while this task was starting sends nothing.
+        guard !state.withLock({ $0.closed }) else { return }
+        var headers = requestHeaders().filter { $0.name != "Content-Type" }
+        headers.removeAll { $0.name == "Accept" }
+        headers.append(("Accept", "text/event-stream"))
+        do {
+            let reply = try await http.send(HTTPRequest(url: url, method: "GET", headers: headers, body: []))
+            guard 200 ..< 300 ~= reply.status, (reply.headers["content-type"] ?? "").contains("text/event-stream")
+            else {
+                return
+            }
+            try await deliverEvents(reply, requestID: nil)
+        } catch {
+            return
+        }
     }
 
     public func send(_ message: [UInt8]) async throws {
@@ -86,13 +113,14 @@ public final class HTTPMCPTransport: MCPTransport {
     }
 
     public func close() async {
-        let (tasks, session) = state.withLock { state -> ([Task<Void, Never>], String?) in
-            guard !state.closed else { return ([], nil) }
+        let (tasks, listener, session) = state.withLock { state -> ([Task<Void, Never>], Task<Void, Never>?, String?) in
+            guard !state.closed else { return ([], nil, nil) }
             state.closed = true
             defer { state.tasks = [:] }
-            return (Array(state.tasks.values), state.sessionID)
+            return (Array(state.tasks.values), state.listener, state.sessionID)
         }
         for task in tasks { task.cancel() }
+        listener?.cancel()
         if let session { await endSession(session) }
         sink.finish()
     }
