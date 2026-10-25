@@ -133,7 +133,7 @@ and finished a length that is not a multiple of 16 with a scalar loop of up to 1
 
 - **At 80 bytes** the five scanners take 1.5 to 2.6 times less time with no hit and 2.4 to 3.2 times less with a hit: about 3 to 6 ns a scan.
 - **At 79 bytes** 3.4 to 4.8 times less with no hit: the scalar tail is gone.
-- **At 255 bytes** about 2 to 2.7 times less; `index_of_nonascii` at 64 KiB rose from 25.7 to 86.8 GB/s.
+- **At 255 bytes** 1.9 to 2.8 times less; `index_of_nonascii` at 64 KiB rose from 25.7 to 86.8 GB/s.
 - A control with no code change moved `fold_ascii` at 64 bytes by 20 %, so effects under about 25 % at small sizes are not claimed.
 - Not measured: x86-64 (untouched, and it still pays `pthread_once` per call), Linux arm64, `index_of_byte` (`memchr`).
 - A defect the first version had was caught by Aemi's Swift tests and not by the new harness; the harness now draws random parameters, and was
