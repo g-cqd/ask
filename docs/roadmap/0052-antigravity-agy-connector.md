@@ -65,7 +65,7 @@ The model list is cached per project (`models-agy.json`), fetched by `ask models
 follows it knows its model's window and compacts before the server refuses. Live: `gpt-oss-120b` resolved 131,072 and compaction at 85,197.
 11 faults killed.
 
-## Done (2026-10-25, ADR-0101, diary 2026-10-25-13)
+## Done (2026-10-25, ADR-0105, diary 2026-10-25-18)
 
 `ask --provider agy --model M` runs: the client, access (refresh with one secret search, onboarding stored with the credentials, the
 unsaved-rotation notice), `ask models agy`, and the name reserved through settings, sessions and composition. Live through the shipping binary

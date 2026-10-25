@@ -109,6 +109,8 @@ final class ScreenSession {
                 }
             case .copied(let notice, let failed, let generation):
                 controller.finishCopy(notice, failed: failed, generation: generation)
+            case .quitWindowEnded(let generation):
+                controller.quitWindowEnded(generation: generation)
             case .inputEnded:
                 effects = [.quit]
         }
@@ -135,6 +137,11 @@ final class ScreenSession {
             case .indexFiles:
                 let conversation = conversation
                 Task { sink.yield(.update(.files(await conversation.projectFiles()))) }
+            case .armQuitTimer(let generation):
+                Task {
+                    try? await Task.sleep(for: ScreenController.quitWindow)
+                    sink.yield(.quitWindowEnded(generation: generation))
+                }
             case .listSkills:
                 let conversation = conversation
                 Task { sink.yield(.update(.skills(await conversation.skillCommands()))) }

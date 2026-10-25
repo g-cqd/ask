@@ -7,6 +7,15 @@ public enum AnthropicEnvironmentAuth {
     /// The most characters a token may have.
     public static let lengthLimit = 4096
 
+    /// The variables a credential is read from, in the order they are tried, each with what it makes of the value.
+    private static let readers: [(variable: String, auth: @Sendable (String) -> AnthropicClient.Auth)] = [
+        ("ANTHROPIC_AUTH_TOKEN", { .bearer($0) }), ("ANTHROPIC_OAUTH_TOKEN", { .subscription(accessToken: $0) }),
+        ("ANTHROPIC_API_KEY", { .apiKey($0) })
+    ]
+
+    /// The names of the variables ``resolve(environment:)`` reads, so that nothing else has to say them again.
+    public static var variables: [String] { readers.map(\.variable) }
+
     /// The credential the environment names, or nil when it names none.
     /// - Parameter environment: the process environment.
     /// - Returns: the auth to send, or nil.
@@ -14,11 +23,7 @@ public enum AnthropicEnvironmentAuth {
     public static func resolve(environment: [String: String]) throws(AnthropicEnvironmentAuthError) -> AnthropicClient
         .Auth?
     {
-        let candidates: [(variable: String, auth: (String) -> AnthropicClient.Auth)] = [
-            ("ANTHROPIC_AUTH_TOKEN", { .bearer($0) }), ("ANTHROPIC_OAUTH_TOKEN", { .subscription(accessToken: $0) }),
-            ("ANTHROPIC_API_KEY", { .apiKey($0) })
-        ]
-        for candidate in candidates {
+        for candidate in readers {
             guard let value = environment[candidate.variable], !value.isEmpty else { continue }
             guard isPlain(value) else { throw .notAToken(variable: candidate.variable) }
             return candidate.auth(value)

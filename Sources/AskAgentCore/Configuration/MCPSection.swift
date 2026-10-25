@@ -1,5 +1,7 @@
-/// The `mcp` section of a configuration file: the servers whose tools the model may use (ADR-0099). Only the user's own file may have
-/// one, because naming a server runs a program.
+internal import Foundation
+
+/// The `mcp` section of a configuration file: the servers whose tools the model may use (ADR-0099). Naming a server runs a program, so a
+/// project's file counts only once the person has trusted it, and trusting it says what would start (``consent``).
 public struct MCPSection: Sendable, Equatable, CustomStringConvertible {
     /// The servers, sorted by name.
     public var servers: [MCPServerSetting]
@@ -23,5 +25,27 @@ public struct MCPSection: Sendable, Equatable, CustomStringConvertible {
                 "\(server.name) (\(server.command == nil ? "url" : "command")\(server.enabled ? "" : ", off"))"
             }
             .joined(separator: ", ")
+    }
+
+    /// What trusting a file with these servers would start or connect to, a line each, so that consent is to something said: the program
+    /// and its arguments, or the address without its query or credentials. Never an environment value or a header.
+    public var consent: [String] {
+        servers.map { server in
+            let off = server.enabled ? "" : " (off)"
+            if let command = server.command {
+                return "\(server.name): runs \(([command] + server.args).joined(separator: " "))\(off)"
+            }
+            let address = server.url.flatMap(Self.withoutQuery) ?? "an address that does not parse"
+            return "\(server.name): connects to \(address)\(off)"
+        }
+    }
+
+    private static func withoutQuery(_ address: String) -> String? {
+        guard var parts = URLComponents(string: address) else { return nil }
+        parts.query = nil
+        parts.fragment = nil
+        parts.user = nil
+        parts.password = nil
+        return parts.string
     }
 }
