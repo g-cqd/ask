@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["0061", "0062", "ADRs for the rules below"]
+blocked-by: ["0061", "0062", "0064", "ADRs for the rules below"]
 date: 2026-10-24
 ---
 
@@ -15,7 +15,7 @@ questions: `docs/research/skills-and-agents-design-2026-10.md`.
 
 1. A child is an **in-process agent loop** with its own context and a short task from the parent; its result returns to the parent as an
    **ordinary tool result**, so the parent's session keeps its shape and resumes unchanged.
-2. A child's transcript is **its own file**, `sessions/<parent>/agents/<id>.jsonl`, linked by id; the closed `SessionPayload` does not change.
+2. A child's transcript is **its own file** (the owner's answer), `sessions/<parent>/agents/<id>.jsonl`, linked by id; the closed `SessionPayload` does not change.
 3. **Authority never widens** (ADR-0054, ADR-0055): the parent's sandbox or narrower, a **read-only tool set by default** (`agents.allowWrites`
    to change it), approvals to the user through the lane (0062).
 4. **Bounded:** `agents.maxDepth` default **1** (a subagent cannot start one; raising it is what makes the tree deeper), `agents.maxConcurrent`,
@@ -31,6 +31,12 @@ Antigravity, TOML for Codex and Vibe). If ask loads another harness's agent defi
 as skills (roadmap 0061): `tools` is a restriction that can never add a tool, `model` is a preference resolved on the active connection with the
 parent's model as the fallback, `maxTurns` and `steps` and `effort` or `reasoningEffort` map onto ask's own limits and thinking level where they
 match and are kept as notes where they do not. That ask loads them at all is still undecided.
+
+## Model-assisted resolution
+
+The owner asked that, when a model or tool token cannot be matched deterministically, a **very cheap model on the active connection** classify it against
+ask's own list. The bounds (tokens and ids only, validated against ask's list, cached, lazy, never on the startup path, can only narrow) are in the
+design note; whether it is on by default is still open.
 
 ## Not decided
 
