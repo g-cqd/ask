@@ -54,6 +54,11 @@ The stream decoder and the request encoder: a Gemini 3 signature stored in a thi
 for the rest; ids on every call and result; the real tool schemas as `parametersJsonSchema`. A live tool loop through both on four models, 81
 faults killed. Nothing sends a request through them yet.
 
+## Done (2026-10-25, diary 2026-10-25-14)
+
+The interactive screen with `agy`, run live through a PTY and an emulator (`Scripts/probe-agy-live.py`, opt-in): the label, a tool call, a mid-session switch to Claude and back with a
+Gemini signature in the history, an abort and the next turn, and a clean exit. No code changed.
+
 ## Done (2026-10-25, ADR-0098, diary 2026-10-25-10)
 
 The model list is cached per project (`models-agy.json`), fetched by `ask models agy` and read by a run, one entry, with no network: a run that
@@ -70,7 +75,7 @@ on three model families, including a refresh, a multi-step Gemini 3 loop and a r
 
 1. **Access for requests**: refresh when expiring (rediscover the secret on `invalid_client`; a lock is optional since the refresh token is
    not rotated) and named connections (ADR-0048), which come with a provider implementation.
-2. ~~Onboarding, the model list, the stream decoder and encoder, the client and the provider~~ done above. **Still owed**: the interactive screen with `agy`, a
+2. ~~Onboarding, the model list, the stream decoder and encoder, the client and the provider~~ done above. **Still owed**: a
    connection kind (`ask login agy --name`), a provoked length refusal, and what a first run with no cached list should do.
 3. **The client identity.** pi found the backend gates the full model catalog and model routing on a User-Agent starting with
    `antigravity/cli/`. ask identifies itself honestly elsewhere (ADR-0007). First live probe: does an honest identity work, and what
