@@ -8,15 +8,21 @@ extension MCPHub {
     public static let userAgent = "ask/0 (MCP client)"
 
     /// The real transports: a child process for a server with a `command`, and an HTTPS connection for one with a `url`.
-    /// - Parameter inheriting: the environment a child's minimal one is taken from (ADR-0096): ask's own.
+    /// - Parameters:
+    ///   - inheriting: the environment a child's minimal one is taken from (ADR-0096): ask's own.
+    ///   - jobs: whose watchdog stops each server's process group if ask is killed in a way it cannot see (ADR-0102), or nil for none.
     /// - Returns: the factory a hub is made with.
-    public static func standardTransport(inheriting: [String: String]) -> MCPHost.TransportFactory {
-        { server, environment, headers in
+    public static func standardTransport(inheriting: [String: String], jobs: JobTable? = nil)
+        -> MCPHost.TransportFactory
+    {
+        let observer = jobs.map { WatchdogObserver(watchdog: $0.watchdog) }
+        return { server, environment, headers in
             if let command = server.command {
                 return StdioTransport(
                     StdioLaunch(
                         executable: command, arguments: server.args, environment: environment,
-                        workingDirectory: server.cwd, inheriting: inheriting))
+                        workingDirectory: server.cwd, inheriting: inheriting),
+                    observer: observer)
             }
             guard let address = server.url, let url = URL(string: address) else {
                 throw MCPError.refusedEndpoint("the setting has no usable address")

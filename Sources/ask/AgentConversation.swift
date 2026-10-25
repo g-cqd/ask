@@ -212,7 +212,7 @@ func runInteractive(
     }
     let jobs = JobTable()
     // Started now, not on the first prompt, so the servers are connecting while the person types.
-    let mcp = startMCPServers(settings)
+    let mcp = startMCPServers(settings, jobs: jobs)
     do {
         let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(
