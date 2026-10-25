@@ -7,7 +7,8 @@ date: 2026-10-25
 # 0066 — Mermaid diagrams in the transcript: drawn in the terminal where they can be, shown as source where they cannot
 
 A fenced block whose info string is `mermaid` is a diagram. Today it would be drawn as code (roadmap 0065, phase 3). The owner wants it drawn
-as a diagram, at whatever width the terminal has, and redrawn when the terminal is resized. Nothing below is built; every claim marked
+in box-drawing characters, at whatever width the terminal has, redrawn when the terminal is resized, and **toggleable by a click between the
+drawing and its source** (owner, 2026-10-25). Nothing below is built; every claim marked
 *unprobed* is an open question until phase 0 has run it.
 
 ## What is known (probed 2026-10-25)
@@ -25,8 +26,18 @@ as a diagram, at whatever width the terminal has, and redrawn when the terminal 
 | **C. An external helper** (`mmdc`, or a user-configured command) | Small; exact Mermaid output | Needs a browser and Node on the user's machine; seconds of latency; **executes a tool on model-controlled text**, so it needs the sandbox and a trust decision |
 | **D. Source only**, a labelled, highlighted code block | Nothing | No diagram |
 
-Proposed order, each independently shippable: **D** (already the result of 0065), then **A** for the kinds the corpus shows, with **D** as the
-fallback for everything else; **B** and **C** are later, and only if A's coverage turns out to matter.
+Decided: **A, with D one click away.** D is also the fallback for every diagram A cannot draw (unsupported kind, over a limit, too narrow).
+B and C are later, and only if A's coverage turns out to matter.
+
+## The toggle
+
+- A diagram's header line is a click target, like a fold header (roadmap 0051, TerminalKit ADR-0027 and 0031): `mermaid · flowchart · 12 nodes ·
+  drawing` and `mermaid · source`. A click flips it; a key does the same for the keyboard (the binding is chosen with 0051's table).
+- The state is per block, in the transcript, and not part of the session file. The default is the drawing (`ui.diagrams`, `"drawing"` or `"source"`).
+- Flipping changes the block's height, and **does not move the reader**: the same `ScrollAnchor` path as a fold.
+- A diagram the renderer cannot draw shows the source with the reason on the header, and the toggle is absent, not dead.
+- A selection and a copy always give the Mermaid source, whichever side is showing (0065's rule).
+- While a diagram is still streaming (its fence is open) it shows as source; it becomes a drawing when the fence closes.
 
 ## Phases
 
@@ -50,8 +61,8 @@ fallback for everything else; **B** and **C** are later, and only if A's coverag
 3. **Draw into cells**, with the same `Style` runs as the rest of the transcript and the terminal palette, edges and boxes in box-drawing
    characters whose width `UnicodeWidth` agrees on (ambiguous-width characters are measured first, TerminalKit roadmap 0013), with an ASCII
    mode. Labels are untrusted text and go through the sanitizer of 0065.
-4. **Copy and fold.** A selection over a diagram copies the Mermaid source (the owner's rule for Markdown, 0065). A long diagram folds like a
-   long code block (`ui.codeFoldLines`), and the header names the kind and the size.
+4. **Toggle, copy and fold.** The click toggle above; a selection copies the source; a long drawing folds like a long code block
+   (`ui.codeFoldLines`), and the header names the kind and the size.
 5. **More kinds**, in the order of the corpus.
 
 ## Safety and budgets
@@ -60,7 +71,7 @@ fallback for everything else; **B** and **C** are later, and only if A's coverag
   parser arbitrary bytes.
 - Layout runs off the main actor, and a diagram that takes longer than a stated budget (decided by the measurement in phase 0) is shown as
   source and finished later; the input-delay budget of `AskCore.Budget` holds.
-- The switch is `ui.markdown`'s neighbour, `ui.diagrams`, default on; off draws the code block.
+- The switch is `ui.markdown`'s neighbour, `ui.diagrams`; `"source"` draws the code block and keeps the toggle.
 
 ## Not in scope
 

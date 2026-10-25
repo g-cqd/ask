@@ -12,7 +12,7 @@ claim marked *unprobed* is an open question until phase 0 has run it.
 
 **Decided by the owner, 2026-10-25:**
 - The placement table below is right.
-- swift-markdown may be the parser, if phase 0 shows it wins.
+- **ask writes its own parser**, `AemiMarkdown`. swift-markdown stays as the baseline in the benchmarks and as the test oracle, not as a dependency of the product.
 - Highlighted code comes from Atelier's lexers.
 - **A selection copies the Markdown source.**
 - All formatting adapts when the terminal is resized (section below).
@@ -47,8 +47,8 @@ claim marked *unprobed* is an open question until phase 0 has run it.
 | Line-resumable highlighting for fenced code | a promoted `AtelierLexers` (target of Aemi or its own package, then Atelier depends on it) | ask cannot depend on an app repository |
 | The `ui.markdown` key, selection policy, folds, wiring | ask (`AskAgentCore/Configuration`, `AskTUI`) | Policy |
 
-**swift-markdown (swiftlang, on cmark-gfm)** is allowed and is the first thing to compare against: it is a native API in the project's sense. Its tree is allocated nodes, it is not incremental, and it has no limit on nesting that ask controls.
-Phase 0 measures it on the real corpus; if it wins on throughput, allocations and linked size, it is adopted and phase 1 shrinks to an adapter.
+**swift-markdown (swiftlang, on cmark-gfm)** is the baseline, not the parser (owner, 2026-10-25: "it seems that we need to write our own"). Its tree is allocated nodes, it is not incremental, and it has no limit on nesting that ask controls (*unprobed*).
+Phase 0 measures it on the real corpus as the number to beat, and the differential tests use it as the oracle; phase 1 is not blocked on it.
 
 ## Phases, each independently shippable
 
@@ -56,11 +56,11 @@ Phase 0 measures it on the real corpus; if it wins on throughput, allocations an
    - *Corpus:* which constructs occur in assistant text. The 139 agent transcripts of TerminalKit ADR-0021 (and `ask`'s own sessions) give a frequency
      table: headings, lists, tables, emphasis, links, bare URLs, fences and their languages, HTML, nesting depth, longest line. Scope is cut
      by this table, not by taste.
-   - *Links:* does each emulator draw OSC 8 and open it? kitty, Ghostty, WezTerm, iTerm2 and Terminal.app, with mouse reporting on and off,
-     in a PTY probe as in TerminalKit ADR-0028 (Terminal.app ignored OSC 52, so it may ignore this too). Does a terminal that ignores it
-     still print the text?
-   - *Parser:* swift-markdown against a hand-written scanner on the corpus: MB/s, allocations per KB, linked size, p99 for one streamed delta
-     into a 100 KB answer.
+   - *Links:* kitty is done (below). Still owed: Ghostty, WezTerm (its `cli get-text` needs the new instance's socket), iTerm2 and
+     Terminal.app, with mouse reporting on and off, in a PTY probe as in TerminalKit ADR-0028 (Terminal.app ignored OSC 52, so it may ignore
+     this too). Does a terminal that ignores OSC 8 still print the text?
+   - *Parser baseline:* swift-markdown on the corpus: MB/s, allocations per KB, linked size, p99 for one streamed delta into a 100 KB answer.
+     These are the numbers `AemiMarkdown` has to beat.
    - *Glow:* done (above). Repeat the nested-quote and delimiter inputs against whichever parser is chosen.
    - *Atelier:* does its block scanner agree with CommonMark on the spec examples (oracle value), and does `AtelierLexers` need
      `AtelierSyntaxModel` for anything but `Language`?
@@ -125,6 +125,15 @@ Run on 2026-10-25 against glow 3.0.0 (diary 2026-10-25-01, `docs/research/markdo
 - It writes a raw `ESC ] 52` (set the clipboard) from the Markdown through to the terminal. The sanitizer below is not optional either.
 - It draws a link as its text and then, again, its target underlined: a visible target is a known mitigation, and the one to adopt.
 
+## Faster kernels first (a unit of Aemi work, started 2026-10-25)
+
+Phase 1 depends on Aemi's byte scanners being fast on lines of about 80 bytes. Read, in `adf_scan.c` and `adf_cpu.c`: every dispatched call goes
+through `adf_kernels_isa()`, which runs `pthread_once`; the NEON kernels find a hit with a scalar rescan of up to 16 bytes and finish a length
+that is not a multiple of 16 with a scalar loop of up to 15 bytes. Measured on this machine (`scripts/bench-c-kernels.sh`): `index_of_nonascii`
+at 64 bytes runs 13.0 GB/s direct and 9.1 GB/s through the dispatcher. The work, with its measurements, is in the diary and in an Aemi ADR.
+A second kernel, a **set scan** (a byte table in two NEON lookups, any set of up to eight classes), is what the inline scanner needs, because
+Markdown has about eleven special bytes and `indexOfAny5` takes five.
+
 ## Leaning on Aemi (pinned revision `afc1be3` contains each of these)
 
 | Aemi tool | Use in the parser |
@@ -141,6 +150,21 @@ Run on 2026-10-25 against glow 3.0.0 (diary 2026-10-25-01, `docs/research/markdo
 
 ADR-0011 measured that Aemi's dispatcher loses about half its speed at 64 bytes: a Markdown line is about that long. The parser therefore
 scans a whole block or buffer per call, never a line per call. *A claim from that ADR, to be re-measured on this workload in phase 0.*
+
+## Links: what a terminal does with OSC 8 (probed 2026-10-25)
+
+- **kitty** (installed, driven through its remote control: `kitten @ get-text --ansi`, a window printing three lines): it parses OSC 8, with
+  the ST terminator and with BEL, and keeps the `id=` parameter. The plain-text read drops the sequences; the line printed without OSC 8
+  has none in the ANSI read, so the probe could fail and did not. Hover and click are not observable this way: still owed.
+- **pi** (this harness, `pi-tui` 1.4.0, read and run): a link is `ESC ] 8 ; ; URL ESC \ text ESC ] 8 ; ; ESC \`, the text only (the target
+  is hidden), when its capability table says the terminal supports it; otherwise `text (url)`. The table is keyed on environment variables
+  and, for tmux, on `client_features` containing `hyperlinks`. It re-opens a link on each wrapped row and closes it at the end of each row,
+  so a link that wraps stays clickable on both rows. Three things to take: re-open and close per row; ask tmux rather than guess; and
+  not to copy its two weaknesses (an environment-variable table, and a raw `href` written into the sequence).
+- White paper §6 says capabilities are probed, not read from environment variables. OSC 8 has no query: silence is unknown, and a terminal
+  that does not know it prints the text and ignores the rest. So the proposal is to **always emit it** (nothing is lost where it is
+  unsupported), and to print `text (url)` only when the user turns `ui.links` to `"visible"` or when the target's host differs from a
+  host written in the link's own text (the spoofing case), never by guessing the terminal.
 
 ## Decided and still owed
 
