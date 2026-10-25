@@ -30,6 +30,7 @@ private func frame(
 }
 
 let benchmarks: @Sendable () -> Void = {
+    registerRunnerBenchmarks()
     registerThinkingBenchmarks()
     registerInputBenchmarks()
     registerCodeBenchmarks()
