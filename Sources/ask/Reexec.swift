@@ -1,6 +1,6 @@
 internal import Darwin
 
-/// Replaces this process with another program, keeping its terminal and environment (ADR-0033).
+/// Replaces this process with another program, keeping its terminal and the environment it was launched with (ADR-0033).
 enum Reexec {
     /// Runs `path` with `arguments` (the first is the program's own name) in place of this process.
     ///
@@ -13,7 +13,13 @@ enum Reexec {
         var pointers: [UnsafeMutablePointer<CChar>?] = arguments.map { strdup($0) }
         pointers.append(nil)
         defer { for pointer in pointers { free(pointer) } }
-        execv(path, &pointers)
+        // The launch environment, not the process's own: its credentials may have been blanked since (ADR-0112).
+        var environment: [UnsafeMutablePointer<CChar>?] = LaunchEnvironment.values.map {
+            strdup("\($0.key)=\($0.value)")
+        }
+        environment.append(nil)
+        defer { for pointer in environment { free(pointer) } }
+        execve(path, &pointers, &environment)
         return errno
     }
 }

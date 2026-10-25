@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-25
 ---
@@ -41,10 +41,11 @@ The launch path uses a filtered custom environment for ordinary and sandboxed jo
 header/environment references. `environment.pass` / `environment.withhold` configure exact exceptions and additional withholding; projects cannot pass credentials through.
 The fake-provider probe is green. See diary 2026-10-25-20 for mutations and validation.
 
-## Still owed
+## Parent-environment read: closed (ADR-0112)
 
-A corrected local probe recovered the exact stand-in key from ask's parent environment using `sysctl(KERN_PROCARGS2)` even under the default sandbox. `ps` was blocked but this
-independent path was not. Inheritance filtering does not fix that exposure. Treat sandbox/process isolation as follow-up work, not a claim the filter already satisfies.
+A sandboxed command recovered the key from ask's own process with `sysctl(KERN_PROCARGS2)`. Seatbelt cannot deny that call and `unsetenv` does not remove the
+secret; ask now takes a launch snapshot and overwrites the values of the variables it withholds, in its own environment, once it has read them.
+`Scripts/probe-bash-parent-environment.py` is green in the default sandbox and with `--read workspace`; skipping the call, and a blanking that writes nothing, each turn it red.
 
 ## Not claimed
 
