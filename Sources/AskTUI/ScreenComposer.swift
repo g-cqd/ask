@@ -93,8 +93,9 @@ public struct ScreenComposer: Sendable {
         cursorIsVisible = editor.cursorVisible
         let promptRows = editor.lines.count
         let statusRows = rows > 1 ? 1 : 0
-        let panel = Self.runnerRows(
-            for: state, available: Swift.max(0, rows - promptRows - statusRows - 1), columns: columns)
+        let strip = RunnerStrip(
+            state, available: Swift.max(0, rows - promptRows - statusRows - 1), columns: columns)
+        let panel = strip.lines
         let status = Self.status(for: state, input: editor.indicator)
         let pickerRows = rows - promptRows - statusRows - panel.count - 1
         let pickerLines = Self.pickerLines(for: state, columns: columns, rows: pickerRows)
@@ -129,6 +130,7 @@ public struct ScreenComposer: Sendable {
                     prompt: editor.layout
                 )
                 .withPicker(state: state, firstRow: transcriptRows + statusRows + 1, rows: pickerRows)
+                .withStrip(strip, firstRow: rows - panel.count)
             )
 
         return writeBottom(

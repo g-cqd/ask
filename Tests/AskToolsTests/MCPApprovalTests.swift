@@ -7,7 +7,7 @@ import Testing
 
 @testable import AskTools
 
-/// A server's own mark on its tool, put to the user before the first damage (ADR-0110). The mark is the server's word, not a fact;
+/// A server's own mark on its tool, put to the user before the first damage (ADR-0111). The mark is the server's word, not a fact;
 /// a run with no one to ask allows the call, because naming the server was the user's consent.
 @Suite("A tool a server marks destructive is asked about, and one that is not marked is not", .timeLimit(.minutes(1)))
 struct MCPApprovalTests {

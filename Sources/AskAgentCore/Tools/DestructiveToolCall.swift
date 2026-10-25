@@ -1,6 +1,6 @@
 public import AskAI
 
-/// A call to a server's tool that the server itself marks destructive, put to the user (ADR-0110).
+/// A call to a server's tool that the server itself marks destructive, put to the user (ADR-0111).
 ///
 /// Nothing here verifies the mark; a server can mislabel its tools either way. ask asks regardless, trading one keypress per tool per
 /// session against a call that destroys something nobody saw coming.

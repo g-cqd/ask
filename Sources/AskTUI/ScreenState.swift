@@ -25,6 +25,14 @@ public struct ScreenState: Sendable, Equatable {
     }
     /// Whether the runner strip is open below the input. It closes by itself when no runners remain.
     public var runnersOpen = false
+    /// The runner whose output the transcript shows, while one is focused; the main conversation waits inside it (roadmap 0062).
+    var lane: LaneView?
+    /// How many lanes were opened, so each one's transcript has revisions of its own.
+    var laneSerial = 0
+    /// The strip row the keys act on, by runner id, while the strip has the keys; nil while the input does.
+    var stripSelection: String?
+    /// The runners whose children are hidden in the strip.
+    var collapsedRunners: Set<String> = []
     /// A question waiting for y, a or n: while it waits, those keys answer it and nothing is typed.
     public var pendingApproval: PendingApproval?
     /// The project's files for the `@` picker; nil until the first listing arrives (roadmap 0048).

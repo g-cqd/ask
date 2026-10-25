@@ -12,7 +12,7 @@ extension AgentConversation {
             [Int: (request: SandboxRequest?, destructiveKey: String?, answer: CheckedContinuation<Bool, Never>)] = [:]
         /// Requests the user allowed for the session; a later request they contain is not asked again.
         var grants: [SandboxRequest] = []
-        /// Server tools the user allowed for the session, as `server/tool` (ADR-0110).
+        /// Server tools the user allowed for the session, as `server/tool` (ADR-0111).
         var destructiveGrants: Set<String> = []
         var ask: (@Sendable (ConversationUpdate) -> Void)?
     }
@@ -29,7 +29,7 @@ extension AgentConversation {
         return await ask(question, remembering: (approval.request, nil))
     }
 
-    /// Asks the user about a server's tool that the server marks destructive (ADR-0110), unless they allowed it for the session.
+    /// Asks the user about a server's tool that the server marks destructive (ADR-0111), unless they allowed it for the session.
     func approveDestructive(_ call: DestructiveToolCall) async -> Bool {
         if approvals.withLock({ $0.destructiveGrants.contains(call.grantKey) }) { return true }
         let question =
