@@ -90,7 +90,7 @@ func runPrompt(
     let workingDirectory = FileManager.default.currentDirectoryPath
     let jobs = JobTable()
     let loop: AgentLoop
-    let mcp = startMCPServers(settings)
+    let mcp = startMCPServers(settings, jobs: jobs)
     let files = instructionFiles(workingDirectory: workingDirectory)
     for line in describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     do {
