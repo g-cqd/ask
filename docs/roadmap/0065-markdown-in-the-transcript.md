@@ -125,20 +125,28 @@ Run on 2026-10-25 against glow 3.0.0 (diary 2026-10-25-01, `docs/research/markdo
 - It writes a raw `ESC ] 52` (set the clipboard) from the Markdown through to the terminal. The sanitizer below is not optional either.
 - It draws a link as its text and then, again, its target underlined: a visible target is a known mitigation, and the one to adopt.
 
-## Faster kernels first (a unit of Aemi work, started 2026-10-25)
+## Faster kernels first (done in Aemi, branch `perf/small-input-kernels`, ADR-0014, not yet pinned by ask)
 
-Phase 1 depends on Aemi's byte scanners being fast on lines of about 80 bytes. Read, in `adf_scan.c` and `adf_cpu.c`: every dispatched call goes
-through `adf_kernels_isa()`, which runs `pthread_once`; the NEON kernels find a hit with a scalar rescan of up to 16 bytes and finish a length
-that is not a multiple of 16 with a scalar loop of up to 15 bytes. Measured on this machine (`scripts/bench-c-kernels.sh`): `index_of_nonascii`
-at 64 bytes runs 13.0 GB/s direct and 9.1 GB/s through the dispatcher. The work, with its measurements, is in the diary and in an Aemi ADR.
-A second kernel, a **set scan** (a byte table in two NEON lookups, any set of up to eight classes), is what the inline scanner needs, because
-Markdown has about eleven special bytes and `indexOfAny5` takes five.
+Read, in `adf_scan.c` and `adf_cpu.c`: every dispatched call ran `pthread_once`; the NEON kernels found a hit with a scalar rescan of 16 bytes
+and finished a length that is not a multiple of 16 with a scalar loop of up to 15 bytes. Measured with the new `scripts/bench-c-kernels.sh --small`
+(ns per call, previous revision in the same binary, interleaved, median and p10 to p90; M2 Pro, `-Os`):
+
+- **At 80 bytes** the five scanners take 1.5 to 2.6 times less time with no hit and 2.4 to 3.2 times less with a hit: about 3 to 6 ns a scan.
+- **At 79 bytes** 3.4 to 4.8 times less with no hit: the scalar tail is gone.
+- **At 255 bytes** about 2 to 2.7 times less; `index_of_nonascii` at 64 KiB rose from 25.7 to 86.8 GB/s.
+- A control with no code change moved `fold_ascii` at 64 bytes by 20 %, so effects under about 25 % at small sizes are not claimed.
+- Not measured: x86-64 (untouched, and it still pays `pthread_once` per call), Linux arm64, `index_of_byte` (`memchr`).
+- A defect the first version had was caught by Aemi's Swift tests and not by the new harness; the harness now draws random parameters, and was
+  seen to fail without the fix.
+
+Still owed: ask pins the Aemi revision that contains it, and a **set scan** (a byte table in two NEON lookups, any set of up to eight classes) for
+the inline scanner, because Markdown has about eleven special bytes and `indexOfAny5` takes five.
 
 ## Leaning on Aemi (pinned revision `afc1be3` contains each of these)
 
 | Aemi tool | Use in the parser |
 |---|---|
-| `AemiKernels` SIMD (`indexOfAny5`, `indexOfControlOrAny5`, `indexOfNonASCII`, `firstInvalidUTF8`, `firstDisallowedText`, runtime-dispatched NEON/AVX2) | One validation pass at the boundary; one pass that finds ESC and other controls to neutralise; a jump to the next inline special character (there are about eleven; the kernel takes five, so phase 0 measures a table-driven scan and a request to Aemi for a wider kernel) |
+| `AemiKernels` SIMD (`indexOfAny5`, `indexOfControlOrAny5`, `indexOfNonASCII`, `firstInvalidUTF8`, `firstDisallowedText`, runtime-dispatched NEON/AVX2) | One validation pass at the boundary; one pass that finds ESC and other controls to neutralise; a jump to the next inline special character (there are about eleven; the kernel takes five, so the set scan above is owed) |
 | `TapeSlot` (tag 4 bits, aux 28, offset 32; O(1) subtree skip) | The record format: a flat preorder tape with no node objects. Limits to design for: 16 tags (blocks and inlines need more kinds, so a second tape or an aux field), 28-bit aux, 4 GiB offsets |
 | `ByteBufferPool` | Reused input and output buffers across deltas |
 | `AemiUnicode` (case folding) | Link reference labels compare case-folded, as CommonMark requires |
@@ -148,8 +156,8 @@ Markdown has about eleven special bytes and `indexOfAny5` takes five.
 | `AemiKernelsFuzz`, AemiJSON's fuzz target, `AemiTestKit` (`CAemiTestKitMalloc`) | The fuzz target and the allocation ceilings |
 | `Benchmarks/CKernels` method (ADR-0011) | The benchmark method: interleaved, median and p10 to p90, a control that can fail |
 
-ADR-0011 measured that Aemi's dispatcher loses about half its speed at 64 bytes: a Markdown line is about that long. The parser therefore
-scans a whole block or buffer per call, never a line per call. *A claim from that ADR, to be re-measured on this workload in phase 0.*
+ADR-0011 measured that Aemi's dispatcher lost about half its speed at 64 bytes; ADR-0014 removes most of that. Even so, a scan costs 3 to 6 ns before it
+reads a byte, so the parser still scans a whole block per call where it can, and a per-line call is measured, not assumed.
 
 ## Links: what a terminal does with OSC 8 (probed 2026-10-25)
 
