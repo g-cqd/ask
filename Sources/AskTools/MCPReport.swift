@@ -1,0 +1,24 @@
+/// What `/mcp` shows (ADR-0099): one line a server, with its notes under it.
+enum MCPReport {
+    /// The lines for `statuses`, or how to add a server when there are none.
+    static func lines(_ statuses: [MCPServerStatus]) -> [String] {
+        guard !statuses.isEmpty else {
+            return [
+                "No MCP servers are configured. Name them under \"mcp\" in your config file (ask config shows where)."
+            ]
+        }
+        return statuses.flatMap { status in
+            ["\(status.name): \(describe(status.state))"] + status.notes.map { "    \($0)" }
+        }
+    }
+
+    private static func describe(_ state: MCPServerStatus.State) -> String {
+        switch state {
+            case .off: "off (enabled is false in the configuration)"
+            case .connecting: "connecting…"
+            case .ready(let offered, let total): "ready, \(offered) of \(total) tool\(total == 1 ? "" : "s") offered"
+            case .skipped(let reason): "connected, no tools offered: \(reason)"
+            case .failed(let reason): "not connected: \(reason)"
+        }
+    }
+}

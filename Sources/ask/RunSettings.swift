@@ -75,6 +75,7 @@ struct RunSettings: Equatable {
         // Only when a file set something: the defaults are in ADR-0046.
         if !c.ui.value.isEmpty { lines.append(row("ui", c.ui.value.description, c.ui.source)) }
         if !c.skills.value.isEmpty { lines.append(row("skills", c.skills.value.description, c.skills.source)) }
+        if !c.mcp.value.isEmpty { lines.append(row("mcp", c.mcp.value.description, c.mcp.source)) }
         lines.append("user file     \(userFile)  \(standing(userFile))")
         lines.append("project file  \(projectFile)  \(standing(projectFile))")
         return lines + notices.map { "note: \($0)" }

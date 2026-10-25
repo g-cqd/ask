@@ -32,6 +32,8 @@ final class AgentConversation: Conversation {
     let promptInput = Mutex<PromptQueue?>(nil)
     /// Jobs outlive turns, not a reload: `/reload` refuses while any run, or stops them when told to.
     let jobs: JobTable
+    /// The MCP servers, which outlive the loop and follow the configuration (ADR-0099).
+    let mcp: MCPHub
     /// The build that is running, to tell when a newer one appears.
     let startup = BinaryIdentity.running()
     /// The build a successful `/reload` chose; ``reExecute()`` starts it.
@@ -50,14 +52,16 @@ final class AgentConversation: Conversation {
     ///   - settings: what the run starts with.
     ///   - source: where the settings come from, read again before each prompt, all or nothing.
     ///   - jobs: the jobs `/reload` must not orphan.
+    ///   - mcp: the MCP servers, started with the settings and kept across loop rebuilds.
     ///   - makeLoop: builds the loop for some settings, on the first prompt and after a change.
     init(
         directory: SessionDirectory, resumed: SessionRecorder? = nil, settings: RunSettings,
-        source: ConfigurationSource, jobs: JobTable,
+        source: ConfigurationSource, jobs: JobTable, mcp: MCPHub,
         makeLoop: @escaping @Sendable (RunSettings, SandboxApprover?, SessionNarrowing) throws -> AgentLoop
     ) {
         sourceState = Mutex(source)
         self.jobs = jobs
+        self.mcp = mcp
         self.makeLoop = makeLoop
         self.directory = directory
         current = Mutex(Current(settings: settings))
@@ -156,6 +160,7 @@ final class AgentConversation: Conversation {
     func agentLoop() throws -> AgentLoop {
         try current.withLock { current throws -> AgentLoop in
             if let existing = current.loop { return existing }
+            mcp.apply(current.settings.configuration.mcp.value.servers)
             let created = try makeLoop(
                 current.settings, { [weak self] in await self?.approve($0) ?? false }, narrowing)
             current.loop = created
@@ -202,14 +207,16 @@ func runInteractive(
             "Reloaded ask: \(reloaded.from) → \(to), in \(Swift.max(0, now - reloaded.startedMilliseconds)) ms.")
     }
     let jobs = JobTable()
+    // Started now, not on the first prompt, so the servers are connecting while the person types.
+    let mcp = startMCPServers(settings)
     do {
         let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(
-            directory: directory, resumed: resumed, settings: settings, source: source, jobs: jobs,
+            directory: directory, resumed: resumed, settings: settings, source: source, jobs: jobs, mcp: mcp,
             makeLoop: { settings, approve, narrowing in
                 try makeLoop(
                     settings, instructions: files, jobs: jobs,
-                    transport: URLSessionTransport(), approve: approve, narrowing: narrowing)
+                    transport: URLSessionTransport(), approve: approve, narrowing: narrowing, live: mcp.live)
             })
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.
@@ -218,10 +225,12 @@ func runInteractive(
             notices: notices + settings.description + describe(files), options: settings.screenOptions,
             beforeSignalExit: { jobs.terminateAllNow() })
         await jobs.stopAll()
+        await mcp.stop()
         // The terminal is already restored: replace this process with the new build, resuming this session.
         if exit == .reload { conversation.reExecute() }
     } catch {
         await jobs.stopAll()
+        await mcp.stop()
         // The screen has already restored the terminal by the time an error reaches here.
         fail("ask: \(error)", code: 70)
     }
