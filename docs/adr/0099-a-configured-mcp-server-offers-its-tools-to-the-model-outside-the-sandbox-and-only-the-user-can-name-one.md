@@ -50,7 +50,7 @@ milliseconds). Roadmap 0067 phases 3 and 4.
 
 The model can use any tool a configured server offers, with no per-call approval: naming the server is the consent, as in the other
 agents. A server still running when ask is killed by a signal is told only by its input closing, which a stubborn server ignores (the
-normal exits stop every server, with the grace of ADR-0096). The configuration is read again before each prompt, so a change applies at
+normal exits stop every server, with the grace of ADR-0096). *(Covered since by ADR-0102: the job watchdog stops it.)* The configuration is read again before each prompt, so a change applies at
 the next one, not at once. `Sources/ask` has no tests (roadmap 0028); what is wired there is covered by the two probes below.
 
 ## Probes
