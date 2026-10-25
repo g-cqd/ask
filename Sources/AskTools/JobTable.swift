@@ -17,8 +17,15 @@ public final class JobTable: Sendable {
     /// Distinguishes this process's output files from another ask's in the same directory.
     private let filePrefix: String
 
-    /// An empty table.
-    public init() {
+    /// The environment commands inherit, before a run's policy takes from it what it withholds (ADR-0106).
+    private let environment: [String: String]
+
+    /// An empty table whose commands inherit ask's own environment, less what a run's policy withholds.
+    public convenience init() { self.init(environment: ProcessInfo.processInfo.environment) }
+
+    /// An empty table whose commands inherit `environment`, which a test chooses.
+    init(environment: [String: String]) {
+        self.environment = environment
         filePrefix = "\(Int(Date().timeIntervalSince1970))-\(getpid())"
     }
 
@@ -40,7 +47,8 @@ public final class JobTable: Sendable {
         let job = Job.start(
             Job.Launch(
                 id: id, command: command, workingDirectory: context.workingDirectory, outputPath: path,
-                keepsInputOpen: keepsInputOpen, keeping: keeping, sandbox: context.sandbox, watchdog: watchdog),
+                keepsInputOpen: keepsInputOpen, keeping: keeping, sandbox: context.sandbox, watchdog: watchdog,
+                environment: context.commandEnvironment.filtered(environment)),
             observe: observe)
         jobs.withLock { $0[id] = job }
         notifyObservers()

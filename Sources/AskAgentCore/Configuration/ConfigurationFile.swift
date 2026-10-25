@@ -17,10 +17,11 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var ui: UISection?
     public var skills: SkillsSection?
     public var mcp: MCPSection?
+    public var environment: EnvironmentSection?
 
     /// The keys ask knows, in the order `ask config` shows them.
     public static let keys = [
-        "model", "provider", "thinking", "maxTurns", "compactAt", "sandbox", "ui", "skills", "mcp"
+        "model", "provider", "thinking", "maxTurns", "compactAt", "sandbox", "ui", "skills", "mcp", "environment"
     ]
 
     /// A file with these values.
@@ -28,7 +29,9 @@ public struct ConfigurationFile: Sendable, Equatable {
         model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil,
         // @dl:accept -- an initializer that takes every key; adding a section adds a parameter
         sandbox: SandboxSection? = nil, ui: UISection? = nil, thinking: ThinkingLevel? = nil,
-        skills: SkillsSection? = nil, mcp: MCPSection? = nil  // @dl:accept -- an initializer that takes every key
+        // @dl:accept -- configuration's optional section parameters are not agent-loop settings; no shared initializer contract
+        skills: SkillsSection? = nil, mcp: MCPSection? = nil,
+        environment: EnvironmentSection? = nil  // @dl:accept -- an initializer that takes every key
     ) {
         self.model = model
         self.provider = provider
@@ -39,6 +42,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         self.ui = ui
         self.skills = skills
         self.mcp = mcp
+        self.environment = environment
     }
 
     /// Whether the file sets the key `name`.
@@ -53,6 +57,7 @@ public struct ConfigurationFile: Sendable, Equatable {
             case "ui": ui != nil
             case "skills": skills != nil
             case "mcp": mcp != nil
+            case "environment": environment != nil
             default: false
         }
     }
@@ -91,6 +96,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         try validateSandbox(file.sandbox, path: path, isProject: isProject)
         try validateSkills(file.skills, path: path, isProject: isProject)
         try validateMCP(file.mcp, path: path, isProject: isProject)
+        try validateEnvironment(file.environment, path: path, isProject: isProject)
         for (key, count) in [
             ("ui.scrollLines", file.ui?.scrollLines), ("ui.promptRows", file.ui?.promptRows),
             ("ui.codeFoldLines", file.ui?.codeFoldLines)
@@ -221,6 +227,8 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "ui": file.ui = try container.decode(UIDecoded.self, forKey: key).section
                     case "skills": file.skills = try container.decode(SkillsDecoded.self, forKey: key).section
                     case "mcp": file.mcp = try container.decode(MCPDecoded.self, forKey: key).section
+                    case "environment":
+                        file.environment = try container.decode(EnvironmentDecoded.self, forKey: key).section
                     default: throw UnknownKey(key: key.stringValue)
                 }
             }

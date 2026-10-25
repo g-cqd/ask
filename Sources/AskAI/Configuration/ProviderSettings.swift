@@ -215,13 +215,24 @@ public struct ProviderSettings: Sendable, Equatable {
     private static func interpolate(_ raw: String, provider: String, environment: [String: String])
         throws(ProviderSettingsError) -> String
     {
-        guard raw.hasPrefix("$") else { return raw }
         if raw.hasPrefix("$$") { return String(raw.dropFirst()) }
-        var name = raw.dropFirst()
-        if name.hasPrefix("{"), name.hasSuffix("}") { name = name.dropFirst().dropLast() }
-        guard let value = environment[String(name)], !value.isEmpty else {
-            throw .missingVariable(provider: provider, variable: String(name))
+        guard let name = Self.variableName(in: raw) else { return raw }
+        guard let value = environment[name], !value.isEmpty else {
+            throw .missingVariable(provider: provider, variable: name)
         }
         return value
+    }
+
+    /// The variable a key names as `$NAME` or `${NAME}`; nil for a literal key, and for the `$$` that escapes a dollar.
+    static func variableName(in raw: String) -> String? {
+        guard raw.hasPrefix("$"), !raw.hasPrefix("$$") else { return nil }
+        var name = raw.dropFirst()
+        if name.hasPrefix("{"), name.hasSuffix("}") { name = name.dropFirst().dropLast() }
+        return String(name)
+    }
+
+    /// The variables the configured providers read their keys from: what ask itself reads, and a command must not inherit (ADR-0106).
+    var referencedVariables: Set<String> {
+        Set(entries.values.compactMap { $0.apiKey.flatMap(Self.variableName(in:)) }.filter { !$0.isEmpty })
     }
 }

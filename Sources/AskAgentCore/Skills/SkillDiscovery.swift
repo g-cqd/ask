@@ -20,9 +20,12 @@ public enum SkillDiscovery {
     ///   - home: the user's home directory.
     ///   - sources: the harnesses whose directories are searched.
     ///   - selection: which harnesses and scopes to search.
-    /// - Returns: the skills that load, the ones that lost a name, what was skipped, and where it looked.
+    ///   - trust: what the user has trusted. A project's skill is text from a repository, so it loads only when its file, as it is now, is in here;
+    ///     the default trusts nothing, so a caller that forgets to pass it gets no project skill, not every one.
+    /// - Returns: the skills that load, the project skills that wait for trust, the ones that lost a name, what was skipped, and where it looked.
     public static func discover(
-        workingDirectory: String, home: String, sources: [SkillSource], selection: SkillSelection = .standard
+        workingDirectory: String, home: String, sources: [SkillSource], selection: SkillSelection = .standard,
+        trust: ProjectTrust = ProjectTrust()
     ) -> SkillCatalog {
         var catalog = SkillCatalog()
         var seenFiles = Set<String>()
@@ -39,21 +42,43 @@ public enum SkillDiscovery {
             }
             for candidate in candidates(in: root.path) {
                 let real = URL(fileURLWithPath: candidate.file).resolvingSymlinksInPath().path
-                guard seenFiles.insert(real).inserted else { continue }
+                guard !seenFiles.contains(real) else { continue }
                 switch read(candidate, real: real, source: root.source, scope: root.scope) {
-                    case .failure(let reason): catalog.skipped.append("\(candidate.file): \(reason)")
+                    case .failure(let reason):
+                        seenFiles.insert(real)
+                        catalog.skipped.append("\(candidate.file): \(reason)")
                     case .success(let skill):
-                        let key = skill.name.lowercased()
-                        if let winner = byName[key] {
-                            if winner.digest != skill.digest { catalog.shadowed.append(skill) }
-                        } else {
-                            byName[key] = skill
-                            catalog.skills.append(skill)
-                        }
+                        // A project's skill that is not trusted does not take the file's place: the same file may be the user's own, reached by
+                        // their directory next.
+                        if !admits(skill, trust: trust, into: &catalog) { continue }
+                        seenFiles.insert(real)
+                        place(skill, in: &catalog, byName: &byName)
                 }
             }
         }
         return catalog
+    }
+
+    /// Whether `skill` may be loaded. A project's skill must be trusted as its file is now; one that is not is set aside in the catalog, once.
+    private static func admits(_ skill: Skill, trust: ProjectTrust, into catalog: inout SkillCatalog) -> Bool {
+        guard skill.scope == .project else { return true }
+        let standing = trust.standing(of: skill.realFile, digest: skill.digest)
+        guard standing != .trusted else { return true }
+        if !catalog.untrusted.contains(where: { $0.skill.realFile == skill.realFile }) {
+            catalog.untrusted.append(SkillCatalog.Untrusted(skill: skill, standing: standing))
+        }
+        return false
+    }
+
+    /// Adds `skill` under its name, or, when an earlier skill has the name, to the shadowed ones unless it is the same skill.
+    private static func place(_ skill: Skill, in catalog: inout SkillCatalog, byName: inout [String: Skill]) {
+        let key = skill.name.lowercased()
+        if let winner = byName[key] {
+            if winner.digest != skill.digest { catalog.shadowed.append(skill) }
+        } else {
+            byName[key] = skill
+            catalog.skills.append(skill)
+        }
     }
 
     struct Root {

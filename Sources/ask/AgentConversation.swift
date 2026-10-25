@@ -30,6 +30,8 @@ final class AgentConversation: Conversation {
     private let destinationSelected = Mutex(false)
     let usage = Mutex(UsageTotals())
     let promptInput = Mutex<PromptQueue?>(nil)
+    /// Whether the user was told about project skills waiting for trust: once, on the first prompt.
+    let skillNoticeGiven = Mutex(false)
     /// Jobs outlive turns, not a reload: `/reload` refuses while any run, or stops them when told to.
     let jobs: JobTable
     /// The MCP servers, which outlive the loop and follow the configuration (ADR-0099).
@@ -124,6 +126,7 @@ final class AgentConversation: Conversation {
         return Task {
             do {
                 await self.refreshSettings(update: update)
+                self.noticeUntrustedSkills(update: update)
                 guard let prompt = self.expandingSkill(prompt, update: update) else {
                     update(.runEnded)
                     return
