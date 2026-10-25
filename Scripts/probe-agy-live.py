@@ -5,7 +5,7 @@ ASK_LIVE_AGY=1 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-agy-live.py .build/releas
 
 Opt-in, because it sends real requests with the signed-in Antigravity account (about a dozen small ones) and reads the real
 credentials. Sessions go to a throwaway state directory, and the project is a throwaway one. Nothing printed is a token. The
-emulator shows what ask's bytes draw, not a physical terminal's rendering (ADR-0105 left the interactive screen unexercised).
+emulator shows what ask's bytes draw, not a physical terminal's rendering (ADR-0109 left the interactive screen unexercised).
 """
 import importlib.util
 import os

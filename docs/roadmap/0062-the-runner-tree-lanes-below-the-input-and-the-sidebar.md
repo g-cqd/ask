@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: ["0064"]
 date: 2026-10-24
 ---
@@ -10,6 +10,10 @@ The owner wants agents, and the subagents of subagents, visible below the input 
 sidebar** too. Today ADR-0066 shows a flat count and a list of background jobs. This entry turns that list into a tree with three views, and does
 it **before** any subagent exists, with jobs as the runners, so the whole UI is verifiable against real processes first. Design and open
 questions: `docs/research/skills-and-agents-design-2026-10.md`.
+
+**Step 1 built** (2026-10-25, ADR-0105, diary 2026-10-25 (18)): the cached tree and capped below-input strip, status counts from the same tree, and Esc closes
+it without losing the draft. Real jobs remain roots; nested snapshots are tested. Steps 2–4 (focus/output, approvals and sidebar) are not built. The key ladder
+of 0064 is built; its lane-return behavior will be implemented with step 2 here.
 
 ## One model, three views
 
