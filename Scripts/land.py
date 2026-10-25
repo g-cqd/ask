@@ -61,8 +61,7 @@ def land(root, keep):
         original_main = oid(root, "main")
         original_remote = oid(root, "origin/main")
         baseline = tree_paths(root, "main") + tree_paths(root, "origin/main")
-        # Deduplicate paths across the two refs; gaps only depend on their numbers.
-        validate(root, set(baseline))
+        # Validate only the merged tree: a branch that is merely behind main has gaps that the merge fills.
         for ref in ["main", "origin/main"]:
             subprocess.run(["git", "-C", str(root), "merge", "--no-edit", ref], check=True)
         validate(root, set(baseline))

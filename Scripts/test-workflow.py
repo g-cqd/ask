@@ -173,6 +173,16 @@ class WorkflowTests(unittest.TestCase):
         self.assertIn("moved during the gate", p.stderr)
         self.assertEqual(self.run_git("rev-parse", "HEAD"), before)
 
+    def test_a_branch_that_is_only_behind_main_lands(self):
+        task = self.task()
+        self.record("diary", "2026-10-25-02.md")
+        self.commit("main moves on with a diary the task has not seen")
+        self.record("diary", "2026-10-25-03.md", root=task)
+        self.commit("task holds 03 while main holds the 02 it has not merged", root=task)
+        p = self.invoke("land.py", root=task)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertTrue((self.root / "docs/diary/2026-10-25-02.md").exists())
+
     def test_keep_retains_task_after_successful_landing(self):
         task = self.task()
         self.record("adr", "0002-task.md", root=task)
