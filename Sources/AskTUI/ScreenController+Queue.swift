@@ -51,4 +51,13 @@ extension ScreenController {
         state.transcript.addUser(first.text)
         return begin(.startRun(first.text)) + pending.map(\.effect)
     }
+
+    /// Puts `text` in the editor if the person has written nothing there; otherwise keeps their draft and shows the text in a notice.
+    mutating func fill(draft text: String) {
+        guard state.editor.text.allSatisfy(\.isWhitespace) else {
+            state.transcript.addNotice("Your draft was kept. The prompt you went back to was:\n\(text)", isError: false)
+            return
+        }
+        state.editor.restore(text)
+    }
 }
