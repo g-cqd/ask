@@ -13,5 +13,6 @@ func startMCPServers(_ settings: RunSettings) -> MCPHub {
 /// One prompt and no later turn: wait for the servers, so the first request already has their tools, and say what did not start.
 func waitForMCPServers(_ hub: MCPHub) async {
     await hub.waitUntilSettled()
-    for line in hub.status.compactMap(\.problem) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
+    let lines = hub.status.compactMap { $0.problem ?? $0.remark }
+    for line in lines { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
 }

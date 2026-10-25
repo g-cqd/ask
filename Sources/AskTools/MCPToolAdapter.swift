@@ -22,17 +22,12 @@ struct MCPToolAdapter: Tool {
     }
 
     func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
-        guard context.sandbox == context.runSandbox else {
-            return .error(
-                "The sandbox was narrowed for this session, and the MCP server \(server) runs outside it, so its tools are off until the session is widened."
-            )
-        }
-        do {
-            let result = try await connection.callTool(original, arguments: input)
-            let text = MCPResultText.of(result)
-            return result.isError ? .error(text) : ToolOutput(text)
-        } catch {
-            return .error(MCPFailure.describe(error, server: server))
-        }
+        guard context.sandbox == context.runSandbox else { return .error(Self.narrowedRefusal(server: server)) }
+        return await MCPCalling.output(original, arguments: input, on: connection, server: server)
+    }
+
+    /// What the model is told when the sandbox was narrowed.
+    static func narrowedRefusal(server: String) -> String {
+        "The sandbox was narrowed for this session, and the MCP server \(server) runs outside it, so its tools are off until the session is widened."
     }
 }

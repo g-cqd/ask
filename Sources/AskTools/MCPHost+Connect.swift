@@ -48,7 +48,7 @@ extension MCPHost {
         }
     }
 
-    /// Lists the server's tools and offers the ones that are wanted.
+    /// Lists the server's tools and offers the ones that are wanted: whole, or, when there are too many to list, through the search.
     private func offer(_ server: MCPServerSetting, _ connection: MCPConnection, announce: Bool = true)
         async throws(MCPError)
     {
@@ -56,19 +56,24 @@ extension MCPHost {
         let (chosen, notes) = Self.select(from: tools, for: server)
         if server.tools == nil, tools.count > maximumDirectTools {
             live.replace(group: server.name, with: [])
-            let reason =
-                "has \(tools.count) tools, more than the \(maximumDirectTools) ask offers whole: name the ones you want in mcp.\(server.name).tools"
-            setStatus(server.name, .skipped(reason), notes: notes)
-            if announce { say("MCP server \(server.name) \(reason); none are offered.") }
+            catalog.set(server: server.name, tools: tools, connection: connection)
+            setStatus(server.name, .searchable(tools: tools.count), notes: notes)
+            if announce, let remark = status.first(where: { $0.name == server.name })?.remark { say(remark) }
         } else {
+            catalog.remove(server: server.name)
             live.replace(group: server.name, with: Self.adapters(chosen, server: server.name, connection: connection))
             setStatus(server.name, .ready(offered: chosen.count, of: tools.count), notes: notes)
-            if announce {
-                say(
-                    "MCP server \(server.name) connected: \(chosen.count) of \(tools.count) tools offered.")
-            }
+            if announce { say("MCP server \(server.name) connected: \(chosen.count) of \(tools.count) tools offered.") }
         }
+        publishSearch()
         countListing(server.name)
+    }
+
+    /// Offers the two search tools while any server is searched, and withdraws them when none is.
+    private func publishSearch() {
+        let tools: [any Tool] =
+            catalog.servers.isEmpty ? [] : [MCPSearchTool(catalog: catalog), MCPCallTool(catalog: catalog)]
+        live.replace(group: Self.searchGroup, with: tools)
     }
 
     /// The tools `server` asked for, and a note for each it asked for that the server does not have.
@@ -93,6 +98,8 @@ extension MCPHost {
     private func gone(_ server: MCPServerSetting) {
         let stopping = state.withLock { $0.stopping }
         live.replace(group: server.name, with: [])
+        catalog.remove(server: server.name)
+        publishSearch()
         guard !stopping else { return }
         setStatus(server.name, .failed("the server went away"), notes: [])
         say("The MCP server \(server.name) went away; its tools are gone.")
