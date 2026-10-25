@@ -13,6 +13,17 @@ enum ModelDiscovery {
             transport: URLSessionTransport(), connection: connection)
     }
 
+    /// The Antigravity account's list, kept in `models-agy.json` beside the credentials.
+    static func agy(environment: [String: String] = ProcessInfo.processInfo.environment) -> AgyModelCatalog {
+        let credentials = NamedConnections.file(for: nil, environment: environment)
+        let transport = URLSessionTransport()
+        return AgyModelCatalog(
+            credentials: credentials,
+            cache: ModelCatalogFile(
+                url: credentials.url.deletingLastPathComponent().appending(path: "models-agy.json")),
+            cloud: AgyCloudClient(transport: transport), access: makeAgyAccess(transport: transport))
+    }
+
     /// Resolve normally first; only a missing Codex default requires discovery. Explicit model ids never need a network.
     static func resolve(
         providers: ProviderSettings, provider: String?, model: String?, environment: [String: String],
@@ -69,6 +80,7 @@ enum ModelDiscovery {
         }
         // Anthropic has no key-based catalog here. Keep its startup out of that lookup's setup entirely.
         if initial.provider == .anthropic { return (initial, notices + announcement(initial)) }
+        if initial.provider == .agy { return try withAgyLimits(initial, resolve: resolve, notices: notices) }
         guard initial.provider == .codex else {
             return try withListedLimits(initial, environment: environment, resolve: resolve, notices: notices)
         }
@@ -107,6 +119,19 @@ enum ModelDiscovery {
         guard let listed else { return (initial, notices + announcement(initial)) }
         let chosen = try resolve([listed])
         return (chosen, notices + announcement(chosen))
+    }
+
+    /// The Antigravity model with the limits the cached list states for it, when there is a fresh one. Never a network, and only the
+    /// run's own entry is decoded, as for `withListedLimits`.
+    private static func withAgyLimits(
+        _ initial: ResolvedModel, resolve: ([CatalogModel]) throws -> ResolvedModel, notices: [String]
+    ) throws -> (model: ResolvedModel, notices: [String]) {
+        let listed: CatalogModel?
+        do { listed = try agy().cachedModel(initial.model, now: Date().timeIntervalSince1970) } catch {
+            return (initial, notices + ["Model list not used: \(error)"])
+        }
+        guard let listed else { return (initial, notices) }
+        return (try resolve([listed]), notices)
     }
 
     /// Says which server model an alias stood for, so a run never hides what it sent.
