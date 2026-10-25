@@ -30,7 +30,7 @@ credentials current, and the wiring that makes `--provider agy` run, with what a
   `ask login agy`; a file may not define `agy`; the known list names it; a damaged credential file is not "signed out". All six checks **fail**
   on the previous binary.
 - **Budgets**, six interleaved pairs against `main`'s own build (12.18 MB; this is 12.27 MB, +86,608 bytes) at load 8 to 15: idle memory is higher
-  in all six, median about **+56 KiB** (9.4 to 9.5 MiB, budget 24); cold start, input delay and action delay show no consistent direction once the order
+  in all six, median about **+56 KiB** (9.2 to 9.3 MiB, 9,392 to 9,504 KiB, against a budget of 24); cold start, input delay and action delay show no consistent direction once the order
   of each pair is reversed. Heavy load, so small differences are not certified.
 
 ## Decision

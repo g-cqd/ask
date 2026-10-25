@@ -217,13 +217,11 @@ the host is roadmap 0033).
 
 ## Status
 
-Five libraries and the `ask` composition root, green in release:
-`AskCore` (budgets, documentation layout, source standards), `AskAI`
-(provider-neutral `Model` and `Transport`, with `Anthropic` and `Claude` as the
-one provider so far), `AskAgentCore` (the agent loop, tools contract,
-sessions), `AskTools` (`read`, `write`, `edit`, `bash`, and jobs: `wait`,
-`job_input`, `job_stop`), `AskTUI` (the interactive screen). Not built yet: a
-second provider, the codemode host.
+Six libraries and the `ask` composition root, green in release: `AskCore` (budgets, documentation layout, source standards), `AskAI`
+(provider-neutral `Model` and `Transport`; Claude, Codex, Antigravity, and OpenAI-compatible or Responses servers by configuration or
+preset), `AskAgentCore` (the agent loop, tools contract, sessions, compaction), `AskTools` (`read`, `write`, `edit`, `bash`, and jobs:
+`wait`, `job_input`, `job_stop`), `AskMCP` (an MCP client) and `AskTUI` (the interactive screen). Not built yet: the codemode host, the
+extension host, subagents, and a versioned release. What is not yet known is written down in `docs/research/`.
 
 Every exit path of the terminal loop writes the reset ladder, and a shutdown
 signal both restores the terminal and dies with `128 + signo` (verified on a
