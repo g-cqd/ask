@@ -35,5 +35,10 @@ struct TrustCommand: ParsableCommand {
         let sets = ConfigurationFile.keys.filter { file.sets($0) }
         print("Trusted \(loader.projectPath) (sha256 \(ProjectTrust.digest(bytes).prefix(12))…).")
         print(sets.isEmpty ? "It sets nothing." : "It sets: " + sets.joined(separator: ", ") + ".")
+        // Naming a server runs a program: say which, so that trusting the file is consent to something stated.
+        if let servers = file.mcp?.consent, !servers.isEmpty {
+            print("Trusting it lets this project start or connect to MCP servers, outside ask's sandbox:")
+            for line in servers { print("  \(line)") }
+        }
     }
 }
