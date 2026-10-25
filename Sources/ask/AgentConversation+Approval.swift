@@ -8,9 +8,12 @@ extension AgentConversation {
     /// current run's questions go.
     struct Approvals {
         var nextID = 0
-        var waiting: [Int: (request: SandboxRequest?, answer: CheckedContinuation<Bool, Never>)] = [:]
+        var waiting:
+            [Int: (request: SandboxRequest?, destructiveKey: String?, answer: CheckedContinuation<Bool, Never>)] = [:]
         /// Requests the user allowed for the session; a later request they contain is not asked again.
         var grants: [SandboxRequest] = []
+        /// Server tools the user allowed for the session, as `server/tool` (ADR-0110).
+        var destructiveGrants: Set<String> = []
         var ask: (@Sendable (ConversationUpdate) -> Void)?
     }
 
@@ -23,6 +26,22 @@ extension AgentConversation {
         let question =
             "\(approval.tool) \(toolSummary(name: approval.tool, input: approval.input)) asks for "
             + approval.asked.joined(separator: " and ") + ". Allow it?"
+        return await ask(question, remembering: (approval.request, nil))
+    }
+
+    /// Asks the user about a server's tool that the server marks destructive (ADR-0110), unless they allowed it for the session.
+    func approveDestructive(_ call: DestructiveToolCall) async -> Bool {
+        if approvals.withLock({ $0.destructiveGrants.contains(call.grantKey) }) { return true }
+        let question =
+            "The MCP server \(call.server)'s tool \(call.tool) (\(toolSummary(name: call.tool, input: call.input))) "
+            + "is marked destructive: it may destroy or overwrite. Allow it?"
+        return await ask(question, remembering: (nil, call.grantKey))
+    }
+
+    /// Puts `question` to the user and waits; false when the run is cancelled or there is no one to ask. What a session grant
+    /// remembers is `remembering`, for the answer's `a`.
+    private func ask(_ question: String, remembering: (request: SandboxRequest?, destructiveKey: String?)) async -> Bool
+    {
         let id = approvals.withLock { state in
             state.nextID += 1
             return state.nextID
@@ -30,7 +49,7 @@ extension AgentConversation {
         return await withTaskCancellationHandler {
             await withCheckedContinuation { (answer: CheckedContinuation<Bool, Never>) in
                 let ask = approvals.withLock { state in
-                    state.waiting[id] = (approval.request, answer)
+                    state.waiting[id] = (remembering.request, remembering.destructiveKey, answer)
                     return state.ask
                 }
                 // Cancelled before the question was stored: the handler found nothing to answer, so answer here.
@@ -47,6 +66,7 @@ extension AgentConversation {
         if choice == .session {
             approvals.withLock { state in
                 if let request = state.waiting[id]?.request { state.grants.append(request) }
+                if let key = state.waiting[id]?.destructiveKey { state.destructiveGrants.insert(key) }
             }
         }
         resolve(id, allowed: choice != .deny)

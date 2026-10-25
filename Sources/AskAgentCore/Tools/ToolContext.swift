@@ -8,6 +8,7 @@ public struct ToolContext: Sendable, Equatable {
             && left.sandbox == right.sandbox && left.runSandbox == right.runSandbox
             && (left.approve == nil) == (right.approve == nil)
             && left.narrowing === right.narrowing && left.commandEnvironment == right.commandEnvironment
+            && (left.destructiveApprover == nil) == (right.destructiveApprover == nil)
     }
 
     /// Relative paths resolve against this directory.
@@ -26,6 +27,8 @@ public struct ToolContext: Sendable, Equatable {
     public let narrowing: SessionNarrowing?
     /// What of ask's own environment a command may inherit (ADR-0106). Everything by default, so a caller that wants protection says so.
     public let commandEnvironment: CommandEnvironment
+    /// Who is asked before a server's tool marked destructive runs; nil, the default, runs it unasked, as `ask -p` does (ADR-0110).
+    public let destructiveApprover: DestructiveApprover?
 
     /// A context rooted at `workingDirectory`.
     /// - Parameters:
@@ -35,10 +38,11 @@ public struct ToolContext: Sendable, Equatable {
     ///   - approve: who grants a call more than `sandbox` allows; nil, the default, refuses.
     ///   - narrowing: where the model's session-wide narrowing is kept; nil offers none.
     ///   - commandEnvironment: which of ask's variables a command is denied.
+    ///   - destructiveApprover: who answers when a server marks its tool destructive; nil, the default, allows.
     public init(
         workingDirectory: String, outputDirectory: String? = nil, sandbox: SandboxPolicy = .unrestricted,
         approve: SandboxApprover? = nil, narrowing: SessionNarrowing? = nil,
-        commandEnvironment: CommandEnvironment = .inherit
+        commandEnvironment: CommandEnvironment = .inherit, destructiveApprover: DestructiveApprover? = nil
     ) {
         self.workingDirectory = workingDirectory
         self.outputDirectory = outputDirectory
@@ -47,6 +51,7 @@ public struct ToolContext: Sendable, Equatable {
         self.approve = approve
         self.narrowing = narrowing
         self.commandEnvironment = commandEnvironment
+        self.destructiveApprover = destructiveApprover
     }
 
     /// This context with `policy` for one call.

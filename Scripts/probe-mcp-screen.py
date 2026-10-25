@@ -52,12 +52,12 @@ def main():
         terminal.until(lambda: b"MCP server fx connected" in bytes(terminal.raw) and b"did not start" in bytes(terminal.raw))
         shown = screen(terminal)
         flat = " ".join(line.strip() for line in shown.split("\n"))  # a long notice wraps
-        check("the screen says the server connected, without anyone typing", "MCP server fx connected: 5 of 5 tools offered" in shown)
+        check("the screen says the server connected, without anyone typing", "MCP server fx connected: 7 of 7 tools offered" in shown)
         check("and that the other did not start, and why", "MCP server ghost did not start" in flat and "is not found or cannot be executed" in flat)
 
         send(session, "/mcp", "fx: ready")
         shown = screen(terminal)
-        check("/mcp lists each server and where it stands", "fx: ready, 5 of 5 tools offered" in shown and "ghost: not connected" in shown)
+        check("/mcp lists each server and where it stands", "fx: ready, 7 of 7 tools offered" in shown and "ghost: not connected" in shown)
 
         send(session, "/help", "/mcp")
         check("/help lists the command", "/mcp" in screen(terminal))
@@ -65,6 +65,47 @@ def main():
         send(session, "hello", "ANSWER ONE")
         first = session.server.requests[0]["body"]["tools"]
         check("the first request already offers the server's tools", any(t["name"] == "mcp__fx__echo" for t in first))
+
+    # A tool the server marks destructive is asked about before it runs (ADR-0110): allow for the session, the grant, and a refusal.
+    import tempfile
+    victim = os.path.join(tempfile.mkdtemp(), "victim.txt")
+    open(victim, "w").write("data")
+    turns = [
+        pp.probe.agent.turn([("call", "b1", "mcp__fx__boom", {"path": victim})], "tool_use"),
+        pp.short_answer("Done one."),
+        pp.probe.agent.turn([("call", "b2", "mcp__fx__boom", {"path": victim})], "tool_use"),
+        pp.short_answer("Done two."),
+        pp.probe.agent.turn([("call", "z1", "mcp__fx__zap", {"path": victim})], "tool_use"),
+        pp.short_answer("Done three."),
+    ]
+    with pp.Session(binary, turns, settings=servers) as asking:
+        terminal = asking.terminal
+        send(asking, "Use boom.", "Allow it?")
+        shown = screen(terminal)
+        check("a marked tool is put to the user before it runs",
+              "boom" in shown and "destructive" in shown and "y once" in shown)
+        press(terminal, b"a")
+        terminal.until(lambda: "Done one." in terminal.text())
+        check("allowing it for the session runs the call", "Allowed for this session." in screen(terminal))
+
+        send(asking, "again", "Done two.")
+        shown = screen(terminal)
+        check("a second call of the same tool is not asked about again",
+              shown.count("Allow it?") == 1 and "Done two." in shown)
+
+        send(asking, "now zap", "tool zap")
+        shown = screen(terminal)
+        check("a different marked tool is asked about", "zap" in shown and shown.count("Allow it?") == 2)
+        press(terminal, b"n")
+        terminal.until(lambda: "Done three." in terminal.text())
+        shown = screen(terminal)
+        check("refusing it says so and the model is told", "Not allowed." in shown and "Done three." in shown)
+        results = [
+            b for r in asking.server.requests for m in r["body"].get("messages", []) for b in m.get("content", [])
+            if isinstance(b, dict) and b.get("type") == "tool_result"
+        ]
+        check("the refusal reached the model as the tool's result",
+              any("did not allow" in str(b.get("content")) for b in results))
     print(f"{len(pp.checks)} checks passed")
 
 

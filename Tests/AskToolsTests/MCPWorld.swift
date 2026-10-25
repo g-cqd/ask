@@ -32,9 +32,9 @@ struct MCPWorld {
     var offered: [String] { (try? ToolRegistry([], live: live))?.definitions.map(\.name) ?? [] }
 
     /// Calls `name` through the registry.
-    func call(_ name: String, _ json: String = "{}") async throws -> ToolOutput {
+    func call(_ name: String, _ json: String = "{}", in context: ToolContext? = nil) async throws -> ToolOutput {
         try await ToolRegistry([], live: live)
             .run(
-                name: name, input: try JSONObject(validating: Array(json.utf8)), in: context)
+                name: name, input: try JSONObject(validating: Array(json.utf8)), in: context ?? self.context)
     }
 }

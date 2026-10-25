@@ -1,6 +1,7 @@
 public import AskAI
 
 /// A tool call the model made, as hooks see it.
+// @dl:accept -- two small records of a call's parts (this and DestructiveToolCall); any such record looks alike by shape
 public struct ToolInvocation: Sendable, Equatable {
     /// The call's id, which its result answers.
     public let id: String

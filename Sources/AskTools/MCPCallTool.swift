@@ -37,13 +37,18 @@ struct MCPCallTool: Tool {
         let raw: JSONObject? =
             given.isObject ? (given.withRawJSONBytes { try? JSONObject(validating: Array($0)) } ?? nil) : nil
         let arguments = raw ?? .empty
-        guard let connection = catalog.connection(server: server, tool: tool) else {
+        guard let found = catalog.find(server: server, tool: tool) else {
             let known = catalog.servers.map(\.name)
             let where_ =
                 known.contains(server)
                 ? "The server \(server) has no tool \(tool)" : "No searchable server is called \(server)"
             return .error("\(where_). Servers: \(known.joined(separator: ", ")). Use mcp_search to find the tools.")
         }
-        return await MCPCalling.output(tool, arguments: arguments, on: connection, server: server)
+        if found.tool.annotations.destructive == true, let approve = context.destructiveApprover {
+            guard await approve(DestructiveToolCall(server: server, tool: tool, input: arguments)) else {
+                return .error(MCPToolAdapter.refused(server: server, tool: tool))
+            }
+        }
+        return await MCPCalling.output(tool, arguments: arguments, on: found.connection, server: server)
     }
 }
