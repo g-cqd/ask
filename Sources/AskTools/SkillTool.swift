@@ -68,9 +68,10 @@ public struct SkillTool: ArgumentTool {
 
     private func load(_ skill: Skill, unknownWords: [String]) -> ToolOutput {
         let note = unknownWords.isEmpty ? nil : "Ignored in from: \(unknownWords.joined(separator: ", "))"
-        guard let contents = SkillContents.load(skill, note: note) else {
-            return .error("The skill \"\(skill.name)\" could not be read from \(skill.file).")
+        do {
+            return ToolOutput(try SkillContents.load(skill, note: note))
+        } catch {
+            return .error(error.reason)
         }
-        return ToolOutput(contents)
     }
 }

@@ -16,6 +16,13 @@ extension SkillCatalog {
         return .missing(suggestions: Array((near.isEmpty ? names : near).sorted().prefix(8)))
     }
 
+    /// A project skill called `name` that is waiting for trust, found the way ``find(_:selection:)`` finds a name. For telling a person why it did not load;
+    /// never for the model.
+    public func untrustedSkill(named name: String) -> Untrusted? {
+        let wanted = Self.normalized(name)
+        return wanted.isEmpty ? nil : untrusted.first { Self.normalized($0.skill.name) == wanted }
+    }
+
     private static func normalized(_ name: String) -> String {
         String(name.lowercased().filter { $0.isLetter || $0.isNumber })
     }

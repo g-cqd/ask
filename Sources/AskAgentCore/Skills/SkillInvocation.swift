@@ -44,6 +44,12 @@ public enum SkillInvocation {
         switch catalog.find(name, selection: selection) {
             case .found(let found), .onlyWhenAsked(let found): skill = found
             case .missing(let suggestions):
+                if let waiting = catalog.untrustedSkill(named: name) {
+                    let why = waiting.standing == .changed ? "has changed since you trusted it" : "is not trusted"
+                    return .failure(
+                        "The project skill \"\(waiting.skill.name)\" \(why), so it is not loaded. Look at \(waiting.skill.file), then run ask trust --skills in a terminal."
+                    )
+                }
                 let hint =
                     suggestions.isEmpty
                     ? "No skills are available." : "Available: \(suggestions.joined(separator: ", "))."
@@ -51,9 +57,8 @@ public enum SkillInvocation {
         }
         let note =
             "The user invoked this skill by name. Follow it for the request above; if there is no request, begin the work it describes."
-        guard let contents = SkillContents.load(skill, note: note) else {
-            return .failure("The skill \"\(skill.name)\" could not be read from \(skill.file).")
-        }
+        let contents: String
+        do { contents = try SkillContents.load(skill, note: note) } catch { return .failure(error.reason) }
         let first = request.isEmpty ? typed.prefix(while: { !$0.isWhitespace }) : Substring(typed)
         return .prompt(
             "\(first)\(marker)\(skill.name) (\(skill.source), \(skill.scope.rawValue)) ---\n\(contents)\n--- end of skill ---"
