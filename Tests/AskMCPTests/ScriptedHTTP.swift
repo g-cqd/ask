@@ -66,6 +66,17 @@ final class ScriptedHTTP: HTTPTransport {
         return try await handler.withLock { $0 }(seen)
     }
 
+    /// A stream reply that stays open until the test ends it, saying when the consumer stops listening.
+    static func held(
+        onTerminated: @escaping @Sendable () -> Void
+    ) -> (HTTPStreamingResponse, AsyncThrowingStream<[UInt8], any Error>.Continuation) {
+        let (body, continuation) = AsyncThrowingStream<[UInt8], any Error>.makeStream()
+        continuation.onTermination = { _ in onTerminated() }
+        return (
+            HTTPStreamingResponse(status: 200, headers: ["content-type": "text/event-stream"], body: body), continuation
+        )
+    }
+
     /// A reply with no body, such as `202`.
     static func status(_ code: Int, headers: [String: String] = [:]) -> HTTPStreamingResponse {
         chunks(code, [], headers: headers)
