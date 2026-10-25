@@ -12,6 +12,15 @@ public protocol MCPTransport: Sendable {
     /// - Throws: when it cannot be delivered, as to a process that has died.
     func send(_ message: [UInt8]) async throws
 
+    /// Told once, after the handshake, which protocol version was agreed. A pipe has no use for it; HTTP must name it in every request.
+    /// - Parameter protocolVersion: the version the server answered and this client accepted.
+    func negotiated(protocolVersion: String)
+
     /// Ends the conversation: tells the server, waits a moment for it to leave, then makes it. Safe to call again.
     func close() async
+}
+
+extension MCPTransport {
+    /// Most transports have nothing to do with the version.
+    public func negotiated(protocolVersion: String) {}
 }

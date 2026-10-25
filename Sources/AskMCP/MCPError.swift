@@ -16,6 +16,8 @@ public enum MCPError: Error, Sendable, Equatable {
     case notStarted
     /// ``MCPConnection/start()`` was called again.
     case alreadyStarted
+    /// The server's address may not be used, and why (never the address itself, which can carry a password).
+    case refusedEndpoint(String)
     /// A listing never ended: the server kept offering another page.
     case tooManyPages
 }
