@@ -33,7 +33,7 @@ struct MCPToolAdapter: Tool {
         return await MCPCalling.output(original, arguments: input, on: connection, server: server)
     }
 
-    /// What the model is told when the user did not allow a call the server marks destructive (ADR-0110).
+    /// What the model is told when the user did not allow a call the server marks destructive (ADR-0111).
     static func refused(server: String, tool: String) -> String {
         "The user did not allow \(tool) on the MCP server \(server); the server marks it destructive. Ask the user, or do without it."
     }

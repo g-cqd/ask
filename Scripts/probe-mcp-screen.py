@@ -66,7 +66,7 @@ def main():
         first = session.server.requests[0]["body"]["tools"]
         check("the first request already offers the server's tools", any(t["name"] == "mcp__fx__echo" for t in first))
 
-    # A tool the server marks destructive is asked about before it runs (ADR-0110): allow for the session, the grant, and a refusal.
+    # A tool the server marks destructive is asked about before it runs (ADR-0111): allow for the session, the grant, and a refusal.
     import tempfile
     victim = os.path.join(tempfile.mkdtemp(), "victim.txt")
     open(victim, "w").write("data")

@@ -21,6 +21,9 @@ struct FrameGeometry: Sendable {
     var pickerFirstRow = 0
     var pickerWindow = 0 ..< 0
     var pickerTrigger: CompletionTrigger?
+    /// The strip's rows as drawn: the screen row of the first, and the runner each shows, so a click means what the user saw.
+    var stripFirstRow = 0
+    var stripIDs: [String] = []
     /// The input as drawn: its first screen row, how many rows, the draft's display row at the top, and the map from cell to text.
     var promptRow = 0
     var promptRows = 0

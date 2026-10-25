@@ -25,7 +25,7 @@ final class FakeMCPServer: MCPTransport {
 
     private let destructive: Set<String>
 
-    /// A server with tools of these names, marking `destructive` as the server would (ADR-0110).
+    /// A server with tools of these names, marking `destructive` as the server would (ADR-0111).
     init(tools: [String] = [], destructive: [String] = []) {
         self.destructive = Set(destructive)
         (incoming, continuation) = AsyncStream.makeStream(of: [UInt8].self)
