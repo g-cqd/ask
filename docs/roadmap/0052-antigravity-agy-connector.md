@@ -54,7 +54,7 @@ The stream decoder and the request encoder: a Gemini 3 signature stored in a thi
 for the rest; ids on every call and result; the real tool schemas as `parametersJsonSchema`. A live tool loop through both on four models, 81
 faults killed. Nothing sends a request through them yet.
 
-## Done (2026-10-25, ADR-0095, diary 2026-10-25-06)
+## Done (2026-10-25, ADR-0097, diary 2026-10-25-09)
 
 `ask --provider agy --model M` runs: the client, access (refresh with one secret search, onboarding stored with the credentials, the
 unsaved-rotation notice), `ask models agy`, and the name reserved through settings, sessions and composition. Live through the shipping binary

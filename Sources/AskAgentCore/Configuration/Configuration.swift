@@ -45,6 +45,7 @@ public struct Configuration: Sendable, Equatable {
     public var compactAt: Setting<Int>
     public var sandbox: Setting<SandboxSection>
     public var ui: Setting<UISection>
+    public var skills: Setting<SkillsSection>
 
     /// Built-in defaults only.
     public static let defaults = Configuration(
@@ -52,7 +53,9 @@ public struct Configuration: Sendable, Equatable {
         thinking: Setting(value: .providerDefault, source: .defaults),
         maxTurns: Setting(value: 100, source: .defaults),
         compactAt: Setting(value: AgentSettings.defaultCompactAtTokens, source: .defaults),
-        sandbox: Setting(value: SandboxSection(), source: .defaults), ui: Setting(value: UISection(), source: .defaults)
+        sandbox: Setting(value: SandboxSection(), source: .defaults),
+        ui: Setting(value: UISection(), source: .defaults),
+        skills: Setting(value: SkillsSection(), source: .defaults)
     )
 
     /// `self` with every key `file` sets replaced, attributed to `source`.
@@ -67,6 +70,9 @@ public struct Configuration: Sendable, Equatable {
             next.sandbox = Setting(value: next.sandbox.value.layered(with: section), source: source)
         }
         if let section = file.ui { next.ui = Setting(value: next.ui.value.layered(with: section), source: source) }
+        if let section = file.skills {
+            next.skills = Setting(value: next.skills.value.layered(with: section), source: source)
+        }
         return next
     }
 
@@ -167,6 +173,7 @@ extension Configuration {
         compare("compactAt", previous.compactAt, compactAt)
         compare("sandbox", previous.sandbox, sandbox)
         compare("ui", previous.ui, ui)
+        compare("skills", previous.skills, skills)
         return lines
     }
 
