@@ -118,12 +118,13 @@ def with_help(program, helps=1, config=None):
     return terminal
 
 
-# /help prints eleven lines; the row of "/quit  Leave ask, stopping a running turn first." is 19 on a 30-row screen.
-QUIT, FOLLOW = 19, 20
-
+# /help prints one line a command, so the row of "/quit  Leave ask, stopping a running turn first." moves each time a command is added:
+# it is found, not counted. (It was 19 with eleven lines, and 17 with thirteen.)
 t = with_help("ghostty")
-check("the screen shows /help where the probe expects it", t.lines()[QUIT].startswith("/quit  Leave ask"), t.lines()[QUIT])
-check("the user prompt has no leading marker", t.lines()[17] == "/help")
+QUIT = next((row for row, line in enumerate(t.lines()) if line.startswith("/quit  Leave ask")), -1)
+FOLLOW = QUIT + 1
+check("the screen shows /help where the probe expects it", QUIT > 0, str(t.lines()))
+check("the user prompt has no leading marker", "/help" in t.lines())
 check("the status has no painted inverse surface", t.inverse(ROWS - 2) == [])
 raw = bytes(t.raw)
 check("the terminal is asked for mouse reports", b"\x1b[?1000h" in raw and b"\x1b[?1006h" in raw)
@@ -198,7 +199,9 @@ t.pump(0.5)
 t.repaint()
 rows = t.lines()
 check("the wheel scrolls back to the start of the conversation", rows[1].startswith("/help"), str(rows[:3]))
-known = ("/help", "/help  ", "/quit  ", "/follow-up  ", "/tasks  ", "/config  ", "/compact  ", "/new  ", "/model  ", "/resume  ", "/reload  ")
+known = (
+    "/help", "/help  ", "/quit  ", "/follow-up  ", "/tasks  ", "/config  ", "/compact  ", "/new  ", "/model  ", "/resume  ", "/tree  ",
+    "/fork  ", "/reload  ")
 malformed = [row for row in rows[: ROWS - 2] if row and not row.startswith(known)]
 check("every row after the scroll is a whole line", malformed == [], str(malformed))
 for _ in range(20):
