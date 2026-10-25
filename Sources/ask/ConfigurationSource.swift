@@ -150,7 +150,7 @@ struct ConfigurationSource: Sendable {
         let thinking = try ThinkingDiscovery.resolve(
             result.configuration.thinking.value, model: discovered.model, environment: environment)
         let commandEnvironment = CommandEnvironment(providers: providers, configuration: result.configuration)
-        // Everything that needed the credentials has read them: the snapshot keeps them, ask's own process does not (ADR-0112).
+        // Everything that needed the credentials has read them: the snapshot keeps them, ask's own process does not (ADR-0113).
         LaunchEnvironment.conceal(commandEnvironment)
         let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections(result.configuration.sandbox.value)
         return RunSettings(

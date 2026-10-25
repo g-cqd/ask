@@ -3,7 +3,7 @@ internal import Testing
 
 @testable import AskCore
 
-/// Blanking variables in the process's own environment, so another process cannot read them from it (ADR-0112).
+/// Blanking variables in the process's own environment, so another process cannot read them from it (ADR-0113).
 /// The kernel-visible copy is covered by `Scripts/probe-bash-parent-environment.py`; these tests cover which entries change.
 @Suite("Concealed variables are blanked in place, and nothing else changes", .serialized)
 struct ProcessEnvironmentTests {

@@ -4,7 +4,7 @@ internal import Foundation
 /// The process's own environment: read once, and blanked in place for the variables that must not outlive their use.
 ///
 /// Another process of the same user can read this one's original environment with `sysctl(KERN_PROCARGS2)`, whatever ask's sandbox
-/// says about files and `ps` (ADR-0112). `unsetenv` does not help: it edits the table and leaves the strings the kernel reports.
+/// says about files and `ps` (ADR-0113). `unsetenv` does not help: it edits the table and leaves the strings the kernel reports.
 /// Only overwriting the strings changes what that call returns. A caller must therefore take its snapshot before blanking.
 public enum ProcessEnvironment {
     /// The environment as the process holds it now.

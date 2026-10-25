@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Can a command the model runs read ask's own environment out of ask's process? (roadmap 0072, ADR-0112)
+"""Can a command the model runs read ask's own environment out of ask's process? (roadmap 0072, ADR-0113)
 
 Usage: python3 Scripts/probe-bash-parent-environment.py .build/release/ask
 Another process of the same user can read a process's original environment with sysctl(KERN_PROCARGS2). The command compiles a small C reader
@@ -7,7 +7,7 @@ Another process of the same user can read a process's original environment with 
 provider, no network. Run twice: the default sandbox and `--read workspace`.
 
 Exit 1 when the stand-in key is recovered, 0 when it is not and the entry was read, 2 when the experiment did not run.
-Before ADR-0112 this exited 1 in both modes; Seatbelt does not govern this call (six rules and ask's deny-default read profile were tried).
+Before ADR-0113 this exited 1 in both modes; Seatbelt does not govern this call (six rules and ask's deny-default read profile were tried).
 """
 import importlib.util
 import json

@@ -1,7 +1,7 @@
 internal import AskAgentCore
 internal import AskCore
 
-/// The environment ask was launched with, and the one place that blanks what ask has read from it (ADR-0112).
+/// The environment ask was launched with, and the one place that blanks what ask has read from it (ADR-0113).
 ///
 /// Everything in `Sources/ask` reads `values`, never `ProcessInfo`, because the process's own copy loses its credentials once they are
 /// concealed. `values` is taken before the first concealment: `conceal` touches it first.
