@@ -35,8 +35,13 @@ final class MCPCatalog: Sendable {
         }
     }
 
-    /// The connection `server` is called through, if it is here and has a tool called `tool`.
-    func connection(server: String, tool: String) -> MCPConnection? {
-        entries.withLock { $0.first { $0.server == server && $0.tools.contains { $0.name == tool } }?.connection }
+    /// The connection `server` is called through and the tool itself, if the server is here and has a tool called `name`.
+    func find(server: String, tool name: String) -> (connection: MCPConnection, tool: MCPTool)? {
+        entries.withLock { entries in
+            guard let entry = entries.first(where: { $0.server == server }),
+                let tool = entry.tools.first(where: { $0.name == name })
+            else { return nil }
+            return (entry.connection, tool)
+        }
     }
 }

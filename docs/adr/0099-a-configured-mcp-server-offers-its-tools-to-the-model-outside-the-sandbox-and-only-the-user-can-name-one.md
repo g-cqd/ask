@@ -34,7 +34,7 @@ milliseconds). Roadmap 0067 phases 3 and 4.
    (for a program, why it could not be launched, or the last line it wrote to standard error).
 6. **Servers outlive the loop.** The loop is rebuilt whenever the configuration changes; the hub keeps the servers, applies a changed
    configuration at the next prompt, and starts or stops only what changed. A server whose tools change is listed again.
-7. **A server runs outside ask's sandbox, and says so to the model's face.** Its process gets only a minimal environment (ADR-0096), but
+7. **A server runs outside ask's sandbox, and says so to the model's face.** *(Since ADR-0110, a tool the server marks destructive is asked about in an interactive session, once a tool a session.)* Its process gets only a minimal environment (ADR-0096), but
    what it does is its own. So its tools are refused when this session's sandbox has been narrowed below the run's (by `narrow_sandbox`),
    because that narrowing is a promise a server cannot keep. A `sandbox` argument of a server's tool is the tool's own argument and is
    never read as a request to narrow ask's. **Limit, stated plainly:** when the run itself was started under a strict policy, the

@@ -103,7 +103,7 @@ project's skills load only after `ask trust --skills`, in a terminal, has truste
 
 MCP servers (a program ask starts, or a URL) are named under `mcp` in your own `config.json` and their tools are offered to the model as
 `mcp__<server>__<tool>`; `/mcp` shows which are connected. A server runs outside ask's sandbox, so naming one is the consent: a project's
-file can name one only once you have trusted it (`ask trust` lists what would start), and a server with more than 16 tools is searched (`mcp_search`, `mcp_call`) instead of listed unless `tools` names the ones you want. See ADR-0099, ADR-0100 and ADR-0103.
+file can name one only once you have trusted it (`ask trust` lists what would start), and a server with more than 16 tools is searched (`mcp_search`, `mcp_call`) instead of listed unless `tools` names the ones you want. See ADR-0099, ADR-0100 and ADR-0103. A tool the server marks destructive is asked about first, once a tool a session (ADR-0110).
 
 Background jobs are counted in the status line (`· 2 jobs`). Click the count, or type `/tasks`, to open a capped runner strip **below the input**, showing each
 job's command and state. Esc closes it without clearing your draft. Selecting a job's output and the sidebar are not built yet. A job does not outlive ask, even when ask is killed with SIGKILL: a small watchdog process stops it

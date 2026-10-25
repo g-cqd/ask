@@ -38,7 +38,7 @@ struct StdioTransportTests {
         let (connection, transport) = connect(launch())
         let info = try await connection.start()
         #expect(info.name == "fixture" && info.supportsTools)
-        #expect(try await connection.listTools().map(\.name) == ["echo", "env", "pwd", "big", "log"])
+        #expect(try await connection.listTools().map(\.name) == ["echo", "env", "pwd", "big", "log", "boom", "zap"])
         let message = try JSONObject(validating: Array(#"{"message":"héllo"}"#.utf8))
         #expect(text(try await connection.callTool("echo", arguments: message)) == "Echo: héllo")
         await connection.close()
@@ -83,7 +83,7 @@ struct StdioTransportTests {
         let (connection, _) = connect(launch("garbage"))
         var events = connection.events.makeAsyncIterator()
         _ = try await connection.start()
-        #expect(try await connection.listTools().count == 5)
+        #expect(try await connection.listTools().count == 7)
         guard case .malformed(let line)? = await events.next() else {
             Issue.record("no event for the stray line")
             return
@@ -95,7 +95,7 @@ struct StdioTransportTests {
     @Test func `a message that arrives in pieces is put back together`() async throws {
         let (connection, _) = connect(launch("split"))
         _ = try await connection.start()
-        #expect(try await connection.listTools().count == 5)
+        #expect(try await connection.listTools().count == 7)
         await connection.close()
     }
 

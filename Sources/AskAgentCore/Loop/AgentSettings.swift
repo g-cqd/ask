@@ -33,6 +33,7 @@ public struct AgentSettings: Sendable, Equatable {
     ///   - thinking: the concrete control chosen from user policy and provider metadata, or nil for defaults.
     public init(
         model: String, maximumTokens: Int, systemPrompt: [String], maximumTurns: Int,
+        // @dl:accept -- an initializer's optional parameters with nil defaults; the lists are the data
         compactAtTokens: Int? = defaultCompactAtTokens, keepRecentBytes: Int = 80_000, toolOutputBytes: Int? = nil,
         thinking: ThinkingControl? = nil
     ) {

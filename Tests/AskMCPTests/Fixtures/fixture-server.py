@@ -37,6 +37,18 @@ TOOLS = [
     {"name": "pwd", "description": "Working directory.", "inputSchema": {"type": "object"}},
     {"name": "big", "description": "A large result.", "inputSchema": {"type": "object"}},
     {"name": "log", "description": "Writes to stderr.", "inputSchema": {"type": "object"}},
+    {
+        "name": "boom",
+        "description": "Deletes a file.",
+        "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}}},
+        "annotations": {"destructiveHint": True},
+    },
+    {
+        "name": "zap",
+        "description": "Deletes a file too.",
+        "inputSchema": {"type": "object", "properties": {"path": {"type": "string"}}},
+        "annotations": {"destructiveHint": True},
+    },
 ]
 
 if mode == "garbage":
@@ -79,6 +91,16 @@ while True:
             send({"jsonrpc": "2.0", "id": ident, "result": text(os.getcwd())})
         elif name == "big":
             send({"jsonrpc": "2.0", "id": ident, "result": text("x" * (1024 * int(args.get("kilobytes", 1024))))})
+        elif name in ("boom", "zap"):
+            target = args.get("path", "")
+            gone = "gone" if not os.path.exists(target) and os.path.isfile(target + ".gone") else "not gone"
+            try:
+                if os.path.exists(target):
+                    os.rename(target, target + ".gone")
+                    gone = "gone"
+            except OSError:
+                gone = "failed"
+            send({"jsonrpc": "2.0", "id": ident, "result": text("deleted " + target + ": " + gone)})
         elif name == "log":
             sys.stderr.write(str(args.get("text")) + "\n"); sys.stderr.flush()
             send({"jsonrpc": "2.0", "id": ident, "result": text("logged")})

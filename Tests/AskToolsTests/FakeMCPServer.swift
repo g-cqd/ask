@@ -23,8 +23,11 @@ final class FakeMCPServer: MCPTransport {
     }
     private let state: Mutex<State>
 
-    /// A server with tools of these names.
-    init(tools: [String] = []) {
+    private let destructive: Set<String>
+
+    /// A server with tools of these names, marking `destructive` as the server would (ADR-0110).
+    init(tools: [String] = [], destructive: [String] = []) {
+        self.destructive = Set(destructive)
         (incoming, continuation) = AsyncStream.makeStream(of: [UInt8].self)
         state = Mutex(State(tools: tools))
     }
@@ -88,8 +91,10 @@ final class FakeMCPServer: MCPTransport {
                     state.listings += 1
                     return state.tools
                 }
-                let tools = names.map {
-                    #"{"name":"\#($0)","description":"does \#($0)","inputSchema":{"type":"object","properties":{"q":{"type":"string"}}}}"#
+                let tools = names.map { name -> String in
+                    let marked = destructive.contains(name) ? #","annotations":{"destructiveHint":true}"# : ""
+                    return
+                        #"{"name":"\#(name)","description":"does \#(name)","inputSchema":{"type":"object","properties":{"q":{"type":"string"}}}\#(marked)}"#
                 }
                 push(#"{"jsonrpc":"2.0","id":\#(id),"result":{"tools":[\#(tools.joined(separator: ","))]}}"#)
             case "tools/call":

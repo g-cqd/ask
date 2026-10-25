@@ -51,6 +51,9 @@ enum MCPSearch {
     /// what a call needs. A schema longer than `schemaBytes` is cut, and the cut is said.
     static func describe(_ matches: [Candidate], schemaBytes: Int) -> String {
         matches.map { match in
+            let mark =
+                match.tool.annotations.destructive == true
+                ? " [the server marks this destructive: ask may ask before it runs]" : ""
             let schema = match.tool.inputSchema.bytes
             let shown = String(decoding: schema.prefix(schemaBytes), as: UTF8.self)
             let cut = schema.count > schemaBytes ? " (schema cut at \(schemaBytes) of \(schema.count) bytes)" : ""
@@ -58,7 +61,7 @@ enum MCPSearch {
             if description.count > descriptionCharacters {
                 description = String(description.prefix(descriptionCharacters)) + "…"
             }
-            return "\(match.server) / \(match.tool.name)\n  \(description)\n  arguments\(cut): \(shown)"
+            return "\(match.server) / \(match.tool.name)\(mark)\n  \(description)\n  arguments\(cut): \(shown)"
         }
         .joined(separator: "\n\n")
     }
