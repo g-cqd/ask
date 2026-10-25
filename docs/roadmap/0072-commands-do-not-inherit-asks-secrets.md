@@ -41,7 +41,7 @@ The launch path uses a filtered custom environment for ordinary and sandboxed jo
 header/environment references. `environment.pass` / `environment.withhold` configure exact exceptions and additional withholding; projects cannot pass credentials through.
 The fake-provider probe is green. See diary 2026-10-25-20 for mutations and validation.
 
-## Parent-environment read: closed (ADR-0112)
+## Parent-environment read: closed (ADR-0113)
 
 A sandboxed command recovered the key from ask's own process with `sysctl(KERN_PROCARGS2)`. Seatbelt cannot deny that call and `unsetenv` does not remove the
 secret; ask now takes a launch snapshot and overwrites the values of the variables it withholds, in its own environment, once it has read them.

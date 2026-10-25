@@ -13,7 +13,7 @@ enum Reexec {
         var pointers: [UnsafeMutablePointer<CChar>?] = arguments.map { strdup($0) }
         pointers.append(nil)
         defer { for pointer in pointers { free(pointer) } }
-        // The launch environment, not the process's own: its credentials may have been blanked since (ADR-0112).
+        // The launch environment, not the process's own: its credentials may have been blanked since (ADR-0113).
         var environment: [UnsafeMutablePointer<CChar>?] = LaunchEnvironment.values.map {
             strdup("\($0.key)=\($0.value)")
         }
