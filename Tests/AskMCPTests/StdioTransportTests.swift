@@ -76,6 +76,7 @@ struct StdioTransportTests {
         #expect(text(try await connection.callTool("log", arguments: args)) == "logged")
         await connection.close()
         #expect(transport.standardErrorTail.contains("a diagnostic"))
+        #expect(transport.diagnostic == "a diagnostic", "the last line a server wrote is what it has to say")
     }
 
     @Test func `a line that is not a message is reported, and the conversation goes on`() async throws {
@@ -133,6 +134,7 @@ struct StdioTransportTests {
                 inheriting: [:]))
         await #expect(throws: MCPError.disconnected) { _ = try await connection.start() }
         #expect(transport.failure?.isEmpty == false)
+        #expect(transport.diagnostic == transport.failure, "a program that cannot start says why")
     }
 
     @Test func `a server that ignores end of input and the polite signal is made to leave, after the grace`()

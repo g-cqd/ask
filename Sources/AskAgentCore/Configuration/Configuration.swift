@@ -46,6 +46,7 @@ public struct Configuration: Sendable, Equatable {
     public var sandbox: Setting<SandboxSection>
     public var ui: Setting<UISection>
     public var skills: Setting<SkillsSection>
+    public var mcp: Setting<MCPSection>
 
     /// Built-in defaults only.
     public static let defaults = Configuration(
@@ -55,7 +56,7 @@ public struct Configuration: Sendable, Equatable {
         compactAt: Setting(value: AgentSettings.defaultCompactAtTokens, source: .defaults),
         sandbox: Setting(value: SandboxSection(), source: .defaults),
         ui: Setting(value: UISection(), source: .defaults),
-        skills: Setting(value: SkillsSection(), source: .defaults)
+        skills: Setting(value: SkillsSection(), source: .defaults), mcp: Setting(value: MCPSection(), source: .defaults)
     )
 
     /// `self` with every key `file` sets replaced, attributed to `source`.
@@ -73,6 +74,7 @@ public struct Configuration: Sendable, Equatable {
         if let section = file.skills {
             next.skills = Setting(value: next.skills.value.layered(with: section), source: source)
         }
+        if let section = file.mcp { next.mcp = Setting(value: next.mcp.value.layered(with: section), source: source) }
         return next
     }
 
@@ -148,6 +150,7 @@ public struct Configuration: Sendable, Equatable {
             // @dl:accept -- a heterogeneous per-key layer table with distinct origins; erasing value types to build a runtime table would lose its checks
             next.sandbox = Setting(value: section, source: .flag("network/write/read"))
         }
+        // @dl:accept -- one flag, one layer entry, with its own origin; the same table as above
         if let model { next.model = Setting(value: model, source: .flag("model")) }
         if let provider { next.provider = Setting(value: provider, source: .flag("provider")) }
         if let thinking { next.thinking = Setting(value: thinking, source: .flag("thinking")) }
@@ -174,6 +177,7 @@ extension Configuration {
         compare("sandbox", previous.sandbox, sandbox)
         compare("ui", previous.ui, ui)
         compare("skills", previous.skills, skills)
+        compare("mcp", previous.mcp, mcp)
         return lines
     }
 

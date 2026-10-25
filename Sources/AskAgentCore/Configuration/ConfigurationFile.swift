@@ -16,16 +16,19 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var sandbox: SandboxSection?
     public var ui: UISection?
     public var skills: SkillsSection?
+    public var mcp: MCPSection?
 
     /// The keys ask knows, in the order `ask config` shows them.
-    public static let keys = ["model", "provider", "thinking", "maxTurns", "compactAt", "sandbox", "ui", "skills"]
+    public static let keys = [
+        "model", "provider", "thinking", "maxTurns", "compactAt", "sandbox", "ui", "skills", "mcp"
+    ]
 
     /// A file with these values.
     public init(
         model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil,
         // @dl:accept -- an initializer that takes every key; adding a section adds a parameter
         sandbox: SandboxSection? = nil, ui: UISection? = nil, thinking: ThinkingLevel? = nil,
-        skills: SkillsSection? = nil
+        skills: SkillsSection? = nil, mcp: MCPSection? = nil  // @dl:accept -- an initializer that takes every key
     ) {
         self.model = model
         self.provider = provider
@@ -35,6 +38,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         self.sandbox = sandbox
         self.ui = ui
         self.skills = skills
+        self.mcp = mcp
     }
 
     /// Whether the file sets the key `name`.
@@ -48,6 +52,7 @@ public struct ConfigurationFile: Sendable, Equatable {
             case "sandbox": sandbox != nil
             case "ui": ui != nil
             case "skills": skills != nil
+            case "mcp": mcp != nil
             default: false
         }
     }
@@ -85,6 +90,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         }
         try validateSandbox(file.sandbox, path: path, isProject: isProject)
         try validateSkills(file.skills, path: path, isProject: isProject)
+        try validateMCP(file.mcp, path: path, isProject: isProject)
         for (key, count) in [
             ("ui.scrollLines", file.ui?.scrollLines), ("ui.promptRows", file.ui?.promptRows),
             ("ui.codeFoldLines", file.ui?.codeFoldLines)
@@ -98,34 +104,6 @@ public struct ConfigurationFile: Sendable, Equatable {
             throw .outOfRange(path: path, key: "compactAt", reason: "must be 0 (only when the window is full) or more")
         }
         return file
-    }
-
-    /// The sandbox section's paths must be absolute or start with `~/`, and a project's file may not widen it.
-    private static func validateSandbox(
-        _ section: SandboxSection?, path: String, isProject: Bool
-    ) throws(ConfigurationError) {
-        guard let section else { return }
-        func paths(_ settings: [PathSetting]) -> [String] {
-            settings.flatMap { setting -> [String] in
-                if case .paths(let paths) = setting { return paths }
-                return []
-            }
-        }
-        for (key, entries) in [
-            ("sandbox.allowRead", section.allowRead), ("sandbox.denyRead", section.denyRead),
-            ("sandbox.write", paths(section.write)), ("sandbox.read", paths(section.read))
-        ] {
-            for entry in entries where !(entry.hasPrefix("/") || entry == "~" || entry.hasPrefix("~/")) {
-                throw .outOfRange(
-                    path: path, key: key, reason: "has \"\(entry)\": use an absolute path, or one starting with ~/")
-            }
-        }
-        if isProject, !section.allowRead.isEmpty {
-            throw .outOfRange(
-                path: path, key: "sandbox.allowRead",
-                reason:
-                    "can only be set in your own config file: a project that could widen the sandbox would defeat it")
-        }
     }
 
     /// An error in words: a parser's `unexpectedCharacter(93, at: 28)` as "unexpected ']'".
@@ -242,6 +220,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
                     case "ui": file.ui = try container.decode(UIDecoded.self, forKey: key).section
                     case "skills": file.skills = try container.decode(SkillsDecoded.self, forKey: key).section
+                    case "mcp": file.mcp = try container.decode(MCPDecoded.self, forKey: key).section
                     default: throw UnknownKey(key: key.stringValue)
                 }
             }
