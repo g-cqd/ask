@@ -57,10 +57,16 @@ the end ([ADR-0072](docs/adr/0072-the-view-holds-while-text-arrives-below-and-th
 
 While the agent is working, Enter queues **steering** after its current
 response and tools. `/follow-up TEXT` queues a message for when it finishes;
-Alt+Enter is a shortcut on terminals that report it. Esc aborts and returns
-unsent messages to the editor alongside your draft. A message is accepted only
+Alt+Enter is a shortcut on terminals that report it. Ctrl+C with an empty
+input stops the turn and returns unsent messages to the editor. A message is accepted only
 once it is recorded in the session
 ([ADR-0040](docs/adr/0040-queued-input-is-acknowledged-only-after-it-is-persisted.md)).
+
+**Keys** ([ADR-0104](docs/adr/0104-escape-only-goes-back-and-control-c-is-a-ladder-that-never-quits-on-the-first-press.md)):
+Esc only goes back: it clears a selection and closes a list, and never stops a turn, quits, or clears what you typed. Ctrl+C is one step a press: it copies a
+selection; otherwise erases the draft; otherwise, with a turn running, stops it; otherwise the status line says `press Ctrl+C again to quit`, and a second
+press within two seconds quits (any other key cancels it). So with text typed during a turn, press Ctrl+C twice to erase it and stop. Ctrl+D on an empty,
+idle input still quits, and `/quit` always does.
 
 A prompt can be several lines: paste keeps its line breaks, Shift-Enter or
 Ctrl-J starts a new line, and Up/Down, Home/End, Ctrl-A/E/U/K edit the current
@@ -72,9 +78,8 @@ binary starts, then replaces itself with it, keeping the session
 
 While the agent is working, Enter queues **steering** after its current
 response and tools. `/follow-up TEXT` queues a message for when it finishes;
-Alt+Enter is a shortcut on terminals that report it. Esc clears a selection
-first; otherwise it aborts and returns unsent messages to the editor alongside
-your draft. A message is accepted only once it is recorded in the session
+Alt+Enter is a shortcut on terminals that report it. Ctrl+C with an empty
+input stops the turn and returns unsent messages to the editor. A message is accepted only once it is recorded in the session
 ([ADR-0040](docs/adr/0040-queued-input-is-acknowledged-only-after-it-is-persisted.md)).
 
 A prompt can be several lines: paste keeps its line breaks, Shift-Enter or
@@ -94,11 +99,11 @@ A click in the input puts the cursor there; a drag there selects text, a double 
 
 Skills (a directory with a `SKILL.md`, from any harness's skills directory) are listed to the model, which loads one with the `skill` tool when a task matches;
 `ask skills` shows what was found and `skills` in `config.json` sets `enabled`, `maxAdvertised` (default 32) and `sources`. A skill grants nothing, and a
-project's skills are not loaded yet. `/skill:name request` asks for one yourself, and the `/` picker lists them.
+project's skills load only after `ask trust --skills`, in a terminal, has trusted each file as it is. `/skill:name request` asks for one yourself, and the `/` picker lists them.
 
 MCP servers (a program ask starts, or a URL) are named under `mcp` in your own `config.json` and their tools are offered to the model as
 `mcp__<server>__<tool>`; `/mcp` shows which are connected. A server runs outside ask's sandbox, so naming one is the consent: a project's
-file cannot, and a server with more than 16 tools is searched (`mcp_search`, `mcp_call`) instead of listed unless `tools` names the ones you want. See ADR-0099 and ADR-0100.
+file can name one only once you have trusted it (`ask trust` lists what would start), and a server with more than 16 tools is searched (`mcp_search`, `mcp_call`) instead of listed unless `tools` names the ones you want. See ADR-0099, ADR-0100 and ADR-0103.
 
 Background jobs are counted in the status line (`· 2 jobs`). Click the count, or type `/tasks`, to list what is running. A job does not outlive ask, even when ask is killed with SIGKILL: a small watchdog process stops it
 ([ADR-0079](docs/adr/0079-a-watchdog-outside-ask-stops-the-jobs-when-ask-is-killed.md)).
@@ -137,10 +142,15 @@ round. It costs about 8 ms per command
 
 Settings live in `config.json` — JSON or JSON5 (comments, unquoted keys,
 trailing commas) — in `~/.config/ask/` and in a project's `.ask/`. The keys
-are `model`, `provider`, `thinking`, `maxTurns`, `compactAt` and `ui`. Layers apply
+include `model`, `provider`, `thinking`, `maxTurns`, `compactAt`, `ui` and `environment`. Layers apply
 lowest first: built-in defaults, the user file, the project file, `ASK_*`
 environment variables, flags. `ask config` shows each value and where it came
 from.
+
+Commands inherit your environment except ask's known credential variables, `ANTHROPIC_*`, `ASK_*`, and variables referenced by provider keys or MCP headers/environment.
+In your user file, `environment: { pass: ['OPENAI_API_KEY'], withhold: ['MY_SERVICE_TOKEN', 'AWS_*'] }` explicitly passes a withheld key or withholds additional names.
+Withholding wins; projects may only add withholding. `/config` shows policy, never values. Unknown secrets remain inherited unless you withhold them.
+This removes direct inheritance, not every route to a credential: parent-environment inspection remains a known macOS sandbox exposure (roadmap 0072).
 
 `thinking` (`--thinking`, `ASK_THINKING`) asks for `off`, `minimal`, `low`,
 `medium`, `high`, `xhigh` or `max`. ask sends only what the model's own list

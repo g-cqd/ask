@@ -52,8 +52,7 @@ struct SkillDiscoveryTests {
         try scratch.write("work/repo/sub/.git/HEAD", "")
         try scratch.skill("x", in: "work/.agents/skills", description: "outer")
         try scratch.skill("x", in: "work/repo/sub/.agents/skills", description: "inner")
-        let catalog = SkillDiscovery.discover(
-            workingDirectory: scratch.project + "/sub", home: scratch.home, sources: SkillSource.fixture)
+        let catalog = scratch.discover(from: scratch.project + "/sub")
         #expect(catalog.skills.map(\.description) == ["inner"])
     }
 

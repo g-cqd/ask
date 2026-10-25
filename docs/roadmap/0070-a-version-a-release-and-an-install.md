@@ -7,7 +7,7 @@ date: 2026-10-25
 # 0070 — A version, a release and an install
 
 The README says "No binary releases yet — build from source", and nothing in the project has a version: `ask --version` is an unknown option (probed today),
-`Package.swift` carries no version, and the Antigravity identity string had to say `ask/0` because there was nothing to put there (ADR-0101). Building needs
+`Package.swift` carries no version, and the Antigravity identity string had to say `ask/0` because there was nothing to put there (ADR-0105). Building needs
 Swift 6.4, macOS 26 and a clone. Anyone but the author starts at the wrong end.
 
 ## The work

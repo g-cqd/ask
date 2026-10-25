@@ -46,6 +46,8 @@ public struct ScreenState: Sendable, Equatable {
     var promptScroll: Int?
     /// Feedback from the last copy request. It reports routing or failure, never an unconfirmed clipboard acknowledgement.
     var clipboardNotice = ""
+    /// When Ctrl+C was pressed on an empty, idle input: the status line asks for a second press, which quits while the window lasts.
+    var quitArmedAt: ContinuousClock.Instant?
     /// Names the native-selection bypass while mouse reporting is enabled (ADR-0046).
     var nativeSelectionHint = ""
 

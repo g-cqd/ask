@@ -158,6 +158,7 @@ struct ConfigurationSource: Sendable {
                     ? ["The sandbox is off (--no-sandbox): ask's own files and your secret stores are not protected."]
                     : []),
             workspace: workspace, thinking: thinking.control, thinkingStatus: thinking.status,
-            thinkingPending: thinking.pending)
+            thinkingPending: thinking.pending,
+            commandEnvironment: CommandEnvironment(providers: providers, configuration: result.configuration))
     }
 }

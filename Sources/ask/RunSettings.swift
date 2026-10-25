@@ -21,6 +21,8 @@ struct RunSettings: Equatable {
     var thinkingStatus = "provider defaults; no control sent"
     /// The control is looked up before the first request, because no descriptor was cached at load.
     var thinkingPending = false
+    /// What commands the model runs may inherit of ask's own environment (ADR-0106).
+    var commandEnvironment = CommandEnvironment.inherit
 
     var limits: RunLimits {
         RunLimits(
@@ -32,7 +34,7 @@ struct RunSettings: Equatable {
     func differs(from other: RunSettings) -> Bool {
         configuration != other.configuration || model != other.model || sandbox != other.sandbox
             || thinking != other.thinking || thinkingStatus != other.thinkingStatus
-            || thinkingPending != other.thinkingPending
+            || thinkingPending != other.thinkingPending || commandEnvironment != other.commandEnvironment
     }
 
     /// What the screen is told when these settings replace `previous`: nothing when nothing changed; a heading
@@ -76,9 +78,19 @@ struct RunSettings: Equatable {
         if !c.ui.value.isEmpty { lines.append(row("ui", c.ui.value.description, c.ui.source)) }
         if !c.skills.value.isEmpty { lines.append(row("skills", c.skills.value.description, c.skills.source)) }
         if !c.mcp.value.isEmpty { lines.append(row("mcp", c.mcp.value.description, c.mcp.source)) }
+        lines.append(row("environment", commandEnvironmentSummary, c.environment.source))
         lines.append("user file     \(userFile)  \(standing(userFile))")
         lines.append("project file  \(projectFile)  \(standing(projectFile))")
         return lines + notices.map { "note: \($0)" }
+    }
+
+    /// What a command is not given of ask's environment, in words and never a value: ask's credential variables and prefixes, then what is configured.
+    var commandEnvironmentSummary: String {
+        let policy = commandEnvironment
+        let prefixes = policy.withheldPrefixes.map { $0 + "*" }.joined(separator: ", ")
+        let configured = configuration.environment.value
+        return "commands are not given \(policy.withheld.count) named variables and \(prefixes)"
+            + (configured.isEmpty ? "" : "; configured: \(configured)")
     }
 
     /// Lines for the user at startup: which configuration files apply, what was ignored, and a strict sandbox.

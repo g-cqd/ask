@@ -22,7 +22,18 @@ enum JobProcess {
         }
         return Configuration(
             executable: .path(FilePath(executable)), arguments: Arguments(arguments),
+            environment: .custom(
+                Dictionary(
+                    uniqueKeysWithValues: launch.environment.compactMap { name, value in
+                        // `=` and NUL cannot occur in an environment entry's name.
+                        isEntryName(name) ? Environment.Key(rawValue: name).map { ($0, value) } : nil
+                    })),
             workingDirectory: FilePath(launch.workingDirectory), platformOptions: groupOptions(graceSeconds: 2))
+    }
+
+    /// Whether `name` can be the name of an environment entry.
+    private static func isEntryName(_ name: String) -> Bool {
+        !name.utf8.contains(0x3D) && !name.utf8.contains(0)
     }
 
     /// Own session, and a teardown that reaches every process the command started: SIGTERM to the group, `graceSeconds`
