@@ -20,7 +20,7 @@ milliseconds). Roadmap 0067 phases 3 and 4.
    that belong to the other kind are refused, not ignored. `${NAME}` in `env` and `headers` is filled from ask's environment when the
    server starts (an unset one fails that server and names the variable), so a token need not be written in a file. `ask config` shows
    the servers and how they are reached, never what they were given.
-2. **A project's file may not name a server**, trusted or not: `ask trust` parses it as a project's and refuses (probed), so a repository
+2. **A project's file may not name a server**, trusted or not *(superseded by ADR-0103: a trusted one may, and trusting says what would start)*: `ask trust` parses it as a project's and refuses (probed), so a repository
    cannot get a program started by being trusted. Allowing it behind trust is a later decision (roadmap 0067).
 3. **Tools are offered as `mcp__<server>__<tool>`** (ADR-0092 keeps these whole), after the built-in tools, in the order the servers
    and the tools were listed, so the prompt-cache prefix does not move. A name outside what providers accept is sanitised and takes a

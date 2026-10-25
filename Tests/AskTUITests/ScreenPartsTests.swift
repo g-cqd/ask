@@ -99,7 +99,7 @@ struct ScreenPartsTests {
         #expect(Array(rows(buffer).prefix(2)) == ["line 2", "line 3"])
     }
 
-    @Test func `tools show their status, and a running state says how to abort`() {
+    @Test func `tools show their status, and a running state says how to stop`() {
         var state = ScreenState(label: "m")
         state.transcript.startTool(name: "bash", summary: "ls")
         state.running = true
@@ -107,7 +107,7 @@ struct ScreenPartsTests {
         var composer = ScreenComposer()
         _ = composer.compose(state, into: &buffer)
         #expect(rows(buffer)[0] == "bash ls …")
-        #expect(rows(buffer)[1] == "m · working… (esc to abort)")
+        #expect(rows(buffer)[1] == "m · working… (ctrl+c to stop)")
         state.transcript.finishTool(.failed("exit 1"))
         state.running = false
         _ = composer.compose(state, into: &buffer)

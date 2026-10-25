@@ -21,6 +21,7 @@ public struct SkillReport: Sendable {
             for note in skill.diagnostics { lines.append("      note: \(note)") }
             if verbose { lines += details(of: skill) }
         }
+        lines += untrustedLines
         if !catalog.shadowed.isEmpty {
             lines.append("name taken by an earlier skill, so not offered with it (name its source to reach it):")
             for skill in catalog.shadowed {

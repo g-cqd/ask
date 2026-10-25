@@ -16,6 +16,8 @@ public struct ScreenController: Sendable {
         case answerApproval(id: Int, ApprovalChoice)
         /// List the project's files for the `@` picker; the answer is ``ConversationUpdate/files(_:)``.
         case indexFiles
+        /// Tell the screen when the quit window closes: Ctrl+C was pressed on an empty, idle input and a second press within this long quits.
+        case armQuitTimer(generation: Int)
         /// List the skills for the `/` picker; the answer is ``ConversationUpdate/skills(_:)``.
         case listSkills
         case quit
@@ -28,6 +30,8 @@ public struct ScreenController: Sendable {
     /// The screen's height as of the last key, which sizes the picker when a file listing arrives between keys.
     var pickerScreenRows = 0
     var nextPromptID = 0
+    /// The number of the quit window last opened, so a timer for an earlier one cannot close a later one.
+    var quitGeneration = 0
     var acceptsInput = false
     var returningInput = false
     let options: ScreenOptions
@@ -48,7 +52,9 @@ public struct ScreenController: Sendable {
         SlashCommand(
             // @dl:accept -- the built-in commands read like the conversation's: a name and a sentence each, as data
             name: "help",
-            summary: "List commands; Ctrl+T thinking, Ctrl+O tools, Ctrl+G code. Enter steers; Alt+Enter queues."),
+            summary:
+                "List commands. Ctrl+C: erase, stop, quit (twice). Ctrl+T/O/G fold. Enter steers."
+        ),
         SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first."),
         SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT."),
         SlashCommand(name: "tasks", summary: "Show or hide the background jobs that are running.")
@@ -85,6 +91,9 @@ public struct ScreenController: Sendable {
     ) -> [Effect] {
         switch event {
             case .key(let key):
+                // Any key but the second Ctrl+C ends the quit window (roadmap 0064): what was armed is read here, then cleared.
+                let armedAt = state.quitArmedAt
+                state.quitArmedAt = nil
                 if key.keyCode == Key.pageUp.rawValue {
                     state.scrollback += Swift.max(1, pageRows)
                     return []
@@ -103,7 +112,7 @@ public struct ScreenController: Sendable {
                 if let effects = selectionOrToggleKey(key, columns: columns) { return effects }
                 if let effects = pickerKey(key, screenRows: pageRows + 3) { return effects }
                 clearSelection()
-                return edit(key, columns: columns)
+                return edit(key, columns: columns, interrupt: Interrupt(at: now, armedAt: armedAt))
             case .mouse(let mouse):
                 return handle(mouse: mouse, at: now)
             case .paste(let text):
@@ -169,15 +178,16 @@ public struct ScreenController: Sendable {
         return []
     }
 
-    private mutating func edit(_ key: KeyEvent, columns: Int?) -> [Effect] {
+    private mutating func edit(_ key: KeyEvent, columns: Int?, interrupt: Interrupt) -> [Effect] {
         let indent = columns.map { PromptLayout.prefix(columns: $0).count } ?? 0
         switch state.editor.apply(key, columns: columns, firstRowIndent: indent) {
             case .submitted(let line):
                 return submit(line, followUp: key.modifiers.contains(.alt))
             case .escape:
-                return state.running ? abort() : []
+                // Esc is navigation only (roadmap 0064): the selection and the picker took it before this point; it never stops a turn.
+                return []
             case .interrupt:
-                return state.running ? abort() : [.quit]
+                return interrupted(interrupt)
             case .endOfInput:
                 return state.running ? [] : [.quit]
             case .edited, .ignored:
@@ -215,7 +225,7 @@ public struct ScreenController: Sendable {
     /// Says so, and returns true, when a turn is still running.
     private mutating func busy() -> Bool {
         guard state.running else { return false }
-        state.transcript.addNotice("A turn is still running; press Esc to abort it first.", isError: false)
+        state.transcript.addNotice("A turn is still running; press Ctrl+C to stop it first.", isError: false)
         return true
     }
 
@@ -229,7 +239,7 @@ public struct ScreenController: Sendable {
 
     mutating func abort() -> [Effect] {
         returningInput = true
-        state.transcript.addNotice("Aborting…", isError: false)
+        state.transcript.addNotice("Stopping…", isError: false)
         return [.cancelRun]
     }
 }
