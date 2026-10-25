@@ -147,6 +147,7 @@ public struct ScreenController: Sendable {
             case .status(let text): state.detail = text
             case .runners(let list): setRunners(list)
             case .files(let list): return receive(files: list)
+            case .fillDraft(let text): fill(draft: text)
             case .promptAccepted(let id, let text):
                 pending.removeAll { $0.id == id }
                 state.transcript.addUser(text)

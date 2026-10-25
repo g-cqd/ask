@@ -15,6 +15,7 @@ extension AgentConversation {
             SlashCommand(
                 name: "model", summary: "Show the model, or choose one for this run: /model [PROVIDER] MODEL, --reset."),
             SlashCommand(name: "resume", summary: "List sessions, or switch with /resume NAME, PREFIX or PATH."),
+            SlashCommand(name: "tree", summary: "List this session's prompts, or go back to before one: /tree N."),
             SlashCommand(
                 name: "reload", summary: "Switch to a newly built ask, keeping this session. /reload now stops jobs.")
         ]
@@ -29,6 +30,7 @@ extension AgentConversation {
                 case "compact": await self.compact(update: update)
                 case "new": await self.newSession(arguments: arguments, update: update)
                 case "resume": await self.resumeSession(arguments: arguments, update: update)
+                case "tree": self.tree(arguments: arguments, update: update)
                 case "model": await self.model(arguments: arguments, update: update)
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))
