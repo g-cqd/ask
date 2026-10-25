@@ -6,7 +6,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Aemi-Studio/aemi.git",
       "state" : {
-        "revision" : "afc1be3d578045b381e76f6b1712a81b39956ced"
+        "revision" : "4f270e05473accace718446ee31c7b03d60a61ae"
       }
     },
     {
@@ -14,7 +14,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiJSON.git",
       "state" : {
-        "revision" : "6bca1d8fade0236506726869fb626c4882fc2aea"
+        "revision" : "08a6ff8e67348f1d60a13cc3cc7cfcccf28c17e9"
       }
     },
     {
@@ -112,7 +112,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/TerminalKit.git",
       "state" : {
-        "revision" : "c0be41773be89fbaa0206826bafbca5d07c6f016"
+        "revision" : "18f82e38ba1f0fe1ae58955051032d0fca8b7822"
       }
     },
     {
