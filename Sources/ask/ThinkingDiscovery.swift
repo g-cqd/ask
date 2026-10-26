@@ -77,7 +77,7 @@ enum ThinkingDiscovery {
                         try ProviderModelDiscovery.catalog(for: model, environment: environment)?
                             .cachedModel(model.model, now: now), []
                     )
-                case .openAICompatible, .agy: return (nil, [])
+                case .openAICompatible, .agy, .apple: return (nil, [])
             }
         } catch { return (nil, ["Thinking catalog not used: \(error)"]) }
     }

@@ -24,6 +24,7 @@ extension ThinkingControl {
                 return level == .off ? .disabled : .effort(level)
             case .openAICompatible: throw .unsupportedProtocol("OpenAI chat completions")
             case .agy: throw .unsupportedProtocol("Antigravity")
+            case .apple: throw .unsupportedProtocol("the on-device model")
         }
     }
 

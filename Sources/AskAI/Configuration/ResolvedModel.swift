@@ -10,6 +10,8 @@ public struct ResolvedModel: Sendable, Equatable {
         case codex
         /// The Antigravity subscription's Cloud Code backend, with ask's own Antigravity sign-in.
         case agy
+        /// Apple's on-device model, run in this process: no account, no key.
+        case apple
         /// A server speaking OpenAI chat completions, at `baseURL`.
         case openAICompatible(name: String, baseURL: URL, apiKey: String?, headers: [String: String])
         /// A server speaking the Responses API, at `baseURL`.

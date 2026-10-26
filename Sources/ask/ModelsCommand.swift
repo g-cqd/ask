@@ -1,5 +1,6 @@
 internal import ArgumentParser
 internal import AskAI
+internal import AskApple
 internal import Foundation
 
 /// `ask models NAME`: read a connection's or provider's model list afresh, and keep it for the runs that follow.
@@ -8,7 +9,7 @@ struct ModelsCommand: AsyncParsableCommand {
         commandName: "models",
         abstract: "List the models a connection or provider offers, with the limits it states.")
 
-    @Argument(help: "codex, agy, anthropic (or claude), a named connection, or an OpenAI-compatible provider.")
+    @Argument(help: "codex, agy, apple, anthropic (or claude), a named connection, or an OpenAI-compatible provider.")
     var connection = ProviderSettings.codex
 
     func run() async throws {
@@ -24,6 +25,8 @@ struct ModelsCommand: AsyncParsableCommand {
                 try await show(codex: nil, now: now)
             } else if connection == ProviderSettings.agy {
                 try await showAgy(now: now)
+            } else if connection == ProviderSettings.apple {
+                showApple()
             } else if [ProviderSettings.anthropic, "claude"].contains(connection) {
                 try await show(anthropic: nil, environment: environment, now: now)
             } else {
@@ -34,12 +37,19 @@ struct ModelsCommand: AsyncParsableCommand {
 
     /// The registered connection called `name`, nil when none is: the name is then a provider's.
     private func registered(_ name: String, environment: [String: String]) throws -> ConnectionRecord? {
-        guard name != ProviderSettings.codex, name != ProviderSettings.agy,
+        guard name != ProviderSettings.codex, name != ProviderSettings.agy, name != ProviderSettings.apple,
             let canonical = ConnectionRecord.canonical(name)
         else { return nil }
         let listing = try NamedConnections.registry(environment: environment).list()
         NamedConnections.report(listing.notices)
         return listing.records.first { $0.name == canonical }
+    }
+
+    /// Apple's one on-device model, with the window the system reports and why it cannot answer when it cannot.
+    private func showApple() {
+        ModelTable.print(CatalogSnapshot(models: [AppleModel.catalogEntry]), defaultFirst: true)
+        if let variant = AppleModel.variantName { print("Variant on this Mac: \(variant).") }
+        if case .unavailable(let reason) = AppleModel.availability() { print("Unavailable now: \(reason).") }
     }
 
     private func show(codex record: ConnectionRecord?, now: Double) async throws {

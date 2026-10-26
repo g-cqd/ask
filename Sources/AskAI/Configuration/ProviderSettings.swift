@@ -26,6 +26,10 @@ public struct ProviderSettings: Sendable, Equatable {
     public static let codex = "codex"
     /// The name of the built-in Antigravity provider.
     public static let agy = "agy"
+    /// Apple's on-device model, also built in: no sign-in, nothing to pay.
+    public static let apple = "apple"
+    /// The on-device model's id: the only one.
+    public static let appleModel = "on-device"
     /// The protocols a configured provider may name besides Anthropic's, which is built in.
     public static let openAICompletions = "openai-completions"
     public static let openAIResponses = "openai-responses"
@@ -136,7 +140,7 @@ public struct ProviderSettings: Sendable, Equatable {
         guard name.lowercased() == connection.name, !connection.removed,
             !configuredNames.contains(where: { $0.lowercased() == connection.name }),
             ProviderPreset.named(connection.name) == nil,
-            ![Self.anthropic, Self.codex, Self.agy, "claude"].contains(connection.name)
+            ![Self.anthropic, Self.codex, Self.agy, Self.apple, "claude"].contains(connection.name)
         else { throw .reservedName(name) }
         let choice: ModelChoice?
         do { choice = try aliases.choice(requested: model, catalog: catalog) } catch { throw .alias(error) }
@@ -157,7 +161,7 @@ public struct ProviderSettings: Sendable, Equatable {
     private func builtIn(_ name: String, model: String?, catalog: [CatalogModel]) throws(ProviderSettingsError)
         -> ResolvedModel?
     {
-        for reserved in [Self.anthropic, Self.codex, Self.agy] where entries[reserved] != nil {
+        for reserved in [Self.anthropic, Self.codex, Self.agy, Self.apple] where entries[reserved] != nil {
             throw .reservedName(reserved)
         }
         switch name {
@@ -168,6 +172,7 @@ public struct ProviderSettings: Sendable, Equatable {
             case Self.agy:
                 guard let chosen = model else { throw .noModel(provider: name) }
                 return Self.resolved(.agy, chosen, from: catalog)
+            case Self.apple: return Self.resolved(.apple, model ?? Self.appleModel, from: catalog)
             default: return nil
         }
     }
@@ -208,7 +213,7 @@ public struct ProviderSettings: Sendable, Equatable {
                     .compactMap { $0 }
                 return "\(preset.name) (needs \(needs.joined(separator: " or ")))"
             }
-        return [Self.anthropic, Self.codex, Self.agy] + (entries.keys + presets).sorted()
+        return [Self.anthropic, Self.codex, Self.agy, Self.apple] + (entries.keys + presets).sorted()
     }
 
     /// `$NAME` or `${NAME}` from the environment, `$$…` as a literal `$…`, and anything else as written.
