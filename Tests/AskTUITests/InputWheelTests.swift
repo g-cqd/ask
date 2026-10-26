@@ -104,7 +104,8 @@ struct InputWheelTests {
 
     @Test func `with the mouse off the wheel is not heard`() {
         var rig = PointerRig(
-            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false), lines: Self.two)
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false),
+            lines: Self.two)
         _ = rig.controller.handle(.paste(Self.ten), pageRows: 10)
         rig.draw()
         wheel(&rig, .scrollUp)

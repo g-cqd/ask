@@ -186,7 +186,8 @@ struct RunnerLaneTests {
 
     @Test func `with the mouse off the keys still do everything`() {
         var rig = PointerRig(
-            columns: 60, rows: 16, options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false),
+            columns: 60, rows: 16,
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false),
             lines: ["first"])
         rig.controller.handle(.runners(Self.jobs))
         rig.controller.state.runnersOpen = true

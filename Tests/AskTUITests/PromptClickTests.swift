@@ -9,7 +9,9 @@ internal import Testing
 @Suite("A click in the input places the cursor")
 struct PromptClickTests {
     /// Thirty columns on twelve rows: the input is the last row, and its first five cells are the `ask> ` prefix.
-    private func rig(options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false))
+    private func rig(
+        options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
+    )
         -> PointerRig
     {
         PointerRig(options: options, lines: ["one", "two"])
@@ -109,7 +111,8 @@ struct PromptClickTests {
     }
 
     @Test func `with the mouse off, or a question waiting, a click leaves the cursor`() {
-        var off = rig(options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false))
+        var off = rig(
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false))
         paste("hello", into: &off)
         #expect(place(&off, row: 10, col: 6) == 5)
         var asking = rig()

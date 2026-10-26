@@ -10,7 +10,8 @@ internal import Testing
 struct InputSelectionTests {
     /// Thirty columns on twelve rows. The input is the last row, and its first five cells are the `ask> ` prefix.
     private func rig(
-        _ draft: String, options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false)
+        _ draft: String,
+        options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
     ) -> PointerRig {
         var rig = PointerRig(options: options, lines: ["one", "two"])
         _ = rig.controller.handle(.paste(draft), pageRows: 10)
@@ -123,7 +124,8 @@ struct InputSelectionTests {
 
     @Test func `with copy on select off, control C copies and consumes it, and escape just clears`() {
         var rig = PointerRig(
-            columns: 100, options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false),
+            columns: 100,
+            options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false, padding: false),
             lines: ["one", "two"])
         _ = rig.controller.handle(.paste("hello world"), pageRows: 10)
         rig.draw()
@@ -147,7 +149,9 @@ struct InputSelectionTests {
     }
 
     @Test func `with the mouse off, or a question waiting, a drag selects nothing`() {
-        var off = rig("hello", options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false))
+        var off = rig(
+            "hello",
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false))
         let effects6 = off.drag(from: (10, 6), to: (10, 9))
         #expect(effects6.isEmpty && off.controller.state.inputSelection == nil)
         var asking = rig("hello")

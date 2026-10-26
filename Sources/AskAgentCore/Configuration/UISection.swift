@@ -25,11 +25,14 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var tint: Bool?
     /// `ui.separator`: whether a rule separates the conversation from the input. `true` is `"on"`, `false` is `"off"`.
     public var separator: Bool?
+    /// `ui.padding`: whether each block has a row of padding around it. `true` is `"on"`, `false` is `"off"`.
+    public var padding: Bool?
 
     public init(
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
         scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil,
-        sidebarOpen: Bool? = nil, prompt: String? = nil, tint: Bool? = nil, separator: Bool? = nil
+        sidebarOpen: Bool? = nil, prompt: String? = nil, tint: Bool? = nil, separator: Bool? = nil,
+        padding: Bool? = nil
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -43,20 +46,23 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.prompt = prompt
         self.tint = tint
         self.separator = separator
+        self.padding = padding
     }
 
     public var isEmpty: Bool {
         mouse == nil && copyOnSelect == nil && foldTools == nil && foldThinking == nil && scrollLines == nil
             && promptRows == nil && foldCode == nil && codeFoldLines == nil && sidebarOpen == nil && prompt == nil
-            && tint == nil && separator == nil
+            && tint == nil && separator == nil && padding == nil
         // @dl:accept -- the layering takes each key from the later section; the keys are the data
     }
 
     /// The keys, in the order they are shown.
-    public static let keys = [
-        "mouse", "copyOnSelect", "tools", "thinking", "scrollLines", "promptRows", "code", "codeFoldLines", "sidebar",
-        "prompt", "tint", "separator"
-    ]
+    public static let keys =
+        ["mouse", "copyOnSelect", "tools", "thinking", "scrollLines", "promptRows", "code", "codeFoldLines", "sidebar"]
+        + lookKeys
+
+    /// The keys that set the look of the screen (roadmap 0074).
+    private static let lookKeys = ["prompt", "tint", "separator", "padding"]
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: UISection) -> UISection {
@@ -66,7 +72,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             scrollLines: section.scrollLines ?? scrollLines, promptRows: section.promptRows ?? promptRows,
             foldCode: section.foldCode ?? foldCode, codeFoldLines: section.codeFoldLines ?? codeFoldLines,
             sidebarOpen: section.sidebarOpen ?? sidebarOpen, prompt: section.prompt ?? prompt,
-            tint: section.tint ?? tint, separator: section.separator ?? separator)
+            tint: section.tint ?? tint, separator: section.separator ?? separator,
+            padding: section.padding ?? padding)
     }
 
     public var description: String {
@@ -85,6 +92,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         if let prompt { parts.append(prompt.isEmpty ? "prompt none" : "prompt \"\(prompt)\"") }
         if let tint { parts.append("tint \(tint ? "on" : "off")") }
         if let separator { parts.append("separator \(separator ? "on" : "off")") }
+        if let padding { parts.append("padding \(padding ? "on" : "off")") }
         return parts.isEmpty ? "defaults" : parts.joined(separator: ", ")
     }
 }

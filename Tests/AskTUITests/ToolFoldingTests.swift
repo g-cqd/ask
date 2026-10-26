@@ -58,7 +58,8 @@ struct ToolFoldingTests {
 
     @Test func `with folding off a tool's output is shown from the start`() {
         let rig = PointerRig(
-            options: ScreenOptions(foldTools: false, prompt: "ask> ", tint: false, separator: false), updates: Self.ls)
+            options: ScreenOptions(foldTools: false, prompt: "ask> ", tint: false, separator: false, padding: false),
+            updates: Self.ls)
         #expect(rig.text(row: 6) == "bash ls ✓")
         #expect(rig.text(row: 9) == "  gamma")
     }

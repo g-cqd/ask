@@ -153,7 +153,11 @@ extension ScreenController {
         guard let source = frame.rows.provenance(atRow: row), state.transcript.items.indices.contains(source.block)
         else { return false }
         let block = source.block
-        let before = ScreenComposer.lines(in: state.transcript, at: block, columns: frame.transcriptColumns).count
+        let before =
+            ScreenComposer.lines(
+                in: state.transcript, at: block, columns: frame.transcriptColumns, style: state.blocks
+            )
+            .count
         if source.line == 0, state.transcript.isFoldable(block) {
             state.transcript.toggleFold(block)
         } else if let fence = state.transcript.codeFence(toggledByLine: source.line, at: block) {
@@ -161,7 +165,11 @@ extension ScreenController {
         } else {
             return false
         }
-        let after = ScreenComposer.lines(in: state.transcript, at: block, columns: frame.transcriptColumns).count
+        let after =
+            ScreenComposer.lines(
+                in: state.transcript, at: block, columns: frame.transcriptColumns, style: state.blocks
+            )
+            .count
         // Scrolled back, the lines below the header grew or shrank, so the view moves by as much and the header stays on its row.
         // At the bottom the view follows the end, as it does for streaming.
         if state.scrollback > 0 { state.scrollback = Swift.max(0, state.scrollback + after - before) }

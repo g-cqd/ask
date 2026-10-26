@@ -32,12 +32,8 @@ extension Transcript.Item {
         return "\(body) · \(count) \(count == 1 ? "line" : "lines")"
     }
 
-    /// The one line a thinking block starts with: `thinking · 3 lines` folded, `thinking` open.
-    static func thinkingHeader(body: String, folded: Bool) -> String {
-        guard !body.isEmpty, folded else { return "thinking" }
-        let count = TranscriptContent.hardLines(of: body).count
-        return "thinking · \(count) \(count == 1 ? "line" : "lines")"
-    }
+    /// The one line a thinking block starts with, folded or open: `Thinking...`, which a click folds and opens.
+    static func thinkingHeader(body _: String, folded _: Bool) -> String { "Thinking..." }
 
     /// What follows a tool's summary, and how it is styled.
     static func toolMark(_ status: Transcript.ToolStatus) -> (text: String, isFailure: Bool) {

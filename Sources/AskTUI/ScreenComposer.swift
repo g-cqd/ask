@@ -62,6 +62,8 @@ public struct ScreenComposer: Sendable {
 
     /// Every transcript item's wrapped lines, end to end, rebuilt from the first item whose revision changed.
     var transcriptLines = LayoutCache<Line>()
+    /// The look those lines were laid out for.
+    var blockStyle = BlockStyle.plain
     /// Every item's hard lines, kept beside the wrapped lines so a selection can be read and highlighted.
     var hardLines: [[String]] = []
     /// What each row of the buffer holds since the last frame, and the size it was composed at.
@@ -142,7 +144,7 @@ public struct ScreenComposer: Sendable {
     ) -> (sidebar: Sidebar, map: RowMap<Int>, totalLines: Int) {
         let sidebar = Sidebar(state, columns: columns, rows: transcriptRows)
         let wrapColumns = sidebar.transcriptColumns(of: columns)
-        updateTranscriptLines(state.transcript, columns: wrapColumns)
+        updateTranscriptLines(state.transcript, columns: wrapColumns, style: state.blocks)
         let flat = transcriptLines.lines
         let end = Swift.max(0, flat.count - state.scrollback)
         let start = Swift.max(0, end - transcriptRows)
@@ -163,57 +165,6 @@ public struct ScreenComposer: Sendable {
                 into: &buffer)
         }
         return (sidebar, map, flat.count)
-    }
-
-    // MARK: - Lines
-
-    static func lines(for item: Transcript.Item, folded: Bool = false, block: Int = 0, columns: Int) -> [Line] {
-        func rows(_ text: String, width: Int, col: Int, style: Style) -> [Line] {
-            TextWrap.rows(text, width: width)
-                .map { row in
-                    Line(
-                        text: row.text, style: style,
-                        source: Source(block: block, line: row.line, offset: row.offset, col: col, text: row.text))
-                }
-        }
-        switch item {
-            case .user(let text):
-                return [Line(text: "", style: .default)]
-                    + rows(text, width: columns, col: 0, style: Style(bold: true))
-            case .assistant(let text):
-                return rows(text, width: columns, col: 0, style: .default)
-            case .tool(let name, let summary, let status, let output):
-                let style: Style
-                switch status {
-                    case .running: style = Style(dim: true)
-                    case .succeeded: style = Style(fg: .indexed(2), dim: true)
-                    case .failed: style = Style(fg: .indexed(1))
-                }
-                let header = Transcript.Item.toolHeader(
-                    name: name, summary: summary, status: status, output: output, folded: folded)
-                return rows(header, width: columns, col: 0, style: style)
-                    + (folded ? [] : body(of: output, block: block, columns: columns, style: Style(dim: true)))
-            case .thinking(let text):
-                let kept = Transcript.kept(text)
-                let style = Style(dim: true, italic: true)
-                let header = Transcript.Item.thinkingHeader(body: kept, folded: folded)
-                return rows(header, width: columns, col: 0, style: style)
-                    + (folded ? [] : body(of: kept, block: block, columns: columns, style: style))
-            case .notice(let text, let isError):
-                let style = isError ? Style(fg: .indexed(1)) : Style(dim: true)
-                return rows(text, width: columns, col: 0, style: style)
-        }
-    }
-
-    /// A foldable block's body: hard lines 1 and on, drawn two columns in. What the block holds, not its own header line.
-    private static func body(of text: String, block: Int, columns: Int, style: Style) -> [Line] {
-        guard !text.isEmpty else { return [] }
-        return TextWrap.rows(text, width: columns - 2)
-            .map { row in
-                Line(
-                    text: "  " + row.text, style: style,
-                    source: Source(block: block, line: row.line + 1, offset: row.offset, col: 2, text: row.text))
-            }
     }
 
     /// Writes a whole row, the text then blanks to the edge, unless the row already holds exactly this.

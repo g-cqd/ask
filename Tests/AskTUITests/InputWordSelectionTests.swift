@@ -10,7 +10,8 @@ internal import Testing
 struct InputWordSelectionTests {
     /// Thirty columns on twelve rows. The input is the last row, and its first five cells are the `ask> ` prefix.
     private func rig(
-        _ draft: String, options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false)
+        _ draft: String,
+        options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
     ) -> PointerRig {
         var rig = PointerRig(options: options, lines: ["one", "two"])
         _ = rig.controller.handle(.paste(draft), pageRows: 10)
@@ -98,7 +99,8 @@ struct InputWordSelectionTests {
 
     @Test func `with copy on select off the word is kept without copying, and control C copies it`() {
         var rig = rig(
-            "hello world", options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false))
+            "hello world",
+            options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false, padding: false))
         #expect(double(&rig, col: 6).isEmpty)
         #expect(rig.controller.state.inputSelection == 0 ..< 5)
         let effects = rig.controller.handle(.key(KeyEvent(keyCode: 0x03)), pageRows: 10)
@@ -106,7 +108,9 @@ struct InputWordSelectionTests {
     }
 
     @Test func `with the mouse off, or a question waiting, nothing is taken`() {
-        var off = rig("hello", options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false))
+        var off = rig(
+            "hello",
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false))
         #expect(double(&off, col: 6).isEmpty && off.controller.state.inputSelection == nil)
         var asking = rig("hello")
         asking.controller.handle(.askApproval(id: 1, question: "Run it?"))

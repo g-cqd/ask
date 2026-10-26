@@ -11,7 +11,7 @@ struct ManualSelectionTests {
 
     @Test func `control C copies a selection with copy on select off and consumes it`() {
         var rig = PointerRig(
-            options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false),
+            options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false, padding: false),
             lines: ["alpha beta"])
         #expect(rig.drag(from: (9, 0), to: (9, 4)).isEmpty)
         let effects = rig.controller.handle(.key(controlC), pageRows: 10)
