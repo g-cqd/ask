@@ -17,6 +17,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case detail(String)
     /// The left of the status line, such as the model, when it changes.
     case label(String)
+    /// The label at several lengths, longest first, so a narrow terminal gets a whole shorter label and not half of the long one.
+    case labelVariants([String])
     /// A short status for the status line, such as token usage.
     case status(String)
     /// Close the screen once the run that sent this has ended, so the caller can act on `exit`.

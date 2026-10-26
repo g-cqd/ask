@@ -10,6 +10,8 @@ public struct ScreenState: Sendable, Equatable {
     public var promptRows = ScreenOptions().promptRows
     /// Shown at the left of the status line, such as the model.
     public var label: String
+    /// The same label at shorter lengths, longest first, for a narrow status line; empty when there is only the one.
+    public var labelVariants: [String] = []
     /// Whether a run is in progress: the status line says so and how to abort it.
     public var running = false
     /// Set by a command that wants the screen closed with this reason once its run has ended.

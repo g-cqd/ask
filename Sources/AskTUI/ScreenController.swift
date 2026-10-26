@@ -177,7 +177,13 @@ public struct ScreenController: Sendable {
             case .notice(let text, let isError): state.transcript.addNotice(text, isError: isError)
             case .detail(let text): receive(detail: text)
             case .requestExit(let exit): state.exitRequest = exit
-            case .label(let text): state.label = text
+            case .label(let text):
+                state.label = text
+                state.labelVariants = []
+            case .labelVariants(let forms):
+                guard let first = forms.first else { break }
+                state.label = first
+                state.labelVariants = forms
             case .status(let text): state.detail = text
             case .runners(let list): setRunners(list)
             case .runnerOutput: break

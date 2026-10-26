@@ -36,7 +36,8 @@ translucent terminal"; icons) are not rediscovered as surprises. The ADR that cl
 Started, not finished.
 
 - Done: a row can carry accents (a run of columns in a style of its own over the row's) and the rest of a tinted row is filled in the row's background (`ScreenComposer.Line.accents`, `spans(of:highlight:)`); `--verbose`/`/verbose` and ADR-0119 (what the status and the startup say). `ModelQualifier` gives `provider/model`.
-- Next, in order, each its own commit with its tests: (a) the status line as prioritised segments fitted to the width, compact label and usage, no `ready`, ⚠ accent, failures-only copy notice; (b) the status below the input and the geometry that follows (pointer regions, picker, strip; the tests that name rows); (c) `ui.prompt`, the input tint and the separator row; (d) the block model: padding, spacing, tints, thinking style; (e) the ADR superseding 0015's lines, and the scripts that wait for `ask>` (`measure-*.py`, the probes) moved to something that survives `ui.prompt` being empty.
+- Done (step 1): the status line as prioritised segments fitted to the width, whole/shorter/gone and never cut, compact `provider/model/effort` label, `↑ ↓` usage, no `ready`, ⚠ accent, copy notice only on failure, `--verbose` shield. The probes still wait for `ready` and `ask>`; step 5 moves them.
+- Next, in order, each its own commit with its tests: (a, done) the status line as prioritised segments fitted to the width, compact label and usage, no `ready`, ⚠ accent, failures-only copy notice; (b) the status below the input and the geometry that follows (pointer regions, picker, strip; the tests that name rows); (c) `ui.prompt`, the input tint and the separator row; (d) the block model: padding, spacing, tints, thinking style; (e) the ADR superseding 0015's lines, and the scripts that wait for `ask>` (`measure-*.py`, the probes) moved to something that survives `ui.prompt` being empty.
 
 ## Things to settle before (d)
 
