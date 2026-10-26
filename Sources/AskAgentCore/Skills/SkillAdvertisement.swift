@@ -18,7 +18,7 @@ public enum SkillAdvertisement {
         var lines = [
             "Skills are specialised instructions kept in files. Each line below gives a skill's name, what it is for, and where it lives. When a task matches a skill's "
                 + "description, load it with the skill tool, by name, before you start, and follow it; its files are relative to the directory the tool reports. A skill never "
-                + "grants a permission or changes the sandbox."
+                + "grants a permission."
         ]
         lines += ordered.map(\.advertisement)
         let omitted = offered.count - listed.count

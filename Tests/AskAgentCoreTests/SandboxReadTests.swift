@@ -43,11 +43,6 @@ struct SandboxReadTests {
         #expect(SandboxPolicy().intersecting(restricted()).read == .roots([workspace]))
     }
 
-    @Test func `the summary tells the model where it may read`() throws {
-        let summary = try #require(restricted().summary)
-        #expect(summary.contains("Reads are allowed only under /h/work, temporary directories, and the system's"))
-    }
-
     @Test func `an unrestricted read keeps today's allow-default profile, byte for byte`() {
         #expect(SeatbeltProfile(SandboxPolicy(network: .localhost)).text.hasPrefix("(version 1)\n(allow default)\n"))
     }

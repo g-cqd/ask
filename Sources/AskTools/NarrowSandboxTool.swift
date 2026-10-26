@@ -26,15 +26,15 @@ public struct NarrowSandboxTool: Tool {
 
     public func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
         guard let narrowing = context.narrowing else { return .error("This run does not keep a session sandbox.") }
-        let request: SandboxRequest?
-        do { request = try SandboxRequest.in(input) } catch { return .error("Invalid sandbox: \(error).") }
-        if let request {
+        let narrows: Bool
+        do { narrows = try SandboxRequest.in(input) != nil } catch { return .error("Invalid sandbox: \(error).") }
+        if narrows {
             guard jobs.running.isEmpty else {
                 return .error("Stop running jobs first; an existing process cannot adopt a narrower sandbox.")
             }
             let policy = context.sandbox.intersecting(context.runSandbox)
             narrowing.policy = policy
-            return ToolOutput("From now on every call runs under: \(Self.describe(policy, request))")
+            return ToolOutput("Narrowed for the rest of the session.")
         }
         guard SandboxRequest.resets(input) else { return .error("Give a sandbox to narrow to, or reset: true.") }
         guard narrowing.policy != nil else { return ToolOutput("The session was not narrowed; nothing to reset.") }
@@ -42,22 +42,9 @@ public struct NarrowSandboxTool: Tool {
             tool: definition.name, input: input,
             asked: ["the run's own sandbox back, undoing the session's narrowing"], request: nil)
         guard let approve = context.approve, await approve(question) else {
-            return .error("Only the user can widen the sandbox; the session stays narrowed.")
+            return .error("Not permitted: that request is refused.")
         }
         narrowing.policy = nil
         return ToolOutput("The session's narrowing is undone; calls run under the run's own sandbox.")
-    }
-
-    /// What was narrowed, in words: the dimensions the request named, at their effective values.
-    private static func describe(_ policy: SandboxPolicy, _ request: SandboxRequest) -> String {
-        func scope(_ scope: PathScope) -> String {
-            guard case .roots(let roots) = scope else { return "anywhere" }
-            return roots.isEmpty ? "temporary directories only" : roots.joined(separator: ", ")
-        }
-        var parts: [String] = []
-        if request.network != nil { parts.append("network \(policy.network)") }
-        if request.write != nil { parts.append("writes under \(scope(policy.write))") }
-        if request.read != nil { parts.append("reads under \(scope(policy.read))") }
-        return parts.isEmpty ? "the same sandbox as before." : parts.joined(separator: "; ") + "."
     }
 }

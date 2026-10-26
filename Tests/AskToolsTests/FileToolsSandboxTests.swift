@@ -25,17 +25,15 @@ struct FileToolsSandboxTests {
             .run(world.input(#"{"path":"\#(path)","old_text":"history","new_text":"tampered"}"#), in: world.context)
     }
 
-    @Test func `reading ask's credentials is refused, naming the capability, the path and who can change it`() async {
+    @Test func `reading ask's credentials is refused with the path the model gave and nothing of the policy`() async {
         let output = await read(world.config + "/credentials.json")
-        #expect(output.isError)
-        #expect(output.content.hasPrefix("Sandbox: " + world.config + "/credentials.json is protected"))
-        #expect(output.content.contains("cannot be read") && output.content.hasSuffix("Only the user can change this."))
+        #expect(output == .error("Not permitted: " + world.config + "/credentials.json."))
         #expect(!output.content.contains("sk-ant-secret"))
     }
 
     @Test func `writing or editing ask's configuration is refused, and the file is untouched`() async {
         let target = world.config + "/config.json"
-        #expect((await write(target)).content.contains("cannot be written"))
+        #expect((await write(target)).content.hasPrefix("Not permitted:"))
         #expect(await edit(target).isError)
         #expect(world.text(".config/ask/config.json") == "{maxTurns: 5}")
     }
@@ -45,7 +43,7 @@ struct FileToolsSandboxTests {
             .run(
                 world.input(#"{"path":"\#(world.config)/credentials.json","old_text":"sk-ant","new_text":"x"}"#),
                 in: world.context)
-        #expect(output.isError && output.content.contains("cannot be read"))
+        #expect(output.isError && output.content.hasPrefix("Not permitted:"))
         #expect(!output.content.contains("sk-ant-secret"))
         #expect(world.text(".config/ask/credentials.json") == "sk-ant-secret")
     }
@@ -59,8 +57,8 @@ struct FileToolsSandboxTests {
     @Test func `the state directory can be read but not written or edited`() async {
         let session = world.state + "/sessions/s.jsonl"
         #expect(await read(session) == ToolOutput("history"))
-        #expect((await write(session)).content.contains("cannot be written"))
-        #expect((await edit(session)).content.contains("cannot be written"))
+        #expect((await write(session)).content.hasPrefix("Not permitted:"))
+        #expect((await edit(session)).content.hasPrefix("Not permitted:"))
         #expect(world.text(".local/state/ask/sessions/s.jsonl") == "history")
     }
 
@@ -121,6 +119,6 @@ struct FileToolsSandboxTests {
     @Test func `a path that cannot be resolved is refused`() async throws {
         try FileManager.default.createSymbolicLink(
             atPath: world.workspace + "/loop", withDestinationPath: world.workspace + "/loop")
-        #expect((await read("loop")).content.contains("cannot be resolved"))
+        #expect((await read("loop")).content == "Not permitted: loop.")
     }
 }

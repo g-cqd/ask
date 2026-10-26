@@ -39,7 +39,7 @@ struct NarrowSandboxToolTests {
     @Test func `a session narrowing applies to every later call`() async throws {
         let narrowing = SessionNarrowing()
         let said = try await call("narrow_sandbox", #"{"sandbox":{"network":"none"}}"#, narrowing: narrowing)
-        #expect(!said.isError && said.content.contains("From now on"))
+        #expect(!said.isError && said.content == "Narrowed for the rest of the session.")
         _ = try await call("spy", #"{}"#, narrowing: narrowing)
         #expect(last?.network == SandboxPolicy.Network.none)
     }
@@ -56,7 +56,7 @@ struct NarrowSandboxToolTests {
         let narrowing = SessionNarrowing()
         _ = try await call("narrow_sandbox", #"{"sandbox":{"network":"none"}}"#, narrowing: narrowing)
         let refused = try await call("narrow_sandbox", #"{"sandbox":{"network":"any"}}"#, narrowing: narrowing)
-        #expect(refused.isError && refused.content.contains("Only the user can widen the sandbox"))
+        #expect(refused.isError && refused.content == "Not permitted: that request is refused.")
         _ = try await call("narrow_sandbox", #"{"sandbox":{"network":"any"}}"#, narrowing: narrowing) { _ in true }
         _ = try await call("spy", #"{}"#, narrowing: narrowing)
         #expect(last?.network == .any)
@@ -66,7 +66,7 @@ struct NarrowSandboxToolTests {
         let narrowing = SessionNarrowing()
         _ = try await call("narrow_sandbox", #"{"sandbox":{"network":"none"}}"#, narrowing: narrowing)
         let refused = try await call("narrow_sandbox", #"{"reset":true}"#, narrowing: narrowing)
-        #expect(refused.isError && refused.content.contains("Only the user can"))
+        #expect(refused.isError && refused.content == "Not permitted: that request is refused.")
         _ = try await call("spy", #"{}"#, narrowing: narrowing)
         #expect(last?.network == SandboxPolicy.Network.none, "still narrowed")
         let asked = Mutex<[SandboxApproval]>([])
@@ -102,13 +102,15 @@ struct NarrowSandboxToolTests {
         #expect(last?.network == .localhost)
     }
 
-    @Test func `a session change reports the run ceiling that later calls actually keep`() async throws {
+    @Test func `a session change keeps the run ceiling for later calls, without telling the model what it is`()
+        async throws
+    {
         let narrowing = SessionNarrowing()
         let policy = SandboxPolicy(network: .localhost)
         let output = try await call(
             "narrow_sandbox", #"{"sandbox":{"network":"any"}}"#, narrowing: narrowing, sandbox: policy
         ) { _ in true }
-        #expect(output.content.contains("network localhost"))
+        #expect(output.content == "Narrowed for the rest of the session.", "the ceiling is not told to the model")
         #expect(narrowing.policy?.network == .localhost)
         _ = try await call("spy", #"{}"#, narrowing: narrowing, sandbox: policy)
         #expect(last?.network == .localhost)

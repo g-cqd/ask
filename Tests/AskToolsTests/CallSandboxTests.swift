@@ -45,6 +45,6 @@ final class CallSandboxTests {
         let output = await registry.run(
             name: "write", input: world.input(#"{"path":"c.txt","content":"x","sandbox":{"write":["sub"]}}"#),
             in: world.context)
-        #expect(output.isError && output.content.contains("outside the places this run may write"))
+        #expect(output == .error("Not permitted: c.txt."))
     }
 }

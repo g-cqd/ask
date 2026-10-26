@@ -7,4 +7,8 @@ public struct ToolFailure: Error, Sendable, Equatable {
 
     /// A failure the model is told about with `message`.
     public init(_ message: String) { output = .error(message) }
+
+    /// A refusal that says only what was refused: the path as the model gave it. Which rule refused it, what else is protected and who
+    /// could change it stay with the user (ADR-0115): the model gets the least that lets it stop trying.
+    public static func notPermitted(_ path: String) -> ToolFailure { ToolFailure("Not permitted: \(path).") }
 }

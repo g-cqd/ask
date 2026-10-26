@@ -474,13 +474,14 @@ def probe_sandbox():
 
     process, got = run()
     results = [check("the run finishes", process.returncode == 0 and len(got) == 7, f"{process.returncode} {len(got)} {process.stderr[-200:]}"),
-               check("write to config.json is refused, naming the capability and path",
-                     got.get("t1", "").startswith("Sandbox: ") and "cannot be written" in got.get("t1", "") and "config.json" in got.get("t1", ""), got.get("t1")),
-               check("read of credentials.json is refused", "cannot be read" in got.get("t2", "") and "SECRET" not in got.get("t2", ""), got.get("t2")),
+               check("write to config.json is refused, naming the path the model gave and nothing of the policy (ADR-0115)",
+                     got.get("t1", "").startswith("Not permitted: ") and "config.json" in got.get("t1", "") and "protected" not in got.get("t1", ""), got.get("t1")),
+               check("read of credentials.json is refused the same way", got.get("t2", "").startswith("Not permitted: ") and "SECRET" not in got.get("t2", ""), got.get("t2")),
                check("bash cannot write the trust store", "Operation not permitted" in got.get("t3", ""), got.get("t3")),
                check("nor read the credentials", "Operation not permitted" in got.get("t4", "") and "SECRET" not in got.get("t4", ""), got.get("t4")),
                check("nor another secret store", "Operation not permitted" in got.get("t5", "") and "AWS-SECRET" not in got.get("t5", ""), got.get("t5")),
-               check("a refused command comes with the sandbox note", "ran in a sandbox" in got.get("t4", ""), got.get("t4")),
+               check("a refused command carries the system's error and no note about a sandbox or its policy",
+                     "ran in a sandbox" not in got.get("t4", "") and "Only the user" not in got.get("t4", "") and "protected" not in got.get("t4", ""), got.get("t4")),
                check("renaming the config's parent away and back changes nothing", "Operation not permitted" in got.get("t6", ""), got.get("t6")),
                check("ordinary work still runs", got.get("t7", "").startswith("fine"), got.get("t7")),
                check("config.json is untouched", contents("config.json") == files["config.json"], contents("config.json")),
@@ -578,11 +579,11 @@ def probe_nested_sandbox():
     server.httpd.shutdown()
     return all([
         check("the run finishes", run.returncode == 0 and len(got) == 2, f"{run.returncode} {run.stderr[-300:]}"),
-        check("the system prompt says how to build SwiftPM packages", "swift build --disable-sandbox" in prompt),
+        check("the system prompt says nothing about the sandbox, SwiftPM's flag included (ADR-0115)", "andbox" not in prompt),
         check("a fresh manifest fails because the sandboxes cannot nest",
               "sandbox_apply: Operation not permitted" in got.get("t1", ""), got.get("t1", "")[-400:]),
         check("and the model is told so, not that it touched a protected path",
-              "tried to start its own macOS sandbox" in got.get("t1", "")
+              "tried to start a sandbox of its own" in got.get("t1", "") and "--disable-sandbox" in got.get("t1", "")
               and "which may be why it was refused" not in got.get("t1", ""), got.get("t1", "")[-400:]),
         check("--disable-sandbox builds and runs under ask's sandbox",
               "built-under-ask" in got.get("t2", "") and "[exit 0]" in got.get("t2", ""), got.get("t2", "")[-400:])])
@@ -643,7 +644,7 @@ def probe_strict_sandbox():
               "Sandbox: writes only under" in process.stderr and "network localhost" in process.stderr, process.stderr[:400]),
         check("writing in the workspace works", got.get("inside", "").startswith("in\n"), got.get("inside")),
         check("bash cannot write outside it", "Operation not permitted" in got.get("outside", "") and not os.path.exists(outside), got.get("outside")),
-        check("nor can the write tool, saying why", "outside the places this run may write" in got.get("tool", ""), got.get("tool")),
+        check("nor can the write tool, which says only that it is not permitted", got.get("tool", "").startswith("Not permitted: "), got.get("tool")),
         check("temporary directories stay writable", got.get("scratch", "").startswith("tmp\n"), got.get("scratch")),
         check("localhost is reachable", "HTTP 200 curl=0" in got.get("reach", ""), got.get("reach")),
         check("a Swift package builds and runs, confined to the workspace and localhost",
@@ -763,7 +764,7 @@ def probe_read_allowlist():
             check("it says reads are restricted", "reads only the workspace" in process.stderr, process.stderr[:500]),
             check("the workspace is readable", got.get("inside", "").startswith("workspace-text"), got.get("inside")),
             check("the rest of the home is not, to bash", "Operation not permitted" in got.get("notes", "") and "PRIVATE" not in got.get("notes", ""), got.get("notes")),
-            check("nor to the read tool, saying why", "outside the places this run may read" in got.get("tool", ""), got.get("tool")),
+            check("nor to the read tool, which says only that it is not permitted", got.get("tool", "").startswith("Not permitted: "), got.get("tool")),
             check("git commits, reading a config the global one includes", got.get("git", "").startswith("Included Name"), got.get("git")),
             check("localhost answers", "HTTP 200 curl=0" in got.get("reach", ""), got.get("reach")),
             check("a fresh Swift package builds and runs", "read-build-ok" in got.get("build", "") and "[exit 0]" in got.get("build", ""), got.get("build", "")[-400:])]
@@ -827,12 +828,11 @@ def probe_call_sandbox():
             check("and cannot write beside it", "Operation not permitted" in got.get("beside", "")
                   and not os.path.exists(os.path.join(project, "b.txt")), got.get("beside")),
             check("the read tool narrowed to the workspace cannot read elsewhere",
-                  "outside the places this run may read" in got.get("far", "") and "ELSEWHERE" not in got.get("far", ""), got.get("far")),
+                  got.get("far", "").startswith("Not permitted: ") and "ELSEWHERE" not in got.get("far", ""), got.get("far")),
             check("which the run itself can", got.get("near", "").startswith("ELSEWHERE-NOTES"), got.get("near"))]
         process, got, _ = run([("call", "wider", "bash", {"command": "REACH", "sandbox": {"network": "any"}})], "--network", "localhost")
-        results.append(check("asking for more than --network localhost is refused, saying who can widen it",
-                             "network any (this run allows localhost)" in got.get("wider", "")
-                             and "Only the user can widen the sandbox" in got.get("wider", ""), got.get("wider")))
+        results.append(check("asking for more than --network localhost is refused without telling the model the run's policy",
+                             got.get("wider", "") == "Not permitted: that request is refused." and "localhost" not in got.get("wider", ""), got.get("wider")))
         return all(results)
     finally:
         shutil.rmtree(base, ignore_errors=True)
@@ -857,9 +857,9 @@ def probe_session_narrowing():
     return all([
         check("the run finishes", process.returncode == 0 and len(got) == 5, f"{process.returncode} {process.stderr[-300:]}"),
         check("before narrowing the network is reachable", "HTTP 200 curl=0" in got.get("before", ""), got.get("before")),
-        check("narrow_sandbox says what every later call runs under", "From now on every call runs under: network none" in got.get("narrow", ""), got.get("narrow")),
+        check("narrow_sandbox only says it narrowed", got.get("narrow", "") == "Narrowed for the rest of the session.", got.get("narrow")),
         check("a later call, with no sandbox argument of its own, cannot connect", "curl=7" in got.get("after", ""), got.get("after")),
-        check("undoing it under -p is refused", "Only the user can widen the sandbox" in got.get("reset", ""), got.get("reset")),
+        check("undoing it under -p is refused", got.get("reset", "") == "Not permitted: that request is refused.", got.get("reset")),
         check("and the session stays narrowed", "curl=7" in got.get("still", ""), got.get("still"))])
 
 
