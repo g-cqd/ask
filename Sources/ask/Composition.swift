@@ -164,7 +164,7 @@ private func settings(
         requestedCompactAt: limits.compactAtTokens)
     return AgentSettings(
         model: resolved.model, maximumTokens: budget.maximumTokens,
-        systemPrompt: [SystemInstructions.text(workingDirectory: workingDirectory, sandbox: sandbox)] + blocks,
+        systemPrompt: [SystemInstructions.text(workingDirectory: workingDirectory)] + blocks,
         maximumTurns: limits.maximumTurns, compactAtTokens: budget.compactAtTokens,
         keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes, thinking: thinking)
 }

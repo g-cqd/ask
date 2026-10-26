@@ -81,11 +81,7 @@ public struct ToolRegistry: Sendable {
                             context.with(
                                 request.granted(over: context.sandbox, workingDirectory: context.workingDirectory)))
                     }
-                    return .refused(
-                        .error(
-                            "This call asked for " + asked.joined(separator: " and ")
-                                + ". Only the user can widen the sandbox: run it within what is allowed, or ask the user."
-                        ))
+                    return .refused(.error("Not permitted: that request is refused."))
                 case .invalid(let reason): return .refused(.error("Invalid sandbox for \(name): \(reason)."))
             }
         } catch {

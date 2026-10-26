@@ -42,7 +42,7 @@ struct FileToolsRaceTests {
         } catch { failure = error.output.content }
         #expect(text != "sk-ant-secret", "the file the sandbox protects was read")
         #expect(
-            failure?.hasPrefix("Sandbox:") == true,
+            failure?.hasPrefix("Not permitted:") == true,
             "refused as the sandbox refuses, not as an accident: \(failure ?? "read \(text ?? "")")")
     }
 
@@ -57,7 +57,8 @@ struct FileToolsRaceTests {
             }
         } catch { failure = error.output.content }
         #expect(!exists(world.config + "/pwn.txt"), "a file was created in ask's configuration directory")
-        #expect(failure?.hasPrefix("Sandbox:") == true, "refused as the sandbox refuses: \(failure ?? "no failure")")
+        #expect(
+            failure?.hasPrefix("Not permitted:") == true, "refused as the sandbox refuses: \(failure ?? "no failure")")
     }
 
     @Test func `a write that creates directories cannot be redirected by a swapped ancestor either`() throws {

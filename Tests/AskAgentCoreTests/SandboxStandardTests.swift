@@ -75,17 +75,4 @@ struct SandboxStandardTests {
         #expect(!allowed(policy, .read, "clients/acme/notes.txt") && !allowed(policy, .write, "clients/x"))
         #expect(allowed(policy, .read, "work/file"))
     }
-
-    @Test func `the protected set is what the summary tells the model, and an empty policy has none`() throws {
-        let summary = try #require(standard().summary)
-        #expect(summary.hasPrefix("Sandbox: These paths cannot be read, written or moved: "))
-        #expect(summary.contains(home + "/.config/ask") && summary.contains(home + "/.aws"))
-        #expect(summary.contains("These can be read but not written or moved: " + home + "/.local/state/ask."))
-        #expect(summary.hasSuffix("say so if a task needs it."))
-        #expect(SandboxPolicy.unrestricted.summary == nil)
-        #expect(SandboxPolicy(network: .none).summary?.contains("There is no network access.") == true)
-        #expect(
-            SandboxPolicy(write: .roots(["/w"])).summary?
-                .contains("Writes are allowed only under /w and temporary directories.") == true)
-    }
 }
