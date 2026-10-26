@@ -19,6 +19,12 @@ shows it; "ask is good enough to work with" is such a claim, and the only probe 
 4. **Measure what a session costs**: tokens in and out per task, how often compaction ran, how many requests were refused or retried, wall time of the turns. These are the numbers
    the context and retry designs have never had.
 
+## Progress
+
+Two sessions so far (diary 25: Antigravity `gemini-3-flash` writing a probe; diary 31: Antigravity `claude-sonnet-5-5-medium` reviewing a security change, which found two real regressions that were then verified and fixed).
+Codex and Claude were rate-limited when tried. Three defects with reproductions or questions are logged; none of the five required sessions is a person working for an hour.
+Per-session numbers so far: 785k and 3.0M input tokens (88% and 93% cached), both stopped by the turn limit.
+
 ## Done when
 
 The diary holds at least five sessions, each defect has a reproduction or a question, and the sorted list exists with the ranking the owner agreed.

@@ -474,6 +474,34 @@ def probe_reload_binary():
     return all(results)
 
 
+def probe_reload_env_key():
+    print("H2: /reload checks a new build with the key the provider reads from the environment (ADR-0113)")
+    project, state, config, bin_dir = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(config, "ask"))
+    server = agent.Server([])
+    # The key is in ask's launch environment and nowhere else; ask blanks its own copy once it has read it, so a check that inherits
+    # that copy finds no key and refuses a build that works.
+    json.dump({"providers": {"gw": {"api": "openai-completions", "baseUrl": server.url + "/v1", "apiKey": "$GW_KEY"}}},
+              open(os.path.join(config, "ask", "providers.json"), "w"))
+    os.environ["GW_KEY"] = "stand-in-gw-key"
+    try:
+        binary = install_build(bin_dir)
+        screen = Screen(server.url, project, state, arguments=["--provider", "gw", "--model", "m"], config=config, binary=binary)
+        results = [check("prompt drawn", screen.until("ask>"))]
+        install_build(bin_dir)
+        results.append(check("a new build is announced", screen.until("A new ask binary appeared.")))
+        screen.until_status("ready")
+        screen.type("/reload\r")
+        results.append(check("the reload goes ahead", screen.until("Reloaded ask: built ", 30), screen.screen.text()[-400:]))
+        screen.until_status("ready")
+        screen.type("/quit\r")
+        results.append(check("quits cleanly", screen.finish() == 0))
+    finally:
+        del os.environ["GW_KEY"]
+        server.httpd.shutdown()
+    return all(results)
+
+
 def probe_reload_refused():
     print("I: a broken build, and running jobs, stop a reload")
     project, state, config, bin_dir = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
@@ -1245,6 +1273,6 @@ def probe_reset_ignores_unrelated_grants():
 
 
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection() & probe_strict_label() & probe_resume_strict() & probe_model_and_destination() & probe_sandbox_approval() & probe_approval_abort() & probe_session_narrowing_screen() & probe_reset_ignores_unrelated_grants()
+    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_env_key() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection() & probe_strict_label() & probe_resume_strict() & probe_model_and_destination() & probe_sandbox_approval() & probe_approval_abort() & probe_session_narrowing_screen() & probe_reset_ignores_unrelated_grants()
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
