@@ -21,7 +21,11 @@ extension ScreenController {
     private func wrappedLines(from first: Int) -> Int {
         (first ..< Swift.max(first, state.transcript.items.count))
             .reduce(0) {
-                $0 + ScreenComposer.lines(in: state.transcript, at: $1, columns: frame.transcriptColumns).count
+                $0
+                    + ScreenComposer.lines(
+                        in: state.transcript, at: $1, columns: frame.transcriptColumns, style: state.blocks
+                    )
+                    .count
             }
     }
 }

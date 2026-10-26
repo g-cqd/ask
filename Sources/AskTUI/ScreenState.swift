@@ -81,6 +81,8 @@ public struct ScreenState: Sendable, Equatable {
     public var promptPrefix = ""
     public var theme = ScreenTheme()
     public var separator = true
+    /// Whether blocks are padded, and the tints they take.
+    public var blocks = BlockStyle()
 
     /// A screen with nothing in it yet.
     public init(label: String, options: ScreenOptions = ScreenOptions()) {
@@ -88,5 +90,6 @@ public struct ScreenState: Sendable, Equatable {
         promptPrefix = options.prompt
         separator = options.separator
         theme = ScreenTheme(tinted: options.tint, light: options.lightBackground)
+        blocks = BlockStyle(padded: options.padding, theme: theme)
     }
 }

@@ -14,18 +14,18 @@ struct ThinkingFoldingTests {
 
     @Test func `reasoning starts as one line that says how much there is`() {
         let rig = PointerRig(updates: Self.reasoning)
-        #expect(rig.text(row: 9) == "thinking · 2 lines")
+        #expect(rig.text(row: 9) == "Thinking...")
         #expect(rig.text(row: 8) == "")
     }
 
     @Test func `streamed reasoning is one block whose count grows`() {
         var rig = PointerRig(updates: [.thinkingText("one")])
-        #expect(rig.text(row: 9) == "thinking · 1 line")
+        #expect(rig.text(row: 9) == "Thinking...")
         rig.controller.handle(.thinkingText("\ntwo\n"))
         rig.controller.handle(.thinkingText("three"))
         rig.draw()
         #expect(rig.controller.state.transcript.items.count == 1)
-        #expect(rig.text(row: 9) == "thinking · 3 lines")
+        #expect(rig.text(row: 9) == "Thinking...")
     }
 
     @Test func `reasoning after an answer is a new block`() {
@@ -38,18 +38,18 @@ struct ThinkingFoldingTests {
     @Test func `a click on the header opens it, dim and italic, and another closes it`() {
         var rig = PointerRig(updates: Self.reasoning)
         rig.click(row: 9, col: 3)
-        #expect(rig.text(row: 7) == "thinking")
+        #expect(rig.text(row: 7) == "Thinking...")
         #expect([8, 9].map { rig.text(row: $0) } == ["  first thought", "  second thought"])
         #expect(rig.buffer[8, 2].style.dim && rig.buffer[8, 2].style.italic)
         rig.click(row: 7, col: 3)
-        #expect(rig.text(row: 9) == "thinking · 2 lines")
+        #expect(rig.text(row: 9) == "Thinking...")
     }
 
     @Test func `with folding off reasoning is shown from the start`() {
         let rig = PointerRig(
-            options: ScreenOptions(foldThinking: false, prompt: "ask> ", tint: false, separator: false),
+            options: ScreenOptions(foldThinking: false, prompt: "ask> ", tint: false, separator: false, padding: false),
             updates: Self.reasoning)
-        #expect(rig.text(row: 7) == "thinking")
+        #expect(rig.text(row: 7) == "Thinking...")
     }
 
     @Test func `control T flips reasoning and leaves tool output alone, and control O the reverse`() {
@@ -76,20 +76,20 @@ struct ThinkingFoldingTests {
 
     @Test func `a folded block copies as the line that is shown`() {
         var rig = PointerRig(updates: Self.reasoning)
-        #expect(rig.drag(from: (9, 0), to: (9, 19)) == [.copy("thinking · 2 lines")])
+        #expect(rig.drag(from: (9, 0), to: (9, 19)) == [.copy("Thinking...")])
     }
 
     @Test func `reasoning that is only blank has nothing to open`() {
         var rig = PointerRig(updates: [.thinkingText("\n\n")])
-        #expect(rig.text(row: 9) == "thinking")
+        #expect(rig.text(row: 9) == "Thinking...")
         rig.click(row: 9, col: 3)
-        #expect(rig.text(row: 9) == "thinking")
+        #expect(rig.text(row: 9) == "Thinking...")
         #expect(!rig.controller.state.transcript.isFoldable(0))
     }
 
     @Test func `a long reasoning is cut and the cut is said`() {
         var rig = PointerRig(updates: [.thinkingText((1 ... 1000).map { "t \($0)" }.joined(separator: "\n"))])
-        #expect(rig.text(row: 9) == "thinking · \(Transcript.outputLineLimit + 1) lines")
+        #expect(rig.text(row: 9) == "Thinking...")
         rig.click(row: 9, col: 3)
         #expect(rig.text(row: 9) == "  … 600 more lines not shown")
     }

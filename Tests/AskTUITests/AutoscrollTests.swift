@@ -9,7 +9,9 @@ internal import Testing
 struct AutoscrollTests {
     private static let long = (1 ... 40).map { "row \($0 < 10 ? "0" : "")\($0)" }
     /// Ten transcript rows on twelve: the first is row 0 and the last is row 9.
-    private func rig(_ options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false))
+    private func rig(
+        _ options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
+    )
         -> PointerRig
     {
         PointerRig(options: options, lines: Self.long)
@@ -106,7 +108,8 @@ struct AutoscrollTests {
         rig.controller.clearSelection()
         #expect(!rig.controller.isAutoscrolling)
         var off = PointerRig(
-            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false), lines: Self.long)
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false),
+            lines: Self.long)
         off.mouse(.left, .drag, row: 0, col: 0)
         let ticked = off.tick()
         #expect(!off.controller.isAutoscrolling && !ticked)

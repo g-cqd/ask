@@ -27,17 +27,19 @@ public struct ScreenOptions: Sendable, Equatable {
     public var tint: Bool
     /// Whether a rule separates the conversation from the input (`ui.separator`).
     public var separator: Bool
+    /// Whether each block has a row of padding around it (`ui.padding`).
+    public var padding: Bool
     /// Whether the terminal's background is light, which picks the lighter tints; the composition root reads it from the environment.
     public var lightBackground: Bool
 
     /// The look before roadmap 0074: an `ask> ` prefix, no tint, no rule. What the screen's older tests were written against.
-    public static let legacy = ScreenOptions(prompt: "ask> ", tint: false, separator: false)
+    public static let legacy = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
 
     public init(
         mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
         scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20,
         sidebar: Bool = false, verbose: Bool = false, prompt: String = "", tint: Bool = true, separator: Bool = true,
-        lightBackground: Bool = false
+        padding: Bool = true, lightBackground: Bool = false
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -52,6 +54,7 @@ public struct ScreenOptions: Sendable, Equatable {
         self.prompt = prompt
         self.tint = tint
         self.separator = separator
+        self.padding = padding
         self.lightBackground = lightBackground
     }
 }

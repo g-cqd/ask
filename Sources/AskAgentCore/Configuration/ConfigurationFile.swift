@@ -168,7 +168,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                 case "sandbox.network": "is \"\(value)\": use \"none\", \"localhost\" or \"any\""
                 case "ui.tools", "ui.thinking", "ui.code": "is \"\(value)\": use \"folded\" or \"open\""
                 case "ui.sidebar": "is \"\(value)\": use \"open\" or \"closed\""
-                case "ui.tint", "ui.separator": "is \"\(value)\": use \"on\" or \"off\""
+                case "ui.tint", "ui.separator", "ui.padding": "is \"\(value)\": use \"on\" or \"off\""
                 default: "is \"\(value)\": use \"workspace\", \"anywhere\" or a list of paths"
             }
         }

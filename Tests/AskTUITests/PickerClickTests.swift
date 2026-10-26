@@ -16,7 +16,8 @@ struct PickerClickTests {
 
     private func rig(
         _ typed: String, files: Bool = false,
-        options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false), transcript: Int = 2,
+        options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false),
+        transcript: Int = 2,
         rows: Int = PickerClickTests.rows
     ) -> PointerRig {
         var rig = PointerRig(
@@ -144,7 +145,8 @@ struct PickerClickTests {
     }
 
     @Test func `with the mouse off nothing is clicked`() throws {
-        var rig = rig("/", options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false))
+        var rig = rig(
+            "/", options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false))
         let target = try #require(row(of: "/tasks", in: rig))
         rig.click(row: target, col: 3)
         #expect(rig.controller.state.editor.text == "/")
