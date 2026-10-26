@@ -78,6 +78,13 @@ struct Ask: AsyncParsableCommand {
             valueName: "scope"))
     var read: String?
 
+    @Flag(
+        name: [.short, .customLong("verbose")],
+        help:
+            "Show details a regular run leaves out: the sandbox in force, the files read, where the model came from. /verbose toggles it."
+    )
+    var verbose = false
+
     @Flag(name: .customLong("self-check"), help: .hidden)
     var selfCheck = false
 
@@ -130,7 +137,7 @@ struct Ask: AsyncParsableCommand {
         LaunchRequest(
             budgets: budgets, prompt: prompt, model: model, provider: provider, thinking: thinking, maxTurns: maxTurns,
             compactAt: compactAt, noSandbox: noSandbox, network: network, write: write, read: read,
-            selfCheck: selfCheck, reloadedFrom: reloadedFrom, reloadStarted: reloadStarted,
+            selfCheck: selfCheck, verbose: verbose, reloadedFrom: reloadedFrom, reloadStarted: reloadStarted,
             selectedProvider: selectedProvider, selectedModel: selectedModel, continueLatest: continueLatest,
             resume: resume)
     }

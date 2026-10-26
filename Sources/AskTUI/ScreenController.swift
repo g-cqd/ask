@@ -67,7 +67,9 @@ public struct ScreenController: Sendable {
         SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first."),
         SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT."),
         SlashCommand(name: "tasks", summary: "Show or hide the background jobs that are running."),
-        SlashCommand(name: "sidebar", summary: "Show or hide the runner sidebar (Ctrl+\\). Wide screens only.")
+        SlashCommand(name: "sidebar", summary: "Show or hide the runner sidebar (Ctrl+\\). Wide screens only."),
+        SlashCommand(
+            name: "verbose", summary: "Show or hide details: the sandbox, the files read, builds that appeared.")
     ]
 
     /// A controller showing `label` in the status line, answering `commands` besides the built-in ones.
@@ -81,6 +83,7 @@ public struct ScreenController: Sendable {
         state.transcript.setCodeFoldLines(options.codeFoldLines)
         state.promptRows = options.promptRows
         state.sidebarOpen = options.sidebar
+        state.verbose = options.verbose
     }
 
     /// Applies terminal input. `pageRows` is how far Page Up and Page Down scroll.
@@ -172,6 +175,7 @@ public struct ScreenController: Sendable {
             case .toolStarted(let name, let summary): state.transcript.startTool(name: name, summary: summary)
             case .toolFinished(let status, let output): state.transcript.finishTool(status, output: output)
             case .notice(let text, let isError): state.transcript.addNotice(text, isError: isError)
+            case .detail(let text): receive(detail: text)
             case .requestExit(let exit): state.exitRequest = exit
             case .label(let text): state.label = text
             case .status(let text): state.detail = text

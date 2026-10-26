@@ -23,6 +23,10 @@ struct RunSettings: Equatable {
     var thinkingPending = false
     /// What commands the model runs may inherit of ask's own environment (ADR-0106).
     var commandEnvironment = CommandEnvironment.inherit
+    /// What ask did on its own account, not needed to read the conversation: shown with `--verbose` (ADR-0119).
+    var details: [String] = []
+    /// Whether `--verbose` was given.
+    var verbose = false
 
     var limits: RunLimits {
         RunLimits(
@@ -44,9 +48,10 @@ struct RunSettings: Equatable {
         let lines: [String] = configuration.changes(from: previous.configuration)
         let fresh: [String] = notices.filter { !previous.notices.contains($0) }
         var updates: [ConversationUpdate] = []
-        if differs(from: previous) { updates.append(.notice("Configuration reloaded.", isError: false)) }
-        for line in lines { updates.append(.notice("  " + line, isError: false)) }
+        if differs(from: previous) { updates.append(.detail("Configuration reloaded.")) }
+        for line in lines { updates.append(.detail("  " + line)) }
         for line in fresh { updates.append(.notice(line, isError: false)) }
+        for line in details where !previous.details.contains(line) { updates.append(.detail(line)) }
         if label != previous.label { updates.append(.label(label)) }
         return updates
     }
@@ -93,9 +98,13 @@ struct RunSettings: Equatable {
             + (configured.isEmpty ? "" : "; configured: \(configured)")
     }
 
-    /// Lines for the user at startup: which configuration files apply, what was ignored, and a strict sandbox.
-    var description: [String] {
-        (applied.isEmpty ? [] : ["Configuration from " + applied.joined(separator: ", ") + "."]) + notices
+    /// What is said at startup whatever the verbosity: a file that was ignored, a catalog that could not be used, a provider chosen because nothing
+    /// was signed in. Each is something the person may need to act on.
+    var description: [String] { notices }
+
+    /// What is said at startup only with `--verbose`: which files applied, the sandbox in force, the thinking effort, and what ask decided by itself.
+    var detailLines: [String] {
+        (applied.isEmpty ? [] : ["Configuration from " + applied.joined(separator: ", ") + "."]) + details
             + (strictTag == nil ? [] : ["Sandbox: writes \(writes); reads \(reads); network \(sandbox.network)."])
             + (thinkingTag.map { ["\($0) (\(thinkingStatus))."] } ?? [])
     }

@@ -43,6 +43,9 @@ public struct ScreenState: Sendable, Equatable {
     var inputAnswer = PromptEditor()
     /// Each command's list of choices, as the conversation last offered it, and when it was asked for.
     var choices: [String: ChoiceList] = [:]
+    /// Whether details are shown, and the ones held back until `/verbose` asks for them.
+    public var verbose = false
+    var heldDetails: [String] = []
     /// The project's files for the `@` picker; nil until the first listing arrives (roadmap 0048).
     var files: ProjectFiles?
     /// When ``files`` arrived, so a listing that has aged is asked for again.
