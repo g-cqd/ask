@@ -55,11 +55,13 @@ public struct ScreenController: Sendable {
             // @dl:accept -- the built-in commands read like the conversation's: a name and a sentence each, as data
             name: "help",
             summary:
+                // @dl:accept -- the built-in commands read like the conversation's: a name and a sentence each, as data
                 "List commands. Ctrl+C: erase, stop, quit (twice). Ctrl+T/O/G fold. Enter steers."
         ),
         SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first."),
         SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT."),
-        SlashCommand(name: "tasks", summary: "Show or hide the background jobs that are running.")
+        SlashCommand(name: "tasks", summary: "Show or hide the background jobs that are running."),
+        SlashCommand(name: "sidebar", summary: "Show or hide the runner sidebar (Ctrl+\\). Wide screens only.")
     ]
 
     /// A controller showing `label` in the status line, answering `commands` besides the built-in ones.
@@ -72,6 +74,7 @@ public struct ScreenController: Sendable {
         state.transcript.setCodeFoldedByDefault(options.foldCode)
         state.transcript.setCodeFoldLines(options.codeFoldLines)
         state.promptRows = options.promptRows
+        state.sidebarOpen = options.sidebar
     }
 
     /// Applies terminal input. `pageRows` is how far Page Up and Page Down scroll.
@@ -140,6 +143,7 @@ public struct ScreenController: Sendable {
         if isToggleToolOutput(key) { return toggleAllToolOutput() }
         if isToggleThinking(key) { return toggleAllThinking() }
         if isToggleCode(key) { return toggleAllCode() }
+        if isToggleSidebar(key) { return toggleSidebar() }
         return nil
     }
 
@@ -218,6 +222,7 @@ public struct ScreenController: Sendable {
                         return []
                     case "quit": return [.quit]
                     case "tasks": return toggleRunners(announcing: true)
+                    case "sidebar": return toggleSidebar(announcing: true)
                     case "follow-up": return submitPrompt(arguments, followUp: true)
                     default:
                         guard !busy() else { return [] }

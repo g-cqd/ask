@@ -8,11 +8,13 @@ struct RunnerStrip {
     /// - Parameters:
     ///   - state: what the screen holds: the tree, the collapsed parents and the selection.
     ///   - available: the most rows it may take.
-    ///   - columns: the screen width, which bounds the indentation.
-    init(_ state: ScreenState, available: Int, columns: Int) {
-        guard state.runnersOpen, !state.runners.isEmpty, available > 0 else { return }
+    ///   - columns: the width it is drawn in, which bounds the indentation.
+    ///   - limit: the most rows it draws; the strip takes five, the sidebar every row it has.
+    ///   - requiresOpen: whether the strip's own open state decides; the sidebar has its own.
+    init(_ state: ScreenState, available: Int, columns: Int, capacity limit: Int = 5, requiresOpen: Bool = true) {
+        guard state.runnersOpen || !requiresOpen, !state.runners.isEmpty, available > 0 else { return }
         let rows = state.runnerTree.visible(collapsed: state.collapsedRunners)
-        let capacity = Swift.min(5, available)
+        let capacity = Swift.min(limit, available)
         let shown = rows.count > capacity ? capacity - 1 : rows.count
         // The selected row stays in the window.
         let selected = rows.firstIndex { $0.row.runner.id == state.stripSelection }

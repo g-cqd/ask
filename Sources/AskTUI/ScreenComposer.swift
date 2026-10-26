@@ -44,15 +44,17 @@ public struct ScreenComposer: Sendable {
         var style: Style
         /// The columns drawn selected, or nil.
         var highlight: Range<Int>?
+        /// What the row carries at its right edge, if the sidebar is open.
+        var side: Sidebar.Cell?
     }
 
     static let prompt = "ask> "
     private var input = PromptLayout()
 
     /// Every transcript item's wrapped lines, end to end, rebuilt from the first item whose revision changed.
-    private var transcriptLines = LayoutCache<Line>()
+    var transcriptLines = LayoutCache<Line>()
     /// Every item's hard lines, kept beside the wrapped lines so a selection can be read and highlighted.
-    private var hardLines: [[String]] = []
+    var hardLines: [[String]] = []
     /// What each row of the buffer holds since the last frame, and the size it was composed at.
     private var shown: [Shown?] = []
     private var shownSize = (columns: -1, rows: -1)
@@ -102,7 +104,9 @@ public struct ScreenComposer: Sendable {
         let transcriptRows = rows - promptRows - statusRows - panel.count - pickerLines.count
         self.transcriptRows = transcriptRows
 
-        updateTranscriptLines(state.transcript, columns: columns)
+        let sidebar = Sidebar(state, columns: columns, rows: transcriptRows)
+        let wrapColumns = sidebar.transcriptColumns(of: columns)
+        updateTranscriptLines(state.transcript, columns: wrapColumns)
         let flat = transcriptLines.lines
         let end = Swift.max(0, flat.count - state.scrollback)
         let start = Swift.max(0, end - transcriptRows)
@@ -118,56 +122,27 @@ public struct ScreenComposer: Sendable {
         for row in 0 ..< transcriptRows {
             let index = row - (transcriptRows - visible.count)
             let line = index >= 0 ? visible[visible.startIndex + index] : Line(text: "", style: .default)
-            write(line, highlight: highlights[row], row: row, into: &buffer)
+            write(
+                line, highlight: highlights[row], side: sidebar.cells.isEmpty ? nil : sidebar.cells[row], row: row,
+                into: &buffer)
         }
-        frames?
-            .store(
-                FrameGeometry(
-                    rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count,
-                    scrollback: state.scrollback, statusRow: transcriptRows,
-                    runnerColumns: status.runners, belowColumns: status.below,
-                    promptRow: rows - panel.count - promptRows, promptRows: promptRows, promptTop: editor.top,
-                    prompt: editor.layout
-                )
-                .withPicker(state: state, firstRow: transcriptRows + statusRows + 1, rows: pickerRows)
-                .withStrip(strip, firstRow: rows - panel.count)
-            )
+        var geometry = FrameGeometry(
+            rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count,
+            scrollback: state.scrollback, statusRow: transcriptRows, runnerColumns: status.runners,
+            belowColumns: status.below, promptRow: rows - panel.count - promptRows, promptRows: promptRows,
+            promptTop: editor.top, prompt: editor.layout
+        )
+        .withPicker(state: state, firstRow: transcriptRows + statusRows + 1, rows: pickerRows)
+        geometry.placeStrip(strip, firstRow: rows - panel.count)
+        geometry.placeSidebar(sidebar, columns: columns)
+        frames?.store(geometry)
 
         return writeBottom(
             panel: panel, status: statusRows > 0 ? status.line : nil, picker: pickerLines, editor: editor,
             from: transcriptRows, into: &buffer)
     }
 
-    /// Which content each transcript row shows, for mapping a cell back to the conversation.
-    private static func provenance(of visible: ArraySlice<Line>, rows: Int, transcriptRows: Int) -> RowMap<Int> {
-        var map = RowMap<Int>()
-        map.reset(rowCount: rows)
-        for row in 0 ..< transcriptRows {
-            let index = row - (transcriptRows - visible.count)
-            guard index >= 0, let source = visible[visible.startIndex + index].source else { continue }
-            map.set(
-                row: row,
-                to: RowProvenance(
-                    block: source.block, ordinal: source.block, line: source.line, firstOffset: source.offset,
-                    col: source.col, text: source.text))
-        }
-        return map
-    }
-
     // MARK: - Lines
-
-    private mutating func updateTranscriptLines(_ transcript: Transcript, columns: Int) {
-        var hard = hardLines
-        transcriptLines.update(width: columns, revisions: transcript.revisions) { index in
-            if hard.count <= index { hard.append(contentsOf: repeatElement([], count: index + 1 - hard.count)) }
-            // Found once per layout: the hard lines a selection reads and the rows drawn come from the same folds.
-            let shown = transcript.shownCode(at: index)
-            hard[index] = TranscriptContent.hardLines(of: shown?.text ?? transcript.contentText(at: index))
-            return Self.lines(in: transcript, at: index, shown: shown, columns: columns)
-        }
-        hard.removeLast(Swift.max(0, hard.count - transcript.items.count))
-        hardLines = hard
-    }
 
     static func lines(for item: Transcript.Item, folded: Bool = false, block: Int = 0, columns: Int) -> [Line] {
         func rows(_ text: String, width: Int, col: Int, style: Style) -> [Line] {
@@ -220,9 +195,9 @@ public struct ScreenComposer: Sendable {
 
     /// Writes a whole row, the text then blanks to the edge, unless the row already holds exactly this.
     mutating func write(
-        _ line: Line, highlight: Range<Int>? = nil, row: Int, into buffer: inout ScreenBuffer
+        _ line: Line, highlight: Range<Int>? = nil, side: Sidebar.Cell? = nil, row: Int, into buffer: inout ScreenBuffer
     ) {
-        let now = Shown(text: line.text, style: line.style, highlight: highlight)
+        let now = Shown(text: line.text, style: line.style, highlight: highlight, side: side)
         guard shown[row] != now else { return }
         shown[row] = now
         if let highlight {
@@ -239,9 +214,14 @@ public struct ScreenComposer: Sendable {
         } else {
             buffer.write(line.text, row: row, col: 0, style: line.style)
         }
-        let used = Swift.min(buffer.columns, UnicodeWidth.displayWidth(of: line.text))
+        let edge = side?.column ?? buffer.columns
+        let used = Swift.min(edge, UnicodeWidth.displayWidth(of: line.text))
         if used < buffer.columns {
             buffer.fill(row: row, col: used, width: buffer.columns - used, height: 1, cell: .empty)
+        }
+        if let side {
+            buffer.write("│", row: row, col: side.column, style: Style(dim: true))
+            buffer.write(side.text, row: row, col: side.column + 1, style: side.style)
         }
     }
 }
