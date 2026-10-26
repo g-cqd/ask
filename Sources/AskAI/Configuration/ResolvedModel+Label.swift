@@ -7,6 +7,7 @@ extension ResolvedModel {
             case .openAICompatible(let name, _, _, _), .openAIResponses(let name, _, _, _): return "\(name)/\(model)"
             case .codex: return "codex/\(model)"
             case .agy: return "agy/\(model)"
+            case .apple: return "apple/\(model)"
             case .anthropic: return model
         }
     }

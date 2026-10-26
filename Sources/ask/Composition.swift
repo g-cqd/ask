@@ -3,6 +3,7 @@
 internal import AemiJSON
 internal import AskAI
 internal import AskAgentCore
+internal import AskApple
 internal import AskTools
 internal import Foundation
 
@@ -47,7 +48,7 @@ func requireSignIn(for model: ResolvedModel, transport: URLSessionTransport) asy
                     connection: model.connection)
                 _ = try await access.credentials(now: Date().timeIntervalSince1970)
             case .agy: _ = try await makeAgyAccess(transport: transport).session(now: Date().timeIntervalSince1970)
-            case .openAICompatible, .openAIResponses: return
+            case .apple, .openAICompatible, .openAIResponses: return
         }
     } catch {
         if let connection = model.connection, case CodexAccessError.signedOut = error {
@@ -65,6 +66,7 @@ func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> 
         case .codex:
             codexProvider(resolved, transport: transport)
         case .agy: agyProvider(transport: transport)
+        case .apple: AppleProvider()
         case .openAICompatible(_, let baseURL, let apiKey, let headers):
             OpenAICompatibleProvider(
                 client: OpenAICompatibleClient(transport: transport, baseURL: baseURL, apiKey: apiKey, headers: headers)

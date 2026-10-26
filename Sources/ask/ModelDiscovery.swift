@@ -1,5 +1,6 @@
 internal import AskAI
 internal import AskAgentCore
+internal import AskApple
 internal import Foundation
 
 /// The CLI's binding of discovery to the current connection; provider behavior stays in AskAI.
@@ -30,15 +31,9 @@ enum ModelDiscovery {
         allowNetwork: Bool
     ) async throws -> (model: ResolvedModel, notices: [String]) {
         let selected = providers.selectedProvider(provider)
-        let connection: ConnectionRecord?
         var notices: [String] = []
-        if [ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy].contains(selected) {
-            connection = nil
-        } else {
-            let listing = try NamedConnections.registry(environment: environment).list()
-            notices = listing.notices
-            connection = listing.records.first { $0.name == selected.lowercased() }
-        }
+        let (connection, found) = try registered(selected, environment: environment)
+        notices += found
         var aliases = ModelAliases.empty
         if let connection {
             do { aliases = try NamedConnections.aliases(for: connection, environment: environment).load() } catch {
@@ -80,11 +75,33 @@ enum ModelDiscovery {
         }
         // Anthropic has no key-based catalog here. Keep its startup out of that lookup's setup entirely.
         if initial.provider == .anthropic { return (initial, notices + announcement(initial)) }
+        if initial.provider == .apple { return withAppleLimits(initial, notices: notices) }
         if initial.provider == .agy { return try withAgyLimits(initial, resolve: resolve, notices: notices) }
         guard initial.provider == .codex else {
             return try withListedLimits(initial, environment: environment, resolve: resolve, notices: notices)
         }
         return withCodexLimits(initial, environment: environment, resolve: resolve, notices: notices)
+    }
+
+    /// The on-device model with the window Apple documents for it. The system is not asked at launch: asking loads the framework's model stack,
+    /// 6 MB of idle memory for a run that may never use it (ADR-0116). The first request reports a model that cannot answer.
+    private static func withAppleLimits(_ initial: ResolvedModel, notices: [String]) -> (
+        model: ResolvedModel, notices: [String]
+    ) {
+        var chosen = initial
+        chosen.contextWindow = AppleModel.fallbackContextWindow
+        chosen.maxOutputTokens = AppleModel.maximumOutputTokens
+        return (chosen, notices)
+    }
+
+    /// The named connection `selected` names, if it names one: the built-in providers never do, and anything else is looked up in the registry.
+    private static func registered(_ selected: String, environment: [String: String]) throws -> (
+        ConnectionRecord?, [String]
+    ) {
+        let builtIn = [ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy, ProviderSettings.apple]
+        guard !builtIn.contains(selected) else { return (nil, []) }
+        let listing = try NamedConnections.registry(environment: environment).list()
+        return (listing.records.first { $0.name == selected.lowercased() }, listing.notices)
     }
 
     /// An explicit Codex model can use the account's cached limits without discovering or changing its choice.

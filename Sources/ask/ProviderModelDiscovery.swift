@@ -18,7 +18,7 @@ enum ProviderModelDiscovery {
     /// The catalog of the provider a resolved model goes to, or nil for a provider with its own catalog.
     static func catalog(for resolved: ResolvedModel, environment: [String: String]) -> ProviderModelCatalog? {
         switch resolved.provider {
-            case .anthropic, .codex, .agy: nil
+            case .anthropic, .codex, .agy, .apple: nil
             case .openAICompatible(let name, let baseURL, let apiKey, let headers),
                 .openAIResponses(let name, let baseURL, let apiKey, let headers):
                 catalog(

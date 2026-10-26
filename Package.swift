@@ -69,6 +69,7 @@ let package = Package(
         // Consumed by the Benchmarks package (ADR-0016).
         .library(name: "AskAgentCore", targets: ["AskAgentCore"]),
         .library(name: "AskAI", targets: ["AskAI"]),
+        .library(name: "AskApple", targets: ["AskApple"]),
         .library(name: "AskMCP", targets: ["AskMCP"]),
         .library(name: "AskTools", targets: ["AskTools"]),
         .library(name: "AskTUI", targets: ["AskTUI"])
@@ -111,6 +112,14 @@ let package = Package(
             path: "Sources/AskAI",
             swiftSettings: packageSettings
         ),
+        // Apple's on-device model, linked in-process through FoundationModels (ADR-0116). Its own target, so nothing but the
+        // executable links the framework and a library's tests do not load it.
+        .target(
+            name: "AskApple",
+            dependencies: ["AskAI", "AskAgentCore", .product(name: "AemiJSON", package: "AemiJSON")],
+            path: "Sources/AskApple",
+            swiftSettings: packageSettings
+        ),
         // The Model Context Protocol client: JSON-RPC over a transport, no policy (ADR-0096). A leaf, like pi's `pi-mcp`.
         .target(
             name: "AskMCP",
@@ -147,7 +156,7 @@ let package = Package(
         .executableTarget(
             name: "ask",
             dependencies: [
-                "AskAI", "AskAgentCore", "AskCore", "AskTools", "AskTUI",
+                "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskTools", "AskTUI",
                 .product(name: "AemiJSON", package: "AemiJSON"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
                 .product(name: "TerminalKitInput", package: "TerminalKit")
@@ -167,6 +176,12 @@ let package = Package(
                 "AskAgentCore", "AskAI", .product(name: "AemiIO", package: "aemi")
             ],
             path: "Tests/AskAgentCoreTests",
+            swiftSettings: packageSettings
+        ),
+        .testTarget(
+            name: "AskAppleTests",
+            dependencies: ["AskApple", "AskAI", "AskAgentCore"],
+            path: "Tests/AskAppleTests",
             swiftSettings: packageSettings
         ),
         .testTarget(
