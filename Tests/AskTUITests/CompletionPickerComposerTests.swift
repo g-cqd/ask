@@ -41,22 +41,20 @@ struct CompletionPickerComposerTests {
         return (controller, rows)
     }
 
-    @Test func `the picker sits between the status line and the prompt`() throws {
+    @Test func `the picker sits above the prompt, and the status line below it`() throws {
         var (controller, height) = screen(typing: "/co")
         controller.handle(.notice("older line", isError: false))
         var buffer = ScreenBuffer(columns: 60, rows: height)
         var composer = ScreenComposer()
         let cursor = composer.compose(controller.state, into: &buffer)
         let shown = rows(buffer)
-        let status = try #require(shown.lastIndex { $0 == "m" })
-        #expect(
-            shown.last == "ask> /co" && status == height - 1 - 4 - 1,
-            "status, then the title and three matches, then the prompt")
-        #expect(shown[status + 1].hasPrefix("commands") && shown[status + 1].contains("Esc"))
-        #expect(shown[status + 2].hasPrefix("/config") && shown[status + 2].contains("Show the settings."))
-        #expect(shown[status + 3].hasPrefix("/compact") && shown[status + 4].hasPrefix("/help"))
-        #expect(cursor.row == height - 1 && cursor.column == 8)
-        #expect(composer.transcriptRows == status)
+        let prompt = height - 2
+        #expect(shown[prompt] == "ask> /co" && shown.last == "m", "the prompt, then the status line under it")
+        #expect(shown[prompt - 4].hasPrefix("commands") && shown[prompt - 4].contains("Esc"))
+        #expect(shown[prompt - 3].hasPrefix("/config") && shown[prompt - 3].contains("Show the settings."))
+        #expect(shown[prompt - 2].hasPrefix("/compact") && shown[prompt - 1].hasPrefix("/help"))
+        #expect(cursor.row == prompt && cursor.column == 8)
+        #expect(composer.transcriptRows == prompt - 4)
     }
 
     @Test func `the choice is bold and nothing is painted, filled or marked`() throws {
@@ -99,7 +97,7 @@ struct CompletionPickerComposerTests {
         _ = composer.compose(controller.state, into: &buffer)
         #expect(composer.transcriptRows >= 1)
         #expect(rows(buffer).contains("still here"))
-        #expect(rows(buffer).last == "ask> /")
+        #expect(rows(buffer).dropLast().last == "ask> /")
     }
 
     @Test func `it is hidden while an approval question waits, and back when it is answered`() {
@@ -127,7 +125,7 @@ struct CompletionPickerComposerTests {
         #expect(ScreenComposer.pickerLines(picker, columns: 0, rows: 8).isEmpty)
     }
 
-    @Test func `the status and picker sit above the input and the runner strip below it`() throws {
+    @Test func `the picker sits above the input, and the status line and the runner strip below it`() throws {
         var (controller, height) = screen(typing: "/co")
         controller.handle(
             .runners([RunnerInfo(name: "job-1", detail: "npm run dev"), RunnerInfo(name: "job-2", detail: "tail -f")]))
@@ -138,11 +136,11 @@ struct CompletionPickerComposerTests {
         let cursor = composer.compose(controller.state, into: &buffer)
         let shown = rows(buffer)
         let first = try #require(shown.firstIndex { $0.hasPrefix("job-1") })
-        let status = composer.transcriptRows
-        #expect(shown[status].hasPrefix("m"))
-        #expect(shown[status + 1].hasPrefix("commands") && shown[status + 2].hasPrefix("/config"))
-        #expect(shown[first - 1] == "ask> /co" && shown[first + 1].hasPrefix("job-2"))
-        #expect(first == height - 2 && cursor.row == first - 1)
+        let picker = composer.transcriptRows
+        #expect(shown[picker].hasPrefix("commands") && shown[picker + 1].hasPrefix("/config"))
+        #expect(shown[first - 2] == "ask> /co" && shown[first - 1].hasPrefix("m"), "the input, then the status")
+        #expect(shown[first + 1].hasPrefix("job-2"))
+        #expect(first == height - 2 && cursor.row == first - 2)
     }
 
     @Test func `a full runners list and the picker together still leave the transcript a row`() {

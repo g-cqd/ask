@@ -26,24 +26,24 @@ struct PromptClickTests {
     @Test func `a click puts the cursor before the character under it`() {
         var rig = rig()
         paste("hello world", into: &rig)
-        #expect(place(&rig, row: 11, col: 7) == 2)
-        #expect(place(&rig, row: 11, col: 5) == 0)
-        #expect(place(&rig, row: 11, col: 15) == 10)
+        #expect(place(&rig, row: 10, col: 7) == 2)
+        #expect(place(&rig, row: 10, col: 5) == 0)
+        #expect(place(&rig, row: 10, col: 15) == 10)
     }
 
     @Test func `the prefix and the space past the end are clicks on the nearest caret`() {
         var rig = rig()
         paste("hello", into: &rig)
-        #expect(place(&rig, row: 11, col: 0) == 0)
-        #expect(place(&rig, row: 11, col: 29) == 5)
+        #expect(place(&rig, row: 10, col: 0) == 0)
+        #expect(place(&rig, row: 10, col: 29) == 5)
     }
 
     @Test func `a click on another line of the draft goes to that line`() {
         var rig = rig()
         paste("ab\ncd\nef", into: &rig)
-        #expect(place(&rig, row: 10, col: 1) == 4)
-        #expect(place(&rig, row: 9, col: 0) == 0)
-        #expect(place(&rig, row: 11, col: 1) == 7)
+        #expect(place(&rig, row: 9, col: 1) == 4)
+        #expect(place(&rig, row: 8, col: 0) == 0)
+        #expect(place(&rig, row: 10, col: 1) == 7)
     }
 
     @Test func `a wrapped line is clicked by the row it wraps onto`() {
@@ -51,7 +51,7 @@ struct PromptClickTests {
         paste(String(repeating: "x", count: 20) + String(repeating: "y", count: 20), into: &rig)
         // Twenty-five cells fit on the first row, after the prefix; the rest wraps.
         #expect(rig.controller.state.editor.text.count == 40)
-        #expect(place(&rig, row: rig.composer.transcriptRows + 2, col: 3) == 28)
+        #expect(place(&rig, row: rig.composer.transcriptRows + 1, col: 3) == 28)
     }
 
     @Test func `a tall draft clicks the rows that are drawn, not the first ones`() {
@@ -70,15 +70,15 @@ struct PromptClickTests {
     @Test func `a wide character is clicked whole`() {
         var rig = rig()
         paste("日本語", into: &rig)
-        #expect(place(&rig, row: 11, col: 5) == 0)
-        #expect(place(&rig, row: 11, col: 6) == 0, "the second cell of a wide character is the character")
-        #expect(place(&rig, row: 11, col: 7) == 1)
+        #expect(place(&rig, row: 10, col: 5) == 0)
+        #expect(place(&rig, row: 10, col: 6) == 0, "the second cell of a wide character is the character")
+        #expect(place(&rig, row: 10, col: 7) == 1)
     }
 
     @Test func `typing after a click inserts there, and a vertical move starts from there`() {
         var rig = rig()
         paste("hello\nworld", into: &rig)
-        _ = place(&rig, row: 10, col: 7)
+        _ = place(&rig, row: 9, col: 7)
         _ = rig.controller.handle(.key(KeyEvent(keyCode: UInt32(Character("X").asciiValue!))), pageRows: 10)
         #expect(rig.controller.state.editor.text == "heXllo\nworld")
         _ = rig.controller.handle(.key(KeyEvent(keyCode: Key.down.rawValue)), pageRows: 10, columns: 30)
@@ -92,7 +92,7 @@ struct PromptClickTests {
         paste("abcd\nefghij", into: &rig)
         _ = rig.controller.handle(.key(KeyEvent(keyCode: Key.up.rawValue)), pageRows: 10, columns: 30)
         #expect(rig.controller.state.editor.cursor == 1, "six cells in on the first line, after its five-cell prefix")
-        #expect(place(&rig, row: 10, col: 5) == 0)
+        #expect(place(&rig, row: 9, col: 5) == 0)
         _ = rig.controller.handle(.key(KeyEvent(keyCode: Key.down.rawValue)), pageRows: 10, columns: 30)
         #expect(rig.controller.state.editor.cursor == 10, "from the clicked cell, not from the old aim")
     }
@@ -100,27 +100,27 @@ struct PromptClickTests {
     @Test func `a click in the input drops the selection in the transcript`() {
         var rig = rig()
         paste("draft", into: &rig)
-        rig.drag(from: (9, 0), to: (9, 2))
+        rig.drag(from: (8, 0), to: (8, 2))
         #expect(rig.controller.state.selection != nil)
-        rig.click(row: 11, col: 7)
+        rig.click(row: 10, col: 7)
         #expect(rig.controller.state.selection == nil)
     }
 
     @Test func `with the mouse off, or a question waiting, a click leaves the cursor`() {
         var off = rig(options: ScreenOptions(mouse: false))
         paste("hello", into: &off)
-        #expect(place(&off, row: 11, col: 6) == 5)
+        #expect(place(&off, row: 10, col: 6) == 5)
         var asking = rig()
         paste("hello", into: &asking)
         asking.controller.handle(.askApproval(id: 1, question: "Run it?"))
         asking.draw()
-        #expect(place(&asking, row: 11, col: 6) == 5)
+        #expect(place(&asking, row: 10, col: 6) == 5)
     }
 
     @Test func `a click above the input does not place the cursor`() {
         var rig = rig()
         paste("hello", into: &rig)
         #expect(place(&rig, row: 3, col: 6) == 5)
-        #expect(place(&rig, row: 10, col: 6) == 5, "the status line is not the input")
+        #expect(place(&rig, row: 11, col: 6) == 5, "the status line is not the input")
     }
 }

@@ -8,8 +8,8 @@ internal import Testing
 /// says how many lines are below it, and a click, End on an empty draft or PageDown takes them there.
 @Suite("A reader scrolled back stays where they are, and is told what is below")
 struct LinesBelowTests {
-    /// Twelve rows: ten of transcript, the status line (row 10), the prompt.
-    private static let statusRow = 10
+    /// Twelve rows: ten of transcript, the prompt (row 10), the status line (row 11).
+    private static let statusRow = 11
 
     private func rig(
         columns: Int = 40, options: ScreenOptions = ScreenOptions(), lines: Int = 40, scrolled: Bool = true

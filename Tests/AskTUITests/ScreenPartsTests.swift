@@ -76,15 +76,15 @@ struct ScreenPartsTests {
             }
     }
 
-    @Test func `the transcript sits above the status line and the prompt, bottom-aligned`() {
+    @Test func `the transcript sits above the prompt and the status line, bottom-aligned`() {
         var state = ScreenState(label: "model")
         state.transcript.addUser("hi")
         state.transcript.addAssistantText("hello there")
         var buffer = ScreenBuffer(columns: 20, rows: 6)
         var composer = ScreenComposer()
         let cursor = composer.compose(state, into: &buffer)
-        #expect(rows(buffer) == ["", "", "hi", "hello there", "model", "ask>"])
-        #expect(cursor.row == 5 && cursor.column == 5)
+        #expect(rows(buffer) == ["", "", "hi", "hello there", "ask>", "model"])
+        #expect(cursor.row == 4 && cursor.column == 5)
     }
 
     @Test func `older lines scroll off the top, and scrollback brings them back`() {
@@ -107,7 +107,7 @@ struct ScreenPartsTests {
         var composer = ScreenComposer()
         _ = composer.compose(state, into: &buffer)
         #expect(rows(buffer)[0] == "bash ls …")
-        #expect(rows(buffer)[1] == "m · working… (ctrl+c to stop)")
+        #expect(rows(buffer)[2] == "m · working… (ctrl+c to stop)")
         state.transcript.finishTool(.failed("exit 1"))
         state.running = false
         _ = composer.compose(state, into: &buffer)
@@ -120,8 +120,8 @@ struct ScreenPartsTests {
         var buffer = ScreenBuffer(columns: 10, rows: 9)
         var composer = ScreenComposer()
         let cursor = composer.compose(state, into: &buffer)
-        #expect(Array(rows(buffer).suffix(3)) == ["ask> xxxxx", "xxxxxxxxxx", "xxxxx"])
-        #expect(cursor.row == 8 && cursor.column == 5)
+        #expect(Array(rows(buffer).suffix(4).dropLast()) == ["ask> xxxxx", "xxxxxxxxxx", "xxxxx"])
+        #expect(cursor.row == 7 && cursor.column == 5)
     }
 
     @Test func `composing an unchanged screen again writes nothing`() {
@@ -144,8 +144,8 @@ struct ScreenPartsTests {
         buffer.dirty.clear()
         state.editor.paste("x")
         _ = composer.compose(state, into: &buffer)
-        #expect(buffer.dirty.dirtyRanges(columns: 40).map(\.row) == [9])
-        #expect(rows(buffer)[9] == "ask> x")
+        #expect(buffer.dirty.dirtyRanges(columns: 40).map(\.row) == [8])
+        #expect(rows(buffer)[8] == "ask> x")
     }
 
     @Test func `a resize recomposes everything at the new width`() {
