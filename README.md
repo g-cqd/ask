@@ -20,7 +20,7 @@ git clone https://github.com/g-cqd/ask.git
 cd ask
 swift build -c release
 .build/release/ask login    # sign in to Claude in a browser, then:
-.build/release/ask
+.build/release/ask          # or just `ask`: with nothing signed in it uses Apple's on-device model, and /login signs in
 ```
 
 `Scripts/quality.sh` runs the full gate instead — format, lint, release build
@@ -43,7 +43,10 @@ attached; add `:12-30` for a line range. The model reads the file itself, under 
 | Command | |
 |---|---|
 | `/new` | fresh conversation; the old session stays saved (stop background jobs first) |
-| `/model` | show the model; `/model MODEL` or `/model PROVIDER MODEL` chooses one for this run, `/model --reset` undoes it |
+| `/model` | type `/model ` for a list of every model of every account you are signed in to (and Apple's on-device model); Up and Down, Enter or a click chooses it at once, and the effort list for it opens next. `/model MODEL`, `/model PROVIDER/MODEL` or `/model PROVIDER MODEL` also work (an unqualified model goes to the account whose list holds it, [ADR-0118](docs/adr/0118-the-provider-follows-the-model-and-the-effort.md)), `/model --reset` undoes it ([ADR-0117](docs/adr/0117-accounts-models-and-effort-are-chosen-inside-the-conversation.md)) |
+| `/thinking` | type `/thinking ` for the efforts the current model takes; `/thinking LEVEL` sets one for this run |
+| `/login` | type `/login ` to sign in to a provider without leaving: Claude, Codex, Antigravity, Spettro, Mistral Vibe by account, or any of them (and any key preset, and `custom NAME URL` for an OpenAI-compatible server) with an API key. A key is typed hidden and kept out of the transcript |
+| `/logout` | type `/logout ` to sign out of one account, or `/logout all`, without leaving |
 | `/resume` | list sessions; `/resume NAME`, a unique prefix or a path switches without leaving the screen |
 | `/tree` | list this session's prompts; `/tree N` goes back to before prompt N and puts it in the editor, so the next message branches from there ([ADR-0093](docs/adr/0093-a-session-is-navigated-by-going-back-to-before-one-of-its-prompts.md)) |
 | `/fork` | continue in a new session; `/fork N` does so from before prompt N. The original stays saved and untouched ([ADR-0094](docs/adr/0094-a-fork-continues-a-session-in-a-file-of-its-own-and-leaves-the-original-alone.md)) |
@@ -171,10 +174,16 @@ previous settings stay
 
 ## Providers
 
-Claude is built in: `ask login`, or an environment variable —
+Nothing needs configuring to start. With no flag, no configuration and no `providers.json` default, ask uses the first account that can answer: Claude, then
+Codex, then Antigravity, and when none is signed in Apple's on-device model (`apple`, one model, `on-device`, run in this process: no account, no key, no cost; its
+window is small, so it is for questions and short edits —
+[ADR-0116](docs/adr/0116-apple-intelligence-is-linked-not-launched.md)). `/login` signs in without leaving the screen, with an account or an API key.
+
+Claude is built in: `ask login`, `ask login claude --api-key`, or an environment variable —
 `ANTHROPIC_AUTH_TOKEN` (bearer token for a gateway), `ANTHROPIC_OAUTH_TOKEN`,
 then `ANTHROPIC_API_KEY`; the first one set is used, and one that is not a
-plain token stops the run.
+plain token stops the run. `ask login codex --api-key` stores an OpenAI API key (provider `openai`);
+`ask login custom NAME URL` adds any OpenAI-compatible server to `providers.json` and stores its key apart from it.
 
 Any server that speaks OpenAI chat completions (llama.cpp, MLX, Ollama, LM
 Studio, vLLM, hosted gateways) is configuration, in
