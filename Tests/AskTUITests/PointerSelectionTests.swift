@@ -180,9 +180,9 @@ struct PointerSelectionTests {
         var rig = PointerRig(lines: Self.long)
         rig.buffer.dirty.clear()
         rig.drag(from: (4, 0), to: (4, 3))
-        #expect(Set(rig.buffer.dirty.dirtyRanges(columns: 30).map(\.row)) == [4, 10])
+        #expect(Set(rig.buffer.dirty.dirtyRanges(columns: 30).map(\.row)) == [4, 11])
         rig.buffer.dirty.clear()
         rig.drag(from: (4, 0), to: (6, 3))
-        #expect(Set(rig.buffer.dirty.dirtyRanges(columns: 30).map(\.row)).isSubset(of: [4, 5, 6, 10]))
+        #expect(Set(rig.buffer.dirty.dirtyRanges(columns: 30).map(\.row)).isSubset(of: [4, 5, 6, 11]))
     }
 }

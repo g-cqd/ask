@@ -16,7 +16,7 @@ struct InputWordSelectionTests {
         return rig
     }
 
-    private func double(_ rig: inout PointerRig, row: Int = 11, col: Int) -> [ScreenController.Effect] {
+    private func double(_ rig: inout PointerRig, row: Int = 10, col: Int) -> [ScreenController.Effect] {
         rig.mouse(.left, .press, row: row, col: col, after: .seconds(1))
         rig.mouse(.left, .release, row: row, col: col)
         rig.mouse(.left, .press, row: row, col: col, after: .milliseconds(50))
@@ -35,7 +35,7 @@ struct InputWordSelectionTests {
         #expect(effects == [.copy("hello")])
         #expect(rig.controller.state.inputSelection == 0 ..< 5)
         #expect(rig.controller.state.editor.cursor == 5)
-        #expect(rig.inverse(row: 11) == [5, 6, 7, 8, 9])
+        #expect(rig.inverse(row: 10) == [5, 6, 7, 8, 9])
     }
 
     @Test
@@ -64,22 +64,22 @@ struct InputWordSelectionTests {
 
     @Test func `a triple click takes the hard line, not its line break, the other lines, or just the word`() {
         var rig = rig("ab\ncd ef\ngh")
-        let effects = triple(&rig, row: 10, col: 1)
+        let effects = triple(&rig, row: 9, col: 1)
         #expect(effects == [.copy("cd ef")])
         #expect(rig.controller.state.inputSelection == 3 ..< 8)
-        #expect(rig.inverse(row: 10) == [0, 1, 2, 3, 4])
-        #expect(rig.inverse(row: 9).isEmpty && rig.inverse(row: 11).isEmpty)
+        #expect(rig.inverse(row: 9) == [0, 1, 2, 3, 4])
+        #expect(rig.inverse(row: 8).isEmpty && rig.inverse(row: 10).isEmpty)
     }
 
     @Test func `a double click on another line takes that line's word`() {
         var rig = rig("ab cd\nef gh")
-        #expect(double(&rig, row: 11, col: 4) == [.copy("gh")])
+        #expect(double(&rig, row: 10, col: 4) == [.copy("gh")])
         #expect(rig.controller.state.inputSelection == 9 ..< 11)
     }
 
     @Test func `an empty line has nothing to take`() {
         var rig = rig("ab\n\ncd")
-        #expect(double(&rig, row: 10, col: 0).isEmpty)
+        #expect(double(&rig, row: 9, col: 0).isEmpty)
         #expect(rig.controller.state.inputSelection == nil)
     }
 
@@ -90,7 +90,7 @@ struct InputWordSelectionTests {
         #expect(rig.controller.state.editor.text == "X world")
         var again = self.rig("hello world")
         _ = double(&again, col: 6)
-        again.click(row: 11, col: 14)
+        again.click(row: 10, col: 14)
         #expect(again.controller.state.inputSelection == nil)
     }
 

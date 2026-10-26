@@ -88,7 +88,7 @@ struct ScreenControllerTests {
         var buffer = ScreenBuffer(columns: 60, rows: 3)
         var composer = ScreenComposer()
         _ = composer.compose(controller.state, into: &buffer)
-        let statusRow = String((0 ..< 60).map { buffer[1, $0].character })
+        let statusRow = String((0 ..< 60).map { buffer[2, $0].character })
         #expect(statusRow.hasPrefix("m · ↑2.1k ↓55"))
     }
 

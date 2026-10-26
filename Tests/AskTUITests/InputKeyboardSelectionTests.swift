@@ -39,7 +39,7 @@ struct InputKeyboardSelectionTests {
         for _ in 0 ..< 3 { press(&rig, Key.right.rawValue) }
         #expect(rig.controller.state.inputSelection == 0 ..< 3)
         #expect(rig.controller.state.editor.cursor == 3)
-        #expect(rig.inverse(row: 11) == [5, 6, 7])
+        #expect(rig.inverse(row: 10) == [5, 6, 7])
     }
 
     @Test func `shift and left from the end take the last characters`() {
@@ -112,7 +112,7 @@ struct InputKeyboardSelectionTests {
         var rig = rig("hello world")
         home(&rig)
         for _ in 0 ..< 5 { press(&rig, Key.right.rawValue) }
-        #expect(rig.text(row: 10).contains("ctrl+c"))
+        #expect(rig.text(row: 11).contains("ctrl+c"))
         let effects = rig.controller.handle(.key(KeyEvent(keyCode: 0x03)), pageRows: 10)
         #expect(effects == [.copy("hello")])
         #expect(rig.controller.state.inputSelection == nil)
@@ -124,7 +124,7 @@ struct InputKeyboardSelectionTests {
 
     @Test func `it takes over from a selection in the transcript, and control or alt make these other keys`() {
         var rig = rig("hello")
-        _ = rig.drag(from: (9, 0), to: (9, 2))
+        _ = rig.drag(from: (8, 0), to: (8, 2))
         #expect(rig.controller.state.selection != nil)
         press(&rig, Key.left.rawValue)
         #expect(rig.controller.state.selection == nil && rig.controller.state.inputSelection != nil)
