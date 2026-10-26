@@ -9,59 +9,6 @@ internal import Synchronization
 internal import System
 internal import TerminalKitInput
 
-/// The answer goes to standard output; tool activity and diagnostics to standard error.
-private final class PrintRenderer: Sendable {
-    private let midLine = Mutex(false)
-    private let usage = Mutex(UsageTotals())
-
-    /// Token usage over the run, for the closing line.
-    var usageSummary: String { usage.withLock { $0.summary } }
-
-    func render(_ event: AgentEvent) {
-        if let spent = event.usage { usage.withLock { $0.add(spent) } }
-        if let notice = compactionNotice(event) {
-            endLine()
-            write("ask: \(notice)\n", to: .standardError)
-        }
-        switch event {
-            case .model(.textDelta(_, let text)):
-                write(text, to: .standardOutput)
-                midLine.withLock { $0 = !text.hasSuffix("\n") }
-            case .toolStarted(_, let name, let input):
-                endLine()
-                let shown = String(decoding: input.bytes, as: UTF8.self)
-                write("▸ \(name) \(shown.count > 200 ? String(shown.prefix(200)) + "…" : shown)\n", to: .standardError)
-            case .toolFinished(_, _, let output):
-                let first = output.content.split(separator: "\n").last.map(String.init) ?? ""
-                write(output.isError ? "  ✗ \(first)\n" : "  ✓\n", to: .standardError)
-            case .model(.notice(let text)):
-                endLine()
-                write("ask: \(text)\n", to: .standardError)
-            case .repaired(let repairs):
-                write("ask: repaired the context: \(repairs)\n", to: .standardError)
-            case .continuedAtOutputLimit:
-                endLine()
-                write("ask: the response hit the output limit; asking the model to continue.\n", to: .standardError)
-            case .retrying(let attempt, let total, let delay, let reason):
-                endLine()
-                write(
-                    "ask: \(retryNotice(attempt: attempt, of: total, delay: delay, reason: reason))\n",
-                    to: .standardError)
-            case .finished:
-                endLine()
-            default:
-                break
-        }
-    }
-
-    private func endLine() {
-        if midLine.withLock({ $0 }) { write("\n", to: .standardOutput) }
-        midLine.withLock { $0 = false }
-    }
-
-    private func write(_ text: String, to handle: FileHandle) { handle.write(Data(text.utf8)) }
-}
-
 /// `prompt`, or for `/skill:name request` the request with the skill after it. A skill that cannot be loaded ends the run with exit code 64 and
 /// says why, before anything is sent.
 private func expandingSkill(_ prompt: String, settings: RunSettings, workingDirectory: String) -> String {

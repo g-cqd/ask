@@ -11,16 +11,9 @@ struct ClaudeProvider: ModelProvider {
 
     func stream(_ request: ModelRequest) -> AsyncThrowingStream<ModelEvent, any Error> {
         let (client, auth) = (client, auth)
-        return AsyncThrowingStream { continuation in
-            let task = Task {
-                do {
-                    for try await event in client.stream(request, auth: try await auth()) { continuation.yield(event) }
-                    continuation.finish()
-                } catch {
-                    continuation.finish(throwing: error)
-                }
-            }
-            continuation.onTermination = { _ in task.cancel() }
+        return ModelStream.after {
+            let auth = try await auth()
+            return client.stream(request, auth: auth)
         }
     }
 }
