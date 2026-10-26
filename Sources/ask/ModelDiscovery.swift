@@ -28,12 +28,14 @@ enum ModelDiscovery {
     /// Resolve normally first; only a missing Codex default requires discovery. Explicit model ids never need a network.
     static func resolve(
         providers: ProviderSettings, provider: String?, model: String?, environment: [String: String],
-        allowNetwork: Bool
+        allowNetwork: Bool, choice: Choice = Choice()
     ) async throws -> (model: ResolvedModel, notices: [String]) {
+        var (provider, model, notices) = qualified(
+            provider, model, providers: providers, environment: environment, choice: choice)
         let picked = automatic(provider, providers: providers, environment: environment)
-        let provider = picked.provider
+        provider = picked.provider
+        notices += picked.notices
         let selected = providers.selectedProvider(provider)
-        var notices = picked.notices
         let (connection, found) = try registered(selected, environment: environment)
         notices += found
         var aliases = ModelAliases.empty
