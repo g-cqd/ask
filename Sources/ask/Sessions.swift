@@ -11,7 +11,10 @@ struct Sessions: ParsableCommand {
     var limit = 20
 
     func run() {
-        let listed = SessionDirectory(project: FileManager.default.currentDirectoryPath).sessions()
+        let listed = SessionDirectory(
+            project: FileManager.default.currentDirectoryPath, environment: LaunchEnvironment.values
+        )
+        .sessions()
         guard !listed.isEmpty else {
             print("No sessions in this project yet.")
             return

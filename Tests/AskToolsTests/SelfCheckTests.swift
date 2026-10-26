@@ -39,6 +39,19 @@ struct SelfCheckTests {
         #expect(await SelfCheck.run(path) == .failed("it exited 9"), "without them the same build fails")
     }
 
+    @Test func `the check runs with the environment it is given, not the one this process holds`() async throws {
+        let path = try build(#"[ "$1" = "--self-check" ] && echo "key=[$SELFCHECK_PROBE_KEY] home=[$HOME]""#)
+        setenv("SELFCHECK_PROBE_KEY", "", 1)  // as ask's own copy is once its credentials are blanked (ADR-0113)
+        defer { unsetenv("SELFCHECK_PROBE_KEY") }
+        let given = ["SELFCHECK_PROBE_KEY": "launch-value", "HOME": "/given"]
+        #expect(await SelfCheck.run(path, environment: given) == .passed("key=[launch-value] home=[/given]"))
+        guard case .passed(let inherited) = await SelfCheck.run(path) else {
+            Issue.record("the default run did not pass")
+            return
+        }
+        #expect(inherited.hasPrefix("key=[] "), "with none given, the child inherits this process's")
+    }
+
     @Test func `a build that exits non-zero fails, with its code and what it said on standard error`() async throws {
         let path = try build(#"echo "config.json:3:13: unexpected ']'" >&2; exit 78"#)
         #expect(await SelfCheck.run(path) == .failed("it exited 78: config.json:3:13: unexpected ']'"))

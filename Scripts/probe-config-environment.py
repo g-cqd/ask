@@ -7,7 +7,9 @@ Stand-in keys only, a local fake provider, a temporary HOME and configuration. E
   1. a user file's `pass` reaches a command and its `withhold` hides another variable; `ask config` names them, never a value;
   2. a name in both lists is withheld;
   3. a project file that passes a variable is refused by `ask trust` and stays ignored, and the key stays withheld;
-  4. a project file that only withholds is trusted and takes effect.
+  4. a project file that only withholds is trusted and takes effect;
+  5. withholding a variable ask itself uses to find its files (XDG_STATE_HOME) hides it from commands without moving the session (ADR-0113).
+     A build with that defect writes its session under the real home directory, which this probe cannot see or clean up.
 """
 import importlib.util
 import json
@@ -126,6 +128,13 @@ def main():
     check("untrusted, its withholding does not apply", before["SERVICE"] == SERVICE, before)
     check("ask trust accepts it", trusted.returncode == 0, trusted.stderr)
     check("trusted, the variable is withheld", after["SERVICE"] == "", after)
+    print("5: withholding a path variable does not move ask's own files")
+    case = Case(user={"environment": {"withhold": ["XDG_STATE_HOME"]}})
+    run = case.ask("-p", "hi")
+    kept = [f for _, _, names in os.walk(case.state) for f in names if f.endswith(".jsonl")]
+    case.close()
+    check("the run succeeds", run.returncode == 0, run.stderr[-300:])
+    check("the session is written where XDG_STATE_HOME says", len(kept) == 1, (kept, run.stderr[-200:]))
     return 0 if all(ok) else 1
 
 

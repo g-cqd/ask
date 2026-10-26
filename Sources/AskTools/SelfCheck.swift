@@ -22,15 +22,18 @@ public enum SelfCheck {
     ///   - executable: the new build.
     ///   - arguments: what follows `--self-check`: the flags the replacement process will be started with, so the
     ///     check loads the configuration it will really run on.
+    ///   - environment: the environment the check runs with, or nil for this process's own. ask passes the one it was launched
+    ///     with, because its own has had its credentials blanked and a check that finds no key would refuse a build that works (ADR-0113).
     ///   - timeout: how long it gets.
     ///   - clock: what the timeout is measured on.
     /// - Returns: the outcome. Never throws: every way it can go wrong is a ``Outcome/failed(_:)``.
     public static func run(
-        _ executable: String, arguments: [String] = [], timeout: Duration = defaultTimeout,
+        _ executable: String, arguments: [String] = [], environment: [String: String]? = nil,
+        timeout: Duration = defaultTimeout,
         clock: any Clock<Duration> = ContinuousClock()
     ) async -> Outcome {
         await withTaskGroup(of: Outcome?.self) { group in
-            group.addTask { await execute(executable, arguments: arguments) }
+            group.addTask { await execute(executable, arguments: arguments, environment: environment) }
             group.addTask {
                 // A cancelled sleep is the check finishing first.
                 guard (try? await clock.sleep(for: timeout)) != nil else { return nil }
@@ -42,11 +45,14 @@ public enum SelfCheck {
         }
     }
 
-    private static func execute(_ executable: String, arguments: [String]) async -> Outcome {
+    private static func execute(_ executable: String, arguments: [String], environment: [String: String]?) async
+        -> Outcome
+    {
         let options = JobProcess.groupOptions(graceSeconds: 1)
         do {
             let result = try await Subprocess.run(
-                .path(FilePath(executable)), arguments: .init(["--self-check"] + arguments), platformOptions: options,
+                .path(FilePath(executable)), arguments: .init(["--self-check"] + arguments),
+                environment: environment.map(JobProcess.environment) ?? .inherit, platformOptions: options,
                 input: .none,
                 output: .string(limit: 16 << 10), error: .string(limit: 16 << 10))
             if Task.isCancelled { return .failed("the check was cancelled") }

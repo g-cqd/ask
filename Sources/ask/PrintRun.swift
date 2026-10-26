@@ -82,7 +82,8 @@ func runPrompt(
 )
     async
 {
-    let directory = SessionDirectory(project: FileManager.default.currentDirectoryPath)
+    let directory = SessionDirectory(
+        project: FileManager.default.currentDirectoryPath, environment: LaunchEnvironment.values)
     let model = settings.model
     for line in startupNotices + settings.description { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     let transport = URLSessionTransport()
