@@ -33,7 +33,7 @@ struct Ask: AsyncParsableCommand {
 
     @Option(
         help:
-            "The connection: a registered name, built-in anthropic/codex, or providers.json entry. Default: config.json, else the file's default."
+            "The connection: a registered name, built-in anthropic/codex/agy/apple, or providers.json entry. Default: config.json, else the file's default, else an account you are signed in to, else Apple's on-device model."
     )
     var provider: String?
 
