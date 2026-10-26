@@ -2,7 +2,7 @@
 ///
 /// Names, endpoints and key variables are pi's, so one environment serves both. Each endpoint answered a keyless
 /// chat request as an API that wants a key (diary 18); a service that could not be verified is left out until it can.
-struct ProviderPreset: Sendable, Equatable {
+public struct ProviderPreset: Sendable, Equatable {
     /// The name `--provider` and `providers.json` use.
     let name: String
     /// Where chat completions are served, without a trailing slash.
@@ -53,6 +53,9 @@ struct ProviderPreset: Sendable, Equatable {
         ProviderPreset("zai", "https://api.z.ai/api/coding/paas/v4", "ZAI_API_KEY"),
         ProviderPreset("zai-coding-cn", "https://open.bigmodel.cn/api/coding/paas/v4", "ZAI_CODING_CN_API_KEY")
     ]
+
+    /// Every preset's name, for a list of what a key can be stored for.
+    public static var names: [String] { all.map(\.name) }
 
     /// The preset named `name`, if there is one.
     static func named(_ name: String) -> ProviderPreset? { all.first { $0.name == name } }

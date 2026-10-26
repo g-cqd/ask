@@ -30,8 +30,10 @@ enum ModelDiscovery {
         providers: ProviderSettings, provider: String?, model: String?, environment: [String: String],
         allowNetwork: Bool
     ) async throws -> (model: ResolvedModel, notices: [String]) {
+        let picked = automatic(provider, providers: providers, environment: environment)
+        let provider = picked.provider
         let selected = providers.selectedProvider(provider)
-        var notices: [String] = []
+        var notices = picked.notices
         let (connection, found) = try registered(selected, environment: environment)
         notices += found
         var aliases = ModelAliases.empty
