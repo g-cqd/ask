@@ -22,7 +22,10 @@ Found by the 2026-10-19 audit (`docs/diary/2026-10-19-02.md`), each with the pro
    the structure baseline shrank with `PrintRun.swift` leaving it. Then, diary 2026-10-26-02: `toolSummary`,
    `modelLabel`, the system instructions, the configuration directory and the instruction-file lines moved out of
    `Composition.swift` into libraries with 27 tests. Still untested in `Sources/ask`: `makeLoop` itself (it is binding:
-   it names which library parts a run is made of), the command handlers and the flow of `runPrompt`.)
+   it names which library parts a run is made of), the command handlers and the flow of `runPrompt`. Read again after the
+   move: the handlers (`/tree`, `/fork`, `/resume`, `/model`) hold only glue around library parts that have tests
+   (`SessionOutline`, `SessionFile.fork`, the recorder) and are exercised end to end by `probe-tree`, `probe-fork` and
+   `probe-interactive`, so item 2 is closed except for that glue.)
 3. **Coverage is measurable and not reported.** 95.0% weighted line coverage over the library files today.
    By the project's own rule it is behaviour that counts, so this is a report in CI to show where a file has
    no test, never a threshold.
