@@ -11,10 +11,9 @@ internal import System
 /// The loop and the session are both made on the first prompt, not at launch: nothing needs them before then,
 /// and building the loop measured about 1.2 ms of cold start.
 ///
-/// Configuration is read again before every prompt (ADR-0031). A valid change takes effect on that prompt and
-/// is reported; an invalid one is reported once and the previous settings stay.
+/// Configuration is read again before every prompt (ADR-0031): a valid change takes effect on that prompt and is reported; an
+/// invalid one is reported once and the previous settings stay.
 final class AgentConversation: Conversation {
-    // Internal rather than private: the command handlers live in AgentConversation+Commands.swift.
     /// Where settings are read from; `/model` replaces it with one carrying the run's selection.
     let sourceState: Mutex<ConfigurationSource>
     var source: ConfigurationSource { sourceState.withLock { $0 } }
@@ -37,9 +36,10 @@ final class AgentConversation: Conversation {
     let jobs: JobTable
     /// The MCP servers, which outlive the loop and follow the configuration (ADR-0099).
     let mcp: MCPHub
-    /// The build that is running, to tell when a newer one appears.
+    /// The questions a command asked the person (a code, a key), waiting for an answer.
+    let inputs = InputBroker()
+    /// The build that is running, and the one a successful `/reload` chose, which ``reExecute()`` starts.
     let startup = BinaryIdentity.running()
-    /// The build a successful `/reload` chose; ``reExecute()`` starts it.
     let reloadTarget = Mutex<BinaryIdentity?>(nil)
 
     /// The settings in force, the loop built from them, and the last reload error shown.

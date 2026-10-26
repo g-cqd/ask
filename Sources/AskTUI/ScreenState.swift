@@ -37,6 +37,12 @@ public struct ScreenState: Sendable, Equatable {
     var collapsedRunners: Set<String> = []
     /// A question waiting for y, a or n: while it waits, those keys answer it and nothing is typed.
     public var pendingApproval: PendingApproval?
+    /// A line a running command asked for, while it waits: the keys go to ``inputAnswer`` until Enter or Esc.
+    public var pendingInput: PendingInput?
+    /// What is typed for ``pendingInput``; never drawn but as dots when the input is a secret.
+    var inputAnswer = PromptEditor()
+    /// Each command's list of choices, as the conversation last offered it, and when it was asked for.
+    var choices: [String: ChoiceList] = [:]
     /// The project's files for the `@` picker; nil until the first listing arrives (roadmap 0048).
     var files: ProjectFiles?
     /// When ``files`` arrived, so a listing that has aged is asked for again.

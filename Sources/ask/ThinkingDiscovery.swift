@@ -57,6 +57,28 @@ enum ThinkingDiscovery {
             maximumTokens: maximumTokens)
     }
 
+    /// The model's catalog entry: the cached one, else one downloaded now. For a list the person is looking at, which may wait; a run's start
+    /// never does (``resolve(_:model:environment:)`` reads the cache only).
+    static func descriptor(for model: ResolvedModel, environment: [String: String]) async -> CatalogModel? {
+        if let cached = cachedMetadata(model, environment: environment).0 { return cached }
+        let now = Date().timeIntervalSince1970
+        let snapshot: CatalogSnapshot?
+        switch model.provider {
+            case .anthropic:
+                snapshot =
+                    try? await AnthropicModelDiscovery.catalog(environment: environment, connection: model.connection)
+                    .models(now: now)
+            case .codex:
+                snapshot = try? await ModelDiscovery.codex(environment: environment, connection: model.connection)
+                    .models(now: now)
+            case .openAIResponses:
+                snapshot = try? await ProviderModelDiscovery.catalog(for: model, environment: environment)?
+                    .models(now: now)
+            case .openAICompatible, .agy, .apple: snapshot = nil
+        }
+        return snapshot?.models.first { $0.id == model.model }
+    }
+
     private static func cachedMetadata(_ model: ResolvedModel, environment: [String: String]) -> (
         CatalogModel?, [String]
     ) {

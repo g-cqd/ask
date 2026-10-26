@@ -6,17 +6,29 @@ struct PickerRow: Sendable, Equatable {
     let detail: String
     /// What the draft gets in place of the word that was typed, sigil included.
     let insertion: String
+    /// The arguments to run the command with at once, when the row is a choice and not text for the draft; nil for a row that inserts.
+    let run: String?
 
     /// A command: `/name`, its summary beside it.
     init(_ command: SlashCommand) {
         label = "/" + command.name
         detail = command.summary
         insertion = label
+        run = nil
     }
 
     init(label: String, detail: String = "", insertion: String) {
         self.label = label
         self.detail = detail
         self.insertion = insertion
+        run = nil
+    }
+
+    /// A choice for `command`: chosen, it runs `command` with `arguments`.
+    init(_ choice: ChoiceRow, command: String) {
+        label = choice.isCurrent ? choice.label + " ●" : choice.label
+        detail = choice.detail
+        insertion = choice.completes ? choice.arguments : "/\(command) \(choice.arguments)"
+        run = choice.completes ? nil : choice.arguments
     }
 }
