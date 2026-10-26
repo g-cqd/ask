@@ -167,6 +167,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                 case "thinking": "must be one of: \(ThinkingLevel.choices)"
                 case "sandbox.network": "is \"\(value)\": use \"none\", \"localhost\" or \"any\""
                 case "ui.tools", "ui.thinking", "ui.code": "is \"\(value)\": use \"folded\" or \"open\""
+                case "ui.sidebar": "is \"\(value)\": use \"open\" or \"closed\""
                 default: "is \"\(value)\": use \"workspace\", \"anywhere\" or a list of paths"
             }
         }

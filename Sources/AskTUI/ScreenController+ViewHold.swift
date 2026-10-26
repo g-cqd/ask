@@ -9,7 +9,7 @@ extension ScreenController {
     /// - Returns: what `change` returned.
     mutating func holdingView(_ change: (inout ScreenController) -> [Effect]) -> [Effect] {
         let held = state.scrollback
-        guard held > 0, frame.columns > 0 else { return change(&self) }
+        guard held > 0, frame.transcriptColumns > 0 else { return change(&self) }
         let first = Swift.max(0, state.transcript.items.count - 1)
         let before = wrappedLines(from: first)
         let effects = change(&self)
@@ -20,6 +20,8 @@ extension ScreenController {
     /// How many rows blocks `first` and after take at the last frame's width; none when the transcript no longer reaches `first`.
     private func wrappedLines(from first: Int) -> Int {
         (first ..< Swift.max(first, state.transcript.items.count))
-            .reduce(0) { $0 + ScreenComposer.lines(in: state.transcript, at: $1, columns: frame.columns).count }
+            .reduce(0) {
+                $0 + ScreenComposer.lines(in: state.transcript, at: $1, columns: frame.transcriptColumns).count
+            }
     }
 }

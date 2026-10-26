@@ -40,6 +40,7 @@ struct SlashCommandsTests {
                 "/quit  Leave ask, stopping a running turn first.",
                 "/follow-up  Queue a message after the agent finishes: /follow-up TEXT.",
                 "/tasks  Show or hide the background jobs that are running.",
+                "/sidebar  Show or hide the runner sidebar (Ctrl+\\). Wide screens only.",
                 "/config  Show the settings."
             ])
     }

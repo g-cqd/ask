@@ -6,7 +6,8 @@ internal import TerminalKitInput
 extension ScreenController {
     /// The keys of the strip, or nil when the key is the editor's. Any other key hands the keys back to the input and is typed there.
     mutating func stripKey(_ key: KeyEvent) -> [Effect]? {
-        guard state.runnersOpen, !state.runnerTree.rows.isEmpty, key.modifiers.isEmpty else {
+        guard state.runnersOpen || !frame.sidebarIDs.isEmpty, !state.runnerTree.rows.isEmpty, key.modifiers.isEmpty
+        else {
             return nil
         }
         let rows = state.runnerTree.visible(collapsed: state.collapsedRunners)
@@ -50,6 +51,30 @@ extension ScreenController {
             let runner = state.runners.first(where: { $0.id == frame.stripIDs[index] })
         else { return [] }
         return enterLane(runner)
+    }
+
+    /// A click on the sidebar's row `index`: the same as a click on the strip's row, Enter on that runner.
+    mutating func clickSidebar(row index: Int) -> [Effect] {
+        guard state.pendingApproval == nil, frame.sidebarIDs.indices.contains(index),
+            let runner = state.runners.first(where: { $0.id == frame.sidebarIDs[index] })
+        else { return [] }
+        return enterLane(runner)
+    }
+
+    /// Ctrl+\\, and the keyboard's way to the sidebar when the mouse is off.
+    func isToggleSidebar(_ key: KeyEvent) -> Bool {
+        key.keyCode == 0x1C || (key.modifiers.contains(.ctrl) && key.keyCode == 0x5C)
+    }
+
+    /// Opens or closes the sidebar. A screen too narrow for it says so instead of seeming to ignore the command.
+    mutating func toggleSidebar(announcing: Bool = false) -> [Effect] {
+        state.sidebarOpen.toggle()
+        if announcing, state.sidebarOpen, frame.columns > 0, frame.columns < Sidebar.minimumColumns {
+            state.transcript.addNotice(
+                "The sidebar needs \(Sidebar.minimumColumns) columns; this screen has \(frame.columns).", isError: false
+            )
+        }
+        return []
     }
 
     /// Esc, once the selection and a picker have had it. One step back, never the draft or a turn: the strip's selection returns to the input, then a

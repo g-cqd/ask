@@ -17,10 +17,13 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var foldCode: Bool?
     /// `ui.codeFoldLines`: a code block with more lines than this starts folded (never more than half the screen).
     public var codeFoldLines: Int?
+    /// `ui.sidebar`: whether the runner sidebar starts open. `true` is `"open"`, `false` is `"closed"`.
+    public var sidebarOpen: Bool?
 
     public init(
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
-        scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil
+        scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil,
+        sidebarOpen: Bool? = nil
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -30,16 +33,17 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.promptRows = promptRows
         self.foldCode = foldCode
         self.codeFoldLines = codeFoldLines
+        self.sidebarOpen = sidebarOpen
     }
 
     public var isEmpty: Bool {
         mouse == nil && copyOnSelect == nil && foldTools == nil && foldThinking == nil && scrollLines == nil
-            && promptRows == nil && foldCode == nil && codeFoldLines == nil
+            && promptRows == nil && foldCode == nil && codeFoldLines == nil && sidebarOpen == nil
     }
 
     /// The keys, in the order they are shown.
     public static let keys = [
-        "mouse", "copyOnSelect", "tools", "thinking", "scrollLines", "promptRows", "code", "codeFoldLines"
+        "mouse", "copyOnSelect", "tools", "thinking", "scrollLines", "promptRows", "code", "codeFoldLines", "sidebar"
     ]
 
     /// `self` with every key `section` sets replaced.
@@ -48,19 +52,22 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             mouse: section.mouse ?? mouse, copyOnSelect: section.copyOnSelect ?? copyOnSelect,
             foldTools: section.foldTools ?? foldTools, foldThinking: section.foldThinking ?? foldThinking,
             scrollLines: section.scrollLines ?? scrollLines, promptRows: section.promptRows ?? promptRows,
-            foldCode: section.foldCode ?? foldCode, codeFoldLines: section.codeFoldLines ?? codeFoldLines)
+            foldCode: section.foldCode ?? foldCode, codeFoldLines: section.codeFoldLines ?? codeFoldLines,
+            sidebarOpen: section.sidebarOpen ?? sidebarOpen)
     }
 
     public var description: String {
         var parts: [String] = []
         if let mouse { parts.append("mouse \(mouse ? "on" : "off")") }
         if let copyOnSelect { parts.append("copyOnSelect \(copyOnSelect ? "on" : "off")") }
+        // @dl:accept -- one line per key, as data, in the order the keys are shown
         if let foldTools { parts.append("tools \(foldTools ? "folded" : "open")") }
         if let foldThinking { parts.append("thinking \(foldThinking ? "folded" : "open")") }
         if let scrollLines { parts.append("scrollLines \(scrollLines)") }
         if let promptRows { parts.append("promptRows \(promptRows)") }
         if let foldCode { parts.append("code \(foldCode ? "folded" : "open")") }
         if let codeFoldLines { parts.append("codeFoldLines \(codeFoldLines)") }
+        if let sidebarOpen { parts.append("sidebar \(sidebarOpen ? "open" : "closed")") }
         return parts.isEmpty ? "defaults" : parts.joined(separator: ", ")
     }
 }
