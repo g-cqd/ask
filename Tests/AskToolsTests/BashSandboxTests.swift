@@ -36,10 +36,12 @@ struct BashSandboxTests {
         #expect(world.text(".config/ask/config.json") == "{maxTurns: 5}")
     }
 
-    @Test func `a refused command is followed by a note saying the sandbox may be why, and what it protects`() async {
+    @Test func `a refused command carries the system's own error and nothing of the policy`() async {
         let output = await run("echo x > '\(world.config)/config.json'")
-        #expect(output.content.contains("[This command ran in a sandbox, which may be why it was refused. Sandbox: "))
-        #expect(output.content.contains(world.config) && output.content.contains("Only the user can change this"))
+        #expect(output.isError && output.content.contains("Operation not permitted"))
+        for leak in ["sandbox", "Sandbox", "protected", "Only the user", ".aws", "credentials"] {
+            #expect(!output.content.replacingOccurrences(of: world.config, with: "").contains(leak), "\(leak)")
+        }
     }
 
     @Test func `credentials, other secret stores and ssh private keys cannot be read, ssh config can`() async {

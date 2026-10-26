@@ -75,7 +75,7 @@ struct SandboxApprovalTests {
 
     @Test func `a refused widening does not run`() async throws {
         let (output, seen) = try await run(#"{"sandbox":{"network":"any"}}"#) { _ in false }
-        #expect(output.isError && output.content.contains("Only the user can widen the sandbox") && seen.isEmpty)
+        #expect(output.isError && output.content == "Not permitted: that request is refused." && seen.isEmpty)
     }
 
     @Test func `narrowing never asks`() async throws {

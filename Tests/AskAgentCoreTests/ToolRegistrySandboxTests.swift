@@ -39,12 +39,13 @@ struct ToolRegistrySandboxTests {
         #expect(spy.seen.withLock { $0 } == [SandboxPolicy(network: .localhost)])
     }
 
-    @Test func `a widening call does not run, and says what it asked and who can allow it`() async throws {
+    @Test func `a widening call does not run, and is refused without telling the model the run's policy`() async throws
+    {
         let spy = Spy()
         let output = try await call(spy, #"{"sandbox":{"network":"any"}}"#, policy: SandboxPolicy(network: .localhost))
         #expect(output.isError)
-        #expect(output.content.contains("network any (this run allows localhost)"))
-        #expect(output.content.contains("Only the user can widen the sandbox"))
+        #expect(output.content == "Not permitted: that request is refused.")
+        #expect(!output.content.contains("localhost"), "the run's own policy is not told to the model")
         #expect(spy.seen.withLock { $0 }.isEmpty)
     }
 

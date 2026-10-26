@@ -135,14 +135,12 @@ enum ScopedFile {
     ) throws(ToolFailure) {
         var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))
         guard fcntl(descriptor, F_GETPATH, &buffer) == 0 else {
-            throw ToolFailure("Sandbox: \(path) cannot be resolved to a real location. Only the user can change this.")
+            throw ToolFailure.notPermitted(path)
         }
         let real = String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
         let target = name.map { real + "/" + $0 } ?? real
-        if case .denied(_, let why) = context.sandbox.authorize(
-            capability, path: target, relativeTo: context.workingDirectory)
-        {
-            throw ToolFailure("Sandbox: \(why) Only the user can change this.")
+        if case .denied = context.sandbox.authorize(capability, path: target, relativeTo: context.workingDirectory) {
+            throw ToolFailure.notPermitted(path)
         }
     }
 }

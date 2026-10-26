@@ -47,6 +47,6 @@ final class ReadSandboxTests {
         let inside = await ReadTool().run(world.input(#"{"path":"file.txt"}"#), in: context)
         #expect(!inside.isError && inside.content.contains("workspace file"))
         let outside = await ReadTool().run(world.input(#"{"path":"\#(world.home)/.ssh/config"}"#), in: context)
-        #expect(outside.isError && outside.content.contains("outside the places this run may read"))
+        #expect(outside == .error("Not permitted: \(world.home)/.ssh/config."))
     }
 }

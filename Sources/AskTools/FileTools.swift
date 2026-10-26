@@ -18,19 +18,17 @@ public enum FileTools {
     /// tool needs, and the path is then used in its canonical form. That narrows what a link swapped in later can do but does not
     /// end it, so `text` and `write` open the object and check where it really is before using it (``ScopedFile``, ADR-0085).
     /// With nothing restricted the path is used as given and nothing is looked up.
-    /// - Throws: a ``ToolFailure`` that names the capability and the path, and says only the user can change it.
+    /// - Throws: a ``ToolFailure`` that names the path the model gave and nothing of the policy that refused it (ADR-0115).
     static func authorized(
         _ path: String, for capabilities: [SandboxCapability], in context: ToolContext
     ) throws(ToolFailure) -> URL {
         guard !context.sandbox.isUnrestricted else { return url(path, in: context) }
         for capability in capabilities {
             let decision = context.sandbox.authorize(capability, path: path, relativeTo: context.workingDirectory)
-            if case .denied(_, let why) = decision {
-                throw ToolFailure("Sandbox: \(why) Only the user can change this.")
-            }
+            if case .denied = decision { throw ToolFailure.notPermitted(path) }
         }
         guard let canonical = CanonicalPath.of(path, relativeTo: context.workingDirectory) else {
-            throw ToolFailure("Sandbox: \(path) cannot be resolved to a real location. Only the user can change this.")
+            throw ToolFailure.notPermitted(path)
         }
         return URL(fileURLWithPath: canonical)
     }
