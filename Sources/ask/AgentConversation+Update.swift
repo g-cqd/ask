@@ -20,7 +20,7 @@ extension AgentConversation {
             case .compacted, .compactionFailed:
                 return RunNotices.compaction(for: event).map { .notice($0, isError: false) }
             case .continuedAtOutputLimit:
-                return .notice("The response hit the output limit; asking the model to continue.", isError: false)
+                return .detail("The response hit the output limit; asking the model to continue.")
             case .retrying(let attempt, let total, let delay, let reason):
                 return .notice(
                     RunNotices.retry(attempt: attempt, of: total, delay: delay, reason: reason), isError: false)

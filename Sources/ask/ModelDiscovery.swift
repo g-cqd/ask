@@ -29,6 +29,25 @@ enum ModelDiscovery {
     static func resolve(
         providers: ProviderSettings, provider: String?, model: String?, environment: [String: String],
         allowNetwork: Bool, choice: Choice = Choice()
+    ) async throws -> (model: ResolvedModel, notices: [String], details: [String]) {
+        let found = try await resolveAll(
+            providers: providers, provider: provider, model: model, environment: environment,
+            allowNetwork: allowNetwork, choice: choice)
+        return (
+            found.model, found.notices.filter { !$0.hasPrefix(detailMark) },
+            found.notices.filter { $0.hasPrefix(detailMark) }.map { String($0.dropFirst(detailMark.count)) }
+        )
+    }
+
+    /// Marks a line that says what ask decided by itself and not what the person needs to act on: ``resolve`` keeps those apart as details
+    /// (ADR-0119), so the helpers below can go on returning one list.
+    static let detailMark = "\u{1}"
+
+    static func detail(_ text: String) -> String { detailMark + text }
+
+    private static func resolveAll(
+        providers: ProviderSettings, provider: String?, model: String?, environment: [String: String],
+        allowNetwork: Bool, choice: Choice
     ) async throws -> (model: ResolvedModel, notices: [String]) {
         var (provider, model, notices) = qualified(
             provider, model, providers: providers, environment: environment, choice: choice)
@@ -73,7 +92,7 @@ enum ModelDiscovery {
             return (
                 chosen,
                 notices + snapshot.notices + [
-                    "Using \(connection?.name ?? "codex")/\(chosen.model) from this account's model catalog."
+                    detail("Using \(connection?.name ?? "codex")/\(chosen.model) from this account's model catalog.")
                 ]
             )
         }
@@ -158,7 +177,7 @@ enum ModelDiscovery {
     /// Says which server model an alias stood for, so a run never hides what it sent.
     private static func announcement(_ resolved: ResolvedModel) -> [String] {
         guard let alias = resolved.alias, let connection = resolved.connection else { return [] }
-        return ["Using \(connection.name)/\(alias), which is \(resolved.model)."]
+        return [detail("Using \(connection.name)/\(alias), which is \(resolved.model).")]
     }
 
     static func exitCode(for error: any Error) -> Int32 {

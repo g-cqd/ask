@@ -18,11 +18,14 @@ public struct ScreenOptions: Sendable, Equatable {
     public var codeFoldLines: Int
     /// Whether the runner sidebar starts open (`ui.sidebar`). Ctrl+\ and `/sidebar` toggle it; it needs 70 columns.
     public var sidebar: Bool
+    /// Whether details are shown: what ask did on its own account, such as the sandbox in force or a build that appeared (`--verbose`).
+    /// `/verbose` toggles it, and shows what was held back meanwhile (ADR-0119).
+    public var verbose: Bool
 
     public init(
         mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
         scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20,
-        sidebar: Bool = false
+        sidebar: Bool = false, verbose: Bool = false
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -33,5 +36,6 @@ public struct ScreenOptions: Sendable, Equatable {
         self.foldCode = foldCode
         self.codeFoldLines = Swift.max(1, codeFoldLines)
         self.sidebar = sidebar
+        self.verbose = verbose
     }
 }

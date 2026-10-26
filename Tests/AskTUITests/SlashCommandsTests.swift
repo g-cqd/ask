@@ -41,6 +41,7 @@ struct SlashCommandsTests {
                 "/follow-up  Queue a message after the agent finishes: /follow-up TEXT.",
                 "/tasks  Show or hide the background jobs that are running.",
                 "/sidebar  Show or hide the runner sidebar (Ctrl+\\). Wide screens only.",
+                "/verbose  Show or hide details: the sandbox, the files read, builds that appeared.",
                 "/config  Show the settings."
             ])
     }

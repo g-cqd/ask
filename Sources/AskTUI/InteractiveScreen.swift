@@ -15,7 +15,8 @@ internal import TerminalKitRender
 ///   - conversation: runs each submitted prompt.
 ///   - label: shown at the left of the status line.
 ///   - history: a resumed session's conversation, shown before anything else.
-///   - notices: shown after the history, such as which instruction files apply.
+///   - notices: shown after the history, such as a file that was ignored.
+///   - details: shown after those only when details are on (`--verbose`, `/verbose`), and kept for `/verbose` otherwise.
 ///   - options: how the pointer behaves: whether it is reported, whether a selection is copied, how far the wheel scrolls.
 ///   - beforeSignalExit: runs when a shutdown signal is about to end the process, after the terminal is
 ///     restored: the last chance to stop child processes.
@@ -24,7 +25,8 @@ internal import TerminalKitRender
 @discardableResult
 public func runInteractiveScreen(
     conversation: any Conversation, label: String, history: [ConversationUpdate] = [], notices: [String] = [],
-    options: ScreenOptions = ScreenOptions(), beforeSignalExit: @escaping @Sendable () -> Void = {}
+    details: [String] = [], options: ScreenOptions = ScreenOptions(),
+    beforeSignalExit: @escaping @Sendable () -> Void = {}
 ) async throws -> ScreenExit {
     // Frames and the session's own escape sequences share one terminal, so their writes take turns.
     let connection = SerializedConnection(POSIXTerminalConnection())
@@ -48,15 +50,15 @@ public func runInteractiveScreen(
                 connection: connection, environment: ProcessInfo.processInfo.environment,
                 pasteboard: HostPasteboard.pbcopy)),
         conversation: conversation, label: label, options: options,
-        opening: openingUpdates(history: history, notices: notices), resizes: resizes)
+        opening: openingUpdates(history: history, notices: notices, details: details), resizes: resizes)
 }
 
 /// The screen over an injected connection, so every exit path is drivable from a test.
 @discardableResult
 func runInteractiveScreen(
     on connection: any TerminalConnection, conversation: any Conversation, label: String,
-    history: [ConversationUpdate] = [], notices: [String] = [], options: ScreenOptions = ScreenOptions(),
-    environment: [String: String] = [:],
+    history: [ConversationUpdate] = [], notices: [String] = [], details: [String] = [],
+    options: ScreenOptions = ScreenOptions(), environment: [String: String] = [:],
     pasteboard: @escaping @Sendable (String) async -> PasteboardResult = { _ in .copied },
     resizes: AsyncStream<Void>
 ) async throws -> ScreenExit {
@@ -69,7 +71,7 @@ func runInteractiveScreen(
             frames: frames,
             clipboard: ScreenClipboard(connection: connection, environment: environment, pasteboard: pasteboard)),
         conversation: conversation, label: label, options: options,
-        opening: openingUpdates(history: history, notices: notices), resizes: resizes)
+        opening: openingUpdates(history: history, notices: notices, details: details), resizes: resizes)
 }
 
 /// The screen inside a terminal session: TerminalKit enters its modes (alternate screen, hidden cursor,
@@ -98,6 +100,7 @@ private func runInteractiveScreen(
 }
 
 /// What the screen shows before the first prompt: a resumed session's history, then the notices.
-private func openingUpdates(history: [ConversationUpdate], notices: [String]) -> [ConversationUpdate] {
-    history + notices.map { .notice($0, isError: false) }
+private func openingUpdates(history: [ConversationUpdate], notices: [String], details: [String]) -> [ConversationUpdate]
+{
+    history + notices.map { .notice($0, isError: false) } + details.map { .detail($0) }
 }

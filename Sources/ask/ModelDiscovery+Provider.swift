@@ -29,7 +29,7 @@ extension ModelDiscovery {
                 model: model, thinking: choice.thinking, providers: providers, environment: environment),
             found != provider
         else { return (provider, model, []) }
-        return (found, model, ["\(model) is served by \(found); \(found)/\(model) says so."])
+        return (found, model, [detail("\(model) is served by \(found); \(found)/\(model) says so.")])
     }
 
     /// The provider to use when nothing named one (not a flag, the configuration or providers.json's default): one that can answer now. Said
@@ -48,7 +48,7 @@ extension ModelDiscovery {
             default:
                 return (
                     picked,
-                    ["No provider chosen; using \(picked), which you are signed in to. /model switches."]
+                    [detail("No provider chosen; using \(picked), which you are signed in to. /model switches.")]
                 )
         }
     }

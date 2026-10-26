@@ -210,14 +210,7 @@ func runInteractive(
 ) async {
     let workingDirectory = FileManager.default.currentDirectoryPath
     let directory = SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values)
-    var notices = startupNotices
-    if let resumed { notices.append("Resumed session \((resumed.path as NSString).lastPathComponent)") }
-    if let reloaded {
-        let now = Int(Date().timeIntervalSince1970 * 1_000)
-        let to = BinaryIdentity.running()?.summary ?? "the new build"
-        notices.append(
-            "Reloaded ask: \(reloaded.from) → \(to), in \(Swift.max(0, now - reloaded.startedMilliseconds)) ms.")
-    }
+    let details = startupDetails(resumed: resumed, reloaded: reloaded)
     let jobs = JobTable(environment: LaunchEnvironment.values)
     // Started now, not on the first prompt, so the servers are connecting while the person types.
     let mcp = startMCPServers(settings, jobs: jobs)
@@ -235,7 +228,8 @@ func runInteractive(
         // stops them gracefully below.
         let exit = try await runInteractiveScreen(
             conversation: conversation, label: settings.label, history: conversation.history(),
-            notices: notices + settings.description + ProjectInstructions.describe(files),
+            notices: startupNotices + settings.description,
+            details: details + settings.detailLines + ProjectInstructions.describe(files),
             options: settings.screenOptions, beforeSignalExit: { jobs.terminateAllNow() })
         await jobs.stopAll()
         await mcp.stop()

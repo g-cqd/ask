@@ -25,6 +25,8 @@ struct ConfigurationSource: Sendable {
         var thinking: ThinkingLevel?
         /// `--no-sandbox`: the user turned ask's protections off for this run.
         var noSandbox = false
+        /// `--verbose`: details are shown (ADR-0119).
+        var verbose = false
         /// `--network`: how far the network reaches, replacing what the files say.
         var network: SandboxPolicy.Network?
         /// `--write`: where writing is allowed, replacing what the files say.
@@ -43,6 +45,7 @@ struct ConfigurationSource: Sendable {
             if let compactAt { arguments += ["--compact-at", String(compactAt)] }
             if let thinking { arguments += ["--thinking", thinking.rawValue] }
             if noSandbox { arguments.append("--no-sandbox") }
+            if verbose { arguments.append("--verbose") }
             if let network { arguments += ["--network", network.description] }
             for (flag, setting) in [("--write", write), ("--read", read)] {
                 switch setting {
@@ -118,14 +121,14 @@ struct ConfigurationSource: Sendable {
         var result = try loader.load(
             model: flags.model, provider: flags.provider, maxTurns: flags.maxTurns, compactAt: flags.compactAt,
             network: flags.network, write: flags.write, read: flags.read, thinking: flags.thinking)
+        var details: [String] = []
         if let record = sessionSandbox, !flags.noSandbox {
             let before = result.configuration.sandbox
             result.configuration = result.configuration.applying(
                 session: record, flaggedNetwork: flags.network != nil, flaggedWrite: flags.write != nil,
                 flaggedRead: flags.read != nil)
             if result.configuration.sandbox != before {
-                result.notices.append(
-                    "Keeping this session's sandbox (\(record)); --network and --write change it.")
+                details.append("Keeping this session's sandbox (\(record)); --network and --write change it.")
             }
         }
         if let selected = flags.selected {
@@ -159,13 +162,15 @@ struct ConfigurationSource: Sendable {
         let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections(result.configuration.sandbox.value)
         return RunSettings(
             configuration: result.configuration, model: thinking.model, sandbox: sandbox, applied: result.applied,
-            notices: result.notices + discovered.notices + thinking.notices
+            notices: result.notices + discovered.notices + thinking.notices,
+            workspace: workspace, thinking: thinking.control, thinkingStatus: thinking.status,
+            thinkingPending: thinking.pending,
+            commandEnvironment: commandEnvironment,
+            details: details + discovered.details
                 + (pinned.map { ["Resuming recorded destination \(selected ?? $0.name)/\($0.model)."] } ?? [])
                 + (flags.noSandbox
                     ? ["The sandbox is off (--no-sandbox): ask's own files and your secret stores are not protected."]
                     : []),
-            workspace: workspace, thinking: thinking.control, thinkingStatus: thinking.status,
-            thinkingPending: thinking.pending,
-            commandEnvironment: commandEnvironment)
+            verbose: flags.verbose)
     }
 }
