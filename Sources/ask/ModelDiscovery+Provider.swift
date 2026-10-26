@@ -2,6 +2,36 @@ internal import AskAI
 internal import Foundation
 
 extension ModelDiscovery {
+    /// What the person said, apart from what the configuration says: whether the provider and the model came from a flag or a `/model`
+    /// choice, and the thinking effort asked for.
+    struct Choice {
+        var providerIsFlagged = false
+        var modelIsFlagged = false
+        var thinking = ThinkingLevel.providerDefault
+    }
+
+    /// The provider and model once `provider/model` is read and, for a model no provider was named for, the provider that serves it is found
+    /// (ADR-0118). A provider the person named on the command line is never overridden, a prefix equal to it is only dropped, and a model the
+    /// configuration chose is not second-guessed.
+    static func qualified(
+        _ provider: String?, _ model: String?, providers: ProviderSettings, environment: [String: String],
+        choice: Choice
+    ) -> (provider: String?, model: String?, notices: [String]) {
+        guard let model else { return (provider, nil, []) }
+        let names = ModelQualifier.providerNames(providers, environment: environment)
+        let reference = ReferencedModel(model, providers: names)
+        if let said = reference.provider {
+            if choice.providerIsFlagged, said != provider?.lowercased() { return (provider, model, []) }
+            return (said, reference.model, [])
+        }
+        guard !choice.providerIsFlagged, choice.modelIsFlagged || provider == nil,
+            let found = ModelQualifier.infer(
+                model: model, thinking: choice.thinking, providers: providers, environment: environment),
+            found != provider
+        else { return (provider, model, []) }
+        return (found, model, ["\(model) is served by \(found); \(found)/\(model) says so."])
+    }
+
     /// The provider to use when nothing named one (not a flag, the configuration or providers.json's default): one that can answer now. Said
     /// once, so a run never silently goes somewhere the person did not choose.
     static func automatic(

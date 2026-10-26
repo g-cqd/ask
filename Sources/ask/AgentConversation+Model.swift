@@ -42,11 +42,24 @@ extension AgentConversation {
                             + "from \(settings.configuration.model.source))", isError: false))
             case .reset: await select(nil, announcing: "Model selection reset to configuration", update: update)
             case .choose(let provider, let model):
-                let named = provider ?? current.withLock { $0.settings.model.providerName }
+                let (named, id) = provider.map { ($0, model) } ?? serving(model)
                 await select(
-                    ModelSelection(provider: named, model: model), announcing: "Model selected for this run",
+                    ModelSelection(provider: named, model: id), announcing: "Model selected for this run",
                     update: update)
         }
+    }
+
+    /// The provider and model for `/model WORD`: `provider/model` as written; else the provider whose list holds the model, for the effort in force
+    /// (ADR-0118); else the provider in force now.
+    private func serving(_ word: String) -> (provider: String, model: String) {
+        let environment = LaunchEnvironment.values
+        let (model, level) = current.withLock { ($0.settings.model, $0.settings.configuration.thinking.value) }
+        let providers = (try? ProviderSettings.load(from: source.providersPath)) ?? .none
+        let reference = ReferencedModel(
+            word, providers: ModelQualifier.providerNames(providers, environment: environment))
+        if let said = reference.provider { return (said, reference.model) }
+        let found = ModelQualifier.infer(model: word, thinking: level, providers: providers, environment: environment)
+        return (found ?? model.providerName, word)
     }
 
     /// Adopts `selection` only when the whole configuration, with it, resolves: a provider that is unknown, has no
