@@ -20,6 +20,7 @@ struct LaunchRequest {
     var write: String?
     var read: String?
     var selfCheck = false
+    var verbose = false
     var reloadedFrom: String?
     var reloadStarted: Int?
     var selectedProvider: String?
@@ -59,7 +60,7 @@ struct LaunchRequest {
             workingDirectory: FileManager.default.currentDirectoryPath,
             flags: .init(
                 model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt,
-                thinking: thinking.flatMap(ThinkingLevel.init(rawValue:)), noSandbox: noSandbox,
+                thinking: thinking.flatMap(ThinkingLevel.init(rawValue:)), noSandbox: noSandbox, verbose: verbose,
                 network: network.flatMap(SandboxPolicy.Network.init(named:)), write: Self.scope(write),
                 read: Self.scope(read),
                 selected: selectedProvider.flatMap { provider in

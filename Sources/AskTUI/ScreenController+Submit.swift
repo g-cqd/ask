@@ -23,6 +23,7 @@ extension ScreenController {
                     case "quit": return [.quit]
                     case "tasks": return toggleRunners(announcing: true)
                     case "sidebar": return toggleSidebar(announcing: true)
+                    case "verbose": return toggleVerbose()
                     case "follow-up": return submitPrompt(arguments, followUp: true)
                     default:
                         guard !busy() else { return [] }

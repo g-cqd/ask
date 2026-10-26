@@ -21,6 +21,11 @@ private func expandingSkill(_ prompt: String, settings: RunSettings, workingDire
     }
 }
 
+/// Says `lines` on standard error, which stays free of the answer.
+private func say(_ lines: [String]) {
+    for line in lines { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
+}
+
 /// Runs `prompt` to completion. SIGINT and SIGTERM abort the run, so a running command's whole process group
 /// is stopped, and then exit with 128 + the signal.
 func runPrompt(
@@ -32,7 +37,7 @@ func runPrompt(
     let directory = SessionDirectory(
         project: FileManager.default.currentDirectoryPath, environment: LaunchEnvironment.values)
     let model = settings.model
-    for line in startupNotices + settings.description { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
+    say(startupNotices + settings.description)
     let transport = URLSessionTransport()
     await requireSignIn(for: model, transport: transport)
     let workingDirectory = FileManager.default.currentDirectoryPath
@@ -40,7 +45,7 @@ func runPrompt(
     let loop: AgentLoop
     let mcp = startMCPServers(settings, jobs: jobs)
     let files = instructionFiles(workingDirectory: workingDirectory)
-    for line in ProjectInstructions.describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
+    if settings.verbose { say(settings.detailLines + ProjectInstructions.describe(files)) }
     do {
         await waitForMCPServers(mcp)
         loop = try makeLoop(
