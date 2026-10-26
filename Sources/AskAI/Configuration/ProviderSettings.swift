@@ -65,6 +65,9 @@ public struct ProviderSettings: Sendable, Equatable {
     /// The selected destination before model resolution.
     public func selectedProvider(_ override: String?) -> String { override ?? defaultProvider ?? Self.anthropic }
 
+    /// Whether `providers.json` names a default provider.
+    public var namesDefault: Bool { defaultProvider != nil }
+
     let defaultProvider: String?
     let entries: [String: Entry]
 
@@ -188,13 +191,17 @@ public struct ProviderSettings: Sendable, Equatable {
     }
 
     /// The key to send: the entry's own, else the preset's variable, else the key a sign-in stored. A preset that
-    /// has none is an error, never a request without a key. An entry that is no preset may have no key at all.
+    /// has none is an error, never a request without a key. An entry that is no preset has the key stored under its name, or none.
     func credential(
         of name: String, entry: Entry, preset: ProviderPreset?, environment: [String: String],
         stored: () throws(CredentialFileError) -> [String: String]
     ) throws(ProviderSettingsError) -> String? {
         if let raw = entry.apiKey { return try Self.interpolate(raw, provider: name, environment: environment) }
-        guard let preset else { return nil }
+        guard let preset else {
+            // An endpoint with no key written beside it may have one stored by `ask login custom`; else it needs none. A file that cannot be
+            // read gives none rather than an error, so a damaged one blocks only the providers that need a key, as it always did.
+            return (try? stored())?[name]
+        }
         if let variable = preset.keyVariable, let value = environment[variable], !value.isEmpty { return value }
         do {
             if let key = try stored()[name] { return key }

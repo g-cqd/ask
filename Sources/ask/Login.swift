@@ -2,72 +2,37 @@ internal import ArgumentParser
 internal import AskAI
 internal import Foundation
 
-/// `ask login`: sign in to a provider. Claude by default.
+/// `ask login`: sign in to a provider, with its account or with an API key. Claude by default.
 struct Login: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "Sign in to a provider.",
-        discussion:
-            "claude, codex: a subscription. agy: a Google account for Antigravity. spettro, mistral-vibe: a browser sign-in that issues an API key."
-    )
+        abstract: "Sign in to a provider, with its account or an API key.",
+        discussion: """
+            claude, codex: a subscription in a browser; add --api-key to use an API key instead (codex's is OpenAI's, stored as `openai`).
+            agy: a Google account for Antigravity. spettro, mistral-vibe: a browser sign-in that issues an API key.
+            Any provider with a key preset (groq, openrouter, …): its API key. custom NAME URL: any OpenAI-compatible server.
+            """)
 
-    @Argument(help: "Which sign-in to run.") var provider: LoginTarget = .claude
+    @Argument(help: "Which sign-in to run: a provider, or custom NAME URL.") var words: [String] = []
+    @Flag(help: "Sign in with an API key instead of an account.") var apiKey = false
     @Flag(help: "For codex: sign in with a code typed at a link, on a machine with no browser.") var device = false
     @Option(help: "Register a separate named codex or claude connection, without replacing the default account.")
     var name: String?
     @Flag(help: "Authorize replacing the remote account bound to this named connection.") var replaceAccount = false
 
     func run() async throws {
-        let connection: ConnectionRecord?
-        if let name {
-            let kind: ConnectionKind
-            switch provider {
-                case .codex: kind = .codex
-                case .claude: kind = .anthropic
-                default: throw ValidationError("Named sign-ins currently support codex and claude.")
-            }
-            connection = try NamedConnections.registry()
-                .register(name: name, provider: kind, reserved: NamedConnections.reserved())
-        } else {
-            guard !replaceAccount else { throw ValidationError("--replace-account requires --name.") }
-            connection = nil
+        var all = words
+        if all.isEmpty { all = ["claude"] }
+        if apiKey { all.append("api-key") }
+        if device { all.append("device") }
+        if let name { all += ["--name", name] }
+        if replaceAccount { all.append("--replace-account") }
+        let request: LoginRequest
+        do { request = try LoginRequest(words: all) } catch { throw ValidationError("\(error)") }
+        if request.replaceAccount, request.connection == nil {
+            throw ValidationError("--replace-account requires --name.")
         }
-        let file = NamedConnections.file(for: connection)
-        switch provider {
-            case .claude: await claudeLogin(file: file, connection: connection)
-            case .agy: await agyLogin(file: file)
-            case .codex:
-                await codexLogin(device: device, file: file, connection: connection, replaceAccount: replaceAccount)
-            case .spettro:
-                let flow: SpettroSignIn
-                do {
-                    let base = LaunchEnvironment.values["SPETTRO_API_URL"] ?? SpettroSignIn.defaultBase
-                    flow = try SpettroSignIn(transport: URLSessionTransport(), base: base)
-                } catch { fail("ask: sign-in failed: \(error)", code: 77) }
-                await browserLogin(flow, keyName: SpettroSignIn.provider, file: file)
-            case .mistralVibe:
-                await browserLogin(
-                    VibeSignIn(transport: URLSessionTransport()), keyName: VibeSignIn.provider, file: file)
-        }
-    }
-
-    private func claudeLogin(file: CredentialFile, connection: ConnectionRecord?) async {
-        let pending = PendingSignIn.begin()
-        print("Open this URL and sign in:\n\n  \(pending.url)\n\nThen paste the code it shows (code#state):")
-        guard let pasted = readLine(strippingNewline: true) else { fail("ask: no code entered.", code: 66) }
         do {
-            let credentials = try await ClaudeAuthClient(transport: URLSessionTransport())
-                .complete(pending, pasted: pasted, now: Date().timeIntervalSince1970)
-            if let connection {
-                try NamedConnections.registry().saveClaude(credentials, for: connection, replaceAccount: replaceAccount)
-            } else {
-                try file.saveClaude(credentials)
-            }
-            print("Signed in\(credentials.accountEmail.map { " as \($0)" } ?? ""). Credentials: \(file.url.path)")
-            if let email = credentials.accountEmail {
-                NamedConnections.reportSharedAccount(.claude(email), connection: connection)
-            }
-        } catch {
-            fail("ask: sign-in failed: \(error)", code: 77)
-        }
+            print(try await AccountLogin(interaction: CommandLineInteraction()).run(request))
+        } catch { fail("ask: sign-in failed: \(error)", code: 77) }
     }
 }

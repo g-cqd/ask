@@ -20,6 +20,7 @@ struct AnthropicAuthorization: Sendable {
     /// Authorization without refreshing or writing; expired stored access is unavailable to a cache reader.
     func cached(environment: [String: String], now: Double) throws -> AnthropicClient.Auth? {
         if let supplied = try supplied(environment) { return supplied }
+        if let key = try storedKey() { return key }
         guard let stored = try file.loadClaude(connection: connection), !stored.needsRefresh(now: now) else {
             return nil
         }
@@ -29,10 +30,18 @@ struct AnthropicAuthorization: Sendable {
     /// The same precedence, refresh path and sign-out diagnostics inference has always used.
     func auth(environment: [String: String], now: Double) async throws -> AnthropicClient.Auth {
         if let supplied = try supplied(environment) { return supplied }
+        if let key = try storedKey() { return key }
         do { return try await access.auth(now: now) } catch ClaudeAccessError.signedOut {
             if let connection { throw ConnectionError.signInRequired(name: connection.name, provider: .anthropic) }
             throw NotSignedIn()
         }
+    }
+
+    /// The API key `ask login claude --api-key` stored. Saving one forgets the subscription and signing in to the subscription forgets the
+    /// key, so there is never a choice to make between them. A named connection is a subscription only.
+    private func storedKey() throws -> AnthropicClient.Auth? {
+        guard connection == nil, let stored = try file.loadKey(for: CredentialFile.claudeKeyName) else { return nil }
+        return .apiKey(stored.key)
     }
 
     private func supplied(_ environment: [String: String]) throws -> AnthropicClient.Auth? {

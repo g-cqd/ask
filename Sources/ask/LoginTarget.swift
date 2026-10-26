@@ -1,19 +1,9 @@
-internal import ArgumentParser
+internal import AskAI
 
-/// What `ask login` and `ask logout` can name.
-enum LoginTarget: String, CaseIterable, ExpressibleByArgument {
-    case claude
-    case codex
-    case agy
-    case spettro
-    case mistralVibe = "mistral-vibe"
-
-    /// The name the credential file keeps this sign-in's key under, for the sign-ins that issue a key.
-    var keyName: String? {
-        switch self {
-            case .claude, .codex, .agy: nil
-            case .spettro: "spettro"
-            case .mistralVibe: "mistral"
-        }
+/// The names `ask logout` takes for the accounts ask itself keeps, which a named connection may not shadow.
+enum LoginTarget {
+    /// Whether `name` is one of the built-in sign-ins rather than a named connection or a stored key.
+    static func builtIn(_ name: String) -> Bool {
+        (LoginRequest.accounts + ["anthropic", "openai"]).contains(name)
     }
 }
