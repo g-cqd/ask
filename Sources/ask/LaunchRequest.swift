@@ -52,7 +52,8 @@ struct LaunchRequest {
             selfCheck
             ? nil
             : session.open(
-                in: SessionDirectory(project: FileManager.default.currentDirectoryPath),
+                in: SessionDirectory(
+                    project: FileManager.default.currentDirectoryPath, environment: LaunchEnvironment.values),
                 note: { startupNotices.append($0) })
         var source = ConfigurationSource(
             workingDirectory: FileManager.default.currentDirectoryPath,

@@ -22,13 +22,18 @@ enum JobProcess {
         }
         return Configuration(
             executable: .path(FilePath(executable)), arguments: Arguments(arguments),
-            environment: .custom(
-                Dictionary(
-                    uniqueKeysWithValues: launch.environment.compactMap { name, value in
-                        // `=` and NUL cannot occur in an environment entry's name.
-                        isEntryName(name) ? Environment.Key(rawValue: name).map { ($0, value) } : nil
-                    })),
+            environment: environment(launch.environment),
             workingDirectory: FilePath(launch.workingDirectory), platformOptions: groupOptions(graceSeconds: 2))
+    }
+
+    /// Exactly `values` as a child's environment, less any entry whose name cannot be one.
+    static func environment(_ values: [String: String]) -> Environment {
+        .custom(
+            Dictionary(
+                uniqueKeysWithValues: values.compactMap { name, value in
+                    // `=` and NUL cannot occur in an environment entry's name.
+                    isEntryName(name) ? Environment.Key(rawValue: name).map { ($0, value) } : nil
+                }))
     }
 
     /// Whether `name` can be the name of an environment entry.

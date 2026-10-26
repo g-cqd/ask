@@ -136,7 +136,8 @@ func makeLoop(
         settings: agent,
         context: ToolContext(
             workingDirectory: workingDirectory,
-            outputDirectory: SessionDirectory(project: workingDirectory).path + "/output", sandbox: sandbox,
+            outputDirectory: SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values).path
+                + "/output", sandbox: sandbox,
             approve: approve, narrowing: narrowing, commandEnvironment: run.commandEnvironment,
             destructiveApprover: destructiveApprover))
 }

@@ -40,6 +40,15 @@ so the key came back in the tool result and went to the provider. Roadmap 0072 s
 - `ProcessEnvironmentTests`: four tests, red against a stub first, for which entries change, that a predicate sees names only, and that the snapshot keeps what was blanked.
   These cover which entries change, not the kernel-visible copy; the probe covers that.
 
+## Update (diary 2026-10-25-31): two things the first version missed
+
+Both were reproduced and fixed, and both came from ask's own library code reading the *live* environment after it had been blanked.
+`/reload`'s self-check inherited the blanked environment, so a provider that reads its key from the environment was refused a reload
+(`SelfCheck.run` now takes the launch environment). And `SessionDirectory` and `CredentialFile.standard` defaulted to the live environment,
+so withholding `XDG_STATE_HOME` moved the session (the executable now passes the snapshot, and a source scan in `LaunchEnvironmentStandardsTests`
+keeps it that way). The decision is unchanged. The lesson is in the consequences: any new child process or library default in the executable that
+reads the environment must take the snapshot.
+
 ## Consequences
 
 - A command can no longer recover a key from ask. The README's "known exposure" line is removed.
