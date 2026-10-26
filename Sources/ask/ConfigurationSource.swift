@@ -140,7 +140,11 @@ struct ConfigurationSource: Sendable {
             providers: providers, provider: selected ?? result.configuration.provider.value,
             // A /model choice, then --model, then the resumed session's model, then the configuration.
             model: flags.selected?.model ?? flags.model ?? pinned?.model ?? result.configuration.model.value,
-            environment: environment, allowNetwork: allowNetwork)
+            environment: environment, allowNetwork: allowNetwork,
+            choice: ModelDiscovery.Choice(
+                providerIsFlagged: flags.provider != nil || flags.selected != nil,
+                modelIsFlagged: flags.model != nil || flags.selected != nil,
+                thinking: result.configuration.thinking.value))
         if let level = discovered.model.thinking, let alias = discovered.model.alias,
             let connection = discovered.model.connection
         {
