@@ -29,6 +29,21 @@ public struct ScreenTheme: Sendable, Equatable {
         }
     }
 
+    /// The background of a block of this kind: the user's messages and the tool calls are tinted (a tool by how it ended), nothing else is.
+    func tint(for item: Transcript.Item) -> Color {
+        guard tinted else { return .default }
+        switch item {
+            case .user: return user
+            case .tool(_, _, let status, _):
+                switch status {
+                    case .running: return pending
+                    case .succeeded: return success
+                    case .failed: return failure
+                }
+            default: return .default
+        }
+    }
+
     /// The input's background, or the terminal's own when nothing is tinted.
     var inputBackground: Color { tinted ? input : .default }
 }

@@ -12,7 +12,8 @@ struct InputCutTests {
 
     /// A hundred columns, so the status line is not clipped. The input is the last row; its first five cells are the prefix.
     private func rig(
-        _ draft: String, options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false)
+        _ draft: String,
+        options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
     ) -> PointerRig {
         var rig = PointerRig(columns: 100, options: options, lines: ["one", "two"])
         _ = rig.controller.handle(.paste(draft), pageRows: 10)
@@ -37,7 +38,8 @@ struct InputCutTests {
 
     @Test func `it cuts even when copy on select is off, which only governs what a selection does by itself`() {
         var rig = rig(
-            "hello world", options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false))
+            "hello world",
+            options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false, padding: false))
         select(&rig, from: 6, to: 10)
         let effects = rig.controller.handle(.key(KeyEvent(keyCode: 0x18)), pageRows: 10)
         #expect(effects == [.copy("world")])

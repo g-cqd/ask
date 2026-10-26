@@ -18,14 +18,19 @@ extension ScreenComposer {
         return map
     }
 
-    mutating func updateTranscriptLines(_ transcript: Transcript, columns: Int) {
+    mutating func updateTranscriptLines(_ transcript: Transcript, columns: Int, style: BlockStyle = .plain) {
+        // A different look lays every block out again.
+        if style != blockStyle {
+            blockStyle = style
+            transcriptLines = LayoutCache<Line>()
+        }
         var hard = hardLines
         transcriptLines.update(width: columns, revisions: transcript.revisions) { index in
             if hard.count <= index { hard.append(contentsOf: repeatElement([], count: index + 1 - hard.count)) }
             // Found once per layout: the hard lines a selection reads and the rows drawn come from the same folds.
             let shown = transcript.shownCode(at: index)
             hard[index] = TranscriptContent.hardLines(of: shown?.text ?? transcript.contentText(at: index))
-            return Self.lines(in: transcript, at: index, shown: shown, columns: columns)
+            return Self.lines(in: transcript, at: index, shown: shown, columns: columns, style: style)
         }
         hard.removeLast(Swift.max(0, hard.count - transcript.items.count))
         hardLines = hard
