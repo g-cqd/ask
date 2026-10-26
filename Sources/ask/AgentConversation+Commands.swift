@@ -14,7 +14,20 @@ extension AgentConversation {
             SlashCommand(name: "compact", summary: "Summarise the conversation now, keeping the recent messages."),
             SlashCommand(name: "new", summary: "Start a new session; the previous session stays saved."),
             SlashCommand(
-                name: "model", summary: "Show the model, or choose one for this run: /model [PROVIDER] MODEL, --reset."),
+                name: "model",
+                summary: "Choose a model from every account you are signed in to, or /model [PROVIDER] MODEL, --reset.",
+                takesChoices: true),
+            SlashCommand(
+                name: "thinking",
+                summary: "Choose how hard the model thinks: the efforts it takes, or /thinking LEVEL.",
+                takesChoices: true),
+            SlashCommand(
+                name: "login",
+                summary: "Sign in to a provider with an account or an API key, without leaving: /login PROVIDER.",
+                takesChoices: true),
+            SlashCommand(
+                name: "logout", summary: "Sign out of one account, or /logout all, without leaving.", takesChoices: true
+            ),
             SlashCommand(name: "resume", summary: "List sessions, or switch with /resume NAME, PREFIX or PATH."),
             SlashCommand(name: "tree", summary: "List this session's prompts, or go back to before one: /tree N."),
             SlashCommand(
@@ -39,6 +52,9 @@ extension AgentConversation {
                 case "tree": self.tree(arguments: arguments, update: update)
                 case "fork": await self.forkSession(arguments: arguments, update: update)
                 case "model": await self.model(arguments: arguments, update: update)
+                case "thinking": await self.thinking(arguments: arguments, update: update)
+                case "login": await self.login(arguments: arguments, update: update)
+                case "logout": await self.logout(arguments: arguments, update: update)
                 case "mcp": for line in MCPHub.report(self.mcp.status) { update(.notice(line, isError: false)) }
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))

@@ -91,8 +91,7 @@ extension ScreenController {
                 return copyIfCommitted(update)
             // Any count: a second click is the same row, or no row at all once the first has closed the list.
             case .click(let target, let cell, .left, _, _) where target == Self.pickerTarget:
-                clickPicker(match: frame.pickerWindow.lowerBound + cell.row - frame.pickerFirstRow)
-                return []
+                return clickPicker(match: frame.pickerWindow.lowerBound + cell.row - frame.pickerFirstRow)
             // Any count: a second click inside the double-click time is the user closing what the first opened, not selecting a word.
             case .click(let target, let cell, .left, _, _) where target == Self.statusTarget:
                 if frame.belowColumns?.contains(cell.col) == true {

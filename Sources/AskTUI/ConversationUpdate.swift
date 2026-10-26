@@ -35,6 +35,11 @@ public enum ConversationUpdate: Sendable, Equatable {
     case files(ProjectFiles)
     /// The skills for the `/` picker, as commands named `skill:name`, answering ``ScreenController/Effect/listSkills``.
     case skills([SlashCommand])
+    /// A command's list, answering ``ScreenController/Effect/listChoices(command:)``.
+    case choices(command: String, rows: [ChoiceRow])
+    /// The running command wants a line from the person: shown as a question in the status line, answered with Enter, cancelled with Esc, and sent to
+    /// ``Conversation/answer(input:with:)``. A secret is hidden as it is typed and never reaches the transcript.
+    case askInput(id: Int, prompt: String, secret: Bool)
     /// A runner's recent output, answering ``ScreenController/Effect/readRunnerOutput(id:)``.
     case runnerOutput(id: String, text: String)
     /// The run is over, however it ended.

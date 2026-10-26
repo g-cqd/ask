@@ -20,6 +20,9 @@ extension ScreenController {
             state.skillsRequested = true
             return [.listSkills]
         }
+        if let found = choiceTrigger() {
+            return refreshChoicePicker(found.command, found.trigger, screenRows: screenRows, at: now)
+        }
         if let trigger = fileTrigger() { return refreshFilePicker(trigger, screenRows: screenRows, at: now) }
         return closePicker()
     }
@@ -70,12 +73,12 @@ extension ScreenController {
 
     /// A click on the picker's match `index`, as the last frame drew it: the same as choosing it and pressing Enter. Nothing happens when
     /// the list has moved on since that frame, because the click meant a row that is no longer there, or while a question has the keys.
-    mutating func clickPicker(match index: Int) {
-        guard var picker = state.picker, state.pendingApproval == nil, picker.trigger == frame.pickerTrigger,
-            picker.matches.indices.contains(index)
-        else { return }
+    mutating func clickPicker(match index: Int) -> [Effect] {
+        guard var picker = state.picker, state.pendingApproval == nil, state.pendingInput == nil,
+            picker.trigger == frame.pickerTrigger, picker.matches.indices.contains(index)
+        else { return [] }
         picker.choose(index)
-        _ = accept(picker)
+        return accept(picker)
     }
 
     /// What an open picker does with `key`, or nil when the key is the editor's.
@@ -98,11 +101,20 @@ extension ScreenController {
         return []
     }
 
-    /// Puts the chosen command in the draft where the word was. Nothing is sent: a second Enter runs it.
+    /// Puts the chosen command in the draft where the word was. Nothing is sent: a second Enter runs it. A choice from a command's list is
+    /// different: it runs that command at once, with the row's arguments.
     mutating func accept(_ picker: CompletionPicker) -> [Effect] {
-        if picker.matches.indices.contains(picker.selected) {
-            state.editor.replace(picker.trigger.range, with: picker.matches[picker.selected].insertion)
+        guard picker.matches.indices.contains(picker.selected) else {
+            state.picker = nil
+            return []
         }
+        let row = picker.matches[picker.selected]
+        if case .choices(let title) = picker.kind, let arguments = row.run {
+            return run(row, command: title, arguments: arguments)
+        }
+        state.editor.replace(picker.trigger.range, with: row.insertion)
+        // A row that asked to be finished leaves the list closed, or it would offer itself again at once.
+        if case .choices = picker.kind { state.pickerDismissedAt = picker.trigger.range.lowerBound }
         state.picker = nil
         return []
     }

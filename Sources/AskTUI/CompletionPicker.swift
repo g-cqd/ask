@@ -7,12 +7,15 @@ struct CompletionPicker: Sendable, Equatable {
     enum Kind: Sendable, Equatable {
         case commands
         case files
+        /// What a command offers after its name; `title` is the command's name.
+        case choices(title: String)
 
         /// The word that titles the list.
         var title: String {
             switch self {
                 case .commands: "commands"
                 case .files: "files"
+                case .choices(let name): name
             }
         }
     }

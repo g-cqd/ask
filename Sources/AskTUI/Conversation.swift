@@ -25,6 +25,13 @@ public protocol Conversation: Sendable {
     /// The skills the `/` picker offers, as commands named `skill:name` with their descriptions. Asked for once, when the picker first opens.
     func skillCommands() async -> [SlashCommand]
 
+    /// What `/command ` offers to choose from, for a command that ``SlashCommand/takesChoices``: the models, the efforts, the accounts. Asked
+    /// for when the list opens, off the input path, and may take as long as a network does; the screen shows what it has meanwhile.
+    func choices(for command: String) async -> [ChoiceRow]
+
+    /// The answer to a question ``ConversationUpdate/askInput(id:prompt:secret:)`` put; nil when the person cancelled it.
+    func answer(input id: Int, with text: String?)
+
     /// A runner's recent output, for the lane that shows it: bounded, the newest part, and never more than the runner wrote.
     func runnerOutput(_ id: String) async -> String
 
@@ -51,6 +58,12 @@ extension Conversation {
 
     /// No files to offer.
     public func projectFiles() async -> ProjectFiles { ProjectFiles() }
+
+    /// No lists.
+    public func choices(for command: String) async -> [ChoiceRow] { [] }
+
+    /// Never asks for input, so never answered.
+    public func answer(input id: Int, with text: String?) {}
 
     /// No skills to offer.
     public func skillCommands() async -> [SlashCommand] { [] }
