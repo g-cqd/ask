@@ -19,12 +19,21 @@ public struct ScreenComposer: Sendable {
         var style: Style
         /// The item's text this row shows, or nil for a row with no content of its own (a blank, a prefix-only row).
         var source: Source?
+        /// Runs of columns drawn in a style of their own over ``style``, such as a warning mark in colour.
+        var accents: [Accent]
 
-        init(text: String, style: Style, source: Source? = nil) {
+        init(text: String, style: Style, source: Source? = nil, accents: [Accent] = []) {
             self.text = text
             self.style = style
             self.source = source
+            self.accents = accents
         }
+    }
+
+    /// A run of columns with a style of its own.
+    struct Accent: Sendable, Equatable {
+        var columns: Range<Int>
+        var style: Style
     }
 
     /// The part of an item's text a row shows (TerminalKit roadmap 0017): its item, hard line and grapheme offset, the column it
@@ -42,6 +51,7 @@ public struct ScreenComposer: Sendable {
     private struct Shown: Equatable {
         var text: String
         var style: Style
+        var accents: [Accent]
         /// The columns drawn selected, or nil.
         var highlight: Range<Int>?
         /// What the row carries at its right edge, if the sidebar is open.
@@ -197,27 +207,21 @@ public struct ScreenComposer: Sendable {
     mutating func write(
         _ line: Line, highlight: Range<Int>? = nil, side: Sidebar.Cell? = nil, row: Int, into buffer: inout ScreenBuffer
     ) {
-        let now = Shown(text: line.text, style: line.style, highlight: highlight, side: side)
+        let now = Shown(text: line.text, style: line.style, accents: line.accents, highlight: highlight, side: side)
         guard shown[row] != now else { return }
         shown[row] = now
-        if let highlight {
-            // The selected cells are inverse, in the line's own style otherwise: nothing is painted but the selection.
-            let parts = ColumnSlicer.split(line.text, columns: highlight)
-            var selected = line.style
-            selected.inverse = true
-            var column = 0
-            for (part, style) in [(parts.before, line.style), (parts.selected, selected), (parts.after, line.style)]
-            where !part.isEmpty {
-                buffer.write(part, row: row, col: column, style: style)
-                column += UnicodeWidth.displayWidth(of: part)
-            }
-        } else {
-            buffer.write(line.text, row: row, col: 0, style: line.style)
+        var column = 0
+        for (part, style) in Self.spans(of: line, highlight: highlight) {
+            buffer.write(part, row: row, col: column, style: style)
+            column += UnicodeWidth.displayWidth(of: part)
         }
         let edge = side?.column ?? buffer.columns
         let used = Swift.min(edge, UnicodeWidth.displayWidth(of: line.text))
         if used < buffer.columns {
-            buffer.fill(row: row, col: used, width: buffer.columns - used, height: 1, cell: .empty)
+            // The rest of the row carries the row's own background, so a tinted block is tinted to the edge.
+            buffer.fill(
+                row: row, col: used, width: buffer.columns - used, height: 1,
+                cell: Cell(character: " ", style: Style(bg: line.style.bg), width: 1))
         }
         if let side {
             buffer.write("│", row: row, col: side.column, style: Style(dim: true))
