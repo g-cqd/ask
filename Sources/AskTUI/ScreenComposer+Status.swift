@@ -8,15 +8,9 @@ extension ScreenComposer {
         for state: ScreenState, input: String = ""
     ) -> (line: Line, runners: Range<Int>?, below: Range<Int>?) {
         let activity = state.running ? "\(state.label) · working… (ctrl+c to stop)" : "\(state.label) · ready"
-        var status = input.isEmpty ? activity : input + " · " + activity
+        var status = questions(in: state) + (input.isEmpty ? activity : input + " · " + activity)
         if state.quitArmedAt != nil { status += " · press Ctrl+C again to quit" }
-        if let lane = state.lane {
-            status += " · main › \(lane.name) · esc returns"
-            // The question was put in main's transcript, which a lane hides: it leads the line so a narrow screen cuts the rest, not it.
-            if let pending = state.pendingApproval {
-                status = "\(pending.question)  y once · a for this session · n no · " + status
-            }
-        }
+        if let lane = state.lane { status += " · main › \(lane.name) · esc returns" }
         var runners: Range<Int>?
         var below: Range<Int>?
         if state.scrollback > 0 {
@@ -43,6 +37,17 @@ extension ScreenComposer {
         }
         if !state.detail.isEmpty { status += " · " + state.detail }
         return (Line(text: status, style: Style(dim: true)), runners, below)
+    }
+
+    /// What leads the line while something waits for an answer, so a narrow screen cuts the rest and not it: a line a command asked for, and an
+    /// approval question while a lane hides the main transcript it was put in.
+    private static func questions(in state: ScreenState) -> String {
+        var text = ""
+        if let pending = state.pendingInput { text += pending.line(typed: state.inputAnswer.text) + " · " }
+        if state.lane != nil, let pending = state.pendingApproval {
+            text = "\(pending.question)  y once · a for this session · n no · " + text
+        }
+        return text
     }
 
     /// The rows of the open runner strip. Empty when it is closed.

@@ -51,19 +51,35 @@ extension AgentConversation {
 
     /// Adopts `selection` only when the whole configuration, with it, resolves: a provider that is unknown, has no
     /// key, or is refused leaves the current model in force. Nothing is written to a file.
+    ///
+    /// A thinking level the new model does not take is put back to the provider's default, and said, rather than refusing the model; a model
+    /// that takes levels then offers them (`/thinking`), so choosing a model and its effort is one movement.
     private func select(
         _ selection: ModelSelection?, announcing: String, update: @Sendable (ConversationUpdate) -> Void
     ) async {
         var candidate = source
         candidate.flags.selected = selection
-        let resolved: RunSettings
-        do { resolved = try await candidate.load(allowNetwork: false) } catch {
-            let what = selection.map { " (\($0.provider) \($0.model))" } ?? ""
-            update(.notice("Model not changed\(what): \(error)", isError: true))
-            return
-        }
+        var resolved: RunSettings
+        var notes: [String] = []
+        do { resolved = try await candidate.load(allowNetwork: false) } catch let failure as ThinkingError {
+            let was = candidate.flags.thinking.map(String.init(describing:)) ?? "the configured level"
+            candidate.flags.thinking = .providerDefault
+            do { resolved = try await candidate.load(allowNetwork: false) } catch {
+                return refused(selection, error, update)
+            }
+            notes.append("Thinking went back to the provider's default: \(was) is not available here (\(failure)).")
+        } catch { return refused(selection, error, update) }
         sourceState.withLock { $0 = candidate }
         await refreshSettings(update: update)
         update(.notice("\(announcing): \(selection?.model ?? resolved.model.label).", isError: false))
+        for note in notes { update(.notice(note, isError: false)) }
+        if selection != nil, await modelTakesThinking() { update(.fillDraft("/thinking ")) }
+    }
+
+    private func refused(
+        _ selection: ModelSelection?, _ error: any Error, _ update: @Sendable (ConversationUpdate) -> Void
+    ) {
+        let what = selection.map { " (\($0.provider) \($0.model))" } ?? ""
+        update(.notice("Model not changed\(what): \(error)", isError: true))
     }
 }

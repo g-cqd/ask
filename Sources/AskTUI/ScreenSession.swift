@@ -148,6 +148,11 @@ final class ScreenSession {
             case .listSkills:
                 let conversation = conversation
                 Task { sink.yield(.update(.skills(await conversation.skillCommands()))) }
+            case .listChoices(let command):
+                let conversation = conversation
+                Task { sink.yield(.update(.choices(command: command, rows: await conversation.choices(for: command)))) }
+            case .answerInput(let id, let text):
+                conversation.answer(input: id, with: text)
             case .cancelRun:
                 run?.cancel()
             case .copy(let text):

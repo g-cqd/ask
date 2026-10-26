@@ -22,6 +22,10 @@ public struct ScreenController: Sendable {
         case armQuitTimer(generation: Int)
         /// List the skills for the `/` picker; the answer is ``ConversationUpdate/skills(_:)``.
         case listSkills
+        /// List what `command` offers to choose from; the answer is ``ConversationUpdate/choices(command:rows:)``.
+        case listChoices(command: String)
+        /// The person answered what a command asked for, or cancelled it (nil).
+        case answerInput(id: Int, text: String?)
         case quit
     }
 
@@ -31,6 +35,8 @@ public struct ScreenController: Sendable {
     var pending: [Pending] = []
     /// The screen's height as of the last key, which sizes the picker when a file listing arrives between keys.
     var pickerScreenRows = 0
+    /// The commands whose lists were asked for and have not arrived, so a key does not ask twice.
+    var asking: Set<String> = []
     var nextPromptID = 0
     /// The number of the quit window last opened, so a timer for an earlier one cannot close a later one.
     var quitGeneration = 0
@@ -114,6 +120,8 @@ public struct ScreenController: Sendable {
                 }
                 // A question waiting for y, a or n takes the keys first (roadmap 0019).
                 if state.pendingApproval != nil { return answer(key) }
+                // A line a command asked for, such as a pasted code or a key, takes every key but the scrolling ones above.
+                if state.pendingInput != nil { return answerInput(key) }
                 if let effects = selectionOrToggleKey(key, columns: columns) { return effects }
                 if let effects = pickerKey(key, screenRows: pageRows + 3) { return effects }
                 if let effects = stripKey(key) { return effects }
@@ -121,6 +129,9 @@ public struct ScreenController: Sendable {
                 return edit(key, columns: columns, interrupt: Interrupt(at: now, armedAt: armedAt))
             case .mouse(let mouse):
                 return handle(mouse: mouse, at: now)
+            case .paste(let text) where state.pendingInput != nil:
+                state.inputAnswer.paste(text.filter { !$0.isNewline })
+                return []
             case .paste(let text):
                 removeInputSelection()
                 clearSelection()
@@ -168,7 +179,12 @@ public struct ScreenController: Sendable {
             case .runnerOutput: break
             case .files(let list): return receive(files: list)
             case .skills(let list): receive(skills: list)
-            case .fillDraft(let text): fill(draft: text)
+            case .choices(let command, let rows): return receive(command: command, choices: rows)
+            case .askInput(let id, let prompt, let secret): askInput(id: id, prompt: prompt, secret: secret)
+            case .fillDraft(let text):
+                fill(draft: text)
+                // A draft that is a command with a list opens it, without waiting for a key.
+                return refreshPicker(screenRows: pickerScreenRows, at: .now)
             case .promptAccepted(let id, let text):
                 pending.removeAll { $0.id == id }
                 state.transcript.addUser(text)
@@ -181,12 +197,14 @@ public struct ScreenController: Sendable {
             case .askApproval(let id, let question): ask(id: id, question: question)
             case .runEnded:
                 state.pendingApproval = nil
+                state.pendingInput = nil
+                state.inputAnswer.clear()
                 return endRun()
         }
         return []
     }
 
-    private mutating func edit(_ key: KeyEvent, columns: Int?, interrupt: Interrupt) -> [Effect] {
+    mutating func edit(_ key: KeyEvent, columns: Int?, interrupt: Interrupt) -> [Effect] {
         let indent = columns.map { PromptLayout.prefix(columns: $0).count } ?? 0
         switch state.editor.apply(key, columns: columns, firstRowIndent: indent) {
             case .submitted(let line):
@@ -199,35 +217,6 @@ public struct ScreenController: Sendable {
                 return state.running ? [] : [.quit]
             case .edited, .ignored:
                 return []
-        }
-    }
-
-    /// A submitted line: a prompt, a command, or a command that does not exist.
-    private mutating func submit(_ line: String, followUp: Bool) -> [Effect] {
-        leaveLane()
-        switch SlashInput(line) {
-            case .prompt(let text):
-                return submitPrompt(text, followUp: followUp)
-            case .command(let name, let arguments):
-                state.transcript.addUser(line)
-                guard let command = commands.first(where: { $0.name == name }) else {
-                    state.transcript.addNotice("There is no command /\(name); /help lists them.", isError: true)
-                    return []
-                }
-                switch command.name {
-                    case "help":
-                        for entry in commands {
-                            state.transcript.addNotice("/\(entry.name)  \(entry.summary)", isError: false)
-                        }
-                        return []
-                    case "quit": return [.quit]
-                    case "tasks": return toggleRunners(announcing: true)
-                    case "sidebar": return toggleSidebar(announcing: true)
-                    case "follow-up": return submitPrompt(arguments, followUp: true)
-                    default:
-                        guard !busy() else { return [] }
-                        return begin(.runCommand(name: name, arguments: arguments))
-                }
         }
     }
 }
