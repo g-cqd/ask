@@ -24,23 +24,15 @@ func requestAuth(_ authorization: AnthropicAuthorization) -> @Sendable () async 
     }
 }
 
-/// ask's configuration directory: `$XDG_CONFIG_HOME/ask` when that is absolute, else `~/.config/ask`.
+/// ask's configuration directory, from the environment ask was launched with.
 func askConfigDirectory(environment: [String: String] = LaunchEnvironment.values) -> String {
-    let base = environment["XDG_CONFIG_HOME"].flatMap { $0.hasPrefix("/") ? $0 : nil } ?? NSHomeDirectory() + "/.config"
-    return base + "/ask"
+    ConfigDirectory.path(environment: environment, home: NSHomeDirectory())
 }
 
 /// The project's instruction files for `workingDirectory` (AGENTS.md / CLAUDE.md), outermost first.
 func instructionFiles(workingDirectory: String) -> [ProjectInstructions.File] {
     ProjectInstructions.discover(
         from: workingDirectory, home: NSHomeDirectory(), configDirectory: askConfigDirectory())
-}
-
-/// One line per instruction file, for the user: what was loaded and what was skipped.
-func describe(_ files: [ProjectInstructions.File]) -> [String] {
-    files.map { file in
-        file.skippedBecause.map { "Skipped \(file.path): \($0)." } ?? "Instructions loaded from \(file.path)."
-    }
 }
 
 /// Fails fast, before any work, when there is no way to authenticate: exit 77 with what to do. A configured provider has no
@@ -118,19 +110,6 @@ private func agyProvider(transport: URLSessionTransport) -> any ModelProvider {
         notice: { notice.message(unsavedBecause: access.unsavedReason) })
 }
 
-/// How the model is named to the user: `model`, or `provider/model` for a configured provider.
-func modelLabel(_ resolved: ResolvedModel) -> String {
-    if let connection = resolved.connection { return "\(connection.name)/\(resolved.model)" }
-    switch resolved.provider {
-        case .openAICompatible(let name, _, _, _), .openAIResponses(let name, _, _, _):
-            return "\(name)/\(resolved.model)"
-        case .codex: return "codex/\(resolved.model)"
-        case .agy: return "agy/\(resolved.model)"
-        case .anthropic: break
-    }
-    return resolved.model
-}
-
 /// The agent loop with the tools, rooted at `workingDirectory`, following `instructions` after ask's own. Jobs
 /// live in `jobs`, which the caller stops when ask exits.
 func makeLoop(
@@ -184,7 +163,7 @@ private func settings(
         requestedCompactAt: limits.compactAtTokens)
     return AgentSettings(
         model: resolved.model, maximumTokens: budget.maximumTokens,
-        systemPrompt: [instructions(workingDirectory: workingDirectory, sandbox: sandbox)] + blocks,
+        systemPrompt: [SystemInstructions.text(workingDirectory: workingDirectory, sandbox: sandbox)] + blocks,
         maximumTurns: limits.maximumTurns, compactAtTokens: budget.compactAtTokens,
         keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes, thinking: thinking)
 }
@@ -201,28 +180,4 @@ func checkSelf(_ settings: RunSettings) {
         fail("ask: \(error)", code: 70)
     }
     print("ask self-check ok")
-}
-
-/// ask's instructions, carried in the first user message (ADR-0007).
-private func instructions(workingDirectory: String, sandbox: SandboxPolicy) -> String {
-    let rules = sandbox.summary.map { " " + $0 } ?? ""
-    return """
-        You are ask, a coding agent working in a terminal on macOS. The working directory is \(workingDirectory). \
-        Use the tools to read, write and edit files and to run bash commands; relative paths resolve against the \
-        working directory. Start servers, watchers and long builds with bash yield_seconds, then use wait, job_input \
-        and job_stop; stop the jobs you started when you no longer need them. Prefer small changes you have verified, by running the build or tests when there are any. \
-        Answer concisely, and say plainly what you did not verify.\(rules)
-        """
-}
-
-/// A short description of a tool call for a one-line display: the command or the path when there is one.
-func toolSummary(name: String, input: JSONObject) -> String {
-    struct Fields: Decodable {
-        let command: String?
-        let path: String?
-    }
-    let fields = try? AemiJSON.JSONDecoder().decode(Fields.self, from: input.bytes)
-    let summary = fields?.command ?? fields?.path ?? String(decoding: input.bytes, as: UTF8.self)
-    let firstLine = summary.split(separator: "\n").first.map(String.init) ?? summary
-    return firstLine.count > 160 ? String(firstLine.prefix(160)) + "…" : firstLine
 }

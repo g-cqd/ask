@@ -39,7 +39,7 @@ func runPrompt(
     let loop: AgentLoop
     let mcp = startMCPServers(settings, jobs: jobs)
     let files = instructionFiles(workingDirectory: workingDirectory)
-    for line in describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
+    for line in ProjectInstructions.describe(files) { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
     do {
         await waitForMCPServers(mcp)
         loop = try makeLoop(

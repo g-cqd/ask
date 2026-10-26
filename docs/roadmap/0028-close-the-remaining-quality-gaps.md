@@ -19,8 +19,10 @@ Found by the 2026-10-19 audit (`docs/diary/2026-10-19-02.md`), each with the pro
    and test it; leave only argument parsing in the executable.
    *(Partly done, 2026-10-26, diary 2026-10-26-01: `PrintRenderer` and the run's notices moved to
    AskAgentCore with 12 tests, and `ClaudeProvider` now binds through the tested `ModelStream.after` seam —
-   the structure baseline shrank with `PrintRun.swift` leaving it. Still untested in `Sources/ask`: the
-   composition itself (`makeLoop`, `toolSummary`), the command handlers and the flow of `runPrompt`.)
+   the structure baseline shrank with `PrintRun.swift` leaving it. Then, diary 2026-10-26-02: `toolSummary`,
+   `modelLabel`, the system instructions, the configuration directory and the instruction-file lines moved out of
+   `Composition.swift` into libraries with 27 tests. Still untested in `Sources/ask`: `makeLoop` itself (it is binding:
+   it names which library parts a run is made of), the command handlers and the flow of `runPrompt`.)
 3. **Coverage is measurable and not reported.** 95.0% weighted line coverage over the library files today.
    By the project's own rule it is behaviour that counts, so this is a report in CI to show where a file has
    no test, never a threshold.

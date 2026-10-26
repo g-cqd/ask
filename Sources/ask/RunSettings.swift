@@ -116,7 +116,7 @@ struct RunSettings: Equatable {
     }
 
     /// What the status line shows at its left: the model, and the sandbox when it is not ask's default.
-    var label: String { ([modelLabel(model)] + [thinkingTag, strictTag].compactMap { $0 }).joined(separator: " · ") }
+    var label: String { ([model.label] + [thinkingTag, strictTag].compactMap { $0 }).joined(separator: " · ") }
 
     /// A short word for a sandbox that differs from the default, or nil: strict modes and `--no-sandbox` both show.
     var strictTag: String? {
