@@ -139,7 +139,7 @@ enum SourceStructure {
     /// make their work unmergeable. The list is a ratchet: ``staleBaseline(_:)`` fails the build when an entry
     /// is clean, so it can shrink and never grow, and a new violation is never added here, only fixed.
     static let knownViolations: Set<String> = [
-        "Sources/ask/PrintRun.swift", "Tests/AskTUITests/TerminalTeardownTests.swift"
+        "Tests/AskTUITests/TerminalTeardownTests.swift"
     ]
 
     /// The entries of `baseline` that are clean or no longer exist, so should be removed from it.
