@@ -10,7 +10,9 @@ extension NamedConnections {
     static func reportSharedAccount(_ identity: AccountIdentity, connection: ConnectionRecord?) {
         let others = (try? registry().connections(as: identity, excluding: connection)) ?? []
         // The default sign-in counts as another holder only when this was a named sign-in.
-        let defaultHolds = connection != nil && ((try? CredentialFile.standard().isSignedIn(as: identity)) ?? false)
+        let defaultHolds =
+            connection != nil
+            && ((try? CredentialFile.standard(environment: LaunchEnvironment.values).isSignedIn(as: identity)) ?? false)
         if let notice = AccountSharing(connections: others, defaultSignIn: defaultHolds).notice { report([notice]) }
     }
 }

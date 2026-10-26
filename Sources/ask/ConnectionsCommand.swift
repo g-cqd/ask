@@ -40,6 +40,7 @@ struct ConnectionsCommand: ParsableCommand {
         guard let identity else { return nil }
         return AccountSharing(
             connections: try registry.connections(as: identity, excluding: record),
-            defaultSignIn: (try? CredentialFile.standard().isSignedIn(as: identity)) ?? false)
+            defaultSignIn: (try? CredentialFile.standard(environment: LaunchEnvironment.values).isSignedIn(as: identity))
+                ?? false)
     }
 }

@@ -209,7 +209,7 @@ func runInteractive(
     reloaded: ReloadNotice?
 ) async {
     let workingDirectory = FileManager.default.currentDirectoryPath
-    let directory = SessionDirectory(project: workingDirectory)
+    let directory = SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values)
     var notices = startupNotices
     if let resumed { notices.append("Resumed session \((resumed.path as NSString).lastPathComponent)") }
     if let reloaded {
