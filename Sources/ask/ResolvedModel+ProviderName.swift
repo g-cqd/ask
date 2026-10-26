@@ -7,6 +7,7 @@ extension ResolvedModel {
             case .anthropic: ProviderSettings.anthropic
             case .codex: ProviderSettings.codex
             case .agy: ProviderSettings.agy
+            case .apple: ProviderSettings.apple
             case .openAICompatible(let name, _, _, _), .openAIResponses(let name, _, _, _): name
         }
     }
