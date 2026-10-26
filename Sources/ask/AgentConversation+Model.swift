@@ -38,7 +38,7 @@ extension AgentConversation {
                 let resolved = settings.model
                 update(
                     .notice(
-                        "Current model: \(modelLabel(resolved)) (provider \(resolved.providerName), "
+                        "Current model: \(resolved.label) (provider \(resolved.providerName), "
                             + "from \(settings.configuration.model.source))", isError: false))
             case .reset: await select(nil, announcing: "Model selection reset to configuration", update: update)
             case .choose(let provider, let model):
@@ -64,6 +64,6 @@ extension AgentConversation {
         }
         sourceState.withLock { $0 = candidate }
         await refreshSettings(update: update)
-        update(.notice("\(announcing): \(selection?.model ?? modelLabel(resolved.model)).", isError: false))
+        update(.notice("\(announcing): \(selection?.model ?? resolved.model.label).", isError: false))
     }
 }
