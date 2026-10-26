@@ -9,7 +9,7 @@ struct Logout: ParsableCommand {
     @Argument(help: "Forget only this sign-in. Default: all of them.") var provider: String?
 
     func run() throws {
-        let file = CredentialFile.standard()
+        let file = CredentialFile.standard(environment: LaunchEnvironment.values)
         do {
             if let name = provider {
                 if let target = LoginTarget(rawValue: name) {
