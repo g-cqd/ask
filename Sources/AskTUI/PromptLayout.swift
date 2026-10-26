@@ -20,15 +20,15 @@ struct PromptLayout: Sendable {
     private var firstRow = 0
 
     /// Clip the ASCII prefix on tiny terminals, always leaving a cell for text or the cursor.
-    static func prefix(columns: Int) -> String {
-        String(ScreenComposer.prompt.prefix(max(1, columns) - 1))
+    static func prefix(_ prompt: String, columns: Int) -> String {
+        String(prompt.prefix(max(1, columns) - 1))
     }
 
     mutating func frame(
-        _ editor: PromptEditor, columns: Int, screenRows: Int, maximumRows: Int, selection: Range<Int>? = nil,
-        scrollTop: Int? = nil
+        _ editor: PromptEditor, prompt: String, columns: Int, screenRows: Int, maximumRows: Int,
+        selection: Range<Int>? = nil, scrollTop: Int? = nil
     ) -> Frame {
-        let prefix = Self.prefix(columns: columns)
+        let prefix = Self.prefix(prompt, columns: columns)
         let layout: InputLayout
         if let cache, cache.columns == columns, cache.text == editor.text {
             layout = cache.layout

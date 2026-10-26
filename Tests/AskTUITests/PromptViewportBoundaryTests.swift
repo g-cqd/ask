@@ -7,7 +7,7 @@ internal import Testing
 struct PromptViewportBoundaryTests {
     @Test(arguments: [(0, 0), (0, 5), (5, 0)])
     func `an empty dimension produces no transcript and a neutral cursor`(columns: Int, rows: Int) {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         state.editor.paste("日本\ntext")
         var buffer = ScreenBuffer(columns: columns, rows: rows)
         var composer = ScreenComposer()
@@ -19,7 +19,7 @@ struct PromptViewportBoundaryTests {
     @Test func `one row leaves room for the cursor rather than drawing a status outside the buffer`() {
         for columns in [1, 2, 5, 8] {
             for rows in 1 ... 3 {
-                var state = ScreenState(label: "m")
+                var state = ScreenState(label: "m", options: .legacy)
                 state.promptRows = Int.min
                 state.editor.paste("日本\ntext")
                 var buffer = ScreenBuffer(columns: columns, rows: rows)

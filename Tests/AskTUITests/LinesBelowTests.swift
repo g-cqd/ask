@@ -12,7 +12,8 @@ struct LinesBelowTests {
     private static let statusRow = 11
 
     private func rig(
-        columns: Int = 40, options: ScreenOptions = ScreenOptions(), lines: Int = 40, scrolled: Bool = true
+        columns: Int = 40, options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false),
+        lines: Int = 40, scrolled: Bool = true
     ) -> PointerRig {
         var rig = PointerRig(
             columns: columns, rows: 12, options: options, lines: (1 ... lines).map { "line \($0)" })
@@ -94,7 +95,7 @@ struct LinesBelowTests {
     }
 
     @Test func `before any frame has been drawn there is no width to measure, and the position is left alone`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         controller.handle(.notice("one", isError: false))
         controller.state.scrollback = 4
         controller.handle(.assistantText("more\nlines"))
@@ -153,7 +154,7 @@ struct LinesBelowTests {
     }
 
     @Test func `with the mouse off the count is still shown and is not clicked`() {
-        var rig = rig(options: ScreenOptions(mouse: false))
+        var rig = rig(options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false))
         rig.controller.state.scrollback = 5
         rig.draw()
         #expect(rig.text(row: Self.statusRow) == "m · 5 lines below")

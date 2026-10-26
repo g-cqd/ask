@@ -10,7 +10,7 @@ struct ApprovalControllerTests {
     private func key(_ text: String) -> InputEvent { .key(KeyEvent(keyCode: text.unicodeScalars.first!.value)) }
 
     private func asking() -> ScreenController {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = controller.handle(.paste("go"), pageRows: 10)
         _ = controller.handle(.key(KeyEvent(keyCode: 0x0D)), pageRows: 10)
         controller.handle(.askApproval(id: 7, question: "bash wants network any. Allow it?"))

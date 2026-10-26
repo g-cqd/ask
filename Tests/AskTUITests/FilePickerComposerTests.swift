@@ -11,7 +11,7 @@ import Testing
 @Suite("The file picker shows paths, and says what it left out")
 struct FilePickerComposerTests {
     private func screen(_ files: ProjectFiles?, typing text: String, rows: Int = 20) -> ScreenController {
-        var controller = ScreenController(label: "m", commands: [])
+        var controller = ScreenController(label: "m", commands: [], options: .legacy)
         if let files { controller.handle(.files(files)) }
         for scalar in text.unicodeScalars {
             _ = controller.handle(.key(KeyEvent(keyCode: scalar.value)), pageRows: rows - 3)

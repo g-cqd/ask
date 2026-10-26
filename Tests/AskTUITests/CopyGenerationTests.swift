@@ -6,7 +6,7 @@ internal import Testing
 @Suite("A late copy result applies only to the copy it belongs to")
 struct CopyGenerationTests {
     private func controller(notice: String = "Host copy pending") -> (ScreenController, Int) {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         let generation = controller.beginCopy()
         controller.state.clipboardNotice = notice
         return (controller, generation)

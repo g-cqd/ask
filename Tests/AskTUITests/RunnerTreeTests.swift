@@ -39,7 +39,7 @@ struct RunnerTreeTests {
     }
 
     @Test func `only running and waiting nodes count as active while terminal states remain in the tree`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         state.runners = [
             node("a"), node("b", state: .waitingForApproval), node("c", state: .done),
             node("d", state: .failed), node("e", state: .stopped)
@@ -56,7 +56,7 @@ struct RunnerTreeTests {
     }
 
     @Test func `the status counts agents as runners and the strip and count come from the same deduplicated tree`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         let agent = RunnerInfo(name: "review", detail: "reading", kind: .agent)
         state.runners = [agent, agent, node("job", parent: "review")]
         state.runnersOpen = true

@@ -142,7 +142,7 @@ extension ScreenController {
         selector.clear()
         state.selection = nil
         state.clipboardNotice = ""
-        let indent = columns.map { PromptLayout.prefix(columns: $0).count } ?? 0
+        let indent = columns.map { PromptLayout.prefix(state.promptPrefix, columns: $0).count } ?? 0
         _ = state.editor.apply(key, columns: columns, firstRowIndent: indent)
         let head = state.editor.cursor
         inputAnchor = anchor

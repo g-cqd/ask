@@ -42,7 +42,9 @@ struct PointerSelectionTests {
     }
 
     @Test func `with copy on select off the selection is kept and nothing is copied`() {
-        var rig = PointerRig(options: ScreenOptions(copyOnSelect: false), lines: Self.two)
+        var rig = PointerRig(
+            options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false), lines: Self.two
+        )
         let effects = rig.drag(from: (8, 0), to: (8, 4))
         #expect(effects.isEmpty)
         #expect(rig.inverse(row: 8) == [0, 1, 2, 3, 4])
@@ -85,7 +87,8 @@ struct PointerSelectionTests {
     }
 
     @Test func `with the mouse off, nothing the pointer does is heard`() {
-        var rig = PointerRig(options: ScreenOptions(mouse: false), lines: Self.two)
+        var rig = PointerRig(
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false), lines: Self.two)
         #expect(rig.drag(from: (8, 0), to: (8, 4)).isEmpty)
         rig.mouse(.scrollUp, .press, row: 5, col: 5)
         #expect(rig.controller.state.selection == nil)
@@ -104,7 +107,8 @@ struct PointerSelectionTests {
     private static let long = (1 ... 40).map { "line \($0)" }
 
     @Test func `the wheel scrolls by the configured lines and stops at both ends`() {
-        var rig = PointerRig(options: ScreenOptions(scrollLines: 4), lines: Self.long)
+        var rig = PointerRig(
+            options: ScreenOptions(scrollLines: 4, prompt: "ask> ", tint: false, separator: false), lines: Self.long)
         rig.mouse(.scrollUp, .press, row: 3, col: 3)
         #expect(rig.controller.state.scrollback == 4)
         rig.mouse(.scrollDown, .press, row: 3, col: 3)
@@ -122,7 +126,8 @@ struct PointerSelectionTests {
     }
 
     @Test func `a selection stays on its text while the wheel scrolls it`() {
-        var rig = PointerRig(options: ScreenOptions(scrollLines: 2), lines: Self.long)
+        var rig = PointerRig(
+            options: ScreenOptions(scrollLines: 2, prompt: "ask> ", tint: false, separator: false), lines: Self.long)
         rig.drag(from: (9, 0), to: (9, 6))  // "line 40"
         #expect(rig.inverse(row: 9) == Array(0 ..< 7))
         rig.mouse(.scrollUp, .press, row: 3, col: 3)
@@ -155,7 +160,7 @@ struct PointerSelectionTests {
         let connection = MockTerminalConnection()
         let pipeline = RenderPipeline(connection: connection, columns: 80, rows: 24)
         var composer = ScreenComposer()
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         for index in 0 ..< 12 { state.transcript.addNotice("untouched line number \(index)", isError: false) }
         pipeline.beginFrame()
         composer.compose(state, into: pipeline)

@@ -46,7 +46,9 @@ struct ThinkingFoldingTests {
     }
 
     @Test func `with folding off reasoning is shown from the start`() {
-        let rig = PointerRig(options: ScreenOptions(foldThinking: false), updates: Self.reasoning)
+        let rig = PointerRig(
+            options: ScreenOptions(foldThinking: false, prompt: "ask> ", tint: false, separator: false),
+            updates: Self.reasoning)
         #expect(rig.text(row: 7) == "thinking")
     }
 

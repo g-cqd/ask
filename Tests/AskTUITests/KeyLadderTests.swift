@@ -20,7 +20,7 @@ struct KeyLadderTests {
     }
 
     private func running() -> ScreenController {
-        var screen = ScreenController(label: "m")
+        var screen = ScreenController(label: "m", options: .legacy)
         type("go", &screen)
         _ = press(0x0D, &screen)
         return screen
@@ -55,7 +55,7 @@ struct KeyLadderTests {
     }
 
     @Test func `idle, the first Ctrl-C only arms the quit and says so; the second within two seconds quits`() {
-        var screen = ScreenController(label: "m")
+        var screen = ScreenController(label: "m", options: .legacy)
         #expect(press(0x03, &screen) == [.armQuitTimer(generation: 1)])
         #expect(screen.state.quitArmedAt != nil)
         let line = ScreenComposer.status(for: screen.state).line.text
@@ -64,14 +64,14 @@ struct KeyLadderTests {
     }
 
     @Test func `a second Ctrl-C after the window arms again instead of quitting`() {
-        var screen = ScreenController(label: "m")
+        var screen = ScreenController(label: "m", options: .legacy)
         _ = press(0x03, &screen)
         #expect(press(0x03, &screen, at: .milliseconds(2_100)) == [.armQuitTimer(generation: 2)])
     }
 
     @Test func `any other key between the two presses disarms the quit`() {
         for key: UInt32 in [0x61, 0x1B, 0x0D, Key.up.rawValue, Key.pageUp.rawValue] {
-            var screen = ScreenController(label: "m")
+            var screen = ScreenController(label: "m", options: .legacy)
             _ = press(0x03, &screen)
             _ = press(key, &screen, at: .milliseconds(100))
             #expect(screen.state.quitArmedAt == nil, "key \(key)")
@@ -79,7 +79,7 @@ struct KeyLadderTests {
     }
 
     @Test func `the timer's end clears the hint, and an old timer cannot clear a newer window`() {
-        var screen = ScreenController(label: "m")
+        var screen = ScreenController(label: "m", options: .legacy)
         _ = press(0x03, &screen)
         _ = press(0x1B, &screen)
         _ = press(0x03, &screen, at: .milliseconds(500))
@@ -104,7 +104,7 @@ struct KeyLadderTests {
     }
 
     @Test func `after a key was typed Ctrl-C erases it instead of quitting`() {
-        var screen = ScreenController(label: "m")
+        var screen = ScreenController(label: "m", options: .legacy)
         _ = press(0x03, &screen)
         _ = press(0x61, &screen, at: .milliseconds(100))
         #expect(press(0x03, &screen, at: .milliseconds(200)).isEmpty)

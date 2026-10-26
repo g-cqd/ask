@@ -12,7 +12,9 @@ struct RunnersTests {
         RunnerInfo(name: "job-1", detail: "npm run dev"), RunnerInfo(name: "job-2", detail: "tail -f log\nsecond line")
     ]
     /// Fourteen rows: opening the strip moves the status and prompt up, and the runners sit below the input.
-    private func rig(_ options: ScreenOptions = ScreenOptions()) -> PointerRig {
+    private func rig(_ options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false))
+        -> PointerRig
+    {
         var rig = PointerRig(columns: 40, rows: 14, options: options, lines: ["one", "two"])
         rig.controller.handle(.runners(Self.two))
         rig.draw()
@@ -83,7 +85,7 @@ struct RunnersTests {
     }
 
     @Test func `slash tasks does the same, with the mouse off too, and says when nothing is running`() {
-        var rig = rig(ScreenOptions(mouse: false))
+        var rig = rig(ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false))
         for character in "/tasks" {
             _ = rig.controller.handle(.key(KeyEvent(keyCode: UInt32(character.asciiValue!))), pageRows: 10)
         }

@@ -8,14 +8,14 @@ import Testing
 @Suite("A prompt put back in the editor fills an empty one and never overwrites a draft")
 struct FillDraftTests {
     @Test func `an empty editor gets the prompt, with the cursor at its end`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         controller.handle(.fillDraft("fix the parser\nthen the lexer"))
         #expect(controller.state.editor.text == "fix the parser\nthen the lexer")
         #expect(controller.state.editor.cursor == "fix the parser\nthen the lexer".count)
     }
 
     @Test func `a draft the person has written stays, and the prompt is shown to them instead`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = controller.handle(.paste("half a thought"), pageRows: 10)
         controller.handle(.fillDraft("the old prompt"))
         #expect(controller.state.editor.text == "half a thought")
@@ -26,7 +26,7 @@ struct FillDraftTests {
     }
 
     @Test func `a draft of only spaces counts as empty`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = controller.handle(.paste("  \n "), pageRows: 10)
         controller.handle(.fillDraft("the old prompt"))
         #expect(controller.state.editor.text == "the old prompt")
