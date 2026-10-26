@@ -24,7 +24,7 @@ extension AgentConversation {
             return true
         }
         let question =
-            "\(approval.tool) \(toolSummary(name: approval.tool, input: approval.input)) asks for "
+            "\(approval.tool) \(ToolSummary.line(for: approval.input)) asks for "
             + approval.asked.joined(separator: " and ") + ". Allow it?"
         return await ask(question, remembering: (approval.request, nil))
     }
@@ -33,7 +33,7 @@ extension AgentConversation {
     func approveDestructive(_ call: DestructiveToolCall) async -> Bool {
         if approvals.withLock({ $0.destructiveGrants.contains(call.grantKey) }) { return true }
         let question =
-            "The MCP server \(call.server)'s tool \(call.tool) (\(toolSummary(name: call.tool, input: call.input))) "
+            "The MCP server \(call.server)'s tool \(call.tool) (\(ToolSummary.line(for: call.input))) "
             + "is marked destructive: it may destroy or overwrite. Allow it?"
         return await ask(question, remembering: (nil, call.grantKey))
     }
