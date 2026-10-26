@@ -18,11 +18,12 @@ extension AgentConversation {
             case .repaired(let repairs):
                 return .notice("Repaired the context before this turn: \(repairs)", isError: false)
             case .compacted, .compactionFailed:
-                return compactionNotice(event).map { .notice($0, isError: false) }
+                return RunNotices.compaction(for: event).map { .notice($0, isError: false) }
             case .continuedAtOutputLimit:
                 return .notice("The response hit the output limit; asking the model to continue.", isError: false)
             case .retrying(let attempt, let total, let delay, let reason):
-                return .notice(retryNotice(attempt: attempt, of: total, delay: delay, reason: reason), isError: false)
+                return .notice(
+                    RunNotices.retry(attempt: attempt, of: total, delay: delay, reason: reason), isError: false)
             default: return nil
         }
     }
