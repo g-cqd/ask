@@ -49,7 +49,7 @@ struct PickerClickTests {
         #expect(effects.isEmpty, "nothing is sent, run or copied")
         #expect(rig.controller.state.editor.text == "/tasks ")
         #expect(rig.controller.state.picker == nil)
-        #expect(rig.text(row: Self.rows - 1) == "ask> /tasks")
+        #expect(rig.text(row: Self.rows - 2) == "ask> /tasks")
     }
 
     @Test func `a click anywhere across the row counts, the last cell as much as the first`() throws {

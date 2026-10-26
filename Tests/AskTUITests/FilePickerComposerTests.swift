@@ -40,7 +40,7 @@ struct FilePickerComposerTests {
         let title = try #require(shown.firstIndex { $0.hasPrefix("files") })
         #expect(shown[title].contains("4 hidden by the sandbox") && shown[title].contains("Esc closes"))
         #expect(shown[title + 1] == "a/one.txt" && shown[title + 2] == "a/two.txt" && shown[title + 3] == "b/three.txt")
-        #expect(shown.last == "ask> @")
+        #expect(shown.dropLast().last == "ask> @")
     }
 
     @Test func `the choice is bold and a truncated listing says so`() throws {
@@ -59,7 +59,7 @@ struct FilePickerComposerTests {
     @Test func `while the files are being listed the picker is one line saying so`() {
         let shown = rows(screen(nil, typing: "@"))
         #expect(shown.filter { $0.hasPrefix("files") } == ["files · looking for files…"])
-        #expect(shown.last == "ask> @")
+        #expect(shown.dropLast().last == "ask> @")
     }
 
     @Test func `matches beyond what fits are counted, and cut matches are named`() throws {

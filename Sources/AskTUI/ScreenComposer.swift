@@ -2,7 +2,7 @@ public import TerminalKitRender
 internal import TerminalKitStyle
 internal import TerminalKitText
 
-/// Lays the screen out into a buffer: the transcript, bottom-aligned, then a status line, then the prompt.
+/// Lays the screen out into a buffer: the transcript, bottom-aligned, then the prompt, then the status line below it.
 ///
 /// Work is proportional to what changed, not to the screen:
 /// - the transcript's wrapped lines are kept flattened, and only lines from the first changed item onward are
@@ -72,7 +72,7 @@ public struct ScreenComposer: Sendable {
     /// Whether the last frame showed the cursor: not while the wheel has scrolled the input's window away from it.
     public private(set) var cursorIsVisible = true
 
-    /// The rows the transcript took in the last frame, from the top: everything above the status line.
+    /// The rows the transcript took in the last frame, from the top: everything above the input (and the picker, when open).
     public private(set) var transcriptRows = 0
 
     /// Where each frame's geometry goes for the mouse, or nil when nothing reads it.
@@ -138,11 +138,12 @@ public struct ScreenComposer: Sendable {
         }
         var geometry = FrameGeometry(
             rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count,
-            scrollback: state.scrollback, statusRow: transcriptRows, runnerColumns: status.runners,
-            belowColumns: status.below, promptRow: rows - panel.count - promptRows, promptRows: promptRows,
+            scrollback: state.scrollback, statusRow: transcriptRows + pickerLines.count + promptRows,
+            runnerColumns: status.runners, belowColumns: status.below, promptRow: transcriptRows + pickerLines.count,
+            promptRows: promptRows,
             promptTop: editor.top, prompt: editor.layout
         )
-        .withPicker(state: state, firstRow: transcriptRows + statusRows + 1, rows: pickerRows)
+        .withPicker(state: state, firstRow: transcriptRows + 1, rows: pickerRows)
         geometry.placeStrip(strip, firstRow: rows - panel.count)
         geometry.placeSidebar(sidebar, columns: columns)
         frames?.store(geometry)

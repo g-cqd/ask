@@ -75,13 +75,13 @@ struct ClipboardFeedbackTests {
     @Test func `selection instructions and copy feedback are visible in the status line`() {
         var rig = PointerRig(columns: 100, options: ScreenOptions(copyOnSelect: false), lines: ["alpha beta"])
         rig.drag(from: (9, 0), to: (9, 4))
-        #expect(rig.text(row: 10).contains("ctrl+c copy · esc clear"))
+        #expect(rig.text(row: 11).contains("ctrl+c copy · esc clear"))
         rig.controller.state.clipboardNotice = "Copy sent to terminal"
         rig.draw()
-        #expect(!rig.text(row: 10).contains("Copy sent to terminal"), "a copy that worked says nothing")
+        #expect(!rig.text(row: 11).contains("Copy sent to terminal"), "a copy that worked says nothing")
         rig.controller.state.clipboardNotice = "Terminal copy failed: broken pipe"
         rig.draw()
-        #expect(rig.text(row: 10).contains("Terminal copy failed"), "a copy that went wrong says so")
+        #expect(rig.text(row: 11).contains("Terminal copy failed"), "a copy that went wrong says so")
     }
 
     @Test(arguments: [("ghostty", "Shift"), ("WezTerm", "Shift"), ("Apple_Terminal", "fn")])

@@ -19,7 +19,7 @@ struct InputCutTests {
     }
 
     private func select(_ rig: inout PointerRig, from: Int, to: Int) {
-        _ = rig.drag(from: (11, 5 + from), to: (11, 5 + to))
+        _ = rig.drag(from: (10, 5 + from), to: (10, 5 + to))
     }
 
     @Test(arguments: cutKeys)
@@ -51,17 +51,17 @@ struct InputCutTests {
         #expect(shifted.controller.handle(.key(KeyEvent(keyCode: 0x18)), pageRows: 10) == [.copy("hello")])
         #expect(shifted.controller.state.editor.text == " world")
         var double = self.rig("hello world")
-        double.mouse(.left, .press, row: 11, col: 7, after: .seconds(1))
-        double.mouse(.left, .release, row: 11, col: 7)
-        double.mouse(.left, .press, row: 11, col: 7, after: .milliseconds(50))
-        double.mouse(.left, .release, row: 11, col: 7)
+        double.mouse(.left, .press, row: 10, col: 7, after: .seconds(1))
+        double.mouse(.left, .release, row: 10, col: 7)
+        double.mouse(.left, .press, row: 10, col: 7, after: .milliseconds(50))
+        double.mouse(.left, .release, row: 10, col: 7)
         #expect(double.controller.handle(.key(KeyEvent(keyCode: 0x18)), pageRows: 10) == [.copy("hello")])
         #expect(double.controller.state.editor.text == " world")
     }
 
     @Test func `cutting everything leaves an empty draft`() {
         var rig = rig("ab\ncd")
-        _ = rig.drag(from: (10, 5), to: (11, 6))
+        _ = rig.drag(from: (9, 5), to: (10, 6))
         #expect(rig.controller.handle(.key(KeyEvent(keyCode: 0x18)), pageRows: 10) == [.copy("ab\ncd")])
         #expect(rig.controller.state.editor.text.isEmpty && rig.controller.state.editor.cursor == 0)
     }
@@ -75,7 +75,7 @@ struct InputCutTests {
 
     @Test func `a selection in the transcript is not cut, and the draft is cleared as before`() {
         var rig = rig("draft")
-        _ = rig.drag(from: (9, 0), to: (9, 2))
+        _ = rig.drag(from: (8, 0), to: (8, 2))
         #expect(rig.controller.state.selection != nil)
         let effects = rig.controller.handle(.key(KeyEvent(keyCode: 0x18)), pageRows: 10)
         #expect(effects.isEmpty)
@@ -85,11 +85,11 @@ struct InputCutTests {
     @Test func `the status line offers the cut for a selection in the input only`() {
         var input = rig("hello world")
         select(&input, from: 1, to: 4)
-        #expect(input.text(row: 10).contains("ctrl+c copy · esc clear · ctrl+x cut"))
+        #expect(input.text(row: 11).contains("ctrl+c copy · esc clear · ctrl+x cut"))
         var transcript = self.rig("hello world")
-        _ = transcript.drag(from: (9, 0), to: (9, 2))
-        #expect(transcript.text(row: 10).contains("ctrl+c copy"))
-        #expect(!transcript.text(row: 10).contains("ctrl+x"))
+        _ = transcript.drag(from: (8, 0), to: (8, 2))
+        #expect(transcript.text(row: 11).contains("ctrl+c copy"))
+        #expect(!transcript.text(row: 11).contains("ctrl+x"))
     }
 
     @Test func `a waiting question keeps the keys`() {
