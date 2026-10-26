@@ -13,6 +13,16 @@ extension RunSettings {
             foldThinking: ui.foldThinking ?? defaults.foldThinking, scrollLines: ui.scrollLines ?? defaults.scrollLines,
             promptRows: ui.promptRows ?? defaults.promptRows, foldCode: ui.foldCode ?? defaults.foldCode,
             codeFoldLines: ui.codeFoldLines ?? defaults.codeFoldLines, sidebar: ui.sidebarOpen ?? defaults.sidebar,
-            verbose: verbose)
+            verbose: verbose, prompt: ui.prompt ?? defaults.prompt, tint: ui.tint ?? defaults.tint,
+            separator: ui.separator ?? defaults.separator, lightBackground: Self.isLightBackground)
+    }
+
+    /// Whether the terminal says its background is light, from `COLORFGBG` (`15;0` is light on dark): the background is the last number, and 7 or
+    /// 9 to 15 are the light ones. A terminal that does not set it is taken as dark; the kit's palette query is the better answer when it lands.
+    static var isLightBackground: Bool {
+        guard let value = LaunchEnvironment.values["COLORFGBG"], let last = value.split(separator: ";").last,
+            let index = Int(last)
+        else { return false }
+        return index == 7 || (9 ... 15).contains(index)
     }
 }

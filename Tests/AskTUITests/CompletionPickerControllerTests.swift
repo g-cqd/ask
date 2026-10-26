@@ -16,7 +16,9 @@ struct CompletionPickerControllerTests {
         reload | Reload the binary.
         """)
 
-    private func controller() -> ScreenController { ScreenController(label: "m", commands: Self.commands) }
+    private func controller() -> ScreenController {
+        ScreenController(label: "m", commands: Self.commands, options: .legacy)
+    }
 
     @discardableResult
     private func type(_ text: String, into controller: inout ScreenController, pageRows: Int = 30) -> [ScreenController
@@ -217,7 +219,7 @@ struct CompletionPickerControllerTests {
 
     @Test func `moving past the visible window scrolls it, and the choice is always inside it`() throws {
         let many = (0 ..< 12).map { SlashCommand(name: "cmd\($0)", summary: "Command \($0).") }
-        var screen = ScreenController(label: "m", commands: many)
+        var screen = ScreenController(label: "m", commands: many, options: .legacy)
         type("/cmd", into: &screen, pageRows: 17)
         for _ in 0 ..< 9 { press(Key.down.rawValue, into: &screen, pageRows: 17) }
         let picker = try #require(screen.state.picker)

@@ -14,7 +14,8 @@ struct SkillPickerTests {
     ]
 
     private func controller() -> ScreenController {
-        ScreenController(label: "m", commands: [SlashCommand(name: "config", summary: "Show the settings.")])
+        ScreenController(
+            label: "m", commands: [SlashCommand(name: "config", summary: "Show the settings.")], options: .legacy)
     }
 
     @discardableResult

@@ -93,7 +93,7 @@ struct FilePickerControllerTests {
     }
 
     @Test func `a name with a space in it is inserted quoted, so the space does not end the word`() {
-        var screen = ScreenController(label: "m", commands: [])
+        var screen = ScreenController(label: "m", commands: [], options: .legacy)
         screen.handle(.files(ProjectFiles(paths: ["My Docs/a b.txt", "plain.txt"])))
         type("@my", into: &screen)
         #expect(labels(screen) == ["My Docs/a b.txt"])

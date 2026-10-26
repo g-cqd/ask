@@ -34,7 +34,7 @@ struct CompletionPickerComposerTests {
     private func screen(
         typing text: String, commands: [SlashCommand] = commands, rows: Int = 20
     ) -> (ScreenController, Int) {
-        var controller = ScreenController(label: "m", commands: commands)
+        var controller = ScreenController(label: "m", commands: commands, options: .legacy)
         for scalar in text.unicodeScalars {
             _ = controller.handle(.key(KeyEvent(keyCode: scalar.value)), pageRows: rows - 3)
         }

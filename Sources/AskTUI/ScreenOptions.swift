@@ -21,11 +21,23 @@ public struct ScreenOptions: Sendable, Equatable {
     /// Whether details are shown: what ask did on its own account, such as the sandbox in force or a build that appeared (`--verbose`).
     /// `/verbose` toggles it, and shows what was held back meanwhile (ADR-0119).
     public var verbose: Bool
+    /// What the input starts with (`ui.prompt`); none by default, since the input is marked by its tint (roadmap 0074).
+    public var prompt: String
+    /// Whether the input and the tool and user blocks have a tinted background (`ui.tint`).
+    public var tint: Bool
+    /// Whether a rule separates the conversation from the input (`ui.separator`).
+    public var separator: Bool
+    /// Whether the terminal's background is light, which picks the lighter tints; the composition root reads it from the environment.
+    public var lightBackground: Bool
+
+    /// The look before roadmap 0074: an `ask> ` prefix, no tint, no rule. What the screen's older tests were written against.
+    public static let legacy = ScreenOptions(prompt: "ask> ", tint: false, separator: false)
 
     public init(
         mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
         scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20,
-        sidebar: Bool = false, verbose: Bool = false
+        sidebar: Bool = false, verbose: Bool = false, prompt: String = "", tint: Bool = true, separator: Bool = true,
+        lightBackground: Bool = false
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -37,5 +49,9 @@ public struct ScreenOptions: Sendable, Equatable {
         self.codeFoldLines = Swift.max(1, codeFoldLines)
         self.sidebar = sidebar
         self.verbose = verbose
+        self.prompt = prompt
+        self.tint = tint
+        self.separator = separator
+        self.lightBackground = lightBackground
     }
 }

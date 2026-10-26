@@ -18,7 +18,9 @@ struct SidebarTests {
     private func rig(columns: Int = 100, sidebar: Bool = true, runners: [RunnerInfo] = SidebarTests.jobs) -> PointerRig
     {
         var rig = PointerRig(
-            columns: columns, rows: 20, options: ScreenOptions(sidebar: sidebar), lines: [Self.long, "short"])
+            columns: columns, rows: 20,
+            options: ScreenOptions(sidebar: sidebar, prompt: "ask> ", tint: false, separator: false),
+            lines: [Self.long, "short"])
         rig.controller.handle(.runners(runners))
         rig.draw()
         return rig

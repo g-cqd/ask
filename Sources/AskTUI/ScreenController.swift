@@ -74,7 +74,7 @@ public struct ScreenController: Sendable {
 
     /// A controller showing `label` in the status line, answering `commands` besides the built-in ones.
     public init(label: String, commands: [SlashCommand] = [], options: ScreenOptions = ScreenOptions()) {
-        state = ScreenState(label: label)
+        state = ScreenState(label: label, options: options)
         self.commands = Self.builtIn + commands
         self.options = options
         state.transcript.setToolsFoldedByDefault(options.foldTools)
@@ -215,7 +215,7 @@ public struct ScreenController: Sendable {
     }
 
     mutating func edit(_ key: KeyEvent, columns: Int?, interrupt: Interrupt) -> [Effect] {
-        let indent = columns.map { PromptLayout.prefix(columns: $0).count } ?? 0
+        let indent = columns.map { PromptLayout.prefix(state.promptPrefix, columns: $0).count } ?? 0
         switch state.editor.apply(key, columns: columns, firstRowIndent: indent) {
             case .submitted(let line):
                 return submit(line, followUp: key.modifiers.contains(.alt))

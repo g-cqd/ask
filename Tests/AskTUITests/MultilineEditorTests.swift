@@ -146,7 +146,7 @@ struct MultilineEditorTests {
     }
 
     @Test func `the prompt draws each line on its own row and the cursor follows the editing line`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         state.editor.paste("one\ntwo")
         _ = state.editor.apply(key(up))
         _ = state.editor.apply(key(Key.home.rawValue))
@@ -159,7 +159,7 @@ struct MultilineEditorTests {
     }
 
     @Test func `a tall prompt scrolls to keep the cursor visible`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         state.editor.paste((1 ... 10).map { "line \($0)" }.joined(separator: "\n"))
         var buffer = ScreenBuffer(columns: 20, rows: 18)
         var composer = ScreenComposer()
@@ -172,7 +172,7 @@ struct MultilineEditorTests {
     }
 
     @Test func `an empty line in the prompt is drawn, not skipped`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         state.editor.paste("a\n\nb")
         var buffer = ScreenBuffer(columns: 20, rows: 9)
         var composer = ScreenComposer()

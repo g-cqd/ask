@@ -19,11 +19,17 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var codeFoldLines: Int?
     /// `ui.sidebar`: whether the runner sidebar starts open. `true` is `"open"`, `false` is `"closed"`.
     public var sidebarOpen: Bool?
+    /// `ui.prompt`: what the input starts with, if anything. Empty is none, which is the default: the input is marked by its tint.
+    public var prompt: String?
+    /// `ui.tint`: whether the input and the tool and user blocks have a tinted background. `true` is `"on"`, `false` is `"off"`.
+    public var tint: Bool?
+    /// `ui.separator`: whether a rule separates the conversation from the input. `true` is `"on"`, `false` is `"off"`.
+    public var separator: Bool?
 
     public init(
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
         scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil,
-        sidebarOpen: Bool? = nil
+        sidebarOpen: Bool? = nil, prompt: String? = nil, tint: Bool? = nil, separator: Bool? = nil
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -34,16 +40,22 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.foldCode = foldCode
         self.codeFoldLines = codeFoldLines
         self.sidebarOpen = sidebarOpen
+        self.prompt = prompt
+        self.tint = tint
+        self.separator = separator
     }
 
     public var isEmpty: Bool {
         mouse == nil && copyOnSelect == nil && foldTools == nil && foldThinking == nil && scrollLines == nil
-            && promptRows == nil && foldCode == nil && codeFoldLines == nil && sidebarOpen == nil
+            && promptRows == nil && foldCode == nil && codeFoldLines == nil && sidebarOpen == nil && prompt == nil
+            && tint == nil && separator == nil
+        // @dl:accept -- the layering takes each key from the later section; the keys are the data
     }
 
     /// The keys, in the order they are shown.
     public static let keys = [
-        "mouse", "copyOnSelect", "tools", "thinking", "scrollLines", "promptRows", "code", "codeFoldLines", "sidebar"
+        "mouse", "copyOnSelect", "tools", "thinking", "scrollLines", "promptRows", "code", "codeFoldLines", "sidebar",
+        "prompt", "tint", "separator"
     ]
 
     /// `self` with every key `section` sets replaced.
@@ -53,11 +65,13 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             foldTools: section.foldTools ?? foldTools, foldThinking: section.foldThinking ?? foldThinking,
             scrollLines: section.scrollLines ?? scrollLines, promptRows: section.promptRows ?? promptRows,
             foldCode: section.foldCode ?? foldCode, codeFoldLines: section.codeFoldLines ?? codeFoldLines,
-            sidebarOpen: section.sidebarOpen ?? sidebarOpen)
+            sidebarOpen: section.sidebarOpen ?? sidebarOpen, prompt: section.prompt ?? prompt,
+            tint: section.tint ?? tint, separator: section.separator ?? separator)
     }
 
     public var description: String {
         var parts: [String] = []
+        // @dl:accept -- one line per key, as data, in the order the keys are shown
         if let mouse { parts.append("mouse \(mouse ? "on" : "off")") }
         if let copyOnSelect { parts.append("copyOnSelect \(copyOnSelect ? "on" : "off")") }
         // @dl:accept -- one line per key, as data, in the order the keys are shown
@@ -68,6 +82,9 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         if let foldCode { parts.append("code \(foldCode ? "folded" : "open")") }
         if let codeFoldLines { parts.append("codeFoldLines \(codeFoldLines)") }
         if let sidebarOpen { parts.append("sidebar \(sidebarOpen ? "open" : "closed")") }
+        if let prompt { parts.append(prompt.isEmpty ? "prompt none" : "prompt \"\(prompt)\"") }
+        if let tint { parts.append("tint \(tint ? "on" : "off")") }
+        if let separator { parts.append("separator \(separator ? "on" : "off")") }
         return parts.isEmpty ? "defaults" : parts.joined(separator: ", ")
     }
 }
