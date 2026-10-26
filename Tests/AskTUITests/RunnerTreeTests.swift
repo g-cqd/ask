@@ -46,7 +46,7 @@ struct RunnerTreeTests {
         ]
         state.runnersOpen = true
         #expect(state.runnerTree.activeCount == 2)
-        #expect(ScreenComposer.status(for: state).line.text == "m · ready · 2 jobs")
+        #expect(ScreenComposer.status(for: state).line.text == "m · 2 jobs")
         let rows = ScreenComposer.runnerRows(for: state, available: 20, columns: 100).map(\.text)
         #expect(
             rows == [
@@ -60,7 +60,7 @@ struct RunnerTreeTests {
         let agent = RunnerInfo(name: "review", detail: "reading", kind: .agent)
         state.runners = [agent, agent, node("job", parent: "review")]
         state.runnersOpen = true
-        #expect(ScreenComposer.status(for: state).line.text == "m · ready · 2 runners")
+        #expect(ScreenComposer.status(for: state).line.text == "m · 2 runners")
         #expect(
             ScreenComposer.runnerRows(for: state, available: 10, columns: 100).map(\.text)
                 == ["review  reading · running", "  job  work · running"])

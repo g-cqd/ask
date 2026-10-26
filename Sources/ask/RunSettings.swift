@@ -52,7 +52,7 @@ struct RunSettings: Equatable {
         for line in lines { updates.append(.detail("  " + line)) }
         for line in fresh { updates.append(.notice(line, isError: false)) }
         for line in details where !previous.details.contains(line) { updates.append(.detail(line)) }
-        if label != previous.label { updates.append(.label(label)) }
+        if labelVariants != previous.labelVariants { updates.append(.labelVariants(labelVariants)) }
         return updates
     }
 
@@ -124,8 +124,22 @@ struct RunSettings: Equatable {
             : "only under chosen paths, the system and developer tools"
     }
 
-    /// What the status line shows at its left: the model, and the sandbox when it is not ask's default.
-    var label: String { ([model.label] + [thinkingTag, strictTag].compactMap { $0 }).joined(separator: " · ") }
+    /// What the status line shows at its left, longest first: `provider/model/effort`, then without the effort, then the model alone, so a
+    /// narrow terminal gets a whole shorter label and not half of the long one. A warning mark leads when there is no sandbox; with `--verbose`
+    /// a shield leads when there is one (roadmap 0074).
+    var labelVariants: [String] {
+        let provider = model.connection?.name ?? model.providerName
+        let named = "\(provider)/\(model.model)"
+        let effort = configuration.thinking.value
+        var forms = effort == .providerDefault ? [] : ["\(named)/\(effort)"]
+        forms += [named, model.model]
+        let mark = sandbox.isUnrestricted ? "⚠ " : (verbose ? "⛨ " : "")
+        var seen: Set<String> = []
+        return forms.map { mark + $0 }.filter { seen.insert($0).inserted }
+    }
+
+    /// The longest form of the label.
+    var label: String { labelVariants[0] }
 
     /// A short word for a sandbox that differs from the default, or nil: strict modes and `--no-sandbox` both show.
     var strictTag: String? {

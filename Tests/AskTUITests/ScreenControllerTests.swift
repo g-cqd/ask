@@ -84,12 +84,12 @@ struct ScreenControllerTests {
 
     @Test func `a status update shows at the right of the status line`() {
         var controller = ScreenController(label: "m")
-        controller.handle(.status("in 2.1k (48% cached) · out 55"))
+        controller.handle(.status("↑2.1k ↓55"))
         var buffer = ScreenBuffer(columns: 60, rows: 3)
         var composer = ScreenComposer()
         _ = composer.compose(controller.state, into: &buffer)
         let statusRow = String((0 ..< 60).map { buffer[1, $0].character })
-        #expect(statusRow.hasPrefix("m · ready · in 2.1k (48% cached) · out 55"))
+        #expect(statusRow.hasPrefix("m · ↑2.1k ↓55"))
     }
 
     @Test func `a paste lands in the editor`() {

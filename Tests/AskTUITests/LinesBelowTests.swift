@@ -117,13 +117,13 @@ struct LinesBelowTests {
 
     @Test func `the status line counts the lines below, and says nothing at the end`() {
         var rig = rig(scrolled: false)
-        #expect(rig.text(row: Self.statusRow) == "m · ready")
+        #expect(rig.text(row: Self.statusRow) == "m")
         rig.mouse(.scrollUp, .press, row: 3, col: 3)
         let below = rig.controller.state.scrollback
-        #expect(rig.text(row: Self.statusRow) == "m · ready · \(below) lines below")
+        #expect(rig.text(row: Self.statusRow) == "m · \(below) lines below")
         rig.controller.state.scrollback = 1
         rig.draw()
-        #expect(rig.text(row: Self.statusRow) == "m · ready · 1 line below")
+        #expect(rig.text(row: Self.statusRow) == "m · 1 line below")
     }
 
     @Test func `the count sits before the jobs, and the jobs keep their click`() {
@@ -131,7 +131,7 @@ struct LinesBelowTests {
         rig.controller.handle(.runners([RunnerInfo(name: "job-1", detail: "sleep 9")]))
         rig.draw()
         let line = rig.text(row: Self.statusRow)
-        #expect(line.hasPrefix("m · ready · ") && line.hasSuffix(" lines below · 1 job"))
+        #expect(line.hasPrefix("m · ") && line.hasSuffix(" lines below · 1 job"))
         let column = line.count - "1 job".count
         rig.click(row: Self.statusRow, col: column + 1)
         #expect(rig.controller.state.runnersOpen)
@@ -143,21 +143,21 @@ struct LinesBelowTests {
         var rig = rig()
         let below = rig.controller.state.scrollback
         let end = rig.text(row: Self.statusRow).count
-        for column in [0, 3, 11, end, 38] {
+        for column in [0, 1, 2, 3, end, 38] {
             rig.click(row: Self.statusRow, col: column)
             #expect(rig.controller.state.scrollback == below, "column \(column), the count ends at \(end)")
         }
-        rig.click(row: Self.statusRow, col: 14)
+        rig.click(row: Self.statusRow, col: 6)
         #expect(rig.controller.state.scrollback == 0)
-        #expect(rig.text(row: 9) == "line 40" && rig.text(row: Self.statusRow) == "m · ready")
+        #expect(rig.text(row: 9) == "line 40" && rig.text(row: Self.statusRow) == "m")
     }
 
     @Test func `with the mouse off the count is still shown and is not clicked`() {
         var rig = rig(options: ScreenOptions(mouse: false))
         rig.controller.state.scrollback = 5
         rig.draw()
-        #expect(rig.text(row: Self.statusRow) == "m · ready · 5 lines below")
-        rig.click(row: Self.statusRow, col: 14)
+        #expect(rig.text(row: Self.statusRow) == "m · 5 lines below")
+        rig.click(row: Self.statusRow, col: 6)
         #expect(rig.controller.state.scrollback == 5)
     }
 
@@ -196,8 +196,8 @@ struct LinesBelowTests {
 
     @Test func `a narrow screen clips the line and nothing breaks`() {
         var rig = rig(columns: 12)
-        #expect(rig.text(row: Self.statusRow) == "m · ready ·", "the count starts at column 12, one past the edge")
+        #expect(rig.text(row: Self.statusRow) == "m", "the count does not fit, so it is left out whole, not cut")
         rig.click(row: Self.statusRow, col: 11)
-        #expect(rig.controller.state.scrollback > 0, "the count is off the screen, so there is nothing to click")
+        #expect(rig.controller.state.scrollback > 0, "the count is not on the screen, so there is nothing to click")
     }
 }

@@ -112,7 +112,7 @@ final class AgentConversation: Conversation {
                     if let shown = Self.update(for: event) { updates.append(shown) }
             }
         }
-        return updates + [.status(usage.withLock { $0.summary })]
+        return updates + [.status(usage.withLock { $0.compact })]
     }
 
     func enqueue(_ text: String, id: Int, followUp: Bool) {
@@ -152,7 +152,7 @@ final class AgentConversation: Conversation {
         if let spent = event.usage {
             let summary = usage.withLock { totals in
                 totals.add(spent)
-                return totals.summary
+                return totals.compact
             }
             update(.status(summary))
         }
@@ -227,7 +227,8 @@ func runInteractive(
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.
         let exit = try await runInteractiveScreen(
-            conversation: conversation, label: settings.label, history: conversation.history(),
+            conversation: conversation, label: settings.label,
+            history: [.labelVariants(settings.labelVariants)] + conversation.history(),
             notices: startupNotices + settings.description,
             details: details + settings.detailLines + ProjectInstructions.describe(files),
             options: settings.screenOptions, beforeSignalExit: { jobs.terminateAllNow() })

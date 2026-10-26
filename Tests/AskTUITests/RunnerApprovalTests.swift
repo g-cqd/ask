@@ -27,7 +27,7 @@ struct RunnerApprovalTests {
     }
 
     private func status(_ rig: PointerRig) -> String {
-        (0 ..< 16).map { rig.text(row: $0) }.first { $0.contains("ready") || $0.contains("y once") } ?? ""
+        (0 ..< 16).map { rig.text(row: $0) }.first { $0 == "m" || $0.hasPrefix("m ·") || $0.contains("y once") } ?? ""
     }
 
     @Test func `the question leads the status line while the lane hides main's transcript`() {
@@ -43,17 +43,17 @@ struct RunnerApprovalTests {
         rig.controller.handle(.askApproval(id: 4, question: "Allow it?"))
         #expect(press(0x79, &rig) == [.answerApproval(id: 4, .once)])
         #expect(
-            !status(rig).contains("Allow it?") && status(rig).contains("main › job-1") && status(rig).contains("ready"))
+            !status(rig).contains("Allow it?") && status(rig).contains("main › job-1"))
     }
 
     @Test func `no question, no change to the line, and main shows its question in the transcript as before`() {
         var rig = lane()
-        #expect(status(rig).hasPrefix("m · ready"))
+        #expect(status(rig).hasPrefix("m"))
         press(0x1B, &rig)
         rig.controller.handle(.askApproval(id: 5, question: "Allow it?"))
         rig.draw()
         #expect((0 ..< 16).contains { rig.text(row: $0).hasPrefix("Allow it?  y once") })
-        #expect((0 ..< 16).contains { rig.text(row: $0).hasPrefix("m · ready") }, "the status line is the plain one")
+        #expect((0 ..< 16).contains { rig.text(row: $0) == "m · 1 job" }, "the status line is the plain one")
     }
 
     @Test func `a question from a runner shows as waiting in the strip and counts`() {
