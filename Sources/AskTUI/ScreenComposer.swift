@@ -108,7 +108,7 @@ public struct ScreenComposer: Sendable {
         let strip = RunnerStrip(
             state, available: Swift.max(0, rows - promptRows - statusRows - 1), columns: columns)
         let panel = strip.lines
-        let status = Self.status(for: state, input: editor.indicator)
+        let status = Self.status(for: state, input: editor.indicator, columns: columns)
         let pickerRows = rows - promptRows - statusRows - panel.count - 1
         let pickerLines = Self.pickerLines(for: state, columns: columns, rows: pickerRows)
         let transcriptRows = rows - promptRows - statusRows - panel.count - pickerLines.count

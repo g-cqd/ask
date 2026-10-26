@@ -48,7 +48,7 @@ struct CompletionPickerComposerTests {
         var composer = ScreenComposer()
         let cursor = composer.compose(controller.state, into: &buffer)
         let shown = rows(buffer)
-        let status = try #require(shown.lastIndex { $0.hasPrefix("m ·") })
+        let status = try #require(shown.lastIndex { $0 == "m" })
         #expect(
             shown.last == "ask> /co" && status == height - 1 - 4 - 1,
             "status, then the title and three matches, then the prompt")
@@ -139,7 +139,7 @@ struct CompletionPickerComposerTests {
         let shown = rows(buffer)
         let first = try #require(shown.firstIndex { $0.hasPrefix("job-1") })
         let status = composer.transcriptRows
-        #expect(shown[status].contains("· ready"))
+        #expect(shown[status].hasPrefix("m"))
         #expect(shown[status + 1].hasPrefix("commands") && shown[status + 2].hasPrefix("/config"))
         #expect(shown[first - 1] == "ask> /co" && shown[first + 1].hasPrefix("job-2"))
         #expect(first == height - 2 && cursor.row == first - 1)

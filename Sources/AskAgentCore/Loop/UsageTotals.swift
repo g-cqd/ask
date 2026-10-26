@@ -30,6 +30,9 @@ public struct UsageTotals: Sendable, Equatable {
         return "in \(Self.short(prompt)) (\(cached)% cached) · out \(Self.short(output))"
     }
 
+    /// For the status line: `↑13.2k ↓1.1k`, the prompt tokens sent and the tokens received.
+    public var compact: String { "↑\(Self.short(prompt)) ↓\(Self.short(output))" }
+
     /// 950, 1.2k, 13k, 1.4M.
     static func short(_ count: Int) -> String {
         switch count {
