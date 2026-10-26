@@ -3,27 +3,33 @@ internal import TerminalKitStyle
 internal import TerminalKitText
 
 extension ScreenComposer {
-    /// Writes everything under the transcript: the picker, the one input, the status line below it, then the runner strip.
+    /// Writes everything under the transcript: the rule, the picker, the one input (tinted), the status line below it, then the runner strip.
     /// - Parameters:
     ///   - panel: the open runners list, if any.
     ///   - status: the status line, or nil on a screen with no room for one.
     ///   - picker: the command picker's rows, if open.
     ///   - editor: the prompt's rows and cursor.
+    ///   - rule: the row that separates the conversation from the input, or nil for none.
+    ///   - inputStyle: the style the input's rows are drawn in: its tint, when it has one.
     ///   - row: the first row under the transcript.
     ///   - buffer: where the rows go.
     /// - Returns: where the cursor belongs, in the prompt.
     mutating func writeBottom(
-        panel: [Line], status: Line?, picker: [Line], editor: PromptLayout.Frame, from row: Int,
-        into buffer: inout ScreenBuffer
+        panel: [Line], status: Line?, picker: [Line], editor: PromptLayout.Frame, rule: Line? = nil,
+        inputStyle: Style = .default, from row: Int, into buffer: inout ScreenBuffer
     ) -> (row: Int, column: Int) {
         var next = row
+        if let rule {
+            write(rule, row: next, into: &buffer)
+            next += 1
+        }
         for line in picker {
             write(line, row: next, into: &buffer)
             next += 1
         }
         for (offset, text) in editor.lines.enumerated() {
             write(
-                Line(text: text, style: .default),
+                Line(text: text, style: inputStyle),
                 highlight: editor.highlights.isEmpty ? nil : editor.highlights[offset], row: next + offset,
                 into: &buffer)
         }

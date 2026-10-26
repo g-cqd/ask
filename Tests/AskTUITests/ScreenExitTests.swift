@@ -20,7 +20,7 @@ struct ScreenExitTests {
     }
 
     @Test func `a request to exit is remembered by the controller, and nothing closes before it is made`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         #expect(controller.state.exitRequest == nil)
         controller.handle(.requestExit(.reload))
         #expect(controller.state.exitRequest == .reload)

@@ -58,7 +58,6 @@ public struct ScreenComposer: Sendable {
         var side: Sidebar.Cell?
     }
 
-    static let prompt = "ask> "
     private var input = PromptLayout()
 
     /// Every transcript item's wrapped lines, end to end, rebuilt from the first item whose revision changed.
@@ -100,20 +99,47 @@ public struct ScreenComposer: Sendable {
             shownSize = (columns, rows)
         }
         let editor = input.frame(
-            state.editor, columns: columns, screenRows: rows, maximumRows: state.promptRows,
+            state.editor, prompt: state.promptPrefix, columns: columns, screenRows: rows, maximumRows: state.promptRows,
             selection: state.inputSelection, scrollTop: state.promptScroll)
         cursorIsVisible = editor.cursorVisible
         let promptRows = editor.lines.count
         let statusRows = rows > 1 ? 1 : 0
+        // A rule between the conversation and the input, when the screen has the rows to spare for it.
+        let ruleRows = state.separator && rows >= 6 ? 1 : 0
         let strip = RunnerStrip(
             state, available: Swift.max(0, rows - promptRows - statusRows - 1), columns: columns)
         let panel = strip.lines
         let status = Self.status(for: state, input: editor.indicator, columns: columns)
-        let pickerRows = rows - promptRows - statusRows - panel.count - 1
+        let pickerRows = rows - promptRows - statusRows - ruleRows - panel.count - 1
         let pickerLines = Self.pickerLines(for: state, columns: columns, rows: pickerRows)
-        let transcriptRows = rows - promptRows - statusRows - panel.count - pickerLines.count
+        let transcriptRows = rows - promptRows - statusRows - ruleRows - panel.count - pickerLines.count
         self.transcriptRows = transcriptRows
 
+        let (sidebar, map, totalLines) = writeTranscript(
+            state, rows: rows, transcriptRows: transcriptRows, columns: columns, into: &buffer)
+        var geometry = FrameGeometry(
+            rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: totalLines,
+            scrollback: state.scrollback,
+            statusRow: transcriptRows + ruleRows + pickerLines.count + promptRows, runnerColumns: status.runners,
+            belowColumns: status.below, promptRow: transcriptRows + ruleRows + pickerLines.count,
+            promptRows: promptRows,
+            promptTop: editor.top, prompt: editor.layout
+        )
+        .withPicker(state: state, firstRow: transcriptRows + ruleRows + 1, rows: pickerRows)
+        geometry.placeStrip(strip, firstRow: rows - panel.count)
+        geometry.placeSidebar(sidebar, columns: columns)
+        frames?.store(geometry)
+
+        return writeBottom(
+            panel: panel, status: statusRows > 0 ? status.line : nil, picker: pickerLines, editor: editor,
+            rule: ruleRows > 0 ? Line(text: String(repeating: "─", count: columns), style: Style(dim: true)) : nil,
+            inputStyle: Style(bg: state.theme.inputBackground), from: transcriptRows, into: &buffer)
+    }
+
+    /// Draws the transcript's visible rows, with the sidebar beside them, and says what each row shows.
+    private mutating func writeTranscript(
+        _ state: ScreenState, rows: Int, transcriptRows: Int, columns: Int, into buffer: inout ScreenBuffer
+    ) -> (sidebar: Sidebar, map: RowMap<Int>, totalLines: Int) {
         let sidebar = Sidebar(state, columns: columns, rows: transcriptRows)
         let wrapColumns = sidebar.transcriptColumns(of: columns)
         updateTranscriptLines(state.transcript, columns: wrapColumns)
@@ -136,21 +162,7 @@ public struct ScreenComposer: Sendable {
                 line, highlight: highlights[row], side: sidebar.cells.isEmpty ? nil : sidebar.cells[row], row: row,
                 into: &buffer)
         }
-        var geometry = FrameGeometry(
-            rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: flat.count,
-            scrollback: state.scrollback, statusRow: transcriptRows + pickerLines.count + promptRows,
-            runnerColumns: status.runners, belowColumns: status.below, promptRow: transcriptRows + pickerLines.count,
-            promptRows: promptRows,
-            promptTop: editor.top, prompt: editor.layout
-        )
-        .withPicker(state: state, firstRow: transcriptRows + 1, rows: pickerRows)
-        geometry.placeStrip(strip, firstRow: rows - panel.count)
-        geometry.placeSidebar(sidebar, columns: columns)
-        frames?.store(geometry)
-
-        return writeBottom(
-            panel: panel, status: statusRows > 0 ? status.line : nil, picker: pickerLines, editor: editor,
-            from: transcriptRows, into: &buffer)
+        return (sidebar, map, flat.count)
     }
 
     // MARK: - Lines

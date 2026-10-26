@@ -12,7 +12,7 @@ struct StreamingScreenTests {
         let connection = MockTerminalConnection()  // 80x24: 22 transcript rows, a status row, a prompt row
         let pipeline = RenderPipeline(connection: connection, columns: 80, rows: 24)
         var composer = ScreenComposer()
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         for index in 0 ..< 40 { state.transcript.addNotice("earlier line \(index) of a long answer", isError: false) }
         pipeline.beginFrame()
         composer.compose(state, into: pipeline)
@@ -32,7 +32,7 @@ struct StreamingScreenTests {
     @Test func `a taller prompt shrinks the region with the transcript`() throws {
         let pipeline = RenderPipeline(connection: MockTerminalConnection(), columns: 80, rows: 24)
         var composer = ScreenComposer()
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         state.editor.paste(String(repeating: "x", count: 200))  // three prompt rows at 80 columns
 
         pipeline.beginFrame()

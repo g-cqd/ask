@@ -73,7 +73,9 @@ struct ClipboardFeedbackTests {
     }
 
     @Test func `selection instructions and copy feedback are visible in the status line`() {
-        var rig = PointerRig(columns: 100, options: ScreenOptions(copyOnSelect: false), lines: ["alpha beta"])
+        var rig = PointerRig(
+            columns: 100, options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false),
+            lines: ["alpha beta"])
         rig.drag(from: (9, 0), to: (9, 4))
         #expect(rig.text(row: 11).contains("ctrl+c copy · esc clear"))
         rig.controller.state.clipboardNotice = "Copy sent to terminal"

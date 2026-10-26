@@ -77,6 +77,16 @@ public struct ScreenState: Sendable, Equatable {
     /// Names the native-selection bypass while mouse reporting is enabled (ADR-0046).
     var nativeSelectionHint = ""
 
+    /// What the input starts with, and whether the screen is tinted and ruled: from the options, which decide the look (roadmap 0074).
+    public var promptPrefix = ""
+    public var theme = ScreenTheme()
+    public var separator = true
+
     /// A screen with nothing in it yet.
-    public init(label: String) { self.label = label }
+    public init(label: String, options: ScreenOptions = ScreenOptions()) {
+        self.label = label
+        promptPrefix = options.prompt
+        separator = options.separator
+        theme = ScreenTheme(tinted: options.tint, light: options.lightBackground)
+    }
 }

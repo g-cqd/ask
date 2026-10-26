@@ -67,7 +67,7 @@ struct WrappedPromptNavigationTests {
     }
 
     @Test func `the controller passes its display width and prefix to navigation`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         controller.state.editor.paste("abcdefghij")
         _ = controller.handle(.key(up), pageRows: 10, columns: 8)
         #expect(controller.state.editor.cursor == 2)

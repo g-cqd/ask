@@ -15,7 +15,8 @@ struct PickerClickTests {
     private static let listing = ProjectFiles(paths: (1 ... 12).map { "src/file\($0).swift" })
 
     private func rig(
-        _ typed: String, files: Bool = false, options: ScreenOptions = ScreenOptions(), transcript: Int = 2,
+        _ typed: String, files: Bool = false,
+        options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false), transcript: Int = 2,
         rows: Int = PickerClickTests.rows
     ) -> PointerRig {
         var rig = PointerRig(
@@ -143,7 +144,7 @@ struct PickerClickTests {
     }
 
     @Test func `with the mouse off nothing is clicked`() throws {
-        var rig = rig("/", options: ScreenOptions(mouse: false))
+        var rig = rig("/", options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false))
         let target = try #require(row(of: "/tasks", in: rig))
         rig.click(row: target, col: 3)
         #expect(rig.controller.state.editor.text == "/")

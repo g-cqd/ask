@@ -26,7 +26,7 @@ struct ScreenMouseModeTests {
     }
 
     @Test func `the screen asks for mouse reports and gives them up again`() async throws {
-        let output = try await connectionOutput(options: ScreenOptions())
+        let output = try await connectionOutput(options: ScreenOptions(prompt: "ask> ", tint: false, separator: false))
         let enable = String(decoding: EscapeSequences.enableMouseSGR, as: UTF8.self)
         let disable = String(decoding: EscapeSequences.disableMouseSGR, as: UTF8.self)
         #expect(output.contains(enable))
@@ -35,7 +35,8 @@ struct ScreenMouseModeTests {
     }
 
     @Test func `with the mouse off the terminal is never asked to report it`() async throws {
-        let output = try await connectionOutput(options: ScreenOptions(mouse: false))
+        let output = try await connectionOutput(
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false))
         #expect(!output.contains(String(decoding: EscapeSequences.enableMouseSGR, as: UTF8.self)))
     }
 }

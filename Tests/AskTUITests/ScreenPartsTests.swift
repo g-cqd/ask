@@ -77,7 +77,7 @@ struct ScreenPartsTests {
     }
 
     @Test func `the transcript sits above the prompt and the status line, bottom-aligned`() {
-        var state = ScreenState(label: "model")
+        var state = ScreenState(label: "model", options: .legacy)
         state.transcript.addUser("hi")
         state.transcript.addAssistantText("hello there")
         var buffer = ScreenBuffer(columns: 20, rows: 6)
@@ -88,7 +88,7 @@ struct ScreenPartsTests {
     }
 
     @Test func `older lines scroll off the top, and scrollback brings them back`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         for index in 1 ... 5 { state.transcript.addNotice("line \(index)", isError: false) }
         var buffer = ScreenBuffer(columns: 20, rows: 4)
         var composer = ScreenComposer()
@@ -100,7 +100,7 @@ struct ScreenPartsTests {
     }
 
     @Test func `tools show their status, and a running state says how to stop`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         state.transcript.startTool(name: "bash", summary: "ls")
         state.running = true
         var buffer = ScreenBuffer(columns: 40, rows: 3)
@@ -115,7 +115,7 @@ struct ScreenPartsTests {
     }
 
     @Test func `a long prompt wraps and the cursor follows it`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         state.editor.paste(String(repeating: "x", count: 20))
         var buffer = ScreenBuffer(columns: 10, rows: 9)
         var composer = ScreenComposer()
@@ -125,7 +125,7 @@ struct ScreenPartsTests {
     }
 
     @Test func `composing an unchanged screen again writes nothing`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         for index in 1 ... 30 { state.transcript.addNotice("line \(index)", isError: false) }
         var buffer = ScreenBuffer(columns: 40, rows: 10)
         var composer = ScreenComposer()
@@ -136,7 +136,7 @@ struct ScreenPartsTests {
     }
 
     @Test func `a keystroke dirties only the prompt row`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         for index in 1 ... 30 { state.transcript.addNotice("line \(index)", isError: false) }
         var buffer = ScreenBuffer(columns: 40, rows: 10)
         var composer = ScreenComposer()
@@ -149,7 +149,7 @@ struct ScreenPartsTests {
     }
 
     @Test func `a resize recomposes everything at the new width`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         state.transcript.addAssistantText("one two three four five")
         var composer = ScreenComposer()
         var wide = ScreenBuffer(columns: 30, rows: 4)
@@ -160,7 +160,7 @@ struct ScreenPartsTests {
     }
 
     @Test func `after reset, a fresh buffer of the same size is drawn in full`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         state.transcript.addAssistantText("hello")
         var composer = ScreenComposer()
         var first = ScreenBuffer(columns: 20, rows: 3)
@@ -172,7 +172,7 @@ struct ScreenPartsTests {
     }
 
     @Test func `a streamed delta re-wraps only the item it extends`() {
-        var state = ScreenState(label: "m")
+        var state = ScreenState(label: "m", options: .legacy)
         state.transcript.addAssistantText("first")
         state.transcript.addUser("next")
         state.transcript.addAssistantText("a")

@@ -15,7 +15,7 @@ struct SteeringControllerTests {
     }
 
     @Test func `busy Enter steers and Alt-Enter follows up without showing an unrecorded user message`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = submit("Start", to: &controller)
         #expect(submit("Now", to: &controller) == [.queuePrompt(id: 0, text: "Now", followUp: false)])
         #expect(
@@ -30,7 +30,7 @@ struct SteeringControllerTests {
     }
 
     @Test func `a submission after the final boundary starts once when runEnded arrives`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = submit("Start", to: &controller)
         _ = submit("Late", to: &controller)
         #expect(controller.handle(.runEnded) == [.startRun("Late")])
@@ -40,7 +40,7 @@ struct SteeringControllerTests {
     }
 
     @Test func `an acknowledged message is not restarted by runEnded`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = submit("Start", to: &controller)
         _ = submit("Once", to: &controller)
         controller.handle(.promptAccepted(id: 0, text: "Once"))
@@ -49,7 +49,7 @@ struct SteeringControllerTests {
     }
 
     @Test func `a restarted run receives the other queued messages and steering wins`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = submit("Start", to: &controller)
         _ = submit("Later", to: &controller, followUp: true)
         _ = submit("First", to: &controller)
@@ -60,7 +60,7 @@ struct SteeringControllerTests {
     }
 
     @Test func `abort returns unsent messages and the unfinished draft without restarting`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = submit("Start", to: &controller)
         _ = submit("One", to: &controller)
         _ = submit("Two", to: &controller, followUp: true)
@@ -72,7 +72,7 @@ struct SteeringControllerTests {
     }
 
     @Test func `failure returns only messages that were not acknowledged`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = submit("Start", to: &controller)
         _ = submit("Recorded", to: &controller)
         _ = submit("Unsent", to: &controller)
@@ -83,7 +83,7 @@ struct SteeringControllerTests {
     }
 
     @Test func `input typed during abort stays local and a late acknowledgment removes only its own message`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = submit("Start", to: &controller)
         _ = submit("Recorded", to: &controller)
         _ = controller.handle(.key(KeyEvent(keyCode: 0x03)), pageRows: 10)
@@ -95,20 +95,21 @@ struct SteeringControllerTests {
 
     @Test(arguments: [false, true])
     func `the follow-up command works without a modified Enter key`(busy: Bool) {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         if busy { _ = submit("Start", to: &controller) }
         let effect = submit("/follow-up Later", to: &controller)
         #expect(effect == (busy ? [.queuePrompt(id: 0, text: "Later", followUp: true)] : [.startRun("Later")]))
     }
 
     @Test func `an empty follow-up command never starts a model request`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         #expect(submit("/follow-up", to: &controller).isEmpty)
         #expect(!controller.state.running)
     }
 
     @Test func `typing during a command is returned to the editor rather than lost or steered`() {
-        var controller = ScreenController(label: "m", commands: [SlashCommand(name: "config", summary: "Settings")])
+        var controller = ScreenController(
+            label: "m", commands: [SlashCommand(name: "config", summary: "Settings")], options: .legacy)
         _ = submit("/config", to: &controller)
         #expect(submit("Keep me", to: &controller).isEmpty)
         #expect(controller.state.editor.text == "Keep me")

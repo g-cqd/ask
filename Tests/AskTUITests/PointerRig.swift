@@ -19,7 +19,7 @@ struct PointerRig {
     var clock = ContinuousClock.now
 
     init(
-        columns: Int = 30, rows: Int = 12, options: ScreenOptions = ScreenOptions(), lines: [String] = [],
+        columns: Int = 30, rows: Int = 12, options: ScreenOptions = .legacy, lines: [String] = [],
         updates: [ConversationUpdate] = []
     ) {
         frames = FrameBox()

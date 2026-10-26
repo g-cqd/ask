@@ -14,7 +14,7 @@ struct ScreenControllerTests {
     }
 
     @Test func `submitting starts a run and records the prompt`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         type("fix it", into: &controller)
         #expect(controller.handle(key(0x0D), pageRows: 10) == [.startRun("fix it")])
         #expect(controller.state.running)
@@ -22,7 +22,7 @@ struct ScreenControllerTests {
     }
 
     @Test func `a second prompt while a turn runs is visibly queued instead of refused`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         type("one", into: &controller)
         _ = controller.handle(key(0x0D), pageRows: 10)
         type("two", into: &controller)
@@ -35,7 +35,7 @@ struct ScreenControllerTests {
     }
 
     @Test func `Ctrl-C stops a running turn, Ctrl-D quits only when idle, and Escape does neither`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         #expect(controller.handle(key(0x1B), pageRows: 10).isEmpty)
         type("go", into: &controller)
         _ = controller.handle(key(0x0D), pageRows: 10)
@@ -49,7 +49,7 @@ struct ScreenControllerTests {
     }
 
     @Test func `conversation updates build the transcript`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         controller.handle(.assistantText("Read"))
         controller.handle(.assistantText("ing."))
         controller.handle(.toolStarted(name: "read", summary: "a.swift"))
@@ -63,7 +63,7 @@ struct ScreenControllerTests {
     }
 
     @Test func `page keys scroll, and submitting returns to the bottom`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = controller.handle(key(Key.pageUp.rawValue), pageRows: 7)
         _ = controller.handle(key(Key.pageUp.rawValue), pageRows: 7)
         #expect(controller.state.scrollback == 14)
@@ -75,7 +75,7 @@ struct ScreenControllerTests {
     }
 
     @Test func `a resumed session's prompts show as the user's, without starting a run`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         controller.handle(.userPrompt("fix it"))
         controller.handle(.assistantText("Fixed."))
         #expect(controller.state.transcript.items == [.user("fix it"), .assistant("Fixed.")])
@@ -83,7 +83,7 @@ struct ScreenControllerTests {
     }
 
     @Test func `a status update shows at the right of the status line`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         controller.handle(.status("↑2.1k ↓55"))
         var buffer = ScreenBuffer(columns: 60, rows: 3)
         var composer = ScreenComposer()
@@ -93,7 +93,7 @@ struct ScreenControllerTests {
     }
 
     @Test func `a paste lands in the editor`() {
-        var controller = ScreenController(label: "m")
+        var controller = ScreenController(label: "m", options: .legacy)
         _ = controller.handle(.paste("a\nb"), pageRows: 10)
         #expect(controller.state.editor.text == "a\nb")
     }
