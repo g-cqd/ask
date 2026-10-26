@@ -10,9 +10,16 @@ extension ConfigurationFile {
                     case "mouse": section.mouse = try container.decode(Bool.self, forKey: key)
                     // @dl:accept -- typed key tables are data; their decoding walk is already shared
                     case "copyOnSelect": section.copyOnSelect = try container.decode(Bool.self, forKey: key)
+                    // @dl:accept -- typed key tables decoded by the shared walk; the keys are the data
                     case "scrollLines": section.scrollLines = try container.decode(Int.self, forKey: key)
                     case "promptRows": section.promptRows = try container.decode(Int.self, forKey: key)
                     case "codeFoldLines": section.codeFoldLines = try container.decode(Int.self, forKey: key)
+                    case "sidebar":
+                        let name = try container.decode(String.self, forKey: key)
+                        guard name == "open" || name == "closed" else {
+                            throw BadValue(key: "ui.sidebar", value: name)
+                        }
+                        section.sidebarOpen = name == "open"
                     case "tools", "thinking", "code":
                         let name = try container.decode(String.self, forKey: key)
                         guard name == "folded" || name == "open" else {

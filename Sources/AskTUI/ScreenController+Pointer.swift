@@ -15,12 +15,15 @@ extension ScreenController {
     private static let promptTarget = 3
     /// The runner strip's rows, where a click focuses a runner.
     private static let stripTarget = 4
+    /// The sidebar's rows, where a click focuses a runner.
+    private static let sidebarTarget = 5
 
     mutating func handle(mouse event: MouseEvent, at now: ContinuousClock.Instant) -> [Effect] {
         guard options.mouse else { return [] }
         var regions = RegionMap<Int>()
         regions.add(
-            Self.transcriptTarget, at: CellRect(row: 0, col: 0, rows: frame.transcriptRows, cols: frame.columns))
+            Self.transcriptTarget,
+            at: CellRect(row: 0, col: 0, rows: frame.transcriptRows, cols: frame.transcriptColumns))
         if frame.prompt != nil, frame.promptRows > 0 {
             regions.add(
                 Self.promptTarget,
@@ -33,6 +36,13 @@ extension ScreenController {
             regions.add(
                 Self.stripTarget,
                 at: CellRect(row: frame.stripFirstRow, col: 0, rows: frame.stripIDs.count, cols: frame.columns))
+        }
+        if !frame.sidebarIDs.isEmpty {
+            regions.add(
+                Self.sidebarTarget,
+                at: CellRect(
+                    row: 0, col: frame.transcriptColumns + 1, rows: frame.sidebarIDs.count,
+                    cols: Swift.max(0, frame.columns - frame.transcriptColumns - 1)))
         }
         if !frame.pickerWindow.isEmpty {
             regions.add(
@@ -91,6 +101,8 @@ extension ScreenController {
                 }
                 guard frame.runnerColumns?.contains(cell.col) == true else { return [] }
                 return toggleRunners()
+            case .click(let target, let cell, .left, _, _) where target == Self.sidebarTarget:
+                return clickSidebar(row: cell.row)
             case .click(let target, let cell, .left, _, _) where target == Self.stripTarget:
                 return clickStrip(row: cell.row - frame.stripFirstRow)
             case .click(let target, let cell, .left, _, let count) where target == Self.promptTarget:
@@ -142,7 +154,7 @@ extension ScreenController {
         guard let source = frame.rows.provenance(atRow: row), state.transcript.items.indices.contains(source.block)
         else { return false }
         let block = source.block
-        let before = ScreenComposer.lines(in: state.transcript, at: block, columns: frame.columns).count
+        let before = ScreenComposer.lines(in: state.transcript, at: block, columns: frame.transcriptColumns).count
         if source.line == 0, state.transcript.isFoldable(block) {
             state.transcript.toggleFold(block)
         } else if let fence = state.transcript.codeFence(toggledByLine: source.line, at: block) {
@@ -150,7 +162,7 @@ extension ScreenController {
         } else {
             return false
         }
-        let after = ScreenComposer.lines(in: state.transcript, at: block, columns: frame.columns).count
+        let after = ScreenComposer.lines(in: state.transcript, at: block, columns: frame.transcriptColumns).count
         // Scrolled back, the lines below the header grew or shrank, so the view moves by as much and the header stays on its row.
         // At the bottom the view follows the end, as it does for streaming.
         if state.scrollback > 0 { state.scrollback = Swift.max(0, state.scrollback + after - before) }

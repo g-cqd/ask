@@ -31,6 +31,8 @@ public struct ScreenState: Sendable, Equatable {
     var laneSerial = 0
     /// The strip row the keys act on, by runner id, while the strip has the keys; nil while the input does.
     var stripSelection: String?
+    /// Whether the runner sidebar is open: the same tree as the strip, beside the transcript when the screen is wide enough.
+    var sidebarOpen = false
     /// The runners whose children are hidden in the strip.
     var collapsedRunners: Set<String> = []
     /// A question waiting for y, a or n: while it waits, those keys answer it and nothing is typed.

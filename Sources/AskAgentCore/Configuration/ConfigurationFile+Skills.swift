@@ -6,6 +6,7 @@ extension ConfigurationFile {
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
                 switch key.stringValue {
+                    // @dl:accept -- typed key tables decoded by the shared walk; the keys are the data
                     case "enabled": section.enabled = try container.decode(Bool.self, forKey: key)
                     case "maxAdvertised": section.maxAdvertised = try container.decode(Int.self, forKey: key)
                     case "sources": section.sources = try container.decode([String].self, forKey: key)

@@ -16,10 +16,13 @@ public struct ScreenOptions: Sendable, Equatable {
     public var foldCode: Bool
     /// A code block with more lines than this is long (ADR-0046: `ui.codeFoldLines`); the screen also caps it at half its height.
     public var codeFoldLines: Int
+    /// Whether the runner sidebar starts open (`ui.sidebar`). Ctrl+\ and `/sidebar` toggle it; it needs 70 columns.
+    public var sidebar: Bool
 
     public init(
         mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
-        scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20
+        scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20,
+        sidebar: Bool = false
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -29,5 +32,6 @@ public struct ScreenOptions: Sendable, Equatable {
         self.promptRows = Swift.max(1, promptRows)
         self.foldCode = foldCode
         self.codeFoldLines = Swift.max(1, codeFoldLines)
+        self.sidebar = sidebar
     }
 }

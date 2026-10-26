@@ -201,7 +201,7 @@ t.repaint()
 rows = t.lines()
 check("the wheel scrolls back to the start of the conversation", rows[1].startswith("/help"), str(rows[:3]))
 known = (
-    "/help", "/help  ", "/quit  ", "/follow-up  ", "/tasks  ", "/config  ", "/compact  ", "/new  ", "/model  ", "/resume  ", "/tree  ",
+    "/help", "/help  ", "/quit  ", "/follow-up  ", "/tasks  ", "/sidebar  ", "/config  ", "/compact  ", "/new  ", "/model  ", "/resume  ", "/tree  ",
     "/fork  ", "/mcp  ", "/reload  ")
 malformed = [row for row in rows[: ROWS - 2] if row and not row.startswith(known)]
 check("every row after the scroll is a whole line", malformed == [], str(malformed))

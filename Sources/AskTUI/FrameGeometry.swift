@@ -7,6 +7,10 @@ struct FrameGeometry: Sendable {
     /// How many rows the transcript took, from the top.
     var transcriptRows = 0
     var columns = 0
+    /// The width the transcript is wrapped and drawn in: less than `columns` when the sidebar takes the right of it.
+    var transcriptColumns = 0
+    /// The runner each row of the sidebar shows, from the top; its first column is `transcriptColumns + 1`.
+    var sidebarIDs: [String] = []
     /// How many wrapped lines the whole transcript has, so a scroll can stop at the top.
     var totalLines = 0
     /// The scroll position this frame was drawn at. A timer step waits until the frame it sees matches the position it asked for.

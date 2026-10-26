@@ -107,7 +107,7 @@ file can name one only once you have trusted it (`ask trust` lists what would st
 
 Background jobs are counted in the status line (`· 2 jobs`). Click the count, or type `/tasks`, to open a capped runner strip **below the input**, showing each
 job's command and state. Down from an empty draft (or the end of one) moves into the strip; Up and Down choose a job, Enter or a click shows what it has printed in place of the conversation
-(a snapshot, read when you focus it), and Esc goes back one step at a time: to the input, then to the conversation, then it closes the strip. It never clears your draft. The sidebar is not built yet. A job does not outlive ask, even when ask is killed with SIGKILL: a small watchdog process stops it
+(a snapshot, read when you focus it), and Esc goes back one step at a time: to the input, then to the conversation, then it closes the strip. It never clears your draft. On a screen of 70 columns or more, `/sidebar` or Ctrl+\\ shows the same tree in a column beside the transcript (`ui.sidebar` set to `"open"` starts it open), with the same keys and clicks. A job does not outlive ask, even when ask is killed with SIGKILL: a small watchdog process stops it
 ([ADR-0079](docs/adr/0079-a-watchdog-outside-ask-stops-the-jobs-when-ask-is-killed.md)).
 
 ## Sandbox

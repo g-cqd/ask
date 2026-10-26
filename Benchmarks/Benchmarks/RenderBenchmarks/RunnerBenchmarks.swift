@@ -28,4 +28,31 @@ func registerRunnerBenchmarks() {
             }
         }
     }
+
+    // The same keystroke frame with the sidebar open (ui.sidebar) and the strip closed, 0 and 5 runners.
+    for count in [0, 5] {
+        Benchmark(
+            "sidebar/\(count) keystroke",
+            configuration: .init(metrics: [.wallClock], maxDuration: .seconds(2), maxIterations: 2_000)
+        ) { benchmark in
+            var controller = ScreenController(label: "m", options: ScreenOptions(sidebar: true))
+            for i in 0 ..< 200 {
+                controller.handle(.notice("line \(i) " + String(repeating: "word ", count: 20), isError: false))
+            }
+            controller.handle(.runners((0 ..< count).map { RunnerInfo(name: "job-\($0)", detail: "sleep \($0)") }))
+            var state = controller.state
+            var composer = ScreenComposer()
+            var front = ScreenBuffer(columns: 120, rows: 40)
+            var back = ScreenBuffer(columns: 120, rows: 40)
+            _ = composer.compose(state, into: &front)
+            benchmark.startMeasurement()
+            for iteration in benchmark.scaledIterations {
+                _ = state.editor.apply(.init(keyCode: iteration % 2 == 0 ? 0x78 : 0x7F))
+                _ = composer.compose(state, into: &back)
+                blackHole(DiffRenderer.render(front: front, back: back))
+                front = back
+                back.dirty.clear()
+            }
+        }
+    }
 }
