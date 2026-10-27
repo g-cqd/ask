@@ -20,5 +20,6 @@ extension Job {
         var watchdog: JobWatchdog?
         /// The whole environment the command is given, and no other (ADR-0106).
         var environment: [String: String]
+        var shell: String? = nil
     }
 }

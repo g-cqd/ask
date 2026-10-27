@@ -14,7 +14,7 @@ struct JobOutputFileTests {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         let outputs = root.appending(path: "output").path
         let context = ToolContext(workingDirectory: root.path, outputDirectory: outputs)
-        let json = #"{"command":"\#(command.replacingOccurrences(of: "\\", with: "\\\\"))"}"#
+        let json = #"{"command":"\#(command.replacingOccurrences(of: "\\", with: "\\\\"))","shell":"/bin/bash"}"#
         let output = await BashTool().run(try JSONObject(validating: Array(json.utf8)), in: context)
         let files = (try? FileManager.default.contentsOfDirectory(atPath: outputs)) ?? []
         return (output, files.map { outputs + "/" + $0 })

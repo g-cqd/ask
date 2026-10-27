@@ -17,7 +17,7 @@ struct NestedSandboxTests {
     private func run(_ command: String) async -> ToolOutput {
         let context = ToolContext(workingDirectory: world.workspace, sandbox: world.policy)
         let quoted = command.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
-        return await BashTool().run(world.input(#"{"command":"\#(quoted)"}"#), in: context)
+        return await BashTool().run(world.input(#"{"command":"\#(quoted)","shell":"/bin/bash"}"#), in: context)
     }
 
     @Test func `a command that starts its own sandbox is told the sandboxes cannot nest, and how SwiftPM avoids it`()

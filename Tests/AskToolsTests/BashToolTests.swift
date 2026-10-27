@@ -21,7 +21,7 @@ struct BashToolTests {
     }
 
     private func command(_ text: String, timeout: Int? = nil) -> JSONObject {
-        var object = #"{"command":"# + Self.quoted(text)
+        var object = #"{"shell":"/bin/bash","command":"# + Self.quoted(text)
         if let timeout { object += #","timeout_seconds":\#(timeout)"# }
         return try! JSONObject(validating: Array((object + "}").utf8))
     }
