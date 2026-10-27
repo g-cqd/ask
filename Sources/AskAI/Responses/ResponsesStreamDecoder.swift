@@ -4,8 +4,8 @@ internal import AemiJSON
 ///
 /// The protocol is made of items (reasoning, message, function call), each announced by `output_item.added`, fed by
 /// deltas that name it by `item_id`, and closed by `output_item.done`, which carries the whole item. The decoder numbers
-/// blocks in the order they start and follows items by `item_id` rather than `output_index`, which llama.cpp does not
-/// send. A text or reasoning block starts at its first real text, so an item with nothing to show makes no block
+/// blocks in the order they start, using `output_index` when supplied and `item_id` when it is not (llama.cpp).
+/// Rotating IDs on an indexed item must not turn its final text echo into another reply. A text or reasoning block starts at its first real text, so an item with nothing to show makes no block
 /// (whitespace-only text would be refused by a provider such as Anthropic if a session later moved to it).
 ///
 /// A reasoning item that arrives with `encrypted_content` is kept whole behind a provenance marker so it can be
@@ -34,6 +34,7 @@ public struct ResponsesStreamDecoder: ModelEventDecoding {
     private var started = false
     private var nextBlock = 0
     private var items: [String: Tracked] = [:]
+    private var identities = ResponsesItemIdentity()
     private var open: [String] = []
     private var sawCall = false
     private var sawRefusal = false
@@ -61,18 +62,22 @@ public struct ResponsesStreamDecoder: ModelEventDecoding {
             events.append(.messageStarted(id: response?.id ?? "", model: response?.model ?? "", usage: TokenUsage()))
         }
         switch wire.type {
-            case "response.output_item.added": if let item = wire.item { register(item, into: &events) }
-            case "response.output_item.done": if let item = wire.item { finish(item, into: &events) }
+            case "response.output_item.added":
+                if let item = wire.item { register(item, at: wire.outputIndex, into: &events) }
+            case "response.output_item.done":
+                if let item = wire.item { finish(item, at: wire.outputIndex, into: &events) }
             case "response.output_text.delta": appendText(wire, into: &events)
             case "response.refusal.delta":
                 sawRefusal = true
                 appendText(wire, into: &events)
             case "response.reasoning_text.delta", "response.reasoning_summary_text.delta":
                 appendThinking(wire, into: &events)
-            case "response.reasoning_summary_part.added": markBreak(wire.itemID)
+            case "response.reasoning_summary_part.added":
+                markBreak(identities.resolve(wire.itemID, index: wire.outputIndex))
             case "response.function_call_arguments.delta": appendArguments(wire, into: &events)
             case "response.completed", "response.incomplete": if let response = wire.response { end(response) }
             default:
+                _ = identities.resolve(wire.itemID, index: wire.outputIndex)
                 if !Self.quiet.contains(wire.type) {
                     events.append(.unrecognized(event: frame.name, type: wire.type))
                 }
@@ -96,8 +101,8 @@ public struct ResponsesStreamDecoder: ModelEventDecoding {
 
     // MARK: - Items
 
-    private mutating func register(_ item: ResponsesWireEvent.Item, into events: inout [ModelEvent]) {
-        let id = item.id ?? "item-\(items.count)"
+    private mutating func register(_ item: ResponsesWireEvent.Item, at index: Int?, into events: inout [ModelEvent]) {
+        let id = identities.resolve(item.id, index: index) ?? "item-\(items.count)"
         guard items[id] == nil else { return }
         switch item.type {
             case "reasoning": items[id] = Tracked(kind: .reasoning)
@@ -115,9 +120,11 @@ public struct ResponsesStreamDecoder: ModelEventDecoding {
         }
     }
 
-    private mutating func finish(_ item: ResponsesWireEvent.Item, into events: inout [ModelEvent]) {
-        register(item, into: &events)
-        guard let id = item.id ?? items.keys.first(where: { items[$0]?.block == nil && items[$0]?.kind != .call }),
+    private mutating func finish(_ item: ResponsesWireEvent.Item, at index: Int?, into events: inout [ModelEvent]) {
+        register(item, at: index, into: &events)
+        guard
+            let id = identities.resolve(item.id, index: index)
+                ?? items.keys.first(where: { items[$0]?.block == nil && items[$0]?.kind != .call }),
             let tracked = items[id]
         else { return }
         switch tracked.kind {
@@ -161,7 +168,9 @@ public struct ResponsesStreamDecoder: ModelEventDecoding {
 
     /// The item a delta is for and its text, registering an item no `added` event announced; nil for an empty delta.
     private mutating func delta(_ wire: ResponsesWireEvent, for kind: Kind) -> (id: String, text: String)? {
-        guard let text = wire.delta, !text.isEmpty, let id = wire.itemID else { return nil }
+        guard let text = wire.delta, !text.isEmpty,
+            let id = identities.resolve(wire.itemID, index: wire.outputIndex)
+        else { return nil }
         if items[id] == nil { items[id] = Tracked(kind: kind) }
         return (id, text)
     }
@@ -199,7 +208,9 @@ public struct ResponsesStreamDecoder: ModelEventDecoding {
     }
 
     private mutating func appendArguments(_ wire: ResponsesWireEvent, into events: inout [ModelEvent]) {
-        guard let id = wire.itemID, let fragment = wire.delta, !fragment.isEmpty, let block = items[id]?.block else {
+        guard let id = identities.resolve(wire.itemID, index: wire.outputIndex),
+            let fragment = wire.delta, !fragment.isEmpty, let block = items[id]?.block
+        else {
             return
         }
         items[id]?.sawArguments = true

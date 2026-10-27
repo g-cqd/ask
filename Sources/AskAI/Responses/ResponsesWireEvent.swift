@@ -3,6 +3,7 @@
 struct ResponsesWireEvent: Decodable, Sendable {
     let type: String
     let itemID: String?
+    let outputIndex: Int?
     let delta: String?
     let item: Item?
     let response: Response?
@@ -13,6 +14,7 @@ struct ResponsesWireEvent: Decodable, Sendable {
     enum CodingKeys: String, CodingKey {
         case type, delta, item, response, code, message
         case itemID = "item_id"
+        case outputIndex = "output_index"
     }
 
     /// Text in a summary, a reasoning content part or a message part.
