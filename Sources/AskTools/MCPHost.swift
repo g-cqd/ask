@@ -35,7 +35,7 @@ public final class MCPHost: Sendable {
     let state: Mutex<State>
     let noticeSink: AsyncStream<String>.Continuation
     let forward: (@Sendable (String) -> Void)?
-    let catalog = MCPCatalog()
+    let catalog: MCPCatalog
     /// The group of the two search tools. A server's name cannot hold a `/`, so it cannot be this one.
     static let searchGroup = "mcp/search"
 
@@ -58,6 +58,7 @@ public final class MCPHost: Sendable {
         self.forward = forwarding
         self.servers = servers
         self.live = live
+        catalog = MCPCatalog(live: live)
         self.environment = environment
         self.maximumDirectTools = maximumDirectTools
         self.makeTransport = transport

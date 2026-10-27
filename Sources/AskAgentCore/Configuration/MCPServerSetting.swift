@@ -16,14 +16,23 @@ public struct MCPServerSetting: Sendable, Equatable {
     public var headers: [String: String]
     /// The tools to offer the model, by the server's own names; nil offers all of them if there are few enough.
     public var tools: [String]?
+    /// Explicit exposure policy; nil uses the per-server threshold (or the host default).
+    public enum Mode: String, Decodable, Sendable {
+        case search, direct
+    }
+    public var mode: Mode?
+    /// Most tools advertised directly in automatic mode. Zero always uses search without an explicit tools list.
+    public var maxDirectTools: Int?
     /// Whether ask connects to it at all.
     public var enabled: Bool
 
     /// A server with these settings.
     public init(
         name: String, command: String? = nil, args: [String] = [], env: [String: String] = [:], cwd: String? = nil,
-        url: String? = nil, headers: [String: String] = [:], tools: [String]? = nil, enabled: Bool = true
+        url: String? = nil, headers: [String: String] = [:], tools: [String]? = nil, enabled: Bool = true,
+        mode: Mode? = nil, maxDirectTools: Int? = nil
     ) {
+        // @dl:accept -- synthesized-looking initializer assignments preserve this public configuration model's defaults
         self.name = name
         self.command = command
         self.args = args
@@ -33,6 +42,8 @@ public struct MCPServerSetting: Sendable, Equatable {
         self.headers = headers
         self.tools = tools
         self.enabled = enabled
+        self.mode = mode
+        self.maxDirectTools = maxDirectTools
     }
 
     /// Whether `name` can be part of a tool's name: letters, digits, `-` and `_`, from 1 to 32 characters, not starting with `-`, and no
