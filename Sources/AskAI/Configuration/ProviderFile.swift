@@ -43,7 +43,8 @@ public enum ProviderFile {
         let lowered = name.lowercased()
         guard PlainToken.word(lowered, length: 1 ... 64, lowercase: true) else { throw .invalidName }
         let reserved = [
-            ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy, ProviderSettings.apple, "claude"
+            ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy, ProviderSettings.apple,
+            CopilotProtocol.name, "claude"
         ]
         guard !reserved.contains(lowered), ProviderPreset.named(lowered) == nil else { throw .reservedName(lowered) }
         let trimmed = baseURL.hasSuffix("/") ? String(baseURL.dropLast()) : baseURL

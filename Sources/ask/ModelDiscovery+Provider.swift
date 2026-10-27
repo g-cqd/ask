@@ -2,6 +2,17 @@ internal import AskAI
 internal import Foundation
 
 extension ModelDiscovery {
+    /// A damaged alias file refuses defaults, but not an explicitly named server model.
+    static func connectionAliases(_ connection: ConnectionRecord?, model: String?, environment: [String: String]) throws
+        -> (ModelAliases, [String])
+    {
+        guard let connection else { return (.empty, []) }
+        do { return (try NamedConnections.aliases(for: connection, environment: environment).load(), []) } catch {
+            guard model != nil else { throw error }
+            return (.empty, ["Aliases not used: \(error)"])
+        }
+    }
+
     /// What the person said, apart from what the configuration says: whether the provider and the model came from a flag or a `/model`
     /// choice, and the thinking effort asked for.
     struct Choice {

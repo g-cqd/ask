@@ -97,6 +97,12 @@ enum ModelChoices {
                     return try await agy.refreshed(now: now).snapshot.models
                 })
         }
+        if has(CopilotProtocol.name) {
+            listings.append(
+                Listing(provider: CopilotProtocol.name) {
+                    try await ModelDiscovery.copilot(environment: environment).models(now: now)
+                })
+        }
         if AppleModel.availability().isAvailable {
             listings.append(Listing(provider: ProviderSettings.apple) { [AppleModel.catalogEntry] })
         }
@@ -112,7 +118,7 @@ enum ModelChoices {
             ?? .none
         let keyed = Set(accounts.map(\.provider))
             .subtracting([
-                ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy
+                ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy, CopilotProtocol.name
             ])
         return keyed.union(providers.configuredNames).sorted()
             .map { name in

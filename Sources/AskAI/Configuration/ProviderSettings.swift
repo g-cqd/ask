@@ -11,10 +11,8 @@ internal import Foundation
 ///                             "apiKey": "$LOCAL_KEY", "headers": {}, "models": [{ "id": "ornith-1.5-9b" }] } } }
 /// ```
 ///
-/// Only `openai-completions` and `openai-responses` are accepted: they are the protocols ask speaks besides
-/// Anthropic's, which is built in under the reserved name `anthropic`. The known services are presets (``ProviderPreset``): an entry with a preset's
-/// name gives only what it changes, so `{ "groq": { "defaultModel": "…" } }` is a whole entry. Keys come from a literal or from `$NAME` / `${NAME}`; a key that would run a
-/// command, as pi allows with a leading `!`, is not supported.
+/// Configured entries accept `openai-completions` or `openai-responses`; built-in account names are reserved.
+/// Presets need only overrides. Keys may be literal or `$NAME` / `${NAME}`, never a leading `!` command.
 public struct ProviderSettings: Sendable, Equatable {
     /// No configured providers: only the built-in one.
     public static let none = ProviderSettings(defaultProvider: nil, entries: [:])
@@ -143,7 +141,8 @@ public struct ProviderSettings: Sendable, Equatable {
         guard name.lowercased() == connection.name, !connection.removed,
             !configuredNames.contains(where: { $0.lowercased() == connection.name }),
             ProviderPreset.named(connection.name) == nil,
-            ![Self.anthropic, Self.codex, Self.agy, Self.apple, "claude"].contains(connection.name)
+            ![Self.anthropic, Self.codex, Self.agy, Self.apple, CopilotProtocol.name, "claude"]
+                .contains(connection.name)
         else { throw .reservedName(name) }
         let choice: ModelChoice?
         do { choice = try aliases.choice(requested: model, catalog: catalog) } catch { throw .alias(error) }
@@ -156,38 +155,6 @@ public struct ProviderSettings: Sendable, Equatable {
         resolved.contextWindow = choice?.contextWindow ?? resolved.contextWindow
         resolved.maxOutputTokens = choice?.maxOutputTokens ?? resolved.maxOutputTokens
         return resolved
-    }
-
-    /// The built-in provider called `name`, if there is one; nil for anything a file or a preset names.
-    /// - Throws: ``ProviderSettingsError/reservedName(_:)`` when the file defines a built-in name, and
-    ///   ``ProviderSettingsError/noModel(provider:)`` for a built-in provider that needs a model named.
-    private func builtIn(_ name: String, model: String?, catalog: [CatalogModel]) throws(ProviderSettingsError)
-        -> ResolvedModel?
-    {
-        for reserved in [Self.anthropic, Self.codex, Self.agy, Self.apple] where entries[reserved] != nil {
-            throw .reservedName(reserved)
-        }
-        switch name {
-            case Self.anthropic: return ResolvedModel(provider: .anthropic, model: model ?? Self.anthropicDefaultModel)
-            case Self.codex:
-                guard let chosen = model ?? catalog.first?.id else { throw .noModel(provider: name) }
-                return Self.resolved(.codex, chosen, from: catalog)
-            case Self.agy:
-                guard let chosen = model else { throw .noModel(provider: name) }
-                return Self.resolved(.agy, chosen, from: catalog)
-            case Self.apple: return Self.resolved(.apple, model ?? Self.appleModel, from: catalog)
-            default: return nil
-        }
-    }
-
-    /// `chosen` on `provider`, with the limits the catalog states for it.
-    private static func resolved(_ provider: ResolvedModel.Provider, _ chosen: String, from catalog: [CatalogModel])
-        -> ResolvedModel
-    {
-        let listed = catalog.first { $0.id == chosen }
-        return ResolvedModel(
-            provider: provider, model: chosen, contextWindow: listed?.contextWindow,
-            maxOutputTokens: listed?.maxOutputTokens)
     }
 
     /// The key to send: the entry's own, else the preset's variable, else the key a sign-in stored. A preset that
@@ -220,7 +187,8 @@ public struct ProviderSettings: Sendable, Equatable {
                     .compactMap { $0 }
                 return "\(preset.name) (needs \(needs.joined(separator: " or ")))"
             }
-        return [Self.anthropic, Self.codex, Self.agy, Self.apple] + (entries.keys + presets).sorted()
+        return [Self.anthropic, Self.codex, Self.agy, Self.apple, CopilotProtocol.name]
+            + (entries.keys + presets).sorted()
     }
 
     /// `$NAME` or `${NAME}` from the environment, `$$…` as a literal `$…`, and anything else as written.
