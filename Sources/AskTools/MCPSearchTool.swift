@@ -25,7 +25,7 @@ struct MCPSearchTool: ArgumentTool {
             description: """
                 Some MCP servers have too many tools to list here: \(reached). Find a tool among them by words from what you \
                 want to do (a part of a tool's name counts most); each match shows what the tool does and the schema of its \
-                arguments. Then call it with mcp_call. An empty query lists the tool names instead.
+                arguments. Matches become directly callable on the next turn; mcp_call also works. An empty query lists names without promoting them.
                 """
         ) {
             ToolProperty.string("query")
@@ -46,6 +46,7 @@ struct MCPSearchTool: ArgumentTool {
             return ToolOutput(
                 "No tool matches \"\(words)\". Search with other words, or with an empty query to list the names.")
         }
+        catalog.promote(matches)
         let more =
             matches.count == Self.limit
             ? "\n\n(The best \(Self.limit); narrow the words or name a server for others.)" : ""

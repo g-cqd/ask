@@ -32,6 +32,8 @@ extension ConfigurationFile {
                     case "headers": server.headers = try container.decode([String: String].self, forKey: key)
                     case "tools": server.tools = try container.decode([String].self, forKey: key)
                     case "enabled": server.enabled = try container.decode(Bool.self, forKey: key)
+                    case "mode": server.mode = try container.decode(MCPServerSetting.Mode.self, forKey: key)
+                    case "maxDirectTools": server.maxDirectTools = try container.decode(Int.self, forKey: key)
                     default: throw UnknownKey(key: "mcp.<server>." + key.stringValue)
                 }
             }
@@ -87,6 +89,9 @@ extension ConfigurationFile {
                 if !server.args.isEmpty { throw refuse("args", "belongs to a \"command\" server") }
                 if !server.env.isEmpty { throw refuse("env", "belongs to a \"command\" server") }
                 if server.cwd != nil { throw refuse("cwd", "belongs to a \"command\" server") }
+        }
+        if let limit = server.maxDirectTools, limit < 0 {
+            throw refuse("maxDirectTools", "must be zero or greater")
         }
         if let tools = server.tools, tools.isEmpty || tools.contains("") {
             throw refuse("tools", "must list tool names, none of them empty; leave it out to offer every tool")
