@@ -11,6 +11,7 @@ extension AgentConversation {
             case "model":
                 let model = current.withLock { $0.settings.model }
                 return await ModelChoices.rows(current: model, environment: LaunchEnvironment.values)
+            case "resume": return sessionRows()
             case "thinking": return await thinkingRows()
             case "login": return LoginChoices.rows()
             case "logout": return logoutRows()

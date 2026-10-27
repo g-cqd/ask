@@ -8,6 +8,18 @@ import Testing
 /// the person types, and Enter runs the command with the row's arguments at once.
 @Suite("A command's list is asked for, narrowed by typing, and a choice runs the command at once")
 struct ChoicePickerControllerTests {
+    @Test func `startup can open preloaded session choices before any key is pressed`() {
+        var screen = ScreenController(
+            label: "m", commands: [SlashCommand(name: "resume", summary: "Choose a session.", takesChoices: true)])
+        screen.setScreenRows(30)
+        let rows = [ChoiceRow(label: "session", detail: "first prompt", arguments: "/tmp/session.jsonl")]
+        #expect(screen.handle(.choices(command: "resume", rows: rows)).isEmpty)
+        #expect(screen.handle(.fillDraft("/resume ")).isEmpty)
+        #expect(labels(screen) == ["session"])
+        #expect(
+            press(Key.enter.rawValue, into: &screen) == [.runCommand(name: "resume", arguments: "/tmp/session.jsonl")])
+    }
+
     private static let models = [
         ChoiceRow(label: "codex/gpt-6-sol", detail: "272k ctx", arguments: "codex gpt-6-sol", isCurrent: true),
         ChoiceRow(label: "codex/gpt-6-astra", detail: "272k ctx", arguments: "codex gpt-6-astra"),

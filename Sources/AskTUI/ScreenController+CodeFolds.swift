@@ -13,6 +13,7 @@ extension ScreenController {
 
     /// Tells the controller how tall the screen is: a code block never needs more than half of it before it folds (ADR-0046).
     public mutating func setScreenRows(_ rows: Int) {
+        pickerScreenRows = rows
         state.transcript.setCodeFoldLines(Swift.min(options.codeFoldLines, Swift.max(1, rows / 2)))
     }
 }
