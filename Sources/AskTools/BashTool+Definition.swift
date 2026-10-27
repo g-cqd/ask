@@ -7,7 +7,8 @@ extension BashTool {
         ToolDefinition(
             name: "bash",
             description:
-                "Run commands using \(shell) (\((shell as NSString).lastPathComponent) syntax). Override with shell. "
+                "Run commands using \(shell) (\((shell as NSString).lastPathComponent) syntax); "
+                + "the command to run goes in command, and shell names another shell's absolute path. "
                 + "timeout_seconds: default 120, max 600. yield_seconds backgrounds; wait_for_output/port/file waits for readiness."
         ) {
             ToolProperty.string("command")

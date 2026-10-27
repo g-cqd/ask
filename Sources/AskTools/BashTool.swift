@@ -71,7 +71,8 @@ public struct BashTool: ArgumentTool {
             output: arguments.waitForOutput, port: arguments.waitForPort,
             file: arguments.waitForFile, in: context)
         if let shell = arguments.shell, !JobTable.isShell(shell) {
-            throw ToolFailure("shell must name an absolute executable file.")
+            throw ToolFailure(
+                "shell must name a shell's absolute path, such as /bin/bash; the command to run goes in command.")
         }
         let yield = arguments.yieldSeconds.map { Swift.min(Swift.max(1, $0), Self.maximumTimeout) }
         let timeout = Swift.min(Swift.max(1, arguments.timeoutSeconds ?? Self.defaultTimeout), Self.maximumTimeout)
