@@ -42,10 +42,14 @@ Execution order selected by the owner: tool presentation → shell lifecycle →
 interactive configuration → categorized picker → file-path/link ergonomics (0075).
 
 - [x] Present bash invocations as `shell` without breaking persisted tool identity.
-- [ ] Tell the model the active shell, using the filtered launch environment and
+- [x] Tell the model the active shell, using the filtered launch environment and
   any explicit override, so commands do not assume bash syntax under fish.
-- [ ] Add file readiness and output/completion waits for already-running jobs;
+- [x] Add file readiness and output/completion waits for already-running jobs;
   preserve timeout, cancellation, bounded output and non-consuming UI snapshots.
+  Readiness is validated before launch and rechecked by opened object after a file
+  event, so a symlink/directory swap cannot satisfy a protected path. Port waits
+  require the effective sandbox network policy. Job waits use canonical/display IDs
+  but never take ownership; timeouts and cancellation leave the job running.
 - [x] Structured `tool · target · compact parameters` headers for read/write/job/shell.
 - [x] Carry full input through live events AND replay; unfold full input above output,
   including commands with empty output. Preserve copy offsets and fold ownership.
@@ -56,7 +60,7 @@ interactive configuration → categorized picker → file-path/link ergonomics (
 - [ ] Migrate existing Swift Regex uses repo-wide to AemiRegex, with parity and
   performance evidence (roadmap 0077).
 
-## Picker and configuration batch
+## Configuration batch (current)
 
 - [ ] Categorize commands into session/model/tools/configuration.
 - [ ] Render group headings without making them selectable; preserve keyboard,
@@ -70,6 +74,20 @@ interactive configuration → categorized picker → file-path/link ergonomics (
 - [ ] Verify resume flag fidelity and launch paths with spaces/quotes; define which
   exit paths print the banner. Ctrl+C must retain its existing abort/draft semantics,
   rather than being converted into unconditional process exit by the study example.
+
+## Tool-presentation follow-up requested after the first presentation batch
+
+Roadmap 0078 is queued, not implemented by the shell-lifecycle work:
+
+- [ ] Compact read intervals `[x:y]`.
+- [ ] Remove input/output dividers; full-brightness input and subtly dim output.
+- [ ] Semantic, pretty-printed tool payloads without raw argument-object dumps;
+  preserve exact commands/source bytes for copying and execution.
+- [ ] Configurable default unfolded-output line/byte limits, center collapse,
+  head/tail retention, accurate hidden counts and independent expansion.
+- [ ] Replace write acknowledgement line counts with typed byte/replacement facts.
+- [ ] Assess IEC byte display; recommended `1 KiB (1,024 B)`, with compact/exact/both
+  UI choices if warranted. Keep file-size and changed-byte meanings distinct.
 
 ## Cross-cutting acceptance
 
