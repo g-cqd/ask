@@ -23,7 +23,7 @@ struct ToolFoldingTests {
         var rig = PointerRig(columns: 60, updates: Self.ls)
         rig.click(row: 9, col: 3)
         #expect(rig.contentText(row: 6) == "bash ls")
-        #expect([7, 8, 9].map { rig.contentText(row: $0) } == ["  alpha", "  beta", "  gamma"])
+        #expect([7, 8, 9].map { rig.contentText(row: $0) } == ["alpha", "beta", "gamma"])
         rig.click(row: 6, col: 3)
         #expect(rig.contentText(row: 9) == "bash ls")
         #expect(rig.contentText(row: 8) == "")
@@ -63,7 +63,7 @@ struct ToolFoldingTests {
             options: ScreenOptions(foldTools: false, prompt: "ask> ", tint: false, separator: false, padding: false),
             updates: Self.ls)
         #expect(rig.contentText(row: 6) == "bash ls")
-        #expect(rig.contentText(row: 9) == "  gamma")
+        #expect(rig.contentText(row: 9) == "gamma")
     }
 
     @Test func `control O flips every tool block, and a choice made by click gives way to it`() {
@@ -121,7 +121,7 @@ struct ToolFoldingTests {
         var rig = PointerRig(columns: 60, updates: Self.ls)
         rig.click(row: 9, col: 3)
         #expect(rig.controller.state.scrollback == 0)
-        #expect(rig.contentText(row: 9) == "  gamma")
+        #expect(rig.contentText(row: 9) == "gamma")
     }
 
     // MARK: - Selecting what is shown
@@ -142,14 +142,14 @@ struct ToolFoldingTests {
     @Test func `an open block copies its body, one line each`() {
         var rig = PointerRig(columns: 60, updates: Self.ls)
         rig.click(row: 9, col: 3)
-        let effects = rig.drag(from: (7, 2), to: (9, 6))
+        let effects = rig.drag(from: (7, 0), to: (9, 6))
         #expect(effects == [.copy("alpha\nbeta\ngamma")])
     }
 
     @Test func `closing a block clears a selection that was inside it`() {
         var rig = PointerRig(columns: 60, updates: Self.ls)
         rig.click(row: 9, col: 3)
-        rig.drag(from: (7, 2), to: (9, 6))
+        rig.drag(from: (7, 0), to: (9, 6))
         rig.click(row: 6, col: 3)
         #expect(rig.controller.state.selection == nil)
         #expect((0 ..< 10).allSatisfy { rig.inverse(row: $0).isEmpty })

@@ -95,15 +95,16 @@ extension ScreenComposer {
         }
     }
 
-    /// A foldable block's body: hard lines 1 and on, drawn two columns in. What the block holds, not its own header line.
+    /// A foldable block's body: hard lines 1 and on, drawn with the block's inset. What the block holds, not its own header line.
     private static func body(of text: String, block: Int, width: Int, inset: Int, style: Style) -> [Line] {
         guard !text.isEmpty else { return [] }
-        return TextWrap.rows(text, width: Swift.max(1, width - 2))
+        let margin = String(repeating: " ", count: inset)
+        return TextWrap.rows(text, width: width)
             .map { row in
                 Line(
-                    text: String(repeating: " ", count: inset + 2) + row.text, style: style,
+                    text: margin + row.text, style: style,
                     source: Source(
-                        block: block, line: row.line + 1, offset: row.offset, col: inset + 2, text: row.text))
+                        block: block, line: row.line + 1, offset: row.offset, col: inset, text: row.text))
             }
     }
 }

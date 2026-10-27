@@ -36,6 +36,7 @@ extension ScreenComposer {
                 }
         }
         if hardLines.count > 1 {
+            // @dl:accept -- continuation rows and tool body rows use the same source coordinates but different header layout
             result += TextWrap.rows(hardLines.dropFirst().joined(separator: "\n"), width: width)
                 .map { row in
                     Line(
@@ -63,7 +64,7 @@ extension ScreenComposer {
                 // The tool's strict exit marker is not prose; other errors stay in its output, not the status column.
                 let code =
                     reason.hasPrefix("[exit ") && reason.hasSuffix("]") ? Int(reason.dropFirst(6).dropLast()) : nil
-                parts.append(code.map { "✗ (\($0))" } ?? "✗")
+                parts.append(code.map { "[\($0)] ✗" } ?? "✗")
         }
         return parts.joined(separator: " · ")
     }
