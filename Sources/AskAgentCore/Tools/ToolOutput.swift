@@ -5,11 +5,14 @@ internal import AskAI
 public struct ToolOutput: Sendable, Equatable {
     public var content: String
     public var isError: Bool
+    /// A live process yielded by this call. UI routing only; never inferred from output prose.
+    public var backgroundJob: String?
 
     /// An output with this content.
-    public init(_ content: String, isError: Bool = false) {
+    public init(_ content: String, isError: Bool = false, backgroundJob: String? = nil) {
         self.content = content
         self.isError = isError
+        self.backgroundJob = backgroundJob
     }
 
     /// A failed outcome, explained for the model.

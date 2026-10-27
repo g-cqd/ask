@@ -37,6 +37,8 @@ public final class Job: Sendable {
 
     struct State {
         var status = JobStatus.running
+        var endedAt: ContinuousClock.Instant?
+        var backgrounded = false
         var unread: OutputBuffer
         /// The last ``recentBytes`` of all output, seen or not: where a text a waiter looks for may have begun.
         var recent: [UInt8] = []
@@ -176,6 +178,7 @@ public final class Job: Sendable {
         if let pid = state.withLock({ $0.pid }) { watchdog?.release(pid) }
         let (waiting, observers) = state.withLock { state in
             state.status = ending
+            state.endedAt = .now
             let observers = Array(state.outputObservers.values)
             state.outputObservers.removeAll()
             state.input?.finish()
@@ -205,7 +208,7 @@ public final class Job: Sendable {
 
     /// Removes the output file: for a command whose result already held all of it.
     func discardFile() {
-        guard let outputPath else { return }
+        guard let outputPath, !state.withLock({ $0.backgrounded }) else { return }
         _ = unlink(outputPath)
     }
 

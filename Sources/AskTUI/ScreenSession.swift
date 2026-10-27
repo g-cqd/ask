@@ -18,6 +18,7 @@ final class ScreenSession {
     private var columns: Int
     private var run: Task<Void, Never>?
     private var runnerOutput: Task<Void, Never>?
+    private var jobOutput: [String: Task<Void, Never>] = [:]
     private var watchedRunner: String?
     /// Ticks while a drag is held at an edge, because a held button reports no motion.
     private var autoscroll = AutoscrollTimer()
@@ -69,6 +70,7 @@ final class ScreenSession {
             autoscroll.stop()
             progress.stop()
             runnerOutput?.cancel()
+            for task in jobOutput.values { task.cancel() }
         }
         render(full: true)
         for await event in events {
@@ -92,6 +94,11 @@ final class ScreenSession {
                 effects = controller.handle(inputEvent, pageRows: Swift.max(1, rows - 3), columns: columns)
             case .update(let update):
                 effects = controller.handle(update)
+                if case .jobOutput(let job) = update, job.status != .running { jobOutput[job.id] = nil }
+                if update == .clearConversation {
+                    for task in jobOutput.values { task.cancel() }
+                    jobOutput.removeAll()
+                }
                 if update == .runEnded {
                     run = nil
                     if let requested = controller.state.exitRequest {
@@ -155,6 +162,9 @@ final class ScreenSession {
                 }
             case .readRunnerOutput(let id):
                 watchRunnerOutput(id)
+            case .watchJob(let id):
+                jobOutput[id]?.cancel()
+                jobOutput[id] = conversation.watchJob(id) { sink.yield(.update(.jobOutput($0))) }
             case .listSkills:
                 let conversation = conversation
                 Task { sink.yield(.update(.skills(await conversation.skillCommands()))) }

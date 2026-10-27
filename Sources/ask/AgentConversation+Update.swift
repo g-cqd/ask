@@ -10,11 +10,13 @@ extension AgentConversation {
             case .model(.thinkingDelta(_, let text)): return .thinkingText(text)
             case .model(.notice(let text)): return .notice(text, isError: false)
             case .promptAccepted(let prompt): return .promptAccepted(id: prompt.id, text: prompt.text)
-            case .toolStarted(_, let name, let input):
-                return .toolStarted(name: name, summary: ToolSummary.line(for: input))
-            case .toolFinished(_, _, let output):
+            case .toolStarted(let id, let name, let input):
+                return .toolStarted(name: name, summary: ToolSummary.line(for: input), id: id)
+            case .toolFinished(let id, _, let output):
                 let last = output.content.split(separator: "\n").last.map(String.init) ?? ""
-                return .toolFinished(output.isError ? .failed(last) : .succeeded, output: output.content)
+                return .toolFinished(
+                    output.isError ? .failed(last) : .succeeded, output: output.content,
+                    id: id, backgroundJob: output.backgroundJob)
             case .repaired(let repairs):
                 return .notice("Repaired the context before this turn: \(repairs)", isError: false)
             case .compacted, .compactionFailed:

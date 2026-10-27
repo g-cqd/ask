@@ -78,11 +78,12 @@ public struct BashTool: ArgumentTool {
             case .found, .ended:
                 return Self.finished(job)
             case .timedOut where yield != nil:
+                job.markBackgrounded()
                 let shown = job.takeOutput()
                 return ToolOutput(
                     (shown.isEmpty ? "" : shown.hasSuffix("\n") ? shown : shown + "\n")
                         + "[still running as \(job.id) after \(limit) s\(JobWaiting.fileNote(job)); "
-                        + "use wait, job_input or job_stop]")
+                        + "use wait, job_input or job_stop]", backgroundJob: job.id)
             case .timedOut, .cancelled:
                 let aborted = Task.isCancelled
                 job.stop()

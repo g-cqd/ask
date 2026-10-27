@@ -6,11 +6,13 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// A prompt the user wrote earlier, shown when a recorded session is resumed.
     case userPrompt(String)
     case assistantText(String)
-    case toolStarted(name: String, summary: String)
+    case toolStarted(name: String, summary: String, id: String? = nil)
     /// More of the model's reasoning, shown as a block that starts folded.
     case thinkingText(String)
     /// The tool ended; `output` is what it returned, kept so the block can be opened.
-    case toolFinished(Transcript.ToolStatus, output: String = "")
+    case toolFinished(Transcript.ToolStatus, output: String = "", id: String? = nil, backgroundJob: String? = nil)
+    /// A background process updates its original tool block independently of focused output.
+    case jobOutput(JobUpdate)
     case notice(String, isError: Bool)
     /// Something ask did on its own account that is not needed to read the conversation: shown with `--verbose` or after `/verbose`, kept for
     /// `/verbose` otherwise (ADR-0119).
