@@ -39,7 +39,7 @@ struct LaunchRequest {
     }
 
     private var session: SessionChoice {
-        if let resume { return .named(resume) }
+        if let resume, !resume.isEmpty { return .named(resume) }
         return continueLatest ? .latest : .new
     }
 
@@ -82,6 +82,7 @@ struct LaunchRequest {
             return
         }
         await runInteractive(
-            source: source, settings: settings, resumed: restored, startupNotices: startupNotices, reloaded: reloaded)
+            source: source, settings: settings, resumed: restored, startupNotices: startupNotices, reloaded: reloaded,
+            pickSession: resume == "")
     }
 }

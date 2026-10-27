@@ -63,6 +63,7 @@ public struct ScreenController: Sendable {
             summary:
                 // @dl:accept -- the built-in commands read like the conversation's: a name and a sentence each, as data
                 "List commands. Ctrl+C: erase, stop, quit (twice). Ctrl+T/O/G fold. Enter steers."
+                // @dl:accept -- adjacent command-table entries match the conversation's table by shape, not by command or behavior
         ),
         SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first."),
         SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT."),

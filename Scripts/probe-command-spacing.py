@@ -44,7 +44,8 @@ def main():
         assert screen.until("FIRST REPLY"), "first reply missing"
         screen.type("second prompt\r")
         assert screen.until("SECOND REPLY"), "second reply missing"
-        for command in ("/help", "/config", "/mcp", "/resume", "/tree"):
+        # /resume now opens choices; probe-session-picker.py covers that interaction.
+        for command in ("/help", "/config", "/mcp", "/tree"):
             rows = report_rows(screen, command)
             results.append(probe.check(
                 command + " has content without blank rows between its entries",
