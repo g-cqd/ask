@@ -20,6 +20,12 @@ struct JobOutputChangesTests {
         #expect(job.write(Array("new output\n".utf8)))
         #expect(await changes.next() != nil)
         #expect(table.outputTail(of: job.id, maximumBytes: 1000) == "new output\n")
+        let waited = try await WaitTool(jobs: table)
+            .run(
+                .init(job: job.id, outputContains: "new output", fileExists: nil, portOpen: nil, timeoutSeconds: 1),
+                in: ToolContext(workingDirectory: root.path))
+        #expect(waited.content.contains("new output\n"))
+        #expect(!waited.isError)
         await table.stopAll()
         #expect(await changes.next() == nil)
     }

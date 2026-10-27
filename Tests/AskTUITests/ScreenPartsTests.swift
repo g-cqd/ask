@@ -106,12 +106,12 @@ struct ScreenPartsTests {
         var buffer = ScreenBuffer(columns: 40, rows: 3)
         var composer = ScreenComposer()
         _ = composer.compose(state, into: &buffer)
-        #expect(rows(buffer)[0] == "bash ls …")
+        #expect(rows(buffer)[0] == "bash ls                     00:00:00 · |")
         #expect(rows(buffer)[2] == "m · working… (ctrl+c to stop)")
-        state.transcript.finishTool(.failed("exit 1"))
+        state.transcript.finishTool(.failed("[exit 1]"))
         state.running = false
         _ = composer.compose(state, into: &buffer)
-        #expect(rows(buffer)[0] == "bash ls ✗ exit 1")
+        #expect(rows(buffer)[0] == "bash ls                 00:00:00 · ✗ (1)")
     }
 
     @Test func `a long prompt wraps and the cursor follows it`() {

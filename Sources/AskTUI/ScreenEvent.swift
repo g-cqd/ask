@@ -7,6 +7,7 @@ enum ScreenEvent: Sendable {
     case resize
     /// A timer step while a drag is held at an edge of the transcript.
     case tick
+    case progressTick
     /// The host pasteboard command ended: the final notice for the copy numbered `generation`, and whether it failed.
     case copied(notice: String, failed: Bool, generation: Int)
     /// The two seconds after an arming Ctrl+C are over.

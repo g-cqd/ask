@@ -68,6 +68,8 @@ struct ManualSelectionTests {
     }
 
     private func tool() -> PointerRig {
-        PointerRig(updates: [.toolStarted(name: "bash", summary: "ls"), .toolFinished(.succeeded, output: "one\ntwo")])
+        PointerRig(
+            columns: 60,
+            updates: [.toolStarted(name: "bash", summary: "ls"), .toolFinished(.succeeded, output: "one\ntwo")])
     }
 }

@@ -28,7 +28,9 @@ struct BlockModelTests {
         return ScreenComposer.lines(in: transcript, at: index, columns: columns, style: style)
     }
 
-    private func texts(_ lines: [ScreenComposer.Line]) -> [String] { lines.map(\.text) }
+    private func texts(_ lines: [ScreenComposer.Line]) -> [String] {
+        lines.map { $0.text.replacing(/[ ]{4,}[0-9]+:[0-9]{2}:[0-9]{2} · .*/, with: "") }
+    }
 
     @Test func `an answer has a row of padding above and below and an inset of one column, and no tint`() {
         let rows = lines([.assistant("hello")], 0)
@@ -51,13 +53,13 @@ struct BlockModelTests {
         let running = lines([.tool(name: "bash", summary: "ls", status: .running, output: "")], 0)
         let tints = [done, failed, running].map { $0[1].style.bg }
         #expect(Set(tints).count == 3 && !tints.contains(.default))
-        #expect(texts(done) == ["", " bash ls ✓", ""])
+        #expect(texts(done) == ["", " bash ls", ""])
     }
 
     @Test func `a blank row, not tinted, stands between two tool calls, and between a message and a tool call`() {
         let tool = Transcript.Item.tool(name: "read", summary: "a", status: .succeeded, output: "")
         let second = lines([tool, tool], 1)
-        #expect(texts(second) == ["", "", " read a ✓", ""])
+        #expect(texts(second) == ["", "", " read a", ""])
         #expect(second[0].style.bg == .default && second[1].style.bg != .default)
         #expect(texts(lines([.user("go"), tool], 1)).first == "")
         #expect(lines([.user("go"), tool], 1).count == 4)
@@ -73,7 +75,7 @@ struct BlockModelTests {
 
     @Test func `thinking is faint italic with no tint, and says Thinking... folded`() {
         let rows = lines([.thinking("a\nb")], 0)
-        #expect(rows[1].text == " Thinking...")
+        #expect(rows[1].text.hasPrefix(" Thinking...    "))
         #expect(rows.allSatisfy { $0.style.bg == .default })
         #expect(rows[1].style.italic && rows[1].style.dim)
     }
@@ -100,31 +102,31 @@ struct BlockModelTests {
     @Test func `padding rows carry no source, so a selection and a copy contain the text and not the padding`() {
         var rig = PointerRig(columns: 30, rows: 12, options: ScreenOptions(), updates: [.assistantText("hello world")])
         let transcript = rig.composer.transcriptRows
-        let text = (0 ..< transcript).map { rig.text(row: $0) }
+        let text = (0 ..< transcript).map { rig.contentText(row: $0) }
         let row = text.lastIndex { $0.contains("hello world") }!
         let effects = rig.drag(from: (row - 1, 0), to: (row + 1, 29))
         #expect(effects == [.copy("hello world")])
     }
 
     @Test func `a click on a tool header opens it even with padding, and the view stays put`() {
-        var rig = PointerRig(columns: 30, rows: 14, options: ScreenOptions(), lines: [])
+        var rig = PointerRig(columns: 40, rows: 14, options: ScreenOptions(), lines: [])
         rig.controller.handle(.toolStarted(name: "bash", summary: "ls"))
         rig.controller.handle(.toolFinished(.succeeded, output: "a\nb"))
         rig.draw()
-        let header = (0 ..< 14).first { rig.text(row: $0).contains("bash ls ✓") }!
+        let header = (0 ..< 14).first { rig.contentText(row: $0).contains("bash ls") }!
         rig.click(row: header, col: 3)
         #expect(!rig.controller.state.transcript.isFolded(0))
-        #expect((0 ..< 14).contains { rig.text(row: $0) == "   a" })
+        #expect((0 ..< 14).contains { rig.contentText(row: $0) == "   a" })
     }
 
     @Test(arguments: [0, 1, 2])
     func `each folded thinking row including padding opens the block`(offset: Int) {
         var rig = PointerRig(columns: 40, rows: 16, options: ScreenOptions(), updates: [.thinkingText("one\ntwo")])
-        let header = (0 ..< 16).first { rig.text(row: $0).contains("Thinking...") }!
+        let header = (0 ..< 16).first { rig.contentText(row: $0).contains("Thinking...") }!
         rig.click(row: header - 1 + offset, col: 39)
         #expect(!rig.controller.state.transcript.isFolded(0))
-        #expect(!(0 ..< 16).contains { rig.text(row: $0).contains("Thinking...") })
-        let content = (0 ..< 16).first { rig.text(row: $0) == " one" }!
+        #expect(!(0 ..< 16).contains { rig.contentText(row: $0).contains("Thinking...") })
+        let content = (0 ..< 16).first { rig.contentText(row: $0) == " one" }!
         rig.click(row: content, col: 39)
         #expect(rig.controller.state.transcript.isFolded(0))
     }
@@ -135,9 +137,9 @@ struct BlockModelTests {
             .toolStarted(name: "bash", summary: "ls"), .toolFinished(.succeeded, output: "a\nb")
         ]
         var rig = PointerRig(columns: 40, rows: 16, options: ScreenOptions(foldTools: false), updates: updates)
-        let header = (0 ..< 16).first { rig.text(row: $0).contains("bash ls ✓") }!
-        #expect(rig.text(row: header + 1) == "")
-        #expect(rig.text(row: header + 2) == "   a")
+        let header = (0 ..< 16).first { rig.contentText(row: $0).contains("bash ls") }!
+        #expect(rig.contentText(row: header + 1) == "")
+        #expect(rig.contentText(row: header + 2) == "   a")
         rig.click(row: header - 1 + offset, col: 39)
         #expect(rig.controller.state.transcript.isFolded(0))
     }
@@ -145,7 +147,7 @@ struct BlockModelTests {
     @Test func `open thinking selection copies content without a hidden header`() {
         var rig = PointerRig(
             columns: 40, rows: 16, options: ScreenOptions(foldThinking: false), updates: [.thinkingText("one\ntwo")])
-        let content = (0 ..< 16).first { rig.text(row: $0) == " one" }!
+        let content = (0 ..< 16).first { rig.contentText(row: $0) == " one" }!
         #expect(rig.drag(from: (content, 1), to: (content + 1, 4)) == [.copy("one\ntwo")])
     }
 

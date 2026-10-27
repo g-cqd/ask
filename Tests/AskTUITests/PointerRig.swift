@@ -78,6 +78,11 @@ struct PointerRig {
         (0 ..< buffer.columns).filter { buffer[row, $0].style.inverse }
     }
 
+    /// The visible content before first-line status, for folding and pointer tests. Metadata has separate cell-exact tests.
+    func contentText(row: Int) -> String {
+        text(row: row).replacing(/[ ]{4,}[0-9]+:[0-9]{2}:[0-9]{2} · .*/, with: "")
+    }
+
     /// What a row shows, as text, trailing blanks dropped.
     func text(row: Int) -> String {
         String((0 ..< buffer.columns).compactMap { buffer[row, $0].isContinuation ? nil : buffer[row, $0].character })
