@@ -10,7 +10,8 @@ enum ModelQualifier {
     /// Every name that can start `provider/model`.
     static func providerNames(_ providers: ProviderSettings, environment: [String: String]) -> Set<String> {
         var names: Set<String> = [
-            ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy, ProviderSettings.apple
+            ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy, ProviderSettings.apple,
+            CopilotProtocol.name
         ]
         names.formUnion(ProviderPreset.names)
         names.formUnion(providers.configuredNames)
@@ -44,6 +45,12 @@ enum ModelQualifier {
             (try? ModelDiscovery.agy(environment: environment).cachedModel(model, now: now)) != nil
         {
             found.append((ProviderSettings.agy, nil, .agy))
+        }
+        if has(CopilotProtocol.name),
+            let entry = (try? ModelDiscovery.copilot(environment: environment).cached(now: now))?
+                .first(where: { $0.id == model })
+        {
+            found.append((CopilotProtocol.name, entry, .copilot))
         }
         let storedKeys: () throws(CredentialFileError) -> [String: String] = { try file.loadKeys().mapValues(\.key) }
         for name in Set(accounts.map(\.provider)).union(providers.configuredNames).sorted()

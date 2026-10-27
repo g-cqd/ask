@@ -16,6 +16,7 @@ enum SessionRouting {
             case .anthropic: name = ProviderSettings.anthropic
             case .codex: name = ProviderSettings.codex
             case .agy: name = ProviderSettings.agy
+            case .copilot: name = CopilotProtocol.name
             case .apple: name = ProviderSettings.apple
             case .openAICompatible(let value, _, _, _), .openAIResponses(let value, _, _, _): name = value
         }

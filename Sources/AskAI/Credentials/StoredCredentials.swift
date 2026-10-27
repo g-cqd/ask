@@ -10,11 +10,12 @@ struct StoredCredentials: Codable {
     var keys: [String: StoredKey]?
     var codex: CodexCredentials?
     var agy: AgyCredentials?
+    var copilot: CopilotCredentials?
     var connection: ConnectionRecord?
     private var unknown: [String: [UInt8]] = [:]
 
     private enum CodingKeys: String, CodingKey {
-        case claude, keys, codex, agy, connection
+        case claude, keys, codex, agy, copilot, connection
     }
 
     init() {}
@@ -44,6 +45,7 @@ struct StoredCredentials: Codable {
         values["keys"] = try keys.map { try encoder.encodeToBytes($0) }
         values["codex"] = try codex.map { try encoder.encodeToBytes($0) }
         values["agy"] = try agy.map { try encoder.encodeToBytes($0) }
+        values["copilot"] = try copilot.map { try encoder.encodeToBytes($0) }
         values["connection"] = try connection.map { try encoder.encodeToBytes($0) }
         var writer = JSONStreamWriter(options: .rfc8259)
         writer.beginObject()

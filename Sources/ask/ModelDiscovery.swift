@@ -55,17 +55,14 @@ enum ModelDiscovery {
         provider = picked.provider
         notices += picked.notices
         let selected = providers.selectedProvider(provider)
+        if selected == CopilotProtocol.name {
+            return try await resolveCopilot(
+                providers, model: model, environment: environment, allowNetwork: allowNetwork, notices: notices)
+        }
         let (connection, found) = try registered(selected, environment: environment)
         notices += found
-        var aliases = ModelAliases.empty
-        if let connection {
-            do { aliases = try NamedConnections.aliases(for: connection, environment: environment).load() } catch {
-                // A damaged file refuses a run that relies on it (the default model would silently change), but not one that
-                // names a server model outright.
-                guard model != nil else { throw error }
-                notices.append("Aliases not used: \(error)")
-            }
-        }
+        let (aliases, aliasNotices) = try connectionAliases(connection, model: model, environment: environment)
+        notices += aliasNotices
         let resolve: ([CatalogModel]) throws -> ResolvedModel = { catalog in
             try providers.resolve(
                 provider: provider, model: model, environment: environment, catalog: catalog, connection: connection,

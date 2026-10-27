@@ -5,7 +5,7 @@ internal import Foundation
 /// What `/login ` offers: every way ask can sign in, each as the words that choose it.
 enum LoginChoices {
     static let usage =
-        "Forms: claude, claude api-key, codex, codex device, codex api-key, agy, spettro, mistral-vibe, PROVIDER (an API key), custom NAME URL."
+        "Forms: claude, claude api-key, codex, codex device, codex api-key, agy, copilot-vscode, spettro, mistral-vibe, PROVIDER (an API key), custom NAME URL."
 
     static func rows() -> [ChoiceRow] {
         var rows = [
@@ -18,6 +18,9 @@ enum LoginChoices {
                 arguments: "codex device"),
             ChoiceRow(label: "codex api-key", detail: "OpenAI API key (stored as openai)", arguments: "codex api-key"),
             ChoiceRow(label: "agy", detail: "Google account for Antigravity", arguments: "agy"),
+            ChoiceRow(
+                label: CopilotProtocol.name, detail: "GitHub Copilot — VS Code-style (experimental)",
+                arguments: CopilotProtocol.name),
             ChoiceRow(label: "spettro", detail: "Spettro, in a browser", arguments: "spettro"),
             ChoiceRow(label: "mistral-vibe", detail: "Mistral Vibe, in a browser", arguments: "mistral-vibe"),
             ChoiceRow(

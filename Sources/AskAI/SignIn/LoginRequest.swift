@@ -12,7 +12,7 @@ public struct LoginRequest: Sendable, Equatable {
     }
 
     /// The providers with a sign-in of their own; anything else that has a key preset is signed in with its key.
-    public static let accounts = ["claude", "codex", "agy", "spettro", "mistral-vibe"]
+    public static let accounts = ["claude", "codex", "agy", "spettro", "mistral-vibe", CopilotProtocol.name]
 
     public let target: String
     public var method: Method?
@@ -69,7 +69,9 @@ public struct LoginRequest: Sendable, Equatable {
         if connection != nil, !["claude", "codex"].contains(target) || method == .apiKey {
             throw Invalid(description: "a named connection is a claude or codex account, not a key")
         }
-        if method == .device, target != "codex" { throw Invalid(description: "device sign-in is for codex") }
+        if method == .device, !["codex", CopilotProtocol.name].contains(target) {
+            throw Invalid(description: "device sign-in is for codex or copilot-vscode")
+        }
         if method == .apiKey,
             !(["claude", "codex", "openai", "custom"] + ProviderPreset.all.map(\.name)).contains(target)
         {
@@ -83,7 +85,7 @@ public struct LoginRequest: Sendable, Equatable {
             case "claude": ProviderSettings.anthropic
             case "codex", "openai": "openai"
             case "custom": endpointName?.lowercased()
-            case "agy", "spettro", "mistral-vibe": nil
+            case "agy", "spettro", "mistral-vibe", CopilotProtocol.name: nil
             default: target
         }
     }

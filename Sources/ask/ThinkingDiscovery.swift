@@ -74,6 +74,9 @@ enum ThinkingDiscovery {
             case .openAIResponses:
                 snapshot = try? await ProviderModelDiscovery.catalog(for: model, environment: environment)?
                     .models(now: now)
+            case .copilot:
+                snapshot = (try? await ModelDiscovery.copilot(environment: environment).models(now: now))
+                    .map { CatalogSnapshot(models: $0) }
             case .openAICompatible, .agy, .apple: snapshot = nil
         }
         return snapshot?.models.first { $0.id == model.model }
@@ -98,6 +101,11 @@ enum ThinkingDiscovery {
                     return (
                         try ProviderModelDiscovery.catalog(for: model, environment: environment)?
                             .cachedModel(model.model, now: now), []
+                    )
+                case .copilot:
+                    return (
+                        try ModelDiscovery.copilot(environment: environment).cached(now: now)?
+                            .first { $0.id == model.model }, []
                     )
                 case .openAICompatible, .agy, .apple: return (nil, [])
             }

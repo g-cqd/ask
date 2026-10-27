@@ -23,6 +23,16 @@ extension ThinkingControl {
                 }
                 return level == .off ? .disabled : .effort(level)
             case .openAICompatible: throw .unsupportedProtocol("OpenAI chat completions")
+            case .copilot:
+                guard let matching else { throw .missingCapabilities(model: model.model) }
+                if matching.api == "/v1/messages" {
+                    return try native(level, descriptor: matching, maximumTokens: maximumTokens)
+                }
+                if matching.api == "/responses" {
+                    let routed = ResolvedModel(provider: .codex, model: model.model)
+                    return try select(level, model: routed, descriptor: matching, maximumTokens: maximumTokens)
+                }
+                throw .unsupportedProtocol("OpenAI chat completions")
             case .agy: throw .unsupportedProtocol("Antigravity")
             case .apple: throw .unsupportedProtocol("the on-device model")
         }

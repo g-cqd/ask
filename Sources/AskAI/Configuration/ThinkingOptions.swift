@@ -17,6 +17,10 @@ public enum ThinkingOptions {
     /// - Returns: the levels, or nil when the provider has no control.
     public static func choices(for provider: ResolvedModel.Provider, descriptor: CatalogModel?) -> Choices? {
         switch provider {
+            case .copilot:
+                if descriptor?.api == "/v1/messages" { return choices(for: .anthropic, descriptor: descriptor) }
+                if descriptor?.api == "/responses" { return choices(for: .codex, descriptor: descriptor) }
+                return nil
             case .openAICompatible, .agy, .apple: return nil
             case .anthropic:
                 guard let descriptor, descriptor.supportsThinking != false else {

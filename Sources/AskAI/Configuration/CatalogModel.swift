@@ -1,6 +1,8 @@
 /// A model reported by a provider's catalog, with the normal limits the server advertises.
 public struct CatalogModel: Codable, Sendable, Equatable {
     public let id: String
+    /// Advertised native wire protocol when one account serves multiple APIs.
+    public let api: String?
     public let contextWindow: Int?
     public let maxOutputTokens: Int?
     /// The reasoning effort names the server reports for this model, in its order. Empty means not reported, which is
@@ -16,9 +18,12 @@ public struct CatalogModel: Codable, Sendable, Equatable {
     /// A catalog entry; an absent limit is unknown, not an invented default.
     public init(
         id: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil, reasoningLevels: [String] = [],
-        defaultReasoningLevel: String? = nil, supportsThinking: Bool? = nil, thinkingModes: [ThinkingMode] = []
+        // @dl:accept -- optional descriptor fields resemble credential initializer fields only by shape
+        defaultReasoningLevel: String? = nil, supportsThinking: Bool? = nil, thinkingModes: [ThinkingMode] = [],
+        api: String? = nil
     ) {
         self.id = id
+        self.api = api
         self.contextWindow = contextWindow
         self.maxOutputTokens = maxOutputTokens
         self.reasoningLevels = reasoningLevels
@@ -37,13 +42,15 @@ public struct CatalogModel: Codable, Sendable, Equatable {
     static let levelLimit = 16
 
     private enum CodingKeys: String, CodingKey {
-        case id, contextWindow, maxOutputTokens, reasoningLevels, defaultReasoningLevel, supportsThinking, thinkingModes
+        case id, api, contextWindow, maxOutputTokens, reasoningLevels, defaultReasoningLevel, supportsThinking,
+            thinkingModes
     }
 
     /// Reads a catalog written before reasoning levels existed: the missing fields are unknown.
     public init(from decoder: any Decoder) throws {
         let values = try decoder.container(keyedBy: CodingKeys.self)
         id = try values.decode(String.self, forKey: .id)
+        api = try values.decodeIfPresent(String.self, forKey: .api)
         contextWindow = try values.decodeIfPresent(Int.self, forKey: .contextWindow)
         maxOutputTokens = try values.decodeIfPresent(Int.self, forKey: .maxOutputTokens)
         reasoningLevels = try values.decodeIfPresent([String].self, forKey: .reasoningLevels) ?? []

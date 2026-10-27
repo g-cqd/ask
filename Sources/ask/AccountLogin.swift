@@ -55,6 +55,12 @@ struct AccountLogin: Sendable {
                     device: request.method == .device, connection: connection, file: store,
                     replace: request.replaceAccount)
             case "agy": return try await agy(file: store)
+            case CopilotProtocol.name:
+                let credentials = try await SignInRunner(clock: ContinuousClock())
+                    .run(
+                        CopilotDeviceSignIn(transport: transport), show: self.show)
+                try store.saveCopilot(credentials)
+                return "Signed in to Copilot (VS Code-style, experimental). Choose a model with /model."
             case "spettro": return try await spettro(file: store)
             default: return try await vibe(file: store)
         }

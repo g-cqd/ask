@@ -29,6 +29,12 @@ extension CredentialFile {
         if stored?.agy != nil {
             accounts.append(SignedInAccount(target: "agy", provider: ProviderSettings.agy, method: "Google account"))
         }
+        if stored?.copilot != nil {
+            accounts.append(
+                SignedInAccount(
+                    target: CopilotProtocol.name, provider: CopilotProtocol.name,
+                    method: "GitHub account (experimental)"))
+        }
         for name in (stored?.keys ?? [:]).keys.sorted() where name != Self.claudeKeyName {
             accounts.append(SignedInAccount(target: name, provider: name, method: "API key"))
         }
@@ -77,12 +83,13 @@ extension CredentialFile {
                     stored.keys?[Self.claudeKeyName] = nil
                 case "codex": stored.codex = nil
                 case "agy": stored.agy = nil
+                case CopilotProtocol.name: stored.copilot = nil
                 case "mistral-vibe": stored.keys?["mistral"] = nil
                 default: stored.keys?[target] = nil
             }
             let changed =
                 stored.claude != before.claude || stored.codex != before.codex || stored.agy != before.agy
-                || stored.keys != before.keys
+                || stored.copilot != before.copilot || stored.keys != before.keys
             return (changed, changed)
         }
     }

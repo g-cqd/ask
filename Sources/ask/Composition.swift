@@ -48,6 +48,9 @@ func requireSignIn(for model: ResolvedModel, transport: URLSessionTransport) asy
                     connection: model.connection)
                 _ = try await access.credentials(now: Date().timeIntervalSince1970)
             case .agy: _ = try await makeAgyAccess(transport: transport).session(now: Date().timeIntervalSince1970)
+            case .copilot:
+                _ = try await CopilotAccess(file: .standard(), transport: transport)
+                    .credentials(now: Date().timeIntervalSince1970)
             case .apple, .openAICompatible, .openAIResponses: return
         }
     } catch {
@@ -67,6 +70,7 @@ func makeProvider(_ resolved: ResolvedModel, transport: URLSessionTransport) -> 
             codexProvider(resolved, transport: transport)
         case .agy: agyProvider(transport: transport)
         case .apple: AppleProvider()
+        case .copilot: CopilotProvider(client: CopilotClient(file: .standard(), transport: transport))
         case .openAICompatible(_, let baseURL, let apiKey, let headers):
             OpenAICompatibleProvider(
                 client: OpenAICompatibleClient(transport: transport, baseURL: baseURL, apiKey: apiKey, headers: headers)

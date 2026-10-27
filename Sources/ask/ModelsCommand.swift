@@ -25,6 +25,9 @@ struct ModelsCommand: AsyncParsableCommand {
                 try await show(codex: nil, now: now)
             } else if connection == ProviderSettings.agy {
                 try await showAgy(now: now)
+            } else if connection == CopilotProtocol.name {
+                let models = try await ModelDiscovery.copilot(environment: environment).models(now: now, refresh: true)
+                ModelTable.print(CatalogSnapshot(models: models), defaultFirst: true)
             } else if connection == ProviderSettings.apple {
                 showApple()
             } else if [ProviderSettings.anthropic, "claude"].contains(connection) {

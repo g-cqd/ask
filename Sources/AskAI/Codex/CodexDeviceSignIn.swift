@@ -23,7 +23,9 @@ public struct CodexDeviceSignIn: BrowserSignIn {
 
     public let pollsImmediately = false
 
+    // @dl:accept -- device flows hold HTTP clients and injected clocks; provider-specific grants and exchanges stay separate
     private let http: SignInHTTP
+    // @dl:accept -- device flows share injected clock and transport construction, but exchange different grants
     private let auth: CodexAuthClient
     private let now: @Sendable () -> Double
 
