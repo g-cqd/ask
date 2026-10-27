@@ -101,13 +101,7 @@ public struct Transcript: Sendable, Equatable {
         id: String? = nil, backgroundJob: String? = nil
     ) {
         guard
-            let index = id.flatMap({ toolBlocks[$0] })
-                ?? (id == nil
-                    ? items.indices.last(where: {
-                        guard !jobBlocks.values.contains($0) else { return false }
-                        if case .tool(_, _, .running, _) = items[$0] { return true }
-                        return false
-                    }) : nil),
+            let index = id.flatMap({ toolBlocks[$0] }) ?? (id == nil ? latestForegroundTool : nil),
             case .tool(let name, let summary, _, _) = items[index]
         else { return }
         finishProgress(at: index, now: now)
