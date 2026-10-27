@@ -36,11 +36,11 @@ struct ToolFoldingTests {
         #expect(!rig.buffer[7, 2].style.inverse)
     }
 
-    @Test func `a click in the body does not toggle it`() {
+    @Test func `a click in the body closes the block too`() {
         var rig = PointerRig(updates: Self.ls)
         rig.click(row: 9, col: 3)
         rig.click(row: 8, col: 4)
-        #expect(rig.text(row: 6) == "bash ls ✓")
+        #expect(rig.text(row: 9) == "bash ls ✓ · 3 lines")
     }
 
     @Test func `a tool that returned nothing has nothing to fold`() {
