@@ -87,8 +87,8 @@ struct BlockModelTests {
         #expect(rows[2].style.italic && rows[2].style.dim && rows[2].source?.col == 3)
     }
 
-    @Test func `a notice is one line with no padding, so a run of them stays compact`() {
-        #expect(texts(lines([.notice("note", isError: false)], 0)) == [" note"])
+    @Test func `command and authentication notices have one row of padding above and below`() {
+        #expect(texts(lines([.notice("note", isError: false)], 0)) == ["", " note", ""])
     }
 
     @Test func `a long line wraps inside the inset`() {

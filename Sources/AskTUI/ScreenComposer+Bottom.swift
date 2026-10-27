@@ -34,6 +34,10 @@ extension ScreenComposer {
                 into: &buffer)
         }
         var below = next + editor.lines.count
+        if let rule {
+            write(rule, row: below, into: &buffer)
+            below += 1
+        }
         if let status {
             write(status, row: below, into: &buffer)
             below += 1

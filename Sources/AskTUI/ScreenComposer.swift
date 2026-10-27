@@ -106,8 +106,9 @@ public struct ScreenComposer: Sendable {
         cursorIsVisible = editor.cursorVisible
         let promptRows = editor.lines.count
         let statusRows = rows > 1 ? 1 : 0
-        // A rule between the conversation and the input, when the screen has the rows to spare for it.
-        let ruleRows = state.separator && rows >= 6 ? 1 : 0
+        // Character rules enclose the input without extra blank rows.
+        let ruleRows = state.separator && rows >= 6 ? 2 : 0
+        let upperRuleRows = ruleRows / 2
         let strip = RunnerStrip(
             state, available: Swift.max(0, rows - promptRows - statusRows - 1), columns: columns)
         let panel = strip.lines
@@ -123,11 +124,11 @@ public struct ScreenComposer: Sendable {
             rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: totalLines,
             scrollback: state.scrollback,
             statusRow: transcriptRows + ruleRows + pickerLines.count + promptRows, runnerColumns: status.runners,
-            belowColumns: status.below, promptRow: transcriptRows + ruleRows + pickerLines.count,
+            belowColumns: status.below, promptRow: transcriptRows + upperRuleRows + pickerLines.count,
             promptRows: promptRows,
             promptTop: editor.top, prompt: editor.layout
         )
-        .withPicker(state: state, firstRow: transcriptRows + ruleRows + 1, rows: pickerRows)
+        .withPicker(state: state, firstRow: transcriptRows + upperRuleRows + 1, rows: pickerRows)
         geometry.placeStrip(strip, firstRow: rows - panel.count)
         geometry.placeSidebar(sidebar, columns: columns)
         frames?.store(geometry)
@@ -135,7 +136,8 @@ public struct ScreenComposer: Sendable {
         return writeBottom(
             panel: panel, status: statusRows > 0 ? status.line : nil, picker: pickerLines, editor: editor,
             rule: ruleRows > 0 ? Line(text: String(repeating: "─", count: columns), style: Style(dim: true)) : nil,
-            inputStyle: Style(bg: state.theme.inputBackground), from: transcriptRows, into: &buffer)
+            inputStyle: Style(bg: ruleRows > 0 ? .default : state.theme.inputBackground), from: transcriptRows,
+            into: &buffer)
     }
 
     /// Draws the transcript's visible rows, with the sidebar beside them, and says what each row shows.

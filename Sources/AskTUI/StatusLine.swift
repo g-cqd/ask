@@ -68,7 +68,7 @@ struct StatusLine {
             column = span.upperBound
         }
         var accents: [ScreenComposer.Accent] = []
-        if let first = text.first, first == "⚠" {
+        if let first = text.first, first == "!" || first == "⚠" {
             accents = [.init(columns: 0 ..< UnicodeWidth.displayWidth(of: String(first)), style: Self.warning)]
         }
         // Only when even the pieces that may not go do not fit: clipped at a cell, the last resort.
