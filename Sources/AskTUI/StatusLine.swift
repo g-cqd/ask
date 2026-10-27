@@ -13,6 +13,9 @@ struct StatusLine {
     let columns: Int
     var markStyle: Style?
 
+    /// The default look of the status line text and enclosing input rules.
+    static let statusStyle = Style(dim: true)
+
     /// Fits `segments`, in the order they are to be shown, to `columns`.
     init(_ segments: [StatusSegment], columns: Int, markStyle: Style? = nil) {
         self.segments = segments

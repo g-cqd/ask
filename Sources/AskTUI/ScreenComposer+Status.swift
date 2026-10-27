@@ -9,7 +9,7 @@ extension ScreenComposer {
     ) -> (line: Line, runners: Range<Int>?, below: Range<Int>?) {
         let mark = leadingMark(for: state)
         return StatusLine(segments(for: state, input: input, mark: mark), columns: columns, markStyle: mark.style)
-            .line(style: Style(dim: true))
+            .line(style: StatusLine.statusStyle)
     }
 
     /// Evaluates a stable per-operation spinner while running, or the sandbox-colored idle `!`.
