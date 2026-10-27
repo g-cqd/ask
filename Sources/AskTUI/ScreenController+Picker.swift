@@ -12,6 +12,8 @@ extension ScreenController {
     /// anywhere, none otherwise.
     /// - Returns: asking for the project's files, when an `@` word needs a listing that is missing or old.
     mutating func refreshPicker(screenRows: Int, at now: ContinuousClock.Instant) -> [Effect] {
+        // The configuration editor is modal: keys belong to it, not to the draft or a word picker.
+        if case .config = state.picker?.kind { return [] }
         guard screenRows >= Self.pickerMinimumRows else { return closePicker() }
         if let trigger = commandTrigger() {
             refreshCommandPicker(trigger, screenRows: screenRows)
@@ -84,6 +86,23 @@ extension ScreenController {
     /// What an open picker does with `key`, or nil when the key is the editor's.
     mutating func pickerKey(_ key: KeyEvent, screenRows: Int) -> [Effect]? {
         guard screenRows >= Self.pickerMinimumRows, var picker = state.picker else { return nil }
+        // The configuration editor owns every key while it is open: arrows move and cycle, Enter saves, Escape closes.
+        if picker.kind.isConfig {
+            switch key.keyCode {
+                case Key.up.rawValue: picker.move(-1)
+                case Key.down.rawValue: picker.move(1)
+                case Key.left.rawValue: cycleConfig(&picker, by: -1)
+                case Key.right.rawValue: cycleConfig(&picker, by: 1)
+                case Key.enter.rawValue where !key.modifiers.contains(.shift): return accept(picker)
+                case 0x1B:
+                    state.pickerDismissedAt = picker.trigger.range.lowerBound
+                    state.picker = nil
+                    return []
+                default: break
+            }
+            state.picker = picker
+            return []
+        }
         // A picker with nothing to choose yet (the files are still being listed) only answers Escape; every other key is the editor's.
         if picker.matches.isEmpty, key.keyCode != 0x1B { return nil }
         switch key.keyCode {
@@ -103,12 +122,39 @@ extension ScreenController {
 
     /// Puts the chosen command in the draft where the word was. Nothing is sent: a second Enter runs it. A choice from a command's list is
     /// different: it runs that command at once, with the row's arguments.
+    /// Left/right cycle the selected setting's staged value. A read-only row has no choices and does not move.
+    private mutating func cycleConfig(_ picker: inout CompletionPicker, by step: Int) {
+        guard picker.matches.indices.contains(picker.selected) else { return }
+        let index = picker.selected
+        let choices = picker.matches[index].choices
+        let real = choices.filter { $0 != "unset" }
+        guard !real.isEmpty else { return }
+        let detail = picker.matches[index].detail
+        let next: String
+        if detail == "unset" {
+            next = step > 0 ? real[0] : real[real.count - 1]
+        } else if let current = real.firstIndex(of: detail) {
+            if step > 0 {
+                next = current == real.count - 1 ? real[0] : real[current + 1]
+            } else {
+                next = current == 0 ? "unset" : real[current - 1]
+            }
+        } else {
+            return
+        }
+        picker.matches[index].detail = next
+    }
+
     mutating func accept(_ picker: CompletionPicker) -> [Effect] {
         guard picker.matches.indices.contains(picker.selected) else {
             state.picker = nil
             return []
         }
         let row = picker.matches[picker.selected]
+        if case .config(let scope, _) = picker.kind {
+            guard !row.choices.isEmpty else { return [] }
+            return [.commitConfig(scope: scope, path: row.path, value: row.detail)]
+        }
         if case .choices(let title) = picker.kind, let arguments = row.run {
             return run(row, command: title, arguments: arguments)
         }

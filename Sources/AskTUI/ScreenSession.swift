@@ -171,6 +171,8 @@ final class ScreenSession {
             case .listChoices(let command):
                 let conversation = conversation
                 Task { sink.yield(.update(.choices(command: command, rows: await conversation.choices(for: command)))) }
+            case .commitConfig(let scope, let path, let value):
+                await conversation.commitConfig(scope: scope, path: path, value: value) { sink.yield(.update($0)) }
             case .answerInput(let id, let text):
                 conversation.answer(input: id, with: text)
             case .cancelRun:

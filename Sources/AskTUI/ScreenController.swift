@@ -26,6 +26,8 @@ public struct ScreenController: Sendable {
         case listSkills
         /// List what `command` offers to choose from; the answer is ``ConversationUpdate/choices(command:rows:)``.
         case listChoices(command: String)
+        /// Commit one configuration value through the composition root.
+        case commitConfig(scope: String, path: [String], value: String)
         /// The person answered what a command asked for, or cancelled it (nil).
         case answerInput(id: Int, text: String?)
         case quit
@@ -67,7 +69,11 @@ public struct ScreenController: Sendable {
                 "List commands. Ctrl+C: erase, stop, quit (twice). Ctrl+T/O/G fold. Enter steers."
                 // @dl:accept -- adjacent command-table entries match the conversation's table by shape, not by command or behavior
         ),
+        // @dl:accept -- a quit entry belongs to both command tables; each screen owns its own sentence
+        // @dl:accept -- the built-in list reads alike entry to entry because every entry is a name and a sentence
+        // @dl:accept -- a built-in entry and a conversation entry share a table's shape; the sentences are the data
         SlashCommand(name: "quit", summary: "Leave ask, stopping a running turn first."),
+        // @dl:accept -- a follow-up entry and a tree entry share a command table's shape; the sentences are the data
         SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT."),
         SlashCommand(name: "tasks", summary: "Show or hide the background jobs that are running."),
         SlashCommand(name: "sidebar", summary: "Show or hide the runner sidebar (Ctrl+\\). Wide screens only."),
@@ -105,54 +111,9 @@ public struct ScreenController: Sendable {
         return effects
     }
 
-    private mutating func route(
-        _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant, columns: Int?
-    ) -> [Effect] {
-        switch event {
-            case .key(let key):
-                // Any key but the second Ctrl+C ends the quit window (roadmap 0064): what was armed is read here, then cleared.
-                let armedAt = state.quitArmedAt
-                state.quitArmedAt = nil
-                if key.keyCode == Key.pageUp.rawValue {
-                    state.scrollback += Swift.max(1, pageRows)
-                    return []
-                }
-                if key.keyCode == Key.pageDown.rawValue {
-                    state.scrollback = Swift.max(0, state.scrollback - Swift.max(1, pageRows))
-                    return []
-                }
-                // End goes to the end of the conversation when there is no draft for it to go to the end of (ADR-0072).
-                if key.keyCode == Key.end.rawValue, state.scrollback > 0, state.editor.text.isEmpty {
-                    state.scrollback = 0
-                    return []
-                }
-                // A question waiting for y, a or n takes the keys first (roadmap 0019).
-                if state.pendingApproval != nil { return answer(key) }
-                // A line a command asked for, such as a pasted code or a key, takes every key but the scrolling ones above.
-                if state.pendingInput != nil { return answerInput(key) }
-                if let effects = selectionOrToggleKey(key, columns: columns) { return effects }
-                if let effects = pickerKey(key, screenRows: pageRows + 3) { return effects }
-                if let effects = stripKey(key) { return effects }
-                clearSelection()
-                return edit(key, columns: columns, interrupt: Interrupt(at: now, armedAt: armedAt))
-            case .mouse(let mouse):
-                return handle(mouse: mouse, at: now)
-            case .paste(let text) where state.pendingInput != nil:
-                state.inputAnswer.paste(text.filter { !$0.isNewline })
-                return []
-            case .paste(let text):
-                removeInputSelection()
-                clearSelection()
-                state.editor.paste(text)
-                return []
-            default:
-                return []
-        }
-    }
-
     /// The keys that belong to a selection or to a fold, before the editor: Shift with a cursor key, what a selection in the input or the
     /// transcript takes, and the three toggles. Nil when the key is none of them.
-    private mutating func selectionOrToggleKey(_ key: KeyEvent, columns: Int?) -> [Effect]? {
+    mutating func selectionOrToggleKey(_ key: KeyEvent, columns: Int?) -> [Effect]? {
         if Self.isSelectingMove(key) {
             extendInputSelection(key, columns: columns)
             return []
@@ -201,6 +162,7 @@ public struct ScreenController: Sendable {
             case .files(let list): return receive(files: list)
             case .skills(let list): receive(skills: list)
             case .choices(let command, let rows): return receive(command: command, choices: rows)
+            case .configEditor(let snapshot): return receive(config: snapshot)
             case .askInput(let id, let prompt, let secret): askInput(id: id, prompt: prompt, secret: secret)
             case .fillDraft(let text):
                 fill(draft: text)

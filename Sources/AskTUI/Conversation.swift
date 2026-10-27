@@ -29,6 +29,10 @@ public protocol Conversation: Sendable {
     /// for when the list opens, off the input path, and may take as long as a network does; the screen shows what it has meanwhile.
     func choices(for command: String) async -> [ChoiceRow]
 
+    /// Commits one value in the interactive configuration editor; updates report the saved rows or the refusal.
+    func commitConfig(
+        scope: String, path: [String], value: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async
+
     /// The answer to a question ``ConversationUpdate/askInput(id:prompt:secret:)`` put; nil when the person cancelled it.
     func answer(input id: Int, with text: String?)
 
@@ -67,6 +71,12 @@ extension Conversation {
 
     /// No lists.
     public func choices(for command: String) async -> [ChoiceRow] { [] }
+
+    public func commitConfig(
+        scope: String, path: [String], value: String, update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) async {
+        update(.notice("Configuration editing is unavailable.", isError: true))
+    }
 
     /// Never asks for input, so never answered.
     public func answer(input id: Int, with text: String?) {}

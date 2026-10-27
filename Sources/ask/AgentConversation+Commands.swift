@@ -8,9 +8,14 @@ internal import Synchronization
 extension AgentConversation {
     var commands: [SlashCommand] {
         // @dl:accept -- a table of command names and summaries; the entries are the data, and they read alike because every command has a name and a sentence
+        // @dl:accept -- a table of command names and summaries; the entries are the data, and they read alike because every command has a name and a sentence
+        // @dl:accept -- screen and conversation command tables match only because tables of data read alike
         [
+            // @dl:accept -- this table's head matches the built-in table's head; the entries are the data
             SlashCommand(
-                name: "config", summary: "Read the configuration again and show every setting and its source."),
+                name: "config",
+                summary: "Edit settings interactively, or /config now to read and show every setting and its source.",
+                takesChoices: true),
             SlashCommand(name: "compact", summary: "Summarise the conversation now, keeping the recent messages."),
             SlashCommand(name: "new", summary: "Start a new session; the previous session stays saved."),
             SlashCommand(
@@ -28,8 +33,12 @@ extension AgentConversation {
             SlashCommand(
                 name: "logout", summary: "Sign out of one account, or /logout all, without leaving.", takesChoices: true
             ),
+            // @dl:accept -- a resume entry belongs to both command tables; the conversation's sentence names its own arguments
+            // @dl:accept -- a resume entry beside the screen's built-ins shares a table's shape; the sentences are the data
             SlashCommand(
                 name: "resume", summary: "Choose a session, or /resume NAME, PREFIX or PATH.", takesChoices: true),
+            // @dl:accept -- the conversation's list reads alike entry to entry because every entry is a name and a sentence
+            // @dl:accept -- a tree entry beside the screen's follow-up shares a command table's shape; the sentences are the data
             SlashCommand(name: "tree", summary: "List this session's prompts, or go back to before one: /tree N."),
             SlashCommand(
                 name: "fork",
@@ -46,7 +55,13 @@ extension AgentConversation {
     ) -> Task<Void, Never> {
         Task {
             switch name {
-                case "config": await self.showConfiguration(update: update)
+                case "config":
+                    let scope = arguments.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+                    if scope == "user" || scope == "project" {
+                        await self.openConfigEditor(ConfigEditor.Scope(rawValue: scope) ?? .user, update: update)
+                    } else {
+                        await self.showConfiguration(update: update)
+                    }
                 case "compact": await self.compact(update: update)
                 case "new": await self.newSession(arguments: arguments, update: update)
                 case "resume": await self.resumeSession(arguments: arguments, update: update)
