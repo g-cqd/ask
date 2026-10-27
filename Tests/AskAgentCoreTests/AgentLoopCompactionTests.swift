@@ -100,6 +100,47 @@ struct AgentLoopCompactionTests {
         #expect(Compaction.contextTokens(sinceCompactionIn: tree) == nil)
     }
 
+    @Test func `a conversation that fits the kept tail is never compacted and reports nothing`() async throws {
+        // A small window drives the threshold to the floor, so compaction is "due" from the first response
+        // (probed on the on-device model, diary 2026-10-28): with nothing before the tail, it is a no-op, not a
+        // failure to announce on every turn.
+        let file = try newFile()
+        let provider = ScriptedProvider([.sized("First answer.", prompt: 150), .reply("Second.")])
+        let loop = loop(provider, compactAt: 100, keepRecentBytes: 100_000)
+        try await loop.run("one", in: file) { _ in }
+        var events: [AgentEvent] = []
+        try await loop.run("two", in: file) { events.append($0) }
+        #expect(kinds(file) == ["user", "response", "user", "response"])
+        #expect(!events.contains { if case .compactionFailed = $0 { true } else { false } })
+        #expect(provider.requests.count == 2)
+    }
+
+    @Test func `a single turn that fills the tail on its own is skipped, not reported as failed`() async throws {
+        // The tail's bytes are reached only at the branch's first entry, so nothing precedes the tail and
+        // compaction cannot run; it is quietly skipped rather than announced as a failure every turn.
+        let file = try newFile()
+        let prompt = String(repeating: "x", count: 1_000)
+        let provider = ScriptedProvider([
+            .call(id: "t1", name: "nothing", input: "{}"), .reply("done."), .reply("second.")
+        ])
+        let loop = loop(provider, compactAt: 1, keepRecentBytes: 400)
+        try await loop.run(prompt, in: file) { _ in }
+        var events: [AgentEvent] = []
+        try await loop.run("two", in: file) { events.append($0) }
+        #expect(kinds(file).prefix(3) == ["user", "response", "result"])
+        #expect(!events.contains { if case .compactionFailed = $0 { true } else { false } })
+    }
+
+    @Test func `an explicit compaction with nothing before the tail still says so`() async throws {
+        let file = try newFile()
+        let provider = ScriptedProvider([.reply("First.")])
+        let loop = loop(provider, compactAt: nil, keepRecentBytes: 100_000)
+        try await loop.run("one", in: file) { _ in }
+        var events: [AgentEvent] = []
+        try await loop.compactNow(in: file) { events.append($0) }
+        #expect(events.contains { if case .compactionFailed = $0 { true } else { false } })
+    }
+
     @Test func `the kept tail never starts at a tool result, which would orphan it from its call`() throws {
         let input = try JSONObject(validating: Array("{}".utf8))
         let call = AssembledResponse(
