@@ -47,6 +47,16 @@ public struct PromptEditor: Sendable, Equatable {
         if key.modifiers.contains(.ctrl), let scalar = Unicode.Scalar(code), scalar.isASCII {
             return control(UInt32(scalar.value & 0x1F))
         }
+        if key.modifiers.contains(.alt) || key.modifiers.contains(.meta) {
+            if code == Key.left.rawValue || code == 0x62 || code == 0x42 {
+                moveWordBackward()
+                return .edited
+            }
+            if code == Key.right.rawValue || code == 0x66 || code == 0x46 {
+                moveWordForward()
+                return .edited
+            }
+        }
         switch code {
             case 0x00 ... 0x1A, 0x7F: return control(code)
             case 0x1B: return .escape
@@ -233,7 +243,7 @@ public struct PromptEditor: Sendable, Equatable {
         return .edited
     }
 
-    private mutating func move(to position: Int) { cursor = Swift.min(Swift.max(0, position), text.count) }
+    mutating func move(to position: Int) { cursor = Swift.min(Swift.max(0, position), text.count) }
 
     private func index(_ offset: Int) -> String.Index { text.index(text.startIndex, offsetBy: offset) }
 }
