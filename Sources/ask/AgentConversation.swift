@@ -235,6 +235,7 @@ func runInteractive(
             options: settings.screenOptions, beforeSignalExit: { jobs.terminateAllNow() })
         await jobs.stopAll()
         await mcp.stop()
+        if exit == .quit { conversation.printResumeCommand() }
         // The terminal is already restored: replace this process with the new build, resuming this session.
         if exit == .reload { conversation.reExecute() }
     } catch {
