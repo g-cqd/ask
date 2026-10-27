@@ -4,6 +4,8 @@ internal import TerminalKitText
 struct FrameGeometry: Sendable {
     /// What each row of the screen shows, for mapping a cell back to the conversation.
     var rows = RowMap<Int>()
+    /// Foldable block owning each transcript row, including its padding but not inter-block spacing.
+    var foldBlocks: [Int?] = []
     /// How many rows the transcript took, from the top.
     var transcriptRows = 0
     var columns = 0

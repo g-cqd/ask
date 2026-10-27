@@ -19,6 +19,8 @@ public struct ScreenComposer: Sendable {
         var style: Style
         /// The item's text this row shows, or nil for a row with no content of its own (a blank, a prefix-only row).
         var source: Source?
+        /// Click ownership, independent of selectable text (padding has no source).
+        var foldBlock: Int?
         /// Runs of columns drawn in a style of their own over ``style``, such as a warning mark in colour.
         var accents: [Accent]
 
@@ -64,6 +66,7 @@ public struct ScreenComposer: Sendable {
     var transcriptLines = LayoutCache<Line>()
     /// The look those lines were laid out for.
     var blockStyle = BlockStyle.plain
+    private var foldBlocks: [Int?] = []
     /// Every item's hard lines, kept beside the wrapped lines so a selection can be read and highlighted.
     var hardLines: [[String]] = []
     /// What each row of the buffer holds since the last frame, and the size it was composed at.
@@ -121,7 +124,7 @@ public struct ScreenComposer: Sendable {
         let (sidebar, map, totalLines) = writeTranscript(
             state, rows: rows, transcriptRows: transcriptRows, columns: columns, into: &buffer)
         var geometry = FrameGeometry(
-            rows: map, transcriptRows: transcriptRows, columns: columns, totalLines: totalLines,
+            rows: map, foldBlocks: foldBlocks, transcriptRows: transcriptRows, columns: columns, totalLines: totalLines,
             scrollback: state.scrollback,
             statusRow: transcriptRows + ruleRows + pickerLines.count + promptRows, runnerColumns: status.runners,
             belowColumns: status.below, promptRow: transcriptRows + upperRuleRows + pickerLines.count,
@@ -152,6 +155,7 @@ public struct ScreenComposer: Sendable {
         let start = Swift.max(0, end - transcriptRows)
         let visible = flat[start ..< end]
         let map = Self.provenance(of: visible, rows: rows, transcriptRows: transcriptRows)
+        foldBlocks = Array(repeating: nil, count: transcriptRows - visible.count) + visible.map(\.foldBlock)
         var highlights = [Range<Int>?](repeating: nil, count: transcriptRows)
         if let selection = state.selection {
             for span in map.highlights(of: selection, in: TranscriptContent(blocks: hardLines))

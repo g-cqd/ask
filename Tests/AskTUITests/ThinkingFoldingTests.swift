@@ -38,10 +38,9 @@ struct ThinkingFoldingTests {
     @Test func `a click on the header opens it, dim and italic, and another closes it`() {
         var rig = PointerRig(updates: Self.reasoning)
         rig.click(row: 9, col: 3)
-        #expect(rig.text(row: 7) == "Thinking...")
-        #expect([8, 9].map { rig.text(row: $0) } == ["  first thought", "  second thought"])
+        #expect([8, 9].map { rig.text(row: $0) } == ["first thought", "second thought"])
         #expect(rig.buffer[8, 2].style.dim && rig.buffer[8, 2].style.italic)
-        rig.click(row: 7, col: 3)
+        rig.click(row: 8, col: 3)
         #expect(rig.text(row: 9) == "Thinking...")
     }
 
@@ -49,7 +48,7 @@ struct ThinkingFoldingTests {
         let rig = PointerRig(
             options: ScreenOptions(foldThinking: false, prompt: "ask> ", tint: false, separator: false, padding: false),
             updates: Self.reasoning)
-        #expect(rig.text(row: 7) == "Thinking...")
+        #expect(rig.text(row: 8) == "first thought")
     }
 
     @Test func `control T flips reasoning and leaves tool output alone, and control O the reverse`() {
@@ -91,6 +90,6 @@ struct ThinkingFoldingTests {
         var rig = PointerRig(updates: [.thinkingText((1 ... 1000).map { "t \($0)" }.joined(separator: "\n"))])
         #expect(rig.text(row: 9) == "Thinking...")
         rig.click(row: 9, col: 3)
-        #expect(rig.text(row: 9) == "  … 600 more lines not shown")
+        #expect(rig.text(row: 9) == "… 600 more lines not shown")
     }
 }

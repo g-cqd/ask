@@ -78,13 +78,13 @@ struct BlockModelTests {
         #expect(rows[1].style.italic && rows[1].style.dim)
     }
 
-    @Test func `an open thinking block keeps its header and shows its body, italic and faint`() {
+    @Test func `an open thinking block replaces its header with its body, italic and faint`() {
         var transcript = Transcript()
         transcript.addThinkingText("one\ntwo")
         transcript.toggleFold(0)
         let rows = ScreenComposer.lines(in: transcript, at: 0, columns: columns, style: style)
-        #expect(texts(rows) == ["", " Thinking...", "   one", "   two", ""])
-        #expect(rows[2].style.italic && rows[2].style.dim && rows[2].source?.col == 3)
+        #expect(texts(rows) == ["", " one", " two", ""])
+        #expect(rows[2].style.italic && rows[2].style.dim && rows[2].source?.col == 1)
     }
 
     @Test func `command and authentication notices have one row of padding above and below`() {
@@ -115,6 +115,38 @@ struct BlockModelTests {
         rig.click(row: header, col: 3)
         #expect(!rig.controller.state.transcript.isFolded(0))
         #expect((0 ..< 14).contains { rig.text(row: $0) == "   a" })
+    }
+
+    @Test(arguments: [0, 1, 2])
+    func `each folded thinking row including padding opens the block`(offset: Int) {
+        var rig = PointerRig(columns: 40, rows: 16, options: ScreenOptions(), updates: [.thinkingText("one\ntwo")])
+        let header = (0 ..< 16).first { rig.text(row: $0).contains("Thinking...") }!
+        rig.click(row: header - 1 + offset, col: 39)
+        #expect(!rig.controller.state.transcript.isFolded(0))
+        #expect(!(0 ..< 16).contains { rig.text(row: $0).contains("Thinking...") })
+        let content = (0 ..< 16).first { rig.text(row: $0) == " one" }!
+        rig.click(row: content, col: 39)
+        #expect(rig.controller.state.transcript.isFolded(0))
+    }
+
+    @Test(arguments: [0, 1, 2, 3, 4, 5])
+    func `every open tool row including padding and header gap closes it`(offset: Int) {
+        let updates: [ConversationUpdate] = [
+            .toolStarted(name: "bash", summary: "ls"), .toolFinished(.succeeded, output: "a\nb")
+        ]
+        var rig = PointerRig(columns: 40, rows: 16, options: ScreenOptions(foldTools: false), updates: updates)
+        let header = (0 ..< 16).first { rig.text(row: $0).contains("bash ls ✓") }!
+        #expect(rig.text(row: header + 1) == "")
+        #expect(rig.text(row: header + 2) == "   a")
+        rig.click(row: header - 1 + offset, col: 39)
+        #expect(rig.controller.state.transcript.isFolded(0))
+    }
+
+    @Test func `open thinking selection copies content without a hidden header`() {
+        var rig = PointerRig(
+            columns: 40, rows: 16, options: ScreenOptions(foldThinking: false), updates: [.thinkingText("one\ntwo")])
+        let content = (0 ..< 16).first { rig.text(row: $0) == " one" }!
+        #expect(rig.drag(from: (content, 1), to: (content + 1, 4)) == [.copy("one\ntwo")])
     }
 
     @Test func `with padding off the older plain layout is unchanged`() {

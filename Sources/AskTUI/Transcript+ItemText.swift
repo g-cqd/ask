@@ -13,7 +13,7 @@ extension Transcript.Item {
             case .thinking(let text):
                 let body = Transcript.kept(text)
                 let header = Self.thinkingHeader(body: body, folded: folded)
-                return body.isEmpty || folded ? header : header + "\n" + body
+                return body.isEmpty || folded ? header : body
             case .tool(let name, let summary, let status, let output):
                 let header = Self.toolHeader(
                     name: name, summary: summary, status: status, output: output, folded: folded)
