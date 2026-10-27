@@ -25,6 +25,7 @@ public struct Transcript: Sendable, Equatable {
     /// Bumped whenever an item changes, so layouts can cache each item's wrapped lines.
     public internal(set) var revisions: [Int] = []
     private var nextRevision = 0
+    var progress: [Int: BlockProgress] = [:]
     /// Which tool blocks the user opened or closed, over the default for the kind (TerminalKit roadmap 0018).
     private(set) var folds = FoldStore<Int>()
     /// Whether a tool block with output starts folded, unless the user chose (ADR-0046: `ui.tools`).
@@ -51,6 +52,7 @@ public struct Transcript: Sendable, Equatable {
     public mutating func removeAll() {
         items.removeAll(keepingCapacity: true)
         revisions.removeAll(keepingCapacity: true)
+        progress.removeAll(keepingCapacity: true)
         folds.clearChoices()
         codeFolds.clearChoices()
     }
@@ -75,18 +77,20 @@ public struct Transcript: Sendable, Equatable {
         }
     }
 
-    public mutating func startTool(name: String, summary: String) {
+    public mutating func startTool(name: String, summary: String, at now: ContinuousClock.Instant = .now) {
         append(.tool(name: name, summary: summary, status: .running, output: ""))
+        progress[items.count - 1] = BlockProgress(at: now)
     }
 
     /// Ends the most recent running tool, keeping what it returned.
-    public mutating func finishTool(_ status: ToolStatus, output: String = "") {
+    public mutating func finishTool(_ status: ToolStatus, output: String = "", at now: ContinuousClock.Instant = .now) {
         guard
             let index = items.lastIndex(where: {
                 if case .tool(_, _, .running, _) = $0 { return true }
                 return false
             }), case .tool(let name, let summary, _, _) = items[index]
         else { return }
+        finishProgress(at: index, now: now)
         items[index] = .tool(name: name, summary: summary, status: status, output: Self.kept(output))
         revisions[index] = bump()
     }
@@ -156,7 +160,9 @@ public struct Transcript: Sendable, Equatable {
     public mutating func addNotice(_ text: String, isError: Bool) { append(.notice(text, isError: isError)) }
 
     private mutating func append(_ item: Item) {
+        finishThinking()
         items.append(item)
+        if case .thinking = item { progress[items.count - 1] = BlockProgress(at: .now) }
         revisions.append(bump())
     }
 

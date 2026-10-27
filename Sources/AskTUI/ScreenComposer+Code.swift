@@ -16,7 +16,7 @@ extension ScreenComposer {
         guard let shown else {
             return lines(
                 for: item, folded: transcript.isFolded(index), block: index, columns: columns, style: style,
-                spacerAbove: spaced)
+                spacerAbove: spaced, progress: transcript.progress[index])
         }
         // A placeholder is dim, like the other folds' headers; the rest of the message, open code included, is as it was.
         let margin = String(repeating: " ", count: style.inset)

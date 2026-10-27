@@ -14,54 +14,56 @@ struct ToolFoldingTests {
     private static let ctrlO = KeyEvent(keyCode: UInt32(Character("o").asciiValue!), modifiers: .ctrl)
 
     @Test func `a tool with output starts as one line that says how much is inside`() {
-        let rig = PointerRig(updates: Self.ls)
-        #expect(rig.text(row: 9) == "bash ls ✓ · 3 lines")
-        #expect(rig.text(row: 8) == "")
+        let rig = PointerRig(columns: 60, updates: Self.ls)
+        #expect(rig.contentText(row: 9) == "bash ls")
+        #expect(rig.contentText(row: 8) == "")
     }
 
     @Test func `a click on the header opens it, and another closes it`() {
-        var rig = PointerRig(updates: Self.ls)
+        var rig = PointerRig(columns: 60, updates: Self.ls)
         rig.click(row: 9, col: 3)
-        #expect(rig.text(row: 6) == "bash ls ✓")
-        #expect([7, 8, 9].map { rig.text(row: $0) } == ["  alpha", "  beta", "  gamma"])
+        #expect(rig.contentText(row: 6) == "bash ls")
+        #expect([7, 8, 9].map { rig.contentText(row: $0) } == ["  alpha", "  beta", "  gamma"])
         rig.click(row: 6, col: 3)
-        #expect(rig.text(row: 9) == "bash ls ✓ · 3 lines")
-        #expect(rig.text(row: 8) == "")
+        #expect(rig.contentText(row: 9) == "bash ls")
+        #expect(rig.contentText(row: 8) == "")
     }
 
     @Test func `the body is dim and the header keeps its status colour`() {
-        var rig = PointerRig(updates: Self.ls)
+        var rig = PointerRig(columns: 60, updates: Self.ls)
         rig.click(row: 9, col: 3)
         #expect(rig.buffer[7, 2].style.dim)
         #expect(!rig.buffer[7, 2].style.inverse)
     }
 
     @Test func `a click in the body closes the block too`() {
-        var rig = PointerRig(updates: Self.ls)
+        var rig = PointerRig(columns: 60, updates: Self.ls)
         rig.click(row: 9, col: 3)
         rig.click(row: 8, col: 4)
-        #expect(rig.text(row: 9) == "bash ls ✓ · 3 lines")
+        #expect(rig.contentText(row: 9) == "bash ls")
     }
 
     @Test func `a tool that returned nothing has nothing to fold`() {
-        var rig = PointerRig(updates: [.toolStarted(name: "bash", summary: "true"), .toolFinished(.succeeded)])
-        #expect(rig.text(row: 9) == "bash true ✓")
+        var rig = PointerRig(
+            columns: 60, updates: [.toolStarted(name: "bash", summary: "true"), .toolFinished(.succeeded)])
+        #expect(rig.contentText(row: 9) == "bash true")
         rig.click(row: 9, col: 3)
-        #expect(rig.text(row: 9) == "bash true ✓")
+        #expect(rig.contentText(row: 9) == "bash true")
         #expect(!rig.controller.state.transcript.isFoldable(0))
     }
 
     @Test func `a running tool shows no count until it has returned`() {
-        let rig = PointerRig(updates: [.toolStarted(name: "bash", summary: "sleep 9")])
-        #expect(rig.text(row: 9) == "bash sleep 9 …")
+        let rig = PointerRig(columns: 60, updates: [.toolStarted(name: "bash", summary: "sleep 9")])
+        #expect(rig.contentText(row: 9) == "bash sleep 9")
     }
 
     @Test func `with folding off a tool's output is shown from the start`() {
         let rig = PointerRig(
+            columns: 60,
             options: ScreenOptions(foldTools: false, prompt: "ask> ", tint: false, separator: false, padding: false),
             updates: Self.ls)
-        #expect(rig.text(row: 6) == "bash ls ✓")
-        #expect(rig.text(row: 9) == "  gamma")
+        #expect(rig.contentText(row: 6) == "bash ls")
+        #expect(rig.contentText(row: 9) == "  gamma")
     }
 
     @Test func `control O flips every tool block, and a choice made by click gives way to it`() {
@@ -77,7 +79,7 @@ struct ToolFoldingTests {
     }
 
     @Test func `control O does not reach the prompt`() {
-        var rig = PointerRig(updates: Self.ls)
+        var rig = PointerRig(columns: 60, updates: Self.ls)
         _ = rig.controller.handle(.key(Self.ctrlO), pageRows: 10)
         #expect(rig.controller.state.editor.text.isEmpty)
     }
@@ -102,50 +104,50 @@ struct ToolFoldingTests {
         var updates: [ConversationUpdate] = (1 ... 6).map { .notice("before \($0)", isError: false) }
         updates += Self.ls
         updates += (1 ... 12).map { .notice("after \($0)", isError: false) }
-        var rig = PointerRig(updates: updates)
+        var rig = PointerRig(columns: 60, updates: updates)
         rig.mouse(.scrollUp, .press, row: 3, col: 3)
         rig.mouse(.scrollUp, .press, row: 3, col: 3)
-        guard let header = (0 ..< 10).first(where: { rig.text(row: $0).hasPrefix("bash") }) else {
+        guard let header = (0 ..< 10).first(where: { rig.contentText(row: $0).hasPrefix("bash") }) else {
             Issue.record("the header is not on screen")
             return
         }
         rig.click(row: header, col: 3)
-        #expect(rig.text(row: header) == "bash ls ✓", "the header moved")
+        #expect(rig.contentText(row: header) == "bash ls", "the header moved")
         rig.click(row: header, col: 3)
-        #expect(rig.text(row: header) == "bash ls ✓ · 3 lines", "the header moved back")
+        #expect(rig.contentText(row: header) == "bash ls", "the header moved back")
     }
 
     @Test func `at the bottom, opening a block grows upward and the end stays in view`() {
-        var rig = PointerRig(updates: Self.ls)
+        var rig = PointerRig(columns: 60, updates: Self.ls)
         rig.click(row: 9, col: 3)
         #expect(rig.controller.state.scrollback == 0)
-        #expect(rig.text(row: 9) == "  gamma")
+        #expect(rig.contentText(row: 9) == "  gamma")
     }
 
     // MARK: - Selecting what is shown
 
     @Test func `a folded block copies as the line that is shown`() {
-        var rig = PointerRig(updates: Self.ls)
+        var rig = PointerRig(columns: 60, updates: Self.ls)
         let effects = rig.drag(from: (9, 0), to: (9, 20))
-        #expect(effects == [.copy("bash ls ✓ · 3 lines")])
+        #expect(effects == [.copy("bash ls")])
     }
 
     @Test func `a selection across a folded block reads its placeholder and not what is inside`() {
-        var rig = PointerRig(updates: Self.ls + [.notice("after", isError: false)])
+        var rig = PointerRig(columns: 60, updates: Self.ls + [.notice("after", isError: false)])
         // Rows: the folded header, then the notice; the body (alpha, beta, gamma) is not drawn and must not be read.
         let effects = rig.drag(from: (8, 0), to: (9, 4))
-        #expect(effects == [.copy("bash ls ✓ · 3 lines\nafter")])
+        #expect(effects == [.copy("bash ls\nafter")])
     }
 
     @Test func `an open block copies its body, one line each`() {
-        var rig = PointerRig(updates: Self.ls)
+        var rig = PointerRig(columns: 60, updates: Self.ls)
         rig.click(row: 9, col: 3)
         let effects = rig.drag(from: (7, 2), to: (9, 6))
         #expect(effects == [.copy("alpha\nbeta\ngamma")])
     }
 
     @Test func `closing a block clears a selection that was inside it`() {
-        var rig = PointerRig(updates: Self.ls)
+        var rig = PointerRig(columns: 60, updates: Self.ls)
         rig.click(row: 9, col: 3)
         rig.drag(from: (7, 2), to: (9, 6))
         rig.click(row: 6, col: 3)
