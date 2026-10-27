@@ -47,6 +47,16 @@ struct ContextBudgetTests {
         #expect(budget.compactAtTokens == 10_000)
     }
 
+    @Test func `the on-device window's margin floors the compaction threshold`() {
+        // 4,096 tokens with a 1,024-token reply: the margin's least (4,096) leaves nothing of the window, so
+        // compaction is due from the first response. The loop does not attempt one while the conversation fits
+        // the kept tail (diary 2026-10-28); this pins the floor it compensates for.
+        let budget = ContextBudget(contextWindow: 4_096, maxOutputTokens: 1_024, requestedCompactAt: 150_000)
+        #expect(budget.maximumTokens == 1_024)
+        #expect(budget.compactAtTokens == 1)
+        #expect(budget.keepRecentBytes == 4_096)
+    }
+
     @Test func `a window too small to hold a reply still yields a usable budget`() {
         let budget = ContextBudget(contextWindow: 2_048, maxOutputTokens: nil, requestedCompactAt: 150_000)
         #expect(budget.maximumTokens == 512)
