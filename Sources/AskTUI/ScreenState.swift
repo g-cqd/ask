@@ -18,6 +18,8 @@ public struct ScreenState: Sendable, Equatable {
     public var sandboxed = true
     /// Current animated frame index for the status line spinner.
     public var statusFrame = 0
+    /// A concrete style selected once per turn, used until a tool/thinking block supplies its own clock.
+    var statusSpinner: SpinnerStyle
     /// Set by a command that wants the screen closed with this reason once its run has ended.
     public var exitRequest: ScreenExit?
     /// Shown at the right of the status line, such as token usage; empty for none.
@@ -98,6 +100,7 @@ public struct ScreenState: Sendable, Equatable {
     /// A screen with nothing in it yet.
     public init(label: String, options: ScreenOptions = ScreenOptions()) {
         self.label = label
+        statusSpinner = options.spinner.resolved()
         promptPrefix = options.prompt
         separator = options.separator
         theme = ScreenTheme(tinted: options.tint, light: options.lightBackground)

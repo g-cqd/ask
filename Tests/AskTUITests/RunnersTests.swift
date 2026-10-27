@@ -25,35 +25,35 @@ struct RunnersTests {
 
     @Test func `the count is in the status line after the activity`() {
         let rig = rig()
-        #expect(rig.text(row: 13) == "m · 2 jobs")
+        #expect(rig.text(row: 13) == "! · m · 2 jobs")
         #expect(rig.text(row: 11) == "two", "no list is open: the transcript owns the rows above the status line")
         var one = PointerRig(columns: 40, rows: 14)
         one.controller.handle(.runners([Self.two[0]]))
         one.draw()
-        #expect(one.text(row: 13) == "m · 1 job")
+        #expect(one.text(row: 13) == "! · m · 1 job")
     }
 
     @Test func `a click on the count opens the strip below the input, and the moved count closes it`() {
         var rig = rig()
-        rig.click(row: 13, col: 5)
+        rig.click(row: 13, col: 9)
         #expect(rig.text(row: 12).hasPrefix("job-1  npm run dev · running"))
         #expect(rig.text(row: 13).hasPrefix("job-2  tail -f log second line"))
-        #expect(rig.text(row: 10) == "m · 2 jobs")
+        #expect(rig.text(row: 10) == "! · m · 2 jobs")
         #expect(rig.text(row: 9) == "ask>")
         #expect(rig.text(row: 11).isEmpty)
         #expect(rig.buffer[12, 0].style.dim)
-        rig.click(row: 10, col: 5)
+        rig.click(row: 10, col: 9)
         #expect(rig.text(row: 10) == "one" && rig.text(row: 11) == "two")
-        #expect(rig.text(row: 13) == "m · 2 jobs")
+        #expect(rig.text(row: 13) == "! · m · 2 jobs")
     }
 
     @Test func `a click elsewhere on the status line does nothing`() {
         var rig = rig()
-        for column in [0, 1, 2, 3, 10, 18, 30, 39] {
+        for column in [0, 1, 2, 3, 4, 5, 6, 7, 14, 18, 30, 39] {
             rig.click(row: 13, col: column)
             #expect(!rig.controller.state.runnersOpen, "column \(column)")
         }
-        for column in [4, 6, 9] {
+        for column in [8, 10, 13] {
             rig.click(row: 13, col: column)
             #expect(rig.controller.state.runnersOpen, "column \(column)")
             rig.click(row: 10, col: column)
@@ -63,27 +63,27 @@ struct RunnersTests {
     @Test func `clicks in quick succession each toggle, however the recognizer counts them`() {
         var rig = rig()
         let quick = Duration.milliseconds(50)
-        rig.click(row: 13, col: 5, after: quick)
+        rig.click(row: 13, col: 9, after: quick)
         #expect(rig.controller.state.runnersOpen)
-        rig.click(row: 10, col: 5, after: quick)
+        rig.click(row: 10, col: 9, after: quick)
         #expect(!rig.controller.state.runnersOpen)
-        rig.click(row: 13, col: 5, after: quick)
+        rig.click(row: 13, col: 9, after: quick)
         #expect(rig.controller.state.runnersOpen, "the third click of a triple is still a toggle")
     }
 
     @Test func `the list takes rows from the transcript and gives them back`() {
         var rig = rig()
         let before = rig.composer.transcriptRows
-        rig.click(row: 13, col: 5)
+        rig.click(row: 13, col: 9)
         #expect(rig.composer.transcriptRows == before - 3)
-        rig.click(row: 10, col: 5)
+        rig.click(row: 10, col: 9)
         #expect(rig.composer.transcriptRows == before)
     }
 
     @Test func `a click on the count after the list moved the status row still lands on it`() {
         var rig = rig()
-        rig.click(row: 13, col: 5)
-        rig.click(row: 10, col: 5)
+        rig.click(row: 13, col: 9)
+        rig.click(row: 10, col: 9)
         #expect(!rig.controller.state.runnersOpen)
     }
 
@@ -106,11 +106,11 @@ struct RunnersTests {
 
     @Test func `the list closes by itself when nothing is running`() {
         var rig = rig()
-        rig.click(row: 13, col: 5)
+        rig.click(row: 13, col: 9)
         rig.controller.handle(.runners([]))
         rig.draw()
         #expect(!rig.controller.state.runnersOpen)
-        #expect(rig.text(row: 13) == "m" && rig.text(row: 11) == "two")
+        #expect(rig.text(row: 13) == "! · m" && rig.text(row: 11) == "two")
         rig.controller.handle(.runners(Self.two))
         rig.draw()
         #expect(rig.text(row: 11) == "two", "a list that closed stays closed when jobs come back")
@@ -127,7 +127,7 @@ struct RunnersTests {
                 "job-4  sleep 4 · running"
             ])
         #expect(rig.text(row: 13) == "… 4 more")
-        #expect(rig.text(row: 7) == "m · 8 jobs")
+        #expect(rig.text(row: 7) == "! · m · 8 jobs")
         #expect(rig.text(row: 8).isEmpty)
     }
 
@@ -145,7 +145,7 @@ struct RunnersTests {
 
     @Test func `the list is not content: a drag across it selects nothing and the transcript still selects`() {
         var rig = rig()
-        rig.click(row: 13, col: 5)
+        rig.click(row: 13, col: 9)
         #expect(rig.drag(from: (12, 0), to: (13, 10)).isEmpty)
         #expect(rig.controller.state.selection == nil)
         #expect(

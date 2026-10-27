@@ -19,9 +19,7 @@ struct StatusLeadingMark: Sendable, Equatable {
     /// Evaluates the leading mark and style based on activity and sandbox state.
     static func mark(running: Bool, sandboxed: Bool, frame: String) -> StatusLeadingMark {
         guard running else {
-            let character = sandboxed ? "" : "!"
-            let style = sandboxed ? nil : Self.warning
-            return StatusLeadingMark(character: character, style: style)
+            return StatusLeadingMark(character: "!", style: sandboxed ? Self.sandboxed : Self.warning)
         }
         let style = sandboxed ? Self.sandboxed : Self.warning
         return StatusLeadingMark(character: frame, style: style)

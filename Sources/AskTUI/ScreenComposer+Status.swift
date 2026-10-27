@@ -12,11 +12,17 @@ extension ScreenComposer {
             .line(style: Style(dim: true))
     }
 
-    /// Evaluates the leading character (spinner when running, `!` when idle without sandbox, empty otherwise).
+    /// Evaluates a stable per-operation spinner while running, or the sandbox-colored idle `!`.
     static func leadingMark(for state: ScreenState) -> StatusLeadingMark {
-        let spinner = state.transcript.spinnerStyle.resolved()
+        guard state.running else {
+            return StatusLeadingMark.mark(running: false, sandboxed: state.sandboxed, frame: "")
+        }
+        let configured = state.transcript.spinnerStyle
+        let clock = state.transcript.progress[state.transcript.items.count - 1].flatMap { $0.ended == nil ? $0 : nil }
+        let spinner = configured == .random ? (clock?.spinner ?? state.statusSpinner) : configured
         let frames = spinner.frames
-        let frame = frames.isEmpty ? "|" : frames[state.statusFrame % frames.count]
+        let index = configured == .random ? (clock?.frame ?? state.statusFrame) : state.statusFrame
+        let frame = frames.isEmpty ? "|" : frames[index % frames.count]
         return StatusLeadingMark.mark(running: state.running, sandboxed: state.sandboxed, frame: frame)
     }
 

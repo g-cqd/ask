@@ -89,7 +89,7 @@ struct ScreenControllerTests {
         var composer = ScreenComposer()
         _ = composer.compose(controller.state, into: &buffer)
         let statusRow = String((0 ..< 60).map { buffer[2, $0].character })
-        #expect(statusRow.hasPrefix("m · ↑2.1k ↓55"))
+        #expect(statusRow.hasPrefix("! · m · ↑2.1k ↓55"))
     }
 
     @Test func `a paste lands in the editor`() {
