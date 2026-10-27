@@ -83,4 +83,14 @@ struct BashToolTests {
         #expect(output.isError && output.content.contains("aborted"))
         #expect(try await ProcessExit.observed(child))
     }
+
+    @Test func `a shell argument that is not an absolute path is refused, naming where the command goes`() async {
+        // The on-device model read `shell` as the command to run and retried six times against a refusal that
+        // never said what `shell` is for (probed live, diary 2026-10-28); the refusal teaches the shape instead.
+        let input = try! JSONObject(validating: Array(#"{"shell":"date","command":"date"}"#.utf8))
+        let output = await BashTool().run(input, in: context)
+        #expect(output.isError)
+        #expect(output.content.contains("absolute"))
+        #expect(output.content.contains("command"))
+    }
 }
