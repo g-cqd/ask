@@ -54,13 +54,13 @@ struct BackgroundJobBlockTests {
         #expect(controller.state.transcript.isFolded(0))
     }
 
-    @Test func `completion appends one faint italic block with right aligned metadata and freezes time`() {
+    @Test func `completion appends one faint italic block with right aligned metadata and freezes time`() throws {
         var controller = controller()
         let ending = snapshot(.failed("[exit 7]"))
         controller.handle(.jobOutput(ending))
         controller.handle(.jobOutput(ending))
         let transcript = controller.state.transcript
-        #expect(transcript.items.count == 2)
+        try #require(transcript.items.count == 2)
         #expect(transcript.items[1] == .jobEnded(label: "[#7a2f] ended", status: .failed("[exit 7]"), lines: 45))
         let style = BlockStyle(padded: false, theme: ScreenTheme(), localizedDurations: false)
         let rows = ScreenComposer.lines(

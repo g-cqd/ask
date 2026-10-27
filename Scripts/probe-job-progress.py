@@ -64,8 +64,9 @@ def main():
             column = terminal.screen.display[row].index("1 job")
             click(terminal, row, column)
             row = status_row(terminal)
+            label = re.search(r"\[#[0-9a-f]{4}\]", terminal.screen.display[row + 2]).group(0)
             check("one blank row separates status and jobs", not terminal.screen.display[row + 1].strip()
-                  and terminal.screen.display[row + 2].startswith("job-1  "))
+                  and terminal.screen.display[row + 2].startswith(label + "  "))
             check("input remains above status", terminal.screen.display[row - 1].startswith("ask>"))
             line = terminal.screen.display[-1]
             check("single cell spinner occupies the trailing column", line[-1] in "|/-\\")
@@ -84,13 +85,13 @@ def main():
             terminal.draw(lambda: terminal.send(b"\x1b[B"))
             terminal.draw(lambda: terminal.send(b"\r"))
             terminal.until(lambda: "JOB READY" in terminal.text())
-            check("job row focuses its original output", "main › job-1" in terminal.text())
+            check("job row focuses its original output", "main › " + label in terminal.text())
             terminal.draw(lambda: terminal.send(b"\x1b"))
             terminal.draw(lambda: terminal.send(b"Stop\r"))
             terminal.until(lambda: b"JOB STOPPED" in terminal.raw and "1 job" not in terminal.text())
             terminal.repaint()
             check("ending the job removes its strip and gap", terminal.screen.display[-2].startswith("ask>")
-                  and "job-1  " not in terminal.text())
+                  and label + "  " not in terminal.text())
         except AssertionError:
             if terminal:
                 print(terminal.text(), file=sys.stderr)
