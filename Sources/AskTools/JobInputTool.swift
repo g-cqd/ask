@@ -39,11 +39,7 @@ public struct JobInputTool: ArgumentTool, JobTool {
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         let job = try access.job(arguments.job)
-        if let text = arguments.text, !job.write(Array(text.utf8)) {
-            throw ToolFailure(
-                "\(job.id) does not take input: \(job.status == .running ? "input is closed" : "it ended").")
-        }
-        if arguments.closeInput == true { job.closeInput() }
+        try job.sendInput(arguments.text, closing: arguments.closeInput == true)
         let seconds = Swift.min(Swift.max(1, arguments.yieldSeconds ?? 1), 60)
         _ = await JobWaiting.wait(for: job, needle: nil, seconds: seconds, clock: access.clock)
         if job.status != .running { return WaitTool.ended(job, headline: "[\(job.id) ended]") }

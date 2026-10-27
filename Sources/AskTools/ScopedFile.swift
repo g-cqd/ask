@@ -129,7 +129,7 @@ enum ScopedFile {
     }
 
     /// Refuses unless the policy allows `capability` at the real location of `descriptor`, with `name` below it when given.
-    private static func verify(
+    static func verify(
         _ descriptor: Int32, for capability: SandboxCapability, appending name: String?, shownAs path: String,
         in context: ToolContext
     ) throws(ToolFailure) {
