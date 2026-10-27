@@ -119,7 +119,7 @@ def one_run(tool):
     shown = None
     try:
         deadline = time.monotonic() + 15
-        while b"ask>" not in screen and time.monotonic() < deadline:
+        while "────".encode() not in screen and time.monotonic() < deadline:
             if select.select([fd], [], [], 0.05)[0]:
                 screen += os.read(fd, 65536)
         os.write(fd, b"Go\r")

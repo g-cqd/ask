@@ -78,18 +78,18 @@ class MeasurementTests(unittest.TestCase):
             return budgets.one_run()
 
     def test_cold_time_includes_fork(self):
-        row = self.measured([(1.03, b'ask> ' + budgets.FRAME_END)])
+        row = self.measured([(1.03, '────'.encode() + budgets.FRAME_END)])
         self.assertIsNotNone(row)
         self.assertAlmostEqual(row[0], 30.0)
 
     def test_prompt_needs_no_trailing_blank(self):
-        # A diff can leave the already-blank cell after '>' untouched, then position the cursor there.
-        row = self.measured([(1.03, b'ask>\x1b[40;6H' + budgets.FRAME_END)])
+        # A separator can be followed directly by cursor positioning, without a trailing blank.
+        row = self.measured([(1.03, '────'.encode() + b'\x1b[40;6H' + budgets.FRAME_END)])
         self.assertIsNotNone(row)
         self.assertAlmostEqual(row[0], 30.0)
 
     def test_cold_time_waits_for_prompt_frame_to_close(self):
-        row = self.measured([(1.02, b'ask> '), (1.03, budgets.FRAME_END)])
+        row = self.measured([(1.02, '────'.encode()), (1.03, budgets.FRAME_END)])
         self.assertIsNotNone(row)
         self.assertAlmostEqual(row[0], 30.0)
 
@@ -154,13 +154,13 @@ class MeasurementTests(unittest.TestCase):
                                   arguments=('-c', program))
 
     def test_a_real_prompt_frame_without_a_blank_is_measurable(self):
-        row = self.fake_startup(b'\x1b[?2026hask>\x1b[40;6H\x1b[?2026l')
+        row = self.fake_startup(b'\x1b[?2026h' + '────'.encode() + b'\x1b[40;6H\x1b[?2026l')
         self.assertIsNone(row['error'])
         self.assertIsNotNone(row['cold_ms'])
         self.assertEqual(row['exit_code'], -9, 'the probe deliberately stops and reaps only its own child')
 
     def test_a_failed_phase_query_is_retained_not_certified(self):
-        row = self.fake_startup(b'TRACE arguments 123 456 4 21 25 5\nask>\x1b[?2026l')
+        row = self.fake_startup(b'TRACE arguments 123 456 4 21 25 5\n' + '────'.encode() + b'\x1b[?2026l')
         self.assertEqual(row['error'], 'phase probe reported a query error')
         self.assertIn('TRACE arguments', row['output_tail'])
 
