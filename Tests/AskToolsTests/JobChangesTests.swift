@@ -30,11 +30,15 @@ struct JobChangesTests {
         let first = start("sleep 60")
         let second = start("sleep 61")
         let both = await next(&iterator) { $0.count == 2 }
-        #expect(both == [JobSummary(id: "job-1", command: "sleep 60"), JobSummary(id: "job-2", command: "sleep 61")])
+        #expect(
+            both == [
+                JobSummary(id: "job-1", command: "sleep 60", startedAt: first.startedAt),
+                JobSummary(id: "job-2", command: "sleep 61", startedAt: second.startedAt)
+            ])
         first.stop()
         await first.ended()
         let one = await next(&iterator) { $0.count == 1 }
-        #expect(one == [JobSummary(id: "job-2", command: "sleep 61")])
+        #expect(one == [JobSummary(id: "job-2", command: "sleep 61", startedAt: second.startedAt)])
         second.stop()
         await second.ended()
         #expect(await next(&iterator) { $0.isEmpty } == [])

@@ -138,9 +138,10 @@ struct CompletionPickerComposerTests {
         let first = try #require(shown.firstIndex { $0.hasPrefix("job-1") })
         let picker = composer.transcriptRows
         #expect(shown[picker].hasPrefix("commands") && shown[picker + 1].hasPrefix("/config"))
-        #expect(shown[first - 2] == "ask> /co" && shown[first - 1].hasPrefix("m"), "the input, then the status")
+        #expect(shown[first - 3] == "ask> /co" && shown[first - 2].hasPrefix("m"), "the input, then the status")
+        #expect(shown[first - 1].isEmpty)
         #expect(shown[first + 1].hasPrefix("job-2"))
-        #expect(first == height - 2 && cursor.row == first - 2)
+        #expect(first == height - 2 && cursor.row == first - 3)
     }
 
     @Test func `a full runners list and the picker together still leave the transcript a row`() {

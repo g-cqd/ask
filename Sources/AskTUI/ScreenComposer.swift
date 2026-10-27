@@ -113,8 +113,8 @@ public struct ScreenComposer: Sendable {
         let ruleRows = state.separator && rows >= 6 ? 2 : 0
         let upperRuleRows = ruleRows / 2
         let strip = RunnerStrip(
-            state, available: Swift.max(0, rows - promptRows - statusRows - 1), columns: columns)
-        let panel = strip.lines
+            state, available: Swift.max(0, rows - promptRows - statusRows - ruleRows - 2), columns: columns)
+        let panel = strip.lines.isEmpty ? [] : [Line(text: "", style: .default)] + strip.lines
         let status = Self.status(for: state, input: editor.indicator, columns: columns)
         let pickerRows = rows - promptRows - statusRows - ruleRows - panel.count - 1
         let pickerLines = Self.pickerLines(for: state, columns: columns, rows: pickerRows)
@@ -132,7 +132,7 @@ public struct ScreenComposer: Sendable {
             promptTop: editor.top, prompt: editor.layout
         )
         .withPicker(state: state, firstRow: transcriptRows + upperRuleRows + 1, rows: pickerRows)
-        geometry.placeStrip(strip, firstRow: rows - panel.count)
+        geometry.placeStrip(strip, firstRow: rows - strip.lines.count)
         geometry.placeSidebar(sidebar, columns: columns)
         frames?.store(geometry)
 

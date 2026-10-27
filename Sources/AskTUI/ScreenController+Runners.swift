@@ -1,6 +1,15 @@
 /// What is running beside the conversation: the status line counts it, and a click on the count or `/tasks` opens the list.
 extension ScreenController {
-    mutating func setRunners(_ list: [RunnerInfo]) {
+    mutating func setRunners(_ list: [RunnerInfo], at instant: ContinuousClock.Instant = .now) {
+        var progress: [String: BlockProgress] = [:]
+        for runner in list where runner.kind == .job && runner.state.isActive {
+            var clock =
+                state.runnerProgress[runner.id]
+                ?? BlockProgress(at: runner.startedAt ?? instant, spinner: options.spinner)
+            clock.sampled = instant
+            progress[runner.id] = clock
+        }
+        state.runnerProgress = progress
         state.runners = list
         if list.isEmpty { state.runnersOpen = false }
         if let id = state.stripSelection, !list.contains(where: { $0.id == id }) { state.stripSelection = nil }
