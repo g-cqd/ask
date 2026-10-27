@@ -35,6 +35,8 @@ extension ScreenController {
 
     mutating func endRun() -> [Effect] {
         state.running = false
+        state.abortArmedAt = nil
+        state.abortArmedAction = nil
         acceptsInput = false
         if returningInput {
             let texts = pending.map(\.text) + (state.editor.text.isEmpty ? [] : [state.editor.text])

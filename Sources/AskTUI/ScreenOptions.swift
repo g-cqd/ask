@@ -35,6 +35,10 @@ public struct ScreenOptions: Sendable, Equatable {
     public var localizedDurations: Bool
     /// Which spinner style is used for progress and status indicators (`ui.spinner`).
     public var spinner: SpinnerStyle
+    /// Whether leaving a focused job lane automatically returns to main when the job ends (`ui.jobAutoReturnWhenFocused`).
+    public var jobAutoReturnWhenFocused: Bool
+    /// Whether aborting a turn requires two-press Ctrl+C confirmation (`ui.abortTurnRequiresConfirmation`).
+    public var abortTurnRequiresConfirmation: Bool
 
     /// The look before roadmap 0074: an `ask> ` prefix, no tint, no rule. What the screen's older tests were written against.
     public static let legacy = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
@@ -44,7 +48,8 @@ public struct ScreenOptions: Sendable, Equatable {
         scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20,
         sidebar: Bool = false, verbose: Bool = false, prompt: String = "", tint: Bool = true, separator: Bool = true,
         padding: Bool = true, lightBackground: Bool = false, localizedDurations: Bool = true,
-        spinner: SpinnerStyle = .line
+        spinner: SpinnerStyle = .line, jobAutoReturnWhenFocused: Bool = true,
+        abortTurnRequiresConfirmation: Bool = false
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -63,5 +68,7 @@ public struct ScreenOptions: Sendable, Equatable {
         self.lightBackground = lightBackground
         self.localizedDurations = localizedDurations
         self.spinner = spinner
+        self.jobAutoReturnWhenFocused = jobAutoReturnWhenFocused
+        self.abortTurnRequiresConfirmation = abortTurnRequiresConfirmation
     }
 }

@@ -7,9 +7,11 @@ extension ScreenController {
         swapLane()
         let result = change(&self)
         swapLane()
-        // The runner may have ended meanwhile: the lane is left, to main, with a notice.
+        // The runner may have ended meanwhile: the lane is left to main with a notice if auto-return is on.
         if let lane = state.lane, !state.runners.contains(where: { $0.id == lane.id }) {
-            leaveLane(notice: "\(lane.name) is no longer running; back to main.")
+            if options.jobAutoReturnWhenFocused {
+                leaveLane(notice: "\(lane.name) is no longer running; back to main.")
+            }
         }
         return result
     }

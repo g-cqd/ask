@@ -33,7 +33,9 @@ struct UISectionLookTests {
         )
     }
 
-    @Test(arguments: ["tint", "separator", "localizedDurations"])
+    @Test(arguments: [
+        "tint", "separator", "localizedDurations", "jobAutoReturnWhenFocused", "abortTurnRequiresConfirmation"
+    ])
     func `a value that is not on or off is refused by name`(key: String) {
         #expect(throws: (any Error).self) { try ui(#"{"\#(key)": "maybe"}"#) }
     }
@@ -54,6 +56,18 @@ struct UISectionLookTests {
         #expect(override.description == "spinner random")
         #expect(UISection.keys.contains("spinner"))
         #expect(base.layered(with: override).description == "tint off, spinner random")
+    }
+
+    @Test func `job safety settings are parsed layered and shown`() throws {
+        let base = try ui(#"{"jobAutoReturnWhenFocused":"on","abortTurnRequiresConfirmation":"off"}"#)
+        let override = try ui(#"{"jobAutoReturnWhenFocused":"off","abortTurnRequiresConfirmation":"on"}"#)
+        #expect(base.jobAutoReturnWhenFocused == true && base.abortTurnRequiresConfirmation == false)
+        #expect(!override.isEmpty)
+        #expect(base.layered(with: override) == override)
+        #expect(base.layered(with: UISection()) == base)
+        #expect(override.description == "jobAutoReturnWhenFocused off, abortTurnRequiresConfirmation on")
+        #expect(UISection.keys.contains("jobAutoReturnWhenFocused"))
+        #expect(UISection.keys.contains("abortTurnRequiresConfirmation"))
     }
 
     @Test func `an unknown spinner style is rejected`() {
