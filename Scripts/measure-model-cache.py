@@ -72,7 +72,7 @@ def sample(config, state, cwd):
             if not chunk:
                 break
             output += chunk
-            if b'ask> ' in output:
+            if "────".encode() in output:
                 return (time.monotonic() - started) * 1000
         raise RuntimeError('no prompt within 10 s; incomplete sample, not a latency; tail=%r' % output[-400:])
     finally:
