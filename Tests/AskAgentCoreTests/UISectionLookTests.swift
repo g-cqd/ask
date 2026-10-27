@@ -33,8 +33,16 @@ struct UISectionLookTests {
         )
     }
 
-    @Test(arguments: ["tint", "separator"])
+    @Test(arguments: ["tint", "separator", "localizedDurations"])
     func `a value that is not on or off is refused by name`(key: String) {
         #expect(throws: (any Error).self) { try ui(#"{"\#(key)": "maybe"}"#) }
+    }
+    @Test func `duration localization is parsed layered and shown`() throws {
+        let base = try ui(#"{"localizedDurations":"on","tint":"off"}"#)
+        let override = try ui(#"{"localizedDurations":"off"}"#)
+        #expect(!override.isEmpty)
+        #expect(override.description == "localizedDurations off")
+        #expect(UISection.keys.contains("localizedDurations"))
+        #expect(base.layered(with: override).description == "tint off, localizedDurations off")
     }
 }

@@ -10,9 +10,9 @@ struct BlockStatusLayoutTests {
             name: "bash", summary: String(repeating: "x", count: 80), status: .succeeded, output: "a\nb")
         let rows = ScreenComposer.lines(for: item, folded: true, columns: 50)
         let first = try #require(rows.first)
-        #expect(first.text.hasSuffix("00:00:00 · 2 lines · ✓"))
+        #expect(first.text.hasSuffix("2 lines · ✓"))
         #expect(UnicodeWidth.displayWidth(of: first.text) == 50)
-        #expect(first.text.contains("xxxx    00:00:00"))
+        #expect(first.text.contains("xxxx    2 lines"))
         #expect(rows.dropFirst().allSatisfy { !$0.text.contains("00:00:00") })
         #expect(rows.count > 1)
         #expect(UnicodeWidth.displayWidth(of: rows[1].text) == 50)
@@ -21,7 +21,7 @@ struct BlockStatusLayoutTests {
     @Test func `failure codes are numeric and success omits the code`() {
         let failed = Transcript.Item.tool(name: "bash", summary: "false", status: .failed("[exit 7]"), output: "")
         let rows = ScreenComposer.lines(for: failed, columns: 60)
-        #expect(rows.first?.text.hasSuffix("00:00:00 · ✗ (7)") == true)
+        #expect(rows.first?.text.hasSuffix("✗ (7)") == true)
         #expect(!rows.contains { $0.text.contains("[exit") })
     }
     @Test func `wide content and tiny widths keep source offsets and exclude metadata`() {

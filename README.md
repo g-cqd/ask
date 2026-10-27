@@ -96,7 +96,12 @@ in `config.json` to change the requested limit, for example
 
 Long output folds to one line you can open: click the line (or press Ctrl-T for thinking, Ctrl-O for tool output, Ctrl-G for code
 blocks longer than 20 lines, never more than half the screen) and it opens in place. `ui.thinking`, `ui.tools` and `ui.code` choose
-`"folded"` or `"open"` at the start; `ui.codeFoldLines` sets the length. A selection copies what is shown.
+`"folded"` or `"open"` at the start; `ui.codeFoldLines` sets the length. Elapsed status is hidden on model answers and for operations lasting one second or less.
+Longer tool and thinking blocks use localized units (for example, `1 hr, 40 min, 30 sec`);
+set `"ui": {"localizedDurations": "off"}` in configuration for a compact clock instead
+(`1:40:30`, `1:01`, or `2` seconds). Zero-valued units are omitted in localized mode.
+
+A selection copies what is shown.
 
 A click in the input puts the cursor there; a drag there selects text, a double click takes a word and a triple click a line; Shift with an arrow, Home or End selects from the keyboard; typing replaces a selection, Backspace deletes it and Ctrl-C copies it and Ctrl-X cuts it (with nothing selected, Ctrl-X clears the draft). The wheel over a long draft scrolls it.
 
