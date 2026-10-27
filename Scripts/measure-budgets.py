@@ -30,8 +30,9 @@ import importlib.util, json, math, os, pty, select, statistics, subprocess, sys,
 BINARY = sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask"
 RUNS = int(sys.argv[2]) if len(sys.argv) > 2 else 15
 
-# A diff need not write the already-blank cell after '>'; require the closing frame, not that byte.
-PROMPT = b"ask>"
+# The first input rule marks startup without depending on ui.prompt (roadmap 0074).
+# Require the closing frame too, not just the separator bytes.
+PROMPT = "────".encode()
 ISOLATED_CONFIG = tempfile.mkdtemp(prefix="ask-budget-config-")
 ISOLATED_STATE = tempfile.mkdtemp(prefix="ask-budget-state-")
 FRAME_END = b"\x1b[?2026l"
