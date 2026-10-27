@@ -45,16 +45,17 @@ extension AgentConversation {
             update(.notice("No sessions in this project yet.", isError: false))
             return
         }
-        update(.notice("Sessions (newest first). Choose with /resume NAME, PREFIX or PATH:", isError: false))
+        var lines = ["Sessions (newest first). Choose with /resume NAME, PREFIX or PATH:"]
         let currentPath = session.withLock { $0?.path }
         for item in listed.prefix(20) {
             let first =
                 SessionSummary(readingFrom: item.path)?.firstPrompt.map { Sessions.oneLine($0, limit: 60) } ?? ""
             let mark = item.path == currentPath ? " (current)" : ""
-            update(.notice("\(item.name)\(mark)  \(first)", isError: false))
+            lines.append("\(item.name)\(mark)  \(first)")
         }
         if listed.count > 20 {
-            update(.notice("Showing 20 of \(listed.count); ask sessions --limit N lists more.", isError: false))
+            lines.append("Showing 20 of \(listed.count); ask sessions --limit N lists more.")
         }
+        update(.notice(lines.joined(separator: "\n"), isError: false))
     }
 }
