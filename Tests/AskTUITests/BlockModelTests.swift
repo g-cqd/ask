@@ -116,7 +116,7 @@ struct BlockModelTests {
         let header = (0 ..< 14).first { rig.contentText(row: $0).contains("bash ls") }!
         rig.click(row: header, col: 3)
         #expect(!rig.controller.state.transcript.isFolded(0))
-        #expect((0 ..< 14).contains { rig.contentText(row: $0) == "   a" })
+        #expect((0 ..< 14).contains { rig.contentText(row: $0) == " a" })
     }
 
     @Test(arguments: [0, 1, 2])
@@ -139,7 +139,7 @@ struct BlockModelTests {
         var rig = PointerRig(columns: 40, rows: 16, options: ScreenOptions(foldTools: false), updates: updates)
         let header = (0 ..< 16).first { rig.contentText(row: $0).contains("bash ls") }!
         #expect(rig.contentText(row: header + 1) == "")
-        #expect(rig.contentText(row: header + 2) == "   a")
+        #expect(rig.contentText(row: header + 2) == " a")
         rig.click(row: header - 1 + offset, col: 39)
         #expect(rig.controller.state.transcript.isFolded(0))
     }
