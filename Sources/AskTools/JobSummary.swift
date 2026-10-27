@@ -2,9 +2,11 @@
 public struct JobSummary: Sendable, Equatable {
     public let id: String
     public let command: String
+    public let startedAt: ContinuousClock.Instant
 
-    public init(id: String, command: String) {
+    public init(id: String, command: String, startedAt: ContinuousClock.Instant) {
         self.id = id
         self.command = command
+        self.startedAt = startedAt
     }
 }

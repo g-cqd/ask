@@ -73,7 +73,7 @@ public final class JobTable: Sendable {
         jobs.withLock {
             $0.values.filter { $0.status == .running }
                 .sorted { Self.number($0.id) < Self.number($1.id) }
-                .map { JobSummary(id: $0.id, command: $0.command) }
+                .map { JobSummary(id: $0.id, command: $0.command, startedAt: $0.startedAt) }
         }
     }
 

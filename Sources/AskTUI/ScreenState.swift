@@ -33,6 +33,8 @@ public struct ScreenState: Sendable, Equatable {
     }
     /// Whether the runner strip is open below the input. It closes by itself when no runners remain.
     public var runnersOpen = false
+    /// Only active jobs have a progress clock. Runner snapshots preserve clocks by stable id.
+    var runnerProgress: [String: BlockProgress] = [:]
     /// The runner whose output the transcript shows, while one is focused; the main conversation waits inside it (roadmap 0062).
     var lane: LaneView?
     /// How many lanes were opened, so each one's transcript has revisions of its own.

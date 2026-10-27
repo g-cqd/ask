@@ -24,6 +24,8 @@ public final class Job: Sendable {
 
     public let id: String
     public let command: String
+    /// Monotonic launch time, shared with the screen rather than restarted when its list opens.
+    public let startedAt = ContinuousClock.now
     /// Where the whole output goes, if anywhere.
     let outputPath: String?
 

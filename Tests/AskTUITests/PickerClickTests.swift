@@ -124,9 +124,9 @@ struct PickerClickTests {
     @Test func `where the screen has room for fewer rows than the list holds, the row clicked is the match it shows`()
         throws
     {
-        // Twelve rows, a runners list open and a prompt of two lines: the list gets two rows of the three it could have, and the
-        // choice, the third match, must stay in view as the second of them.
-        var rig = rig("/", rows: 12)
+        // Thirteen rows, a runners list plus separator and a two-line prompt: two matches fit below the title.
+        // The third match must stay in view as the second of them.
+        var rig = rig("/", rows: 13)
         rig.controller.handle(.runners((1 ... 7).map { RunnerInfo(name: "job-\($0)", detail: "sleep \($0)") }))
         rig.controller.state.runnersOpen = true
         _ = rig.controller.handle(.paste("\nsecond"), pageRows: 9)
@@ -136,7 +136,7 @@ struct PickerClickTests {
         let picker = try #require(rig.controller.state.picker)
         #expect(picker.selected == 2 && rig.controller.state.editor.text == "/\nsecond")
         let chosen = picker.matches[2].label
-        let drawn = try #require((0 ..< 12).first { rig.text(row: $0).hasPrefix(chosen) }, "the choice is in view")
+        let drawn = try #require((0 ..< 13).first { rig.text(row: $0).hasPrefix(chosen) }, "the choice is in view")
         #expect(rig.text(row: drawn - 2).hasPrefix("commands"), "the title, then two rows: \(drawn)")
         let above = try #require(rig.text(row: drawn - 1).split(separator: " ").first.map(String.init))
         #expect(above == picker.matches[1].label, "the row above the choice shows the second match")

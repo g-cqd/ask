@@ -1,4 +1,5 @@
 internal import TerminalKitStyle
+internal import TerminalKitText
 
 /// The strip's rows as drawn, and which runner each row is, so the frame can tell a click what it landed on.
 struct RunnerStrip {
@@ -25,6 +26,11 @@ struct RunnerStrip {
             var text =
                 indent + runner.name + "  " + runner.detail.replacing("\n", with: " ") + " · " + runner.state.rawValue
             if item.hidden > 0 { text += " · \(item.hidden) hidden" }
+            if let progress = state.runnerProgress[runner.id] {
+                let duration = progress.duration(localized: state.blocks.localizedDurations)
+                let suffix = [duration, progress.indicator].compactMap { $0 }.joined(separator: " ")
+                text = Self.trailing(suffix, after: text, columns: columns)
+            }
             let chosen = runner.id == state.stripSelection
             lines.append(ScreenComposer.Line(text: text, style: chosen ? Style(bold: true) : Style(dim: true)))
             ids.append(runner.id)
@@ -32,5 +38,15 @@ struct RunnerStrip {
         if shown < rows.count {
             lines.append(ScreenComposer.Line(text: "… \(rows.count - shown) more", style: Style(dim: true)))
         }
+    }
+
+    /// Metadata keeps its right edge on narrow screens; text yields first, with the same four-cell gap as block headers.
+    private static func trailing(_ metadata: String, after text: String, columns: Int) -> String {
+        guard columns > 0 else { return "" }
+        let suffix = UnicodeWidth.displayWidth(of: metadata) + 5 <= columns ? metadata : String(metadata.suffix(1))
+        let suffixWidth = UnicodeWidth.displayWidth(of: suffix)
+        let prefix = ColumnSlicer.split(text, columns: 0 ..< Swift.max(0, columns - suffixWidth - 4)).selected
+        let gap = Swift.max(0, columns - UnicodeWidth.displayWidth(of: prefix) - suffixWidth)
+        return prefix + String(repeating: " ", count: gap) + suffix
     }
 }
