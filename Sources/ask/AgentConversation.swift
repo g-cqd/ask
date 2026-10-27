@@ -97,22 +97,23 @@ final class AgentConversation: Conversation {
             return updates
         }
         for item in updates { update(item) }
+        update(contextUpdate())
     }
 
     /// What the screen shows first for a resumed session: its conversation, then its usage so far, which the
     /// status line keeps adding to.
     func history() -> [ConversationUpdate] {
-        guard let tree = session.withLock({ $0?.tree }) else { return [] }
+        guard let tree = session.withLock({ $0?.tree }) else { return [contextUpdate()] }
         var updates: [ConversationUpdate] = []
         for step in SessionReplay.steps(tree.activeBranch()) {
             switch step {
                 case .prompt(let text): updates.append(.userPrompt(text))
                 case .event(let event):
-                    if let spent = event.usage { usage.withLock { $0.add(spent) } }
+                    recordUsage(event)
                     if let shown = Self.update(for: event) { updates.append(shown) }
             }
         }
-        return updates + [.status(usage.withLock { $0.compact })]
+        return updates + [.status(usage.withLock { $0.compact }), contextUpdate()]
     }
 
     func enqueue(_ text: String, id: Int, followUp: Bool) {
@@ -149,12 +150,10 @@ final class AgentConversation: Conversation {
 
     /// Shows an event on the screen and adds what it cost to the status line.
     func deliver(_ event: AgentEvent, to update: @Sendable (ConversationUpdate) -> Void) {
-        if let spent = event.usage {
-            let summary = usage.withLock { totals in
-                totals.add(spent)
-                return totals.compact
-            }
-            update(.status(summary))
+        if event.usage != nil {
+            recordUsage(event)
+            update(.status(usage.withLock { $0.compact }))
+            update(contextUpdate())
         }
         if let shown = Self.update(for: event) { update(shown) }
     }

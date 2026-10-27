@@ -21,6 +21,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case labelVariants([String])
     /// A short status for the status line, such as token usage.
     case status(String)
+    /// Latest measured context occupancy and model capacity, separate from cumulative token spend.
+    case context(String)
     /// Close the screen once the run that sent this has ended, so the caller can act on `exit`.
     case requestExit(ScreenExit)
     /// A queued message was persisted; remove its pending copy and show it in the conversation.

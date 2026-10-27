@@ -185,6 +185,7 @@ public struct ScreenController: Sendable {
                 state.label = first
                 state.labelVariants = forms
             case .status(let text): state.detail = text
+            case .context(let text): state.context = text
             case .runners(let list): setRunners(list)
             case .runnerOutput: break
             case .files(let list): return receive(files: list)
@@ -203,6 +204,7 @@ public struct ScreenController: Sendable {
                 state.transcript.removeAll()
                 clearSelection()
                 state.detail = ""
+                state.context = ""
                 state.scrollback = 0
             case .askApproval(let id, let question): ask(id: id, question: question)
             case .runEnded:
