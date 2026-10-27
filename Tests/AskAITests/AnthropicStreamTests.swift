@@ -61,6 +61,15 @@ struct AnthropicStreamTests {
             ])
     }
 
+    @Test func `a trailing data DONE frame is ignored without error`() throws {
+        let events = try decode([
+            frame("message_start", #"{"type":"message_start","message":{"id":"m","model":"claude","usage":{}}}"#),
+            frame("message_stop", #"{"type":"message_stop"}"#),
+            "data: [DONE]\n\n"
+        ])
+        #expect(events.count == 2)
+    }
+
     @Test func `a tool call streams its input as partial JSON`() throws {
         let events = try decode([
             frame(
