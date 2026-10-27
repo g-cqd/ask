@@ -117,9 +117,10 @@ Escape only navigates and never aborts a turn.
 Animated spinners accompany ongoing operations and lead the status line; set
 `"ui": {"spinner": "braille"}` (or `braillefull`, `braillequarter`, `snake`, `line`, `dot`, `star`, `random`)
 to customize the animation style. Each spinner frame strictly occupies 1 column. In the status line,
-running operations show the spinner in bold white when sandboxed or yellow when unsandboxed; idle sessions
-display `!` in yellow when unsandboxed or omit the indicator when sandboxed. Ongoing jobs are displayed at
-the end of the status line.
+running operations show the spinner in white when sandboxed or yellow when unsandboxed; idle sessions
+display `!` with the same sandbox color. `random` chooses a concrete animation per turn/tool/thinking block,
+not on every redraw. A random tool/thinking header and its status indicator share the same animation.
+Ongoing jobs are displayed at the end of the status line.
 
 A selection copies what is shown.
 

@@ -58,18 +58,15 @@ terminal, service authorization and billing acceptance are different evidence le
 
 1. Finish semantic job-name investigation, explicitly comparing Foundation Models'
    ordinary and content-tagging use cases. No naming implementation is claimed.
-2. Resolve the idle `!` fallback mismatch and random status-spinner lifetime. Tool/job
-   spinners choose once per operation; status currently resolves random on each render.
-3. Port sibling Copilot pricing refresh and usage/quota UI where intended; independently
+2. Port sibling Copilot pricing refresh and usage/quota UI where intended; independently
    validate live units/headers/visuals. Headers do not establish VS Code billing parity.
-4. Compare native wait with harness semantics rather than calling existing process,
+3. Compare native wait with harness semantics rather than calling existing process,
    output, file and port waits exhaustive parity or a multi-job wait-all API.
-5. Investigate recorded duplicated Responses replies (`Hello!Hello!`, `testtest`).
-6. Integrate conditional pixel rules/palette support through TerminalKit.
-7. Migrate remaining obsolete ready/ask> historical probes, replace the misleading
+4. Integrate conditional pixel rules/palette support through TerminalKit.
+5. Migrate remaining obsolete ready/ask> historical probes, replace the misleading
    unit-test-only Copilot flow probe with real CLI integration, and establish budgets.
    Recent baseline/candidate startup cohorts both exceed 25 ms with high spread.
-8. A PTY rapid-click fix is not universal real-terminal acceptance; verify any remaining
+6. A PTY rapid-click fix is not universal real-terminal acceptance; verify any remaining
    reported thinking-fold symptom rather than assuming all variants have one cause.
 
 ## Other projects found in the same sessions
