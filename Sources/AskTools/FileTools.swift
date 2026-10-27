@@ -4,7 +4,7 @@ internal import Foundation
 
 /// The file tools, in the order they are offered to the model.
 public enum FileTools {
-    public static let all: [any Tool] = [ReadTool(), WriteTool(), EditTool()]
+    public static let all: [any Tool] = [ReadTool(), WriteTool()]
 
     /// The largest file read or edited: far above source files, low enough to bound memory.
     static let maximumFileBytes = 16 << 20

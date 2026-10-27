@@ -61,14 +61,47 @@ struct FileToolsTests {
         #expect(output.isError && output.content.contains("limit"))
     }
 
-    // MARK: - write
+    // MARK: - write (unified write + targeted replacement)
 
-    @Test func `write creates parent directories and replaces whole files`() async throws {
+    @Test func `write creates parent directories and replaces whole files with content or new_text`() async throws {
         let output = await WriteTool().run(input(#"{"path":"new/dir/b.txt","content":"hello"}"#), in: context)
         #expect(!output.isError)
         #expect(try contents("new/dir/b.txt") == "hello")
-        _ = await WriteTool().run(input(#"{"path":"new/dir/b.txt","content":"bye"}"#), in: context)
+        _ = await WriteTool().run(input(#"{"path":"new/dir/b.txt","new_text":"bye"}"#), in: context)
         #expect(try contents("new/dir/b.txt") == "bye")
+    }
+
+    @Test func `write executes targeted string replacement when old_text and new_text are provided`() async throws {
+        try file("unified.txt", "alpha beta gamma")
+        let output = await WriteTool()
+            .run(input(#"{"path":"unified.txt","old_text":"beta","new_text":"omega"}"#), in: context)
+        #expect(!output.isError)
+        #expect(try contents("unified.txt") == "alpha omega gamma")
+    }
+
+    @Test func `write with old_text requires new_text and enforces unique occurrence`() async throws {
+        try file("dup.txt", "token token token")
+        let missing = await WriteTool().run(input(#"{"path":"dup.txt","old_text":"token"}"#), in: context)
+        #expect(missing.isError && missing.content.contains("new_text"))
+        let multi = await WriteTool()
+            .run(input(#"{"path":"dup.txt","old_text":"token","new_text":"one"}"#), in: context)
+        #expect(multi.isError && multi.content.contains("3"))
+        let replaced = await WriteTool()
+            .run(input(#"{"path":"dup.txt","old_text":"token","new_text":"one","replace_all":true}"#), in: context)
+        #expect(!replaced.isError)
+        #expect(try contents("dup.txt") == "one one one")
+    }
+
+    @Test func `write rejects ambiguous modes without touching the file`() async throws {
+        try file("mixed.txt", "original")
+        for json in [
+            #"{"path":"mixed.txt","content":"overwrite","new_text":"other"}"#,
+            #"{"path":"mixed.txt","content":"overwrite","old_text":"original","new_text":"edit"}"#
+        ] {
+            let result = await WriteTool().run(input(json), in: context)
+            #expect(result.isError)
+            #expect(try contents("mixed.txt") == "original")
+        }
     }
 
     // MARK: - edit
@@ -108,6 +141,6 @@ struct FileToolsTests {
 
     @Test func `the tools register together under distinct names`() throws {
         let registry = try ToolRegistry(FileTools.all)
-        #expect(registry.definitions.map(\.name) == ["read", "write", "edit"])
+        #expect(registry.definitions.map(\.name) == ["read", "write"])
     }
 }
