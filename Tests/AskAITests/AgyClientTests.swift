@@ -39,7 +39,7 @@ struct AgyClientTests {
                 == "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse")
         func values(_ name: String) -> [String] { sent.headers.filter { $0.name == name }.map(\.value) }
         #expect(values("authorization") == ["Bearer at-1"])
-        #expect(values("user-agent") == ["ask/0 (Antigravity subscription connector)"])
+        #expect(values("user-agent") == ["antigravity/cli/1.4.0 ask/0 (Antigravity subscription connector)"])
         #expect(values("accept") == ["text/event-stream"] && values("content-type") == ["application/json"])
     }
 

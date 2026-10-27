@@ -13,7 +13,7 @@ struct AgyRequestEncoderTests {
         let root = try AgyEncoderFixtures.encode(AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")]))
         #expect(root["project"].string == "proj-1" && root["requestId"].string == "req-1")
         #expect(root["model"].string == "gemini-3-flash" && root["userPromptId"].string == "prompt-1")
-        #expect(root["userAgent"].string == "ask/0 (Antigravity subscription connector)")
+        #expect(root["userAgent"].string == "antigravity/cli/1.4.0 ask/0 (Antigravity subscription connector)")
         #expect(root["requestType"].string == "agent")
     }
 
