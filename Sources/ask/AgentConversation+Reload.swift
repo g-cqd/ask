@@ -20,7 +20,12 @@ extension AgentConversation {
                 group.addTask {
                     for await list in jobs.changes() {
                         update(
-                            .runners(list.map { RunnerInfo(name: $0.id, detail: $0.command, startedAt: $0.startedAt) }))
+                            .runners(
+                                list.map {
+                                    RunnerInfo(
+                                        name: "[#" + $0.displayID + "]", detail: $0.command, id: $0.id,
+                                        startedAt: $0.startedAt)
+                                }))
                     }
                 }
                 if let startup {

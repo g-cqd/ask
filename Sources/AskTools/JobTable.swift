@@ -10,6 +10,7 @@ internal import Synchronization
 public final class JobTable: Sendable {
     private let jobs = Mutex<[String: Job]>([:])
     private let counter = Atomic<Int>(0)
+    private let displayIDs = Mutex(JobDisplayIDs())
     private let observers = Mutex<[Int: AsyncStream<[JobSummary]>.Continuation]>([:])
     private let nextObserver = Atomic<Int>(0)
     /// Stops the jobs' groups if ask is killed, which nothing in ask can observe (ADR-0079).
@@ -46,7 +47,8 @@ public final class JobTable: Sendable {
         let path = context.outputDirectory.map { $0 + "/\(filePrefix)-\(number).log" }
         let job = Job.start(
             Job.Launch(
-                id: id, command: command, workingDirectory: context.workingDirectory, outputPath: path,
+                id: id, displayID: displayIDs.withLock { $0.next() }, command: command,
+                workingDirectory: context.workingDirectory, outputPath: path,
                 keepsInputOpen: keepsInputOpen, keeping: keeping, sandbox: context.sandbox, watchdog: watchdog,
                 environment: context.commandEnvironment.filtered(environment)),
             observe: observe)
@@ -61,7 +63,11 @@ public final class JobTable: Sendable {
     }
 
     /// The job named `id`.
-    func job(_ id: String) -> Job? { jobs.withLock { $0[id] } }
+    func job(_ id: String) -> Job? {
+        jobs.withLock { jobs in
+            jobs[id] ?? jobs.values.first { $0.displayID == (id.hasPrefix("#") ? String(id.dropFirst()) : id) }
+        }
+    }
 
     /// The jobs still running, by name.
     public var running: [String] {
@@ -73,7 +79,7 @@ public final class JobTable: Sendable {
         jobs.withLock {
             $0.values.filter { $0.status == .running }
                 .sorted { Self.number($0.id) < Self.number($1.id) }
-                .map { JobSummary(id: $0.id, command: $0.command, startedAt: $0.startedAt) }
+                .map { JobSummary(id: $0.id, command: $0.command, startedAt: $0.startedAt, displayID: $0.displayID) }
         }
     }
 
