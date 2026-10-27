@@ -33,6 +33,8 @@ public struct ScreenOptions: Sendable, Equatable {
     public var lightBackground: Bool
     /// Locale-aware elapsed units (`ui.localizedDurations`); off uses a compact clock.
     public var localizedDurations: Bool
+    /// Which spinner style is used for progress and status indicators (`ui.spinner`).
+    public var spinner: SpinnerStyle
 
     /// The look before roadmap 0074: an `ask> ` prefix, no tint, no rule. What the screen's older tests were written against.
     public static let legacy = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
@@ -41,7 +43,8 @@ public struct ScreenOptions: Sendable, Equatable {
         mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
         scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20,
         sidebar: Bool = false, verbose: Bool = false, prompt: String = "", tint: Bool = true, separator: Bool = true,
-        padding: Bool = true, lightBackground: Bool = false, localizedDurations: Bool = true
+        padding: Bool = true, lightBackground: Bool = false, localizedDurations: Bool = true,
+        spinner: SpinnerStyle = .line
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -59,5 +62,6 @@ public struct ScreenOptions: Sendable, Equatable {
         self.padding = padding
         self.lightBackground = lightBackground
         self.localizedDurations = localizedDurations
+        self.spinner = spinner
     }
 }

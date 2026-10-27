@@ -45,4 +45,18 @@ struct UISectionLookTests {
         #expect(UISection.keys.contains("localizedDurations"))
         #expect(base.layered(with: override).description == "tint off, localizedDurations off")
     }
+
+    @Test func `spinner preference is parsed, layered and shown`() throws {
+        let base = try ui(#"{"spinner": "braille", "tint": "off"}"#)
+        let override = try ui(#"{"spinner": "random"}"#)
+        #expect(base.spinner == .braille)
+        #expect(override.spinner == .random)
+        #expect(override.description == "spinner random")
+        #expect(UISection.keys.contains("spinner"))
+        #expect(base.layered(with: override).description == "tint off, spinner random")
+    }
+
+    @Test func `an unknown spinner style is rejected`() {
+        #expect(throws: (any Error).self) { try ui(#"{"spinner": "bouncing_ball"}"#) }
+    }
 }

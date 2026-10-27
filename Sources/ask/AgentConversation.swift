@@ -228,7 +228,8 @@ func runInteractive(
         let sessionPicker = pickSession ? conversation.sessionPickerOpening() : []
         let exit = try await runInteractiveScreen(
             conversation: conversation, label: settings.label,
-            history: [.labelVariants(settings.labelVariants)] + conversation.history() + sessionPicker,
+            history: [.labelVariants(settings.labelVariants), .sandboxActive(!settings.sandbox.isUnrestricted)]
+                + conversation.history() + sessionPicker,
             notices: startupNotices + settings.description,
             details: details + settings.detailLines + ProjectInstructions.describe(files),
             options: settings.screenOptions, beforeSignalExit: { jobs.terminateAllNow() })

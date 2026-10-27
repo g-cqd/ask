@@ -7,6 +7,7 @@ extension RunSettings {
     var screenOptions: ScreenOptions {
         let ui = configuration.ui.value
         let defaults = ScreenOptions()
+        let spinnerStyle = ui.spinner.flatMap { SpinnerStyle(rawValue: $0.rawValue) } ?? defaults.spinner
         return ScreenOptions(
             mouse: ui.mouse ?? defaults.mouse, copyOnSelect: ui.copyOnSelect ?? defaults.copyOnSelect,
             foldTools: ui.foldTools ?? defaults.foldTools,
@@ -16,7 +17,8 @@ extension RunSettings {
             verbose: verbose, prompt: ui.prompt ?? defaults.prompt, tint: ui.tint ?? defaults.tint,
             separator: ui.separator ?? defaults.separator, padding: ui.padding ?? defaults.padding,
             lightBackground: Self.isLightBackground,
-            localizedDurations: ui.localizedDurations ?? defaults.localizedDurations)
+            localizedDurations: ui.localizedDurations ?? defaults.localizedDurations,
+            spinner: spinnerStyle)
     }
 
     /// Whether the terminal says its background is light, from `COLORFGBG` (`15;0` is light on dark): the background is the last number, and 7 or
