@@ -9,11 +9,8 @@ public import AskAgentCore
 public struct NarrowSandboxTool: Tool {
     public let definition = ToolDefinition(
         name: "narrow_sandbox",
-        description: """
-            Narrow the sandbox for every later call in this session, with the same fields as a call's sandbox argument. \
-            Stop running jobs first. Asking for more than now, or reset: true to restore the run's own sandbox, \
-            needs the user's approval. Later calls stay bounded by the run's policy even after approval.
-            """
+        description:
+            "Narrow later calls with sandbox, or restore the run policy with reset: true. Widening needs approval; stop jobs first."
     ) {
         SandboxRequest.property
         ToolProperty.boolean("reset").optional
