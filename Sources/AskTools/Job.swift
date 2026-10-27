@@ -47,6 +47,8 @@ public final class Job: Sendable {
         var task: Task<Void, Never>?
         var waiters: [Int: Waiter] = [:]
         var nextWaiter = 0
+        var outputObservers: [Int: AsyncStream<Void>.Continuation] = [:]
+        var nextOutputObserver = 0
     }
 
     /// How much recent output seeds a new waiter, so a text split across a report is still found.
@@ -150,6 +152,7 @@ public final class Job: Sendable {
                 if (try? file.writeAll(written)) == nil { state.fileBytes = Self.maximumFileBytes }
                 state.fileBytes += written.count
             }
+            for observer in state.outputObservers.values { observer.yield(()) }
             var met: [CheckedContinuation<WaitResult, Never>] = []
             for (key, var waiter) in state.waiters {
                 guard let needle = waiter.needle else { continue }
@@ -169,15 +172,18 @@ public final class Job: Sendable {
 
     private func finish(_ ending: JobStatus) {
         if let pid = state.withLock({ $0.pid }) { watchdog?.release(pid) }
-        let waiting: [CheckedContinuation<WaitResult, Never>] = state.withLock { state in
+        let (waiting, observers) = state.withLock { state in
             state.status = ending
+            let observers = Array(state.outputObservers.values)
+            state.outputObservers.removeAll()
             state.input?.finish()
             state.input = nil
             if let file = state.file { _ = try? file.close() }
             state.file = nil
             defer { state.waiters.removeAll() }
-            return state.waiters.values.map(\.continuation)
+            return (state.waiters.values.map(\.continuation), observers)
         }
+        for observer in observers { observer.finish() }
         for continuation in waiting { continuation.resume(returning: .ended) }
     }
 
