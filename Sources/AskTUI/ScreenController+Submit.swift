@@ -25,6 +25,11 @@ extension ScreenController {
                     case "verbose": return toggleVerbose()
                     case "follow-up": return submitPrompt(arguments, followUp: true)
                     default:
+                        if command.takesChoices, arguments.isEmpty {
+                            state.editor.paste("/\(name) ")
+                            pickerScreenRows = Swift.max(pickerScreenRows, Self.pickerMinimumRows)
+                            return refreshPicker(screenRows: pickerScreenRows, at: .now)
+                        }
                         guard !busy() else { return [] }
                         return begin(.runCommand(name: name, arguments: arguments))
                 }
