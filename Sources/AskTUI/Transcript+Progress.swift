@@ -2,7 +2,11 @@ extension Transcript {
     /// Cancellation can end a run without delivering a result for its last tool.
     mutating func finishRunProgress() {
         finishThinking()
-        while items.contains(where: { if case .tool(_, _, .running, _) = $0 { true } else { false } }) {
+        while items.indices.contains(where: {
+            guard !jobBlocks.values.contains($0) else { return false }
+            if case .tool(_, _, .running, _) = items[$0] { return true }
+            return false
+        }) {
             finishTool(.failed("run ended without a tool result"))
         }
     }

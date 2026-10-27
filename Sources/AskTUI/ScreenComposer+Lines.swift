@@ -90,6 +90,13 @@ extension ScreenComposer {
                         status: progress?.ended == nil && progress != nil ? .running : .succeeded,
                         output: kept, progress: progress, localizedDurations: style.localizedDurations), block: block,
                     width: width, inset: inset, style: look)
+            case .jobEnded(let label, let status, let lines):
+                return blockHeader(
+                    label,
+                    metadata: blockMetadata(
+                        status: status, output: "", progress: progress,
+                        localizedDurations: style.localizedDurations, lineCount: lines),
+                    block: block, width: width, inset: inset, style: Style(dim: true, italic: true))
             case .notice(let text, let isError):
                 return rows(text, style: isError ? Style(fg: .indexed(1)) : Style(dim: true))
         }

@@ -19,13 +19,18 @@ public struct Transcript: Sendable, Equatable {
         /// What the model reasoned before answering, kept so it can be opened (ADR-0046: `ui.thinking`).
         case thinking(String)
         case notice(String, isError: Bool)
+        /// A completed background job, with status metadata drawn at the right edge.
+        case jobEnded(label: String, status: ToolStatus, lines: Int)
     }
 
-    public private(set) var items: [Item] = []
+    public internal(set) var items: [Item] = []
     /// Bumped whenever an item changes, so layouts can cache each item's wrapped lines.
     public internal(set) var revisions: [Int] = []
     private var nextRevision = 0
     var progress: [Int: BlockProgress] = [:]
+    var toolBlocks: [String: Int] = [:]
+    var jobBlocks: [String: Int] = [:]
+    var completedJobs: Set<String> = []
     /// Which tool blocks the user opened or closed, over the default for the kind (TerminalKit roadmap 0018).
     private(set) var folds = FoldStore<Int>()
     /// Whether a tool block with output starts folded, unless the user chose (ADR-0046: `ui.tools`).
@@ -55,6 +60,9 @@ public struct Transcript: Sendable, Equatable {
         items.removeAll(keepingCapacity: true)
         revisions.removeAll(keepingCapacity: true)
         progress.removeAll(keepingCapacity: true)
+        toolBlocks.removeAll(keepingCapacity: true)
+        jobBlocks.removeAll(keepingCapacity: true)
+        completedJobs.removeAll(keepingCapacity: true)
         folds.clearChoices()
         codeFolds.clearChoices()
     }
@@ -79,22 +87,33 @@ public struct Transcript: Sendable, Equatable {
         }
     }
 
-    public mutating func startTool(name: String, summary: String, at now: ContinuousClock.Instant = .now) {
+    public mutating func startTool(
+        name: String, summary: String, at now: ContinuousClock.Instant = .now, id: String? = nil
+    ) {
         append(.tool(name: name, summary: summary, status: .running, output: ""))
         progress[items.count - 1] = BlockProgress(at: now, spinner: spinnerStyle)
+        if let id { toolBlocks[id] = items.count - 1 }
     }
 
     /// Ends the most recent running tool, keeping what it returned.
-    public mutating func finishTool(_ status: ToolStatus, output: String = "", at now: ContinuousClock.Instant = .now) {
+    public mutating func finishTool(
+        _ status: ToolStatus, output: String = "", at now: ContinuousClock.Instant = .now,
+        id: String? = nil, backgroundJob: String? = nil
+    ) {
         guard
-            let index = items.lastIndex(where: {
-                if case .tool(_, _, .running, _) = $0 { return true }
-                return false
-            }), case .tool(let name, let summary, _, _) = items[index]
+            let index = id.flatMap({ toolBlocks[$0] })
+                ?? (id == nil
+                    ? items.indices.last(where: {
+                        guard !jobBlocks.values.contains($0) else { return false }
+                        if case .tool(_, _, .running, _) = items[$0] { return true }
+                        return false
+                    }) : nil),
+            case .tool(let name, let summary, _, _) = items[index]
         else { return }
         finishProgress(at: index, now: now)
         items[index] = .tool(name: name, summary: summary, status: status, output: Self.kept(output))
         revisions[index] = bump()
+        if let backgroundJob { jobBlocks[backgroundJob] = index }
     }
 
     /// The output without its trailing line feeds, and at most ``outputLineLimit`` lines, with the cut said.
@@ -161,7 +180,7 @@ public struct Transcript: Sendable, Equatable {
 
     public mutating func addNotice(_ text: String, isError: Bool) { append(.notice(text, isError: isError)) }
 
-    private mutating func append(_ item: Item) {
+    mutating func append(_ item: Item) {
         finishThinking()
         items.append(item)
         if case .thinking = item { progress[items.count - 1] = BlockProgress(at: .now, spinner: spinnerStyle) }

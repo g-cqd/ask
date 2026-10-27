@@ -10,6 +10,7 @@ extension Transcript.Item {
     func contentText(folded: Bool) -> String {
         switch self {
             case .user(let text), .assistant(let text), .notice(let text, _): return text
+            case .jobEnded(let label, _, _): return label
             case .thinking(let text):
                 let body = Transcript.kept(text)
                 let header = Self.thinkingHeader(body: body, folded: folded)

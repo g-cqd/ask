@@ -38,6 +38,9 @@ public protocol Conversation: Sendable {
     /// Watches the focused runner until cancelled. Updates replace its bounded output snapshot, not the main transcript.
     func watchRunnerOutput(_ id: String, update: @escaping @Sendable (String) -> Void) -> Task<Void, Never>
 
+    /// Watches a yielded process without consuming its model-facing unread output.
+    func watchJob(_ id: String, update: @escaping @Sendable (JobUpdate) -> Void) -> Task<Void, Never>
+
     /// Starts anything that reports on its own while the screen is open, such as a new build appearing, until the
     /// returned task is cancelled. Nil when there is nothing to watch.
     func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>?
@@ -77,6 +80,11 @@ extension Conversation {
     /// A conversation without live runners supplies its one snapshot.
     public func watchRunnerOutput(_ id: String, update: @escaping @Sendable (String) -> Void) -> Task<Void, Never> {
         Task { update(await runnerOutput(id)) }
+    }
+
+    /// A conversation without process jobs has no snapshots to send.
+    public func watchJob(_ id: String, update: @escaping @Sendable (JobUpdate) -> Void) -> Task<Void, Never> {
+        Task {}
     }
 
     /// Nothing to watch.
