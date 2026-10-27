@@ -73,7 +73,10 @@ extension ScreenComposer {
                     name: name, summary: summary, status: status, output: output, folded: folded)
                 let gap = style.padded && !folded && !output.isEmpty ? [Line(text: "", style: .default)] : []
                 return blockHeader(
-                    header, metadata: blockMetadata(status: status, output: output, progress: progress),
+                    header,
+                    metadata: blockMetadata(
+                        status: status, output: output, progress: progress, localizedDurations: style.localizedDurations
+                    ),
                     block: block, width: width, inset: inset, style: look) + gap
                     + (folded
                         ? [] : body(of: output, block: block, width: width, inset: inset, style: Style(dim: true)))
@@ -85,7 +88,8 @@ extension ScreenComposer {
                     folded || kept.isEmpty ? header : kept,
                     metadata: blockMetadata(
                         status: progress?.ended == nil && progress != nil ? .running : .succeeded,
-                        output: kept, progress: progress), block: block, width: width, inset: inset, style: look)
+                        output: kept, progress: progress, localizedDurations: style.localizedDurations), block: block,
+                    width: width, inset: inset, style: look)
             case .notice(let text, let isError):
                 return rows(text, style: isError ? Style(fg: .indexed(1)) : Style(dim: true))
         }

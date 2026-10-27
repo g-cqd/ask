@@ -92,6 +92,6 @@ public struct ScreenState: Sendable, Equatable {
         promptPrefix = options.prompt
         separator = options.separator
         theme = ScreenTheme(tinted: options.tint, light: options.lightBackground)
-        blocks = BlockStyle(padded: options.padding, theme: theme)
+        blocks = BlockStyle(padded: options.padding, theme: theme, localizedDurations: options.localizedDurations)
     }
 }

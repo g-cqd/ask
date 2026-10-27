@@ -29,7 +29,7 @@ struct BlockModelTests {
     }
 
     private func texts(_ lines: [ScreenComposer.Line]) -> [String] {
-        lines.map { $0.text.replacing(/[ ]{4,}[0-9]+:[0-9]{2}:[0-9]{2} · .*/, with: "") }
+        lines.map { $0.text.replacing(/[ ]{4,}.*/, with: "") }
     }
 
     @Test func `an answer has a row of padding above and below and an inset of one column, and no tint`() {

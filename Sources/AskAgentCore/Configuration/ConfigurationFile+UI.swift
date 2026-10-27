@@ -22,7 +22,7 @@ extension ConfigurationFile {
                         section.sidebarOpen = name == "open"
                     case "prompt": section.prompt = try container.decode(String.self, forKey: key)
                     // @dl:accept -- on/off keys decoded like the folded/open ones beside them; the key tables are the data
-                    case "tint", "separator", "padding":
+                    case "tint", "separator", "padding", "localizedDurations":
                         let name = try container.decode(String.self, forKey: key)
                         guard name == "on" || name == "off" else {
                             throw BadValue(key: "ui." + key.stringValue, value: name)
@@ -30,7 +30,8 @@ extension ConfigurationFile {
                         switch key.stringValue {
                             case "tint": section.tint = name == "on"
                             case "separator": section.separator = name == "on"
-                            default: section.padding = name == "on"
+                            case "padding": section.padding = name == "on"
+                            default: section.localizedDurations = name == "on"
                         }
                     case "tools", "thinking", "code":
                         let name = try container.decode(String.self, forKey: key)

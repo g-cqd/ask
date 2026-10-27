@@ -80,7 +80,7 @@ struct PointerRig {
 
     /// The visible content before first-line status, for folding and pointer tests. Metadata has separate cell-exact tests.
     func contentText(row: Int) -> String {
-        text(row: row).replacing(/[ ]{4,}[0-9]+:[0-9]{2}:[0-9]{2} · .*/, with: "")
+        text(row: row).replacing(/[ ]{4,}.*/, with: "")
     }
 
     /// What a row shows, as text, trailing blanks dropped.

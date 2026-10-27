@@ -4,10 +4,13 @@ public struct BlockStyle: Sendable, Equatable {
     /// above are both tool calls or the user's messages.
     public var padded: Bool
     public var theme: ScreenTheme
+    /// Whether elapsed status uses locale-aware units instead of a compact clock.
+    public var localizedDurations: Bool
 
-    public init(padded: Bool = true, theme: ScreenTheme = ScreenTheme()) {
+    public init(padded: Bool = true, theme: ScreenTheme = ScreenTheme(), localizedDurations: Bool = true) {
         self.padded = padded
         self.theme = theme
+        self.localizedDurations = localizedDurations
     }
 
     /// The older look: text with no padding, no inset and no tint.

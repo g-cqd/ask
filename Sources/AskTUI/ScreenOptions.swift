@@ -31,6 +31,8 @@ public struct ScreenOptions: Sendable, Equatable {
     public var padding: Bool
     /// Whether the terminal's background is light, which picks the lighter tints; the composition root reads it from the environment.
     public var lightBackground: Bool
+    /// Locale-aware elapsed units (`ui.localizedDurations`); off uses a compact clock.
+    public var localizedDurations: Bool
 
     /// The look before roadmap 0074: an `ask> ` prefix, no tint, no rule. What the screen's older tests were written against.
     public static let legacy = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
@@ -39,7 +41,7 @@ public struct ScreenOptions: Sendable, Equatable {
         mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
         scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20,
         sidebar: Bool = false, verbose: Bool = false, prompt: String = "", tint: Bool = true, separator: Bool = true,
-        padding: Bool = true, lightBackground: Bool = false
+        padding: Bool = true, lightBackground: Bool = false, localizedDurations: Bool = true
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -56,5 +58,6 @@ public struct ScreenOptions: Sendable, Equatable {
         self.separator = separator
         self.padding = padding
         self.lightBackground = lightBackground
+        self.localizedDurations = localizedDurations
     }
 }
