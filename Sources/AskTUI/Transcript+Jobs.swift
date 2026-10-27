@@ -2,11 +2,12 @@ extension Transcript {
     /// Replace only the originating tool, never the newest unrelated tool. Fold choices remain keyed to its index.
     mutating func updateJob(_ job: JobUpdate, at instant: ContinuousClock.Instant = .now) {
         guard let index = jobBlocks[job.id], !completedJobs.contains(job.id),
-            case .tool(let name, let summary, _, _) = items[index]
+            case .tool(let name, let summary, _, _, let input) = items[index]
         else { return }
         let prefix = "[\(job.label)] "
         let title = summary.hasPrefix(prefix) ? summary : prefix + summary
-        items[index] = .tool(name: name, summary: title, status: job.status, output: Self.kept(job.output))
+        items[index] = .tool(
+            name: name, summary: title, status: job.status, output: Self.kept(job.output), fullInput: input)
         var clock = BlockProgress(at: job.startedAt, spinner: progress[index]?.spinner ?? spinnerStyle)
         clock.sampled = instant
         clock.ended = job.endedAt

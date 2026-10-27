@@ -6,10 +6,10 @@ extension ScreenComposer {
     /// and a blank row above when this block and the one before are both tool calls or the user's messages.
     static func lines(
         for item: Transcript.Item, folded: Bool = false, block: Int = 0, columns: Int, style: BlockStyle = .plain,
-        spacerAbove: Bool = false, progress: BlockProgress? = nil
+        spacerAbove: Bool = false, progress: BlockProgress? = nil, toolInput: ShownToolInput? = nil
     ) -> [Line] {
         let content = contentLines(
-            for: item, folded: folded, block: block, columns: columns, style: style, progress: progress)
+            for: item, folded: folded, block: block, columns: columns, style: style, context: (progress, toolInput))
         var result = framed(content, kind: item, style: style, spacerAbove: spacerAbove)
         switch item {
             case .tool, .thinking:
@@ -43,8 +43,11 @@ extension ScreenComposer {
     }
 
     private static func contentLines(
-        for item: Transcript.Item, folded: Bool, block: Int, columns: Int, style: BlockStyle, progress: BlockProgress?
+        for item: Transcript.Item, folded: Bool, block: Int, columns: Int, style: BlockStyle,
+        context: (progress: BlockProgress?, toolInput: ShownToolInput?)
     ) -> [Line] {
+        let progress = context.progress
+        let toolInput = context.toolInput
         let inset = style.inset
         let width = Swift.max(1, columns - 2 * inset)
         let margin = String(repeating: " ", count: inset)
@@ -62,15 +65,15 @@ extension ScreenComposer {
                 return (style.padded ? [] : [Line(text: "", style: .default)]) + rows(text, style: Style(bold: true))
             case .assistant(let text):
                 return rows(text, style: .default)
-            case .tool(let name, let summary, let status, let output):
-                let look: Style
-                switch status {
-                    case .running: look = Style(dim: true)
-                    case .succeeded: look = Style(fg: .indexed(2), dim: true)
-                    case .failed: look = Style(fg: .indexed(1))
-                }
+            case .tool(let name, let summary, let status, let output, let input):
+                let look = toolStatusStyle(status)
                 let header = Transcript.Item.toolHeader(
                     name: name, summary: summary, status: status, output: output, folded: folded)
+                if !folded, !input.isEmpty {
+                    return toolInputLines(
+                        item: item, input: toolInput?.text ?? ShownToolInput(input, isFolded: { _ in true }).text,
+                        block: block, columns: columns, style: style, progress: progress)
+                }
                 let gap = !folded && !output.isEmpty ? [Line(text: "", style: .default)] : []
                 return blockHeader(
                     header,
@@ -103,7 +106,7 @@ extension ScreenComposer {
     }
 
     /// A foldable block's body: hard lines 1 and on, drawn with the block's inset. What the block holds, not its own header line.
-    private static func body(of text: String, block: Int, width: Int, inset: Int, style: Style) -> [Line] {
+    static func body(of text: String, block: Int, width: Int, inset: Int, style: Style, firstLine: Int = 1) -> [Line] {
         guard !text.isEmpty else { return [] }
         let margin = String(repeating: " ", count: inset)
         return TextWrap.rows(text, width: width)
@@ -111,7 +114,7 @@ extension ScreenComposer {
                 Line(
                     text: margin + row.text, style: style,
                     source: Source(
-                        block: block, line: row.line + 1, offset: row.offset, col: inset, text: row.text))
+                        block: block, line: row.line + firstLine, offset: row.offset, col: inset, text: row.text))
             }
     }
 }

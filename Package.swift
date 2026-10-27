@@ -81,6 +81,8 @@ let package = Package(
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
         .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "ff380fad3d485619fb9aa4900021c34a7b40dcef"),
+        // Already resolved through AemiJSON; the linear-time engine also recognizes UI heredoc openers.
+        .package(url: "https://github.com/g-cqd/aemiregex.git", revision: "4ddbcd4ed15b56805528a3b90402556d027dd707"),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "785c6b25cb3f4dc16ca2334fd69428fae4ee0b01"),
@@ -149,7 +151,8 @@ let package = Package(
                 .product(name: "TerminalKitInput", package: "TerminalKit"),
                 .product(name: "TerminalKitRender", package: "TerminalKit"),
                 .product(name: "TerminalKitStyle", package: "TerminalKit"),
-                .product(name: "TerminalKitText", package: "TerminalKit")
+                .product(name: "TerminalKitText", package: "TerminalKit"),
+                .product(name: "AemiRegex", package: "aemiregex")
             ],
             path: "Sources/AskTUI",
             swiftSettings: packageSettings

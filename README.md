@@ -97,6 +97,10 @@ in `config.json` to change the requested limit, for example
 Long output folds to one line you can open: click the line (or press Ctrl-T for thinking, Ctrl-O for tool output, Ctrl-G for code
 blocks longer than 20 lines, never more than half the screen) and it opens in place. `ui.thinking`, `ui.tools` and `ui.code` choose
 `"folded"` or `"open"` at the start; `ui.codeFoldLines` sets the length. Elapsed status is hidden on model answers and for operations lasting one second or less.
+Expanded tool blocks show complete input above output, with compact target/parameter headers. Bash calls are presented as `shell` without changing their tool identity.
+Common literal heredocs above 40 payload lines keep the first 20 and a clickable omitted-count marker; Ctrl-G expands/refolds them independently of Ctrl-O. Unsupported shell forms remain visible.
+Input and output copy without section labels or indentation, including when replaying a session.
+
 Longer tool and thinking blocks use localized units (for example, `1 hr, 40 min, 30 sec`);
 set `"ui": {"localizedDurations": "off"}` in configuration for a compact clock instead
 (`1:40:30`, `1:01`, or `2` seconds). Zero-valued units are omitted in localized mode.

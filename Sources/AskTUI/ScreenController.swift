@@ -177,8 +177,8 @@ public struct ScreenController: Sendable {
             case .userPrompt(let text): state.transcript.addUser(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
             case .thinkingText(let text): state.transcript.addThinkingText(text)
-            case .toolStarted(let name, let summary, let id):
-                state.transcript.startTool(name: name, summary: summary, id: id)
+            case .toolStarted(let name, let summary, let id, let input):
+                state.transcript.startTool(name: name, summary: summary, id: id, fullInput: input)
             case .toolFinished(let status, let output, let id, let job):
                 state.transcript.finishTool(status, output: output, id: id, backgroundJob: job)
                 if let job { return [.watchJob(id: job)] }
