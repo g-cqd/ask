@@ -93,10 +93,11 @@ struct ChoicePickerControllerTests {
         #expect(screen.state.picker == nil && screen.state.editor.text == "/model ap")
     }
 
-    @Test func `a command typed in full without a choice still runs as it did`() {
+    @Test func `a command typed in full without a choice opens its choices`() {
         var screen = controller()
         type("/model", into: &screen)
-        #expect(press(Key.enter.rawValue, into: &screen) == [.runCommand(name: "model", arguments: "")])
+        #expect(press(Key.enter.rawValue, into: &screen) == [.listChoices(command: "model")])
+        #expect(screen.state.editor.text == "/model ")
     }
 
     @Test func `a list that has aged is asked for again`() {
