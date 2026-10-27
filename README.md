@@ -50,7 +50,7 @@ attached; add `:12-30` for a line range. The model reads the file itself, under 
 | `/resume` | searchable session picker; `/resume NAME`, a unique prefix or a path switches directly without leaving the screen |
 | `/tree` | list this session's prompts; `/tree N` goes back to before prompt N and puts it in the editor, so the next message branches from there ([ADR-0093](docs/adr/0093-a-session-is-navigated-by-going-back-to-before-one-of-its-prompts.md)) |
 | `/fork` | continue in a new session; `/fork N` does so from before prompt N. The original stays saved and untouched ([ADR-0094](docs/adr/0094-a-fork-continues-a-session-in-a-file-of-its-own-and-leaves-the-original-alone.md)) |
-| `/config` | show the settings and re-read the files |
+| `/config` | edit settings interactively (bare), or show them and re-read the files (`/config now`) |
 | `/compact` | summarise the conversation now |
 | `/quit` | leave |
 
