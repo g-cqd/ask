@@ -6,8 +6,9 @@ internal import Testing
 /// The decoder reproduces what a real Responses server sent, recorded byte for byte (`Tests/Fixtures/Responses`,
 /// captured from Ornith-1.5-9B on llama.cpp by `capture_responses_sse.py`).
 ///
-/// llama.cpp is the only Responses server recorded: deltas carry `item_id` but no `output_index`, the reply is
-/// `completed` even when cut at `max_output_tokens`, and `encrypted_content` is empty. OpenAI's own stream has not
+/// These llama.cpp recordings carry `item_id` but no `output_index`; the reply is `completed` even when cut at
+/// `max_output_tokens`, and `encrypted_content` is empty. ResponsesIdentityTests separately cover a sanitized
+/// rotating-ID Copilot recording. OpenAI's own stream has not
 /// been recorded (it needs an account); the shapes it adds are covered by hand-built frames in
 /// ``ResponsesStreamDecoderTests`` and checked against a live run when one is made (roadmap 0036).
 @Suite("Recorded Responses streams from llama.cpp decode to the same response, however they are delivered")

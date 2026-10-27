@@ -1,0 +1,30 @@
+event: message
+data: {"type":"response.created","response":{"id":"response-0","model":"gpt-6.1-sol","status":"in_progress"}}
+
+event: message
+data: {"type":"response.in_progress","response":{"id":"response-1","model":"gpt-6.1-sol","status":"in_progress"}}
+
+event: message
+data: {"type":"response.output_item.added","output_index":0,"item":{"type":"message","id":"message-2","role":"assistant","status":"in_progress","content":[]}}
+
+event: message
+data: {"type":"response.content_part.added","item_id":"message-3","output_index":0,"content_index":0,"part":{"type":"output_text","text":""}}
+
+event: message
+data: {"type":"response.output_text.delta","item_id":"message-4","output_index":0,"content_index":0,"delta":"AUD"}
+
+event: message
+data: {"type":"response.output_text.delta","item_id":"message-5","output_index":0,"content_index":0,"delta":"IT"}
+
+event: message
+data: {"type":"response.output_text.done","item_id":"message-6","output_index":0,"content_index":0,"text":"AUDIT"}
+
+event: message
+data: {"type":"response.content_part.done","item_id":"message-7","output_index":0,"content_index":0,"part":{"type":"output_text","text":"AUDIT"}}
+
+event: message
+data: {"type":"response.output_item.done","output_index":0,"item":{"type":"message","id":"message-8","role":"assistant","status":"completed","content":[{"type":"output_text","text":"AUDIT"}]}}
+
+event: message
+data: {"type":"response.completed","response":{"id":"response-9","model":"gpt-6.1-sol","status":"completed","output":[{"type":"message","id":"message-10","content":[{"type":"output_text","text":"AUDIT"}]}],"usage":{"input_tokens":12,"output_tokens":6,"total_tokens":18}}}
+
