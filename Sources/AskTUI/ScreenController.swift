@@ -207,8 +207,7 @@ public struct ScreenController: Sendable {
                 // A draft that is a command with a list opens it, without waiting for a key.
                 return refreshPicker(screenRows: pickerScreenRows, at: .now)
             case .promptAccepted(let id, let text):
-                pending.removeAll { $0.id == id }
-                state.transcript.addUser(text)
+                replaceQueuedPrompt(id: id, text: text)
             case .returnQueuedPrompts: returningInput = true
             case .clearConversation:
                 state.transcript.removeAll()
