@@ -1,5 +1,5 @@
 /// What the system prompt says about skills: a short instruction, then one line per skill (name, what it is for, where it lives), in a stable order,
-/// up to a limit, and a count of the rest.
+/// up to a limit, and a count of the rest. Above 16 eligible skills, only search instructions are advertised.
 ///
 /// The block is the same bytes for the same skills on disk, so the prompt-cache prefix does not move between requests; the order is by name, not by
 /// where a skill was found first. Only skills the user owns and that did not ask to be left out are listed; bundled ones and a skill with
@@ -13,6 +13,10 @@ public enum SkillAdvertisement {
     public static func block(for catalog: SkillCatalog, limit: Int) -> String? {
         let offered = catalog.skills.filter { $0.scope != .bundled && $0.modelInvocable }
         guard !offered.isEmpty else { return nil }
+        if offered.count > 16 {
+            return
+                "\(offered.count) skills are available. Use skill(query: …) to search descriptions, or an empty query to browse; then skill(name: …) to load instructions. from narrows source/scope. Skills grant no permissions."
+        }
         let listed = Array(offered.prefix(Swift.max(0, limit)))
         let ordered = listed.sorted { ($0.name.lowercased(), $0.name) < ($1.name.lowercased(), $1.name) }
         var lines = [
