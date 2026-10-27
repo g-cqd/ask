@@ -29,9 +29,7 @@ public struct SkillTool: ArgumentTool {
 
     public let definition = ToolDefinition(
         name: "skill",
-        description:
-            "Load a skill's full instructions by name, from the list in your instructions. Pass from to narrow where it is looked for: harness ids, "
-            + "separated by commas, or user or bundled; it cannot name a path."
+        description: "Load a skill's full instructions by name (optional 'from' narrows to harness/user/bundled)."
     ) {
         ToolProperty.string("name", minLength: 1)
         ToolProperty.string("from").optional

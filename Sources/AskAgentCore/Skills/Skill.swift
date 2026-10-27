@@ -24,14 +24,14 @@ public struct Skill: Sendable, Equatable {
     /// The SHA-256 of the file's bytes, so two copies of one skill are one.
     public let digest: String
 
-    /// The most characters of a description the model is told. A longer one is cut in the advertisement and whole in what the tool returns.
-    public static let advertisedDescriptionLimit = 1_024
+    /// The most characters of a description the model is told in initial prompt advertisement.
+    public static let advertisedDescriptionLimit = 80
 
     /// What the system prompt says about it: its name, what it is for, and where it is.
     public var advertisement: String {
         let text =
             description.count > Self.advertisedDescriptionLimit
-            ? String(description.prefix(Self.advertisedDescriptionLimit)) + "…" : description
+            ? String(description.prefix(Self.advertisedDescriptionLimit - 1)) + "…" : description
         return "- \(name): \(text) (\(file))"
     }
 }
