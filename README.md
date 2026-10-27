@@ -100,6 +100,9 @@ blocks longer than 20 lines, never more than half the screen) and it opens in pl
 Longer tool and thinking blocks use localized units (for example, `1 hr, 40 min, 30 sec`);
 set `"ui": {"localizedDurations": "off"}` in configuration for a compact clock instead
 (`1:40:30`, `1:01`, or `2` seconds). Zero-valued units are omitted in localized mode.
+The jobs list sits one blank row below status. Each active job shows its elapsed time
+and a single-cell spinner at the right edge; these keep updating while the model is idle.
+
 Set `"ui": {"jobAutoReturnWhenFocused": "off"}` to keep a finished job's focused output
 visible until Escape (default: `"on"`, return to main). Set
 `"ui": {"abortTurnRequiresConfirmation": "on"}` to require two consecutive Ctrl+C presses

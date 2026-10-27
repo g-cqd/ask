@@ -22,11 +22,13 @@ public struct RunnerInfo: Sendable, Equatable {
     public var name: String
     /// What it is doing, such as the command line. Line breaks are shown as spaces.
     public var detail: String
+    /// The owner's monotonic launch time; nil when the owner only supplies activity.
+    public var startedAt: ContinuousClock.Instant?
 
     /// A runner. An omitted id is its name, for jobs whose name is already stable.
     public init(
         name: String, detail: String, id: String? = nil, parentID: String? = nil, kind: Kind = .job,
-        state: State = .running
+        state: State = .running, startedAt: ContinuousClock.Instant? = nil
     ) {
         self.id = id ?? name
         self.parentID = parentID
@@ -34,5 +36,6 @@ public struct RunnerInfo: Sendable, Equatable {
         self.state = state
         self.name = name
         self.detail = detail
+        self.startedAt = startedAt
     }
 }

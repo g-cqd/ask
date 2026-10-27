@@ -32,7 +32,7 @@ struct Sidebar {
     init(_ state: ScreenState, columns: Int, rows: Int) {
         guard state.sidebarOpen, columns >= Self.minimumColumns, rows >= 3 else { return }
         width = Swift.min(32, Swift.max(20, columns / 4))
-        let tree = RunnerStrip(state, available: rows, columns: width, capacity: rows, requiresOpen: false)
+        let tree = RunnerStrip(state, available: rows, columns: width - 1, capacity: rows, requiresOpen: false)
         let lines = tree.lines.isEmpty ? [ScreenComposer.Line(text: "no runners", style: Style(dim: true))] : tree.lines
         let column = columns - width - 1
         cells = (0 ..< rows)

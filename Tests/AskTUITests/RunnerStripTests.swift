@@ -13,12 +13,13 @@ struct RunnerStripTests {
         rig.controller.state.runnersOpen = true
         rig.controller.state.editor.paste("draft")
         rig.draw()
-        #expect(rig.text(row: 10) == "two")
-        #expect(rig.text(row: 11) == "ask> draft")
-        #expect(rig.text(row: 12).contains("1 job"))
+        #expect(rig.text(row: 9) == "two")
+        #expect(rig.text(row: 10) == "ask> draft")
+        #expect(rig.text(row: 11).contains("1 job"))
+        #expect(rig.text(row: 12).isEmpty)
         #expect(rig.text(row: 13).hasPrefix("job-1"))
-        #expect(rig.controller.frame.promptRow == 11)
-        #expect(rig.controller.frame.statusRow == 12)
+        #expect(rig.controller.frame.promptRow == 10)
+        #expect(rig.controller.frame.statusRow == 11)
     }
 
     @Test func `Escape closes the strip and keeps the draft and the running turn`() {

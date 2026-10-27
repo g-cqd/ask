@@ -50,8 +50,9 @@ struct SidebarTests {
         let rig = rig()
         let divider = 100 - 25 - 1
         #expect(dividerColumn(rig) == divider && rig.controller.frame.transcriptColumns == divider)
-        #expect(rig.text(row: 0).contains("│ job-1  npm run dev ·"))
-        #expect(rig.text(row: 1).contains("│ job-2  tail -f log ·"))
+        #expect(rig.text(row: 0).contains("│ job-1  npm run dev"))
+        #expect(rig.text(row: 1).contains("│ job-2  tail -f log"))
+        #expect(rig.buffer[0, 99].character == "|" && rig.buffer[1, 99].character == "|")
         #expect(rig.controller.frame.sidebarIDs == ["job-1", "job-2"])
         for row in 0 ..< rig.composer.transcriptRows {
             #expect(rig.buffer[row, divider].character == "│", "row \(row)")
@@ -65,7 +66,8 @@ struct SidebarTests {
         rig.controller.state.runnersOpen = true
         rig.controller.state.editor.paste(String(repeating: "x", count: 90))
         rig.draw()
-        #expect(rig.text(row: 19 - 2).count > 76 || rig.text(row: 17).count > 76 || rig.text(row: 16).count > 76)
+        #expect(rig.text(row: rig.controller.frame.promptRow).count == 95)
+        #expect(rig.text(row: rig.controller.frame.stripFirstRow).count == 100)
         #expect(rig.buffer[rig.controller.frame.statusRow, 99].character == " " && rig.controller.frame.columns == 100)
     }
 
