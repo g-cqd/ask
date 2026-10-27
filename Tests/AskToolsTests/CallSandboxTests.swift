@@ -20,7 +20,8 @@ final class CallSandboxTests {
         let registry = try ToolRegistry([BashTool(), WriteTool()])
         let quoted = command.replacingOccurrences(of: "\"", with: "\\\"")
         return await registry.run(
-            name: "bash", input: world.input(#"{"command":"\#(quoted)","sandbox":\#(sandbox)}"#), in: world.context)
+            name: "bash", input: world.input(#"{"command":"\#(quoted)","sandbox":\#(sandbox),"shell":"/bin/bash"}"#),
+            in: world.context)
     }
 
     @Test func `a call narrowed to a subdirectory cannot write beside it, though the run could`() async throws {

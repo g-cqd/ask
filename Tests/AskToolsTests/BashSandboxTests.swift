@@ -18,7 +18,7 @@ struct BashSandboxTests {
     private func run(_ command: String, policy: SandboxPolicy? = nil) async -> ToolOutput {
         let context = ToolContext(workingDirectory: world.workspace, sandbox: policy ?? world.policy)
         let quoted = command.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
-        return await BashTool().run(world.input(#"{"command":"\#(quoted)"}"#), in: context)
+        return await BashTool().run(world.input(#"{"command":"\#(quoted)","shell":"/bin/bash"}"#), in: context)
     }
 
     @Test func `ordinary work succeeds and the output carries no sandbox note`() async {
@@ -138,7 +138,8 @@ struct BashSandboxTests {
         }
         let context = ToolContext(workingDirectory: world.workspace, sandbox: world.policy)
         async let output = tool.run(
-            world.input(#"{"command":"sleep 300 & echo \"child $!\"; wait","timeout_seconds":5}"#), in: context)
+            world.input(#"{"command":"sleep 300 & echo \"child $!\"; wait","timeout_seconds":5,"shell":"/bin/bash"}"#),
+            in: context)
         let child = try await started.child()
         try await clock.waitForSleepers(count: 1)
         clock.advance(by: .seconds(5))

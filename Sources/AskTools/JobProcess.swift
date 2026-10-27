@@ -15,9 +15,10 @@ enum JobProcess {
     /// `exec`s bash so the group teardown still reaches it. Without one, bash is started directly and costs nothing.
     static func configuration(_ launch: Job.Launch) -> Configuration {
         var arguments = ["-c", launch.command]
-        var executable = "/bin/bash"
+        let shell = launch.shell ?? "/bin/bash"
+        var executable = shell
         if !launch.sandbox.isUnrestricted {
-            arguments = SeatbeltProfile(launch.sandbox).arguments + ["/bin/bash"] + arguments
+            arguments = SeatbeltProfile(launch.sandbox).arguments + [shell] + arguments
             executable = "/usr/bin/sandbox-exec"
         }
         return Configuration(
