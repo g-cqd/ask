@@ -48,15 +48,13 @@ extension AgentConversation {
 
     private func list(_ outline: SessionOutline, update: @Sendable (ConversationUpdate) -> Void) {
         let lines = outline.lines()
-        update(
-            .notice(
-                "Prompts in this session (> is the path you are on). /tree N goes back to before prompt N and puts it back in the editor:",
-                isError: false))
-        for line in lines.suffix(Self.treeListingLimit) { update(.notice(line, isError: false)) }
+        var report = [
+            "Prompts in this session (> is the path you are on). /tree N goes back to before prompt N and puts it back in the editor:"
+        ]
+        report.append(contentsOf: lines.suffix(Self.treeListingLimit))
         if lines.count > Self.treeListingLimit {
-            update(
-                .notice(
-                    "Showing the last \(Self.treeListingLimit) of \(lines.count); every number works.", isError: false))
+            report.append("Showing the last \(Self.treeListingLimit) of \(lines.count); every number works.")
         }
+        update(.notice(report.joined(separator: "\n"), isError: false))
     }
 }
