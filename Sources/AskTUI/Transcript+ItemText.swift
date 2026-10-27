@@ -26,7 +26,7 @@ extension Transcript.Item {
     static func toolHeader(
         name: String, summary: String, status _: Transcript.ToolStatus, output _: String, folded _: Bool
     ) -> String {
-        "\(name) \(summary)".replacing("\n", with: " ")
+        "\(name) · \(summary)".replacing("\n", with: " ")
     }
 
     /// The one line a thinking block starts with, folded or open: `Thinking...`, which a click folds and opens.
