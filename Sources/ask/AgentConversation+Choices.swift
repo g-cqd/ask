@@ -11,6 +11,13 @@ extension AgentConversation {
             case "model":
                 let model = current.withLock { $0.settings.model }
                 return await ModelChoices.rows(current: model, environment: LaunchEnvironment.values)
+            case "config":
+                let user = configEditorPath(.user)
+                let project = configEditorPath(.project)
+                return [
+                    ChoiceRow(label: "user", detail: user.path, arguments: "user"),
+                    ChoiceRow(label: "project", detail: project.path, arguments: "project")
+                ]
             case "resume": return sessionRows()
             case "thinking": return await thinkingRows()
             case "login": return LoginChoices.rows()

@@ -8,13 +8,15 @@ import Testing
 /// that is not a command still goes to the model.
 @Suite("Slash commands run in the screen, and a prompt still goes to the model")
 struct SlashCommandsTests {
-    private let config = SlashCommand(name: "config", summary: "Show the settings.")
+    private let config = SlashCommand(name: "config", summary: "Edit settings interactively.", takesChoices: true)
 
-    private func submit(_ line: String, to controller: inout ScreenController) -> [ScreenController.Effect] {
+    private func submit(_ line: String, to controller: inout ScreenController, pageRows: Int = 10) -> [ScreenController
+        .Effect]
+    {
         for scalar in line.unicodeScalars {
-            _ = controller.handle(.key(KeyEvent(keyCode: scalar.value)), pageRows: 10)
+            _ = controller.handle(.key(KeyEvent(keyCode: scalar.value)), pageRows: pageRows)
         }
-        return controller.handle(.key(KeyEvent(keyCode: 0x0D)), pageRows: 10)
+        return controller.handle(.key(KeyEvent(keyCode: 0x0D)), pageRows: pageRows)
     }
 
     private func notices(_ controller: ScreenController) -> [String] {
@@ -43,7 +45,7 @@ struct SlashCommandsTests {
                     "/tasks  Show or hide the background jobs that are running.",
                     "/sidebar  Show or hide the runner sidebar (Ctrl+\\). Wide screens only.",
                     "/verbose  Show or hide details: the sandbox, the files read, builds that appeared.",
-                    "/config  Show the settings."
+                    "/config  Edit settings interactively."
                 ]
                 .joined(separator: "\n")
             ])
@@ -71,8 +73,14 @@ struct SlashCommandsTests {
     @Test func `a command that is not the screen's own waits for the running turn, as a prompt does`() {
         var controller = ScreenController(label: "m", commands: [config], options: .legacy)
         _ = submit("a prompt", to: &controller)
-        #expect(submit("/config", to: &controller).isEmpty)
+        #expect(submit("/config now", to: &controller).isEmpty)
         #expect(notices(controller).last?.contains("Ctrl+C") == true)
+    }
+
+    @Test func `a bare config command opens its scope choices`() {
+        var controller = ScreenController(label: "m", commands: [config], options: .legacy)
+        #expect(submit("/config", to: &controller, pageRows: 30) == [.listChoices(command: "config")])
+        #expect(controller.state.editor.text == "/config ")
     }
 
     @Test func `a path or a doubled slash is a prompt`() {

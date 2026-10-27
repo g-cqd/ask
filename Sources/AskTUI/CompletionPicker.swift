@@ -9,6 +9,8 @@ struct CompletionPicker: Sendable, Equatable {
         case files
         /// What a command offers after its name; `title` is the command's name.
         case choices(title: String)
+        /// The interactive configuration editor: a modal list whose rows are settings.
+        case config(scope: String, file: String)
 
         /// The word that titles the list.
         var title: String {
@@ -16,7 +18,12 @@ struct CompletionPicker: Sendable, Equatable {
                 case .commands: "commands"
                 case .files: "files"
                 case .choices(let name): name
+                case .config(let scope, _): "config · \(scope)"
             }
+        }
+
+        var isConfig: Bool {
+            if case .config = self { true } else { false }
         }
     }
 
@@ -27,7 +34,7 @@ struct CompletionPicker: Sendable, Equatable {
     /// The word the matches are for.
     let trigger: CompletionTrigger
     /// Every command that matches, best first.
-    private(set) var matches: [PickerRow]
+    var matches: [PickerRow]
     /// The chosen match.
     private(set) var selected = 0
     /// The first match the window shows.
