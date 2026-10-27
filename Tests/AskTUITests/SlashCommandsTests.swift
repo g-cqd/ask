@@ -36,14 +36,21 @@ struct SlashCommandsTests {
         #expect(!controller.state.running)
         #expect(
             notices(controller) == [
-                "/help  List commands. Ctrl+C: erase, stop, quit (twice). Ctrl+T/O/G fold. Enter steers.",
-                "/quit  Leave ask, stopping a running turn first.",
-                "/follow-up  Queue a message after the agent finishes: /follow-up TEXT.",
-                "/tasks  Show or hide the background jobs that are running.",
-                "/sidebar  Show or hide the runner sidebar (Ctrl+\\). Wide screens only.",
-                "/verbose  Show or hide details: the sandbox, the files read, builds that appeared.",
-                "/config  Show the settings."
+                [
+                    "/help  List commands. Ctrl+C: erase, stop, quit (twice). Ctrl+T/O/G fold. Enter steers.",
+                    "/quit  Leave ask, stopping a running turn first.",
+                    "/follow-up  Queue a message after the agent finishes: /follow-up TEXT.",
+                    "/tasks  Show or hide the background jobs that are running.",
+                    "/sidebar  Show or hide the runner sidebar (Ctrl+\\). Wide screens only.",
+                    "/verbose  Show or hide details: the sandbox, the files read, builds that appeared.",
+                    "/config  Show the settings."
+                ]
+                .joined(separator: "\n")
             ])
+        let transcript = controller.state.transcript
+        let rows = ScreenComposer.lines(in: transcript, at: 1, columns: 120, style: BlockStyle())
+        #expect(rows.count == 9, "seven help entries share just two padding rows")
+        #expect(rows.first?.text == "" && rows.last?.text == "")
     }
 
     @Test func `quit leaves, and works while a turn is running`() {
