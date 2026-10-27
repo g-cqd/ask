@@ -146,21 +146,20 @@ extension ScreenController {
         return [.copy(text)]
     }
 
-    /// Opens or closes the block whose header is on `row`, keeping the reader where they were. Returns whether a block was there.
-    /// A header is a tool's or thinking block's first line, or a long code block's placeholder or opening fence.
+    /// Toggles tools/thinking from any owned row, including padding; code folds still use their fence lines.
     private mutating func toggleFold(atRow row: Int) -> Bool {
-        // Only a header is the target: a click in a body is for selecting.
-        guard let source = frame.rows.provenance(atRow: row), state.transcript.items.indices.contains(source.block)
+        let source = frame.rows.provenance(atRow: row)
+        let owned = frame.foldBlocks.indices.contains(row) ? frame.foldBlocks[row] : nil
+        guard let block = owned ?? source?.block, state.transcript.items.indices.contains(block)
         else { return false }
-        let block = source.block
         let before =
             ScreenComposer.lines(
                 in: state.transcript, at: block, columns: frame.transcriptColumns, style: state.blocks
             )
             .count
-        if source.line == 0, state.transcript.isFoldable(block) {
+        if state.transcript.isFoldable(block) {
             state.transcript.toggleFold(block)
-        } else if let fence = state.transcript.codeFence(toggledByLine: source.line, at: block) {
+        } else if let source, let fence = state.transcript.codeFence(toggledByLine: source.line, at: block) {
             state.transcript.toggleCodeFold(fence, at: block)
         } else {
             return false

@@ -9,7 +9,15 @@ extension ScreenComposer {
         spacerAbove: Bool = false
     ) -> [Line] {
         let content = contentLines(for: item, folded: folded, block: block, columns: columns, style: style)
-        return framed(content, kind: item, style: style, spacerAbove: spacerAbove)
+        var result = framed(content, kind: item, style: style, spacerAbove: spacerAbove)
+        switch item {
+            case .tool, .thinking:
+                for index in result.indices where !(style.padded && spacerAbove && index == 0) {
+                    result[index].foldBlock = block
+                }
+            default: break
+        }
+        return result
     }
 
     /// Wraps every block, including command and authentication notices, in padding, tint and spacing.
@@ -62,15 +70,15 @@ extension ScreenComposer {
                 }
                 let header = Transcript.Item.toolHeader(
                     name: name, summary: summary, status: status, output: output, folded: folded)
-                return rows(header, style: look)
+                let gap = style.padded && !folded && !output.isEmpty ? [Line(text: "", style: .default)] : []
+                return rows(header, style: look) + gap
                     + (folded
                         ? [] : body(of: output, block: block, width: width, inset: inset, style: Style(dim: true)))
             case .thinking(let text):
                 let kept = Transcript.kept(text)
                 let look = Style(dim: true, italic: true)
                 let header = Transcript.Item.thinkingHeader(body: kept, folded: folded)
-                return rows(header, style: look)
-                    + (folded ? [] : body(of: kept, block: block, width: width, inset: inset, style: look))
+                return rows(folded || kept.isEmpty ? header : kept, style: look)
             case .notice(let text, let isError):
                 return rows(text, style: isError ? Style(fg: .indexed(1)) : Style(dim: true))
         }
