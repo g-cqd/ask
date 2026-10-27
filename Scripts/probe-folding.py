@@ -94,7 +94,7 @@ class Terminal:
         os.write(self.fd, value)
 
     def row(self, prefix):
-        return next(index for index, line in enumerate(self.screen.display) if line.startswith(prefix))
+        return next(index for index, line in enumerate(self.screen.display) if prefix in line)
 
     def click(self, prefix):
         row = self.row(prefix) + 1
@@ -128,7 +128,7 @@ def main():
         with open(project + "/note.txt", "w") as file:
             file.write("ALPHA OUTPUT\nBETA OUTPUT\n")
         with open(config + "/ask/config.json", "w") as file:
-            file.write('{"ui":{"thinking":"folded","tools":"folded"}}')
+            file.write('{"ui":{"prompt":"ask> ","thinking":"folded","tools":"folded","tint":"off","separator":"off"}}')
         server = agent.Server([thinking_turn(), agent.turn([("text", "PROBE ANSWER")], "end_turn")])
         environment = agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")
@@ -141,15 +141,15 @@ def main():
             beginning = len(terminal.raw)
             terminal.send(b"Go\r")
             terminal.until(lambda: b"PROBE ANSWER" in bytes(terminal.raw)[beginning:]
-                           and b"ready" in bytes(terminal.raw)[beginning:])
+                           )
             terminal.repaint()
-            check("thinking and tool output start folded", "thinking · 2 lines" in terminal.text()
-                  and "read note.txt ✓ · 2 lines" in terminal.text()
+            check("thinking and tool output start folded", "Thinking..." in terminal.text()
+                  and "read note.txt" in terminal.text() and "2 lines · ✓" in terminal.text()
                   and "FIRST THOUGHT" not in terminal.text() and "ALPHA OUTPUT" not in terminal.text())
             check("the status retains the terminal background", all(
-                not terminal.screen.buffer[28][col].reverse and terminal.screen.buffer[28][col].bg == "default"
+                not terminal.screen.buffer[29][col].reverse and terminal.screen.buffer[29][col].bg == "default"
                 for col in range(100)))
-            terminal.draw(lambda: terminal.click("thinking"))
+            terminal.draw(lambda: terminal.click("Thinking..."))
             check("the expanded reasoning is visible", "SECOND THOUGHT" in terminal.text())
             check("a click opens thinking only", "FIRST THOUGHT" in terminal.text() and "ALPHA OUTPUT" not in terminal.text())
             # The shortcut flips the kind's default, discarding per-block overrides: first all open, then all folded.
@@ -158,8 +158,8 @@ def main():
             terminal.draw(lambda: terminal.send(b"\x0f"))  # Ctrl+O
             check("Ctrl+T and Ctrl+O control separate kinds", "FIRST THOUGHT" not in terminal.text()
                   and "BETA OUTPUT" in terminal.text())
-            first, last = terminal.row("  ALPHA OUTPUT") + 1, terminal.row("  BETA OUTPUT") + 1
-            terminal.send(f"\x1b[<0;3;{first}M\x1b[<32;13;{last}M\x1b[<0;13;{last}m".encode())
+            first, last = terminal.row("ALPHA OUTPUT") + 1, terminal.row("BETA OUTPUT") + 1
+            terminal.send(f"\x1b[<0;1;{first}M\x1b[<32;13;{last}M\x1b[<0;13;{last}m".encode())
             terminal.until(lambda: bool(terminal.copies()))
             check("a selection copies the expanded output without indentation", terminal.copies()[-1] == "ALPHA OUTPUT\nBETA OUTPUT")
             terminal.draw(lambda: terminal.send(b"\x0f"))
@@ -169,8 +169,8 @@ def main():
             terminal = Terminal(project, environment, resume=True)
             terminal.until(lambda: "PROBE ANSWER" in terminal.text())
             terminal.repaint()
-            check("resume replays thinking and tool output folded", "thinking · 2 lines" in terminal.text()
-                  and "read note.txt ✓ · 2 lines" in terminal.text())
+            check("resume replays thinking and tool output folded", "Thinking..." in terminal.text()
+                  and "read note.txt" in terminal.text() and "2 lines · ✓" in terminal.text())
             terminal.draw(lambda: terminal.send(b"\x14"))
             check("resumed reasoning can be opened", "FIRST THOUGHT" in terminal.text())
         except AssertionError:

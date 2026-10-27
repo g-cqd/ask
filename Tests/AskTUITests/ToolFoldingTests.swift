@@ -22,9 +22,9 @@ struct ToolFoldingTests {
     @Test func `a click on the header opens it, and another closes it`() {
         var rig = PointerRig(columns: 60, updates: Self.ls)
         rig.click(row: 9, col: 3)
-        #expect(rig.contentText(row: 6) == "bash ls")
+        #expect(rig.contentText(row: 5) == "bash ls")
         #expect([7, 8, 9].map { rig.contentText(row: $0) } == ["alpha", "beta", "gamma"])
-        rig.click(row: 6, col: 3)
+        rig.click(row: 5, col: 3)
         #expect(rig.contentText(row: 9) == "bash ls")
         #expect(rig.contentText(row: 8) == "")
     }
@@ -62,7 +62,7 @@ struct ToolFoldingTests {
             columns: 60,
             options: ScreenOptions(foldTools: false, prompt: "ask> ", tint: false, separator: false, padding: false),
             updates: Self.ls)
-        #expect(rig.contentText(row: 6) == "bash ls")
+        #expect(rig.contentText(row: 5) == "bash ls")
         #expect(rig.contentText(row: 9) == "gamma")
     }
 

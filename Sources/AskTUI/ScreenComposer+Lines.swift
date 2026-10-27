@@ -71,7 +71,7 @@ extension ScreenComposer {
                 }
                 let header = Transcript.Item.toolHeader(
                     name: name, summary: summary, status: status, output: output, folded: folded)
-                let gap = style.padded && !folded && !output.isEmpty ? [Line(text: "", style: .default)] : []
+                let gap = !folded && !output.isEmpty ? [Line(text: "", style: .default)] : []
                 return blockHeader(
                     header,
                     metadata: blockMetadata(
