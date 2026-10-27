@@ -144,7 +144,7 @@ def main():
                            )
             terminal.repaint()
             check("thinking and tool output start folded", "Thinking..." in terminal.text()
-                  and "read note.txt" in terminal.text() and "2 lines · ✓" in terminal.text()
+                  and "read · note.txt" in terminal.text() and "2 lines · ✓" in terminal.text()
                   and "FIRST THOUGHT" not in terminal.text() and "ALPHA OUTPUT" not in terminal.text())
             check("the status retains the terminal background", all(
                 not terminal.screen.buffer[29][col].reverse and terminal.screen.buffer[29][col].bg == "default"
@@ -170,7 +170,7 @@ def main():
             terminal.until(lambda: "PROBE ANSWER" in terminal.text())
             terminal.repaint()
             check("resume replays thinking and tool output folded", "Thinking..." in terminal.text()
-                  and "read note.txt" in terminal.text() and "2 lines · ✓" in terminal.text())
+                  and "read · note.txt" in terminal.text() and "2 lines · ✓" in terminal.text())
             terminal.draw(lambda: terminal.send(b"\x14"))
             check("resumed reasoning can be opened", "FIRST THOUGHT" in terminal.text())
         except AssertionError:

@@ -29,14 +29,14 @@ struct BlockStatusLayoutTests {
         let item = Transcript.Item.tool(name: "read", summary: summary, status: .succeeded, output: "a")
         let rows = ScreenComposer.lines(for: item, folded: true, columns: 50)
         #expect(rows.allSatisfy { UnicodeWidth.displayWidth(of: $0.text) <= 50 })
-        #expect(rows.compactMap { $0.source?.text }.joined() == "read " + summary)
+        #expect(rows.compactMap { $0.source?.text }.joined() == "read · " + summary)
         let ascii = Transcript.Item.tool(name: "bash", summary: "abc", status: .running, output: "")
         for width in 1 ... 30 {
             let tiny = ScreenComposer.lines(for: ascii, columns: width)
             #expect(tiny.allSatisfy { UnicodeWidth.displayWidth(of: $0.text) <= width })
-            #expect(tiny.compactMap { $0.source?.text }.joined().filter { !$0.isWhitespace } == "bashabc")
+            #expect(tiny.compactMap { $0.source?.text }.joined().filter { !$0.isWhitespace } == "bash·abc")
             for source in tiny.compactMap(\.source) {
-                #expect(String("bash abc".dropFirst(source.offset).prefix(source.text.count)) == source.text)
+                #expect(String("bash · abc".dropFirst(source.offset).prefix(source.text.count)) == source.text)
             }
         }
     }

@@ -20,7 +20,7 @@ struct ContentStyleTests {
                 .toolFinished(.succeeded, output: "result")
             ])
         #expect(rig.contentText(row: 8) == "Thinking...")
-        #expect(rig.contentText(row: 9) == "read file")
+        #expect(rig.contentText(row: 9) == "read · file")
     }
 
     @Test func `the status line and transcript keep the terminal's default background`() {
