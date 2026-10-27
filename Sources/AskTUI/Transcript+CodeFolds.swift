@@ -14,7 +14,7 @@ extension Transcript {
     /// The long code block a click on display hard line `line` of item `index` toggles, or nil when that line toggles nothing.
     func codeFence(toggledByLine line: Int, at index: Int) -> Int? {
         guard items.indices.contains(index) else { return nil }
-        return shownCode(at: index)?.toggles[line]
+        return shownToolInput(at: index)?.toggles[line - 1] ?? shownCode(at: index)?.toggles[line]
     }
 
     /// Opens or closes one long code block.
@@ -40,8 +40,11 @@ extension Transcript {
 
     private mutating func relayOutCode() {
         for index in items.indices {
-            guard case .assistant(let text) = items[index], ShownCode.mayContainFence(text) else { continue }
-            revisions[index] = bump()
+            switch items[index] {
+                case .assistant(let text) where ShownCode.mayContainFence(text): revisions[index] = bump()
+                case .tool(_, _, _, _, let input) where input.contains("<<"): revisions[index] = bump()
+                default: continue
+            }
         }
     }
 }

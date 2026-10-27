@@ -88,7 +88,7 @@ struct ToolFoldingTests {
         var transcript = Transcript()
         transcript.startTool(name: "cat", summary: "big")
         transcript.finishTool(.succeeded, output: (1 ... 1000).map { "row \($0)" }.joined(separator: "\n") + "\n\n")
-        guard case .tool(_, _, _, let output) = transcript.items[0] else {
+        guard case .tool(_, _, _, let output, _) = transcript.items[0] else {
             Issue.record("no tool")
             return
         }

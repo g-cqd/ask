@@ -3,7 +3,7 @@ extension Transcript {
     var latestForegroundTool: Int? {
         items.indices.last {
             guard !jobBlocks.values.contains($0) else { return false }
-            if case .tool(_, _, .running, _) = items[$0] { return true }
+            if case .tool(_, _, .running, _, _) = items[$0] { return true }
             return false
         }
     }
