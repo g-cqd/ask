@@ -32,11 +32,18 @@ public final class JobTable: Sendable {
 
     /// Shell selection belongs to the shell tool; internal POSIX job scripts keep their bash default.
     func commandShell(_ requested: String?, in context: ToolContext) -> String {
-        let candidate = requested ?? context.commandEnvironment.filtered(environment)["SHELL"]
-        if let candidate, candidate.hasPrefix("/"), FileManager.default.isExecutableFile(atPath: candidate) {
-            return candidate
-        }
-        return "/bin/bash"
+        commandShell(requested, policy: context.commandEnvironment)
+    }
+
+    func commandShell(_ requested: String?, policy: CommandEnvironment) -> String {
+        let candidate = requested ?? policy.filtered(environment)["SHELL"]
+        return candidate.flatMap { Self.isShell($0) ? $0 : nil } ?? "/bin/bash"
+    }
+
+    static func isShell(_ path: String) -> Bool {
+        var directory = ObjCBool(false)
+        return path.hasPrefix("/") && FileManager.default.fileExists(atPath: path, isDirectory: &directory)
+            && !directory.boolValue && FileManager.default.isExecutableFile(atPath: path)
     }
 
     /// Starts `command` as a new job.
