@@ -205,7 +205,7 @@ final class AgentConversation: Conversation {
 /// The interactive screen in the working directory.
 func runInteractive(
     source: ConfigurationSource, settings: RunSettings, resumed: SessionRecorder?, startupNotices: [String],
-    reloaded: ReloadNotice?
+    reloaded: ReloadNotice?, pickSession: Bool = false
 ) async {
     let workingDirectory = FileManager.default.currentDirectoryPath
     let directory = SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values)
@@ -225,9 +225,10 @@ func runInteractive(
             })
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.
+        let sessionPicker = pickSession ? conversation.sessionPickerOpening() : []
         let exit = try await runInteractiveScreen(
             conversation: conversation, label: settings.label,
-            history: [.labelVariants(settings.labelVariants)] + conversation.history(),
+            history: [.labelVariants(settings.labelVariants)] + conversation.history() + sessionPicker,
             notices: startupNotices + settings.description,
             details: details + settings.detailLines + ProjectInstructions.describe(files),
             options: settings.screenOptions, beforeSignalExit: { jobs.terminateAllNow() })

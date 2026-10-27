@@ -7,8 +7,8 @@ numbers, not adjectives — each is defined once in `AskCore.Budget`, printed by
 
 `ask -p "…"` runs one prompt through the agent loop. Without `-p`, ask opens a
 full-screen terminal interface. Every run is a session file: `-c`/`--continue`
-resumes the last one, `-r`/`--resume <name>` a named one, `ask sessions` lists
-them all.
+resumes the last one, bare `-r`/`--resume` opens a searchable session picker,
+and `--resume <name>` resumes directly. `ask sessions` lists them all.
 
 ## Install
 
@@ -47,7 +47,7 @@ attached; add `:12-30` for a line range. The model reads the file itself, under 
 | `/thinking` | type `/thinking ` for the efforts the current model takes; `/thinking LEVEL` sets one for this run |
 | `/login` | type `/login ` to sign in to a provider without leaving: Claude, Codex, Antigravity, Spettro, Mistral Vibe by account, or any of them (and any key preset, and `custom NAME URL` for an OpenAI-compatible server) with an API key. A key is typed hidden and kept out of the transcript |
 | `/logout` | type `/logout ` to sign out of one account, or `/logout all`, without leaving |
-| `/resume` | list sessions; `/resume NAME`, a unique prefix or a path switches without leaving the screen |
+| `/resume` | searchable session picker; `/resume NAME`, a unique prefix or a path switches directly without leaving the screen |
 | `/tree` | list this session's prompts; `/tree N` goes back to before prompt N and puts it in the editor, so the next message branches from there ([ADR-0093](docs/adr/0093-a-session-is-navigated-by-going-back-to-before-one-of-its-prompts.md)) |
 | `/fork` | continue in a new session; `/fork N` does so from before prompt N. The original stays saved and untouched ([ADR-0094](docs/adr/0094-a-fork-continues-a-session-in-a-file-of-its-own-and-leaves-the-original-alone.md)) |
 | `/config` | show the settings and re-read the files |

@@ -104,12 +104,15 @@ struct Ask: AsyncParsableCommand {
     var continueLatest = false
 
     @Option(
-        name: [.short, .customLong("resume")],
-        help: "Resume a session by name, unique name prefix, or path. `ask sessions` lists them.")
-    var resume: String?
+        name: [.short, .customLong("resume")], defaultAsFlag: "", parsing: .next,
+        help: "Choose a session, or resume directly with --resume NAME, PREFIX or PATH.")
+    var resume: String? = nil
 
     func validate() throws {
         if continueLatest, resume != nil { throw ValidationError("Use --continue or --resume, not both.") }
+        if resume == "", prompt != nil {
+            throw ValidationError("With --prompt, --resume needs a session name or path.")
+        }
         if let maxTurns, maxTurns < 1 { throw ValidationError("--max-turns must be at least 1.") }
         if let compactAt, compactAt < 0 { throw ValidationError("--compact-at must be 0 or more.") }
         if let thinking, ThinkingLevel(rawValue: thinking) == nil {

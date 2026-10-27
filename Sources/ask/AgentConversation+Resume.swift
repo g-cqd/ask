@@ -8,7 +8,7 @@ extension AgentConversation {
     /// Opens the replacement before releasing the old writer, so lookup/open/lock failure changes nothing.
     func resumeSession(arguments: String, update: @Sendable (ConversationUpdate) -> Void) async {
         guard !arguments.isEmpty else {
-            listSessions(update: update)
+            for item in sessionPickerOpening() { update(item) }
             return
         }
         do {
@@ -38,24 +38,22 @@ extension AgentConversation {
         }
     }
 
-    /// Lists this project's sessions without opening a writer or selecting one.
-    private func listSessions(update: @Sendable (ConversationUpdate) -> Void) {
-        let listed = directory.sessions()
-        guard !listed.isEmpty else {
-            update(.notice("No sessions in this project yet.", isError: false))
-            return
-        }
-        var lines = ["Sessions (newest first). Choose with /resume NAME, PREFIX or PATH:"]
+    /// Preload startup choices: opening updates run before asynchronous effects are handled.
+    func sessionPickerOpening() -> [ConversationUpdate] {
+        let rows = sessionRows()
+        guard !rows.isEmpty else { return [.notice("No sessions in this project yet.", isError: false)] }
+        return [.choices(command: "resume", rows: rows), .fillDraft("/resume ")]
+    }
+
+    /// Searchable choices, newest first. Listing never opens a writer or selects a session.
+    func sessionRows() -> [ChoiceRow] {
         let currentPath = session.withLock { $0?.path }
-        for item in listed.prefix(20) {
-            let first =
-                SessionSummary(readingFrom: item.path)?.firstPrompt.map { Sessions.oneLine($0, limit: 60) } ?? ""
-            let mark = item.path == currentPath ? " (current)" : ""
-            lines.append("\(item.name)\(mark)  \(first)")
-        }
-        if listed.count > 20 {
-            lines.append("Showing 20 of \(listed.count); ask sessions --limit N lists more.")
-        }
-        update(.notice(lines.joined(separator: "\n"), isError: false))
+        return directory.sessions()
+            .map { item in
+                let first =
+                    SessionSummary(readingFrom: item.path)?.firstPrompt.map { Sessions.oneLine($0, limit: 80) } ?? ""
+                return ChoiceRow(
+                    label: item.name, detail: first, arguments: item.path, isCurrent: item.path == currentPath)
+            }
     }
 }

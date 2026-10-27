@@ -28,7 +28,8 @@ extension AgentConversation {
             SlashCommand(
                 name: "logout", summary: "Sign out of one account, or /logout all, without leaving.", takesChoices: true
             ),
-            SlashCommand(name: "resume", summary: "List sessions, or switch with /resume NAME, PREFIX or PATH."),
+            SlashCommand(
+                name: "resume", summary: "Choose a session, or /resume NAME, PREFIX or PATH.", takesChoices: true),
             SlashCommand(name: "tree", summary: "List this session's prompts, or go back to before one: /tree N."),
             SlashCommand(
                 name: "fork",
