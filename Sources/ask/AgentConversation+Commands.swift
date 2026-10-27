@@ -55,7 +55,7 @@ extension AgentConversation {
                 case "thinking": await self.thinking(arguments: arguments, update: update)
                 case "login": await self.login(arguments: arguments, update: update)
                 case "logout": await self.logout(arguments: arguments, update: update)
-                case "mcp": for line in MCPHub.report(self.mcp.status) { update(.notice(line, isError: false)) }
+                case "mcp": update(.notice(MCPHub.report(self.mcp.status).joined(separator: "\n"), isError: false))
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))
             }
@@ -68,7 +68,7 @@ extension AgentConversation {
         await refreshSettings(update: update)
         let settings = current.withLock { $0.settings }
         let lines = settings.report(userFile: source.loader.userPath, projectFile: source.loader.projectPath)
-        for line in lines { update(.notice(line, isError: false)) }
+        update(.notice(lines.joined(separator: "\n"), isError: false))
     }
 
     /// Compacts at the user's request, whatever the context's size. Nothing is made up: with nothing recorded, or
