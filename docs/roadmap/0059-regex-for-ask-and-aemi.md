@@ -1,10 +1,15 @@
 ---
 status: not-started
-blocked-by: ["owner decisions, see the report"]
+blocked-by: []
 date: 2026-10-24
 ---
 
 # 0059 — A safe regex for ask, and possibly `AemiRegex`
+
+Owner decision (2026-10-27): use AemiRegex, including a repo-wide migration of
+Swift Regex. The actionable migration is now roadmap 0077; the wrapper/engine
+stages below are retained as the original investigation's alternatives, not the
+current implementation plan.
 
 Today `ask` has one runtime regex use (three short patterns on a refusal message in `ProviderFailure+Overflow.swift`) and two test helpers,
 all in Swift `Regex`. The owner asked for a Sendable, safe `NSRegularExpression` wrapper to remove it, and asked what a vector kernel and a
