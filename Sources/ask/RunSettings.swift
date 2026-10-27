@@ -53,6 +53,9 @@ struct RunSettings: Equatable {
         for line in fresh { updates.append(.notice(line, isError: false)) }
         for line in details where !previous.details.contains(line) { updates.append(.detail(line)) }
         if labelVariants != previous.labelVariants { updates.append(.labelVariants(labelVariants)) }
+        if sandbox.isUnrestricted != previous.sandbox.isUnrestricted {
+            updates.append(.sandboxActive(!sandbox.isUnrestricted))
+        }
         return updates
     }
 
@@ -133,7 +136,7 @@ struct RunSettings: Equatable {
         let effort = configuration.thinking.value
         var forms = effort == .providerDefault ? [] : ["\(named)/\(effort)"]
         forms += [named, model.model]
-        let mark = sandbox.isUnrestricted ? "! · " : (verbose ? "⛨ " : "")
+        let mark = verbose ? "⛨ " : ""
         var seen: Set<String> = []
         return forms.map { mark + $0 }.filter { seen.insert($0).inserted }
     }

@@ -14,6 +14,10 @@ public struct ScreenState: Sendable, Equatable {
     public var labelVariants: [String] = []
     /// Whether a run is in progress: the status line says so and how to abort it.
     public var running = false
+    /// Whether the sandbox is active for this session (false if unrestricted).
+    public var sandboxed = true
+    /// Current animated frame index for the status line spinner.
+    public var statusFrame = 0
     /// Set by a command that wants the screen closed with this reason once its run has ended.
     public var exitRequest: ScreenExit?
     /// Shown at the right of the status line, such as token usage; empty for none.

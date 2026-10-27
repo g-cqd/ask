@@ -16,15 +16,52 @@ struct StatusLineFitTests {
     }
 
     @Test func `the ASCII warning is accented and separated from the model`() {
-        let state = ScreenState(label: "! · codex/model")
+        var state = ScreenState(label: "codex/model")
+        state.sandboxed = false
         let line = ScreenComposer.status(for: state, columns: 80).line
         #expect(line.text == "! · codex/model")
         #expect(line.accents.first?.columns == 0 ..< 1)
+        #expect(line.accents.first?.style.fg == StatusLeadingMark.warning.fg)
+    }
+
+    @Test func `running sandboxed status starts with white spinner and no working text`() {
+        var state = ScreenState(label: "model")
+        state.running = true
+        state.sandboxed = true
+        state.transcript.spinnerStyle = .braille
+        state.statusFrame = 0
+        let line = ScreenComposer.status(for: state, columns: 80).line
+        #expect(line.text.hasPrefix("⠋ · model"))
+        #expect(!line.text.contains("working"))
+        #expect(line.accents.first?.columns == 0 ..< 1)
+        #expect(line.accents.first?.style.fg == StatusLeadingMark.sandboxed.fg)
+    }
+
+    @Test func `running unsandboxed status starts with yellow spinner`() {
+        var state = ScreenState(label: "model")
+        state.running = true
+        state.sandboxed = false
+        state.transcript.spinnerStyle = .braille
+        state.statusFrame = 1
+        let line = ScreenComposer.status(for: state, columns: 80).line
+        #expect(line.text.hasPrefix("⠙ · model"))
+        #expect(line.accents.first?.style.fg == StatusLeadingMark.warning.fg)
+    }
+
+    @Test func `ongoing running jobs are positioned at the end of the line`() {
+        var state = ScreenState(label: "model")
+        state.running = true
+        state.detail = "↑1k ↓2k"
+        state.runners = [
+            RunnerInfo(name: "job-1", detail: "sleep 10", id: "1", kind: .job, state: .running)
+        ]
+        let line = ScreenComposer.status(for: state, columns: 120).line
+        #expect(line.text.hasSuffix("1 job"))
     }
 
     private func state(width _: Int = 0) -> ScreenState {
-        var state = ScreenState(label: "⚠ codex/gpt-6.1-sol/medium")
-        state.labelVariants = ["⚠ codex/gpt-6.1-sol/medium", "⚠ codex/gpt-6.1-sol", "⚠ gpt-6.1-sol"]
+        var state = ScreenState(label: "codex/gpt-6.1-sol/medium")
+        state.labelVariants = ["codex/gpt-6.1-sol/medium", "codex/gpt-6.1-sol", "gpt-6.1-sol"]
         state.detail = "↑12.3k ↓456"
         state.running = true
         state.scrollback = 12
@@ -38,7 +75,7 @@ struct StatusLineFitTests {
     @Test func `at a generous width everything is said, in order`() {
         #expect(
             text(state(), columns: 200)
-                == "⚠ codex/gpt-6.1-sol/medium · ↑12.3k ↓456 · working… (ctrl+c to stop) · 12 lines below")
+                == "| · codex/gpt-6.1-sol/medium · ↑12.3k ↓456 · 12 lines below")
     }
 
     @Test func `there is no ready, and no sandbox word`() {
@@ -56,38 +93,42 @@ struct StatusLineFitTests {
 
     @Test func `each piece that is shown is a whole one, at every width that fits the label`() {
         let wholes = [
-            "⚠ codex/gpt-6.1-sol/medium", "⚠ codex/gpt-6.1-sol", "⚠ gpt-6.1-sol", "↑12.3k ↓456",
-            "working… (ctrl+c to stop)", "working…", "12 lines below"
+            "codex/gpt-6.1-sol/medium", "codex/gpt-6.1-sol", "gpt-6.1-sol", "↑12.3k ↓456",
+            "12 lines below"
         ]
-        for columns in 14 ... 200 {
-            let pieces = text(state(), columns: columns).components(separatedBy: " · ")
+        // 17 columns is the minimum width for the shortest label ("| · gpt-6.1-sol")
+        for columns in 17 ... 200 {
+            var raw = text(state(), columns: columns)
+            if raw.hasPrefix("| · ") {
+                raw = String(raw.dropFirst(4))
+            }
+            let pieces = raw.components(separatedBy: " · ")
             for piece in pieces { #expect(wholes.contains(piece), "\(columns) columns: \"\(piece)\" is a cut piece") }
         }
     }
 
     @Test
-    func
-        `the least important goes first: usage, then the count, then the activity's long form, and the label is shortened last`()
-    {
-        let full = "⚠ codex/gpt-6.1-sol/medium"
-        #expect(text(state(), columns: 80) == full + " · working… (ctrl+c to stop) · 12 lines below")
-        #expect(text(state(), columns: 70) == full + " · working… (ctrl+c to stop)")
-        #expect(text(state(), columns: 50) == full + " · working…")
+    func `the least important goes first: usage, then the count, and the label is shortened last`() {
+        let full = "| · codex/gpt-6.1-sol/medium"
+        #expect(text(state(), columns: 80) == full + " · ↑12.3k ↓456 · 12 lines below")
+        #expect(text(state(), columns: 45) == full + " · 12 lines below")
         #expect(text(state(), columns: 35) == full)
-        #expect(text(state(), columns: 22) == "⚠ codex/gpt-6.1-sol")
-        #expect(text(state(), columns: 14) == "⚠ gpt-6.1-sol")
+        #expect(text(state(), columns: 25) == "| · codex/gpt-6.1-sol")
+        #expect(text(state(), columns: 17) == "| · gpt-6.1-sol")
     }
 
     @Test func `a warning mark leads in colour, and only the mark`() {
-        let line = ScreenComposer.status(for: state(), columns: 80).line
+        var s = state()
+        s.sandboxed = false
+        let line = ScreenComposer.status(for: s, columns: 80).line
         #expect(line.accents.count == 1 && line.accents[0].columns.lowerBound == 0)
-        #expect(line.accents[0].style.fg == StatusLine.warning.fg)
+        #expect(line.accents[0].style.fg == StatusLeadingMark.warning.fg)
         #expect(ScreenComposer.status(for: ScreenState(label: "codex/x"), columns: 80).line.accents.isEmpty)
     }
 
     @Test func `a click's columns follow the shortening`() {
-        let wide = ScreenComposer.status(for: state(), columns: 200)
-        let narrow = ScreenComposer.status(for: state(), columns: 80)
+        let wide = ScreenComposer.status(for: state(), columns: 60)
+        let narrow = ScreenComposer.status(for: state(), columns: 45)
         #expect(wide.below != nil && narrow.below != nil && wide.below != narrow.below)
         let line = narrow.line.text
         let below = narrow.below!

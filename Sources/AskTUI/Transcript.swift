@@ -38,6 +38,8 @@ public struct Transcript: Sendable, Equatable {
     public internal(set) var codeFoldedByDefault = true
     /// A code block with more lines than this can fold (ADR-0046: `ui.codeFoldLines`, never more than half the screen).
     public internal(set) var codeFoldLines = 20
+    /// Which spinner style is used for progress indicators in live blocks.
+    public var spinnerStyle: SpinnerStyle = .line
     /// The most lines of one tool's output kept; the rest is said, not stored, so one huge output cannot slow every frame.
     static let outputLineLimit = 400
 
@@ -79,7 +81,7 @@ public struct Transcript: Sendable, Equatable {
 
     public mutating func startTool(name: String, summary: String, at now: ContinuousClock.Instant = .now) {
         append(.tool(name: name, summary: summary, status: .running, output: ""))
-        progress[items.count - 1] = BlockProgress(at: now)
+        progress[items.count - 1] = BlockProgress(at: now, spinner: spinnerStyle)
     }
 
     /// Ends the most recent running tool, keeping what it returned.
@@ -162,7 +164,7 @@ public struct Transcript: Sendable, Equatable {
     private mutating func append(_ item: Item) {
         finishThinking()
         items.append(item)
-        if case .thinking = item { progress[items.count - 1] = BlockProgress(at: .now) }
+        if case .thinking = item { progress[items.count - 1] = BlockProgress(at: .now, spinner: spinnerStyle) }
         revisions.append(bump())
     }
 

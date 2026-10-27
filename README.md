@@ -100,6 +100,12 @@ blocks longer than 20 lines, never more than half the screen) and it opens in pl
 Longer tool and thinking blocks use localized units (for example, `1 hr, 40 min, 30 sec`);
 set `"ui": {"localizedDurations": "off"}` in configuration for a compact clock instead
 (`1:40:30`, `1:01`, or `2` seconds). Zero-valued units are omitted in localized mode.
+Animated spinners accompany ongoing operations and lead the status line; set
+`"ui": {"spinner": "braille"}` (or `braillefull`, `braillequarter`, `snake`, `line`, `dot`, `star`, `random`)
+to customize the animation style. Each spinner frame strictly occupies 1 column. In the status line,
+running operations show the spinner in bold white when sandboxed or yellow when unsandboxed; idle sessions
+display `!` in yellow when unsandboxed or omit the indicator when sandboxed. Ongoing jobs are displayed at
+the end of the status line.
 
 A selection copies what is shown.
 

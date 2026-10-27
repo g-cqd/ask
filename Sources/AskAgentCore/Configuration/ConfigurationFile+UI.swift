@@ -21,6 +21,12 @@ extension ConfigurationFile {
                         }
                         section.sidebarOpen = name == "open"
                     case "prompt": section.prompt = try container.decode(String.self, forKey: key)
+                    case "spinner":
+                        let raw = try container.decode(String.self, forKey: key)
+                        guard let preference = SpinnerPreference(rawValue: raw) else {
+                            throw BadValue(key: "ui.spinner", value: raw)
+                        }
+                        section.spinner = preference
                     // @dl:accept -- on/off keys decoded like the folded/open ones beside them; the key tables are the data
                     case "tint", "separator", "padding", "localizedDurations":
                         let name = try container.decode(String.self, forKey: key)
