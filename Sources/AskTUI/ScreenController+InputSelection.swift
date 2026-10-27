@@ -128,10 +128,11 @@ extension ScreenController {
     // MARK: - Keys
 
     /// Shift with an arrow, Home or End: the cursor moves as that key would move it, and the selection runs from where the cursor was
-    /// when the first of them was pressed to where it is now. Ctrl and Alt change what these keys mean, so they are not selections.
+    /// when the first of them was pressed to where it is now. Alt with Left/Right extends by words instead.
     static func isSelectingMove(_ key: KeyEvent) -> Bool {
-        guard key.modifiers.contains(.shift), key.modifiers.isDisjoint(with: [.ctrl, .alt, .super, .meta]) else {
-            return false
+        guard key.modifiers.contains(.shift), key.modifiers.isDisjoint(with: [.ctrl, .super]) else { return false }
+        if !key.modifiers.isDisjoint(with: [.alt, .meta]) {
+            return key.keyCode == Key.left.rawValue || key.keyCode == Key.right.rawValue
         }
         return [Key.left, .right, .up, .down, .home, .end].contains { $0.rawValue == key.keyCode }
     }
