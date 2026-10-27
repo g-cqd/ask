@@ -7,7 +7,12 @@ extension AgentConversation {
         return Task {
             for await _ in jobs.outputChanges(of: id) {
                 guard !Task.isCancelled else { return }
-                if let snapshot = jobs.snapshot(of: id) { update(Self.screenJob(snapshot)) }
+                if let snapshot = jobs.snapshot(of: id) {
+                    update(Self.screenJob(snapshot))
+                    if snapshot.status != .running { return }
+                }
+                // Coalesce a noisy process's notifications before allocating another 64 KiB UI snapshot.
+                try? await Task.sleep(for: .milliseconds(100))
             }
             // The closing stream carries no element: read once more for final output and exit status.
             guard !Task.isCancelled else { return }
