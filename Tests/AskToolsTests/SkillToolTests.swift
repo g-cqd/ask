@@ -111,7 +111,7 @@ struct SkillToolTests {
     }
 
     @Test func `arguments that do not decode are an error the model can read`() async throws {
-        #expect(try await run(#"{"from":"claude"}"#).isError)
+        #expect(try await run(#"{"query":5}"#).isError)
         #expect(try await run(#"{"name":5}"#).isError)
     }
 }

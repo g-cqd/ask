@@ -66,6 +66,22 @@ struct SkillAdvertisementTests {
         #expect(block.contains("- shown:") && !block.contains("quiet") && !block.contains("builtin"))
     }
 
+    @Test(arguments: [15, 16, 17, 40])
+    func `only catalogs above sixteen eligible skills switch to search`(_ count: Int) throws {
+        let scratch = try SkillScratch()
+        for index in 0 ..< count { try scratch.skill("item\(index)", in: ".agents/skills") }
+        try scratch.skill("quiet", in: ".agents/skills", extra: "disable-model-invocation: true\n")
+        let block = try #require(SkillAdvertisement.block(for: scratch.discover(), limit: 32))
+        if count > 16 {
+            #expect(!block.contains("- item"))
+            #expect(block.contains("\(count) skills") && block.contains("query"))
+            #expect(block.count < 500)
+        } else {
+            #expect(block.contains("- item0:") && block.contains("- item\(count - 1):"))
+        }
+        #expect(!block.contains("- quiet:"))
+    }
+
     @Test func `nothing to advertise is no block at all`() throws {
         let scratch = try SkillScratch()
         #expect(SkillAdvertisement.block(for: scratch.discover(), limit: 32) == nil)
