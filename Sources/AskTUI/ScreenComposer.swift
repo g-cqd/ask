@@ -138,7 +138,8 @@ public struct ScreenComposer: Sendable {
 
         return writeBottom(
             panel: panel, status: statusRows > 0 ? status.line : nil, picker: pickerLines, editor: editor,
-            rule: ruleRows > 0 ? Line(text: String(repeating: "─", count: columns), style: Style(dim: true)) : nil,
+            rule: ruleRows > 0
+                ? Line(text: String(repeating: "─", count: columns), style: StatusLine.statusStyle) : nil,
             inputStyle: Style(bg: ruleRows > 0 ? .default : state.theme.inputBackground), from: transcriptRows,
             into: &buffer)
     }

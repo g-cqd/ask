@@ -93,6 +93,6 @@ struct BackgroundJobBlockTests {
         let transcript = controller.state.transcript
         #expect(transcript.contentText(at: 0).contains("… 200 more lines not shown"))
         let rows = ScreenComposer.lines(for: transcript.items[0], columns: 80)
-        #expect(rows[1].source?.col == 0 && rows[1].source?.text == "line 0")
+        #expect(rows[2].source?.col == 0 && rows[2].source?.text == "line 0")
     }
 }
