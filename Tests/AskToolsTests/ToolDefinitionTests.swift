@@ -26,7 +26,7 @@ struct ToolDefinitionTests {
     @Test func `write`() {
         #expect(
             schema(WriteTool())
-                == #"{"type":"object","properties":{"path":{"type":"string"},"content":{"type":"string"},"sandbox":{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}},"required":["path","content"]}"#
+                == #"{"type":"object","properties":{"path":{"type":"string"},"content":{"type":"string"},"old_text":{"type":"string","minLength":1},"new_text":{"type":"string"},"replace_all":{"type":"boolean"},"sandbox":{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}},"required":["path"]}"#
         )
     }
 
