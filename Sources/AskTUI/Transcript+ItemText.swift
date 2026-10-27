@@ -21,26 +21,13 @@ extension Transcript.Item {
         }
     }
 
-    /// The one line a tool block starts with: its name and summary, how it ended, and when it has output, whether it is folded and
-    /// how much it holds. Line feeds are flattened so the header is always hard line 0, the line a click toggles.
+    /// Selectable tool content, without the separately drawn status. Line feeds flatten to hard line zero.
     static func toolHeader(
-        name: String, summary: String, status: Transcript.ToolStatus, output: String, folded: Bool
+        name: String, summary: String, status _: Transcript.ToolStatus, output _: String, folded _: Bool
     ) -> String {
-        let body = "\(name) \(summary)\(toolMark(status).text)".replacing("\n", with: " ")
-        guard !output.isEmpty, folded else { return body }
-        let count = TranscriptContent.hardLines(of: output).count
-        return "\(body) · \(count) \(count == 1 ? "line" : "lines")"
+        "\(name) \(summary)".replacing("\n", with: " ")
     }
 
     /// The one line a thinking block starts with, folded or open: `Thinking...`, which a click folds and opens.
     static func thinkingHeader(body _: String, folded _: Bool) -> String { "Thinking..." }
-
-    /// What follows a tool's summary, and how it is styled.
-    static func toolMark(_ status: Transcript.ToolStatus) -> (text: String, isFailure: Bool) {
-        switch status {
-            case .running: (" …", false)
-            case .succeeded: (" ✓", false)
-            case .failed(let reason): (" ✗ " + reason, true)
-        }
-    }
 }

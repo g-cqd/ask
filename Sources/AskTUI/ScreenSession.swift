@@ -21,6 +21,7 @@ final class ScreenSession {
     private var watchedRunner: String?
     /// Ticks while a drag is held at an edge, because a held button reports no motion.
     private var autoscroll = AutoscrollTimer()
+    private var progress = BlockProgressTimer()
     private let events: AsyncStream<ScreenEvent>
     private let sink: AsyncStream<ScreenEvent>.Continuation
     private var exit = ScreenExit.quit
@@ -66,6 +67,7 @@ final class ScreenSession {
         }
         defer {
             autoscroll.stop()
+            progress.stop()
             runnerOutput?.cancel()
         }
         render(full: true)
@@ -97,6 +99,8 @@ final class ScreenSession {
                         return false
                     }
                 }
+            case .progressTick:
+                controller.advanceProgress()
             case .tick:
                 controller.frame = frames.load()
                 guard controller.tick() else {
@@ -122,6 +126,7 @@ final class ScreenSession {
         for effect in effects where await !perform(effect) {
             return false
         }
+        progress.update(wanted: controller.hasLiveProgress) { [sink] in sink.yield(.progressTick) }
         syncRunnerOutput()
         syncAutoscroll()
         render()

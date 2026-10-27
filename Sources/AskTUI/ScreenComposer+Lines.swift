@@ -6,9 +6,10 @@ extension ScreenComposer {
     /// and a blank row above when this block and the one before are both tool calls or the user's messages.
     static func lines(
         for item: Transcript.Item, folded: Bool = false, block: Int = 0, columns: Int, style: BlockStyle = .plain,
-        spacerAbove: Bool = false
+        spacerAbove: Bool = false, progress: BlockProgress? = nil
     ) -> [Line] {
-        let content = contentLines(for: item, folded: folded, block: block, columns: columns, style: style)
+        let content = contentLines(
+            for: item, folded: folded, block: block, columns: columns, style: style, progress: progress)
         var result = framed(content, kind: item, style: style, spacerAbove: spacerAbove)
         switch item {
             case .tool, .thinking:
@@ -42,7 +43,7 @@ extension ScreenComposer {
     }
 
     private static func contentLines(
-        for item: Transcript.Item, folded: Bool, block: Int, columns: Int, style: BlockStyle
+        for item: Transcript.Item, folded: Bool, block: Int, columns: Int, style: BlockStyle, progress: BlockProgress?
     ) -> [Line] {
         let inset = style.inset
         let width = Swift.max(1, columns - 2 * inset)
@@ -71,14 +72,20 @@ extension ScreenComposer {
                 let header = Transcript.Item.toolHeader(
                     name: name, summary: summary, status: status, output: output, folded: folded)
                 let gap = style.padded && !folded && !output.isEmpty ? [Line(text: "", style: .default)] : []
-                return rows(header, style: look) + gap
+                return blockHeader(
+                    header, metadata: blockMetadata(status: status, output: output, progress: progress),
+                    block: block, width: width, inset: inset, style: look) + gap
                     + (folded
                         ? [] : body(of: output, block: block, width: width, inset: inset, style: Style(dim: true)))
             case .thinking(let text):
                 let kept = Transcript.kept(text)
                 let look = Style(dim: true, italic: true)
                 let header = Transcript.Item.thinkingHeader(body: kept, folded: folded)
-                return rows(folded || kept.isEmpty ? header : kept, style: look)
+                return blockHeader(
+                    folded || kept.isEmpty ? header : kept,
+                    metadata: blockMetadata(
+                        status: progress?.ended == nil && progress != nil ? .running : .succeeded,
+                        output: kept, progress: progress), block: block, width: width, inset: inset, style: look)
             case .notice(let text, let isError):
                 return rows(text, style: isError ? Style(fg: .indexed(1)) : Style(dim: true))
         }
