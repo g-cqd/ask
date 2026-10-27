@@ -53,9 +53,13 @@ using `SystemLanguageModel(useCase:)`:
 
 ## Architectural Constraints for Adoption
 
-1. **Strictly Non-Blocking / Asynchronous:**
+1. **Non-Canonical UX Enhancement Only:**
+   Semantic titles are an advisory visual label for the user in the strip or completion lines. The **core identification and lifecycle logic of all jobs must strictly use immutable canonical IDs (`job-N`) and collision-free short display IDs (`[#7a2f]`)**.
+   - Model-facing tool arguments (`wait`, `job_input`, `job_stop`), IPC, output file tracking, and focused lane subscriptions must **never** depend on or address jobs by semantic names.
+   - Availability varies by hardware (Apple silicon requirement), OS version (macOS 26/27+), local system load, or regional model availability (`model.availability != .available`). Absence of the local model leaves the UI rendering the command string without any degradation in job management.
+2. **Strictly Non-Blocking / Asynchronous:**
    With latency scaling from 350 ms up to 4.9 s on large scripts, semantic naming **must never execute on the main thread or gate tool returns**. The action budget is 25 ms.
-2. **Background Detached Task:**
+3. **Background Detached Task:**
    When a command is backgrounded (yielded), ask can dispatch an unawaited background naming task. The UI displays the short display ID (`[#7a2f]`) and raw command immediately. When the title completes, it updates the runner entry and completion line in place.
-3. **Prompt Truncation Safeguard:**
+4. **Prompt Truncation Safeguard:**
    Feeding 18 KB of script text takes ~5 seconds of NPU/GPU compute on the local Apple Neural Engine. For semantic job naming, the prompt should feed at most the first **1,000–2,000 bytes** of the command line, which caps latency at < 600 ms while preserving the leading command verbs and targets.
