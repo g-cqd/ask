@@ -18,6 +18,8 @@ public struct ScreenState: Sendable, Equatable {
     public var exitRequest: ScreenExit?
     /// Shown at the right of the status line, such as token usage; empty for none.
     public var detail = ""
+    /// Latest measured context occupancy, distinct from session-wide spend.
+    public var context = ""
     /// The newest runner snapshot. Its cached preorder and counts feed every view.
     public private(set) var runnerTree = RunnerTree()
     /// Updating the runners rebuilds the tree once, not once per frame.

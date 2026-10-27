@@ -7,6 +7,14 @@ internal import Testing
 /// The status line at every width (roadmap 0074): each piece whole, in a shorter form, or gone; never cut in the middle.
 @Suite("The status line fits any width without cutting a piece")
 struct StatusLineFitTests {
+    @Test func `context is a whole segment retained ahead of cumulative usage`() {
+        var state = ScreenState(label: "model")
+        state.context = "25%/200k"
+        state.detail = "↑12.3k ↓456"
+        #expect(text(state, columns: 80) == "model · 25%/200k · ↑12.3k ↓456")
+        #expect(text(state, columns: 16) == "model · 25%/200k")
+    }
+
     @Test func `the ASCII warning is accented and separated from the model`() {
         let state = ScreenState(label: "! · codex/model")
         let line = ScreenComposer.status(for: state, columns: 80).line

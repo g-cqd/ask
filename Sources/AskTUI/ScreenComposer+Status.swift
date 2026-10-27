@@ -23,6 +23,7 @@ extension ScreenComposer {
                     "\(pending.question)  y once · a for this session · n no", priority: 100, droppable: false))
         }
         pieces.append(StatusSegment(labelForms(of: state), priority: 90))
+        if !state.context.isEmpty { pieces.append(StatusSegment(state.context, priority: 40)) }
         if !state.detail.isEmpty { pieces.append(StatusSegment(state.detail, priority: 20)) }
         if state.running {
             pieces.append(StatusSegment(["working… (ctrl+c to stop)", "working…"], priority: 85))
