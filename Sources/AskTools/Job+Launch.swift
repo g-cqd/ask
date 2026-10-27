@@ -5,6 +5,7 @@ extension Job {
     struct Launch: Sendable {
         /// The job's name, as the model sees it.
         var id: String
+        var displayID: String? = nil
         var command: String
         var workingDirectory: String
         /// A new file for the whole output, or nil.

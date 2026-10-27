@@ -23,6 +23,7 @@ public final class Job: Sendable {
     }
 
     public let id: String
+    public let displayID: String
     public let command: String
     /// Monotonic launch time, shared with the screen rather than restarted when its list opens.
     public let startedAt = ContinuousClock.now
@@ -71,12 +72,14 @@ public final class Job: Sendable {
     private let watchdog: JobWatchdog?
 
     private init(
-        id: String, command: String, outputPath: String?, keeping: Int, sandbox: SandboxPolicy, watchdog: JobWatchdog?
+        id: String, displayID: String?, command: String, outputPath: String?, keeping: Int,
+        sandbox: SandboxPolicy, watchdog: JobWatchdog?
     ) {
         self.watchdog = watchdog
         self.sandbox = sandbox
         self.keeping = keeping
         self.id = id
+        self.displayID = displayID ?? id
         self.command = command
         self.outputPath = outputPath
         state = Mutex(State(unread: OutputBuffer(keeping: keeping)))
@@ -89,7 +92,8 @@ public final class Job: Sendable {
     /// - Returns: the running job.
     static func start(_ launch: Launch, observe: @escaping @Sendable ([UInt8]) -> Void) -> Job {
         let job = Job(
-            id: launch.id, command: launch.command, outputPath: launch.outputPath, keeping: launch.keeping,
+            id: launch.id, displayID: launch.displayID, command: launch.command, outputPath: launch.outputPath,
+            keeping: launch.keeping,
             sandbox: launch.sandbox, watchdog: launch.watchdog)
         let (input, feed) = AsyncStream<[UInt8]>.makeStream()
         if !launch.keepsInputOpen { feed.finish() }

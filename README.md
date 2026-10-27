@@ -100,6 +100,11 @@ blocks longer than 20 lines, never more than half the screen) and it opens in pl
 Longer tool and thinking blocks use localized units (for example, `1 hr, 40 min, 30 sec`);
 set `"ui": {"localizedDurations": "off"}` in configuration for a compact clock instead
 (`1:40:30`, `1:01`, or `2` seconds). Zero-valued units are omitted in localized mode.
+Background jobs continue streaming into their original foldable tool block, even while
+another job is focused. They use short `[#7a2f]` display identities; `wait`, `job_input`
+and `job_stop` also accept `#7a2f` or `7a2f` (legacy `job-N` references still work).
+A completed job adds one faint italic outcome row with trailing elapsed/count/status.
+
 The jobs list sits one blank row below status. Each active job shows its elapsed time
 and a single-cell spinner at the right edge; these keep updating while the model is idle.
 
