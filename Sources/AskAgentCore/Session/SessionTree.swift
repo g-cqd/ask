@@ -164,6 +164,18 @@ public struct SessionTree: Sendable, Equatable {
         return nil
     }
 
+    /// Walks the active branch from its leaf toward its root, handing each payload to `visit` with whether it is
+    /// the branch's first entry, until `visit` returns false or the first entry is reached. No branch copy is made.
+    /// - Complexity: O(entries visited), and `visit` decides when to stop.
+    public func walkFromLeaf(_ visit: (SessionPayload, Bool) -> Bool) {
+        var cursor = leaf
+        while let current = cursor, let position = positions[current] {
+            let parent = entries[position].parentID
+            if !visit(entries[position].payload, parent == nil) { return }
+            cursor = parent
+        }
+    }
+
     private func ancestry(of id: EntryID?) -> [SessionEntry] {
         var walked: [SessionEntry] = []
         var cursor = id

@@ -2,32 +2,49 @@ internal import AskAI
 
 /// Compaction in the loop (roadmap 0030): summarise the context before the kept tail and record it.
 extension AgentLoop {
-    /// Whether to compact before the next request: the window is full, or the context reached the threshold.
-    /// Synchronous and O(1) in the common case, since it runs before every request.
+    /// Whether to compact before the next request: the window is full, or the context reached the threshold and
+    /// something sits before the kept tail to summarise. Synchronous and O(1) in the common case, since it runs
+    /// before every request: a small window floors the threshold (its margin leaves nothing of the window), so
+    /// the tail check keeps a whole conversation that fits the tail from trying every turn.
     func compactionDue(_ session: SessionRecorder, contextFull: Bool) -> Bool {
         if contextFull { return true }
         guard let threshold = budget.compactAtTokens else { return false }
-        return (session.reading { Compaction.contextTokens(sinceCompactionIn: $0) } ?? 0) >= threshold
+        return session.reading { tree in
+            guard (Compaction.contextTokens(sinceCompactionIn: tree) ?? 0) >= threshold else { return false }
+            return Compaction.hasContent(beforeTailIn: tree, keepingRecentBytes: budget.keepRecentBytes)
+        }
     }
 
     /// Compacts now, at the user's request, whatever the context's size. A summary that cannot be made is reported
     /// as a ``AgentEvent/compactionFailed(_:)``, and the session is left whole.
     /// - Throws: ``AgentError/cancelled`` when aborted.
     public func compactNow(in session: SessionRecorder, events: (AgentEvent) -> Void) async throws(AgentError) {
-        try await compact(session, contextFull: false, events: events)
+        try await compact(session, contextFull: false, explicit: true, events: events)
     }
 
     /// Compacts the session's context.
     ///
-    /// A threshold compaction that fails is reported and skipped: the run goes on with the whole context. A
-    /// full window cannot go on without one, so its failure ends the run.
+    /// A threshold compaction with nothing before the kept tail is skipped: it has nothing to do, and a window
+    /// whose threshold sits at the floor would otherwise announce its own no-op on every turn. An explicit
+    /// compaction still reports it, because the user asked. A threshold compaction that fails is reported and
+    /// skipped: the run goes on with the whole context. A full window cannot go on without one, so its failure
+    /// ends the run.
+    /// - Parameters:
+    ///   - session: the session whose context is compacted.
+    ///   - contextFull: the window refused the request, so the compaction cannot be skipped.
+    ///   - explicit: the user asked for this compaction, so "nothing to summarise" is reported rather than
+    ///     skipped.
+    ///   - events: where completed steps are reported.
     /// - Throws: ``AgentError``, only when `contextFull` or on abort.
-    func compact(_ session: SessionRecorder, contextFull: Bool, events: (AgentEvent) -> Void)
-        async throws(AgentError)
-    {
+    func compact(
+        _ session: SessionRecorder, contextFull: Bool, explicit: Bool = false, events: (AgentEvent) -> Void
+    ) async throws(AgentError) {
+        let context = session.tree.context()
+        if !contextFull, !explicit, Compaction.cut(context, keepingRecentBytes: budget.keepRecentBytes) == nil {
+            return
+        }
         do {
-            let (summary, usage, firstKept) = try await summarise(
-                session.tree.context(), contextFull: contextFull, events: events)
+            let (summary, usage, firstKept) = try await summarise(context, contextFull: contextFull, events: events)
             try record(.compaction(summary: summary, firstKept: firstKept), in: session)
             events(.compacted(summary: summary, usage: usage))
         } catch {

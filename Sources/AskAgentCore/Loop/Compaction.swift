@@ -54,6 +54,23 @@ public enum Compaction {
         return index > 0 ? index : nil
     }
 
+    /// Whether the branch may hold anything before a kept tail of `bytes`, without building the context: the
+    /// walk from the leaf stops as soon as the tail's bytes are filled. False is exact — the whole branch fits the
+    /// tail — and settles that there is nothing to summarise; true is the cheap maybe that ``cut(_:keepingRecentBytes:)``
+    /// itself settles, and is reached even when the bytes first fill at the branch's first entry, which nothing
+    /// precedes (a small window can ask for a compaction on every turn, diary 2026-10-28).
+    /// - Complexity: O(entries within `bytes` of the leaf), and no copy of the branch.
+    static func hasContent(beforeTailIn tree: borrowing SessionTree, keepingRecentBytes bytes: Int) -> Bool {
+        var kept = 0
+        var filled = false
+        tree.walkFromLeaf { payload, isRoot in
+            kept += size(payload)
+            filled = kept >= bytes && !isRoot
+            return kept < bytes
+        }
+        return filled
+    }
+
     /// Where the kept tail starts when a compaction must happen: the tail asked for if it leaves something to
     /// summarise, else the largest tail, halving from `bytes`, that does. Nil only when the context holds one turn.
     static func cut(_ context: [SessionEntry], keepingAtMost bytes: Int) -> Int? {
