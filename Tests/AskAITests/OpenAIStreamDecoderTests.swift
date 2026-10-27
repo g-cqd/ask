@@ -120,4 +120,51 @@ struct OpenAIStreamDecoderTests {
         let response = try assemble([chunk(#"{"content":"hello"}"#), chunk("{}", finish: "stop"), final])
         #expect(response.blocks == [.text("hello")])
     }
+
+    @Test func `content parts decode: thinking parts become a thinking block, a text part becomes text`() throws {
+        // api.mistral.ai on zai-glm-5-3 and mistral-large-4 (probed 2026-10-27, diary 22): a delta's
+        // content is a list of parts, not a string.
+        let response = try assemble([
+            chunk(#"{"role":"assistant","content":""}"#),
+            chunk(#"{"content":[{"type":"thinking","thinking":[{"type":"text","text":"The"}],"closed":true}]}"#),
+            chunk(
+                #"{"content":[{"type":"thinking","thinking":[{"type":"text","text":" user"}],"closed":true},{"type":"text","text":"Hi"}]}"#
+            ),
+            chunk(#"{"content":""}"#, finish: "stop")
+        ])
+        #expect(response.blocks == [.thinking(text: "The user", signature: ""), .text("Hi")])
+        #expect(response.stopReason == .endTurn)
+    }
+
+    @Test func `a thinking part without closed, and several segments in one part, still decode`() throws {
+        // mistral-large-4 omits `closed` on some thinking parts and packs several segments into one part.
+        let response = try assemble([
+            chunk(
+                #"{"content":[{"type":"thinking","thinking":[{"type":"text","text":"a"},{"type":"text","text":"b"}]}]}"#
+            ),
+            chunk(#"{"content":[{"type":"text","text":"Hi"}]}"#),
+            chunk("{}", finish: "stop")
+        ])
+        #expect(response.blocks == [.thinking(text: "ab", signature: ""), .text("Hi")])
+    }
+
+    @Test func `a content part of an unknown type is ignored, not fatal`() throws {
+        let response = try assemble([
+            chunk(#"{"content":[{"type":"citations","text":"x"},{"type":"text","text":"Hi"}]}"#),
+            chunk("{}", finish: "stop")
+        ])
+        #expect(response.blocks == [.text("Hi")])
+    }
+
+    @Test func `tool calls after content parts decode as one tool block`() throws {
+        let response = try assemble([
+            chunk(#"{"content":[{"type":"thinking","thinking":[{"type":"text","text":"think"}],"closed":true}]}"#),
+            chunk(#"{"tool_calls":[{"index":0,"id":"t1","function":{"name":"add","arguments":"{\"a\": "}}]}"#),
+            chunk(#"{"tool_calls":[{"index":0,"function":{"arguments":"2}"}}]}"#),
+            chunk("{}", finish: "tool_calls")
+        ])
+        #expect(calls(response) == [#"add{"a": 2}"#])
+        #expect(response.blocks.first == .thinking(text: "think", signature: ""))
+        #expect(response.stopReason == .toolUse)
+    }
 }

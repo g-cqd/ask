@@ -3,7 +3,9 @@ internal import AemiJSON
 /// Turns an OpenAI-compatible chat-completions stream into ``ModelEvent``s, one SSE event at a time.
 ///
 /// That protocol has no content blocks: reasoning, text and tool calls arrive as fields of a delta, interleaved, and
-/// tool calls are keyed by their own index. The decoder keeps one text or reasoning block open at a time and one
+/// tool calls are keyed by their own index. Mistral's reasoning models instead pack a delta's text and reasoning into
+/// a list of content parts (diary 22); both shapes decode to the same events. The decoder keeps one text or
+/// reasoning block open at a time and one
 /// block per tool call, numbering blocks in the order they begin, and closes them all when the stream ends, because
 /// usage can arrive after the finish reason. Text that is only whitespace is held back until real text follows and
 /// dropped if none does: servers send `""` or `"\n\n"` around a tool call, and a whitespace-only text block is one a
@@ -90,7 +92,7 @@ public struct OpenAIStreamDecoder: ModelEventDecoding {
 
     private mutating func apply(_ delta: OpenAIWireChunk.Delta, into events: inout [ModelEvent]) {
         if let reasoning = delta.reasoningText, !reasoning.isEmpty { appendReasoning(reasoning, into: &events) }
-        if let content = delta.content, !content.isEmpty { appendText(content, into: &events) }
+        if let text = delta.text, !text.isEmpty { appendText(text, into: &events) }
         for call in delta.toolCalls ?? [] { appendToolCall(call, into: &events) }
     }
 
