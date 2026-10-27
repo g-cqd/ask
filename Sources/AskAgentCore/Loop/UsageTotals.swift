@@ -9,12 +9,17 @@ public struct UsageTotals: Sendable, Equatable {
     public private(set) var output = 0
     public private(set) var cacheRead = 0
     public private(set) var cacheCreation = 0
+    /// Latest request's prompt plus reply, not cumulative spend. Unknown after compaction until a fresh response.
+    public private(set) var contextTokens: Int?
 
     /// No usage yet.
     public init() {}
 
     /// Adds one response's usage. Counts the provider did not report add nothing.
-    public mutating func add(_ usage: TokenUsage) {
+    public mutating func add(_ usage: TokenUsage, isCompaction: Bool = false) {
+        contextTokens =
+            !isCompaction && usage.input != nil
+            ? (usage.input ?? 0) + (usage.cacheRead ?? 0) + (usage.cacheCreation ?? 0) + (usage.output ?? 0) : nil
         input += usage.input ?? 0
         output += usage.output ?? 0
         cacheRead += usage.cacheRead ?? 0
