@@ -101,7 +101,8 @@ let package = Package(
         .target(
             name: "AskAgentCore",
             dependencies: [
-                "AskAI", .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiIO", package: "aemi")
+                "AskAI", .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiIO", package: "aemi"),
+                .product(name: "AemiText", package: "aemi")
             ],
             path: "Sources/AskAgentCore",
             swiftSettings: packageSettings

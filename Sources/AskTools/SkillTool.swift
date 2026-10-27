@@ -4,7 +4,7 @@ internal import Foundation
 
 /// `skill`: a skill's full instructions, by name (roadmap 0061).
 ///
-/// The model sees each skill's name, description and path in its instructions and loads the body here when a task matches. The result is an ordinary
+/// Small catalogs are listed in the instructions; larger ones are searched here without loading bodies. Loading by name returns an ordinary
 /// tool result, so a resumed session replays it and no session record had to change. The tool takes **no path**: a name finds a skill the discovery
 /// already found in a harness's directory, and `from` can only narrow to harnesses, never name a place. A skill grants no permission.
 public struct SkillTool: ArgumentTool {
@@ -23,15 +23,18 @@ public struct SkillTool: ArgumentTool {
     }
 
     public struct Arguments: Decodable, Sendable {
-        let name: String
+        let name: String?
+        let query: String?
         let from: Words?
     }
 
     public let definition = ToolDefinition(
         name: "skill",
-        description: "Load a skill's full instructions by name (optional 'from' narrows to harness/user/bundled)."
+        description:
+            "Load instructions by name, or search metadata with query (empty browses, at most 8 results). from narrows source/scope."
     ) {
-        ToolProperty.string("name", minLength: 1)
+        ToolProperty.string("name", minLength: 1).optional
+        ToolProperty.string("query").optional
         ToolProperty.string("from").optional
     }
 
@@ -48,7 +51,25 @@ public struct SkillTool: ArgumentTool {
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         let selection = SkillSelection(tokens: arguments.from?.list ?? [], knownSources: knownSources)
-        switch catalog.find(arguments.name, selection: selection) {
+        guard let name = arguments.name else {
+            let found = catalog.search(arguments.query ?? "", selection: selection)
+            guard !found.isEmpty else {
+                return ToolOutput("No skill matches. Try other words or an empty query to browse.")
+            }
+            let lines = found.map { skill in
+                let description =
+                    skill.description.count > Skill.advertisedDescriptionLimit
+                    ? String(skill.description.prefix(Skill.advertisedDescriptionLimit - 1)) + "…" : skill.description
+                return "- \(skill.name): \(description) (\(skill.source), \(skill.scope.rawValue))"
+            }
+            let note =
+                selection.unknown.isEmpty ? "" : "\nIgnored in from: \(selection.unknown.joined(separator: ", "))"
+            return ToolOutput(
+                lines.joined(separator: "\n")
+                    + "\nLoad full instructions with skill(name: …); narrow query for other matches." + note)
+        }
+        guard arguments.query == nil else { return .error("Supply name to load or query to search, not both.") }
+        switch catalog.find(name, selection: selection) {
             case .found(let skill):
                 return load(skill, unknownWords: selection.unknown)
             case .onlyWhenAsked(let skill):
@@ -60,7 +81,7 @@ public struct SkillTool: ArgumentTool {
                 let words =
                     selection.unknown.isEmpty
                     ? "" : " Not a harness or a scope, so ignored: \(selection.unknown.joined(separator: ", "))."
-                return .error("No skill is called \"\(arguments.name)\". \(hint)\(words)")
+                return .error("No skill is called \"\(name)\". \(hint)\(words)")
         }
     }
 
