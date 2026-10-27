@@ -68,7 +68,7 @@ struct CompletionPicker: Sendable, Equatable {
         guard old.trigger.range.lowerBound == trigger.range.lowerBound, old.trigger.query == trigger.query else {
             return
         }
-        selected = Swift.min(old.selected, matches.count - 1)
+        selected = Swift.max(0, Swift.min(old.selected, matches.count - 1))
         firstVisible = old.firstVisible
         settle()
     }
