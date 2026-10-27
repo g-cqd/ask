@@ -112,7 +112,8 @@ extension ScreenController {
                     selector.clear()
                     return []
                 }
-                if count == 1, toggleFold(atRow: cell.row) { return [] }
+                // Fold controls toggle at every click count; rapid re-clicks must not become word selection.
+                if toggleFold(atRow: cell.row) { return [] }
                 let content = count >= 2 ? TranscriptContent(state.transcript) : TranscriptContent()
                 let update = selector.click(
                     row: cell.row, col: cell.col, count: count, rows: frame.rows, content: content)
