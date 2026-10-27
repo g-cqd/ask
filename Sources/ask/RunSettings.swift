@@ -133,7 +133,7 @@ struct RunSettings: Equatable {
         let effort = configuration.thinking.value
         var forms = effort == .providerDefault ? [] : ["\(named)/\(effort)"]
         forms += [named, model.model]
-        let mark = sandbox.isUnrestricted ? "⚠ " : (verbose ? "⛨ " : "")
+        let mark = sandbox.isUnrestricted ? "! · " : (verbose ? "⛨ " : "")
         var seen: Set<String> = []
         return forms.map { mark + $0 }.filter { seen.insert($0).inserted }
     }

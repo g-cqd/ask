@@ -12,10 +12,9 @@ extension ScreenComposer {
         return framed(content, kind: item, style: style, spacerAbove: spacerAbove)
     }
 
-    /// Wraps a block's rows in its padding, tint and spacing. A notice is a line of its own and has none, so a run of them stays compact.
+    /// Wraps every block, including command and authentication notices, in padding, tint and spacing.
     static func framed(_ content: [Line], kind: Transcript.Item, style: BlockStyle, spacerAbove: Bool) -> [Line] {
         guard style.padded else { return content }
-        if case .notice = kind { return content }
         let tint = style.theme.tint(for: kind)
         func tinted(_ line: Line) -> Line {
             var line = line
