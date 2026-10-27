@@ -12,6 +12,7 @@ public struct EditTool: ArgumentTool {
         let replaceAll: Bool?
 
         enum CodingKeys: String, CodingKey {
+            // @dl:accept -- legacy edit and unified write preserve the same wire spelling for replacement fields
             case path
             case oldText = "old_text"
             case newText = "new_text"
