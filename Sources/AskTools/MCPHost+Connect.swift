@@ -54,10 +54,14 @@ extension MCPHost {
     {
         let tools = try await connection.listTools()
         let (chosen, notes) = Self.select(from: tools, for: server)
-        if server.tools == nil, tools.count > maximumDirectTools {
+        let searched =
+            server.mode == .search
+            || (server.mode == nil && server.tools == nil
+                && tools.count > Swift.max(0, server.maxDirectTools ?? maximumDirectTools))
+        if searched {
             live.replace(group: server.name, with: [])
-            catalog.set(server: server.name, tools: tools, connection: connection)
-            setStatus(server.name, .searchable(tools: tools.count), notes: notes)
+            catalog.set(server: server.name, tools: chosen, connection: connection)
+            setStatus(server.name, .searchable(tools: chosen.count), notes: notes)
             if announce, let remark = status.first(where: { $0.name == server.name })?.remark { say(remark) }
         } else {
             catalog.remove(server: server.name)
