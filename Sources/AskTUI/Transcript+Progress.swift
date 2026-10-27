@@ -1,12 +1,17 @@
 extension Transcript {
-    /// Cancellation can end a run without delivering a result for its last tool.
-    mutating func finishRunProgress() {
-        finishThinking()
-        while items.indices.contains(where: {
+    /// Yielded jobs outlive the turn, so they are not candidates for its implicit tool completion.
+    var latestForegroundTool: Int? {
+        items.indices.last {
             guard !jobBlocks.values.contains($0) else { return false }
             if case .tool(_, _, .running, _) = items[$0] { return true }
             return false
-        }) {
+        }
+    }
+
+    /// Cancellation can end a run without delivering a result for its last tool.
+    mutating func finishRunProgress() {
+        finishThinking()
+        while latestForegroundTool != nil {
             finishTool(.failed("run ended without a tool result"))
         }
     }
