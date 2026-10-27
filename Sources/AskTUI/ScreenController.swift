@@ -18,6 +18,8 @@ public struct ScreenController: Sendable {
         case indexFiles
         /// Read a runner's recent output for its lane; the answer is ``ConversationUpdate/runnerOutput(id:text:)``.
         case readRunnerOutput(id: String)
+        /// Follow a yielded process in its original tool block until it ends.
+        case watchJob(id: String)
         /// Tell the screen when the quit window closes: Ctrl+C was pressed on an empty, idle input and a second press within this long quits.
         case armQuitTimer(generation: Int)
         /// List the skills for the `/` picker; the answer is ``ConversationUpdate/skills(_:)``.
@@ -175,8 +177,12 @@ public struct ScreenController: Sendable {
             case .userPrompt(let text): state.transcript.addUser(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
             case .thinkingText(let text): state.transcript.addThinkingText(text)
-            case .toolStarted(let name, let summary): state.transcript.startTool(name: name, summary: summary)
-            case .toolFinished(let status, let output): state.transcript.finishTool(status, output: output)
+            case .toolStarted(let name, let summary, let id):
+                state.transcript.startTool(name: name, summary: summary, id: id)
+            case .toolFinished(let status, let output, let id, let job):
+                state.transcript.finishTool(status, output: output, id: id, backgroundJob: job)
+                if let job { return [.watchJob(id: job)] }
+            case .jobOutput(let job): state.transcript.updateJob(job)
             case .notice(let text, let isError): state.transcript.addNotice(text, isError: isError)
             case .detail(let text): receive(detail: text)
             case .requestExit(let exit): state.exitRequest = exit

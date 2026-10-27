@@ -23,6 +23,7 @@ struct BlockModelTests {
                     transcript.startTool(name: name, summary: summary)
                     transcript.finishTool(status, output: output)
                 case .notice(let text, let isError): transcript.addNotice(text, isError: isError)
+                case .jobEnded: transcript.append(item)
             }
         }
         return ScreenComposer.lines(in: transcript, at: index, columns: columns, style: style)
