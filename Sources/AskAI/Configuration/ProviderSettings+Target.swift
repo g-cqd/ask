@@ -39,7 +39,7 @@ extension ProviderSettings {
         storedKeys: () throws(CredentialFileError) -> [String: String] = { [:] }
     ) throws(ProviderSettingsError) -> Listing? {
         let name = selectedProvider(provider)
-        if [Self.anthropic, Self.codex, Self.agy, Self.apple].contains(name) { return nil }
+        if [Self.anthropic, Self.codex, Self.agy, Self.apple, CopilotProtocol.name].contains(name) { return nil }
         let target = try target(name, environment: environment, storedKeys: storedKeys)
         let (url, key) = try endpoint(of: target, environment: environment, storedKeys: storedKeys)
         return Listing(name: name, baseURL: url, apiKey: key, headers: target.entry.headers ?? [:])

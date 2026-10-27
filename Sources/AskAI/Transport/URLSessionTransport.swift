@@ -23,7 +23,7 @@ public struct URLSessionTransport: HTTPTransport {
 
         let (body, continuation) = AsyncThrowingStream<[UInt8], any Error>.makeStream()
         let task = session.dataTask(with: urlRequest)
-        let delegate = StreamingDelegate(body: continuation)
+        let delegate = StreamingDelegate(body: continuation, allowsRedirects: request.allowsRedirects)
         task.delegate = delegate
         continuation.onTermination = { termination in
             if case .cancelled = termination { task.cancel() }
@@ -60,7 +60,19 @@ public struct URLSessionTransport: HTTPTransport {
         /// Resumed exactly once: by the response, or by completion when no response came.
         private let head = Mutex<CheckedContinuation<(Int, [String: String]), any Error>?>(nil)
 
-        init(body: AsyncThrowingStream<[UInt8], any Error>.Continuation) { self.body = body }
+        private let allowsRedirects: Bool
+
+        init(body: AsyncThrowingStream<[UInt8], any Error>.Continuation, allowsRedirects: Bool) {
+            self.body = body
+            self.allowsRedirects = allowsRedirects
+        }
+
+        func urlSession(
+            _ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
+            newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void
+        ) {
+            completionHandler(allowsRedirects ? request : nil)
+        }
 
         func awaitHead(_ continuation: CheckedContinuation<(Int, [String: String]), any Error>) {
             head.withLock { $0 = continuation }

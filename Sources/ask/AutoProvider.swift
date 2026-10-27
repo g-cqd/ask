@@ -16,7 +16,7 @@ enum AutoProvider {
         }
         let accounts =
             (try? CredentialFile.standard(environment: environment).signedInAccounts(environment: environment)) ?? []
-        for name in [ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy]
+        for name in [ProviderSettings.anthropic, ProviderSettings.codex, ProviderSettings.agy, CopilotProtocol.name]
         where accounts.contains(where: { $0.provider == name }) {
             return name
         }

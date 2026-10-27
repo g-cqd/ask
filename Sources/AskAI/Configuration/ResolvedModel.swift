@@ -10,6 +10,8 @@ public struct ResolvedModel: Sendable, Equatable {
         case codex
         /// The Antigravity subscription's Cloud Code backend, with ask's own Antigravity sign-in.
         case agy
+        /// Experimental VS Code-style GitHub Copilot account.
+        case copilot
         /// Apple's on-device model, run in this process: no account, no key.
         case apple
         /// A server speaking OpenAI chat completions, at `baseURL`.
