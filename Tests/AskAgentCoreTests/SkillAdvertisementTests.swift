@@ -77,6 +77,8 @@ struct SkillAdvertisementTests {
         let scratch = try SkillScratch()
         try scratch.skill("long", in: ".agents/skills", description: String(repeating: "word ", count: 400))
         let block = try #require(SkillAdvertisement.block(for: scratch.discover(), limit: 32))
+        let expected = String(String(repeating: "word ", count: 16).prefix(79)) + "…"
+        #expect(block.contains("- long: \(expected) ("))
         #expect(block.contains("…") && block.count < 1_800)
     }
 }
