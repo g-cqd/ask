@@ -26,7 +26,10 @@ struct SteeringControllerTests {
                 return false
             } == [.user("Start")])
         controller.handle(.promptAccepted(id: 0, text: "Now"))
-        #expect(controller.state.transcript.items.last == .user("Now"))
+        #expect(
+            controller.state.transcript.items == [
+                .user("Start"), .user("Now"), .notice("Queued follow-up: Later", isError: false)
+            ])
     }
 
     @Test func `a submission after the final boundary starts once when runEnded arrives`() {

@@ -4,6 +4,8 @@ extension ScreenController {
         let id: Int
         let text: String
         let followUp: Bool
+        let transcriptIndex: Int
+        let transcriptRevision: Int
 
         var effect: Effect { .queuePrompt(id: id, text: text, followUp: followUp) }
     }
@@ -24,11 +26,14 @@ extension ScreenController {
             state.transcript.addNotice("A command is running; the prompt stays in the editor.", isError: false)
             return []
         }
-        let prompt = Pending(id: nextPromptID, text: text, followUp: followUp)
-        nextPromptID += 1
-        pending.append(prompt)
         let kind = followUp ? "follow-up" : "steering"
         state.transcript.addNotice("Queued \(kind): \(text)", isError: false)
+        let index = state.transcript.items.count - 1
+        let prompt = Pending(
+            id: nextPromptID, text: text, followUp: followUp,
+            transcriptIndex: index, transcriptRevision: state.transcript.revisions[index])
+        nextPromptID += 1
+        pending.append(prompt)
         // During abort, keep input locally: the cancelled run must not consume it.
         return returningInput ? [] : [prompt.effect]
     }
@@ -49,8 +54,8 @@ extension ScreenController {
         // A message may arrive after the agent's last boundary but before runEnded reaches the screen.
         // It is still ours until acknowledged, so start it now and reoffer the others to the new run.
         let index = pending.firstIndex(where: { !$0.followUp }) ?? pending.startIndex
-        let first = pending.remove(at: index)
-        state.transcript.addUser(first.text)
+        let first = pending[index]
+        replaceQueuedPrompt(id: first.id, text: first.text)
         return begin(.startRun(first.text)) + pending.map(\.effect)
     }
 
@@ -61,5 +66,20 @@ extension ScreenController {
             return
         }
         state.editor.restore(text)
+    }
+
+    /// Replaces the queued steering notification with the user message in-place to avoid duplicate transcript noise.
+    mutating func replaceQueuedPrompt(id: Int, text: String) {
+        guard let pendingIndex = pending.firstIndex(where: { $0.id == id }) else { return }
+        let prompt = pending.remove(at: pendingIndex)
+        let index = prompt.transcriptIndex
+        guard state.transcript.revisions.indices.contains(index),
+            state.transcript.revisions[index] == prompt.transcriptRevision
+        else {
+            state.transcript.addUser(text)
+            return
+        }
+        state.transcript.items[index] = .user(text)
+        state.transcript.revisions[index] = state.transcript.bump()
     }
 }
