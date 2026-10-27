@@ -111,7 +111,7 @@ struct ScreenPartsTests {
         state.transcript.finishTool(.failed("[exit 1]"))
         state.running = false
         _ = composer.compose(state, into: &buffer)
-        #expect(rows(buffer)[0] == "bash ls                            ✗ (1)")
+        #expect(rows(buffer)[0] == "bash ls                            [1] ✗")
     }
 
     @Test func `a long prompt wraps and the cursor follows it`() {

@@ -21,7 +21,7 @@ struct BlockStatusLayoutTests {
     @Test func `failure codes are numeric and success omits the code`() {
         let failed = Transcript.Item.tool(name: "bash", summary: "false", status: .failed("[exit 7]"), output: "")
         let rows = ScreenComposer.lines(for: failed, columns: 60)
-        #expect(rows.first?.text.hasSuffix("✗ (7)") == true)
+        #expect(rows.first?.text.hasSuffix("[7] ✗") == true)
         #expect(!rows.contains { $0.text.contains("[exit") })
     }
     @Test func `wide content and tiny widths keep source offsets and exclude metadata`() {
