@@ -10,6 +10,8 @@ extension ScreenController {
     mutating func begin(_ effect: Effect) -> [Effect] {
         if case .startRun = effect { acceptsInput = true } else { acceptsInput = false }
         returningInput = false
+        state.abortArmedAt = nil
+        state.abortArmedAction = nil
         state.running = true
         state.scrollback = 0
         return [effect]

@@ -32,13 +32,19 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var localizedDurations: Bool?
     /// `ui.spinner`: the spinner style used for progress and status line indicators.
     public var spinner: SpinnerPreference?
+    /// `ui.jobAutoReturnWhenFocused`: whether leaving a focused job lane automatically returns to main when the job ends.
+    public var jobAutoReturnWhenFocused: Bool?
+    /// `ui.abortTurnRequiresConfirmation`: whether aborting an active conversation turn requires two Ctrl+C presses within two seconds.
+    public var abortTurnRequiresConfirmation: Bool?
 
     public init(
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
         scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil,
         sidebarOpen: Bool? = nil, prompt: String? = nil, tint: Bool? = nil, separator: Bool? = nil,
-        padding: Bool? = nil, localizedDurations: Bool? = nil, spinner: SpinnerPreference? = nil
+        padding: Bool? = nil, localizedDurations: Bool? = nil, spinner: SpinnerPreference? = nil,
+        jobAutoReturnWhenFocused: Bool? = nil, abortTurnRequiresConfirmation: Bool? = nil
     ) {
+        // @dl:accept -- optional configuration and resolved screen options deliberately assign the same UI keys
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
         self.foldTools = foldTools
@@ -54,26 +60,31 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.padding = padding
         self.localizedDurations = localizedDurations
         self.spinner = spinner
+        self.jobAutoReturnWhenFocused = jobAutoReturnWhenFocused
+        self.abortTurnRequiresConfirmation = abortTurnRequiresConfirmation
     }
 
     public var isEmpty: Bool {
         mouse == nil && copyOnSelect == nil && foldTools == nil && foldThinking == nil && scrollLines == nil
             && promptRows == nil && foldCode == nil && codeFoldLines == nil && sidebarOpen == nil && prompt == nil
             && tint == nil && separator == nil && padding == nil && localizedDurations == nil && spinner == nil
+            && jobAutoReturnWhenFocused == nil && abortTurnRequiresConfirmation == nil
         // @dl:accept -- the layering takes each key from the later section; the keys are the data
     }
 
     /// The keys, in the order they are shown.
     public static let keys =
         ["mouse", "copyOnSelect", "tools", "thinking", "scrollLines", "promptRows", "code", "codeFoldLines", "sidebar"]
-        + lookKeys
+        + lookKeys + behaviorKeys
 
     /// The keys that set the look of the screen (roadmap 0074).
     private static let lookKeys = ["prompt", "tint", "separator", "padding", "localizedDurations", "spinner"]
+    private static let behaviorKeys = ["jobAutoReturnWhenFocused", "abortTurnRequiresConfirmation"]
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: UISection) -> UISection {
         UISection(
+            // @dl:accept -- each configuration field independently takes its later non-nil value
             mouse: section.mouse ?? mouse, copyOnSelect: section.copyOnSelect ?? copyOnSelect,
             foldTools: section.foldTools ?? foldTools, foldThinking: section.foldThinking ?? foldThinking,
             scrollLines: section.scrollLines ?? scrollLines, promptRows: section.promptRows ?? promptRows,
@@ -81,7 +92,9 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             sidebarOpen: section.sidebarOpen ?? sidebarOpen, prompt: section.prompt ?? prompt,
             tint: section.tint ?? tint, separator: section.separator ?? separator,
             padding: section.padding ?? padding, localizedDurations: section.localizedDurations ?? localizedDurations,
-            spinner: section.spinner ?? spinner)
+            spinner: section.spinner ?? spinner,
+            jobAutoReturnWhenFocused: section.jobAutoReturnWhenFocused ?? jobAutoReturnWhenFocused,
+            abortTurnRequiresConfirmation: section.abortTurnRequiresConfirmation ?? abortTurnRequiresConfirmation)
     }
 
     public var description: String {
@@ -97,12 +110,19 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         if let foldCode { parts.append("code \(foldCode ? "folded" : "open")") }
         if let codeFoldLines { parts.append("codeFoldLines \(codeFoldLines)") }
         if let sidebarOpen { parts.append("sidebar \(sidebarOpen ? "open" : "closed")") }
+        // @dl:accept -- named UI fields form the user-facing configuration listing
         if let prompt { parts.append(prompt.isEmpty ? "prompt none" : "prompt \"\(prompt)\"") }
         if let tint { parts.append("tint \(tint ? "on" : "off")") }
         if let separator { parts.append("separator \(separator ? "on" : "off")") }
         if let padding { parts.append("padding \(padding ? "on" : "off")") }
         if let localizedDurations { parts.append("localizedDurations \(localizedDurations ? "on" : "off")") }
         if let spinner { parts.append("spinner \(spinner.rawValue)") }
+        if let jobAutoReturnWhenFocused {
+            parts.append("jobAutoReturnWhenFocused \(jobAutoReturnWhenFocused ? "on" : "off")")
+        }
+        if let abortTurnRequiresConfirmation {
+            parts.append("abortTurnRequiresConfirmation \(abortTurnRequiresConfirmation ? "on" : "off")")
+        }
         return parts.isEmpty ? "defaults" : parts.joined(separator: ", ")
     }
 }

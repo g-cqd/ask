@@ -28,7 +28,8 @@ extension ConfigurationFile {
                         }
                         section.spinner = preference
                     // @dl:accept -- on/off keys decoded like the folded/open ones beside them; the key tables are the data
-                    case "tint", "separator", "padding", "localizedDurations":
+                    case "tint", "separator", "padding", "localizedDurations", "jobAutoReturnWhenFocused",
+                        "abortTurnRequiresConfirmation":
                         let name = try container.decode(String.self, forKey: key)
                         guard name == "on" || name == "off" else {
                             throw BadValue(key: "ui." + key.stringValue, value: name)
@@ -37,7 +38,9 @@ extension ConfigurationFile {
                             case "tint": section.tint = name == "on"
                             case "separator": section.separator = name == "on"
                             case "padding": section.padding = name == "on"
-                            default: section.localizedDurations = name == "on"
+                            case "localizedDurations": section.localizedDurations = name == "on"
+                            case "jobAutoReturnWhenFocused": section.jobAutoReturnWhenFocused = name == "on"
+                            default: section.abortTurnRequiresConfirmation = name == "on"
                         }
                     case "tools", "thinking", "code":
                         let name = try container.decode(String.self, forKey: key)

@@ -40,6 +40,10 @@ extension ScreenComposer {
         if state.quitArmedAt != nil {
             pieces.append(StatusSegment(["press Ctrl+C again to quit", "ctrl+c again to quit"], priority: 80))
         }
+        if let armed = state.abortArmedAction {
+            pieces.append(
+                StatusSegment(["press \(armed) again to abort", "\(armed.lowercased()) again to abort"], priority: 82))
+        }
         if let lane = state.lane {
             pieces.append(StatusSegment(["main › \(lane.name) · esc returns", "main › \(lane.name)"], priority: 65))
         }
