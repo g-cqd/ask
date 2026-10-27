@@ -92,6 +92,7 @@ public struct ScreenController: Sendable {
     public mutating func handle(
         _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant = .now, columns: Int? = nil
     ) -> [Effect] {
+        disarmTurnAbort(unlessInterrupt: event)
         var effects = route(event, pageRows: pageRows, at: now, columns: columns)
         switch event {
             case .key, .paste:

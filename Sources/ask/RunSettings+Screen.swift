@@ -18,7 +18,9 @@ extension RunSettings {
             separator: ui.separator ?? defaults.separator, padding: ui.padding ?? defaults.padding,
             lightBackground: Self.isLightBackground,
             localizedDurations: ui.localizedDurations ?? defaults.localizedDurations,
-            spinner: spinnerStyle)
+            spinner: spinnerStyle,
+            jobAutoReturnWhenFocused: ui.jobAutoReturnWhenFocused ?? defaults.jobAutoReturnWhenFocused,
+            abortTurnRequiresConfirmation: ui.abortTurnRequiresConfirmation ?? defaults.abortTurnRequiresConfirmation)
     }
 
     /// Whether the terminal says its background is light, from `COLORFGBG` (`15;0` is light on dark): the background is the last number, and 7 or
