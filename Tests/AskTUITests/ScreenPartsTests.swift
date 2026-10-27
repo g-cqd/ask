@@ -83,7 +83,7 @@ struct ScreenPartsTests {
         var buffer = ScreenBuffer(columns: 20, rows: 6)
         var composer = ScreenComposer()
         let cursor = composer.compose(state, into: &buffer)
-        #expect(rows(buffer) == ["", "", "hi", "hello there", "ask>", "model"])
+        #expect(rows(buffer) == ["", "", "hi", "hello there", "ask>", "! · model"])
         #expect(cursor.row == 4 && cursor.column == 5)
     }
 

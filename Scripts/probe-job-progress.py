@@ -57,6 +57,9 @@ def main():
         try:
             terminal = probe.Terminal(project, environment, columns=100, rows=30)
             terminal.until(lambda: "ask>" in terminal.text())
+            terminal.repaint()
+            mark = terminal.screen.buffer[29][0]
+            check("sandboxed idle status shows a white exclamation", mark.data == "!" and mark.fg == "white")
             terminal.send(b"Start\r")
             terminal.until(lambda: b"JOB RUNNING" in terminal.raw and "1 job" in terminal.text())
             terminal.repaint()

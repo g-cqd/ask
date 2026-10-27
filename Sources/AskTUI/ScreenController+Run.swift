@@ -13,6 +13,8 @@ extension ScreenController {
         state.abortArmedAt = nil
         state.abortArmedAction = nil
         state.running = true
+        state.statusSpinner = options.spinner.resolved()
+        state.statusFrame = 0
         state.scrollback = 0
         return [effect]
     }
