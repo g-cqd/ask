@@ -44,7 +44,7 @@ struct AgyCloudClientTests {
         #expect(request.url.absoluteString == "https://daily-cloudcode-pa.googleapis.com/v1internal:loadCodeAssist")
         func header(_ name: String) -> String? { request.headers.first { $0.name == name }?.value }
         #expect(header("authorization") == "Bearer access-test")
-        #expect(header("user-agent") == "ask/0 (Antigravity subscription connector)")
+        #expect(header("user-agent") == "antigravity/cli/1.4.0 ask/0 (Antigravity subscription connector)")
         let body = try AemiJSON.parse(request.body).root
         #expect(body["mode"].string == "FULL_ELIGIBILITY_CHECK")
         #expect(body["metadata"]["ideName"].string == "ask")
@@ -129,12 +129,14 @@ struct AgyCloudClientTests {
         async throws
     {
         let list = try await recordedModels()
-        // Groups: the Claude and GPT-OSS agent models. Then the command model, the tiered models by tier name (flash, then flashLite).
+        // Groups: the Argon, Flash 3.8, Claude and GPT-OSS agent models. Then the command model, the tiered models by tier name.
         // Then the remaining thinking models, by id.
         let expected = """
-            claude-opus-5-5-low claude-opus-5-5-medium claude-opus-5-5-high claude-sonnet-5-5-low claude-sonnet-5-5-medium \
-            claude-sonnet-5-5-high gpt-oss-120b-medium gemini-3-flash gemini-3.8-flash-tiered gemini-3.5-flash-lite \
-            gemini-2.5-flash gemini-2.5-flash-lite gemini-2.5-flash-thinking gemini-2.5-pro gemini-3.1-flash-lite
+            gemini-4-argon-medium gemini-4-argon-high gemini-4-argon-low gemini-3.8-flash-high gemini-3.8-flash-medium \
+            gemini-3.8-flash-low claude-opus-5-5-low claude-opus-5-5-medium claude-opus-5-5-high claude-sonnet-5-5-low \
+            claude-sonnet-5-5-medium claude-sonnet-5-5-high gpt-oss-120b-medium gemini-3-flash gemini-3.8-flash-tiered \
+            gemini-3.5-flash-lite gemini-2.5-flash gemini-2.5-flash-lite gemini-2.5-flash-thinking gemini-2.5-pro \
+            gemini-3.1-flash-lite
             """
         #expect(list.models.map(\.id) == expected.split(separator: " ").map(String.init))
     }
@@ -170,7 +172,7 @@ struct AgyCloudClientTests {
     }
 
     @Test func `the server's own default is reported when it is listed, and only then`() async throws {
-        #expect(try await recordedModels().defaultModelID == "claude-opus-5-5-low")
+        #expect(try await recordedModels().defaultModelID == "gemini-4-argon-medium")
         let hidden =
             #"{"models":{"a":{"supportsThinking":true},"chat_1":{"isInternal":true,"maxTokens":9}},"defaultAgentModelId":"chat_1"}"#
         let list = try await models(hidden)

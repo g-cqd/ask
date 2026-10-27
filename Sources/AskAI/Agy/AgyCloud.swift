@@ -6,7 +6,7 @@ internal import Foundation
 /// list and streaming all answer to it, so no first-party client name is claimed. The version is 0 because ask has none.
 enum AgyCloud {
     static let baseURL = URL(string: "https://daily-cloudcode-pa.googleapis.com")!
-    static let userAgent = "ask/0 (Antigravity subscription connector)"
+    static let userAgent = "antigravity/cli/1.4.0 ask/0 (Antigravity subscription connector)"
 
     /// The platform name Cloud Code's client metadata uses for this machine.
     static var platform: String {

@@ -30,12 +30,12 @@ struct AgyModelCatalogTests {
         try world.file.saveAgy(world.valid)
         let transport = SequencedTransport([.json(200, try Self.list())])
         let listing = try await catalog(transport).refreshed(now: 5_000)
-        #expect(listing.snapshot.models.count == 15 && listing.snapshot.notices.isEmpty)
-        #expect(listing.defaultModelID == "claude-opus-5-5-low")
+        #expect(listing.snapshot.models.count == 21 && listing.snapshot.notices.isEmpty)
+        #expect(listing.defaultModelID == "gemini-4-argon-medium")
         let sent = try #require(transport.sent.first)
         #expect(sent.url == AgyModelCatalog.endpoint)
         #expect(sent.headers.contains { $0.name == "authorization" && $0.value == "Bearer at-ok" })
-        #expect(try cacheFile.load(scope: scope(), now: 5_000)?.count == 15)
+        #expect(try cacheFile.load(scope: scope(), now: 5_000)?.count == 21)
     }
 
     @Test func `the cache is read with no request, and says what the download did`() async throws {
@@ -125,7 +125,7 @@ struct AgyModelCatalogTests {
             cloud: AgyCloudClient(transport: SequencedTransport([.json(200, try Self.list())])),
             access: world.access(SequencedTransport([.json(500, "")])))
         let listing = try await catalog.refreshed(now: 5_000)
-        #expect(listing.snapshot.models.count == 15)
+        #expect(listing.snapshot.models.count == 21)
         #expect(listing.snapshot.notices.count == 1 && listing.snapshot.notices[0].contains("could not be cached"))
     }
 
