@@ -11,11 +11,13 @@ struct StatusLine {
 
     private(set) var segments: [StatusSegment]
     let columns: Int
+    var markStyle: Style?
 
     /// Fits `segments`, in the order they are to be shown, to `columns`.
-    init(_ segments: [StatusSegment], columns: Int) {
+    init(_ segments: [StatusSegment], columns: Int, markStyle: Style? = nil) {
         self.segments = segments
         self.columns = Swift.max(1, columns)
+        self.markStyle = markStyle
         fit()
     }
 
@@ -47,7 +49,7 @@ struct StatusLine {
         }
     }
 
-    /// The row, with the columns the clickable pieces cover and an accent on a warning mark that starts the line.
+    /// The row, with the columns the clickable pieces cover and an accent on the leading mark.
     func line(style: Style) -> (line: ScreenComposer.Line, runners: Range<Int>?, below: Range<Int>?) {
         var text = ""
         var column = 0
@@ -68,7 +70,9 @@ struct StatusLine {
             column = span.upperBound
         }
         var accents: [ScreenComposer.Accent] = []
-        if let first = text.first, first == "!" || first == "⚠" {
+        if let markStyle, let first = text.first {
+            accents = [.init(columns: 0 ..< UnicodeWidth.displayWidth(of: String(first)), style: markStyle)]
+        } else if let first = text.first, first == "!" || first == "⚠" {
             accents = [.init(columns: 0 ..< UnicodeWidth.displayWidth(of: String(first)), style: Self.warning)]
         }
         // Only when even the pieces that may not go do not fit: clipped at a cell, the last resort.

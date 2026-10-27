@@ -49,6 +49,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case askInput(id: Int, prompt: String, secret: Bool)
     /// A runner's recent output, answering ``ScreenController/Effect/readRunnerOutput(id:)``.
     case runnerOutput(id: String, text: String)
+    /// Whether the sandbox is active for this session.
+    case sandboxActive(Bool)
     /// The run is over, however it ended.
     case runEnded
 }

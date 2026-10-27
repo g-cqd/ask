@@ -33,6 +33,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         skills: SkillsSection? = nil, mcp: MCPSection? = nil,
         environment: EnvironmentSection? = nil  // @dl:accept -- an initializer that takes every key
     ) {
+        // @dl:accept -- member assignments in configuration section initializers
         self.model = model
         self.provider = provider
         self.thinking = thinking

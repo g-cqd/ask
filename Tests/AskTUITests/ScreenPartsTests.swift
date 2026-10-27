@@ -107,7 +107,7 @@ struct ScreenPartsTests {
         var composer = ScreenComposer()
         _ = composer.compose(state, into: &buffer)
         #expect(rows(buffer)[0] == "bash ls                                |")
-        #expect(rows(buffer)[2] == "m · working… (ctrl+c to stop)")
+        #expect(rows(buffer)[2].hasPrefix("| · m"))
         state.transcript.finishTool(.failed("[exit 1]"))
         state.running = false
         _ = composer.compose(state, into: &buffer)

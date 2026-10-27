@@ -82,6 +82,7 @@ public struct ScreenController: Sendable {
         state.transcript.setThinkingFoldedByDefault(options.foldThinking)
         state.transcript.setCodeFoldedByDefault(options.foldCode)
         state.transcript.setCodeFoldLines(options.codeFoldLines)
+        state.transcript.spinnerStyle = options.spinner
         state.promptRows = options.promptRows
         state.sidebarOpen = options.sidebar
         state.verbose = options.verbose
@@ -185,6 +186,7 @@ public struct ScreenController: Sendable {
                 guard let first = forms.first else { break }
                 state.label = first
                 state.labelVariants = forms
+            case .sandboxActive(let active): state.sandboxed = active
             case .status(let text): state.detail = text
             case .context(let text): state.context = text
             case .runners(let list): setRunners(list)
