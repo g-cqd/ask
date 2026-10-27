@@ -16,9 +16,8 @@ extension ScreenController {
                 }
                 switch command.name {
                     case "help":
-                        for entry in commands {
-                            state.transcript.addNotice("/\(entry.name)  \(entry.summary)", isError: false)
-                        }
+                        let help = commands.map { "/\($0.name)  \($0.summary)" }.joined(separator: "\n")
+                        state.transcript.addNotice(help, isError: false)
                         return []
                     case "quit": return [.quit]
                     case "tasks": return toggleRunners(announcing: true)
