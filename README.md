@@ -126,13 +126,13 @@ A selection copies what is shown.
 
 A click in the input puts the cursor there; a drag there selects text, a double click takes a word and a triple click a line; Shift with an arrow, Home or End selects from the keyboard; typing replaces a selection, Backspace deletes it and Ctrl-C copies it and Ctrl-X cuts it (with nothing selected, Ctrl-X clears the draft). The wheel over a long draft scrolls it.
 
-Skills (a directory with a `SKILL.md`, from any harness's skills directory) are listed to the model, which loads one with the `skill` tool when a task matches;
+Skills (a directory with a `SKILL.md`, from any harness's skills directory) are listed to the model up to 16 eligible skills. Larger catalogs are discovered through `skill(query: …)` (empty query browses); results are bounded and typo-tolerant using AemiText. `skill(name: …)` loads full instructions when a task matches;
 `ask skills` shows what was found and `skills` in `config.json` sets `enabled`, `maxAdvertised` (default 32) and `sources`. A skill grants nothing, and a
 project's skills load only after `ask trust --skills`, in a terminal, has trusted each file as it is. `/skill:name request` asks for one yourself, and the `/` picker lists them.
 
 MCP servers (a program ask starts, or a URL) are named under `mcp` in your own `config.json` and their tools are offered to the model as
 `mcp__<server>__<tool>`; `/mcp` shows which are connected. A server runs outside ask's sandbox, so naming one is the consent: a project's
-file can name one only once you have trusted it (`ask trust` lists what would start), and a server with more than 16 tools is searched (`mcp_search`, `mcp_call`) instead of listed unless `tools` names the ones you want. See ADR-0099, ADR-0100 and ADR-0103. A tool the server marks destructive is asked about first, once a tool a session (ADR-0111).
+file can name one only once you have trusted it (`ask trust` lists what would start). Automatic exposure searches servers above 16 tools; per-server `maxDirectTools` overrides that threshold (zero is allowed). `mode: "search"` or `"direct"` overrides automatic exposure. A `tools` allowlist is enforced in every mode and, without an explicit mode, remains directly offered. `mcp_search` promotes up to eight matches per server for direct calls on subsequent turns; a later search replaces that server's promoted set and a listing change or disconnect withdraws it. Browsing with an empty query promotes nothing. `mcp_call` remains available. See ADR-0099, ADR-0100 and ADR-0103. A tool the server marks destructive is asked about first, once a tool a session (ADR-0111).
 
 Background jobs are counted in the status line (`· 2 jobs`). Click the count, or type `/tasks`, to open a capped runner strip **below the input**, showing each
 job's command and state. Down from an empty draft (or the end of one) moves into the strip; Up and Down choose a job, Enter or a click shows what it has printed in place of the conversation
