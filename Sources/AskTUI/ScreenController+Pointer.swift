@@ -158,10 +158,10 @@ extension ScreenController {
                 in: state.transcript, at: block, columns: frame.transcriptColumns, style: state.blocks
             )
             .count
-        if state.transcript.isFoldable(block) {
-            state.transcript.toggleFold(block)
-        } else if let source, let fence = state.transcript.codeFence(toggledByLine: source.line, at: block) {
+        if let source, let fence = state.transcript.codeFence(toggledByLine: source.line, at: block) {
             state.transcript.toggleCodeFold(fence, at: block)
+        } else if state.transcript.isFoldable(block) {
+            state.transcript.toggleFold(block)
         } else {
             return false
         }

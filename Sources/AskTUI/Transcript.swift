@@ -15,7 +15,7 @@ public struct Transcript: Sendable, Equatable {
         case user(String)
         case assistant(String)
         /// A tool call. `output` is what it returned, shown when the block is unfolded.
-        case tool(name: String, summary: String, status: ToolStatus, output: String)
+        case tool(name: String, summary: String, status: ToolStatus, output: String, fullInput: String = "")
         /// What the model reasoned before answering, kept so it can be opened (ADR-0046: `ui.thinking`).
         case thinking(String)
         case notice(String, isError: Bool)
@@ -88,9 +88,9 @@ public struct Transcript: Sendable, Equatable {
     }
 
     public mutating func startTool(
-        name: String, summary: String, at now: ContinuousClock.Instant = .now, id: String? = nil
+        name: String, summary: String, at now: ContinuousClock.Instant = .now, id: String? = nil, fullInput: String = ""
     ) {
-        append(.tool(name: name, summary: summary, status: .running, output: ""))
+        append(.tool(name: name, summary: summary, status: .running, output: "", fullInput: fullInput))
         progress[items.count - 1] = BlockProgress(at: now, spinner: spinnerStyle)
         if let id { toolBlocks[id] = items.count - 1 }
     }
@@ -102,10 +102,10 @@ public struct Transcript: Sendable, Equatable {
     ) {
         guard
             let index = id.flatMap({ toolBlocks[$0] }) ?? (id == nil ? latestForegroundTool : nil),
-            case .tool(let name, let summary, _, _) = items[index]
+            case .tool(let name, let summary, _, _, let input) = items[index]
         else { return }
         finishProgress(at: index, now: now)
-        items[index] = .tool(name: name, summary: summary, status: status, output: Self.kept(output))
+        items[index] = .tool(name: name, summary: summary, status: status, output: Self.kept(output), fullInput: input)
         revisions[index] = bump()
         if let backgroundJob { jobBlocks[backgroundJob] = index }
     }
@@ -126,7 +126,7 @@ public struct Transcript: Sendable, Equatable {
     public func isFoldable(_ index: Int) -> Bool {
         guard items.indices.contains(index) else { return false }
         switch items[index] {
-            case .tool(_, _, _, let output): return !output.isEmpty
+            case .tool(_, _, _, let output, let input): return !output.isEmpty || !input.isEmpty
             case .thinking(let text): return !Self.kept(text).isEmpty
             default: return false
         }

@@ -44,7 +44,7 @@ struct BlockProgressTests {
         controller.handle(.toolStarted(name: "bash", summary: "read"))
         controller.handle(.runEnded)
         #expect(!controller.hasLiveProgress)
-        guard case .tool(_, _, .failed, _) = controller.state.transcript.items[0] else {
+        guard case .tool(_, _, .failed, _, _) = controller.state.transcript.items[0] else {
             Issue.record("a tool without a result was marked successful or left running")
             return
         }

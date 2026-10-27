@@ -19,7 +19,7 @@ struct BlockModelTests {
                 case .user(let text): transcript.addUser(text)
                 case .assistant(let text): transcript.addAssistantText(text)
                 case .thinking(let text): transcript.addThinkingText(text)
-                case .tool(let name, let summary, let status, let output):
+                case .tool(let name, let summary, let status, let output, _):
                     transcript.startTool(name: name, summary: summary)
                     transcript.finishTool(status, output: output)
                 case .notice(let text, let isError): transcript.addNotice(text, isError: isError)

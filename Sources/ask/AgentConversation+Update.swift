@@ -11,7 +11,9 @@ extension AgentConversation {
             case .model(.notice(let text)): return .notice(text, isError: false)
             case .promptAccepted(let prompt): return .promptAccepted(id: prompt.id, text: prompt.text)
             case .toolStarted(let id, let name, let input):
-                return .toolStarted(name: name, summary: ToolSummary.line(for: input), id: id)
+                return .toolStarted(
+                    name: name == "bash" ? "shell" : name, summary: ToolSummary.header(for: input), id: id,
+                    fullInput: ToolSummary.fullInput(for: input))
             case .toolFinished(let id, _, let output):
                 let last = output.content.split(separator: "\n").last.map(String.init) ?? ""
                 return .toolFinished(

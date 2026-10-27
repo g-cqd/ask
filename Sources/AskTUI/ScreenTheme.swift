@@ -34,7 +34,7 @@ public struct ScreenTheme: Sendable, Equatable {
         guard tinted else { return .default }
         switch item {
             case .user: return user
-            case .tool(_, _, let status, _):
+            case .tool(_, _, let status, _, _):
                 switch status {
                     case .running: return pending
                     case .succeeded: return success
