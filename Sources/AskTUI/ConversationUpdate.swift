@@ -46,6 +46,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case skills([SlashCommand])
     /// A command's list, answering ``ScreenController/Effect/listChoices(command:)``.
     case choices(command: String, rows: [ChoiceRow])
+    /// Replaces the interactive configuration editor's rows.
+    case configEditor(ConfigEditorSnapshot)
     /// The running command wants a line from the person: shown as a question in the status line, answered with Enter, cancelled with Esc, and sent to
     /// ``Conversation/answer(input:with:)``. A secret is hidden as it is typed and never reaches the transcript.
     case askInput(id: Int, prompt: String, secret: Bool)

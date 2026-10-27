@@ -59,6 +59,7 @@ extension ScreenComposer {
             picker.matches.count > shown && shown > 0 ? " \(picker.selected + 1) of \(picker.matches.count)" : ""
         let heading = name + position + (picker.caption.isEmpty ? "" : " · " + picker.caption)
         let chooses: Bool = if case .choices = picker.kind { true } else { false }
+        let config: Bool = if case .config = picker.kind { true } else { false }
         let options =
             picker.matches.isEmpty
             ? [heading, name]
@@ -67,11 +68,16 @@ extension ScreenComposer {
                     heading + " · ↑↓ then Enter chooses · Esc closes", heading + " · Enter chooses · Esc closes",
                     heading, name
                 ]
-                : [
-                    heading + " · Enter or Tab inserts · Esc closes", heading + " · Enter inserts · Esc closes",
-                    heading,
-                    name + position, name
-                ]
+                : config
+                    ? [
+                        heading + " · ↑↓ move · ←→ change · Enter saves · Esc closes",
+                        heading + " · ←→ change · Enter saves · Esc closes", heading, name
+                    ]
+                    : [
+                        heading + " · Enter or Tab inserts · Esc closes", heading + " · Enter inserts · Esc closes",
+                        heading,
+                        name + position, name
+                    ]
         return clipped(options.first { UnicodeWidth.displayWidth(of: $0) <= columns } ?? name, to: columns)
     }
 
