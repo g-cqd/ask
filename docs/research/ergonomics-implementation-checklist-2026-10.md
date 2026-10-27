@@ -60,17 +60,22 @@ interactive configuration → categorized picker → file-path/link ergonomics (
 - [ ] Migrate existing Swift Regex uses repo-wide to AemiRegex, with parity and
   performance evidence (roadmap 0077).
 
-## Configuration batch (current)
+## Configuration batch (done)
+
+- [x] `/config` interactive user/project scope selection and key navigation.
+- [x] Up/down keys, left/right enum/boolean/spinner choices; Enter commits.
+- [x] JSON/JSON5 via AemiJSON; atomic writes, indentation preservation, unrelated
+  settings retained; clear error handling and no writes on cancel/read.
+  JSON5 comments do not survive a save: AemiJSON re-encodes strict JSON.
+- [x] Reload edited settings through existing validation and safety boundaries.
+  Strings, numbers, paths and lists are listed read-only rather than guessed at;
+  scope switching inside the editor and a raw-text mode remain follow-ups.
+
+## Picker batch (current)
 
 - [ ] Categorize commands into session/model/tools/configuration.
 - [ ] Render group headings without making them selectable; preserve keyboard,
   click, scroll, search, small-screen and Escape behavior.
-- [ ] `/config` interactive user/project scope selection and key navigation.
-- [ ] Up/down keys, left/right enum/boolean/spinner choices; Enter commits.
-- [ ] JSON/JSON5 via AemiJSON; atomic writes, indentation preservation, unrelated
-  settings retained; clear error handling and no writes on cancel/read.
-- [ ] Reload edited settings through existing validation and safety boundaries;
-  settings not expressible as enum/boolean need an explicit supported editor path.
 - [ ] Verify resume flag fidelity and launch paths with spaces/quotes; define which
   exit paths print the banner. Ctrl+C must retain its existing abort/draft semantics,
   rather than being converted into unconditional process exit by the study example.
