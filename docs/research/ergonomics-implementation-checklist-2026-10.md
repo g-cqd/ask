@@ -38,16 +38,23 @@ savings and usage percentages are estimates, not measured acceptance criteria.
 
 ## Shell and tool presentation batch
 
-- [ ] Present bash invocations as `shell` without breaking persisted tool identity.
+Execution order selected by the owner: tool presentation → shell lifecycle →
+interactive configuration → categorized picker → file-path/link ergonomics (0075).
+
+- [x] Present bash invocations as `shell` without breaking persisted tool identity.
 - [ ] Tell the model the active shell, using the filtered launch environment and
   any explicit override, so commands do not assume bash syntax under fish.
 - [ ] Add file readiness and output/completion waits for already-running jobs;
   preserve timeout, cancellation, bounded output and non-consuming UI snapshots.
-- [ ] Structured `tool · target · compact parameters` headers for read/write/job/shell.
-- [ ] Carry full input through live events AND replay; unfold full input above output,
+- [x] Structured `tool · target · compact parameters` headers for read/write/job/shell.
+- [x] Carry full input through live events AND replay; unfold full input above output,
   including commands with empty output. Preserve copy offsets and fold ownership.
-- [ ] Fold heredoc payloads above **40 lines** (the user's explicit threshold takes
+- [x] Fold heredoc payloads above **40 lines** (the user's explicit threshold takes
   precedence over the study's 50), with delimiter, omitted count, and explicit expansion.
+  Common literal cat/tee/interpreter openers use AemiRegex; unsupported/ambiguous
+  shell forms remain fully visible rather than guessing. This is not a shell parser.
+- [ ] Migrate existing Swift Regex uses repo-wide to AemiRegex, with parity and
+  performance evidence (roadmap 0077).
 
 ## Picker and configuration batch
 
