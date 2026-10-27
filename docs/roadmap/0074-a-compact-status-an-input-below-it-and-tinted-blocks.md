@@ -31,6 +31,14 @@ translucent terminal"; icons) are not rediscovered as surprises. The ADR that cl
 11. Tool calls have a tinted background up to behind the padding (border-box), by outcome. **The user's own message, once sent, is tinted too**, like the input it came from (added by the owner after the first list). Answers have no tint. Thinking has no tint: italic and faint, or folded to an italic `Thinking...`.
     The spacing rule of 10 therefore reads: a block gets the empty block above it when it and the block before it are both tinted (tool after tool, tool after user, user after tool); answers and thinking never do.
 
+## Owner refinement after step 4
+
+- With separators, the input itself is untinted. Character rules sit immediately above and below it, with no blank rows between them and the input. Both rules are implemented.
+- Pixel rules must also sit above and below, with one blank character row between each rule and the input. Pixel rendering remains deferred to TerminalKit integration; do not apply the character-rule geometry to it.
+- Replace the poor-looking warning glyph with a yellow ASCII `!`, separated from the model label by ` · `.
+- Command/authentication notices (including key prompts, hidden receipt acknowledgements and storage confirmations) have one blank row above and below, just like other blocks. They are not exempt from padding.
+- Verification: all 516 AskTUI tests pass after these refinements.
+
 ## Where it stands
 
 Started, not finished.
@@ -39,7 +47,7 @@ Started, not finished.
 - Done (step 1): the status line as prioritised segments fitted to the width, whole/shorter/gone and never cut, compact `provider/model/effort` label, `↑ ↓` usage, no `ready`, ⚠ accent, copy notice only on failure, `--verbose` shield. The probes still wait for `ready` and `ask>`; step 5 moves them.
 - Done (step 2): the status line is below the input: picker, input, status, runner strip; the pointer regions, picker geometry and cursor follow.
 - Done (step 3): `ui.prompt` (none by default), `ui.tint` and `ui.separator` (on by default), `ScreenTheme` (a dark and a light set; light from `COLORFGBG`), a box-drawing rule above the input (the pixel line waits on the kit, handover item 4), the input tinted to the edge of its row. `ScreenOptions.legacy` is the old look the older screen tests are written against.
-- Done (step 4): the block model (`BlockStyle`, `ui.padding`): a row of padding around every block but a notice, an inset of one column, tool calls tinted by outcome and the user's messages tinted, a blank row between consecutive tool calls and messages, answers and thinking untinted and unspaced, thinking faint italic with a `Thinking...` header. `probe-blocks.py` reads the renderer's bytes: no scroll is written with a background set, with a control that can fail.
+- Done (step 4): the block model (`BlockStyle`, `ui.padding`): a row of padding around every block (including notices after the owner refinement), an inset of one column, tool calls tinted by outcome and the user's messages tinted, a blank row between consecutive tool calls and messages, answers and thinking untinted and unspaced, thinking faint italic with a `Thinking...` header. `probe-blocks.py` reads the renderer's bytes: no scroll is written with a background set, with a control that can fail.
 - Next, in order, each its own commit with its tests: (a, done) the status line as prioritised segments fitted to the width, compact label and usage, no `ready`, ⚠ accent, failures-only copy notice; (b) the status below the input and the geometry that follows (pointer regions, picker, strip; the tests that name rows); (c) `ui.prompt`, the input tint and the separator row; (d) the block model: padding, spacing, tints, thinking style; (e) the ADR superseding 0015's lines, and the scripts that wait for `ask>` (`measure-*.py`, the probes) moved to something that survives `ui.prompt` being empty.
 
 ## Things to settle before (d)

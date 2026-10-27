@@ -32,8 +32,9 @@ struct InputLookTests {
         let rig = rig()
         let rule = rig.composer.transcriptRows
         #expect(rig.text(row: rule) == String(repeating: "─", count: 30))
-        #expect(rig.composer.transcriptRows == 12 - 1 - 1 - 1, "the input, the status and the rule")
-        #expect(rig.controller.frame.promptRow == rule + 1 && rig.controller.frame.statusRow == rule + 2)
+        #expect(rig.composer.transcriptRows == 12 - 1 - 1 - 2, "the input, the status and two rules")
+        #expect(rig.text(row: rule + 2) == String(repeating: "─", count: 30))
+        #expect(rig.controller.frame.promptRow == rule + 1 && rig.controller.frame.statusRow == rule + 3)
     }
 
     @Test func `with the rule off the input follows the conversation`() {
@@ -42,12 +43,10 @@ struct InputLookTests {
         #expect(rig.text(row: rig.composer.transcriptRows) == "hi")
     }
 
-    @Test func `the input row is tinted to its edge, and the rows around it are not`() {
+    @Test func `rules replace the input tint without adding blank rows`() {
         let rig = rig()
         let input = rig.composer.transcriptRows + 1
-        let tint = ScreenTheme().inputBackground
-        #expect(tint != .default)
-        #expect((0 ..< 30).allSatisfy { rig.buffer[input, $0].style.bg == tint }, "text and blanks alike")
+        #expect((0 ..< 30).allSatisfy { rig.buffer[input, $0].style.bg == .default }, "text and blanks alike")
         #expect(rig.buffer[input - 1, 0].style.bg == .default && rig.buffer[input + 1, 0].style.bg == .default)
     }
 
