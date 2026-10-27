@@ -26,7 +26,7 @@ import tempfile
 import termios
 import time
 
-PROMPT, FRAME_END = b'ask>', b'\x1b[?2026l'
+PROMPT, FRAME_END = '────'.encode(), b'\x1b[?2026l'
 TRACE = re.compile(rb'TRACE ([a-z_.]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+) ([0-9]+)')
 
 
