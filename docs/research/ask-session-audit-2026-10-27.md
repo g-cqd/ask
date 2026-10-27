@@ -54,35 +54,24 @@ terminal, service authorization and billing acceptance are different evidence le
   the lookup is shared and snapshot emission is coalesced. See diary 13 for commands,
   counterfactuals, actual gate results and performance uncertainty.
 
+- Semantic naming evaluation: empirical comparison of `.general` vs `.contentTagging`
+  FoundationModels on large commands up to 17.8 KB recorded in
+  `docs/research/apple-semantic-job-naming-2026-10.md`. Established that semantic names
+  are strictly advisory visual hints; all core job lifecycle and identification strictly
+  uses canonical and display IDs (`75d8ccc`).
+
 ## Still owed for ask
 
-1. Finish semantic job-name investigation, explicitly comparing Foundation Models'
-   ordinary and content-tagging use cases. No naming implementation is claimed.
-2. Port sibling Copilot pricing refresh and usage/quota UI where intended; independently
-   validate live units/headers/visuals. Headers do not establish VS Code billing parity.
-3. Compare native wait with harness semantics rather than calling existing process,
-   output, file and port waits exhaustive parity or a multi-job wait-all API.
-4. Integrate conditional pixel rules/palette support through TerminalKit.
-5. Migrate remaining obsolete ready/ask> historical probes, replace the misleading
-   unit-test-only Copilot flow probe with real CLI integration, and establish budgets.
-   Recent baseline/candidate startup cohorts both exceed 25 ms with high spread.
-6. A PTY rapid-click fix is not universal real-terminal acceptance; verify any remaining
-   reported thinking-fold symptom rather than assuming all variants have one cause.
-
-## Other projects found in the same sessions
-
-- pi-integrations Copilot: experimental connection, errors, official list-price refresh,
-  quota footer and curated mutation script exist locally; fresh audit run had 55 tests
-  passing. Copilot files remained untracked/modified. Live quota/billing reconciliation
-  was unverified. Do not overwrite that sibling work or equate it with the ask port.
-- localization and Xcode clone cleanup: recorded work and local merge commits
-  are present; the two requested temporary clone directories are absent. Linguistic
-  acceptance and experimental format conversion were not independently established.
-- Deep-link location: RFC removal was committed/pushed after approval; external scanner
-  acceptance criteria had not been reconciled.
-- MAIN-24753 price/currency: substantial implementation and per-commit testing underway
-  in another active checkout. Reorder quantity/its tooltip and final history completion
-  were not established at audit time. No full simulator/backend acceptance claim.
-
-Keep unrelated repository work separate. Completion is assessed requirement by
-requirement; approvals and 'continue' messages do not turn partial features into done.
+1. UI spacing edge case: tool header gap row between command and body is currently
+   conditional on `style.padded` (`ScreenComposer+Lines.swift:74`); should apply cleanly
+   whenever a block is unfolded with output.
+2. Status line and rule styling: rule character lines above and below the input should
+   adopt the status line text style/color, and status line text opacity/contrast can be
+   further dimmed/softened.
+3. Thinking block folding: ensure thinking blocks fold and unfold reliably across all
+   rendering states, mouse drag, and click event variants.
+4. Tool harness parity: investigate and align `WaitTool` multi-target and timeout semantics
+   with harness standards.
+5. TerminalKit integration: true terminal palette negotiation (`OSCPalette`) and pixel
+   separators when available from TerminalKit.
+6. Copilot list pricing refresh and usage/quota footer display.
