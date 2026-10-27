@@ -47,8 +47,11 @@ extension ScreenComposer {
         return result
     }
 
-    static func blockMetadata(status: Transcript.ToolStatus, output: String, progress: BlockProgress?) -> String {
-        var parts = [progress?.duration ?? "00:00:00"]
+    static func blockMetadata(
+        status: Transcript.ToolStatus, output: String, progress: BlockProgress?, localizedDurations: Bool = true
+    ) -> String {
+        var parts: [String] = []
+        if let duration = progress?.duration(localized: localizedDurations) { parts.append(duration) }
         if !output.isEmpty {
             let count = TranscriptContent.hardLines(of: output).count
             parts.append("\(count) \(count == 1 ? "line" : "lines")")

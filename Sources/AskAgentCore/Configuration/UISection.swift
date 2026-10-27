@@ -22,17 +22,20 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     /// `ui.prompt`: what the input starts with, if anything. Empty is none, which is the default: the input is marked by its tint.
     public var prompt: String?
     /// `ui.tint`: whether the input and the tool and user blocks have a tinted background. `true` is `"on"`, `false` is `"off"`.
+    // @dl:accept -- optional UI settings are schema data, not the unrelated MCP annotation fields
     public var tint: Bool?
     /// `ui.separator`: whether a rule separates the conversation from the input. `true` is `"on"`, `false` is `"off"`.
     public var separator: Bool?
     /// `ui.padding`: whether each block has a row of padding around it. `true` is `"on"`, `false` is `"off"`.
     public var padding: Bool?
+    /// `ui.localizedDurations`: localized elapsed units (`"on"`, default) or a compact clock (`"off"`).
+    public var localizedDurations: Bool?
 
     public init(
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
         scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil,
         sidebarOpen: Bool? = nil, prompt: String? = nil, tint: Bool? = nil, separator: Bool? = nil,
-        padding: Bool? = nil
+        padding: Bool? = nil, localizedDurations: Bool? = nil
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -47,12 +50,13 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.tint = tint
         self.separator = separator
         self.padding = padding
+        self.localizedDurations = localizedDurations
     }
 
     public var isEmpty: Bool {
         mouse == nil && copyOnSelect == nil && foldTools == nil && foldThinking == nil && scrollLines == nil
             && promptRows == nil && foldCode == nil && codeFoldLines == nil && sidebarOpen == nil && prompt == nil
-            && tint == nil && separator == nil && padding == nil
+            && tint == nil && separator == nil && padding == nil && localizedDurations == nil
         // @dl:accept -- the layering takes each key from the later section; the keys are the data
     }
 
@@ -62,7 +66,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         + lookKeys
 
     /// The keys that set the look of the screen (roadmap 0074).
-    private static let lookKeys = ["prompt", "tint", "separator", "padding"]
+    private static let lookKeys = ["prompt", "tint", "separator", "padding", "localizedDurations"]
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: UISection) -> UISection {
@@ -73,7 +77,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             foldCode: section.foldCode ?? foldCode, codeFoldLines: section.codeFoldLines ?? codeFoldLines,
             sidebarOpen: section.sidebarOpen ?? sidebarOpen, prompt: section.prompt ?? prompt,
             tint: section.tint ?? tint, separator: section.separator ?? separator,
-            padding: section.padding ?? padding)
+            padding: section.padding ?? padding, localizedDurations: section.localizedDurations ?? localizedDurations)
     }
 
     public var description: String {
@@ -93,6 +97,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         if let tint { parts.append("tint \(tint ? "on" : "off")") }
         if let separator { parts.append("separator \(separator ? "on" : "off")") }
         if let padding { parts.append("padding \(padding ? "on" : "off")") }
+        if let localizedDurations { parts.append("localizedDurations \(localizedDurations ? "on" : "off")") }
         return parts.isEmpty ? "defaults" : parts.joined(separator: ", ")
     }
 }
