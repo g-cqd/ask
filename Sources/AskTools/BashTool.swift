@@ -20,10 +20,16 @@ public struct BashTool: ArgumentTool {
         let command: String
         let timeoutSeconds: Int?
         let yieldSeconds: Int?
+        let waitForOutput: String?
+        let waitForPort: Int?
+        let shell: String?
         enum CodingKeys: String, CodingKey {
             case command
             case timeoutSeconds = "timeout_seconds"
             case yieldSeconds = "yield_seconds"
+            case waitForOutput = "wait_for_output"
+            case waitForPort = "wait_for_port"
+            case shell
         }
     }
 
@@ -38,17 +44,15 @@ public struct BashTool: ArgumentTool {
 
     public let definition = ToolDefinition(
         name: "bash",
-        description: """
-            Run a bash command in the working directory. Returns combined stdout and stderr and the exit status. \
-            Without yield_seconds, standard input is closed and the command is stopped after timeout_seconds \
-            (default 120, at most 600). With yield_seconds, a command still running after that many seconds keeps \
-            running as a job, with standard input open: use it for servers, watchers and long builds, then wait, \
-            job_input and job_stop. A result too long to show names a file holding the whole output.
-            """
+        description:
+            "Run a shell command. Use timeout_seconds (default 120, max 600), yield_seconds to background, or wait_for_output / wait_for_port."
     ) {
         ToolProperty.string("command")
         ToolProperty.integer("timeout_seconds", minimum: 1, maximum: 600).optional
         ToolProperty.integer("yield_seconds", minimum: 1, maximum: 600).optional
+        ToolProperty.string("wait_for_output").optional
+        ToolProperty.integer("wait_for_port", minimum: 1, maximum: 65_535).optional
+        ToolProperty.string("shell").optional
         SandboxRequest.property
     }
 
@@ -71,11 +75,37 @@ public struct BashTool: ArgumentTool {
         let limit =
             yield ?? Swift.min(Swift.max(1, arguments.timeoutSeconds ?? Self.defaultTimeout), Self.maximumTimeout)
         let observe = observe
+        let keepsInput = yield != nil || arguments.waitForOutput != nil || arguments.waitForPort != nil
         let job = access.jobs.start(
-            arguments.command, in: context, keepsInputOpen: yield != nil, keeping: Self.keptBytes
+            arguments.command, in: context, keepsInputOpen: keepsInput, keeping: Self.keptBytes,
+            shell: access.jobs.commandShell(arguments.shell, in: context)
         ) { observe(.output($0)) }
-        switch await JobWaiting.wait(for: job, needle: nil, seconds: limit, clock: access.clock) {
-            case .found, .ended:
+
+        if let port = arguments.waitForPort {
+            let outcome = await Self.waitForPort(port, job: job, seconds: limit, clock: access.clock)
+            if outcome == .ended { return Self.finished(job) }
+            if outcome == .found {
+                job.markBackgrounded()
+                let shown = job.takeOutput()
+                return ToolOutput(
+                    BashTool.body(shown) + "[port \(port) accepts connections; still running as \(job.id)]",
+                    backgroundJob: job.id)
+            }
+            job.stop()
+            await job.ended()
+            return .error(
+                BashTool.body(job.takeOutput()) + "[port \(port) did not accept connections within \(limit) s]")
+        }
+
+        let needle = arguments.waitForOutput.map { Array($0.utf8) }
+        switch await JobWaiting.wait(for: job, needle: needle, seconds: limit, clock: access.clock) {
+            case .found:
+                job.markBackgrounded()
+                let shown = job.takeOutput()
+                return ToolOutput(
+                    BashTool.body(shown) + "[\(job.id) printed \"\(arguments.waitForOutput ?? "")\"; still running]",
+                    backgroundJob: job.id)
+            case .ended:
                 return Self.finished(job)
             case .timedOut where yield != nil:
                 job.markBackgrounded()
@@ -83,7 +113,8 @@ public struct BashTool: ArgumentTool {
                 return ToolOutput(
                     (shown.isEmpty ? "" : shown.hasSuffix("\n") ? shown : shown + "\n")
                         + "[still running as \(job.id) after \(limit) s\(JobWaiting.fileNote(job)); "
-                        + "display [#\(job.displayID)]; use wait, job_input or job_stop]", backgroundJob: job.id)
+                        + "display [#\(job.displayID)]; use job to inspect, send input, or stop]", backgroundJob: job.id
+                )
             case .timedOut, .cancelled:
                 let aborted = Task.isCancelled
                 job.stop()

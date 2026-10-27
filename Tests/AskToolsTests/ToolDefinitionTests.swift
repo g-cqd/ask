@@ -40,7 +40,7 @@ struct ToolDefinitionTests {
     @Test func `bash`() {
         #expect(
             schema(BashTool())
-                == #"{"type":"object","properties":{"command":{"type":"string"},"timeout_seconds":{"type":"integer","minimum":1,"maximum":600},"yield_seconds":{"type":"integer","minimum":1,"maximum":600},"sandbox":{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}},"required":["command"]}"#
+                == #"{"type":"object","properties":{"command":{"type":"string"},"timeout_seconds":{"type":"integer","minimum":1,"maximum":600},"yield_seconds":{"type":"integer","minimum":1,"maximum":600},"wait_for_output":{"type":"string"},"wait_for_port":{"type":"integer","minimum":1,"maximum":65535},"shell":{"type":"string"},"sandbox":{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}},"required":["command"]}"#
         )
     }
 }

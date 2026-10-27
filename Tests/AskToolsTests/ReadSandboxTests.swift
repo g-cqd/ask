@@ -26,7 +26,7 @@ final class ReadSandboxTests {
     private func run(_ command: String) async -> ToolOutput {
         let quoted = command.replacingOccurrences(of: "\\", with: "\\\\").replacingOccurrences(of: "\"", with: "\\\"")
         let context = ToolContext(workingDirectory: world.workspace, sandbox: policy)
-        return await BashTool().run(world.input(#"{"command":"\#(quoted)"}"#), in: context)
+        return await BashTool().run(world.input(#"{"command":"\#(quoted)","shell":"/bin/bash"}"#), in: context)
     }
 
     @Test func `the workspace and the system are readable, and programs run`() async {

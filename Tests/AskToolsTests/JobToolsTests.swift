@@ -13,7 +13,8 @@ import Testing
 struct JobToolsTests {
     private let root: URL
     private let context: ToolContext
-    private let jobs = JobTable()
+    private let jobs = JobTable(
+        environment: ProcessInfo.processInfo.environment.merging(["SHELL": "/bin/bash"]) { _, shell in shell })
 
     init() throws {
         root = FileManager.default.temporaryDirectory.appending(path: "ask-jobs-\(UUID().uuidString)")
@@ -50,6 +51,23 @@ struct JobToolsTests {
         let reply = await JobInputTool(jobs: jobs, clock: TestClock())
             .run(input(#"{"job":"job-1","text":"hello\n"}"#), in: context)
         #expect(reply == ToolOutput("[job-1 ended]\ngot hello\n[exit 0]"))
+        #expect(jobs.running.isEmpty)
+    }
+
+    // MARK: - consolidated job tool (input, stop, status)
+
+    @Test func `job tool actions handle input, status check, and stop`() async throws {
+        _ = try await started(#"echo ready; read line; echo "got $line"; read hold"#, printed: "ready")
+        let jobTool = JobActionTool(jobs: jobs)
+
+        let statusOutput = await jobTool.run(input(#"{"job":"job-1","action":"status"}"#), in: context)
+        #expect(!statusOutput.isError && statusOutput.content.contains("running"))
+
+        let inputReply = await jobTool.run(input(#"{"job":"job-1","action":"input","text":"hello\n"}"#), in: context)
+        #expect(!inputReply.isError && inputReply.content.contains("got hello"))
+
+        let stopReply = await jobTool.run(input(#"{"job":"job-1","action":"stop"}"#), in: context)
+        #expect(!stopReply.isError && stopReply.content.contains("stopped"))
         #expect(jobs.running.isEmpty)
     }
 

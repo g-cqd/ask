@@ -30,16 +30,27 @@ public final class JobTable: Sendable {
         filePrefix = "\(Int(Date().timeIntervalSince1970))-\(getpid())"
     }
 
+    /// Shell selection belongs to the shell tool; internal POSIX job scripts keep their bash default.
+    func commandShell(_ requested: String?, in context: ToolContext) -> String {
+        let candidate = requested ?? context.commandEnvironment.filtered(environment)["SHELL"]
+        if let candidate, candidate.hasPrefix("/"), FileManager.default.isExecutableFile(atPath: candidate) {
+            return candidate
+        }
+        return "/bin/bash"
+    }
+
     /// Starts `command` as a new job.
     /// - Parameters:
     ///   - command: the bash command.
     ///   - context: where it runs, and where its output file goes.
     ///   - keepsInputOpen: whether standard input stays open.
     ///   - keeping: how many bytes of unseen output to keep at each end.
+    ///   - shell: the shell binary to use, or nil for default.
     ///   - observe: sees every chunk of output, for tests.
     /// - Returns: the running job.
     func start(
         _ command: String, in context: ToolContext, keepsInputOpen: Bool, keeping: Int,
+        shell: String? = nil,
         observe: @escaping @Sendable ([UInt8]) -> Void
     ) -> Job {
         let number = counter.wrappingAdd(1, ordering: .relaxed).newValue
@@ -50,7 +61,7 @@ public final class JobTable: Sendable {
                 id: id, displayID: displayIDs.withLock { $0.next() }, command: command,
                 workingDirectory: context.workingDirectory, outputPath: path,
                 keepsInputOpen: keepsInputOpen, keeping: keeping, sandbox: context.sandbox, watchdog: watchdog,
-                environment: context.commandEnvironment.filtered(environment)),
+                environment: context.commandEnvironment.filtered(environment), shell: shell),
             observe: observe)
         jobs.withLock { $0[id] = job }
         notifyObservers()

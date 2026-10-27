@@ -136,7 +136,7 @@ func makeLoop(
         provider: deferringThinking(makeProvider(resolved, transport: transport), run: run, limit: agent.maximumTokens),
         tools: try ToolRegistry(
             FileTools.all + [
-                BashTool(jobs: jobs), WaitTool(jobs: jobs), JobInputTool(jobs: jobs), JobStopTool(jobs: jobs),
+                BashTool(jobs: jobs), JobActionTool(jobs: jobs),
                 NarrowSandboxTool(jobs: jobs)
             ] + (skills.tool.map { [$0] } ?? []), live: live),
         settings: agent,
