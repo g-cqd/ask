@@ -17,6 +17,8 @@ final class ScreenSession {
     private var rows: Int
     private var columns: Int
     private var run: Task<Void, Never>?
+    private var runnerOutput: Task<Void, Never>?
+    private var watchedRunner: String?
     /// Ticks while a drag is held at an edge, because a held button reports no motion.
     private var autoscroll = AutoscrollTimer()
     private let events: AsyncStream<ScreenEvent>
@@ -62,7 +64,10 @@ final class ScreenSession {
             watching?.cancel()
             input.stop()
         }
-        defer { autoscroll.stop() }
+        defer {
+            autoscroll.stop()
+            runnerOutput?.cancel()
+        }
         render(full: true)
         for await event in events {
             guard await handle(event) else { return exit }
@@ -117,6 +122,7 @@ final class ScreenSession {
         for effect in effects where await !perform(effect) {
             return false
         }
+        syncRunnerOutput()
         syncAutoscroll()
         render()
         return true
@@ -143,8 +149,7 @@ final class ScreenSession {
                     sink.yield(.quitWindowEnded(generation: generation))
                 }
             case .readRunnerOutput(let id):
-                let conversation = conversation
-                Task { sink.yield(.update(.runnerOutput(id: id, text: await conversation.runnerOutput(id)))) }
+                watchRunnerOutput(id)
             case .listSkills:
                 let conversation = conversation
                 Task { sink.yield(.update(.skills(await conversation.skillCommands()))) }
@@ -167,6 +172,20 @@ final class ScreenSession {
                 return false
         }
         return true
+    }
+
+    private func watchRunnerOutput(_ id: String) {
+        runnerOutput?.cancel()
+        watchedRunner = id
+        let sink = sink
+        runnerOutput = conversation.watchRunnerOutput(id) { sink.yield(.update(.runnerOutput(id: id, text: $0))) }
+    }
+
+    private func syncRunnerOutput() {
+        guard watchedRunner != controller.state.lane?.id else { return }
+        runnerOutput?.cancel()
+        runnerOutput = nil
+        watchedRunner = nil
     }
 
     private func syncAutoscroll() {
