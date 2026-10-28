@@ -1,3 +1,5 @@
+internal import AemiRegex
+
 extension ProviderFailure.Kind {
     /// Whether a refusal's wording says the request exceeded the context window.
     ///
@@ -12,12 +14,19 @@ extension ProviderFailure.Kind {
 
     /// The window a refusal for length names in its wording: llama.cpp and Ollama "available context size (N
     /// tokens)", OpenAI and vLLM "maximum context length is N tokens", Anthropic "N tokens > M maximum".
+    private static let windowPatterns: [Pattern] = [
+        #"available context size \((\d+) tokens\)"#, #"maximum context length is (\d+) tokens"#, #"> (\d+) maximum"#
+    ]
+    .compactMap { try? Pattern($0) }
+
     static func contextWindow(describedIn message: String) -> Int? {
-        let patterns = [
-            /available context size \((\d+) tokens\)/, /maximum context length is (\d+) tokens/, /> (\d+) maximum/
-        ]
-        for pattern in patterns {
-            if let match = message.firstMatch(of: pattern), let window = Int(match.output.1) { return window }
+        // Linear-time patterns; a provider's message is untrusted input.
+        for pattern in Self.windowPatterns {
+            if let match = pattern.firstMatch(in: message), let range = match.range(ofGroup: 1, in: message),
+                let window = Int(message[range])
+            {
+                return window
+            }
         }
         return nil
     }

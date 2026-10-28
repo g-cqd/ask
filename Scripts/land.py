@@ -20,7 +20,7 @@ def oid(root, ref):
     return git(root, "rev-parse", "--verify", ref).stdout.strip()
 
 
-PUBLIC_EMAIL = "42325924+g-cqd@users.noreply.github.com"
+PUBLIC_EMAIL = os.environ.get("ASK_LAND_EMAIL", "42325924+g-cqd@users.noreply.github.com")
 
 
 def foreign_authors(root):

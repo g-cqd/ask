@@ -73,4 +73,12 @@ struct ContextOverflowTests {
             OpenAICompatibleError.status(400, OpenAIStreamDecoder.failure(inErrorBody: Array(body.utf8)))
                 .isContextOverflow)
     }
+
+    @Test func `the window a refusal names is read from each server's wording`() {
+        let kind = ProviderFailure.Kind.self
+        #expect(kind.contextWindow(describedIn: "exceeds the available context size (2048 tokens), try") == 2048)
+        #expect(kind.contextWindow(describedIn: "maximum context length is 32768 tokens. However") == 32768)
+        #expect(kind.contextWindow(describedIn: "210000 tokens > 200000 maximum") == 200_000)
+        #expect(kind.contextWindow(describedIn: "something else (12 tokens)") == nil)
+    }
 }

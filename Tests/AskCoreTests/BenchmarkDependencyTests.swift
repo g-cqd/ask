@@ -1,3 +1,4 @@
+internal import AemiRegex
 import Foundation
 import Testing
 
@@ -10,14 +11,20 @@ struct BenchmarkDependencyTests {
         let pins = try ["Package.swift", "Benchmarks/Package.swift"]
             .map { path in
                 let text = try String(contentsOf: root.appending(path: path), encoding: .utf8)
-                let match = try #require(
-                    text.firstMatch(
-                        of:
-                            #/\.package\(url: "https://github\.com/g-cqd/TerminalKit\.git", revision: "([a-f0-9]{40})"\)/#
-                    ))
-                return String(match.1)
+                return try #require(
+                    capture(
+                        ##"\.package\(url: "https://github\.com/g-cqd/TerminalKit\.git", revision: "([a-f0-9]{40})"\)"##,
+                        in: text))
             }
         #expect(
             pins[0] == pins[1], "A dependency update must update both manifests; otherwise benchmarks cannot resolve.")
     }
+}
+
+/// The first capture group of `pattern` in `text`, matched in linear time.
+private func capture(_ pattern: String, in text: String) -> String? {
+    guard let compiled = try? Pattern(pattern), let match = compiled.firstMatch(in: text),
+        let range = match.range(ofGroup: 1, in: text)
+    else { return nil }
+    return String(text[range])
 }
