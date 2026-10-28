@@ -123,6 +123,14 @@ struct AgentLoopTests {
         #expect(provider.requests.count == 3)
     }
 
+    @Test func `with no turn limit a run goes past the old default of 100 and ends when the model does`() async throws {
+        let file = try newFile()
+        let provider = ScriptedProvider(
+            Array(repeating: .call(id: "t", name: "upper", input: #"{"text":"a"}"#), count: 150) + [.reply("done")])
+        try await loop(provider, maximumTurns: Configuration.noTurnLimit).run("Loop", in: file) { _ in }
+        #expect(provider.requests.count == 151)
+    }
+
     @Test func `abort between tools records the finished result and leaves the rest unanswered`() async throws {
         let file = try newFile()
         let provider = ScriptedProvider([.calls([("a", "abort", "{}"), ("b", "upper", #"{"text":"x"}"#)])])

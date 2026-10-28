@@ -227,7 +227,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     // @dl:accept -- the key tables are the data, and the walk over them is already shared
                     case "provider": file.provider = try container.decode(String.self, forKey: key)
                     case "thinking": file.thinking = try ConfigurationFile.decodeThinking(container, key: key)
-                    case "maxTurns": file.maxTurns = try container.decode(Int.self, forKey: key)
+                    case "maxTurns": file.maxTurns = try ConfigurationFile.decodeMaxTurns(container, key: key)
                     case "compactAt": file.compactAt = try ConfigurationFile.decodeCompactAt(container, key: key)
                     case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
                     case "ui": file.ui = try container.decode(UIDecoded.self, forKey: key).section

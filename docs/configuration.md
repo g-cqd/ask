@@ -104,7 +104,7 @@ trusting it. Some settings can only come from your own file, as the tables below
 | `model` | the provider's default | The model to use. `/model` changes it for the session. |
 | `provider` | the first account that can answer | The connection to use: `anthropic`, `codex`, `agy`, `apple`, a named connection, or an entry of `providers.json`. See [Providers and accounts](providers.md). |
 | `thinking` | `default` | How much the model thinks: `default` (whatever the provider does), `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. |
-| `maxTurns` | `100` | The most model requests one prompt may make before ask stops it. |
+| `maxTurns` | `100` | The most model requests one prompt may make before ask stops it, or `"none"` for no limit (also `ASK_MAX_TURNS=none`). |
 | `compactAt` | `"75%"` | When the conversation is summarised to make room: a share of the model's window (`"75%"`), a number of tokens (`150000`), or `0` for only when the window is full. Whatever you set, ask compacts before a request would not fit. |
 | `sandbox` | on, see below | What the model's tools may read, write and reach. |
 | `ui` | see below | How the screen looks and behaves. |
