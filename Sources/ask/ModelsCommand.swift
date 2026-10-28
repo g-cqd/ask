@@ -12,6 +12,9 @@ struct ModelsCommand: AsyncParsableCommand {
     @Argument(help: "codex, agy, apple, anthropic (or claude), a named connection, or an OpenAI-compatible provider.")
     var connection = ProviderSettings.codex
 
+    @Flag(name: .long, help: "Also list the models the ui.onlyUsefulModels setting hides, with the reason.")
+    var all = false
+
     func run() async throws {
         let environment = LaunchEnvironment.values
         do {
@@ -27,7 +30,7 @@ struct ModelsCommand: AsyncParsableCommand {
                 try await showAgy(now: now)
             } else if connection == CopilotProtocol.name {
                 let models = try await ModelDiscovery.copilot(environment: environment).models(now: now, refresh: true)
-                ModelTable.print(CatalogSnapshot(models: models), defaultFirst: true)
+                ModelTable.print(CatalogSnapshot(models: models), defaultFirst: true, showAll: all)
             } else if connection == ProviderSettings.apple {
                 showApple()
             } else if [ProviderSettings.anthropic, "claude"].contains(connection) {
@@ -50,7 +53,7 @@ struct ModelsCommand: AsyncParsableCommand {
 
     /// Apple's one on-device model, with the window the system reports and why it cannot answer when it cannot.
     private func showApple() {
-        ModelTable.print(CatalogSnapshot(models: [AppleModel.catalogEntry]), defaultFirst: true)
+        ModelTable.print(CatalogSnapshot(models: [AppleModel.catalogEntry]), defaultFirst: true, showAll: all)
         if let variant = AppleModel.variantName { print("Variant on this Mac: \(variant).") }
         if case .unavailable(let reason) = AppleModel.availability() { print("Unavailable now: \(reason).") }
     }
@@ -59,7 +62,7 @@ struct ModelsCommand: AsyncParsableCommand {
         let snapshot =
             try await ModelDiscovery.codex(environment: LaunchEnvironment.values, connection: record)
             .models(now: now, refresh: true)
-        ModelTable.print(snapshot, defaultFirst: true)
+        ModelTable.print(snapshot, defaultFirst: true, showAll: all)
         if let record { try printAliases(of: record) }
         print("* default model when none is configured.")
     }
@@ -70,7 +73,7 @@ struct ModelsCommand: AsyncParsableCommand {
         }
         let snapshot = try await AnthropicModelDiscovery.catalog(environment: environment, connection: record)
             .models(now: now, refresh: true)
-        ModelTable.print(snapshot, defaultFirst: false)
+        ModelTable.print(snapshot, defaultFirst: false, showAll: all)
         if let record { try printAliases(of: record) }
         print(
             "Catalog order chooses no default; ask's built-in fallback is \(ProviderSettings.anthropicDefaultModel)."
@@ -89,7 +92,7 @@ struct ModelsCommand: AsyncParsableCommand {
         }
         let snapshot = try await ProviderModelDiscovery.catalog(for: listing, environment: environment)
             .models(now: now, refresh: true)
-        ModelTable.print(snapshot, defaultFirst: false)
+        ModelTable.print(snapshot, defaultFirst: false, showAll: all)
         print("No default chosen from list order. Name a model with --model or configuration.")
     }
 

@@ -49,8 +49,9 @@ extension ConfigurationFile {
                         section.spinner = preference
                     // @dl:accept -- on/off keys decoded like the folded/open ones beside them; the key tables are the data
                     case "tint", "separator", "padding", "localizedDurations", "jobAutoReturnWhenFocused",
+                        // @dl:accept -- a key table decoded by the shared walk; the keys are the data
                         "abortTurnRequiresConfirmation",
-                        "escapeInterruptRequiresConfirmation":
+                        "escapeInterruptRequiresConfirmation", "onlyUsefulModels":
                         let name = try container.decode(String.self, forKey: key)
                         guard name == "on" || name == "off" else {
                             throw BadValue(key: "ui." + key.stringValue, value: name)
@@ -62,10 +63,12 @@ extension ConfigurationFile {
                             case "localizedDurations": section.localizedDurations = name == "on"
                             case "jobAutoReturnWhenFocused": section.jobAutoReturnWhenFocused = name == "on"
                             case "abortTurnRequiresConfirmation": section.abortTurnRequiresConfirmation = name == "on"
+                            case "onlyUsefulModels": section.onlyUsefulModels = name == "on"
                             default: section.escapeInterruptRequiresConfirmation = name == "on"
                         }
                     case "interruptKeys", "interruptSendsQueued":
                         try decodeInterruptChoice(key, from: container)
+                    // @dl:accept -- a key table decoded by the shared walk; the keys are the data
                     case "tools", "thinking", "code":
                         let name = try container.decode(String.self, forKey: key)
                         guard name == "folded" || name == "open" else {
