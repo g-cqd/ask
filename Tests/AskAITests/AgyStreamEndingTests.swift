@@ -171,6 +171,15 @@ struct AgyStreamEndingTests {
             AgyStreamDecoder.failure(inErrorBody: other)?.kind == .server, "only a 400 is read as a refusal for length")
     }
 
+    /// Recorded 2026-10-28 (roadmap 0069 U1): 137,838 tokens sent to `gpt-oss-120b-medium`. The message is the server's;
+    /// the JSON envelope around it is assumed to be the one the other 400s use (the raw body was not captured).
+    @Test func `the recorded Antigravity refusal for length is a context overflow with its window`() {
+        let message = "The input (137838 tokens) is longer than the model's context length (131072 tokens)."
+        let body = Array(#"{"error":{"code":400,"message":"\#(message)","status":"INVALID_ARGUMENT"}}"#.utf8)
+        let failure = AgyStreamDecoder.failure(inErrorBody: body)
+        #expect(failure?.kind == .contextOverflow && failure?.contextWindow == 131072)
+    }
+
     @Test func `an error with no words is given some`() {
         let failure = AgyStreamDecoder.failure(inErrorBody: Array(#"{"error":{"code":503}}"#.utf8))
         #expect(failure == ProviderFailure(kind: .overloaded, message: "the provider reported an error"))
