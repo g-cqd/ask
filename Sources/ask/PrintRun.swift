@@ -34,13 +34,12 @@ func runPrompt(
 )
     async
 {
-    let directory = SessionDirectory(
-        project: FileManager.default.currentDirectoryPath, environment: LaunchEnvironment.values)
+    let workingDirectory = FileManager.default.currentDirectoryPath
+    let directory = SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values)
     let model = settings.model
     say(startupNotices + settings.description)
     let transport = URLSessionTransport()
     await requireSignIn(for: model, transport: transport)
-    let workingDirectory = FileManager.default.currentDirectoryPath
     let jobs = JobTable(environment: LaunchEnvironment.values)
     let loop: AgentLoop
     let mcp = startMCPServers(settings, jobs: jobs)
@@ -76,6 +75,9 @@ func runPrompt(
     let renderer = PrintRenderer()
 
     let sent = expandingSkill(prompt, settings: settings, workingDirectory: workingDirectory)
+    // Awake for the run and for any job it leaves running until ask stops them below (roadmap 0090).
+    let keepAwake = awake(settings)
+    defer { keepAwake.turnEnded() }
     let run = Task<Void, any Error> {
         try await loop.run(sent, in: session) { renderer.render($0) }
     }
@@ -95,4 +97,11 @@ func runPrompt(
     FileHandle.standardError.write(Data("ask: tokens \(renderer.usageSummary)\nask: session \(sessionPath)\n".utf8))
     if let signal = interrupted.withLock({ $0 }) { Foundation.exit(128 + signal) }
     if case .failure(let error) = result { fail("ask: \(error)", code: 69) }
+}
+
+/// The Mac kept awake as `settings` say, already holding for the run that is about to start.
+private func awake(_ settings: RunSettings) -> KeepAwake {
+    let keepAwake = KeepAwake(mode: settings.configuration.keepAwake.value)
+    keepAwake.turnStarted()
+    return keepAwake
 }

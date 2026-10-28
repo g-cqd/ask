@@ -1,10 +1,13 @@
 internal import AskAI
 
 extension ConfigurationFile {
-    static func decodeThinking(_ container: KeyedDecodingContainer<Key>, key: Key) throws -> ThinkingLevel {
+    /// A key whose value is one of `Choice`'s names (`thinking`, `keepAwake`); any other string is refused, naming the key.
+    static func decodeChoice<Choice: RawRepresentable>(
+        _ container: KeyedDecodingContainer<Key>, key: Key, as _: Choice.Type
+    ) throws -> Choice where Choice.RawValue == String {
         let name = try container.decode(String.self, forKey: key)
-        guard let level = ThinkingLevel(rawValue: name) else { throw BadValue(key: "thinking", value: name) }
-        return level
+        guard let choice = Choice(rawValue: name) else { throw BadValue(key: key.stringValue, value: name) }
+        return choice
     }
 
     /// `maxTurns`: a whole number of at least 1, or `"none"` for no limit (roadmap 0098), kept as ``Configuration/noTurnLimit``.

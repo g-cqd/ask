@@ -18,10 +18,12 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var skills: SkillsSection?
     public var mcp: MCPSection?
     public var environment: EnvironmentSection?
+    public var keepAwake: KeepAwakeMode?  // roadmap 0090; not in the initializer, set after it
 
     /// The keys ask knows, in the order `ask config` shows them.
     public static let keys = [
-        "model", "provider", "thinking", "maxTurns", "compactAt", "sandbox", "ui", "skills", "mcp", "environment"
+        "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "sandbox", "ui", "skills", "mcp",
+        "environment"
     ]
 
     /// A file with these values.
@@ -54,6 +56,7 @@ public struct ConfigurationFile: Sendable, Equatable {
             case "thinking": thinking != nil
             case "maxTurns": maxTurns != nil
             case "compactAt": compactAt != nil
+            case "keepAwake": keepAwake != nil
             case "sandbox": sandbox != nil
             case "ui": ui != nil
             case "skills": skills != nil
@@ -163,6 +166,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         var reason: String {
             switch key {
                 case "thinking": "must be one of: \(ThinkingLevel.choices)"
+                case "keepAwake": "is \"\(value)\": use \(KeepAwakeMode.choices)"
                 case "sandbox.network": "is \"\(value)\": use \"none\", \"localhost\" or \"any\""
                 case "ui.tools", "ui.thinking", "ui.code": "is \"\(value)\": use \"folded\" or \"open\""
                 case "ui.sidebar": "is \"\(value)\": use \"open\" or \"closed\""
@@ -226,9 +230,12 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "model": file.model = try container.decode(String.self, forKey: key)
                     // @dl:accept -- the key tables are the data, and the walk over them is already shared
                     case "provider": file.provider = try container.decode(String.self, forKey: key)
-                    case "thinking": file.thinking = try ConfigurationFile.decodeThinking(container, key: key)
+                    case "thinking":
+                        file.thinking = try ConfigurationFile.decodeChoice(container, key: key, as: ThinkingLevel.self)
                     case "maxTurns": file.maxTurns = try ConfigurationFile.decodeMaxTurns(container, key: key)
                     case "compactAt": file.compactAt = try ConfigurationFile.decodeCompactAt(container, key: key)
+                    case "keepAwake":
+                        file.keepAwake = try ConfigurationFile.decodeChoice(container, key: key, as: KeepAwakeMode.self)
                     case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
                     case "ui": file.ui = try container.decode(UIDecoded.self, forKey: key).section
                     case "skills": file.skills = try container.decode(SkillsDecoded.self, forKey: key).section

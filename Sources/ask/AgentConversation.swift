@@ -28,6 +28,8 @@ final class AgentConversation: Conversation {
     let session = Mutex<SessionRecorder?>(nil)
     /// Launch consent is consumed once, not reused to authorize an account replacement later in this process.
     private let destinationSelected = Mutex(false)
+    /// Keeps the Mac awake while a turn or a job runs (`keepAwake`, roadmap 0090).
+    let keepAwake: KeepAwake
     let usage = Mutex(UsageTotals())
     let promptInput = Mutex<PromptQueue?>(nil)
     /// Whether the user was told about project skills waiting for trust: once, on the first prompt.
@@ -72,6 +74,8 @@ final class AgentConversation: Conversation {
         self.directory = directory
         current = Mutex(Current(settings: settings))
         session.withLock { $0 = resumed }
+        keepAwake = KeepAwake(mode: settings.configuration.keepAwake.value)
+        Self.follow(jobs, with: keepAwake)
     }
 
     /// Reads the configuration again and, when it changed, tells the screen what changed. The loop is rebuilt
@@ -96,6 +100,7 @@ final class AgentConversation: Conversation {
             current.settings = fresh
             return updates
         }
+        keepAwake.use(fresh.configuration.keepAwake.value)
         for item in updates { update(item) }
         update(contextUpdate())
     }
@@ -129,6 +134,8 @@ final class AgentConversation: Conversation {
         // Approval questions during this run go to this run's screen updates.
         approvals.withLock { $0.ask = update }
         return Task {
+            self.keepAwake.turnStarted()
+            defer { self.keepAwake.turnEnded() }
             do {
                 await self.refreshSettings(update: update)
                 self.noticeUntrustedSkills(update: update)
@@ -156,15 +163,6 @@ final class AgentConversation: Conversation {
             update(contextUpdate())
         }
         for shown in Self.updates(for: event) { update(shown) }
-    }
-
-    /// Says why a run or command ended without finishing.
-    func report(_ error: any Error, to update: @Sendable (ConversationUpdate) -> Void) {
-        if case AgentError.cancelled = error {
-            update(.notice("Aborted. Results already known were kept.", isError: false))
-        } else {
-            update(.notice("ask: \(error)", isError: true))
-        }
     }
 
     func agentLoop() throws -> AgentLoop {

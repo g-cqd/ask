@@ -20,6 +20,7 @@ extension ConfigurationFile {
                 }
                 section.interruptSendsQueued = queued
             }
+            // @dl:accept -- the key walk is shared with the top-level keys' decoder; each table names its own keys
         }
 
         // @dl:accept -- the key walk is shared; each section names its own keys

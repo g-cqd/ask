@@ -48,6 +48,8 @@ public struct Configuration: Sendable, Equatable {
     public var skills: Setting<SkillsSection>
     public var mcp: Setting<MCPSection>
     public var environment: Setting<EnvironmentSection>
+    /// What ask keeps awake while it works (roadmap 0090): the Mac, by default, so a long turn is not cut short by idle sleep.
+    public var keepAwake = Setting(value: KeepAwakeMode.system, source: .defaults)
     /// Where each `ui` and `skills` key came from, by its dotted name; read through `source(ofKey:)`.
     var keySources: [String: Source] = [:]
 
@@ -64,14 +66,21 @@ public struct Configuration: Sendable, Equatable {
         environment: Setting(value: EnvironmentSection(), source: .defaults)
     )
 
-    /// `self` with every key `file` sets replaced, attributed to `source`.
-    public func applying(_ file: ConfigurationFile, from source: Source) -> Configuration {
-        var next = recordingKeySources(of: file, from: source)
+    /// `self` with the single-valued keys `file` sets replaced; the sections are layered by ``applying(_:from:)``.
+    private func applyingScalars(_ file: ConfigurationFile, from source: Source) -> Configuration {
+        var next = self
         if let model = file.model { next.model = Setting(value: model, source: source) }
         if let provider = file.provider { next.provider = Setting(value: provider, source: source) }
         if let thinking = file.thinking { next.thinking = Setting(value: thinking, source: source) }
         if let turns = file.maxTurns { next.maxTurns = Setting(value: turns, source: source) }
         if let compactAt = file.compactAt { next.compactAt = Setting(value: compactAt, source: source) }
+        if let keepAwake = file.keepAwake { next.keepAwake = Setting(value: keepAwake, source: source) }
+        return next
+    }
+
+    /// `self` with every key `file` sets replaced, attributed to `source`.
+    public func applying(_ file: ConfigurationFile, from source: Source) -> Configuration {
+        var next = recordingKeySources(of: file, from: source).applyingScalars(file, from: source)
         // @dl:accept -- heterogeneous per-key layering retains each section's type and origin; the table is the data
         if let section = file.sandbox {
             next.sandbox = Setting(value: next.sandbox.value.layered(with: section), source: source)
@@ -195,6 +204,7 @@ extension Configuration {
         compare("thinking", previous.thinking, thinking)
         compare("maxTurns", previous.maxTurns, maxTurns)
         compare("compactAt", previous.compactAt, compactAt)
+        compare("keepAwake", previous.keepAwake, keepAwake)
         compare("sandbox", previous.sandbox, sandbox)
         compare("ui", previous.ui, ui)
         compare("skills", previous.skills, skills)
