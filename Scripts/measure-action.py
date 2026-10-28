@@ -115,7 +115,7 @@ def one_run(tool):
         os.chdir(project)
         os.execve(BINARY, arguments, agent.environment(state, server.url))
     screen = b""
-    mark = ("read note.txt ✓" if tool == "read" else "bash echo ok ✓").encode()
+    mark = ("read · note.txt" if tool == "read" else "echo ok").encode()
     shown = None
     try:
         deadline = time.monotonic() + 15
@@ -132,7 +132,7 @@ def one_run(tool):
                 now = time.monotonic()
                 emulator.feed(chunk)
                 tail = (tail + chunk)[-64:]
-                if tail.endswith(FRAME_END) and mark.decode() in emulator.text():
+                if tail.endswith(FRAME_END) and any(mark.decode() in row and "✓" in row for row in emulator.text().splitlines()):
                     shown = now
                     break
         while len(server.arrived) < offset + 2 and time.monotonic() < deadline:
