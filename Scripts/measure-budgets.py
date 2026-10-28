@@ -157,7 +157,32 @@ def load_budgets():
         return None
 
 
+def start_load():
+    """Keep every core busy while measuring (ASK_BUDGET_LOAD=N workers, default one per core, 0 for none).
+
+    A budget that only holds on an idle machine is not one the owner can feel: a person runs ask while a build,
+    a browser and other agents are running (ADR-0122). Workers are plain busy loops at normal priority.
+    """
+    count = int(os.environ.get("ASK_BUDGET_LOAD", os.cpu_count() or 1))
+    return [subprocess.Popen([sys.executable, "-c", "while True: pass"]) for _ in range(count)]
+
+
+def stop_load(workers):
+    for worker in workers:
+        worker.kill()
+    for worker in workers:
+        worker.wait()
+
+
 def main():
+    workers = start_load()
+    try:
+        return measure(len(workers))
+    finally:
+        stop_load(workers)
+
+
+def measure(load_workers):
     runs, incomplete = [], []
     action = action_probe()
     for i in range(RUNS):
@@ -180,7 +205,8 @@ def main():
               % (NAMES[idx], med, unit, vals[math.ceil(len(vals) * 0.95) - 1], vals[0], vals[-1]))
 
     NAMES = ["cold start", "idle memory", "input delay", "action-to-action"]
-    print("ask — four budgets, %d runs, release build, measured externally over a PTY" % len(runs))
+    print("ask — four budgets, %d runs, release build, measured externally over a PTY, under %d busy workers"
+          % (len(runs), load_workers))
     col(0, 1.0, "ms")
     col(1, 1.0, "KiB")
     col(2, 1.0, "ms")

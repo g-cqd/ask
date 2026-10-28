@@ -15,9 +15,10 @@
 public enum Budget {
     /// Process spawn to the first frame visible on the terminal, in milliseconds.
     ///
-    /// Measured 11.06 ms median, 13.77 p95. Budget set at 25 ms: roughly 2x the median and above the
-    /// p95 observed, so ordinary variance cannot fail the gate.
-    public static let coldStartMilliseconds: Double = 25
+    /// Measured 11.06 ms median, 13.77 p95 on an idle machine. Set at 25 ms, then raised to 50 ms by the owner
+    /// (ADR-0122), who asked that every budget check run with the machine loaded: under load the median was 27 to
+    /// 45 ms (roadmap 0054, 0079), so 25 ms measured idle-machine luck, not what a person feels.
+    public static let coldStartMilliseconds: Double = 50
 
     /// Resident memory once the prompt is up and the process is idle, in mebibytes.
     ///
