@@ -62,15 +62,30 @@ struct ScreenControllerTests {
             ])
     }
 
-    @Test func `page keys scroll, and submitting returns to the bottom`() {
+    @Test func `page keys scroll, stop with the first line at the top, and submitting returns to the bottom`() {
+        var rig = PointerRig(columns: 30, rows: 12, lines: (0 ..< 40).map { "line \($0)" })
+        _ = rig.controller.handle(key(Key.pageUp.rawValue), pageRows: 7)
+        #expect(rig.controller.state.scrollback == 7)
+        for _ in 0 ..< 20 {
+            _ = rig.controller.handle(key(Key.pageUp.rawValue), pageRows: 7)
+            rig.draw()
+        }
+        let furthest = rig.controller.frame.totalLines - rig.controller.frame.transcriptRows
+        #expect(rig.controller.state.scrollback == furthest, "held Page Up stops at the session's start (roadmap 0125)")
+        let shown = (0 ..< 12).map { rig.text(row: $0) }
+        #expect(
+            shown.contains("line 0") && !(shown[0].isEmpty && shown[1].isEmpty),
+            "the first line is shown, not empty rows")
+        _ = rig.controller.handle(key(Key.pageDown.rawValue), pageRows: 7)
+        #expect(rig.controller.state.scrollback == furthest - 7)
+        type("x", into: &rig.controller)
+        _ = rig.controller.handle(key(0x0D), pageRows: 7)
+        #expect(rig.controller.state.scrollback == 0)
+    }
+
+    @Test func `Page Up with nothing to scroll does nothing`() {
         var controller = ScreenController(label: "m", options: .legacy)
         _ = controller.handle(key(Key.pageUp.rawValue), pageRows: 7)
-        _ = controller.handle(key(Key.pageUp.rawValue), pageRows: 7)
-        #expect(controller.state.scrollback == 14)
-        _ = controller.handle(key(Key.pageDown.rawValue), pageRows: 7)
-        #expect(controller.state.scrollback == 7)
-        type("x", into: &controller)
-        _ = controller.handle(key(0x0D), pageRows: 7)
         #expect(controller.state.scrollback == 0)
     }
 

@@ -12,7 +12,8 @@ extension ScreenController {
                 let armedAt = state.quitArmedAt
                 state.quitArmedAt = nil
                 if key.keyCode == Key.pageUp.rawValue {
-                    state.scrollback += Swift.max(1, pageRows)
+                    // No further than the first line at the top of the screen, as the wheel (roadmap 0125).
+                    scroll(by: Swift.max(1, pageRows))
                     return []
                 }
                 if key.keyCode == Key.pageDown.rawValue {
