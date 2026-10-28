@@ -8,6 +8,13 @@ extension AgentConversation {
     static func updates(for event: AgentEvent) -> [ConversationUpdate] {
         switch event {
             case .compacting: return [.compacting(true)]
+            // A dropped connection is said by the status bar while ask waits to try again, not by a block; the reason is a detail, shown
+            // with --verbose.
+            case .retrying(let attempt, let total, let delay, let reason):
+                return [
+                    .reconnecting(true),
+                    .detail(RunNotices.retry(attempt: attempt, of: total, delay: delay, reason: reason))
+                ]
             case .compacted, .compactionFailed:
                 return [.compacting(false)]
                     + (RunNotices.compaction(for: event).map { [.notice($0, isError: false)] } ?? [])
@@ -40,9 +47,6 @@ extension AgentConversation {
                 return .notice("Repaired the context before this turn: \(repairs)", isError: false)
             case .continuedAtOutputLimit:
                 return .detail("The response hit the output limit; asking the model to continue.")
-            case .retrying(let attempt, let total, let delay, let reason):
-                return .notice(
-                    RunNotices.retry(attempt: attempt, of: total, delay: delay, reason: reason), isError: false)
             default: return nil
         }
     }
