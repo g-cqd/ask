@@ -55,7 +55,10 @@ struct CompletionPickerControllerTests {
             "the screen's own and the conversation's, headings aside")
         #expect(
             names(screen)
-                == ["help", "quit", "follow-up", "tasks", "config", "compact", "reload", "sidebar", "verbose"],
+                == [
+                    "help", "quit", "continue", "follow-up", "tasks", "config", "compact", "reload", "sidebar",
+                    "verbose"
+                ],
             "the session commands, then the tools")
         #expect(headings(screen) == ["session", "tools"], "commands group under their categories")
         #expect(screen.state.picker?.selected == 1, "the first command follows the first heading")
@@ -64,7 +67,7 @@ struct CompletionPickerControllerTests {
     @Test func `typing narrows it with prefix matches first`() {
         var screen = controller()
         type("/co", into: &screen)
-        #expect(names(screen) == ["config", "compact", "help"], "prefix matches first, then the summary's")
+        #expect(names(screen) == ["continue", "config", "compact", "help"], "prefix matches first, then the summary's")
         #expect(headings(screen) == ["session"])
     }
 
@@ -74,7 +77,7 @@ struct CompletionPickerControllerTests {
         press(Key.down.rawValue, into: &screen)
         let effects = press(Key.enter.rawValue, into: &screen)
         #expect(effects.isEmpty)
-        #expect(screen.state.editor.text == "/compact " && screen.state.editor.cursor == 9)
+        #expect(screen.state.editor.text == "/config " && screen.state.editor.cursor == 8)
         #expect(screen.state.picker == nil && !screen.state.running && screen.state.transcript.items.isEmpty)
     }
 
@@ -190,7 +193,7 @@ struct CompletionPickerControllerTests {
         for _ in 0 ..< 4 { press(Key.left.rawValue, into: &screen) }
         #expect(screen.state.picker?.trigger.query == "co")
         press(Key.enter.rawValue, into: &screen)
-        #expect(screen.state.editor.text == "/config now" && screen.state.editor.cursor == 8)
+        #expect(screen.state.editor.text == "/continue now" && screen.state.editor.cursor == 10)
     }
 
     @Test func `while a turn runs Enter inserts and does not queue a steering message`() {
@@ -199,7 +202,7 @@ struct CompletionPickerControllerTests {
         press(Key.enter.rawValue, into: &screen)
         type("/co", into: &screen)
         #expect(press(Key.enter.rawValue, into: &screen).isEmpty)
-        #expect(screen.state.editor.text == "/config ")
+        #expect(screen.state.editor.text == "/continue ")
     }
 
     @Test func `a paste that makes a command word opens it`() {

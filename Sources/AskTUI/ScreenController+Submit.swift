@@ -7,7 +7,7 @@ extension ScreenController {
         leaveLane()
         switch SlashInput(line) {
             case .prompt(let text):
-                return submitPrompt(text, followUp: followUp)
+                return submitPrompt(Self.isContinueWord(text) ? Self.continueText : text, followUp: followUp)
             case .command(let name, let arguments):
                 state.transcript.addUser(line)
                 guard let command = commands.first(where: { $0.name == name }) else {
@@ -24,6 +24,7 @@ extension ScreenController {
                     case "sidebar": return toggleSidebar(announcing: true)
                     case "verbose": return toggleVerbose()
                     case "follow-up": return submitPrompt(arguments, followUp: true)
+                    case "continue": return submitPrompt(Self.continueText(with: arguments), followUp: followUp)
                     default:
                         if command.takesChoices, arguments.isEmpty {
                             state.editor.paste("/\(name) ")

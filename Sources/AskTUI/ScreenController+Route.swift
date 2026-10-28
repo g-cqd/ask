@@ -11,6 +11,8 @@ extension ScreenController {
                 // Any key but the second Ctrl+C ends the quit window (roadmap 0064): what was armed is read here, then cleared.
                 let armedAt = state.quitArmedAt
                 state.quitArmedAt = nil
+                let tappedAt = state.rightTappedAt
+                state.rightTappedAt = nil
                 if key.keyCode == Key.pageUp.rawValue {
                     // No further than the first line at the top of the screen, as the wheel (roadmap 0125).
                     scroll(by: Swift.max(1, pageRows))
@@ -37,6 +39,7 @@ extension ScreenController {
                 if let effects = pickerKey(key, screenRows: pageRows + 3) { return effects }
                 if let effects = stripKey(key) { return effects }
                 clearSelection()
+                if let effects = continueTap(key, at: now, previous: tappedAt) { return effects }
                 return edit(key, columns: columns, interrupt: Interrupt(at: now, armedAt: armedAt))
             case .mouse(let mouse):
                 return handle(mouse: mouse, at: now)

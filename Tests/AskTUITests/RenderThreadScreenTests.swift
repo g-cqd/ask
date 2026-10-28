@@ -50,7 +50,7 @@ struct RenderThreadScreenTests {
 
     @Test func `a submitted prompt reaches the conversation while the first frame is stuck in a write`() async throws {
         let connection = StallingFirstFrame()
-        connection.feedInput(Array("go\r".utf8))
+        connection.feedInput(Array("hello\r".utf8))
         let (prompts, sink) = AsyncStream<String>.makeStream()
         let (resizes, done) = AsyncStream<Void>.makeStream()
         done.finish()
@@ -65,7 +65,7 @@ struct RenderThreadScreenTests {
         connection.releaseFrame()
         _ = try await screen.value
 
-        #expect(prompt == "go")
+        #expect(prompt == "hello")
     }
 
     @Test func `the last frame is written before the terminal is restored`() async throws {
