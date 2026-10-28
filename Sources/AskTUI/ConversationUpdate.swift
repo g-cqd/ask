@@ -57,6 +57,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case runnerOutput(id: String, text: String)
     /// Whether the sandbox is active for this session.
     case sandboxActive(Bool)
+    /// The connection dropped and ask is waiting to try again: the status bar says `Reconnecting...` until the model answers again.
+    case reconnecting(Bool)
     /// A compaction began (true) or ended (false): the status bar says `Compacting...` meanwhile (roadmap 0099).
     case compacting(Bool)
     /// The run is over, however it ended.

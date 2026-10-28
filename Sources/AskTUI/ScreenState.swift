@@ -16,6 +16,8 @@ public struct ScreenState: Sendable, Equatable {
     public var running = false
     /// Whether the conversation is being compacted, which the status bar's leading mark says (roadmap 0099).
     public var compacting = false
+    /// Whether ask lost the connection and is waiting to try again (`Reconnecting...` in the status bar).
+    public var reconnecting = false
     /// Whether the sandbox is active for this session (false if unrestricted).
     public var sandboxed = true
     /// Current animated frame index for the status line spinner.
