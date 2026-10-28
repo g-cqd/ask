@@ -1,6 +1,7 @@
 // @dl:accept -- each section decodes its keys through the one shared walk; the key tables are the data
 extension ConfigurationFile {
     /// The `skills` keys; unknown keys are refused.
+    // @dl:accept -- three key tables decoded the same way; the tables are the data, and the walk is already shared
     struct SkillsDecoded: Decodable {
         var section = SkillsSection()
         // @dl:accept -- the key walk is shared; each section names its own keys
@@ -8,7 +9,7 @@ extension ConfigurationFile {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
                 switch key.stringValue {
                     // @dl:accept -- typed key tables decoded by the shared walk; the keys are the data
-                    case "enabled": section.enabled = try container.decode(Bool.self, forKey: key)
+                    case "enabled": section.enabled = try decodeSwitch(container, key: key, name: "skills.enabled")
                     case "maxAdvertised": section.maxAdvertised = try container.decode(Int.self, forKey: key)
                     case "sources": section.sources = try container.decode([String].self, forKey: key)
                     default: throw UnknownKey(key: "skills." + key.stringValue)

@@ -29,10 +29,11 @@ extension ConfigurationFile {
                     // @dl:accept -- a key table row
                     case "cwd": server.cwd = try container.decode(String.self, forKey: key)
                     case "url": server.url = try container.decode(String.self, forKey: key)
+                    // @dl:accept -- a key table row, typed like the sandbox and skills rows it resembles
                     case "headers": server.headers = try container.decode([String: String].self, forKey: key)
                     // @dl:accept -- a key table decoded by the shared walk; the keys are the data
                     case "tools": server.tools = try container.decode([String].self, forKey: key)
-                    case "enabled": server.enabled = try container.decode(Bool.self, forKey: key)
+                    case "enabled": server.enabled = try decodeSwitch(container, key: key, name: "mcp.<server>.enabled")
                     case "mode": server.mode = try container.decode(MCPServerSetting.Mode.self, forKey: key)
                     case "maxDirectTools": server.maxDirectTools = try container.decode(Int.self, forKey: key)
                     default: throw UnknownKey(key: "mcp.<server>." + key.stringValue)
