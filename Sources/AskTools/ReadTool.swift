@@ -3,22 +3,50 @@ public import AskAI
 public import AskAgentCore
 internal import Foundation
 
-/// `read`: a file's text, or a window of its lines.
+/// `read`: a file's text or a window of its lines, or an image, pages of a PDF, or frames of a video.
 public struct ReadTool: ArgumentTool {
+    /// The most images one call returns when the model does not say, and the most it may ask for.
+    static let defaultImages = 8
+    static let largestImages = 20
+
     public struct Arguments: Decodable, Sendable {
         let path: String
         let offset: Int?
         let limit: Int?
+        let pages: String?
+        let at: [Double]?
+        let count: Int?
+        let every: Double?
+        let start: Double?
+        let end: Double?
+        let maxImages: Int?
+
+        private enum CodingKeys: String, CodingKey {
+            case path, offset, limit, pages, at, count, every, start, end
+            case maxImages = "max_images"
+        }
     }
 
     public let definition = ToolDefinition(
         name: "read",
-        description:
-            "Read a UTF-8 text file, or an image (PNG, JPEG, GIF, WebP) which is shown to you. For text, optionally pass offset (1-based first line) and limit (line count)."
+        description: """
+            Read a UTF-8 text file (optionally offset, the 1-based first line, and limit, a line count), or show an image \
+            (PNG, JPEG, GIF, WebP, BMP, TIFF, HEIC, AVIF), a PDF, or a video (MP4, MOV, M4V) as pictures. For a PDF, pages \
+            such as "1-3,7" chooses pages. For a video, at (seconds) takes exact frames; otherwise count frames are spread \
+            over start..end (seconds), or one is taken every `every` seconds. max_images (default 8, at most 20) limits the \
+            pictures returned by one call.
+            """
     ) {
         ToolProperty.string("path")
         ToolProperty.integer("offset", minimum: 1).optional
         ToolProperty.integer("limit", minimum: 1).optional
+        ToolProperty.string("pages").optional
+        ToolProperty.schema("at", #"{"type":"array","items":{"type":"number","minimum":0}}"#).optional
+        ToolProperty.integer("count", minimum: 1, maximum: 20).optional
+        ToolProperty.schema("every", #"{"type":"number","exclusiveMinimum":0}"#).optional
+        ToolProperty.schema("start", #"{"type":"number","minimum":0}"#).optional
+        ToolProperty.schema("end", #"{"type":"number","minimum":0}"#).optional
+        ToolProperty.integer("max_images", minimum: 1, maximum: 20).optional
         // @dl:accept -- the file tools share a tool's shape: a schema, an empty init, and a run that asks the sandbox first
         SandboxRequest.property
     }
@@ -27,7 +55,21 @@ public struct ReadTool: ArgumentTool {
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         let url = try FileTools.authorized(arguments.path, for: [.read], in: context)
-        let bytes = try FileTools.bytes(at: url, shownAs: arguments.path, in: context)
+        let header = FileTools.header(of: url)
+        let maximumImages = min(Self.largestImages, max(1, arguments.maxImages ?? Self.defaultImages))
+        if VideoReader.looksLikeVideo(header) {
+            let request = VideoReader.Request(
+                at: arguments.at, count: arguments.count, every: arguments.every, start: arguments.start,
+                end: arguments.end, maximumImages: maximumImages)
+            return try await VideoReader.read(url, path: arguments.path, request)
+        }
+        let isMedia = ImageReader.mediaType(of: header) != nil || PDFReader.isPDF(header)
+        let bytes = try FileTools.bytes(
+            at: url, shownAs: arguments.path, in: context,
+            limit: isMedia ? FileTools.maximumMediaBytes : FileTools.maximumFileBytes)
+        if PDFReader.isPDF(bytes) {
+            return try PDFReader.read(bytes, path: arguments.path, pages: arguments.pages, maximumImages: maximumImages)
+        }
         if ImageReader.mediaType(of: bytes) != nil { return try image(bytes, shownAs: arguments.path) }
         let text = try FileTools.text(from: bytes, shownAs: arguments.path)
         guard arguments.offset != nil || arguments.limit != nil else { return ToolOutput(text) }
