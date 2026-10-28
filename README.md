@@ -117,7 +117,7 @@ visible until Escape (default: `"on"`, return to main). Set
 `"ui": {"abortTurnRequiresConfirmation": "on"}` to require two consecutive Ctrl+C presses
 within two seconds to abort a turn (default: `"off"`). Ctrl+C still clears a draft first.
 
-Commands the model runs use zsh, else bash, else your login shell (`$SHELL`). `"environment": {"shell": "fish"}` in your user file
+Commands the model runs use the first zsh on your PATH, else the first bash, else your login shell (`$SHELL`). `"environment": {"shell": "fish"}` in your user file
 (a name, or an absolute path from `/etc/shells`) chooses another; a project file cannot. The tool's description tells the model which.
 
 Model lists (`/model`, `ask models NAME`, a Codex default) leave out the models that are of no use to ask: image,

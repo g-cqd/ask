@@ -1,5 +1,6 @@
 internal import AskAI
 internal import AskAgentCore
+internal import AskTools
 internal import Foundation
 
 /// Where a run's settings come from, and how to read them again: the loader, the command-line flags that stay
@@ -162,7 +163,8 @@ struct ConfigurationSource: Sendable {
         let sandbox: SandboxPolicy = flags.noSandbox ? .unrestricted : protections(result.configuration.sandbox.value)
         return RunSettings(
             configuration: result.configuration, model: thinking.model, sandbox: sandbox, applied: result.applied,
-            notices: result.notices + discovered.notices + thinking.notices,
+            notices: result.notices + discovered.notices + thinking.notices
+                + [JobTable.unusableShellNotice(commandEnvironment, environment: environment)].compactMap { $0 },
             workspace: workspace, thinking: thinking.control, thinkingStatus: thinking.status,
             thinkingPending: thinking.pending,
             commandEnvironment: commandEnvironment,

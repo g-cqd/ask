@@ -35,20 +35,37 @@ public final class JobTable: Sendable {
         commandShell(requested, policy: context.commandEnvironment)
     }
 
+    /// The shell for a command: the model's listed choice, the configured one, the first zsh then bash on the PATH, then SHELL.
     func commandShell(_ requested: String?, policy: CommandEnvironment) -> String {
-        let login = policy.filtered(environment)["SHELL"]
+        let visible = policy.filtered(environment)
+        let login = visible["SHELL"]
         // A shell the model names must be a login shell of the system or the user's own, not any executable.
         if let requested, Self.isListedShell(requested, configured: login), Self.isShell(requested) { return requested }
-        if let chosen = policy.shell.flatMap(Self.chosenShell) { return chosen }
-        // Nothing chosen: zsh, then bash, then the person's login shell (roadmap 0091).
-        for path in ["/bin/zsh", "/bin/bash"] where Self.isShell(path) { return path }
+        if let chosen = policy.shell.flatMap({ Self.chosenShell($0, path: visible["PATH"]) }) { return chosen }
+        // Nothing chosen: the first zsh on the PATH, else the first bash on it, else the person's login shell (roadmap 0091).
+        for name in ["zsh", "bash"] {
+            if let found = Self.onPath(name, path: visible["PATH"]) { return found }
+        }
         return login.flatMap { Self.isShell($0) ? $0 : nil } ?? "/bin/bash"
     }
 
-    /// The shell a configuration names: a bare name is looked for in the system's usual places, a path must be a shell the system lists.
-    static func chosenShell(_ name: String) -> String? {
+    /// The directories of a PATH value; when there is none, the system's own.
+    private static func directories(_ path: String?) -> [String] {
+        let listed = (path ?? "").split(separator: ":").map(String.init).filter { $0.hasPrefix("/") }
+        return listed.isEmpty ? ["/bin", "/usr/bin"] : listed
+    }
+
+    /// The first executable called `name` in `path`'s directories, as the shell would find it.
+    static func onPath(_ name: String, path: String?) -> String? {
+        directories(path).map { "\($0)/\(name)" }.first(where: isShell)
+    }
+
+    /// The shell a configuration names: a bare name is looked for on the PATH, then in the system's usual places; a path must be a shell
+    /// the system lists.
+    static func chosenShell(_ name: String, path: String?) -> String? {
         if name.hasPrefix("/") { return isListedShell(name, configured: nil) && isShell(name) ? name : nil }
-        return ["/bin", "/usr/bin", "/opt/homebrew/bin", "/usr/local/bin"].map { "\($0)/\(name)" }.first(where: isShell)
+        return onPath(name, path: path)
+            ?? ["/bin", "/usr/bin", "/opt/homebrew/bin", "/usr/local/bin"].map { "\($0)/\(name)" }.first(where: isShell)
     }
 
     static func isListedShell(_ path: String, configured: String?) -> Bool {
