@@ -32,7 +32,7 @@ public struct Transcript: Sendable, Equatable {
     var jobBlocks: [String: Int] = [:]
     var completedJobs: Set<String> = []
     /// Which tool blocks the user opened or closed, over the default for the kind (TerminalKit roadmap 0018).
-    private(set) var folds = FoldStore<Int>()
+    var folds = FoldStore<Int>()
     /// Whether a tool block with output starts folded, unless the user chose (ADR-0046: `ui.tools`).
     public private(set) var toolsFoldedByDefault = true
     /// Whether a thinking block starts folded, unless the user chose.
@@ -70,20 +70,17 @@ public struct Transcript: Sendable, Equatable {
     public mutating func addUser(_ text: String) { append(.user(text)) }
 
     /// Appends streamed reasoning, continuing the current thinking block when it is the last item.
-    public mutating func addThinkingText(_ text: String) {
-        if case .thinking(let existing) = items.last {
-            replaceLast(.thinking(existing + text))
-        } else {
-            append(.thinking(text))
-        }
-    }
+    public mutating func addThinkingText(_ text: String) { stream(text, as: Item.thinking) }
 
     /// Appends streamed assistant text, continuing the current assistant item when it is the last one.
-    public mutating func addAssistantText(_ text: String) {
-        if case .assistant(let existing) = items.last {
-            replaceLast(.assistant(existing + text))
-        } else {
-            append(.assistant(text))
+    public mutating func addAssistantText(_ text: String) { stream(text, as: Item.assistant) }
+
+    /// Continues the last item when it is of the kind `make` makes, or starts one.
+    private mutating func stream(_ text: String, as make: (String) -> Item) {
+        switch (items.last, make("")) {
+            case (.thinking(let existing)?, .thinking), (.assistant(let existing)?, .assistant):
+                replaceLast(make(existing + text))
+            default: append(make(text))
         }
     }
 
@@ -110,6 +107,9 @@ public struct Transcript: Sendable, Equatable {
         if let backgroundJob { jobBlocks[backgroundJob] = index }
     }
 
+    /// Whether reasoning says anything: a block of white space, or nothing at all, does not (roadmap 0081).
+    static func saysSomething(_ text: String) -> Bool { text.contains { !$0.isWhitespace } }
+
     /// The output without its trailing line feeds, and at most ``outputLineLimit`` lines, with the cut said.
     static func kept(_ output: String) -> String {
         var text = Substring(output)
@@ -127,7 +127,7 @@ public struct Transcript: Sendable, Equatable {
         guard items.indices.contains(index) else { return false }
         switch items[index] {
             case .tool(_, _, _, let output, let input): return !output.isEmpty || !input.isEmpty
-            case .thinking(let text): return !Self.kept(text).isEmpty
+            case .thinking(let text): return Self.saysSomething(text)
             default: return false
         }
     }
