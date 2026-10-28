@@ -8,13 +8,16 @@ extension ScreenComposer {
         for state: ScreenState, input: String = "", columns: Int = 200
     ) -> (line: Line, runners: Range<Int>?, below: Range<Int>?) {
         let mark = leadingMark(for: state)
-        return StatusLine(segments(for: state, input: input, mark: mark), columns: columns, markStyle: mark.style)
-            .line(style: StatusLine.statusStyle)
+        return StatusLine(
+            segments(for: state, input: input, mark: mark), columns: columns, markStyle: mark.style,
+            markWidth: UnicodeWidth.displayWidth(of: mark.character)
+        )
+        .line(style: StatusLine.statusStyle)
     }
 
     /// Evaluates a stable per-operation spinner while running, or the sandbox-colored idle `!`.
     static func leadingMark(for state: ScreenState) -> StatusLeadingMark {
-        guard state.running else {
+        guard state.running || state.compacting else {
             return StatusLeadingMark.mark(running: false, sandboxed: state.sandboxed, frame: "")
         }
         let configured = state.transcript.spinnerStyle
@@ -23,6 +26,7 @@ extension ScreenComposer {
         let frames = spinner.frames
         let index = configured == .random ? (clock?.frame ?? state.statusFrame) : state.statusFrame
         let frame = frames.isEmpty ? "|" : frames[index % frames.count]
+        if state.compacting { return StatusLeadingMark.compactingMark(frame: frame) }
         return StatusLeadingMark.mark(running: state.running, sandboxed: state.sandboxed, frame: frame)
     }
 

@@ -12,15 +12,18 @@ struct StatusLine {
     private(set) var segments: [StatusSegment]
     let columns: Int
     var markStyle: Style?
+    /// How many cells the leading mark takes, which its style covers: one for a spinner, more for `⠋ Compacting...`.
+    var markWidth: Int
 
     /// The default look of the status line text and enclosing input rules.
     static let statusStyle = Style(dim: true)
 
     /// Fits `segments`, in the order they are to be shown, to `columns`.
-    init(_ segments: [StatusSegment], columns: Int, markStyle: Style? = nil) {
+    init(_ segments: [StatusSegment], columns: Int, markStyle: Style? = nil, markWidth: Int = 1) {
         self.segments = segments
         self.columns = Swift.max(1, columns)
         self.markStyle = markStyle
+        self.markWidth = markWidth
         fit()
     }
 
@@ -72,15 +75,17 @@ struct StatusLine {
             text += segment.text
             column = span.upperBound
         }
-        var accents: [ScreenComposer.Accent] = []
-        if let markStyle, let first = text.first {
-            accents = [.init(columns: 0 ..< UnicodeWidth.displayWidth(of: String(first)), style: markStyle)]
-        } else if let first = text.first, first == "!" || first == "⚠" {
-            accents = [.init(columns: 0 ..< UnicodeWidth.displayWidth(of: String(first)), style: Self.warning)]
-        }
-        // Only when even the pieces that may not go do not fit: clipped at a cell, the last resort.
+        // Only when even the pieces that may not go do not fit: clipped at a cell, the last resort. Before the accent, which must not
+        // reach past what is left.
         if UnicodeWidth.displayWidth(of: text) > columns {
             text = ColumnSlicer.split(text, columns: 0 ..< columns).selected
+        }
+        var accents: [ScreenComposer.Accent] = []
+        if let markStyle, let first = text.first {
+            let width = Swift.max(UnicodeWidth.displayWidth(of: String(first)), markWidth)
+            accents = [.init(columns: 0 ..< Swift.min(width, UnicodeWidth.displayWidth(of: text)), style: markStyle)]
+        } else if let first = text.first, first == "!" || first == "⚠" {
+            accents = [.init(columns: 0 ..< UnicodeWidth.displayWidth(of: String(first)), style: Self.warning)]
         }
         return (ScreenComposer.Line(text: text, style: style, accents: accents), runners, below)
     }

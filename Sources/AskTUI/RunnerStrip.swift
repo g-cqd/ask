@@ -28,8 +28,11 @@ struct RunnerStrip {
             if item.hidden > 0 { text += " · \(item.hidden) hidden" }
             if let progress = state.runnerProgress[runner.id] {
                 let duration = progress.duration(localized: state.blocks.localizedDurations)
-                let suffix = [duration, progress.indicator].compactMap { $0 }.joined(separator: " ")
+                let suffix = [duration, progress.indicator].compactMap { $0 }.joined(separator: " · ")
                 text = Self.trailing(suffix, after: text, columns: columns)
+            } else {
+                let fitted = ScreenComposer.ellipsized(text, cells: columns)
+                text = fitted.shown + fitted.mark
             }
             let chosen = runner.id == state.stripSelection
             lines.append(ScreenComposer.Line(text: text, style: chosen ? Style(bold: true) : Style(dim: true)))
@@ -40,13 +43,16 @@ struct RunnerStrip {
         }
     }
 
-    /// Metadata keeps its right edge on narrow screens; text yields first, with the same four-cell gap as block headers.
+    /// Metadata keeps its right edge on narrow screens; text yields first and ends with `…` when cut (roadmap 0100), with the same gap as
+    /// block headers.
     private static func trailing(_ metadata: String, after text: String, columns: Int) -> String {
         guard columns > 0 else { return "" }
-        let suffix = UnicodeWidth.displayWidth(of: metadata) + 5 <= columns ? metadata : String(metadata.suffix(1))
+        let gap = ScreenComposer.headerGap
+        let suffix =
+            UnicodeWidth.displayWidth(of: metadata) + gap + 1 <= columns ? metadata : String(metadata.suffix(1))
         let suffixWidth = UnicodeWidth.displayWidth(of: suffix)
-        let prefix = ColumnSlicer.split(text, columns: 0 ..< Swift.max(0, columns - suffixWidth - 4)).selected
-        let gap = Swift.max(0, columns - UnicodeWidth.displayWidth(of: prefix) - suffixWidth)
-        return prefix + String(repeating: " ", count: gap) + suffix
+        let fitted = ScreenComposer.ellipsized(text, cells: Swift.max(0, columns - suffixWidth - gap))
+        let spaces = Swift.max(0, columns - fitted.cells - suffixWidth)
+        return fitted.shown + fitted.mark + String(repeating: " ", count: spaces) + suffix
     }
 }

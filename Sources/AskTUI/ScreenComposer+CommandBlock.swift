@@ -16,18 +16,7 @@ extension ScreenComposer {
         let status = ColumnSlicer.split(metadata, columns: 0 ..< width).selected
         let statusCells = UnicodeWidth.displayWidth(of: status)
         let available = Swift.max(0, width - statusCells - (status.isEmpty ? 0 : headerGap))
-        var shown = ""
-        var cells = 0
-        let fits = UnicodeWidth.displayWidth(of: flat) <= available
-        let room = fits ? available : Swift.max(0, available - 1)
-        for character in flat {
-            let next = UnicodeWidth.displayWidth(of: String(character))
-            guard cells + next <= room else { break }
-            shown.append(character)
-            cells += next
-        }
-        let mark = fits || available == 0 ? "" : "…"
-        cells += mark.isEmpty ? 0 : 1
+        let (shown, mark, cells) = ellipsized(flat, cells: available)
         let gap = String(repeating: " ", count: Swift.max(0, width - cells - statusCells))
         return [
             Line(

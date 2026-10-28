@@ -43,6 +43,7 @@ extension AgentLoop {
         if !contextFull, !explicit, Compaction.cut(context, keepingRecentBytes: budget.keepRecentBytes) == nil {
             return
         }
+        events(.compacting)
         do {
             let (summary, usage, firstKept) = try await summarise(context, contextFull: contextFull, events: events)
             try record(.compaction(summary: summary, firstKept: firstKept), in: session)
