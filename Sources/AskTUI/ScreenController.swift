@@ -194,10 +194,7 @@ public struct ScreenController: Sendable {
                 state.scrollback = 0
             case .askApproval(let id, let question):
                 ask(id: id, question: HomePath.abbreviate(question, home: options.home))
-            case .compacting(let active):
-                state.compacting = active
-            case .reconnecting(let waiting):
-                state.reconnecting = waiting
+            case .compacting, .compactionFinished, .reconnecting: applyBackgroundWork(update)
             case .runEnded:
                 state.compacting = false
                 state.reconnecting = false
