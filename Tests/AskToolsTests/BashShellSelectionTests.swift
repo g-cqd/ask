@@ -27,4 +27,10 @@ struct BashShellSelectionTests {
         let result = await tool.run(input(#"{"command":"printf '%s' \"$0\""}"#), in: context)
         #expect(result == ToolOutput("/bin/bash\n[exit 0]"))
     }
+
+    @Test func `an executable that is not a shell cannot be named as the shell`() async {
+        let tool = BashTool(jobs: JobTable(environment: ["SHELL": "/bin/sh"]))
+        let result = await tool.run(input(#"{"command":"printf '%s' \"$0\"","shell":"/usr/bin/python3"}"#), in: context)
+        #expect(result == ToolOutput("/bin/sh\n[exit 0]"))
+    }
 }

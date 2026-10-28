@@ -21,9 +21,29 @@ public enum PathDisplay {
         return path
     }
 
-    /// Formats an OSC 8 terminal hyperlink for a file path, with an absolute `file://` URI.
+    /// Whether `text` holds a C0 control (ESC, BEL, newline, ...), DEL or a C1 control. Such a character printed to a
+    /// terminal is interpreted, not shown, and a pasted command cannot carry it safely.
+    public static func hasControl(_ text: String) -> Bool {
+        text.unicodeScalars.contains(where: isControl)
+    }
+
+    /// `text` with every control character replaced by U+FFFD, so a path from the file system can be printed.
+    public static func sanitized(_ text: String) -> String {
+        guard hasControl(text) else { return text }
+        var view = String.UnicodeScalarView()
+        for scalar in text.unicodeScalars { view.append(isControl(scalar) ? "\u{FFFD}" : scalar) }
+        return String(view)
+    }
+
+    private static func isControl(_ scalar: Unicode.Scalar) -> Bool {
+        scalar.value < 0x20 || (0x7F ... 0x9F).contains(scalar.value)
+    }
+
+    /// Formats an OSC 8 terminal hyperlink for a file path, with an absolute `file://` URI. A path or label holding a
+    /// control character is printed as plain, sanitized text: no escape sequence is built from it.
     public static func link(to path: String, display: String? = nil) -> String {
         let label = display ?? tilde(path)
+        if hasControl(path) || hasControl(label) { return sanitized(label) }
         let resolved = URL(fileURLWithPath: path).standardizedFileURL.resolvingSymlinksInPath().path
         let encoded = URL(fileURLWithPath: resolved).absoluteString
         return "\u{1B}]8;;\(encoded)\u{1B}\\\(label)\u{1B}]8;;\u{1B}\\"

@@ -40,4 +40,17 @@ struct PathDisplayTests {
         #expect(escaped.hasPrefix("~/Work\\ Space/project\\'s\\ ask"))
         #expect(!escaped.hasPrefix("'~"))
     }
+
+    @Test func `a control character in a path never reaches the terminal as one`() {
+        let hostile = "/Users/testuser/x\u{1B}]52;c;AAAA\u{07}y\nz"
+        #expect(PathDisplay.hasControl(hostile))
+        #expect(PathDisplay.hasControl("a\u{85}b"))
+        #expect(PathDisplay.hasControl("a\u{7F}b"))
+        #expect(!PathDisplay.hasControl("/Users/testuser/Work Space/é"))
+        let link = PathDisplay.link(to: hostile)
+        #expect(!link.unicodeScalars.contains { $0.value < 0x20 || $0.value == 0x7F })
+        #expect(PathDisplay.sanitized("a\u{1B}b") == "a\u{FFFD}b")
+        let labelled = PathDisplay.link(to: "/tmp/ok", display: "bad\u{07}label")
+        #expect(!labelled.contains("\u{07}") && !labelled.contains("\u{1B}"))
+    }
 }
