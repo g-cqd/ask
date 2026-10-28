@@ -1,4 +1,5 @@
 import AskAI
+import Foundation
 import Testing
 
 @testable import AskAgentCore
@@ -18,6 +19,25 @@ struct RequestContextTests {
         var tree = SessionTree()
         for payload in payloads { try tree.append(payload) }
         return tree.context()
+    }
+
+    @Test func `an image in a tool result survives the session file and reaches the request`() throws {
+        let image = ImagePart(mediaType: "image/png", data: [0, 1, 2, 250, 255])
+        let payloads: [SessionPayload] = [
+            .user("look"),
+            response([.toolCall(id: "t1", name: "read", input: input("{}"))]),
+            .toolResult(callID: "t1", content: "a.png: image", isError: false, images: [image])
+        ]
+        for payload in payloads {
+            let bytes = try JSONEncoder().encode(WirePayload(value: payload))
+            #expect(try JSONDecoder().decode(WirePayload.self, from: bytes).value == payload)
+        }
+        let messages = RequestContext(try entries(payloads)).messages
+        #expect(
+            messages.last
+                == ModelMessage(
+                    role: .user,
+                    blocks: [.toolResult(id: "t1", content: "a.png: image", isError: false, images: [image])]))
     }
 
     @Test func `text turns alternate as user and assistant messages`() throws {

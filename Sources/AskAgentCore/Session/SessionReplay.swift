@@ -26,7 +26,7 @@ public enum SessionReplay {
         }
         for entry in entries {
             if case .destination = entry.payload { continue }
-            if case .toolResult(let id, let content, let isError) = entry.payload,
+            if case .toolResult(let id, let content, let isError, _) = entry.payload,
                 let index = pending.firstIndex(where: { $0.id == id })
             {
                 let call = pending.remove(at: index)

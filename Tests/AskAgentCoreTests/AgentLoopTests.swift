@@ -96,7 +96,7 @@ struct AgentLoopTests {
         let file = try newFile()
         let provider = ScriptedProvider([.call(id: "t1", name: "rm", input: "{}"), .reply("Sorry.")])
         try await loop(provider).run("Delete it", in: file) { _ in }
-        guard case .toolResult("t1", let content, true) = file.tree.entries[2].payload else {
+        guard case .toolResult("t1", let content, true, _) = file.tree.entries[2].payload else {
             Issue.record("expected an error result, got \(file.tree.entries[2].payload)")
             return
         }

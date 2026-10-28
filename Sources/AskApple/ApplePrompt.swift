@@ -25,9 +25,10 @@ enum ApplePrompt {
                     case .toolCall(let id, let name, let input):
                         names[id] = name
                         parts.append("Assistant called \(name) with \(String(decoding: input.bytes, as: UTF8.self))")
-                    case .toolResult(let id, let content, let isError):
+                    case .toolResult(let id, let content, let isError, let images):
                         let label = (names[id] ?? "tool") + (isError ? " failed" : " returned")
-                        parts.append("The \(label):\n" + clipped(content, to: resultLimit))
+                        let shown = clipped(ImagePart.noting(images, in: content), to: resultLimit)
+                        parts.append("The \(label):\n" + shown)
                     case .text, .thinking, .redactedThinking: break
                 }
             }

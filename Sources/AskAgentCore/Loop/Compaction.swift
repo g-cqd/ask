@@ -86,7 +86,7 @@ public enum Compaction {
     /// `entries` with each tool result clipped to `bytes`, for a summary request that must fit a small window.
     static func clippingResults(_ entries: some Sequence<SessionEntry>, toBytes bytes: Int) -> [SessionEntry] {
         entries.map { entry in
-            guard case .toolResult(let id, let content, let isError) = entry.payload else { return entry }
+            guard case .toolResult(let id, let content, let isError, _) = entry.payload else { return entry }
             return SessionEntry(
                 id: entry.id, parentID: entry.parentID,
                 payload: .toolResult(callID: id, content: clipped(content, toBytes: bytes), isError: isError))
@@ -123,7 +123,8 @@ public enum Compaction {
             switch entry.payload {
                 case .user(let text): asked.append(clipped(text, toBytes: 2_000))
                 case .compaction(let summary, _): summaries.append(summary)
-                case .toolResult(let id, let content, _): results[id] = clipped(content, toBytes: 400, note: "omitted")
+                case .toolResult(let id, let content, _, _):
+                    results[id] = clipped(content, toBytes: 400, note: "omitted")
                 case .response(let response):
                     for case .toolCall(let id, let name, let input) in response.blocks {
                         calls.append((id, "\(name) \(String(decoding: input.bytes, as: UTF8.self))"))
@@ -153,7 +154,7 @@ public enum Compaction {
         switch payload {
             case .destination: return 0
             case .user(let text), .assistant(let text): return text.utf8.count
-            case .toolResult(_, let content, _): return content.utf8.count
+            case .toolResult(_, let content, _, _): return content.utf8.count
             case .compaction(let summary, _): return summary.utf8.count
             case .response(let response):
                 return response.blocks.reduce(0) { total, block in

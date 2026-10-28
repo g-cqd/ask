@@ -12,7 +12,7 @@ public enum SessionPayload: Sendable, Equatable {
     /// signatures, tool calls and usage included.
     case response(AssembledResponse)
     /// The result of one tool call, recorded as soon as it is known.
-    case toolResult(callID: String, content: String, isError: Bool)
+    case toolResult(callID: String, content: String, isError: Bool, images: [ImagePart] = [])
     /// A summary followed in context by messages from an ancestor boundary onward.
     case compaction(summary: String, firstKept: EntryID)
 }
