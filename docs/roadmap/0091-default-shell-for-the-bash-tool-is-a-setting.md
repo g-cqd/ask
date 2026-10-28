@@ -35,9 +35,21 @@ Whether `$SHELL` should still count when it names one of the three. The wish say
 
 - Setting `environment.shell` (a name: zsh, bash, fish, sh, dash, ksh; or an absolute path the system lists in `/etc/shells`), **user file
   only** (a project file is refused). It sits in the `environment` section, which already reaches the tool, instead of a new top-level key.
-- Default when unset: `/bin/zsh`, else `/bin/bash`, else `$SHELL`, else `/bin/bash`. The model's own `shell` argument still wins for a call.
-- The tool description names the shell, so the model writes its syntax. Checked live on the release binary with the sandbox on:
-  `echo $0` printed `/bin/zsh`, `$ZSH_VERSION` 5.9.
-- A configured shell that is missing or unlisted falls back to the default silently (no notice channel in the tool): not ideal, open.
-- Not verified: fish as a configured shell (quoting of `-c`, login flags in `JobProcess`); zsh-specific behaviour differences for commands the
-  model wrote for bash (globbing that matches nothing is an error in zsh, `[[` and arrays differ in places); jobs' watchdog scripts keep `/bin/sh`.
+- Default when unset (owner, same day): the **first `zsh` on the PATH**, else the first `bash` on the PATH, else `$SHELL`, else `/bin/bash`.
+  On this machine that is `/opt/homebrew/bin/zsh`, not `/bin/zsh`. A configured name is also looked up on the PATH first, then in `/bin`,
+  `/usr/bin`, `/opt/homebrew/bin`, `/usr/local/bin`. The model's own `shell` argument still wins for a call.
+- The tool description names the shell, so the model writes its syntax. For zsh it adds that a glob matching nothing aborts the command.
+- A configured shell that cannot be used is no longer silent: a startup notice says why and which shell runs instead.
+
+### Verified live (release binary, sandbox on, 2026-10-28)
+
+- Default: `echo $0` printed `/opt/homebrew/bin/zsh`.
+- zsh stops the line at an unmatched glob (`zsh:1: no matches found`, exit 1, later commands not run), hence the description note.
+- `"shell": "fish"`: fish runs `-c` correctly inside the sandbox; it reports the unmatched glob, carries on, and prints `after`. `$0` is empty
+  in fish.
+- `"shell": "nosuch"` is refused at load with a clear message; `"shell": "/usr/bin/python3"` gives the notice and falls back to zsh.
+
+### Still not verified
+
+- zsh vs bash differences other than the unmatched glob (`[[`, arrays, word splitting) on commands models write.
+- Commands that rely on `$0` under fish (it is empty there).
