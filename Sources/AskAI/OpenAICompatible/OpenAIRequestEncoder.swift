@@ -41,13 +41,17 @@ public enum OpenAIRequestEncoder {
         // @dl:accept -- each protocol writes a tool result as its own item in its own words; the loop is the same shape, the fields are not
         switch message.role {
             case .user:
+                var shown: [ImagePart] = []
                 for case .toolResult(let id, let content, _, let images) in message.blocks {
                     writer.object {
                         $0.field("role", "tool")
                         $0.field("tool_call_id", id)
-                        $0.field("content", ImagePart.noting(images, in: content))
+                        $0.field("content", images.isEmpty ? content : content + ImagePart.attachedNote)
                     }
+                    shown += images
                 }
+                // A tool message holds text only on this wire, so the pictures follow in a user message.
+                ImagePart.writeFollowing(shown, as: .chat, into: &writer)
                 if !text.isEmpty {
                     writer.object {
                         $0.field("role", "user")

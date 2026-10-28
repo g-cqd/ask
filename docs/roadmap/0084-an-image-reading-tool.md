@@ -83,3 +83,21 @@ Slices, each shippable and tested alone:
 7. MCP image results use the same part. Terminal display stays out (TerminalKit 0018).
 
 Order: 1, 2 and 3 for Anthropic first (the smallest end to end), then the other encoders.
+
+## Progress (2026-10-28)
+
+- Slices 1-2 and the PDF/video/format extension: done (`df19552`, `8df567d`).
+- **Sandbox (owner: "sandbox should always be followed whenever enabled")**: under a restricted policy the kind of a file is read
+  through the verified descriptor, and a video, which AVFoundation can only open by path, is copied from the verified descriptor into
+  a private 0700 directory and read from the copy, which is removed after. Test: a restricted policy reads an allowed video and
+  refuses a protected one, leaving no copy.
+- **Slice 3 (encoders), generalised**: one rule before every encoder (`ImagePart.filtering`, called in `AgentLoop.request`): images
+  are sent only when the model is known to take them (`acceptsImages == true`); otherwise the result says why they were not sent.
+  Anthropic: inside the tool result. OpenAI chat and Responses: the tool result says the image is attached, and one user message
+  after the results carries it (`image_url` data URL / `input_image`), one shared writer for both. Agy and Apple stay on the note.
+- **Slice 4 (capability)**: `acceptsImages: Bool?` on `CatalogModel`, `ResolvedModel` and `AgentSettings`. Known true for the
+  Anthropic and Codex subscriptions; Codex's `input_modalities` and Copilot's `supports.vision` fill it; `providers.json` models take
+  `"images": true|false`; anything else is unknown and withholds, as other harnesses assume text only for an unlisted model.
+- Not verified: the wire shapes against a live provider (none sent), Copilot's `vision` field name, and that other harnesses behave
+  as described (from memory of pi and opencode; not re-read). Still open: Gemini/Agy inline images, persistence by hash,
+  per-request budget, MCP images, native PDF documents.
