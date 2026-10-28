@@ -35,7 +35,7 @@ input changes, MCP exposure control, `memory-safety` on `ConfigEditor.run` and `
 
 ## Blocking
 
-- [ ] **Terminal-escape injection through `PathDisplay`.** `link(to:display:)` puts the label inside an OSC 8
+- [x] **Terminal-escape injection through `PathDisplay`.** `link(to:display:)` puts the label inside an OSC 8
   sequence without removing control characters, and `shellArgument` backslash-escapes an ESC byte instead of
   removing or quoting it, so the raw byte still reaches the terminal. The workspace path and the session path
   are printed by `printResumeCommand` after exit. A workspace directory named `x<ESC>]52;c;…<BEL>` (a cloned
@@ -44,6 +44,7 @@ input changes, MCP exposure control, `memory-safety` on `ConfigEditor.run` and `
   or percent-encode C0/C1 controls in `link`; quote any path holding a control or newline with `'…'` and
   `'\''`. Tests for ESC, BEL, newline and a quote in `PathDisplayTests`. This matters more once item
   "links in the transcript" below puts paths into every block.
+  Done: `PathDisplay.link` prints a path or label with a control character as plain sanitized text, `printResumeCommand` prints no command for such a path, and `PathDisplayTests` covers ESC, BEL, newline, DEL and C1.
 - [ ] **A roadmap entry is marked done while its request is open.** 0075 has `status: done` but its own
   "Still owed" section holds the owner's request of 2026-10-27 21:28 (paths in blocks are links). Set it to
   `in-progress` until that ships. (Done in this commit.)
@@ -61,9 +62,9 @@ Each line: request (date, time) → what main has → what is owed.
 - [ ] **Semantic tool payloads, no `--- input ---` / `--- output ---`, configurable output limit with a centre
   collapse, byte formatting** (10-27 22:27) → 0078 `not-started`; only compact `[x:y]` intervals, divider removal and
   typed write facts landed. Owed: pretty-printed payloads, `ui` output-limit setting, the byte-format setting.
-- [ ] **Copilot parity with the sibling implementation** (10-27 after the port) → ask has the connection and the
-  catalog, not the quota footer (used / left, colour-coded bar in the status line) and not the pricing snapshot with
-  its daily refresh. The 10-27 session itself listed both as not ported. Needs a roadmap entry of its own.
+- [ ] **Copilot pricing snapshot** (10-27 after the port) → ask has the connection and the catalog, not the pricing
+  snapshot with its daily refresh. **The quota bar (used / left, colour-coded, in the status line) is not a priority
+  at all** (owner, 2026-10-28): leave it out until asked again.
 - [ ] **Pixel rule above and below the input, terminal-palette tint** (10-26 13:52, 10-27 08:48) → character rules
   only; `OSCPalette` is waiting for TerminalKit (0074 stays in progress). The TerminalKit handover report exists.
 - [ ] **Asynchronous semantic job naming** (10-27 18:22) → investigated, constrained to UX only, not implemented.
@@ -95,17 +96,19 @@ Each line: request (date, time) → what main has → what is owed.
 
 ## Suggestion
 
-- [ ] **`ConfigEditor.writeAtomically` replaces a symlinked config with a regular file.** `rename(2)` over a
+- [x] **`ConfigEditor.writeAtomically` replaces a symlinked config with a regular file.** `rename(2)` over a
   `settings.json` that links into a dotfiles repository swaps the link for a file and leaves the real one stale.
   Resolve with `realpath` before choosing the temporary directory. Test with a symlinked target.
+  Done: the target path is resolved first; `ConfigEditorSymlinkTests`.
 - [ ] **Read–modify–write without a lock.** Two `ask` processes editing at once can lose an edit. Take a short lock
   like the credentials transaction (ADR-0039), or write in the ADR that last-writer-wins is accepted.
 - [ ] **The resume command prints only the first `--write`/`--read` path** (`paths.prefix(1)` in
   `Flags.arguments`). The resumed run is narrower than the original unless the session file decides. Say which, or
   print every path.
-- [ ] **`shell` argument of the bash tool accepts any absolute executable** (`JobTable.isShell` checks existence
+- [x] **`shell` argument of the bash tool accepts any absolute executable** (`JobTable.isShell` checks existence
   and the execute bit). The model can name `/usr/bin/python3` as the shell. Restrict to `/etc/shells` plus the
   configured shell.
+  Done: a named shell must be in `/etc/shells` or be the configured `SHELL`; otherwise the configured shell is used. Test added.
 - [ ] **`wait_for_port` is allowed whenever the network is not `.none`**, including a domain-limited policy.
   State in ADR-0043 which hosts it may touch (loopback only?), and route a host argument through the connection check.
 - [ ] **Copilot impersonates VS Code** (client id `01ab8ac9400c4e429b23`, `editor-version vscode/…`,
