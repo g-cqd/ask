@@ -36,8 +36,16 @@ public final class JobTable: Sendable {
     }
 
     func commandShell(_ requested: String?, policy: CommandEnvironment) -> String {
-        let candidate = requested ?? policy.filtered(environment)["SHELL"]
+        let configured = policy.filtered(environment)["SHELL"]
+        // A shell the model names must be a login shell of the system or the user's own, not any executable.
+        let candidate = requested.flatMap { Self.isListedShell($0, configured: configured) ? $0 : nil } ?? configured
         return candidate.flatMap { Self.isShell($0) ? $0 : nil } ?? "/bin/bash"
+    }
+
+    static func isListedShell(_ path: String, configured: String?) -> Bool {
+        if path == configured { return true }
+        let listed = (try? String(contentsOfFile: "/etc/shells", encoding: .utf8)) ?? ""
+        return listed.split(separator: "\n").contains { $0.trimmingCharacters(in: .whitespaces) == path }
     }
 
     static func isShell(_ path: String) -> Bool {

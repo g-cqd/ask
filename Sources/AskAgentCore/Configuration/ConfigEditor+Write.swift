@@ -115,6 +115,8 @@ extension ConfigEditor {
     /// Writes `bytes` to a fresh file beside `path`, flushes it, and renames it over the target.
     static func writeAtomically(_ bytes: [UInt8], to path: String, preserving mode: mode_t?) throws(ConfigEditor.Error)
     {
+        // A settings file that is a symlink (into a dotfiles repository) is written through, not replaced.
+        let path = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
         let directory = (path as NSString).deletingLastPathComponent
         do {
             try FileManager.default.createDirectory(
