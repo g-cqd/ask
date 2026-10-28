@@ -91,7 +91,7 @@ Phase 0 measures it on the real corpus as the number to beat, and the differenti
    - *Owed, needs the owner at a terminal:* a click-and-hover check of OSC 8 in Ghostty, WezTerm, iTerm2 and Terminal.app (kitty shows a link to a script and the others were not tried), from a script that prints one link of each form. And a licence question for phase 1: the spec's examples are
      CC BY-SA 4.0 (its own header); fixtures copied from them carry the attribution and the share-alike, and the alternative is to generate expected output from
      cmark at test time instead of storing it.
-1. **The parser: built, in `~/Developer/g-cqd/AemiMarkdown` (local; no remote yet), ADR-0001 there.** What is true now, from its diary
+1. **The parser: built, in `g-cqd/AemiMarkdown` (now on GitHub; see 0086), ADR-0001 there.** What is true now, from its diary
    (`docs/diary/2026-10-25-01.md`), release, the 19,897 messages of phase 0, load average 6.9:
    - **Conformance:** CommonMark 0.31.2, 652 of 652 examples; the GitHub extensions the corpus uses (tables, strikethrough, extended autolinks), 20 of 20;
      a **ratchet** (a list of failing examples that can only shrink; it is empty) makes a regression or a stale list fail the suite. Footnotes, task
