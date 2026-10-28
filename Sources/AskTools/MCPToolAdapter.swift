@@ -30,7 +30,9 @@ struct MCPToolAdapter: Tool {
                 return .error(Self.refused(server: server, tool: original))
             }
         }
-        return await MCPCalling.output(original, arguments: input, on: connection, server: server)
+        return await MCPCalling.output(
+            original, arguments: input, on: connection, server: server,
+            allowance: ImageReader.Allowance(context.imageLimits))
     }
 
     /// What the model is told when the user did not allow a call the server marks destructive (ADR-0111).

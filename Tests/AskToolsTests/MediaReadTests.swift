@@ -88,7 +88,7 @@ struct MediaReadTests {
         let some = try await run("d.pdf", pdf(pages: 12), #","pages":"2,5-6""#)
         #expect(some.images.count == 3 && some.content.contains("pages 2, 5, 6"))
         let capped = try await run("d.pdf", pdf(pages: 12), #","pages":"1-10","max_images":2"#)
-        #expect(capped.images.count == 2 && capped.content.contains("8 more asked for"))
+        #expect(capped.images.count == 2 && capped.content.contains("8 more asked for,"))
         let past = try await run("d.pdf", pdf(pages: 3), #","pages":"9""#)
         #expect(past.isError && past.content.contains("past the end"))
     }

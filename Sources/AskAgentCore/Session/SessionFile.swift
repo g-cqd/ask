@@ -43,6 +43,8 @@ public struct SessionFile: ~Copyable {
     private var needsRewrite: Bool
     /// Internal for the opening extension, which passes it on to a fork.
     let calls: SessionFileCalls
+    /// Where the pictures of tool results are kept, beside the session file.
+    private var images: SessionImageStore { SessionImageStore(besideSessionAt: path.string) }
 
     /// Writes one record to the append descriptor. Only tests replace it (through ``SessionFileCalls``), to make that write fail.
     typealias RecordWriter = ([UInt8], FileDescriptor) throws(SessionFileError) -> Void
@@ -133,7 +135,10 @@ public struct SessionFile: ~Copyable {
     {
         do throws(SessionFileError) {
             guard let entry = tree.entry(id) else { throw .tree(.unknownEntry(id)) }
-            try persist(try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(for: entry) })
+            try persist(
+                try SessionFileIO.encoded { () throws(SessionLogError) in
+                    try SessionLog.line(for: entry, images: images)
+                })
         } catch {
             tree.rewind(to: checkpoint)
             throw error
@@ -170,7 +175,9 @@ public struct SessionFile: ~Copyable {
     /// Writes ``tree`` beside the file, preserving a damaged original or an upgrade's versioned original, then swaps atomically.
     private mutating func rewrite() throws(SessionFileError) {
         let temporary = FilePath(path.string + ".tmp")
-        let snapshot = try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(tree) }
+        let snapshot = try SessionFileIO.encoded { () throws(SessionLogError) in
+            try SessionLog.snapshot(tree, images: images)
+        }
         let descriptor = try SessionFileIO.io(.open) {
             try FileDescriptor.open(
                 temporary, .writeOnly, options: [.create, .truncate], permissions: [.ownerReadWrite])

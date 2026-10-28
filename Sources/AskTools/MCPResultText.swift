@@ -4,8 +4,12 @@ internal import AskMCP
 /// its type and size, and never pasted: a base64 image would be tens of thousands of tokens of nothing.
 enum MCPResultText {
     /// The text of `result`.
-    static func of(_ result: MCPToolResult) -> String {
-        let parts = result.content.map(text).filter { !$0.isEmpty }
+    /// - Parameters:
+    ///   - result: what the server returned.
+    ///   - replacing: for a block by its position, the line that stands for it, which a picture made fit to send has.
+    /// - Returns: the text the model reads.
+    static func of(_ result: MCPToolResult, replacing: [Int: String] = [:]) -> String {
+        let parts = result.content.enumerated().map { replacing[$0.offset] ?? text($0.element) }.filter { !$0.isEmpty }
         if !parts.isEmpty { return parts.joined(separator: "\n\n") }
         if let structured = result.structuredContent, !structured.isEmpty {
             return String(decoding: structured, as: UTF8.self)
