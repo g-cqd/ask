@@ -80,12 +80,16 @@ struct PointerRig {
 
     /// The visible content before first-line status, for folding and pointer tests. Metadata has separate cell-exact tests.
     func contentText(row: Int) -> String {
-        text(row: row).replacing(/[ ]{4,}.*/, with: "")
+        let line = text(row: row)
+        guard let gap = line.range(of: "    ") else { return line }
+        return String(line[..<gap.lowerBound])
     }
 
     /// What a row shows, as text, trailing blanks dropped.
     func text(row: Int) -> String {
-        String((0 ..< buffer.columns).compactMap { buffer[row, $0].isContinuation ? nil : buffer[row, $0].character })
-            .replacing(/\s+$/, with: "")
+        var line = String(
+            (0 ..< buffer.columns).compactMap { buffer[row, $0].isContinuation ? nil : buffer[row, $0].character })
+        while let last = line.last, last.isWhitespace { line.removeLast() }
+        return line
     }
 }

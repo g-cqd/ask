@@ -1,3 +1,4 @@
+internal import Foundation
 internal import TerminalKitInput
 internal import TerminalKitRender
 internal import TerminalKitStyle
@@ -30,7 +31,9 @@ struct BlockModelTests {
     }
 
     private func texts(_ lines: [ScreenComposer.Line]) -> [String] {
-        lines.map { $0.text.replacing(/[ ]{4,}.*/, with: "") }
+        lines.map { line in
+            line.text.range(of: "    ").map { String(line.text[..<$0.lowerBound]) } ?? line.text
+        }
     }
 
     @Test func `an answer has a row of padding above and below and an inset of one column, and no tint`() {

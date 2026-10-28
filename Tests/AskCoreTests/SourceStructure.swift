@@ -1,3 +1,4 @@
+internal import AemiRegex
 internal import AskCore
 internal import Foundation
 
@@ -48,17 +49,16 @@ enum SourceStructure {
         let isFileLocalHelper: Bool
     }
 
-    /// Built per scan, not stored: `Regex` is not `Sendable`, and a scan reads a file, not a hot path.
-    private static func declarationPattern() -> Regex<(Substring, Substring, Substring)> {
-        /^(?:(?:public|internal|private|fileprivate|package|open|final|indirect|nonisolated|@\w+(?:\([^)]*\))?)\s+)*(struct|class|enum|actor|protocol|extension)\s+(\[|[A-Za-z_]\w*)/
-    }
+    /// Linear-time pattern with the kind (group 1) and the name (group 2).
+    private static let declaration = try? Pattern(
+        #"^(?:(?:public|internal|private|fileprivate|package|open|final|indirect|nonisolated|@\w+(?:\([^)]*\))?)\s+)*(struct|class|enum|actor|protocol|extension)\s+(\[|[A-Za-z_]\w*)"#
+    )
 
     /// The top-level declarations in `text`, in order.
     ///
     /// Only lines that start in column zero are read, and neither comments nor the inside of a multi-line
     /// string literal are: a file may document or quote a declaration without being charged for it.
     static func declarations(in text: String) -> [Declaration] {
-        let declaration = declarationPattern()
         let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
         var found: [Declaration] = []
         var insideString = false
@@ -66,10 +66,11 @@ enum SourceStructure {
             let wasInside = insideString
             if (line.components(separatedBy: "\"\"\"").count - 1) % 2 == 1 { insideString.toggle() }
             guard !wasInside, let first = line.first, !first.isWhitespace, !line.hasPrefix("//"),
-                let match = line.firstMatch(of: declaration)
+                let declaration = Self.declaration, let match = declaration.firstMatch(in: line),
+                let kind = match.range(ofGroup: 1, in: line), let named = match.range(ofGroup: 2, in: line)
             else { continue }
-            let isExtension = match.output.1 == "extension"
-            let name = match.output.2 == "[" ? "Array" : String(match.output.2)
+            let isExtension = line[kind] == "extension"
+            let name = line[named] == "[" ? "Array" : String(line[named])
             found.append(
                 Declaration(
                     kind: isExtension ? .extension : .type, name: name, line: index + 1,

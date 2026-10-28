@@ -111,7 +111,9 @@ let package = Package(
         ),
         .target(
             name: "AskAI",
-            dependencies: [.product(name: "AemiJSON", package: "AemiJSON")],
+            dependencies: [
+                .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiRegex", package: "aemiregex")
+            ],
             path: "Sources/AskAI",
             swiftSettings: packageSettings
         ),
@@ -170,7 +172,10 @@ let package = Package(
         ),
         .testTarget(
             name: "AskCoreTests",
-            dependencies: ["AskCore", .product(name: "AemiJSON", package: "AemiJSON")],
+            dependencies: [
+                "AskCore", .product(name: "AemiJSON", package: "AemiJSON"),
+                .product(name: "AemiRegex", package: "aemiregex")
+            ],
             path: "Tests/AskCoreTests",
             swiftSettings: packageSettings
         ),
@@ -198,7 +203,7 @@ let package = Package(
             name: "AskMCPTests",
             dependencies: [
                 "AskMCP", "AskAI", .product(name: "AemiJSON", package: "AemiJSON"),
-                .product(name: "AemiTesting", package: "aemi")
+                .product(name: "AemiTesting", package: "aemi"), .product(name: "AemiRegex", package: "aemiregex")
             ],
             path: "Tests/AskMCPTests",
             exclude: ["Fixtures"],
@@ -207,7 +212,8 @@ let package = Package(
         .testTarget(
             name: "AskToolsTests",
             dependencies: [
-                "AskTools", "AskAgentCore", "AskAI", "AskMCP", .product(name: "AemiTesting", package: "aemi")
+                "AskTools", "AskAgentCore", "AskAI", "AskMCP", .product(name: "AemiTesting", package: "aemi"),
+                .product(name: "AemiRegex", package: "aemiregex")
             ],
             path: "Tests/AskToolsTests",
             swiftSettings: packageSettings

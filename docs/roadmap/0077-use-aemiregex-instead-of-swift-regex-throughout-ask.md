@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-27
 ---
@@ -31,3 +31,14 @@ reusable regex primitives belong upstream, consistent with roadmap 0076.
 
 The current tool-input task will investigate the already resolved AemiRegex revision
 for heredoc opener matching before adopting a regex implementation.
+
+## Done (2026-10-28)
+
+- Production: the only Swift Regex use left, `ProviderFailure+Overflow.contextWindow`, now uses a linear-time `Pattern`
+  (`AskAI` depends on AemiRegex); a test covers the window of each server's wording, which had none.
+- Tests: `FakeMCPServer`, `HTTPMCPSessionTests`, `BenchmarkDependencyTests`, `SourceStructure`, `PointerRig` and
+  `BlockModelTests` no longer use Swift Regex literals (the last two use plain string operations).
+- Regression: `NoSwiftRegexTests` fails on `import RegexBuilder`, `Regex<`, `try Regex(`, `firstMatch(of:`,
+  `wholeMatch(of:`, `matches(of:`, `.replacing(/` and `(#/` in `Sources` and `Tests`.
+- Not measured: cold compile, warm matching and binary size against Swift Regex (the roadmap asks for it). Python and
+  shell helpers keep their own regexes by design.
