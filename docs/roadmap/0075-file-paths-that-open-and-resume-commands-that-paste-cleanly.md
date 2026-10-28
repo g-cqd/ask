@@ -34,5 +34,4 @@ leading unquoted `~` so bash, zsh, and fish can expand it cleanly upon paste.
   the selection's text, so it is not done.
 - Relative paths are not linked (a row does not know its directory); a path wrapped over two rows links only the part
   on each row; no `id=` parameter joins them for hover.
-- ask pins TerminalKit at a25ea4d, which is committed locally and not pushed: push TerminalKit first, or a fresh
-  clone cannot resolve the pin.
+- ask pins TerminalKit at e0b13ab, which is pushed.
