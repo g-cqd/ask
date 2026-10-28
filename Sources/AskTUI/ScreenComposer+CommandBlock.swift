@@ -5,7 +5,7 @@ internal import TerminalKitText
 /// rest of it continues below, so the command is never shown twice.
 extension ScreenComposer {
     /// Cells between the header text and the status that trails it.
-    static let headerGap = 2
+    static let headerGap = 4
 
     /// A header that is one row whatever its length: the text takes the row up to the gap before `metadata`, and text wider than that is cut
     /// with `…`, counted in display cells. A selection takes the text that is shown, not the ellipsis.

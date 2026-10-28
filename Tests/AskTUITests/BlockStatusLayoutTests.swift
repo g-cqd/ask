@@ -11,7 +11,7 @@ struct BlockStatusLayoutTests {
         let rows = ScreenComposer.lines(for: item, folded: true, columns: 50)
         let first = try #require(rows.first)
         #expect(rows.count == 1)
-        #expect(first.text.hasSuffix("xx…  2 lines · ✓"))
+        #expect(first.text.hasSuffix("xx…    2 lines · ✓"))
         #expect(UnicodeWidth.displayWidth(of: first.text) == 50)
         #expect(first.source?.text.hasSuffix("x") == true, "a selection takes the text, not the ellipsis")
     }

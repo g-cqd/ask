@@ -64,8 +64,8 @@ struct RunnerProgressTests {
         }
         let text = RunnerStrip(controller.state, available: 5, columns: 80).lines[0].text
         #expect(
-            text.hasSuffix("…  1:01:01 · |"),
-            "a cut command ends with an ellipsis, two cells before the time (roadmap 0100)")
+            text.hasSuffix("…    1:01:01 · |"),
+            "a cut command ends with an ellipsis, four cells before the time (roadmap 0100)")
     }
 
     @Test func `a row with no clock that is too wide ends with an ellipsis at the edge`() {

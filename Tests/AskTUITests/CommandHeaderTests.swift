@@ -46,7 +46,7 @@ struct CommandHeaderTests {
             #expect(shown.count == 1, "\(columns) columns")
             let row = try #require(shown.first)
             #expect(UnicodeWidth.displayWidth(of: row.text) == columns, "\(columns) columns")
-            #expect(row.text.hasSuffix("…  1 line · ✓"), "\(columns) columns: \(row.text)")
+            #expect(row.text.hasSuffix("…    1 line · ✓"), "\(columns) columns: \(row.text)")
         }
     }
 
@@ -56,7 +56,7 @@ struct CommandHeaderTests {
             let row = try #require(rows(transcript(command), columns: columns).first)
             #expect(UnicodeWidth.displayWidth(of: row.text) == columns, "\(columns) columns: \(row.text)")
             // A two-cell character that does not fit leaves one cell, which widens the gap rather than splitting the character.
-            #expect(row.text.contains("…  1 line · ✓") || row.text.contains("…   1 line · ✓"), "\(row.text)")
+            #expect(row.text.contains("…    1 line · ✓") || row.text.contains("…     1 line · ✓"), "\(row.text)")
         }
     }
 
