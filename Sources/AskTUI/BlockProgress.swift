@@ -21,19 +21,7 @@ struct BlockProgress: Sendable, Equatable {
         let elapsed = started.duration(to: ended ?? sampled)
         guard elapsed > .seconds(1) else { return nil }
         let seconds = elapsed.components.seconds
-        if localized {
-            return Duration.seconds(seconds)
-                .formatted(
-                    Duration.UnitsFormatStyle(
-                        allowedUnits: [.hours, .minutes, .seconds], width: .abbreviated,
-                        zeroValueUnits: .hide
-                    )
-                    .locale(locale))
-        }
-        func padded(_ value: Int64) -> String { value < 10 ? "0\(value)" : String(value) }
-        if seconds >= 3600 { return "\(seconds / 3600):\(padded(seconds / 60 % 60)):\(padded(seconds % 60))" }
-        if seconds >= 60 { return "\(seconds / 60):\(padded(seconds % 60))" }
-        return String(seconds)
+        return localized ? DurationText.localized(seconds, locale: locale) : DurationText.clock(seconds)
     }
 
     /// The current animation frame, strictly width 1.

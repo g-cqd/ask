@@ -8,7 +8,7 @@ extension ScreenComposer {
     ) -> [Line] {
         let hardLines = TranscriptContent.hardLines(of: text)
         let text = hardLines[0]
-        let available = Swift.max(0, width - UnicodeWidth.displayWidth(of: metadata) - 4)
+        let available = Swift.max(0, width - UnicodeWidth.displayWidth(of: metadata) - headerGap)
         var prefix = ""
         var cells = 0
         for character in text {

@@ -131,7 +131,7 @@ Switches take `"on"` or `"off"` (`true` and `false` work too).
 | `tint` | `"on"` | Tinted backgrounds for the input, your messages and tool calls. |
 | `separator` | `"on"` | A rule between the conversation and the input. |
 | `padding` | `"on"` | A row of padding around each block. |
-| `localizedDurations` | `"on"` | Elapsed times as `1 hr, 40 min` rather than `1:40:00`. |
+| `localizedDurations` | `"on"` | Elapsed times as `1 hr, 40 min` rather than `1:40:00`, and a command's limits as `timeout 2 min` rather than `timeout 2:00`. |
 | `spinner` | `"line"` | The spinner: `line`, `dot`, `star`, `snake`, `braille`, `braillefull`, `braillequarter` or `random`. |
 | `interruptKeys` | `"both"` | Which keys stop a running turn: `"esc"`, `"ctrl-c"` or `"both"`. |
 | `escapeInterruptRequiresConfirmation` | `"on"` | Esc must be pressed twice to stop a turn. |
