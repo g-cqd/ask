@@ -28,7 +28,7 @@ wish in `ask-wishes.md` up to 23:11 has a roadmap item; the newest are 0123 to 0
 
 ## 4. MCP (critical per the owner)
 
-- **0123** every version, three transports (adding HTTP with SSE), the official conformance suite, resources and the other features, a
+- **0123** (owner: AskMCP is promoted to a standalone package, AemiMCP, on the Aemi packages) every version, three transports (adding HTTP with SSE), the official conformance suite, resources and the other features, a
   head-to-head with the official Swift SDK in `MCPStress`. Big: several sessions. apple-docs' public instance already works (0114).
 - 0114's remaining part (REA, daily use) folds into 0123's real-server checks.
 
@@ -64,7 +64,8 @@ the work above touches them.
 1. 0124 and 0125, now.
 2. The cheap UI wave: 0129, 0128, 0097 with 0112, 0105, 0093; 0126 and 0106 once their forms are chosen.
 3. 0088, so every budget holds before more is added.
-4. 0123, the MCP program.
-5. 0086 with 0065, then 0087.
-6. The decision items (0113, 0118), then 0127, 0110, 0111, 0116 with 0117.
-7. Investigations: 0115, 0107, 0121; 0109 then 0130.
+4. 0123, the MCP program, as the AemiMCP package.
+5. The Aemi family, before the picker and the question tool (owner): 0086 with 0065, 0087, 0077, 0109 then 0130, AemiMCP (0123).
+6. The decision items (0113, 0118), then 0127, 0110, 0111.
+7. Then 0116 with 0117.
+8. Investigations: 0115, 0107, 0121.

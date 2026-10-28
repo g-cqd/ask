@@ -28,7 +28,7 @@ struct SteeringControllerTests {
         controller.handle(.promptAccepted(id: 0, text: "Now"))
         #expect(
             controller.state.transcript.items == [
-                .user("Start"), .user("Now"), .notice("Queued follow-up: Later", isError: false)
+                .user("Start"), .user("Now"), .queued("Later")
             ])
     }
 

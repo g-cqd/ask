@@ -72,8 +72,9 @@ public struct ScreenTheme: Sendable, Equatable {
         // Shares tuned so text on every tint keeps at least 80% of the terminal's own contrast (WCAG 2 ratio) on Apple Terminal's Basic,
         // Solarized and One Light pages, while each tint stays visibly off the page; `TerminalColoursTests` checks both.
         input = mix(page.foreground, light ? 0.05 : 0.06)
-        user = mix(page.foreground * 0.7 + Self.blue * 0.3, 0.09)
-        pending = mix(Self.blue, light ? 0.07 : 0.08)
+        // The user's message is blue, bluer than anything else; a tool still running is grey (roadmap 0129).
+        user = mix(Self.blue, 0.12)
+        pending = mix(page.foreground, light ? 0.06 : 0.065)
         success = mix(Self.green, light ? 0.11 : 0.10)
         failure = mix(Self.red, 0.11)
         let grey = page.background + (page.foreground - page.background) * 0.8

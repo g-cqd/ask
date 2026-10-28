@@ -12,7 +12,7 @@ struct QueuedSteeringReplacementTests {
         controller.handle(.promptAccepted(id: 0, text: "same"))
         #expect(
             controller.state.transcript.items == [
-                .user("same"), .notice("Queued follow-up: same", isError: false)
+                .user("same"), .queued("same")
             ])
     }
 
@@ -32,7 +32,7 @@ struct QueuedSteeringReplacementTests {
         // User queues steering while running
         _ = controller.queue("next action", followUp: false)
         #expect(controller.state.transcript.items.count == 1)
-        #expect(controller.state.transcript.items[0] == .notice("Queued steering: next action", isError: false))
+        #expect(controller.state.transcript.items[0] == .queued("next action"))
 
         // Prompt accepted by loop
         controller.handle(.promptAccepted(id: 0, text: "next action"))

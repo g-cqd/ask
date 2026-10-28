@@ -18,6 +18,12 @@ extension Transcript {
         }
     }
 
+    /// Adds a queued message with a spinner of its own.
+    mutating func addQueued(_ text: String, now: ContinuousClock.Instant = .now) {
+        append(.queued(text))
+        progress[items.count - 1] = BlockProgress(at: now, spinner: spinnerStyle)
+    }
+
     var hasLiveProgress: Bool { progress.values.contains { $0.ended == nil } }
 
     /// Only live blocks change revision; completed blocks remain cached across animation ticks.

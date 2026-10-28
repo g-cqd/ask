@@ -24,6 +24,7 @@ struct BlockModelTests {
                     transcript.startTool(name: name, summary: summary)
                     transcript.finishTool(status, output: output)
                 case .notice(let text, let isError): transcript.addNotice(text, isError: isError)
+                case .queued(let text): transcript.addQueued(text)
                 case .jobEnded: transcript.append(item)
             }
         }

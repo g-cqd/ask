@@ -25,3 +25,10 @@ terminals; everything else, including notices, has the terminal's own background
 
 A transcript kind for ask's own messages (split from `.notice`), a `system` colour pair in `ScreenTheme`, and a width/colour test like the
 other tints.
+
+## Owner's note (2026-10-28)
+
+I was meant to ask refining questions before building (the wish said so) and had only listed them as pending. They are asked in the
+conversation of 2026-10-28 and answered here before any work: which blocks count as "about ask or its configuration" (the `/config`
+output, `ask config`, reload notices, notices of ask's own actions?); whether the whole block is tinted or only its label; how purple
+relates to the yellow of the debug mode (0107); whether errors from ask stay red.

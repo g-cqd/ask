@@ -27,11 +27,7 @@ struct ScreenControllerTests {
         _ = controller.handle(key(0x0D), pageRows: 10)
         type("two", into: &controller)
         #expect(controller.handle(key(0x0D), pageRows: 10) == [.queuePrompt(id: 0, text: "two", followUp: false)])
-        guard case .notice(let text, false) = controller.state.transcript.items.last else {
-            Issue.record("expected a notice")
-            return
-        }
-        #expect(text.contains("Queued steering"))
+        #expect(controller.state.transcript.items.last == .queued("two"))
     }
 
     @Test func `Ctrl-C stops a running turn, Ctrl-D quits only when idle, and one Escape only arms`() {

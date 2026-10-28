@@ -52,3 +52,13 @@ SDK has not been measured.
 apple-docs' public instance (`https://apple-docs-mcp.everest.mt/mcp`) through the release binary: streamable HTTP with plain JSON
 replies, protocol 2025-11-25, stateless; ask offered its nine tools and a `search_docs` call returned real documentation, in 1.5 s for
 the whole `ask -p` run. It also offers resources, which ask cannot read yet.
+
+## Owner's decisions (2026-10-28)
+
+- The plan above is accepted.
+- **AskMCP becomes a standalone package, AemiMCP**, in the Aemi family, relying on the other Aemi packages (AemiJSON and the rest) to be as
+  fast as possible. ask then depends on it like on the others. Do the conformance and head-to-head work in the new package.
+- Investigate `g-cqd/HTTP` if a need arises. It is a from-scratch HTTP/1.1, 2 and 3 *origin server* library (Network.framework,
+  epoll on Linux), so it is not a client: its use would be the server side (a conformance server, the fake servers of `MCPStress`, or an
+  MCP server of ours), not AemiMCP's requests, which stay on URLSession unless a client is built.
+- Sampling is explained to the owner (a server asking the client's model to generate text); the decision is pending.
