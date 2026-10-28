@@ -125,6 +125,8 @@ final class ScreenSession {
                 }
             case .copied(let notice, let failed, let generation):
                 controller.finishCopy(notice, failed: failed, generation: generation)
+            case .pasteRefused(let reason):
+                controller.state.transcript.addNotice(reason, isError: true)
             case .quitWindowEnded(let generation):
                 controller.quitWindowEnded(generation: generation)
             case .inputEnded:
@@ -177,6 +179,8 @@ final class ScreenSession {
                 conversation.answer(input: id, with: text)
             case .cancelRun:
                 run?.cancel()
+            case .pasteFromClipboard:
+                clipboard.paste(into: sink)
             case .copy(let text):
                 let generation = controller.beginCopy()
                 controller.state.clipboardNotice = clipboard.copy(text) {

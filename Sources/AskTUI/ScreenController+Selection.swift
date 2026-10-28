@@ -11,9 +11,7 @@ extension ScreenController {
             clearSelection()
             return []
         }
-        let isCopy =
-            key.keyCode == 0x03 || (key.modifiers.contains(.ctrl) && (key.keyCode == 0x63 || key.keyCode == 0x43))
-        guard isCopy else { return nil }
+        guard Self.isClipboardChord(key, "c") else { return nil }
         let text = selection.text(in: TranscriptContent(state.transcript))
         clearSelection()
         guard let text, !text.isEmpty else { return [] }

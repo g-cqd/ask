@@ -15,6 +15,7 @@ extension PromptEditor {
     /// This is the editor's own rule, so a selection is replaced by exactly the keys that would have typed something.
     static func insertsText(_ key: KeyEvent) -> Bool {
         let code = key.keyCode
+        if !key.modifiers.isDisjoint(with: [.super, .hyper]) { return false }
         if code == 0x0D, key.modifiers.contains(.shift) { return true }
         if key.modifiers.contains(.ctrl), let scalar = Unicode.Scalar(code), scalar.isASCII {
             return scalar.value & 0x1F == 0x0A

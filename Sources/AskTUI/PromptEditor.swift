@@ -47,19 +47,13 @@ public struct PromptEditor: Sendable, Equatable {
         if key.modifiers.contains(.ctrl), let scalar = Unicode.Scalar(code), scalar.isASCII {
             return control(UInt32(scalar.value & 0x1F))
         }
-        if key.modifiers.contains(.alt) || key.modifiers.contains(.meta) {
-            if code == Key.left.rawValue || code == 0x62 || code == 0x42 {
-                moveWordBackward()
-                return .edited
-            }
-            if code == Key.right.rawValue || code == 0x66 || code == 0x46 {
-                moveWordForward()
-                return .edited
-            }
-        }
+        // Command (super) and hyper chords are the terminal's or the screen's, never text: Command+C printed a "c" (roadmap 0082).
+        if !key.modifiers.isDisjoint(with: [.super, .hyper]) { return .ignored }
+        if let outcome = optionKey(key) { return outcome }
         switch code {
             case 0x00 ... 0x1A, 0x7F: return control(code)
             case 0x1B: return .escape
+            case Self.forwardDelete: return delete(forward: true)
             case Key.left.rawValue: move(to: cursor - 1)
             case Key.right.rawValue: move(to: cursor + 1)
             case Key.home.rawValue: move(to: lineStart())
@@ -171,15 +165,6 @@ public struct PromptEditor: Sendable, Equatable {
         text.remove(at: index(target))
         cursor = target
         return .edited
-    }
-
-    private mutating func deleteWordBackward() {
-        var start = cursor
-        let characters = Array(text)
-        while start > 0, characters[start - 1] == " " || characters[start - 1] == "\n" { start -= 1 }
-        while start > 0, characters[start - 1] != " ", characters[start - 1] != "\n" { start -= 1 }
-        text.removeSubrange(index(start) ..< index(cursor))
-        cursor = start
     }
 
     /// Where the cursor's line begins, as a character offset.

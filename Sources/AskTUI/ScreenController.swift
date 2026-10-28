@@ -13,6 +13,8 @@ public struct ScreenController: Sendable {
         case cancelRun
         /// Put this text on the clipboard.
         case copy(String)
+        /// Read the host's pasteboard and paste it, as a bracketed paste would (roadmap 0082).
+        case pasteFromClipboard
         case answerApproval(id: Int, ApprovalChoice)
         /// List the project's files for the `@` picker; the answer is ``ConversationUpdate/files(_:)``.
         case indexFiles
@@ -124,6 +126,7 @@ public struct ScreenController: Sendable {
         }
         if let effects = inputSelectionKey(key) { return effects }
         if let effects = selectionKey(key) { return effects }
+        if let effects = clipboardChordKey(key) { return effects }
         if isToggleToolOutput(key) { return toggleAllToolOutput() }
         if isToggleThinking(key) { return toggleAllThinking() }
         if isToggleCode(key) { return toggleAllCode() }
