@@ -11,7 +11,7 @@ struct WhitePaperTests {
         #expect(
             lines <= DocumentationLayout.maximumWhitePaperLines,
             """
-            docs/WHITE-PAPER.md is \(lines) lines, over the \
+            development/WHITE-PAPER.md is \(lines) lines, over the \
             \(DocumentationLayout.maximumWhitePaperLines)-line budget for a principles document.
             Probe history belongs in the diary, not here.
             """

@@ -3,7 +3,7 @@
 `ask` is a Swift terminal coding agent built for latency. Cold start, idle memory, input delay and
 action-to-action delay are budgets with numbers, not adjectives.
 
-**Read [`docs/WHITE-PAPER.md`](docs/WHITE-PAPER.md) first.** It carries the principles and leads with
+**Read [`development/WHITE-PAPER.md`](development/WHITE-PAPER.md) first.** It carries the principles and leads with
 the evidence rule. This file does not repeat them — it records what an agent cannot derive by reading
 the source: the commands, the gates, the traps, and the decisions that are not yet settled.
 
@@ -27,7 +27,7 @@ never writes; `SessionLog.recover` is the worked example (ADR-0013). Refusing in
 reason. Convenience is a requirement, not a nice-to-have.
 
 Code and tests state their own reasons. When studying another agent, run its code against edge cases
-rather than trusting its source, and keep the notes in `docs/research/`, not in the codebase.
+rather than trusting its source, and keep the notes in `development/research/`, not in the codebase.
 
 ## Commands
 
@@ -79,10 +79,10 @@ Four directories, and the shape is enforced by tests rather than by good intenti
 
 | Path | Rule |
 |---|---|
-| `docs/WHITE-PAPER.md` | Principles, never a log. Capped at 200 lines. Probe history belongs in the diary. |
-| `docs/adr/NNNN-title.md` | One decision per file. A decision changed by evidence becomes a **new ADR that supersedes** the old one — records are not edited into an unrecognisable shape. |
-| `docs/roadmap/NNNN-title.md` | One entry per file, declaring `status:`. An entry is a claimable, completable unit of work. |
-| `docs/diary/YYYY-MM-DD-NN.md` | The working log and **where probe history lives**. Capped at 256 lines; roll over at the ceiling. |
+| `development/WHITE-PAPER.md` | Principles, never a log. Capped at 200 lines. Probe history belongs in the diary. |
+| `development/adr/NNNN-title.md` | One decision per file. A decision changed by evidence becomes a **new ADR that supersedes** the old one — records are not edited into an unrecognisable shape. |
+| `development/roadmap/NNNN-title.md` | One entry per file, declaring `status:`. An entry is a claimable, completable unit of work. |
+| `development/diary/YYYY-MM-DD-NN.md` | The working log and **where probe history lives**. Capped at 256 lines; roll over at the ceiling. |
 
 When a decision changes, supersede it. `status: superseded` with a `superseded-by:` link, never a
 silent rewrite.
@@ -189,8 +189,8 @@ sessions, compaction, hooks), `AskTools` (`read`, `write`, `edit`, `bash`, jobs,
 Skills (0061) and MCP (0067) are in progress. Not built: the codemode host (0012), the extension host (0033), subagents (0063), a
 version and a release (0070); CI has never run (billing).
 
-`docs/roadmap/` says what is owed and in what order. What is *not known* is registered, with what would settle it, in
-`docs/research/` (`antigravity-2026-10.md`; the project-wide snapshot is `reassessment-2026-10-25.md`): read them before probing
+`development/roadmap/` says what is owed and in what order. What is *not known* is registered, with what would settle it, in
+`development/research/` (`antigravity-2026-10.md`; the project-wide snapshot is `reassessment-2026-10-25.md`): read them before probing
 something that is already written down as a question.
 
 Read an entry's `status:` and `blocked-by:` before starting it.

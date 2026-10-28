@@ -5,9 +5,9 @@ import re
 import subprocess
 
 PATTERNS = {
-    "adr": re.compile(r"docs/adr/(\d+)-[^/]+\.md$"),
-    "roadmap": re.compile(r"docs/roadmap/(\d+)-[^/]+\.md$"),
-    "diary": re.compile(r"docs/diary/(\d{4}-\d{2}-\d{2})-(\d+)\.md$"),
+    "adr": re.compile(r"development/adr/(\d+)-[^/]+\.md$"),
+    "roadmap": re.compile(r"development/roadmap/(\d+)-[^/]+\.md$"),
+    "diary": re.compile(r"development/diary/(\d{4}-\d{2}-\d{2})-(\d+)\.md$"),
 }
 
 
@@ -31,12 +31,12 @@ def records(paths):
 
 
 def tree_paths(root, ref):
-    return git(root, "ls-tree", "-r", "--name-only", ref, "--", "docs/adr", "docs/roadmap", "docs/diary").stdout.splitlines()
+    return git(root, "ls-tree", "-r", "--name-only", ref, "--", "development/adr", "development/roadmap", "development/diary").stdout.splitlines()
 
 
 def disk_paths(root):
     root = pathlib.Path(root)
-    return [p.relative_to(root).as_posix() for kind in PATTERNS for p in (root / "docs" / kind).glob("*.md")]
+    return [p.relative_to(root).as_posix() for kind in PATTERNS for p in (root / "development" / kind).glob("*.md")]
 
 
 def duplicates(paths):
