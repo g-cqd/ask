@@ -134,12 +134,12 @@ struct PickerClickTests {
         key(.down, in: &rig)
         key(.down, in: &rig)
         let picker = try #require(rig.controller.state.picker)
-        #expect(picker.selected == 2 && rig.controller.state.editor.text == "/\nsecond")
-        let chosen = picker.matches[2].label
+        #expect(picker.selected == 3 && rig.controller.state.editor.text == "/\nsecond")
+        let chosen = picker.matches[3].label
         let drawn = try #require((0 ..< 13).first { rig.text(row: $0).hasPrefix(chosen) }, "the choice is in view")
         #expect(rig.text(row: drawn - 2).hasPrefix("commands"), "the title, then two rows: \(drawn)")
         let above = try #require(rig.text(row: drawn - 1).split(separator: " ").first.map(String.init))
-        #expect(above == picker.matches[1].label, "the row above the choice shows the second match")
+        #expect(above == picker.matches[2].label, "the row above the choice shows the second match")
         rig.click(row: drawn - 1, col: 3)
         #expect(rig.controller.state.editor.text == above + " \nsecond")
     }
