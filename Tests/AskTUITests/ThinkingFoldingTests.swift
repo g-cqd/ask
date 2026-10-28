@@ -79,12 +79,33 @@ struct ThinkingFoldingTests {
         #expect(rig.drag(from: (9, 0), to: (9, 19)) == [.copy("Thinking...")])
     }
 
-    @Test func `reasoning that is only blank has nothing to open`() {
-        var rig = PointerRig(columns: 60, updates: [.thinkingText("\n\n")])
-        #expect(rig.contentText(row: 9) == "Thinking...")
-        rig.click(row: 9, col: 3)
-        #expect(rig.contentText(row: 9) == "Thinking...")
-        #expect(!rig.controller.state.transcript.isFoldable(0))
+    @Test func `blank reasoning shows while the model thinks, then leaves no block behind`() {
+        for blank in ["", "\n\n", " \t \n"] {
+            var rig = PointerRig(columns: 60, updates: [.userPrompt("q"), .thinkingText(blank)])
+            #expect(rig.contentText(row: 9) == "Thinking...", "live, the spinner says the model is thinking")
+            #expect(!rig.controller.state.transcript.isFoldable(1))
+            rig.controller.handle(.assistantText("answer"))
+            rig.draw()
+            #expect(rig.controller.state.transcript.items == [.user("q"), .assistant("answer")])
+        }
+    }
+
+    @Test func `blank reasoning that ends the run, or comes before a tool, is dropped too`() {
+        var ended = PointerRig(columns: 60, updates: [.userPrompt("q"), .thinkingText("\n")])
+        ended.controller.handle(.runEnded)
+        #expect(ended.controller.state.transcript.items == [.user("q")])
+        var tool = PointerRig(columns: 60, updates: [.thinkingText(" ")])
+        tool.controller.handle(.toolStarted(name: "shell", summary: "ls", id: "t1", fullInput: "ls"))
+        tool.controller.handle(.toolFinished(.succeeded, output: "a", id: "t1"))
+        #expect(tool.controller.state.transcript.items.count == 1)
+        #expect(tool.controller.state.transcript.isFoldable(0), "the tool kept its index and its output")
+    }
+
+    @Test func `reasoning that says something stays, whatever follows it`() {
+        var rig = PointerRig(columns: 60, updates: [.thinkingText("\n  why\n")])
+        rig.controller.handle(.assistantText("answer"))
+        rig.controller.handle(.runEnded)
+        #expect(rig.controller.state.transcript.items == [.thinking("\n  why\n"), .assistant("answer")])
     }
 
     @Test func `a long reasoning is cut and the cut is said`() {
