@@ -37,7 +37,7 @@ public struct OpenAIStreamDecoder: ModelEventDecoding {
         do {
             chunk = try AemiJSON.JSONDecoder().decode(OpenAIWireChunk.self, from: frame.data)
         } catch {
-            throw .malformed
+            throw .malformed(of: frame.data)
         }
         if let error = chunk.error ?? chunk.topLevelError {
             let status = if case .number(let code) = error.code { code } else { Int?.none }
