@@ -52,4 +52,19 @@ struct ConfigurationChangesTests {
         #expect(
             Configuration.describeTurns(Configuration.noTurnLimit) == "none" && Configuration.describeTurns(30) == "30")
     }
+
+    @Test func `unset, the turn limit is 100 in the sandbox and none outside it; set anywhere, it wins either way`()
+        throws
+    {
+        #expect(Configuration.defaults.turnLimit(sandboxed: true) == 100)
+        #expect(Configuration.defaults.turnLimit(sandboxed: false) == Configuration.noTurnLimit)
+        let forty = Configuration.defaults.applying(ConfigurationFile(maxTurns: 40), from: .file("/u/config.json"))
+        #expect(forty.turnLimit(sandboxed: true) == 40 && forty.turnLimit(sandboxed: false) == 40)
+        let none = Configuration.defaults.applying(
+            try ConfigurationFile.parse(Array(#"{"maxTurns": "none"}"#.utf8), path: "c.json"), from: .file("c.json"))
+        #expect(none.turnLimit(sandboxed: true) == Configuration.noTurnLimit)
+        var problems: [String] = []
+        let hundred = Configuration.defaults.applying(environment: ["ASK_MAX_TURNS": "100"], problems: &problems)
+        #expect(hundred.turnLimit(sandboxed: false) == 100, "100 written out is a choice, not the default")
+    }
 }
