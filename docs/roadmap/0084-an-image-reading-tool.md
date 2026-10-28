@@ -98,6 +98,13 @@ Order: 1, 2 and 3 for Anthropic first (the smallest end to end), then the other 
 - **Slice 4 (capability)**: `acceptsImages: Bool?` on `CatalogModel`, `ResolvedModel` and `AgentSettings`. Known true for the
   Anthropic and Codex subscriptions; Codex's `input_modalities` and Copilot's `supports.vision` fill it; `providers.json` models take
   `"images": true|false`; anything else is unknown and withholds, as other harnesses assume text only for an unlisted model.
-- Not verified: the wire shapes against a live provider (none sent), Copilot's `vision` field name, and that other harnesses behave
-  as described (from memory of pi and opencode; not re-read). Still open: Gemini/Agy inline images, persistence by hash,
-  per-request budget, MCP images, native PDF documents.
+- **Copilot (owner: second most important; diary 07)**: the catalogue's `limits.vision` (count, bytes, media types) is read and
+  applied by `read` (`ImageReader.Allowance`) and by `ImagePart.filtering` (unlisted types, a per-request count that drops the oldest
+  to half the allowance); `ask models` shows an IMAGES column. Requests match VS Code Copilot Chat 0.44.0: `Copilot-Vision-Request`
+  with an image, `X-Interaction-Id` per user turn, `X-Interaction-Type`, `X-Agent-Task-Id`, `X-GitHub-Api-Version: 2025-05-01`,
+  `detail: "auto"`, and its follow-up wording. Live: one 64×64 PNG read correctly on the Messages, Responses and chat routes, and a
+  3.3 MB PNG was sent as a 1.1 MB JPEG under the 3 MB limit.
+- Not verified: the Gemini/Agy shape; the header's necessity, over-limit behaviour and whether the byte limit is raw or base64 on
+  Copilot; the other providers' wires live; other harnesses beyond Copilot (opencode, pi and VS Code were read for Copilot only;
+  codex and gemini-cli not yet). Still open: Gemini/Agy inline images, persistence by hash, a context cost per image, MCP images,
+  native PDF documents, and the cross-harness review.

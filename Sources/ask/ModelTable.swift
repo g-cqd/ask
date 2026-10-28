@@ -14,6 +14,11 @@ enum ModelTable {
             headers.append("REASONING")
             widths.append(44)
         }
+        let images = snapshot.models.contains { $0.acceptsImages != nil }
+        if images {
+            headers.append("IMAGES")
+            widths.append(44)
+        }
         if modes {
             headers.append("THINKING MODES")
             widths.append(0)
@@ -26,6 +31,7 @@ enum ModelTable {
                 model.maxOutputTokens.map(String.init) ?? "unknown"
             ]
             if efforts { columns.append(model.reasoningDescription) }
+            if images { columns.append(imageDescription(model)) }
             if modes { columns.append(thinkingModes(model)) }
             Swift.print(row(columns, widths: widths))
         }
@@ -39,6 +45,14 @@ enum ModelTable {
                     : value.padding(toLength: Swift.max(widths[index], value.count + 1), withPad: " ", startingAt: 0)
             }
             .joined()
+    }
+
+    private static func imageDescription(_ model: CatalogModel) -> String {
+        switch model.acceptsImages {
+            case nil: "unknown"
+            case false: "no"
+            case true: model.imageLimits.map { "yes (\($0.summary))" } ?? "yes"
+        }
     }
 
     private static func thinkingModes(_ model: CatalogModel) -> String {

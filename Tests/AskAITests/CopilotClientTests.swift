@@ -50,6 +50,12 @@ struct CopilotClientTests {
         #expect(sent.url.path == api && !sent.allowsRedirects)
         #expect(sent.headers.contains { $0.name == "authorization" && $0.value == "Bearer SHORT-SECRET" })
         #expect(sent.headers.contains { $0.name == "x-initiator" && $0.value == "user" })
+        for name in ["x-interaction-id", "x-interaction-type", "x-agent-task-id", "openai-intent"] {
+            #expect(sent.headers.contains { $0.name == name })
+        }
+        #expect(sent.headers.contains { $0.name == "x-github-api-version" && $0.value == "2025-05-01" })
+        let ids = sent.headers.filter { $0.name == "x-request-id" || $0.name == "x-agent-task-id" }.map { $0.value }
+        #expect(ids.count == 2 && ids[0] == ids[1])
         #expect(!sent.headers.contains { $0.value.contains("GITHUB-SECRET") || $0.name == "x-api-key" })
         let cache = try String(contentsOf: root.appending(path: "config/models-copilot-vscode.json"), encoding: .utf8)
         #expect(!cache.contains("SECRET"))

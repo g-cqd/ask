@@ -16,6 +16,8 @@ public struct CatalogModel: Codable, Sendable, Equatable {
     public let thinkingModes: [ThinkingMode]
     /// Whether the provider reports that the model takes images; nil is unknown, not false.
     public let acceptsImages: Bool?
+    /// What the provider says about images in one request, when it says.
+    public let imageLimits: ImageLimits?
 
     /// A catalog entry; an absent limit is unknown, not an invented default.
     public init(
@@ -23,9 +25,10 @@ public struct CatalogModel: Codable, Sendable, Equatable {
         // @dl:accept -- optional descriptor fields resemble credential initializer fields only by shape
         defaultReasoningLevel: String? = nil, supportsThinking: Bool? = nil, thinkingModes: [ThinkingMode] = [],
         // @dl:accept -- initializer parameters repeat the stored fields by design
-        api: String? = nil, acceptsImages: Bool? = nil
+        api: String? = nil, acceptsImages: Bool? = nil, imageLimits: ImageLimits? = nil
     ) {
         self.acceptsImages = acceptsImages
+        self.imageLimits = imageLimits
         self.id = id
         self.api = api
         self.contextWindow = contextWindow
@@ -47,7 +50,7 @@ public struct CatalogModel: Codable, Sendable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case id, api, contextWindow, maxOutputTokens, reasoningLevels, defaultReasoningLevel, supportsThinking,
-            thinkingModes, acceptsImages
+            thinkingModes, acceptsImages, imageLimits
     }
 
     /// Reads a catalog written before reasoning levels existed: the missing fields are unknown.
@@ -62,6 +65,7 @@ public struct CatalogModel: Codable, Sendable, Equatable {
         supportsThinking = try values.decodeIfPresent(Bool.self, forKey: .supportsThinking)
         thinkingModes = try values.decodeIfPresent([ThinkingMode].self, forKey: .thinkingModes) ?? []
         acceptsImages = try values.decodeIfPresent(Bool.self, forKey: .acceptsImages)
+        imageLimits = try values.decodeIfPresent(ImageLimits.self, forKey: .imageLimits)
     }
 
     /// Whether an untrusted descriptor is safe to use in a request and as a terminal label.

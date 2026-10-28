@@ -74,8 +74,12 @@ enum ImageReader {
     }
 
     /// The image, bounded.
+    /// - Parameters:
+    ///   - bytes: the file.
+    ///   - allowance: what the model's provider accepts, beyond ask's own bounds.
+    /// - Returns: the picture to send and a line describing it.
     /// - Throws: ``Failure`` when the bytes are not an image, are animated, cannot be decoded, or cannot be made to fit.
-    static func read(_ bytes: [UInt8]) throws(Failure) -> Result {
+    static func read(_ bytes: [UInt8], allowance: Allowance = Allowance()) throws(Failure) -> Result {
         guard let type = mediaType(of: bytes) else { throw .notAnImage }
         let data = Data(bytes)
         guard let source = CGImageSourceCreateWithData(data as CFData, nil), CGImageSourceGetCount(source) >= 1,
@@ -91,15 +95,15 @@ enum ImageReader {
             ["image/png", "image/gif", "image/bmp"].contains(type)
             || (properties[kCGImagePropertyHasAlpha] as? Bool) == true
         let name = type.dropFirst("image/".count)
-        if passThrough.contains(type), frames == 1, max(width, height) <= maximumSide,
-            encodedSize(bytes.count) < maximumEncodedBytes
+        if passThrough.contains(type), frames == 1, max(width, height) <= maximumSide, allowance.admits(type: type),
+            allowance.admits(count: bytes.count)
         {
             return Result(
                 part: ImagePart(mediaType: type, data: bytes),
                 summary: "image \(name), \(width)×\(height), \(bytes.count) bytes")
         }
 
-        let fitted = try fit(favoursPNG: favoursPNG, longSide: max(width, height)) { side in
+        let fitted = try fit(favoursPNG: favoursPNG, longSide: max(width, height), allowance: allowance) { side in
             // ImageIO decodes JPEG and HEIC at reduced size, which a full decode and a separate scale cannot do
             // (diary 2026-10-28-05 and -06: faster, and 3–15× less memory than vImage, Core Image or Metal).
             CGImageSourceCreateThumbnailAtIndex(
@@ -126,11 +130,12 @@ enum ImageReader {
     /// - Parameters:
     ///   - favoursPNG: whether the picture is likely flat or transparent.
     ///   - longSide: the picture's own long side.
+    ///   - allowance: what the model's provider accepts, beyond ask's own bounds.
     ///   - render: the picture scaled so its long side is at most the given number of pixels.
     /// - Returns: the encoded picture and its size.
     /// - Throws: ``Failure/undecodable`` when `render` gives nothing, ``Failure/cannotFit`` when even one pixel is too big.
     static func fit(
-        favoursPNG: Bool, longSide: Int, render: (Int) -> CGImage?
+        favoursPNG: Bool, longSide: Int, allowance: Allowance = Allowance(), render: (Int) -> CGImage?
     ) throws(Failure) -> Fitted {
         var side = min(maximumSide, longSide)
         while true {
@@ -138,10 +143,10 @@ enum ImageReader {
             let jpegs = qualities.map { (UTType.jpeg, Optional($0)) }
             let attempts: [(UTType, Double?)] = favoursPNG ? [(.png, nil)] + jpegs : jpegs + [(.png, nil)]
             for (format, quality) in attempts {
-                guard let encoded = encode(scaled, as: format, quality: quality),
-                    encodedSize(encoded.count) < maximumEncodedBytes
-                else { continue }
                 let mediaType = format == .png ? "image/png" : "image/jpeg"
+                guard allowance.admits(type: mediaType), let encoded = encode(scaled, as: format, quality: quality),
+                    allowance.admits(count: encoded.count)
+                else { continue }
                 return Fitted(
                     part: ImagePart(mediaType: mediaType, data: [UInt8](encoded)), width: scaled.width,
                     height: scaled.height)
