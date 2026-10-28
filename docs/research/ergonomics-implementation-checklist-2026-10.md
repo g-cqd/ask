@@ -71,11 +71,17 @@ interactive configuration → categorized picker → file-path/link ergonomics (
   Strings, numbers, paths and lists are listed read-only rather than guessed at;
   scope switching inside the editor and a raw-text mode remain follow-ups.
 
-## Picker batch (current)
+## Picker batch (done)
 
-- [ ] Categorize commands into session/model/tools/configuration.
-- [ ] Render group headings without making them selectable; preserve keyboard,
+- [x] Categorize commands into session/model/tools/configuration.
+- [x] Render group headings without making them selectable; preserve keyboard,
   click, scroll, search, small-screen and Escape behavior.
+
+## File links and resume banner batch (current, roadmap 0075)
+
+- [ ] Clickable terminal file links (OSC 8) with fallback for plain text.
+- [ ] Display `~/…` relative paths for files within user home.
+- [ ] Clean-exit resume command with unquoted command/flags and shell-safe paths.
 - [ ] Verify resume flag fidelity and launch paths with spaces/quotes; define which
   exit paths print the banner. Ctrl+C must retain its existing abort/draft semantics,
   rather than being converted into unconditional process exit by the study example.
