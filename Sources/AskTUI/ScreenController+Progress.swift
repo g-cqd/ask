@@ -1,6 +1,6 @@
 extension ScreenController {
     var hasLiveProgress: Bool {
-        state.running || state.compacting || !state.runnerProgress.isEmpty
+        state.running || state.compacting || state.reconnecting || !state.runnerProgress.isEmpty
             || (state.lane?.stashed ?? state.transcript).hasLiveProgress
     }
 

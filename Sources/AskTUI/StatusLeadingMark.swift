@@ -25,6 +25,11 @@ struct StatusLeadingMark: Sendable, Equatable {
         StatusLeadingMark(character: frame + " Compacting...", style: compacting)
     }
 
+    /// The mark while ask waits to reconnect: `<spinner> Reconnecting...`, in the warning colour.
+    static func reconnectingMark(frame: String) -> StatusLeadingMark {
+        StatusLeadingMark(character: frame + " Reconnecting...", style: warning)
+    }
+
     /// Evaluates the leading mark and style based on activity and sandbox state.
     static func mark(running: Bool, sandboxed: Bool, frame: String) -> StatusLeadingMark {
         guard running else {

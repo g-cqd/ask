@@ -3,6 +3,9 @@
 The conversation fills the screen, the input sits at the bottom, and a status line below it shows the model, what is running, and the
 background jobs.
 
+The status line starts with a spinner while ask works. It reads `Compacting...` in purple while the conversation is being summarised, and
+`Reconnecting...` in yellow while ask waits to try again after the connection dropped; neither adds anything to the conversation.
+
 ## Writing a prompt
 
 - **Enter** sends. **Shift+Enter** or **Ctrl+J** starts a new line; a paste keeps its line breaks.

@@ -142,6 +142,7 @@ public struct ScreenController: Sendable {
     }
 
     mutating func apply(_ update: ConversationUpdate) -> [Effect] {
+        if state.reconnecting, update.showsTheModelIsBack { state.reconnecting = false }
         switch update {
             case .userPrompt(let text): state.transcript.addUser(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
@@ -188,8 +189,11 @@ public struct ScreenController: Sendable {
             case .askApproval(let id, let question): ask(id: id, question: question)
             case .compacting(let active):
                 state.compacting = active
+            case .reconnecting(let waiting):
+                state.reconnecting = waiting
             case .runEnded:
                 state.compacting = false
+                state.reconnecting = false
                 state.transcript.finishRunProgress()
                 state.pendingApproval = nil
                 state.pendingInput = nil
