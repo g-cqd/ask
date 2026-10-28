@@ -20,7 +20,12 @@ extension RunSettings {
             localizedDurations: ui.localizedDurations ?? defaults.localizedDurations,
             spinner: spinnerStyle,
             jobAutoReturnWhenFocused: ui.jobAutoReturnWhenFocused ?? defaults.jobAutoReturnWhenFocused,
-            abortTurnRequiresConfirmation: ui.abortTurnRequiresConfirmation ?? defaults.abortTurnRequiresConfirmation)
+            abortTurnRequiresConfirmation: ui.abortTurnRequiresConfirmation ?? defaults.abortTurnRequiresConfirmation,
+            interruptKeys: ui.interruptKeys.flatMap { InterruptKeys(rawValue: $0.rawValue) } ?? defaults.interruptKeys,
+            escapeInterruptRequiresConfirmation: ui.escapeInterruptRequiresConfirmation
+                ?? defaults.escapeInterruptRequiresConfirmation,
+            interruptSendsQueued: ui.interruptSendsQueued.flatMap { QueuedAfterInterrupt(rawValue: $0.rawValue) }
+                ?? defaults.interruptSendsQueued)
     }
 
     /// Whether the terminal says its background is light, from `COLORFGBG` (`15;0` is light on dark): the background is the last number, and 7 or

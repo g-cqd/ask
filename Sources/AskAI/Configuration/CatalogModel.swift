@@ -27,6 +27,7 @@ public struct CatalogModel: Codable, Sendable, Equatable {
         // @dl:accept -- initializer parameters repeat the stored fields by design
         api: String? = nil, acceptsImages: Bool? = nil, imageLimits: ImageLimits? = nil
     ) {
+        // @dl:accept -- optional capability fields are assigned one by one, as data
         self.acceptsImages = acceptsImages
         self.imageLimits = imageLimits
         self.id = id

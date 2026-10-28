@@ -33,7 +33,7 @@ extension ConfigEditor {
         ["mouse", "copyOnSelect"].map { .init(path: ["ui", $0], kind: .boolean) }
         + [
             "tint", "separator", "padding", "localizedDurations", "jobAutoReturnWhenFocused",
-            "abortTurnRequiresConfirmation"
+            "abortTurnRequiresConfirmation", "escapeInterruptRequiresConfirmation"
         ]
         .map { .init(path: ["ui", $0], kind: .onOff) }
         + ["tools", "thinking", "code"]
@@ -44,7 +44,11 @@ extension ConfigEditor {
             readOnly(["ui", "scrollLines"]), readOnly(["ui", "promptRows"]),
             .init(path: ["ui", "sidebar"], kind: .choice(["open", "closed"])),
             readOnly(["ui", "prompt"]),
-            .init(path: ["ui", "spinner"], kind: .choice(SpinnerPreference.allCases.map(\.rawValue)))
+            .init(path: ["ui", "spinner"], kind: .choice(SpinnerPreference.allCases.map(\.rawValue))),
+            .init(path: ["ui", "interruptKeys"], kind: .choice(InterruptKeysPreference.allCases.map(\.rawValue))),
+            .init(
+                path: ["ui", "interruptSendsQueued"],
+                kind: .choice(QueuedAfterInterruptPreference.allCases.map(\.rawValue)))
         ]
 
     /// One descriptor as a row: its current value, and `unset` plus the choices when it can change.

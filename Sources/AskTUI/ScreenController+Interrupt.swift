@@ -19,7 +19,7 @@ extension ScreenController {
             state.editor.clear()
             return []
         }
-        if state.running {
+        if state.running, options.interruptKeys.allowsControlC {
             if options.abortTurnRequiresConfirmation {
                 if let armed = state.abortArmedAt, press.at - armed <= Self.quitWindow {
                     state.abortArmedAt = nil
@@ -39,11 +39,28 @@ extension ScreenController {
         return [.armQuitTimer(generation: quitGeneration)]
     }
 
+    /// Esc on a running turn, once nothing else wants it (a lane, the strip and a selection have had it). Esc must be allowed to interrupt;
+    /// with confirmation (the default) the first press arms and a second inside the window stops the turn, as opencode does.
+    mutating func escapeInterrupts(at instant: ContinuousClock.Instant) -> [Effect] {
+        if options.escapeInterruptRequiresConfirmation {
+            if let armed = state.abortArmedAt, instant - armed <= Self.quitWindow {
+                state.abortArmedAt = nil
+                state.abortArmedAction = nil
+                return abort()
+            }
+            state.abortArmedAt = instant
+            state.abortArmedAction = "Esc"
+            quitGeneration += 1
+            return [.armQuitTimer(generation: quitGeneration)]
+        }
+        return abort()
+    }
+
     /// Only consecutive interrupt presses can confirm aborting the current turn.
     mutating func disarmTurnAbort(unlessInterrupt event: InputEvent) {
         switch event {
             case .key(let key):
-                if key.keyCode == 0x03
+                if key.keyCode == 0x03 || key.keyCode == 0x1B
                     || (key.modifiers.contains(.ctrl) && (key.keyCode == 0x63 || key.keyCode == 0x43))
                 {
                     return

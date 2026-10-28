@@ -35,7 +35,8 @@ That the refusal wording is the same for Claude and Gemini on Cloud Code: the fi
 ## Owner answers (2026-10-28)
 
 - **U1: yes** to the one request of about 140,000 tokens on `gpt-oss-120b` (step 5). Not yet sent.
-- **U12: yes** to sending the first-party identity once, to measure the catalogue. Not yet sent.
+- **U12: yes** to sending the first-party identity once, to measure the catalogue. **Settled without a new request**: ask already sends
+  the `antigravity/cli/1.4.0` prefix since `b9f80b8` (2026-10-27); see the U12 result below.
 - **U19:** applied to all providers as a setting, roadmap 0089.
 - **U22:** not applicable.
 
@@ -53,3 +54,12 @@ a clear message) is not done.
 `gemini-2.5-flash` on Antigravity refuses any tool call, with or without an image: HTTP 400 "Function call is missing a
 thought_signature in functionCall parts … `default_api:read`, position 2". ask sends the sentinel only for `gemini-3*`
 (`AgyThoughtSignature.requiresSignature`). Not fixed; found while testing images (0084).
+
+## U12 result (2026-10-28)
+
+No new request was needed or sent: the first-party prefix has been on every request since `b9f80b8`, which measured the effect the day
+before (diary 2026-10-27-09): 20 catalog entries with ask's own `User-Agent`, 26 with the `antigravity/cli/1.4.0` prefix, and streaming
+to `gemini-4-argon-*` works only with it. The cache on this machine holds 21 chat models fetched that way. I did not repeat the
+comparison, so the 20-versus-26 figures are that diary's, not mine. The real first-party string is unknown to me (the `agy` binary
+reports only `1.4.7`); the prefix plus ask's own suffix is what the backend accepts. This contradicts ADR-0080 decision 1, now amended.
+Open for the owner: keep the claim (U22), and whether to track the installed `agy` version rather than the constant `1.4.0`.

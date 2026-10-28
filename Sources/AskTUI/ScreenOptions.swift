@@ -39,6 +39,12 @@ public struct ScreenOptions: Sendable, Equatable {
     public var jobAutoReturnWhenFocused: Bool
     /// Whether aborting a turn requires two-press Ctrl+C confirmation (`ui.abortTurnRequiresConfirmation`).
     public var abortTurnRequiresConfirmation: Bool
+    /// Which keys interrupt a running turn (`ui.interruptKeys`).
+    public var interruptKeys: InterruptKeys
+    /// Whether Esc must be pressed twice to interrupt (`ui.escapeInterruptRequiresConfirmation`).
+    public var escapeInterruptRequiresConfirmation: Bool
+    /// What happens to queued messages after an interruption (`ui.interruptSendsQueued`).
+    public var interruptSendsQueued: QueuedAfterInterrupt
 
     /// The look before roadmap 0074: an `ask> ` prefix, no tint, no rule. What the screen's older tests were written against.
     public static let legacy = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
@@ -49,7 +55,8 @@ public struct ScreenOptions: Sendable, Equatable {
         sidebar: Bool = false, verbose: Bool = false, prompt: String = "", tint: Bool = true, separator: Bool = true,
         padding: Bool = true, lightBackground: Bool = false, localizedDurations: Bool = true,
         spinner: SpinnerStyle = .line, jobAutoReturnWhenFocused: Bool = true,
-        abortTurnRequiresConfirmation: Bool = false
+        abortTurnRequiresConfirmation: Bool = false, interruptKeys: InterruptKeys = .both,
+        escapeInterruptRequiresConfirmation: Bool = true, interruptSendsQueued: QueuedAfterInterrupt = .all
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -70,5 +77,8 @@ public struct ScreenOptions: Sendable, Equatable {
         self.spinner = spinner
         self.jobAutoReturnWhenFocused = jobAutoReturnWhenFocused
         self.abortTurnRequiresConfirmation = abortTurnRequiresConfirmation
+        self.interruptKeys = interruptKeys
+        self.escapeInterruptRequiresConfirmation = escapeInterruptRequiresConfirmation
+        self.interruptSendsQueued = interruptSendsQueued
     }
 }

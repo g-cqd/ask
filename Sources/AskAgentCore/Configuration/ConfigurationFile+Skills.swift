@@ -3,6 +3,7 @@ extension ConfigurationFile {
     /// The `skills` keys; unknown keys are refused.
     struct SkillsDecoded: Decodable {
         var section = SkillsSection()
+        // @dl:accept -- the key walk is shared; each section names its own keys
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
                 switch key.stringValue {

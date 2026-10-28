@@ -10,6 +10,7 @@ extension ScreenController {
     mutating func begin(_ effect: Effect) -> [Effect] {
         if case .startRun = effect { acceptsInput = true } else { acceptsInput = false }
         returningInput = false
+        interruptedByPerson = false
         state.abortArmedAt = nil
         state.abortArmedAction = nil
         state.running = true
@@ -21,6 +22,7 @@ extension ScreenController {
 
     mutating func abort() -> [Effect] {
         returningInput = true
+        interruptedByPerson = true
         state.transcript.addNotice("Stopping…", isError: false)
         return [.cancelRun]
     }
