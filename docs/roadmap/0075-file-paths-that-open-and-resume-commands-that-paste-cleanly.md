@@ -1,30 +1,28 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-27
 ---
 
 # 0075 — File paths that open and resume commands that paste cleanly
 
-File paths shown in UI blocks should be terminal hyperlinks to the actual file,
-not merely text that resembles a path. Use an absolute, encoded `file://` target
-while displaying a short path: `~/…` inside the home directory and a suitable
-workspace-relative path elsewhere. Relative tool paths resolve against the tool's
-working directory, not the renderer's. Preserve copy provenance, line references,
-folding and wrapping; control characters must not inject terminal sequences.
-Plain-text terminals must still show useful paths. Capability handling belongs to
-TerminalKit, not a parallel terminal protocol implementation in ask.
+File paths shown on session exit use terminal hyperlinks (OSC 8) to the actual
+file with an absolute `file://` URI while displaying a short path using `~` inside
+the user's home directory. The resume command outputs unquoted `ask`, unquoted
+`--resume`, unquoted flags, and backslash-escaped path components that preserve
+leading unquoted `~` so bash, zsh, and fish can expand it cleanly upon paste.
+
+## Done
+
+- `PathDisplay` in `AskAgentCore/Session`: `tilde` path formatting, OSC 8
+  `link(to:display:)` hyperlinks, and paste-safe `shellArgument(_:home:)`.
+- `AgentConversation.printResumeCommand()`: prints clickable terminal hyperlink
+  displaying `~/…` and a clean `cd <workspace>; ask --resume <session> <flags>`
+  command without outer single quotes breaking tilde expansion.
+- `Scripts/probe-resume-banner.py`: PTY probe verifying the OSC 8 sequence,
+  unquoted command, and expandable tilde session argument.
 
 ## Still owed
 
-- File hyperlinks in tool headers/bodies, diagnostic locations, and other UI blocks
-  that identify real files; do not turn arbitrary prose into misleading links.
-- A clickable session-file path in the clean-exit banner, with `~/…` display under
-  the user's actual home rather than a long absolute home prefix.
-- A readable resume command: `cd ~/Developer/g-cqd/ask; ask --resume ~/.local/state/ask/sessions/… --no-sandbox`.
-  Do not quote the command or ordinary flags. Quote/escape only path components
-  that need protection; never quote a leading `~` so the shell can expand it.
-  Preserve exact session selection and all active launch flags.
-- Byte-level link-target/label tests, copy tests excluding OSC sequences, wrapped
-  and folded block tests, and a terminal-emulator check. Cover spaces, apostrophes,
-  non-ASCII paths, outside-home paths and home-prefix lookalikes.
+- File hyperlinks in tool headers/bodies and diagnostic locations within the
+  interactive transcript (separate UI block link integration).

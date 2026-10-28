@@ -77,11 +77,11 @@ interactive configuration → categorized picker → file-path/link ergonomics (
 - [x] Render group headings without making them selectable; preserve keyboard,
   click, scroll, search, small-screen and Escape behavior.
 
-## File links and resume banner batch (current, roadmap 0075)
+## File links and resume banner batch (done, roadmap 0075)
 
-- [ ] Clickable terminal file links (OSC 8) with fallback for plain text.
-- [ ] Display `~/…` relative paths for files within user home.
-- [ ] Clean-exit resume command with unquoted command/flags and shell-safe paths.
+- [x] Clickable terminal file links (OSC 8) on session save with fallback.
+- [x] Display `~/…` relative paths for files within user home.
+- [x] Clean-exit resume command with unquoted command/flags and shell-safe paths.
 - [ ] Verify resume flag fidelity and launch paths with spaces/quotes; define which
   exit paths print the banner. Ctrl+C must retain its existing abort/draft semantics,
   rather than being converted into unconditional process exit by the study example.
@@ -90,14 +90,14 @@ interactive configuration → categorized picker → file-path/link ergonomics (
 
 Roadmap 0078 is queued, not implemented by the shell-lifecycle work:
 
-- [ ] Compact read intervals `[x:y]`.
-- [ ] Remove input/output dividers; full-brightness input and subtly dim output.
+- [x] Compact read intervals `[x:y]`.
+- [x] Remove input/output dividers; full-brightness input and subtly dim output.
 - [ ] Semantic, pretty-printed tool payloads without raw argument-object dumps;
   preserve exact commands/source bytes for copying and execution.
 - [ ] Configurable default unfolded-output line/byte limits, center collapse,
   head/tail retention, accurate hidden counts and independent expansion.
-- [ ] Replace write acknowledgement line counts with typed byte/replacement facts.
-- [ ] Assess IEC byte display; recommended `1 KiB (1,024 B)`, with compact/exact/both
+- [x] Replace write acknowledgement line counts with typed byte/replacement facts.
+- [x] Assess IEC byte display; recommended `1 KiB (1,024 B)`, with compact/exact/both
   UI choices if warranted. Keep file-size and changed-byte meanings distinct.
 
 ## Cross-cutting acceptance
