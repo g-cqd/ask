@@ -41,6 +41,7 @@ struct SlashCommandsTests {
                 [
                     "/help  List commands. Ctrl+C: erase, stop, quit (twice). Ctrl+T/O/G fold. Enter steers.",
                     "/quit  Leave ask, stopping a running turn first.",
+                    "/continue  Tell the agent to carry on where it stopped. Also: continue, resume, go ahead, go.",
                     "/follow-up  Queue a message after the agent finishes: /follow-up TEXT.",
                     "/tasks  Show or hide the background jobs that are running.",
                     "/sidebar  Show or hide the runner sidebar (Ctrl+\\). Wide screens only.",
@@ -51,7 +52,7 @@ struct SlashCommandsTests {
             ])
         let transcript = controller.state.transcript
         let rows = ScreenComposer.lines(in: transcript, at: 1, columns: 120, style: BlockStyle())
-        #expect(rows.count == 9, "seven help entries share just two padding rows")
+        #expect(rows.count == 10, "eight help entries share just two padding rows")
         #expect(rows.first?.text == "" && rows.last?.text == "")
     }
 

@@ -50,12 +50,13 @@ struct CompletionPickerComposerTests {
         let shown = rows(buffer)
         let prompt = height - 2
         #expect(shown[prompt] == "ask> /co" && shown.last == "! · m", "the prompt, then the status line under it")
-        #expect(shown[prompt - 5].hasPrefix("commands") && shown[prompt - 5].contains("Esc"))
-        #expect(shown[prompt - 4] == "session", "the group heading sits under the title")
+        #expect(shown[prompt - 6].hasPrefix("commands") && shown[prompt - 6].contains("Esc"))
+        #expect(shown[prompt - 5] == "session", "the group heading sits under the title")
+        #expect(shown[prompt - 4].hasPrefix("/continue"))
         #expect(shown[prompt - 3].hasPrefix("/config") && shown[prompt - 3].contains("Show the settings."))
         #expect(shown[prompt - 2].hasPrefix("/compact") && shown[prompt - 1].hasPrefix("/help"))
         #expect(cursor.row == prompt && cursor.column == 8)
-        #expect(composer.transcriptRows == prompt - 5)
+        #expect(composer.transcriptRows == prompt - 6)
     }
 
     @Test func `the choice is bold and nothing is painted, filled or marked`() throws {
@@ -65,7 +66,7 @@ struct CompletionPickerComposerTests {
         var composer = ScreenComposer()
         _ = composer.compose(controller.state, into: &buffer)
         let shown = rows(buffer)
-        let first = try #require(shown.firstIndex { $0.hasPrefix("/config") })
+        let first = try #require(shown.firstIndex { $0.hasPrefix("/continue") })
         #expect(!buffer[first, 0].style.bold && buffer[first + 1, 0].style.bold, "the second match is the choice")
         for row in (first - 1) ..< (first + 4) {
             for column in 0 ..< 60 {
@@ -139,7 +140,7 @@ struct CompletionPickerComposerTests {
         let first = try #require(shown.firstIndex { $0.hasPrefix("job-1") })
         let picker = composer.transcriptRows
         #expect(shown[picker].hasPrefix("commands") && shown[picker + 1] == "session")
-        #expect(shown[picker + 2].hasPrefix("/config"))
+        #expect(shown[picker + 2].hasPrefix("/continue") && shown[picker + 3].hasPrefix("/config"))
         #expect(shown[first - 3] == "ask> /co" && shown[first - 2].hasPrefix("! · m"), "the input, then the status")
         #expect(shown[first - 1].isEmpty)
         #expect(shown[first + 1].hasPrefix("job-2"))
@@ -183,7 +184,7 @@ struct CompletionPickerComposerTests {
         let withPicker = composer.transcriptRows
         _ = controller.handle(.key(KeyEvent(keyCode: 0x1B)), pageRows: height - 3)
         _ = composer.compose(controller.state, into: &buffer)
-        #expect(composer.transcriptRows == withPicker + 5, "the title, the heading and three matches")
+        #expect(composer.transcriptRows == withPicker + 6, "the title, the heading and four matches")
         #expect(
             rows(buffer)[composer.transcriptRows - 1] == "line 30",
             "the newest line stays at the bottom of the transcript")
