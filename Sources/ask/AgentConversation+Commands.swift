@@ -66,7 +66,10 @@ extension AgentConversation {
                     } else {
                         await self.showConfiguration(update: update)
                     }
-                case "compact": await self.compact(update: update)
+                case "compact":
+                    self.keepAwake.turnStarted()
+                    await self.compact(update: update)
+                    self.keepAwake.turnEnded()
                 case "new": await self.newSession(arguments: arguments, update: update)
                 case "resume": await self.resumeSession(arguments: arguments, update: update)
                 case "tree": self.tree(arguments: arguments, update: update)

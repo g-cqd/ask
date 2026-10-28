@@ -106,6 +106,7 @@ trusting it. Some settings can only come from your own file, as the tables below
 | `thinking` | `default` | How much the model thinks: `default` (whatever the provider does), `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. |
 | `maxTurns` | `100` in the sandbox, none with `--no-sandbox` | The most model requests one prompt may make before ask stops it, or `"none"` for no limit (also `ASK_MAX_TURNS=none`). A value you set applies in both cases. |
 | `compactAt` | `"75%"` | When the conversation is summarised to make room: a share of the model's window (`"75%"`), a number of tokens (`150000`), or `0` for only when the window is full. Whatever you set, ask compacts before a request would not fit. |
+| `keepAwake` | `"system"` | While a prompt runs or a background job does, `"system"` keeps the Mac from sleeping when idle, `"display"` keeps the display on too, `"off"` does nothing. Released as soon as ask stops working, and when it exits. |
 | `sandbox` | on, see below | What the model's tools may read, write and reach. |
 | `ui` | see below | How the screen looks and behaves. |
 | `skills` | see below | Which skills are offered to the model. |
