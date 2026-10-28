@@ -75,7 +75,7 @@ struct AgyThoughtSignatureTests {
     }
 
     @Test func `models that do not take a signature never get one, not even a matching one`() throws {
-        for model in ["claude-sonnet-5-5-low", "gpt-oss-120b-medium", "gemini-2.5-pro", "gemini-2.5-flash-lite"] {
+        for model in ["claude-sonnet-5-5-low", "gpt-oss-120b-medium", "gemini-2.4-flash", "gemini-2-flash"] {
             let blocks = [
                 AgyEncoderFixtures.carrier("REAL", model: model), try AgyEncoderFixtures.call("c1"),
                 try AgyEncoderFixtures.call("c2")
@@ -90,13 +90,18 @@ struct AgyThoughtSignatureTests {
         }
     }
 
-    @Test func `the model's major version decides, as the server's rule does`() {
+    @Test func `the model's version decides: 2.5 and later, as the live refusals show`() {
+        // @dl:accept -- a list of model ids is data
         let yes = [
             "gemini-3-flash", "gemini-3.8-flash-tiered", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-3",
-            "Gemini-3-Pro", "gemini-live-3-flash", "gemini-10-x", "gemini-03-x"
+            "Gemini-3-Pro", "gemini-live-3-flash", "gemini-10-x", "gemini-03-x", "gemini-2.5-flash",
+            "gemini-2.5-flash-lite", "gemini-2.5-flash-thinking",
+            "gemini-2.5-pro", "gemini-2.6-x"
         ]
+        // @dl:accept -- a list of model ids is data
         let no = [
-            "gemini-2.5-pro", "gemini-2-flash", "gemini-", "gemini-x-3", "xgemini-3", "gemini-live-2",
+            "gemini-2.4-flash", "gemini-2-flash", "gemini-2.", "gemini-2.x", "gemini-", "gemini-x-3", "xgemini-3",
+            "gemini-live-2",
             "claude-sonnet-5-5-low", "gpt-oss-120b-medium", "", "gemini-live-", "gemini3-flash", "3-flash", "42",
             "live-3-flash", "claude-3-opus", "gpt-oss-4"
         ]
