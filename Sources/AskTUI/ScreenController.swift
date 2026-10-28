@@ -97,6 +97,7 @@ public struct ScreenController: Sendable {
         state.transcript.setCodeFoldedByDefault(options.foldCode)
         state.transcript.setCodeFoldLines(options.codeFoldLines)
         state.transcript.spinnerStyle = options.spinner
+        state.transcript.localizedDurations = options.localizedDurations
         state.promptRows = options.promptRows
         state.sidebarOpen = options.sidebar
         state.verbose = options.verbose
@@ -145,8 +146,8 @@ public struct ScreenController: Sendable {
             case .userPrompt(let text): state.transcript.addUser(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
             case .thinkingText(let text): state.transcript.addThinkingText(text)
-            case .toolStarted(let name, let summary, let id, let input):
-                state.transcript.startTool(name: name, summary: summary, id: id, fullInput: input)
+            case .toolStarted(let name, let summary, let id, let input, let command):
+                state.transcript.startTool(name: name, summary: summary, id: id, fullInput: input, command: command)
             case .toolFinished(let status, let output, let id, let job):
                 state.transcript.finishTool(status, output: output, id: id, backgroundJob: job)
                 if let job { return [.watchJob(id: job)] }

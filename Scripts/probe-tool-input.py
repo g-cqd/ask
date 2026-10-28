@@ -28,15 +28,15 @@ def main():
             probe.agent.turn([("text", "ANSWER")], "end_turn")
         ])
         environment = probe.agent.environment(root + "/state", server.url, config=config)
-        environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")
+        environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty", LANG="en_US.UTF-8")
         terminal = probe.Terminal(project, environment, rows=80)
         try:
             terminal.until(lambda: "ask>" in terminal.text())
             terminal.send(b"Go\r")
             terminal.until(lambda: b"ANSWER" in terminal.raw)
             terminal.repaint()
-            probe.check("canonical bash calls are presented as shell with compact parameters",
-                        "shell · cat" in terminal.text() and "timeout 5s" in terminal.text())
+            probe.check("canonical bash calls are presented as shell, the limits before the command",
+                        "shell · timeout 5 sec · cat" in terminal.text())
             probe.check("full tool input starts inside the folded block", "payload0" not in terminal.text())
             terminal.draw(lambda: terminal.send(b"\x0f"))
             probe.check("expanded tool shows input and output without decorative divider labels",

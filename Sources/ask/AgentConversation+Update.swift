@@ -13,7 +13,12 @@ extension AgentConversation {
             case .toolStarted(let id, let name, let input):
                 return .toolStarted(
                     name: name == "bash" ? "shell" : name, summary: ToolSummary.header(for: input), id: id,
-                    fullInput: ToolSummary.fullInput(for: input))
+                    fullInput: ToolSummary.fullInput(for: input),
+                    command: ToolSummary.commandLimits(for: input)
+                        .map {
+                            ToolCommand(
+                                timeout: $0.timeout.map(Duration.seconds), yield: $0.yield.map(Duration.seconds))
+                        })
             case .toolFinished(let id, _, let output):
                 let last = output.content.split(separator: "\n").last.map(String.init) ?? ""
                 return .toolFinished(

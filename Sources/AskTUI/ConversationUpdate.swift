@@ -6,7 +6,9 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// A prompt the user wrote earlier, shown when a recorded session is resumed.
     case userPrompt(String)
     case assistantText(String)
-    case toolStarted(name: String, summary: String, id: String? = nil, fullInput: String = "")
+    /// A tool began. With `command`, the full input is a command, which heads the block after its limits, and `summary` is unused.
+    case toolStarted(
+        name: String, summary: String, id: String? = nil, fullInput: String = "", command: ToolCommand? = nil)
     /// More of the model's reasoning, shown as a block that starts folded.
     case thinkingText(String)
     /// The tool ended; `output` is what it returned, kept so the block can be opened.
