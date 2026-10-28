@@ -52,12 +52,14 @@ public struct AgyStreamDecoder: ModelEventDecoding {
 
     /// The Gemini response inside an event's data, which wraps it in `response`.
     private static func chunk(of data: [UInt8]) throws(OpenAIStreamError) -> JSON {
-        guard let root = try? AemiJSON.parse(data).root, root.isObject else { throw .malformed }
+        guard let root = try? AemiJSON.parse(data).root, root.isObject else {
+            throw .malformed(of: data)
+        }
         if root["error"].isObject { throw .provider(failure(root["error"])) }
         let wrapped = root["response"]
-        if wrapped.exists, !wrapped.isObject { throw .malformed }
+        if wrapped.exists, !wrapped.isObject { throw .malformed(of: data) }
         let chunk = wrapped.exists ? wrapped : root
-        if chunk["candidates"].exists, chunk["candidates"].array == nil { throw .malformed }
+        if chunk["candidates"].exists, chunk["candidates"].array == nil { throw .malformed(of: data) }
         return chunk
     }
 

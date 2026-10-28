@@ -101,8 +101,21 @@ struct OpenAIStreamDecoderTests {
         }
     }
 
-    @Test func `data that is not JSON is refused`() {
-        #expect(throws: OpenAIStreamError.malformed) { _ = try assemble(["{not json"]) }
+    @Test func `data that is not JSON is refused, naming the bytes that broke it`() {
+        #expect(throws: OpenAIStreamError.malformed(event: "{not json")) { _ = try assemble(["{not json"]) }
+    }
+
+    @Test func `a frame whose fields have the wrong types names its bytes, whole and cut`() throws {
+        // The evidence is the frame's head, cut at 240 bytes: a server's undocumented shape (a mistral thinking
+        // part, diary 22) is diagnosed from the bytes, and a refusal that carries none cannot be probed at all.
+        let mistyped = chunk(#"{"content":5}"#)
+        #expect(throws: OpenAIStreamError.malformed(event: mistyped)) {
+            _ = try assemble([mistyped])
+        }
+        let long = String(repeating: "a", count: 500)
+        #expect(throws: OpenAIStreamError.malformed(event: String(repeating: "a", count: 240) + "… 500 bytes in all")) {
+            _ = try assemble([long])
+        }
     }
 
     @Test func `a stream that never says why it stopped is incomplete, not a finished turn`() {

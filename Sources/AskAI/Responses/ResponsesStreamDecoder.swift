@@ -49,7 +49,7 @@ public struct ResponsesStreamDecoder: ModelEventDecoding {
     public mutating func decode(_ frame: SSEEvent, into events: inout [ModelEvent]) throws(OpenAIStreamError) {
         let wire: ResponsesWireEvent
         do { wire = try AemiJSON.JSONDecoder().decode(ResponsesWireEvent.self, from: frame.data) } catch {
-            throw .malformed
+            throw .malformed(of: frame.data)
         }
         if wire.type == "error" { throw .provider(Self.failure(code: wire.code, message: wire.message ?? "")) }
         if wire.type == "response.failed" {
