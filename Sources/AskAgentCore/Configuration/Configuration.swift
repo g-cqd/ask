@@ -118,7 +118,9 @@ public struct Configuration: Sendable, Equatable {
         {
             next.thinking = thinking
         }
-        if let turns = whole("ASK_MAX_TURNS", atLeast: 1) {
+        if text("ASK_MAX_TURNS") == "none" {
+            next.maxTurns = Setting(value: Self.noTurnLimit, source: .environment("ASK_MAX_TURNS"))
+        } else if let turns = whole("ASK_MAX_TURNS", atLeast: 1) {
             next.maxTurns = Setting(value: turns, source: .environment("ASK_MAX_TURNS"))
         }
         if let threshold = parsed(
@@ -201,7 +203,20 @@ extension Configuration {
         return lines
     }
 
+    /// `maxTurns` with no limit (`"none"`, roadmap 0098): a count the loop never reaches.
+    public static let noTurnLimit = Int.max
+
+    /// A turn limit as written: a whole number of at least 1, or `none`. Nil for anything else.
+    public static func turnLimit(parsing text: String) -> Int? {
+        if text == "none" { return noTurnLimit }
+        return Int(text).flatMap { $0 >= 1 ? $0 : nil }
+    }
+
+    /// A turn limit as a person writes it: `none` for no limit.
+    public static func describeTurns(_ turns: Int) -> String { turns == noTurnLimit ? "none" : String(turns) }
+
     private static func show<Value>(_ value: Value) -> String {
+        if let turns = value as? Int, turns == noTurnLimit { return "none" }
         if let text = value as? String { return "\"\(text)\"" }
         if let optional = value as? String?, optional == nil { return "default" }
         if let optional = value as? String? { return "\"\(optional ?? "")\"" }

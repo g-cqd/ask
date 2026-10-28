@@ -34,4 +34,22 @@ struct ConfigurationChangesTests {
         let flagged = env.applying(model: nil, provider: nil, maxTurns: 2, compactAt: nil)
         #expect(flagged.maxTurns == .init(value: 2, source: .flag("max-turns")))
     }
+
+    @Test func `maxTurns "none" removes the limit from a file or the environment, and shows as none`() throws {
+        let file = try ConfigurationFile.parse(Array(#"{"maxTurns": "none"}"#.utf8), path: "c.json")
+        #expect(file.maxTurns == Configuration.noTurnLimit)
+        let unlimited = Configuration.defaults.applying(file, from: .file("/u/config.json"))
+        #expect(unlimited.changes(from: .defaults) == ["maxTurns: 100 → none (/u/config.json)"])
+        var problems: [String] = []
+        let env = Configuration.defaults.applying(environment: ["ASK_MAX_TURNS": "none"], problems: &problems)
+        #expect(env.maxTurns.value == Configuration.noTurnLimit && problems.isEmpty)
+        #expect(throws: (any Error).self) {
+            try ConfigurationFile.parse(Array(#"{"maxTurns": "lots"}"#.utf8), path: "c.json")
+        }
+        #expect(throws: (any Error).self) {
+            try ConfigurationFile.parse(Array(#"{"maxTurns": 0}"#.utf8), path: "c.json")
+        }
+        #expect(
+            Configuration.describeTurns(Configuration.noTurnLimit) == "none" && Configuration.describeTurns(30) == "30")
+    }
 }
