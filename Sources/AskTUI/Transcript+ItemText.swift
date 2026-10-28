@@ -13,7 +13,7 @@ extension Transcript.Item {
     /// The text a selection can take from this item.
     func contentText(folded: Bool, toolInput: String? = nil, command: Bool = false) -> String {
         switch self {
-            case .user(let text), .assistant(let text), .notice(let text, _): return text
+            case .user(let text), .assistant(let text), .notice(let text, _), .queued(let text): return text
             case .jobEnded(let label, _, _): return label
             case .thinking(let text):
                 let body = Transcript.kept(text)

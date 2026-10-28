@@ -5,7 +5,6 @@ extension ScreenController {
         let text: String
         let followUp: Bool
         let transcriptIndex: Int
-        let transcriptRevision: Int
 
         var effect: Effect { .queuePrompt(id: id, text: text, followUp: followUp) }
     }
@@ -26,12 +25,9 @@ extension ScreenController {
             state.transcript.addNotice("A command is running; the prompt stays in the editor.", isError: false)
             return []
         }
-        let kind = followUp ? "follow-up" : "steering"
-        state.transcript.addNotice("Queued \(kind): \(text)", isError: false)
+        state.transcript.addQueued(text)
         let index = state.transcript.items.count - 1
-        let prompt = Pending(
-            id: nextPromptID, text: text, followUp: followUp,
-            transcriptIndex: index, transcriptRevision: state.transcript.revisions[index])
+        let prompt = Pending(id: nextPromptID, text: text, followUp: followUp, transcriptIndex: index)
         nextPromptID += 1
         pending.append(prompt)
         // During abort, keep input locally: the cancelled run must not consume it.
@@ -53,6 +49,11 @@ extension ScreenController {
         }
         if returningInput {
             interruptedByPerson = false
+            for prompt in pending where state.transcript.items.indices.contains(prompt.transcriptIndex) {
+                if state.transcript.items[prompt.transcriptIndex] == .queued(prompt.text) {
+                    state.transcript.finishProgress(at: prompt.transcriptIndex)
+                }
+            }
             let texts = pending.map(\.text) + (state.editor.text.isEmpty ? [] : [state.editor.text])
             state.editor.restore(texts.joined(separator: "\n\n"))
             pending.removeAll()
@@ -88,13 +89,14 @@ extension ScreenController {
         guard let pendingIndex = pending.firstIndex(where: { $0.id == id }) else { return }
         let prompt = pending.remove(at: pendingIndex)
         let index = prompt.transcriptIndex
-        guard state.transcript.revisions.indices.contains(index),
-            state.transcript.revisions[index] == prompt.transcriptRevision
+        // Still the queued message it was: the spinner moves the revision on every tick, so the item is checked, not the revision.
+        guard state.transcript.items.indices.contains(index), state.transcript.items[index] == .queued(prompt.text)
         else {
             state.transcript.addUser(text)
             return
         }
         state.transcript.items[index] = .user(text)
+        state.transcript.progress[index] = nil
         state.transcript.revisions[index] = state.transcript.bump()
     }
 }

@@ -556,9 +556,9 @@ def probe_steering():
     screen.type("Start the work\r")
     results.append(check("first gate is running", screen.until("release-one")))
     screen.type("Later please\x1b[13;3u")  # CSI-u Alt+Enter, independent of legacy ESC/Enter ambiguity
-    results.append(check("follow-up visibly queued", screen.until("Queued follow-up: Later please")))
+    results.append(check("follow-up visibly queued", screen.until(" · Later please")))
     screen.type("Change direction\r")
-    results.append(check("steering visibly queued", screen.until("Queued steering: Change direction")))
+    results.append(check("steering visibly queued", screen.until(" · Change direction")))
     open(os.path.join(project, "release-one"), "w").close()
     results.append(check("the next turn has reached its gate", screen.until("release-two")))
     if len(server.requests) >= 2:
@@ -601,9 +601,9 @@ def probe_abort_queue():
     screen.type("Start\r")
     results = [check("waiting in a tool", screen.until("never-created"))]
     screen.type("Unsent steering\r")
-    results.append(check("steering queued", screen.until("Queued steering: Unsent steering")))
+    results.append(check("steering queued", screen.until(" · Unsent steering")))
     screen.type("/follow-up Unsent followup\r")
-    results.append(check("follow-up queued without a modified Enter key", screen.until("Queued follow-up: Unsent followup")))
+    results.append(check("follow-up queued without a modified Enter key", screen.until(" · Unsent followup")))
     screen.type("draft\x1b")
     screen.until("\x00", 1.0)
     results.append(check("Esc with a draft typed does not end the run", "working" in screen.screen.text() and "draft" in screen.screen.text()))
@@ -641,7 +641,7 @@ def probe_failed_queue():
     screen.type("Start\r")
     results = [check("waiting in a tool", screen.until("release"))]
     screen.type("Unsent followup\x1b[13;3u")
-    results.append(check("follow-up queued", screen.until("Queued follow-up: Unsent followup")))
+    results.append(check("follow-up queued", screen.until(" · Unsent followup")))
     open(os.path.join(project, "release"), "w").close()
     results.append(check("failed stream ends the run", screen.until_status("ready")))
     lines = screen.screen.text().splitlines()

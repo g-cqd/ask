@@ -92,6 +92,8 @@ extension ScreenComposer {
                     block: block, width: width, inset: inset, style: Style(dim: true, italic: true))
             case .notice(let text, let isError):
                 return rows(text, style: isError ? Style(fg: .indexed(1)) : Style(dim: true))
+            case .queued(let text):
+                return queuedLines(text, block: block, width: width, inset: inset, progress: progress)
         }
     }
 
