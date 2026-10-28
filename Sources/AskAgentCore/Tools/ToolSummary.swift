@@ -62,6 +62,12 @@ public enum ToolSummary {
         return parts.joined(separator: " · ")
     }
 
+    /// For a tool whose input is a command, the limits the call set on it, in seconds (roadmap 0080); nil for any other tool.
+    public static func commandLimits(for input: JSONObject) -> (timeout: Int?, yield: Int?)? {
+        guard let fields = fields(input), fields.command != nil else { return nil }
+        return (fields.timeoutSeconds, fields.yieldSeconds)
+    }
+
     /// Complete text, never the truncated header. Unknown tools retain their original JSON bytes.
     public static func fullInput(for input: JSONObject) -> String {
         guard let fields = fields(input) else { return String(decoding: input.bytes, as: UTF8.self) }

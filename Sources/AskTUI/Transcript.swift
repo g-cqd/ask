@@ -29,6 +29,8 @@ public struct Transcript: Sendable, Equatable {
     private var nextRevision = 0
     var progress: [Int: BlockProgress] = [:]
     var toolBlocks: [String: Int] = [:]
+    /// The tool blocks whose input is a command, which heads the block (roadmap 0080).
+    var commandBlocks: Set<Int> = []
     var jobBlocks: [String: Int] = [:]
     var completedJobs: Set<String> = []
     /// Which tool blocks the user opened or closed, over the default for the kind (TerminalKit roadmap 0018).
@@ -45,6 +47,8 @@ public struct Transcript: Sendable, Equatable {
     public internal(set) var codeFoldLines = 20
     /// Which spinner style is used for progress indicators in live blocks.
     public var spinnerStyle: SpinnerStyle = .line
+    /// Whether a command's limits are written in the locale's units or as a clock (`ui.localizedDurations`).
+    public var localizedDurations = true
     /// The most lines of one tool's output kept; the rest is said, not stored, so one huge output cannot slow every frame.
     static let outputLineLimit = 400
 
@@ -61,6 +65,7 @@ public struct Transcript: Sendable, Equatable {
         revisions.removeAll(keepingCapacity: true)
         progress.removeAll(keepingCapacity: true)
         toolBlocks.removeAll(keepingCapacity: true)
+        commandBlocks.removeAll(keepingCapacity: true)
         jobBlocks.removeAll(keepingCapacity: true)
         completedJobs.removeAll(keepingCapacity: true)
         folds.clearChoices()
@@ -85,10 +90,14 @@ public struct Transcript: Sendable, Equatable {
     }
 
     public mutating func startTool(
-        name: String, summary: String, at now: ContinuousClock.Instant = .now, id: String? = nil, fullInput: String = ""
+        name: String, summary: String, at now: ContinuousClock.Instant = .now, id: String? = nil,
+        fullInput: String = "",
+        command: ToolCommand? = nil
     ) {
+        let summary = command.map { $0.parameters(localized: localizedDurations) } ?? summary
         append(.tool(name: name, summary: summary, status: .running, output: "", fullInput: fullInput))
         progress[items.count - 1] = BlockProgress(at: now, spinner: spinnerStyle)
+        if command != nil { commandBlocks.insert(items.count - 1) }
         if let id { toolBlocks[id] = items.count - 1 }
     }
 

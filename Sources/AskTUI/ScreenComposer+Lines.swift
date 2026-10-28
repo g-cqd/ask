@@ -6,10 +6,12 @@ extension ScreenComposer {
     /// and a blank row above when this block and the one before are both tool calls or the user's messages.
     static func lines(
         for item: Transcript.Item, folded: Bool = false, block: Int = 0, columns: Int, style: BlockStyle = .plain,
-        spacerAbove: Bool = false, progress: BlockProgress? = nil, toolInput: ShownToolInput? = nil
+        spacerAbove: Bool = false, progress: BlockProgress? = nil, toolInput: ShownToolInput? = nil,
+        command: Bool = false
     ) -> [Line] {
         let content = contentLines(
-            for: item, folded: folded, block: block, columns: columns, style: style, context: (progress, toolInput))
+            for: item, folded: folded, block: block, columns: columns, style: style,
+            context: (progress, toolInput, command))
         var result = framed(content, kind: item, style: style, spacerAbove: spacerAbove)
         switch item {
             case .tool, .thinking:
@@ -48,10 +50,9 @@ extension ScreenComposer {
 
     private static func contentLines(
         for item: Transcript.Item, folded: Bool, block: Int, columns: Int, style: BlockStyle,
-        context: (progress: BlockProgress?, toolInput: ShownToolInput?)
+        context: (progress: BlockProgress?, toolInput: ShownToolInput?, command: Bool)
     ) -> [Line] {
         let progress = context.progress
-        let toolInput = context.toolInput
         let inset = style.inset
         let width = Swift.max(1, columns - 2 * inset)
         let margin = String(repeating: " ", count: inset)
@@ -69,26 +70,9 @@ extension ScreenComposer {
                 return (style.padded ? [] : [Line(text: "", style: .default)]) + rows(text, style: Style(bold: true))
             case .assistant(let text):
                 return rows(text, style: .default)
-            case .tool(let name, let summary, let status, let output, let input):
-                let look = toolStatusStyle(status)
-                let header = Transcript.Item.toolHeader(
-                    name: name, summary: summary, status: status, output: output, folded: folded)
-                if !folded, !input.isEmpty {
-                    return toolInputLines(
-                        item: item, input: toolInput?.text ?? ShownToolInput(input, isFolded: { _ in true }).text,
-                        block: block, columns: columns, style: style, progress: progress)
-                }
-                let gap = !folded && !output.isEmpty ? [Line(text: "", style: .default)] : []
-                return blockHeader(
-                    header,
-                    metadata: blockMetadata(
-                        status: status, output: output, progress: progress,
-                        localizedDurations: style.localizedDurations,
-                        toolName: name
-                    ),
-                    block: block, width: width, inset: inset, style: look) + gap
-                    + (folded
-                        ? [] : body(of: output, block: block, width: width, inset: inset, style: Style(dim: true)))
+            case .tool:
+                return toolContentLines(
+                    item, folded: folded, block: block, columns: columns, style: style, context: context)
             case .thinking(let text):
                 let kept = Transcript.kept(text)
                 let look = Style(dim: true, italic: true)

@@ -14,7 +14,8 @@ extension Transcript {
     /// The long code block a click on display hard line `line` of item `index` toggles, or nil when that line toggles nothing.
     func codeFence(toggledByLine line: Int, at index: Int) -> Int? {
         guard items.indices.contains(index) else { return nil }
-        return shownToolInput(at: index)?.toggles[line - 1] ?? shownCode(at: index)?.toggles[line]
+        return shownToolInput(at: index)?.toggles[line - (commandBlocks.contains(index) ? 0 : 1)]
+            ?? shownCode(at: index)?.toggles[line]
     }
 
     /// Opens or closes one long code block.
