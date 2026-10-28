@@ -56,10 +56,10 @@ struct CommandCategoryPickerTests {
         let first = controller()
         let picker = try #require(first.state.picker)
         let selectable = picker.matches.filter { !$0.isHeading }
-        #expect(selectable.count == 10, "every command, built-in and offered, remains selectable")
+        #expect(selectable.count == 11, "every command, built-in and offered, remains selectable")
         #expect(picker.matches.first?.isHeading == true, "the first row is a heading")
         #expect(picker.selected == 1, "the selection starts on the first command, not the heading")
-        #expect(picker.countOfChoices == 10)
+        #expect(picker.countOfChoices == 11)
         var down = controller()
         for _ in 0 ..< 20 { _ = down.handle(.key(KeyEvent(keyCode: Key.down.rawValue)), pageRows: 30) }
         let after = try #require(down.state.picker)
@@ -99,7 +99,7 @@ struct CommandCategoryPickerTests {
     @Test func `the position count includes commands but not headings`() throws {
         let controller = controller()
         let picker = try #require(controller.state.picker)
-        #expect(picker.countOfChoices == 10)
+        #expect(picker.countOfChoices == 11)
         var buffer = ScreenBuffer(columns: 60, rows: 30)
         var composer = ScreenComposer()
         _ = composer.compose(controller.state, into: &buffer)
@@ -112,7 +112,7 @@ struct CommandCategoryPickerTests {
             if title.contains("commands") { break }
             title = ""
         }
-        #expect(title.contains("1 of 10"), "the title counts commands, never headings")
+        #expect(title.contains("1 of 11"), "the title counts commands, never headings")
     }
 
     @Test func `small screens keep working and headings take no extra rows when hidden`() throws {

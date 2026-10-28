@@ -13,6 +13,8 @@ The status line starts with a spinner while ask works. It reads `Compacting...` 
   a second Enter runs it. A click on a row runs it at once.
 - **`@`** at the start of a word lists the project's files (`.gitignore` applies, and only what the sandbox lets ask read). Enter inserts `@path`;
   add `:12-30` for a line range. The model then reads the file itself.
+- **`/continue`**, or just `continue`, `resume`, `go ahead` or `go` as the whole message, or **Right pressed twice** on an empty input while nothing
+  runs, tells the model to carry on where it stopped. A sentence that merely starts with one of those words is sent as written.
 
 While the model is working, **Enter** queues your message as steering: it is sent after the model's current step. `/follow-up TEXT` (or
 **Alt+Enter**, where the terminal reports it) queues a message for when the turn is over.

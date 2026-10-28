@@ -49,7 +49,7 @@ struct SkillPickerTests {
         #expect(all.first == "/help")
         #expect(
             all == [
-                "/help", "/quit", "/follow-up", "/tasks", "/config", "/sidebar", "/verbose",
+                "/help", "/quit", "/continue", "/follow-up", "/tasks", "/config", "/sidebar", "/verbose",
                 "/skill:code-review", "/skill:debugging"
             ], "session commands, then the tools, skills last")
         #expect(screen.state.picker?.matches.last?.detail.hasPrefix("skill · ") == true)
