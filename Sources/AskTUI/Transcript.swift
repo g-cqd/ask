@@ -19,6 +19,9 @@ public struct Transcript: Sendable, Equatable {
         /// What the model reasoned before answering, kept so it can be opened (ADR-0046: `ui.thinking`).
         case thinking(String)
         case notice(String, isError: Bool)
+        /// A message sent while a turn runs, waiting for the model to take it (steering or a follow-up): drawn dim, with a spinner and no
+        /// background, and replaced by the user's message once it is accepted (roadmap 0129).
+        case queued(String)
         /// A completed background job, with status metadata drawn at the right edge.
         case jobEnded(label: String, status: ToolStatus, lines: Int)
     }
