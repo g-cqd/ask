@@ -37,7 +37,7 @@ public struct CodexCatalogClient: Sendable {
                 guard let model = entry.element.model, seen.insert(model.id).inserted else { return nil }
                 return model
             }
-        guard !models.isEmpty else { throw ModelCatalogError.noModels }
+        guard models.contains(where: { $0.unsuitable == nil }) else { throw ModelCatalogError.noModels }
         return models
     }
 

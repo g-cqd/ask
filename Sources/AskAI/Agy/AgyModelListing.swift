@@ -16,29 +16,40 @@ enum AgyModelListing {
         }
         let models = root["models"]
         let named = namedIDs(root)
-        let excluded = Set(
-            ["tabModelIds", "imageGenerationModelIds", "audioTranscriptionModelIds"].flatMap { strings(root[$0]) })
+        var reasons: [String: String] = [:]
+        for (key, reason) in [
+            ("tabModelIds", "tab completion"), ("imageGenerationModelIds", "image generation"),
+            ("audioTranscriptionModelIds", "audio transcription")
+        ] {
+            for id in strings(root[key]) { reasons[id] = reasons[id] ?? reason }
+        }
         var capable: [String] = []
         models.forEachMember { name, entry in
             if entry["supportsThinking"].bool == true { capable.append(String(name)) }
         }
         var seen = Set<String>()
-        let kept = (named + capable.sorted())
+        var rest: [String] = []
+        models.forEachMember { name, _ in rest.append(String(name)) }
+        let all = (named + capable.sorted() + rest.sorted())
             .compactMap { id -> CatalogModel? in
                 let entry = models[id]
-                guard entry.isObject, entry["isInternal"].bool != true, !excluded.contains(id),
-                    CatalogModel.validID(id),
-                    seen.insert(id).inserted
-                else { return nil }
+                guard entry.isObject, CatalogModel.validID(id), seen.insert(id).inserted else { return nil }
+                let chat = entry["isInternal"].bool != true && reasons[id] == nil
+                let unsuitable = reasons[id] ?? (entry["isInternal"].bool == true ? "internal" : nil)
+                // Not named for agent use and not a thinking model: the server does not offer it for chat.
+                let offered = named.contains(id) || capable.contains(id)
                 return CatalogModel(
                     id: id, contextWindow: positive(entry["maxTokens"]),
                     maxOutputTokens: positive(entry["maxOutputTokens"]),
-                    supportsThinking: entry["supportsThinking"].bool)
+                    supportsThinking: entry["supportsThinking"].bool,
+                    unsuitable: chat && !offered ? "not offered for chat" : unsuitable)
             }
+        // The default and the emptiness test are about the useful models, as before this list also held the rest.
+        let kept = all.filter { $0.unsuitable == nil }
         guard !kept.isEmpty else { throw ModelCatalogError.noModels }
         let standard = root["defaultAgentModelId"].string
         return AgyModelList(
-            models: kept, defaultModelID: standard.flatMap { id in kept.contains { $0.id == id } ? id : nil })
+            models: all, defaultModelID: standard.flatMap { id in kept.contains { $0.id == id } ? id : nil })
     }
 
     /// The ids the server names for agent use: its groups in order, then command models, then tiered models by tier name.

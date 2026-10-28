@@ -10,6 +10,20 @@ struct ListedModel: Decodable, Sendable {
     let topProvider: Lenient<Route>?
     /// Hugging Face's router: each service that can serve the model, with the window it gives.
     let providers: Lenient<[Lenient<Route>]>?
+    /// OpenRouter's `architecture`, whose `modality` reads `text+image->text`: what goes in, then what comes out.
+    let architecture: Lenient<Architecture>?
+
+    /// The part of OpenRouter's `architecture` ask reads.
+    struct Architecture: Decodable, Sendable {
+        let modality: String?
+
+        /// Whether the output side names something other than text (`text->image`): no use for a chat loop. Nil when it does not say.
+        var givesText: Bool? {
+            guard let output = modality?.split(separator: ">", maxSplits: 1).last, modality?.contains("->") == true
+            else { return nil }
+            return output.split(separator: "+").contains("text")
+        }
+    }
 
     /// A service that serves the model: OpenRouter's `top_provider` and each of Hugging Face's `providers` share this shape.
     struct Route: Decodable, Sendable {
@@ -25,7 +39,7 @@ struct ListedModel: Decodable, Sendable {
     }
 
     enum CodingKeys: String, CodingKey {
-        case id, providers
+        case id, providers, architecture
         case contextWindow = "context_window"
         case contextLength = "context_length"
         case topProvider = "top_provider"

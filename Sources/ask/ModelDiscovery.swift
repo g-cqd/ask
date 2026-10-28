@@ -85,7 +85,8 @@ enum ModelDiscovery {
                 }
                 snapshot = cached
             }
-            let chosen = try resolve(snapshot.models)
+            let chosen = try resolve(
+                ModelUsefulness.shown(snapshot.models, onlyUseful: ModelFilter.onlyUseful(environment: environment)))
             return (
                 chosen,
                 notices + snapshot.notices + [

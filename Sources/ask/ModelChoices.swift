@@ -29,6 +29,7 @@ enum ModelChoices {
             for await (provider, result) in group { all[provider] = result }
             return all
         }
+        let onlyUseful = ModelFilter.onlyUseful(environment: environment)
         let currentName = current.connection?.name ?? current.providerName
         var ordered = listings.map(\.provider)
         if let index = ordered.firstIndex(of: currentName) { ordered.insert(ordered.remove(at: index), at: 0) }
@@ -37,7 +38,8 @@ enum ModelChoices {
         for provider in ordered {
             switch results[provider] {
                 case .success(let models):
-                    rows += models.map { offer($0, provider: provider, current: current, currentName: currentName) }
+                    rows += ModelUsefulness.shown(models, onlyUseful: onlyUseful)
+                        .map { offer($0, provider: provider, current: current, currentName: currentName) }
                 case .failure(let error): failed.append("\(provider): \(error)")
                 case nil: break
             }

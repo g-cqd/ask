@@ -26,6 +26,9 @@ struct AgyCloudClientTests {
             .models(accessToken: "access-test", project: "ask-test-project-1")
     }
 
+    /// The models the filter of roadmap 0089 shows: the list holds the others too, marked.
+    private func shown(_ list: AgyModelList) -> [CatalogModel] { ModelUsefulness.shown(list.models, onlyUseful: true) }
+
     private func recordedModels() async throws -> AgyModelList { try await models(Self.fixture("model-list.json")) }
 
     // MARK: - Onboarding
@@ -138,17 +141,17 @@ struct AgyCloudClientTests {
             gemini-3.5-flash-lite gemini-2.5-flash gemini-2.5-flash-lite gemini-2.5-flash-thinking gemini-2.5-pro \
             gemini-3.1-flash-lite
             """
-        #expect(list.models.map(\.id) == expected.split(separator: " ").map(String.init))
+        #expect(shown(list).map(\.id) == expected.split(separator: " ").map(String.init))
     }
 
-    @Test func `internal, tab and image entries are left out, and say why only in this test`() async throws {
-        let ids = Set(try await recordedModels().models.map(\.id))
-        for left in [
-            "chat_20706", "chat_23310", "tab_flash_lite_preview", "tab_jump_flash_lite_preview",
-            "gemini-3.1-flash-image"
-        ] {
-            #expect(!ids.contains(left), "\(left)")
-        }
+    @Test func `image and internal entries are kept, marked, and hidden by the filter`() async throws {
+        let list = try await recordedModels()
+        let marks = Dictionary(uniqueKeysWithValues: list.models.map { ($0.id, $0.unsuitable) })
+        #expect(marks["gemini-3.1-flash-image"] == "image generation")
+        #expect(marks["chat_20706"] == "tab completion" && marks["chat_23310"] == "tab completion")
+        #expect(marks["tab_flash_lite_preview"] == "not offered for chat", "named in no group and not a thinking model")
+        #expect(shown(list).allSatisfy { $0.unsuitable == nil } && shown(list).count < list.models.count)
+        #expect(ModelUsefulness.shown(list.models, onlyUseful: false).count == list.models.count)
     }
 
     @Test func `limits come from the server and an unreported limit stays unknown`() async throws {
@@ -168,7 +171,7 @@ struct AgyCloudClientTests {
             "t2":{"maxTokens":1},"t1":{"maxTokens":1}},
             "tieredModelIds":{"pro":["t2"],"flash":["t1"]}}
             """#
-        #expect(try await models(body).models.map(\.id) == ["t1", "t2", "alpha", "mid", "zeta"])
+        #expect(shown(try await models(body)).map(\.id) == ["t1", "t2", "alpha", "mid", "zeta"])
     }
 
     @Test func `the server's own default is reported when it is listed, and only then`() async throws {
@@ -176,7 +179,7 @@ struct AgyCloudClientTests {
         let hidden =
             #"{"models":{"a":{"supportsThinking":true},"chat_1":{"isInternal":true,"maxTokens":9}},"defaultAgentModelId":"chat_1"}"#
         let list = try await models(hidden)
-        #expect(list.models.map(\.id) == ["a"] && list.defaultModelID == nil)
+        #expect(shown(list).map(\.id) == ["a"] && list.defaultModelID == nil)
         let missing = try await models(#"{"models":{"a":{"supportsThinking":true}},"defaultAgentModelId":"zzz"}"#)
         #expect(missing.defaultModelID == nil)
     }
@@ -188,7 +191,7 @@ struct AgyCloudClientTests {
             "tabModelIds":["t"],"imageGenerationModelIds":["i"],"audioTranscriptionModelIds":["a"],
             "agentModelSorts":[{"groups":[{"modelIds":["x","t"]}]}]}
             """#
-        #expect(try await models(body).models.map(\.id) == ["ok"])
+        #expect(shown(try await models(body)).map(\.id) == ["ok"])
     }
 
     @Test func `a named entry that reports no thinking still counts, a bare one does not`() async throws {
@@ -197,7 +200,7 @@ struct AgyCloudClientTests {
             "agentModelSorts":[{"groups":[{"modelIds":["named"]}]}],"commandModelIds":["cmd"],
             "tieredModelIds":{"pro":["tier"]}}
             """#
-        #expect(try await models(body).models.map(\.id) == ["named", "cmd", "tier"])
+        #expect(shown(try await models(body)).map(\.id) == ["named", "cmd", "tier"])
     }
 
     @Test func `ids that name nothing, repeat, or are not plain are dropped, one at a time`() async throws {
@@ -206,7 +209,7 @@ struct AgyCloudClientTests {
             "":{"supportsThinking":true},"notobject":7},
             "agentModelSorts":[{"groups":[{"modelIds":["good","good","ghost","bad id","../x","","notobject",5,null]}]}]}
             """#
-        #expect(try await models(body).models.map(\.id) == ["good"])
+        #expect(shown(try await models(body)).map(\.id) == ["good"])
     }
 
     @Test func `limits that are not positive whole numbers are unknown, not zero or negative`() async throws {

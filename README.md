@@ -117,6 +117,10 @@ visible until Escape (default: `"on"`, return to main). Set
 `"ui": {"abortTurnRequiresConfirmation": "on"}` to require two consecutive Ctrl+C presses
 within two seconds to abort a turn (default: `"off"`). Ctrl+C still clears a draft first.
 
+Model lists (`/model`, `ask models NAME`, a Codex default) leave out the models that are of no use to ask: image,
+audio and tab-completion models, ones without tool calls, ones a provider hides. `ask models NAME` says how many it hid and why, and
+`--all` lists them. `"ui": {"onlyUsefulModels": "off"}` turns the filter off (default `"on"`); `--model` names any model either way.
+
 Esc interrupts a running turn once it has nothing else to close (a picker, a selection, a job lane):
 the first press shows "press Esc again to abort", and a second within two seconds stops the turn.
 `"ui": {"interruptKeys": "esc" | "ctrl-c" | "both"}` chooses the keys (default `"both"`);
