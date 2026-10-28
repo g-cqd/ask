@@ -33,17 +33,20 @@ struct CodexCatalogEntry: Decodable {
     init(from decoder: any Decoder) throws {
         let fields = try? decoder.container(keyedBy: CodingKeys.self)
         priority = (try? fields?.decode(Int.self, forKey: .priority)) ?? Int.max
-        guard let id = try? fields?.decode(String.self, forKey: .slug),
-            CatalogModel.validID(id),
-            (try? fields?.decode(String.self, forKey: .visibility)) != "hide",
-            (try? fields?.decode(Bool.self, forKey: .supportedInAPI)) != false
-        else {
+        guard let id = try? fields?.decode(String.self, forKey: .slug), CatalogModel.validID(id) else {
             model = nil
             return
         }
-        if let modalities = try? fields?.decode([String].self, forKey: .inputModalities), !modalities.contains("text") {
-            model = nil
-            return
+        // Kept and marked, not dropped: the filter of roadmap 0089 hides them, and turning it off lists them.
+        var unsuitable: String?
+        if (try? fields?.decode(String.self, forKey: .visibility)) == "hide" {
+            unsuitable = "hidden by the provider"
+        } else if (try? fields?.decode(Bool.self, forKey: .supportedInAPI)) == false {
+            unsuitable = "not supported in the API"
+        } else if let modalities = try? fields?.decode([String].self, forKey: .inputModalities),
+            !modalities.contains("text")
+        {
+            unsuitable = "takes no text"
         }
         let context = try? fields?.decode(Int.self, forKey: .contextWindow)
         let output = try? fields?.decode(Int.self, forKey: .maxOutputTokens)
@@ -59,6 +62,7 @@ struct CodexCatalogEntry: Decodable {
             id: id, contextWindow: context.flatMap { $0 > 0 ? $0 : nil },
             maxOutputTokens: output.flatMap { $0 > 0 ? $0 : nil }, reasoningLevels: levels,
             defaultReasoningLevel: standard.flatMap { levels.contains($0) ? $0 : nil },
-            acceptsImages: (try? fields?.decode([String].self, forKey: .inputModalities))?.contains("image"))
+            acceptsImages: (try? fields?.decode([String].self, forKey: .inputModalities))?.contains("image"),
+            unsuitable: unsuitable)
     }
 }

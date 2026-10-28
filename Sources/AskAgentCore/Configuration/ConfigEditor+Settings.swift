@@ -33,7 +33,7 @@ extension ConfigEditor {
         ["mouse", "copyOnSelect"].map { .init(path: ["ui", $0], kind: .boolean) }
         + [
             "tint", "separator", "padding", "localizedDurations", "jobAutoReturnWhenFocused",
-            "abortTurnRequiresConfirmation", "escapeInterruptRequiresConfirmation"
+            "abortTurnRequiresConfirmation", "escapeInterruptRequiresConfirmation", "onlyUsefulModels"
         ]
         .map { .init(path: ["ui", $0], kind: .onOff) }
         + ["tools", "thinking", "code"]

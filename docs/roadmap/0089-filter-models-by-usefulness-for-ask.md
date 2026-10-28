@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -32,3 +32,15 @@ filters each provider's models by actual usefulness for ask. **On by default.** 
 ## Not decided
 
 The context floor, and whether "tab" models of providers other than Antigravity exist in practice. Both come from the fixtures.
+
+## Result (2026-10-28, ADR-0125)
+
+- Setting is `ui.onlyUsefulModels`, not `models.onlyUseful`. Parsers mark (`CatalogModel.unsuitable`), `ModelUsefulness` filters at read time.
+- Applied to: `/model` rows, `ask models NAME` (`--all` shows the rest and a reason column; a line says how many were hidden), and the Codex
+  default choice. Agy's default was already chosen among useful models. `--model` is always accepted.
+- Hidden, from the recorded fixtures: Antigravity (live list; the 26-entry fixture is tested for the marks, not counted)
+  (1 image generation, 2 tab completion, 2 not offered for chat); live Codex 2 hidden by the provider. Copilot's live list was not
+  re-fetched; its marks are tested with synthetic entries only.
+- No context floor was chosen.
+- Not verified: OpenRouter's modality mark (the fixture has only `->text`, so only a synthetic body tests it); Anthropic and Apple mark nothing;
+  caches predate the marks until refreshed; the Copilot and Antigravity marks come from the catalog's own flags, not from trying each model.

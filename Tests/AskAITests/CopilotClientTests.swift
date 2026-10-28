@@ -80,7 +80,7 @@ struct CopilotClientTests {
     }
 
     @Test(arguments: ["picker", "tools", "streaming", "protocol", "policy"])
-    func `ineligible account models never become choices`(reason: String) async throws {
+    func `ineligible account models are marked and hidden, never chosen`(reason: String) async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
         defer { try? FileManager.default.removeItem(at: root) }
         let file = try file(root)
@@ -96,9 +96,19 @@ struct CopilotClientTests {
         }
         let body = payload
         let transport = CopilotTestTransport { _ in CopilotTestTransport.reply(body) }
-        #expect(
-            try await CopilotCatalog(file: file, transport: transport).models(now: Date().timeIntervalSince1970).isEmpty
-        )
+        let listed = try await CopilotCatalog(file: file, transport: transport)
+            .models(now: Date().timeIntervalSince1970)
+        if reason == "protocol" {
+            #expect(listed.isEmpty, "no usable endpoint: nothing to call")
+        } else {
+            let expected = [
+                "picker": "not in Copilot's own picker", "tools": "no tool calls", "streaming": "no streaming",
+                "policy": "disabled by policy"
+            ]
+            #expect(listed.map(\.unsuitable) == [expected[reason]])
+            #expect(ModelUsefulness.shown(listed, onlyUseful: true).isEmpty)
+            #expect(ModelUsefulness.shown(listed, onlyUseful: false).count == 1)
+        }
     }
 
     @Test(arguments: [401, 402, 403, 429, 500])

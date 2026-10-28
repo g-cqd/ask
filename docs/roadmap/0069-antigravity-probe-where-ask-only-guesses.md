@@ -37,7 +37,8 @@ That the refusal wording is the same for Claude and Gemini on Cloud Code: the fi
 - **U1: yes** to the one request of about 140,000 tokens on `gpt-oss-120b` (step 5). Not yet sent.
 - **U12: yes** to sending the first-party identity once, to measure the catalogue. **Settled without a new request**: ask already sends
   the `antigravity/cli/1.4.0` prefix since `b9f80b8` (2026-10-27); see the U12 result below.
-- **U19:** applied to all providers as a setting, roadmap 0089.
+- **U19:** answered by roadmap 0089 (done): the setting `ui.onlyUsefulModels`, on by default, for all providers. Antigravity keeps its
+  `tab`, image, audio and internal entries in the list, marked, and hides them.
 - **U22:** not applicable.
 
 ## U1 result (2026-10-28)

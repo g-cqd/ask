@@ -16,7 +16,9 @@ struct CodexCatalogClientTests {
     @Test func `the recorded catalog excludes hidden models and uses the normal context window`() async throws {
         let path = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .appending(path: "Fixtures/Codex/models.json")
-        let models = try await read(String(decoding: Data(contentsOf: path), as: UTF8.self))
+        let all = try await read(String(decoding: Data(contentsOf: path), as: UTF8.self))
+        let models = ModelUsefulness.shown(all, onlyUseful: true)
+        #expect(all.count > models.count && ModelUsefulness.hidden(all).allSatisfy { $0.unsuitable != nil })
         #expect(
             models.map(\.id) == [
                 "gpt-6.1-sol", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"
@@ -101,7 +103,12 @@ struct CodexCatalogClientTests {
             #"{"models":[null,7,{"slug":""},{"slug":"bad\nname"},{"slug":"hidden","visibility":"hide"},{"slug":"unavailable","supported_in_api":false},{"slug":"image-only","input_modalities":["image"]},{"slug":"ok","context_window":-1,"max_output_tokens":0},{"slug":"ok"},{"slug":"other","context_window":8192,"max_output_tokens":1024}]}"#
         )
         #expect(
-            models == [CatalogModel(id: "ok"), CatalogModel(id: "other", contextWindow: 8192, maxOutputTokens: 1024)])
+            ModelUsefulness.shown(models, onlyUseful: true)
+                == [CatalogModel(id: "ok"), CatalogModel(id: "other", contextWindow: 8192, maxOutputTokens: 1024)])
+        let marks = Dictionary(uniqueKeysWithValues: models.map { ($0.id, $0.unsuitable) })
+        #expect(marks["hidden"] == "hidden by the provider")
+        #expect(marks["unavailable"] == "not supported in the API")
+        #expect(marks["image-only"] == "takes no text")
     }
 
     @Test(arguments: [#"{}"#, #"{"models":{}}"#, "<html>not JSON</html>"])

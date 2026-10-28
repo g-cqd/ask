@@ -42,6 +42,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var escapeInterruptRequiresConfirmation: Bool?
     /// `ui.interruptSendsQueued`: what happens to queued messages after an interruption: `"none"`, `"next"` or `"all"` (default).
     public var interruptSendsQueued: QueuedAfterInterruptPreference?
+    /// `ui.onlyUsefulModels`: whether model lists leave out the models of no use to ask (`"on"`, default; roadmap 0089).
+    public var onlyUsefulModels: Bool?
 
     public init(
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
@@ -51,7 +53,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         // @dl:accept -- optional settings are schema data: each parameter names a key
         jobAutoReturnWhenFocused: Bool? = nil, abortTurnRequiresConfirmation: Bool? = nil,
         interruptKeys: InterruptKeysPreference? = nil, escapeInterruptRequiresConfirmation: Bool? = nil,
-        interruptSendsQueued: QueuedAfterInterruptPreference? = nil
+        interruptSendsQueued: QueuedAfterInterruptPreference? = nil, onlyUsefulModels: Bool? = nil
     ) {
         // @dl:accept -- optional configuration and resolved screen options deliberately assign the same UI keys
         self.mouse = mouse
@@ -74,6 +76,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.interruptKeys = interruptKeys
         self.escapeInterruptRequiresConfirmation = escapeInterruptRequiresConfirmation
         self.interruptSendsQueued = interruptSendsQueued
+        self.onlyUsefulModels = onlyUsefulModels
     }
 
     public var isEmpty: Bool {
@@ -82,6 +85,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             && tint == nil && separator == nil && padding == nil && localizedDurations == nil && spinner == nil
             && jobAutoReturnWhenFocused == nil && abortTurnRequiresConfirmation == nil && interruptKeys == nil
             && escapeInterruptRequiresConfirmation == nil && interruptSendsQueued == nil
+            && onlyUsefulModels == nil
         // @dl:accept -- the layering takes each key from the later section; the keys are the data
     }
 
@@ -91,10 +95,11 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         + lookKeys + behaviorKeys
 
     /// The keys that set the look of the screen (roadmap 0074).
+    // @dl:accept -- the key table is schema data
     private static let lookKeys = ["prompt", "tint", "separator", "padding", "localizedDurations", "spinner"]
     private static let behaviorKeys = [
         "jobAutoReturnWhenFocused", "abortTurnRequiresConfirmation", "interruptKeys",
-        "escapeInterruptRequiresConfirmation", "interruptSendsQueued"
+        "escapeInterruptRequiresConfirmation", "interruptSendsQueued", "onlyUsefulModels"
     ]
 
     /// `self` with every key `section` sets replaced.
@@ -114,7 +119,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             interruptKeys: section.interruptKeys ?? interruptKeys,
             escapeInterruptRequiresConfirmation: section.escapeInterruptRequiresConfirmation
                 ?? escapeInterruptRequiresConfirmation,
-            interruptSendsQueued: section.interruptSendsQueued ?? interruptSendsQueued)
+            interruptSendsQueued: section.interruptSendsQueued ?? interruptSendsQueued,
+            onlyUsefulModels: section.onlyUsefulModels ?? onlyUsefulModels)
     }
 
     public var description: String {
@@ -146,6 +152,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         if let interruptKeys { parts.append("interruptKeys \(interruptKeys.rawValue)") }
         flag("escapeInterruptRequiresConfirmation", escapeInterruptRequiresConfirmation)
         if let interruptSendsQueued { parts.append("interruptSendsQueued \(interruptSendsQueued.rawValue)") }
+        flag("onlyUsefulModels", onlyUsefulModels)
         return parts.isEmpty ? "defaults" : parts.joined(separator: ", ")
     }
 }

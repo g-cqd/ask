@@ -50,9 +50,7 @@ public struct CopilotCatalog: Sendable {
     private static func parse(_ entries: [Entry]) -> [CatalogModel] {
         var seen = Set<String>()
         return entries.compactMap { item in
-            guard CatalogModel.validID(item.id), !seen.contains(item.id), item.model_picker_enabled == true,
-                item.policy?.state != "disabled", let caps = item.capabilities, caps.type == "chat",
-                caps.supports?.tool_calls == true, caps.supports?.streaming == true,
+            guard CatalogModel.validID(item.id), !seen.contains(item.id), let caps = item.capabilities,
                 let api = paths.first(where: { (item.supported_endpoints ?? ["/chat/completions"]).contains($0) })
             else { return nil }
             seen.insert(item.id)
@@ -68,10 +66,20 @@ public struct CopilotCatalog: Sendable {
                 maxOutputTokens: positive(caps.limits?.max_output_tokens), reasoningLevels: Array(Set(levels)).sorted(),
                 supportsThinking: thinking,
                 thinkingModes: adaptive ? [.adaptive, .disabled] : (thinking ? [.enabled, .disabled] : []), api: api,
-                acceptsImages: images?.accepts, imageLimits: images?.limits)
+                acceptsImages: images?.accepts, imageLimits: images?.limits, unsuitable: unsuitable(item, caps))
             return model.isValid ? model : nil
         }
     }
+    /// Why the entry is of no use to ask's loop, when it is not (roadmap 0089): the first reason the entry gives.
+    private static func unsuitable(_ item: Entry, _ caps: Entry.Capabilities) -> String? {
+        if caps.type != "chat" { return "not a chat model" }
+        if item.policy?.state == "disabled" { return "disabled by policy" }
+        if caps.supports?.tool_calls != true { return "no tool calls" }
+        if caps.supports?.streaming != true { return "no streaming" }
+        if item.model_picker_enabled != true { return "not in Copilot's own picker" }
+        return nil
+    }
+
     /// Whether the model takes images and within what limits, from its `supports.vision` flag and `limits.vision` block: nil when
     /// the entry says neither, which is unknown and not text only.
     private static func images(_ flag: Bool?, _ block: Entry.Capabilities.Vision?) -> (
