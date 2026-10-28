@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["0061", "0062", "0064", "ADRs for the rules below"]
+blocked-by: ["0061", "0062", "0064"]
 date: 2026-10-24
 ---
 

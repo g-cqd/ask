@@ -20,6 +20,15 @@ def oid(root, ref):
     return git(root, "rev-parse", "--verify", ref).stdout.strip()
 
 
+PUBLIC_EMAIL = "42325924+g-cqd@users.noreply.github.com"
+
+
+def foreign_authors(root):
+    """Commits on the task branch not yet on origin/main whose author or committer is not the public identity."""
+    log = git(root, "log", "--format=%h %ae %ce", "origin/main..HEAD").stdout.splitlines()
+    return [line for line in log if any(email != PUBLIC_EMAIL for email in line.split()[1:])]
+
+
 def gaps(paths):
     days = {}
     for kind, day, number in records(paths):
@@ -65,6 +74,9 @@ def land(root, keep):
         for ref in ["main", "origin/main"]:
             subprocess.run(["git", "-C", str(root), "merge", "--no-edit", ref], check=True)
         validate(root, set(baseline))
+        foreign = foreign_authors(root)
+        if foreign:
+            raise RuntimeError("commits not authored and committed as " + PUBLIC_EMAIL + ":\n" + "\n".join(foreign))
         desired = oid(root, "HEAD")
         print("==> full quality gate", flush=True)
         subprocess.run([str(root / "Scripts" / "quality.sh"), "--check"], cwd=root, check=True)

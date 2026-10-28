@@ -32,6 +32,9 @@ input changes, MCP exposure control, `memory-safety` on `ConfigEditor.run` and `
   deciding whether to re-sign. A diary line naming an unrelated project was reworded.
 - [ ] Add the guard so it cannot recur: `Scripts/land.py` refuses an author other than the configured no-reply
   address, and the machine gets the `includeIf "gitdir:~/Developer/g-cqd/"` identity rule.
+  Done: `land.py` refuses commits whose author or committer is not the no-reply address (guard only; the `includeIf` rule is still owed and touches the live `~/.gitconfig`).
+  Also done: roadmap 0063 front matter fixed, 0059 marked superseded, the two backup branches deleted (their four commits are on main under the same subjects).
+  Finding: `--write`/`--read` take one value by design, so `prefix(1)` is the CLI limit; printing every path needs the flags to repeat, which is a feature, not a fix.
 
 ## Blocking
 
