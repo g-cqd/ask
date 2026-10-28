@@ -43,9 +43,10 @@ struct CommandEnvironmentJobTests {
 
     @Test func `a command is given the table and not the environment of the process that runs the tests`() async throws
     {
-        // HOME is set for this process and absent from the table, so a command that sees it was handed more than the table.
-        #expect(!(ProcessInfo.processInfo.environment["HOME"] ?? "").isEmpty)
-        #expect(try await run(#"echo \"[${HOME}]\""#, policy: .inherit) == "[]\n[exit 0]")
+        // TMPDIR is set for this process and absent from the table, so a command that sees it was handed more than the table. (Not
+        // HOME: zsh, which is the default shell now, fills that in itself.)
+        #expect(!(ProcessInfo.processInfo.environment["TMPDIR"] ?? "").isEmpty)
+        #expect(try await run(#"echo \"[${TMPDIR}]\""#, policy: .inherit) == "[]\n[exit 0]")
     }
 
     @Test func `the same holds when the command runs in the sandbox`() async throws {

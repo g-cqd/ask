@@ -10,12 +10,17 @@ public struct CommandEnvironment: Sendable, Equatable {
     public var withheldPrefixes: [String]
     /// Exact names a command is given even though ask would withhold them.
     public var passed: Set<String>
+    /// The shell the person chose for commands (`zsh`, a path, ...), nil when ask chooses (roadmap 0091).
+    public var shell: String?
 
     /// Nothing withheld: every variable is inherited. The library's default, so a caller that wants protection says so.
     public static let inherit = CommandEnvironment()
 
     /// A policy with these names.
-    public init(withheld: Set<String> = [], withheldPrefixes: [String] = [], passed: Set<String> = []) {
+    public init(
+        withheld: Set<String> = [], withheldPrefixes: [String] = [], passed: Set<String> = [], shell: String? = nil
+    ) {
+        self.shell = shell
         self.withheld = withheld
         self.withheldPrefixes = withheldPrefixes
         self.passed = passed
@@ -35,7 +40,7 @@ public struct CommandEnvironment: Sendable, Equatable {
         let taken = { (name: String) in exact.contains(name) || prefixes.contains { name.hasPrefix($0) } }
         self.init(
             withheld: credentials.union(exact), withheldPrefixes: credentialPrefixes + prefixes,
-            passed: Set(configured.pass.filter { !taken($0) }))
+            passed: Set(configured.pass.filter { !taken($0) }), shell: configured.shell)
     }
 
     /// Whether a command is denied the variable called `name`. Names are matched as written: the environment is case-sensitive.

@@ -16,7 +16,8 @@ extension ConfigEditor {
                 .init(path: ["sandbox", "network"], kind: .choice(["none", "localhost", "any"])),
                 .init(path: ["skills", "enabled"], kind: .boolean),
                 readOnly(["skills", "maxAdvertised"]), readOnly(["skills", "sources"]),
-                readOnly(["mcp"]), readOnly(["environment", "pass"]), readOnly(["environment", "withhold"])
+                readOnly(["mcp"]), readOnly(["environment", "pass"]), readOnly(["environment", "withhold"]),
+                readOnly(["environment", "shell"])
             ]
         return rows
     }()
