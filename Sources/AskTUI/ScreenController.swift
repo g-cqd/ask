@@ -98,6 +98,7 @@ public struct ScreenController: Sendable {
         state.transcript.setCodeFoldLines(options.codeFoldLines)
         state.transcript.spinnerStyle = options.spinner
         state.transcript.localizedDurations = options.localizedDurations
+        state.transcript.home = options.home
         state.promptRows = options.promptRows
         state.sidebarOpen = options.sidebar
         state.verbose = options.verbose
@@ -153,8 +154,9 @@ public struct ScreenController: Sendable {
                 state.transcript.finishTool(status, output: output, id: id, backgroundJob: job)
                 if let job { return [.watchJob(id: job)] }
             case .jobOutput(let job): state.transcript.updateJob(job)
-            case .notice(let text, let isError): state.transcript.addNotice(text, isError: isError)
-            case .detail(let text): receive(detail: text)
+            case .notice(let text, let isError):
+                state.transcript.addNotice(HomePath.abbreviate(text, home: options.home), isError: isError)
+            case .detail(let text): receive(detail: HomePath.abbreviate(text, home: options.home))
             case .requestExit(let exit): state.exitRequest = exit
             case .label(let text):
                 state.label = text
@@ -186,7 +188,8 @@ public struct ScreenController: Sendable {
                 state.detail = ""
                 state.context = ""
                 state.scrollback = 0
-            case .askApproval(let id, let question): ask(id: id, question: question)
+            case .askApproval(let id, let question):
+                ask(id: id, question: HomePath.abbreviate(question, home: options.home))
             case .compacting(let active):
                 state.compacting = active
             case .reconnecting(let waiting):
