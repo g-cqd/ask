@@ -43,6 +43,10 @@ public func runInteractiveScreen(
     let signals = SignalHandler(onResize: { resized.yield() }, onShutdown: { shutdown.handle($0) })
     try signals.start()
     defer { signals.stop() }
+    // macOS posts appearance changes as a distributed notification; the screen asks the terminal for its colours again on each (0108).
+    let (appearances, appearanceChanged) = AsyncStream<Void>.makeStream()
+    let watcher = TerminalColours.follows(options) ? TerminalColours.watchAppearance { appearanceChanged.yield() } : nil
+    defer { watcher.map(TerminalColours.stopWatching) }
     return try await runInteractiveScreen(
         on: ScreenTerminal(
             connection: connection, session: terminal, renderer: renderer, frames: frames,
@@ -50,7 +54,8 @@ public func runInteractiveScreen(
                 connection: connection, environment: ProcessInfo.processInfo.environment,
                 pasteboard: HostPasteboard.write, read: HostPasteboard.read)),
         conversation: conversation, label: label, options: options,
-        opening: openingUpdates(history: history, notices: notices, details: details), resizes: resizes)
+        opening: openingUpdates(history: history, notices: notices, details: details),
+        changes: (resizes, appearances))
 }
 
 /// The screen over an injected connection, so every exit path is drivable from a test.
@@ -60,7 +65,7 @@ func runInteractiveScreen(
     history: [ConversationUpdate] = [], notices: [String] = [], details: [String] = [],
     options: ScreenOptions = ScreenOptions(), environment: [String: String] = [:],
     pasteboard: @escaping @Sendable (String) async -> PasteboardResult = { _ in .copied },
-    resizes: AsyncStream<Void>
+    resizes: AsyncStream<Void>, appearances: AsyncStream<Void> = AsyncStream { $0.finish() }
 ) async throws -> ScreenExit {
     let connection = SerializedConnection(connection)
     let terminal = TerminalSession(connection: connection, modes: modes(for: options), keyboardProtocol: .probe)
@@ -71,7 +76,8 @@ func runInteractiveScreen(
             frames: frames,
             clipboard: ScreenClipboard(connection: connection, environment: environment, pasteboard: pasteboard)),
         conversation: conversation, label: label, options: options,
-        opening: openingUpdates(history: history, notices: notices, details: details), resizes: resizes)
+        opening: openingUpdates(history: history, notices: notices, details: details),
+        changes: (resizes, appearances))
 }
 
 /// The screen inside a terminal session: TerminalKit enters its modes (alternate screen, hidden cursor,
@@ -81,14 +87,14 @@ func runInteractiveScreen(
 /// The last frame is drawn before the terminal is restored, on a normal exit and on an error.
 private func runInteractiveScreen(
     on screen: ScreenTerminal, conversation: any Conversation, label: String, options: ScreenOptions,
-    opening: [ConversationUpdate], resizes: AsyncStream<Void>
+    opening: [ConversationUpdate], changes: (resizes: AsyncStream<Void>, appearances: AsyncStream<Void>)
 ) async throws -> ScreenExit {
     let exit: ScreenExit
     do {
         try screen.session.enter()
         let session = ScreenSession(
             screen, conversation: conversation, label: label, options: options, opening: opening)
-        exit = try await session.run(resizes: resizes)
+        exit = try await session.run(resizes: changes.resizes, appearances: changes.appearances)
     } catch {
         await screen.renderer.finish()
         screen.session.leave()

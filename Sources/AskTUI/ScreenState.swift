@@ -103,7 +103,18 @@ public struct ScreenState: Sendable, Equatable {
         statusSpinner = options.spinner.resolved()
         promptPrefix = options.prompt
         separator = options.separator
-        theme = ScreenTheme(tinted: options.tint, light: options.lightBackground)
+        theme = ScreenTheme(
+            tinted: options.tint,
+            page: options.appearance == .auto
+                ? (options.lightBackground ? .light : .dark)
+                : options.appearance == .light ? .light : .dark,
+            known: options.appearance != .auto)
         blocks = BlockStyle(padded: options.padding, theme: theme, localizedDurations: options.localizedDurations)
+    }
+
+    /// Mixes the tints again from the terminal's own colours (roadmap 0108).
+    mutating func adopt(_ page: ScreenTheme.Page) {
+        theme = ScreenTheme(tinted: theme.tinted, page: page)
+        blocks.theme = theme
     }
 }

@@ -10,7 +10,8 @@ struct ConfigurationKeySourceTests {
         codeFoldLines: 20, sidebarOpen: false, prompt: "", tint: true, separator: true, padding: false,
         localizedDurations: true,
         spinner: .line, jobAutoReturnWhenFocused: true, abortTurnRequiresConfirmation: false, interruptKeys: .ctrlC,
-        escapeInterruptRequiresConfirmation: true, interruptSendsQueued: .next, onlyUsefulModels: true)
+        escapeInterruptRequiresConfirmation: true, interruptSendsQueued: .next, onlyUsefulModels: true,
+        appearance: .auto)
 
     @Test func `a section that sets every key has a value for each of them`() {
         let missing = UISection.keys.filter { Self.full.value(forKey: $0) == nil }

@@ -17,15 +17,16 @@ final class ScreenSession {
     private var rows: Int
     private var columns: Int
     private var run: Task<Void, Never>?
-    private var runnerOutput: Task<Void, Never>?
+    private var runnerOutput = RunnerOutputWatch()
     private var jobOutput: [String: Task<Void, Never>] = [:]
-    private var watchedRunner: String?
     /// Ticks while a drag is held at an edge, because a held button reports no motion.
     private var autoscroll = AutoscrollTimer()
     private var progress = BlockProgressTimer()
     private let events: AsyncStream<ScreenEvent>
     private let sink: AsyncStream<ScreenEvent>.Continuation
     private var exit = ScreenExit.quit
+    /// The terminal's colours, when the tints follow them (`ui.appearance` auto); nil when they are fixed or off.
+    private var colours: TerminalColours?
 
     init(
         _ screen: ScreenTerminal, conversation: any Conversation, label: String, options: ScreenOptions,
@@ -44,11 +45,12 @@ final class ScreenSession {
         controller = ScreenController(label: label, commands: conversation.commands, options: options)
         controller.state.nativeSelectionHint = options.mouse ? screen.clipboard.nativeSelectionHint : ""
         controller.setScreenRows(rows)
+        colours = TerminalColours(following: options, connection: screen.connection)
         for update in opening { controller.handle(update) }
         (events, sink) = AsyncStream<ScreenEvent>.makeStream()
     }
 
-    func run(resizes: AsyncStream<Void>) async throws -> ScreenExit {
+    func run(resizes: AsyncStream<Void>, appearances: AsyncStream<Void>) async throws -> ScreenExit {
         let input = input
         let sink = sink
         let forwarding = Task {
@@ -60,6 +62,9 @@ final class ScreenSession {
         }
         let watching = conversation.background { sink.yield(.update($0)) }
         input.start()
+        let recolouring = TerminalColours.askAgain(after: appearances) { sink.yield(.askColours) }
+        defer { recolouring.cancel() }
+        colours?.ask()
         defer {
             forwarding.cancel()
             resizing.cancel()
@@ -69,11 +74,16 @@ final class ScreenSession {
         defer {
             autoscroll.stop()
             progress.stop()
-            runnerOutput?.cancel()
+            runnerOutput.stop()
             for task in jobOutput.values { task.cancel() }
         }
         render(full: true)
         for await event in events {
+            if let taken = colours?.take(event) {
+                if case .page(let page) = taken { controller.state.adopt(page) }
+                render(full: true)
+                continue
+            }
             guard await handle(event) else { return exit }
         }
         return exit
@@ -131,12 +141,14 @@ final class ScreenSession {
                 controller.quitWindowEnded(generation: generation)
             case .inputEnded:
                 effects = [.quit]
+            case .askColours:
+                return true
         }
         for effect in effects where await !perform(effect) {
             return false
         }
         progress.update(wanted: controller.hasLiveProgress) { [sink] in sink.yield(.progressTick) }
-        syncRunnerOutput()
+        runnerOutput.sync(lane: controller.state.lane?.id)
         syncAutoscroll()
         render()
         return true
@@ -163,7 +175,7 @@ final class ScreenSession {
                     sink.yield(.quitWindowEnded(generation: generation))
                 }
             case .readRunnerOutput(let id):
-                watchRunnerOutput(id)
+                runnerOutput.watch(id, in: conversation, sink: sink)
             case .watchJob(let id):
                 jobOutput[id]?.cancel()
                 jobOutput[id] = conversation.watchJob(id) { sink.yield(.update(.jobOutput($0))) }
@@ -193,20 +205,6 @@ final class ScreenSession {
                 return false
         }
         return true
-    }
-
-    private func watchRunnerOutput(_ id: String) {
-        runnerOutput?.cancel()
-        watchedRunner = id
-        let sink = sink
-        runnerOutput = conversation.watchRunnerOutput(id) { sink.yield(.update(.runnerOutput(id: id, text: $0))) }
-    }
-
-    private func syncRunnerOutput() {
-        guard watchedRunner != controller.state.lane?.id else { return }
-        runnerOutput?.cancel()
-        runnerOutput = nil
-        watchedRunner = nil
     }
 
     private func syncAutoscroll() {

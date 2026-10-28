@@ -30,7 +30,10 @@ public struct ScreenOptions: Sendable, Equatable {
     /// Whether each block has a row of padding around it (`ui.padding`).
     public var padding: Bool
     /// Whether the terminal's background is light, which picks the lighter tints; the composition root reads it from the environment.
+    /// With ``appearance`` on auto it is only the first guess, until the terminal says what its colours are.
     public var lightBackground: Bool
+    /// Where the tints come from (`ui.appearance`): the terminal's own colours, followed while ask runs, or a fixed light or dark page.
+    public var appearance = ScreenAppearance.auto
     /// Locale-aware elapsed units (`ui.localizedDurations`); off uses a compact clock.
     public var localizedDurations: Bool
     /// Which spinner style is used for progress and status indicators (`ui.spinner`).
