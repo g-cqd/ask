@@ -3,8 +3,7 @@ internal import AskAgentCore
 internal import AskTUI
 
 extension AgentConversation {
-    /// What the screen shows for one loop event: nothing, or one update, or two when a compaction ends (it stops the status mark and
-    /// says how it went).
+    /// What the screen shows for one loop event: nothing, or one update, or two when a connection drops.
     static func updates(for event: AgentEvent) -> [ConversationUpdate] {
         switch event {
             case .compacting: return [.compacting(true)]
@@ -15,9 +14,8 @@ extension AgentConversation {
                     .reconnecting(true),
                     .detail(RunNotices.retry(attempt: attempt, of: total, delay: delay, reason: reason))
                 ]
-            case .compacted, .compactionFailed:
-                return [.compacting(false)]
-                    + (RunNotices.compaction(for: event).map { [.notice($0, isError: false)] } ?? [])
+            case .compacted(let summary, _): return [.compactionFinished(.succeeded, text: summary)]
+            case .compactionFailed(let reason): return [.compactionFinished(.failed("failed"), text: reason)]
             default: return update(for: event).map { [$0] } ?? []
         }
     }

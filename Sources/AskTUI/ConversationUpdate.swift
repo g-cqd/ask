@@ -61,6 +61,9 @@ public enum ConversationUpdate: Sendable, Equatable {
     case reconnecting(Bool)
     /// A compaction began (true) or ended (false): the status bar says `Compacting...` meanwhile (roadmap 0099).
     case compacting(Bool)
+    /// A compaction ended, with its summary or the reason it failed (roadmap 0105). It finishes the block `compacting(true)` started; with
+    /// none running, as when a session is shown again, it is a block already done.
+    case compactionFinished(Transcript.ToolStatus, text: String)
     /// The run is over, however it ended.
     case runEnded
 }
