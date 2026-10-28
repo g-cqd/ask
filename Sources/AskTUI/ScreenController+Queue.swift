@@ -43,7 +43,16 @@ extension ScreenController {
         state.abortArmedAt = nil
         state.abortArmedAction = nil
         acceptsInput = false
+        let sendQueued =
+            returningInput && interruptedByPerson && options.interruptSendsQueued != .none
+            && !pending.isEmpty && state.exitRequest == nil
+        if sendQueued {
+            returningInput = false
+            interruptedByPerson = false
+            return startQueued(offeringRest: options.interruptSendsQueued == .all)
+        }
         if returningInput {
+            interruptedByPerson = false
             let texts = pending.map(\.text) + (state.editor.text.isEmpty ? [] : [state.editor.text])
             state.editor.restore(texts.joined(separator: "\n\n"))
             pending.removeAll()
@@ -53,10 +62,16 @@ extension ScreenController {
         guard !pending.isEmpty, state.exitRequest == nil else { return [] }
         // A message may arrive after the agent's last boundary but before runEnded reaches the screen.
         // It is still ours until acknowledged, so start it now and reoffer the others to the new run.
+        return startQueued(offeringRest: true)
+    }
+
+    /// Starts a turn with the first queued message, steering before follow-ups. The others join that turn as steering, or, when
+    /// `offeringRest` is false, wait here and start their own turns one by one as each ends.
+    private mutating func startQueued(offeringRest: Bool) -> [Effect] {
         let index = pending.firstIndex(where: { !$0.followUp }) ?? pending.startIndex
         let first = pending[index]
         replaceQueuedPrompt(id: first.id, text: first.text)
-        return begin(.startRun(first.text)) + pending.map(\.effect)
+        return begin(.startRun(first.text)) + (offeringRest ? pending.map(\.effect) : [])
     }
 
     /// Puts `text` in the editor if the person has written nothing there; otherwise keeps their draft and shows the text in a notice.

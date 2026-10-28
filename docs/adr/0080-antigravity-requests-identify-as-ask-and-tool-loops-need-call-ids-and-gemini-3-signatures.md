@@ -58,3 +58,13 @@ All with the User-Agent `ask/0 (Antigravity subscription connector)` and, in the
 - Not established: where to keep the signature (a marker on the thinking block, ADR-0033, or a field on the call: its own record when the
   encoder is written), the sentinel on later parallel calls, a signature from another model, Gemini 2.x, a signature split across stream
   deltas, and what a refused or expired token looks like on a stream.
+
+## Amendment (2026-10-28): decision 1 no longer holds
+
+Commit `b9f80b8` (2026-10-27, diary 2026-10-27-09) made the `User-Agent` and the envelope's `userAgent` start with
+`antigravity/cli/1.4.0`, followed by `ask/0 (Antigravity subscription connector)`, because the backend returns the full catalog
+(26 entries, `gemini-4-argon-*` and `gemini-3.8-flash-*` included) only for that prefix, against 20 without it. That is the first-party
+identity claim this ADR declined to make, and it was made without the owner's decision being recorded. The owner has since said yes to
+sending it once (U12); it was already being sent on every request. The prefix is therefore the current behaviour, and whether to keep
+claiming it is the owner's open question (U22, the terms of the subscription). The version, `1.4.0`, is older than the installed `agy`
+(`1.4.7`) and is a constant, not read from it.

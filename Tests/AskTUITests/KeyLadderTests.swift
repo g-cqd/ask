@@ -26,10 +26,10 @@ struct KeyLadderTests {
         return screen
     }
 
-    @Test func `Escape with a turn running does nothing to the turn, the draft or the session`() {
+    @Test func `a first Escape with a turn running only arms: the turn, the draft and the session are untouched`() {
         var screen = running()
         type("draft", &screen)
-        #expect(press(0x1B, &screen).isEmpty)
+        #expect(!press(0x1B, &screen).contains(.cancelRun))
         #expect(screen.state.running && screen.state.editor.text == "draft")
         #expect(screen.state.transcript.items.last.map { "\($0)".contains("Stopping") } != true)
     }

@@ -46,6 +46,8 @@ public struct ScreenController: Sendable {
     var quitGeneration = 0
     var acceptsInput = false
     var returningInput = false
+    /// Whether the person stopped the turn (Esc or Ctrl+C), not a failure: only then do the queued messages follow `ui.interruptSendsQueued`.
+    var interruptedByPerson = false
     let options: ScreenOptions
     /// What the last frame drew, set by the driver before it hands over a mouse event.
     var frame = FrameGeometry()
@@ -196,7 +198,7 @@ public struct ScreenController: Sendable {
             case .submitted(let line):
                 return submit(line, followUp: key.modifiers.contains(.alt))
             case .escape:
-                return escapePressed()
+                return escapePressed(at: interrupt.at)
             case .interrupt:
                 return interrupted(interrupt)
             case .endOfInput:
