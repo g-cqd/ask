@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -24,7 +24,9 @@ with the sandbox on and none without.
 - The owner's `~/.config/ask/config.json` was created with only `"maxTurns": "none"`; `ask config` reports it as applied.
 - The `--max-turns` flag still takes a number only.
 
-## Still owed
+## Owner's rule (2026-10-28 20:40)
 
-- The default: still 100. Changing it waits on the open point above (what "enable it when in sandbox" means).
-
+"defaults to 100 when in sandbox, defaults to none when no sandbox, either way, if a setting is set, use it." This settles the open point.
+`Configuration.turnLimit(sandboxed:)` holds the rule: a `maxTurns` from any layer (file, environment, flag) wins, even `100` written out;
+unset, it is 100 with the sandbox on and no limit with `--no-sandbox`. `ask config` shows the effective value and, for the default, which
+case applies. Tested in `ConfigurationChangesTests`.

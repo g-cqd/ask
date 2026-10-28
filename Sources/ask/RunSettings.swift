@@ -30,7 +30,7 @@ struct RunSettings: Equatable {
 
     var limits: RunLimits {
         RunLimits(
-            maximumTurns: configuration.maxTurns.value,
+            maximumTurns: configuration.turnLimit(sandboxed: !sandbox.isUnrestricted),
             compactAt: configuration.compactAt.value)
     }
 
@@ -74,7 +74,12 @@ struct RunSettings: Equatable {
             row("provider", c.provider.value ?? "(the default)", c.provider.source),
             row("model", c.model.value ?? "(the provider's default)", c.model.source),
             row("thinking", c.thinking.value.rawValue + " (\(thinkingStatus))", c.thinking.source),
-            row("maxTurns", Configuration.describeTurns(c.maxTurns.value), c.maxTurns.source),
+            row(
+                "maxTurns",
+                Configuration.describeTurns(limits.maximumTurns)
+                    + (c.maxTurns.source == .defaults
+                        ? (sandbox.isUnrestricted ? " (no sandbox)" : " (sandbox on)") : ""),
+                c.maxTurns.source),
             row("compactAt", Self.describe(c.compactAt.value), c.compactAt.source),
             "sandbox   " + (sandbox.isUnrestricted ? "off (--no-sandbox)" : "on")
                 + (sandbox.isUnrestricted || c.sandbox.value.isEmpty

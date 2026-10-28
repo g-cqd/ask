@@ -206,6 +206,12 @@ extension Configuration {
     /// `maxTurns` with no limit (`"none"`, roadmap 0098): a count the loop never reaches.
     public static let noTurnLimit = Int.max
 
+    /// The turn limit a run uses (roadmap 0098, owner's rule): a `maxTurns` set anywhere wins; unset, it is the default of 100 inside the
+    /// sandbox and no limit outside it, where the person has already chosen to let the model act freely.
+    public func turnLimit(sandboxed: Bool) -> Int {
+        maxTurns.source != .defaults || sandboxed ? maxTurns.value : Self.noTurnLimit
+    }
+
     /// A turn limit as written: a whole number of at least 1, or `none`. Nil for anything else.
     public static func turnLimit(parsing text: String) -> Int? {
         if text == "none" { return noTurnLimit }
