@@ -30,7 +30,6 @@ struct Sessions: ParsableCommand {
 
     /// `text` on one line, cut to `limit` characters with an ellipsis.
     static func oneLine(_ text: String, limit: Int) -> String {
-        let flat = text.split(whereSeparator: \.isNewline).joined(separator: " ")
-        return flat.count <= limit ? flat : String(flat.prefix(limit - 1)) + "…"
+        SessionOutline.oneLine(text, limit: limit)
     }
 }

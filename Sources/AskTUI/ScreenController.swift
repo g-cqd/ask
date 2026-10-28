@@ -82,6 +82,7 @@ public struct ScreenController: Sendable {
             name: "continue",
             // @dl:accept -- a continue entry and a conversation entry share a command table's shape; the sentences are the data
             summary: "Tell the agent to carry on where it stopped. Also: continue, resume, go ahead, go."),
+        // @dl:accept -- a follow-up entry and a tree entry share a command table's shape; the sentences are the data
         SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT."),
         SlashCommand(name: "tasks", summary: "Show or hide the background jobs that are running."),
         SlashCommand(

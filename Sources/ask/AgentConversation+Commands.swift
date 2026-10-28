@@ -41,7 +41,8 @@ extension AgentConversation {
                 name: "resume", summary: "Choose a session, or /resume NAME, PREFIX or PATH.", takesChoices: true),
             // @dl:accept -- the conversation's list reads alike entry to entry because every entry is a name and a sentence
             // @dl:accept -- a tree entry beside the screen's follow-up shares a command table's shape; the sentences are the data
-            SlashCommand(name: "tree", summary: "List this session's prompts, or go back to before one: /tree N."),
+            SlashCommand(
+                name: "tree", summary: "Choose a prompt to go back to before it, or /tree N.", takesChoices: true),
             SlashCommand(
                 name: "fork",
                 summary: "Continue in a new session: /fork, or /fork N from before prompt N. The original stays."),
