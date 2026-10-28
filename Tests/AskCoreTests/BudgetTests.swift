@@ -97,6 +97,11 @@ struct BudgetTests {
         #expect(Budget.idleMemoryMebibytes == 24)
     }
 
+    @Test func `the cold start budget is the 50 ms the owner chose, so changing it is a deliberate act`() {
+        // ADR-0122. Raised from 25 ms because the budget is now checked with the machine loaded.
+        #expect(Budget.coldStartMilliseconds == 50)
+    }
+
     @Test func `every budget sits above what was measured`() {
         // Measured: 11.06 ms cold start, 5.58 MiB idle, 0.12 ms input, 0.05 ms action. A budget at or
         // below the measurement would leave no room for ordinary variance.
