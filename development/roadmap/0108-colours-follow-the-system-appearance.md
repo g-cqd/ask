@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -41,7 +41,11 @@ screenshots and printed mocked sessions that show the various blocks and how the
   config tests for the key. PTY: `Scripts/probe-terminal-colours.py`, 10 checks, the probe answering for the terminal and posting the
   real notification.
 
-## Still owed
+## Verified by the owner (2026-10-28)
+
+The owner ran it in Apple Terminal and reports it "perfect"; the real-terminal check below is closed by that.
+
+## Left for later
 
 - A run in the real Apple Terminal, light and dark, with screenshots of a mocked session showing every kind of block. Not done: it opens
   windows on the owner's machine and needs screen recording permission. Unverified until then: that Apple Terminal answers OSC 10 and 11,
