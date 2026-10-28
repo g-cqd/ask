@@ -38,3 +38,7 @@ That the refusal wording is the same for Claude and Gemini on Cloud Code: the fi
 - **U12: yes** to sending the first-party identity once, to measure the catalogue. Not yet sent.
 - **U19:** applied to all providers as a setting, roadmap 0089.
 - **U22:** not applicable.
+
+## U1 result (2026-10-28)
+
+One request, 137,838 tokens of random dictionary words, to `gpt-oss-120b-medium` (window 131,072) through the release binary: **HTTP 400, "The input (137838 tokens) is longer than the model's context length (131072 tokens)."** Answered in 3.6 s. `describesContextOverflow` did **not** recognise it (no "exceed", no "maximum context length"), so the loop showed a refusal instead of compacting. Fixed with that wording and a window pattern; test `the recorded Antigravity refusal for length...`. Not captured: the raw JSON body (the test assumes the usual envelope), and the compact-and-retry run against the live server (it would be a second large request). Step 5 of this entry is done except for that last demonstration; U12 is still to send.
