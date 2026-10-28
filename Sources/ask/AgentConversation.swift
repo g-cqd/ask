@@ -115,7 +115,7 @@ final class AgentConversation: Conversation {
                 case .prompt(let text): updates.append(.userPrompt(text))
                 case .event(let event):
                     recordUsage(event)
-                    updates += Self.updates(for: event).filter { $0 != .compacting(false) }
+                    updates += Self.updates(for: event)
             }
         }
         return updates + [.status(usage.withLock { $0.compact }), contextUpdate()]
