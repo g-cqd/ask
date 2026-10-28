@@ -1,6 +1,9 @@
 /// The `environment` section of a configuration file: what commands the model runs may and may not inherit of ask's own environment
 /// (ADR-0106). Only names, never values.
 public struct EnvironmentSection: Sendable, Equatable, CustomStringConvertible {
+    /// The keys a file may set under `environment`.
+    public static let keys = ["pass", "withhold", "shell"]
+
     /// The most names one list may hold, far above any real use, so a file cannot grow the environment check without bound.
     public static let limit = 256
 

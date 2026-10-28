@@ -46,6 +46,7 @@ measured against the release binary (`Scripts/measure-budgets.py`).
 | [development/adr/](development/adr/) | one decision per file; a decision changed by evidence becomes a **new ADR that supersedes** the old one — records are never edited into an unrecognisable shape |
 | [development/roadmap/](development/roadmap/) | one claimable unit of work per file; read an entry's `status:` and `blocked-by:` before starting it |
 | [development/diary/](development/diary/) | the working log and the probe ledger; capped at 256 lines per file |
+| [docs/](docs/README.md) | the user guide, not a record: keep it accurate in the same change that alters what a user sees ([ADR-0128](development/adr/0128-user-documentation-in-docs-development-records-in-development.md)) |
 | [AGENTS.md](AGENTS.md) | the working discipline for agents resident in the repository (worktrees, merge flow, traps) |
 
 ## The gates you cannot see failing

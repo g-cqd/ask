@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -24,3 +24,16 @@ approachable. The README is lean; `docs/` holds the user documentation; the deve
 ## Done when
 
 The four steps are in, the gate is clean, and the README is short enough to read in a minute.
+
+## Result (2026-10-28)
+
+1. Records moved to `development/` in `aff4130` (ADR-0128); 126 files had their paths rewritten.
+2. `docs/` holds seven guide pages and an index, written against the code and `ask --help` output. Writing them turned up an inconsistency:
+   `ui.mouse`, `ui.copyOnSelect`, `skills.enabled` and `mcp.<server>.enabled` took only `true`/`false` while the other switches took only
+   `"on"`/`"off"`. Every switch now takes either form (`ConfigurationFile.decodeSwitch`).
+3. The README is 29 lines: what ask is, build, start, links. The feature list moved to `docs/README.md` (owner: "details can be fanned out").
+4. `UserDocumentationTests`: every key of every section is in `docs/configuration.md`, every relative link in `docs/` and the README
+   resolves, and only `docs/README.md` mentions `development/`. Each test was broken on purpose and failed.
+
+Not verified: the defaults column of the `ui` table is checked against the live `ask config`, not by a test; provider names and login
+commands come from `--help`, not a sign-in per provider.
