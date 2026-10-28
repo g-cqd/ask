@@ -21,7 +21,7 @@ struct ConfigurationFileTests {
               compactAt: 100000,
             }
             """)
-        #expect(json == ConfigurationFile(model: "claude-sonnet-5-5", maxTurns: 40, compactAt: 100_000))
+        #expect(json == ConfigurationFile(model: "claude-sonnet-5-5", maxTurns: 40, compactAt: .tokens(100_000)))
         #expect(json5 == json)
         #expect(try parse("{}") == ConfigurationFile())
     }

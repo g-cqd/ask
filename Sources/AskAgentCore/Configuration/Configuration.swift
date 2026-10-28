@@ -42,19 +42,21 @@ public struct Configuration: Sendable, Equatable {
     public var provider: Setting<String?>
     public var thinking: Setting<ThinkingLevel>
     public var maxTurns: Setting<Int>
-    public var compactAt: Setting<Int>
+    public var compactAt: Setting<CompactionThreshold>
     public var sandbox: Setting<SandboxSection>
     public var ui: Setting<UISection>
     public var skills: Setting<SkillsSection>
     public var mcp: Setting<MCPSection>
     public var environment: Setting<EnvironmentSection>
+    /// Where each `ui` and `skills` key came from, by its dotted name; read through `source(ofKey:)`.
+    var keySources: [String: Source] = [:]
 
     /// Built-in defaults only.
     public static let defaults = Configuration(
         model: Setting(value: nil, source: .defaults), provider: Setting(value: nil, source: .defaults),
         thinking: Setting(value: .providerDefault, source: .defaults),
         maxTurns: Setting(value: 100, source: .defaults),
-        compactAt: Setting(value: AgentSettings.defaultCompactAtTokens, source: .defaults),
+        compactAt: Setting(value: .standard, source: .defaults),
         sandbox: Setting(value: SandboxSection(), source: .defaults),
         ui: Setting(value: UISection(), source: .defaults),
         skills: Setting(value: SkillsSection(), source: .defaults),
@@ -64,13 +66,13 @@ public struct Configuration: Sendable, Equatable {
 
     /// `self` with every key `file` sets replaced, attributed to `source`.
     public func applying(_ file: ConfigurationFile, from source: Source) -> Configuration {
-        var next = self
+        var next = recordingKeySources(of: file, from: source)
         if let model = file.model { next.model = Setting(value: model, source: source) }
         if let provider = file.provider { next.provider = Setting(value: provider, source: source) }
         if let thinking = file.thinking { next.thinking = Setting(value: thinking, source: source) }
         if let turns = file.maxTurns { next.maxTurns = Setting(value: turns, source: source) }
-        // @dl:accept -- heterogeneous per-key layering retains each section's type and origin; the table is the data
         if let compactAt = file.compactAt { next.compactAt = Setting(value: compactAt, source: source) }
+        // @dl:accept -- heterogeneous per-key layering retains each section's type and origin; the table is the data
         if let section = file.sandbox {
             next.sandbox = Setting(value: next.sandbox.value.layered(with: section), source: source)
         }
@@ -104,18 +106,25 @@ public struct Configuration: Sendable, Equatable {
         if let provider = text("ASK_PROVIDER") {
             next.provider = Setting(value: provider, source: .environment("ASK_PROVIDER"))
         }
-        if let name = text("ASK_THINKING") {
-            if let level = ThinkingLevel(rawValue: name) {
-                next.thinking = Setting(value: level, source: .environment("ASK_THINKING"))
-            } else {
-                problems.append("$ASK_THINKING is not a thinking level; use \(ThinkingLevel.choices); ignored")
+        func parsed<Value>(_ name: String, _ parse: (String) -> Value?, must: String) -> Setting<Value>? {
+            guard let value = text(name) else { return nil }
+            guard let parsed = parse(value) else {
+                problems.append("$\(name) is \"\(value)\"; it must be \(must); ignored")
+                return nil
             }
+            return Setting(value: parsed, source: .environment(name))
+        }
+        if let thinking = parsed("ASK_THINKING", ThinkingLevel.init(rawValue:), must: "one of \(ThinkingLevel.choices)")
+        {
+            next.thinking = thinking
         }
         if let turns = whole("ASK_MAX_TURNS", atLeast: 1) {
             next.maxTurns = Setting(value: turns, source: .environment("ASK_MAX_TURNS"))
         }
-        if let tokens = whole("ASK_COMPACT_AT", atLeast: 0) {
-            next.compactAt = Setting(value: tokens, source: .environment("ASK_COMPACT_AT"))
+        if let threshold = parsed(
+            "ASK_COMPACT_AT", CompactionThreshold.init(parsing:), must: CompactionThreshold.expected)
+        {
+            next.compactAt = threshold
         }
         return next
     }
@@ -147,7 +156,8 @@ public struct Configuration: Sendable, Equatable {
     /// `self` with the flags the user gave. A nil flag was not given. `network` and `write` replace what the files
     /// set rather than narrowing it: a flag is the user, and only the user widens the sandbox.
     public func applying(
-        model: String?, provider: String?, maxTurns: Int?, compactAt: Int?, network: SandboxPolicy.Network? = nil,
+        model: String?, provider: String?, maxTurns: Int?, compactAt: CompactionThreshold?,
+        network: SandboxPolicy.Network? = nil,
         write: PathSetting? = nil, read: PathSetting? = nil, thinking: ThinkingLevel? = nil
     ) -> Configuration {
         var next = self

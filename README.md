@@ -197,7 +197,8 @@ trailing commas) — in `~/.config/ask/` and in a project's `.ask/`. The keys
 include `model`, `provider`, `thinking`, `maxTurns`, `compactAt`, `ui` and `environment`. Layers apply
 lowest first: built-in defaults, the user file, the project file, `ASK_*`
 environment variables, flags. `ask config` shows each value and where it came
-from.
+from. `compactAt` is a share of the model's window (`"75%"`, the default) or a
+number of tokens; `0` compacts only when the window is full.
 
 Commands inherit your environment except ask's known credential variables, `ANTHROPIC_*`, `ASK_*`, and variables referenced by provider keys or MCP headers/environment.
 In your user file, `environment: { pass: ['OPENAI_API_KEY'], withhold: ['MY_SERVICE_TOKEN', 'AWS_*'] }` explicitly passes a withheld key or withholds additional names.

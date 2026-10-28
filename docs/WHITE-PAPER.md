@@ -54,14 +54,10 @@ package, and specialised packages build on it; this binds the whole ecosystem. T
 consumer is plausible, not whether one exists. Promotion is a real change to a shared package: measured,
 reviewed and pinned by dependents like any other.
 
-**System APIs before subprocesses.** When macOS offers an API for something, ask calls it instead of
-starting a command-line tool: the pasteboard through `NSPasteboard`, not `pbcopy` or `pbpaste` (ADR-0127);
-keeping the Mac awake through a power assertion, not `caffeinate` (roadmap 0090). A process costs a spawn,
-a pipe and a failure mode of its own, and leaves nothing to type-check. Before reaching for a tool, look the
-API up in the current documentation (`apple-docs`) and use its current form. A subprocess stays only where it
-is the point (the commands the model runs, MCP servers, the provider's own binary, the self-check of a new
-build), where macOS offers no API (`sandbox-exec`), or where the tool is the authority (`git ls-files` for
-what git ignores), and each such use says why next to it. Roadmap 0101 keeps the inventory.
+**System APIs before subprocesses.** Where macOS has an API, ask calls its current form (`apple-docs`), not a
+tool: `NSPasteboard`, not `pbcopy` (ADR-0127); a power assertion, not `caffeinate`. A subprocess stays only where
+it is the point (model commands, MCP servers, the self-check), where no API exists (`sandbox-exec`) or where the
+tool is the authority (`git ls-files`), saying why beside it. Roadmap 0101 keeps the inventory.
 
 **Reliable by default, and never silent.** Damage costs only what is actually damaged: everything intact
 still loads, every repair is reported, reading never writes. Refusing input needs a written safety reason,
@@ -97,12 +93,11 @@ tool "usually" behaves is not a probe.
 documentation read out of context; a passing build that does not distinguish between the hypotheses;
 inference from a *different* configuration than the one shipping.
 
-**The bisect lesson.** A flag blamed for a failure was cleared by removing it — from a build that still
-failed, because four other flags were present. The claim was false and nearly became a written
-constraint. *A probe that cannot fail is not a probe.*
+**The bisect lesson.** A flag blamed for a failure was "cleared" from a build that still failed for four
+other flags; the false claim nearly became a constraint. *A probe that cannot fail is not a probe.*
 
-**Escalation.** When a probe contradicts a confident belief, the belief loses; record the contradiction
-in the diary. Do not re-litigate a settled decision unless new evidence contradicts it.
+**Escalation.** A probe that contradicts a confident belief wins, and the diary records it. A settled
+decision is reopened only by new evidence.
 
 ---
 
@@ -114,11 +109,10 @@ in the diary. Do not re-litigate a settled decision unless new evidence contradi
   ``@Test func `every diary file is within the line budget`()`` — the name says what must hold, so a
   failure names its own cause.
 - **Green by the minimum *general* code** — not code special-cased to the test's input.
-- **Refactor with tests green**, one named move at a time.
-- **Red and green land in the same commit**, so history stays buildable and `git bisect` keeps working.
-- **Never** assert on nothing, never share mutable state between tests, never test a private method to
-  test itself.
-- Coverage is measured by **behaviour**, never by percentage.
+- **Refactor with tests green**, one named move at a time. **Red and green land in the same commit**, so
+  history stays buildable and `git bisect` keeps working.
+- **Never** share mutable state between tests or test a private method for itself. Coverage is measured by
+  **behaviour**, never by percentage.
 
 ## 2. Performance doctrine
 
@@ -126,9 +120,8 @@ in the diary. Do not re-litigate a settled decision unless new evidence contradi
 - **Release only.** `swift build` and `swift test` run `-c release`. A debug build measures a program
   nobody ships. See ADR-0002.
 - **Percentiles, not averages.** Users feel p95 and p99.
-- **Budgets, stated as numbers.** The four `ask` budgets are cold start, idle memory, input delay,
-  and action-to-action delay. Each is a number with units, recorded in the diary once measured.
-  An unmeasured budget is not a budget.
+- **Budgets, stated as numbers:** cold start, idle memory, input delay and action-to-action delay, each with
+  units and recorded in the diary once measured. An unmeasured budget is not a budget.
 - **Order of attack:** don't do the work → do less work → do it elsewhere → do it in parallel →
   micro-optimise. The order says where to look first, not what to skip (ADR-0016).
 - **A benchmark is the evidence.** It runs the shipping build's code path, not a model of it in
@@ -150,10 +143,9 @@ not remove one without a probe that shows the project is better without it.**
 | `MemberImportVisibility` | SE-0444, Swift 6.1 | A member is visible only where its module is imported. |
 | `.treatAllWarnings(as: .error)` | — | A warning is a defect with a louder voice. |
 
-Prefer behavior tests through public APIs; where internal access is justified, enable testability
-explicitly for optimized tests. Shipping binaries and benchmarks are built separately, without it, and
-are not claimed identical. Compiler settings require controlled probes, not blanket prohibitions
-inferred from a failed build.
+Prefer behaviour tests through public APIs; where internal access is justified, optimized tests enable
+testability explicitly, and shipping binaries and benchmarks are built without it. Compiler settings
+require controlled probes, not prohibitions inferred from a failed build.
 
 ## 4. Documentation law
 
@@ -173,8 +165,7 @@ inferred from a failed build.
 - Commits are **atomic and buildable**. The message states **why**; the diff already says what.
 - Never mix a refactor and a behaviour change in one commit.
 - Slice by behaviour, not by file type. A commit should be reviewable in about fifteen minutes.
-- Report residual risk and follow-ups explicitly. Silence reads as "nothing left", which is almost
-  never true.
+- Report residual risk and follow-ups explicitly: silence reads as "nothing left", which is rarely true.
 
 ## 6. Terminal doctrine
 
@@ -189,8 +180,8 @@ nothing cost **520 ms** against a 25 ms budget, so a probe never gates the first
 
 - Unbenchmarked performance-affecting changes. Unprobed claims. Best-run or debug-build benchmarking.
   Sleeping or timing out inside a test. Tests that assert on nothing.
-- Big-bang rewrites. Drive-by churn beyond the task's scope.
-- Adding a dependency for convenience. **A dependency is an architectural decision.**
+- Big-bang rewrites. Drive-by churn beyond the task's scope. Adding a dependency for convenience:
+  **a dependency is an architectural decision.**
 - Taking on a bug the task did not ask about, mid-task: report it as follow-up instead.
 
 ## 8. Structure and idiom

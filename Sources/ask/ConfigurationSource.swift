@@ -22,7 +22,7 @@ struct ConfigurationSource: Sendable {
         var model: String?
         var provider: String?
         var maxTurns: Int?
-        var compactAt: Int?
+        var compactAt: CompactionThreshold?
         var thinking: ThinkingLevel?
         /// `--no-sandbox`: the user turned ask's protections off for this run.
         var noSandbox = false
@@ -43,7 +43,7 @@ struct ConfigurationSource: Sendable {
             if let model { arguments += ["--model", model] }
             if let provider { arguments += ["--provider", provider] }
             if let maxTurns { arguments += ["--max-turns", String(maxTurns)] }
-            if let compactAt { arguments += ["--compact-at", String(compactAt)] }
+            if let compactAt { arguments += ["--compact-at", compactAt.description] }
             if let thinking { arguments += ["--thinking", thinking.rawValue] }
             if noSandbox { arguments.append("--no-sandbox") }
             if verbose { arguments.append("--verbose") }

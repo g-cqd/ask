@@ -12,7 +12,7 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var provider: String?
     public var thinking: ThinkingLevel?
     public var maxTurns: Int?
-    public var compactAt: Int?
+    public var compactAt: CompactionThreshold?
     public var sandbox: SandboxSection?
     public var ui: UISection?
     public var skills: SkillsSection?
@@ -26,7 +26,7 @@ public struct ConfigurationFile: Sendable, Equatable {
 
     /// A file with these values.
     public init(
-        model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil,
+        model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: CompactionThreshold? = nil,
         // @dl:accept -- an initializer that takes every key; adding a section adds a parameter
         sandbox: SandboxSection? = nil, ui: UISection? = nil, thinking: ThinkingLevel? = nil,
         // @dl:accept -- configuration's optional section parameters are not agent-loop settings; no shared initializer contract
@@ -107,9 +107,6 @@ public struct ConfigurationFile: Sendable, Equatable {
         if let turns = file.maxTurns, turns < 1 {
             throw .outOfRange(path: path, key: "maxTurns", reason: "must be at least 1")
         }
-        if let tokens = file.compactAt, tokens < 0 {
-            throw .outOfRange(path: path, key: "compactAt", reason: "must be 0 (only when the window is full) or more")
-        }
         return file
     }
 
@@ -173,6 +170,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     "ui.abortTurnRequiresConfirmation", "ui.escapeInterruptRequiresConfirmation", "ui.onlyUsefulModels":
                     "is \"\(value)\": use \"on\" or \"off\""
                 case "ui.interruptKeys": "is \"\(value)\": use \"esc\", \"ctrl-c\" or \"both\""
+                case "compactAt": "is \(value): use \(CompactionThreshold.expected)"
                 case "ui.interruptSendsQueued": "is \"\(value)\": use \"none\", \"next\" or \"all\""
                 default: "is \"\(value)\": use \"workspace\", \"anywhere\" or a list of paths"
             }
@@ -229,7 +227,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "provider": file.provider = try container.decode(String.self, forKey: key)
                     case "thinking": file.thinking = try ConfigurationFile.decodeThinking(container, key: key)
                     case "maxTurns": file.maxTurns = try container.decode(Int.self, forKey: key)
-                    case "compactAt": file.compactAt = try container.decode(Int.self, forKey: key)
+                    case "compactAt": file.compactAt = try ConfigurationFile.decodeCompactAt(container, key: key)
                     case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
                     case "ui": file.ui = try container.decode(UIDecoded.self, forKey: key).section
                     case "skills": file.skills = try container.decode(SkillsDecoded.self, forKey: key).section

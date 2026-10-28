@@ -12,12 +12,12 @@ struct ConfigurationChangesTests {
     @Test func `each changed setting is a line with both values and the new source`() {
         let before = Configuration.defaults.applying(ConfigurationFile(maxTurns: 40), from: .file("/u/config.json"))
         let after = before.applying(
-            ConfigurationFile(model: "haiku", maxTurns: 7, compactAt: 0), from: .file("/p/.ask/config.json"))
+            ConfigurationFile(model: "haiku", maxTurns: 7, compactAt: .tokens(0)), from: .file("/p/.ask/config.json"))
         #expect(
             after.changes(from: before) == [
                 "model: default → \"haiku\" (/p/.ask/config.json)",
                 "maxTurns: 40 → 7 (/p/.ask/config.json)",
-                "compactAt: 150000 → 0 (/p/.ask/config.json)"
+                "compactAt: 75% → 0 (/p/.ask/config.json)"
             ])
     }
 

@@ -31,7 +31,7 @@ struct RunSettings: Equatable {
     var limits: RunLimits {
         RunLimits(
             maximumTurns: configuration.maxTurns.value,
-            compactAtTokens: configuration.compactAt.value > 0 ? configuration.compactAt.value : nil)
+            compactAt: configuration.compactAt.value)
     }
 
     /// Whether a run built for `other` would behave differently: its layers or its model changed.
@@ -75,17 +75,14 @@ struct RunSettings: Equatable {
             row("model", c.model.value ?? "(the provider's default)", c.model.source),
             row("thinking", c.thinking.value.rawValue + " (\(thinkingStatus))", c.thinking.source),
             row("maxTurns", String(c.maxTurns.value), c.maxTurns.source),
-            row("compactAt", String(c.compactAt.value), c.compactAt.source),
+            row("compactAt", Self.describe(c.compactAt.value), c.compactAt.source),
             "sandbox   " + (sandbox.isUnrestricted ? "off (--no-sandbox)" : "on")
                 + (sandbox.isUnrestricted || c.sandbox.value.isEmpty
                     ? "" : ", \(c.sandbox.value)  [\(c.sandbox.source)]"),
             "          writes: \(writes), reads: \(reads), network: "
                 + (sandbox.isUnrestricted ? "any" : sandbox.network.description)
         ]
-        // Only when a file set something: the defaults are in ADR-0046.
-        if !c.ui.value.isEmpty { lines.append(row("ui", c.ui.value.description, c.ui.source)) }
-        if !c.skills.value.isEmpty { lines.append(row("skills", c.skills.value.description, c.skills.source)) }
-        if !c.mcp.value.isEmpty { lines.append(row("mcp", c.mcp.value.description, c.mcp.source)) }
+        lines += sectionRows
         lines.append(row("environment", commandEnvironmentSummary, c.environment.source))
         lines.append("user file     \(userFile)  \(standing(userFile))")
         lines.append("project file  \(projectFile)  \(standing(projectFile))")
