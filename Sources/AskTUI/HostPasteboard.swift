@@ -1,80 +1,41 @@
-internal import Foundation
-internal import Synchronization
+internal import AppKit
 
-/// The host's pasteboard, through a command that reads the text on its standard input (`pbcopy` on macOS). A copy is finished when that
-/// command has exited with status 0, not when it was started, and a command that hangs is stopped after `timeout`.
+/// The host's pasteboard, through `NSPasteboard` (roadmap 0082), still the system pasteboard API on macOS 27; SwiftUI's clipboard
+/// modifiers sit on top of it and need views and menu commands, which a terminal program has not.
+///
+/// Since macOS's pasteboard privacy (AppKit updates, 2025), reading the general pasteboard from code may ask the person first, unless the
+/// person denied it for good. ask reads only when the terminal passed Command+V or Ctrl+V on instead of pasting, and checks
+/// `accessBehavior` first so that a denial is said, not silent. Writing is not covered by the alert. The first use costs about 1 MiB and
+/// 2 ms (measured 2026-10-28), and nothing before it.
 enum HostPasteboard {
-    /// How long `pbcopy` may take before the copy is called failed. It is normally instant.
-    static let timeout = Duration.seconds(5)
-
-    /// `pbcopy`, the macOS pasteboard.
-    static let pbcopy: @Sendable (String) async -> PasteboardResult = { text in
-        await run(text, executable: "/usr/bin/pbcopy", arguments: [], timeout: timeout)
+    /// What a paste read: the text, nothing to paste, or a refusal to say.
+    enum Reading: Sendable, Equatable {
+        case text(String)
+        case empty
+        case denied(String)
     }
 
-    /// Runs `executable` with `text` on its standard input and reports how it ended. Nothing blocks a thread: the process's end and the
-    /// deadline both resume one continuation, whichever comes first.
-    static func run(_ text: String, executable: String, arguments: [String], timeout: Duration) async
-        -> PasteboardResult
-    {
-        await withCheckedContinuation { (continuation: CheckedContinuation<PasteboardResult, Never>) in
-            let once = Once(continuation)
-            let process = Process()
-            process.executableURL = URL(fileURLWithPath: executable)
-            process.arguments = arguments
-            let pipe = Pipe()
-            process.standardInput = pipe
-            process.standardOutput = FileHandle.nullDevice
-            process.standardError = FileHandle.nullDevice
-            process.terminationHandler = { finished in
-                once.resume(
-                    finished.terminationStatus == 0
-                        ? .copied
-                        : .failed(
-                            "\((executable as NSString).lastPathComponent) exited with status \(finished.terminationStatus)"
-                        ))
-            }
-            do {
-                try process.run()
-            } catch {
-                once.resume(.failed("\((executable as NSString).lastPathComponent) could not start"))
-                return
-            }
-            // A command that exits without reading must give the write an error, not a SIGPIPE that would end ask.
-            _ = fcntl(pipe.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
-            // A large text may fill the pipe before the command reads it, so the write has its own thread.
-            Thread.detachNewThread {
-                try? pipe.fileHandleForWriting.write(contentsOf: Data(text.utf8))
-                try? pipe.fileHandleForWriting.close()
-            }
-            Task.detached {
-                try? await Task.sleep(for: timeout)
-                if once.resume(.failed("\((executable as NSString).lastPathComponent) did not finish in time")) {
-                    process.terminate()
-                }
-            }
-        }
+    /// Writes `text` to the general pasteboard.
+    static let write: @Sendable (String) async -> PasteboardResult = { text in
+        write(text, to: NSPasteboard.general)
     }
 
-    /// Resumes a continuation once, whichever of the exit and the deadline gets there first.
-    private final class Once: Sendable {
-        private let continuation: Mutex<CheckedContinuation<PasteboardResult, Never>?>
+    /// Reads the general pasteboard's text.
+    static let read: @Sendable () async -> Reading = { read(from: NSPasteboard.general) }
 
-        init(_ continuation: CheckedContinuation<PasteboardResult, Never>) {
-            self.continuation = Mutex(continuation)
-        }
+    /// Replaces what `pasteboard` holds with `text`.
+    static func write(_ text: String, to pasteboard: NSPasteboard) -> PasteboardResult {
+        _ = pasteboard.prepareForNewContents(with: [])
+        return pasteboard.setString(text, forType: .string) ? .copied : .failed("the pasteboard refused the text")
+    }
 
-        /// - Returns: whether this call resumed it.
-        @discardableResult
-        func resume(_ result: PasteboardResult) -> Bool {
-            guard
-                let taken = continuation.withLock({ state -> CheckedContinuation<PasteboardResult, Never>? in
-                    defer { state = nil }
-                    return state
-                })
-            else { return false }
-            taken.resume(returning: result)
-            return true
+    /// The text `pasteboard` holds, unless the person has denied this program access to it.
+    static func read(from pasteboard: NSPasteboard) -> Reading {
+        if pasteboard.accessBehavior == .alwaysDeny {
+            return .denied(
+                "Paste refused: pasteboard access is denied for this terminal in System Settings, Privacy & Security.")
         }
+        guard let text = pasteboard.string(forType: .string), !text.isEmpty else { return .empty }
+        return .text(text)
     }
 }

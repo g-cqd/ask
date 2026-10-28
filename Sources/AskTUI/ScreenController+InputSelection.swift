@@ -158,12 +158,12 @@ extension ScreenController {
             clearSelection()
             return []
         }
-        if Self.isControl(key, "c") {
+        if Self.isClipboardChord(key, "c") {
             let text = selectedInputText
             clearSelection()
             return text.map { [.copy($0)] } ?? []
         }
-        if Self.isControl(key, "x") {
+        if Self.isClipboardChord(key, "x") {
             // Cut: what is selected leaves the draft and goes to the clipboard, whatever `ui.copyOnSelect` says. Without a selection
             // Ctrl-X clears the whole draft (ADR-0059), and this is not reached.
             let text = selectedInputText

@@ -32,7 +32,7 @@ sessions (`docs/research/ui-content-sizes-2026-10.md`).
 | `ui.promptRows` | 6, and never more than a third of the viewport | Prompts are heavy-tailed (most one or two rows, a few very long), which argues for an input that scrolls inside itself and not for a different number. Six is unchanged from today |
 | `ui.scrollLines` | 3 | A wheel report is one step, and terminals send 1, 3 or 9 reports for the same gesture (ADR-0028), so the host must choose what a step scrolls. 3 is a starting value to tune on a real trackpad, which was not measured |
 
-**The clipboard.** Copying writes through OSC 52, and also through the system pasteboard (`pbcopy`) on a terminal that is not known
+**The clipboard.** Copying writes through OSC 52, and also through the system pasteboard (NSPasteboard since ADR-0127; `pbcopy` before) on a terminal that is not known
 to take OSC 52, which includes Terminal.app, where OSC 52 was measured to do nothing (TerminalKit ADR-0028).
 
 **The hint.** The status bar names the key that returns the terminal's own selection for the terminal in use, so the cost of
