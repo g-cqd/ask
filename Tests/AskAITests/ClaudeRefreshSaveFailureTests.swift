@@ -3,7 +3,7 @@ internal import Testing
 
 @testable import AskAI
 
-/// Found by the TLA+ model `docs/formal/CredentialRefresh.tla`: a refresh the server accepted whose save then fails (the save lock held
+/// Found by the TLA+ model `development/formal/CredentialRefresh.tla`: a refresh the server accepted whose save then fails (the save lock held
 /// past `lockWait`, a full disk, a failed rename) used to drop the rotated credentials, leaving the single-use token in the file spent
 /// (ADR-0074), so a failure that was only transient signed the user out (roadmap 0056, ADR-0082). The rotated pair is now kept in
 /// memory, this request goes ahead with it, and every later call tries the save again before anything else.

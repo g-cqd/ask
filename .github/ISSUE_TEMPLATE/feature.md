@@ -8,6 +8,6 @@ labels: enhancement
 
 **Why** — the problem it solves; a workaround you use today and its cost.
 
-Check [docs/roadmap/](../docs/roadmap/) first: the plan lives there, one
+Check [development/roadmap/](../development/roadmap/) first: the plan lives there, one
 claimable unit of work per file, and an entry may already cover this. If it
 does, say which one.

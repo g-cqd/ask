@@ -3,7 +3,7 @@ import Testing
 
 @testable import AskTools
 
-/// Found by modelling `OutputBuffer` in Lean (`docs/formal/lean/OutputBuffer.lean`). Its head and tail are what a
+/// Found by modelling `OutputBuffer` in Lean (`development/formal/lean/OutputBuffer.lean`). Its head and tail are what a
 /// stream's ends were; `kept` joins them, and `Job.wait(for:)` searches `kept` for a text. Where bytes were omitted
 /// the join is not what the command printed, so a text can be found that the command never printed.
 @Suite("The bounded output buffer keeps the ends of a stream and says what it dropped")

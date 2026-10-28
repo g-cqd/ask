@@ -26,7 +26,7 @@ class WorkflowTests(unittest.TestCase):
         self.run_git("config", "user.email", "fixture@example.invalid")
         os.environ["ASK_LAND_EMAIL"] = "fixture@example.invalid"
         for directory in ["adr", "roadmap", "diary"]:
-            (self.root / "docs" / directory).mkdir(parents=True)
+            (self.root / "development" / directory).mkdir(parents=True)
         (self.root / "Scripts").mkdir()
         for name in ["land.py", "land.sh", "next-number.py", "next-number.sh", "record_numbers.py", "check-records.py"]:
             shutil.copy(HERE / name, self.root / "Scripts" / name)
@@ -43,7 +43,7 @@ class WorkflowTests(unittest.TestCase):
         return git(root or self.root, *args).stdout.strip()
 
     def record(self, kind, name, root=None):
-        path = (root or self.root) / "docs" / kind / name
+        path = (root or self.root) / "development" / kind / name
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text("# Fixture\n")
 
@@ -79,7 +79,7 @@ class WorkflowTests(unittest.TestCase):
         self.record("adr", "0037-branch-only.md", root=task)
         self.commit("unmerged record", root=task)
         self.run_git("checkout", "--detach", "main", root=task)
-        self.assertFalse((task / "docs/adr/0037-branch-only.md").exists())
+        self.assertFalse((task / "development/adr/0037-branch-only.md").exists())
         self.record("roadmap", "0042-uncommitted.md", root=task)
         self.assertEqual(next_number(self.root, "adr", "", False), "0038")
         self.assertEqual(next_number(self.root, "roadmap", "", False), "0043")
@@ -101,9 +101,9 @@ class WorkflowTests(unittest.TestCase):
 
     def test_duplicate_detection_covers_all_three_kinds(self):
         self.assertEqual(len(duplicates([
-            "docs/adr/0002-a.md", "docs/adr/0002-b.md", "docs/roadmap/0003-a.md", "docs/roadmap/0003-b.md",
-            "docs/diary/2026-10-25-01.md", "docs/diary/2026-10-25-1.md"])), 3)
-        self.assertFalse(duplicates(["docs/diary/2026-10-25-01.md", "docs/diary/2026-10-26-01.md"]))
+            "development/adr/0002-a.md", "development/adr/0002-b.md", "development/roadmap/0003-a.md", "development/roadmap/0003-b.md",
+            "development/diary/2026-10-25-01.md", "development/diary/2026-10-25-1.md"])), 3)
+        self.assertFalse(duplicates(["development/diary/2026-10-25-01.md", "development/diary/2026-10-26-01.md"]))
 
     def test_landing_runs_gate_fast_forwards_and_removes_only_task_without_pushing(self):
         task = self.task()
@@ -152,7 +152,7 @@ class WorkflowTests(unittest.TestCase):
         p = self.invoke("check-records.py")
         self.assertEqual(p.returncode, 1)
         self.assertIn("0001-other.md", p.stderr)
-        (self.root / "docs/adr/0001-other.md").unlink()
+        (self.root / "development/adr/0001-other.md").unlink()
         self.assertEqual(self.invoke("check-records.py").returncode, 0)
 
     def test_main_moving_during_gate_is_refused(self):
@@ -183,7 +183,7 @@ class WorkflowTests(unittest.TestCase):
         self.commit("task holds 03 while main holds the 02 it has not merged", root=task)
         p = self.invoke("land.py", root=task)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
-        self.assertTrue((self.root / "docs/diary/2026-10-25-02.md").exists())
+        self.assertTrue((self.root / "development/diary/2026-10-25-02.md").exists())
 
     def test_keep_retains_task_after_successful_landing(self):
         task = self.task()

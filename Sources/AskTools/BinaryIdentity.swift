@@ -3,7 +3,7 @@ public import Foundation
 
 /// Which build of ask a file is: where it is, and the file's identity, size and modification time (ADR-0033).
 ///
-/// A rebuilt executable is a new file: the linker writes a new inode (probed, `docs/research/self-development-and-
+/// A rebuilt executable is a new file: the linker writes a new inode (probed, `development/research/self-development-and-
 /// reload.md`), so a changed inode is a new build, and size and time catch an in-place write. Hashing the
 /// 8 MB executable instead would cost milliseconds of cold start for a question the file system already answers.
 public struct BinaryIdentity: Sendable, Equatable {

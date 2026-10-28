@@ -18,15 +18,15 @@ would run; it is the only entry point, so there is no second command to
 forget. A pre-commit hook lints, and a green test run is not a green commit:
 run the script.
 
-Build and test in **release, always** ([ADR-0002](docs/adr/0002-release-only-no-testable.md)):
+Build and test in **release, always** ([ADR-0002](development/adr/0002-release-only-no-testable.md)):
 a debug build measures a program nobody ships. Release tests need
 `--enable-testable-imports`, which `Scripts/quality.sh` passes for you.
 
 ## The evidence rule
 
-Read [docs/WHITE-PAPER.md](docs/WHITE-PAPER.md) first. Every claim is named,
+Read [development/WHITE-PAPER.md](development/WHITE-PAPER.md) first. Every claim is named,
 given a probe that could fail, run, and recorded in the diary
-([docs/diary/](docs/diary/)) before it is acted on. Consequences:
+([development/diary/](development/diary/)) before it is acted on. Consequences:
 
 - A probe that cannot fail is not a probe. Check that it *could* have failed
   before trusting a green result.
@@ -42,10 +42,10 @@ measured against the release binary (`Scripts/measure-budgets.py`).
 
 | Path | What |
 |---|---|
-| [docs/WHITE-PAPER.md](docs/WHITE-PAPER.md) | the principles, and the evidence rule |
-| [docs/adr/](docs/adr/) | one decision per file; a decision changed by evidence becomes a **new ADR that supersedes** the old one — records are never edited into an unrecognisable shape |
-| [docs/roadmap/](docs/roadmap/) | one claimable unit of work per file; read an entry's `status:` and `blocked-by:` before starting it |
-| [docs/diary/](docs/diary/) | the working log and the probe ledger; capped at 256 lines per file |
+| [development/WHITE-PAPER.md](development/WHITE-PAPER.md) | the principles, and the evidence rule |
+| [development/adr/](development/adr/) | one decision per file; a decision changed by evidence becomes a **new ADR that supersedes** the old one — records are never edited into an unrecognisable shape |
+| [development/roadmap/](development/roadmap/) | one claimable unit of work per file; read an entry's `status:` and `blocked-by:` before starting it |
+| [development/diary/](development/diary/) | the working log and the probe ledger; capped at 256 lines per file |
 | [AGENTS.md](AGENTS.md) | the working discipline for agents resident in the repository (worktrees, merge flow, traps) |
 
 ## The gates you cannot see failing
@@ -53,13 +53,13 @@ measured against the release binary (`Scripts/measure-budgets.py`).
 These run inside `swift test`, so `Scripts/quality.sh` already enforces them:
 
 - One top-level type per file, named for it, and a 250-line ceiling — tests
-  included ([ADR-0021](docs/adr/0021-structure-is-a-gate-not-a-habit.md)).
+  included ([ADR-0021](development/adr/0021-structure-is-a-gate-not-a-habit.md)).
 - Banned constructs and unjustified `@unchecked Sendable` (`SourceStandards`).
 - Provider names only in provider code (`AskAI/Anthropic`, `AskAI/Claude`,
   `Sources/ask`).
 - The shape of ADRs, roadmap entries and diaries.
 - Unused code, duplicated code and retain cycles
-  ([ADR-0022](docs/adr/0022-static-analyzers-are-gates-pinned-by-version-and-hash.md));
+  ([ADR-0022](development/adr/0022-static-analyzers-are-gates-pinned-by-version-and-hash.md));
   a finding is fixed, or accepted where it is with a written reason.
 
 Style is Aemi's canonical swift-format and SwiftLint configuration, synced

@@ -7,7 +7,7 @@ internal import Foundation
 /// that, so the check has to read the text.
 ///
 /// The scan walks outward from this file to the repository root, the same way ``DocumentationLayout``
-/// finds `docs/`, so it works from any checkout without configuration.
+/// finds `Package.swift`, so it works from any checkout without configuration.
 enum SourceStandards {
     /// Repository root, found by walking up to the directory holding `Package.swift`.
     static let repositoryRoot: URL = {
