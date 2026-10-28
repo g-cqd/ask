@@ -78,7 +78,9 @@ extension ScreenComposer {
                 return blockHeader(
                     header,
                     metadata: blockMetadata(
-                        status: status, output: output, progress: progress, localizedDurations: style.localizedDurations
+                        status: status, output: output, progress: progress,
+                        localizedDurations: style.localizedDurations,
+                        toolName: name
                     ),
                     block: block, width: width, inset: inset, style: look) + gap
                     + (folded
