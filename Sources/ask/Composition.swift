@@ -167,13 +167,15 @@ private func settings(
 ) -> AgentSettings {
     let budget = ContextBudget(
         contextWindow: resolved.contextWindow, maxOutputTokens: resolved.maxOutputTokens,
-        requestedCompactAt: limits.compactAtTokens)
-    return AgentSettings(
+        requestedCompactAt: limits.compactAt.tokens(window: resolved.contextWindow))
+    var settings = AgentSettings(
         model: resolved.model, maximumTokens: budget.maximumTokens,
         systemPrompt: [SystemInstructions.text(workingDirectory: workingDirectory)] + blocks,
         maximumTurns: limits.maximumTurns, compactAtTokens: budget.compactAtTokens,
         keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes, thinking: thinking,
         acceptsImages: resolved.acceptsImages, imageLimits: resolved.imageLimits)
+    settings.compactAtShare = limits.compactAt.percent
+    return settings
 }
 
 /// `ask --self-check`: starts everything a run starts, without a network, so a reload can tell a build that works

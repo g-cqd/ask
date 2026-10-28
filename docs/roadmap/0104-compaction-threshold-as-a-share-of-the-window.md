@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -21,3 +21,11 @@ tenth of the window, at least 4,096). So a 1M-token model compacts at 15% of its
 - With no window known, a share falls back to the token default (150,000), and `ask config` says so.
 - The cap stays: whatever is asked, compaction starts before the next request would not fit.
 - Tests on `ContextBudget` and on parsing (file, flag, environment, a share over 100% refused).
+
+## Result
+
+`CompactionThreshold` is `.share(1...100)` or `.tokens(n)`. A file takes `"75%"` (a string) or a number; `--compact-at` and `ASK_COMPACT_AT`
+take either, and a bad environment value is named and ignored. The default is `75%`, **pending the owner's confirmation**. At launch the share
+is taken of the window the model metadata gives (150,000 tokens when none is known), and once the server shows a window during a run the
+same share is taken of that (`AgentLoop.budget(for:window:)`); the cap still applies. `ask config` prints "75% of the model's window".
+Tests: `CompactionThresholdTests`, plus the configuration suites updated.

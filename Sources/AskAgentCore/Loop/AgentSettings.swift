@@ -11,6 +11,9 @@ public struct AgentSettings: Sendable, Equatable {
     /// its reply); nil never does,
     /// except when the context window is full.
     public var compactAtTokens: Int?
+    /// When the threshold was asked as a share of the window, that percentage: a window the server shows later is then compacted at the same
+    /// share of it, rather than at the tokens worked out before it was known (roadmap 0104).
+    public var compactAtShare: Int?
     /// How much of the recent conversation a compaction keeps word for word, in bytes of text.
     public var keepRecentBytes: Int
     /// How much tool output one turn may add, in bytes, shared by its calls; nil for no limit beyond the tools' own.

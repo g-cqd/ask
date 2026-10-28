@@ -7,14 +7,18 @@ extension AgentLoop {
 
     /// The reply limit, compaction threshold and kept tail for the next request: the configured ones, narrowed to
     /// fit a window the server showed it has (``ContextBudget``'s rules). Never wider than configured.
-    var budget: ContextBudget {
+    var budget: ContextBudget { Self.budget(for: settings, window: learnedWindow.window) }
+
+    /// The budget for `settings` once the server showed a window of `window` tokens, or the configured one when none was shown.
+    /// A threshold asked as a share is taken of that window (roadmap 0104).
+    static func budget(for settings: AgentSettings, window: Int?) -> ContextBudget {
         let configured = ContextBudget(
             maximumTokens: settings.maximumTokens, compactAtTokens: settings.compactAtTokens,
             keepRecentBytes: settings.keepRecentBytes, toolOutputBytes: settings.toolOutputBytes)
-        guard let window = learnedWindow.window else { return configured }
+        guard let window else { return configured }
         let fitted = ContextBudget(
-            contextWindow: window, maxOutputTokens: settings.maximumTokens, requestedCompactAt: settings.compactAtTokens
-        )
+            contextWindow: window, maxOutputTokens: settings.maximumTokens,
+            requestedCompactAt: settings.compactAtShare.map { window * $0 / 100 } ?? settings.compactAtTokens)
         return ContextBudget(
             maximumTokens: Swift.min(configured.maximumTokens, fitted.maximumTokens),
             compactAtTokens: fitted.compactAtTokens,

@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -15,3 +15,9 @@ and then only the keys that file set, so the defaults are invisible and the READ
   (`ScreenOptions()`), so a default changes in one place.
 - Show `skills` (enabled, how many are advertised, the sources) and `mcp` (the servers named, or none) the same way.
 - Tests on the report: an empty configuration lists every `ui` key as `[default]`; a file's key shows its source.
+
+## Result
+
+`ask config` lists every `ui` key (the name a file uses, the effective value from `ScreenOptions`, and `[default]` or the layer that set it),
+the three `skills` keys and the MCP servers, whether or not a file sets them. Each layer records the keys it set (`Configuration.keySources`),
+so a project file's `ui.padding` and the user file's `ui.tint` each show their own file. Tests: `ConfigurationKeySourceTests`.
