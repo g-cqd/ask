@@ -62,8 +62,10 @@ struct ResponsesStreamEndingTests {
         } catch { Issue.record("\(error)") }
     }
 
-    @Test func `an event that is not JSON is malformed`() {
-        #expect(throws: OpenAIStreamError.malformed) { _ = try decode(["not json"], finish: false) }
+    @Test func `an event that is not JSON is malformed, naming its bytes`() {
+        #expect(throws: OpenAIStreamError.malformed(event: "not json")) {
+            _ = try decode(["not json"], finish: false)
+        }
     }
 
     @Test func `an event nobody knows is reported, and the known quiet ones are not`() throws {

@@ -68,13 +68,13 @@ struct AgyStreamEndingTests {
         #expect(OpenAIStreamError.unfinished.isRetryable)
     }
 
-    @Test func `data that is not this protocol's JSON is malformed`() {
+    @Test func `data that is not this protocol's JSON is malformed, naming its bytes`() {
         for bad in ["", "not json", "[]", "7", "null", #"{"response":7}"#, #"{"response":{"candidates":7}}"#] {
-            #expect(throws: OpenAIStreamError.malformed, "\(bad.debugDescription)") {
+            #expect(throws: OpenAIStreamError.malformed(event: bad), "\(bad)") {
                 try AgyStreamFixtures.decode(lines: [bad])
             }
         }
-        #expect(!OpenAIStreamError.malformed.isRetryable)
+        #expect(!OpenAIStreamError.malformed(event: "x").isRetryable)
     }
 
     /// Synthetic: the recording had no in-stream error. The shape is the one Cloud Code returns with an HTTP status.
