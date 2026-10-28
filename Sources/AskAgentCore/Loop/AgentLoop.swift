@@ -192,7 +192,9 @@ public struct AgentLoop: Sendable {
         if !built.repairs.isEmpty { events(.repaired(built.repairs)) }
         return ModelRequest(
             model: settings.model, maxTokens: budget.maximumTokens, systemPrompt: settings.systemPrompt,
-            messages: ImagePart.filtering(built.messages, accepts: settings.acceptsImages), tools: tools.definitions,
+            messages: ImagePart.filtering(
+                built.messages, accepts: settings.acceptsImages, limits: settings.imageLimits),
+            tools: tools.definitions,
             thinking: settings.thinking)
     }
 

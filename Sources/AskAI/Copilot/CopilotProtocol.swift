@@ -17,6 +17,25 @@ public enum CopilotProtocol {
         return URL(string: "https://\(host)")!
     }
 
+    /// The headers of a chat request, as VS Code Copilot Chat 0.44.0 sends them (`chatMLFetcher.ts`, `networking.ts`): the shared
+    /// set, `X-GitHub-Api-Version: 2025-05-01`, the intent, the interaction and its type, and the task, which is the request.
+    static func chatHeaders(
+        _ credential: CopilotCredentials, session: String, interaction: String, userInitiated: Bool
+    ) -> [(name: String, value: String)] {
+        let request = UUID().uuidString
+        var headers = headers(credential, session: session)
+            .filter {
+                $0.name != "x-github-api-version" && $0.name != "x-request-id"
+            }
+        headers += [
+            ("x-github-api-version", "2025-05-01"), ("x-request-id", request), ("openai-intent", "conversation-agent"),
+            ("x-interaction-id", interaction), ("x-interaction-type", "conversation-agent"),
+            ("x-agent-task-id", request),
+            ("x-initiator", userInitiated ? "user" : "agent")
+        ]
+        return headers
+    }
+
     static func headers(_ credential: CopilotCredentials, session: String) -> [(name: String, value: String)] {
         [
             ("authorization", "Bearer \(credential.accessToken)"), ("user-agent", userAgent),

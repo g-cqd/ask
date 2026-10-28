@@ -61,12 +61,15 @@ public struct ReadTool: ArgumentTool {
             let request = VideoReader.Request(
                 at: arguments.at, count: arguments.count, every: arguments.every, start: arguments.start,
                 end: arguments.end, maximumImages: maximumImages)
-            if context.sandbox.isUnrestricted { return try await VideoReader.read(url, path: arguments.path, request) }
+            let allowance = ImageReader.Allowance(context.imageLimits)
+            if context.sandbox.isUnrestricted {
+                return try await VideoReader.read(url, path: arguments.path, request, allowance: allowance)
+            }
             // AVFoundation opens a path, and a path can be swapped after the check: it reads a verified copy instead.
             return try await ScopedFile.withCopy(
                 of: url, shownAs: arguments.path, limit: FileTools.maximumMediaBytes, in: context
             ) { copy throws(ToolFailure) in
-                try await VideoReader.read(copy, path: arguments.path, request)
+                try await VideoReader.read(copy, path: arguments.path, request, allowance: allowance)
             }
         }
         let isMedia = ImageReader.mediaType(of: header) != nil || PDFReader.isPDF(header)
@@ -74,9 +77,13 @@ public struct ReadTool: ArgumentTool {
             at: url, shownAs: arguments.path, in: context,
             limit: isMedia ? FileTools.maximumMediaBytes : FileTools.maximumFileBytes)
         if PDFReader.isPDF(bytes) {
-            return try PDFReader.read(bytes, path: arguments.path, pages: arguments.pages, maximumImages: maximumImages)
+            return try PDFReader.read(
+                bytes, path: arguments.path, pages: arguments.pages, maximumImages: maximumImages,
+                allowance: ImageReader.Allowance(context.imageLimits))
         }
-        if ImageReader.mediaType(of: bytes) != nil { return try image(bytes, shownAs: arguments.path) }
+        if ImageReader.mediaType(of: bytes) != nil {
+            return try image(bytes, shownAs: arguments.path, allowance: ImageReader.Allowance(context.imageLimits))
+        }
         let text = try FileTools.text(from: bytes, shownAs: arguments.path)
         guard arguments.offset != nil || arguments.limit != nil else { return ToolOutput(text) }
         let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
@@ -90,16 +97,20 @@ public struct ReadTool: ArgumentTool {
     }
 
     /// An image file: a line saying what it is, and the image itself for a model that takes images (roadmap 0084).
-    private func image(_ bytes: [UInt8], shownAs path: String) throws(ToolFailure) -> ToolOutput {
+    private func image(_ bytes: [UInt8], shownAs path: String, allowance: ImageReader.Allowance) throws(ToolFailure)
+        -> ToolOutput
+    {
         do {
-            let result = try ImageReader.read(bytes)
+            let result = try ImageReader.read(bytes, allowance: allowance)
             var output = ToolOutput("\(path): \(result.summary)")
             output.images = [result.part]
             return output
         } catch .animated {
             throw ToolFailure("\(path) is an animated PNG; it was not read.")
         } catch .cannotFit {
-            throw ToolFailure("\(path) could not be made small enough to send (long side 2000 px, 4.5 MiB as base64).")
+            throw ToolFailure(
+                "\(path) could not be made small enough to send (long side 2000 px, 4.5 MiB as base64, and what the model's provider accepts)."
+            )
         } catch {
             throw ToolFailure("\(path) looks like an image but could not be decoded.")
         }

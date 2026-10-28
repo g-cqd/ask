@@ -36,12 +36,15 @@ public struct ResolvedModel: Sendable, Equatable {
     /// Whether the model takes images: true, false, or nil when nothing says. The two first-party subscriptions' models are known to;
     /// for any other the catalogue or the user's `images` setting must say, as in other coding agents, which assume text only.
     public var acceptsImages: Bool?
+    /// What the provider says it accepts of images in one request, when it says.
+    public var imageLimits: ImageLimits?
 
     /// A resolved provider and model, with what is known of the model's limits.
     public init(
         provider: Provider, model: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil,
-        acceptsImages: Bool? = nil
+        acceptsImages: Bool? = nil, imageLimits: ImageLimits? = nil
     ) {
+        self.imageLimits = imageLimits
         switch provider {
             case .anthropic, .codex: self.acceptsImages = acceptsImages ?? true
             default: self.acceptsImages = acceptsImages

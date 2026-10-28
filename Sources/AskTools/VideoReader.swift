@@ -67,7 +67,9 @@ enum VideoReader {
         return (times, count)
     }
 
-    static func read(_ url: URL, path: String, _ request: Request) async throws(ToolFailure) -> ToolOutput {
+    static func read(
+        _ url: URL, path: String, _ request: Request, allowance: ImageReader.Allowance = ImageReader.Allowance()
+    ) async throws(ToolFailure) -> ToolOutput {
         let asset = AVURLAsset(url: url)
         let duration: Double
         let size: CGSize
@@ -99,7 +101,7 @@ enum VideoReader {
             guard case .success(_, let frame, let actual) = result else { continue }
             guard
                 let fitted = try? ImageReader.fit(
-                    favoursPNG: false, longSide: max(frame.width, frame.height),
+                    favoursPNG: false, longSide: max(frame.width, frame.height), allowance: allowance,
                     render: { ImageReader.scaled(frame, toLongSide: $0) })
             else { continue }
             images.append(fitted.part)

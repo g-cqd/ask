@@ -24,9 +24,13 @@ extension ImagePart {
                             case .chat:
                                 $0.field("type", "image_url")
                                 $0.key("image_url")
-                                $0.object { $0.field("url", image.dataURL) }
+                                $0.object {
+                                    $0.field("url", image.dataURL)
+                                    $0.field("detail", "auto")
+                                }
                             case .responses:
                                 $0.field("type", "input_image")
+                                $0.field("detail", "auto")
                                 $0.field("image_url", image.dataURL)
                         }
                     }
