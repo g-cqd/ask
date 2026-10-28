@@ -20,3 +20,9 @@ boundary, one message at a time (`AgentLoop`, `PromptQueue`).
     the next one is sent.
 - Tests: each key choice, interruption with an empty queue, with one and with several queued inputs, and an
   interruption during a tool call. Check the queued messages stay persisted in order.
+
+## Conflict with 0064
+
+0064 records the owner direction of 2026-10-24 that Esc never aborts a turn and Ctrl+C is a ladder. The wish of
+2026-10-28 asks for Esc, Ctrl-C or both as a setting. Treat the wish as the newer decision: the default stays 0064's
+(Ctrl-C), Esc interrupting is opt-in, and 0064 gets a note when this lands. Confirm with the owner before building.
