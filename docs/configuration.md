@@ -129,6 +129,7 @@ Switches take `"on"` or `"off"` (`true` and `false` work too).
 | `sidebar` | `"closed"` | Whether the runner sidebar starts `"open"` (wide screens only). |
 | `prompt` | none | Text the input line starts with, such as `"> "`. By default the input is marked by its tint. |
 | `tint` | `"on"` | Tinted backgrounds for the input, your messages and tool calls. |
+| `appearance` | `"auto"` | Where the tints come from. `auto` mixes them, and the grey of secondary text, from your terminal's own colours and follows them when macOS switches between light and dark; `light` or `dark` fixes them and asks the terminal nothing. |
 | `separator` | `"on"` | A rule between the conversation and the input. |
 | `padding` | `"on"` | A row of padding around each block. |
 | `localizedDurations` | `"on"` | Elapsed times as `1 hr, 40 min` rather than `1:40:00`, and a command's limits as `timeout 2 min` rather than `timeout 2:00`. |

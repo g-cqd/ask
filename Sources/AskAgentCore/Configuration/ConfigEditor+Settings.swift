@@ -46,6 +46,7 @@ extension ConfigEditor {
             .init(path: ["ui", "sidebar"], kind: .choice(["open", "closed"])),
             readOnly(["ui", "prompt"]),
             .init(path: ["ui", "spinner"], kind: .choice(SpinnerPreference.allCases.map(\.rawValue))),
+            .init(path: ["ui", "appearance"], kind: .choice(AppearancePreference.allCases.map(\.rawValue))),
             .init(path: ["ui", "interruptKeys"], kind: .choice(InterruptKeysPreference.allCases.map(\.rawValue))),
             .init(
                 path: ["ui", "interruptSendsQueued"],

@@ -75,6 +75,8 @@ public struct ScreenComposer: Sendable {
     /// What each row of the buffer holds since the last frame, and the size it was composed at.
     private var shown: [Shown?] = []
     private var shownSize = (columns: -1, rows: -1)
+    /// The theme the shown rows were drawn in; a new one redraws every row, because their colours come from it.
+    private var theme: ScreenTheme?
 
     /// Whether the last frame showed the cursor: not while the wheel has scrolled the input's window away from it.
     public private(set) var cursorIsVisible = true
@@ -102,9 +104,10 @@ public struct ScreenComposer: Sendable {
             frames?.store(FrameGeometry(columns: columns))
             return (0, 0)
         }
-        if shownSize != (columns, rows) {
+        if shownSize != (columns, rows) || theme != state.theme {
             shown = Array(repeating: nil, count: rows)
             shownSize = (columns, rows)
+            theme = state.theme
         }
         let editor = input.frame(
             state.editor, prompt: state.promptPrefix, columns: columns, screenRows: rows, maximumRows: state.promptRows,
@@ -188,7 +191,7 @@ public struct ScreenComposer: Sendable {
         shown[row] = now
         var column = 0
         for (part, style) in Self.spans(of: line, highlight: highlight) {
-            buffer.write(part, row: row, col: column, style: style)
+            buffer.write(part, row: row, col: column, style: theme?.legible(style) ?? style)
             column += UnicodeWidth.displayWidth(of: part)
         }
         let edge = side?.column ?? buffer.columns

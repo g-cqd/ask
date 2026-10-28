@@ -32,6 +32,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var localizedDurations: Bool?
     /// `ui.spinner`: the spinner style used for progress and status line indicators.
     public var spinner: SpinnerPreference?
+    /// `ui.appearance`: the tints follow the terminal's colours (`"auto"`, default) or are fixed for a `"light"` or `"dark"` page.
+    public var appearance: AppearancePreference?
     /// `ui.jobAutoReturnWhenFocused`: whether leaving a focused job lane automatically returns to main when the job ends.
     public var jobAutoReturnWhenFocused: Bool?
     /// `ui.abortTurnRequiresConfirmation`: whether aborting an active conversation turn requires two Ctrl+C presses within two seconds.
@@ -52,8 +54,10 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         padding: Bool? = nil, localizedDurations: Bool? = nil, spinner: SpinnerPreference? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
         jobAutoReturnWhenFocused: Bool? = nil, abortTurnRequiresConfirmation: Bool? = nil,
+        // @dl:accept -- optional settings are schema data: each parameter names a key
         interruptKeys: InterruptKeysPreference? = nil, escapeInterruptRequiresConfirmation: Bool? = nil,
-        interruptSendsQueued: QueuedAfterInterruptPreference? = nil, onlyUsefulModels: Bool? = nil
+        interruptSendsQueued: QueuedAfterInterruptPreference? = nil, onlyUsefulModels: Bool? = nil,
+        appearance: AppearancePreference? = nil
     ) {
         // @dl:accept -- optional configuration and resolved screen options deliberately assign the same UI keys
         self.mouse = mouse
@@ -77,6 +81,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.escapeInterruptRequiresConfirmation = escapeInterruptRequiresConfirmation
         self.interruptSendsQueued = interruptSendsQueued
         self.onlyUsefulModels = onlyUsefulModels
+        self.appearance = appearance
     }
 
     public var isEmpty: Bool {
@@ -85,7 +90,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             && tint == nil && separator == nil && padding == nil && localizedDurations == nil && spinner == nil
             && jobAutoReturnWhenFocused == nil && abortTurnRequiresConfirmation == nil && interruptKeys == nil
             && escapeInterruptRequiresConfirmation == nil && interruptSendsQueued == nil
-            && onlyUsefulModels == nil
+            && onlyUsefulModels == nil && appearance == nil
         // @dl:accept -- the layering takes each key from the later section; the keys are the data
     }
 
@@ -95,8 +100,10 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         + lookKeys + behaviorKeys
 
     /// The keys that set the look of the screen (roadmap 0074).
-    // @dl:accept -- the key table is schema data
-    private static let lookKeys = ["prompt", "tint", "separator", "padding", "localizedDurations", "spinner"]
+    private static let lookKeys = [
+        // @dl:accept -- the key table is schema data
+        "prompt", "tint", "appearance", "separator", "padding", "localizedDurations", "spinner"
+    ]
     private static let behaviorKeys = [
         "jobAutoReturnWhenFocused", "abortTurnRequiresConfirmation", "interruptKeys",
         "escapeInterruptRequiresConfirmation", "interruptSendsQueued", "onlyUsefulModels"
@@ -120,7 +127,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             escapeInterruptRequiresConfirmation: section.escapeInterruptRequiresConfirmation
                 ?? escapeInterruptRequiresConfirmation,
             interruptSendsQueued: section.interruptSendsQueued ?? interruptSendsQueued,
-            onlyUsefulModels: section.onlyUsefulModels ?? onlyUsefulModels)
+            onlyUsefulModels: section.onlyUsefulModels ?? onlyUsefulModels,
+            appearance: section.appearance ?? appearance)
     }
 
     public var description: String {
@@ -143,6 +151,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         // @dl:accept -- named UI fields form the user-facing configuration listing
         if let prompt { parts.append(prompt.isEmpty ? "prompt none" : "prompt \"\(prompt)\"") }
         flag("tint", tint)
+        if let appearance { parts.append("appearance \(appearance.rawValue)") }
         flag("separator", separator)
         flag("padding", padding)
         flag("localizedDurations", localizedDurations)

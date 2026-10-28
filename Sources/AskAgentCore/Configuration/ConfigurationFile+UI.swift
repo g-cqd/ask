@@ -37,6 +37,12 @@ extension ConfigurationFile {
                         }
                         section.sidebarOpen = name == "open"
                     case "prompt": section.prompt = try container.decode(String.self, forKey: key)
+                    case "appearance":
+                        let raw = try container.decode(String.self, forKey: key)
+                        guard let preference = AppearancePreference(rawValue: raw) else {
+                            throw BadValue(key: "ui.appearance", value: raw)
+                        }
+                        section.appearance = preference
                     case "spinner":
                         let raw = try container.decode(String.self, forKey: key)
                         guard let preference = SpinnerPreference(rawValue: raw) else {
