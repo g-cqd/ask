@@ -62,14 +62,27 @@ extension ScreenController {
         }
         install(
             CompletionPicker(
-                kind: .commands, trigger: trigger, matches: matches.map(PickerRow.init),
+                kind: .commands, trigger: trigger, matches: Self.groupedByCategory(matches),
                 capacity: CompletionPicker.capacity(screenRows: screenRows)))
+    }
+
+    /// Commands under one dim heading per category, in the categories' fixed order.
+    static func groupedByCategory(_ commands: [SlashCommand]) -> [PickerRow] {
+        var rows: [PickerRow] = []
+        for category in SlashCommand.Category.allCases {
+            let inCategory = commands.filter { $0.category == category }
+            guard !inCategory.isEmpty else { continue }
+            rows.append(PickerRow(heading: category.heading))
+            rows += inCategory.map(PickerRow.init)
+        }
+        return rows
     }
 
     /// Shows `picker`, keeping the choice when it is the same word with the same query.
     mutating func install(_ picker: CompletionPicker) {
         var picker = picker
         if let old = state.picker { picker.keepChoice(from: old) }
+        picker.snapSelectionToChoice()
         state.picker = picker
     }
 
@@ -77,7 +90,8 @@ extension ScreenController {
     /// the list has moved on since that frame, because the click meant a row that is no longer there, or while a question has the keys.
     mutating func clickPicker(match index: Int) -> [Effect] {
         guard var picker = state.picker, state.pendingApproval == nil, state.pendingInput == nil,
-            picker.trigger == frame.pickerTrigger, picker.matches.indices.contains(index)
+            picker.trigger == frame.pickerTrigger, picker.matches.indices.contains(index),
+            !picker.matches[index].isHeading
         else { return [] }
         picker.choose(index)
         return accept(picker)
@@ -151,6 +165,7 @@ extension ScreenController {
             return []
         }
         let row = picker.matches[picker.selected]
+        guard !row.isHeading else { return [] }
         if case .config(let scope, _) = picker.kind {
             guard !row.choices.isEmpty else { return [] }
             return [.commitConfig(scope: scope, path: row.path, value: row.detail)]

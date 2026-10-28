@@ -15,23 +15,25 @@ extension AgentConversation {
             SlashCommand(
                 name: "config",
                 summary: "Edit settings interactively, or /config now to read and show every setting and its source.",
-                takesChoices: true),
+                takesChoices: true, category: .configuration),
             SlashCommand(name: "compact", summary: "Summarise the conversation now, keeping the recent messages."),
             SlashCommand(name: "new", summary: "Start a new session; the previous session stays saved."),
             SlashCommand(
                 name: "model",
                 summary: "Choose a model from every account you are signed in to, or /model [PROVIDER] MODEL, --reset.",
-                takesChoices: true),
+                takesChoices: true, category: .model),
             SlashCommand(
                 name: "thinking",
                 summary: "Choose how hard the model thinks: the efforts it takes, or /thinking LEVEL.",
-                takesChoices: true),
+                takesChoices: true, category: .model),
             SlashCommand(
                 name: "login",
                 summary: "Sign in to a provider with an account or an API key, without leaving: /login PROVIDER.",
-                takesChoices: true),
+                takesChoices: true, category: .model),
             SlashCommand(
-                name: "logout", summary: "Sign out of one account, or /logout all, without leaving.", takesChoices: true
+                name: "logout", summary: "Sign out of one account, or /logout all, without leaving.",
+                takesChoices: true,
+                category: .model
             ),
             // @dl:accept -- a resume entry belongs to both command tables; the conversation's sentence names its own arguments
             // @dl:accept -- a resume entry beside the screen's built-ins shares a table's shape; the sentences are the data
@@ -44,9 +46,11 @@ extension AgentConversation {
                 name: "fork",
                 summary: "Continue in a new session: /fork, or /fork N from before prompt N. The original stays."),
             SlashCommand(
-                name: "mcp", summary: "Show the MCP servers: which are connected and how many tools each offers."),
+                name: "mcp", summary: "Show the MCP servers: which are connected and how many tools each offers.",
+                category: .tools),
             SlashCommand(
-                name: "reload", summary: "Switch to a newly built ask, keeping this session. /reload now stops jobs.")
+                name: "reload", summary: "Switch to a newly built ask, keeping this session. /reload now stops jobs.",
+                category: .tools)
         ]
     }
 

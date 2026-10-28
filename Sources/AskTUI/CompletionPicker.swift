@@ -56,13 +56,34 @@ struct CompletionPicker: Sendable, Equatable {
         matches[firstVisible ..< Swift.min(matches.count, firstVisible + capacity)]
     }
 
+    /// The indexes a group heading never holds: the ones a person can choose.
+    var choiceIndexes: [Int] { matches.indices.filter { !matches[$0].isHeading } }
+
+    /// How many matches can be chosen; group headings are not matches.
+    var countOfChoices: Int { choiceIndexes.count }
+
+    /// Puts the selection on the nearest match, so it never rests on a group heading.
+    mutating func snapSelectionToChoice() {
+        guard matches.indices.contains(selected), !matches[selected].isHeading else {
+            let nearest = choiceIndexes.min {
+                abs($0 - selected) < abs($1 - selected) || (abs($0 - selected) == abs($1 - selected) && $0 < $1)
+            }
+            selected = nearest ?? selected
+            settle()
+            return
+        }
+    }
+
     /// The most matches listed on a screen of `screenRows`: seven, fewer on a short screen, so the transcript keeps its rows.
     static func capacity(screenRows: Int) -> Int { Swift.max(1, Swift.min(7, (screenRows - 6) / 2)) }
 
-    /// Moves the choice by `step`, wrapping at either end, and scrolls the window to keep it in view.
+    /// Moves the choice by `step` among the matches a heading never holds, wrapping at either end, and
+    /// scrolls the window to keep it in view.
     mutating func move(_ step: Int) {
-        guard !matches.isEmpty else { return }
-        selected = ((selected + step) % matches.count + matches.count) % matches.count
+        let choices = choiceIndexes
+        guard !choices.isEmpty else { return }
+        let current = choices.firstIndex(of: selected) ?? 0
+        selected = choices[((current + step) % choices.count + choices.count) % choices.count]
         settle()
     }
 
@@ -78,6 +99,7 @@ struct CompletionPicker: Sendable, Equatable {
         selected = Swift.max(0, Swift.min(old.selected, matches.count - 1))
         firstVisible = old.firstVisible
         settle()
+        snapSelectionToChoice()
     }
 
     private mutating func settle() {

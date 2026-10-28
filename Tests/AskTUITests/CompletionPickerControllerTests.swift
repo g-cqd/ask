@@ -39,22 +39,33 @@ struct CompletionPickerControllerTests {
     }
 
     private func names(_ controller: ScreenController) -> [String] {
-        controller.state.picker?.matches.map { String($0.label.dropFirst()) } ?? []
+        controller.state.picker?.matches.filter { !$0.isHeading }.map { String($0.label.dropFirst()) } ?? []
+    }
+
+    /// The headings the picker draws, in order.
+    private func headings(_ controller: ScreenController) -> [String] {
+        controller.state.picker?.matches.filter { $0.isHeading }.map { $0.detail } ?? []
     }
 
     @Test func `a slash at the start of a prompt opens every command`() {
         var screen = controller()
         type("/", into: &screen)
         #expect(
-            names(screen) == (ScreenController.builtIn + Self.commands).map(\.name),
-            "the screen's own and the conversation's")
-        #expect(screen.state.picker?.selected == 0)
+            Set(names(screen)) == Set((ScreenController.builtIn + Self.commands).map(\.name)),
+            "the screen's own and the conversation's, headings aside")
+        #expect(
+            names(screen)
+                == ["help", "quit", "follow-up", "tasks", "config", "compact", "reload", "sidebar", "verbose"],
+            "the session commands, then the tools")
+        #expect(headings(screen) == ["session", "tools"], "commands group under their categories")
+        #expect(screen.state.picker?.selected == 1, "the first command follows the first heading")
     }
 
     @Test func `typing narrows it with prefix matches first`() {
         var screen = controller()
         type("/co", into: &screen)
-        #expect(Array(names(screen).prefix(2)) == ["config", "compact"])
+        #expect(names(screen) == ["config", "compact", "help"], "prefix matches first, then the summary's")
+        #expect(headings(screen) == ["session"])
     }
 
     @Test func `Enter inserts the choice and never sends it`() {
@@ -85,15 +96,17 @@ struct CompletionPickerControllerTests {
         var screen = controller()
         type("/", into: &screen)
         press(Key.down.rawValue, into: &screen)
-        #expect(screen.state.picker?.selected == 1)
+        #expect(screen.state.picker?.selected == 2)
         press(Key.up.rawValue, into: &screen)
         press(Key.up.rawValue, into: &screen)
-        #expect(screen.state.picker?.selected == names(screen).count - 1, "Up from the first wraps to the last")
+        #expect(
+            screen.state.picker?.selected == screen.state.picker!.choiceIndexes.last,
+            "Up from the first wraps to the last")
         press(Key.down.rawValue, into: &screen)
-        #expect(screen.state.picker?.selected == 0, "Down from the last wraps to the first")
+        #expect(screen.state.picker?.selected == 1, "Down from the last wraps to the first")
         press(Key.down.rawValue, into: &screen)
         type("c", into: &screen)
-        #expect(screen.state.picker?.selected == 0)
+        #expect(screen.state.picker?.selected == 1, "typing starts again at the first command under its heading")
     }
 
     @Test func `Escape closes it and keeps what was typed, and more typing does not reopen it`() {
@@ -223,7 +236,8 @@ struct CompletionPickerControllerTests {
         type("/cmd", into: &screen, pageRows: 17)
         for _ in 0 ..< 9 { press(Key.down.rawValue, into: &screen, pageRows: 17) }
         let picker = try #require(screen.state.picker)
-        #expect(picker.selected == 9 && picker.visible.contains { $0.label == "/cmd9" })
-        #expect(picker.visible.count == 7 && picker.firstVisible == 3)
+        #expect(picker.matches.first?.isHeading == true, "the group's heading takes the first row")
+        #expect(picker.selected == 10 && picker.visible.contains { $0.label == "/cmd9" })
+        #expect(picker.visible.count == 7 && picker.firstVisible == 4)
     }
 }

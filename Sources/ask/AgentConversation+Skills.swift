@@ -20,7 +20,8 @@ extension AgentConversation {
         let waiting = book.catalog.untrusted.map {
             SlashCommand(
                 name: "skill:" + $0.skill.name,
-                summary: "project skill, not trusted · look at it, then ask trust --skills in a terminal")
+                summary: "project skill, not trusted · look at it, then ask trust --skills in a terminal",
+                category: .tools)
         }
         return loaded + waiting
     }
