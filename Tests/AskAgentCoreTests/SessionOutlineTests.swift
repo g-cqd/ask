@@ -116,4 +116,20 @@ struct SessionOutlineTests {
     @Test func `an empty session has no turns and no listing`() {
         #expect(SessionOutline(SessionTree()).turns.isEmpty && SessionOutline(SessionTree()).lines().isEmpty)
     }
+
+    @Test
+    func
+        `the picker rows are the turns, newest first, with the number to type, one line of text, and where a branch comes from`()
+        throws
+    {
+        var (tree, ids) = try straight()
+        try tree.moveLeaf(to: ids[1])
+        try tree.append(.user("use Swift Testing\nplease"))
+        let rows = SessionOutline(tree).picks(textLimit: 12)
+        #expect(rows.map(\.number) == [3, 2, 1])
+        #expect(rows.map(\.text) == ["use Swift T…", "now add tes…", "fix the par…"])
+        #expect(rows.map(\.isOnActiveBranch) == [true, false, true])
+        #expect(rows.map(\.note) == ["branch after 1", "", ""])
+        #expect(SessionOutline(SessionTree()).picks().isEmpty)
+    }
 }

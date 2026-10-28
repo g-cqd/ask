@@ -46,6 +46,18 @@ extension AgentConversation {
                 isError: false))
     }
 
+    /// The prompts as the rows of the `/tree` picker; choosing one is `/tree N`. The prompts on the path the session is at are marked.
+    func treeRows() -> [ChoiceRow] {
+        guard let recorder = session.withLock({ $0 }) else { return [] }
+        return SessionOutline(recorder.tree).picks()
+            .map { pick in
+                ChoiceRow(
+                    label: String(pick.number),
+                    detail: ([pick.text, pick.note].filter { !$0.isEmpty }).joined(separator: "  ·  "),
+                    arguments: String(pick.number), isCurrent: pick.isOnActiveBranch)
+            }
+    }
+
     private func list(_ outline: SessionOutline, update: @Sendable (ConversationUpdate) -> Void) {
         let lines = outline.lines()
         var report = [
