@@ -33,9 +33,19 @@ public struct ResolvedModel: Sendable, Equatable {
     /// The longest reply the model allows, when the settings say.
     // @dl:accept -- two plain value types that hold the same optional limits share a shape, not behaviour; a base type would only be a name for it
     public var maxOutputTokens: Int?
+    /// Whether the model takes images: true, false, or nil when nothing says. The two first-party subscriptions' models are known to;
+    /// for any other the catalogue or the user's `images` setting must say, as in other coding agents, which assume text only.
+    public var acceptsImages: Bool?
 
     /// A resolved provider and model, with what is known of the model's limits.
-    public init(provider: Provider, model: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil) {
+    public init(
+        provider: Provider, model: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil,
+        acceptsImages: Bool? = nil
+    ) {
+        switch provider {
+            case .anthropic, .codex: self.acceptsImages = acceptsImages ?? true
+            default: self.acceptsImages = acceptsImages
+        }
         self.provider = provider
         self.model = model
         self.contextWindow = contextWindow

@@ -14,14 +14,18 @@ public struct CatalogModel: Codable, Sendable, Equatable {
     public let supportsThinking: Bool?
     /// The modes the provider explicitly reports as supported. Empty is unknown unless ``supportsThinking`` is false.
     public let thinkingModes: [ThinkingMode]
+    /// Whether the provider reports that the model takes images; nil is unknown, not false.
+    public let acceptsImages: Bool?
 
     /// A catalog entry; an absent limit is unknown, not an invented default.
     public init(
         id: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil, reasoningLevels: [String] = [],
         // @dl:accept -- optional descriptor fields resemble credential initializer fields only by shape
         defaultReasoningLevel: String? = nil, supportsThinking: Bool? = nil, thinkingModes: [ThinkingMode] = [],
-        api: String? = nil
+        // @dl:accept -- initializer parameters repeat the stored fields by design
+        api: String? = nil, acceptsImages: Bool? = nil
     ) {
+        self.acceptsImages = acceptsImages
         self.id = id
         self.api = api
         self.contextWindow = contextWindow
@@ -43,7 +47,7 @@ public struct CatalogModel: Codable, Sendable, Equatable {
 
     private enum CodingKeys: String, CodingKey {
         case id, api, contextWindow, maxOutputTokens, reasoningLevels, defaultReasoningLevel, supportsThinking,
-            thinkingModes
+            thinkingModes, acceptsImages
     }
 
     /// Reads a catalog written before reasoning levels existed: the missing fields are unknown.
@@ -57,6 +61,7 @@ public struct CatalogModel: Codable, Sendable, Equatable {
         defaultReasoningLevel = try values.decodeIfPresent(String.self, forKey: .defaultReasoningLevel)
         supportsThinking = try values.decodeIfPresent(Bool.self, forKey: .supportsThinking)
         thinkingModes = try values.decodeIfPresent([ThinkingMode].self, forKey: .thinkingModes) ?? []
+        acceptsImages = try values.decodeIfPresent(Bool.self, forKey: .acceptsImages)
     }
 
     /// Whether an untrusted descriptor is safe to use in a request and as a terminal label.

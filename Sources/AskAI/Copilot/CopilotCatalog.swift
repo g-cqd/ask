@@ -66,7 +66,8 @@ public struct CopilotCatalog: Sendable {
                     ?? positive(caps.limits?.max_prompt_tokens),
                 maxOutputTokens: positive(caps.limits?.max_output_tokens), reasoningLevels: Array(Set(levels)).sorted(),
                 supportsThinking: thinking,
-                thinkingModes: adaptive ? [.adaptive, .disabled] : (thinking ? [.enabled, .disabled] : []), api: api)
+                thinkingModes: adaptive ? [.adaptive, .disabled] : (thinking ? [.enabled, .disabled] : []), api: api,
+                acceptsImages: support?.vision)
             return model.isValid ? model : nil
         }
     }
@@ -88,6 +89,7 @@ public struct CopilotCatalog: Sendable {
                 let thinking: Bool?
                 let adaptive_thinking: Bool?
                 let reasoning_effort: [String]?
+                let vision: Bool?
             }
             struct Limits: Decodable {
                 let max_context_window_tokens: Int?
