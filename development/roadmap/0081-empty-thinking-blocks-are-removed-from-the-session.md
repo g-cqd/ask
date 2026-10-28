@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -17,3 +17,16 @@ Owner request, from `ask-wishes.md`: remove empty thinking blocks from the sessi
   do not change; check that a provider which needs the empty thinking block (signature or replay rules) still
   gets it.
 - Tests for each case above, and a check that a non-empty thinking block is unaffected.
+
+## Result (2026-10-28)
+
+A thinking block whose text is empty or only white space (as a provider that hides its reasoning streams it) shows `Thinking...` with its
+spinner while it is live, then leaves the screen when it ends: when anything follows it, or when the run ends
+(`Transcript.finishThinking`). Before, it stayed as a header that opened on nothing; `" \t "` even opened onto blank rows, because only line
+feeds were trimmed. One predicate, `Transcript.saysSomething`, now decides foldability, the shown text and the removal.
+
+A resumed session reaches the screen through the same updates (`AgentConversation.history` maps replayed events with `update(for:)`), so it
+takes the tested path. The change is in `AskTUI` only: the session file and the provider replay keep the block, with its signature.
+
+Tests (`ThinkingFoldingTests`): empty, line feeds and mixed white space, each followed by an answer; at the end of a run; before a tool, whose
+index and output stay right; non-empty reasoning with blank edges kept as it is. The new tests fail without the change.

@@ -94,7 +94,7 @@ extension ScreenComposer {
                 let look = Style(dim: true, italic: true)
                 let header = Transcript.Item.thinkingHeader(body: kept, folded: folded)
                 return blockHeader(
-                    folded || kept.isEmpty ? header : kept,
+                    folded || !Transcript.saysSomething(kept) ? header : kept,
                     metadata: blockMetadata(
                         status: progress?.ended == nil && progress != nil ? .running : .succeeded,
                         output: kept, progress: progress, localizedDurations: style.localizedDurations), block: block,

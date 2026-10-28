@@ -1,3 +1,5 @@
+internal import TerminalKitText
+
 extension Transcript {
     /// Yielded jobs outlive the turn, so they are not candidates for its implicit tool completion.
     var latestForegroundTool: Int? {
@@ -33,8 +35,18 @@ extension Transcript {
         revisions[index] = bump()
     }
 
+    /// Ends the thinking block that is last, if one is. One that said nothing (roadmap 0081: empty, only white space, as a provider that
+    /// hides its reasoning streams it) is dropped instead: live, its spinner said the model was thinking; ended, it would be a header that
+    /// opens on nothing. Only the screen loses it: the session file and what is sent back to the provider keep the block.
     mutating func finishThinking(now: ContinuousClock.Instant = .now) {
-        guard let index = items.indices.last, case .thinking = items[index] else { return }
+        guard let index = items.indices.last, case .thinking(let text) = items[index] else { return }
+        guard Self.saysSomething(text) else {
+            items.removeLast()
+            revisions.removeLast()
+            progress[index] = nil
+            folds.clearChoice(for: index)
+            return
+        }
         finishProgress(at: index, now: now)
     }
 }
