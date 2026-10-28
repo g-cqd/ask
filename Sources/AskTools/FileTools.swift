@@ -8,6 +8,8 @@ public enum FileTools {
 
     /// The largest file read or edited: far above source files, low enough to bound memory.
     static let maximumFileBytes = 16 << 20
+    /// The largest image or PDF read: a 48-megapixel photograph is tens of megabytes, and it is decoded at reduced size.
+    static let maximumMediaBytes = 128 << 20
 
     static func url(_ path: String, in context: ToolContext) -> URL {
         path.hasPrefix("/")
@@ -52,12 +54,23 @@ public enum FileTools {
 
     /// The file's bytes, checked the same way ``text(at:shownAs:in:between:)`` checks them before it decodes.
     static func bytes(
-        at url: URL, shownAs path: String, in context: ToolContext, between: () -> Void = {}
+        at url: URL, shownAs path: String, in context: ToolContext, limit: Int = maximumFileBytes,
+        between: () -> Void = {}
     ) throws(ToolFailure) -> [UInt8] {
         between()
         return context.sandbox.isUnrestricted
-            ? try unscopedBytes(at: url, shownAs: path)
-            : try ScopedFile.read(url, shownAs: path, limit: maximumFileBytes, in: context)
+            ? try unscopedBytes(at: url, shownAs: path, limit: limit)
+            : try ScopedFile.read(url, shownAs: path, limit: limit, in: context)
+    }
+
+    /// The first `count` bytes of the file, to tell what kind it is before reading all of it. Empty if it cannot be read.
+    static func header(of url: URL, count: Int = 16) -> [UInt8] {
+        let descriptor = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        guard descriptor >= 0 else { return [] }
+        defer { close(descriptor) }
+        var bytes = [UInt8](repeating: 0, count: count)
+        let filled = bytes.withUnsafeMutableBytes { unsafe Darwin.read(descriptor, $0.baseAddress!, count) }
+        return filled > 0 ? Array(bytes.prefix(filled)) : []
     }
 
     /// `bytes` as text, or the failure that says they are binary.
@@ -69,13 +82,13 @@ public enum FileTools {
         return text
     }
 
-    private static func unscopedBytes(at url: URL, shownAs path: String) throws(ToolFailure) -> [UInt8] {
+    private static func unscopedBytes(at url: URL, shownAs path: String, limit: Int) throws(ToolFailure) -> [UInt8] {
         guard let attributes = try? FileManager.default.attributesOfItem(atPath: url.path) else {
             throw ToolFailure("No file at \(path).")
         }
         let size = (attributes[.size] as? Int) ?? 0
-        guard size <= maximumFileBytes else {
-            throw ToolFailure("\(path) is \(size) bytes, over the \(maximumFileBytes)-byte limit.")
+        guard size <= limit else {
+            throw ToolFailure("\(path) is \(size) bytes, over the \(limit)-byte limit.")
         }
         guard let data = try? Data(contentsOf: url) else { throw ToolFailure("Cannot read \(path).") }
         return [UInt8](data)
