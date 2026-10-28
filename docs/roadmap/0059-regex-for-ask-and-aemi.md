@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: superseded
 blocked-by: []
 date: 2026-10-24
 ---
