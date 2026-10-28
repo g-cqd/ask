@@ -21,3 +21,7 @@ insert any character.
   cuts; Command+V and Ctrl+V paste, like bracketed paste does today.
 - Ctrl+C keeps its meaning as interrupt (see 0083) when nothing is selected; say what wins when both apply.
 - Tests in TerminalKitInput for the decoding, and in AskTUI for "no character reaches the input".
+
+## Update (2026-10-28)
+
+TerminalKit already has `KeyModifiers.super`, so the hypothesis above is narrower than it read: the kit may be decoding the chord correctly and ask (or the kit's router) may print the letter as well. TerminalKit roadmap 0020 item 1 holds the probe.
