@@ -29,7 +29,7 @@ extension ConfigEditor {
             case "sandbox": known = ["allowRead", "denyRead", "write", "read", "network"]
             case "ui": known = Set(UISection.keys)
             case "skills": known = Set(SkillsSection.keys)
-            case "environment": known = ["pass", "withhold"]
+            case "environment": known = ["pass", "withhold", "shell"]
             case "mcp": return Self.strippedServers(object, path: path, warnings: &warnings)
             default: return value
         }

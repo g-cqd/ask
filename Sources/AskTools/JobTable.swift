@@ -36,10 +36,19 @@ public final class JobTable: Sendable {
     }
 
     func commandShell(_ requested: String?, policy: CommandEnvironment) -> String {
-        let configured = policy.filtered(environment)["SHELL"]
+        let login = policy.filtered(environment)["SHELL"]
         // A shell the model names must be a login shell of the system or the user's own, not any executable.
-        let candidate = requested.flatMap { Self.isListedShell($0, configured: configured) ? $0 : nil } ?? configured
-        return candidate.flatMap { Self.isShell($0) ? $0 : nil } ?? "/bin/bash"
+        if let requested, Self.isListedShell(requested, configured: login), Self.isShell(requested) { return requested }
+        if let chosen = policy.shell.flatMap(Self.chosenShell) { return chosen }
+        // Nothing chosen: zsh, then bash, then the person's login shell (roadmap 0091).
+        for path in ["/bin/zsh", "/bin/bash"] where Self.isShell(path) { return path }
+        return login.flatMap { Self.isShell($0) ? $0 : nil } ?? "/bin/bash"
+    }
+
+    /// The shell a configuration names: a bare name is looked for in the system's usual places, a path must be a shell the system lists.
+    static func chosenShell(_ name: String) -> String? {
+        if name.hasPrefix("/") { return isListedShell(name, configured: nil) && isShell(name) ? name : nil }
+        return ["/bin", "/usr/bin", "/opt/homebrew/bin", "/usr/local/bin"].map { "\($0)/\(name)" }.first(where: isShell)
     }
 
     static func isListedShell(_ path: String, configured: String?) -> Bool {

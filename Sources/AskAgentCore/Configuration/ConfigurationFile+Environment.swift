@@ -6,14 +6,16 @@ extension ConfigurationFile {
         init(from decoder: any Decoder) throws {
             var pass: [String] = []
             var withhold: [String] = []
+            var shell: String?
             try ConfigurationFile.eachKey(of: decoder) { key, container in
                 switch key.stringValue {
                     case "pass": pass = try container.decode([String].self, forKey: key)
                     case "withhold": withhold = try container.decode([String].self, forKey: key)
+                    case "shell": shell = try container.decode(String.self, forKey: key)
                     default: throw UnknownKey(key: "environment." + key.stringValue)
                 }
             }
-            section = EnvironmentSection(pass: pass, withhold: withhold)
+            section = EnvironmentSection(pass: pass, withhold: withhold, shell: shell)
         }
     }
 
@@ -33,6 +35,18 @@ extension ConfigurationFile {
                 throw .outOfRange(
                     path: path, key: key,
                     reason: "\"\(name)\" is not a variable name" + (prefixes ? " or a prefix such as \"AWS_*\"" : ""))
+            }
+        }
+        if let shell = section.shell {
+            if isProject {
+                throw .outOfRange(
+                    path: path, key: "environment.shell", reason: "only the user's file may choose the shell")
+            }
+            if !EnvironmentSection.shellNames.contains(shell), !shell.hasPrefix("/") || shell.utf8.count > 256 {
+                throw .outOfRange(
+                    path: path, key: "environment.shell",
+                    reason: "\"\(shell)\" is neither a shell name (zsh, bash, fish, sh, dash, ksh) nor an absolute path"
+                )
             }
         }
         if isProject, !section.pass.isEmpty {
