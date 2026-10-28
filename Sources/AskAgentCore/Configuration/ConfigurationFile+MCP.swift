@@ -30,6 +30,7 @@ extension ConfigurationFile {
                     case "cwd": server.cwd = try container.decode(String.self, forKey: key)
                     case "url": server.url = try container.decode(String.self, forKey: key)
                     case "headers": server.headers = try container.decode([String: String].self, forKey: key)
+                    // @dl:accept -- a key table decoded by the shared walk; the keys are the data
                     case "tools": server.tools = try container.decode([String].self, forKey: key)
                     case "enabled": server.enabled = try container.decode(Bool.self, forKey: key)
                     case "mode": server.mode = try container.decode(MCPServerSetting.Mode.self, forKey: key)

@@ -170,8 +170,10 @@ public struct ConfigurationFile: Sendable, Equatable {
                 case "ui.tools", "ui.thinking", "ui.code": "is \"\(value)\": use \"folded\" or \"open\""
                 case "ui.sidebar": "is \"\(value)\": use \"open\" or \"closed\""
                 case "ui.tint", "ui.separator", "ui.padding", "ui.localizedDurations", "ui.jobAutoReturnWhenFocused",
-                    "ui.abortTurnRequiresConfirmation":
+                    "ui.abortTurnRequiresConfirmation", "ui.escapeInterruptRequiresConfirmation":
                     "is \"\(value)\": use \"on\" or \"off\""
+                case "ui.interruptKeys": "is \"\(value)\": use \"esc\", \"ctrl-c\" or \"both\""
+                case "ui.interruptSendsQueued": "is \"\(value)\": use \"none\", \"next\" or \"all\""
                 default: "is \"\(value)\": use \"workspace\", \"anywhere\" or a list of paths"
             }
         }

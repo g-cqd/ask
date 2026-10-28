@@ -115,8 +115,15 @@ and a single-cell spinner at the right edge; these keep updating while the model
 Set `"ui": {"jobAutoReturnWhenFocused": "off"}` to keep a finished job's focused output
 visible until Escape (default: `"on"`, return to main). Set
 `"ui": {"abortTurnRequiresConfirmation": "on"}` to require two consecutive Ctrl+C presses
-within two seconds to abort a turn (default: `"off"`). Ctrl+C still clears a draft first;
-Escape only navigates and never aborts a turn.
+within two seconds to abort a turn (default: `"off"`). Ctrl+C still clears a draft first.
+
+Esc interrupts a running turn once it has nothing else to close (a picker, a selection, a job lane):
+the first press shows "press Esc again to abort", and a second within two seconds stops the turn.
+`"ui": {"interruptKeys": "esc" | "ctrl-c" | "both"}` chooses the keys (default `"both"`);
+`"escapeInterruptRequiresConfirmation": "off"` makes one Esc enough (default `"on"`).
+`"interruptSendsQueued"` says what happens to messages queued behind an interrupted turn:
+`"all"` (default) starts a turn with the first and the rest join it as steering, `"next"` starts only
+the first and each other waits for its own turn, and `"none"` returns them to the input.
 
 Animated spinners accompany ongoing operations and lead the status line; set
 `"ui": {"spinner": "braille"}` (or `braillefull`, `braillequarter`, `snake`, `line`, `dot`, `star`, `random`)

@@ -31,6 +31,7 @@ public struct SkillsSection: Sendable, Equatable, CustomStringConvertible {
 
     public var description: String {
         var parts: [String] = []
+        // @dl:accept -- one line per key, as data
         if let enabled { parts.append("enabled \(enabled ? "on" : "off")") }
         if let maxAdvertised { parts.append("maxAdvertised \(maxAdvertised)") }
         if let sources { parts.append("sources \(sources.joined(separator: ", "))") }

@@ -63,7 +63,10 @@ struct SteeringControllerTests {
     }
 
     @Test func `abort returns unsent messages and the unfinished draft without restarting`() {
-        var controller = ScreenController(label: "m", options: .legacy)
+        var controller = ScreenController(
+            label: "m",
+            options: ScreenOptions(
+                prompt: "ask> ", tint: false, separator: false, padding: false, interruptSendsQueued: .none))
         _ = submit("Start", to: &controller)
         _ = submit("One", to: &controller)
         _ = submit("Two", to: &controller, followUp: true)
@@ -86,7 +89,10 @@ struct SteeringControllerTests {
     }
 
     @Test func `input typed during abort stays local and a late acknowledgment removes only its own message`() {
-        var controller = ScreenController(label: "m", options: .legacy)
+        var controller = ScreenController(
+            label: "m",
+            options: ScreenOptions(
+                prompt: "ask> ", tint: false, separator: false, padding: false, interruptSendsQueued: .none))
         _ = submit("Start", to: &controller)
         _ = submit("Recorded", to: &controller)
         _ = controller.handle(.key(KeyEvent(keyCode: 0x03)), pageRows: 10)

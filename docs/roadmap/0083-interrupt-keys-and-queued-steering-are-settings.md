@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -22,8 +22,9 @@ one message at a time (`AgentLoop`, `PromptQueue`).
 
 ## Survey: what other harnesses do
 
-Written from memory of their documentation; only pi's row was checked against source (the installed `keybindings.js` has
-`app.interrupt` defaulting to `escape`).
+Written from memory; checked against source: pi (`app.interrupt` defaults to `escape`) and Codex (`chat.interrupt_turn` defaults to plain Esc;
+Ctrl+C is a fixed "interrupt or quit"). gemini-cli has an Esc handler that cancels (`useGeminiStream.ts`). opencode and Claude Code rows are
+not re-checked.
 
 | Harness | Esc while a turn runs | Ctrl-C while a turn runs |
 | --- | --- | --- |
@@ -38,18 +39,13 @@ second press; an interrupt cancels the in-flight request and the running tools, 
 stops the turn **and** its tools, as the majority does, and the owner's two-press Esc matches opencode. Re-check each row against
 current source before this lands.
 
-## Settings to add (names proposed)
+## Built (2026-10-28, ADR-0124)
 
-- `interrupt.keys`: `esc`, `ctrl-c`, `both` (default `both`).
-- `interrupt.confirmEsc`: bool (default `true`).
-- `interrupt.sendQueued`: `none`, `next`, `all` (default `all`). When `next`, the rest stay queued, in order, and persisted.
+Settings, as built (names differ from the proposal): `ui.interruptKeys` (`esc`, `ctrl-c`, `both`; default `both`),
+`ui.escapeInterruptRequiresConfirmation` (default `on`) and `ui.interruptSendsQueued` (`none`, `next`, `all`; default `all`). They are in
+the config editor, `README.md` and tests (`InterruptSettingsTests`, `InterruptConfigurationTests`). `all` = the first queued message starts
+a turn and the rest join it as steering; `next` = only the first starts, the others wait unsent and start their own turns in order.
 
-Each validated in the config editor and documented in `ask config`.
-
-## Still owed
-
-- The survey's rows re-checked (opencode and Codex source; Claude Code and Gemini docs).
-- Implementation and tests: each key choice; confirm on and off, and the expiry of the first press; interruption with an empty
-  queue, one and several queued inputs; an interruption during a tool call (the tool is cancelled, its block shows it); queued
-  messages stay in order on disk.
-- An ADR when built, superseding the Esc rule of 0064.
+Not verified: a real terminal session (the controller is tested with synthesised keys); that Esc still reaches ask un-delayed under
+tmux and other terminals that hold a lone Esc to tell it from an escape sequence; the interruption of a tool call in flight (unchanged
+cancellation path, not re-tested); `next` with a follow-up first in the queue; the survey's opencode and Claude Code rows.

@@ -36,13 +36,22 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var jobAutoReturnWhenFocused: Bool?
     /// `ui.abortTurnRequiresConfirmation`: whether aborting an active conversation turn requires two Ctrl+C presses within two seconds.
     public var abortTurnRequiresConfirmation: Bool?
+    /// `ui.interruptKeys`: which keys interrupt a running turn: `"esc"`, `"ctrl-c"` or `"both"` (default).
+    public var interruptKeys: InterruptKeysPreference?
+    /// `ui.escapeInterruptRequiresConfirmation`: whether Esc must be pressed twice to interrupt (`"on"`, default) or once (`"off"`).
+    public var escapeInterruptRequiresConfirmation: Bool?
+    /// `ui.interruptSendsQueued`: what happens to queued messages after an interruption: `"none"`, `"next"` or `"all"` (default).
+    public var interruptSendsQueued: QueuedAfterInterruptPreference?
 
     public init(
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
         scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil,
         sidebarOpen: Bool? = nil, prompt: String? = nil, tint: Bool? = nil, separator: Bool? = nil,
         padding: Bool? = nil, localizedDurations: Bool? = nil, spinner: SpinnerPreference? = nil,
-        jobAutoReturnWhenFocused: Bool? = nil, abortTurnRequiresConfirmation: Bool? = nil
+        // @dl:accept -- optional settings are schema data: each parameter names a key
+        jobAutoReturnWhenFocused: Bool? = nil, abortTurnRequiresConfirmation: Bool? = nil,
+        interruptKeys: InterruptKeysPreference? = nil, escapeInterruptRequiresConfirmation: Bool? = nil,
+        interruptSendsQueued: QueuedAfterInterruptPreference? = nil
     ) {
         // @dl:accept -- optional configuration and resolved screen options deliberately assign the same UI keys
         self.mouse = mouse
@@ -62,13 +71,17 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.spinner = spinner
         self.jobAutoReturnWhenFocused = jobAutoReturnWhenFocused
         self.abortTurnRequiresConfirmation = abortTurnRequiresConfirmation
+        self.interruptKeys = interruptKeys
+        self.escapeInterruptRequiresConfirmation = escapeInterruptRequiresConfirmation
+        self.interruptSendsQueued = interruptSendsQueued
     }
 
     public var isEmpty: Bool {
         mouse == nil && copyOnSelect == nil && foldTools == nil && foldThinking == nil && scrollLines == nil
             && promptRows == nil && foldCode == nil && codeFoldLines == nil && sidebarOpen == nil && prompt == nil
             && tint == nil && separator == nil && padding == nil && localizedDurations == nil && spinner == nil
-            && jobAutoReturnWhenFocused == nil && abortTurnRequiresConfirmation == nil
+            && jobAutoReturnWhenFocused == nil && abortTurnRequiresConfirmation == nil && interruptKeys == nil
+            && escapeInterruptRequiresConfirmation == nil && interruptSendsQueued == nil
         // @dl:accept -- the layering takes each key from the later section; the keys are the data
     }
 
@@ -79,7 +92,10 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
 
     /// The keys that set the look of the screen (roadmap 0074).
     private static let lookKeys = ["prompt", "tint", "separator", "padding", "localizedDurations", "spinner"]
-    private static let behaviorKeys = ["jobAutoReturnWhenFocused", "abortTurnRequiresConfirmation"]
+    private static let behaviorKeys = [
+        "jobAutoReturnWhenFocused", "abortTurnRequiresConfirmation", "interruptKeys",
+        "escapeInterruptRequiresConfirmation", "interruptSendsQueued"
+    ]
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: UISection) -> UISection {
@@ -94,16 +110,24 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             padding: section.padding ?? padding, localizedDurations: section.localizedDurations ?? localizedDurations,
             spinner: section.spinner ?? spinner,
             jobAutoReturnWhenFocused: section.jobAutoReturnWhenFocused ?? jobAutoReturnWhenFocused,
-            abortTurnRequiresConfirmation: section.abortTurnRequiresConfirmation ?? abortTurnRequiresConfirmation)
+            abortTurnRequiresConfirmation: section.abortTurnRequiresConfirmation ?? abortTurnRequiresConfirmation,
+            interruptKeys: section.interruptKeys ?? interruptKeys,
+            escapeInterruptRequiresConfirmation: section.escapeInterruptRequiresConfirmation
+                ?? escapeInterruptRequiresConfirmation,
+            interruptSendsQueued: section.interruptSendsQueued ?? interruptSendsQueued)
     }
 
     public var description: String {
         var parts: [String] = []
+        func flag(_ name: String, _ value: Bool?) {
+            if let value { parts.append("\(name) \(value ? "on" : "off")") }
+        }
         // @dl:accept -- one line per key, as data, in the order the keys are shown
-        if let mouse { parts.append("mouse \(mouse ? "on" : "off")") }
-        if let copyOnSelect { parts.append("copyOnSelect \(copyOnSelect ? "on" : "off")") }
+        flag("mouse", mouse)
+        flag("copyOnSelect", copyOnSelect)
         // @dl:accept -- one line per key, as data, in the order the keys are shown
         if let foldTools { parts.append("tools \(foldTools ? "folded" : "open")") }
+        // @dl:accept -- one line per key, as data, in the order the keys are shown
         if let foldThinking { parts.append("thinking \(foldThinking ? "folded" : "open")") }
         if let scrollLines { parts.append("scrollLines \(scrollLines)") }
         if let promptRows { parts.append("promptRows \(promptRows)") }
@@ -112,17 +136,16 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         if let sidebarOpen { parts.append("sidebar \(sidebarOpen ? "open" : "closed")") }
         // @dl:accept -- named UI fields form the user-facing configuration listing
         if let prompt { parts.append(prompt.isEmpty ? "prompt none" : "prompt \"\(prompt)\"") }
-        if let tint { parts.append("tint \(tint ? "on" : "off")") }
-        if let separator { parts.append("separator \(separator ? "on" : "off")") }
-        if let padding { parts.append("padding \(padding ? "on" : "off")") }
-        if let localizedDurations { parts.append("localizedDurations \(localizedDurations ? "on" : "off")") }
+        flag("tint", tint)
+        flag("separator", separator)
+        flag("padding", padding)
+        flag("localizedDurations", localizedDurations)
         if let spinner { parts.append("spinner \(spinner.rawValue)") }
-        if let jobAutoReturnWhenFocused {
-            parts.append("jobAutoReturnWhenFocused \(jobAutoReturnWhenFocused ? "on" : "off")")
-        }
-        if let abortTurnRequiresConfirmation {
-            parts.append("abortTurnRequiresConfirmation \(abortTurnRequiresConfirmation ? "on" : "off")")
-        }
+        flag("jobAutoReturnWhenFocused", jobAutoReturnWhenFocused)
+        flag("abortTurnRequiresConfirmation", abortTurnRequiresConfirmation)
+        if let interruptKeys { parts.append("interruptKeys \(interruptKeys.rawValue)") }
+        flag("escapeInterruptRequiresConfirmation", escapeInterruptRequiresConfirmation)
+        if let interruptSendsQueued { parts.append("interruptSendsQueued \(interruptSendsQueued.rawValue)") }
         return parts.isEmpty ? "defaults" : parts.joined(separator: ", ")
     }
 }

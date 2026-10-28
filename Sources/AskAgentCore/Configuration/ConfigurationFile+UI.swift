@@ -3,6 +3,26 @@ extension ConfigurationFile {
     // @dl:accept -- three key tables decoded the same way; the tables are the data, and the walk is already shared
     struct UIDecoded: Decodable {
         var section = UISection()
+
+        /// `ui.interruptKeys` and `ui.interruptSendsQueued`: one word out of a short list.
+        private mutating func decodeInterruptChoice(
+            _ key: Key, from container: KeyedDecodingContainer<Key>
+        ) throws {
+            let raw = try container.decode(String.self, forKey: key)
+            if key.stringValue == "interruptKeys" {
+                guard let keys = InterruptKeysPreference(rawValue: raw) else {
+                    throw BadValue(key: "ui.interruptKeys", value: raw)
+                }
+                section.interruptKeys = keys
+            } else {
+                guard let queued = QueuedAfterInterruptPreference(rawValue: raw) else {
+                    throw BadValue(key: "ui.interruptSendsQueued", value: raw)
+                }
+                section.interruptSendsQueued = queued
+            }
+        }
+
+        // @dl:accept -- the key walk is shared; each section names its own keys
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
                 switch key.stringValue {
@@ -29,7 +49,8 @@ extension ConfigurationFile {
                         section.spinner = preference
                     // @dl:accept -- on/off keys decoded like the folded/open ones beside them; the key tables are the data
                     case "tint", "separator", "padding", "localizedDurations", "jobAutoReturnWhenFocused",
-                        "abortTurnRequiresConfirmation":
+                        "abortTurnRequiresConfirmation",
+                        "escapeInterruptRequiresConfirmation":
                         let name = try container.decode(String.self, forKey: key)
                         guard name == "on" || name == "off" else {
                             throw BadValue(key: "ui." + key.stringValue, value: name)
@@ -40,8 +61,11 @@ extension ConfigurationFile {
                             case "padding": section.padding = name == "on"
                             case "localizedDurations": section.localizedDurations = name == "on"
                             case "jobAutoReturnWhenFocused": section.jobAutoReturnWhenFocused = name == "on"
-                            default: section.abortTurnRequiresConfirmation = name == "on"
+                            case "abortTurnRequiresConfirmation": section.abortTurnRequiresConfirmation = name == "on"
+                            default: section.escapeInterruptRequiresConfirmation = name == "on"
                         }
+                    case "interruptKeys", "interruptSendsQueued":
+                        try decodeInterruptChoice(key, from: container)
                     case "tools", "thinking", "code":
                         let name = try container.decode(String.self, forKey: key)
                         guard name == "folded" || name == "open" else {

@@ -38,7 +38,7 @@ struct ManualSelectionTests {
         rig.controller.state.running = true
         #expect(rig.controller.handle(.key(escape), pageRows: 10).isEmpty)
         #expect(rig.controller.state.selection == nil)
-        #expect(rig.controller.handle(.key(escape), pageRows: 10).isEmpty)
+        #expect(!rig.controller.handle(.key(escape), pageRows: 10).contains(.cancelRun))
         #expect(rig.controller.state.running)
     }
 

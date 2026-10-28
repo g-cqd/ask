@@ -12,14 +12,6 @@ struct TurnAbortConfirmationTests {
         return controller
     }
 
-    @Test func `Escape never arms or aborts a turn`() {
-        var controller = controller()
-        for _ in 0 ..< 3 {
-            #expect(controller.handle(.key(KeyEvent(keyCode: 0x1B)), pageRows: 12).isEmpty)
-        }
-        #expect(controller.state.abortArmedAt == nil)
-    }
-
     @Test func `two consecutive Ctrl C presses abort but the first only arms`() {
         var controller = controller()
         let now = ContinuousClock.now
@@ -32,7 +24,7 @@ struct TurnAbortConfirmationTests {
         var controller = controller()
         let now = ContinuousClock.now
         _ = controller.handle(.key(KeyEvent(keyCode: 3)), pageRows: 12, at: now)
-        _ = controller.handle(.key(KeyEvent(keyCode: 0x1B)), pageRows: 12, at: now)
+        _ = controller.handle(.key(KeyEvent(keyCode: 0x61)), pageRows: 12, at: now)
         #expect(!controller.handle(.key(KeyEvent(keyCode: 3)), pageRows: 12, at: now).contains(.cancelRun))
     }
 

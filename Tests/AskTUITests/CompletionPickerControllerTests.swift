@@ -135,7 +135,7 @@ struct CompletionPickerControllerTests {
         #expect(screen.state.running)
         type("/co", into: &screen)
         #expect(press(0x1B, into: &screen).isEmpty, "the first Escape only closes the picker")
-        #expect(press(0x1B, into: &screen).isEmpty, "the second Escape does nothing to the turn")
+        #expect(!press(0x1B, into: &screen).contains(.cancelRun), "the second Escape only arms the interruption")
         #expect(screen.state.running)
     }
 
