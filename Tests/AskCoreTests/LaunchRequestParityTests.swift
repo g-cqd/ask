@@ -38,6 +38,7 @@ struct LaunchRequestParityTests {
         for option in options {
             let notGiven =
                 (option.type.hasSuffix("?") && option.defaultValue == "nil") || option.defaultValue == "false"
+                || (option.type.hasPrefix("[") && option.defaultValue == "[]")
             #expect(notGiven, "\(option.name) defaults to \(option.defaultValue); a bare launch would not match it")
         }
     }

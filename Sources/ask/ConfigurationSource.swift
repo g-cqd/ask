@@ -51,7 +51,7 @@ struct ConfigurationSource: Sendable {
                 switch setting {
                     case .anywhere?: arguments += [flag, "anywhere"]
                     case .workspace?: arguments += [flag, "workspace"]
-                    case .paths(let paths)?: arguments += [flag] + paths.prefix(1)
+                    case .paths(let paths)?: for path in paths { arguments += [flag, path] }
                     case nil: break
                 }
             }

@@ -7,6 +7,8 @@ extension ConfigEditor {
     /// read again first, so a change made elsewhere between opening the editor and pressing Enter is
     /// not overwritten wholesale, and the text is re-parsed against the file's actual current value.
     public func commit(_ text: String, at path: [String]) throws(ConfigEditor.Error) {
+        let lock = try takeLock()
+        defer { close(lock) }
         let latest = try reopen()
         let typed: Value
         do {
@@ -14,12 +16,38 @@ extension ConfigEditor {
         } catch {
             throw .configuration(error)
         }
-        return try latest.commitTyped(typed, at: path)
+        try latest.commitTyped(typed, at: path)
     }
 
     /// Commits a typed value by re-reading first, so a change made elsewhere is not overwritten wholesale.
     public func commit(path: [String], value: Value) throws(ConfigEditor.Error) {
+        let lock = try takeLock()
+        defer { close(lock) }
         try reopen().commitTyped(value, at: path)
+    }
+
+    /// Takes an exclusive lock on the file's directory (no stray file); closing the returned descriptor releases it. So two ask processes cannot both read the file and each
+    /// erase the other's change: the read, the change and the rename happen as one step. The system drops the lock
+    /// if the process dies. A lock held for more than two seconds is reported, not waited on forever.
+    private func takeLock() throws(ConfigEditor.Error) -> Int32 {
+        let target = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
+        try? FileManager.default.createDirectory(
+            atPath: (target as NSString).deletingLastPathComponent, withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700])
+        let descriptor = open((target as NSString).deletingLastPathComponent, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
+        guard descriptor >= 0 else {
+            throw .cannotWrite(path: path, reason: "cannot lock the directory: \(String(cString: strerror(errno)))")
+        }
+        var waited = 0
+        while flock(descriptor, LOCK_EX | LOCK_NB) != 0 {
+            guard errno == EWOULDBLOCK, waited < 2_000 else {
+                close(descriptor)
+                throw .cannotWrite(path: path, reason: "another ask is changing this file; try again")
+            }
+            usleep(10_000)
+            waited += 10
+        }
+        return descriptor
     }
 
     /// The file as it is now, so a commit never overwrites a change made since the editor opened.

@@ -66,17 +66,17 @@ struct Ask: AsyncParsableCommand {
 
     @Option(
         help: ArgumentHelp(
-            "Where commands and tools may write: workspace (this directory), anywhere, or one directory. "
-                + "Replaces config.json's sandbox.write.",
+            "Where commands and tools may write: workspace (this directory), anywhere, or a directory; repeat it "
+                + "for several directories. Replaces config.json's sandbox.write.",
             valueName: "scope"))
-    var write: String?
+    var write: [String] = []
 
     @Option(
         help: ArgumentHelp(
             "Where commands and tools may read: workspace (this directory, the system and developer tools), "
-                + "anywhere, or one directory. Replaces config.json's sandbox.read.",
+                + "anywhere, or a directory; repeat it for several directories. Replaces config.json's sandbox.read.",
             valueName: "scope"))
-    var read: String?
+    var read: [String] = []
 
     @Flag(
         name: [.short, .customLong("verbose")],
@@ -118,20 +118,29 @@ struct Ask: AsyncParsableCommand {
         if let thinking, ThinkingLevel(rawValue: thinking) == nil {
             throw ValidationError("--thinking must be one of: \(ThinkingLevel.choices).")
         }
-        if noSandbox, network != nil || write != nil || read != nil {
+        if noSandbox, network != nil || !write.isEmpty || !read.isEmpty {
             throw ValidationError("--no-sandbox turns the sandbox off; --network, --write and --read need it on.")
         }
         if let network, SandboxPolicy.Network(named: network) == nil {
             throw ValidationError("--network must be none, localhost or any.")
         }
-        for (flag, value) in [("--write", write), ("--read", read)] {
-            if let value, !["workspace", "anywhere"].contains(value), !value.hasPrefix("/"), !value.hasPrefix("~/") {
+        try Self.validateScopes(write: write, read: read)
+        if (selectedProvider == nil) != (selectedModel == nil) {
+            throw ValidationError("--selected-provider and --selected-model go together.")
+        }
+    }
+
+    /// `--write` and `--read`: each value is a keyword or an absolute path, and keywords stand alone.
+    private static func validateScopes(write: [String], read: [String]) throws {
+        for (flag, values) in [("--write", write), ("--read", read)] {
+            for value in values
+            where !["workspace", "anywhere"].contains(value) && !value.hasPrefix("/") && !value.hasPrefix("~/") {
                 throw ValidationError(
                     "\(flag) must be workspace, anywhere, or an absolute path (or one starting with ~/).")
             }
-        }
-        if (selectedProvider == nil) != (selectedModel == nil) {
-            throw ValidationError("--selected-provider and --selected-model go together.")
+            if values.count > 1, values.contains(where: { ["workspace", "anywhere"].contains($0) }) {
+                throw ValidationError("\(flag) given several times takes directories only, not workspace or anywhere.")
+            }
         }
     }
 
