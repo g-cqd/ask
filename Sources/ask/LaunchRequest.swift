@@ -17,8 +17,8 @@ struct LaunchRequest {
     var compactAt: Int?
     var noSandbox = false
     var network: String?
-    var write: String?
-    var read: String?
+    var write: [String] = []
+    var read: [String] = []
     var selfCheck = false
     var verbose = false
     var reloadedFrom: String?
@@ -29,12 +29,12 @@ struct LaunchRequest {
     var resume: String?
 
     /// `--write` or `--read` as a setting.
-    private static func scope(_ value: String?) -> PathSetting? {
-        switch value {
+    private static func scope(_ values: [String]) -> PathSetting? {
+        switch values.first {
             case nil: nil
-            case "workspace": .workspace
-            case "anywhere": .anywhere
-            case let path?: .paths([path])
+            case "workspace" where values.count == 1: .workspace
+            case "anywhere" where values.count == 1: .anywhere
+            default: .paths(values)
         }
     }
 
