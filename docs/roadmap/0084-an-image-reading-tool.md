@@ -56,3 +56,30 @@ Not run; read only.
   a resumed session, and the OpenAI-chat and Gemini encodings against recorded request shapes.
 - Not verified here: how each provider's current API limits images (count, size), and what Anthropic and OpenAI
   charge per image. Check the providers' documents when writing the design.
+
+## Design (2026-10-28, proposed; nothing built)
+
+The touch points, read from the code: `ToolOutput` is `content: String` + `isError` + `backgroundJob`;
+`RequestBlock.toolResult(id:content:isError:)` carries a string; four request encoders turn it into wire JSON
+(`AnthropicRequestEncoder`, `OpenAIRequestEncoder`, `ResponsesRequestEncoder`, `AgyRequestEncoder+Content`), plus `ApplePrompt`
+(on-device: text only); `WirePayload` and `SessionReplay` persist it; `Compaction` and the context estimate read it.
+
+Slices, each shippable and tested alone:
+
+1. **Value type.** `ImagePart { mediaType: String, data: [UInt8] }` in AskAI. `ToolOutput` gains `images: [ImagePart] = []`;
+   `RequestBlock.toolResult` gains `images`. The empty default keeps every existing call site and test unchanged.
+2. **Sniff, bound and downscale** in a new `ImageReader` in AskTools (ImageIO/CoreGraphics; macOS only, as ask is today): magic
+   numbers for PNG, JPEG, GIF and WebP; refuse animated PNG and files above a read cap (say 20 MiB); scale to at most 2000 px on
+   the long side and re-encode until under 4.5 MiB (pi's numbers; to be checked against each provider's limits). `read` calls it
+   when the bytes are an image, and returns a text line (type, dimensions, size) plus the part.
+3. **Encoders**, each against a recorded request shape: Anthropic (image block inside `tool_result`), OpenAI chat (text
+   "(see attached image)", then a user message with `image_url` data URLs), Responses, Gemini/Antigravity (inline data in the
+   function response; older models a user turn). The on-device model: text only.
+4. **Modality field** on the model catalogue (`inputModalities`), with Codex's decoded value, a default of text for the rest and an
+   override in config. A model without image input gets "this model does not support image input", not an image.
+5. **Persistence**: images stored beside the session file by content hash and referenced from the payload, so a resumed session
+   stays small; the context estimate counts a fixed cost per image until measured.
+6. **Budget** across a request: keep the newest images up to a cap, replace older ones by a placeholder in steps (cache-friendly).
+7. MCP image results use the same part. Terminal display stays out (TerminalKit 0018).
+
+Order: 1, 2 and 3 for Anthropic first (the smallest end to end), then the other encoders.
