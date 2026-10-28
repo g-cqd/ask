@@ -37,6 +37,8 @@ public struct ProviderSettings: Sendable, Equatable {
             let id: String
             let contextWindow: Int?
             let maxTokens: Int?
+            /// `"images": true` says the model takes images, `false` that it does not; absent, the catalogue says.
+            let images: Bool?
         }
 
         let api: String?
@@ -129,7 +131,8 @@ public struct ProviderSettings: Sendable, Equatable {
                 ? .openAIResponses(name: name, baseURL: url, apiKey: key, headers: headers)
                 : .openAICompatible(name: name, baseURL: url, apiKey: key, headers: headers),
             model: chosen, contextWindow: stated?.contextWindow ?? listed?.contextWindow,
-            maxOutputTokens: stated?.maxTokens ?? listed?.maxOutputTokens)
+            maxOutputTokens: stated?.maxTokens ?? listed?.maxOutputTokens,
+            acceptsImages: stated?.images ?? listed?.acceptsImages)
     }
 
     /// A registration must identify exactly the selected name and must not shadow configured or built-in authority.

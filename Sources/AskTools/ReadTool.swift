@@ -55,13 +55,19 @@ public struct ReadTool: ArgumentTool {
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         let url = try FileTools.authorized(arguments.path, for: [.read], in: context)
-        let header = FileTools.header(of: url)
+        let header = FileTools.header(of: url, in: context)
         let maximumImages = min(Self.largestImages, max(1, arguments.maxImages ?? Self.defaultImages))
         if VideoReader.looksLikeVideo(header) {
             let request = VideoReader.Request(
                 at: arguments.at, count: arguments.count, every: arguments.every, start: arguments.start,
                 end: arguments.end, maximumImages: maximumImages)
-            return try await VideoReader.read(url, path: arguments.path, request)
+            if context.sandbox.isUnrestricted { return try await VideoReader.read(url, path: arguments.path, request) }
+            // AVFoundation opens a path, and a path can be swapped after the check: it reads a verified copy instead.
+            return try await ScopedFile.withCopy(
+                of: url, shownAs: arguments.path, limit: FileTools.maximumMediaBytes, in: context
+            ) { copy throws(ToolFailure) in
+                try await VideoReader.read(copy, path: arguments.path, request)
+            }
         }
         let isMedia = ImageReader.mediaType(of: header) != nil || PDFReader.isPDF(header)
         let bytes = try FileTools.bytes(

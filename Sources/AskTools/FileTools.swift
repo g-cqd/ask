@@ -64,13 +64,12 @@ public enum FileTools {
     }
 
     /// The first `count` bytes of the file, to tell what kind it is before reading all of it. Empty if it cannot be read.
-    static func header(of url: URL, count: Int = 16) -> [UInt8] {
+    static func header(of url: URL, in context: ToolContext, count: Int = 16) -> [UInt8] {
+        guard context.sandbox.isUnrestricted else { return ScopedFile.header(of: url, count: count, in: context) }
         let descriptor = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
         guard descriptor >= 0 else { return [] }
         defer { close(descriptor) }
-        var bytes = [UInt8](repeating: 0, count: count)
-        let filled = bytes.withUnsafeMutableBytes { unsafe Darwin.read(descriptor, $0.baseAddress!, count) }
-        return filled > 0 ? Array(bytes.prefix(filled)) : []
+        return ScopedFile.prefix(of: descriptor, count: count)
     }
 
     /// `bytes` as text, or the failure that says they are binary.

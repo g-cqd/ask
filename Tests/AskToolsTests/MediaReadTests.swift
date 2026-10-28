@@ -16,7 +16,9 @@ struct MediaReadTests {
     private let context: ToolContext
 
     init() throws {
-        root = FileManager.default.temporaryDirectory.appending(path: "ask-media-\(UUID().uuidString)")
+        // The real location, as the sandbox compares real locations: /var is a link to /private/var.
+        root = URL(fileURLWithPath: CanonicalPath.of(NSTemporaryDirectory(), relativeTo: "/") ?? NSTemporaryDirectory())
+            .appending(path: "ask-media-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
         context = ToolContext(workingDirectory: root.path)
     }
@@ -139,6 +141,26 @@ struct MediaReadTests {
         #expect(exact.images.count == 2 && exact.content.contains("0.5 s, 1.5 s"))
         let every = try await read("v.mp4", #","every":1,"start":1,"max_images":2"#)
         #expect(every.images.count == 2 && every.content.contains("1 more asked for"))
+    }
+
+    @Test func `under a restricted sandbox a video is read from a verified copy, and a protected one is refused`()
+        async throws
+    {
+        _ = try await video("v.mp4")
+        let secret = root.appending(path: "secret")
+        try FileManager.default.createDirectory(at: secret, withIntermediateDirectories: true)
+        try FileManager.default.copyItem(at: root.appending(path: "v.mp4"), to: secret.appending(path: "v.mp4"))
+        let restricted = ToolContext(
+            workingDirectory: root.path,
+            sandbox: SandboxPolicy(denyRead: [SandboxRule(secret.path, .subpath)]))
+        let allowed = await ReadTool().run(try JSONObject(validating: Array(#"{"path":"v.mp4"}"#.utf8)), in: restricted)
+        #expect(!allowed.isError && allowed.images.count == 4, "\(allowed.content)")
+        let denied = await ReadTool()
+            .run(
+                try JSONObject(validating: Array(#"{"path":"secret/v.mp4"}"#.utf8)), in: restricted)
+        #expect(denied.isError && denied.images.isEmpty, "\(denied.content) \(denied.images.count)")
+        let temporary = try FileManager.default.contentsOfDirectory(atPath: FileManager.default.temporaryDirectory.path)
+        #expect(!temporary.contains { $0.hasPrefix("ask-read-") })
     }
 
     @Test func `frame times follow count, window, period, explicit times and the limit`() {

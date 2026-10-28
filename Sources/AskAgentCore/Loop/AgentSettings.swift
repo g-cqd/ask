@@ -17,6 +17,8 @@ public struct AgentSettings: Sendable, Equatable {
     public var toolOutputBytes: Int?
     /// The provider-compatible control; every normal and compaction request carries it unchanged.
     public var thinking: ThinkingControl?
+    /// Whether the model takes images; anything but true withholds them from every request, with a line saying so.
+    public var acceptsImages: Bool?
 
     /// The default threshold: Anthropic's own default trigger for server-side compaction.
     public static let defaultCompactAtTokens = 150_000
@@ -31,12 +33,14 @@ public struct AgentSettings: Sendable, Equatable {
     ///   - keepRecentBytes: how much recent text a compaction keeps; about 20,000 tokens by default.
     ///   - toolOutputBytes: how much tool output one turn may add, or nil.
     ///   - thinking: the concrete control chosen from user policy and provider metadata, or nil for defaults.
+    ///   - acceptsImages: whether the model takes images; anything but true withholds them.
     public init(
         model: String, maximumTokens: Int, systemPrompt: [String], maximumTurns: Int,
         // @dl:accept -- an initializer's optional parameters with nil defaults; the lists are the data
         compactAtTokens: Int? = defaultCompactAtTokens, keepRecentBytes: Int = 80_000, toolOutputBytes: Int? = nil,
-        thinking: ThinkingControl? = nil
+        thinking: ThinkingControl? = nil, acceptsImages: Bool? = nil
     ) {
+        self.acceptsImages = acceptsImages
         self.toolOutputBytes = toolOutputBytes
         self.thinking = thinking
         self.model = model

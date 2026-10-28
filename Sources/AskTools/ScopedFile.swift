@@ -23,18 +23,8 @@ enum ScopedFile {
     static func read(_ url: URL, shownAs path: String, limit: Int, in context: ToolContext) throws(ToolFailure)
         -> [UInt8]
     {
-        let descriptor = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
-        guard descriptor >= 0 else {
-            throw ToolFailure(errno == ENOENT ? "No file at \(path)." : "Cannot read \(path).")
-        }
+        let (descriptor, size) = try openRegular(url, shownAs: path, limit: limit, in: context)
         defer { close(descriptor) }
-        try verify(descriptor, for: .read, appending: nil, shownAs: path, in: context)
-        var info = stat()
-        guard fstat(descriptor, &info) == 0, info.st_mode & S_IFMT == S_IFREG else {
-            throw ToolFailure("Cannot read \(path).")
-        }
-        let size = Int(info.st_size)
-        guard size <= limit else { throw ToolFailure("\(path) is \(size) bytes, over the \(limit)-byte limit.") }
         var bytes = [UInt8](repeating: 0, count: size)
         var filled = 0
         while filled < size {
@@ -47,6 +37,99 @@ enum ScopedFile {
         }
         bytes.removeLast(size - filled)
         return bytes
+    }
+
+    /// A descriptor on the file, opened without following a link, whose real location the policy allows reading. The caller closes it.
+    /// - Parameters:
+    ///   - url: the file, as resolved by the first check.
+    ///   - path: the name to show in a failure.
+    ///   - context: where the sandbox is.
+    /// - Returns: the open descriptor.
+    /// - Throws: a ``ToolFailure`` for a missing, unreadable or protected file.
+    static func openVerified(_ url: URL, shownAs path: String, in context: ToolContext) throws(ToolFailure) -> Int32 {
+        let descriptor = open(url.path, O_RDONLY | O_NOFOLLOW | O_CLOEXEC)
+        guard descriptor >= 0 else {
+            throw ToolFailure(errno == ENOENT ? "No file at \(path)." : "Cannot read \(path).")
+        }
+        do { try verify(descriptor, for: .read, appending: nil, shownAs: path, in: context) } catch {
+            close(descriptor)
+            throw error
+        }
+        return descriptor
+    }
+
+    /// A verified descriptor on a regular file of at most `limit` bytes, and its size. The caller closes the descriptor.
+    /// - Throws: a ``ToolFailure`` for a missing, unreadable, protected, irregular or oversized file.
+    static func openRegular(_ url: URL, shownAs path: String, limit: Int, in context: ToolContext)
+        throws(ToolFailure) -> (descriptor: Int32, size: Int)
+    {
+        let descriptor = try openVerified(url, shownAs: path, in: context)
+        var failure: ToolFailure?
+        do {
+            let size = try regularSize(of: descriptor, shownAs: path)
+            if size <= limit { return (descriptor, size) }
+            failure = ToolFailure("\(path) is \(size) bytes, over the \(limit)-byte limit.")
+        } catch {
+            failure = error
+        }
+        close(descriptor)
+        throw failure ?? ToolFailure.notPermitted(path)
+    }
+
+    /// The size of the regular file `descriptor` is open on.
+    /// - Throws: a ``ToolFailure`` when it is not a regular file.
+    static func regularSize(of descriptor: Int32, shownAs path: String) throws(ToolFailure) -> Int {
+        var info = stat()
+        guard fstat(descriptor, &info) == 0, info.st_mode & S_IFMT == S_IFREG else {
+            throw ToolFailure("Cannot read \(path).")
+        }
+        return Int(info.st_size)
+    }
+
+    /// The first `count` bytes of the file, read through a verified descriptor. Empty when it cannot be read or is not allowed.
+    static func header(of url: URL, count: Int, in context: ToolContext) -> [UInt8] {
+        guard let descriptor = try? openVerified(url, shownAs: url.lastPathComponent, in: context) else { return [] }
+        defer { close(descriptor) }
+        return prefix(of: descriptor, count: count)
+    }
+
+    /// Up to `count` bytes from the start of what `descriptor` is open on.
+    static func prefix(of descriptor: Int32, count: Int) -> [UInt8] {
+        var bytes = [UInt8](repeating: 0, count: count)
+        let filled = bytes.withUnsafeMutableBytes { unsafe Darwin.read(descriptor, $0.baseAddress!, count) }
+        return filled > 0 ? Array(bytes.prefix(filled)) : []
+    }
+
+    /// Copies the verified file into a private temporary directory, under the same extension, for a framework that can only open a
+    /// path; it works on the copy, which nothing can redirect, and the copy is removed afterwards.
+    /// - Parameters:
+    ///   - url: the file, as resolved by the first check.
+    ///   - path: the name to show in a failure.
+    ///   - limit: the most bytes the file may have.
+    ///   - context: where the sandbox is.
+    ///   - body: what to do with the copy.
+    /// - Returns: what `body` returns.
+    /// - Throws: a ``ToolFailure`` for a missing, protected, oversized or uncopyable file, or what `body` throws.
+    static func withCopy<Result>(
+        of url: URL, shownAs path: String, limit: Int, in context: ToolContext,
+        _ body: (URL) async throws(ToolFailure) -> Result
+    ) async throws(ToolFailure) -> Result {
+        let (source, _) = try openRegular(url, shownAs: path, limit: limit, in: context)
+        defer { close(source) }
+        let directory = FileManager.default.temporaryDirectory.appending(path: "ask-read-\(UUID().uuidString)")
+        guard
+            (try? FileManager.default.createDirectory(
+                at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])) != nil
+        else { throw ToolFailure("Cannot read \(path).") }
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let copy = directory.appending(path: "file." + url.pathExtension)
+        let target = open(copy.path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o600)
+        guard target >= 0 else { throw ToolFailure("Cannot read \(path).") }
+        defer { close(target) }
+        guard fcopyfile(source, target, nil, copyfile_flags_t(COPYFILE_DATA)) == 0 else {
+            throw ToolFailure("Cannot read \(path).")
+        }
+        return try await body(copy)
     }
 
     /// Replaces or creates the file at `url` with `bytes`, atomically, creating its directories, without ever naming a directory twice.

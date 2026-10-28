@@ -172,7 +172,8 @@ private func settings(
         model: resolved.model, maximumTokens: budget.maximumTokens,
         systemPrompt: [SystemInstructions.text(workingDirectory: workingDirectory)] + blocks,
         maximumTurns: limits.maximumTurns, compactAtTokens: budget.compactAtTokens,
-        keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes, thinking: thinking)
+        keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes, thinking: thinking,
+        acceptsImages: resolved.acceptsImages)
 }
 
 /// `ask --self-check`: starts everything a run starts, without a network, so a reload can tell a build that works

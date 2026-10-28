@@ -192,7 +192,8 @@ public struct AgentLoop: Sendable {
         if !built.repairs.isEmpty { events(.repaired(built.repairs)) }
         return ModelRequest(
             model: settings.model, maxTokens: budget.maximumTokens, systemPrompt: settings.systemPrompt,
-            messages: built.messages, tools: tools.definitions, thinking: settings.thinking)
+            messages: ImagePart.filtering(built.messages, accepts: settings.acceptsImages), tools: tools.definitions,
+            thinking: settings.thinking)
     }
 
     func record(_ payload: SessionPayload, in session: SessionRecorder) throws(AgentError) {

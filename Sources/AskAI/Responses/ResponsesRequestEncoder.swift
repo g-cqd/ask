@@ -52,13 +52,16 @@ public enum ResponsesRequestEncoder {
     private static func encode(_ message: ModelMessage, replaying: Bool, into writer: inout JSONStreamWriter) {
         switch message.role {
             case .user:
+                var shown: [ImagePart] = []
                 for case .toolResult(let id, let content, _, let images) in message.blocks {
                     writer.object {
                         $0.field("type", "function_call_output")
                         $0.field("call_id", id)
-                        $0.field("output", ImagePart.noting(images, in: content))
+                        $0.field("output", images.isEmpty ? content : content + ImagePart.attachedNote)
                     }
+                    shown += images
                 }
+                ImagePart.writeFollowing(shown, as: .responses, into: &writer)
                 let text = message.blocks.compactMap { if case .text(let text) = $0 { text } else { nil } }
                 if !text.isEmpty {
                     writer.object { writer in
