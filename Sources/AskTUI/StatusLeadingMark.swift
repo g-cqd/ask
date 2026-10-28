@@ -17,6 +17,14 @@ struct StatusLeadingMark: Sendable, Equatable {
     /// light one (roadmap 0108).
     static let sandboxed = Style(bold: true)
 
+    /// While compacting: the spinner and the word, in purple (roadmap 0099).
+    static let compacting = Style(fg: .indexed(5))
+
+    /// The mark while the conversation is compacted: `<spinner> Compacting...`.
+    static func compactingMark(frame: String) -> StatusLeadingMark {
+        StatusLeadingMark(character: frame + " Compacting...", style: compacting)
+    }
+
     /// Evaluates the leading mark and style based on activity and sandbox state.
     static func mark(running: Bool, sandboxed: Bool, frame: String) -> StatusLeadingMark {
         guard running else {

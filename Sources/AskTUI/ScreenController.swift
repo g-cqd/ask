@@ -186,7 +186,10 @@ public struct ScreenController: Sendable {
                 state.context = ""
                 state.scrollback = 0
             case .askApproval(let id, let question): ask(id: id, question: question)
+            case .compacting(let active):
+                state.compacting = active
             case .runEnded:
+                state.compacting = false
                 state.transcript.finishRunProgress()
                 state.pendingApproval = nil
                 state.pendingInput = nil
