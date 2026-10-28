@@ -5,6 +5,7 @@ public struct CopilotClient: Sendable {
     private let catalog: CopilotCatalog
     private let transport: any HTTPTransport
     private let session = UUID().uuidString
+    private let interaction = CopilotInteraction()
     public init(file: CredentialFile, transport: any HTTPTransport) {
         catalog = CopilotCatalog(file: file, transport: transport)
         self.transport = transport
@@ -28,10 +29,11 @@ public struct CopilotClient: Sendable {
                         if case .text = $0 { return true }
                         return false
                     }) == true
-            var headers = CopilotProtocol.headers(credential, session: session)
-            headers += [
-                ("openai-intent", "conversation-agent"), ("x-initiator", userInitiated ? "user" : "agent")
-            ]
+            var headers = CopilotProtocol.chatHeaders(
+                credential, session: session, interaction: interaction.id(startingNew: userInitiated),
+                userInitiated: userInitiated)
+            // VS Code sends this whenever a message holds an image and the model takes images.
+            if request.messages.contains(where: \.holdsImages) { headers.append(("copilot-vision-request", "true")) }
             if path == "/responses", let problem = request.thinking?.responsesProblem { throw problem }
             if path == "/v1/messages",
                 let problem = request.thinking?.anthropicProblem(maximumTokens: request.maxTokens)

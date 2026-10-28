@@ -1,5 +1,5 @@
 internal import AemiJSON
-internal import AskAI
+public import AskAI
 
 /// Where a tool runs.
 public struct ToolContext: Sendable, Equatable {
@@ -9,6 +9,7 @@ public struct ToolContext: Sendable, Equatable {
             && (left.approve == nil) == (right.approve == nil)
             && left.narrowing === right.narrowing && left.commandEnvironment == right.commandEnvironment
             && (left.destructiveApprover == nil) == (right.destructiveApprover == nil)
+            && left.imageLimits == right.imageLimits
     }
 
     /// Relative paths resolve against this directory.
@@ -29,6 +30,8 @@ public struct ToolContext: Sendable, Equatable {
     public let commandEnvironment: CommandEnvironment
     /// Who is asked before a server's tool marked destructive runs; nil, the default, runs it unasked, as `ask -p` does (ADR-0111).
     public let destructiveApprover: DestructiveApprover?
+    /// What the model's provider accepts of images in one request, when it says; `read` fits pictures to it.
+    public let imageLimits: ImageLimits?
 
     /// A context rooted at `workingDirectory`.
     /// - Parameters:
@@ -39,11 +42,14 @@ public struct ToolContext: Sendable, Equatable {
     ///   - narrowing: where the model's session-wide narrowing is kept; nil offers none.
     ///   - commandEnvironment: which of ask's variables a command is denied.
     ///   - destructiveApprover: who answers when a server marks its tool destructive; nil, the default, allows.
+    ///   - imageLimits: what the model's provider accepts of images, or nil when it did not say.
     public init(
         workingDirectory: String, outputDirectory: String? = nil, sandbox: SandboxPolicy = .unrestricted,
         approve: SandboxApprover? = nil, narrowing: SessionNarrowing? = nil,
-        commandEnvironment: CommandEnvironment = .inherit, destructiveApprover: DestructiveApprover? = nil
+        commandEnvironment: CommandEnvironment = .inherit, destructiveApprover: DestructiveApprover? = nil,
+        imageLimits: ImageLimits? = nil
     ) {
+        self.imageLimits = imageLimits
         self.workingDirectory = workingDirectory
         self.outputDirectory = outputDirectory
         self.sandbox = sandbox

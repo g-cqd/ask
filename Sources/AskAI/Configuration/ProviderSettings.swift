@@ -132,7 +132,7 @@ public struct ProviderSettings: Sendable, Equatable {
                 : .openAICompatible(name: name, baseURL: url, apiKey: key, headers: headers),
             model: chosen, contextWindow: stated?.contextWindow ?? listed?.contextWindow,
             maxOutputTokens: stated?.maxTokens ?? listed?.maxOutputTokens,
-            acceptsImages: stated?.images ?? listed?.acceptsImages)
+            acceptsImages: stated?.images ?? listed?.acceptsImages, imageLimits: listed?.imageLimits)
     }
 
     /// A registration must identify exactly the selected name and must not shadow configured or built-in authority.

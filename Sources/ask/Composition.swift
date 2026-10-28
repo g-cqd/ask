@@ -145,7 +145,7 @@ func makeLoop(
             outputDirectory: SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values).path
                 + "/output", sandbox: sandbox,
             approve: approve, narrowing: narrowing, commandEnvironment: run.commandEnvironment,
-            destructiveApprover: destructiveApprover))
+            destructiveApprover: destructiveApprover, imageLimits: run.model.imageLimits))
 }
 
 /// The provider, with a control still to be looked up wrapped to look it up before the first request, not at startup.
@@ -173,7 +173,7 @@ private func settings(
         systemPrompt: [SystemInstructions.text(workingDirectory: workingDirectory)] + blocks,
         maximumTurns: limits.maximumTurns, compactAtTokens: budget.compactAtTokens,
         keepRecentBytes: budget.keepRecentBytes, toolOutputBytes: budget.toolOutputBytes, thinking: thinking,
-        acceptsImages: resolved.acceptsImages)
+        acceptsImages: resolved.acceptsImages, imageLimits: resolved.imageLimits)
 }
 
 /// `ask --self-check`: starts everything a run starts, without a network, so a reload can tell a build that works

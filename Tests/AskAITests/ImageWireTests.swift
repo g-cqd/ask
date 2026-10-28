@@ -29,13 +29,13 @@ struct ImageWireTests {
         #expect(
             body.contains(
                 #"{"role":"user","content":[{"type":"text","text":"\#(ImagePart.attachedLead)"},"#
-                    + #"{"type":"image_url","image_url":{"url":"data:image/png;base64,AQIDBA=="}}]}"#))
+                    + #"{"type":"image_url","image_url":{"url":"data:image/png;base64,AQIDBA==","detail":"auto"}}]}"#))
     }
 
     @Test func `the Responses wire does the same with input_image`() {
         let body = String(decoding: ResponsesRequestEncoder.encode(request(messages)), as: UTF8.self)
         #expect(body.contains(#""type":"function_call_output","call_id":"t1","output":"a.png: image\n[the image"#))
-        #expect(body.contains(#"{"type":"input_image","image_url":"data:image/png;base64,AQIDBA=="}"#))
+        #expect(body.contains(#"{"type":"input_image","detail":"auto","image_url":"data:image/png;base64,AQIDBA=="}"#))
     }
 
     @Test func `a result without images is written as before`() {

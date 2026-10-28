@@ -29,7 +29,8 @@ enum PDFReader {
     }
 
     static func read(
-        _ bytes: [UInt8], path: String, pages spec: String?, maximumImages: Int
+        _ bytes: [UInt8], path: String, pages spec: String?, maximumImages: Int,
+        allowance: ImageReader.Allowance = ImageReader.Allowance()
     ) throws(ToolFailure) -> ToolOutput {
         guard let provider = CGDataProvider(data: Data(bytes) as CFData), let document = CGPDFDocument(provider) else {
             throw ToolFailure("\(path) looks like a PDF but could not be opened.")
@@ -47,7 +48,7 @@ enum PDFReader {
                 throw ToolFailure("\(path): page \(number) could not be read.")
             }
             do {
-                let fitted = try render(page)
+                let fitted = try render(page, allowance: allowance)
                 images.append(fitted.part)
             } catch {
                 throw ToolFailure("\(path): page \(number) could not be made small enough to send.")
@@ -79,13 +80,15 @@ enum PDFReader {
         return named
     }
 
-    private static func render(_ page: CGPDFPage) throws(ImageReader.Failure) -> ImageReader.Fitted {
+    private static func render(_ page: CGPDFPage, allowance: ImageReader.Allowance) throws(ImageReader.Failure)
+        -> ImageReader.Fitted
+    {
         let box = page.getBoxRect(.cropBox)
         let turned = page.rotationAngle % 180 != 0
         let pageWidth = turned ? box.height : box.width
         let pageHeight = turned ? box.width : box.height
         guard pageWidth > 0, pageHeight > 0 else { throw .undecodable }
-        return try ImageReader.fit(favoursPNG: true, longSide: ImageReader.maximumSide) { side in
+        return try ImageReader.fit(favoursPNG: true, longSide: ImageReader.maximumSide, allowance: allowance) { side in
             let scale = Double(side) / max(pageWidth, pageHeight)
             let width = max(1, Int(pageWidth * scale))
             let height = max(1, Int(pageHeight * scale))
