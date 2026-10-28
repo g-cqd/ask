@@ -14,7 +14,7 @@ struct LaunchRequest {
     var provider: String?
     var thinking: String?
     var maxTurns: Int?
-    var compactAt: Int?
+    var compactAt: String?
     var noSandbox = false
     var network: String?
     var write: [String] = []
@@ -59,7 +59,8 @@ struct LaunchRequest {
         var source = ConfigurationSource(
             workingDirectory: FileManager.default.currentDirectoryPath,
             flags: .init(
-                model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt,
+                model: model, provider: provider, maxTurns: maxTurns,
+                compactAt: compactAt.flatMap(CompactionThreshold.init(parsing:)),
                 thinking: thinking.flatMap(ThinkingLevel.init(rawValue:)), noSandbox: noSandbox, verbose: verbose,
                 network: network.flatMap(SandboxPolicy.Network.init(named:)), write: Self.scope(write),
                 read: Self.scope(read),

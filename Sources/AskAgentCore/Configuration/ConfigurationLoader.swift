@@ -45,7 +45,7 @@ public struct ConfigurationLoader: Sendable {
     /// - Returns: the new configuration and what it was made from.
     /// - Throws: ``ConfigurationError`` for any file that exists, applies, and is not valid.
     public func load(
-        model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: Int? = nil,
+        model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: CompactionThreshold? = nil,
         network: SandboxPolicy.Network? = nil, write: PathSetting? = nil, read: PathSetting? = nil,
         thinking: ThinkingLevel? = nil
     ) throws(ConfigurationError) -> Result {

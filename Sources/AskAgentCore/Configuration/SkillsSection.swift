@@ -29,6 +29,16 @@ public struct SkillsSection: Sendable, Equatable, CustomStringConvertible {
             sources: section.sources ?? sources)
     }
 
+    /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.
+    public func value(forKey key: String) -> String? {
+        switch key {
+            case "enabled": enabled.map { $0 ? "on" : "off" }
+            case "maxAdvertised": maxAdvertised.map(String.init)
+            case "sources": sources.map { $0.joined(separator: ", ") }
+            default: nil
+        }
+    }
+
     public var description: String {
         var parts: [String] = []
         // @dl:accept -- one line per key, as data

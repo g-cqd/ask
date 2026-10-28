@@ -37,12 +37,12 @@ struct ConfigurationLoaderTests {
         try write(loader().projectPath, "{maxTurns: 20}")
         try trustProject()
         let result = try loader(environment: ["ASK_MAX_TURNS": "30", "ASK_PROVIDER": "local"])
-            .load(compactAt: 7000)
+            .load(compactAt: .tokens(7000))
         let configuration = result.configuration
         #expect(configuration.model == .init(value: "user-model", source: .file(loader().userPath)))
         #expect(configuration.maxTurns == .init(value: 30, source: .environment("ASK_MAX_TURNS")))
         #expect(configuration.provider == .init(value: "local", source: .environment("ASK_PROVIDER")))
-        #expect(configuration.compactAt == .init(value: 7000, source: .flag("compact-at")))
+        #expect(configuration.compactAt == .init(value: .tokens(7000), source: .flag("compact-at")))
         #expect(result.applied == [loader().userPath, loader().projectPath])
     }
 
@@ -53,7 +53,7 @@ struct ConfigurationLoaderTests {
         try trustProject()
         let result = try loader(environment: ["ASK_MAX_TURNS": "30", "ASK_COMPACT_AT": "222"]).load(maxTurns: 2)
         #expect(result.configuration.maxTurns == .init(value: 2, source: .flag("max-turns")))
-        #expect(result.configuration.compactAt == .init(value: 222, source: .environment("ASK_COMPACT_AT")))
+        #expect(result.configuration.compactAt == .init(value: .tokens(222), source: .environment("ASK_COMPACT_AT")))
     }
 
     @Test func `a project file that was never trusted is ignored, with a notice that says how to use it`() throws {

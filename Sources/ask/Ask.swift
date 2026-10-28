@@ -48,10 +48,10 @@ struct Ask: AsyncParsableCommand {
 
     @Option(
         help: ArgumentHelp(
-            "Compact the conversation once its context reaches this many tokens; 0 only when the window is full. "
-                + "Default: config.json, else 150000.",
-            valueName: "tokens"))
-    var compactAt: Int?
+            "Compact the conversation once its context reaches this share of the model's window (75%) or this many tokens; "
+                + "0 only when the window is full. Default: config.json, else 75%.",
+            valueName: "share-or-tokens"))
+    var compactAt: String?
 
     @Flag(
         name: .customLong("no-sandbox"),
@@ -114,7 +114,9 @@ struct Ask: AsyncParsableCommand {
             throw ValidationError("With --prompt, --resume needs a session name or path.")
         }
         if let maxTurns, maxTurns < 1 { throw ValidationError("--max-turns must be at least 1.") }
-        if let compactAt, compactAt < 0 { throw ValidationError("--compact-at must be 0 or more.") }
+        if let compactAt, CompactionThreshold(parsing: compactAt) == nil {
+            throw ValidationError("--compact-at must be \(CompactionThreshold.expected).")
+        }
         if let thinking, ThinkingLevel(rawValue: thinking) == nil {
             throw ValidationError("--thinking must be one of: \(ThinkingLevel.choices).")
         }
@@ -148,7 +150,8 @@ struct Ask: AsyncParsableCommand {
     private var request: LaunchRequest {
         LaunchRequest(
             budgets: budgets, prompt: prompt, model: model, provider: provider, thinking: thinking, maxTurns: maxTurns,
-            compactAt: compactAt, noSandbox: noSandbox, network: network, write: write, read: read,
+            compactAt: compactAt, noSandbox: noSandbox, network: network,
+            write: write, read: read,
             selfCheck: selfCheck, verbose: verbose, reloadedFrom: reloadedFrom, reloadStarted: reloadStarted,
             selectedProvider: selectedProvider, selectedModel: selectedModel, continueLatest: continueLatest,
             resume: resume)
