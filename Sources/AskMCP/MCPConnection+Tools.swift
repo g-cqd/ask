@@ -11,13 +11,11 @@ extension MCPConnection {
         for _ in 0 ..< Self.maximumListPages {
             let reply = try await request(
                 "tools/list", params: cursor.map(Self.cursorParams), timeout: requestTimeout)
-            guard let document = try? AemiJSON.parse(reply, options: JSONParseOptions(recordsContainerSpans: true))
-            else { throw .malformedResponse("the tool list cannot be read") }
-            document.root["tools"]
+            reply["tools"]
                 .forEachElement { element in
                     if let tool = MCPToolParsing.tool(element) { tools.append(tool) }
                 }
-            guard let next = document.root["nextCursor"].string, !next.isEmpty else { return tools }
+            guard let next = reply["nextCursor"].string, !next.isEmpty else { return tools }
             cursor = next
         }
         throw .tooManyPages
@@ -41,10 +39,7 @@ extension MCPConnection {
         let reply = try await request(
             "tools/call", params: Self.callParams(name: name, arguments: arguments, token: token),
             timeout: timeout ?? requestTimeout)
-        guard let result = MCPToolParsing.result(reply) else {
-            throw .malformedResponse("the tool result cannot be read")
-        }
-        return result
+        return MCPToolParsing.result(reply)
     }
 
     /// Asks the server whether it is there.

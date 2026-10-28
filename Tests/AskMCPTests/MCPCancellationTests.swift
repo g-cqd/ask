@@ -26,6 +26,16 @@ struct MCPCancellationTests {
         return (connection, transport)
     }
 
+    /// The call's value, cancelling the call if this test is cancelled (by its time limit), so a broken timer fails the test instead of
+    /// hanging it.
+    private static func value(of call: Task<MCPToolResult, any Error>) async throws -> MCPToolResult {
+        try await withTaskCancellationHandler {
+            try await call.value
+        } onCancel: {
+            call.cancel()
+        }
+    }
+
     private func cancelled(_ transport: ScriptedTransport) throws -> (requestId: String?, reason: String?) {
         let params = try #require(transport.sent("notifications/cancelled").first?.params)
         let root = try AemiJSON.parse(Array(params.utf8), options: JSONParseOptions(recordsContainerSpans: true)).root
@@ -98,5 +108,35 @@ struct MCPCancellationTests {
         #expect(transport.sent("notifications/cancelled").isEmpty)
         call.cancel()
         _ = await call.result
+    }
+
+    @Test func `a later call with a shorter time is given up at its own time, and the longer one at its own`()
+        async throws
+    {
+        let clock = TestClock()
+        let (connection, transport) = try await started(clock: clock, timeout: .seconds(30))
+        let long = Task { try await connection.callTool("long", arguments: .empty, timeout: .seconds(600)) }
+        await transport.waitUntilSent("tools/call")
+        let short = Task { try await connection.callTool("short", arguments: .empty, timeout: .seconds(10)) }
+        await transport.waitUntilSent("tools/call", count: 2)
+        try await clock.waitForSleepers(count: 1)
+        clock.advance(by: .seconds(10))
+        await #expect(throws: MCPError.timedOut(method: "tools/call")) { _ = try await Self.value(of: short) }
+        #expect(transport.sent("notifications/cancelled").count == 1, "only the shorter call is given up")
+        try await clock.waitForSleepers(count: 1)
+        clock.advance(by: .seconds(590))
+        await #expect(throws: MCPError.timedOut(method: "tools/call")) { _ = try await Self.value(of: long) }
+    }
+
+    @Test func `many calls at once are each sent once, in turn, and each gets its own answer`() async throws {
+        let (connection, transport) = try await started()
+        transport.on("tools/call") { [$0.result(#"{"content":[{"type":"text","text":"ok"}]}"#)] }
+        let answers = try await withThrowingTaskGroup(of: MCPToolResult.self) { group in
+            for _ in 0 ..< 200 { group.addTask { try await connection.callTool("echo", arguments: .empty) } }
+            return try await group.reduce(into: []) { $0.append($1) }
+        }
+        #expect(answers.count == 200 && answers.allSatisfy { $0.content == [.text("ok")] })
+        let ids = transport.sent("tools/call").compactMap(\.id)
+        #expect(ids.count == 200 && Set(ids).count == 200)
     }
 }

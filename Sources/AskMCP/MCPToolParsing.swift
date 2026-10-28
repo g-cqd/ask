@@ -21,17 +21,14 @@ enum MCPToolParsing {
             hasOutputSchema: element["outputSchema"].isObject)
     }
 
-    /// A `tools/call` result, or nil when it is not an object.
-    static func result(_ bytes: [UInt8]) -> MCPToolResult? {
-        guard let document = try? AemiJSON.parse(bytes, options: JSONParseOptions(recordsContainerSpans: true)),
-            document.root.isObject
-        else { return nil }
+    /// A `tools/call` result, read from the object the envelope already parsed (it is always an object there).
+    static func result(_ root: JSON) -> MCPToolResult {
         var content: [MCPContent] = []
-        document.root["content"].forEachElement { content.append(block($0)) }
-        let structured = document.root["structuredContent"]
+        root["content"].forEachElement { content.append(block($0)) }
+        let structured = root["structuredContent"]
         return MCPToolResult(
             content: content, structuredContent: structured.isObject ? structured.withRawJSONBytes { Array($0) } : nil,
-            isError: document.root["isError"].bool ?? false)
+            isError: root["isError"].bool ?? false)
     }
 
     /// One block of a result.
