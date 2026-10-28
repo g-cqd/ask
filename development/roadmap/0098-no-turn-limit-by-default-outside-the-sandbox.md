@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-28
 ---
@@ -15,3 +15,16 @@ As written, "enable it when in sandbox" keeps the limit for the default run, sin
 applies only when the sandbox is on and is gone with `--no-sandbox`. Confirm with the owner whether the intent is the reverse (no limit while
 sandboxed, because the sandbox already contains the risk). Until confirmed, implement: an explicit `maxTurns` always wins; unset means a limit
 with the sandbox on and none without.
+
+## Done (2026-10-28)
+
+- The owner asked for the limit to be removed, in their config at least. `maxTurns` now takes `"none"` in a config file and
+  `ASK_MAX_TURNS=none`, kept as `Configuration.noTurnLimit` (`Int.max`, a count the loop never reaches); `ask config` and reload notices
+  show `none`. A loop test runs 151 requests with no limit and ends when the model stops.
+- The owner's `~/.config/ask/config.json` was created with only `"maxTurns": "none"`; `ask config` reports it as applied.
+- The `--max-turns` flag still takes a number only.
+
+## Still owed
+
+- The default: still 100. Changing it waits on the open point above (what "enable it when in sandbox" means).
+
