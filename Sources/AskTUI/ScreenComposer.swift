@@ -23,6 +23,8 @@ public struct ScreenComposer: Sendable {
         var foldBlock: Int?
         /// Runs of columns drawn in a style of their own over ``style``, such as a warning mark in colour.
         var accents: [Accent]
+        /// File paths in the row, drawn as terminal hyperlinks over whatever style the column has.
+        var links: [PathLinks.Link] = []
 
         init(text: String, style: Style, source: Source? = nil, accents: [Accent] = []) {
             self.text = text
@@ -54,6 +56,7 @@ public struct ScreenComposer: Sendable {
         var text: String
         var style: Style
         var accents: [Accent]
+        var links: [PathLinks.Link]
         /// The columns drawn selected, or nil.
         var highlight: Range<Int>?
         /// What the row carries at its right edge, if the sidebar is open.
@@ -178,7 +181,9 @@ public struct ScreenComposer: Sendable {
     mutating func write(
         _ line: Line, highlight: Range<Int>? = nil, side: Sidebar.Cell? = nil, row: Int, into buffer: inout ScreenBuffer
     ) {
-        let now = Shown(text: line.text, style: line.style, accents: line.accents, highlight: highlight, side: side)
+        let now = Shown(
+            text: line.text, style: line.style, accents: line.accents, links: line.links, highlight: highlight,
+            side: side)
         guard shown[row] != now else { return }
         shown[row] = now
         var column = 0
