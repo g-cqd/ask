@@ -1,3 +1,4 @@
+internal import AemiRegex
 internal import AskAI
 internal import Foundation
 internal import Testing
@@ -127,7 +128,7 @@ struct HTTPMCPSessionTests {
 
     @Test func `a whole conversation through a connection: start, list, call`() async throws {
         let http = ScriptedHTTP { seen in
-            let id = seen.body.firstMatch(of: /"id":(\d+)/).map { String($0.1) } ?? "0"
+            let id = capture(#""id":(\d+)"#, in: seen.body) ?? "0"
             switch seen.rpcMethod {
                 case "initialize":
                     return ScriptedHTTP.json(
@@ -155,4 +156,12 @@ struct HTTPMCPSessionTests {
                 && later.first?.headers["mcp-protocol-version"] == "2025-06-18")
         #expect(http.requests.last?.method == "DELETE")
     }
+}
+
+/// The first capture group of `pattern` in `text`, matched in linear time.
+private func capture(_ pattern: String, in text: String) -> String? {
+    guard let compiled = try? Pattern(pattern), let match = compiled.firstMatch(in: text),
+        let range = match.range(ofGroup: 1, in: text)
+    else { return nil }
+    return String(text[range])
 }

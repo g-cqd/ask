@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Throwaway-repository tests for shared number claims and the no-push landing workflow."""
 import concurrent.futures
+import os
 import pathlib
 import shutil
 import subprocess
@@ -23,6 +24,7 @@ class WorkflowTests(unittest.TestCase):
         self.run_git("init", "-q", "-b", "main")
         self.run_git("config", "user.name", "Fixture")
         self.run_git("config", "user.email", "fixture@example.invalid")
+        os.environ["ASK_LAND_EMAIL"] = "fixture@example.invalid"
         for directory in ["adr", "roadmap", "diary"]:
             (self.root / "docs" / directory).mkdir(parents=True)
         (self.root / "Scripts").mkdir()

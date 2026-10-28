@@ -1,3 +1,4 @@
+import AemiRegex
 import AskMCP
 import Foundation
 import Synchronization
@@ -67,8 +68,8 @@ final class FakeMCPServer: MCPTransport {
 
     func send(_ message: [UInt8]) async throws {
         let text = String(decoding: message, as: UTF8.self)
-        guard let id = text.firstMatch(of: /"id":(\d+)/).map({ String($0.1) }),
-            let method = text.firstMatch(of: /"method":"([^"]+)"/).map({ String($0.1) })
+        guard let id = capture(#""id":(\d+)"#, in: text),
+            let method = capture(#""method":"([^"]+)""#, in: text)
         else { return }
         switch method {
             case "initialize":
@@ -98,8 +99,8 @@ final class FakeMCPServer: MCPTransport {
                 }
                 push(#"{"jsonrpc":"2.0","id":\#(id),"result":{"tools":[\#(tools.joined(separator: ","))]}}"#)
             case "tools/call":
-                let name = text.firstMatch(of: /"name":"([^"]+)"/).map { String($0.1) } ?? ""
-                let arguments = text.firstMatch(of: /"arguments":(\{[^}]*\})/).map { String($0.1) } ?? "{}"
+                let name = capture(#""name":"([^"]+)""#, in: text) ?? ""
+                let arguments = capture(#""arguments":(\{[^}]*\})"#, in: text) ?? "{}"
                 let reply = state.withLock { state -> String in
                     state.calls.append((name, arguments))
                     return state.callReply(name, arguments)
@@ -113,4 +114,12 @@ final class FakeMCPServer: MCPTransport {
         state.withLock { $0.closed = true }
         continuation.finish()
     }
+}
+
+/// The first capture group of `pattern` in `text`, matched in linear time.
+private func capture(_ pattern: String, in text: String) -> String? {
+    guard let compiled = try? Pattern(pattern), let match = compiled.firstMatch(in: text),
+        let range = match.range(ofGroup: 1, in: text)
+    else { return nil }
+    return String(text[range])
 }
