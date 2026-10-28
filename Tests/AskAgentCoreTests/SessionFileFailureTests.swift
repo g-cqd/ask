@@ -7,7 +7,7 @@ import Testing
 
 @testable import AskAgentCore
 
-/// Read from `SessionFile` while reviewing `docs/formal/REPORT.md` and then probed here by making one system call fail: a lock taken a
+/// Read from `SessionFile` while reviewing `development/formal/REPORT.md` and then probed here by making one system call fail: a lock taken a
 /// moment too soon, a rename that fails after the original was preserved, a flush that fails after the bytes were written (ADR-0084).
 @Suite("A session file's failure paths leave nothing open, nothing piled up and nothing undecided")
 struct SessionFileFailureTests {

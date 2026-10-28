@@ -15,10 +15,10 @@ Read `references/shapes.md` for a worked skeleton of each file type.
 
 | The writing is… | Goes in | Because |
 |---|---|---|
-| A **principle** that holds regardless of what was measured | `docs/WHITE-PAPER.md` | It changes when a principle changes, and never when a probe runs |
-| A **decision**, with the evidence that produced it | `docs/adr/NNNN-title.md` | One decision per file, supersession by a new record |
-| A **unit of work** someone can claim and finish alone | `docs/roadmap/NNNN-title.md` | One entry per file, declaring `status:` |
-| A **session**, or the **result of a probe** | `docs/diary/YYYY-MM-DD-NN.md` | The working log, capped, and where probe history lives |
+| A **principle** that holds regardless of what was measured | `development/WHITE-PAPER.md` | It changes when a principle changes, and never when a probe runs |
+| A **decision**, with the evidence that produced it | `development/adr/NNNN-title.md` | One decision per file, supersession by a new record |
+| A **unit of work** someone can claim and finish alone | `development/roadmap/NNNN-title.md` | One entry per file, declaring `status:` |
+| A **session**, or the **result of a probe** | `development/diary/YYYY-MM-DD-NN.md` | The working log, capped, and where probe history lives |
 
 The line that gets crossed most often: a probe result goes in the **diary**, never in the white paper.
 The white paper once carried a table of every probe run against the project. That made the principles

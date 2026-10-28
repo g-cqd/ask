@@ -2,7 +2,7 @@
 
 From the 2026-10-19 quality audit. Read from each skill's `SKILL.md`; the `references/` folders were not
 read exhaustively, so "does not say" means "not in the body that gets loaded". Each item has a probe or an
-observation behind it in `docs/diary/2026-10-19-04.md`.
+observation behind it in `development/diary/2026-10-19-04.md`.
 
 | Skill | Gap | Seen as |
 |---|---|---|

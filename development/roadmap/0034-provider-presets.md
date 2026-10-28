@@ -1,0 +1,33 @@
+---
+status: in-progress
+blocked-by: []
+date: 2026-10-19
+decision: ADR-0027
+---
+
+# 0034 — Built-in presets for the OpenAI-compatible providers
+
+`--provider groq` should work with `GROQ_API_KEY` set and no `providers.json`. The twelve base URLs and key variables
+in `development/research/provider-connections-2026-10.md` were each probed on 2026-10-19 (401 with an auth error, or a
+public model list), so presets carry only verified endpoints. A `providers.json` entry of the same name overrides a
+preset, and a preset with its variable unset is listed as unavailable, never sent without a key.
+
+Done when each preset resolves from its variable, `ask --provider NAME` lists what is available when NAME is not,
+and the context windows of known models are filled in where the provider's catalog reports them.
+
+## Done (diary 18)
+
+Twenty-four presets from pi's catalogue, each resolving from its key variable with no `providers.json`; an entry of the
+same name overrides only what it gives; an unknown name lists the presets and which still need their variable.
+
+## Done (diary 57, ADR-0058)
+
+Explicit `ask models NAME` listing and cached context windows. Live public-list verification: OpenRouter (model and
+route windows), Hugging Face (minimum known live-route window), NVIDIA (limits unknown). Runs consume the selected
+entry locally and user-stated limits win. No static model/context table was added.
+
+## Still owed
+
+- Authenticated list/window checks for the other presets. Google's OpenAI list root returned 404 and needs its own adapter.
+- `opencode` and `opencode-go`, which need an `x-opencode-session` header per conversation.
+- `ant-ling`, whose endpoint answers only HTML to unauthenticated requests.

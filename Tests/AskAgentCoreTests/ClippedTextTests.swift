@@ -2,7 +2,7 @@ import Testing
 
 @testable import AskAgentCore
 
-/// Found by modelling the head-and-tail cut in Lean (`docs/formal/lean/OutputBuffer.lean`).
+/// Found by modelling the head-and-tail cut in Lean (`development/formal/lean/OutputBuffer.lean`).
 @Suite("Clipped text keeps its ends and says how much it dropped")
 struct ClippedTextTests {
     @Test func `text within the limit is returned as it is`() {

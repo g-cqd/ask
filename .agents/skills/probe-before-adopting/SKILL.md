@@ -21,7 +21,7 @@ you want `documentation-law` instead.
    Ask: what result would prove me wrong? If no result could, redesign the probe.
 3. **Run it.** Record the command verbatim.
 4. **Record the verdict in the diary** — claim, probe, result. Append to the table in the most recent
-   `docs/diary/YYYY-MM-DD-NN.md`.
+   `development/diary/YYYY-MM-DD-NN.md`.
 5. **Act only then.** An unprobed claim is an open question, never a fact.
 
 Read `references/probe-patterns.md` for the shapes of probe that have worked here, and for the

@@ -7,7 +7,7 @@ set -eu
 cd "$(dirname "$0")/.."
 only=${1:-all}
 printf '%-5s %-12s %-18s %s\n' entry status blocked-by title
-for file in docs/roadmap/*.md; do
+for file in development/roadmap/*.md; do
     status=$(sed -n 's/^status: *//p' "$file" | head -1)
     [ "$only" = "open" ] && [ "$status" = "done" ] && continue
     blocked=$(sed -n 's/^blocked-by: *//p' "$file" | head -1 | tr -d '[]" ')

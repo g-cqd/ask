@@ -89,8 +89,8 @@ decide what the principles are.
 
 | File | Cap | Enforced by |
 |---|---|---|
-| `docs/WHITE-PAPER.md` | 200 lines | `WhitePaperTests` |
-| `docs/diary/*.md` | 256 lines | `DiaryLineBudgetTests` |
+| `development/WHITE-PAPER.md` | 200 lines | `WhitePaperTests` |
+| `development/diary/*.md` | 256 lines | `DiaryLineBudgetTests` |
 | ADR / roadmap entry | one decision, one entry | `RoadmapGranularityTests` |
 
 When a diary hits the cap, start `YYYY-MM-DD-(NN+1).md`. Do not trim history to fit — the cap exists so

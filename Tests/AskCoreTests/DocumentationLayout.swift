@@ -21,7 +21,7 @@ enum DocumentationLayout {
     static let maximumWhitePaperLines = 200
 
     /// The white paper's path.
-    static func whitePaperURL() -> URL { repositoryRoot.appending(path: "docs/WHITE-PAPER.md") }
+    static func whitePaperURL() -> URL { repositoryRoot.appending(path: "development/WHITE-PAPER.md") }
 
     /// The white paper's current line count.
     static func whitePaperLineCount() throws -> Int { try lineCount(of: whitePaperURL()) }
@@ -76,14 +76,14 @@ enum DocumentationLayout {
         return directory
     }()
 
-    /// `docs/diary`.
-    static func diaryDirectory() -> URL { repositoryRoot.appending(path: "docs/diary") }
+    /// `development/diary`.
+    static func diaryDirectory() -> URL { repositoryRoot.appending(path: "development/diary") }
 
-    /// `docs/roadmap`.
-    static func roadmapDirectory() -> URL { repositoryRoot.appending(path: "docs/roadmap") }
+    /// `development/roadmap`.
+    static func roadmapDirectory() -> URL { repositoryRoot.appending(path: "development/roadmap") }
 
-    /// `docs/adr`.
-    static func adrDirectory() -> URL { repositoryRoot.appending(path: "docs/adr") }
+    /// `development/adr`.
+    static func adrDirectory() -> URL { repositoryRoot.appending(path: "development/adr") }
 
     /// A scratch directory for fixtures the tests write and remove.
     static func fixtureDirectory() throws -> URL {
@@ -94,7 +94,7 @@ enum DocumentationLayout {
 
     // MARK: - Reading
 
-    /// Whether `docs/diary` is present.
+    /// Whether `development/diary` is present.
     static func diaryDirectoryExists() throws -> Bool {
         var isDirectory: ObjCBool = false
         return FileManager.default.fileExists(atPath: diaryDirectory().path, isDirectory: &isDirectory)
