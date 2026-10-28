@@ -35,3 +35,7 @@ Item 1 is drafted: `docs/protocol/extensions.md`, version 1. Its complete Python
 documented exchange (initialize, a blocked and an allowed `hooks/tool_call`, shutdown) and behaved as written.
 The version is fixed when the host ships. Items 2 to 5 are owed.
 
+
+## Decision (2026-10-28, ADR-0123)
+
+The extension host is kept for hooks only (block, rewrite, observe); tools from outside arrive through MCP (0067). Remaining work is the hook points.

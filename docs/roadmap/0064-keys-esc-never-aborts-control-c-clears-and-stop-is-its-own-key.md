@@ -72,3 +72,7 @@ the help text, with an ADR that supersedes the key rules of ADR-0040 and ADR-005
 ## Not decided
 
 A dedicated stop chord that works with text in the input; whether to kill only a tool call; the quit-arming window (two seconds proposed).
+
+## Superseded in part (2026-10-28)
+
+The owner decided that Esc interrupts a running turn by default, with a second press as confirmation (a setting). "Esc never aborts" no longer holds; 0083 carries the survey and the settings. The rest of this entry stands until 0083 lands.

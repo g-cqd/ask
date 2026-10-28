@@ -32,3 +32,9 @@ time to the first usable frame may be 50 ms.
 
 Not run for this ADR: the harness change is exercised by `Scripts/test-measurements.py`, and the loaded numbers are recorded in
 the diary entry of the same day.
+
+## Amendment (2026-10-28, later)
+
+The owner set the numbers, all to be assessed on a loaded machine: cold start 50 ms; idle memory 15 MiB (was 24); **active memory 20 MiB (new: resident size right after a tool call is answered and shown, sampled by `Scripts/measure-action.py`)**; input delay 4 ms (was 2); action to result 8 ms (was 5). "Input and action not above 8 ms, and input below 4" was read as action 8 and input 4.
+
+First loaded run (15 runs, 8 workers, load average above 100 from other work): cold start 23.1 ms, idle 12,384 KiB, input 0.80 ms, action 2.89 ms, **active memory 22,000 KiB against 20,480: over**. The active-memory overrun is real, about 9.6 MiB above idle, and is roadmap 0088.

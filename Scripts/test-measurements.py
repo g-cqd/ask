@@ -98,8 +98,8 @@ class MeasurementTests(unittest.TestCase):
             @staticmethod
             def one_run(tool):
                 return 2.0, 3.0
-        limits = dict(coldStartMilliseconds=50, idleMemoryMebibytes=24,
-                      inputDelayMilliseconds=2, actionToActionMilliseconds=5)
+        limits = dict(coldStartMilliseconds=50, idleMemoryMebibytes=15, activeMemoryMebibytes=20,
+                      inputDelayMilliseconds=4, actionToActionMilliseconds=8)
         with patch.dict(os.environ, {"ASK_BUDGET_LOAD": "0"}), patch.object(budgets, "RUNS", 2), patch.object(budgets, "action_probe", return_value=FakeAction()), \
              patch.object(budgets, 'one_run', side_effect=[(10.0, 9000, 0.5), None]), \
              patch.object(budgets, 'load_budgets', return_value=limits), \

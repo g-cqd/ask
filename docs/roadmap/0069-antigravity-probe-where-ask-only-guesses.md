@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["the owner's approval for the one large request, only for step 5"]
+blocked-by: []
 date: 2026-10-25
 ---
 
@@ -31,3 +31,10 @@ the recorded body or stream as its fixture and a fault that fails without the ch
 ## Not claimed
 
 That the refusal wording is the same for Claude and Gemini on Cloud Code: the first probe gives one family's. The others stay open.
+
+## Owner answers (2026-10-28)
+
+- **U1: yes** to the one request of about 140,000 tokens on `gpt-oss-120b` (step 5). Not yet sent.
+- **U12: yes** to sending the first-party identity once, to measure the catalogue. Not yet sent.
+- **U19:** applied to all providers as a setting, roadmap 0089.
+- **U22:** not applicable.
