@@ -8,6 +8,12 @@ struct PickerRow: Sendable, Equatable {
     let insertion: String
     /// The arguments to run the command with at once, when the row is a choice and not text for the draft; nil for a row that inserts.
     let run: String?
+    /// Whether the row is a group heading rather than a match: never selected, never chosen.
+    var isHeading: Bool { label == Self.headingMark }
+
+    /// The marker a heading row's label carries; a command cannot be called this.
+    static let headingMark = "\u{7}heading"
+
     /// The setting path, for rows that commit a configuration value rather than insert text.
     let path: [String]
     /// The values left/right may cycle through; empty for a read-only row.
@@ -38,6 +44,16 @@ struct PickerRow: Sendable, Equatable {
         detail = choice.detail
         insertion = choice.completes ? choice.arguments : "/\(command) \(choice.arguments)"
         run = choice.completes ? nil : choice.arguments
+        path = []
+        choices = []
+    }
+
+    /// A group heading: drawn dim above the category's first match, never selectable.
+    init(heading: String) {
+        label = Self.headingMark
+        detail = heading
+        insertion = heading
+        run = nil
         path = []
         choices = []
     }

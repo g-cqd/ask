@@ -49,7 +49,10 @@ def listed(terminal):
     names = []
     for line in shown[top + 1:]:
         if not line.startswith("/"):
-            break
+            # A category heading ("session", "tools") is not a match; the prompt or a blank row ends the list.
+            if line.startswith("ask>") or not line:
+                break
+            continue
         names.append(line.split()[0])
     return names, top
 
@@ -116,19 +119,20 @@ class Session:
         self.root.cleanup()
 
 
-def control(binary):
-    with Session(binary, [], columns=100, height=30) as session:
+def control(binary, settings):
+    with Session(binary, [], columns=100, height=30, settings=settings) as session:
         type_text(session.terminal, "/")
         check("control (a binary without the picker): a slash opens no list", title_row(session.terminal) is None)
 
 
 def main():
     binary = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask")
+    settings = lambda project: {"ui": {"prompt": "ask> "}}
     if "--control" in sys.argv:
-        control(sys.argv[sys.argv.index("--control") + 1])
+        control(sys.argv[sys.argv.index("--control") + 1], settings=settings)
 
     turns = [long_answer(), short_answer("GOT PATH"), short_answer("GOT ESCAPED"), short_answer("GOT PLAIN")]
-    with Session(binary, turns) as session:
+    with Session(binary, turns, settings=settings) as session:
         terminal = session.terminal
         # A transcript taller than the screen, so there is something for the wheel to scroll.
         type_text(terminal, "fill")
@@ -141,32 +145,36 @@ def main():
         names, top = listed(terminal)
         check("a slash opens a list of every command, titled and above the prompt", top is not None and len(names) >= 6
               and names[:3] == ["/help", "/quit", "/follow-up"] and prompt_row(terminal) == "ask> /")
+        check("commands group under dim category headings",
+              rows(terminal)[top + 1] == "session" and not terminal.screen.buffer[top + 1][0].bold)
         check("the title names the keys", "Enter" in rows(terminal)[top] and "Esc" in rows(terminal)[top])
-        check("the list sits between the status line and the prompt, in text only",
-              rows(terminal)[top - 1].startswith("claude-") or "ready" in rows(terminal)[top - 1])
+        check("the list sits between the transcript and the prompt, in text only",
+              rows(terminal)[top - 1].startswith("─") or rows(terminal)[top - 1].startswith("ANSWER LINE"))
 
         type_text(terminal, "co")
         names, top = listed(terminal)
-        check("typing filters it, prefix matches first", names[:2] == ["/config", "/compact"])
+        check("typing filters it, keeping the category's prefix matches first",
+              names[0] == "/compact" and rows(terminal)[top + 1] == "session")
         check("the filter is the draft itself", prompt_row(terminal) == "ask> /co")
 
         press(terminal, b"\x1b[B")
         names, top = listed(terminal)
         buffer = terminal.screen.buffer
-        check("Down moves the choice: the second row is bold and the first is not",
-              buffer[top + 2][0].bold and not buffer[top + 1][0].bold)
+        check("Down moves the choice: a command row turns bold and the heading does not",
+              buffer[top + 3][0].bold and not buffer[top + 2][0].bold and not buffer[top + 1][0].bold)
 
         before = terminal.text()
         press(terminal, b"\x1b[<64;10;3M")
         names_after, top_after = listed(terminal)
         check("the wheel scrolls the transcript and leaves the list, the choice and the draft alone",
-              names_after == names and top_after == top and buffer[top + 2][0].bold
+              names_after == names and top_after == top and buffer[top + 3][0].bold
               and prompt_row(terminal) == "ask> /co" and terminal.text() != before)
         press(terminal, b"\x1b[<65;10;3M")
 
+        inserted = names[1]
         press(terminal, b"\r")
         check("Enter inserts the chosen command and does not send it",
-              prompt_row(terminal) == "ask> /compact" and title_row(terminal) is None and session.requests() == baseline)
+              prompt_row(terminal) == "ask> " + inserted and title_row(terminal) is None and session.requests() == baseline)
         press(terminal, b"\x18")  # Ctrl-X clears the draft
 
         type_text(terminal, "/re")
@@ -191,8 +199,11 @@ def main():
         type_text(terminal, "/config")
         check("a name typed in full closes the list", title_row(terminal) is None)
         press(terminal, b"\r")
-        terminal.until(lambda: "user file" in terminal.text())
-        check("so Enter still runs it, as it always did", session.requests() == baseline)
+        terminal.until(lambda: "config ·" in terminal.text() and "user" in terminal.text())
+        check("submitting a choice-taking command opens its choices without a prompt",
+              session.requests() == baseline)
+        press(terminal, b"\x1b")
+        press(terminal, b"\x18")
 
         type_text(terminal, "/etc/hosts what is this")
         check("a path is not a command word", title_row(terminal) is None)
@@ -212,7 +223,7 @@ def main():
         press(terminal, b"\x1b")
         press(terminal, b"\x18")
 
-    with Session(binary, []) as session:
+    with Session(binary, [], settings=settings) as session:
         terminal = session.terminal
         type_text(terminal, "/co")
         names, top = listed(terminal)
@@ -223,7 +234,7 @@ def main():
         check("after a resize the next key sizes the list to the screen (three rows at 13)", 1 <= len(names) <= 3)
         check("and the prompt stays on the last row", prompt_row(terminal) == "ask> /com")
 
-    with Session(binary, [], columns=80, height=11) as session:
+    with Session(binary, [], columns=80, height=11, settings=settings) as session:
         terminal = session.terminal
         type_text(terminal, "/co")
         check("a screen too short for the list does not show one", title_row(terminal) is None)

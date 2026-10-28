@@ -76,9 +76,11 @@ public struct ScreenController: Sendable {
         // @dl:accept -- a follow-up entry and a tree entry share a command table's shape; the sentences are the data
         SlashCommand(name: "follow-up", summary: "Queue a message after the agent finishes: /follow-up TEXT."),
         SlashCommand(name: "tasks", summary: "Show or hide the background jobs that are running."),
-        SlashCommand(name: "sidebar", summary: "Show or hide the runner sidebar (Ctrl+\\). Wide screens only."),
         SlashCommand(
-            name: "verbose", summary: "Show or hide details: the sandbox, the files read, builds that appeared.")
+            name: "sidebar", summary: "Show or hide the runner sidebar (Ctrl+\\). Wide screens only.", category: .tools),
+        SlashCommand(
+            name: "verbose", summary: "Show or hide details: the sandbox, the files read, builds that appeared.",
+            category: .tools)
     ]
 
     /// A controller showing `label` in the status line, answering `commands` besides the built-in ones.

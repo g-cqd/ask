@@ -27,11 +27,15 @@ extension ScreenComposer {
         guard shown >= 1 else { return [] }
         let start = range.lowerBound
         let matches = picker.matches[range]
-        let labels = matches.map(\.label)
+        let labels = matches.filter { !$0.isHeading }.map(\.label)
         let labelWidth = Swift.min(24, labels.map { UnicodeWidth.displayWidth(of: $0) }.max() ?? 0)
         var lines = [Line(text: title(for: picker, shown: shown, columns: columns), style: Style(dim: true))]
         for (offset, row) in matches.enumerated() {
-            let label = labels[offset]
+            if row.isHeading {
+                lines.append(Line(text: clipped(row.detail, to: columns), style: Style(dim: true)))
+                continue
+            }
+            let label = row.label
             let padding = String(
                 repeating: " ", count: Swift.max(0, labelWidth - UnicodeWidth.displayWidth(of: label)) + 2)
             let chosen = start + offset == picker.selected
@@ -55,8 +59,10 @@ extension ScreenComposer {
     /// What the list is, how far down it the choice is when it does not all fit, and the keys, as many as the width has room for.
     private static func title(for picker: CompletionPicker, shown: Int, columns: Int) -> String {
         let name = picker.kind.title
+        let choiceNumber = picker.choiceIndexes.firstIndex(of: picker.selected).map { $0 + 1 }
         let position =
-            picker.matches.count > shown && shown > 0 ? " \(picker.selected + 1) of \(picker.matches.count)" : ""
+            picker.countOfChoices > shown && shown > 0
+            ? " \(choiceNumber ?? 1) of \(picker.countOfChoices)" : ""
         let heading = name + position + (picker.caption.isEmpty ? "" : " · " + picker.caption)
         let chooses: Bool = if case .choices = picker.kind { true } else { false }
         let config: Bool = if case .config = picker.kind { true } else { false }

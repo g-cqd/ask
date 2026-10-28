@@ -9,8 +9,8 @@ import Testing
 @Suite("The command picker lists skills after the commands, asking for them once")
 struct SkillPickerTests {
     private static let skills = [
-        SlashCommand(name: "skill:code-review", summary: "skill · Reviews a diff."),
-        SlashCommand(name: "skill:debugging", summary: "skill · Finds a bug.")
+        SlashCommand(name: "skill:code-review", summary: "skill · Reviews a diff.", category: .tools),
+        SlashCommand(name: "skill:debugging", summary: "skill · Finds a bug.", category: .tools)
     ]
 
     private func controller() -> ScreenController {
@@ -27,7 +27,9 @@ struct SkillPickerTests {
         return effects
     }
 
-    private func labels(_ screen: ScreenController) -> [String] { screen.state.picker?.matches.map(\.label) ?? [] }
+    private func labels(_ screen: ScreenController) -> [String] {
+        screen.state.picker?.matches.filter { !$0.isHeading }.map(\.label) ?? []
+    }
 
     @Test func `the first slash asks for the skills and later keys do not`() {
         var screen = controller()
@@ -45,8 +47,15 @@ struct SkillPickerTests {
         screen.handle(.skills(Self.skills))
         let all = labels(screen)
         #expect(all.first == "/help")
-        #expect(all.suffix(3) == ["/config", "/skill:code-review", "/skill:debugging"])
+        #expect(
+            all == [
+                "/help", "/quit", "/follow-up", "/tasks", "/config", "/sidebar", "/verbose",
+                "/skill:code-review", "/skill:debugging"
+            ], "session commands, then the tools, skills last")
         #expect(screen.state.picker?.matches.last?.detail.hasPrefix("skill · ") == true)
+        #expect(
+            screen.state.picker?.matches.filter { $0.isHeading }.map { $0.detail } == ["session", "tools"],
+            "the skills group under the tools heading, as the conversation categorises them")
     }
 
     @Test func `typing skill and a colon narrows to skills, and a name typed in full closes the picker`() {
