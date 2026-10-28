@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -12,9 +12,24 @@ pinned commit is not its ancestor, which points to a history rewrite. SwiftPM re
 ("could not find the commit"); ask still builds here only because the commit is in the local `.build/repositories` cache. The benchmarks
 were built by fetching the commit from that cache, locally.
 
-## Still owed
+## Done (2026-10-28)
 
-- Confirm from a fresh clone in a temporary directory that ask fails to resolve, so the size of the problem is known, not assumed.
-- Find the commit on the new history that matches `785c6b2` (same tree, or the same change), and move the pin in aemi's dependents
-  together: TerminalKit, AemiJSON, aemiregex if it pins aemi, then ask. SwiftPM needs one revision per package in the graph.
-- Check the other Aemi-family pins against their remotes the same way.
+The owner asked for the pin to be moved everywhere. The counterpart of `785c6b2` on aemi's new history is `f6da05c`: same author, date and
+message, and its diff from `785c6b2` is only "Created by Guillaume Coquard" becoming "Created by Gigi" in 33 file headers.
+
+Moved, each resolved against GitHub, built, committed signed as Gigi and pushed, in dependency order:
+
+- on aemi only: AemiRegex `fe9b07f`, TerminalKit `cc0c60c`, AemiMarkdown, AemiProtobuf, AemiSwift, AemiUI, AemiUtilities, and Abysm
+  (`f180a85`, cloned for this) then AemiSDR, which pins it;
+- AemiJSON `5542d37` (aemi and AemiRegex), then analyzerkit `3d1f811` (aemi and AemiJSON);
+- the analyzers arcleak, dolly, deadwood, fcheck and modeler (AemiJSON and analyzerkit);
+- benchmark packages in AemiMarkdown and TerminalKit; Atelier's AtelierCore, KittyCode and GitDiffViewer, whose TerminalKit pin
+  `554a224` was also off main after the rewrite and moved to `cc0c60c` (five additive commits past its counterpart);
+- ask: aemi `f6da05c`, TerminalKit `cc0c60c`, AemiJSON `5542d37`, AemiRegex `fe9b07f` (URL now `g-cqd/AemiRegex.git`, as AemiJSON
+  names it), and the Benchmarks package. The quality gate passes on the new graph.
+
+Found on the way: AemiUI's and AemiUtilities' local clones held a second, unpushed copy of the same rewritten history (same commits and
+trees, different hashes). Their pin commits were replayed on GitHub's history and pushed as fast-forwards; the old local histories are kept
+on a `local-before-aemi-repin` branch. A clone made in a temporary directory has no identity or SSH key set, and its first commit came
+out with the wrong author and its push was refused for the wrong account; it was redone with the repository settings the other clones use.
+The earlier note that ask's AemiRegex, AemiJSON and TerminalKit pins were also gone was wrong (a broken shell loop); they were on main.
