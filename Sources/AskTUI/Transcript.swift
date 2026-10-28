@@ -52,6 +52,8 @@ public struct Transcript: Sendable, Equatable {
     public var spinnerStyle: SpinnerStyle = .line
     /// Whether a command's limits are written in the locale's units or as a clock (`ui.localizedDurations`).
     public var localizedDurations = true
+    /// The home folder that a tool's path is written without (roadmap 0128).
+    public var home: String?
     /// The most lines of one tool's output kept; the rest is said, not stored, so one huge output cannot slow every frame.
     static let outputLineLimit = 400
 
@@ -97,7 +99,8 @@ public struct Transcript: Sendable, Equatable {
         fullInput: String = "",
         command: ToolCommand? = nil
     ) {
-        let summary = command.map { $0.parameters(localized: localizedDurations) } ?? summary
+        let summary =
+            command.map { $0.parameters(localized: localizedDurations) } ?? HomePath.abbreviate(summary, home: home)
         append(.tool(name: name, summary: summary, status: .running, output: "", fullInput: fullInput))
         progress[items.count - 1] = BlockProgress(at: now, spinner: spinnerStyle)
         if command != nil { commandBlocks.insert(items.count - 1) }
