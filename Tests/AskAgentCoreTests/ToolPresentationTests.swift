@@ -20,8 +20,14 @@ struct ToolPresentationTests {
     @Test func `read and write headers show concise window and size parameters`() throws {
         #expect(
             ToolSummary.header(for: try input(#"{"path":"src/a.swift","offset":10,"limit":36}"#))
-                == "src/a.swift · lines 10–45")
-        #expect(ToolSummary.header(for: try input(#"{"path":"a.txt","content":"é"}"#)) == "a.txt · 2 bytes")
+                == "src/a.swift · [10:45]")
+        #expect(
+            ToolSummary.header(for: try input(#"{"path":"src/b.swift","offset":15}"#))
+                == "src/b.swift · [15:]")
+        #expect(ToolSummary.header(for: try input(#"{"path":"a.txt","content":"é"}"#)) == "a.txt · 2 B")
+        let kb = String(repeating: "a", count: 1024)
+        #expect(
+            ToolSummary.header(for: try input(#"{"path":"b.txt","content":"\#(kb)"}"#)) == "b.txt · 1 KiB (1,024 B)")
         #expect(ToolSummary.fullInput(for: try input(#"{"path":"a.txt","content":"é\nhello"}"#)) == "é\nhello")
     }
 

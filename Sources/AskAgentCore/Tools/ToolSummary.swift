@@ -48,13 +48,13 @@ public enum ToolSummary {
             if fields.oldText != nil {
                 parts.append("exact replacement")
             } else if let content = fields.content ?? fields.newText {
-                parts.append("\(content.utf8.count) bytes")
+                parts.append(formatBytes(content.utf8.count))
             } else if let limit = fields.limit, limit > 0 {
                 let first = Swift.max(1, fields.offset ?? 1)
                 let end = first.addingReportingOverflow(limit - 1)
-                parts.append(end.overflow ? "from \(first) · limit \(limit)" : "lines \(first)–\(end.partialValue)")
+                parts.append(end.overflow ? "[\(first):]" : "[\(first):\(end.partialValue)]")
             } else if let offset = fields.offset {
-                parts.append("from line \(offset)")
+                parts.append("[\(offset):]")
             }
         } else if let job = fields.job {
             parts = [compact(job), fields.action ?? "input"]
@@ -68,6 +68,20 @@ public enum ToolSummary {
         if let command = fields.command { return command }
         if let old = fields.oldText, let new = fields.newText { return "old_text:\n\(old)\nnew_text:\n\(new)" }
         return fields.content ?? fields.newText ?? String(decoding: input.bytes, as: UTF8.self)
+    }
+
+    static func formatBytes(_ count: Int) -> String {
+        guard count >= 1024 else { return "\(count) B" }
+        let kib = Double(count) / 1024.0
+        let tenths = Int((kib * 10).rounded())
+        let formattedKib = "\(tenths / 10)" + (tenths % 10 == 0 ? "" : ".\(tenths % 10)")
+        var exact = String(count)
+        var offset = exact.count - 3
+        while offset > 0 {
+            exact.insert(",", at: exact.index(exact.startIndex, offsetBy: offset))
+            offset -= 3
+        }
+        return "\(formattedKib) KiB (\(exact) B)"
     }
 
     private static func compact(_ text: String) -> String {
