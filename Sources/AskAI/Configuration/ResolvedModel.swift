@@ -47,6 +47,7 @@ public struct ResolvedModel: Sendable, Equatable {
         self.imageLimits = imageLimits
         switch provider {
             case .anthropic, .codex: self.acceptsImages = acceptsImages ?? true
+            case .agy: self.acceptsImages = acceptsImages ?? AgyImagePlacement.accepts(model: model)
             default: self.acceptsImages = acceptsImages
         }
         self.provider = provider

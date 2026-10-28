@@ -38,8 +38,13 @@ public enum SessionLog {
     /// - Throws: ``SessionLogError/encodingFailed``.
     /// - Complexity: O(total payload size).
     public static func snapshot(_ tree: SessionTree) throws(SessionLogError) -> [UInt8] {
+        try snapshot(tree, images: nil)
+    }
+
+    /// ``snapshot(_:)`` with the pictures of tool results written to `images` and referenced by hash.
+    static func snapshot(_ tree: SessionTree, images: SessionImageStore?) throws(SessionLogError) -> [UInt8] {
         var bytes = try encode(.header(version: formatVersion))
-        for entry in tree.entries { bytes += try encode(.entry(entry)) }
+        for entry in tree.entries { bytes += try encode(.entry(entry), images: images) }
         if let sandbox = tree.sandbox { bytes += try encode(.sandbox(sandbox)) }
         bytes += try encode(.leaf(tree.leaf))
         return bytes
@@ -50,7 +55,12 @@ public enum SessionLog {
     /// - Returns: the record's bytes.
     /// - Throws: ``SessionLogError/encodingFailed``.
     public static func line(for entry: SessionEntry) throws(SessionLogError) -> [UInt8] {
-        try encode(.entry(entry))
+        try line(for: entry, images: nil)
+    }
+
+    /// ``line(for:)`` with the pictures of tool results written to `images` and referenced by hash.
+    static func line(for entry: SessionEntry, images: SessionImageStore?) throws(SessionLogError) -> [UInt8] {
+        try encode(.entry(entry), images: images)
     }
 
     /// One newline-terminated record selecting `leaf`, or a new root when nil.
@@ -82,12 +92,19 @@ public enum SessionLog {
     public static func recover(
         _ bytes: [UInt8], limits: Limits = .standard
     ) throws(SessionLogError) -> RecoveredSession {
+        try recover(bytes, limits: limits, images: nil)
+    }
+
+    /// ``recover(_:limits:)`` reading the pictures of tool results from `images`. A picture it cannot find becomes a line of text.
+    static func recover(
+        _ bytes: [UInt8], limits: Limits, images: SessionImageStore?
+    ) throws(SessionLogError) -> RecoveredSession {
         guard bytes.count <= limits.maximumArchiveBytes else { throw .archiveTooLarge(bytes.count) }
         guard !bytes.isEmpty else { return RecoveredSession(tree: SessionTree(), issues: [.missingHeader]) }
         var lines = bytes.split(separator: 0x0A, omittingEmptySubsequences: false)
         // Empty when the archive ends in a newline, as every complete write does.
         let finalLine = lines.removeLast()
-        var recovery = Recovery(limits: limits)
+        var recovery = Recovery(limits: limits, images: images)
         for (index, line) in lines.enumerated() {
             try recovery.consume(line, number: index + 1, isFinal: false)
         }
@@ -113,7 +130,7 @@ public enum SessionLog {
     /// reported; the tree is valid after every step.
     private struct Recovery {
         let limits: Limits
-        let decoder = AemiJSON.JSONDecoder()
+        var decoder = AemiJSON.JSONDecoder()
         var tree = SessionTree()
         var issues: [SessionLogIssue] = []
         var version = SessionLog.formatVersion
@@ -122,7 +139,10 @@ public enum SessionLog {
         /// Spliced-out compactions, mapped to the parent their children now attach to.
         private var spliced: [EntryID: EntryID?] = [:]
 
-        init(limits: Limits) { self.limits = limits }
+        init(limits: Limits, images: SessionImageStore?) {
+            self.limits = limits
+            if let images { decoder.userInfo[SessionImageStore.userInfoKey] = images }
+        }
 
         mutating func consume(_ line: ArraySlice<UInt8>, number: Int, isFinal: Bool) throws(SessionLogError) {
             guard line.count <= limits.maximumLineBytes else {
@@ -207,8 +227,11 @@ public enum SessionLog {
         }
     }
 
-    private static func encode(_ record: SessionLogRecord) throws(SessionLogError) -> [UInt8] {
+    private static func encode(
+        _ record: SessionLogRecord, images: SessionImageStore? = nil
+    ) throws(SessionLogError) -> [UInt8] {
         var encoder = AemiJSON.JSONEncoder()
+        if let images { encoder.userInfo[SessionImageStore.userInfoKey] = images }
         // Sorted keys make equal records byte-identical; slashes stay unescaped, AemiJSON's default.
         encoder.options.keyOrder = .sorted
         do {

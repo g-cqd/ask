@@ -42,3 +42,14 @@ That the refusal wording is the same for Claude and Gemini on Cloud Code: the fi
 ## U1 result (2026-10-28)
 
 One request, 137,838 tokens of random dictionary words, to `gpt-oss-120b-medium` (window 131,072) through the release binary: **HTTP 400, "The input (137838 tokens) is longer than the model's context length (131072 tokens)."** Answered in 3.6 s. `describesContextOverflow` did **not** recognise it (no "exceed", no "maximum context length"), so the loop showed a refusal instead of compacting. Fixed with that wording and a window pattern; test `the recorded Antigravity refusal for length...`. Not captured: the raw JSON body (the test assumes the usual envelope), and the compact-and-retry run against the live server (it would be a second large request). Step 5 of this entry is done except for that last demonstration; U12 is still to send.
+
+## U1 second probe, and a thought-signature bug (2026-10-28)
+
+The second large request to `gpt-oss-120b-medium` met two HTTP 503s, then ask compacted ("Compacted the conversation…"), and the
+provider then refused: "The input (138295 tokens) is longer than the model's context length (131072 tokens)". ask stopped with
+"does not fit … even after compacting". A single oversized user message cannot be compacted away; a fix (clip, or refuse early with
+a clear message) is not done.
+
+`gemini-2.5-flash` on Antigravity refuses any tool call, with or without an image: HTTP 400 "Function call is missing a
+thought_signature in functionCall parts … `default_api:read`, position 2". ask sends the sentinel only for `gemini-3*`
+(`AgyThoughtSignature.requiresSignature`). Not fixed; found while testing images (0084).

@@ -49,6 +49,8 @@ struct MCPCallTool: Tool {
                 return .error(MCPToolAdapter.refused(server: server, tool: tool))
             }
         }
-        return await MCPCalling.output(tool, arguments: arguments, on: found.connection, server: server)
+        return await MCPCalling.output(
+            tool, arguments: arguments, on: found.connection, server: server,
+            allowance: ImageReader.Allowance(context.imageLimits))
     }
 }
