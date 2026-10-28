@@ -54,6 +54,15 @@ package, and specialised packages build on it; this binds the whole ecosystem. T
 consumer is plausible, not whether one exists. Promotion is a real change to a shared package: measured,
 reviewed and pinned by dependents like any other.
 
+**System APIs before subprocesses.** When macOS offers an API for something, ask calls it instead of
+starting a command-line tool: the pasteboard through `NSPasteboard`, not `pbcopy` or `pbpaste` (ADR-0127);
+keeping the Mac awake through a power assertion, not `caffeinate` (roadmap 0090). A process costs a spawn,
+a pipe and a failure mode of its own, and leaves nothing to type-check. Before reaching for a tool, look the
+API up in the current documentation (`apple-docs`) and use its current form. A subprocess stays only where it
+is the point (the commands the model runs, MCP servers, the provider's own binary, the self-check of a new
+build), where macOS offers no API (`sandbox-exec`), or where the tool is the authority (`git ls-files` for
+what git ignores), and each such use says why next to it. Roadmap 0101 keeps the inventory.
+
 **Reliable by default, and never silent.** Damage costs only what is actually damaged: everything intact
 still loads, every repair is reported, reading never writes. Refusing input needs a written safety reason,
 because convenience and reliability are requirements together, like speed and safety. Other agents are
