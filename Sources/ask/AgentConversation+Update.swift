@@ -3,8 +3,20 @@ internal import AskAgentCore
 internal import AskTUI
 
 extension AgentConversation {
-    /// What the screen shows for one loop event, or nil when it shows nothing.
-    static func update(for event: AgentEvent) -> ConversationUpdate? {
+    /// What the screen shows for one loop event: nothing, or one update, or two when a compaction ends (it stops the status mark and
+    /// says how it went).
+    static func updates(for event: AgentEvent) -> [ConversationUpdate] {
+        switch event {
+            case .compacting: return [.compacting(true)]
+            case .compacted, .compactionFailed:
+                return [.compacting(false)]
+                    + (RunNotices.compaction(for: event).map { [.notice($0, isError: false)] } ?? [])
+            default: return update(for: event).map { [$0] } ?? []
+        }
+    }
+
+    /// What the screen shows for one loop event other than a compaction's, or nil when it shows nothing.
+    private static func update(for event: AgentEvent) -> ConversationUpdate? {
         switch event {
             case .model(.textDelta(_, let text)): return .assistantText(text)
             case .model(.thinkingDelta(_, let text)): return .thinkingText(text)
@@ -26,8 +38,6 @@ extension AgentConversation {
                     id: id, backgroundJob: output.backgroundJob)
             case .repaired(let repairs):
                 return .notice("Repaired the context before this turn: \(repairs)", isError: false)
-            case .compacted, .compactionFailed:
-                return RunNotices.compaction(for: event).map { .notice($0, isError: false) }
             case .continuedAtOutputLimit:
                 return .detail("The response hit the output limit; asking the model to continue.")
             case .retrying(let attempt, let total, let delay, let reason):

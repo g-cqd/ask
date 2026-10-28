@@ -14,6 +14,8 @@ public struct ScreenState: Sendable, Equatable {
     public var labelVariants: [String] = []
     /// Whether a run is in progress: the status line says so and how to abort it.
     public var running = false
+    /// Whether the conversation is being compacted, which the status bar's leading mark says (roadmap 0099).
+    public var compacting = false
     /// Whether the sandbox is active for this session (false if unrestricted).
     public var sandboxed = true
     /// Current animated frame index for the status line spinner.

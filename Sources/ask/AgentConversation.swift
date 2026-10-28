@@ -110,7 +110,7 @@ final class AgentConversation: Conversation {
                 case .prompt(let text): updates.append(.userPrompt(text))
                 case .event(let event):
                     recordUsage(event)
-                    if let shown = Self.update(for: event) { updates.append(shown) }
+                    updates += Self.updates(for: event).filter { $0 != .compacting(false) }
             }
         }
         return updates + [.status(usage.withLock { $0.compact }), contextUpdate()]
@@ -155,7 +155,7 @@ final class AgentConversation: Conversation {
             update(.status(usage.withLock { $0.compact }))
             update(contextUpdate())
         }
-        if let shown = Self.update(for: event) { update(shown) }
+        for shown in Self.updates(for: event) { update(shown) }
     }
 
     /// Says why a run or command ended without finishing.

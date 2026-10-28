@@ -39,12 +39,12 @@ struct RunnerProgressTests {
         let runner = RunnerInfo(name: "job-1", detail: "build", startedAt: start)
         controller.setRunners([runner], at: start + .seconds(61))
         controller.state.runnersOpen = true
-        #expect(RunnerStrip(controller.state, available: 5, columns: 40).lines[0].text.hasSuffix("1:01 |"))
+        #expect(RunnerStrip(controller.state, available: 5, columns: 40).lines[0].text.hasSuffix("1:01 · |"))
         _ = controller.enterLane(runner)
         controller.advanceProgress(at: start + .seconds(62))
         controller.setRunners([runner], at: start + .seconds(63))
         #expect(controller.state.runnerProgress[runner.id]?.started == start)
-        #expect(RunnerStrip(controller.state, available: 5, columns: 40).lines[0].text.hasSuffix("1:03 /"))
+        #expect(RunnerStrip(controller.state, available: 5, columns: 40).lines[0].text.hasSuffix("1:03 · /"))
         controller.leaveLane()
         #expect(controller.state.runnerProgress[runner.id]?.started == start)
     }
@@ -63,7 +63,22 @@ struct RunnerProgressTests {
             #expect(text.hasSuffix("|"))
         }
         let text = RunnerStrip(controller.state, available: 5, columns: 80).lines[0].text
-        #expect(text.hasSuffix("    1:01:01 |"))
+        #expect(
+            text.hasSuffix("…  1:01:01 · |"),
+            "a cut command ends with an ellipsis, two cells before the time (roadmap 0100)")
+    }
+
+    @Test func `a row with no clock that is too wide ends with an ellipsis at the edge`() {
+        var controller = ScreenController(label: "test")
+        controller.setRunners(
+            [RunnerInfo(name: "job-1", detail: String(repeating: "x", count: 100), state: .done)], at: .now)
+        controller.state.runnersOpen = true
+        for columns in [10, 33, 60] {
+            let text = RunnerStrip(controller.state, available: 5, columns: columns).lines[0].text
+            #expect(UnicodeWidth.displayWidth(of: text) == columns && text.hasSuffix("…"), "\(columns): \(text)")
+        }
+        let wide = RunnerStrip(controller.state, available: 5, columns: 200).lines[0].text
+        #expect(!wide.contains("…"), "a row that fits is not cut")
     }
 
     @Test func `terminal and removed jobs discard clocks without stopping a live model`() {

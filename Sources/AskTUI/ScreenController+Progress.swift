@@ -1,6 +1,7 @@
 extension ScreenController {
     var hasLiveProgress: Bool {
-        state.running || !state.runnerProgress.isEmpty || (state.lane?.stashed ?? state.transcript).hasLiveProgress
+        state.running || state.compacting || !state.runnerProgress.isEmpty
+            || (state.lane?.stashed ?? state.transcript).hasLiveProgress
     }
 
     mutating func advanceProgress(at instant: ContinuousClock.Instant = .now) {

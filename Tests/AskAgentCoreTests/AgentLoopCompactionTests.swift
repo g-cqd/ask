@@ -38,6 +38,9 @@ struct AgentLoopCompactionTests {
         #expect(resumed.first?.blocks.first == .text(RequestContext.summaryPrefix + "SUMMARY"))
         #expect(!resumed.flatMap(\.blocks).contains(.text("First answer.")))
         #expect(events.contains { if case .compacted = $0 { true } else { false } })
+        // The screen is told before the summary is asked for, so it can say "Compacting..." meanwhile (roadmap 0099).
+        let began = try #require(events.firstIndex(of: .compacting))
+        #expect(began < events.firstIndex { if case .compacted = $0 { true } else { false } }!)
         // The summary is ask's own request: it is not shown as the assistant speaking.
         #expect(!events.contains(.model(.textDelta(index: 0, "SUMMARY"))))
     }
@@ -139,6 +142,7 @@ struct AgentLoopCompactionTests {
         var events: [AgentEvent] = []
         try await loop.compactNow(in: file) { events.append($0) }
         #expect(events.contains { if case .compactionFailed = $0 { true } else { false } })
+        #expect(events.contains(.compacting), "a compaction that fails still began, and its end clears the status")
     }
 
     @Test func `the kept tail never starts at a tool result, which would orphan it from its call`() throws {
