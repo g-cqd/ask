@@ -48,8 +48,8 @@ struct JobToolsTests {
         #expect(!yielded.isError)
         #expect(yielded.content.hasPrefix("ready\n[still running as job-1 after 5 s"))
         #expect(jobs.running == ["job-1"])
-        let reply = await JobInputTool(jobs: jobs, clock: TestClock())
-            .run(input(#"{"job":"job-1","text":"hello\n"}"#), in: context)
+        let reply = await JobActionTool(jobs: jobs)
+            .run(input(#"{"job":"job-1","action":"input","text":"hello\n"}"#), in: context)
         #expect(reply == ToolOutput("[job-1 ended]\ngot hello\n[exit 0]"))
         #expect(jobs.running.isEmpty)
     }

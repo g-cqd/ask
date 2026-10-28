@@ -30,9 +30,9 @@ input changes, MCP exposure control, `memory-safety` on `ConfigEditor.run` and `
   `git filter-branch` on `origin/main..main` only (published hashes unchanged); commit hashes quoted in the
   diary before this entry may not match. Unsigned: the signing key has a passphrase. Push only after
   deciding whether to re-sign. A diary line naming an unrelated project was reworded.
-- [ ] Add the guard so it cannot recur: `Scripts/land.py` refuses an author other than the configured no-reply
+- [x] Add the guard so it cannot recur: `Scripts/land.py` refuses an author other than the configured no-reply
   address, and the machine gets the `includeIf "gitdir:~/Developer/g-cqd/"` identity rule.
-  Done: `land.py` refuses commits whose author or committer is not the no-reply address (guard only; the `includeIf` rule is still owed and touches the live `~/.gitconfig`).
+  Done: `land.py` refuses commits whose author or committer is not the no-reply address The `includeIf` rule is in the live `~/.gitconfig` (backup `~/.gitconfig.bak-2026-10-28`, identity in `~/.gitconfig-g-cqd`), for `/Volumes/Disk/Github/g-cqd/` and `~/Developer/g-cqd/`.
   Also done: roadmap 0063 front matter fixed, 0059 left as is (its body already says 0077 supersedes it; the checker allows no "superseded" status), the two backup branches deleted (their four commits are on main under the same subjects).
   Finding: `--write`/`--read` take one value by design, so `prefix(1)` is the CLI limit; printing every path needs the flags to repeat, which is a feature, not a fix.
 
@@ -103,23 +103,26 @@ Each line: request (date, time) → what main has → what is owed.
   `settings.json` that links into a dotfiles repository swaps the link for a file and leaves the real one stale.
   Resolve with `realpath` before choosing the temporary directory. Test with a symlinked target.
   Done: the target path is resolved first; `ConfigEditorSymlinkTests`.
-- [ ] **Read–modify–write without a lock.** Two `ask` processes editing at once can lose an edit. Take a short lock
+- [x] **Read–modify–write without a lock.** Two `ask` processes editing at once can lose an edit. Take a short lock
   like the credentials transaction (ADR-0039), or write in the ADR that last-writer-wins is accepted.
-- [ ] **The resume command prints only the first `--write`/`--read` path** (`paths.prefix(1)` in
+  Done: `ConfigEditor` takes an exclusive `flock` on the settings file's directory around the re-read, the change and the rename (no stray lock file); a lock held for more than two seconds is reported. `ConfigEditorLockTests`. The concurrency test cannot prove the race on its own, the held-lock test proves the lock is taken.
+- [x] **The resume command prints only the first `--write`/`--read` path** (`paths.prefix(1)` in
   `Flags.arguments`). The resumed run is narrower than the original unless the session file decides. Say which, or
   print every path.
+  Done: `--write` and `--read` are repeatable (several directories; `workspace`/`anywhere` only alone), and the resume command prints every path. Checked by running the parser, not by a unit test: the executable has no test target.
 - [x] **`shell` argument of the bash tool accepts any absolute executable** (`JobTable.isShell` checks existence
   and the execute bit). The model can name `/usr/bin/python3` as the shell. Restrict to `/etc/shells` plus the
   configured shell.
   Done: a named shell must be in `/etc/shells` or be the configured `SHELL`; otherwise the configured shell is used. Test added.
-- [ ] **`wait_for_port` is allowed whenever the network is not `.none`**, including a domain-limited policy.
+- [x] **`wait_for_port` is allowed whenever the network is not `.none`**, including a domain-limited policy.
   State in ADR-0043 which hosts it may touch (loopback only?), and route a host argument through the connection check.
+  Done: ADR-0121: it probes 127.0.0.1 and ::1 only and takes no host; a host argument comes only with the domain policy of 0021. A test pins the address.
 - [ ] **Copilot impersonates VS Code** (client id `01ab8ac9400c4e429b23`, `editor-version vscode/…`,
   `copilot-integration-id vscode-chat`), as requested ("as if it was vscode"). The code says "not a claim of official
   parity", but the terms of service of the service are the owner's decision; record that decision in an ADR.
 - [ ] **`PathDisplay.tilde` resolves symlinks** for paths outside `home`. Fine at exit; one syscall per row per frame
   if moved into the render path. Compute once per block, with a benchmark (ADR-0016).
-- [ ] **Code reachable only from tests (deadwood, 16 notes).** `JobInputTool` (not registered since `eb3d3f1`'s
+- [ ] **Code reachable only from tests (deadwood, 15 notes after `JobInputTool` was deleted; the rest are test hooks and credential `remove*` helpers).** `JobInputTool` (not registered since `eb3d3f1`'s
   subject, "smaller tool surface"), `SandboxRequestError`, `CredentialFile.remove{Agy,Codex,Claude,Key}`,
   `rotationIsUnsaved` (×3), `Budget.isWithinBudget`, `MCPToolName.isMCP`, `JobWatchdog.simulateDeath` /
   `openDescriptorForTesting`, `MCPHost.waitUntilListed`, `StdioTransport.waitUntilRunning`, `MCPConnection.ping`.
