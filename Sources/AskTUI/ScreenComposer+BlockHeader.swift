@@ -50,11 +50,15 @@ extension ScreenComposer {
 
     static func blockMetadata(
         status: Transcript.ToolStatus, output: String, progress: BlockProgress?, localizedDurations: Bool = true,
-        lineCount: Int? = nil
+        lineCount: Int? = nil, toolName: String? = nil
     ) -> String {
         var parts: [String] = []
         if let duration = progress?.duration(localized: localizedDurations) { parts.append(duration) }
-        let count = lineCount ?? (output.isEmpty ? 0 : TranscriptContent.hardLines(of: output).count)
+        let isWriteAck = toolName == "write"
+        let count =
+            isWriteAck
+            ? 0
+            : (lineCount ?? (output.isEmpty ? 0 : TranscriptContent.hardLines(of: output).count))
         if count > 0 {
             parts.append("\(count) \(count == 1 ? "line" : "lines")")
         }

@@ -1,3 +1,4 @@
+import TerminalKitStyle
 import TerminalKitText
 import Testing
 
@@ -15,6 +16,30 @@ struct ToolInputPresentationTests {
 
     private func heredoc(_ count: Int, opening: String = "cat << 'EOF' > test.py", closing: String = "EOF") -> String {
         ([opening] + (0 ..< count).map { "payload\($0)" } + [closing, "echo after"]).joined(separator: "\n")
+    }
+
+    @Test func `unfolded tool omits input output dividers and dims output while keeping input at default style`() throws
+    {
+        var transcript = Transcript()
+        transcript.startTool(name: "shell", summary: "echo", id: "c1", fullInput: "echo hello")
+        transcript.finishTool(.succeeded, output: "hello", id: "c1")
+        transcript.setToolsFoldedByDefault(false)
+        let rows = ScreenComposer.lines(in: transcript, at: 0, columns: 80)
+        #expect(!rows.contains { $0.text.contains("input") && $0.text.contains("──") }, "no input divider")
+        #expect(!rows.contains { $0.text.contains("output") && $0.text.contains("──") }, "no output divider")
+        let inputRow = try #require(rows.first { $0.text.contains("echo hello") })
+        let outputRow = try #require(rows.first { $0.text.contains("hello") && !$0.text.contains("echo") })
+        #expect(!inputRow.style.dim, "input is default brightness")
+        #expect(outputRow.style.dim, "output is dimmed")
+    }
+
+    @Test func `write tool omits line count from trailing metadata`() throws {
+        var transcript = Transcript()
+        transcript.startTool(name: "write", summary: "test.txt · 10 B", id: "w1", fullInput: "new content")
+        transcript.finishTool(.succeeded, output: "Wrote 10 bytes to test.txt.", id: "w1")
+        let headerRow = ScreenComposer.lines(in: transcript, at: 0, columns: 80).first?.text ?? ""
+        #expect(!headerRow.contains("1 line"), "write tool acknowledgement does not show 1 line")
+        #expect(headerRow.contains("✓"))
     }
 
     @Test func `long multiline input appears above output with exact copy sources`() throws {

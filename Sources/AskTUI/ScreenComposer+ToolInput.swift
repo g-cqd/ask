@@ -28,12 +28,15 @@ extension ScreenComposer {
             Transcript.Item.toolHeader(name: name, summary: summary, status: status, output: output, folded: false),
             metadata: blockMetadata(
                 status: status, output: output, progress: progress,
-                localizedDurations: style.localizedDurations), block: block, width: width, inset: inset, style: look)
-            + [Line(text: "", style: .default), label("input")]
+                localizedDurations: style.localizedDurations, toolName: name), block: block, width: width, inset: inset,
+            style: look)
+            + [Line(text: "", style: .default)]
             + body(of: input, block: block, width: width, inset: inset, style: .default)
-            + [Line(text: "", style: .default), label(output.isEmpty ? "output · empty" : "output")]
-            + body(
-                of: output, block: block, width: width, inset: inset, style: Style(dim: true),
-                firstLine: 1 + TranscriptContent.hardLines(of: input).count)
+            + (output.isEmpty
+                ? []
+                : [Line(text: "", style: .default)]
+                    + body(
+                        of: output, block: block, width: width, inset: inset, style: Style(dim: true),
+                        firstLine: 1 + TranscriptContent.hardLines(of: input).count))
     }
 }

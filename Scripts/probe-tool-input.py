@@ -39,14 +39,15 @@ def main():
                         "shell · cat" in terminal.text() and "timeout 5s" in terminal.text())
             probe.check("full tool input starts inside the folded block", "payload0" not in terminal.text())
             terminal.draw(lambda: terminal.send(b"\x0f"))
-            probe.check("expanded tool separates input and output", "── input ──" in terminal.text()
-                        and "── output ──" in terminal.text() and "DONE" in terminal.text())
+            probe.check("expanded tool shows input and output without decorative divider labels",
+                        "DONE" in terminal.text() and "payload19" in terminal.text()
+                        and "── input ──" not in terminal.text() and "── output ──" not in terminal.text())
             probe.check("a 45-line heredoc keeps twenty lines and identifies twenty-five omitted",
                         "payload19" in terminal.text() and "25 lines embedded heredoc" in terminal.text()
                         and "payload44" not in terminal.text() and "printf DONE" in terminal.text())
             terminal.draw(lambda: terminal.click("embedded heredoc"))
             probe.check("a click opens the heredoc without closing the whole tool",
-                        "payload44" in terminal.text() and "── output ──" in terminal.text())
+                        "payload44" in terminal.text() and "DONE" in terminal.text())
             first, last = terminal.row("payload42") + 1, terminal.row("payload44") + 1
             terminal.send(f"\x1b[<0;1;{first}M\x1b[<32;10;{last}M\x1b[<0;10;{last}m".encode())
             terminal.until(lambda: bool(terminal.copies()))
