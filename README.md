@@ -94,6 +94,9 @@ the full draft is submitted, never just the visible slice. Set `ui.promptRows`
 in `config.json` to change the requested limit, for example
 `{ "ui": { "promptRows": 3 } }`.
 
+Option+Backspace deletes the previous word (as Ctrl-W does) and Option+Delete the next one. Command+C, X and V copy, cut and paste like
+their Ctrl twins and never type a letter; Ctrl-C still interrupts and Ctrl-X still clears the draft when nothing is selected.
+
 Long output folds to one line you can open: click the line (or press Ctrl-T for thinking, Ctrl-O for tool output, Ctrl-G for code
 blocks longer than 20 lines, never more than half the screen) and it opens in place. `ui.thinking`, `ui.tools` and `ui.code` choose
 `"folded"` or `"open"` at the start; `ui.codeFoldLines` sets the length. Elapsed status is hidden on model answers and for operations lasting one second or less.

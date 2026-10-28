@@ -8,14 +8,30 @@ struct ScreenClipboard {
     private var writer: ClipboardWriter
     private let connection: any TerminalConnection
     private let pasteboard: @Sendable (String) async -> PasteboardResult
+    /// Reads the host's pasteboard for a Command+V or Ctrl+V the terminal passed on instead of pasting (roadmap 0082).
+    let read: @Sendable () async -> HostPasteboard.Reading
 
     init(
         connection: any TerminalConnection, environment: [String: String],
-        pasteboard: @escaping @Sendable (String) async -> PasteboardResult
+        pasteboard: @escaping @Sendable (String) async -> PasteboardResult,
+        read: @escaping @Sendable () async -> HostPasteboard.Reading = { .empty }
     ) {
         writer = ClipboardWriter(environment: environment)
         self.connection = connection
         self.pasteboard = pasteboard
+        self.read = read
+    }
+
+    /// Reads the pasteboard and hands its text to the screen as a bracketed paste, or why it could not (roadmap 0082).
+    func paste(into sink: AsyncStream<ScreenEvent>.Continuation) {
+        let read = read
+        Task {
+            switch await read() {
+                case .text(let text): sink.yield(.input(.paste(text)))
+                case .denied(let reason): sink.yield(.pasteRefused(reason))
+                case .empty: break
+            }
+        }
     }
 
     /// The measured bypass key for this terminal, or the configuration switch when the terminal is unknown.

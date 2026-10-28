@@ -48,7 +48,7 @@ public func runInteractiveScreen(
             connection: connection, session: terminal, renderer: renderer, frames: frames,
             clipboard: ScreenClipboard(
                 connection: connection, environment: ProcessInfo.processInfo.environment,
-                pasteboard: HostPasteboard.pbcopy)),
+                pasteboard: HostPasteboard.write, read: HostPasteboard.read)),
         conversation: conversation, label: label, options: options,
         opening: openingUpdates(history: history, notices: notices, details: details), resizes: resizes)
 }
