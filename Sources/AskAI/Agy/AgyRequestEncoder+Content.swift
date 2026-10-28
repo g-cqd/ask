@@ -36,9 +36,12 @@ extension AgyRequestEncoder {
             var text: [Part] = []
             for block in blocks {
                 switch block {
-                    case .toolResult(let id, let content, let isError):
+                    case .toolResult(let id, let content, let isError, let images):
                         results.append(
-                            .result(id: id, name: names[id] ?? "unknown_tool", content: content, isError: isError))
+                            .result(
+                                id: id, name: names[id] ?? "unknown_tool",
+                                content: ImagePart.noting(images, in: content),
+                                isError: isError))
                     case .text(let value) where !value.isEmpty: text.append(.text(value))
                     default: break
                 }

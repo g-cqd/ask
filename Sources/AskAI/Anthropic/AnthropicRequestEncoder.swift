@@ -1,4 +1,5 @@
 internal import AemiJSON
+internal import Foundation
 
 /// Encodes a ``ModelRequest`` as an Anthropic Messages streaming request body.
 ///
@@ -146,11 +147,33 @@ public enum AnthropicRequestEncoder {
                     $0.raw(input.bytes)
                     breakpoint(if: cached, &$0)
                 }
-            case .toolResult(let id, let content, let isError):
+            case .toolResult(let id, let content, let isError, let images):
                 writer.object {
                     $0.field("type", "tool_result")
                     $0.field("tool_use_id", id)
-                    $0.field("content", content)
+                    if images.isEmpty {
+                        $0.field("content", content)
+                    } else {
+                        // Images ride inside the result, after its text (roadmap 0084).
+                        $0.key("content")
+                        $0.array { parts in
+                            parts.object {
+                                $0.field("type", "text")
+                                $0.field("text", content)
+                            }
+                            for image in images {
+                                parts.object {
+                                    $0.field("type", "image")
+                                    $0.key("source")
+                                    $0.object {
+                                        $0.field("type", "base64")
+                                        $0.field("media_type", image.mediaType)
+                                        $0.field("data", Data(image.data).base64EncodedString())
+                                    }
+                                }
+                            }
+                        }
+                    }
                     if isError {
                         $0.key("is_error")
                         $0.bool(true)

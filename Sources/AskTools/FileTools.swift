@@ -47,11 +47,21 @@ public enum FileTools {
     static func text(
         at url: URL, shownAs path: String, in context: ToolContext, between: () -> Void = {}
     ) throws(ToolFailure) -> String {
+        try text(from: try bytes(at: url, shownAs: path, in: context, between: between), shownAs: path)
+    }
+
+    /// The file's bytes, checked the same way ``text(at:shownAs:in:between:)`` checks them before it decodes.
+    static func bytes(
+        at url: URL, shownAs path: String, in context: ToolContext, between: () -> Void = {}
+    ) throws(ToolFailure) -> [UInt8] {
         between()
-        let bytes =
-            context.sandbox.isUnrestricted
+        return context.sandbox.isUnrestricted
             ? try unscopedBytes(at: url, shownAs: path)
             : try ScopedFile.read(url, shownAs: path, limit: maximumFileBytes, in: context)
+    }
+
+    /// `bytes` as text, or the failure that says they are binary.
+    static func text(from bytes: [UInt8], shownAs path: String) throws(ToolFailure) -> String {
         // On an array, not through Data's iterator: the NUL scan is then a plain loop the compiler vectorizes.
         guard !bytes.contains(0), let text = String(validating: bytes, as: UTF8.self) else {
             throw ToolFailure("\(path) looks binary (\(bytes.count) bytes); it was not read as text.")

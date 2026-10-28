@@ -1,4 +1,5 @@
 internal import AskAI
+internal import Foundation
 
 /// The persisted form of ``SessionPayload``: a `kind` and that kind's fields, mapped explicitly so the
 /// session format is ask's own, not a provider type's derived encoding.
@@ -6,7 +7,8 @@ struct WirePayload: Codable {
     let value: SessionPayload
 
     private enum CodingKeys: String, CodingKey {
-        case kind, text, summary, firstKept, blocks, id, model, stopReason, usage, callID, content, isError, destination
+        case kind, text, summary, firstKept, blocks, id, model, stopReason, usage, callID, content, isError,
+            destination, images
     }
 
     private enum Kind: String, Codable {
@@ -39,7 +41,9 @@ struct WirePayload: Codable {
                 value = .toolResult(
                     callID: try container.decode(String.self, forKey: .callID),
                     content: try container.decode(String.self, forKey: .content),
-                    isError: try container.decode(Bool.self, forKey: .isError))
+                    isError: try container.decode(Bool.self, forKey: .isError),
+                    images: try (container.decodeIfPresent([WireImage].self, forKey: .images) ?? [])
+                        .map { try $0.part() })
         }
     }
 
@@ -67,11 +71,30 @@ struct WirePayload: Codable {
                 try container.encode(response.blocks.map(WireBlock.init), forKey: .blocks)
                 try container.encodeIfPresent(response.stopReason?.wire, forKey: .stopReason)
                 try container.encode(WireUsage(response.usage), forKey: .usage)
-            case .toolResult(let callID, let content, let isError):
+            case .toolResult(let callID, let content, let isError, let images):
                 try container.encode(Kind.toolResult, forKey: .kind)
+                if !images.isEmpty { try container.encode(images.map(WireImage.init), forKey: .images) }
                 try container.encode(callID, forKey: .callID)
                 try container.encode(content, forKey: .content)
                 try container.encode(isError, forKey: .isError)
+        }
+    }
+
+    /// An image a tool returned, kept inline as base64 (roadmap 0084 slice 5 will move it beside the file).
+    private struct WireImage: Codable {
+        var mediaType: String
+        var data: String
+
+        struct Malformed: Error {}
+
+        init(_ part: ImagePart) {
+            mediaType = part.mediaType
+            data = Data(part.data).base64EncodedString()
+        }
+
+        func part() throws -> ImagePart {
+            guard let bytes = Data(base64Encoded: data) else { throw Malformed() }
+            return ImagePart(mediaType: mediaType, data: [UInt8](bytes))
         }
     }
 

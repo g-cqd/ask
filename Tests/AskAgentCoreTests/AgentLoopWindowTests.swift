@@ -110,7 +110,7 @@ struct AgentLoopWindowTests {
             context: ToolContext(workingDirectory: directory.path))
         try await loop.run("go", in: file) { _ in }
         let results = file.tree.entries.compactMap { entry -> String? in
-            if case .toolResult(_, let content, _) = entry.payload { content } else { nil }
+            if case .toolResult(_, let content, _, _) = entry.payload { content } else { nil }
         }
         #expect(results.count == 4)
         #expect(results.reduce(0) { $0 + $1.utf8.count } <= 8_192 + 4 * 120)

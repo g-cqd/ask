@@ -6,5 +6,6 @@ public enum RequestBlock: Sendable, Equatable {
     case thinking(text: String, signature: String)
     case redactedThinking(data: String)
     case toolCall(id: String, name: String, input: JSONObject)
-    case toolResult(id: String, content: String, isError: Bool)
+    /// A tool's result: its text, and any images it returned (roadmap 0084).
+    case toolResult(id: String, content: String, isError: Bool, images: [ImagePart] = [])
 }
