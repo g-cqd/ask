@@ -12,13 +12,8 @@ extension MCPConnection {
             state.begun = true
         }
         launchLoops()
-        let reply = try await request(
+        let root = try await request(
             "initialize", params: initializeParams(), timeout: startTimeout, beforeStart: true)
-        guard let document = try? AemiJSON.parse(reply, options: JSONParseOptions(recordsContainerSpans: true)) else {
-            await close()
-            throw .malformedResponse("the answer to initialize cannot be read")
-        }
-        let root = document.root
         guard let version = root["protocolVersion"].string else {
             await close()
             throw .malformedResponse("the answer to initialize has no protocolVersion")

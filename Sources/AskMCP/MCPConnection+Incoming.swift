@@ -2,17 +2,8 @@ internal import AemiJSON
 internal import Synchronization
 
 extension MCPConnection {
-    /// Starts the two loops that move messages: out to the server in the order they were queued, and in from it as they come.
+    /// Starts the loop that takes messages in from the server as they come. Messages out are sent by whoever has one (`+Outbound`).
     func launchLoops() {
-        Task { [self] in
-            for await message in outbound {
-                do { try await transport.send(message) } catch {
-                    shutdown()
-                    await transport.close()
-                    return
-                }
-            }
-        }
         Task { [self] in
             for await line in transport.incoming { handle(line) }
             shutdown()

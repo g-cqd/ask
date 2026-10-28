@@ -14,7 +14,9 @@ let package = Package(
         .package(name: "ask", path: ".."),
         .package(url: "https://github.com/ordo-one/package-benchmark", .upToNextMajor(from: "1.38.0")),
         // The same revision ask pins; SwiftPM resolves one revision per package.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "e0b13abe0d122b4b739a2302188da47ec3389c7c")
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "e0b13abe0d122b4b739a2302188da47ec3389c7c"),
+        // The same revision ask pins, for MCPStress's codec floor.
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "ff380fad3d485619fb9aa4900021c34a7b40dcef")
     ],
     targets: [
         .executableTarget(
@@ -61,6 +63,17 @@ let package = Package(
                 .product(name: "TerminalKitIO", package: "TerminalKit")
             ],
             path: "Benchmarks/PipelineProbe"
+        ),
+        // MCP calls under stress (roadmap 0114): a plain executable, because its stdio and HTTP cases run child processes and compare each
+        // layer with the floor beneath it. Run: swift run -c release MCPStress [calls]
+        .executableTarget(
+            name: "MCPStress",
+            dependencies: [
+                .product(name: "AskMCP", package: "ask"),
+                .product(name: "AskAI", package: "ask"),
+                .product(name: "AemiJSON", package: "AemiJSON")
+            ],
+            path: "Benchmarks/MCPStress"
         )
     ]
 )

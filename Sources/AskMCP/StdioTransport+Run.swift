@@ -91,7 +91,7 @@ extension StdioTransport {
     private static func read(_ output: SubprocessOutputSequence, into shared: Shared, limit: Int) async throws {
         var splitter = LineSplitter(maximumLineBytes: limit)
         for try await buffer in output {
-            for line in splitter.feed(buffer.withUnsafeBytes { Array($0) }) { shared.incoming.yield(line) }
+            for line in buffer.withUnsafeBytes({ splitter.feed($0) }) { shared.incoming.yield(line) }
             if splitter.overflowed { throw MessageTooLong(limit: limit) }
         }
     }
