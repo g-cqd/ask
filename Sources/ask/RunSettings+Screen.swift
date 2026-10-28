@@ -28,6 +28,7 @@ extension RunSettings {
             interruptSendsQueued: ui.interruptSendsQueued.flatMap { QueuedAfterInterrupt(rawValue: $0.rawValue) }
                 ?? defaults.interruptSendsQueued)
         options.appearance = appearance
+        options.home = LaunchEnvironment.values["HOME"]
         return options
     }
 
