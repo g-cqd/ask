@@ -27,4 +27,4 @@ Not related to 0078 (semantic payloads, deprioritised): this changes only the he
 
 ## Open questions
 
-- Whether other tools than `shell` get the same prefix form (`<tool> · <detail> · …`).
+- Prefixes for other tools: proposed in the 2026-10-28 reply, awaiting the owner. Nothing is implemented for them.
