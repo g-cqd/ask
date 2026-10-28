@@ -16,6 +16,10 @@ extension ScreenComposer {
                 for index in result.indices where !(style.padded && spacerAbove && index == 0) {
                     result[index].foldBlock = block
                 }
+                if case .tool = item {
+                    // Once per layout of the block, not per frame; the row cache then redraws only what changed.
+                    for index in result.indices { result[index].links = PathLinks.links(in: result[index].text) }
+                }
             default: break
         }
         return result

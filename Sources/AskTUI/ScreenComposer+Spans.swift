@@ -8,6 +8,7 @@ extension ScreenComposer {
         let width = UnicodeWidth.displayWidth(of: line.text)
         var cuts: Set<Int> = [0, width]
         for accent in line.accents { cuts.formUnion([accent.columns.lowerBound, accent.columns.upperBound]) }
+        for link in line.links { cuts.formUnion([link.columns.lowerBound, link.columns.upperBound]) }
         if let highlight { cuts.formUnion([highlight.lowerBound, highlight.upperBound]) }
         let edges = cuts.filter { $0 >= 0 && $0 <= width }.sorted()
         var spans: [(String, Style)] = []
@@ -16,6 +17,7 @@ extension ScreenComposer {
             guard !part.isEmpty else { continue }
             var style = line.accents.first { $0.columns.contains(low) }?.style ?? line.style
             if line.style.bg != .default, style.bg == .default { style.bg = line.style.bg }
+            if let link = line.links.first(where: { $0.columns.contains(low) }) { style.link = link.uri }
             if let highlight, highlight.contains(low) { style.inverse = true }
             spans.append((part, style))
         }
