@@ -171,7 +171,9 @@ public struct AgentLoop: Sendable {
             guard !Task.isCancelled else { throw .cancelled }
             var output = await runTool(call, events: events)
             if let limit { output.content = Compaction.clipped(output.content, toBytes: limit, note: Self.clipNote) }
-            try record(.toolResult(callID: call.id, content: output.content, isError: output.isError), in: session)
+            try record(
+                .toolResult(callID: call.id, content: output.content, isError: output.isError, images: output.images),
+                in: session)
             events(.toolFinished(id: call.id, name: call.name, output: output))
         }
         guard !Task.isCancelled else { throw .cancelled }

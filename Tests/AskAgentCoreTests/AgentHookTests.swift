@@ -55,7 +55,7 @@ struct AgentHookTests {
     }
 
     private func result(_ payloads: [SessionPayload]) -> (content: String, isError: Bool)? {
-        for case .toolResult(_, let content, let isError) in payloads { return (content, isError) }
+        for case .toolResult(_, let content, let isError, _) in payloads { return (content, isError) }
         return nil
     }
 

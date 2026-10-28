@@ -52,11 +52,11 @@ public enum ResponsesRequestEncoder {
     private static func encode(_ message: ModelMessage, replaying: Bool, into writer: inout JSONStreamWriter) {
         switch message.role {
             case .user:
-                for case .toolResult(let id, let content, _) in message.blocks {
+                for case .toolResult(let id, let content, _, let images) in message.blocks {
                     writer.object {
                         $0.field("type", "function_call_output")
                         $0.field("call_id", id)
-                        $0.field("output", content)
+                        $0.field("output", ImagePart.noting(images, in: content))
                     }
                 }
                 let text = message.blocks.compactMap { if case .text(let text) = $0 { text } else { nil } }
