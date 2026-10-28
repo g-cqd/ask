@@ -19,7 +19,7 @@ struct ToolDefinitionTests {
     @Test func `read`() {
         #expect(
             schema(ReadTool())
-                == #"{"type":"object","properties":{"path":{"type":"string"},"offset":{"type":"integer","minimum":1},"limit":{"type":"integer","minimum":1},"sandbox":{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}},"required":["path"]}"#
+                == #"{"type":"object","properties":{"path":{"type":"string"},"offset":{"type":"integer","minimum":1},"limit":{"type":"integer","minimum":1},"pages":{"type":"string"},"at":{"type":"array","items":{"type":"number","minimum":0}},"count":{"type":"integer","minimum":1,"maximum":20},"every":{"type":"number","exclusiveMinimum":0},"start":{"type":"number","minimum":0},"end":{"type":"number","minimum":0},"max_images":{"type":"integer","minimum":1,"maximum":20},"sandbox":{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}},"required":["path"]}"#
         )
     }
 
