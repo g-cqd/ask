@@ -21,7 +21,9 @@ extension SessionFile {
         _ tree: SessionTree, at path: FilePath, durability: Durability, calls: SessionFileCalls
     ) throws(SessionFileError) -> SessionFile {
         let descriptor = try SessionFileIO.writeExclusively(
-            try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(tree) },
+            try SessionFileIO.encoded { () throws(SessionLogError) in
+                try SessionLog.snapshot(tree, images: SessionImageStore(besideSessionAt: path.string))
+            },
             to: path, durability: durability)
         let lock: SessionLock
         do {
@@ -70,7 +72,8 @@ extension SessionFile {
         let bytes = try SessionFileIO.readAll(lock.descriptor, limits: limits)
         let recovered: RecoveredSession
         do {
-            recovered = try SessionLog.recover(bytes, limits: limits)
+            recovered = try SessionLog.recover(
+                bytes, limits: limits, images: SessionImageStore(besideSessionAt: path.string))
         } catch {
             throw .log(error)
         }

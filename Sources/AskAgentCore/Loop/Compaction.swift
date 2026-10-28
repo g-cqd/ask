@@ -149,12 +149,17 @@ public enum Compaction {
         }
     }
 
-    /// The text an entry adds to the context, in UTF-8 bytes.
-    private static func size(_ payload: SessionPayload) -> Int {
+    /// What one image adds to the context, in bytes, whatever its size: 3,000 tokens at 4 bytes a token, Gemini CLI's estimate. The
+    /// base64 length would overstate it a hundredfold. Measured through Copilot (diary 2026-10-28-08), a 64×64 image added under 100
+    /// tokens and a 2000×1500 one about 3.9k on Claude and 3.6k on GPT, so this is the larger kind; Codex charges 7,373 bytes.
+    static let imageBytes = 12_000
+
+    /// What an entry adds to the context, in UTF-8 bytes, with each image at ``imageBytes``.
+    static func size(_ payload: SessionPayload) -> Int {
         switch payload {
             case .destination: return 0
             case .user(let text), .assistant(let text): return text.utf8.count
-            case .toolResult(_, let content, _, _): return content.utf8.count
+            case .toolResult(_, let content, _, let images): return content.utf8.count + images.count * imageBytes
             case .compaction(let summary, _): return summary.utf8.count
             case .response(let response):
                 return response.blocks.reduce(0) { total, block in

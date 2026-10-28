@@ -20,9 +20,10 @@ public struct ReadTool: ArgumentTool {
         let start: Double?
         let end: Double?
         let maxImages: Int?
+        let render: Bool?
 
         private enum CodingKeys: String, CodingKey {
-            case path, offset, limit, pages, at, count, every, start, end
+            case path, offset, limit, pages, at, count, every, start, end, render
             case maxImages = "max_images"
         }
     }
@@ -32,7 +33,8 @@ public struct ReadTool: ArgumentTool {
         description: """
             Read a UTF-8 text file (optionally offset, the 1-based first line, and limit, a line count), or show an image \
             (PNG, JPEG, GIF, WebP, BMP, TIFF, HEIC, AVIF), a PDF, or a video (MP4, MOV, M4V) as pictures. For a PDF, pages \
-            such as "1-3,7" chooses pages. For a video, at (seconds) takes exact frames; otherwise count frames are spread \
+            such as "1-3,7" chooses pages; a page with text comes as text and one without as a picture, and render \
+            gives pictures of every page. For a video, at (seconds) takes exact frames; otherwise count frames are spread \
             over start..end (seconds), or one is taken every `every` seconds. max_images (default 8, at most 20) limits the \
             pictures returned by one call.
             """
@@ -47,6 +49,7 @@ public struct ReadTool: ArgumentTool {
         ToolProperty.schema("start", #"{"type":"number","minimum":0}"#).optional
         ToolProperty.schema("end", #"{"type":"number","minimum":0}"#).optional
         ToolProperty.integer("max_images", minimum: 1, maximum: 20).optional
+        ToolProperty.boolean("render").optional
         // @dl:accept -- the file tools share a tool's shape: a schema, an empty init, and a run that asks the sandbox first
         SandboxRequest.property
     }
@@ -79,7 +82,7 @@ public struct ReadTool: ArgumentTool {
         if PDFReader.isPDF(bytes) {
             return try PDFReader.read(
                 bytes, path: arguments.path, pages: arguments.pages, maximumImages: maximumImages,
-                allowance: ImageReader.Allowance(context.imageLimits))
+                render: arguments.render ?? false, allowance: ImageReader.Allowance(context.imageLimits))
         }
         if ImageReader.mediaType(of: bytes) != nil {
             return try image(bytes, shownAs: arguments.path, allowance: ImageReader.Allowance(context.imageLimits))

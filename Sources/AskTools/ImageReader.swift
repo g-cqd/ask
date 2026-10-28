@@ -163,6 +163,7 @@ enum ImageReader {
         let width = max(1, image.width * side / long)
         let height = max(1, image.height * side / long)
         guard
+            // @dl:accept -- a bitmap context is made the same way for a scaled image and a drawn page; the arguments differ, so sharing would take as many
             let context = CGContext(
                 data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
                 space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)

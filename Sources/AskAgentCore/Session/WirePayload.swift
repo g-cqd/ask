@@ -38,12 +38,16 @@ struct WirePayload: Codable {
                             .map(StopReason.init(wire:)),
                         usage: try container.decode(WireUsage.self, forKey: .usage).tokens, unrecognized: []))
             case .toolResult:
+                let store = decoder.userInfo[SessionImageStore.userInfoKey] as? SessionImageStore
+                var images: [ImagePart] = []
+                var lost = 0
+                for wire in try container.decodeIfPresent([WireImage].self, forKey: .images) ?? [] {
+                    if let part = try wire.part(from: store) { images.append(part) } else { lost += 1 }
+                }
                 value = .toolResult(
                     callID: try container.decode(String.self, forKey: .callID),
-                    content: try container.decode(String.self, forKey: .content),
-                    isError: try container.decode(Bool.self, forKey: .isError),
-                    images: try (container.decodeIfPresent([WireImage].self, forKey: .images) ?? [])
-                        .map { try $0.part() })
+                    content: try container.decode(String.self, forKey: .content) + Self.lostNote(lost),
+                    isError: try container.decode(Bool.self, forKey: .isError), images: images)
         }
     }
 
@@ -73,27 +77,47 @@ struct WirePayload: Codable {
                 try container.encode(WireUsage(response.usage), forKey: .usage)
             case .toolResult(let callID, let content, let isError, let images):
                 try container.encode(Kind.toolResult, forKey: .kind)
-                if !images.isEmpty { try container.encode(images.map(WireImage.init), forKey: .images) }
+                if !images.isEmpty {
+                    let store = encoder.userInfo[SessionImageStore.userInfoKey] as? SessionImageStore
+                    try container.encode(images.map { WireImage($0, in: store) }, forKey: .images)
+                }
                 try container.encode(callID, forKey: .callID)
                 try container.encode(content, forKey: .content)
                 try container.encode(isError, forKey: .isError)
         }
     }
 
-    /// An image a tool returned, kept inline as base64 (roadmap 0084 slice 5 will move it beside the file).
+    /// What the model is told of pictures a resumed session no longer has.
+    private static func lostNote(_ count: Int) -> String {
+        guard count > 0 else { return "" }
+        let what = count == 1 ? "an image read here is" : "\(count) images read here are"
+        return "\n[\(what) no longer available: the file in the session's images directory is missing or damaged]"
+    }
+
+    /// An image a tool returned: a reference to the file in the session's image store, or, when there is no store or it could not be
+    /// written, the bytes inline as base64 (the form of older sessions, which stay readable).
     private struct WireImage: Codable {
         var mediaType: String
-        var data: String
+        var data: String?
+        var sha256: String?
 
         struct Malformed: Error {}
 
-        init(_ part: ImagePart) {
+        init(_ part: ImagePart, in store: SessionImageStore?) {
             mediaType = part.mediaType
-            data = Data(part.data).base64EncodedString()
+            if let store, let name = try? store.put(part.data) {
+                sha256 = name
+            } else {
+                data = Data(part.data).base64EncodedString()
+            }
         }
 
-        func part() throws -> ImagePart {
-            guard let bytes = Data(base64Encoded: data) else { throw Malformed() }
+        /// The image, or nil when it was kept in the store and the store no longer holds it intact.
+        func part(from store: SessionImageStore?) throws -> ImagePart? {
+            if let sha256 {
+                return store?.get(sha256).map { ImagePart(mediaType: mediaType, data: $0) }
+            }
+            guard let data, let bytes = Data(base64Encoded: data) else { throw Malformed() }
             return ImagePart(mediaType: mediaType, data: [UInt8](bytes))
         }
     }
