@@ -26,10 +26,10 @@ extension ConfigEditor {
         guard case .object(let object) = value else { return value }
         let known: Set<String>
         switch section {
-            case "sandbox": known = ["allowRead", "denyRead", "write", "read", "network"]
+            case "sandbox": known = Set(SandboxSection.keys)
             case "ui": known = Set(UISection.keys)
             case "skills": known = Set(SkillsSection.keys)
-            case "environment": known = ["pass", "withhold", "shell"]
+            case "environment": known = Set(EnvironmentSection.keys)
             case "mcp": return Self.strippedServers(object, path: path, warnings: &warnings)
             default: return value
         }
@@ -57,9 +57,7 @@ extension ConfigEditor {
     private static func strippedServers(
         _ object: OrderedDictionary<String, JSONValue>, path: [String], warnings: inout [String]
     ) -> JSONValue {
-        let known = Set([
-            "command", "args", "env", "cwd", "url", "headers", "tools", "enabled", "mode", "maxDirectTools"
-        ])
+        let known = Set(MCPServerSetting.keys)
         var kept = OrderedDictionary<String, JSONValue>()
         kept.reserveCapacity(object.count)
         for (server, value) in object {

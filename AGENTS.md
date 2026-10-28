@@ -84,6 +84,10 @@ Four directories, and the shape is enforced by tests rather than by good intenti
 | `development/roadmap/NNNN-title.md` | One entry per file, declaring `status:`. An entry is a claimable, completable unit of work. |
 | `development/diary/YYYY-MM-DD-NN.md` | The working log and **where probe history lives**. Capped at 256 lines; roll over at the ceiling. |
 
+`docs/` is not a record: it is the user guide, written for people using ask (ADR-0128). A change a user would notice updates it in the
+same commit. `UserDocumentationTests` fails when a configuration key is undocumented, a link is broken, or a page other than its index
+points into `development/`.
+
 When a decision changes, supersede it. `status: superseded` with a `superseded-by:` link, never a
 silent rewrite.
 

@@ -1,6 +1,9 @@
 /// The `sandbox` section of a configuration file: what the user adds to or lifts from ask's default protections
 /// (ADR-0035), and the strict modes (roadmap 0042). Paths are absolute, or start with `~/` for the home directory.
 public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
+    /// The keys a file may set under `sandbox`.
+    public static let keys = ["allowRead", "denyRead", "write", "read", "network"]
+
     /// Secret stores the user allows reading despite the default: `~/.aws` for the aws CLI, say. ask's own
     /// directories are never lifted by this, and only the user's own file may set it: a project that could widen
     /// the sandbox would defeat it.

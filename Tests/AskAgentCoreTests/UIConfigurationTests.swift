@@ -23,6 +23,17 @@ struct UIConfigurationTests {
         #expect(file.sets("ui") && !ConfigurationFile().sets("ui"))
     }
 
+    @Test func `a switch is "on" or "off", or true or false, whichever way it is written`() throws {
+        let words = try parse(
+            "{ui: {mouse: 'off', copyOnSelect: 'on', tint: 'off', padding: 'on'}, skills: {enabled: 'off'}}")
+        #expect(words.ui == UISection(mouse: false, copyOnSelect: true, tint: false, padding: true))
+        #expect(words.skills?.enabled == false)
+        let flags = try parse("{ui: {mouse: false, tint: false, onlyUsefulModels: true}, skills: {enabled: true}}")
+        #expect(flags.ui == UISection(mouse: false, tint: false, onlyUsefulModels: true))
+        #expect(flags.skills?.enabled == true)
+        #expect(throws: ConfigurationError.self) { try parse("{ui: {mouse: 'yes'}}") }
+    }
+
     @Test func `folded is a tool setting, and so is open`() throws {
         #expect(try parse("{ui: {tools: 'folded'}}").ui?.foldTools == true)
         #expect(try parse("{ui: {tools: 'open'}}").ui?.foldTools == false)
