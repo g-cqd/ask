@@ -19,6 +19,7 @@ extension AgentConversation {
                     ChoiceRow(label: "project", detail: project.path, arguments: "project")
                 ]
             case "resume": return sessionRows()
+            case "tree": return treeRows()
             case "thinking": return await thinkingRows()
             case "login": return LoginChoices.rows()
             case "logout": return logoutRows()

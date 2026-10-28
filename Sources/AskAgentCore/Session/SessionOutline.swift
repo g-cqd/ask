@@ -69,8 +69,7 @@ public struct SessionOutline: Sendable, Equatable {
     public func lines(textLimit: Int = 60) -> [String] {
         let width = String(turns.count).count
         return turns.map { turn in
-            let flat = turn.text.split(whereSeparator: \.isNewline).joined(separator: " ")
-            let shown = flat.count <= textLimit ? flat : String(flat.prefix(textLimit - 1)) + "…"
+            let shown = Self.oneLine(turn.text, limit: textLimit)
             let number = String(turn.number)
             let padded = String(repeating: " ", count: width - number.count) + number
             let branch: String
@@ -81,6 +80,12 @@ public struct SessionOutline: Sendable, Equatable {
             }
             return (turn.isOnActiveBranch ? "> " : "  ") + padded + "  " + shown + branch
         }
+    }
+
+    /// `text` on one line, cut to `limit` characters with an ellipsis.
+    public static func oneLine(_ text: String, limit: Int) -> String {
+        let flat = text.split(whereSeparator: \.isNewline).joined(separator: " ")
+        return flat.count <= limit ? flat : String(flat.prefix(limit - 1)) + "…"
     }
 
     /// The number of the nearest prompt at or before `entry`, or nil when there is none.
