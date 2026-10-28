@@ -23,6 +23,7 @@ import struct
 import termios
 import select
 import statistics
+import subprocess
 import sys
 import tempfile
 import threading
@@ -93,7 +94,11 @@ def history_file(state, project, turns):
     return path
 
 
+last_rss_kb = ""
+
+
 def one_run(tool):
+    global last_rss_kb
     project, state = tempfile.mkdtemp(), tempfile.mkdtemp()
     open(os.path.join(project, "note.txt"), "w").write("a small file\n")
     call = ("call", "t1", "read", {"path": "note.txt"}) if tool == "read" else ("tool", "t1", "echo ok")
@@ -134,6 +139,7 @@ def one_run(tool):
                 tail = (tail + chunk)[-64:]
                 if tail.endswith(FRAME_END) and any(mark.decode() in row and "✓" in row for row in emulator.text().splitlines()):
                     shown = now
+                    last_rss_kb = subprocess.run(["ps", "-o", "rss=", "-p", str(pid)], capture_output=True, text=True).stdout.strip()
                     break
         while len(server.arrived) < offset + 2 and time.monotonic() < deadline:
             time.sleep(0.005)

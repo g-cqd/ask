@@ -18,6 +18,7 @@ extension Budget {
     private struct Report: Encodable {
         let coldStartMilliseconds = Budget.coldStartMilliseconds
         let idleMemoryMebibytes = Budget.idleMemoryMebibytes
+        let activeMemoryMebibytes = Budget.activeMemoryMebibytes
         let inputDelayMilliseconds = Budget.inputDelayMilliseconds
         let actionToActionMilliseconds = Budget.actionToActionMilliseconds
     }

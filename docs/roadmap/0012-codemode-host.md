@@ -41,3 +41,6 @@ worker count. Each must **fail** rather than silently truncate, with the reason 
 
 One script can compose many tool calls, every limit is enforced and reported, and a cancelled script
 leaves no work running.
+## Decision (2026-10-28, ADR-0123)
+
+Shelved until real use (0071) shows many-step tool sequences that cost too many round trips.

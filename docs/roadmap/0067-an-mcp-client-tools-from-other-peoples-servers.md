@@ -17,3 +17,7 @@ ADR-0096 holds the decisions. Phases:
 5. **Still open** (ordered by value):
    - **Approval of what a server does beyond its tools**, such as a tool the server does not mark destructive but that ask learns is (nothing today can learn that).
    - Resources, prompts, OAuth for remote servers, sampling (refused today).
+
+## Decision (2026-10-28, ADR-0123)
+
+MCP is the route for other people's tools in ask.

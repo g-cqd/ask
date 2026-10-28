@@ -190,7 +190,8 @@ def measure(load_workers):
         # The action runs in its own process, against a fake model server (ADR-0053).
         shown = action.one_run("read") if r else None
         if r and shown:
-            runs.append(r + (shown[0],))
+            active = getattr(action, "last_rss_kb", "")
+            runs.append(r + (shown[0], float(active) if str(active).isdigit() else 0.0))
         else:
             incomplete.append(i + 1)
             print("  run %d incomplete (%s)" % (i + 1, "action" if r else "startup/input"), file=sys.stderr)
@@ -204,13 +205,14 @@ def measure(load_workers):
         print("    %-22s median %8.2f %-4s  p95 %8.2f  min %8.2f  max %8.2f"
               % (NAMES[idx], med, unit, vals[math.ceil(len(vals) * 0.95) - 1], vals[0], vals[-1]))
 
-    NAMES = ["cold start", "idle memory", "input delay", "action-to-action"]
-    print("ask — four budgets, %d runs, release build, measured externally over a PTY, under %d busy workers"
+    NAMES = ["cold start", "idle memory", "input delay", "action-to-action", "active memory"]
+    print("ask — five budgets, %d runs, release build, measured externally over a PTY, under %d busy workers"
           % (len(runs), load_workers))
     col(0, 1.0, "ms")
     col(1, 1.0, "KiB")
     col(2, 1.0, "ms")
     col(3, 1.0, "ms")
+    col(4, 1.0, "KiB")
     budgets = load_budgets()
     if budgets is None:
         print("\n  No budgets available, so nothing is checked. Reporting nothing is not passing.")
@@ -221,6 +223,7 @@ def measure(load_workers):
         ("idle memory", 1, budgets["idleMemoryMebibytes"] * 1024.0, "KiB"),
         ("input delay", 2, budgets["inputDelayMilliseconds"], "ms"),
         ("action-to-action", 3, budgets["actionToActionMilliseconds"], "ms"),
+        ("active memory", 4, budgets["activeMemoryMebibytes"] * 1024.0, "KiB"),
     ]
     print()
     print("  %-22s %12s %12s   %s" % ("budget", "median", "limit", "verdict"))
@@ -241,7 +244,7 @@ def measure(load_workers):
         return 1
     if incomplete:
         return 1
-    print("  All four within budget.")
+    print("  All five within budget.")
     print("  The action is a tool call to its result on screen, for an in-process tool; see")
     print("  Scripts/measure-action.py for the next request and a sandboxed bash command.")
     return 0

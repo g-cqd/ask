@@ -30,8 +30,8 @@ struct BudgetTests {
     @Test func `the action budget is the real action's, not the old trivial one`() {
         // The old figure measured Enter redrawing a prompt (0.05 ms against 2 ms). A tool call to its result on screen
         // measures about 2.6 ms, so the old 2 ms budget would fail the shipping binary on every run.
-        #expect(Budget.actionToActionMilliseconds == 5)
-        #expect(!Budget.isWithinBudget(coldStart: 5, idleMemoryMebibytes: 5, inputDelay: 0.12, action: 5.01))
+        #expect(Budget.actionToActionMilliseconds == 8)
+        #expect(!Budget.isWithinBudget(coldStart: 5, idleMemoryMebibytes: 5, inputDelay: 0.12, action: 8.01))
     }
 
     @Test func `a cold start over budget fails`() {
@@ -91,15 +91,27 @@ struct BudgetTests {
         }
     }
 
-    @Test func `the idle memory budget is the 24 MiB the owner chose, so changing it is a deliberate act`() {
-        // ADR-0038. The earlier 8 MiB had been exceeded since before the agent loop landed; the measured median is
+    @Test func `the idle memory budget is the 15 MiB the owner chose, so changing it is a deliberate act`() {
+        // ADR-0122 (earlier ADR-0038 set 24). The earlier 8 MiB had been exceeded since before the agent loop landed; the measured median is
         // about 9 MiB. Moving this number again means editing this test and writing down why.
-        #expect(Budget.idleMemoryMebibytes == 24)
+        #expect(Budget.idleMemoryMebibytes == 15)
     }
 
     @Test func `the cold start budget is the 50 ms the owner chose, so changing it is a deliberate act`() {
         // ADR-0122. Raised from 25 ms because the budget is now checked with the machine loaded.
         #expect(Budget.coldStartMilliseconds == 50)
+    }
+
+    @Test func `active memory and the delays are the numbers the owner chose`() {
+        // ADR-0122, 2026-10-28.
+        #expect(Budget.activeMemoryMebibytes == 20)
+        #expect(Budget.inputDelayMilliseconds == 4)
+        #expect(
+            !Budget.isWithinBudget(
+                coldStart: 5, idleMemoryMebibytes: 5, inputDelay: 0.1, action: 1, activeMemoryMebibytes: 20.5))
+        #expect(
+            Budget.isWithinBudget(
+                coldStart: 5, idleMemoryMebibytes: 5, inputDelay: 0.1, action: 1, activeMemoryMebibytes: 20))
     }
 
     @Test func `every budget sits above what was measured`() {

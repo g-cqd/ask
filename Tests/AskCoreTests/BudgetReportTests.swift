@@ -8,17 +8,19 @@ struct BudgetReportTests {
     private struct Report: Decodable, Equatable {
         let coldStartMilliseconds: Double
         let idleMemoryMebibytes: Int
+        let activeMemoryMebibytes: Int
         let inputDelayMilliseconds: Double
         let actionToActionMilliseconds: Double
     }
 
-    @Test func `the report carries the four budgets under the keys the script reads`() throws {
+    @Test func `the report carries the five budgets under the keys the script reads`() throws {
         let report = try AemiJSON.JSONDecoder().decode(Report.self, from: Budget.reportJSON())
         #expect(
             report
                 == Report(
                     coldStartMilliseconds: Budget.coldStartMilliseconds,
                     idleMemoryMebibytes: Budget.idleMemoryMebibytes,
+                    activeMemoryMebibytes: Budget.activeMemoryMebibytes,
                     inputDelayMilliseconds: Budget.inputDelayMilliseconds,
                     actionToActionMilliseconds: Budget.actionToActionMilliseconds))
     }
