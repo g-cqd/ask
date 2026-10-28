@@ -73,4 +73,14 @@ struct UISectionLookTests {
     @Test func `an unknown spinner style is rejected`() {
         #expect(throws: (any Error).self) { try ui(#"{"spinner": "bouncing_ball"}"#) }
     }
+
+    @Test func `appearance is read, layered, shown, and refused when unknown`() throws {
+        let base = try ui(#"{"appearance": "light", "tint": "on"}"#)
+        #expect(base.appearance == .light && base.value(forKey: "appearance") == "light")
+        #expect(base.description == "tint on, appearance light")
+        #expect(base.layered(with: try ui(#"{"appearance": "auto"}"#)).appearance == .auto)
+        let dark = try ui(#"{"appearance": "dark"}"#)
+        #expect(UISection.keys.contains("appearance") && !dark.isEmpty)
+        #expect(throws: (any Error).self) { try ui(#"{"appearance": "sepia"}"#) }
+    }
 }

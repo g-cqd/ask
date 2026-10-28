@@ -24,7 +24,7 @@ struct StatusLineFitTests {
         #expect(line.accents.first?.style.fg == StatusLeadingMark.warning.fg)
     }
 
-    @Test func `running sandboxed status starts with white spinner and no working text`() {
+    @Test func `running sandboxed status starts with a spinner in the text colour and no working text`() {
         var state = ScreenState(label: "model")
         state.running = true
         state.sandboxed = true
@@ -34,7 +34,8 @@ struct StatusLineFitTests {
         #expect(line.text.hasPrefix("⠋ · model"))
         #expect(!line.text.contains("working"))
         #expect(line.accents.first?.columns == 0 ..< 1)
-        #expect(line.accents.first?.style.fg == StatusLeadingMark.sandboxed.fg)
+        #expect(line.accents.first?.style == StatusLeadingMark.sandboxed)
+        #expect(StatusLeadingMark.sandboxed.fg == .default, "the terminal's text colour, readable on any page")
     }
 
     @Test func `running unsandboxed status starts with yellow spinner`() {

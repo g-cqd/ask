@@ -16,6 +16,7 @@ extension UISection {
             case "sidebar": return sidebarOpen.map { $0 ? "open" : "closed" }
             case "prompt": return prompt.map { $0.isEmpty ? "none" : "\"\($0)\"" }
             case "tint": return onOff(tint)
+            case "appearance": return appearance?.rawValue
             case "separator": return onOff(separator)
             case "padding": return onOff(padding)
             case "localizedDurations": return onOff(localizedDurations)

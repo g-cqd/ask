@@ -13,8 +13,9 @@ struct StatusLeadingMark: Sendable, Equatable {
 
     /// Yellow accent style for unsandboxed mode or warnings.
     static let warning = Style(fg: .indexed(3))
-    /// White/bold-white style for sandboxed mode.
-    static let sandboxed = Style(fg: .indexed(7))
+    /// Sandboxed mode: the terminal's own text colour, in bold. ANSI white (7) was that colour only on a dark page and nearly vanished on a
+    /// light one (roadmap 0108).
+    static let sandboxed = Style(bold: true)
 
     /// Evaluates the leading mark and style based on activity and sandbox state.
     static func mark(running: Bool, sandboxed: Bool, frame: String) -> StatusLeadingMark {
