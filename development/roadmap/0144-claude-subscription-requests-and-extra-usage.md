@@ -113,3 +113,11 @@ Harness correction: locally blocked requests use 400 invalid_request_error, not 
 POST /v1/messages only for a streaming conversational request with the Claude Code beta flag and without a structured-output format.
 Auxiliary/minimal calls, token refresh and other POSTs remain blocked. This predicate is an experimental harness filter, not provider
 billing logic. Retrying the small agreed prompt is the next step; upstream acceptance/billing still untested.
+
+## Official-client baseline succeeded (2026-10-29, 14:54)
+
+One authorized request, `claude-opus-5-5`, returned 200 and the owner saw OK. Unified response headers: status allowed, five-hour/seven-day
+allowed, representative claim five_hour, overage rejected with org_level_disabled. This supports a subscription-quota baseline, not yet
+account/model equivalence with ask. Later local 400 refusals occurred because the one-use permit had been consumed; no reauthentication
+needed on that evidence. Details and token counts are in the research note. Next: compare ask's exact failing request, same model and
+verified account/grant where possible; do not blindly copy first-party identity headers or conclude that callback shape causes billing.

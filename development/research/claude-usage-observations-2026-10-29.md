@@ -49,3 +49,29 @@ This analysis establishes REA MCP invocation works, not just discovery. No secre
 Next: verify the current Claude Code and ask account/model comparison without exposing identifiers; establish what the owner saw as
 extra usage in ask. Ask permission for one minimal potentially billed inference; leave automatic auxiliary inference blocked. Keep the
 localhost-versus-hosted OAuth callback hypothesis separate: no reauthentication or token exchange has been observed in this pass.
+
+## One official-client inference succeeded (later, 2026-10-29)
+
+Owner approved potentially billed inference. After fixing an over-strict lab request filter, a single-use allowance forwarded one
+conversational streaming POST /v1/messages at 14:54:27 local time. Anthropic returned HTTP 200 at 14:54:29; request and message_start model
+were both `claude-opus-5-5`. Owner reports the answer was `OK`. The response carried:
+
+| Header suffix after `anthropic-ratelimit-unified-` | Value |
+| --- | --- |
+| `status` | `allowed` |
+| `5h-status`, `7d-status` | `allowed`, `allowed` |
+| `representative-claim` | `five_hour` |
+| `overage-status` | `rejected` |
+| `overage-disabled-reason` | `org_level_disabled` |
+| `5h-utilization`, `7d-utilization` | `0.01`, `0.09` |
+| `fallback-percentage` | `0.5` (semantics not established) |
+
+Usage event: input_tokens 2, cache_creation_input_tokens 3076, cache_read_input_tokens 0, output_tokens 4. Response quota utilization is
+fractional here, unlike the usage endpoint's percentage values; the observations were at different times, and rounding/refresh semantics
+are unverified. These headers support that this official-client request was allowed against its five-hour quota while overage was disabled;
+no billing ledger was inspected. Account/grant equivalence with ask and ask's exact failing model remain unverified.
+
+The screenshot supplied by the owner showed a connection/firewall/proxy warning before the successful answer; exact cause is unknown.
+At 14:54:56, subsequent Haiku and Opus requests were blocked locally (400) after the allowance was consumed. They are not upstream failures.
+The owner should not run /login because of those local refusals. No further inference is enabled. The capture contains auxiliary calls,
+so the request filter and permit are essential to distinguishing one forwarded request from local generated errors.
