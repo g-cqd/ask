@@ -18,6 +18,26 @@ extension Transcript {
         }
     }
 
+    /// The person stopped the turn (roadmap 0142): every block still going, reasoning and foreground tools, ends now and turns orange.
+    /// Background jobs go on. A tool's result arriving later is still kept.
+    mutating func interruptRunning(at now: ContinuousClock.Instant = .now) {
+        if let index = items.indices.last, case .thinking(let text) = items[index], Self.saysSomething(text),
+            progress[index]?.ended == nil
+        {
+            interrupted.insert(index)
+            revisions[index] = bump()
+        }
+        finishThinking(now: now)
+        while let index = latestForegroundTool,
+            case .tool(let name, let summary, _, let output, let input) = items[index]
+        {
+            finishProgress(at: index, now: now)
+            interrupted.insert(index)
+            items[index] = .tool(name: name, summary: summary, status: .interrupted, output: output, fullInput: input)
+            revisions[index] = bump()
+        }
+    }
+
     /// Adds a queued message with a spinner of its own.
     mutating func addQueued(_ text: String, now: ContinuousClock.Instant = .now) {
         append(.queued(text))

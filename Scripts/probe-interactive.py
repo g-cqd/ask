@@ -292,10 +292,11 @@ def probe_abort():
     screen.until("\x00", 1.0)
     results.append(check("Esc leaves the running command alone", not screen.idle() and "Aborted" not in screen.screen.text()))
     screen.type("\x03")
-    results.append(check("abort reported", screen.until("Aborted. Results already known were kept.")))
-    # The result folds into the tool's row, which ends in ✗; the text itself is what the model is sent.
-    results.append(check("tool shown as stopped", screen.until_tool("sleep 300 & echo", "✗")))
+    # No block says so (roadmap 0142): the tool's row ends in ⊘, drawn orange; the text itself is what the model is sent.
+    results.append(check("tool shown as interrupted", screen.until_tool("sleep 300 & echo", "⊘")))
     results.append(check("back to ready", screen.until_status("ready")))
+    results.append(check("no Stopping or Aborted block",
+                         "Stopping" not in screen.screen.text() and "Aborted" not in screen.screen.text()))
     alive = True
     end = time.time() + 5
     while alive and time.time() < end:
@@ -1313,7 +1314,8 @@ def probe_approval_abort():
     screen.type("Go\r")
     results = [check("the question waits", screen.until("Allow it?"))]
     screen.type("\x03")
-    results.append(check("Ctrl-C aborts the turn instead", screen.until("Aborted.", 10) and screen.until_status("ready")))
+    results.append(check("Ctrl-C aborts the turn instead, with no block (roadmap 0142)",
+                         screen.until_status("ready") and "Aborted" not in screen.screen.text()))
     results.append(check("and the call did not run", not os.path.exists(marker)))
     results.append(check("the question no longer waits: keys type again",
                          (screen.type("hello"), screen.until_editor("hello", 5))[1]))

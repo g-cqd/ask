@@ -70,6 +70,7 @@ extension ScreenComposer {
                 let code =
                     reason.hasPrefix("[exit ") && reason.hasSuffix("]") ? Int(reason.dropFirst(6).dropLast()) : nil
                 parts.append(code.map { "[\($0)] ✗" } ?? "✗")
+            case .interrupted: parts.append("⊘")
         }
         return parts.joined(separator: " · ")
     }

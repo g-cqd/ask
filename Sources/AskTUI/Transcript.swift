@@ -8,6 +8,8 @@ public struct Transcript: Sendable, Equatable {
         case running
         case succeeded
         case failed(String)
+        /// The person stopped the turn while it ran (roadmap 0142): orange, not a failure's red.
+        case interrupted
     }
 
     /// One thing in the conversation.
@@ -34,6 +36,8 @@ public struct Transcript: Sendable, Equatable {
     var toolBlocks: [String: Int] = [:]
     /// The tool blocks whose input is a command, which heads the block (roadmap 0080).
     var commandBlocks: Set<Int> = []
+    /// The blocks still going when the person stopped the turn (roadmap 0142), drawn on the interruption tint.
+    var interrupted: Set<Int> = []
     var jobBlocks: [String: Int] = [:]
     var completedJobs: Set<String> = []
     /// Which tool blocks the user opened or closed, over the default for the kind (TerminalKit roadmap 0018).
@@ -77,6 +81,7 @@ public struct Transcript: Sendable, Equatable {
         progress.removeAll(keepingCapacity: true)
         toolBlocks.removeAll(keepingCapacity: true)
         commandBlocks.removeAll(keepingCapacity: true)
+        interrupted.removeAll(keepingCapacity: true)
         jobBlocks.removeAll(keepingCapacity: true)
         completedJobs.removeAll(keepingCapacity: true)
         folds.clearChoices()
@@ -124,6 +129,8 @@ public struct Transcript: Sendable, Equatable {
             case .tool(let name, let summary, _, _, let input) = items[index]
         else { return }
         finishProgress(at: index, now: now)
+        // A tool the person interrupted stays orange whatever it returned, unless it finished its work.
+        let status = interrupted.contains(index) && status != .succeeded ? .interrupted : status
         items[index] = .tool(name: name, summary: summary, status: status, output: Self.kept(output), fullInput: input)
         revisions[index] = bump()
         if let backgroundJob { jobBlocks[backgroundJob] = index }
