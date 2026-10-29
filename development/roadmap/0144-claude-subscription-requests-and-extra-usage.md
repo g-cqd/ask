@@ -92,3 +92,11 @@ Client network sandbox permits only the proxy's localhost port. Per-process CA t
 or proxy changes. Local tests verify a blocked inference response, omitted sentinel credentials/prompts, and refused direct-IP egress.
 Sanitized JSONL and transformed HAR preserve field shapes and selected quota values, not raw bodies or credentials. These restrictions
 alter normal client behaviour; a missing request can reflect a block, and this first stage is not a faithful inference/billing test.
+
+## First read-only result (2026-10-29)
+
+Owner: status and usage work, ordinary prompt fails (blocked as designed). `/api/oauth/usage` returns 200, five-hour utilization 2%,
+seven-day 9%, `extra_usage.is_enabled: false` for the official client's current login. Account equivalence with ask is unverified.
+Three inference POSTs (different shapes, including auxiliary-looking work) were blocked before forwarding, not evidence of upstream
+rejection or billing. REA MCP successfully parsed the sanitized, URI-valid HAR export (29 records). Full findings and limits:
+`development/research/claude-usage-observations-2026-10-29.md`. No inference enabled, no credentials refreshed or billing settings changed.
