@@ -23,6 +23,20 @@ def check(label, condition):
     checks.append(label)
 
 
+def rules(terminal):
+    return [row for row, line in enumerate(terminal.screen.display) if line.startswith("\u2500" * 5)]
+
+
+def prompt(terminal):
+    """The prompt's rows: those between the last two rules. The prompt has no marker; the status is the row below them."""
+    found = rules(terminal)
+    return [terminal.screen.display[row].rstrip() for row in range(found[-2] + 1, found[-1])] if len(found) >= 2 else []
+
+
+def status(terminal):
+    return terminal.screen.display[terminal.screen.lines - 1].rstrip()
+
+
 def paste(terminal, text):
     terminal.draw(lambda: terminal.send(b"\x1b[200~" + text.encode() + b"\x1b[201~"))
 
@@ -42,21 +56,20 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
         terminal = None
         try:
             terminal = probe.Terminal(project, environment, columns=width, rows=height)
-            terminal.until(lambda: "ask>" in terminal.text())
+            terminal.until(lambda: len(rules(terminal)) >= 2)
             if clear_first:
                 paste(terminal, "\n".join(f"line {n}" for n in range(1, 11)))
                 check(label + ": configured two-row limit has a visible clipping cue",
-                      terminal.screen.display[height - 3].startswith("input 9–10 of 10"))
+                      status(terminal).startswith("input 9–10 of 10") and prompt(terminal) == ["line 9", "line 10"])
                 terminal.draw(lambda: terminal.send(b"\x18"))
                 check(label + ": Ctrl+X clears every hard line without submitting",
-                      not server.requests and terminal.screen.display[height - 1].rstrip() == "ask>"
-                      and "line 10" not in terminal.text())
+                      not server.requests and prompt(terminal) == [""] and "line 10" not in terminal.text())
             paste(terminal, draft)
             check(label + ": a bracketed paste is not a submission", not server.requests)
             if changed:
                 width, height = changed
                 terminal.resize(width, height)
-                check(label + ": resize preserves a bounded viewport", terminal.screen.display[height - 3].startswith("input "))
+                check(label + ": resize preserves a bounded viewport", status(terminal).startswith("input ") and len(prompt(terminal)) == 2)
             if click:
                 column, row = click
                 terminal.draw(lambda: terminal.send(f"\x1b[<0;{column + 1};{row + 1}M\x1b[<0;{column + 1};{row + 1}m".encode()))
@@ -73,24 +86,23 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
                 check(label + ": control X puts exactly the selection on the clipboard", terminal.copies()[-1] == copied)
                 terminal.repaint()
                 check(label + ": and takes it out of the draft",
-                      terminal.screen.display[height - 1].rstrip() == "ask> h world" and "ctrl+x" not in terminal.text())
+                      prompt(terminal) == ["h world"] and "ctrl+x" not in terminal.text())
             elif wheeled:
                 for _ in range(wheeled):
-                    terminal.send(f"\x1b[<64;5;{height}M".encode())
+                    terminal.send(f"\x1b[<64;5;{height - 2}M".encode())  # over the prompt's lower row
                     terminal.pump()
                 terminal.repaint()
-                rows = [terminal.screen.display[row].rstrip() for row in (height - 2, height - 1)]
-                check(label + ": the wheel scrolls the input's window by rows", rows == ["line 6", "line 7"])
+                check(label + ": the wheel scrolls the input's window by rows", prompt(terminal) == ["line 6", "line 7"])
                 check(label + ": the cursor is hidden while it is out of the window", terminal.screen.cursor.hidden)
                 check(label + ": and nothing was submitted", not server.requests)
                 terminal.draw(lambda: terminal.send(b"Y"))
                 check(label + ": a key brings the window and the cursor back",
-                      not terminal.screen.cursor.hidden and terminal.screen.display[height - 1].rstrip() == "line 10Y")
+                      not terminal.screen.cursor.hidden and prompt(terminal)[-1:] == ["line 10Y"])
             elif shifted:
                 steps, copied = shifted
                 terminal.draw(lambda: terminal.send(b"\x01" + b"\x1b[1;2C" * steps))
-                row = height - 1
-                cells = list(range(5, 5 + steps))
+                row = height - 3
+                cells = list(range(0, steps))
                 inverse = lambda: [col for col in range(width) if terminal.screen.buffer[row][col].reverse]
                 terminal.until(lambda: inverse() == cells)
                 check(label + ": shift and right highlight the cells passed", inverse() == cells)
@@ -119,9 +131,11 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
                 check(label + ": and highlights it", bool(inverse) and inverse[0] == start[0])
             else:
                 terminal.draw(lambda: terminal.send(b"\x1b[A"))
-                wanted_column = 7
+                # The prompt has no marker: the wanted cell is the column the caret had, 2 in every draft here (after "YZ", "ef" or "ghi" on a
+                # tab stop, which Up lands on at its first cell).
+                wanted_column = 2
                 check(label + ": Up moves to the previous display row at the wanted cell",
-                      terminal.screen.cursor.y == height - 2 and terminal.screen.cursor.x == wanted_column)
+                      terminal.screen.cursor.y == height - 4 and terminal.screen.cursor.x == wanted_column)
             terminal.draw(lambda: terminal.send(b"X"))
             start = len(terminal.raw)
             terminal.send(b"\r")
@@ -158,16 +172,18 @@ def main():
     # The tab at display column 7 ends at stop 8; nine letters put the final caret at column 7 on the next row.
     scenario("tabs", "日\tabcdefghi", "日X\tabcdefghi", 10, 9)
     scenario("resized", draft, draft[:52] + "X" + draft[52:], 20, 12, changed=(10, 9))
-    scenario("click", "hello world", "helloX world", 40, 12, click=(10, 11))
+    # In a 12-row screen a one-row draft is on row 9 (rules on 8 and 10, the status on 11); a two-row one on rows 8 and 9.
+    scenario("click", "hello world", "helloX world", 40, 12, click=(5, 9))
+    # Forty letters fill two rows of twenty, so the caret after them opens a third and the window shows rows two and three.
     wrapped = "0123456789abcdefghijklmnopqrstuvwxyzABCD"
-    scenario("click on a wrapped row", wrapped, wrapped[:19] + "X" + wrapped[19:], 20, 12, click=(4, 10))
-    scenario("select", "hello world", "hX world", 40, 12, select=((6, 11), (9, 11), "ello"))
-    scenario("double click", "hello world", "X world", 40, 12, taps=((7, 11), 2, "hello"))
-    scenario("triple click", "ab cd\nef gh", "ab cd\nX", 40, 12, taps=((7, 11), 3, "ef gh"))
+    scenario("click on a wrapped row", wrapped, wrapped[:24] + "X" + wrapped[24:], 20, 12, click=(4, 8))
+    scenario("select", "hello world", "hX world", 40, 12, select=((1, 9), (4, 9), "ello"))
+    scenario("double click", "hello world", "X world", 40, 12, taps=((2, 9), 2, "hello"))
+    scenario("triple click", "ab cd\nef gh", "ab cd\nX", 40, 12, taps=((2, 9), 3, "ef gh"))
     scenario("shift and arrows", "hello world", "X world", 40, 12, shifted=(5, "hello"))
     ten = "\n".join(f"line {n}" for n in range(1, 11))
     scenario("wheel", ten, ten + "YX", 40, 12, wheeled=3)
-    scenario("cut", "hello world", "hX world", 40, 12, cut=((6, 11), (9, 11), "ello"))
+    scenario("cut", "hello world", "hX world", 40, 12, cut=((1, 9), (4, 9), "ello"))
     print(f"{len(checks)} checks passed")
 
 
