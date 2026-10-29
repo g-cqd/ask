@@ -29,7 +29,7 @@ extension ScreenController {
                 Self.promptTarget,
                 at: CellRect(row: frame.promptRow, col: 0, rows: frame.promptRows, cols: frame.columns))
         }
-        if frame.runnerColumns != nil || frame.belowColumns != nil {
+        if frame.runnerColumns != nil || frame.belowColumns != nil || frame.markColumns != nil {
             regions.add(Self.statusTarget, at: CellRect(row: frame.statusRow, col: 0, rows: 1, cols: frame.columns))
         }
         if !frame.stripIDs.isEmpty {
@@ -98,6 +98,7 @@ extension ScreenController {
                     state.scrollback = 0
                     return []
                 }
+                if frame.markColumns?.contains(cell.col) == true { return toggleSandboxNote() }
                 guard frame.runnerColumns?.contains(cell.col) == true else { return [] }
                 return toggleRunners()
             case .click(let target, let cell, .left, _, _) where target == Self.sidebarTarget:

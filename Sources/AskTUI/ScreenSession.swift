@@ -139,6 +139,7 @@ final class ScreenSession {
                 controller.state.transcript.addNotice(reason, isError: true)
             case .quitWindowEnded(let generation):
                 controller.quitWindowEnded(generation: generation)
+            case .sandboxNoteEnded(let generation): controller.sandboxNoteEnded(generation: generation)
             case .inputEnded:
                 effects = [.quit]
             case .askColours:
@@ -170,10 +171,10 @@ final class ScreenSession {
                 let conversation = conversation
                 Task { sink.yield(.update(.files(await conversation.projectFiles()))) }
             case .armQuitTimer(let generation):
-                Task {
-                    try? await Task.sleep(for: ScreenController.quitWindow)
-                    sink.yield(.quitWindowEnded(generation: generation))
-                }
+                ScreenTimer.after(ScreenController.quitWindow, send: .quitWindowEnded(generation: generation), to: sink)
+            case .armSandboxNoteTimer(let generation):
+                ScreenTimer.after(
+                    ScreenController.sandboxNoteWindow, send: .sandboxNoteEnded(generation: generation), to: sink)
             case .readRunnerOutput(let id):
                 runnerOutput.watch(id, in: conversation, sink: sink)
             case .watchJob(let id):

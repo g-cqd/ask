@@ -15,10 +15,16 @@ extension ScreenComposer {
         .line(style: StatusLine.statusStyle)
     }
 
+    /// The columns of the idle mark, which a click names (roadmap 0133); nil while anything else leads the line.
+    static func markColumns(for state: ScreenState) -> Range<Int>? {
+        guard !(state.running || state.compacting || state.reconnecting) else { return nil }
+        return 0 ..< UnicodeWidth.displayWidth(of: leadingMark(for: state).character)
+    }
+
     /// Evaluates a stable per-operation spinner while running, or the sandbox-colored idle `!`.
     static func leadingMark(for state: ScreenState) -> StatusLeadingMark {
         guard state.running || state.compacting || state.reconnecting else {
-            return StatusLeadingMark.mark(running: false, sandboxed: state.sandboxed, frame: "")
+            return StatusLeadingMark.idle(sandboxed: state.sandboxed, named: state.sandboxNoteShown)
         }
         let configured = state.transcript.spinnerStyle
         let clock = state.transcript.progress[state.transcript.items.count - 1].flatMap { $0.ended == nil ? $0 : nil }
