@@ -129,3 +129,11 @@ historical boundaries 6488/6490 found no recovery issues or RequestContext repai
 Not sent upstream. User requested interactive ask: fresh disposable clone in Kitty, real CLI/built-in tools, Opus medium, eight inference
 requests total (four per turn), restricted network, no MCP/skills/credential refresh. No automatic replay of the long session. Research note
 holds exact matrix, reconstruction counts and harness limits. Await interactive outcome, then capture the exact failing request if needed.
+
+## Interactive ask result (2026-10-29)
+
+Owner completed two turns: seven requests, seven HTTP 200 responses, actual read (3) and bash (4) calls, successful signed-thinking/tool-result
+replay. Context 7.2k to 10.2k tokens. Every response uses allowed five_hour quota with overage rejected. Remaining inference budget revoked.
+The original extra-usage refusal is not reproduced; original long-context replay is not yet performed or assumed cheap. Research note has
+counts, sizes and remaining variables. Next: obtain the failing process's effective settings and bounded request metadata; any historical
+reconstruction is approximate without its tool/config snapshots.
