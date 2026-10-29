@@ -91,3 +91,33 @@ consumer needs it). **Proposed to close:** AemiHTML (0139), which was conditiona
 - Session history (user entries `3992`, `4188`, in `20261028T064028Z-412fcd46.jsonl`) already answers 0126 and 0123: rejected short timeout
   spellings, asked for a typed display-setting proposal; approved more permissive, granular per-server MCP scopes. Do not re-ask those
   general questions. The exact unapproved enum/custom-label design and sampling default are distinct from those settled directions.
+
+## Update (2026-10-29, evening)
+
+**Landed since:** the Claude context window without a thinking level (0147); configuration watched and applied while idle, through AemiIO
+(0127's watching; ADR-0131); file watching and then AemiRegex's kernels and Unicode data consolidated into aemi (aemi ADR 0016, 0018),
+every pin moved; the C kernels reviewed and a Rust port measured (aemi `docs/research/c-kernels-and-rust-2026-10.md`: as fast, not worth
+the packaging; x86-64 kernels never run in CI, now partly covered).
+
+**Answered:** 0126 go (`ui.timeout` auto, always, never, and a label of at most 8 cells); 0142 orange for the last ongoing blocks, no
+interruption block, distinct from error red in light and dark; 0123 permissive, with granular per-server MCP settings; 0088 step 3 go if
+opening, Page Up and unfolding show no lag; 0139 closed (done); 0085 wants its five proposals explained with examples.
+
+**Later, so they stop competing with the planned features above** (no status change; each stays not started or in progress, and is
+picked up when a feature needs it):
+
+- Pixel UI and layouts (0014, 0015): no feature waits on them.
+- Isolation infrastructure (0020 ask sandboxed, 0021 domain proxy, 0022 containers): large; the sandbox of commands already holds.
+- Aemi promotions without a consumer waiting (0076, 0087): AemiRegex's showed the cost (a pin chain through six repositories); promote when
+  a second user arrives, test first.
+- AskMCP covering every version and transport (0123's conformance half): the granular settings half stays in the plan with 0114.
+- Subagents (0063), Xcode's code model (0073), cold-start variance (0054, under budget), taking over a session (0115).
+- AemiTerminal (TerminalKit roadmap 0026): the owner's "later"; its first phase would replace pyte in ask's probes, which matters once
+  probe artifacts start costing time (one did today: a reply missing until a resize forced a full redraw, pyte's or ask's, unknown).
+
+**Open from today:** the incremental-redraw artifact above (seen in pyte only; a full redraw shows the right transcript); AemiMarkdown's
+punctuation follows the platform's Unicode, which equals Unicode 17 on this machine, so no failing test can drive a switch to AemiUnicode
+here (it would matter on macOS 15); x86-64 AVX2 and AVX-512 kernels need a runner that has them.
+
+**Next item:** 0126, the timeout's short form, approved and small; then 0142's orange; then the paths that are not links (0075) and MCP at
+idle (0143), as ordered above.
