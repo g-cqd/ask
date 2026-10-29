@@ -107,8 +107,33 @@ release build, a copy of the owner's 12 MB session (5,564 entries), 120x40, agai
 | resident size, open and quiet | 61.2 MiB | 54.9 MiB |
 | open (spawn to the quiet first frame) | 545-664 ms | 504-636 ms |
 | a new width, 120 to 100 columns | 302-354 ms | 225-254 ms |
-| a typed byte, a Page Up | under 1 ms | under 1 ms |
+| a typed byte | under 1 ms | under 1 ms |
 | fresh screen, resident size | 14.3 MiB | 14.3 MiB |
 
 Every item is still laid out once to learn its height, so opening and a new width cost a full layout. Laying out only the last 50 items
 bounds what is left to gain here: 52.6 MiB and 258 ms to open. Next: heights found from the end on demand.
+
+## Step 2, second half (2026-10-29): laid out from the end, on demand (TerminalKit e2607ad, 0023 done)
+
+The transcript is laid out from its end as far as the shown rows and a window above them need, and further as the reader scrolls up, so
+opening a session and taking a new width cost the screen, not the conversation. Paged to the top, the screen equals the full layout's, with
+the same 16,148 rows below it, and the first prompt shown.
+
+Two fixes the measurement found. **Page Up did not scroll before a mouse event**, in every build: `ScreenSession` loaded the newest frame's
+geometry for mouse events only, so a key's scroll was clamped against an empty frame until the wheel or a tick had loaded one. Every input
+now loads it. (The first half's Page Up figure above timed frames that did not move, and is struck.) And a folded block's header counted
+its output's lines by splitting the whole output after a tab replacement; `TranscriptContent.hardLineCount(of:)` counts line feeds.
+
+Release build, the same 12 MB copy, interleaved against the full layout (the first half's parent with the Page Up fix), 2 x 3 runs:
+
+| | full layout | from the end |
+| --- | --- | --- |
+| resident size, open and quiet | 60.9 MiB | 52.7 MiB |
+| open | 439-442 ms | 229-230 ms |
+| a new width, 30 pages up | 231 ms | 15-18 ms |
+| a typed byte | 1.0-1.3 ms | 0.9-1.3 ms |
+| Page Up, median of 30 (worst) | 1.3 ms (1.5-1.9) | 2.5 ms (3.5-5.9) |
+| fresh screen, resident size; open | 14.3 MiB; ~35 ms | 14.3 MiB; ~35 ms |
+
+Page Up is 1.2 ms dearer, inside the 4 ms input budget: it lays out the page it reaches, which the full layout paid for at open. What is
+left of the 52.7 MiB is the session itself (its strings, about 16 MB in 38,000 string buffers, and the entries): step 3's lever.

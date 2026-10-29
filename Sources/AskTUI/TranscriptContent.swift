@@ -19,7 +19,14 @@ struct TranscriptContent: SelectableContent {
 
     /// The lines of `text` as `TextWrap` sees them: tabs expanded, split at line feeds.
     static func hardLines(of text: String) -> [String] {
-        text.replacing("\t", with: "    ").split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+        // Most text has no tab, and the replacement is a search through all of it.
+        let expanded = text.utf8.contains(0x09) ? text.replacing("\t", with: "    ") : text
+        return expanded.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+    }
+
+    /// How many lines ``hardLines(of:)`` finds in `text`, without building them: a folded block's header counts its output's lines.
+    static func hardLineCount(of text: String) -> Int {
+        text.utf8.reduce(1) { $1 == 0x0A ? $0 + 1 : $0 }
     }
 
     var blockCount: Int { blocks.count }

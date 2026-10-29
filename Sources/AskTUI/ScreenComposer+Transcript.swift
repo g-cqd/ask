@@ -18,8 +18,8 @@ extension ScreenComposer {
         return map
     }
 
-    /// The transcript's rows from `rowsFromEnd` up to `rows` above it: every item's height is kept, and the lines of the items near
-    /// the window only (TerminalKit roadmap 0023), so a long conversation does not hold its whole laid-out text.
+    /// The transcript's rows from `rowsFromEnd` up to `rows` above it, laid out from the end as far as the window and a margin need
+    /// (TerminalKit roadmap 0023): a long conversation is not laid out whole to open, to take a new width, or to be held.
     mutating func transcriptWindow(
         _ transcript: Transcript, columns: Int, style: BlockStyle, rows: Int, rowsFromEnd: Int
     ) -> [Line] {
@@ -32,9 +32,9 @@ extension ScreenComposer {
             Self.lines(
                 in: transcript, at: index, shown: transcript.shownCode(at: index), columns: columns, style: style)
         }
+        // A window above the shown rows is known too, so a scroll up by a page always has rows to go to.
         transcriptLines.update(
             width: columns, revisions: transcript.revisions, keepingFromEnd: rowsFromEnd + 2 * rows, layout: layout)
-        let end = Swift.max(0, transcriptLines.rowCount - rowsFromEnd)
-        return transcriptLines.lines(in: Swift.max(0, end - rows) ..< end, layout: layout)
+        return transcriptLines.lines(fromEnd: rowsFromEnd, rows: rows, layout: layout)
     }
 }
