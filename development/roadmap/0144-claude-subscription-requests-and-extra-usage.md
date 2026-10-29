@@ -165,7 +165,8 @@ because MCP servers had just been configured in that session. Resolution require
 The owner requested a layer reproducing how Claude Code transmits tool calls, informed by examining the Claude Code binary.
 No compatibility layer was implemented.
 The experiments found that changing only two tool names moved the same request from an extra-usage refusal to subscription
-quota, without a validation error. The binary was only identified (`file`); it was not disassembled or searched.
+quota, without a validation error. The binary was not disassembled; later the same day `strings` was run over it
+to list its tool names for feature research (0146).
 
 `AnthropicRequestEncoder.canonicalSystemLine` sends a "Claude Agent SDK" identity line, and the
 `claude-code-20250219` beta header, on subscription requests. These remain request-comparison observations.
@@ -173,3 +174,19 @@ quota, without a validation error. The binary was only identified (`file`); it w
 Other available connections are an Anthropic API key (`ask login`, billed per use) and the existing Copilot connection for
 Claude models. The ask-side error improvement is to describe the subscription refusal plainly instead of implying exhausted
 quota. Private lab data (session copy and sanitized captures) remains in `~/.local/share/ask-lab`, outside git.
+
+## Confirmed from a second session (2026-10-29)
+
+With throwaway configurations (the owner's file untouched): apple-docs alone, lldb alone, and Xcode's 54 tools offered directly are
+accepted; any configuration that offers `mcp_search` and `mcp_call` (Xcode or REA in search mode, lldb forced to search mode) gets the
+refusal. Only the request's `tools` list matters: a history that called `mcp_search` is accepted once the tool is not offered.
+Today the owner's running configuration offers only apple-docs (9 tools, direct), which is
+accepted; Xcode, LLDB and REA are commented out by the owner.
+
+## The honest message, built (2026-10-29)
+
+`AnthropicStreamDecoder.notCovered`: an HTTP 400 `invalid_request_error` whose words say "out of extra usage" now reads "Anthropic did not
+count this request against your Claude subscription, and extra usage is off, so it refused it (your five-hour quota still allows requests).
+Sending it again will not help; an Anthropic API key or another connection can serve it. Anthropic said: …". The quota clause appears only
+when the response's `anthropic-ratelimit-unified-5h-status` header says `allowed`. The kind stays `invalidRequest`, which is not retried.
+Tests: `AnthropicSubscriptionRefusalTests`. Not checked against a live refusal after the change.
