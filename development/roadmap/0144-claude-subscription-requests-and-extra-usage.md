@@ -121,3 +121,11 @@ allowed, representative claim five_hour, overage rejected with org_level_disable
 account/model equivalence with ask. Later local 400 refusals occurred because the one-use permit had been consumed; no reauthentication
 needed on that evidence. Details and token counts are in the research note. Next: compare ask's exact failing request, same model and
 verified account/grant where possible; do not blindly copy first-party identity headers or conclude that callback shape causes billing.
+
+## Matrix and interactive lab (2026-10-29)
+
+All four small tool-history/default-or-medium thinking cases succeeded against five_hour quota, overage rejected. Offline reconstruction of
+historical boundaries 6488/6490 found no recovery issues or RequestContext repairs; encoded context about 0.94 MB without tools/system.
+Not sent upstream. User requested interactive ask: fresh disposable clone in Kitty, real CLI/built-in tools, Opus medium, eight inference
+requests total (four per turn), restricted network, no MCP/skills/credential refresh. No automatic replay of the long session. Research note
+holds exact matrix, reconstruction counts and harness limits. Await interactive outcome, then capture the exact failing request if needed.
