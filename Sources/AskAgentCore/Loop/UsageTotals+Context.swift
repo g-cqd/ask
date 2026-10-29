@@ -4,6 +4,6 @@ extension UsageTotals {
     public func contextStatus(limit: Int?) -> String {
         guard let limit, limit > 0 else { return "—%/?" }
         let percentage = contextTokens.map { String(Int(Double($0) / Double(limit) * 100)) } ?? "—"
-        return "\(percentage)%/\(Self.short(limit))"
+        return "\(percentage)%/\(Self.windowSize(limit))"
     }
 }

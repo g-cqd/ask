@@ -38,13 +38,21 @@ public struct UsageTotals: Sendable, Equatable {
     /// For the status line: `↑13.2k ↓1.1k`, the prompt tokens sent and the tokens received.
     public var compact: String { "↑\(Self.short(prompt)) ↓\(Self.short(output))" }
 
-    /// 950, 1.2k, 13k, 1.4M.
+    /// A context window as a label: 200k, 1.0M. A window is a round number, so one decimal says it.
+    static func windowSize(_ count: Int) -> String {
+        count >= 1_000_000 ? "\(count / 1_000_000).\(count % 1_000_000 / 100_000)M" : short(count)
+    }
+
+    /// 950, 1.2k, 13k, 1.42M, 12M. Two decimals in the millions, where one decimal let 100,000 tokens pass unseen (roadmap 0136).
     static func short(_ count: Int) -> String {
         switch count {
             case ..<1_000: return "\(count)"
             case ..<10_000: return "\(count / 1_000).\(count % 1_000 / 100)k"
             case ..<1_000_000: return "\(count / 1_000)k"
-            default: return "\(count / 1_000_000).\(count % 1_000_000 / 100_000)M"
+            case ..<10_000_000:
+                let hundredths = count % 1_000_000 / 10_000
+                return "\(count / 1_000_000).\(hundredths < 10 ? "0" : "")\(hundredths)M"
+            default: return "\(count / 1_000_000)M"
         }
     }
 }
