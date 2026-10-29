@@ -46,7 +46,7 @@ def main():
             turn([("call", "t1", "bash", {"command": "printf 'JOB READY\\n'; exec sleep 60",
                                           "yield_seconds": 1})], "tool_use"),
             turn([("text", "JOB RUNNING")], "end_turn"),
-            turn([("call", "t2", "job_stop", {"job": "job-1"})], "tool_use"),
+            turn([("call", "t2", "job", {"job": "job-1", "action": "stop"})], "tool_use"),
             turn([("text", "JOB STOPPED")], "end_turn"),
         ])
         environment = probe.agent.environment(root + "/state", server.url, config=config)
@@ -76,9 +76,9 @@ def main():
             before = line[-1]
             terminal.until(lambda: terminal.screen.display[-1][-1] != before)
             check("job spinner animates without another model turn", terminal.screen.display[-1][-1] in "|/-\\")
-            terminal.until(lambda: bool(re.search(r"\s[2-9][0-9]* [|/\\-]$", terminal.screen.display[-1])))
+            terminal.until(lambda: bool(re.search(r"\s[2-9][0-9]* · [|/\\-]$", terminal.screen.display[-1])))
             check("job duration advances while model is idle", bool(re.search(
-                r"\s[2-9][0-9]* [|/\\-]$", terminal.screen.display[-1])))
+                r"\s[2-9][0-9]* · [|/\\-]$", terminal.screen.display[-1])))
             terminal.draw(lambda: terminal.send(b"draft"))
             row = status_row(terminal) - 1
             click(terminal, row, 5)
