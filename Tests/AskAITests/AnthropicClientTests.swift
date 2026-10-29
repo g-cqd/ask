@@ -104,6 +104,7 @@ struct AnthropicClientTests {
         (.stream(.provider(ProviderFailure(kind: .rateLimited, message: ""))), true),
         (.stream(.provider(ProviderFailure(kind: .invalidRequest, message: ""))), false),
         (.stream(.malformed(event: "x")), false), (.truncated, true), (.transport("down"), true),
+        (.interrupted("no data arrived for 600 seconds"), true),
         (.framing(.eventTooLarge(limit: 1)), false)
     ])
     func `only transient failures are retryable`(error: AnthropicClientError, retryable: Bool) {
@@ -114,6 +115,17 @@ struct AnthropicClientTests {
         let transport = ScriptedTransport(
             status: 200, chunks: [turn[0], turn[1], turn[2], "data: {\"type\":\"content_bl"])
         await #expect(throws: AnthropicClientError.truncated) {
+            _ = try await events(AnthropicClient(transport: transport), auth: .apiKey("k"))
+        }
+    }
+
+    /// A connection that breaks after the response began is the provider stream's error, so the loop's retry advice and wording apply to
+    /// it; it used to escape as the transport's raw error.
+    @Test func `a body that breaks part way is an interruption, in words`() async {
+        let transport = ScriptedTransport(
+            status: 200, chunks: [turn[0], turn[1]],
+            failure: HTTPTransportError.interrupted("no data arrived for 600 seconds"))
+        await #expect(throws: AnthropicClientError.interrupted("no data arrived for 600 seconds")) {
             _ = try await events(AnthropicClient(transport: transport), auth: .apiKey("k"))
         }
     }

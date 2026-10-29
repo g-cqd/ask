@@ -11,4 +11,6 @@ public enum ProviderStreamError<DecoderFailure: StreamDecodingFailure>: Error, E
     case truncated
     /// The request did not complete.
     case transport(String)
+    /// The connection failed after the response began.
+    case interrupted(String)
 }

@@ -15,6 +15,15 @@ public struct URLSessionTransport: HTTPTransport {
 
     private var session: URLSession { provided ?? lazySession.value }
 
+    /// Ephemeral (no cookies, cache or credentials on disk), and patient: URLSession's default gives up after 60 s without data, and a
+    /// provider reading a very long prompt can be silent longer than that before its first event. 600 s is what the providers' own
+    /// clients wait (anthropic-sdk-python and openai-python, `DEFAULT_TIMEOUT`). Stopping the turn ends a wait sooner.
+    static func configuration() -> URLSessionConfiguration {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.timeoutIntervalForRequest = 600
+        return configuration
+    }
+
     public func send(_ request: HTTPRequest) async throws -> HTTPStreamingResponse {
         var urlRequest = URLRequest(url: request.url)
         urlRequest.httpMethod = request.method
@@ -47,7 +56,7 @@ public struct URLSessionTransport: HTTPTransport {
         var value: URLSession {
             session.withLock { existing in
                 if let existing { return existing }
-                let created = URLSession(configuration: .ephemeral)
+                let created = URLSession(configuration: URLSessionTransport.configuration())
                 existing = created
                 return created
             }
@@ -101,14 +110,26 @@ public struct URLSessionTransport: HTTPTransport {
         }
 
         func urlSession(_ session: URLSession, task: URLSessionTask, didCompleteWithError error: (any Error)?) {
+            let cancelled = (error as? URLError)?.code == .cancelled
+            let reason = error.map { Self.reason($0, idle: session.configuration.timeoutIntervalForRequest) }
             if let pending = head.withLock({ $0.take() }) {
-                if let urlError = error as? URLError, urlError.code == .cancelled {
-                    pending.resume(throwing: CancellationError())
-                } else {
-                    pending.resume(throwing: HTTPTransportError.failed(error?.localizedDescription ?? "no response"))
-                }
+                pending.resume(
+                    throwing: cancelled ? CancellationError() : HTTPTransportError.failed(reason ?? "no response"))
             }
-            if let error { body.finish(throwing: error) } else { body.finish() }
+            // Only the system's own description reaches a person: an NSError described whole is its user-info dump.
+            if cancelled {
+                body.finish(throwing: CancellationError())
+            } else if let reason {
+                body.finish(throwing: HTTPTransportError.interrupted(reason))
+            } else {
+                body.finish()
+            }
+        }
+
+        /// The system's sentence for `error`, or how long the connection was quiet when that is why it ended.
+        private static func reason(_ error: any Error, idle: TimeInterval) -> String {
+            if (error as? URLError)?.code == .timedOut { return "no data arrived for \(Int(idle)) seconds" }
+            return error.localizedDescription
         }
     }
 }

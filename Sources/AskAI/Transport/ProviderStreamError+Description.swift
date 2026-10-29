@@ -12,6 +12,7 @@ extension ProviderStreamError: CustomStringConvertible {
                 "the response stream sent an event larger than \(limit) bytes"
             case .truncated: "the connection closed in the middle of the response"
             case .transport(let reason): "the request did not complete: \(reason)"
+            case .interrupted(let reason): "the connection failed during the response: \(reason)"
         }
     }
 }
