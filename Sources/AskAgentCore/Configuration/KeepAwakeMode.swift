@@ -6,7 +6,9 @@ public enum KeepAwakeMode: String, Sendable, CaseIterable {
     case system
     /// Neither the Mac nor the display goes to sleep when idle.
     case display
+    /// The Mac does not go to sleep when idle for as long as ask runs, working or not (roadmap 0148); the display may.
+    case always
 
     /// The choices, as an error names them.
-    static let choices = #""off", "system" or "display""#
+    static let choices = #""off", "system", "display" or "always""#
 }
