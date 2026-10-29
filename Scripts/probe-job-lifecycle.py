@@ -24,6 +24,23 @@ def click(terminal, row, column=2):
         f"\x1b[<0;{column + 1};{row + 1}M\x1b[<0;{column + 1};{row + 1}m".encode()))
 
 
+def shown(terminal, line):
+    """Whether `line` is a row of its own: the command in the block's header also says STREAM_TWO, so a substring proves nothing."""
+    return any(text.strip() == line for text in terminal.screen.display)
+
+
+def eventually(terminal, line, seconds=2.0):
+    """Whether `line` becomes a row of its own within `seconds`, repainting: a lane's output reaches the main block within about 0.3 s."""
+    deadline = time.monotonic() + seconds
+    while True:
+        terminal.repaint()
+        if shown(terminal, line):
+            return True
+        if time.monotonic() > deadline:
+            return False
+        time.sleep(0.1)
+
+
 def main():
     with tempfile.TemporaryDirectory() as root:
         project, config = Path(root) / "project", Path(root) / "config"
@@ -37,7 +54,8 @@ def main():
         server = probe.agent.Server([
             turn([("call", "t1", "bash", {"command": command, "yield_seconds": 1})], "tool_use"),
             turn([("text", "JOB RUNNING")], "end_turn"),
-            turn([("call", "t2", "wait", {"job": "job-1", "output_contains": "STREAM_TWO", "timeout_seconds": 3})], "tool_use"),
+            turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_output": "STREAM_TWO", "timeout_seconds": 3})],
+                 "tool_use"),
             turn([("text", "WAIT PRESERVED")], "end_turn"),
         ])
         environment = probe.agent.environment(root + "/state", server.url, config=str(config))
@@ -47,28 +65,28 @@ def main():
             terminal = probe.Terminal(str(project), environment, columns=140, rows=40)
             terminal.until(lambda: "ask>" in terminal.text())
             terminal.send(b"Start\r")
-            terminal.until(lambda: b"JOB RUNNING" in terminal.raw and b"bash [#" in terminal.raw)
+            terminal.until(lambda: b"JOB RUNNING" in terminal.raw and "shell \u00b7 [#" in terminal.text())
             terminal.repaint()
-            label = re.search(r"bash \[(#[0-9a-f]{4})\]", terminal.text()).group(1)
-            row = next(i for i, text in enumerate(terminal.screen.display) if "bash [" in text)
+            label = re.search(r"shell · \[(#[0-9a-f]{4})\]", terminal.text()).group(1)
+            row = next(i for i, text in enumerate(terminal.screen.display) if "shell · [" in text)
             click(terminal, row)
-            probe.check("original tool unfolds with the job's initial output", "STREAM_ONE" in terminal.text())
+            probe.check("original tool unfolds with the job's initial output", shown(terminal, "STREAM_ONE"))
             terminal.draw(lambda: terminal.send(b"/tasks\r"))
             job_row = next(i for i, text in enumerate(terminal.screen.display) if text.startswith("[" + label + "]  "))
             click(terminal, job_row)
             terminal.until(lambda: "STREAM_ONE" in terminal.text() and "main › [" + label + "]" in terminal.text())
             (project / "second").touch()
-            terminal.until(lambda: "STREAM_TWO" in terminal.text())
-            probe.check("focused output keeps streaming", "STREAM_TWO" in terminal.text())
+            terminal.until(lambda: shown(terminal, "STREAM_TWO"))
+            probe.check("focused output keeps streaming", shown(terminal, "STREAM_ONE") and shown(terminal, "STREAM_TWO"))
             terminal.draw(lambda: terminal.send(b"\x1b"))
-            probe.check("main block was updated while another lane was focused", "STREAM_TWO" in terminal.text()
+            probe.check("main block was updated while another lane was focused", eventually(terminal, "STREAM_TWO")
                         and "JOB RUNNING" in terminal.text())
-            row = next(i for i, text in enumerate(terminal.screen.display) if "bash [" in text)
+            row = next(i for i, text in enumerate(terminal.screen.display) if "shell · [" in text)
             click(terminal, row)
-            probe.check("a streamed block still folds", not any(text.strip() == "STREAM_TWO" for text in terminal.screen.display))
-            row = next(i for i, text in enumerate(terminal.screen.display) if "bash [" in text)
+            probe.check("a streamed block still folds", not shown(terminal, "STREAM_TWO"))
+            row = next(i for i, text in enumerate(terminal.screen.display) if "shell · [" in text)
             click(terminal, row)
-            probe.check("a streamed block still unfolds", any(text.strip() == "STREAM_TWO" for text in terminal.screen.display))
+            probe.check("a streamed block still unfolds", shown(terminal, "STREAM_TWO"))
             terminal.send(b"Wait\r")
             terminal.until(lambda: b"WAIT PRESERVED" in terminal.raw)
             result = probe.agent.tool_results(server).get("t2", "")

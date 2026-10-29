@@ -64,8 +64,11 @@ class Server:
 
 
 def environment(state, url, config=None):
-    """The run's environment. `config` is a directory standing in for ~/.config; none by default."""
-    env = dict(os.environ, ANTHROPIC_API_KEY="sk-ant-api-fake", ANTHROPIC_BASE_URL=url, XDG_STATE_HOME=state)
+    """The run's environment. `config` is a directory standing in for ~/.config; none by default. HOME is an empty directory inside `state`,
+    so nothing of the machine's own home (skills, instructions, credentials) reaches the run: the picker probe listed the owner's skills."""
+    home = os.path.join(state, "home")
+    os.makedirs(home, exist_ok=True)
+    env = dict(os.environ, ANTHROPIC_API_KEY="sk-ant-api-fake", ANTHROPIC_BASE_URL=url, XDG_STATE_HOME=state, HOME=home)
     env.pop("XDG_CONFIG_HOME", None)
     for name in [n for n in env if n.startswith("ASK_")]:
         del env[name]

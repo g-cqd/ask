@@ -81,9 +81,11 @@ class Session:
         os.makedirs(project)
         os.makedirs(config + "/ask")
         self.project = os.path.realpath(project)
-        if settings is not None:
-            with open(config + "/ask/config.json", "w") as file:
-                json.dump(settings(self.project), file)
+        # The prompt has no marker by default; the probes read the prompt row by one, so every session sets it unless the probe chose its own.
+        chosen = settings(self.project) if settings is not None else {}
+        chosen.setdefault("ui", {}).setdefault("prompt", "ask> ")
+        with open(config + "/ask/config.json", "w") as file:
+            json.dump(chosen, file)
         if prepare is not None:
             prepare(self.project)
         self.server = probe.agent.Server(turns)
@@ -144,7 +146,7 @@ def main():
         type_text(terminal, "/")
         names, top = listed(terminal)
         check("a slash opens a list of every command, titled and above the prompt", top is not None and len(names) >= 6
-              and names[:3] == ["/help", "/quit", "/follow-up"] and prompt_row(terminal) == "ask> /")
+              and names[:4] == ["/help", "/quit", "/continue", "/follow-up"] and prompt_row(terminal) == "ask> /")
         check("commands group under dim category headings",
               rows(terminal)[top + 1] == "session" and not terminal.screen.buffer[top + 1][0].bold)
         check("the title names the keys", "Enter" in rows(terminal)[top] and "Esc" in rows(terminal)[top])
@@ -154,7 +156,7 @@ def main():
         type_text(terminal, "co")
         names, top = listed(terminal)
         check("typing filters it, keeping the category's prefix matches first",
-              names[0] == "/compact" and rows(terminal)[top + 1] == "session")
+              names[:2] == ["/continue", "/compact"] and rows(terminal)[top + 1] == "session")
         check("the filter is the draft itself", prompt_row(terminal) == "ask> /co")
 
         press(terminal, b"\x1b[B")

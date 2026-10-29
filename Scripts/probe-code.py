@@ -34,7 +34,7 @@ def main():
         os.makedirs(project)
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
-            json.dump({"ui": {"codeFoldLines": 20}}, file)
+            json.dump({"ui": {"prompt": "ask> ", "codeFoldLines": 20}}, file)
         server = probe.agent.Server([probe.agent.turn([("text", REPLY)], "end_turn")])
         environment = probe.agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")
@@ -45,8 +45,9 @@ def main():
             terminal = probe.Terminal(project, environment, rows=50)
             terminal.until(lambda: "ask>" in terminal.text())
             start = len(terminal.raw)
-            terminal.send(b"Go\r")
-            terminal.until(lambda: b"AFTER CODE" in bytes(terminal.raw)[start:] and b"ready" in bytes(terminal.raw)[start:])
+            # Not "Go": that is one of /continue's words. The status's check mark is the screen at rest.
+            terminal.send(b"Show the code\r")
+            terminal.until(lambda: b"AFTER CODE" in bytes(terminal.raw)[start:] and "\u2713 \u00b7" in terminal.text())
             terminal.repaint()
             text = terminal.text()
             check("a 30-line block is one line that says its language and length", "code · swift · 30 lines" in text
