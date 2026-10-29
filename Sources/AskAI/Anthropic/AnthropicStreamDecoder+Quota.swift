@@ -6,7 +6,7 @@ extension AnthropicStreamDecoder {
     public static func failure(inErrorBody body: [UInt8], status: Int, headers: [String: String]) -> ProviderFailure? {
         let prefix = "anthropic-ratelimit-unified-"
         guard status == 429, headers[prefix + "overage-status"] != "allowed" else {
-            return failure(inErrorBody: body)
+            return failure(inErrorBody: body).map { status == 400 ? notCovered($0, headers: headers) : $0 }
         }
         // @dl:disable near-clone -- this provider's quota-name table is unrelated to sandbox test path tables
         var message = ""
@@ -32,5 +32,21 @@ extension AnthropicStreamDecoder {
         }
         message += " Wait for the rejected quotas to reset or use another account/provider; do not retry immediately."
         return ProviderFailure(kind: .usageLimit, message: message)
+    }
+
+    /// Anthropic's HTTP 400 "You're out of extra usage" means it did not count the request against the subscription and extra usage is off
+    /// (roadmap 0144). Its words read like a spent quota, so the person is told what happened, keeping the provider's words.
+    static func notCovered(_ failure: ProviderFailure, headers: [String: String]) -> ProviderFailure {
+        guard failure.kind == .invalidRequest, failure.message.lowercased().contains("out of extra usage") else {
+            return failure
+        }
+        var message =
+            "Anthropic did not count this request against your Claude subscription, and extra usage is off, so it refused it"
+        if headers["anthropic-ratelimit-unified-5h-status"] == "allowed" {
+            message += " (your five-hour quota still allows requests)"
+        }
+        message +=
+            ". Sending it again will not help; an Anthropic API key or another connection can serve it. Anthropic said: "
+        return ProviderFailure(kind: failure.kind, message: message + failure.message)
     }
 }
