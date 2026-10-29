@@ -11,8 +11,8 @@ struct StatusLineFitTests {
         var state = ScreenState(label: "model")
         state.context = "25%/200k"
         state.detail = "↑12.3k ↓456"
-        #expect(text(state, columns: 80) == "! · model · 25%/200k · ↑12.3k ↓456")
-        #expect(text(state, columns: 20) == "! · model · 25%/200k")
+        #expect(text(state, columns: 80) == "✓ · model · 25%/200k · ↑12.3k ↓456")
+        #expect(text(state, columns: 20) == "✓ · model · 25%/200k")
     }
 
     @Test func `the ASCII warning is accented and separated from the model`() {
@@ -82,7 +82,7 @@ struct StatusLineFitTests {
     @Test func `there is no ready, and no sandbox word`() {
         var quiet = ScreenState(label: "codex/gpt-6.1-sol")
         quiet.labelVariants = []
-        #expect(text(quiet, columns: 80) == "! · codex/gpt-6.1-sol")
+        #expect(text(quiet, columns: 80) == "✓ · codex/gpt-6.1-sol")
     }
 
     @Test func `at no width does the line run past the screen`() {
@@ -126,7 +126,7 @@ struct StatusLineFitTests {
         #expect(line.accents[0].style.fg == StatusLeadingMark.warning.fg)
         #expect(
             ScreenComposer.status(for: ScreenState(label: "codex/x"), columns: 80).line.accents.first?.style.fg
-                == StatusLeadingMark.sandboxed.fg)
+                == StatusLeadingMark.protected.fg, "a sandboxed ask leads with a green check")
     }
 
     @Test func `a click's columns follow the shortening`() {
@@ -149,10 +149,10 @@ struct StatusLineFitTests {
         var copied = ScreenState(label: "m")
         copied.clipboardNotice = "Terminal copy failed: x"
         copied.nativeSelectionHint = "Shift: native selection"
-        #expect(text(copied, columns: 80) == "! · m · Terminal copy failed: x")
+        #expect(text(copied, columns: 80) == "✓ · m · Terminal copy failed: x")
         copied.clipboardNotice = ""
-        #expect(text(copied, columns: 80) == "! · m")
+        #expect(text(copied, columns: 80) == "✓ · m")
         copied.verbose = true
-        #expect(text(copied, columns: 80) == "! · m · Shift: native selection")
+        #expect(text(copied, columns: 80) == "✓ · m · Shift: native selection")
     }
 }

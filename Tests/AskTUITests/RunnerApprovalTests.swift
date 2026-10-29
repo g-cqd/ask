@@ -48,12 +48,12 @@ struct RunnerApprovalTests {
 
     @Test func `no question, no change to the line, and main shows its question in the transcript as before`() {
         var rig = lane()
-        #expect(status(rig).hasPrefix("! · m"))
+        #expect(status(rig).hasPrefix("✓ · m"))
         press(0x1B, &rig)
         rig.controller.handle(.askApproval(id: 5, question: "Allow it?"))
         rig.draw()
         #expect((0 ..< 16).contains { rig.text(row: $0).hasPrefix("Allow it?  y once") })
-        #expect((0 ..< 16).contains { rig.text(row: $0) == "! · m · 1 job" }, "the status line is the plain one")
+        #expect((0 ..< 16).contains { rig.text(row: $0) == "✓ · m · 1 job" }, "the status line is the plain one")
     }
 
     @Test func `a question from a runner shows as waiting in the strip and counts`() {

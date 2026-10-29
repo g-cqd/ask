@@ -59,7 +59,7 @@ def main():
             terminal.until(lambda: "ask>" in terminal.text())
             terminal.repaint()
             mark = terminal.screen.buffer[29][0]
-            check("sandboxed idle status shows a white exclamation", mark.data == "!" and mark.fg == "white")
+            check("sandboxed idle status shows a green check", mark.data == "✓" and mark.fg == "green")
             terminal.send(b"Start\r")
             terminal.until(lambda: b"JOB RUNNING" in terminal.raw and "1 job" in terminal.text())
             terminal.repaint()
