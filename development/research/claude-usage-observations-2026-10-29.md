@@ -157,3 +157,20 @@ The original provider refusal remains unreproduced. The reconstructed historical
 lab: any upstream replay needs an explicit scope/cost estimate, no real tool execution, and a copy/prefix of the log rather than mutations
 to the original. An exact historic wire request cannot be reconstructed from the session alone because it lacks all request settings and
 tool-definition snapshots. Do not label an approximate replay exact, or attribute billing to a token threshold without a controlled result.
+
+## Owner narrows reproduction to /tree checkout
+
+Owner reports failure after using /tree to return to the past. This was not exercised by the seven-request fresh-session baseline.
+Read code: the UI uses SessionOutline.turn.before, moves the recorder's leaf, clears/replays the screen and fills the prior prompt; it
+keeps the current model/jobs/sandbox. It does not restore historical runtime settings. SessionTree.context resolves compaction along the
+selected ancestry, and RequestContext constructs the messages from that context.
+
+Offline check at entry 6485 (the historical checkout point present in this log): recovering the complete current file then moveLeaf(to:
+6485) produces byte-identical AnthropicRequestEncoder output to recovering the original file prefix ending at 6485. Appending the same
+synthetic new prompt to each also yields byte-identical output. Network denied, original log unchanged. This rules out future branches
+leaking into the encoded context at that point under matched settings. It does not validate historic signatures upstream, restore past
+model/thinking settings, or establish the failing process's exact request.
+
+Prepared a two-request live follow-up: resume only the small lab's session in Kitty (`Ask tree lab`), use the actual /tree command to select
+the second prior prompt, then submit a short no-tools answer request. Preserve signed history; no reauthentication, no original long-log
+replay. Proxy otherwise unchanged; only the existing ask/Opus streaming profile passes. Outcome pending.
