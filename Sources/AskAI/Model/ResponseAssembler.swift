@@ -70,6 +70,20 @@ public struct ResponseAssembler: Sendable {
         return response
     }
 
+    /// What arrived before the stream broke (roadmap 0141): the text blocks so far, finished or not, and nothing else, since reasoning
+    /// and a tool call are only sent back whole. Nil when no text arrived.
+    public func partial() -> AssembledResponse? {
+        guard var response else { return nil }
+        let texts = blocks.keys.sorted()
+            .compactMap { index -> ContentBlock? in
+                guard let block = blocks[index], case .text = block.kind, !block.text.isEmpty else { return nil }
+                return .text(block.text)
+            }
+        guard !texts.isEmpty else { return nil }
+        response.blocks = texts
+        return response
+    }
+
     // MARK: - Steps
 
     private mutating func start(_ index: Int, _ kind: BlockKind) throws(ResponseAssemblyError) {
