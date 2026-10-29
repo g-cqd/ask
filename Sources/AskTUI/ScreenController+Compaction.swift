@@ -11,6 +11,7 @@ extension ScreenController {
                 if active { startCompactionBlock() }
             case .compactionFinished(let status, let text): finishCompactionBlock(status, text: text)
             case .reconnecting(let waiting): state.reconnecting = waiting
+            case .connectingMCP(let waiting): state.connectingMCP = waiting
             default: break
         }
     }

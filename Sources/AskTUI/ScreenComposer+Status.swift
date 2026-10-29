@@ -34,6 +34,7 @@ extension ScreenComposer {
         let frame = frames.isEmpty ? "|" : frames[index % frames.count]
         if state.compacting { return StatusLeadingMark.compactingMark(frame: frame) }
         if state.reconnecting { return StatusLeadingMark.reconnectingMark(frame: frame) }
+        if state.connectingMCP { return StatusLeadingMark.connectingMCPMark(frame: frame) }
         return StatusLeadingMark.mark(running: state.running, sandboxed: state.sandboxed, frame: frame)
     }
 

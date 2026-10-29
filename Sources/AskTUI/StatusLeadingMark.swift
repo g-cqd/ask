@@ -28,6 +28,11 @@ struct StatusLeadingMark: Sendable, Equatable {
         StatusLeadingMark(character: frame + " Compacting...", style: compacting)
     }
 
+    /// The mark while the turn waits for MCP servers: `<spinner> Connecting MCP...`, in ask's purple (roadmap 0143).
+    static func connectingMCPMark(frame: String) -> StatusLeadingMark {
+        StatusLeadingMark(character: frame + " Connecting MCP...", style: compacting)
+    }
+
     /// The mark while ask waits to reconnect: `<spinner> Reconnecting...`, in the warning colour.
     static func reconnectingMark(frame: String) -> StatusLeadingMark {
         StatusLeadingMark(character: frame + " Reconnecting...", style: warning)
