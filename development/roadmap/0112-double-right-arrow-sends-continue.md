@@ -22,3 +22,7 @@ Related to 0097 (a `/continue` command and bare words): this is the key for the 
 Right pressed twice, within 600 ms, on an empty input while no turn runs, sends the same message as 0097. It does nothing while a turn
 runs (a stray double tap must not steer), with text in the input (Right moves the cursor), when another key came between, or on an
 auto-repeat (a held key is not a second tap). Decided without asking, as the wish left it open: say if it should also work during a turn.
+
+## Owner's decision (2026-10-29)
+
+Double Right while a turn runs stays ignored.

@@ -51,3 +51,11 @@ which nothing needs once the screen is open; the session's entries 0.8 MB; file-
 3. Let the session tree keep large tool results and responses on disk, read back when an item is opened or the context is built.
 4. Re-measure each with the footprint and the long session; add the long-session figure to `Scripts/measure-budgets.py`.
 
+## Owner's decision (2026-10-29)
+
+The budget is **resident size**: 15 MiB idle and 20 MiB active mean RSS, so the budget as written stands and the active figure
+(22 to 23 MiB) is still over it. The physical-footprint figures above are information, not the budget. Improvement opportunities are to be
+studied for feasibility and built when relevant, as long as they do not worsen another metric significantly (cold start 50 ms, input
+4 ms, action 8 ms, idle 15 MiB). The 8.4 MB that a turn adds to RSS is mostly the networking and security libraries becoming resident; the
+first feasibility question is what in the first request touches them (URLSession and its TLS state, certificate evaluation, the JSON
+codec) and whether a lighter path exists on the first request, measured as RSS against first-request latency.

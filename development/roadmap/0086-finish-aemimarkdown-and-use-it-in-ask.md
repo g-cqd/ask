@@ -40,3 +40,11 @@ parsing (the last commit). 0065's record of 652/652 spec examples, 11x throughpu
 
 AemiMarkdown carries DocC, its gates and a current benchmark record, its README says what it is, and ask renders an answer through
 it behind `ui.markdown` with the three ADRs written.
+
+## Owner's decisions (2026-10-29)
+
+- The licence of the spec fixtures: respect it. AemiMarkdown itself is MIT; the CommonMark and GFM spec fixtures stay as attributed copies
+  under their own licence (CC BY-SA 4.0), and the README gains a notice listing everything distributed in the repository under a
+  different licence than the package's.
+- TerminalKit's features are consolidated first (the palette and theme, scroll state, the closing of 0016 to 0019, the markdown renderer's
+  place), then AemiMarkdown is finished.
