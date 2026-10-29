@@ -141,7 +141,7 @@ Each line: request (date, time) → what main has → what is owed.
 
 ## Process
 
-- [ ] Review the unreviewed areas above with `secure-coding` (MCP per-server exposure), `memory-safety`
+- [ ] Review the unreviewed areas above with `secure-coding` (MCP per-server exposure: done in the audit of 2026-10-29, roadmap 0153), `memory-safety`
   (descriptors in `ConfigEditor.run`, `JobWatchdog`) and the screen redesign with `code-review`.
 - [ ] Re-run `Scripts/quality.sh --check` on the reauthored tree before any push.
 - [ ] The migration kept two local backup branches (`backup/local-main-b3c0699`, `backup/local-main-db6510f`) from the
