@@ -145,6 +145,7 @@ final class AgentConversation: Conversation {
                     update(.runEnded)
                     return
                 }
+                try await self.connectMCP(update: update)
                 let loop = try self.agentLoop()
                 let recorder = try self.recorder()
                 try self.current.withLock { $0.settings }.record(in: recorder)
@@ -211,8 +212,8 @@ func runInteractive(
     let directory = SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values)
     let details = startupDetails(resumed: resumed, reloaded: reloaded)
     let jobs = JobTable(environment: LaunchEnvironment.values)
-    // Started now, not on the first prompt, so the servers are connecting while the person types.
-    let mcp = startMCPServers(settings, jobs: jobs)
+    // Connected on the first message, not now (roadmap 0143): an idle ask holds no server's memory.
+    let mcp = startMCPServers(settings, jobs: jobs, connectsOnFirstNeed: true)
     do {
         let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(

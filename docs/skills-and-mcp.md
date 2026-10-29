@@ -30,7 +30,8 @@ An MCP server offers the model more tools: a program ask starts, or a service at
 
 `${NAME}` takes the value from your environment, so a token need not be written in the file.
 
-- Its tools reach the model as `mcp__github__<tool>`. When ask starts, one block says how many servers connected and why any failed;
+- Its tools reach the model as `mcp__github__<tool>`. The servers connect when you send your first message, not when ask starts, so an idle ask holds none of them; that message
+  waits for them, ten seconds at most, and a slower one joins when it is ready. One block then says how many connected and why any failed;
   `/mcp` shows each server, how many tools it offers, and how to choose them.
 - A server runs **outside** ask's sandbox, so naming it is your consent. A project's file can name one only once you have trusted it
   (`ask trust`).
