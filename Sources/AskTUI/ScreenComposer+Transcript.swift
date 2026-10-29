@@ -18,21 +18,23 @@ extension ScreenComposer {
         return map
     }
 
-    mutating func updateTranscriptLines(_ transcript: Transcript, columns: Int, style: BlockStyle = .plain) {
+    /// The transcript's rows from `rowsFromEnd` up to `rows` above it: every item's height is kept, and the lines of the items near
+    /// the window only (TerminalKit roadmap 0023), so a long conversation does not hold its whole laid-out text.
+    mutating func transcriptWindow(
+        _ transcript: Transcript, columns: Int, style: BlockStyle, rows: Int, rowsFromEnd: Int
+    ) -> [Line] {
         // A different look lays every block out again.
         if style != blockStyle {
             blockStyle = style
-            transcriptLines = LayoutCache<Line>()
+            transcriptLines = WindowedLayout<Line>()
         }
-        var hard = hardLines
-        transcriptLines.update(width: columns, revisions: transcript.revisions) { index in
-            if hard.count <= index { hard.append(contentsOf: repeatElement([], count: index + 1 - hard.count)) }
-            // Found once per layout: the hard lines a selection reads and the rows drawn come from the same folds.
-            let shown = transcript.shownCode(at: index)
-            hard[index] = TranscriptContent.hardLines(of: shown?.text ?? transcript.contentText(at: index))
-            return Self.lines(in: transcript, at: index, shown: shown, columns: columns, style: style)
+        let layout = { (index: Int) in
+            Self.lines(
+                in: transcript, at: index, shown: transcript.shownCode(at: index), columns: columns, style: style)
         }
-        hard.removeLast(Swift.max(0, hard.count - transcript.items.count))
-        hardLines = hard
+        transcriptLines.update(
+            width: columns, revisions: transcript.revisions, keepingFromEnd: rowsFromEnd + 2 * rows, layout: layout)
+        let end = Swift.max(0, transcriptLines.rowCount - rowsFromEnd)
+        return transcriptLines.lines(in: Swift.max(0, end - rows) ..< end, layout: layout)
     }
 }
