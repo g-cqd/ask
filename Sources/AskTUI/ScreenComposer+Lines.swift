@@ -44,6 +44,7 @@ extension ScreenComposer {
     static func isSpaced(_ item: Transcript.Item) -> Bool {
         switch item {
             case .user, .tool: true
+            case .notice(_, let isError): !isError
             default: false
         }
     }
