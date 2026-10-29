@@ -60,3 +60,14 @@ a reason to call `refreshSettings` while idle, never during a turn or over a dra
 one watching primitive. The cost of the promotion: ask, TerminalKit, AemiJSON and Atelier all pin aemi at `f6da05c`, and SwiftPM allows one
 revision per package in a graph, so the new revision is adopted by all four together. Waiting for the owner's choice of home and timing;
 until then 0127 can be built on a directory kqueue like `BinaryWatcher`, behind the same small interface, and switched later.
+
+## Built (2026-10-29): watching, through AemiIO
+
+The owner chose to promote both kinds of watcher into AemiIO and use them in ask and Atelier. Done: aemi `dcad319`
+(ADR 0016: `FileWatching`, `FileWatcher` from Atelier, a new `KqueueWatcher`, `DirectoryWatch`, `FileIdentity`,
+`CanonicalPath`, 59 tests); the pins moved through AemiJSON `8db07fb`, AemiMarkdown `ece0313`, TerminalKit `30b0fcc`;
+Atelier `1694d51` uses AemiIO's watcher (its ADR 0004); ask watches its configuration and executable with one
+`KqueueWatcher` and applies configuration changes while idle (ADR-0131, with the measurements).
+
+Still owed here: what replacing versus adding does per section today (lists such as `mcp` servers and sandbox paths),
+and the setting that makes a layer replace, and its name.
