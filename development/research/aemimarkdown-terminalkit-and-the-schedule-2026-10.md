@@ -135,3 +135,9 @@ markdown.
    sandboxed" on click) when it is off (ask 0133).
 6. Read-only tools are exempt from approval by default; a setting can require approval (0134).
 7. Double Right during a turn stays ignored.
+
+## Progress (2026-10-29)
+
+Phase 1, TerminalKit consolidation, step 1 and 2 done (kit `c654b52`, ask `caf98b4`): page model, follower and appearance, scroll position;
+step 3 (reconcile 0016 to 0020, open 0022 to 0025) done as records. Not done: the row-window work (kit 0023, which is 0088 step 2) and anything
+about Linux. Next in Phase 1: AemiMarkdown.
