@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-29
 ---
@@ -20,3 +20,14 @@ Today (0090, done) `keepAwake` is `off`, `system` or `display`, held through `Pr
   `applicationShouldTerminate`; launchd sends a terminal program SIGTERM). To find out, on this machine: whether a held assertion defers
   the automatic restart of a scheduled macOS update, what `softwareupdate` and the update scheduler respect, and whether anything short of
   a GUI helper or administrator settings can do more. Report what is possible before building anything beyond the cheap half.
+
+## Done (2026-10-29): the cheap half
+
+`keepAwake: "always"` holds the system activity (`PreventUserIdleSystemSleep`, the display may sleep) from launch to exit, through turns,
+jobs and idle time; leaving it while idle lets go. Tests in `KeepAwakeAlwaysTests` (a mutation dropping `always` from the reasons to hold
+turns them red). Checked by hand on the release binary: idle with `always`, `pmset -g assertions` lists ask's assertion; after `kill -9` it
+is gone; idle with `system`, none. The assertion's name is still "ask is working" while idle.
+
+Still owed: the investigation of the other half (deferring a scheduled update's restart, what a terminal process can do at shutdown),
+reported before anything is built.
+
