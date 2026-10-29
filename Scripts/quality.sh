@@ -55,6 +55,7 @@ python3 Scripts/test-measurements.py || fail "measurement harness guards"
 printf '==> documentation numbers and landing workflow guards\n'
 python3 Scripts/check-records.py || fail "duplicate documentation numbers"
 python3 -B Scripts/test-workflow.py || fail "landing workflow guards"
+python3 -B Scripts/test-sign.py || fail "signing script guards"
 
 printf '==> build and test (release)\n'
 # Explicit testability for optimized tests (ADR-0006). Benchmark/shipping binaries are built

@@ -11,6 +11,11 @@ swift build -c release
 cp .build/release/ask /usr/local/bin/   # or anywhere on your PATH
 ```
 
+To keep your keys in the macOS Keychain, sign the build with your own code-signing identity: set `ASK_SIGNING_IDENTITY` to its name (as
+`security find-identity -v -p codesigning` lists it) and build with `Scripts/build-release.sh` instead, which signs after building. The
+first time, macOS asks for your login keychain's password so `codesign` can use the identity; "Always Allow" stops it asking. An unsigned
+build keeps keys in `~/.config/ask/credentials.json` (see `credentials` in the [configuration](configuration.md)).
+
 ## Sign in
 
 ask can start without an account: when nothing is signed in, it uses Apple's on-device model, which needs no key and costs nothing, but has
