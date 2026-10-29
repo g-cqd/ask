@@ -100,3 +100,16 @@ seven-day 9%, `extra_usage.is_enabled: false` for the official client's current 
 Three inference POSTs (different shapes, including auxiliary-looking work) were blocked before forwarding, not evidence of upstream
 rejection or billing. REA MCP successfully parsed the sanitized, URI-valid HAR export (29 records). Full findings and limits:
 `development/research/claude-usage-observations-2026-10-29.md`. No inference enabled, no credentials refreshed or billing settings changed.
+
+## Inference test authorization and harness correction (2026-10-29)
+
+Owner supplied ask's exact provider refusal: HTTP 400, "You're out of extra usage. Add more at claude.ai/settings/usage and keep going."
+This is a reported upstream refusal, not a lab response, but it does not establish why extra usage applies or account/model equivalence.
+Owner approved potentially billed inference through ask or Claude Code. First single-request guard matched the exact prompt text in the
+last user message; the actual client request missed it and received a local 403. Permit remained unused: no inference forwarded. Claude
+suggested `/login` in response to our local refusal, which was misleading. Do not reauthenticate on that basis.
+
+Harness correction: locally blocked requests use 400 invalid_request_error, not an auth-looking 403. One single-use permit now allows
+POST /v1/messages only for a streaming conversational request with the Claude Code beta flag and without a structured-output format.
+Auxiliary/minimal calls, token refresh and other POSTs remain blocked. This predicate is an experimental harness filter, not provider
+billing logic. Retrying the small agreed prompt is the next step; upstream acceptance/billing still untested.
