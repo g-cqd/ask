@@ -22,6 +22,8 @@ struct FrameGeometry: Sendable {
     var runnerColumns: Range<Int>?
     /// The columns of "N lines below" in the status line, when it is there, so a click on it goes to the end.
     var belowColumns: Range<Int>?
+    /// The columns of the idle mark in the status line, when it is the mark, so a click on it names the sandbox state.
+    var markColumns: Range<Int>?
     /// The picker's matches as drawn: the row of the first, which matches they are, and the word they were for, so a click on a row
     /// means the match the user saw, and means nothing if the list has since moved on.
     var pickerFirstRow = 0

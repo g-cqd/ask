@@ -133,7 +133,8 @@ public struct ScreenComposer: Sendable {
             rows: map, foldBlocks: foldBlocks, transcriptRows: transcriptRows, columns: columns, totalLines: totalLines,
             scrollback: state.scrollback,
             statusRow: transcriptRows + ruleRows + pickerLines.count + promptRows, runnerColumns: status.runners,
-            belowColumns: status.below, promptRow: transcriptRows + upperRuleRows + pickerLines.count,
+            belowColumns: status.below, markColumns: Self.markColumns(for: state),
+            promptRow: transcriptRows + upperRuleRows + pickerLines.count,
             promptRows: promptRows,
             promptTop: editor.top, prompt: editor.layout
         )

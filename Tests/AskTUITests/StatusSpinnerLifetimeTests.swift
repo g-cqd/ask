@@ -53,9 +53,9 @@ struct StatusSpinnerLifetimeTests {
     }
 
     @Test(arguments: [true, false])
-    func `idle always shows a colored exclamation fallback`(sandboxed: Bool) {
+    func `idle always shows a coloured mark: a green check when sandboxed, a warning ! when not`(sandboxed: Bool) {
         let mark = StatusLeadingMark.mark(running: false, sandboxed: sandboxed, frame: "|")
-        #expect(mark.character == "!")
-        #expect(mark.style?.fg == (sandboxed ? StatusLeadingMark.sandboxed.fg : StatusLeadingMark.warning.fg))
+        #expect(mark.character == (sandboxed ? "✓" : "!"))
+        #expect(mark.style?.fg == (sandboxed ? StatusLeadingMark.protected.fg : StatusLeadingMark.warning.fg))
     }
 }

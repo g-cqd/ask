@@ -88,6 +88,9 @@ public struct ScreenState: Sendable, Equatable {
     var clipboardNotice = ""
     /// When Ctrl+C was pressed on an empty, idle input: the status line asks for a second press, which quits while the window lasts.
     var quitArmedAt: ContinuousClock.Instant?
+    /// Whether the idle mark is showing its word after a click (roadmap 0133), and which click, so an older timer cannot end a newer note.
+    var sandboxNoteShown = false
+    var sandboxNoteGeneration = 0
     /// When Right was last pressed on an empty input, which a second press soon after turns into "continue" (roadmap 0112).
     var rightTappedAt: ContinuousClock.Instant?
     /// When Esc/Ctrl+C was pressed while a turn was running: the status line asks for a second press to abort when confirmation is enabled.

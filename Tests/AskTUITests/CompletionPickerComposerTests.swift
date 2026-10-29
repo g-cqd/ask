@@ -49,7 +49,7 @@ struct CompletionPickerComposerTests {
         let cursor = composer.compose(controller.state, into: &buffer)
         let shown = rows(buffer)
         let prompt = height - 2
-        #expect(shown[prompt] == "ask> /co" && shown.last == "! · m", "the prompt, then the status line under it")
+        #expect(shown[prompt] == "ask> /co" && shown.last == "✓ · m", "the prompt, then the status line under it")
         #expect(shown[prompt - 6].hasPrefix("commands") && shown[prompt - 6].contains("Esc"))
         #expect(shown[prompt - 5] == "session", "the group heading sits under the title")
         #expect(shown[prompt - 4].hasPrefix("/continue"))
@@ -141,7 +141,7 @@ struct CompletionPickerComposerTests {
         let picker = composer.transcriptRows
         #expect(shown[picker].hasPrefix("commands") && shown[picker + 1] == "session")
         #expect(shown[picker + 2].hasPrefix("/continue") && shown[picker + 3].hasPrefix("/config"))
-        #expect(shown[first - 3] == "ask> /co" && shown[first - 2].hasPrefix("! · m"), "the input, then the status")
+        #expect(shown[first - 3] == "ask> /co" && shown[first - 2].hasPrefix("✓ · m"), "the input, then the status")
         #expect(shown[first - 1].isEmpty)
         #expect(shown[first + 1].hasPrefix("job-2"))
         #expect(first == height - 2 && cursor.row == first - 3)

@@ -14,6 +14,8 @@ enum ScreenEvent: Sendable {
     case pasteRefused(String)
     /// The two seconds after an arming Ctrl+C are over.
     case quitWindowEnded(generation: Int)
+    /// The sandbox note has been up for its five seconds.
+    case sandboxNoteEnded(generation: Int)
     case inputEnded
     /// Time to ask the terminal for its colours again, after macOS changed appearance (roadmap 0108).
     case askColours

@@ -24,6 +24,8 @@ public struct ScreenController: Sendable {
         case watchJob(id: String)
         /// Tell the screen when the quit window closes: Ctrl+C was pressed on an empty, idle input and a second press within this long quits.
         case armQuitTimer(generation: Int)
+        /// Tell the screen when the sandbox note, shown by a click on the status mark, has been up long enough (roadmap 0133).
+        case armSandboxNoteTimer(generation: Int)
         /// List the skills for the `/` picker; the answer is ``ConversationUpdate/skills(_:)``.
         case listSkills
         /// List what `command` offers to choose from; the answer is ``ConversationUpdate/choices(command:rows:)``.

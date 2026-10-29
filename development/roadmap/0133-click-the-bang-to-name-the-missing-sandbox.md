@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-29
 ---
@@ -20,3 +20,13 @@ to a green `sandboxed`, which goes back to `✓` after 5 seconds. With the sandb
 shows `not sandboxed` for 5 seconds. This changes the idle mark everywhere it is read: `StatusLeadingMark`, the probes that look for a
 `!` at the start of the status line (`Screen.idle()` in `probe-interactive.py`), and the spinner, which still replaces it while a
 turn runs.
+
+## Result (2026-10-29)
+
+Idle, the first status component is a green `✓` with the sandbox on and a warning-coloured `!` with it off; a spinner still replaces it
+while a turn, a compaction or a reconnection shows. A click on the mark names the state in the same colour, `sandboxed` or `not
+sandboxed`, and five seconds later (one-shot timer by generation, as the quit window) the mark is back; a second click closes it at once, and
+a timer from an earlier click means nothing. The mark's columns are a click region only while it is the idle mark. Tests:
+`SandboxMarkTests`; the tests that pinned `! ·` for the default state now pin `✓ ·`. Real binary: `Scripts/probe-sandbox-mark.py`
+(8 checks, sandboxed and `--no-sandbox`, including the real five seconds); `probe-interactive.py`'s `idle()` accepts the new marks.
+

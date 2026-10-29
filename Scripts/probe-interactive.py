@@ -139,9 +139,9 @@ class Screen:
         return next((line for line in reversed(lines) if " · " in line), "")
 
     def idle(self):
-        """Whether ask waits for a prompt: the status line leads with its `!` mark, where a turn shows a spinner (roadmap 0074 dropped the
+        """Whether ask waits for a prompt: the status line leads with its idle mark (`✓` sandboxed, `!` not), where a turn shows a spinner (roadmap 0074 dropped the
         "ready" word and the `ask> ` prefix; the probe reads the screen's structure instead)."""
-        return self.status().lstrip().startswith("!")
+        return self.status().lstrip().startswith(("✓", "!", "sandboxed", "not sandboxed"))
 
     def ready(self, seconds=15):
         """Read until ask is idle at a drawn frame."""
