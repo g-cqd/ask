@@ -107,3 +107,36 @@ credential, prompt and tools; reasoning on/off where supported; a small valid to
 long context. Preserve the original history and signatures. Use bounded requests, one upstream allowance per experiment; do not send a
 large synthetic context or replay the user's long session until its token cost and privacy scope are clear. Prefer local request
 reconstruction and schema/sequence tests before billable inference.
+
+## Tool history and thinking matrix; interactive ask lab
+
+Four small requests through unchanged AskAI, same credential/model, max_tokens 512, one advertised `read` tool, no actual tool execution:
+
+| Synthetic prior tool_use/tool_result pair | Thinking | HTTP | Representative quota | Overage |
+| --- | --- | --- | --- | --- |
+| no | default | 200 | five_hour, allowed | rejected |
+| yes | default | 200 | five_hour, allowed | rejected |
+| no | medium adaptive | 200 | five_hour, allowed | rejected |
+| yes | medium adaptive | 200 | five_hour, allowed | rejected |
+
+All answered OK. Input/cache totals were 472 or 528 tokens; output 4 each. This is a valid synthetic prior round trip, not an executed file
+read. It does not test historical thinking signatures, large contexts or the exact rejected request. REA parsed a sanitized snapshot of the
+lab (102 records, including blocked calls); parent evidence ev_248ae54da319e284855486f5c4adc5af336299a1e014e56379c29f1516124a31.
+
+Offline reconstruction with the real SessionLog/RequestContext/Anthropic encoder, network denied, at the relevant historical boundaries:
+
+| Through entry | Context messages | Tool call/result pairs | Signed thinking blocks | Encoded bytes without definitions/instructions |
+| --- | --- | --- | --- | --- |
+| 6488 (after last Claude tool result) | 387 | 195 | 170 | 944419 |
+| 6490 (after retry on an earlier checkout) | 385 | 194 | 169 | 940927 |
+
+No recovery issues or context repairs, no images, no empty signatures; thought text empty, signatures retained. Prior tool names bash/write,
+largest tool result 14641 text bytes. These reconstructed bodies are local diagnostics, not the exact wire capture of the failure:
+settings, definitions, system prompt and the failed process's revision remain variables. Original log was read only, never modified.
+
+Owner requests interactive ask in proxied Kitty. Prepared `Ask lab`: disposable clone, fresh separate configuration/state, Opus medium,
+normal five built-in tools, no skills/MCP, at most four requests per turn and eight upstream inference requests total across turns. Proxy
+accepts only ask user-agent, selected model, streaming requests, max_tokens <=16384; all other POSTs remain blocked. Outer client sandbox
+restricts network to loopback relay; ordinary ask tool sandbox remains enabled. Existing unexpired credential supplied in child environment,
+not arguments or copied credential files; no refresh. This environmental restriction may break network-using tools and is a lab effect.
+Request budget exhaustion produces a local error, not a provider quota claim. Window opened; interactive results pending.
