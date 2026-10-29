@@ -5,7 +5,7 @@ extension ProviderStreamError: RetryAdvice {
         switch self {
             case .status(let code, let failure, _): ProviderFailure.isRetryable(status: code, failure: failure)
             case .stream(let failure): failure.isRetryable
-            case .truncated, .transport: true
+            case .truncated, .transport, .interrupted: true
             case .framing: false
         }
     }

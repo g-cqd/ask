@@ -24,6 +24,10 @@ struct ProviderErrorDescriptionTests {
     @Test(arguments: [
         (AnthropicClientError.truncated, "the connection closed in the middle of the response"),
         (.transport("offline"), "the request did not complete: offline"),
+        (
+            .interrupted("no data arrived for 600 seconds"),
+            "the connection failed during the response: no data arrived for 600 seconds"
+        ),
         (.framing(.eventTooLarge(limit: 8)), "the response stream sent an event larger than 8 bytes")
     ])
     func `other failures say what happened`(error: AnthropicClientError, text: String) {

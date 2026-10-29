@@ -52,7 +52,31 @@ struct HTTPTransportTests {
         var iterator = response.body.makeAsyncIterator()
         #expect(try await iterator.next() == Array("data: partial".utf8))
         StubProtocol.releaseFailure(request.url)
-        await #expect(throws: (any Error).self) { _ = try await iterator.next() }
+        await #expect(throws: HTTPTransportError.interrupted(URLError(.networkConnectionLost).localizedDescription)) {
+            _ = try await iterator.next()
+        }
+    }
+
+    /// A stream that goes quiet past the session's idle timeout says so in words, not as an NSError dump (owner report, 2026-10-29:
+    /// `ask: Error Domain=NSURLErrorDomain Code=-1001 "The request timed out." UserInfo={…}`).
+    @Test func `a body that goes quiet too long throws how long it waited`() async throws {
+        let request = request(#function)
+        StubProtocol.script(
+            request.url, Script(status: 200, chunks: ["data: partial"], heldFailure: URLError(.timedOut)))
+        let response = try await transport.send(request)
+        var iterator = response.body.makeAsyncIterator()
+        _ = try await iterator.next()
+        StubProtocol.releaseFailure(request.url)
+        let seconds = Int(StubProtocol.session.configuration.timeoutIntervalForRequest)
+        await #expect(throws: HTTPTransportError.interrupted("no data arrived for \(seconds) seconds")) {
+            _ = try await iterator.next()
+        }
+    }
+
+    /// URLSession gives up after 60 s without data; a provider reading a very long prompt can be silent for longer before its first
+    /// event. The providers' own clients wait 600 s (anthropic-sdk-python and openai-python, `DEFAULT_TIMEOUT`).
+    @Test func `the default session waits as long as the providers' own clients`() {
+        #expect(URLSessionTransport.configuration().timeoutIntervalForRequest == 600)
     }
 
     @Test func `collecting refuses a body over the limit`() async throws {
