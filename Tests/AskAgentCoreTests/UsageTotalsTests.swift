@@ -21,7 +21,10 @@ struct UsageTotalsTests {
         #expect(totals.summary == "in 0 (0% cached) · out 3")
     }
 
-    @Test(arguments: [(950, "950"), (1_249, "1.2k"), (13_400, "13k"), (1_420_000, "1.4M")])
+    @Test(arguments: [
+        (950, "950"), (1_249, "1.2k"), (13_400, "13k"), (1_420_000, "1.42M"), (1_187_873, "1.18M"),
+        (1_199_999, "1.19M"), (1_200_000, "1.20M"), (9_999_999, "9.99M"), (12_345_678, "12M"), (311_000_000, "311M")
+    ])
     func `counts are shortened for a status line`(count: Int, text: String) {
         #expect(UsageTotals.short(count) == text)
     }
