@@ -19,6 +19,7 @@ public final class KeepAwake: Sendable {
     public init(mode: KeepAwakeMode, activities: any PowerActivities = SystemPowerActivities()) {
         state = Mutex(State(mode: mode))
         self.activities = activities
+        change { _ in }
     }
 
     /// Whether an activity is held now.
@@ -40,7 +41,7 @@ public final class KeepAwake: Sendable {
             state.mode = mode
             let old = state.activity
             state.activity = nil
-            if mode != .off, state.turns > 0 || state.jobsRunning {
+            if mode != .off, Self.working(state) {
                 state.activity = activities.begin(mode, reason: Self.reason)
             }
             return old
@@ -48,11 +49,16 @@ public final class KeepAwake: Sendable {
         if let old { activities.end(old) }
     }
 
+    /// Whether there is a reason to hold: a turn or a job, or `always`, which holds from launch to exit.
+    private static func working(_ state: State) -> Bool {
+        state.mode == .always || state.turns > 0 || state.jobsRunning
+    }
+
     /// Applies `edit`, then begins or ends the activity when whether there is work changed.
     private func change(_ edit: (inout State) -> Void) {
         let ended: (any Sendable)? = state.withLock { state in
             edit(&state)
-            let working = state.turns > 0 || state.jobsRunning
+            let working = Self.working(state)
             if working, state.activity == nil, state.mode != .off {
                 state.activity = activities.begin(state.mode, reason: Self.reason)
             } else if !working, let activity = state.activity {
