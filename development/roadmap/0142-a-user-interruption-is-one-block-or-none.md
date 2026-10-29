@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-29
 ---
@@ -28,3 +28,14 @@ Owner to choose; 2 needs a colour check on light and dark pages (`ui.appearance`
 No interruption block at all: only the last ongoing blocks turn **orange**. This supersedes both proposed choices above: do not move
 "Stopping…" into another transcript block, and do not colour older completed blocks. Preserve known results, distinguish interruption
 from failure, and verify contrast on light and dark pages. Implementation is approved, after the urgent Claude investigation (0144).
+
+## Done (2026-10-29)
+
+Stopping a turn adds no block: "Stopping…" and "Aborted. Results already known were kept." are gone. At the stop, the reasoning and the
+foreground tools still going (a compaction too, drawn as a tool) end and are drawn on an orange tint mixed from the page like the others,
+their status `⊘` in orange (a mark of its own, for anyone who cannot tell the colours apart). A result arriving later is kept, and the
+block stays orange unless it succeeded. Older blocks keep their colours; background jobs go on. The orange tint is in `ScreenTheme.tints`,
+so `TerminalColoursTests` checks its contrast on light and dark pages. Tests: `InterruptionColourTests` (a mutation that skips the
+interruption turns all five red); `probe-interactive.py` B and W through the release binary. Not covered: an assistant reply cut while
+streaming has no header to colour, so it simply stops; `probe-agy-live.py` (a live account) was updated but not run.
+

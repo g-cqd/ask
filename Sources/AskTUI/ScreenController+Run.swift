@@ -23,7 +23,8 @@ extension ScreenController {
     mutating func abort() -> [Effect] {
         returningInput = true
         interruptedByPerson = true
-        state.transcript.addNotice("Stopping…", isError: false)
+        // No block says so: what was still going turns orange (roadmap 0142).
+        state.transcript.interruptRunning()
         return [.cancelRun]
     }
 }

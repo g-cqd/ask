@@ -17,6 +17,8 @@ public struct ScreenTheme: Sendable, Equatable {
     var user: Color
     /// ask's own messages: purple, whole block (roadmap 0106).
     var system: Color
+    /// What the person interrupted: orange, apart from a failure's red (roadmap 0142).
+    var interrupted: Color
     /// Secondary text, which the screen used to draw faint (SGR 2). Faint is left to the terminal and is often too weak on light and dark
     /// pages alike, so on a known page it is a grey four fifths of the way from the page to its text, or the text colour itself when that
     /// grey would read below 4.5:1 (low-contrast themes such as Solarized). On a guessed page it is nil and faint stays: a grey mixed for the
@@ -43,6 +45,7 @@ public struct ScreenTheme: Sendable, Equatable {
         success = mix(Self.green, light ? 0.11 : 0.10)
         failure = mix(Self.red, 0.11)
         system = mix(Self.purple, 0.11)
+        interrupted = mix(Self.orange, 0.11)
         secondary = known ? page.secondaryText : nil
     }
 
@@ -50,6 +53,7 @@ public struct ScreenTheme: Sendable, Equatable {
     private static let green = SIMD3<Double>(52, 199, 89)
     private static let red = SIMD3<Double>(255, 69, 58)
     private static let purple = SIMD3<Double>(175, 82, 222)
+    private static let orange = SIMD3<Double>(255, 149, 0)
 
     /// `style` as drawn: on a known page never faint, secondary text in ``secondary`` and coloured text at its full colour.
     func legible(_ style: Style) -> Style {
@@ -61,7 +65,7 @@ public struct ScreenTheme: Sendable, Equatable {
     }
 
     /// Every tint, for checks.
-    var tints: [Color] { [input, user, pending, success, failure, system] }
+    var tints: [Color] { [input, user, pending, success, failure, system, interrupted] }
 
     /// The background of a block of this kind: the user's messages and the tool calls are tinted (a tool by how it ended), nothing else is.
     func tint(for item: Transcript.Item) -> Color {
@@ -74,6 +78,7 @@ public struct ScreenTheme: Sendable, Equatable {
                     case .running: return pending
                     case .succeeded: return success
                     case .failed: return failure
+                    case .interrupted: return interrupted
                 }
             default: return .default
         }

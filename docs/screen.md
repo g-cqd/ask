@@ -28,7 +28,8 @@ While the model is working, **Enter** queues your message as steering: it is sen
 | **Ctrl+D** | Quits when the input is empty and nothing is running. |
 | `/quit` | Quits, stopping a running turn first. |
 
-When a turn stops, the messages you queued are sent by default; `ui.interruptSendsQueued` changes that. `ui.interruptKeys` and the two
+When you stop a turn, nothing is added to the conversation: what was still going (a command, the reasoning, a compaction) turns orange
+and ends with `⊘`, apart from a failure's red `✗`, and whatever it had already returned is kept. The messages you queued are sent by default; `ui.interruptSendsQueued` changes that. `ui.interruptKeys` and the two
 confirmation settings choose which keys stop a turn and how many presses it takes (see [Configuration](configuration.md#ui)).
 
 ## Editing

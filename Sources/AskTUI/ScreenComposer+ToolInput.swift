@@ -7,6 +7,7 @@ extension ScreenComposer {
             case .running: Style(dim: true)
             case .succeeded: Style(fg: .indexed(2), dim: true)
             case .failed: Style(fg: .indexed(1))
+            case .interrupted: Style(fg: .indexed(208))
         }
     }
 

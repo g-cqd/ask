@@ -7,12 +7,12 @@ extension ScreenComposer {
     static func lines(
         for item: Transcript.Item, folded: Bool = false, block: Int = 0, columns: Int, style: BlockStyle = .plain,
         spacerAbove: Bool = false, progress: BlockProgress? = nil, toolInput: ShownToolInput? = nil,
-        command: Bool = false
+        command: Bool = false, interrupted: Bool = false
     ) -> [Line] {
         let content = contentLines(
             for: item, folded: folded, block: block, columns: columns, style: style,
             context: (progress, toolInput, command))
-        var result = framed(content, kind: item, style: style, spacerAbove: spacerAbove)
+        var result = framed(content, kind: item, style: style, spacerAbove: spacerAbove, interrupted: interrupted)
         switch item {
             case .tool, .thinking:
                 for index in result.indices where !(style.padded && spacerAbove && index == 0) {
@@ -28,9 +28,11 @@ extension ScreenComposer {
     }
 
     /// Wraps every block, including command and authentication notices, in padding, tint and spacing.
-    static func framed(_ content: [Line], kind: Transcript.Item, style: BlockStyle, spacerAbove: Bool) -> [Line] {
+    static func framed(
+        _ content: [Line], kind: Transcript.Item, style: BlockStyle, spacerAbove: Bool, interrupted: Bool = false
+    ) -> [Line] {
         guard style.padded else { return content }
-        let tint = style.theme.tint(for: kind)
+        let tint = interrupted && style.theme.tinted ? style.theme.interrupted : style.theme.tint(for: kind)
         func tinted(_ line: Line) -> Line {
             var line = line
             line.style.bg = tint
