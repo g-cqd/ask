@@ -12,7 +12,7 @@ struct CodeFoldingTests {
     private static let reply = "intro\n```swift\na\nb\nc\nd\n```\nafter"
     private static let ctrlG = KeyEvent(keyCode: UInt32(Character("g").asciiValue!), modifiers: .ctrl)
     private static let three = ScreenOptions(
-        codeFoldLines: 3, prompt: "ask> ", tint: false, separator: false, padding: false)
+        codeFoldLines: 3, markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false)
 
     private func rig(_ options: ScreenOptions = Self.three, _ text: String = Self.reply) -> PointerRig {
         PointerRig(options: options, updates: [.assistantText(text)])
@@ -47,7 +47,9 @@ struct CodeFoldingTests {
     }
 
     @Test func `a block no longer than the limit is never folded`() {
-        var rig = rig(ScreenOptions(codeFoldLines: 4, prompt: "ask> ", tint: false, separator: false, padding: false))
+        var rig = rig(
+            ScreenOptions(
+                codeFoldLines: 4, markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false))
         #expect(rig.text(row: 3) == "```swift")
         rig.click(row: 3, col: 1)
         #expect(rig.text(row: 3) == "```swift")
@@ -71,12 +73,13 @@ struct CodeFoldingTests {
     @Test func `with code open by default nothing is folded`() {
         let rig = rig(
             ScreenOptions(
-                foldCode: false, codeFoldLines: 3, prompt: "ask> ", tint: false, separator: false, padding: false))
+                foldCode: false, codeFoldLines: 3, markdown: false, prompt: "ask> ", tint: false, separator: false,
+                padding: false))
         #expect(rig.text(row: 3) == "```swift")
     }
 
     @Test func `the screen's height caps the length a block may have before it folds`() {
-        var rig = rig(ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false))
+        var rig = rig(ScreenOptions(markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false))
         #expect(rig.text(row: 3) == "```swift", "20 lines by default")
         rig.controller.setScreenRows(8)
         rig.draw()

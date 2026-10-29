@@ -9,6 +9,11 @@ extension ScreenComposer {
         for row in 0 ..< transcriptRows {
             let index = row - (transcriptRows - visible.count)
             guard index >= 0, let source = visible[visible.startIndex + index].source else { continue }
+            let segments = visible[visible.startIndex + index].segments
+            guard segments.isEmpty else {
+                map.set(row: row, to: RowProvenance(block: source.block, ordinal: source.block, segments: segments))
+                continue
+            }
             map.set(
                 row: row,
                 to: RowProvenance(

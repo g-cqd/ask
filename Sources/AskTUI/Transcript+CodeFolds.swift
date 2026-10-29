@@ -4,8 +4,9 @@ internal import TerminalKitText
 /// output and thinking. The message stays one item: a fold changes what it shows, not how many items there are.
 extension Transcript {
     /// What the assistant item at `index` shows, folded blocks replaced by their placeholders. Nil for any other item.
+    /// Drawn as Markdown, a message shows its text as written, so there is none: code folds are drawn by ``markdownFences(at:)``.
     func shownCode(at index: Int) -> ShownCode? {
-        guard case .assistant(let text) = items[index] else { return nil }
+        guard !markdown, case .assistant(let text) = items[index] else { return nil }
         return ShownCode(text, longerThan: codeFoldLines) { fence in
             codeFolds.isFolded(CodeBlockID(item: index, fence: fence), default: codeFoldedByDefault)
         }
@@ -16,6 +17,7 @@ extension Transcript {
         guard items.indices.contains(index) else { return nil }
         return shownToolInput(at: index)?.toggles[line - (commandBlocks.contains(index) ? 0 : 1)]
             ?? shownCode(at: index)?.toggles[line]
+            ?? markdownFences(at: index)?.first { $0.fence.openingLine == line }?.ordinal
     }
 
     /// Opens or closes one long code block.
@@ -37,6 +39,30 @@ extension Transcript {
         guard lines != codeFoldLines else { return }
         codeFoldLines = lines
         relayOutCode()
+    }
+
+    /// Draws assistant messages as Markdown, or as the text the model wrote. Every assistant message is laid out again.
+    public mutating func setMarkdown(_ on: Bool) {
+        guard on != markdown else { return }
+        markdown = on
+        for index in items.indices {
+            if case .assistant = items[index] { revisions[index] = bump() }
+        }
+    }
+
+    /// The long code blocks of the assistant message at `index` drawn as Markdown, each with its ordinal among the message's fences and whether
+    /// it is folded. Nil when the item is not such a message.
+    func markdownFences(at index: Int) -> [(fence: CodeFence, ordinal: Int, folded: Bool)]? {
+        guard markdown, case .assistant(let text) = items[index], ShownCode.mayContainFence(text) else { return nil }
+        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+        return CodeFence.scan(lines).enumerated()
+            .filter { $0.element.bodyLines > codeFoldLines }
+            .map { ordinal, fence in
+                (
+                    fence, ordinal,
+                    codeFolds.isFolded(CodeBlockID(item: index, fence: ordinal), default: codeFoldedByDefault)
+                )
+            }
     }
 
     private mutating func relayOutCode() {

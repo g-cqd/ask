@@ -8,6 +8,7 @@ struct ScreenOptionsTests {
         let options = ScreenOptions()
         #expect(options.mouse && options.copyOnSelect && options.foldTools && options.foldThinking)
         #expect(options.scrollLines == 3 && options.promptRows == 6)
+        #expect(options.markdown)
     }
 
     @Test func `a wheel step scrolls at least one line`() {

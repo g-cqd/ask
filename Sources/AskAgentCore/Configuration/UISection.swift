@@ -28,6 +28,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var separator: Bool?
     /// `ui.padding`: whether each block has a row of padding around it. `true` is `"on"`, `false` is `"off"`.
     public var padding: Bool?
+    /// `ui.markdown`: whether the assistant's messages are drawn as Markdown (`"on"`, default) or as the text the model wrote (`"off"`).
+    public var markdown: Bool?
     /// `ui.localizedDurations`: localized elapsed units (`"on"`, default) or a compact clock (`"off"`).
     public var localizedDurations: Bool?
     /// `ui.spinner`: the spinner style used for progress and status line indicators.
@@ -51,7 +53,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
         scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil,
         sidebarOpen: Bool? = nil, prompt: String? = nil, tint: Bool? = nil, separator: Bool? = nil,
-        padding: Bool? = nil, localizedDurations: Bool? = nil, spinner: SpinnerPreference? = nil,
+        padding: Bool? = nil, markdown: Bool? = nil, localizedDurations: Bool? = nil, spinner: SpinnerPreference? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
         jobAutoReturnWhenFocused: Bool? = nil, abortTurnRequiresConfirmation: Bool? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
@@ -73,6 +75,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.tint = tint
         self.separator = separator
         self.padding = padding
+        self.markdown = markdown
         self.localizedDurations = localizedDurations
         self.spinner = spinner
         self.jobAutoReturnWhenFocused = jobAutoReturnWhenFocused
@@ -87,7 +90,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var isEmpty: Bool {
         mouse == nil && copyOnSelect == nil && foldTools == nil && foldThinking == nil && scrollLines == nil
             && promptRows == nil && foldCode == nil && codeFoldLines == nil && sidebarOpen == nil && prompt == nil
-            && tint == nil && separator == nil && padding == nil && localizedDurations == nil && spinner == nil
+            && tint == nil && separator == nil && padding == nil && markdown == nil && localizedDurations == nil
+            && spinner == nil
             && jobAutoReturnWhenFocused == nil && abortTurnRequiresConfirmation == nil && interruptKeys == nil
             && escapeInterruptRequiresConfirmation == nil && interruptSendsQueued == nil
             && onlyUsefulModels == nil && appearance == nil
@@ -100,9 +104,9 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         + lookKeys + behaviorKeys
 
     /// The keys that set the look of the screen (roadmap 0074).
+    // @dl:accept -- the key table is schema data, a list of names like a test's list of names
     private static let lookKeys = [
-        // @dl:accept -- the key table is schema data
-        "prompt", "tint", "appearance", "separator", "padding", "localizedDurations", "spinner"
+        "prompt", "tint", "appearance", "separator", "padding", "markdown", "localizedDurations", "spinner"
     ]
     private static let behaviorKeys = [
         "jobAutoReturnWhenFocused", "abortTurnRequiresConfirmation", "interruptKeys",
@@ -119,7 +123,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             foldCode: section.foldCode ?? foldCode, codeFoldLines: section.codeFoldLines ?? codeFoldLines,
             sidebarOpen: section.sidebarOpen ?? sidebarOpen, prompt: section.prompt ?? prompt,
             tint: section.tint ?? tint, separator: section.separator ?? separator,
-            padding: section.padding ?? padding, localizedDurations: section.localizedDurations ?? localizedDurations,
+            padding: section.padding ?? padding, markdown: section.markdown ?? markdown,
+            localizedDurations: section.localizedDurations ?? localizedDurations,
             spinner: section.spinner ?? spinner,
             jobAutoReturnWhenFocused: section.jobAutoReturnWhenFocused ?? jobAutoReturnWhenFocused,
             abortTurnRequiresConfirmation: section.abortTurnRequiresConfirmation ?? abortTurnRequiresConfirmation,
@@ -154,6 +159,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         if let appearance { parts.append("appearance \(appearance.rawValue)") }
         flag("separator", separator)
         flag("padding", padding)
+        flag("markdown", markdown)
         flag("localizedDurations", localizedDurations)
         if let spinner { parts.append("spinner \(spinner.rawValue)") }
         flag("jobAutoReturnWhenFocused", jobAutoReturnWhenFocused)
