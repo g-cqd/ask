@@ -122,3 +122,16 @@ markdown.
 5. 0133: should a click on `!` when sandboxed say `sandboxed`?
 6. 0134: are read-only tools exempt from approval by default?
 7. Double-Right while a turn runs (0112): ignored today.
+
+## 6. Owner's answers (2026-10-29)
+
+1. The budget is resident size: 15 MiB idle, 20 MiB active. It stands; improvements are studied and built when they do not worsen another
+   metric significantly (ask 0088).
+2. AemiMarkdown is MIT; fixtures stay attributed under their licence, with a README notice for differently licensed distributed files.
+3. TerminalKit's consolidation comes before AemiMarkdown's finishing: Phase 1 item 5 moves ahead of item 6, and the renderer's design is
+   settled in the kit first.
+4. The schedule is otherwise accepted.
+5. `!` becomes a green `✓` when the sandbox is on, expanding on click to a green `sandboxed`, and stays `!` (warning colour, "not
+   sandboxed" on click) when it is off (ask 0133).
+6. Read-only tools are exempt from approval by default; a setting can require approval (0134).
+7. Double Right during a turn stays ignored.

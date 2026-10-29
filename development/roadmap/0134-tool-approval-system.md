@@ -21,3 +21,8 @@ and selector pickers).
 - Network: the model provider's own host is the one allowed address; any other connection needs a decision (0021 is the enforcement side).
 - What "default on" costs in daily use: a first run asks for every bash call. Decide with the owner whether read-only tools are exempt.
 - Depends on 0116 (the picker as a confirmation step).
+
+## Owner's decision (2026-10-29)
+
+Read-only tools are exempt from approval by default. A configuration setting can make them require approval too (a per-tool or per-kind
+`ask` list already covers it; the default list is what changes).
