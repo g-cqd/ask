@@ -140,3 +140,20 @@ accepts only ask user-agent, selected model, streaming requests, max_tokens <=16
 restricts network to loopback relay; ordinary ask tool sandbox remains enabled. Existing unexpired credential supplied in child environment,
 not arguments or copied credential files; no refresh. This environmental restriction may break network-using tools and is a lab effect.
 Request budget exhaustion produces a local error, not a provider quota claim. Window opened; interactive results pending.
+
+## Interactive ask: actual tool calls and signed reasoning succeeded
+
+Owner exercised the proxied Ask lab and reported done. Seven inference requests forwarded, all HTTP 200, representative claim five_hour,
+unified status allowed, overage rejected. The fresh session records two user turns, seven model responses, seven tool results: three read
+and four bash calls. Four thinking blocks were recorded, and requests successfully replayed signed thinking and tool-use/result history.
+No model-request retry or upstream quota failure was observed. The final unused allowance was revoked when the owner finished (budget zero).
+
+Input/cache token totals by request: 7227, 7382, 7600, 7753, 8162, 9226, 10205. Request bodies grew from 18689 to 30140 bytes. Output
+counts from message_delta: 70, 133, 68, 239, 71, 93, 351. Tool output/prompt content is private and not copied into this report. These
+successful small-context interactions narrow, but do not eliminate, tool/protocol hypotheses: old signatures, many tools/MCP definitions,
+large contexts, model limits and the original failing process's environment/revision remain distinct variables.
+
+The original provider refusal remains unreproduced. The reconstructed historical context is about 0.94 MB, versus 30 KB for this successful
+lab: any upstream replay needs an explicit scope/cost estimate, no real tool execution, and a copy/prefix of the log rather than mutations
+to the original. An exact historic wire request cannot be reconstructed from the session alone because it lacks all request settings and
+tool-definition snapshots. Do not label an approximate replay exact, or attribute billing to a token threshold without a controlled result.
