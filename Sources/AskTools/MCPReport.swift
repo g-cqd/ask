@@ -8,8 +8,14 @@ enum MCPReport {
             ]
         }
         return statuses.flatMap { status in
-            ["\(status.name): \(describe(status.state))"] + status.notes.map { "    \($0)" }
+            ["\(status.name): \(describe(status.state))"] + (status.notes + hints(status)).map { "    \($0)" }
         }
+    }
+
+    /// How to change what a server offers, where the plain way does not apply: a searched server's tools, offered whole by name.
+    private static func hints(_ status: MCPServerStatus) -> [String] {
+        guard case .searchable = status.state else { return [] }
+        return ["name the ones you want in mcp.\(status.name).tools to offer them directly"]
     }
 
     private static func describe(_ state: MCPServerStatus.State) -> String {

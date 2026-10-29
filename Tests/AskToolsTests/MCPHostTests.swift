@@ -116,7 +116,7 @@ struct MCPHostTests {
         var notices = host.notices.makeAsyncIterator()
         host.start()
         await host.waitUntilSettled()
-        #expect(await notices.next()?.contains("srv") == true, "first the notice that it connected")
+        #expect(await notices.next() == "1 MCP server connected.", "first the startup summary")
         fake.end()
         let message = await notices.next()
         #expect(message?.contains("srv") == true && message?.contains("went away") == true)

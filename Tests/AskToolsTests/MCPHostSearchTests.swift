@@ -27,11 +27,12 @@ struct MCPHostSearchTests {
         await host.stop()
     }
 
-    @Test func `the person is told, and told how to offer the tools whole`() async throws {
+    @Test func `/mcp tells the person, and how to offer the tools whole; startup only counts it`() async throws {
         let (host, _) = big()
         var notices = host.notices.makeAsyncIterator()
         host.start()
-        let said = await notices.next() ?? ""
+        #expect(await notices.next() == "1 MCP server connected.")
+        let said = MCPHub.report(host.status).joined(separator: "\n")
         #expect(
             said.contains("big") && said.contains("5 tools") && said.contains("mcp_search")
                 && said.contains("mcp.big.tools"))

@@ -84,9 +84,9 @@ struct MCPHubTests {
         let hub = hub(factory)
         var notices = hub.notices.makeAsyncIterator()
         hub.apply([MCPServerSetting(name: "a", command: "one")])
-        #expect(await notices.next()?.contains("MCP server a connected") == true)
+        #expect(await notices.next() == "1 MCP server connected.")
         hub.apply([MCPServerSetting(name: "b", command: "two")])
-        #expect(await notices.next()?.contains("MCP server b connected") == true)
+        #expect(await notices.next() == "1 MCP server connected.", "the new servers' summary, once")
         await hub.stop()
     }
 
