@@ -144,3 +144,11 @@ Owner reports the refusal follows /tree checkout. Local full-log checkout to 648
 encoded context, before and after an identical new prompt. No future-branch leakage established. Current runtime settings persist across
 checkout, so historical settings mismatch remains a variable. Two-request small-lab live checkout test prepared in `Ask tree lab`, resuming
 only the successful small session. No original-session inference or reauthentication. Research note records limits; outcome pending.
+
+## Reproduced upstream after long-history checkout (2026-10-29)
+
+Owner submitted the historical prompt in the copied session, after approving a larger proxy allowance. One forwarded ask/Opus request,
+960643 body bytes, 169 thinking blocks and 194 tool-call/result pairs: Anthropic HTTP 400 invalid_request_error with the exact reported
+out-of-extra-usage sentence, header overage-disabled-reason org_level_disabled. Not a local proxy error. Small checkout succeeded; long
+checkout fails. No causal attribution yet to /tree, token threshold, signatures or callback. Research note separates earlier local refusals
+from this upstream reproduction. Preserve fixture and isolate variables; avoid repeated large-context requests without a clear test.
