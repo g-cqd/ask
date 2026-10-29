@@ -24,7 +24,7 @@ internal import TerminalKitRender
 /// - Throws: when the terminal cannot be set up.
 @discardableResult
 public func runInteractiveScreen(
-    conversation: any Conversation, label: String, history: [ConversationUpdate] = [], notices: [String] = [],
+    conversation: any Conversation, label: String, history: consuming [ConversationUpdate] = [], notices: [String] = [],
     details: [String] = [], options: ScreenOptions = ScreenOptions(),
     beforeSignalExit: @escaping @Sendable () -> Void = {}
 ) async throws -> ScreenExit {
@@ -54,8 +54,7 @@ public func runInteractiveScreen(
                 connection: connection, environment: ProcessInfo.processInfo.environment,
                 pasteboard: HostPasteboard.write, read: HostPasteboard.read)),
         conversation: conversation, label: label, options: options,
-        opening: openingUpdates(history: history, notices: notices, details: details),
-        changes: (resizes, appearances))
+        opening: openingUpdates(history: history, notices: notices, details: details), changes: (resizes, appearances))
 }
 
 /// The screen over an injected connection, so every exit path is drivable from a test.
@@ -87,13 +86,13 @@ func runInteractiveScreen(
 /// The last frame is drawn before the terminal is restored, on a normal exit and on an error.
 private func runInteractiveScreen(
     on screen: ScreenTerminal, conversation: any Conversation, label: String, options: ScreenOptions,
-    opening: [ConversationUpdate], changes: (resizes: AsyncStream<Void>, appearances: AsyncStream<Void>)
+    opening: consuming [ConversationUpdate], changes: (resizes: AsyncStream<Void>, appearances: AsyncStream<Void>)
 ) async throws -> ScreenExit {
     let exit: ScreenExit
     do {
         try screen.session.enter()
         let session = ScreenSession(
-            screen, conversation: conversation, label: label, options: options, opening: opening)
+            screen, conversation: conversation, label: label, options: options, opening: consume opening)
         exit = try await session.run(resizes: changes.resizes, appearances: changes.appearances)
     } catch {
         await screen.renderer.finish()
@@ -106,7 +105,12 @@ private func runInteractiveScreen(
 }
 
 /// What the screen shows before the first prompt: a resumed session's history, then the notices.
-private func openingUpdates(history: [ConversationUpdate], notices: [String], details: [String]) -> [ConversationUpdate]
+private func openingUpdates(history: consuming [ConversationUpdate], notices: [String], details: [String])
+    -> [ConversationUpdate]
 {
-    history + notices.map { .notice($0, isError: false) } + details.map { .detail($0) }
+    // `history` is consumed here, not kept by the caller for as long as the screen is open: for a long session it is megabytes (roadmap 0088).
+    var opening = history
+    opening += notices.map { .notice($0, isError: false) }
+    opening += details.map { .detail($0) }
+    return opening
 }

@@ -59,3 +59,33 @@ studied for feasibility and built when relevant, as long as they do not worsen a
 4 ms, action 8 ms, idle 15 MiB). The 8.4 MB that a turn adds to RSS is mostly the networking and security libraries becoming resident; the
 first feasibility question is what in the first request touches them (URLSession and its TLS state, certificate evaluation, the JSON
 codec) and whether a lighter path exists on the first request, measured as RSS against first-request latency.
+
+## Feasibility study of the resident-size budget (2026-10-29)
+
+Rule from the owner: the budget is RSS. Idle is 14.6 MiB (budget 15), active after a tool turn 22 to 23 MiB (budget 20).
+
+**Where a turn's 8.4 MiB comes from** (`vmmap -summary` before and after a tool turn): code pages of the system libraries paged in by the
+first request (`__TEXT` +4.0 MiB), malloc (+2.0 MiB), mapped files, constants. It is a property of the first request, not of the turn.
+
+**Experiment** (`/tmp/rss`, throwaway): one HTTPS request to the same host, RSS before and after, three runs each.
+
+| client | RSS added by the first request | time |
+| --- | --- | --- |
+| `URLSession` (what ask uses) | +9.1 MiB | 0.51 s |
+| `NWConnection` with TLS, HTTP/1.1 written by hand | +5.7 MiB | 0.51 s |
+
+A 3.4 MiB saving at the same latency would bring the active figure to about 19.5 MiB, under the budget, with cold start and idle
+untouched (the transport is created on first use, as `URLSessionTransport` is). So this is relevant. It would be a second conformer of
+the existing `HTTPTransport` seam in AskAI; `g-cqd/HTTP` is an origin-server library and gives no client codec, so the client side
+(request writer, response parser: status line, headers, `Content-Length`, chunked, close-delimited; streaming bodies; cancellation;
+keep-alive pooling so a session does not pay a handshake per turn; plain TCP for localhost) is ours to write, about 400 lines plus tests.
+Risks to settle before building: the system proxy settings `URLSession` applies and a raw `NWConnection` does not (read them from
+SystemConfiguration, or fall back to `URLSession` when a proxy is configured, which must not itself load CFNetwork on the common path);
+certificate and error mapping to `HTTPTransportError`; the MCP HTTP transport shares `HTTPTransport`, so it gets the saving too.
+Decision for the owner: build it (about a session), keeping `URLSession` as the fallback.
+
+**Step 1 (opening updates), done:** `history` and `opening` are `consuming` and consumed, so the two arrays of the opening updates are no
+longer held for the screen's lifetime: live heap of the 1,930-response session 23.8 to 22.6 MB. Resident size did not move (53 to 55 MB,
+noise): malloc keeps freed pages. Lesson recorded: trimming the heap does not lower RSS; only touching fewer pages does, so the windowed
+transcript (step 2) lowers RSS only if the lines are never built, and the lazy line building has to be measured as RSS, not as heap.
+
