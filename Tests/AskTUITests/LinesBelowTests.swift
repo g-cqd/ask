@@ -13,7 +13,8 @@ struct LinesBelowTests {
 
     private func rig(
         columns: Int = 40,
-        options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false),
+        options: ScreenOptions = ScreenOptions(
+            markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false),
         lines: Int = 40, scrolled: Bool = true
     ) -> PointerRig {
         var rig = PointerRig(
@@ -156,7 +157,8 @@ struct LinesBelowTests {
 
     @Test func `with the mouse off the count is still shown and is not clicked`() {
         var rig = rig(
-            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false))
+            options: ScreenOptions(
+                mouse: false, markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false))
         rig.controller.state.scrollback = 5
         rig.draw()
         #expect(rig.text(row: Self.statusRow) == "✓ · m · 5 lines below")

@@ -25,6 +25,9 @@ public struct ScreenComposer: Sendable {
         var accents: [Accent]
         /// File paths in the row, drawn as terminal hyperlinks over whatever style the column has.
         var links: [PathLinks.Link] = []
+        /// Every stretch of the item's text the row shows, for a row of rendered Markdown that hides markers and adds chrome between them
+        /// (roadmap 0065); empty for a row that shows one stretch as written, which ``source`` describes.
+        var segments: [RowSegment] = []
 
         init(text: String, style: Style, source: Source? = nil, accents: [Accent] = []) {
             self.text = text
@@ -164,7 +167,11 @@ public struct ScreenComposer: Sendable {
         if let selection = state.selection {
             for span in map.highlights(of: selection, in: ShownTranscriptContent(transcript: state.transcript))
             where span.row < transcriptRows {
-                highlights[span.row] = span.startCol ..< span.endCol
+                // A row of Markdown can have a span per stretch it shows; the row paints them as one.
+                let earlier = highlights[span.row]
+                highlights[span.row] =
+                    Swift.min(earlier?.lowerBound ?? span.startCol, span.startCol)
+                    ..< Swift.max(earlier?.upperBound ?? span.endCol, span.endCol)
             }
         }
         for row in 0 ..< transcriptRows {

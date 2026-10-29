@@ -34,6 +34,7 @@ let benchmarks: @Sendable () -> Void = {
     registerThinkingBenchmarks()
     registerInputBenchmarks()
     registerCodeBenchmarks()
+    registerMarkdownBenchmarks()
     registerPickerBenchmarks()
     registerFilePickerBenchmarks()
     Benchmark.defaultConfiguration = .init(

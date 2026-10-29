@@ -29,12 +29,12 @@ extension ConfigEditor {
     /// A read-only row at top-level key `name`.
     private static func readOnly(_ name: String) -> Descriptor { readOnly([name]) }
 
-    /// The `ui` section's rows: two wire booleans, six on/off strings, three folded/open switches, then the rest.
+    /// The `ui` section's rows: two wire booleans, the on/off strings, three folded/open switches, then the rest.
     // @dl:accept -- the `ui` key table is data: its three switch spellings differ only in their choice lists
     private static let uiDescriptorTable: [Descriptor] =
         ["mouse", "copyOnSelect"].map { .init(path: ["ui", $0], kind: .boolean) }
         + [
-            "tint", "separator", "padding", "localizedDurations", "jobAutoReturnWhenFocused",
+            "tint", "separator", "padding", "markdown", "localizedDurations", "jobAutoReturnWhenFocused",
             "abortTurnRequiresConfirmation", "escapeInterruptRequiresConfirmation", "onlyUsefulModels"
         ]
         .map { .init(path: ["ui", $0], kind: .onOff) }
@@ -46,6 +46,7 @@ extension ConfigEditor {
             readOnly(["ui", "scrollLines"]), readOnly(["ui", "promptRows"]),
             .init(path: ["ui", "sidebar"], kind: .choice(["open", "closed"])),
             readOnly(["ui", "prompt"]),
+            // @dl:accept -- one row per choice key, each naming its own enumeration; the rows are data
             .init(path: ["ui", "spinner"], kind: .choice(SpinnerPreference.allCases.map(\.rawValue))),
             .init(path: ["ui", "appearance"], kind: .choice(AppearancePreference.allCases.map(\.rawValue))),
             .init(path: ["ui", "interruptKeys"], kind: .choice(InterruptKeysPreference.allCases.map(\.rawValue))),

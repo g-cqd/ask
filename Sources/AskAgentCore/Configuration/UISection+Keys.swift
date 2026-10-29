@@ -19,6 +19,7 @@ extension UISection {
             case "appearance": return appearance?.rawValue
             case "separator": return onOff(separator)
             case "padding": return onOff(padding)
+            case "markdown": return onOff(markdown)
             case "localizedDurations": return onOff(localizedDurations)
             case "spinner": return spinner?.rawValue
             default: return behaviorValue(forKey: key)

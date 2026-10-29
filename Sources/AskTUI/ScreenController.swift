@@ -103,6 +103,7 @@ public struct ScreenController: Sendable {
         state.transcript.setThinkingFoldedByDefault(options.foldThinking)
         state.transcript.setCodeFoldedByDefault(options.foldCode)
         state.transcript.setCodeFoldLines(options.codeFoldLines)
+        state.transcript.setMarkdown(options.markdown)
         state.transcript.spinnerStyle = options.spinner
         state.transcript.localizedDurations = options.localizedDurations
         state.transcript.home = options.home

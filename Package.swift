@@ -77,12 +77,15 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "e2607ad7743f90898f0e1768dfa40358d52b0d9e"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "be91ed889aaf95fc58bdbeaa8b81da2df80bdb32"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
         .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "5542d37ff0edb17c822b48fe69bff6e792354c57"),
         // Already resolved through AemiJSON; the linear-time engine also recognizes UI heredoc openers.
         .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "fe9b07f00f7b52d2d210ed4df43bd2b18f4ad674"),
+        // The Markdown parser the transcript draws assistant messages with (roadmap 0065); the revision TerminalKitMarkdown pins.
+        .package(
+            url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "2e75a94af21a4e942e9478d42c788458ac97bc95"),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "f6da05cd0efdf60700e854efb5b6092eae89b8c5"),
@@ -154,6 +157,8 @@ let package = Package(
                 .product(name: "TerminalKitRender", package: "TerminalKit"),
                 .product(name: "TerminalKitStyle", package: "TerminalKit"),
                 .product(name: "TerminalKitText", package: "TerminalKit"),
+                .product(name: "TerminalKitMarkdown", package: "TerminalKit"),
+                .product(name: "AemiMarkdown", package: "AemiMarkdown"),
                 .product(name: "AemiRegex", package: "aemiregex")
             ],
             path: "Sources/AskTUI",

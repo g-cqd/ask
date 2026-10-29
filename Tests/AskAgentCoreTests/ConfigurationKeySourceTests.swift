@@ -8,7 +8,7 @@ struct ConfigurationKeySourceTests {
         mouse: true, copyOnSelect: false, foldTools: true, foldThinking: false, scrollLines: 3, promptRows: 6,
         foldCode: true,
         codeFoldLines: 20, sidebarOpen: false, prompt: "", tint: true, separator: true, padding: false,
-        localizedDurations: true,
+        markdown: true, localizedDurations: true,
         spinner: .line, jobAutoReturnWhenFocused: true, abortTurnRequiresConfirmation: false, interruptKeys: .ctrlC,
         escapeInterruptRequiresConfirmation: true, interruptSendsQueued: .next, onlyUsefulModels: true,
         appearance: .auto)

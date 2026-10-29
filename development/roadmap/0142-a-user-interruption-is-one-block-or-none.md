@@ -1,0 +1,24 @@
+---
+status: not-started
+blocked-by: []
+date: 2026-10-29
+---
+
+# 0142 — A user's interruption is one block, or none and a colour
+
+Owner wish (2026-10-29 13:08): "The following should not be 2 blocks, only one block and i think stopping should be replaced by aborted. but we
+could also think about making an interruption by the user not show anything and have the ongoing tool call, block, turn purple or orange instead
+of red to signify the difference and not add a stopped or aborted block, just rely on the color"
+
+    > Stopping…
+    > Aborted. Results already known were kept.
+
+## Options
+
+1. **One block.** "Stopping…" becomes the status bar's state while the turn winds down (as "Reconnecting…" does, 0120), and the transcript
+   gets one block when it has: "Aborted. Results already known were kept."
+2. **No block, a colour.** The interrupted tool call, block or turn takes an interruption colour (purple or orange, from the palette, distinct
+   from the error red), and nothing is added. The status bar says it was interrupted until the next input.
+
+Either way, the session file records the interruption once (resume and `/tree` show it), and the copy of a block carries no marker.
+Owner to choose; 2 needs a colour check on light and dark pages (`ui.appearance`).

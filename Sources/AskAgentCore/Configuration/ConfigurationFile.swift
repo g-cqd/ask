@@ -171,7 +171,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                 case "ui.tools", "ui.thinking", "ui.code": "is \"\(value)\": use \"folded\" or \"open\""
                 case "ui.sidebar": "is \"\(value)\": use \"open\" or \"closed\""
                 case "ui.mouse", "ui.copyOnSelect", "skills.enabled", "ui.tint", "ui.separator", "ui.padding",
-                    "ui.localizedDurations", "ui.jobAutoReturnWhenFocused",
+                    "ui.markdown", "ui.localizedDurations", "ui.jobAutoReturnWhenFocused",
                     "ui.abortTurnRequiresConfirmation", "ui.escapeInterruptRequiresConfirmation", "ui.onlyUsefulModels":
                     "is \"\(value)\": use \"on\" or \"off\""
                 case "ui.interruptKeys": "is \"\(value)\": use \"esc\", \"ctrl-c\" or \"both\""

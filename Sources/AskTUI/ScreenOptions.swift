@@ -16,6 +16,9 @@ public struct ScreenOptions: Sendable, Equatable {
     public var foldCode: Bool
     /// A code block with more lines than this is long (ADR-0046: `ui.codeFoldLines`); the screen also caps it at half its height.
     public var codeFoldLines: Int
+    /// Whether the assistant's messages are drawn as Markdown (`ui.markdown`, roadmap 0065): headings, emphasis, lists, tables and links
+    /// rather than the marks that make them. A selection still copies what the model wrote.
+    public var markdown: Bool
     /// Whether the runner sidebar starts open (`ui.sidebar`). Ctrl+\ and `/sidebar` toggle it; it needs 70 columns.
     public var sidebar: Bool
     /// Whether details are shown: what ask did on its own account, such as the sandbox in force or a build that appeared (`--verbose`).
@@ -57,7 +60,8 @@ public struct ScreenOptions: Sendable, Equatable {
     public init(
         mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
         scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20,
-        sidebar: Bool = false, verbose: Bool = false, prompt: String = "", tint: Bool = true, separator: Bool = true,
+        markdown: Bool = true, sidebar: Bool = false, verbose: Bool = false, prompt: String = "", tint: Bool = true,
+        separator: Bool = true,
         padding: Bool = true, lightBackground: Bool = false, localizedDurations: Bool = true,
         spinner: SpinnerStyle = .line, jobAutoReturnWhenFocused: Bool = true,
         abortTurnRequiresConfirmation: Bool = false, interruptKeys: InterruptKeys = .both,
@@ -71,6 +75,7 @@ public struct ScreenOptions: Sendable, Equatable {
         self.promptRows = Swift.max(1, promptRows)
         self.foldCode = foldCode
         self.codeFoldLines = Swift.max(1, codeFoldLines)
+        self.markdown = markdown
         self.sidebar = sidebar
         self.verbose = verbose
         self.prompt = prompt
