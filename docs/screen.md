@@ -49,6 +49,8 @@ conversation copies what is shown, as soon as you let go.
 
 ## Reading the conversation
 
+- File paths, web addresses and email addresses anywhere in the conversation are links: a click opens a file or folder in its app, a
+  page in your browser, an address in Mail. A file that would run (an app, a script, a program) is shown in the Finder instead.
 - Tool calls, the model's thinking and long code blocks start **folded** to one line. Click a block to open it in place; **Ctrl+O** opens or
   folds the tool output, **Ctrl+T** the thinking and **Ctrl+G** the code blocks.
 - A shell block is headed by its limits, then the command: `shell · timeout 5 min · swift build`; a timeout equal to the default is not
