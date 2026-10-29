@@ -112,9 +112,9 @@ enum ThinkingDiscovery {
         } catch { return (nil, ["Thinking catalog not used: \(error)"]) }
     }
 
-    /// An explicit native policy already paid for metadata. Retain the user's alias limits field by field; a newly
-    /// learned output maximum may lower, but never raise, the existing reply budget. Unset/default runs do none of this.
-    private static func withNativeLimits(_ model: ResolvedModel, descriptor: CatalogModel?) -> ResolvedModel {
+    /// A Claude model with the limits `descriptor` states. Retain the user's alias limits field by field; a newly
+    /// learned output maximum may lower, but never raise, the existing reply budget.
+    static func withNativeLimits(_ model: ResolvedModel, descriptor: CatalogModel?) -> ResolvedModel {
         guard model.provider == .anthropic, let descriptor else { return model }
         var chosen = model
         chosen.contextWindow = model.contextWindow ?? descriptor.contextWindow

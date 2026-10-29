@@ -90,8 +90,6 @@ once are each sent once and answered.
 
 ## Still owed
 
-- Run ask against the apple-docs server from `g-cqd/apple-docs` and record what fails or is slow: connection time, tool listing, call
-  latency, large results.
 - Budgets for MCP: connection must not delay the first frame (cold start 50 ms); a call's overhead over the server's own time.
 - Close the gaps 0067 still lists that daily use hits first (progress in the transcript, resources if apple-docs serves any).
 - Decide how the development of ask itself uses these servers, so API choices are checked against current Apple documentation.
@@ -105,3 +103,18 @@ once are each sent once and answered.
 Owner requested it for the urgent Claude connector investigation (0144). `rea-agents@6.8.0`, isolated installation, absolute Node launcher
 in the user's ask configuration, all tools allowed. MCP initialize and enumeration: 229 tools; ask's `/mcp`: ready and all reachable through
 search/call. No reverse-engineering or traffic-capture tool exercised yet. Reload the session to expose the tools to the agent.
+
+## apple-docs in daily use (2026-10-29)
+
+The owner's configuration, apple-docs only (`https://apple-docs-mcp.everest.mt/mcp`, 9 tools, offered directly), Claude Haiku through
+ask, two questions from roadmap entries (0101, 0127):
+
+- **Calls work.** 26 calls, 25 answered; the one failure is the server's own answer (`browse`: "Page not found"), shown as an error.
+  One `read_doc` by symbol (`makeFileSystemObjectSource`, framework `Dispatch`) answered `{"found":false}`; the same page by path worked.
+- **Latency is the server's.** Measured with curl against the same server: `search_docs` 1.08 s, `read_doc` 0.14 to 0.21 s. The 0101
+  question took 38.8 s for 19 calls in 13 requests.
+- **Large results drive the tokens.** `search_docs` returns 25 results by default: 33 KB from the server (the text and the same data again as
+  `structuredContent`), 15 to 18 KB kept by ask (the text only). Eleven of them made the 0101 run 478k input tokens, 88% from cache.
+  Worth trying: a smaller `limit` in the tool's description or through a per-server default, and the compact `match` excerpts.
+- **The answers need checking.** Both runs drew conclusions the pages did not support (0101's "replacement", 0127's preference for a
+  descriptor watch, which misses an atomic save). The documents are useful, the model's summary of them less so: cite paths and read them.
