@@ -131,16 +131,43 @@ struct AgentLoopTests {
         #expect(provider.requests.count == 151)
     }
 
-    @Test func `abort between tools records the finished result and leaves the rest unanswered`() async throws {
+    @Test func `abort between tools records the finished result and the rest as not run, so nothing needs repair`()
+        async throws
+    {
         let file = try newFile()
         let provider = ScriptedProvider([.calls([("a", "abort", "{}"), ("b", "upper", #"{"text":"x"}"#)])])
         await #expect(throws: AgentError.cancelled) {
             try await loop(provider, tools: [Upper(), AbortingTool()]).run("Go", in: file) { _ in }
         }
         let payloads = file.tree.entries.map(\.payload)
-        #expect(payloads.last == .toolResult(callID: "a", content: "stopping", isError: false))
-        let next = RequestContext(file.tree.context())
-        #expect(next.repairs == [.interruptedToolCall(id: "b")])
+        #expect(
+            payloads.suffix(2) == [
+                .toolResult(callID: "a", content: "stopping", isError: false),
+                .toolResult(callID: "b", content: AgentLoop.notRunResult, isError: true)
+            ])
+        #expect(RequestContext(file.tree.context()).repairs.isEmpty, "the next request is valid as recorded")
+    }
+
+    @Test func `a session an older ask left unanswered is repaired before every request but said only once`()
+        async throws
+    {
+        let file = try newFile()
+        _ = try file.append(.user("Earlier"))
+        _ = try file.append(
+            .response(
+                AssembledResponse(
+                    id: "m", model: "c", blocks: [.toolCall(id: "old", name: "upper", input: input("{}"))],
+                    stopReason: .toolUse, usage: TokenUsage(), unrecognized: [])))
+        let provider = ScriptedProvider([.reply("one"), .reply("two")])
+        let agent = try loop(provider)
+        let repairs = Mutex<[[RequestContext.Repair]]>([])
+        for prompt in ["First", "Second"] {
+            try await agent.run(prompt, in: file) { event in
+                if case .repaired(let list) = event { repairs.withLock { $0.append(list) } }
+            }
+        }
+        #expect(provider.requests.count == 2, "both requests were sent, each repaired")
+        #expect(repairs.withLock { $0 } == [[.interruptedToolCall(id: "old")]])
     }
 
     private struct Upper: ArgumentTool {

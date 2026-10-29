@@ -11,7 +11,7 @@ public import AskAI
 /// - blocks that cannot be sent back are dropped, and a response left empty produces no message.
 public struct RequestContext: Sendable, Equatable {
     /// One change made so the context is a valid request.
-    public enum Repair: Sendable, Equatable {
+    public enum Repair: Sendable, Hashable {
         case interruptedToolCall(id: String)
         case orphanedToolResult(id: String)
         case droppedBlock(type: String)
