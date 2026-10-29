@@ -19,6 +19,8 @@ public struct ScreenState: Sendable, Equatable {
     public var compacting = false
     /// Whether ask lost the connection and is waiting to try again (`Reconnecting...` in the status bar).
     public var reconnecting = false
+    /// Whether the turn waits for MCP servers to connect (`Connecting MCP...` in the status bar, roadmap 0143).
+    public var connectingMCP = false
     /// Whether the sandbox is active for this session (false if unrestricted).
     public var sandboxed = true
     /// Current animated frame index for the status line spinner.

@@ -9,6 +9,8 @@ is said once and the screen still works; /help lists the command. With --control
 """
 import importlib.util
 import os
+import time
+import subprocess
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -38,6 +40,12 @@ def servers(project):
     return {"mcp": {"fx": {"command": "python3", "args": [FIXTURE]}, "ghost": {"command": "/nonexistent/mcp-server"}}}
 
 
+def fixture_running():
+    """How many processes run the fixture server now."""
+    found = subprocess.run(["pgrep", "-f", FIXTURE], capture_output=True, text=True).stdout.split()
+    return len(found)
+
+
 def main():
     binary = os.path.abspath(sys.argv[1])
     turns = [pp.short_answer("ANSWER ONE")]
@@ -48,11 +56,22 @@ def main():
         return
     with pp.Session(binary, turns, settings=servers) as session:
         terminal = session.terminal
+        # Nothing connects before the first message (roadmap 0143): /mcp says when they will.
+        send(session, "/mcp", "fx: connects with the first message")
+        time.sleep(1.0)
+        shown = screen(terminal)
+        check("before the first message no server is started, and /mcp says they connect with it (0143)",
+              "fx: connects with the first message" in shown and "MCP server connected" not in shown
+              and fixture_running() == 0)
+
+        send(session, "hello", "ANSWER ONE")
+        first = session.server.requests[0]["body"]["tools"]
+        check("the first request already offers the server's tools", any(t["name"] == "mcp__fx__echo" for t in first))
         # The raw bytes, not the emulated screen: pyte does not do scroll regions, so only a repaint (`screen`) is a faithful picture.
         terminal.until(lambda: b"1 MCP server connected." in bytes(terminal.raw))
         shown = screen(terminal)
         flat = " ".join(line.strip() for line in shown.split("\n"))  # a long notice wraps
-        check("the screen says the server connected in one summary, without anyone typing (0145)",
+        check("the first message's turn says the servers connected in one summary (0145)",
               "1 MCP server connected." in shown and "MCP server fx connected" not in shown)
         check("and, in the same block, that the other failed, and why",
               "1 failed to connect:" in flat and "ghost:" in flat and "is not found or cannot be executed" in flat)
@@ -63,10 +82,6 @@ def main():
 
         send(session, "/help", "/mcp")
         check("/help lists the command", "/mcp" in screen(terminal))
-
-        send(session, "hello", "ANSWER ONE")
-        first = session.server.requests[0]["body"]["tools"]
-        check("the first request already offers the server's tools", any(t["name"] == "mcp__fx__echo" for t in first))
 
     # A tool the server marks destructive is asked about before it runs (ADR-0111): allow for the session, the grant, and a refusal.
     import tempfile

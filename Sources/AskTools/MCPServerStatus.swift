@@ -4,6 +4,8 @@ public struct MCPServerStatus: Sendable, Equatable {
     public enum State: Sendable, Equatable {
         /// Configured off; never started.
         case off
+        /// Not started yet: it connects when the first message needs it (roadmap 0143).
+        case waiting
         /// Starting, or listing its tools.
         case connecting
         /// Connected; `offered` of its `of` tools are offered to the model.
@@ -24,7 +26,7 @@ public struct MCPServerStatus: Sendable, Equatable {
     public var problem: String? {
         switch state {
             case .failed(let reason): "MCP server \(name) did not start: \(reason)"
-            case .off, .connecting, .ready, .searchable: nil
+            case .off, .waiting, .connecting, .ready, .searchable: nil
         }
     }
 

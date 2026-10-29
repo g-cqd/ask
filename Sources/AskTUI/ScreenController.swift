@@ -200,10 +200,11 @@ public struct ScreenController: Sendable {
                 state.scrollback = 0
             case .askApproval(let id, let question):
                 ask(id: id, question: HomePath.abbreviate(question, home: options.home))
-            case .compacting, .compactionFinished, .reconnecting: applyBackgroundWork(update)
+            case .compacting, .compactionFinished, .reconnecting, .connectingMCP: applyBackgroundWork(update)
             case .runEnded:
                 state.compacting = false
                 state.reconnecting = false
+                state.connectingMCP = false
                 state.transcript.finishRunProgress()
                 state.pendingApproval = nil
                 state.pendingInput = nil

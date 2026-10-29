@@ -21,6 +21,7 @@ enum MCPReport {
     private static func describe(_ state: MCPServerStatus.State) -> String {
         switch state {
             case .off: "off (enabled is false in the configuration)"
+            case .waiting: "connects with the first message"
             case .connecting: "connecting…"
             case .ready(let offered, let total): "ready, \(offered) of \(total) tool\(total == 1 ? "" : "s") offered"
             case .searchable(let tools): "ready, \(tools) tools reachable through mcp_search and mcp_call"
