@@ -1,7 +1,7 @@
 /// An API key a provider's browser sign-in issued, as stored: Spettro's device key, a Mistral key from Vibe.
 public struct StoredKey: Sendable, Equatable, Codable {
     /// The key itself.
-    public let key: String
+    public internal(set) var key: String
     /// When it was issued, in seconds since 1970.
     public let obtainedAt: Double
 

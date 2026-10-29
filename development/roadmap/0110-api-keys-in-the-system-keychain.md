@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-28
 ---
@@ -9,12 +9,21 @@ date: 2026-10-28
 Owner wish (2026-10-28 19:22): instead of saving keys in files, use the system keychain by default; files stay possible as a config
 setting.
 
+## Done (2026-10-29, ADR-0133)
+
+- Secrets only (tokens, client secret, keys) in one Keychain item per record; metadata stays in the file with a marker in place of each
+  secret. Writes store and read back before the file changes; a failing Keychain leaves everything as it was.
+- `credentials`: `auto` (Keychain for a signed build, file for an ad-hoc one, which never moves anything), `keychain`, `file`; own config
+  only. Changing it moves what is stored, for ask's file and every named connection's.
+- Tests: in-memory store for the file's logic (mutation: file written before the store, red), a throwaway keychain for the Keychain store,
+  the auto rule (mutation red), and an end-to-end run of the release binary against a throwaway keychain (`ASK_KEYCHAIN_PATH`): keychain,
+  file, keychain, auto unsigned both ways.
+
 ## Still owed
 
-- Inventory where keys are written and read today (provider logins, `ask config`, environment).
-- Keychain storage through the Security framework (system API, white paper rule), one generic password item per provider and account.
-- A config setting that keeps the file store; migration of existing file keys, with the file removed only after the keychain write succeeds.
-- Behaviour when the keychain is locked or unavailable (SSH sessions, Linux), and tests that do not touch the user's real keychain.
+- A signing step with the personal Apple Development identity (`ASK_SIGNING_IDENTITY`), run after the build and before `/reload` switches;
+  then the first signed run moves the real credentials into the login keychain, to be checked by hand.
+- A locked keychain over SSH, checked for real (only the message is written).
 
 ## Investigation (2026-10-29)
 
