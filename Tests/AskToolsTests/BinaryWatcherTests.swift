@@ -3,8 +3,8 @@ import Testing
 
 @testable import AskTools
 
-/// The watcher against real files and a real kqueue: no sleeps, every wait ends on an event.
-@Suite("A new build appearing beside the running one is reported", .timeLimit(.minutes(1)))
+/// The identity check against real files; the watching itself is `FileChangeSignal`'s and AemiIO's.
+@Suite("A new build appearing beside the running one is reported once")
 struct BinaryWatcherTests {
     private let directory: URL
 
@@ -23,58 +23,35 @@ struct BinaryWatcherTests {
         _ = try FileManager.default.replaceItemAt(URL(filePath: path), withItemAt: staged)
     }
 
-    @Test func `a rebuilt executable is reported with its new identity`() async throws {
+    @Test func `a rebuilt executable is reported with its new identity, once`() throws {
         let running = try #require(BinaryIdentity(path: path))
-        var changes = BinaryWatcher.changes(since: running).makeAsyncIterator()
+        var watcher = BinaryWatcher(since: running)
+        #expect(watcher.look() == nil, "nothing new yet")
         try rebuild("build two, longer")
-        let reported = await changes.next()
+        let look = watcher.look()
+        let reported = try #require(look)
         #expect(reported == BinaryIdentity(path: path))
         #expect(reported != running)
+        #expect(watcher.look() == nil, "the same build is not reported twice")
     }
 
-    @Test func `other files changing in the directory report nothing, and the next real build still arrives`()
-        async throws
-    {
+    @Test func `other files changing in the directory report nothing`() throws {
         let running = try #require(BinaryIdentity(path: path))
-        var changes = BinaryWatcher.changes(since: running).makeAsyncIterator()
+        var watcher = BinaryWatcher(since: running)
         try Data("noise".utf8).write(to: directory.appending(path: "ask.log"))
-        try Data("more noise".utf8).write(to: directory.appending(path: "other"))
-        try rebuild("build two")
-        // Had the noise been reported, the first value here would equal the running identity.
-        let reported = try #require(await changes.next())
-        #expect(reported != running)
-        #expect(reported == BinaryIdentity(path: path))
+        #expect(watcher.look() == nil)
     }
 
-    @Test func `a build that landed before the watch began is still reported`() async throws {
+    @Test func `two builds in a row are two reports, the later one last`() throws {
         let running = try #require(BinaryIdentity(path: path))
-        try rebuild("build two, before anyone watched")
-        var changes = BinaryWatcher.changes(since: running).makeAsyncIterator()
-        #expect(await changes.next() == BinaryIdentity(path: path))
-    }
-
-    @Test func `two builds in a row are two reports, the later one last`() async throws {
-        let running = try #require(BinaryIdentity(path: path))
-        var changes = BinaryWatcher.changes(since: running).makeAsyncIterator()
+        var watcher = BinaryWatcher(since: running)
         try rebuild("build two")
-        let first = try #require(await changes.next())
+        let firstLook = watcher.look()
+        let first = try #require(firstLook)
         try rebuild("build three, longer than the others")
-        var latest = first
-        while latest != BinaryIdentity(path: path), let next = await changes.next() { latest = next }
-        #expect(latest == BinaryIdentity(path: path))
-        #expect(latest != first)
-    }
-
-    @Test func `cancelling the stream stops the thread and closes what it opened`() async throws {
-        let running = try #require(BinaryIdentity(path: path))
-        let closed = await withCheckedContinuation { (stopped: CheckedContinuation<(Bool, Bool), Never>) in
-            let stream = BinaryWatcher.changes(since: running) { queue, directory in
-                stopped.resume(returning: (queue, directory))
-            }
-            let consumer = Task { for await _ in stream {} }
-            consumer.cancel()
-        }
-        #expect(closed.0, "the kqueue descriptor was open, and is closed")
-        #expect(closed.1, "the directory descriptor was open, and is closed")
+        let secondLook = watcher.look()
+        let second = try #require(secondLook)
+        #expect(second != first)
+        #expect(second == BinaryIdentity(path: path))
     }
 }
