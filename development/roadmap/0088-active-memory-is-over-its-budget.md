@@ -89,3 +89,8 @@ longer held for the screen's lifetime: live heap of the 1,930-response session 2
 noise): malloc keeps freed pages. Lesson recorded: trimming the heap does not lower RSS; only touching fewer pages does, so the windowed
 transcript (step 2) lowers RSS only if the lines are never built, and the lazy line building has to be measured as RSS, not as heap.
 
+## Owner's decision (2026-10-29)
+
+Not today: ask will not write its own HTTP request handling now. The `URLSession` transport stays; the `NWConnection` study above is the
+record of what building it would save (about 3.4 MiB resident) and what it would cost. Active memory remains over its budget until a
+different way is found or the owner revisits this.

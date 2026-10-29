@@ -45,8 +45,8 @@ public func runInteractiveScreen(
     defer { signals.stop() }
     // macOS posts appearance changes as a distributed notification; the screen asks the terminal for its colours again on each (0108).
     let (appearances, appearanceChanged) = AsyncStream<Void>.makeStream()
-    let watcher = TerminalColours.follows(options) ? TerminalColours.watchAppearance { appearanceChanged.yield() } : nil
-    defer { watcher.map(TerminalColours.stopWatching) }
+    let watcher = TerminalColours.follows(options) ? SystemAppearance.watch { appearanceChanged.yield() } : nil
+    defer { withExtendedLifetime(watcher) {} }
     return try await runInteractiveScreen(
         on: ScreenTerminal(
             connection: connection, session: terminal, renderer: renderer, frames: frames,

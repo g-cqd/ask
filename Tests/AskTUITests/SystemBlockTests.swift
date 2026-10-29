@@ -1,3 +1,4 @@
+internal import TerminalKitCodecs
 internal import TerminalKitStyle
 internal import TerminalKitText
 internal import Testing
@@ -42,13 +43,13 @@ struct SystemBlockTests {
     }
 
     /// How far the red channel sits above the green one, against the page: purple pulls red up, blue pulls it down.
-    private func warmth(_ color: Color, page: ScreenTheme.Page) -> Double {
+    private func warmth(_ color: Color, page: TerminalPage) -> Double {
         guard case .rgb(let r, let g, _) = color else { return 0 }
         return (Double(r) - Double(g)) - (page.background.x - page.background.y)
     }
 
     @Test func `purple is a different hue from the user's blue on light and dark pages`() {
-        for page: ScreenTheme.Page in [
+        for page: TerminalPage in [
             .light, .dark, .init(background: SIMD3(0, 43, 54), foreground: SIMD3(131, 148, 150))
         ] {
             let theme = ScreenTheme(page: page)

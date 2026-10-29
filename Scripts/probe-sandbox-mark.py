@@ -3,8 +3,8 @@
 
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-sandbox-mark.py .build/release/ask
 
-Sandboxed: a green check; a click shows a green `sandboxed`, and five seconds later the check is back. With `--no-sandbox`: a `!` in the
-warning colour; a click shows `not sandboxed`. A click away from the mark does nothing. pyte, not a physical terminal.
+Sandboxed: a green check; a click shows a green `Sandboxed`, and five seconds later the check is back. With `--no-sandbox`: a `!` in the
+warning colour; a click shows `Not sandboxed`. A click away from the mark does nothing. pyte, not a physical terminal.
 """
 import importlib.util
 import os
@@ -55,7 +55,7 @@ def run(label, word, mark, colour, yellow_names):
 
 
 def main():
-    run("sandboxed", "sandboxed", "✓", "green", ("green",))
+    run("sandboxed", "Sandboxed", "✓", "green", ("green",))
     folding_binary = folding.BINARY
     # --no-sandbox is a launch flag: run a wrapper script that adds it.
     wrapper = tempfile.mkdtemp() + "/ask"
@@ -63,7 +63,7 @@ def main():
     os.chmod(wrapper, 0o755)
     folding.BINARY = wrapper
     try:
-        run("unsandboxed", "not sandboxed", "!", "yellow", ("brown", "yellow"))
+        run("unsandboxed", "Not sandboxed", "!", "yellow", ("brown", "yellow"))
     finally:
         folding.BINARY = folding_binary
 

@@ -30,3 +30,4 @@ a timer from an earlier click means nothing. The mark's columns are a click regi
 `SandboxMarkTests`; the tests that pinned `! ·` for the default state now pin `✓ ·`. Real binary: `Scripts/probe-sandbox-mark.py`
 (8 checks, sandboxed and `--no-sandbox`, including the real five seconds); `probe-interactive.py`'s `idle()` accepts the new marks.
 
+Owner (2026-10-29): the words are capitalised, `Sandboxed` and `Not sandboxed`.

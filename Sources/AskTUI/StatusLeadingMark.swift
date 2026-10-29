@@ -34,13 +34,13 @@ struct StatusLeadingMark: Sendable, Equatable {
     }
 
     /// The idle mark (roadmap 0133): a green check with the sandbox on, `!` in the warning colour with it off; `named` writes the word
-    /// instead, `sandboxed` or `not sandboxed`, as a click on the mark shows it for a few seconds.
+    /// instead, `Sandboxed` or `Not sandboxed`, as a click on the mark shows it for a few seconds.
     static func idle(sandboxed: Bool, named: Bool = false) -> StatusLeadingMark {
         switch (sandboxed, named) {
             case (true, false): StatusLeadingMark(character: "✓", style: protected)
-            case (true, true): StatusLeadingMark(character: "sandboxed", style: protected)
+            case (true, true): StatusLeadingMark(character: "Sandboxed", style: protected)
             case (false, false): StatusLeadingMark(character: "!", style: warning)
-            case (false, true): StatusLeadingMark(character: "not sandboxed", style: warning)
+            case (false, true): StatusLeadingMark(character: "Not sandboxed", style: warning)
         }
     }
 

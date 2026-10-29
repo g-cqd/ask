@@ -56,3 +56,9 @@ The owner ran it in Apple Terminal and reports it "perfect"; the real-terminal c
 
 - Over SSH or in tmux, the system appearance belongs to another machine and tmux may not pass OSC 11 through: is the terminal's answer
   enough there, and what should the first guess be?
+
+## Moved to TerminalKit (2026-10-29)
+
+The page model (contrast, mixing, secondary grey), the query and answer follower, and the system-appearance watcher with its two re-asks now
+live in TerminalKit (`TerminalPage`, `PageFollower`, `SystemAppearance`; kit roadmap 0021, pin `c654b52`), so Atelier gets them. ask keeps its kind
+shares and `ScreenOptions.appearance`; `TerminalColours` is the screen's mapping from events. `probe-terminal-colours.py` still passes (10 of 10).

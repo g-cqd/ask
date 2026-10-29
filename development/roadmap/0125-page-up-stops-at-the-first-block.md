@@ -15,3 +15,8 @@ Page Up added a page to `scrollback` with no ceiling, while the wheel went throu
 Page Up now uses `scroll(by:)`: held down, it stops with the session's first line at the top of the screen. fn+Up on a Mac keyboard is
 Page Up. The test that expected an empty conversation to scroll 14 lines encoded the bug; it is replaced by one on 40 lines that holds
 Page Up and checks the stop, and both new tests fail with the old line restored.
+
+## Moved to TerminalKit (2026-10-29)
+
+The wheel, the Page keys, edge autoscroll and the fold that holds the reader's place all use `ScrollPosition` (kit roadmap 0021): one place for
+"no further than the first row at the top", where there were three. `state.scrollback` remains as a read view of it.
