@@ -41,7 +41,7 @@ extension MCPHost {
     private func follow(_ server: MCPServerSetting, _ connection: MCPConnection) async {
         for await event in connection.events {
             switch event {
-                case .toolsChanged: try? await offer(server, connection, announce: false)
+                case .toolsChanged: try? await offer(server, connection)
                 case .closed: gone(server)
                 case .log, .malformed: continue
             }
@@ -49,9 +49,8 @@ extension MCPHost {
     }
 
     /// Lists the server's tools and offers the ones that are wanted: whole, or, when there are too many to list, through the search.
-    private func offer(_ server: MCPServerSetting, _ connection: MCPConnection, announce: Bool = true)
-        async throws(MCPError)
-    {
+    /// Nothing is said: the startup summary counts it, and `/mcp` says what it offers.
+    private func offer(_ server: MCPServerSetting, _ connection: MCPConnection) async throws(MCPError) {
         let tools = try await connection.listTools()
         let (chosen, notes) = Self.select(from: tools, for: server)
         let searched =
@@ -62,12 +61,10 @@ extension MCPHost {
             live.replace(group: server.name, with: [])
             catalog.set(server: server.name, tools: chosen, connection: connection)
             setStatus(server.name, .searchable(tools: chosen.count), notes: notes)
-            if announce, let remark = status.first(where: { $0.name == server.name })?.remark { say(remark) }
         } else {
             catalog.remove(server: server.name)
             live.replace(group: server.name, with: Self.adapters(chosen, server: server.name, connection: connection))
             setStatus(server.name, .ready(offered: chosen.count, of: tools.count), notes: notes)
-            if announce { say("MCP server \(server.name) connected: \(chosen.count) of \(tools.count) tools offered.") }
         }
         publishSearch()
         countListing(server.name)
@@ -109,9 +106,9 @@ extension MCPHost {
         say("The MCP server \(server.name) went away; its tools are gone.")
     }
 
+    /// Keeps the reason for the startup summary and `/mcp`.
     private func fail(_ server: MCPServerSetting, _ reason: String) {
         setStatus(server.name, .failed(reason), notes: [])
-        say("MCP server \(server.name) did not start: \(reason)")
     }
 
     private func setStatus(_ name: String, _ next: MCPServerStatus.State, notes: [String]) {

@@ -49,11 +49,13 @@ def main():
     with pp.Session(binary, turns, settings=servers) as session:
         terminal = session.terminal
         # The raw bytes, not the emulated screen: pyte does not do scroll regions, so only a repaint (`screen`) is a faithful picture.
-        terminal.until(lambda: b"MCP server fx connected" in bytes(terminal.raw) and b"did not start" in bytes(terminal.raw))
+        terminal.until(lambda: b"1 MCP server connected." in bytes(terminal.raw))
         shown = screen(terminal)
         flat = " ".join(line.strip() for line in shown.split("\n"))  # a long notice wraps
-        check("the screen says the server connected, without anyone typing", "MCP server fx connected: 7 of 7 tools offered" in shown)
-        check("and that the other did not start, and why", "MCP server ghost did not start" in flat and "is not found or cannot be executed" in flat)
+        check("the screen says the server connected in one summary, without anyone typing (0145)",
+              "1 MCP server connected." in shown and "MCP server fx connected" not in shown)
+        check("and, in the same block, that the other failed, and why",
+              "1 failed to connect:" in flat and "ghost:" in flat and "is not found or cannot be executed" in flat)
 
         send(session, "/mcp", "fx: ready")
         shown = screen(terminal)

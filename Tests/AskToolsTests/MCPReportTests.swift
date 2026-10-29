@@ -16,7 +16,10 @@ struct MCPReportTests {
         #expect(MCPReport.lines([status("a", .ready(offered: 1, of: 1))]) == ["a: ready, 1 of 1 tool offered"])
         #expect(
             MCPReport.lines([status("a", .searchable(tools: 40))])
-                == ["a: ready, 40 tools reachable through mcp_search and mcp_call"])
+                == [
+                    "a: ready, 40 tools reachable through mcp_search and mcp_call",
+                    "    name the ones you want in mcp.a.tools to offer them directly"
+                ])
         #expect(MCPReport.lines([status("a", .failed("no thanks"))]) == ["a: not connected: no thanks"])
     }
 

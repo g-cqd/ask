@@ -19,6 +19,8 @@ public final class MCPHost: Sendable {
         var connections: [String: MCPConnection] = [:]
         var tasks: [Task<Void, Never>] = []
         var followers: [Task<Void, Never>] = []
+        /// Says the startup summary once every server has settled (roadmap 0145).
+        var summary: Task<Void, Never>?
         var stopping = false
         var listings: [String: Int] = [:]
         var waiters: [(server: String, times: Int, continuation: CheckedContinuation<Void, Never>)] = []
@@ -73,13 +75,23 @@ public final class MCPHost: Sendable {
     /// Begins connecting every enabled server, and returns at once.
     public func start() {
         let tasks = servers.filter(\.enabled).map { server in Task { await self.connect(server) } }
-        state.withLock { $0.tasks = tasks }
+        // One block for the whole startup, said when the last server has connected or failed, never while one is pending.
+        let summary = Task {
+            for task in tasks { await task.value }
+            guard !self.state.withLock({ $0.stopping }), let text = MCPStartupSummary.text(self.status) else { return }
+            self.say(text)
+        }
+        state.withLock {
+            $0.tasks = tasks
+            $0.summary = summary
+        }
     }
 
-    /// Returns when every server has connected or failed.
+    /// Returns when every server has connected or failed, and the startup summary has been said.
     public func waitUntilSettled() async {
-        let tasks = state.withLock { $0.tasks }
+        let (tasks, summary) = state.withLock { ($0.tasks, $0.summary) }
         for task in tasks { await task.value }
+        await summary?.value
     }
 
     /// Returns once the tools of `server` have been listed `times` times: the first listing, and one for each change it announced.
@@ -102,6 +114,7 @@ public final class MCPHost: Sendable {
         }
         for task in tasks { task.cancel() }
         for task in tasks { await task.value }
+        await state.withLock { $0.summary }?.value
         let (connections, followers) = state.withLock { (Array($0.connections.values), $0.followers) }
         for connection in connections { await connection.close() }
         for follower in followers { await follower.value }

@@ -30,7 +30,8 @@ An MCP server offers the model more tools: a program ask starts, or a service at
 
 `${NAME}` takes the value from your environment, so a token need not be written in the file.
 
-- Its tools reach the model as `mcp__github__<tool>`. `/mcp` shows which servers are connected and how many tools each offers.
+- Its tools reach the model as `mcp__github__<tool>`. When ask starts, one block says how many servers connected and why any failed;
+  `/mcp` shows each server, how many tools it offers, and how to choose them.
 - A server runs **outside** ask's sandbox, so naming it is your consent. A project's file can name one only once you have trusted it
   (`ask trust`).
 - A server with many tools (more than 16) is offered through a search, to keep the model's prompt short. `tools: [...]` keeps only the ones
