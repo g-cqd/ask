@@ -62,3 +62,11 @@ the whole `ask -p` run. It also offers resources, which ask cannot read yet.
   epoll on Linux), so it is not a client: its use would be the server side (a conformance server, the fake servers of `MCPStress`, or an
   MCP server of ours), not AemiMCP's requests, which stay on URLSession unless a client is built.
 - Sampling is explained to the owner (a server asking the client's model to generate text); the decision is pending.
+
+## Owner's decision on sampling and permissions (2026-10-29)
+
+Be more permissive than refusing everything, and provide granular settings for the MCP scope of each server. Proposed shape, per server
+under `mcp.<name>`: `sampling` (`"deny"`, `"ask"` default, `"allow"`) with `samplingMaxTokens`; `roots` (`"none"`, `"workspace"`);
+`elicitation` (`"deny"`, `"ask"`); `resources` (`"deny"`, `"read"`); and `tools` allow and deny lists as today. `"ask"` uses the
+confirmation picker of 0116 and the approval system of 0134. Typed values only (0118). The conformance suite decides which of these
+must exist; the settings come with each feature, not before.
