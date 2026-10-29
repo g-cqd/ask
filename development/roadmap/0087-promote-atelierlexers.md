@@ -44,3 +44,8 @@ that dependency is needed, because it ties the package to the kit.
 ## Done when
 
 The package builds and passes its tests from its own repository; Atelier consumes it; ask renders a fenced block coloured by it.
+
+
+## Folded into 0152 (2026-10-29)
+
+The promotion is phase 1 of 0152, syntax highlighting wherever code is shown; this entry stays as its record.
