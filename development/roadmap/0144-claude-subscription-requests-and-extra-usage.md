@@ -152,3 +152,10 @@ Owner submitted the historical prompt in the copied session, after approving a l
 out-of-extra-usage sentence, header overage-disabled-reason org_level_disabled. Not a local proxy error. Small checkout succeeded; long
 checkout fails. No causal attribution yet to /tree, token threshold, signatures or callback. Research note separates earlier local refusals
 from this upstream reproduction. Preserve fixture and isolate variables; avoid repeated large-context requests without a clear test.
+
+## Root cause isolated (2026-10-29)
+
+Anthropic's endpoint rejects requests that define tools named `mcp_search` or `mcp_call` under this OAuth grant, returning HTTP 400
+with the extra-usage refusal. Renaming them (for example to `search_catalog` and `dispatch_call`) succeeds against subscription quota
+with the exact same schema and description; changing only the description while keeping the names fails. The issue appeared after /tree
+because MCP servers had just been configured in that session. Resolution requires compliant tool names across AskTools and documentation.
