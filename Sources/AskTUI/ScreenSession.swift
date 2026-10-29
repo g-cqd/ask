@@ -30,7 +30,7 @@ final class ScreenSession {
 
     init(
         _ screen: ScreenTerminal, conversation: any Conversation, label: String, options: ScreenOptions,
-        opening: [ConversationUpdate]
+        opening: consuming [ConversationUpdate]
     ) {
         terminal = screen.session
         renderer = screen.renderer
