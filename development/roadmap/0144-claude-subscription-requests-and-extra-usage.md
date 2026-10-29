@@ -77,3 +77,18 @@ Produce a sanitized endpoint inventory and a gap table against ask: already impl
 unresolved. Prefer documented APIs where available. Any adoption needs bounded refresh/backoff and no launch/input latency regression.
 A passive capture of an official-client action is distinct from replay: do not replay billing changes, top-ups, spend-limit edits, account
 changes or unknown mutations. Keep credentials, cookies, account identifiers and unrelated project content out of durable capture records.
+
+## Callback hypothesis and first lab setup (2026-10-29)
+
+Owner supplied the official client's authorization URL: same OAuth client ID and scopes as ask, but a dynamic localhost callback rather
+than ask's hosted callback/manual paste. State and PKCE values are deliberately not retained. The different callback explains automatic
+completion versus pasting a code; whether the grant or billing classification differs is **unproven**, and is now a comparison axis.
+Do not reauthenticate the baseline merely to test it; any grant-flow experiment must account for credential rotation and keep existing
+ask sessions intact.
+
+First-stage lab prepared: independent ask clone at `~/Developer/ask-lab/ask`, origin removed; private versioned Python environment with
+mitmproxy 12.2.3. Loopback proxy permits only api.anthropic.com HTTPS GET/HEAD, rejects inference and token-exchange POSTs and other hosts.
+Client network sandbox permits only the proxy's localhost port. Per-process CA trust only, upstream TLS verification on, no global trust
+or proxy changes. Local tests verify a blocked inference response, omitted sentinel credentials/prompts, and refused direct-IP egress.
+Sanitized JSONL and transformed HAR preserve field shapes and selected quota values, not raw bodies or credentials. These restrictions
+alter normal client behaviour; a missing request can reflect a block, and this first stage is not a faithful inference/billing test.
