@@ -75,3 +75,35 @@ The screenshot supplied by the owner showed a connection/firewall/proxy warning 
 At 14:54:56, subsequent Haiku and Opus requests were blocked locally (400) after the allowance was consumed. They are not upstream failures.
 The owner should not run /login because of those local refusals. No further inference is enabled. The capture contains auxiliary calls,
 so the request filter and permit are essential to distinguishing one forwarded request from local generated errors.
+
+## Ask baseline and tool/protocol hypothesis
+
+Two ask tests succeeded unchanged on `claude-opus-5-5`, using its own unexpired stored OAuth credential without refresh: (1) a minimal
+probe calling the real AskAI encoder/client/transport/decoder with no tools and max_tokens 32; (2) the shipping ask CLI in an isolated
+fresh workspace/config/state, MCP and skills disabled, default thinking, max-turns 1. The first attempt to select thinking off stopped
+locally because the model does not support it; no request was forwarded and the permit remained unused. Default thinking succeeded.
+
+The CLI request included **five built-in tool definitions**, max_tokens 16384, request body 5625 bytes. It returned OK (HTTP 200), usage
+input 4 + cache creation 2559, output 4, and the same quota headers as the official client: five-hour/seven-day allowed, representative
+claim five_hour, overage rejected/org_level_disabled. A usage GET with ask's own token also returned five-hour 2%, weekly 9%, extra usage
+disabled. Local stored account email and organization name match the official client's local account metadata; values were compared in
+memory and not printed. This is not cryptographic proof of equivalent grants.
+
+Owner asks whether tools or adjacent API differences explain the refusal. Yes, still testable, but separate these variables:
+
+- Advertising ask's built-in tools works in the fresh CLI baseline. No model tool invocation was executed, so replayed tool_use/tool_result
+  history, images, large outputs, missing-result repairs, changed tool definitions and reasoning signatures remain untested.
+- Official successful request: metadata, thinking, context_management, safeguards, output_config and diagnostics. Ask successful request:
+  none of those fields. Their absence is therefore not a universal blocker. They could still interact with longer histories or requested
+  modes; they are not a justification to copy the client's identity or security assertions.
+- Ask's latest recorded Opus success on the main long session used 278223 input/cache tokens, and the second session 187071. Those are
+  **successful prior requests**, not measurements of the rejected request. Context growth is a lead, not proof of a long-context surcharge
+  or a specific threshold. Do not claim a 200k cutoff based on these observations.
+- Adjacent APIs returned model/config/account state to the official client. We have not shown that calling any of them changes server-side
+  entitlements; blindly replaying bootstrap, auth or telemetry is not a valid causal test.
+
+Next comparison: capture the exact failing ask request's safe metadata and upstream error headers, then use controlled pairs: same model,
+credential, prompt and tools; reasoning on/off where supported; a small valid tool-result round trip; a fresh versus safely reconstructed
+long context. Preserve the original history and signatures. Use bounded requests, one upstream allowance per experiment; do not send a
+large synthetic context or replay the user's long session until its token cost and privacy scope are clear. Prefer local request
+reconstruction and schema/sequence tests before billable inference.
