@@ -22,3 +22,9 @@ of red to signify the difference and not add a stopped or aborted block, just re
 
 Either way, the session file records the interruption once (resume and `/tree` show it), and the copy of a block carries no marker.
 Owner to choose; 2 needs a colour check on light and dark pages (`ui.appearance`).
+
+## Owner decision (2026-10-29)
+
+No interruption block at all: only the last ongoing blocks turn **orange**. This supersedes both proposed choices above: do not move
+"Stopping…" into another transcript block, and do not colour older completed blocks. Preserve known results, distinguish interruption
+from failure, and verify contrast on light and dark pages. Implementation is approved, after the urgent Claude investigation (0144).

@@ -16,3 +16,9 @@ the keys it sets, unless a setting says otherwise.
   layered key by key; check lists such as `mcp` servers and sandbox paths).
 - Watching through FSEvents or a dispatch source (a system API, white paper rule), only for files the sandbox lets ask read.
 - The setting that makes a layer replace instead of add, and its name.
+
+## Priority reaffirmed by the owner (2026-10-29)
+
+Automatic configuration update when files change is important: move this out of the low-priority infrastructure group, directly after the
+urgent Claude investigation and immediate correctness fixes. Preserve layered configuration and sandbox rules; invalid updates keep the
+last valid configuration and report why. Watch rename/replace saves as well as in-place writes, without resetting a draft or an active turn.
