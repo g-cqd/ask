@@ -159,3 +159,17 @@ Anthropic's endpoint rejects requests that define tools named `mcp_search` or `m
 with the extra-usage refusal. Renaming them (for example to `search_catalog` and `dispatch_call`) succeeds against subscription quota
 with the exact same schema and description; changing only the description while keeping the names fails. The issue appeared after /tree
 because MCP servers had just been configured in that session. Resolution requires compliant tool names across AskTools and documentation.
+
+## Compatibility-layer request and connection observations (2026-10-29)
+
+The owner requested a layer reproducing how Claude Code transmits tool calls, informed by examining the Claude Code binary.
+No compatibility layer was implemented.
+The experiments found that changing only two tool names moved the same request from an extra-usage refusal to subscription
+quota, without a validation error. The binary was only identified (`file`); it was not disassembled or searched.
+
+`AnthropicRequestEncoder.canonicalSystemLine` sends a "Claude Agent SDK" identity line, and the
+`claude-code-20250219` beta header, on subscription requests. These remain request-comparison observations.
+
+Other available connections are an Anthropic API key (`ask login`, billed per use) and the existing Copilot connection for
+Claude models. The ask-side error improvement is to describe the subscription refusal plainly instead of implying exhausted
+quota. Private lab data (session copy and sanitized captures) remains in `~/.local/share/ask-lab`, outside git.
