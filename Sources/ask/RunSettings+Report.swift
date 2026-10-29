@@ -47,7 +47,8 @@ extension RunSettings {
             escapeInterruptRequiresConfirmation: options.escapeInterruptRequiresConfirmation,
             interruptSendsQueued: QueuedAfterInterruptPreference(rawValue: options.interruptSendsQueued.rawValue),
             onlyUsefulModels: configuration.ui.value.onlyUsefulModels ?? true,
-            appearance: AppearancePreference(rawValue: options.appearance.rawValue))
+            appearance: AppearancePreference(rawValue: options.appearance.rawValue),
+            timeout: TimeoutPreference(rawValue: options.timeoutDisplay.rawValue), timeoutLabel: options.timeoutLabel)
     }
 
     /// `compactAt` in words: a share of the window, a number of tokens, or only when the window is full.

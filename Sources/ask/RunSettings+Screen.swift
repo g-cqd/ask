@@ -29,6 +29,8 @@ extension RunSettings {
             interruptSendsQueued: ui.interruptSendsQueued.flatMap { QueuedAfterInterrupt(rawValue: $0.rawValue) }
                 ?? defaults.interruptSendsQueued)
         options.appearance = appearance
+        options.timeoutDisplay = ui.timeout.flatMap { TimeoutDisplay(rawValue: $0.rawValue) } ?? defaults.timeoutDisplay
+        options.timeoutLabel = ui.timeoutLabel ?? defaults.timeoutLabel
         options.home = LaunchEnvironment.values["HOME"]
         return options
     }

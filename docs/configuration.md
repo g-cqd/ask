@@ -139,6 +139,8 @@ Switches take `"on"` or `"off"` (`true` and `false` work too).
 | `markdown` | `"on"` | Markdown everywhere it can be: the model's replies and reasoning and your own messages are drawn as Markdown (headings, emphasis, lists, quotes, tables, links), and your draft is coloured as you type, every character kept as typed. A selection still copies what was written. `"off"` shows all of it as written. |
 | `localizedDurations` | `"on"` | Elapsed times as `1 hr, 40 min` rather than `1:40:00`, and a command's limits as `timeout 2 min` rather than `timeout 2:00`. |
 | `spinner` | `"line"` | The spinner: `line`, `dot`, `star`, `snake`, `braille`, `braillefull`, `braillequarter` or `random`. |
+| `timeout` | `"auto"` | When a command's timeout is written in its header: `"auto"` only when the model chose one other than the 2-minute default, so the usual header is `shell · swift build`; `"always"` whenever the model set one; `"never"`. The time a command is left to run before it moves to the background (`yield`) is written unless this is `"never"`. |
+| `timeoutLabel` | `"timeout"` | The word in front of a command's timeout, 1 to 8 characters: `"⏱"` writes `shell · ⏱ 5 min · swift build`. |
 | `interruptKeys` | `"both"` | Which keys stop a running turn: `"esc"`, `"ctrl-c"` or `"both"`. |
 | `escapeInterruptRequiresConfirmation` | `"on"` | Esc must be pressed twice to stop a turn. |
 | `abortTurnRequiresConfirmation` | `"off"` | Ctrl+C must be pressed twice to stop a turn. |

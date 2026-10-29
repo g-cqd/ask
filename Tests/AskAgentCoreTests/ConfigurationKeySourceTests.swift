@@ -11,7 +11,7 @@ struct ConfigurationKeySourceTests {
         markdown: true, localizedDurations: true,
         spinner: .line, jobAutoReturnWhenFocused: true, abortTurnRequiresConfirmation: false, interruptKeys: .ctrlC,
         escapeInterruptRequiresConfirmation: true, interruptSendsQueued: .next, onlyUsefulModels: true,
-        appearance: .auto)
+        appearance: .auto, timeout: .never, timeoutLabel: "t")
 
     @Test func `a section that sets every key has a value for each of them`() {
         let missing = UISection.keys.filter { Self.full.value(forKey: $0) == nil }

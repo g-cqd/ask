@@ -50,7 +50,8 @@ conversation copies what is shown, as soon as you let go.
 
 - Tool calls, the model's thinking and long code blocks start **folded** to one line. Click a block to open it in place; **Ctrl+O** opens or
   folds the tool output, **Ctrl+T** the thinking and **Ctrl+G** the code blocks.
-- A shell block is headed by its limits, then the command: `shell · timeout 2 min · swift build`. Folded, a long command is cut with `…`
+- A shell block is headed by its limits, then the command: `shell · timeout 5 min · swift build`; a timeout equal to the default is not
+  written (`ui.timeout`, `ui.timeoutLabel`). Folded, a long command is cut with `…`
   before the status; opened, the command is shown in full and brighter, with its output below.
 - Scroll with the wheel or **Page Up**. The view stays on what you were reading while new text arrives, and the status line counts the lines
   below (`12 lines below`). Click that count, press **Page Down**, or **End** with an empty input, to return to the end.

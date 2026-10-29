@@ -51,6 +51,8 @@ extension ConfigEditor {
             .init(path: ["ui", "spinner"], kind: .choice(SpinnerPreference.allCases.map(\.rawValue))),
             .init(path: ["ui", "appearance"], kind: .choice(AppearancePreference.allCases.map(\.rawValue))),
             .init(path: ["ui", "interruptKeys"], kind: .choice(InterruptKeysPreference.allCases.map(\.rawValue))),
+            .init(path: ["ui", "timeout"], kind: .choice(TimeoutPreference.allCases.map(\.rawValue))),
+            readOnly(["ui", "timeoutLabel"]),
             .init(
                 path: ["ui", "interruptSendsQueued"],
                 kind: .choice(QueuedAfterInterruptPreference.allCases.map(\.rawValue)))
