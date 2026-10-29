@@ -174,3 +174,22 @@ model/thinking settings, or establish the failing process's exact request.
 Prepared a two-request live follow-up: resume only the small lab's session in Kitty (`Ask tree lab`), use the actual /tree command to select
 the second prior prompt, then submit a short no-tools answer request. Preserve signed history; no reauthentication, no original long-log
 replay. Proxy otherwise unchanged; only the existing ask/Opus streaming profile passes. Outcome pending.
+
+## Small checkout succeeded; large-session fixture prepared
+
+The owner reports /tree 2 worked. Observations include successful requests replaying three/four thinking blocks and five to seven
+previous tool-use/result pairs, HTTP 200, five_hour allowed. This does not reproduce the original failure. The initial two-request budget
+was inadequate for the original task's tool loop; local proxy errors must not be classified as provider failures. Six further requests
+were permitted for the checkout test; remaining allowance was revoked before preparing the next fixture.
+
+At the owner's request, snapshotted the largest session: 15604962 bytes, 6762 complete JSONL records at the time of copying. Read a fixed
+file prefix and retained complete records only; validated each as JSON, original never locked or modified. Copied images/output sidecars,
+current config.json and Anthropic catalog, and the existing shipping binary into a private `large-session` directory under the lab root.
+Manifest records source path, hashes, size, and configuration limitations. No credentials or trust grants copied. Sidecars and history
+contain private project data and remain outside git. The original continues independently; the snapshot is not a continuously synced file.
+
+Opened `Ask history lab` on the copy, navigation only, inference budget zero. CLI explicitly selects Anthropic Opus/medium (not the snapshot's
+current Codex destination), max two requests per turn; current MCP configuration is preserved but subject to the outer network sandbox.
+Therefore this is a diagnostic setup, not exact historic runtime fidelity. Original request settings/working-directory instruction paths,
+current catalog and tool list may differ. Do not send a prompt until a bounded large-context allowance and scope are agreed. No large
+history has been sent upstream by this preparation.
