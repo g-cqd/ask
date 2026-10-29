@@ -112,7 +112,7 @@ public struct ScreenComposer: Sendable {
         }
         let editor = input.frame(
             state.editor, prompt: state.promptPrefix, columns: columns, screenRows: rows, maximumRows: state.promptRows,
-            selection: state.inputSelection, scrollTop: state.promptScroll)
+            selection: state.inputSelection, scrollTop: state.promptScroll, markdown: state.transcript.markdown)
         cursorIsVisible = editor.cursorVisible
         let promptRows = editor.lines.count
         let statusRows = rows > 1 ? 1 : 0

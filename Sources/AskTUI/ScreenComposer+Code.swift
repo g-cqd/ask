@@ -13,6 +13,9 @@ extension ScreenComposer {
     ) -> [Line] {
         let item = transcript.items[index]
         let spaced = index > 0 && isSpaced(item) && isSpaced(transcript.items[index - 1])
+        if let rows = markdownItemLines(in: transcript, at: index, columns: columns, style: style) {
+            return framed(rows, kind: item, style: style, spacerAbove: spaced)
+        }
         if transcript.markdown, case .assistant(let text) = item {
             return framed(
                 markdownLines(text, in: transcript, at: index, columns: columns, style: style), kind: item,
