@@ -30,8 +30,8 @@ struct SandboxMarkTests {
         throws
     {
         for (sandboxed, word, mark, style) in [
-            (true, "sandboxed", "✓", StatusLeadingMark.protected),
-            (false, "not sandboxed", "!", StatusLeadingMark.warning)
+            (true, "Sandboxed", "✓", StatusLeadingMark.protected),
+            (false, "Not sandboxed", "!", StatusLeadingMark.warning)
         ] {
             var rig = rig(sandboxed: sandboxed)
             let row = rig.controller.frame.statusRow
@@ -68,7 +68,7 @@ struct SandboxMarkTests {
         }
         rig.controller.sandboxNoteEnded(generation: first)
         rig.draw()
-        #expect(status(rig).text.hasPrefix("sandboxed · "), "an old timer does not end a newer note")
+        #expect(status(rig).text.hasPrefix("Sandboxed · "), "an old timer does not end a newer note")
         #expect(second > first)
     }
 

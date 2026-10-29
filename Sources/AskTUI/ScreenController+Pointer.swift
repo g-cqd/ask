@@ -137,8 +137,7 @@ extension ScreenController {
 
     /// Scrolls the transcript up by `lines`, or down for a negative number, and no further than its ends.
     mutating func scroll(by lines: Int) {
-        let furthest = Swift.max(0, frame.totalLines - frame.transcriptRows)
-        state.scrollback = Swift.max(0, Swift.min(state.scrollback + lines, Swift.max(furthest, state.scrollback)))
+        state.scroll.scroll(by: lines, totalRows: frame.totalLines, viewportRows: frame.transcriptRows)
     }
 
     private func copyIfCommitted(_ update: SelectionController<Int>.Update) -> [Effect] {
@@ -173,7 +172,7 @@ extension ScreenController {
             .count
         // Scrolled back, the lines below the header grew or shrank, so the view moves by as much and the header stays on its row.
         // At the bottom the view follows the end, as it does for streaming.
-        if state.scrollback > 0 { state.scrollback = Swift.max(0, state.scrollback + after - before) }
+        state.scroll.keepPlace(whenRowsAboveChangeBy: after - before)
         // Positions inside a body that just closed no longer exist.
         selector.clear()
         return true

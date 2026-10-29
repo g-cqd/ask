@@ -62,7 +62,7 @@ final class ScreenSession {
         }
         let watching = conversation.background { sink.yield(.update($0)) }
         input.start()
-        let recolouring = TerminalColours.askAgain(after: appearances) { sink.yield(.askColours) }
+        let recolouring = SystemAppearance.askAgain(after: appearances) { sink.yield(.askColours) }
         defer { recolouring.cancel() }
         colours?.ask()
         defer {

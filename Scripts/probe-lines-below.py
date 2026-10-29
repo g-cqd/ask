@@ -70,7 +70,8 @@ class GatedServer:
 
 
 def status_row(terminal):
-    return next((i for i, line in enumerate(rows(terminal)) if " · ready" in line or "working…" in line), None)
+    """The status line is the last row that has text (roadmap 0131: it no longer says ready or working)."""
+    return max(i for i, line in enumerate(rows(terminal)) if line.strip())
 
 
 def transcript(terminal):
@@ -103,7 +104,7 @@ def scenario(binary, label, expect_hold):
             gated.release.set()
             for _ in range(40):
                 terminal.pump()
-                if " · ready" in "\n".join(rows(terminal)) and "working" not in "\n".join(rows(terminal)):
+                if rows(terminal)[status_row(terminal)].startswith(("✓", "!")):
                     break
             terminal.repaint()
             after = transcript(terminal)

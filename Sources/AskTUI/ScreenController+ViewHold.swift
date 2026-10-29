@@ -1,3 +1,5 @@
+internal import TerminalKitText
+
 /// A reader who scrolled back is reading something, and text that arrives below must not slide it away (ADR-0072).
 extension ScreenController {
     /// Runs `change`, then moves the scroll position by the lines it added to the transcript's tail, so the same lines stay on the screen.
@@ -13,7 +15,9 @@ extension ScreenController {
         let first = Swift.max(0, state.transcript.items.count - 1)
         let before = wrappedLines(from: first)
         let effects = change(&self)
-        if state.scrollback == held { state.scrollback = Swift.max(0, held + wrappedLines(from: first) - before) }
+        if state.scrollback == held {
+            state.scroll.keepPlace(whenRowsAboveChangeBy: wrappedLines(from: first) - before)
+        }
         return effects
     }
 

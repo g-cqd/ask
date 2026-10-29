@@ -1,3 +1,4 @@
+internal import TerminalKitCodecs
 internal import TerminalKitStyle
 internal import TerminalKitText
 internal import Testing
@@ -69,14 +70,14 @@ struct QueuedBlockTests {
     }
 
     /// How much bluer a colour is than the page, in channel units.
-    private func blueness(_ color: Color, page: ScreenTheme.Page) -> Double {
+    private func blueness(_ color: Color, page: TerminalPage) -> Double {
         guard case .rgb(let r, let g, let b) = color else { return 0 }
         func tilt(_ r: Double, _ g: Double, _ b: Double) -> Double { b - (r + g) / 2 }
         return tilt(Double(r), Double(g), Double(b)) - tilt(page.background.x, page.background.y, page.background.z)
     }
 
     @Test func `the user's block is blue, bluer than a tool still running, which is grey, on light and dark pages`() {
-        for page: ScreenTheme.Page in [
+        for page: TerminalPage in [
             .light, .dark, .init(background: SIMD3(0, 43, 54), foreground: SIMD3(131, 148, 150))
         ] {
             let theme = ScreenTheme(page: page)
