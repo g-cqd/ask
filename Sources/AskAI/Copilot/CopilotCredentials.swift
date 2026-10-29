@@ -1,7 +1,7 @@
 /// The GitHub grant is used only for token exchange; inference receives only the short-lived Copilot token.
 public struct CopilotCredentials: Codable, Sendable, Equatable {
-    public let githubToken: String
-    public let accessToken: String
+    public internal(set) var githubToken: String
+    public internal(set) var accessToken: String
     public let expiresAt: Double
     public let apiURL: String
     public let machineID: String

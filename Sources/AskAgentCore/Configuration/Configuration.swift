@@ -50,6 +50,8 @@ public struct Configuration: Sendable, Equatable {
     public var environment: Setting<EnvironmentSection>
     /// What ask keeps awake while it works (roadmap 0090): the Mac, by default, so a long turn is not cut short by idle sleep.
     public var keepAwake = Setting(value: KeepAwakeMode.system, source: .defaults)
+    /// Where keys and tokens are kept (roadmap 0110).
+    public var credentials = Setting(value: CredentialStorage.auto, source: .defaults)
     /// Where each `ui` and `skills` key came from, by its dotted name; read through `source(ofKey:)`.
     var keySources: [String: Source] = [:]
 
@@ -75,6 +77,7 @@ public struct Configuration: Sendable, Equatable {
         if let turns = file.maxTurns { next.maxTurns = Setting(value: turns, source: source) }
         if let compactAt = file.compactAt { next.compactAt = Setting(value: compactAt, source: source) }
         if let keepAwake = file.keepAwake { next.keepAwake = Setting(value: keepAwake, source: source) }
+        if let credentials = file.credentials { next.credentials = Setting(value: credentials, source: source) }
         return next
     }
 
@@ -199,12 +202,14 @@ extension Configuration {
             guard old != new else { return }
             lines.append("\(name): \(Self.show(old.value)) → \(Self.show(new.value)) (\(new.source))")
         }
+        // @dl:accept -- one compare per key: the change table is the data
         compare("model", previous.model, model)
         compare("provider", previous.provider, provider)
         compare("thinking", previous.thinking, thinking)
         compare("maxTurns", previous.maxTurns, maxTurns)
         compare("compactAt", previous.compactAt, compactAt)
         compare("keepAwake", previous.keepAwake, keepAwake)
+        compare("credentials", previous.credentials, credentials)
         compare("sandbox", previous.sandbox, sandbox)
         compare("ui", previous.ui, ui)
         compare("skills", previous.skills, skills)

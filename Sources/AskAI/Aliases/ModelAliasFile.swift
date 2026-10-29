@@ -99,6 +99,7 @@ public struct ModelAliasFile: Sendable {
         if after != before { try save(after) }
     }
 
+    // @dl:accept -- the aliases' lock maps its failure to their own error type; the credential file's twin maps to its own
     private func take() throws(ModelAliasError) -> CredentialLock {
         do { return try CredentialLock.acquireBlocking(beside: url, wait: lockWait, name: "aliases") } catch {
             switch error {
