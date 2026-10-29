@@ -73,6 +73,7 @@ public struct ScreenComposer: Sendable {
     /// The look those lines were laid out for.
     var blockStyle = BlockStyle.plain
     private var foldBlocks: [Int?] = []
+    private var rowLinks: [[PathLinks.Link]] = []
     /// What each row of the buffer holds since the last frame, and the size it was composed at.
     private var shown: [Shown?] = []
     private var shownSize = (columns: -1, rows: -1)
@@ -140,6 +141,7 @@ public struct ScreenComposer: Sendable {
             promptTop: editor.top, prompt: editor.layout
         )
         .withPicker(state: state, firstRow: transcriptRows + upperRuleRows + 1, rows: pickerRows)
+        geometry.links = rowLinks
         geometry.placeStrip(strip, firstRow: rows - strip.lines.count)
         geometry.placeSidebar(sidebar, columns: columns)
         frames?.store(geometry)
@@ -163,6 +165,7 @@ public struct ScreenComposer: Sendable {
             rowsFromEnd: state.scrollback)[...]
         let map = Self.provenance(of: visible, rows: rows, transcriptRows: transcriptRows)
         foldBlocks = Array(repeating: nil, count: transcriptRows - visible.count) + visible.map(\.foldBlock)
+        rowLinks = Array(repeating: [], count: transcriptRows - visible.count) + visible.map(\.links)
         var highlights = [Range<Int>?](repeating: nil, count: transcriptRows)
         if let selection = state.selection {
             for span in map.highlights(of: selection, in: ShownTranscriptContent(transcript: state.transcript))
@@ -194,7 +197,7 @@ public struct ScreenComposer: Sendable {
         guard shown[row] != now else { return }
         shown[row] = now
         var column = 0
-        for (part, style) in Self.spans(of: line, highlight: highlight) {
+        for (part, style) in Self.spans(of: line, highlight: highlight, row: row) {
             buffer.write(part, row: row, col: column, style: theme?.legible(style) ?? style)
             column += UnicodeWidth.displayWidth(of: part)
         }

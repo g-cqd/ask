@@ -27,9 +27,23 @@ leading unquoted `~` so bash, zsh, and fish can expand it cleanly upon paste.
 - `PathLinks` in `AskTUI`: tool-block rows (header, input, output) link `/…` and `~/…` words, without a trailing
   `:line:col`, computed once per block layout. Tests in `PathLinksTests` and TerminalKit's `HyperlinkTests`.
 
+- Owner report (2026-10-29): hovering one path lit up every copy of it in the block, and clicking a link opened nothing. Fixed:
+  - TerminalKit `dad2cd6` `Style.linkID`: OSC 8 `id=`, only letters, digits, `-_.`; ask gives each link an id from its screen
+    row and column, so two copies of one path are two links (`LinkIdentityTests`; checked in a PTY: `id=ask-24-6` and `id=ask-24-24`
+    for one path twice).
+  - A single click on a link opens it (`Effect.openLink`, `LinkOpener` through `NSWorkspace`): web pages, `mailto:`, documents and
+    folders in their apps. A file that would run (an app, a script, an executable, an installer) is shown in the Finder instead; other
+    schemes are not followed; a refusal is said in the status line. A double click still selects the word; a click beside a link still
+    folds. With the mouse on, the terminal's own link handling never sees a click, which is why nothing opened.
+  - Web addresses (`http(s)://`, balanced parentheses kept, sentence punctuation dropped), `mailto:` and bare email addresses are
+    linked beside paths (`AddressLinks`), in every block, not only tool rows; a `git@host:org/repo` remote is not an email.
+  - The plain-assistant characterisation digest was re-pinned after proving that, without links and the new style field, it is the
+    old one.
+
 ## Still owed
 
-- Not seen in a real terminal: the escape sequences are tested as bytes, no PTY probe of the transcript yet.
+- Not seen in a real terminal: the escape sequences were checked in a PTY's bytes, not in the owner's terminal; a click opening an app
+  was not run (it would open one on this Mac).
 - The row keeps the text the tool printed (an absolute path stays absolute): showing `~/…` would change wrapping and
   the selection's text, so it is not done.
 - Relative paths are not linked (a row does not know its directory); a path wrapped over two rows links only the part

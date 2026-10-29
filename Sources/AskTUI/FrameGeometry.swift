@@ -6,6 +6,8 @@ struct FrameGeometry: Sendable {
     var rows = RowMap<Int>()
     /// Foldable block owning each transcript row, including its padding but not inter-block spacing.
     var foldBlocks: [Int?] = []
+    /// The links each transcript row draws, so a click on one opens it.
+    var links: [[PathLinks.Link]] = []
     /// How many rows the transcript took, from the top.
     var transcriptRows = 0
     var columns = 0

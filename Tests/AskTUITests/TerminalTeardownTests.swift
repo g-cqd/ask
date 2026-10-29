@@ -124,9 +124,16 @@ struct TerminalTeardownTests {
         try await runInteractiveScreen(
             on: connection, conversation: IdleConversation(), label: "m",
             notices: ["Instructions loaded from /p/AGENTS.md."], resizes: resizes)
-        #expect(
-            String(decoding: connection.writtenOutput, as: UTF8.self).contains("Instructions loaded from /p/AGENTS.md.")
-        )
+        let written = String(decoding: connection.writtenOutput, as: UTF8.self)
+        // The path is a link now (roadmap 0075): the text around the OSC 8 sequences is the notice.
+        var text = written
+        while let open = text.range(of: "\u{1B}]8;"),
+            let close = text.range(of: "\u{1B}\\", range: open.upperBound ..< text.endIndex)
+        {
+            text.removeSubrange(open.lowerBound ..< close.upperBound)
+        }
+        #expect(text.contains("Instructions loaded from /p/AGENTS.md."))
+        #expect(written.contains(";file:///p/AGENTS.md\u{1B}\\"))
     }
 
     @Test func `a submitted prompt reaches the conversation and the screen`() async throws {

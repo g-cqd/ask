@@ -109,16 +109,7 @@ extension ScreenController {
                 if count >= 2 { return selectInput(at: cell, count: count) }
                 placeCursor(at: cell)
             case .click(_, let cell, .left, _, let count):
-                if count == 1, isSelected(cell) {
-                    selector.clear()
-                    return []
-                }
-                // Fold controls toggle at every click count; rapid re-clicks must not become word selection.
-                if toggleFold(atRow: cell.row) { return [] }
-                let content = count >= 2 ? TranscriptContent(state.transcript) : TranscriptContent()
-                let update = selector.click(
-                    row: cell.row, col: cell.col, count: count, rows: frame.rows, content: content)
-                return copyIfCommitted(update)
+                return clickTranscript(at: cell, count: count)
             case .click:
                 break
         }
@@ -145,6 +136,28 @@ extension ScreenController {
             let text = selector.selection?.text(in: TranscriptContent(state.transcript)), !text.isEmpty
         else { return [] }
         return [.copy(text)]
+    }
+
+    /// A click on the transcript: a link opens, a selection is let go, a fold control folds, and anything else starts a selection.
+    private mutating func clickTranscript(at cell: CellPosition, count: Int) -> [Effect] {
+        // A link wins over the fold and the selection; a double click still takes the word.
+        if count == 1, let uri = link(at: cell) { return [.openLink(uri)] }
+        if count == 1, isSelected(cell) {
+            selector.clear()
+            return []
+        }
+        // Fold controls toggle at every click count; rapid re-clicks must not become word selection.
+        if toggleFold(atRow: cell.row) { return [] }
+        let content = count >= 2 ? TranscriptContent(state.transcript) : TranscriptContent()
+        let update = selector.click(
+            row: cell.row, col: cell.col, count: count, rows: frame.rows, content: content)
+        return copyIfCommitted(update)
+    }
+
+    /// The link drawn at `cell` of the transcript, if any.
+    private func link(at cell: CellPosition) -> String? {
+        guard frame.links.indices.contains(cell.row) else { return nil }
+        return frame.links[cell.row].first { $0.columns.contains(cell.col) }?.uri
     }
 
     /// Toggles tools/thinking from any owned row, including padding; code folds still use their fence lines.
