@@ -141,3 +141,9 @@ markdown.
 Phase 1, TerminalKit consolidation, step 1 and 2 done (kit `c654b52`, ask `caf98b4`): page model, follower and appearance, scroll position;
 step 3 (reconcile 0016 to 0020, open 0022 to 0025) done as records. Not done: the row-window work (kit 0023, which is 0088 step 2) and anything
 about Linux. Next in Phase 1: AemiMarkdown.
+
+AemiMarkdown (2026-10-29), section 1's four points: 1 and 2 done (top-level blocks with stable identities and parser-based finality, ADR-0002; the walker
+existed and now walks one block); 3 done (debug suite green, grammar differential tests in the default run, DocC, a fresh benchmark against swift-markdown
+on a new corpus) and the cmark comparison, run for the first time, found and fixed one real divergence (lazy continuation whitespace, 12 of 16
+differences); 4 done (MIT, fixture notice in the README, status line). Pins: AemiMarkdown `029235c`, TerminalKit `0022` unblocked. Next in Phase 1:
+0088 steps 2 and 3 (row windows, kit 0023), then Phase 2 (the renderer, kit 0022, and ask 0065).
