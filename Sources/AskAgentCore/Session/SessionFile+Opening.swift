@@ -69,14 +69,9 @@ extension SessionFile {
     ) throws(SessionFileError) -> SessionFile {
         // Locked before reading, so no other writer can append between what we read and what we write.
         let lock = try SessionLock.acquire(path)
-        let bytes = try SessionFileIO.readAll(lock.descriptor, limits: limits)
-        let recovered: RecoveredSession
-        do {
-            recovered = try SessionLog.recover(
-                bytes, limits: limits, images: SessionImageStore(besideSessionAt: path.string))
-        } catch {
-            throw .log(error)
-        }
+        let recovered = try SessionLogReader()
+            .recover(
+                lock.descriptor, limits: limits, images: SessionImageStore(besideSessionAt: path.string))
         return SessionFile(
             path: path, tree: recovered.tree, issues: recovered.issues, durability: durability, appender: nil,
             lock: lock, calls: calls, formatVersion: recovered.formatVersion)
