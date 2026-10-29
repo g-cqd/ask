@@ -42,7 +42,7 @@ extension AgentConversation {
                     output.isError ? .failed(last) : .succeeded, output: output.content,
                     id: id, backgroundJob: output.backgroundJob)
             case .repaired(let repairs):
-                return .notice("Repaired the context before this turn: \(repairs)", isError: false)
+                return .notice("Repaired the context: \(RequestContext.describe(repairs)).", isError: false)
             case .continuedAtOutputLimit:
                 return .detail("The response hit the output limit; asking the model to continue.")
             default: return nil
