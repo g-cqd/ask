@@ -193,3 +193,26 @@ current Codex destination), max two requests per turn; current MCP configuration
 Therefore this is a diagnostic setup, not exact historic runtime fidelity. Original request settings/working-directory instruction paths,
 current catalog and tool list may differ. Do not send a prompt until a bounded large-context allowance and scope are agreed. No large
 history has been sent upstream by this preparation.
+
+## Original refusal reproduced on the copied long-history checkout
+
+Owner checked out the prompt prefixed "check this session file history to know what were my answers to those questions" and submitted it.
+After explicit authorization to enlarge the proxy allowance (1000 requests), exactly one additional request was forwarded in this stage;
+remaining budget 999. The real upstream response was HTTP 400, not a local budget error:
+
+> You're out of extra usage. Add more at claude.ai/settings/usage and keep going.
+
+Error type invalid_request_error; response header `anthropic-ratelimit-unified-overage-disabled-reason: org_level_disabled`. No unified
+five-hour/seven-day status headers were present in this error. Request: claude-opus-5-5, max_tokens 16384, medium/adaptive thinking shape,
+960643 body bytes, 83 text blocks, 169 thinking blocks, 194 tool_use and 194 tool_result blocks. Auth kind bearer, unchanged ask protocol
+headers. No model response was appended for this refusal. This reproduces the reported wording with a genuinely forwarded request.
+
+Comparison: same connector/model/account metadata succeeded on the fresh interactive session and small /tree checkout, including signed
+thinking and tool history. The successful small checkout retained three/four signed thinking blocks and five to seven prior tool pairs.
+The large failure therefore establishes a long-history-dependent reproduction, NOT that the server detects /tree or that any particular
+size/signature/entitlement field causes the refusal. The historical prefix equivalence test still holds at matching settings.
+
+Two earlier large requests (about 1.61 MB) were blocked locally while budget zero, and are NOT Anthropic failures. Do not combine them
+with this upstream result. Preserve this failing fixture; no blind resubmission. Next use local request comparisons and a bounded,
+explicitly scoped ablation to separate retained context size, signature history, and the selected branch/settings. Large-prefix tests may
+consume significant quota even with a short output; do not promise a cost from JSON byte count alone.
