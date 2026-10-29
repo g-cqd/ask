@@ -48,6 +48,10 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var interruptSendsQueued: QueuedAfterInterruptPreference?
     /// `ui.onlyUsefulModels`: whether model lists leave out the models of no use to ask (`"on"`, default; roadmap 0089).
     public var onlyUsefulModels: Bool?
+    /// `ui.timeout`: when a command's timeout is written: `"auto"` (default), `"always"` or `"never"` (roadmap 0126).
+    public var timeout: TimeoutPreference?
+    /// `ui.timeoutLabel`: the word in front of a command's timeout, 1 to 8 characters (`"timeout"` by default).
+    public var timeoutLabel: String?
 
     public init(
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
@@ -59,7 +63,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         // @dl:accept -- optional settings are schema data: each parameter names a key
         interruptKeys: InterruptKeysPreference? = nil, escapeInterruptRequiresConfirmation: Bool? = nil,
         interruptSendsQueued: QueuedAfterInterruptPreference? = nil, onlyUsefulModels: Bool? = nil,
-        appearance: AppearancePreference? = nil
+        appearance: AppearancePreference? = nil, timeout: TimeoutPreference? = nil, timeoutLabel: String? = nil
     ) {
         // @dl:accept -- optional configuration and resolved screen options deliberately assign the same UI keys
         self.mouse = mouse
@@ -79,12 +83,15 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.localizedDurations = localizedDurations
         self.spinner = spinner
         self.jobAutoReturnWhenFocused = jobAutoReturnWhenFocused
+        // @dl:accept -- one assignment per key: the initializer is the schema, as any memberwise initializer
         self.abortTurnRequiresConfirmation = abortTurnRequiresConfirmation
         self.interruptKeys = interruptKeys
         self.escapeInterruptRequiresConfirmation = escapeInterruptRequiresConfirmation
         self.interruptSendsQueued = interruptSendsQueued
         self.onlyUsefulModels = onlyUsefulModels
         self.appearance = appearance
+        self.timeout = timeout
+        self.timeoutLabel = timeoutLabel
     }
 
     public var isEmpty: Bool {
@@ -94,7 +101,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             && spinner == nil
             && jobAutoReturnWhenFocused == nil && abortTurnRequiresConfirmation == nil && interruptKeys == nil
             && escapeInterruptRequiresConfirmation == nil && interruptSendsQueued == nil
-            && onlyUsefulModels == nil && appearance == nil
+            && onlyUsefulModels == nil && appearance == nil && timeout == nil && timeoutLabel == nil
         // @dl:accept -- the layering takes each key from the later section; the keys are the data
     }
 
@@ -106,7 +113,9 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     /// The keys that set the look of the screen (roadmap 0074).
     // @dl:accept -- the key table is schema data, a list of names like a test's list of names
     private static let lookKeys = [
-        "prompt", "tint", "appearance", "separator", "padding", "markdown", "localizedDurations", "spinner"
+        // @dl:accept -- a list of key names is data, like any other list of names
+        "prompt", "tint", "appearance", "separator", "padding", "markdown", "localizedDurations", "spinner", "timeout",
+        "timeoutLabel"
     ]
     private static let behaviorKeys = [
         "jobAutoReturnWhenFocused", "abortTurnRequiresConfirmation", "interruptKeys",
@@ -133,7 +142,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
                 ?? escapeInterruptRequiresConfirmation,
             interruptSendsQueued: section.interruptSendsQueued ?? interruptSendsQueued,
             onlyUsefulModels: section.onlyUsefulModels ?? onlyUsefulModels,
-            appearance: section.appearance ?? appearance)
+            appearance: section.appearance ?? appearance, timeout: section.timeout ?? timeout,
+            timeoutLabel: section.timeoutLabel ?? timeoutLabel)
     }
 
     public var description: String {
@@ -162,6 +172,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         flag("markdown", markdown)
         flag("localizedDurations", localizedDurations)
         if let spinner { parts.append("spinner \(spinner.rawValue)") }
+        if let timeout { parts.append("timeout \(timeout.rawValue)") }
+        if let timeoutLabel { parts.append("timeoutLabel \"\(timeoutLabel)\"") }
         flag("jobAutoReturnWhenFocused", jobAutoReturnWhenFocused)
         flag("abortTurnRequiresConfirmation", abortTurnRequiresConfirmation)
         if let interruptKeys { parts.append("interruptKeys \(interruptKeys.rawValue)") }

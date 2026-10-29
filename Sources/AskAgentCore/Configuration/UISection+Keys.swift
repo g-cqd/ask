@@ -22,6 +22,8 @@ extension UISection {
             case "markdown": return onOff(markdown)
             case "localizedDurations": return onOff(localizedDurations)
             case "spinner": return spinner?.rawValue
+            case "timeout": return timeout?.rawValue
+            case "timeoutLabel": return timeoutLabel.map { "\"\($0)\"" }
             default: return behaviorValue(forKey: key)
         }
     }

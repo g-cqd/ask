@@ -36,6 +36,7 @@ public struct CatalogModel: Codable, Sendable, Equatable {
         self.acceptsImages = acceptsImages
         self.imageLimits = imageLimits
         self.unsuitable = unsuitable
+        // @dl:accept -- one assignment per field, as data; a settings initializer elsewhere has the same shape
         self.id = id
         self.api = api
         self.contextWindow = contextWindow

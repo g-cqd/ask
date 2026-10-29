@@ -23,6 +23,16 @@ extension ConfigurationFile {
             // @dl:accept -- the key walk is shared with the top-level keys' decoder; each table names its own keys
         }
 
+        /// `ui.timeout`, one of three words, and `ui.timeoutLabel`, a short label (roadmap 0126).
+        private mutating func decodeTimeoutSetting(_ key: Key, from container: KeyedDecodingContainer<Key>) throws {
+            if key.stringValue == "timeout" {
+                section.timeout = try ConfigurationFile.decodeChoice(
+                    container, key: key, as: TimeoutPreference.self, named: "ui.timeout")
+            } else {
+                section.timeoutLabel = try ConfigurationFile.decodeLabel(container, key: key, named: "ui.timeoutLabel")
+            }
+        }
+
         // @dl:accept -- the key walk is shared; each section names its own keys
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
@@ -73,6 +83,7 @@ extension ConfigurationFile {
                         }
                     case "interruptKeys", "interruptSendsQueued":
                         try decodeInterruptChoice(key, from: container)
+                    case "timeout", "timeoutLabel": try decodeTimeoutSetting(key, from: container)
                     // @dl:accept -- a key table decoded by the shared walk; the keys are the data
                     case "tools", "thinking", "code":
                         let name = try container.decode(String.self, forKey: key)

@@ -1,13 +1,25 @@
 internal import AskAI
 
 extension ConfigurationFile {
-    /// A key whose value is one of `Choice`'s names (`thinking`, `keepAwake`); any other string is refused, naming the key.
+    /// A key whose value is one of `Choice`'s names (`thinking`, `keepAwake`); any other string is refused, naming the key, or `named`
+    /// for a key inside a section (`ui.timeout`).
     static func decodeChoice<Choice: RawRepresentable>(
-        _ container: KeyedDecodingContainer<Key>, key: Key, as _: Choice.Type
+        _ container: KeyedDecodingContainer<Key>, key: Key, as _: Choice.Type, named: String? = nil
     ) throws -> Choice where Choice.RawValue == String {
         let name = try container.decode(String.self, forKey: key)
-        guard let choice = Choice(rawValue: name) else { throw BadValue(key: key.stringValue, value: name) }
+        guard let choice = Choice(rawValue: name) else { throw BadValue(key: named ?? key.stringValue, value: name) }
         return choice
+    }
+
+    /// A label drawn in a header (`ui.timeoutLabel`): 1 to 8 characters, none of them a control or format character, since a newline
+    /// or an escape would break the row.
+    static func decodeLabel(_ container: KeyedDecodingContainer<Key>, key: Key, named: String) throws -> String {
+        let label = try container.decode(String.self, forKey: key)
+        let breaksRow = label.unicodeScalars.contains {
+            $0.properties.generalCategory == .control || $0.properties.generalCategory == .format
+        }
+        guard (1 ... 8).contains(label.count), !breaksRow else { throw BadValue(key: named, value: label) }
+        return label
     }
 
     /// `maxTurns`: a whole number of at least 1, or `"none"` for no limit (roadmap 0098), kept as ``Configuration/noTurnLimit``.
