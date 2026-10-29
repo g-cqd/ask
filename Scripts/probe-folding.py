@@ -23,6 +23,9 @@ import time
 sys.path.insert(0, os.environ.get("ASK_PYTE", "/tmp/ask-pty/lib"))
 import pyte
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_screen
+
 BINARY = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask")
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("agent_probe", os.path.join(HERE, "probe-agent-run.py"))
@@ -52,8 +55,7 @@ class Terminal:
             fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", rows, columns, 0, 0))
             os.chdir(project)
             os.execve(BINARY, [BINARY] + (["--continue"] if resume else []), environment)
-        self.screen = pyte.Screen(columns, rows)
-        self.stream = pyte.ByteStream(self.screen)
+        self.screen, self.stream = probe_screen.make(columns, rows)
         self.raw = bytearray()
 
     def pump(self):

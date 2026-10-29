@@ -7,8 +7,8 @@ host's pasteboard (`pbcopy`) is never used. The screen is read through `pyte`, a
     python3 -m pip install --target /tmp/ask-pty/lib pyte
     ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-pointer.py [path/to/ask]
 
-pyte does not implement scroll-down (`CSI T`), which the screen uses to move the transcript, so a row read right after a scroll can be
-wrong. The probe forces a full repaint with a resize before it reads anything that scrolled.
+pyte does not implement SU and SD (`CSI S`, `CSI T`), which the screen uses to move the transcript; `probe_screen` adds them, so rows
+read after a scroll are what a terminal shows. The scroll checks still force a full repaint before reading, as a second opinion.
 
 Exit 0 when every check passes, 1 otherwise.
 """
@@ -16,6 +16,9 @@ import base64, fcntl, os, pty, re, select, shutil, signal, struct, sys, tempfile
 
 sys.path.insert(0, os.environ.get("ASK_PYTE", "/tmp/ask-pty/lib"))
 import pyte
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_screen
 
 ASK = os.path.abspath(
     sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", ".build", "debug", "ask")
@@ -43,8 +46,7 @@ class Terminal:
             os.chdir(self.home)
             os.execve(ASK, [ASK], env)
         self.size(ROWS)
-        self.screen = pyte.Screen(COLS, ROWS)
-        self.stream = pyte.ByteStream(self.screen)
+        self.screen, self.stream = probe_screen.make(COLS, ROWS)
         self.raw = bytearray()
         self.pump(3)
 
@@ -71,6 +73,24 @@ class Terminal:
 
     def lines(self):
         return [self.screen.display[row].rstrip() for row in range(self.screen.lines)]
+
+    def rules(self):
+        return [row for row, line in enumerate(self.lines()) if line.startswith("\u2500" * 10)]
+
+    def prompt(self):
+        """The prompt's text: the rows between the last two rules (the prompt has no marker of its own)."""
+        rules = self.rules()
+        return "\n".join(self.lines()[rules[-2] + 1 : rules[-1]]) if len(rules) >= 2 else None
+
+    def status(self):
+        """The status is the last row with text, below the prompt's lower rule."""
+        return next((line for line in reversed(self.lines()) if line), "")
+
+    def transcript(self):
+        """The rows above the prompt, without the left margin, blank rows dropped."""
+        rules = self.rules()
+        rows = self.lines()[: rules[-2] if len(rules) >= 2 else ROWS]
+        return [row.strip() for row in rows if row.strip()]
 
     def inverse(self, row):
         return [col for col in range(COLS) if self.screen.buffer[row][col].reverse]
@@ -118,41 +138,74 @@ def with_help(program, helps=1, config=None):
     return terminal
 
 
-# /help prints one line a command, so the row of "/quit  Leave ask, stopping a running turn first." moves each time a command is added:
-# it is found, not counted. (It was 19 with eleven lines, and 17 with thirteen.)
+def found(terminal, start):
+    """The row whose text, after the left margin, starts with `start`, and the column of that text; (-1, -1) when absent."""
+    for row, line in enumerate(terminal.lines()):
+        if line.lstrip().startswith(start):
+            return row, len(line) - len(line.lstrip())
+    return -1, -1
+
+
+NOTICE = "Nothing is signed in"  # the first row of a conversation with no account: where the start is
+
+
+def at_start(terminal):
+    rows = terminal.transcript()
+    # Every /help listing starts with a "/help" row, so only the notice above the first one says this is the start.
+    return bool(rows) and rows[0].startswith(NOTICE) and rows[1:2] == ["/help"]
+
+
+def wheel(terminal, button, limit=80):
+    """Turns the wheel until the transcript stops moving: enough to reach either end however long /help has grown."""
+    last = None
+    for _ in range(limit):
+        terminal.mouse(button, 40, 10, wait=0.03)
+        terminal.pump(0.05)
+        now = terminal.lines()
+        if now == last:
+            break
+        last = now
+    terminal.pump(0.3)
+    terminal.repaint()
+
+
+# /help prints one line a command, so its rows move each time a command is added: they are found, not counted, and so is the left margin.
 t = with_help("ghostty")
-QUIT = next((row for row, line in enumerate(t.lines()) if line.startswith("/quit  Leave ask")), -1)
+QUIT, MARGIN = found(t, "/quit  Leave ask")
 FOLLOW = QUIT + 1
+LEAVE = MARGIN + len("/quit  ")
 check("the screen shows /help where the probe expects it", QUIT > 0, str(t.lines()))
-check("the user prompt has no leading marker", "/help" in t.lines())
-check("the status has no painted inverse surface", t.inverse(ROWS - 2) == [])
+found_listing = t.transcript()
+check("the user prompt has no leading marker", "/help" in t.transcript()[:1], str(t.transcript()[:2]))
+check("the status has no painted inverse surface", t.inverse(ROWS - 1) == [], t.status())
 raw = bytes(t.raw)
 check("the terminal is asked for mouse reports", b"\x1b[?1000h" in raw and b"\x1b[?1006h" in raw)
 
 before = len(t.copies())
-t.drag((7, QUIT), (15, QUIT))
-check("a drag highlights exactly the dragged cells", t.inverse(QUIT) == list(range(7, 16)), str(t.inverse(QUIT)))
+t.drag((LEAVE, QUIT), (LEAVE + 8, QUIT))
+check("a drag highlights exactly the dragged cells", t.inverse(QUIT) == list(range(LEAVE, LEAVE + 9)), str(t.inverse(QUIT)))
 check("and copies exactly that text over OSC 52", t.copies()[before:] == ["Leave ask"], str(t.copies()[before:]))
 
 before = len(t.copies())
-t.drag((3, FOLLOW), (7, QUIT))
+t.drag((MARGIN + 3, FOLLOW), (LEAVE, QUIT))
+following = t.lines()[FOLLOW][MARGIN : MARGIN + 4]
 check(
     "a drag backwards across two rows reads them in order, the grapheme under the press included",
-    t.copies()[before:] == ["Leave ask, stopping a running turn first.\n/fol"],
+    t.copies()[before:] == ["Leave ask, stopping a running turn first.\n" + following],
     str(t.copies()[before:]),
 )
 
-t.click(50, 25)
+t.click(50, 2)
 check("a click clears the selection", t.inverse(QUIT) == [] and t.inverse(FOLLOW) == [])
 
 before = len(t.copies())
 for _ in range(2):
-    t.click(9, QUIT)
+    t.click(LEAVE + 2, QUIT)
 t.pump(0.4)
 check("a double click copies the word", t.copies()[before:] == ["Leave"], str(t.copies()[before:]))
 before = len(t.copies())
 for _ in range(3):
-    t.click(9, QUIT)
+    t.click(LEAVE + 2, QUIT)
 t.pump(0.4)
 check(
     "a triple click copies the line",
@@ -161,13 +214,13 @@ check(
 )
 
 t.type("x")
-check("typing clears the selection and reaches the prompt", t.inverse(QUIT) == [] and t.lines()[ROWS - 1] == "ask> x")
+check("typing clears the selection and reaches the prompt", t.inverse(QUIT) == [] and t.prompt() == "x", repr(t.prompt()))
 t.close()
 
 t = with_help("WezTerm")
-t.drag((7, QUIT), (15, QUIT))
+t.drag((LEAVE, QUIT), (LEAVE + 8, QUIT))
 first = t.copies()
-t.drag((0, QUIT), (5, QUIT))
+t.drag((MARGIN, QUIT), (MARGIN + 5, QUIT))
 check(
     "WezTerm gets its first copy twice and the next once",
     first == ["Leave ask", "Leave ask"] and t.copies()[len(first) :] == ["/quit "],
@@ -176,40 +229,40 @@ check(
 t.close()
 
 t = with_help("ghostty", config="{ ui: { copyOnSelect: false } }")
-t.drag((7, QUIT), (15, QUIT))
-check("copy-on-select off keeps the highlight without copying", t.copies() == [] and t.inverse(QUIT) == list(range(7, 16)))
-check("the status explains keyboard copy", "ctrl+c copy" in t.lines()[ROWS - 2])
+t.drag((LEAVE, QUIT), (LEAVE + 8, QUIT))
+check(
+    "copy-on-select off keeps the highlight without copying",
+    t.copies() == [] and t.inverse(QUIT) == list(range(LEAVE, LEAVE + 9)),
+    f"{t.copies()} {t.inverse(QUIT)}",
+)
+check("the status explains keyboard copy", "ctrl+c copy" in t.status(), t.status())
 t.type("\x03")
-check("Ctrl+C explicitly copies and consumes the selection", t.copies() == ["Leave ask"] and t.inverse(QUIT) == [])
-check("the status reports the terminal copy request", "Copy sent to terminal" in t.lines()[ROWS - 2])
+check("Ctrl+C explicitly copies and consumes the selection", t.copies() == ["Leave ask"] and t.inverse(QUIT) == [], str(t.copies()))
+# Only a copy that went wrong is announced (roadmap 0074): one that was sent says nothing.
+check("the status says nothing about a copy that worked", "opy" not in t.status(), t.status())
 t.type("x")
-check("copy did not quit the screen", t.lines()[ROWS - 1] == "ask> x")
+check("copy did not quit the screen", t.prompt() == "x", repr(t.prompt()))
 t.close()
 
 t = with_help("ghostty", config="{ ui: { mouse: false } }")
 check("ui.mouse false: the terminal is never asked for reports", b"\x1b[?1000h" not in bytes(t.raw))
-t.drag((7, QUIT), (15, QUIT))
+t.drag((LEAVE, QUIT), (LEAVE + 8, QUIT))
 check("ui.mouse false: a drag selects and copies nothing", t.copies() == [] and t.inverse(QUIT) == [])
 t.close()
 
 t = with_help("ghostty", helps=4)
-# Enough wheel turns to reach the start however many commands /help lists: each command adds a line to each of the four listings.
-for _ in range(14):
-    t.mouse(64, 40, 10)
-t.pump(0.5)
-t.repaint()
-rows = t.lines()
-check("the wheel scrolls back to the start of the conversation", rows[1].startswith("/help"), str(rows[:3]))
-known = (
-    "/help", "/help  ", "/quit  ", "/follow-up  ", "/tasks  ", "/sidebar  ", "/config  ", "/compact  ", "/new  ", "/model  ", "/resume  ", "/tree  ",
-    "/fork  ", "/mcp  ", "/reload  ")
-malformed = [row for row in rows[: ROWS - 2] if row and not row.startswith(known)]
+end = t.transcript()
+listing = set(found_listing)  # every row /help draws, the wrapped continuations included, read from the first screen
+wheel(t, 64)
+rows = t.transcript()
+check(
+    "the wheel scrolls back to the start of the conversation",
+    at_start(t) and rows[rows.index("/help") + 1].startswith("/help  "), str(rows[:3])
+)
+malformed = [row for row in rows if row not in listing and not row.startswith(NOTICE)]
 check("every row after the scroll is a whole line", malformed == [], str(malformed))
-for _ in range(20):
-    t.mouse(65, 40, 10, wait=0.03)
-t.pump(0.4)
-t.repaint()
-check("the wheel brings the end back", t.lines()[ROWS - 3].startswith("/reload  "), t.lines()[ROWS - 3])
+wheel(t, 65)
+check("the wheel brings the end back", t.transcript() == end, str(t.transcript()[-2:]))
 t.close()
 
 t = with_help("ghostty", helps=4)
@@ -225,18 +278,24 @@ t = with_help("ghostty", helps=4)
 before = len(t.copies())
 t.mouse(0, 5, 12, wait=0.1)
 t.mouse(32, 5, 0, wait=0.1)
-t.pump(2.5)  # the button is held still: a terminal reports no motion, so only the timer can scroll
+# The button is held still: a terminal reports no motion, so only the timer can scroll. Held until the start is in view (or 15 s).
+held_for = time.time()
+t.pump(1.0)
 check("a held drag shows no copy before release", t.copies()[before:] == [])
+while time.time() - held_for < 15 and not at_start(t):
+    t.pump(0.5)
+t.pump(0.5)
 t.mouse(0, 5, 0, release=True, wait=0.5)
 held = t.copies()[before:]
 check(
     "a drag held still at the top edge scrolls to the start and selects everything it passed",
-    len(held) == 1 and held[0].startswith("/help") and held[0].count("/quit") >= 3
+    len(held) == 1 and held[0].startswith(NOTICE) and held[0].count("/quit") >= 3
     and held[0].count("\n") >= brief[0].count("\n") + 8,
-    f"held lines={held[0].count(chr(10)) + 1 if held else 0} quits={held[0].count('/quit') if held else 0}; brief lines={brief[0].count(chr(10)) + 1}",
+    f"held lines={held[0].count(chr(10)) + 1 if held else 0} quits={held[0].count('/quit') if held else 0}; "
+    f"brief lines={brief[0].count(chr(10)) + 1}; {time.time() - held_for:.1f} s",
 )
 t.repaint()
-check("the screen is left scrolled to the start", t.lines()[1].startswith("/help"), str(t.lines()[:3]))
+check("the screen is left scrolled to the start", at_start(t), str(t.transcript()[:3]))
 t.close()
 
 print(f"\n{sum(results)} of {len(results)} checks passed")
