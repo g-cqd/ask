@@ -65,13 +65,12 @@ public struct ScreenComposer: Sendable {
 
     private var input = PromptLayout()
 
-    /// Every transcript item's wrapped lines, end to end, rebuilt from the first item whose revision changed.
-    var transcriptLines = LayoutCache<Line>()
+    /// Every transcript item's height, and the wrapped lines of those near the shown rows, rebuilt from the first item whose
+    /// revision changed.
+    var transcriptLines = WindowedLayout<Line>()
     /// The look those lines were laid out for.
     var blockStyle = BlockStyle.plain
     private var foldBlocks: [Int?] = []
-    /// Every item's hard lines, kept beside the wrapped lines so a selection can be read and highlighted.
-    var hardLines: [[String]] = []
     /// What each row of the buffer holds since the last frame, and the size it was composed at.
     private var shown: [Shown?] = []
     private var shownSize = (columns: -1, rows: -1)
@@ -157,16 +156,14 @@ public struct ScreenComposer: Sendable {
     ) -> (sidebar: Sidebar, map: RowMap<Int>, totalLines: Int) {
         let sidebar = Sidebar(state, columns: columns, rows: transcriptRows)
         let wrapColumns = sidebar.transcriptColumns(of: columns)
-        updateTranscriptLines(state.transcript, columns: wrapColumns, style: state.blocks)
-        let flat = transcriptLines.lines
-        let end = Swift.max(0, flat.count - state.scrollback)
-        let start = Swift.max(0, end - transcriptRows)
-        let visible = flat[start ..< end]
+        let visible = transcriptWindow(
+            state.transcript, columns: wrapColumns, style: state.blocks, rows: transcriptRows,
+            rowsFromEnd: state.scrollback)[...]
         let map = Self.provenance(of: visible, rows: rows, transcriptRows: transcriptRows)
         foldBlocks = Array(repeating: nil, count: transcriptRows - visible.count) + visible.map(\.foldBlock)
         var highlights = [Range<Int>?](repeating: nil, count: transcriptRows)
         if let selection = state.selection {
-            for span in map.highlights(of: selection, in: TranscriptContent(blocks: hardLines))
+            for span in map.highlights(of: selection, in: ShownTranscriptContent(transcript: state.transcript))
             where span.row < transcriptRows {
                 highlights[span.row] = span.startCol ..< span.endCol
             }
@@ -178,7 +175,7 @@ public struct ScreenComposer: Sendable {
                 line, highlight: highlights[row], side: sidebar.cells.isEmpty ? nil : sidebar.cells[row], row: row,
                 into: &buffer)
         }
-        return (sidebar, map, flat.count)
+        return (sidebar, map, transcriptLines.rowCount)
     }
 
     /// Writes a whole row, the text then blanks to the edge, unless the row already holds exactly this.

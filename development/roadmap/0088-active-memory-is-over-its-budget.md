@@ -94,3 +94,21 @@ transcript (step 2) lowers RSS only if the lines are never built, and the lazy l
 Not today: ask will not write its own HTTP request handling now. The `URLSession` transport stays; the `NWConnection` study above is the
 record of what building it would save (about 3.4 MiB resident) and what it would cost. Active memory remains over its budget until a
 different way is found or the owner revisits this.
+
+## Step 2, first half (2026-10-29): the transcript keeps heights, and lines near the window only
+
+TerminalKit 0023's `WindowedLayout` replaces `LayoutCache` in `ScreenComposer`: every item's row count is kept, and the wrapped lines of
+the items within two windows of the shown rows; the per-item hard lines held for the selection highlight are gone (the highlight only
+resolves which items a selection names, `ShownTranscriptContent` reads lines on demand). `Scripts/measure-long-session.py` measures it:
+release build, a copy of the owner's 12 MB session (5,564 entries), 120x40, against the previous binary run interleaved on a loaded machine.
+
+| | before | after |
+| --- | --- | --- |
+| resident size, open and quiet | 61.2 MiB | 54.9 MiB |
+| open (spawn to the quiet first frame) | 545-664 ms | 504-636 ms |
+| a new width, 120 to 100 columns | 302-354 ms | 225-254 ms |
+| a typed byte, a Page Up | under 1 ms | under 1 ms |
+| fresh screen, resident size | 14.3 MiB | 14.3 MiB |
+
+Every item is still laid out once to learn its height, so opening and a new width cost a full layout. Laying out only the last 50 items
+bounds what is left to gain here: 52.6 MiB and 258 ms to open. Next: heights found from the end on demand.
