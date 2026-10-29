@@ -65,8 +65,7 @@ public struct ScreenComposer: Sendable {
 
     private var input = PromptLayout()
 
-    /// Every transcript item's height, and the wrapped lines of those near the shown rows, rebuilt from the first item whose
-    /// revision changed.
+    /// The last transcript items' heights, as far up as the shown rows reach, and the wrapped lines of those near them.
     var transcriptLines = WindowedLayout<Line>()
     /// The look those lines were laid out for.
     var blockStyle = BlockStyle.plain

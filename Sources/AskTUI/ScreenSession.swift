@@ -99,8 +99,9 @@ final class ScreenSession {
                 input.escapeIsUnambiguous = terminal.escapeIsUnambiguous
                 return true
             case .input(let inputEvent):
-                // A click means what was drawn, so it is resolved against the newest frame.
-                if case .mouse = inputEvent { controller.frame = frames.load() }
+                // A click means what was drawn, and a Page key scrolls through the rows drawn, so every input is resolved against
+                // the newest frame: a key that came first after a resume met an empty one and PageUp did not move.
+                controller.frame = frames.load()
                 effects = controller.handle(inputEvent, pageRows: Swift.max(1, rows - 3), columns: columns)
             case .update(let update):
                 effects = controller.handle(update)

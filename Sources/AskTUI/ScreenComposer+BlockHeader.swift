@@ -58,7 +58,7 @@ extension ScreenComposer {
         let count =
             isWriteAck
             ? 0
-            : (lineCount ?? (output.isEmpty ? 0 : TranscriptContent.hardLines(of: output).count))
+            : (lineCount ?? (output.isEmpty ? 0 : TranscriptContent.hardLineCount(of: output)))
         if count > 0 {
             parts.append("\(count) \(count == 1 ? "line" : "lines")")
         }

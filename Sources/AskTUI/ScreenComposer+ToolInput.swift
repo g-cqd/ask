@@ -37,6 +37,6 @@ extension ScreenComposer {
                 : [Line(text: "", style: .default)]
                     + body(
                         of: output, block: block, width: width, inset: inset, style: Style(dim: true),
-                        firstLine: 1 + TranscriptContent.hardLines(of: input).count))
+                        firstLine: 1 + TranscriptContent.hardLineCount(of: input)))
     }
 }

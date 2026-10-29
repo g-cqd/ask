@@ -71,7 +71,7 @@ extension ScreenComposer {
             status: status, output: output, progress: context.progress, localizedDurations: style.localizedDurations,
             toolName: name)
         let lead = Transcript.Item.commandHeader(name: name, parameters: parameters, command: "", folded: false).count
-        let commandLines = TranscriptContent.hardLines(of: header).count
+        let commandLines = TranscriptContent.hardLineCount(of: header)
         return openBlock(header, metadata: metadata, item: item, block: block, width: width, inset: inset)
             .map { brightened($0, block: block, lead: lead, commandLines: commandLines) }
     }
@@ -107,6 +107,6 @@ extension ScreenComposer {
         return lines + [Line(text: "", style: .default)]
             + body(
                 of: output, block: block, width: width, inset: inset, style: Style(dim: true),
-                firstLine: TranscriptContent.hardLines(of: header).count)
+                firstLine: TranscriptContent.hardLineCount(of: header))
     }
 }
