@@ -187,3 +187,9 @@ prevents another ask; an editor can still) is detected by the id check and falls
 old tool result is opened (under 1 ms for the largest, 1 MB line limit) or when the leaf moves to before a compaction. About a session of
 work; the owner's go-ahead is the remaining step.
 
+
+## Owner decision (2026-10-29, payloads on disk)
+
+Proceed **only if it does not introduce lag when session screens load**. Opening/resuming, paging to old blocks, expanding them, checkout,
+fork and resize must be measured against the current implementation. The source-design estimates above are not measured guarantees;
+use a bounded cache or revise the design if synchronous disk reads move input/action or screen-loading latency significantly.
