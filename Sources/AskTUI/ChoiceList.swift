@@ -2,4 +2,6 @@
 struct ChoiceList: Sendable, Equatable {
     let rows: [ChoiceRow]
     let at: ContinuousClock.Instant
+    /// Whether something that can change the list has happened since it arrived: it is still shown, and asked for again.
+    var stale = false
 }

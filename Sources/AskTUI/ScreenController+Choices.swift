@@ -34,7 +34,7 @@ extension ScreenController {
         }
         var effects: [Effect] = []
         let held = state.choices[command.name]
-        if held.map({ now - $0.at > Self.choicesMaxAge }) ?? true, !asking.contains(command.name) {
+        if held.map({ $0.stale || now - $0.at > Self.choicesMaxAge }) ?? true, !asking.contains(command.name) {
             asking.insert(command.name)
             effects = [.listChoices(command: command.name)]
         }
@@ -66,6 +66,13 @@ extension ScreenController {
         guard pickerScreenRows >= Self.pickerMinimumRows, let found = choiceTrigger(), found.command.name == command
         else { return [] }
         return refreshChoicePicker(found.command, found.trigger, screenRows: pickerScreenRows, at: .now)
+    }
+
+    /// A finished prompt or command can change any list (`/tree` gains a prompt, `/resume` a session, `/logout` an account): each is asked
+    /// for again the next time it opens, and shown as it was until the answer comes.
+    mutating func markChoicesStale() {
+        for name in state.choices.keys { state.choices[name]?.stale = true }
+        asking.removeAll()
     }
 
     /// Runs the command a chosen row stands for: the draft is cleared, the line is shown as if it had been typed, and the command starts.

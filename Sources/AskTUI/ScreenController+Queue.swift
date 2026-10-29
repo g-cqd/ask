@@ -35,6 +35,7 @@ extension ScreenController {
     }
 
     mutating func endRun() -> [Effect] {
+        markChoicesStale()
         state.running = false
         state.abortArmedAt = nil
         state.abortArmedAction = nil

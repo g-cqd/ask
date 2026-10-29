@@ -108,6 +108,27 @@ struct ChoicePickerControllerTests {
         #expect(type("c", into: &screen) == [.listChoices(command: "model")])
     }
 
+    /// A prompt or a command can change a list: `/tree` gains the prompt just sent, `/resume` the session, `/logout` the account. The probe
+    /// found `/tree` still offering two prompts after a third was sent (roadmap 0131): the held list was under 30 s old.
+    @Test func `a list held across a finished run is asked for again, and shown meanwhile`() {
+        var screen = ScreenController(
+            label: "m", commands: [SlashCommand(name: "tree", summary: "Go back.", takesChoices: true)])
+        screen.setScreenRows(30)
+        screen.handle(.choices(command: "tree", rows: [ChoiceRow(label: "1", detail: "first", arguments: "1")]))
+        screen.handle(.runEnded)
+        #expect(type("/tree ", into: &screen) == [.listChoices(command: "tree")])
+        #expect(labels(screen) == ["1"])
+        screen.handle(
+            .choices(
+                command: "tree",
+                rows: [
+                    ChoiceRow(label: "2", detail: "second", arguments: "2"),
+                    ChoiceRow(label: "1", detail: "first", arguments: "1")
+                ]))
+        #expect(labels(screen) == ["2", "1"])
+        #expect(type("x", into: &screen).isEmpty, "fresh again until the next run ends")
+    }
+
     @Test func `a row that needs more words is written in the draft, and the list stays closed`() {
         var screen = ScreenController(
             label: "m", commands: [SlashCommand(name: "login", summary: "Sign in.", takesChoices: true)])

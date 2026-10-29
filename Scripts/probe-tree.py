@@ -34,6 +34,24 @@ def send(session, text, expect):
     terminal.until(lambda: expect in terminal.text())
 
 
+def picker_rows(session):
+    """Opens the `/tree` picker and returns its rows with the spacing collapsed ("3 ● second question · branch after 1"), then closes it
+    and clears the draft."""
+    terminal = session.terminal
+    send(session, "/tree", "tree \u00b7")
+    terminal.until(lambda: "looking" not in terminal.text())
+    shown = rows(terminal)
+    top = next(index for index, line in enumerate(shown) if line.startswith("tree \u00b7"))
+    found = []
+    for line in shown[top + 1:]:
+        if not line or not line[0].isdigit():
+            break
+        found.append(" ".join(line.split()))
+    press(terminal, b"\x1b")
+    press(terminal, b"\x18")
+    return found
+
+
 def texts(body):
     out = []
     for message in body["messages"]:
@@ -57,9 +75,8 @@ def main():
         send(session, "first question", "ANSWER ONE")
         send(session, "second question", "ANSWER TWO")
 
-        send(session, "/tree", "> 2  second question")
-        shown = screen(terminal)
-        check("a listing numbers the prompts and marks the path", "> 1  first question" in shown and "> 2  second question" in shown)
+        listed = picker_rows(session)
+        check("the picker lists the prompts newest first and marks the path", listed == ["2 ● second question", "1 ● first question"])
 
         send(session, "/tree 2", "Went back to before prompt 2")
         shown = screen(terminal)
@@ -76,10 +93,10 @@ def main():
               said[-3:] == ["first question", "ANSWER ONE", "second question but shorter"]
               and "ANSWER TWO" not in said and "second question" not in said and session.requests() == before + 1)
 
-        send(session, "/tree", "(branch after 1)")
-        shown = screen(terminal)
-        check("the listing now shows the branch, and the set-aside turn off the path",
-              "  2  second question" in shown and "> 3  second question but shorter  (branch after 1)" in shown)
+        # The list was held from the first opening, under 30 s before: a finished turn must make it be asked for again.
+        listed = picker_rows(session)
+        check("the picker now shows the branch, and the set-aside turn off the path",
+              listed == ["3 ● second question but shorter · branch after 1", "2 second question", "1 ● first question"])
 
         send_command = "/tree 1"
         type_text(terminal, send_command)
