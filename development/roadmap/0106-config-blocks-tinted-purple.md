@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -43,3 +43,13 @@ relates to the yellow of the debug mode (0107); whether errors from ask stay red
 
 Ready to build: a transcript kind for ask's own messages, a `system` tint in `ScreenTheme` that keeps the contrast test, text in the
 terminal's foreground.
+
+## Result (2026-10-29)
+
+Built to the owner's four answers. Every notice that is not an error is a purple block: the whole block, padding rows to the edge, tinted
+from the page like the others (`ScreenTheme.system`, a 11% mix of purple that keeps at least 87% of each profile's own contrast and sits
+15 units of red-over-green away from the user's blue on light, dark and Solarized pages); text in the terminal's foreground. Errors stay red
+and untinted; `ui.tint: off` removes it with the rest. Because notices are all ask speaking, no new transcript kind was needed. Like the
+user's and the tool blocks, consecutive ones are set apart by a blank row, which made the `/help` block one row taller. Tests:
+`SystemBlockTests`, and the contrast test covers the new tint. Real binary: `Scripts/probe-system-block.py`.
+
