@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -48,3 +48,12 @@ it behind `ui.markdown` with the three ADRs written.
   different licence than the package's.
 - TerminalKit's features are consolidated first (the palette and theme, scroll state, the closing of 0016 to 0019, the markdown renderer's
   place), then AemiMarkdown is finished.
+
+## Result (2026-10-29)
+
+- AemiMarkdown at `2e75a94` (README `96c5903`): 652/652 CommonMark and 30/30 GFM examples, ratchet empty; release suites pass; deadwood, dolly
+  and arcleak clean; DocC with tested examples, built with warnings as errors; the fixtures' licences listed in the README. The differences
+  from cmark and cmark-gfm on random inputs are classified, none owed (its diary 2026-10-29).
+- ask renders through it behind `ui.markdown` (`2d6bb5c`). The ADRs: copy semantics and link safety in ADR-0129 with TerminalKit ADR 0030
+  (amended) and 0033; the pin in ADR-0129. Highlighting in fences stays 0065 phase 5 and 0087.
+
