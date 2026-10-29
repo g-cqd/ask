@@ -69,3 +69,5 @@ the work above touches them.
 6. The decision items (0113, 0118), then 0127, 0110, 0111.
 7. Then 0116 with 0117.
 8. Investigations: 0115, 0107, 0121.
+
+**Superseded in part by `aemimarkdown-terminalkit-and-the-schedule-2026-10.md` (2026-10-29), which holds the current schedule.**
