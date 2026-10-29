@@ -19,6 +19,8 @@ extension ConfigurationFile {
                     "ui.markdown", "ui.localizedDurations", "ui.jobAutoReturnWhenFocused",
                     "ui.abortTurnRequiresConfirmation", "ui.escapeInterruptRequiresConfirmation", "ui.onlyUsefulModels":
                     "is \"\(value)\": use \"on\" or \"off\""
+                case "ui.timeout": "is \"\(value)\": use \"auto\", \"always\" or \"never\""
+                case "ui.timeoutLabel": "must be 1 to 8 characters, with no control characters"
                 case "ui.interruptKeys": "is \"\(value)\": use \"esc\", \"ctrl-c\" or \"both\""
                 case "compactAt": "is \(value): use \(CompactionThreshold.expected)"
                 case "ui.interruptSendsQueued": "is \"\(value)\": use \"none\", \"next\" or \"all\""

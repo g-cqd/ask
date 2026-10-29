@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -30,3 +30,11 @@ Two typed settings, in the spirit of 0118 (an enum and a bounded string, no free
   `⏱` or `t`. A bounded string rather than a template, so it stays checkable.
 
 The yield limit follows the same two keys. To be confirmed with the owner before it is built.
+
+## Done (2026-10-29)
+
+Approved as proposed and built: `ui.timeout` (`auto`, `always`, `never`; `auto` hides a timeout equal to the shell tool's 120 s default,
+and the yield is written unless `never`) and `ui.timeoutLabel` (1 to 8 characters, no control or format characters; the screen also cuts
+it to 8 cells, so a wide character fits). Tests in `TimeoutDisplayTests` and `TimeoutConfigurationTests`; mutations (auto writing the
+default, the label check accepting a newline) turned them red. `Scripts/probe-command-header.py` through the release binary: a 300 s
+timeout is written, a 120 s one is not. Changes apply to blocks started after a configuration is loaded, as for `ui.localizedDurations`.

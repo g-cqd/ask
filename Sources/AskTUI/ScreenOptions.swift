@@ -53,6 +53,10 @@ public struct ScreenOptions: Sendable, Equatable {
     public var escapeInterruptRequiresConfirmation: Bool
     /// What happens to queued messages after an interruption (`ui.interruptSendsQueued`).
     public var interruptSendsQueued: QueuedAfterInterrupt
+    /// When a command's timeout is written in its header (`ui.timeout`).
+    public var timeoutDisplay = TimeoutDisplay.auto
+    /// The word in front of a command's timeout (`ui.timeoutLabel`), drawn in at most 8 cells.
+    public var timeoutLabel = "timeout"
 
     /// The look before roadmap 0074: an `ask> ` prefix, no tint, no rule. What the screen's older tests were written against.
     public static let legacy = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)

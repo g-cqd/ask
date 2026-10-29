@@ -57,7 +57,8 @@ def main():
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
             file.write('{"ui":{"prompt":"ask> ","tools":"folded","tint":"off","separator":"off","padding":"off"}}')
-        server = agent.Server([tool_turn(LONG, timeout=120, blank_thinking=True), tool_turn(MULTI),
+        server = agent.Server([tool_turn(LONG, timeout=300, blank_thinking=True), tool_turn(MULTI),
+                               tool_turn("echo DEFAULT_LIMIT", timeout=120),
                                agent.turn([("text", "PROBE ANSWER")], "end_turn")])
         environment = agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty", LANG="en_US.UTF-8")
@@ -75,15 +76,17 @@ def main():
             if os.environ.get("PROBE_SHOW"):
                 print(terminal.text())
             check("blank thinking leaves no block", "Thinking..." not in terminal.text())
-            long_row = next(line for line in screen if "shell · timeout 2 min · : START" in line)
+            long_row = next(line for line in screen if "shell · timeout 5 min · : START" in line)
             check("the long command is one row, cut with … before the status", long_row.rstrip().endswith("✓")
                   and "…" in long_row and "ZZEND" not in terminal.text())
             check("nothing continues the folded command on the next row",
                   not screen[screen.index(long_row) + 1].startswith("xxxx"))
+            check("a timeout equal to the default is not written (ui.timeout auto)",
+                  any(line.startswith("shell · echo DEFAULT_LIMIT") for line in screen))
             check("without a timeout there is only the tool", any(line.startswith("shell · cd . …") for line in screen))
             for columns in (60, 140):
                 terminal.resize(columns, 30)
-                row = next(line for line in terminal.screen.display if "shell · timeout 2 min · : START" in line)
+                row = next(line for line in terminal.screen.display if "shell · timeout 5 min · : START" in line)
                 check(f"at {columns} columns the header fills its one row", len(row.rstrip()) == columns
                       and row.rstrip().endswith("✓"))
             terminal.draw(lambda: terminal.send(b"\x0f"))  # Ctrl+O: open every tool block

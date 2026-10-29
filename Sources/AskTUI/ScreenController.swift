@@ -106,6 +106,8 @@ public struct ScreenController: Sendable {
         state.transcript.setMarkdown(options.markdown)
         state.transcript.spinnerStyle = options.spinner
         state.transcript.localizedDurations = options.localizedDurations
+        state.transcript.timeoutDisplay = options.timeoutDisplay
+        state.transcript.timeoutLabel = options.timeoutLabel
         state.transcript.home = options.home
         state.promptRows = options.promptRows
         state.sidebarOpen = options.sidebar

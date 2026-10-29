@@ -1,6 +1,7 @@
 internal import AskAI
 internal import AskAgentCore
 internal import AskTUI
+internal import AskTools
 
 extension AgentConversation {
     /// What the screen shows for one loop event: nothing, or one update, or two when a connection drops.
@@ -34,7 +35,8 @@ extension AgentConversation {
                     command: ToolSummary.commandLimits(for: input)
                         .map {
                             ToolCommand(
-                                timeout: $0.timeout.map(Duration.seconds), yield: $0.yield.map(Duration.seconds))
+                                timeout: $0.timeout.map(Duration.seconds), yield: $0.yield.map(Duration.seconds),
+                                defaultTimeout: .seconds(BashTool.defaultTimeout))
                         })
             case .toolFinished(let id, _, let output):
                 let last = output.content.split(separator: "\n").last.map(String.init) ?? ""
