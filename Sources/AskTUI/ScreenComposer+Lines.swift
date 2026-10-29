@@ -18,10 +18,6 @@ extension ScreenComposer {
                 for index in result.indices where !(style.padded && spacerAbove && index == 0) {
                     result[index].foldBlock = block
                 }
-                if case .tool = item {
-                    // Once per layout of the block, not per frame; the row cache then redraws only what changed.
-                    for index in result.indices { result[index].links = PathLinks.links(in: result[index].text) }
-                }
             default: break
         }
         return result
@@ -31,6 +27,9 @@ extension ScreenComposer {
     static func framed(
         _ content: [Line], kind: Transcript.Item, style: BlockStyle, spacerAbove: Bool, interrupted: Bool = false
     ) -> [Line] {
+        // Paths, web and email addresses become links in every block (roadmap 0075), beside a Markdown row's own links. Once per layout
+        // of the block, not per frame; the row cache then redraws only what changed.
+        let content = content.map(Self.linked)
         guard style.padded else { return content }
         let tint = interrupted && style.theme.tinted ? style.theme.interrupted : style.theme.tint(for: kind)
         func tinted(_ line: Line) -> Line {
@@ -40,6 +39,19 @@ extension ScreenComposer {
         }
         let padding = Line(text: "", style: Style(bg: tint))
         return (spacerAbove ? [Line(text: "", style: .default)] : []) + [padding] + content.map(tinted) + [padding]
+    }
+
+    /// `line` with the paths and addresses in its text linked, where no link of its own already is.
+    static func linked(_ line: Line) -> Line {
+        guard line.text.contains("/") || line.text.contains("@") || line.text.contains(":") else { return line }
+        let found = PathLinks.links(in: line.text)
+            .filter { link in
+                !line.links.contains { $0.columns.overlaps(link.columns) }
+            }
+        guard !found.isEmpty else { return line }
+        var line = line
+        line.links = (line.links + found).sorted { $0.columns.lowerBound < $1.columns.lowerBound }
+        return line
     }
 
     /// Whether the item is one of the kinds set apart by a blank row from a neighbour of the same sort.

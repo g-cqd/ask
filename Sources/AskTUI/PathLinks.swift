@@ -24,6 +24,17 @@ enum PathLinks {
     ///   - home: what `~` means.
     /// - Returns: the links, left to right.
     static func links(in text: String, home: String = NSHomeDirectory()) -> [Link] {
+        let paths = pathLinks(in: text, home: home)
+        guard text.contains(":") || text.contains("@") else { return paths }
+        let addresses = AddressLinks.links(in: text)
+            .filter { found in
+                !paths.contains { $0.columns.overlaps(found.columns) }
+            }
+        return (paths + addresses).sorted { $0.columns.lowerBound < $1.columns.lowerBound }
+    }
+
+    /// The `/…` and `~/…` paths in one row.
+    private static func pathLinks(in text: String, home: String) -> [Link] {
         guard text.contains("/") else { return [] }
         let characters = Array(text)
         var result: [Link] = []
