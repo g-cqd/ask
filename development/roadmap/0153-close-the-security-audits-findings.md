@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: []
+blocked-by: [0116, 0134]
 date: 2026-10-29
 ---
 
@@ -10,16 +10,25 @@ The owner asked for a full review of the security posture (2026-10-29). `develop
 report; the validated `findings.json` and `coverage-ledger.json` are in `~/security-audits/ask/run-1`. The run was `quick` and partial:
 one agent, no independent verifier.
 
+## How the refinements behave (owner, 2026-10-29)
+
+The sandbox refinements below are not plain denials: a call that reaches a protected path, a credential store, or the network beyond the
+default goes behind **call approval with the confirmation tool** (0116's picker as the confirmation step, 0134's approval system), and
+each protected set and default is **tunable in the configuration** (documented in `docs/configuration.md`, the person's own file only, as
+`sandbox` already is). A model's command asks; the person decides once, for the session, or in config.
+
 ## The findings, each to be fixed test first
 
 1. **High: by default a command can plant code that later runs outside the sandbox.** Protect, for writes, every path that runs or is
    loaded later outside ask (launch agents and daemons, login items, shell startup files, all of `~/.ssh`, git hooks and the executable
-   keys of `.git/config`, `~/.config/git`, crontab, ask's own executable); a write there asks the person. Decide whether the default write
+   keys of `.git/config`, `~/.config/git`, crontab, ask's own executable); a write there asks the person through the confirmation
+   tool, and the list is tunable in config. Decide whether the default write
    scope becomes the workspace.
 2. **High: other tools' credentials are readable and the network is open by default.** Extend the protected reads to known credential
-   stores (gh, docker, kube, npm, pypi, gcloud, azure, git-credentials, other agents' tokens, browser profiles); decide the default
-   network (localhost, or asking for the first outbound host of a session, with 0021).
-3. **High: under `--write workspace`, git hooks can still be written.** Deny `.git/hooks` and `.git/config` writes in every mode.
+   stores (gh, docker, kube, npm, pypi, gcloud, azure, git-credentials, other agents' tokens, browser profiles), a read there asking
+   for approval, the list tunable in config; decide the default network (localhost, or asking for the first outbound host of a session, with 0021).
+3. **High: under `--write workspace`, git hooks can still be written.** `.git/hooks` and `.git/config` writes ask for approval in every
+   mode, tunable in config.
 4. **Medium: an MCP tool without annotations runs without approval.** Approve unless `readOnlyHint == true` or the person allowed the
    tool; the start of 0134.
 5. **Needs validation: `ask -p` writes control sequences to a terminal.** Check the owner's terminal; strip C0/C1 controls from text
