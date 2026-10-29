@@ -38,6 +38,7 @@ extension RunSettings {
             foldThinking: options.foldThinking, scrollLines: options.scrollLines, promptRows: options.promptRows,
             foldCode: options.foldCode, codeFoldLines: options.codeFoldLines, sidebarOpen: options.sidebar,
             prompt: options.prompt, tint: options.tint, separator: options.separator, padding: options.padding,
+            markdown: options.markdown,
             localizedDurations: options.localizedDurations,
             spinner: SpinnerPreference(rawValue: options.spinner.rawValue),
             jobAutoReturnWhenFocused: options.jobAutoReturnWhenFocused,

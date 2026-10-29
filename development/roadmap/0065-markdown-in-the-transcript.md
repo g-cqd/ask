@@ -125,6 +125,9 @@ Phase 0 measures it on the real corpus as the number to beat, and the differenti
      wants one. Off draws what ask draws today, byte for byte (a characterisation test written **before** the change, red against any drift).
    - *Non-terminals:* `ask -p` and a pipe stay raw.
    - *Streaming:* the open block is drawn as plain text until it closes, or its tail is styled, whichever phase 0's measurements show does not flicker.
+   - *As built (2026-10-29, ADR-0129):* on by default, `ui.markdown` switches it; off is byte for byte the old drawing. Streaming re-parses
+     the whole reply per delta (0.75 ms at 9 KB) rather than drawing the open block plain. No command-line or `/` toggle yet. Copy is the
+     source through TerminalKit's row segments. Not checked in a real terminal yet: the look, and OSC 8 click and hover.
 5. **Highlighted code.** Atelier's lexers, promoted out of the app repository, colour a fenced block by its info string, resuming per line, with a plain fallback for an
    unknown or absent language.
 

@@ -51,7 +51,7 @@ extension ConfigurationFile {
                         }
                         section.spinner = preference
                     // @dl:accept -- on/off keys decoded like the folded/open ones beside them; the key tables are the data
-                    case "mouse", "copyOnSelect", "tint", "separator", "padding", "localizedDurations",
+                    case "mouse", "copyOnSelect", "tint", "separator", "padding", "markdown", "localizedDurations",
                         "jobAutoReturnWhenFocused",
                         // @dl:accept -- a key table decoded by the shared walk; the keys are the data
                         "abortTurnRequiresConfirmation",
@@ -64,6 +64,7 @@ extension ConfigurationFile {
                             case "tint": section.tint = name == "on"
                             case "separator": section.separator = name == "on"
                             case "padding": section.padding = name == "on"
+                            case "markdown": section.markdown = on
                             case "localizedDurations": section.localizedDurations = name == "on"
                             case "jobAutoReturnWhenFocused": section.jobAutoReturnWhenFocused = name == "on"
                             case "abortTurnRequiresConfirmation": section.abortTurnRequiresConfirmation = name == "on"
