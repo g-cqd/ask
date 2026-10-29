@@ -137,3 +137,10 @@ replay. Context 7.2k to 10.2k tokens. Every response uses allowed five_hour quot
 The original extra-usage refusal is not reproduced; original long-context replay is not yet performed or assumed cheap. Research note has
 counts, sizes and remaining variables. Next: obtain the failing process's effective settings and bounded request metadata; any historical
 reconstruction is approximate without its tool/config snapshots.
+
+## /tree is the reported trigger
+
+Owner reports the refusal follows /tree checkout. Local full-log checkout to 6485 versus historical-prefix reconstruction yields identical
+encoded context, before and after an identical new prompt. No future-branch leakage established. Current runtime settings persist across
+checkout, so historical settings mismatch remains a variable. Two-request small-lab live checkout test prepared in `Ask tree lab`, resuming
+only the successful small session. No original-session inference or reauthentication. Research note records limits; outcome pending.
