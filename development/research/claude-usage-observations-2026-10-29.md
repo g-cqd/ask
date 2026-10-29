@@ -216,3 +216,37 @@ Two earlier large requests (about 1.61 MB) were blocked locally while budget zer
 with this upstream result. Preserve this failing fixture; no blind resubmission. Next use local request comparisons and a bounded,
 explicitly scoped ablation to separate retained context size, signature history, and the selected branch/settings. Large-prefix tests may
 consume significant quota even with a short output; do not promise a cost from JSON byte count alone.
+
+## Causal trigger isolated: tool names mcp_search and mcp_call
+
+Controlled ablations on the failing historical context (Opus, medium thinking, max_tokens 16384):
+
+| Tool definitions included with the 5 built-in tools | Status | Unified overage header |
+| --- | --- | --- |
+| skill only | 200 | rejected (allowed subscription quota, five_hour) |
+| skill + mcp_search + mcp_call | 400 | org_level_disabled (out of extra usage) |
+| mcp_search + mcp_call (without skill) | 400 | org_level_disabled (out of extra usage) |
+| mcp_search alone | 400 | org_level_disabled (out of extra usage) |
+| mcp_call alone | 400 | org_level_disabled (out of extra usage) |
+
+Then on a 1-message, 512-token synthetic request:
+
+| Tool definitions | Status | Result |
+| --- | --- | --- |
+| 5 built-in + skill | 200 | allowed subscription quota |
+| + mcp_search (original name and description) | 400 | out of extra usage |
+| + mcp_call (original name and description) | 400 | out of extra usage |
+| + search_catalog (renamed, original description) | 200 | allowed subscription quota |
+| + dispatch_call (renamed, original description) | 200 | allowed subscription quota |
+| + search_catalog (renamed, generic description) | 200 | allowed subscription quota |
+| + dispatch_call (renamed, generic description) | 200 | allowed subscription quota |
+| + mcp_search (original name, generic description) | 400 | out of extra usage |
+| + mcp_call (original name, generic description) | 400 | out of extra usage |
+
+Renaming the tool while keeping its schema and description succeeds under subscription quota. Keeping the name `mcp_search` or
+`mcp_call` with a simplified generic description is refused. Both tool names produce the same result independently.
+
+This explains why /tree was the reported moment of failure: the session had no MCP servers configured in its earlier history. Adding
+the owner's apple-docs, Xcode, LLDB and REA servers introduced searchable MCP exposure. The first request made after that configuration
+change was the /tree checkout. The trigger is the presence of those tool names under this OAuth grant, not checkout or context length.
+All lab proxy processes were terminated cleanly after these measurements.
