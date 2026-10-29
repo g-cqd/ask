@@ -48,7 +48,15 @@ extension ScreenController {
         }
         let ranked = PickerRanking.rank(held.rows, query: trigger.query)
         guard !ranked.isEmpty else {
+            // Typing that matches nothing closes the list, so Enter runs what was typed. A list with nothing in it says so instead of
+            // vanishing; Enter then runs the bare command, which says why (`/resume`: no sessions yet).
             state.picker = nil
+            if held.rows.isEmpty, trigger.query.isEmpty {
+                install(
+                    CompletionPicker(
+                        kind: .choices(title: command.name), trigger: trigger, matches: [], capacity: capacity,
+                        caption: "nothing to choose"))
+            }
             return effects
         }
         install(

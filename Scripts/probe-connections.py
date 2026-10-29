@@ -66,8 +66,8 @@ run(['--provider', 'work', '--self-check'], 0, lambda s: 'self-check ok' in s)
 run(['connections', 'rename', 'work', 'employer'], 0)
 assert json.loads(work_path.read_text())['connection']['id'].lower() == work['id'].lower()
 run(['connections', 'rename', 'employer', 'work'], 0)
-run(['login', 'codex', '--name', 'groq'], 1, lambda s: 'already belongs' in s)
-run(['login', 'codex', '--name', '../escape'], 1, lambda s: '1–64' in s)
+run(['login', 'codex', '--name', 'groq'], 77, lambda s: 'already belongs' in s)  # a failed sign-in is EX_NOPERM
+run(['login', 'codex', '--name', '../escape'], 77, lambda s: '1–64' in s)
 
 # --- aliases and the default ---------------------------------------------------------------------------------------------
 run(['connections', 'alias', 'work', 'fast', 'gpt-6-luna', '--context', '8000'], 0, lambda s: 'work/fast is gpt-6-luna' in s)
@@ -81,11 +81,12 @@ aliases = json.loads((work_dir / 'aliases.json').read_text())
 assert aliases['aliases']['fast']['model'] == 'gpt-6-sol' and 'default' not in aliases, aliases
 assert oct((work_dir / 'aliases.json').stat().st_mode & 0o777) == '0o600'
 sign_out_fixture(work_path)  # from here a request stops locally, before any network
-run(['--provider', 'work', '--model', 'deep', '--print', 'x'], 77,
+# Which model an alias stands for is a detail, said with --verbose (ADR-0119).
+run(['--provider', 'work', '--model', 'deep', '--verbose', '--print', 'x'], 77,
     lambda s: 'Using work/deep, which is gpt-6-sol.' in s and 'ask login codex --name work' in s)
 run(['connections', 'default', 'work', 'fast'], 0)
-run(['--provider', 'work', '--print', 'x'], 77, lambda s: 'Using work/fast, which is gpt-6-sol.' in s)
-run(['--provider', 'work', '--model', 'gpt-9-unlisted', '--print', 'x'], 77, lambda s: 'Using work/' not in s)
+run(['--provider', 'work', '--verbose', '--print', 'x'], 77, lambda s: 'Using work/fast, which is gpt-6-sol.' in s)
+run(['--provider', 'work', '--model', 'gpt-9-unlisted', '--verbose', '--print', 'x'], 77, lambda s: 'Using work/' not in s)
 run(['connections', 'unalias', 'work', 'fast'], 1, lambda s: 'is the default model' in s)
 run(['connections', 'default', 'work', '--clear'], 0)
 run(['connections', 'unalias', 'work', 'fast'], 0)
@@ -121,7 +122,7 @@ print('PASS with no level left the file is version 1 again', flush=True)
 # --- a rename keeps the aliases; a damaged file refuses a run that relies on it, not one that names a model ---------------
 run(['connections', 'default', 'work', 'deep'], 0)
 run(['connections', 'rename', 'work', 'employer'], 0)
-run(['--provider', 'employer', '--print', 'x'], 77, lambda s: 'Using employer/deep, which is gpt-6-sol.' in s)
+run(['--provider', 'employer', '--verbose', '--print', 'x'], 77, lambda s: 'Using employer/deep, which is gpt-6-sol.' in s)
 (work_dir / 'aliases.json').write_text('{broken')
 run(['--provider', 'employer', '--print', 'x'], 78, lambda s: 'not a valid alias file' in s)
 run(['--provider', 'employer', '--model', 'gpt-6-sol', '--print', 'x'], 77, lambda s: 'Aliases not used' in s)

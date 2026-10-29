@@ -129,6 +129,19 @@ struct ChoicePickerControllerTests {
         #expect(type("x", into: &screen).isEmpty, "fresh again until the next run ends")
     }
 
+    /// The probe found `/resume` in a project with no sessions doing nothing at all: the empty list closed the picker, and Enter only opened
+    /// it again (roadmap 0131).
+    @Test func `an empty list says there is nothing to choose, and Enter then runs the bare command`() {
+        var screen = ScreenController(
+            label: "m", commands: [SlashCommand(name: "resume", summary: "Choose a session.", takesChoices: true)])
+        screen.setScreenRows(30)
+        type("/resume", into: &screen)
+        #expect(press(Key.enter.rawValue, into: &screen) == [.listChoices(command: "resume")])
+        screen.handle(.choices(command: "resume", rows: []))
+        #expect(screen.state.picker?.matches.isEmpty == true && screen.state.picker?.caption == "nothing to choose")
+        #expect(press(Key.enter.rawValue, into: &screen) == [.runCommand(name: "resume", arguments: "")])
+    }
+
     @Test func `a row that needs more words is written in the draft, and the list stays closed`() {
         var screen = ScreenController(
             label: "m", commands: [SlashCommand(name: "login", summary: "Sign in.", takesChoices: true)])

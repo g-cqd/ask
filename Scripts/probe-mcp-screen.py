@@ -95,7 +95,9 @@ def main():
 
         send(asking, "now zap", "tool zap")
         shown = screen(terminal)
-        check("a different marked tool is asked about", "zap" in shown and shown.count("Allow it?") == 2)
+        # The first question may have scrolled off this screen: what counts is that the one now pending is about zap.
+        pending = shown[shown.rindex("The MCP server"):] if "The MCP server" in shown else ""
+        check("a different marked tool is asked about", "tool zap" in pending and "Allow it?" in pending)
         press(terminal, b"n")
         terminal.until(lambda: "Done three." in terminal.text())
         shown = screen(terminal)

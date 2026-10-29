@@ -64,16 +64,19 @@ class Server:
 
 
 def environment(state, url, config=None):
-    """The run's environment. `config` is a directory standing in for ~/.config; none by default. HOME is an empty directory inside `state`,
-    so nothing of the machine's own home (skills, instructions, credentials) reaches the run: the picker probe listed the owner's skills."""
+    """The run's environment. `config` is a directory standing in for ~/.config; by default an empty one inside `state`, never the
+    machine's own: ask finds ~/.config through NSHomeDirectory(), which on macOS ignores HOME, so without XDG_CONFIG_HOME a probe read the
+    owner's credentials and model catalogs, and could refresh a real token. HOME is an empty directory inside `state` too, for the commands
+    the model runs."""
     home = os.path.join(state, "home")
     os.makedirs(home, exist_ok=True)
     env = dict(os.environ, ANTHROPIC_API_KEY="sk-ant-api-fake", ANTHROPIC_BASE_URL=url, XDG_STATE_HOME=state, HOME=home)
-    env.pop("XDG_CONFIG_HOME", None)
     for name in [n for n in env if n.startswith("ASK_")]:
         del env[name]
-    if config:
-        env["XDG_CONFIG_HOME"] = config
+    if not config:
+        config = os.path.join(state, "config")
+        os.makedirs(config, exist_ok=True)
+    env["XDG_CONFIG_HOME"] = config
     return env
 
 
@@ -106,7 +109,7 @@ def probe_round_trip():
         first, second = server.requests[0]["body"], server.requests[1]["body"]
         results.append(check("system is the canonical line", first["system"] == [{"type": "text", "text": CANONICAL}], first["system"]))
         results.append(check("prompt leads the first user message", "You are ask" in first["messages"][0]["content"][0]["text"]))
-        results.append(check("tools offered", [t["name"] for t in first["tools"] if t["name"] != "skill"] == ["read", "write", "edit", "bash", "wait", "job_input", "job_stop", "narrow_sandbox"]))
+        results.append(check("tools offered", [t["name"] for t in first["tools"] if t["name"] != "skill"] == ["read", "write", "bash", "job", "narrow_sandbox"]))
         last = second["messages"][-1]["content"][0]
         results.append(check("tool result sent back", last["type"] == "tool_result" and "probe-ok" in last["content"], last))
         results.append(check("user-agent is ask", server.requests[0]["headers"].get("user-agent") == "ask"))
@@ -318,10 +321,10 @@ def probe_jobs():
     project, state, port = tempfile.mkdtemp(), tempfile.mkdtemp(), free_port()
     server = Server([
         turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
-        turn([("call", "t2", "wait", {"job": "job-1", "port_open": port, "timeout_seconds": 20})], "tool_use"),
+        turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
         turn([("tool", "t3", f"curl -s http://127.0.0.1:{port}/ | head -c 200")], "tool_use"),
-        turn([("tool", "t4", "seq 1 1500000")], "tool_use"),
-        turn([("call", "t5", "job_stop", {"job": "job-1"})], "tool_use"),
+        turn([("tool", "t4", "awk 'BEGIN { for (n = 1; n <= 1500000; n++) print n }'")], "tool_use"),  # macOS seq prints 1.5e+06
+        turn([("call", "t5", "job", {"job": "job-1", "action": "stop"})], "tool_use"),
         turn([("text", "Done.")], "end_turn")])
     run = subprocess.run([ASK, "-p", "Serve, check, stop."], cwd=project, env=environment(state, server.url),
                          capture_output=True, text=True, timeout=120)
@@ -329,7 +332,7 @@ def probe_jobs():
     if len(server.requests) == 6:
         got = tool_results(server)
         results += [check("bash yielded the server as job-1", "still running as job-1 after 1 s" in got.get("t1", ""), got.get("t1")),
-                    check("wait saw the port open", f"[port {port} accepts connections]" in got.get("t2", ""), got.get("t2")),
+                    check("wait saw the port open", f"[job-1 port {port} accepts connections]" in got.get("t2", ""), got.get("t2")),
                     check("the server answered", "Directory listing" in got.get("t3", ""), got.get("t3")),
                     check("job_stop stopped it", got.get("t5", "").startswith("[job-1 stopped]"), got.get("t5"))]
         named = re.search(r"\[whole output in (.+?)\]", got.get("t4", ""))
@@ -348,13 +351,13 @@ def probe_jobs_end_with_ask():
     project, state, port = tempfile.mkdtemp(), tempfile.mkdtemp(), free_port()
     server = Server([
         turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
-        turn([("call", "t2", "wait", {"job": "job-1", "port_open": port, "timeout_seconds": 20})], "tool_use"),
+        turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
         turn([("text", "Left it running.")], "end_turn")])
     run = subprocess.run([ASK, "-p", "Serve and leave it."], cwd=project, env=environment(state, server.url),
                          capture_output=True, text=True, timeout=120)
     got = tool_results(server) if len(server.requests) == 3 else {}
     results = [check("exit 0", run.returncode == 0, run.stderr[-300:]),
-               check("the server was up during the run", f"[port {port} accepts connections]" in got.get("t2", ""), got),
+               check("the server was up during the run", f"[job-1 port {port} accepts connections]" in got.get("t2", ""), got),
                check("and is gone once ask has exited", not accepts(port))]
     server.httpd.shutdown()
     return all(results)
@@ -385,7 +388,7 @@ def probe_configuration():
 
     def requests_made(*arguments, **extra):
         before = len(server.requests)
-        run = ask("-p", "Loop.", *arguments, **extra)
+        run = ask("-p", "Loop.", "--verbose", *arguments, **extra)
         return len(server.requests) - before, run
 
     # JSON5 in a .json file: comments, unquoted keys, single quotes, trailing comma.
@@ -466,7 +469,7 @@ def probe_sandbox():
             turn([("text", "Done.")], "end_turn")])
         env = environment(state, server.url, config)
         env["HOME"] = home
-        process = subprocess.run([ASK, "-p", "Attack.", *arguments], cwd=project, env=env, capture_output=True,
+        process = subprocess.run([ASK, "--verbose", "-p", "Attack.", *arguments], cwd=project, env=env, capture_output=True,
                                  text=True, timeout=120)
         results = tool_results(server) if len(server.requests) == 8 else {}
         server.httpd.shutdown()
@@ -480,12 +483,12 @@ def probe_sandbox():
                check("write to config.json is refused, naming the path the model gave and nothing of the policy (ADR-0115)",
                      got.get("t1", "").startswith("Not permitted: ") and "config.json" in got.get("t1", "") and "protected" not in got.get("t1", ""), got.get("t1")),
                check("read of credentials.json is refused the same way", got.get("t2", "").startswith("Not permitted: ") and "SECRET" not in got.get("t2", ""), got.get("t2")),
-               check("bash cannot write the trust store", "Operation not permitted" in got.get("t3", ""), got.get("t3")),
-               check("nor read the credentials", "Operation not permitted" in got.get("t4", "") and "SECRET" not in got.get("t4", ""), got.get("t4")),
-               check("nor another secret store", "Operation not permitted" in got.get("t5", "") and "AWS-SECRET" not in got.get("t5", ""), got.get("t5")),
+               check("bash cannot write the trust store", "operation not permitted" in got.get("t3", "").lower(), got.get("t3")),
+               check("nor read the credentials", "operation not permitted" in got.get("t4", "").lower() and "SECRET" not in got.get("t4", ""), got.get("t4")),
+               check("nor another secret store", "operation not permitted" in got.get("t5", "").lower() and "AWS-SECRET" not in got.get("t5", ""), got.get("t5")),
                check("a refused command carries the system's error and no note about a sandbox or its policy",
                      "ran in a sandbox" not in got.get("t4", "") and "Only the user" not in got.get("t4", "") and "protected" not in got.get("t4", ""), got.get("t4")),
-               check("renaming the config's parent away and back changes nothing", "Operation not permitted" in got.get("t6", ""), got.get("t6")),
+               check("renaming the config's parent away and back changes nothing", "operation not permitted" in got.get("t6", "").lower(), got.get("t6")),
                check("ordinary work still runs", got.get("t7", "").startswith("fine"), got.get("t7")),
                check("config.json is untouched", contents("config.json") == files["config.json"], contents("config.json")),
                check("trusted.json is untouched", contents("trusted.json") == files["trusted.json"], contents("trusted.json")),
@@ -531,8 +534,8 @@ def probe_sandbox_allowance():
     return all([check("the run finishes", run.returncode == 0 and len(got) == 3, f"{run.returncode} {run.stderr[-200:]}"),
                 check("the allowed secret store is readable", "AWS-SECRET" in got.get("t1", ""), got.get("t1")),
                 check("ask's own credentials still are not, though the list named them",
-                      "Operation not permitted" in got.get("t2", "") and "SECRET" not in got.get("t2", ""), got.get("t2")),
-                check("a directory the user asked to hide is hidden", "Operation not permitted" in got.get("t3", ""), got.get("t3")),
+                      "operation not permitted" in got.get("t2", "").lower() and "SECRET" not in got.get("t2", ""), got.get("t2")),
+                check("a directory the user asked to hide is hidden", "operation not permitted" in got.get("t3", "").lower(), got.get("t3")),
                 check("ask config shows the section and where it came from",
                       "allowRead" in shown.stdout and "denyRead" in shown.stdout and "sandbox   on" in shown.stdout, shown.stdout)])
 
@@ -620,7 +623,7 @@ def probe_strict_sandbox():
         reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo \" curl=$?\""
         calls_with_url = [c if c[2] != "REACH" else (c[0], c[1], reach) for c in calls]
         server.responses = [turn([c], "tool_use") for c in calls_with_url] + [turn([("text", "Done.")], "end_turn")]
-        process = subprocess.run([ASK, "-p", "Work.", *arguments], cwd=project, env=env, capture_output=True,
+        process = subprocess.run([ASK, "--verbose", "-p", "Work.", *arguments], cwd=project, env=env, capture_output=True,
                                  text=True, timeout=600)
         got = tool_results(server) if len(server.requests) == len(calls) + 1 else {}
         server.httpd.shutdown()
@@ -646,7 +649,7 @@ def probe_strict_sandbox():
         check("it says, at the start, that the sandbox is strict",
               "Sandbox: writes only under" in process.stderr and "network localhost" in process.stderr, process.stderr[:400]),
         check("writing in the workspace works", got.get("inside", "").startswith("in\n"), got.get("inside")),
-        check("bash cannot write outside it", "Operation not permitted" in got.get("outside", "") and not os.path.exists(outside), got.get("outside")),
+        check("bash cannot write outside it", "operation not permitted" in got.get("outside", "").lower() and not os.path.exists(outside), got.get("outside")),
         check("nor can the write tool, which says only that it is not permitted", got.get("tool", "").startswith("Not permitted: "), got.get("tool")),
         check("temporary directories stay writable", got.get("scratch", "").startswith("tmp\n"), got.get("scratch")),
         check("localhost is reachable", "HTTP 200 curl=0" in got.get("reach", ""), got.get("reach")),
@@ -669,7 +672,7 @@ def probe_strict_sandbox():
     os.close(slave)
     os.close(master)
     process, got = run(calls=[("tool", "outside", f"echo out > '{outside}'"), ("tool", "reach", "REACH")])
-    results += [check("a project cannot widen writing", "Operation not permitted" in got.get("outside", "") and not os.path.exists(outside), got.get("outside")),
+    results += [check("a project cannot widen writing", "operation not permitted" in got.get("outside", "").lower() and not os.path.exists(outside), got.get("outside")),
                 check("and the network stays the user's localhost", "HTTP 200 curl=0" in got.get("reach", ""), got.get("reach")),
                 check("and says the sandbox is still strict", "network localhost" in process.stderr, process.stderr[:400])]
     # Only the user widens: flags replace what the files say.
@@ -691,7 +694,7 @@ def probe_session_sandbox():
         target = Server([])
         reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo \" curl=$?\""
         server = Server([turn([("tool", "reach", reach)], "tool_use"), turn([("text", "Done.")], "end_turn")])
-        process = subprocess.run([ASK, "-p", "Reach.", *arguments], cwd=project, env=environment(state, server.url),
+        process = subprocess.run([ASK, "--verbose", "-p", "Reach.", *arguments], cwd=project, env=environment(state, server.url),
                                  capture_output=True, text=True, timeout=120)
         got = tool_results(server).get("reach", "") if len(server.requests) == 2 else ""
         server.httpd.shutdown()
@@ -747,7 +750,7 @@ def probe_read_allowlist():
         server = Server([turn([c], "tool_use") for c in calls] + [turn([("text", "Done.")], "end_turn")])
         env = environment(state, server.url, config)
         env["HOME"] = home
-        process = subprocess.run([ASK, "-p", "Work.", *arguments], cwd=project, env=env, capture_output=True,
+        process = subprocess.run([ASK, "--verbose", "-p", "Work.", *arguments], cwd=project, env=env, capture_output=True,
                                  text=True, timeout=600)
         got = tool_results(server) if len(server.requests) == len(calls) + 1 else {}
         server.httpd.shutdown()
@@ -766,7 +769,7 @@ def probe_read_allowlist():
             check("the run finishes", process.returncode == 0 and len(got) == 6, f"{process.returncode} {process.stderr[-300:]}"),
             check("it says reads are restricted", "reads only the workspace" in process.stderr, process.stderr[:500]),
             check("the workspace is readable", got.get("inside", "").startswith("workspace-text"), got.get("inside")),
-            check("the rest of the home is not, to bash", "Operation not permitted" in got.get("notes", "") and "PRIVATE" not in got.get("notes", ""), got.get("notes")),
+            check("the rest of the home is not, to bash", "operation not permitted" in got.get("notes", "").lower() and "PRIVATE" not in got.get("notes", ""), got.get("notes")),
             check("nor to the read tool, which says only that it is not permitted", got.get("tool", "").startswith("Not permitted: "), got.get("tool")),
             check("git commits, reading a config the global one includes", got.get("git", "").startswith("Included Name"), got.get("git")),
             check("localhost answers", "HTTP 200 curl=0" in got.get("reach", ""), got.get("reach")),
@@ -780,12 +783,12 @@ def probe_read_allowlist():
         os.close(slave)
         os.close(master)
         process, got = run(calls=[("tool", "notes", f"cat '{notes}'")])
-        results.append(check("a trusted project cannot widen reading", "PRIVATE" not in got.get("notes", "") and "Operation not permitted" in got.get("notes", ""), got.get("notes")))
+        results.append(check("a trusted project cannot widen reading", "PRIVATE" not in got.get("notes", "") and "operation not permitted" in got.get("notes", "").lower(), got.get("notes")))
         process, got = run("--read", "anywhere", calls=[("tool", "notes", f"cat '{notes}'")])
         results.append(check("the user's flag widens it", got.get("notes", "").startswith("PRIVATE-NOTES"), got.get("notes")))
         process, got = run("--continue", calls=[("tool", "notes", f"cat '{notes}'")])
         # A record only narrows (ADR-0045): the widening was the flag's, for that run; the files restrict again.
-        results.append(check("continuing without the flag is restricted again", "PRIVATE" not in got.get("notes", "") and "Operation not permitted" in got.get("notes", ""), got.get("notes")))
+        results.append(check("continuing without the flag is restricted again", "PRIVATE" not in got.get("notes", "") and "operation not permitted" in got.get("notes", "").lower(), got.get("notes")))
         return all(results)
     finally:
         shutil.rmtree(base, ignore_errors=True)
@@ -805,7 +808,7 @@ def probe_call_sandbox():
         reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo \" curl=$?\""
         calls = [(c[0], c[1], c[2], {**c[3], "command": reach} if c[3].get("command") == "REACH" else c[3]) for c in calls]
         server = Server([turn([c], "tool_use") for c in calls] + [turn([("text", "Done.")], "end_turn")])
-        process = subprocess.run([ASK, "-p", "Work.", *arguments], cwd=project, env=environment(state, server.url),
+        process = subprocess.run([ASK, "--verbose", "-p", "Work.", *arguments], cwd=project, env=environment(state, server.url),
                                  capture_output=True, text=True, timeout=180)
         got = tool_results(server) if len(server.requests) == len(calls) + 1 else {}
         tools = server.requests[0]["body"].get("tools", []) if server.requests else []
@@ -828,7 +831,7 @@ def probe_call_sandbox():
             check("the run reaches a local server", "HTTP 200 curl=0" in got.get("open", ""), got.get("open")),
             check("a call narrowed to no network cannot", "curl=7" in got.get("closed", ""), got.get("closed")),
             check("a call narrowed to sub writes there", got.get("inside", "").startswith("in\n"), got.get("inside")),
-            check("and cannot write beside it", "Operation not permitted" in got.get("beside", "")
+            check("and cannot write beside it", "operation not permitted" in got.get("beside", "").lower()
                   and not os.path.exists(os.path.join(project, "b.txt")), got.get("beside")),
             check("the read tool narrowed to the workspace cannot read elsewhere",
                   got.get("far", "").startswith("Not permitted: ") and "ELSEWHERE" not in got.get("far", ""), got.get("far")),
@@ -867,6 +870,15 @@ def probe_session_narrowing():
 
 
 if __name__ == "__main__":
-    ok = probe_round_trip() & probe_interrupt() & probe_resume() & probe_crash_resume() & probe_compaction() & probe_jobs() & probe_jobs_end_with_ask() & probe_configuration() & probe_sandbox() & probe_sandbox_allowance() & probe_damaged_session() & probe_nested_sandbox() & probe_strict_sandbox() & probe_session_sandbox() & probe_read_allowlist() & probe_call_sandbox() & probe_session_narrowing()
+    probes = [probe_round_trip, probe_interrupt, probe_resume, probe_crash_resume, probe_compaction, probe_jobs, probe_jobs_end_with_ask,
+              probe_configuration, probe_sandbox, probe_sandbox_allowance, probe_damaged_session, probe_nested_sandbox, probe_strict_sandbox,
+              probe_session_sandbox, probe_read_allowlist, probe_call_sandbox, probe_session_narrowing]
+    # --only F,J runs the probes whose heading starts with those letters (each prints "F: …" first).
+    wanted = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
+    ok = True
+    for probe in probes:
+        letter = next((c[0] for c in probe.__code__.co_consts if isinstance(c, str) and re.match(r"[A-Z]: ", c)), "?")
+        if wanted is None or letter in wanted:
+            ok = probe() and ok
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)
