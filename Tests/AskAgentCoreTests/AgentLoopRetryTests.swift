@@ -7,9 +7,9 @@ import Testing
 
 @testable import AskAgentCore
 
-/// Transient provider failures are retried with backoff, never after output was shown. Waits go through an
+/// Transient provider failures are retried with backoff; a drop after text was shown is carried on (`AgentLoopReconnectTests`). Waits go through an
 /// immediate clock that records them, so no test can hang on a wait it did not expect.
-@Suite("Transient failures are retried with backoff, never after anything was shown")
+@Suite("Transient failures are retried with backoff")
 struct AgentLoopRetryTests {
     private typealias Provider = ScriptedProvider
     private let directory = FileManager.default.temporaryDirectory.appending(path: "ask-retry-\(UUID().uuidString)")
@@ -80,16 +80,6 @@ struct AgentLoopRetryTests {
         let (result, _) = try await run(try loop(provider, clock: clock, attempts: 2))
         #expect(failure(result) == .provider("overloaded"))
         #expect(provider.requests.count == 2)
-    }
-
-    @Test func `a failure after text was shown is not retried`() async throws {
-        let clock = ImmediateClock()
-        let provider = Provider([.textThenTransient("partial"), .reply("ok")])
-        let (result, events) = try await run(try loop(provider, clock: clock))
-        #expect(failure(result) == .provider("overloaded"))
-        #expect(retries(events).isEmpty)
-        #expect(provider.requests.count == 1)
-        #expect(clock.sleeps.isEmpty)
     }
 
     @Test func `a failure that is not transient is not retried`() async throws {

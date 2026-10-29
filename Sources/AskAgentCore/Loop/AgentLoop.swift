@@ -13,6 +13,8 @@ public struct AgentLoop: Sendable {
     let clock: any Clock<Duration>
     private let hooks: [any AgentHook]
     let learnedWindow = LearnedWindow()
+    /// Answers in a row that lost their connection part way (roadmap 0141).
+    let drops = DropCount()
     /// Repairs already reported, so an old session's damage is said once and not before every request.
     let reportedRepairs = ReportedRepairs()
 
@@ -20,6 +22,15 @@ public struct AgentLoop: Sendable {
     public static let continuationPrompt =
         "[ask] Your previous response was cut off at the output token limit. Continue from where you stopped. "
         + "If you were writing a tool call, it was dropped: issue it again, in smaller steps if it was large."
+
+    /// What the loop sends, as a recorded user message, after the connection dropped part way through a response (roadmap 0141); the
+    /// part that arrived is recorded before it.
+    public static let reconnectionPrompt =
+        "[ask] The connection dropped while you were answering; what arrived is above. Continue exactly where it stopped, without "
+        + "repeating it. If you were writing a tool call, it was dropped: issue it again."
+
+    /// The stop reason of a response cut by a dropped connection, as the session keeps it.
+    static let droppedStopReason = StopReason.other("ask_connection_lost")
 
     /// What the loop sends, as a recorded user message, after a response stopped because the context window
     /// was full. The conversation is compacted before it is sent.
@@ -148,6 +159,11 @@ public struct AgentLoop: Sendable {
         if filled {
             // The window filled: the next request is compacted first; say why the reply stopped.
             try record(.user(Self.contextFullPrompt), in: session)
+            return true
+        }
+        if response.stopReason == Self.droppedStopReason {
+            try record(.user(Self.reconnectionPrompt), in: session)
+            events(.continuedAfterDrop)
             return true
         }
         switch response.stopReason {

@@ -16,6 +16,12 @@ final class ScriptedProvider: ModelProvider {
         case transient(retryAfter: Duration?)
         /// Some text reaches the screen, then the stream fails transiently.
         case textThenTransient(String)
+        /// Some text, then the stream simply ends, without the answer's end: a connection closed between two events.
+        case textThenEnds(String)
+        /// Reasoning reaches the screen, no text, then the stream fails transiently.
+        case thinkingThenTransient(String)
+        /// Text, then a tool call whose input is cut, then the stream fails transiently.
+        case textAndCutCallThenTransient(String)
         /// A failure the provider says will not succeed if retried, such as a refused credential.
         case permanent
         /// Text that stops at the output-token limit.
@@ -136,6 +142,28 @@ final class ScriptedProvider: ModelProvider {
                 for event in events + [.blockStarted(index: 0, .text), .textDelta(index: 0, text)] {
                     continuation.yield(event)
                 }
+                continuation.finish(throwing: TransientFailure(retryAfter: nil))
+                return stream
+            case .textThenEnds(let text):
+                for event in events + [.blockStarted(index: 0, .text), .textDelta(index: 0, text)] {
+                    continuation.yield(event)
+                }
+                continuation.finish()
+                return stream
+            case .thinkingThenTransient(let text):
+                for event in events + [.blockStarted(index: 0, .thinking), .thinkingDelta(index: 0, text)] {
+                    continuation.yield(event)
+                }
+                continuation.finish(throwing: TransientFailure(retryAfter: nil))
+                return stream
+            case .textAndCutCallThenTransient(let text):
+                let partial: [ModelEvent] = [
+                    .blockStarted(index: 0, .thinking), .thinkingDelta(index: 0, "hm"), .signatureDelta(index: 0, "s"),
+                    .blockStopped(index: 0), .blockStarted(index: 1, .text), .textDelta(index: 1, text),
+                    .blockStopped(index: 1), .blockStarted(index: 2, .toolUse(id: "c", name: "bash")),
+                    .toolInputDelta(index: 2, #"{"comm"#)
+                ]
+                for event in events + partial { continuation.yield(event) }
                 continuation.finish(throwing: TransientFailure(retryAfter: nil))
                 return stream
         }

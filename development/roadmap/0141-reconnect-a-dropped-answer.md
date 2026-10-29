@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-29
 ---
@@ -37,3 +37,23 @@ Owner report (2026-10-29): a turn ended with the whole `NSError` of `NSURLErrorD
 - Scripted transport: drop before the head, after the head, after N text events, inside a tool call's input; each ends in one assistant
   message and no error block.
 - `probe-reconnecting.py` gains a case where the fake server closes the socket mid-answer, and one where it refuses connections for 20 s.
+
+## Done (2026-10-29): items 1 and 3
+
+- **A drop after text was shown is carried on, for every provider.** The loop keeps the text that arrived (`ResponseAssembler.partial()`:
+  text blocks only; reasoning and a half-sent tool call are never sent back), waits the retry delay with "Reconnecting..." in the status
+  bar, records it as the response (stop reason `ask_connection_lost`) followed by `AgentLoop.reconnectionPrompt`, and asks again. One
+  generic user turn rather than Anthropic's trailing-assistant continuation, so every API takes it; the output-limit continuation works
+  the same way. Only reasoning shown: the request is sent again whole. Consecutive drops are bounded by the retry policy's attempts
+  (`DropCount`, reset by a whole answer). A resumed session replays the prompt as `continuedAfterDrop`, which draws nothing; `ask -p`
+  says it on standard error.
+- **A stream that just ends before the answer's end is a drop too** (`ClosedEarly`): the probe found that a socket closed between two
+  events reaches the loop as a normal end, then a protocol error ("incomplete(openBlocks: [0])"); no layer below saw it.
+- **The screen never ends for it:** run and command errors are reported by the conversation; only terminal failures reach the process exit.
+- Tests: `AgentLoopReconnectTests` (carry on, reasoning and a cut call dropped, reasoning only retried whole, a stream that ends early,
+  drops bounded, replay); mutations of the bound and of the partial's filter turn them red. The old "not retried after text" test is
+  replaced. `probe-reconnecting.py` gains a server that streams "FIRST HALF" on a chunked response and closes the socket: through the
+  release binary, both halves are shown, no error block, and the second request carries the partial answer and the prompt.
+
+Still owed: item 2 (waiting for the network with `NWPathMonitor`, up to minutes, cancellable) and item 4's usage check.
+
