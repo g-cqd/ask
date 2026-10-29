@@ -49,6 +49,8 @@ final class AgentConversation: Conversation {
         var settings: RunSettings
         var loop: AgentLoop?
         var shownError: String?
+        /// A turn is running, and a configuration file changed during it (roadmap 0127).
+        var turnRunning = false, reloadPending = false
     }
 
     /// - Parameters:
@@ -134,8 +136,8 @@ final class AgentConversation: Conversation {
         // Approval questions during this run go to this run's screen updates.
         approvals.withLock { $0.ask = update }
         return Task {
-            self.keepAwake.turnStarted()
-            defer { self.keepAwake.turnEnded() }
+            self.beginTurn()
+            defer { self.endTurn(update: update) }
             do {
                 await self.refreshSettings(update: update)
                 self.noticeUntrustedSkills(update: update)

@@ -12,8 +12,10 @@ its default. To see what is in force and where each value came from, run:
 ask config
 ```
 
-Inside ask, `/config` opens an editor for the same settings, and `/config now` re-reads the files and shows them. Edits to a file are picked
-up at the next prompt; if an edit is broken, ask says so and keeps the previous settings.
+Inside ask, `/config` opens an editor for the same settings, and `/config now` re-reads the files and shows them. ask watches the files while it
+runs: a saved change applies at once between turns, or as soon as the running turn ends, and your draft is left as it is (`/verbose`
+lists what changed). A project file is noticed even when its `.ask` folder did not exist when ask started. If an edit is broken, ask
+says so and keeps the previous settings.
 
 ## Common recipes
 

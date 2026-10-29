@@ -28,15 +28,9 @@ extension AgentConversation {
                                 }))
                     }
                 }
-                if let startup {
-                    group.addTask {
-                        // The first event is "a build appeared", not "a build is finished": /reload's self-check decides that.
-                        for await _ in BinaryWatcher.changes(since: startup) {
-                            update(.detail("A new ask binary appeared. /reload checks it and switches to it."))
-                            break
-                        }
-                    }
-                }
+                // One watcher for the configuration files and the executable; the screen owns this task while it shows
+                // the conversation.
+                group.addTask { await self.watchFiles(since: startup, update: update) }
                 await group.waitForAll()
             }
         }

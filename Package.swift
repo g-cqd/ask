@@ -77,18 +77,18 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "be91ed889aaf95fc58bdbeaa8b81da2df80bdb32"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "30b0fcc27410a23793db0549c7dbace575c61930"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "5542d37ff0edb17c822b48fe69bff6e792354c57"),
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "8db07fbd1fd7d4c22e06c419b38ab5bf3c123548"),
         // Already resolved through AemiJSON; the linear-time engine also recognizes UI heredoc openers.
         .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "fe9b07f00f7b52d2d210ed4df43bd2b18f4ad674"),
         // The Markdown parser the transcript draws assistant messages with (roadmap 0065); the revision TerminalKitMarkdown pins.
         .package(
-            url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "2e75a94af21a4e942e9478d42c788458ac97bc95"),
+            url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "ece03139260db5cf95f13311ee08dfd2296ba93d"),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
-        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "f6da05cd0efdf60700e854efb5b6092eae89b8c5"),
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "dcad319f1f41a7f59978767451396d77e85e91ff"),
         // Child processes for the bash tool (ADR-0011): the official package, added with the first tool that
         // runs one.
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", .upToNextMinor(from: "1.0.2")),
@@ -142,7 +142,8 @@ let package = Package(
             name: "AskTools",
             dependencies: [
                 "AskAgentCore", "AskAI", "AskMCP", .product(name: "AemiKernel", package: "aemi"),
-                .product(name: "Subprocess", package: "swift-subprocess")
+                // File watching (aemi ADR 0016): the new build beside the running one, the configuration files.
+                .product(name: "AemiIO", package: "aemi"), .product(name: "Subprocess", package: "swift-subprocess")
             ],
             path: "Sources/AskTools",
             swiftSettings: packageSettings
