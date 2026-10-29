@@ -135,7 +135,7 @@ Switches take `"on"` or `"off"` (`true` and `false` work too).
 | `appearance` | `"auto"` | Where the tints come from. `auto` mixes them, and the grey of secondary text, from your terminal's own colours and follows them when macOS switches between light and dark; `light` or `dark` fixes them and asks the terminal nothing. |
 | `separator` | `"on"` | A rule between the conversation and the input. |
 | `padding` | `"on"` | A row of padding around each block. |
-| `markdown` | `"on"` | The model's replies are drawn as Markdown: headings, emphasis, lists, quotes, tables and links. A selection still copies what the model wrote. `"off"` shows the text as written. |
+| `markdown` | `"on"` | Markdown everywhere it can be: the model's replies and reasoning and your own messages are drawn as Markdown (headings, emphasis, lists, quotes, tables, links), and your draft is coloured as you type, every character kept as typed. A selection still copies what was written. `"off"` shows all of it as written. |
 | `localizedDurations` | `"on"` | Elapsed times as `1 hr, 40 min` rather than `1:40:00`, and a command's limits as `timeout 2 min` rather than `timeout 2:00`. |
 | `spinner` | `"line"` | The spinner: `line`, `dot`, `star`, `snake`, `braille`, `braillefull`, `braillequarter` or `random`. |
 | `interruptKeys` | `"both"` | Which keys stop a running turn: `"esc"`, `"ctrl-c"` or `"both"`. |
