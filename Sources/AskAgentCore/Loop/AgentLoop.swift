@@ -13,6 +13,8 @@ public struct AgentLoop: Sendable {
     let clock: any Clock<Duration>
     private let hooks: [any AgentHook]
     let learnedWindow = LearnedWindow()
+    /// Repairs already reported, so an old session's damage is said once and not before every request.
+    let reportedRepairs = ReportedRepairs()
 
     /// What the loop sends, as a recorded user message, after a response stopped at the output-token limit.
     public static let continuationPrompt =
@@ -167,8 +169,11 @@ public struct AgentLoop: Sendable {
         async throws(AgentError)
     {
         let limit = budget.toolOutputBytes.map { Swift.max(512, $0 / calls.count) }
-        for call in calls {
-            guard !Task.isCancelled else { throw .cancelled }
+        for (index, call) in calls.enumerated() {
+            guard !Task.isCancelled else {
+                try recordNotRun(calls[index...], in: session)
+                throw .cancelled
+            }
             var output = await runTool(call, events: events)
             if let limit { output.content = Compaction.clipped(output.content, toBytes: limit, note: Self.clipNote) }
             try record(
@@ -189,7 +194,8 @@ public struct AgentLoop: Sendable {
     /// The request for `context`, reporting any repair it needed.
     func request(for context: [SessionEntry], events: (AgentEvent) -> Void) -> ModelRequest {
         let built = RequestContext(context)
-        if !built.repairs.isEmpty { events(.repaired(built.repairs)) }
+        let fresh = reportedRepairs.unreported(built.repairs)
+        if !fresh.isEmpty { events(.repaired(fresh)) }
         return ModelRequest(
             model: settings.model, maxTokens: budget.maximumTokens, systemPrompt: settings.systemPrompt,
             messages: ImagePart.filtering(

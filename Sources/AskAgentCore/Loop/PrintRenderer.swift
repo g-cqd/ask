@@ -50,7 +50,7 @@ public final class PrintRenderer: Sendable {
                 endLine()
                 err("ask: \(text)\n")
             case .repaired(let repairs):
-                err("ask: repaired the context: \(repairs)\n")
+                err("ask: repaired the context: \(RequestContext.describe(repairs)).\n")
             case .continuedAtOutputLimit:
                 endLine()
                 err("ask: the response hit the output limit; asking the model to continue.\n")
