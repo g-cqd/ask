@@ -94,8 +94,9 @@ enum ModelDiscovery {
                 ]
             )
         }
-        // Anthropic has no key-based catalog here. Keep its startup out of that lookup's setup entirely.
-        if initial.provider == .anthropic { return (initial, notices + announcement(initial)) }
+        if initial.provider == .anthropic {
+            return withAnthropicLimits(initial, environment: environment, notices: notices)
+        }
         if initial.provider == .apple { return withAppleLimits(initial, notices: notices) }
         if initial.provider == .agy { return try withAgyLimits(initial, resolve: resolve, notices: notices) }
         guard initial.provider == .codex else {
@@ -156,6 +157,21 @@ enum ModelDiscovery {
         } catch { return (initial, notices + ["Model list not used: \(error)"] + announcement(initial)) }
         guard let listed else { return (initial, notices + announcement(initial)) }
         let chosen = try resolve([listed])
+        return (chosen, notices + announcement(chosen))
+    }
+
+    /// The Claude model with the window and reply limit the cached `v1/models` list states, when there is a fresh one for the current
+    /// sign-in. Never a network and no refresh: one small file, and only this model's entry decoded. Without it the status line showed
+    /// `?` and the context budget had no window unless a thinking level was set (roadmap 0147).
+    private static func withAnthropicLimits(
+        _ initial: ResolvedModel, environment: [String: String], notices: [String]
+    ) -> (model: ResolvedModel, notices: [String]) {
+        let listed: CatalogModel?
+        do {
+            listed = try AnthropicModelDiscovery.catalog(environment: environment, connection: initial.connection)
+                .cachedModel(initial.model, now: Date().timeIntervalSince1970)
+        } catch { return (initial, notices + ["Model list not used: \(error)"] + announcement(initial)) }
+        let chosen = ThinkingDiscovery.withNativeLimits(initial, descriptor: listed)
         return (chosen, notices + announcement(chosen))
     }
 
