@@ -28,8 +28,15 @@ extension ScreenComposer {
             next += 1
         }
         for (offset, text) in editor.lines.enumerated() {
+            // A mark keeps the input's tint behind it.
+            let accents = (editor.accents.isEmpty ? [] : editor.accents[offset])
+                .map { accent in
+                    var accent = accent
+                    accent.style.bg = inputStyle.bg
+                    return accent
+                }
             write(
-                Line(text: text, style: inputStyle),
+                Line(text: text, style: inputStyle, accents: accents),
                 highlight: editor.highlights.isEmpty ? nil : editor.highlights[offset], row: next + offset,
                 into: &buffer)
         }

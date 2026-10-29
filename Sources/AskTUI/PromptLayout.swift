@@ -14,9 +14,12 @@ struct PromptLayout: Sendable {
         var cursorVisible = true
         /// The cells of each drawn row that are selected, or nil; empty when nothing is selected.
         var highlights: [Range<Int>?]
+        /// The Markdown colour of each drawn row (roadmap 0151); empty when the draft has none.
+        var accents: [[ScreenComposer.Accent]] = []
     }
 
     private var cache: (text: String, columns: Int, layout: InputLayout)?
+    private var markdownCache: (text: String, window: Range<Int>, spans: [InputMarkdown.Span])?
     private var firstRow = 0
 
     /// Clip the ASCII prefix on tiny terminals, always leaving a cell for text or the cursor.
@@ -26,7 +29,7 @@ struct PromptLayout: Sendable {
 
     mutating func frame(
         _ editor: PromptEditor, prompt: String, columns: Int, screenRows: Int, maximumRows: Int,
-        selection: Range<Int>? = nil, scrollTop: Int? = nil
+        selection: Range<Int>? = nil, scrollTop: Int? = nil, markdown: Bool = false
     ) -> Frame {
         let prefix = Self.prefix(prompt, columns: columns)
         let layout: InputLayout
@@ -49,9 +52,50 @@ struct PromptLayout: Sendable {
             selection == nil
             ? []
             : viewport.visibleRows.map { Self.highlight(row: $0, of: layout, prefix: prefix, selection: selection) }
-        return Frame(
+        var frame = Frame(
             lines: lines, cursor: viewport.cursor, indicator: indicator, top: firstRow, layout: layout,
             cursorVisible: viewport.cursorVisible, highlights: highlights)
+        if markdown {
+            // Only the rows shown are parsed in a long draft, so the window is part of what the spans depend on.
+            let rows = viewport.visibleRows
+            let low = layout.offset(atRow: rows.lowerBound, column: 0)
+            let high =
+                rows.upperBound < layout.rows.count
+                ? layout.offset(atRow: rows.upperBound, column: 0) : editor.text.count
+            let spans: [InputMarkdown.Span]
+            if let markdownCache, markdownCache.text == editor.text, markdownCache.window == low ..< high {
+                spans = markdownCache.spans
+            } else {
+                spans = InputMarkdown.spans(of: editor.text, visible: low ..< high)
+                markdownCache = (editor.text, low ..< high, spans)
+            }
+            if !spans.isEmpty {
+                frame.accents = Self.accents(spans, rows: viewport.visibleRows, layout: layout, prefix: prefix)
+            }
+        }
+        return frame
+    }
+
+    /// The spans as runs of cells on each drawn row: a span that crosses a row break is cut at it.
+    private static func accents(
+        _ spans: [InputMarkdown.Span], rows: Range<Int>, layout: InputLayout, prefix: String
+    ) -> [[ScreenComposer.Accent]] {
+        var result = [[ScreenComposer.Accent]](repeating: [], count: rows.count)
+        for span in spans {
+            let start = layout.position(at: span.characters.lowerBound)
+            let end = layout.position(at: span.characters.upperBound)
+            guard end.row >= rows.lowerBound, start.row < rows.upperBound else { continue }
+            for row in Swift.max(start.row, rows.lowerBound) ... Swift.min(end.row, rows.upperBound - 1) {
+                let width = (row == 0 ? prefix.count : 0) + UnicodeWidth.displayWidth(of: layout.rows[row])
+                let low = row == start.row ? start.column : (row == 0 ? prefix.count : 0)
+                let high = row == end.row ? end.column : width
+                if high > low {
+                    result[row - rows.lowerBound]
+                        .append(ScreenComposer.Accent(columns: low ..< high, style: span.style))
+                }
+            }
+        }
+        return result
     }
 
     /// The rows to draw: the kit's window, which keeps the cursor in view, or, after the wheel, a window the user put somewhere else.

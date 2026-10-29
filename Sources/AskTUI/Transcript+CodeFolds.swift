@@ -46,7 +46,10 @@ extension Transcript {
         guard on != markdown else { return }
         markdown = on
         for index in items.indices {
-            if case .assistant = items[index] { revisions[index] = bump() }
+            switch items[index] {
+                case .assistant, .user, .thinking: revisions[index] = bump()
+                default: break
+            }
         }
     }
 
