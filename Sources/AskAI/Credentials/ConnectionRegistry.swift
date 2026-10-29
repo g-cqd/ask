@@ -21,7 +21,8 @@ public struct ConnectionRegistry: Sendable {
         var notices: [String] = []
         for path in try FileManager.default.contentsOfDirectory(atPath: directory.path).sorted() {
             guard let id = UUID(uuidString: path) else { continue }
-            let file = CredentialFile(url: directory.appending(path: path).appending(path: "credentials.json"))
+            let url = directory.appending(path: path).appending(path: "credentials.json")
+            let file = CredentialFile.preferred(url: url)
             do {
                 guard let record = try file.read()?.connection, record.id == id,
                     ConnectionRecord.canonical(record.name) == record.name

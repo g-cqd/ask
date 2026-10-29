@@ -16,4 +16,8 @@ public enum CredentialFileError: Error, Sendable, Equatable {
     case connectionChanged(path: String)
     /// Registration metadata needs a newer writer; interpreting and rewriting it would be unsafe.
     case newerFormat(path: String)
+    /// The file says a record's secrets are in the secret store (the Keychain), and the store has no item for it.
+    case secretMissing(path: String, record: String)
+    /// The secret store refused a read or a write; the file was left as it was.
+    case secretStore(path: String, status: Int32)
 }

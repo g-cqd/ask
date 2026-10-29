@@ -109,6 +109,7 @@ trusting it. Some settings can only come from your own file, as the tables below
 | `maxTurns` | `100` in the sandbox, none with `--no-sandbox` | The most model requests one prompt may make before ask stops it, or `"none"` for no limit (also `ASK_MAX_TURNS=none`). A value you set applies in both cases. |
 | `compactAt` | `"75%"` | When the conversation is summarised to make room: a share of the model's window (`"75%"`), a number of tokens (`150000`), or `0` for only when the window is full. Whatever you set, ask compacts before a request would not fit. |
 | `keepAwake` | `"system"` | While a prompt runs or a background job does, `"system"` keeps the Mac from sleeping when idle, `"display"` keeps the display on too, `"off"` does nothing. Released as soon as ask stops working, and when it exits. |
+| `credentials` | `"auto"` | Where your API keys and sign-in tokens are kept: `"keychain"` in the macOS Keychain (only ask can read them without you being asked), `"file"` in `~/.config/ask/credentials.json`, or `"auto"`: the Keychain for a signed build of ask, the file for an unsigned one, whose every rebuild the Keychain would ask about. Emails, expiry dates and account names stay in the file either way. Changing it moves what is stored. Your own file only. |
 | `sandbox` | on, see below | What the model's tools may read, write and reach. |
 | `ui` | see below | How the screen looks and behaves. |
 | `skills` | see below | Which skills are offered to the model. |

@@ -37,6 +37,7 @@ public enum ProviderSettingsError: Error, Sendable, Equatable, CustomStringConve
                 "provider \"\(provider)\" has no model chosen: run `ask models codex` to list your account's, or pass --model"
             // @dl:accept -- these enum-case sentences are independent diagnostic data, not shared logic with session-log repairs
             case .noModel(let provider) where provider == ProviderSettings.agy:
+                // @dl:accept -- diagnostic sentences per case; the credential file's descriptions are independent data
                 "provider \"\(provider)\" has no model chosen: run `ask models agy` to list your account's, then pass --model"
             case .noModel(let provider): "provider \"\(provider)\" lists no model; add one, or pass --model"
             case .missingVariable(let provider, let variable):

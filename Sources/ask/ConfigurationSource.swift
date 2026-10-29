@@ -123,6 +123,8 @@ struct ConfigurationSource: Sendable {
             model: flags.model, provider: flags.provider, maxTurns: flags.maxTurns, compactAt: flags.compactAt,
             network: flags.network, write: flags.write, read: flags.read, thinking: flags.thinking)
         var details: [String] = []
+        // Before anything reads a credential: the choice decides where they are read from.
+        result.notices += CredentialPlacement.apply(result.configuration.credentials.value, environment: environment)
         if let record = sessionSandbox, !flags.noSandbox {
             let before = result.configuration.sandbox
             result.configuration = result.configuration.applying(

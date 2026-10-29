@@ -19,11 +19,13 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var mcp: MCPSection?
     public var environment: EnvironmentSection?
     public var keepAwake: KeepAwakeMode?  // roadmap 0090; not in the initializer, set after it
+    public var credentials: CredentialStorage?  // roadmap 0110; the person's own file only
 
     /// The keys ask knows, in the order `ask config` shows them.
+    // @dl:accept -- the list of keys is data; the sandbox policy's list of names is other data
     public static let keys = [
-        "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "sandbox", "ui", "skills", "mcp",
-        "environment"
+        "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "credentials", "sandbox", "ui", "skills",
+        "mcp", "environment"
     ]
 
     /// A file with these values.
@@ -57,6 +59,7 @@ public struct ConfigurationFile: Sendable, Equatable {
             case "maxTurns": maxTurns != nil
             case "compactAt": compactAt != nil
             case "keepAwake": keepAwake != nil
+            case "credentials": credentials != nil
             case "sandbox": sandbox != nil
             case "ui": ui != nil
             case "skills": skills != nil
@@ -101,6 +104,11 @@ public struct ConfigurationFile: Sendable, Equatable {
         try validateSkills(file.skills, path: path, isProject: isProject)
         try validateMCP(file.mcp, path: path, isProject: isProject)
         try validateEnvironment(file.environment, path: path, isProject: isProject)
+        if isProject, file.credentials != nil {
+            throw .outOfRange(
+                path: path, key: "credentials",
+                reason: "says where your keys are kept: only your own config file can choose that")
+        }
         for (key, count) in [
             ("ui.scrollLines", file.ui?.scrollLines), ("ui.promptRows", file.ui?.promptRows),
             ("ui.codeFoldLines", file.ui?.codeFoldLines)
@@ -158,30 +166,6 @@ public struct ConfigurationFile: Sendable, Equatable {
             default: throw BadValue(key: name, value: one)
         }
     }
-    /// A string that is not one of the key's choices.
-    struct BadValue: Error {
-        let key: String
-        let value: String
-
-        var reason: String {
-            switch key {
-                case "thinking": "must be one of: \(ThinkingLevel.choices)"
-                case "keepAwake": "is \"\(value)\": use \(KeepAwakeMode.choices)"
-                case "sandbox.network": "is \"\(value)\": use \"none\", \"localhost\" or \"any\""
-                case "ui.tools", "ui.thinking", "ui.code": "is \"\(value)\": use \"folded\" or \"open\""
-                case "ui.sidebar": "is \"\(value)\": use \"open\" or \"closed\""
-                case "ui.mouse", "ui.copyOnSelect", "skills.enabled", "ui.tint", "ui.separator", "ui.padding",
-                    "ui.markdown", "ui.localizedDurations", "ui.jobAutoReturnWhenFocused",
-                    "ui.abortTurnRequiresConfirmation", "ui.escapeInterruptRequiresConfirmation", "ui.onlyUsefulModels":
-                    "is \"\(value)\": use \"on\" or \"off\""
-                case "ui.interruptKeys": "is \"\(value)\": use \"esc\", \"ctrl-c\" or \"both\""
-                case "compactAt": "is \(value): use \(CompactionThreshold.expected)"
-                case "ui.interruptSendsQueued": "is \"\(value)\": use \"none\", \"next\" or \"all\""
-                default: "is \"\(value)\": use \"workspace\", \"anywhere\" or a list of paths"
-            }
-        }
-    }
-
     struct Key: CodingKey {
         var stringValue: String
         var intValue: Int? { nil }
@@ -236,6 +220,9 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "compactAt": file.compactAt = try ConfigurationFile.decodeCompactAt(container, key: key)
                     case "keepAwake":
                         file.keepAwake = try ConfigurationFile.decodeChoice(container, key: key, as: KeepAwakeMode.self)
+                    case "credentials":
+                        file.credentials = try ConfigurationFile.decodeChoice(
+                            container, key: key, as: CredentialStorage.self)
                     case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
                     case "ui": file.ui = try container.decode(UIDecoded.self, forKey: key).section
                     case "skills": file.skills = try container.decode(SkillsDecoded.self, forKey: key).section

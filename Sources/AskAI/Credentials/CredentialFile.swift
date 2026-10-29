@@ -12,11 +12,25 @@ public import Foundation
 public struct CredentialFile: Sendable {
     public let url: URL
     let lockWait: Duration
+    /// Where secrets are written (roadmap 0110): a secret store, or nil for the file itself.
+    let secrets: (any SecretStore)?
+    /// Where secrets the file marks as kept elsewhere are read from: `secrets`, else this.
+    let vault: (any SecretStore)?
 
     /// The file at `url`, waiting up to `lockWait` for another ask's save to finish.
-    public init(url: URL, lockWait: Duration = .seconds(5)) {
+    /// - Parameters:
+    ///   - url: the credential file.
+    ///   - lockWait: how long to wait for another ask's save.
+    ///   - secrets: where keys and tokens are written; nil keeps them in the file.
+    ///   - vault: where secrets the file marks as kept elsewhere are read from when `secrets` is nil (a file switched back to file
+    ///     mode); nil means the Keychain.
+    public init(
+        url: URL, lockWait: Duration = .seconds(5), secrets: (any SecretStore)? = nil, vault: (any SecretStore)? = nil
+    ) {
         self.url = url
         self.lockWait = lockWait
+        self.secrets = secrets
+        self.vault = vault
     }
 
     /// `$XDG_CONFIG_HOME/ask/credentials.json` when that is an absolute path, else
@@ -28,7 +42,7 @@ public struct CredentialFile: Sendable {
         let configured = environment["XDG_CONFIG_HOME"].flatMap { $0.hasPrefix("/") ? $0 : nil }
         let base = URL(fileURLWithPath: configured ?? home + "/.config", isDirectory: true)
         // @dl:accept -- Claude's and Codex's public accessors are twins over different credential types; a protocol to share them would cost more than it saves
-        return CredentialFile(url: base.appending(path: "ask/credentials.json"))
+        return preferred(url: base.appending(path: "ask/credentials.json"))
     }
 
     /// The stored Claude credentials, or nil when there are none.
@@ -136,9 +150,11 @@ public struct CredentialFile: Sendable {
         }
         let lock = try takeLock()
         defer { lock.release() }
-        var stored = try read() ?? StoredCredentials()
+        let (found, marked) = try readMarked()
+        var stored = found ?? StoredCredentials()
+        let before = Set(stored.recordNames)
         let outcome = change(&stored)
-        if outcome.write { try write(stored) }
+        if outcome.write { try write(stored, removing: before.subtracting(stored.recordNames), marked: marked) }
         return outcome.result
     }
 
@@ -173,7 +189,7 @@ public struct CredentialFile: Sendable {
         }
     }
 
-    private func takeLock() throws(CredentialFileError) -> CredentialLock {
+    func takeLock() throws(CredentialFileError) -> CredentialLock {
         do { return try CredentialLock.acquireBlocking(beside: url, wait: lockWait, name: "write") } catch {
             switch error {
                 case .timedOut, .cancelled: throw .locked(path: CredentialLock.path(beside: url, name: "write"))
@@ -196,8 +212,11 @@ public struct CredentialFile: Sendable {
 
     // MARK: - The file
 
-    /// What the file holds, or nil when there is no file.
-    func read() throws(CredentialFileError) -> StoredCredentials? {
+    /// What the file holds, secrets included, or nil when there is no file.
+    func read() throws(CredentialFileError) -> StoredCredentials? { try readMarked().stored }
+
+    /// The file's own contents, markers and all.
+    func readFile() throws(CredentialFileError) -> StoredCredentials? {
         var status = stat()
         guard stat(url.path, &status) == 0 else {
             if errno == ENOENT { return nil }
@@ -209,20 +228,5 @@ public struct CredentialFile: Sendable {
         do { return try StoredCredentials(decoding: [UInt8](bytes)) } catch StoredCredentials.FormatError.newerVersion {
             throw .newerFormat(path: url.path)
         } catch { throw .damaged(path: url.path) }
-    }
-
-    /// Writes `stored` as a new owner-only file and renames it into place, so a crash leaves the old file or the new.
-    private func write(_ stored: StoredCredentials) throws(CredentialFileError) {
-        guard let bytes = try? stored.encoded() else { throw .damaged(path: url.path) }
-        do { try AtomicFile.replace(url, with: bytes) } catch { throw .io(path: url.path, errno: error.code) }
-    }
-
-    /// Deletes the whole file, every provider's credentials. Nothing stored is not an error.
-    /// - Throws: ``CredentialFileError/io(path:errno:)``.
-    public func remove() throws(CredentialFileError) {
-        guard FileManager.default.fileExists(atPath: url.deletingLastPathComponent().path) else { return }
-        let lock = try takeLock()
-        defer { lock.release() }
-        guard unlink(url.path) == 0 || errno == ENOENT else { throw .io(path: url.path, errno: errno) }
     }
 }

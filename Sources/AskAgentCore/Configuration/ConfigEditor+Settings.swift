@@ -11,6 +11,7 @@ extension ConfigEditor {
                 .init(path: ["thinking"], kind: .choice(ThinkingLevel.allCases.map(\.rawValue))),
                 readOnly("maxTurns"), readOnly("compactAt"),
                 .init(path: ["keepAwake"], kind: .choice(KeepAwakeMode.allCases.map(\.rawValue))),
+                .init(path: ["credentials"], kind: .choice(CredentialStorage.allCases.map(\.rawValue))),
                 readOnly(["sandbox", "allowRead"]), readOnly(["sandbox", "denyRead"]),
                 // @dl:accept -- read-only rows across sections list real configuration keys; the lists are the data
                 readOnly(["sandbox", "write"]), readOnly(["sandbox", "read"]),
