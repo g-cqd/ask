@@ -44,8 +44,8 @@ def main():
         assert screen.until("FIRST REPLY"), "first reply missing"
         screen.type("second prompt\r")
         assert screen.until("SECOND REPLY"), "second reply missing"
-        # /resume now opens choices; probe-session-picker.py covers that interaction.
-        for command in ("/help", "/config", "/mcp", "/tree"):
+        # /resume, /config and /tree open their choices instead of a report; the picker probes cover those.
+        for command in ("/help", "/mcp"):
             rows = report_rows(screen, command)
             results.append(probe.check(
                 command + " has content without blank rows between its entries",

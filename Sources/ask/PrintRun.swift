@@ -38,13 +38,14 @@ func runPrompt(
     let directory = SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values)
     let model = settings.model
     say(startupNotices + settings.description)
+    // Before anything can refuse the run: what ask decided is most useful when it then stops (a signed-out connection).
+    let files = instructionFiles(workingDirectory: workingDirectory)
+    if settings.verbose { say(settings.detailLines + ProjectInstructions.describe(files)) }
     let transport = URLSessionTransport()
     await requireSignIn(for: model, transport: transport)
     let jobs = JobTable(environment: LaunchEnvironment.values)
     let loop: AgentLoop
     let mcp = startMCPServers(settings, jobs: jobs)
-    let files = instructionFiles(workingDirectory: workingDirectory)
-    if settings.verbose { say(settings.detailLines + ProjectInstructions.describe(files)) }
     do {
         await waitForMCPServers(mcp)
         loop = try makeLoop(

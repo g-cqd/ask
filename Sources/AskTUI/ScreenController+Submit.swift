@@ -26,7 +26,9 @@ extension ScreenController {
                     case "follow-up": return submitPrompt(arguments, followUp: true)
                     case "continue": return submitPrompt(Self.continueText(with: arguments), followUp: followUp)
                     default:
-                        if command.takesChoices, arguments.isEmpty {
+                        // A list known to be empty has nothing to open: the bare command runs and says why.
+                        let knownEmpty = state.choices[name].map { $0.rows.isEmpty && !$0.stale } ?? false
+                        if command.takesChoices, arguments.isEmpty, !knownEmpty {
                             state.editor.paste("/\(name) ")
                             pickerScreenRows = Swift.max(pickerScreenRows, Self.pickerMinimumRows)
                             return refreshPicker(screenRows: pickerScreenRows, at: .now)

@@ -229,7 +229,7 @@ with lock:
 assert len(turns) == 2 and all(turn['output_config']['effort'] == 'high' for turn in turns)
 assert any(b.get('type') == 'tool_result' and 'LOCAL_TOOL_RESULT' in str(b) for m in turns[-1]['messages'] for b in m['content'])
 passed('both inference requests around an actual read tool retain the policy')
-result = run('--thinking', 'high', provider='responses')
+result = run('--thinking', 'high', '--verbose', provider='responses')  # the thinking status is a detail (ADR-0119)
 assert body()['reasoning'] == {'effort': 'high', 'summary': 'auto'} and 'support unverified' in result.stderr
 run('--thinking', 'off', provider='responses')
 assert body()['reasoning'] == {'effort': 'none'}

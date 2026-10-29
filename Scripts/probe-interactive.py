@@ -8,6 +8,7 @@ C: a double Ctrl-C at an idle prompt quits, exit 0, with the terminal restored (
 Usage: Scripts/probe-interactive.py .build/release/ask
 """
 import json
+import re
 import subprocess
 import shutil
 import importlib.util, os, pty, select, signal, struct, sys, tempfile, time, fcntl, termios
@@ -180,6 +181,20 @@ class Screen:
             self.until("\x00", 0.05)
         return False
 
+    def tool_shown(self, command, mark, kind="shell"):
+        """Whether a tool row shows `command` ending in `mark`: `shell · COMMAND …  N lines · ✓`, the mark at the row's right.
+        `kind` is the row's first word: `shell`, or `compact` for /compact's row."""
+        return any(f"{kind} · {command}" in line and line.rstrip().endswith(mark) for line in self.screen.text().split("\n"))
+
+    def until_tool(self, command, mark="✓", seconds=15, kind="shell"):
+        """Read until a tool row shows `command` with `mark` (see ``tool_shown``)."""
+        end = time.time() + seconds
+        while time.time() < end:
+            if self.output.endswith(FRAME_END) and self.tool_shown(command, mark, kind):
+                return True
+            self.until("\x00", 0.05)
+        return False
+
     def type(self, text):
         os.write(self.fd, text.encode())
 
@@ -206,6 +221,21 @@ class Screen:
         return None
 
 
+def dismiss_thinking_offer(screen):
+    """Closes the effort list a chosen model offers: /model fills the input with `/thinking ` (ADR-0117), and a prompt typed next would
+    otherwise become that command's argument."""
+    screen.until("\x00", 0.5)
+    if any(line.lstrip().startswith("/thinking") for line in screen.editor_lines()):
+        screen.type("\x1b\x15")
+        screen.until_editor("")
+
+
+def output_tokens(screen):
+    """The output tokens the status line counts, `↓N`, or None when it shows no usage."""
+    found = re.search(r"↓(\d+)", screen.status())
+    return int(found.group(1)) if found else None
+
+
 def check(label, condition, detail=""):
     return agent.check(label, condition, detail)
 
@@ -219,7 +249,7 @@ def probe_turn():
     results = [check("prompt drawn", screen.ready())]
     screen.type("Write the file\r")
     results.append(check("prompt in the transcript", screen.until("Write the file")))
-    results.append(check("tool call shown, succeeded", screen.until("bash echo screen-ok > out.txt ✓")))
+    results.append(check("tool call shown, succeeded", screen.until_tool("echo screen-ok > out.txt")))
     results.append(check("answer streamed", screen.until("All done here.")))
     results.append(check("back to ready", screen.until_status("ready")))
     results.append(check("file written", os.path.exists(os.path.join(project, "out.txt"))))
@@ -263,7 +293,8 @@ def probe_abort():
     results.append(check("Esc leaves the running command alone", not screen.idle() and "Aborted" not in screen.screen.text()))
     screen.type("\x03")
     results.append(check("abort reported", screen.until("Aborted. Results already known were kept.")))
-    results.append(check("tool shown as stopped", screen.until("[aborted; the command and its children were stopped]")))
+    # The result folds into the tool's row, which ends in ✗; the text itself is what the model is sent.
+    results.append(check("tool shown as stopped", screen.until_tool("sleep 300 & echo", "✗")))
     results.append(check("back to ready", screen.until_status("ready")))
     alive = True
     end = time.time() + 5
@@ -308,12 +339,13 @@ def probe_resume():
     first.until_status("ready")
     first.type("\x03\x03")
     first.finish()
-    resumed = Screen(server.url, project, state, ["--continue"])
+    # Which session it resumed is a detail, said with --verbose (ADR-0119).
+    resumed = Screen(server.url, project, state, ["--continue", "--verbose"])
     results = [check("says which session it resumed", resumed.until("Resumed session 20")),
                check("earlier prompt shown", resumed.until("Remember KIWI")),
-               check("earlier tool call shown, succeeded", resumed.until("bash echo kept > kept.txt ✓")),
+               check("earlier tool call shown, succeeded", resumed.until_tool("echo kept > kept.txt")),
                check("earlier answer shown", resumed.until("First answer.")),
-               check("usage so far on the status line", "% cached" in resumed.status(), resumed.status())]
+               check("usage so far on the status line", re.search(r"↑[1-9]\d* ↓[1-9]", resumed.status()) is not None, resumed.status())]
     resumed.type("And now?\r")
     results.append(check("new answer streamed", resumed.until("Second answer.")))
     resumed.until_status("ready")
@@ -333,7 +365,7 @@ def probe_signal_stops_jobs():
     project, port = tempfile.mkdtemp(), agent.free_port()
     server = agent.Server([
         agent.turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
-        agent.turn([("call", "t2", "wait", {"job": "job-1", "port_open": port, "timeout_seconds": 20})], "tool_use"),
+        agent.turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
         agent.turn([("text", "Serving.")], "end_turn")])
     screen = Screen(server.url, project)
     screen.ready()
@@ -354,7 +386,8 @@ def probe_reload():
     os.makedirs(os.path.join(config, "ask"))
     user_file = os.path.join(config, "ask", "config.json")
     server = agent.Server([agent.turn([("text", f"Answer {i}.")], "end_turn") for i in range(1, 10)])
-    screen = Screen(server.url, project, config=config)
+    # What changed on a reload is a detail, said with --verbose (ADR-0119); a broken file is said regardless.
+    screen = Screen(server.url, project, config=config, arguments=["--verbose"])
     results = [check("prompt drawn", screen.ready())]
 
     def turn(prompt, answer):
@@ -391,13 +424,23 @@ def probe_reload():
 
 def probe_slash():
     print("G: slash commands")
+    # The /config now report runs to some 45 rows: a taller screen keeps the setting under test in view.
+    global ROWS
+    saved, ROWS = ROWS, 80
+    try:
+        return slash_checks()
+    finally:
+        ROWS = saved
+
+
+def slash_checks():
     project, config = tempfile.mkdtemp(), tempfile.mkdtemp()
     os.makedirs(os.path.join(config, "ask"))
     server = agent.Server([agent.turn([("text", "Answer 1.")], "end_turn"),
                            agent.turn([("text", "Answer 2.")], "end_turn"),
                            agent.turn([("text", "SUMMARY: the user pasted notes.")], "end_turn"),
                            agent.turn([("text", "Answer 4.")], "end_turn")])
-    screen = Screen(server.url, project, config=config)
+    screen = Screen(server.url, project, config=config, arguments=["--verbose"])
     results = [check("prompt drawn", screen.ready())]
 
     def line(text):
@@ -405,19 +448,20 @@ def probe_slash():
 
     line("/help")
     results += [check("/help lists the screen's commands", screen.until("/quit  Leave ask")),
-                check("and the conversation's", screen.until("/compact  Summarise") and screen.until("/config  Read"))]
+                check("and the conversation's", screen.until("/compact  Summarise") and screen.until("/config  Edit settings"))]
     line("/confg")
     results.append(check("an unknown command is an error, and no request was made",
                          screen.until("There is no command /confg; /help lists them.") and len(server.requests) == 0,
                          len(server.requests)))
     line("/compact")
     results.append(check("/compact with nothing recorded says so", screen.until("Nothing to compact yet.")))
-    line("/config")
-    results += [check("/config shows each setting with its source", screen.until("maxTurns  100  [default]")),
+    # Bare /config opens the settings editor; /config now is the report.
+    line("/config now")
+    results += [check("/config now shows each setting with its source", screen.until("maxTurns  100 (sandbox on)  [default]")),
                 check("and the files", screen.until("user file") and screen.until("(none)"))]
     open(os.path.join(config, "ask", "config.json"), "w").write("{maxTurns: 7}")
-    line("/config")
-    results += [check("/config reads the files again and announces the change", screen.until("maxTurns: 100 → 7")),
+    line("/config now")
+    results += [check("/config now reads the files again and announces the change", screen.until("maxTurns: 100 → 7")),
                 check("and shows the new value from its file", screen.until("maxTurns  7  [") and screen.until("(applied)"))]
     line("/etc/hosts: what is this file?")
     results.append(check("a path is a prompt for the model", screen.until("Answer 1.") and len(server.requests) == 1
@@ -426,14 +470,14 @@ def probe_slash():
     screen.until_status("ready")
     line("/compact")
     results.append(check("/compact with only a short exchange says nothing could be summarised",
-                         screen.until("Could not compact") and len(server.requests) == 1, len(server.requests)))
+                         screen.until_tool("earlier messages", "✗", kind="compact") and len(server.requests) == 1, len(server.requests)))
     screen.until_status("ready")
     # A prompt well past the 80 KB kept tail, pasted: bracketed paste, as a terminal sends it.
     screen.type("\x1b[200~Notes: " + "lorem ipsum " * 7500 + "\x1b[201~\r")
     results.append(check("a large prompt is answered", screen.until("Answer 2.", 30)))
     screen.until_status("ready")
     line("/compact")
-    results += [check("/compact summarises the older conversation", screen.until("Compacted the conversation", 30)),
+    results += [check("/compact summarises the older conversation", screen.until_tool("earlier messages", "✓", 30, kind="compact")),
                 check("through one summary request", len(server.requests) == 3, len(server.requests))]
     screen.until_status("ready")
     line("and now?")
@@ -474,7 +518,8 @@ def probe_reload_binary():
     os.makedirs(os.path.join(config, "ask"))
     binary = install_build(bin_dir)
     server = agent.Server([agent.turn([("text", "Answer 1.")], "end_turn"), agent.turn([("text", "Answer 2.")], "end_turn")])
-    screen = Screen(server.url, project, state, config=config, binary=binary)
+    # A new build, the reload and the resumed session are details, said with --verbose (ADR-0119); a reload passes it on.
+    screen = Screen(server.url, project, state, config=config, binary=binary, arguments=["--verbose"])
     results = [check("prompt drawn", screen.ready())]
     screen.type("one\r")
     screen.until("Answer 1.")
@@ -520,7 +565,7 @@ def probe_reload_env_key():
     os.environ["GW_KEY"] = "stand-in-gw-key"
     try:
         binary = install_build(bin_dir)
-        screen = Screen(server.url, project, state, arguments=["--provider", "gw", "--model", "m"], config=config, binary=binary)
+        screen = Screen(server.url, project, state, arguments=["--provider", "gw", "--model", "m", "--verbose"], config=config, binary=binary)
         results = [check("prompt drawn", screen.ready())]
         install_build(bin_dir)
         results.append(check("a new build is announced", screen.until("A new ask binary appeared.")))
@@ -544,10 +589,11 @@ def probe_reload_refused():
     port = agent.free_port()
     server = agent.Server([
         agent.turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
-        agent.turn([("call", "t2", "wait", {"job": "job-1", "port_open": port, "timeout_seconds": 20})], "tool_use"),
+        agent.turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
         agent.turn([("text", "Serving.")], "end_turn"),
         agent.turn([("text", "Still here.")], "end_turn")])
-    screen = Screen(server.url, project, state, config=config, binary=binary)
+    # A new build, the reload and the resumed session are details, said with --verbose (ADR-0119); a reload passes it on.
+    screen = Screen(server.url, project, state, config=config, binary=binary, arguments=["--verbose"])
     screen.ready()
     screen.type("serve\r")
     results = [check("a job is running", screen.until("Serving.", 30) and agent.accepts(port))]
@@ -576,13 +622,18 @@ def probe_reload_refused():
     return all(results)
 
 
+def gate(call, name):
+    """A tool call that holds its turn until the file `name` appears in the project: a foreground command, so the model waits on it."""
+    return ("call", call, "bash", {"command": f"while [ ! -e {name} ]; do sleep 0.05; done"})
+
+
 def probe_steering():
     print("J: steering after the whole tool batch; a follow-up only after the agent finishes")
     project = tempfile.mkdtemp()
     server = agent.Server([
-        agent.turn([("call", "gate1", "wait", {"file_exists": "release-one"}),
+        agent.turn([gate("gate1", "release-one"),
                     ("tool", "batch", "echo batch-finished > batch.txt")], "tool_use"),
-        agent.turn([("call", "gate2", "wait", {"file_exists": "release-two"})], "tool_use"),
+        agent.turn([gate("gate2", "release-two")], "tool_use"),
         agent.turn([("text", "BASE WORK FINISHED")], "end_turn"),
         agent.turn([("text", "FOLLOWUP ANSWER")], "end_turn")])
     screen = Screen(server.url, project)
@@ -626,11 +677,14 @@ def probe_steering():
 
 def probe_abort_queue():
     print("K: stopping returns unsent input to the editor, without persisting or running it")
-    project = tempfile.mkdtemp()
+    project, config = tempfile.mkdtemp(), tempfile.mkdtemp()
+    # The default, "all", sends queued messages when a turn stops; "none" puts them back in the input, which is what this probes.
+    os.makedirs(os.path.join(config, "ask"))
+    json.dump({"ui": {"interruptSendsQueued": "none"}}, open(os.path.join(config, "ask", "config.json"), "w"))
     server = agent.Server([
-        agent.turn([("call", "gate", "wait", {"file_exists": "never-created"})], "tool_use"),
+        agent.turn([gate("gate", "never-created")], "tool_use"),
         agent.turn([("text", "RECOVERED AFTER ABORT")], "end_turn")])
-    screen = Screen(server.url, project)
+    screen = Screen(server.url, project, config=config)
     screen.ready()
     screen.type("Start\r")
     results = [check("waiting in a tool", screen.until("never-created"))]
@@ -667,7 +721,7 @@ def probe_failed_queue():
     print("L: a failed stream returns queued input rather than automatically starting it")
     project = tempfile.mkdtemp()
     server = agent.Server([
-        agent.turn([("call", "gate", "wait", {"file_exists": "release"})], "tool_use"),
+        agent.turn([gate("gate", "release")], "tool_use"),
         b'event: message_stop\ndata: {"type":"message_stop"}\n\n'])
     screen = Screen(server.url, project)
     screen.ready()
@@ -704,7 +758,7 @@ def probe_multiline():
     screen.type("\r")
     results.append(check("the answer arrives", screen.until("Got all four lines.")))
     results.append(check("the transcript shows the prompt on four rows",
-                         "alpha\nBETA\ngamma\ndelta" in screen.screen.text()))
+                         "alpha\nBETA\ngamma\ndelta" in "\n".join(line.strip() for line in screen.screen.text().split("\n"))))
     wanted = "alpha\nBETA\ngamma\ndelta"
     blocks = [b.get("text") for m in (server.requests[0]["body"]["messages"] if server.requests else [])
               for b in m["content"]]
@@ -740,7 +794,7 @@ def probe_new_session():
     screen.type("/new\r")
     results.append(check("new session announced", screen.until("New session. The previous one is saved.")))
     results.append(check("old transcript and usage are gone",
-                         "ORIGINAL SESSION ANSWER" not in screen.screen.text() and "out 5" not in screen.status()))
+                         "ORIGINAL SESSION ANSWER" not in screen.screen.text() and output_tokens(screen) != 5))
     results.append(check("no empty session was created", agent.sessions(screen.state) == paths))
     released = False
     if original:
@@ -762,7 +816,7 @@ def probe_new_session():
     files = agent.sessions(screen.state)
     results.append(check("the second prompt created its own session", len(files) == 2, files))
     results.append(check("the old file is unchanged", original and open(original, "rb").read() == before))
-    results.append(check("only new usage is shown", "out 5" in screen.status() and "out 10" not in screen.status(), screen.status()))
+    results.append(check("only new usage is shown", output_tokens(screen) == 5 and output_tokens(screen) != 10, screen.status()))
     screen.type("/quit\r")
     results.append(check("same process exits cleanly", screen.finish() == 0))
     server.httpd.shutdown()
@@ -830,7 +884,10 @@ def probe_resume_sessions():
     screen = Screen(server.url, project)
     screen.ready()
     screen.type("/resume\r")
-    available = screen.until("No sessions in this project yet.")
+    # An empty list says so in the picker's title; Enter then runs the bare command, which says why.
+    offered = screen.until("resume · nothing to choose")
+    screen.type("\r")
+    available = offered and screen.until("No sessions in this project yet.")
     results = [check("an empty list is reported without creating a session", available and not agent.sessions(screen.state), screen.screen.text())]
     if not available:
         screen.type("/quit\r")
@@ -852,23 +909,31 @@ def probe_resume_sessions():
     a_bytes = open(a, "rb").read()
     screen.type("/resume\r")
     results.append(check("the list includes both session names", screen.until(os.path.basename(a)) and screen.until(os.path.basename(b))))
-    screen.until_status("ready")
     results.append(check("listing made no provider request", len(server.requests) == 2))
+    screen.type("\x1b\x15")  # close the list, clear the draft
+    screen.until_editor("")
+    # In the screen a prefix narrows the list, and Enter takes the highlighted row; the command refusing an ambiguous prefix is
+    # SessionLookupTests' to show.
     ambiguous = os.path.commonprefix([os.path.basename(a), os.path.basename(b)])
-    screen.type("/resume " + ambiguous + "\r")
-    results.append(check("an ambiguous prefix is refused", screen.until("Cannot resume " + ambiguous + ":")))
-    screen.until_status("ready")
+    screen.type("/resume " + ambiguous)
+    screen.until("\x00", 0.5)
+    listed = "\n".join(screen.editor_lines())
+    results.append(check("an ambiguous prefix leaves both sessions to choose from",
+                         os.path.basename(a) in listed and os.path.basename(b) in listed, listed))
+    screen.type("\x1b\x15")
+    screen.until_editor("")
     screen.type("/resume definitely-absent\r")
     results.append(check("unknown selection is refused", screen.until("Cannot resume definitely-absent:")))
     screen.until_status("ready")
     missing = os.path.join(project, "missing.jsonl")
     screen.type("/resume " + missing + "\r")
-    results.append(check("opening a missing file is refused", screen.until("Cannot resume " + missing + ":")))
+    results.append(check("opening a missing file is refused, in words", screen.until("Cannot resume " + missing + ":")
+                         and screen.until("No such file or directory"), screen.screen.text()[-600:]))
     screen.until_status("ready")
     with open(a, "rb") as locked:
         fcntl.flock(locked.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
         screen.type("/resume " + os.path.basename(a) + "\r")
-        results.append(check("another writer is refused", screen.until("this session is open in another ask")))
+        results.append(check("another writer is refused", screen.until("this session is open")))  # the long path wraps the rest
         screen.until_status("ready")
     screen.type("Continue B after refusals\r")
     results.append(check("B remains usable", screen.until("B AFTER REFUSAL")))
@@ -881,19 +946,19 @@ def probe_resume_sessions():
     screen.until_status("ready")
     results.append(check("only A's history is drawn", "FIRST ARCHIVE ANSWER" in screen.screen.text()
                          and "SECOND ARCHIVE ANSWER" not in screen.screen.text() and "B AFTER REFUSAL" not in screen.screen.text()))
-    results.append(check("A's usage replaces B's usage", "out 5" in screen.status() and "out 10" not in screen.status(), screen.status()))
+    results.append(check("A's usage replaces B's usage", output_tokens(screen) == 5 and output_tokens(screen) != 10, screen.status()))
     results.append(check("B is unlocked and A is locked", can_lock_session(b) and not can_lock_session(a)))
     results.append(check("switching only reads the target archive", open(a, "rb").read() == a_bytes))
     screen.type("/resume " + a + "\r")
     results.append(check("selecting the current session is a no-op", screen.until("Already using session " + os.path.basename(a))))
     screen.until_status("ready")
-    results.append(check("reselecting does not double-count usage", "out 5" in screen.status() and "out 10" not in screen.status(), screen.status()))
+    results.append(check("reselecting does not double-count usage", output_tokens(screen) == 5 and output_tokens(screen) != 10, screen.status()))
     screen.type("Continue A now\r")
     results.append(check("A continues", screen.until("A AFTER RESUME")))
     screen.until_status("ready")
     last = server.requests[-1]["body"]["messages"]
     results.append(check("the actual request carries A, not B", "A first canary" in json.dumps(last) and "B second canary" not in json.dumps(last)))
-    results.append(check("A usage accumulates from its own history", "out 10" in screen.status(), screen.status()))
+    results.append(check("A usage accumulates from its own history", output_tokens(screen) == 10, screen.status()))
     results.append(check("B's file was not changed by A's turn", open(b, "rb").read() == b_bytes))
     damaged = os.path.join(os.path.dirname(a), "damaged-probe.jsonl")
     original = open(a, "rb").read() + b'{"id":"torn'
@@ -927,6 +992,16 @@ def until_after(screen, marker, needle, seconds=15):
 
 def probe_model_selection():
     print("Q: /model is run-local, atomic, pinned to its provider, and survives reload without losing reset")
+    # The /config now report runs to some 45 rows: a taller screen keeps the settings under test in view.
+    global ROWS
+    saved, ROWS = ROWS, 80
+    try:
+        return model_selection_checks()
+    finally:
+        ROWS = saved
+
+
+def model_selection_checks():
     project, config, binary_dir = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
     os.makedirs(os.path.join(config, "ask"))
     config_path = os.path.join(config, "ask", "config.json")
@@ -941,11 +1016,14 @@ def probe_model_selection():
     binary = install_build(binary_dir)
     server = agent.Server([agent.turn([("text", text)], "end_turn") for text in [
         "BASE MODEL ANSWER", "PICKED MODEL ANSWER", "MODEL AFTER REFUSAL", "RESET MODEL ANSWER"]])
-    screen = Screen(server.url, project, config=config, binary=binary, arguments=("--model", "flag-model"))
+    # A changed provider, a new build and the reload are details, said with --verbose (ADR-0119).
+    screen = Screen(server.url, project, config=config, binary=binary, arguments=("--model", "flag-model", "--verbose"))
     screen.ready()
     screen.type("/model\r")
-    found = screen.until("Current model: flag-model")
-    results = [check("the current model is reported without a request", found and not server.requests, screen.screen.text())]
+    # Bare /model opens the list of models; the status line names the current one.
+    found = screen.until("model · ") and "flag-model" in screen.status()
+    screen.type("\x1b\x15")  # close the list, clear the draft
+    results = [check("the list opens and the current model is shown, without a request", found and not server.requests, screen.screen.text())]
     if not found:
         screen.type("/quit\r")
         screen.finish()
@@ -959,9 +1037,10 @@ def probe_model_selection():
     before = open(config_path, "rb").read()
     screen.type("/model " + chosen + "\r")
     results.append(check("a model id with slashes is not misread as a provider", screen.until("Model selected for this run: " + chosen)))
+    dismiss_thinking_offer(screen)
     results.append(check("selecting did not rewrite configuration", open(config_path, "rb").read() == before))
     screen.until_status("ready")
-    screen.type("/config\r")
+    screen.type("/config now\r")
     results.append(check("configuration reports command provenance", screen.until("[/model (this run)]")))
     screen.until_status("ready")
     settings.update(provider="unconfigured-file-provider", model="changed-file-model", maxTurns=7)
@@ -970,12 +1049,13 @@ def probe_model_selection():
     results.append(check("the choice survives prompt-time configuration reload", screen.until("PICKED MODEL ANSWER")))
     screen.until_status("ready")
     results.append(check("the request uses the selected id", len(server.requests) == 2 and server.requests[1]["body"]["model"] == chosen))
-    screen.type("/config\r")
+    screen.type("/config now\r")
     results.append(check("unrelated configuration still reloads", screen.until("maxTurns  7")))
     screen.until_status("ready")
     for arguments in ["missing-provider any-model", "keyless any-model"]:
         screen.type("/model " + arguments + "\r")
         results.append(check("failed selection is nonfatal: " + arguments, screen.until("Model not changed (" + arguments + "):")))
+        dismiss_thinking_offer(screen)
         screen.until_status("ready")
     marker = "/config after-refusals"  # unique: an older /config's report cannot satisfy the waits below
     screen.type("/config after-refusals\r")
@@ -987,16 +1067,20 @@ def probe_model_selection():
     screen.until_status("ready")
     screen.type("/model local local-model\r")
     results.append(check("a provider and model switch together", screen.until("Model selected for this run: local-model"), screen.screen.text()))
+    dismiss_thinking_offer(screen)
     results.append(check("the status label names the provider", screen.until_status("local/local-model")))
     screen.until_status("ready")
     screen.type("/model " + chosen + "\r")
     results.append(check("a bare id keeps the provider now in force", screen.until("local/" + chosen)))
+    dismiss_thinking_offer(screen)
     screen.until_status("ready")
     screen.type("/model anthropic " + chosen + "\r")
     results.append(check("and the provider can be named again", screen.until('provider: "local" → "anthropic" (/model (this run))')))
+    dismiss_thinking_offer(screen)
     screen.until_status("ready")
     screen.type("/model one two three\r")
     results.append(check("bad command syntax is refused", screen.until("Usage: /model [PROVIDER] MODEL"), screen.screen.text()))
+    dismiss_thinking_offer(screen)
     screen.until_status("ready")
     results.append(check("commands made no model requests", len(server.requests) == 2))
     screen.type("Request after refusals\r")
@@ -1013,7 +1097,7 @@ def probe_model_selection():
                          screen.until("Reloaded ask: built ", 30)))
     results.append(check("reload keeps the selected model and process", chosen in screen.status() and screen.pid == original_pid))
     screen.until_status("ready")
-    screen.type("/config\r")
+    screen.type("/config now\r")
     results.append(check("reload kept command rather than CLI provenance", screen.until("[/model (this run)]")))
     screen.until_status("ready")
     settings["provider"] = "anthropic"
@@ -1021,6 +1105,7 @@ def probe_model_selection():
     saved = open(config_path, "rb").read()
     screen.type("/model --reset\r")
     results.append(check("reset after reload restores the original CLI flag", screen.until("Model selection reset to configuration: flag-model")))
+    dismiss_thinking_offer(screen)
     screen.until_status("ready")
     screen.type("Request after reset\r")
     results.append(check("the reset model runs", screen.until("RESET MODEL ANSWER")))
@@ -1037,26 +1122,36 @@ def probe_model_selection():
 
 
 def probe_strict_label():
-    print("R: the status line says when the sandbox is strict, or off")
+    print("R: a strict sandbox is said at the start with --verbose; no sandbox is a warning on the status line")
+    # Roadmap 0074: the status line leads with ✓ when sandboxed and ! when not, and says nothing more about a sandbox that is on.
     project = tempfile.mkdtemp()
     server = agent.Server([])
     results = []
-    for arguments, wanted in [(("--write", "workspace", "--network", "none"), "sandbox: workspace only, no network"),
-                              (("--network", "localhost"), "sandbox: localhost only"),
-                              (("--read", "workspace"), "sandbox: reads workspace"),
-                              (("--no-sandbox",), "no sandbox"),
-                              ((), None)]:
-        screen = Screen(server.url, project, arguments=arguments)
+    for arguments, wanted, mark in [(("--write", "workspace", "--network", "none"), "network none", "✓"),
+                                    (("--network", "localhost"), "network localhost", "✓"),
+                                    (("--read", "workspace"), "reads only the workspace", "✓"),
+                                    (("--no-sandbox",), "The sandbox is off", "!"),
+                                    ((), None, "✓")]:
+        screen = Screen(server.url, project, arguments=(*arguments, "--verbose"))
         screen.ready()
-        status = screen.status()
+        status, text = screen.status(), screen.screen.text()
+        label = " ".join(arguments) or "the default"
+        results.append(check(f"{label}: the status line leads with {mark}", status.lstrip().startswith(mark), status))
         if wanted:
-            results.append(check(f"{' '.join(arguments)}: the status line says '{wanted}'", wanted in status, status))
+            results.append(check(f"{label}: the start says '{wanted}'", wanted in text, text[:400]))
         else:
-            results.append(check("the default sandbox adds nothing to the status line", "sandbox" not in status, status))
+            results.append(check("the default sandbox is not described", "Sandbox:" not in text, text[:400]))
         screen.type("/quit\r")
         results.append(check("clean exit", screen.finish() == 0))
     server.httpd.shutdown()
     return all(results)
+
+
+def sandbox_row(screen):
+    """The sandbox rows of the last `/config now` report: `sandbox   on` and the line under it naming writes, reads and the network."""
+    lines = screen.screen.text().split("\n")
+    start = max((i for i, line in enumerate(lines) if line.strip().startswith("sandbox ")), default=None)
+    return " ".join(line.strip() for line in lines[start:start + 2]) if start is not None else ""
 
 
 def probe_resume_strict():
@@ -1067,19 +1162,35 @@ def probe_resume_strict():
                           env=agent.environment(state, server.url), capture_output=True, text=True, timeout=60)
     files = agent.sessions(state)
     results = [check("a strict session exists", made.returncode == 0 and len(files) == 1, made.stderr[-300:])]
-    screen = Screen(server.url, project, state)
-    screen.ready()
-    results.append(check("a fresh screen is not strict", "sandbox" not in screen.status(), screen.status()))
-    screen.type("/resume " + os.path.basename(files[0]) + "\r")
-    results.append(check("resuming adopts the recorded sandbox", screen.until_status("sandbox: workspace only, no network"), screen.status()))
-    results.append(check("and says so", screen.until("Keeping this session's sandbox")))
-    screen.until_status("ready")
-    screen.type("/new\r")
-    results.append(check("/new drops it", screen.until("New session.")  # /new clears the transcript, so its own line is gone
-                         and screen.until_status("ready") and "sandbox" not in screen.status(), screen.status()))
-    screen.type("/quit\r")
-    results.append(check("clean exit", screen.finish() == 0))
-    server.httpd.shutdown()
+    # Keeping a session's sandbox is a detail, said with --verbose (ADR-0119); /config now shows the sandbox in force.
+    global ROWS
+    saved, ROWS = ROWS, 80
+    try:
+        screen = Screen(server.url, project, state, arguments=["--verbose"])
+        screen.ready()
+        screen.type("/config now\r")
+        screen.until("project file")
+        results.append(check("a fresh screen is not strict", "network: any" in sandbox_row(screen), sandbox_row(screen)))
+        screen.until_status("ready")
+        screen.type("/resume " + os.path.basename(files[0]) + "\r")
+        results.append(check("resuming says it keeps the recorded sandbox", screen.until("Keeping this session's sandbox")))
+        screen.until_status("ready")
+        screen.type("/config now\r")
+        screen.until("\x00", 1.0)
+        row = sandbox_row(screen)
+        results.append(check("and adopts it", ("network none" in row or "network: none" in row) and "this session's record" in row, row))
+        screen.until_status("ready")
+        screen.type("/new\r")
+        screen.until("New session.")
+        screen.until_status("ready")
+        screen.type("/config now\r")
+        screen.until("\x00", 1.0)
+        results.append(check("/new drops it", "network: any" in sandbox_row(screen), sandbox_row(screen)))
+        screen.type("/quit\r")
+        results.append(check("clean exit", screen.finish() == 0))
+    finally:
+        ROWS = saved
+        server.httpd.shutdown()
     return all(results)
 
 
@@ -1108,6 +1219,7 @@ def probe_model_and_destination():
     screen.until_status("ready")
     screen.type("/model gamma-model\r")
     screen.until("Model selected for this run: gamma-model")
+    dismiss_thinking_offer(screen)
     screen.until_status("ready")
     screen.type("Now on gamma\r")
     results.append(check("/model overrides the recorded destination, as the user's consent",
@@ -1115,6 +1227,7 @@ def probe_model_and_destination():
     screen.until_status("ready")
     screen.type("/model local local-x\r")
     screen.until("Model selected for this run: local-x")
+    dismiss_thinking_offer(screen)
     screen.until_status("local/local-x · ready")
     before = len(server.requests)
     screen.type("Now elsewhere\r")
@@ -1171,14 +1284,16 @@ def probe_sandbox_approval():
     screen.type("a")
     results.append(check("a runs it and allows it for the session",
                          wait(lambda: "HTTP 200 curl=0" in result(2)) and "Allowed for this session." in screen.screen.text()))
+    # Earlier questions scroll away: what follows the grant is what counts.
+    after_grant = lambda: screen.screen.text().rsplit("Allowed for this session.", 1)[-1]
     results.append(check("a request the session grant covers runs without asking",
-                         wait(lambda: "HTTP 200 curl=0" in result(3))
-                         and screen.screen.text().count("network any (this run allows localhost). Allow it?") == 2,
-                         (questions(), result(3)[-200:])))
-    results.append(check("a larger request asks", wait(lambda: questions() == 3) and "asks for writing under /Users/Shared" in screen.screen.text()))
+                         wait(lambda: "HTTP 200 curl=0" in result(3)) and "network any" not in after_grant(),
+                         (after_grant()[-300:], result(3)[-200:])))
+    results.append(check("a larger request asks", wait(lambda: "asks for writing under /Users/Shared" in after_grant())))
     screen.type("n")
-    results.append(check("n refuses it, saying who can widen the sandbox",
-                         wait(lambda: "Only the user can widen the sandbox" in result(4)) and not os.path.exists(never), result(4)[-300:]))
+    # The model is told the least about the sandbox (ADR-0115): a refusal, not who could widen it.
+    results.append(check("n refuses it",
+                         wait(lambda: "that request is refused" in result(4)) and not os.path.exists(never), result(4)[-300:]))
     screen.until("All done.", 15)
     screen.until_status("ready")
     screen.type("/quit\r")
@@ -1244,6 +1359,7 @@ def probe_session_narrowing_screen():
     screen.until_status("ready")
     screen.type("/model narrowed-model\r")
     screen.until("Model selected for this run: narrowed-model")
+    dismiss_thinking_offer(screen)
     screen.until_status("ready")
     screen.type("Try after rebuilding the loop\r")
     results.append(check("/model rebuilds the loop without losing the narrowing",
@@ -1293,7 +1409,7 @@ def probe_reset_ignores_unrelated_grants():
                          wait(lambda: screen.screen.text().count("Allow it?") == 2)
                          and "narrowing" in screen.screen.text(), screen.screen.text()[-600:]))
     screen.type("n")
-    results.append(check("no keeps the narrowing", wait(lambda: "Only the user can widen" in result(3)), result(3)[-200:]))
+    results.append(check("no keeps the narrowing", wait(lambda: "that request is refused" in result(3)), result(3)[-200:]))
     results.append(check("and a later call cannot connect", wait(lambda: "curl=7" in result(4)), result(4)[-200:]))
     screen.until("Reset refused.")
     screen.until_status("ready")
@@ -1305,6 +1421,13 @@ def probe_reset_ignores_unrelated_grants():
 
 
 if __name__ == "__main__":
-    ok = probe_turn() & probe_abort() & probe_quit() & probe_resume() & probe_signal_stops_jobs() & probe_reload() & probe_slash() & probe_reload_binary() & probe_reload_env_key() & probe_reload_refused() & probe_steering() & probe_abort_queue() & probe_failed_queue() & probe_multiline() & probe_new_session() & probe_session_job_guard() & probe_resume_sessions() & probe_model_selection() & probe_strict_label() & probe_resume_strict() & probe_model_and_destination() & probe_sandbox_approval() & probe_approval_abort() & probe_session_narrowing_screen() & probe_reset_ignores_unrelated_grants()
+    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants]
+    # --only A,F runs the probes whose heading starts with those letters (each prints "A: …" first).
+    wanted = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
+    ok = True
+    for probe in probes:
+        label = next((c.split(":")[0] for c in probe.__code__.co_consts if isinstance(c, str) and re.match(r"[A-Z]\w*: ", c)), "?")
+        if wanted is None or label in wanted:
+            ok = probe() and ok
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

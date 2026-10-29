@@ -69,7 +69,8 @@ def main():
         terminal = None
         try:
             terminal = probe.Terminal(project, environment, rows=30)
-            terminal.until(lambda: "ask>" in terminal.text())
+            # The input is drawn before the status line names the model.
+            terminal.until(lambda: "ask>" in terminal.text() and "anthropic/" in terminal.text())
             check("with nothing running the status line has no count", "job" not in terminal.screen.display[status_row(terminal)])
             start = len(terminal.raw)
             terminal.send(b"Serve\r")

@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-29
 ---
@@ -51,3 +51,17 @@ not by loosening the check; split the file (1,300 lines) into one probe per scen
 the mark, so every probe built on `pp.Session` starts. `probe-lines-below` passes 5 of 5 against the release binary. `probe-picker`,
 `probe-tree`, `probe-files` and `probe-picker-click` start now but still fail further in on other expectations of the old layout;
 `probe-pointer` fails 19 checks, `probe-input` fails at startup. Still open.
+
+## Done (2026-10-29)
+
+Every probe the batch runs passes against the release build: `probe-interactive` 264 checks, `probe-agent-run` 157, and the rest of
+`Scripts/probe-*.py` but agy-live, agy-login, accounts and copilot-flow, which need real accounts. Each check was set against what the
+screen is meant to do now, not loosened: startup details are `--verbose` (ADR-0119); `/config now`; the status line's ✓ and ! (0074);
+the folded `shell · CMD … ✓` rows; the short refusal the model is told (ADR-0115); `/model` offering `/thinking ` (ADR-0117); questions
+that scroll away; `--only A,F` runs sections alone. The file was not split: `--only` gives the same seconds-long run.
+
+The probes found four bugs, fixed with tests: `/tree` offered a list held from before the run (`markChoicesStale`); a refused run hid the
+verbose details it should have shown first; `/resume` with no sessions did nothing at all (the empty picker now says "nothing to choose",
+Enter runs the bare command); a missing session file read `io(…Operation.open, errno: 2)` (`SessionFileError` has words now). And one in
+the probes themselves: they read the owner's real `~/.config/ask`, because `NSHomeDirectory()` ignores `$HOME`; `environment()` now always
+sets `XDG_CONFIG_HOME`.
