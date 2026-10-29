@@ -21,8 +21,9 @@ setting.
 
 ## Still owed
 
-- A signing step with the personal Apple Development identity (`ASK_SIGNING_IDENTITY`), run after the build and before `/reload` switches;
-  then the first signed run moves the real credentials into the login keychain, to be checked by hand.
+- `Scripts/build-release.sh` builds and signs with `ASK_SIGNING_IDENTITY` (`Scripts/sign.sh`, identifier `ask`; tested ad hoc in the
+  gate, `Scripts/test-sign.py`). Owed: the first real signing with the personal identity (a keychain password prompt for the owner),
+  then the first signed run moving the real credentials into the login keychain, checked by hand.
 - A locked keychain over SSH, checked for real (only the message is written).
 
 ## Investigation (2026-10-29)
