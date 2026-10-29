@@ -29,4 +29,5 @@ characters kept; 0085's research specified it (proposal 4); ADR-0129 drew replie
 ## Still owed
 
 - Queued prompts; the real-terminal look of all three (pyte only so far).
-- Drafts over about 20 KB were already past the 4 ms input budget before this (0085 proposal 5, an incremental `InputLayout`).
+- Drafts over about 20 KB were already past the 4 ms input budget before this; with Markdown a 20 KB draft is at the edge (3.65 and
+  4.09 ms in two runs). The fix for both is 0085 proposal 5: an incremental `InputLayout`, and a parse of the edited block only.

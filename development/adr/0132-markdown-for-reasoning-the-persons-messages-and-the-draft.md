@@ -42,8 +42,9 @@ draft  46000 B markdown on : keystroke median  5.33 ms p90  7.76 ms
 ```
 
 The first version parsed the whole draft and kept a `Style` per byte: +2.5 ms at 46 KB, and 20 KB went from 3.55 to 4.70 ms, past the
-4 ms budget. A byte-sized style index and the window brought it to within noise. Drafts over about 20 KB were over budget before this
-(0085 proposal 5).
+4 ms budget. A byte-sized style index and the window brought the extra to 0.15 to 0.6 ms up to 20 KB and 0.7 to 1.3 ms at 46 KB, over two runs.
+At 20 KB the median with Markdown was 3.65 ms in one run and 4.09 ms in the other (3.49 to 3.50 without): at the edge of the budget.
+Drafts over about 20 KB were over budget before this (0085 proposal 5); an incremental `InputLayout` and parse are what would fix both.
 
 ## Consequences
 
