@@ -93,7 +93,7 @@ class Session:
             environment.pop(key, None)
         probe.BINARY = os.path.abspath(binary)
         self.terminal = probe.Terminal(project, environment, columns=columns, rows=height)
-        self.terminal.until(lambda: "ask>" in self.terminal.text())
+        self.terminal.until(lambda: "ask>" in self.terminal.text() or "✓ ·" in self.terminal.text() or "! ·" in self.terminal.text())
 
     def requests(self):
         return len(self.server.requests)

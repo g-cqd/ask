@@ -44,3 +44,10 @@ not by loosening the check; split the file (1,300 lines) into one probe per scen
 - V: a call asking for more than the sandbox allows is put to the user: onc (2): a larger request asks; n refuses it, saying who can widen the sandbox
 - Y: undoing the session's narrowing asks; /model keeps it and /new drops i (2): /model rebuilds the loop without losing the narrowing; /new drops the narrowing
 - Z: a remembered write grant is not permission to undo a network narrowing (1): no keeps the narrowing
+
+## Progress (2026-10-29)
+
+`probe-lines-below.py` repaired (the status line is the last row with text; idle is the mark) and `probe-picker.py`'s startup wait accepts
+the mark, so every probe built on `pp.Session` starts. `probe-lines-below` passes 5 of 5 against the release binary. `probe-picker`,
+`probe-tree`, `probe-files` and `probe-picker-click` start now but still fail further in on other expectations of the old layout;
+`probe-pointer` fails 19 checks, `probe-input` fails at startup. Still open.

@@ -14,8 +14,8 @@ extension ScreenController {
 
     private func canScroll(_ request: ScrollRequest) -> Bool {
         switch request {
-            case .up: frame.totalLines - frame.transcriptRows > state.scrollback
-            case .down: state.scrollback > 0
+            case .up: state.scroll.canScrollUp(totalRows: frame.totalLines, viewportRows: frame.transcriptRows)
+            case .down: state.scroll.canScrollDown
         }
     }
 

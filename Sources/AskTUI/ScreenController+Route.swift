@@ -1,5 +1,6 @@
 internal import TerminalKitCodecs
 internal import TerminalKitInput
+internal import TerminalKitText
 
 /// Routing an input event to whichever part of the screen has the keys.
 extension ScreenController {
@@ -19,12 +20,12 @@ extension ScreenController {
                     return []
                 }
                 if key.keyCode == Key.pageDown.rawValue {
-                    state.scrollback = Swift.max(0, state.scrollback - Swift.max(1, pageRows))
+                    scroll(by: -Swift.max(1, pageRows))
                     return []
                 }
                 // End goes to the end of the conversation when there is no draft for it to go to the end of (ADR-0072).
                 if key.keyCode == Key.end.rawValue, state.scrollback > 0, state.editor.text.isEmpty {
-                    state.scrollback = 0
+                    state.scroll.followEnd()
                     return []
                 }
                 // A question waiting for y, a or n takes the keys first (roadmap 0019).

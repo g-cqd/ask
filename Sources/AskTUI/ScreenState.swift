@@ -1,3 +1,4 @@
+internal import TerminalKitCodecs
 internal import TerminalKitRender
 internal import TerminalKitStyle
 internal import TerminalKitText
@@ -76,8 +77,13 @@ public struct ScreenState: Sendable, Equatable {
     var picker: CompletionPicker?
     /// Where the word the user closed the picker on starts. It stays closed until the cursor leaves that word.
     var pickerDismissedAt: Int?
+    /// Where the transcript is scrolled to: up from the bottom, with TerminalKit's rules for moving it.
+    var scroll = ScrollPosition()
     /// How many wrapped lines the transcript is scrolled up from the bottom.
-    public var scrollback = 0
+    public var scrollback: Int {
+        get { scroll.rowsFromEnd }
+        set { scroll.rowsFromEnd = Swift.max(0, newValue) }
+    }
     /// What the user has selected with the pointer, anchored in the conversation so it survives scrolling and streaming.
     var selection: ContentSelection<Int>?
     /// What is selected in the draft, as character offsets, while a selection in the input exists.
@@ -122,7 +128,7 @@ public struct ScreenState: Sendable, Equatable {
     }
 
     /// Mixes the tints again from the terminal's own colours (roadmap 0108).
-    mutating func adopt(_ page: ScreenTheme.Page) {
+    mutating func adopt(_ page: TerminalPage) {
         theme = ScreenTheme(tinted: theme.tinted, page: page)
         blocks.theme = theme
     }
