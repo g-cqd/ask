@@ -31,8 +31,8 @@ def run(binary):
     server = agent.Server([
         agent.turn([("call", "t1", "bash", {"command": JOB, "yield_seconds": 1})], "tool_use"),
         agent.turn([("tool", "t2", "sleep 4")], "tool_use"),  # the job prints its 1.5 MiB meanwhile
-        agent.turn([("call", "t3", "wait", {"job": "job-1", "output_contains": "Read", "timeout_seconds": 2})], "tool_use"),
-        agent.turn([("call", "t4", "job_stop", {"job": "job-1"})], "tool_use"),
+        agent.turn([("call", "t3", "job", {"job": "job-1", "action": "wait", "wait_for_output": "Read", "timeout_seconds": 2})], "tool_use"),
+        agent.turn([("call", "t4", "job", {"job": "job-1", "action": "stop"})], "tool_use"),
         agent.turn([("text", "Done.")], "end_turn")])
     try:
         ran = subprocess.run([binary, "-p", "Wait for Read."], cwd=project, env=agent.environment(state, server.url),
@@ -42,8 +42,8 @@ def run(binary):
         server.httpd.shutdown()
 
 
-def check(label, condition):
-    print(("PASS " if condition else "FAIL ") + label, flush=True)
+def check(label, condition, detail=""):
+    print(("PASS " if condition else "FAIL ") + label + ("" if condition else f": {detail!r}"), flush=True)
     checks.append(label)
     if not condition:
         raise AssertionError(label)
@@ -60,8 +60,8 @@ def main():
               code == 0 and 'printed "Read"' in got.get("t3", ""))
     code, got = run(binary)
     check("candidate: the run completed", code == 0 and "t3" in got)
-    check("candidate: wait does not report Read found", "printed \"Read\"" not in got["t3"])
-    check("candidate: it times out instead, as a text that never came", "nothing happened within" in got["t3"])
+    check("candidate: wait does not report Read found", "printed \"Read\"" not in got["t3"], got["t3"][-200:])
+    check("candidate: it times out instead, as a text that never came", "nothing happened within" in got["t3"], got["t3"][-200:])
     print(f"{len(checks)} checks passed")
 
 
