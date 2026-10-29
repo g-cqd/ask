@@ -32,3 +32,14 @@ I was meant to ask refining questions before building (the wish said so) and had
 conversation of 2026-10-28 and answered here before any work: which blocks count as "about ask or its configuration" (the `/config`
 output, `ask config`, reload notices, notices of ask's own actions?); whether the whole block is tinted or only its label; how purple
 relates to the yellow of the debug mode (0107); whether errors from ask stay red.
+
+## Owner's answers (2026-10-29)
+
+1. Which blocks: those about ask itself and its configuration: `/config` and `ask config` output, reload notices, ask's own action
+   notices. In practice every notice that is not an error, since a notice is ask speaking.
+2. The whole block is tinted purple, as the user's block is blue.
+3. Separate from the debug mode: purple is ask's own messages, yellow (0107) is debug.
+4. Errors stay red.
+
+Ready to build: a transcript kind for ask's own messages, a `system` tint in `ScreenTheme` that keeps the contrast test, text in the
+terminal's foreground.
