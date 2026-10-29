@@ -160,3 +160,30 @@ Next in step 3: the payloads themselves. Of the file's 12 MB, responses are 7.1 
 0.25) and tool results 4.6 MB; the session has 22 compactions, so only what follows the last one is ever sent again. Keeping the entries
 before it as file offsets, read back when shown, opened or forked, is the lever on the 12.4 MB of strings.
 
+## Step 3, second part: payloads on disk (designed, not built)
+
+**What it would save.** On the 12 MB session, 5,465 of the leaf path's 5,564 entries precede its last compaction, and with them 98% of the
+payload bytes: signatures 3.56 MB, tool call inputs 2.25 MB, tool results 3.96 MB (after it: 0.13 MB in all). `malloc_history` attributes
+the live strings to the decoded payloads, each held once: the screen's items share their storage, and the `content + lostNote` copy in
+`WirePayload` costs nothing in the end (tried and measured: live heap +0.1 MB, reverted). So the strings go only if the payloads do.
+
+**Who reads payloads** (26 sites): the request context and compaction (only the entries after the last compaction on the path), the
+screen's replay (`SessionReplay`: the text of tool results and answers, not signatures or tool inputs), the outline and summary (user text),
+and the writers: `fork`, and `SessionLog.snapshot` when a file is rewritten.
+
+**The risk.** A writer that copies a slimmed entry loses its signatures or tool inputs from the new file, silently; a context rebuilt after
+a `/tree` checkout to before a compaction would send thinking without signatures (a 400 from Anthropic) or tool calls without input.
+
+**Design, so the compiler finds every reader.** An entry read from the file keeps where its line is (offset and length; the log is append
+only, so they do not move). Entries before the leaf path's last compaction are kept slim: signatures and tool inputs dropped, tool result
+text kept to its first lines and its line count. `SessionEntry.payload` stays the full payload type but is reachable only through
+`SessionFile.payload(of:)`, which reads a slim entry's line back (`pread`, decode, verify its id); the slim form is a separate type that
+the screen's replay accepts and the context builder and the writers do not, so a missed site does not compile. Moving the leaf or the
+last compaction re-reads what becomes context. Tests: fork and rewrite of a session with slim entries are byte-identical to the original's
+records; a checkout to before a compaction builds the same request as with everything in memory; a file changed under ask (the lock
+prevents another ask; an editor can still) is detected by the id check and falls back to the slim text with a notice.
+
+**Expected:** about 9 of the 11.3 MB of strings for this session, and an open that decodes less. Cost: one `pread` and decode when a folded
+old tool result is opened (under 1 ms for the largest, 1 MB line limit) or when the leaf moves to before a compaction. About a session of
+work; the owner's go-ahead is the remaining step.
+
