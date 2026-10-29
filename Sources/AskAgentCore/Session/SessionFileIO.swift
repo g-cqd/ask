@@ -2,7 +2,7 @@ internal import AemiIO
 internal import Darwin
 internal import System
 
-/// The system calls behind ``SessionFile``: exclusive creation, bounded reads, whole writes, and flushes.
+/// The system calls behind ``SessionFile``: exclusive creation, whole writes, and flushes (reads are ``SessionLogReader``'s).
 /// Policy (when to rewrite, what to keep) stays in `SessionFile`; this type only talks to the kernel.
 enum SessionFileIO {
     static func writeExclusively(
@@ -29,26 +29,6 @@ enum SessionFileIO {
             throw error
         }
         return descriptor
-    }
-
-    /// Reads the whole file through `descriptor`, from the start, after checking its size against `limits`.
-    static func readAll(_ descriptor: FileDescriptor, limits: SessionLog.Limits) throws(SessionFileError) -> [UInt8] {
-        let size = Int(try io(.read) { try descriptor.seek(offset: 0, from: .end) })
-        guard size <= limits.maximumArchiveBytes else { throw .log(.archiveTooLarge(size)) }
-        _ = try io(.read) { try descriptor.seek(offset: 0, from: .start) }
-        var bytes = [UInt8](repeating: 0, count: size)
-        var filled = 0
-        while filled < size {
-            let count = try io(.read) {
-                try bytes.withUnsafeMutableBytes { raw in
-                    try descriptor.read(into: UnsafeMutableRawBufferPointer(rebasing: raw[filled...]))
-                }
-            }
-            if count == 0 { break }  // The file shrank while being read; parse what was there.
-            filled += count
-        }
-        bytes.removeLast(size - filled)
-        return bytes
     }
 
     static func writeAll(_ bytes: [UInt8], to descriptor: FileDescriptor) throws(SessionFileError) {
