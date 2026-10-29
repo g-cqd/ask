@@ -22,3 +22,14 @@ the keys it sets, unless a setting says otherwise.
 Automatic configuration update when files change is important: move this out of the low-priority infrastructure group, directly after the
 urgent Claude investigation and immediate correctness fixes. Preserve layered configuration and sandbox rules; invalid updates keep the
 last valid configuration and report why. Watch rename/replace saves as well as in-place writes, without resetting a draft or an active turn.
+
+## What the documentation and the existing code say (2026-10-29)
+
+Through apple-docs (7 calls, all answered, 14.7 s, 41k tokens): `dispatch/dispatchsource/makefilesystemobjectsource(filedescriptor:eventmask:queue:)`
+with `dispatch/dispatchsource/filesystemevent` (`.write`, `.rename`, `.delete`, `.attrib`), and `coreservices/1443980-fseventstreamcreate`
+(macOS 10.5). The model recommended a descriptor on the file; that is wrong for this use: after an editor's atomic save the descriptor still
+names the old, renamed-away inode, and later writes go unseen. Watch the **parent directory** and compare the file, or use FSEvents.
+
+ask already does the first for its own binary: `BinaryWatcher` keeps a kqueue on the executable's directory on a 64 KiB thread of its own,
+because the linker swaps files (ADR-0033). Atelier has the second as a general watcher (`AtelierFileTree/AtelierFileWatcher.swift`, below);
+whichever is used, configuration files get one watcher for all their directories, not one per file.
