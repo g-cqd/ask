@@ -16,6 +16,9 @@ public enum AgentEvent: Sendable, Equatable {
     case retrying(attempt: Int, of: Int, delay: Duration, reason: String)
     /// The response stopped at the output-token limit; a continuation request was recorded and sent.
     case continuedAtOutputLimit
+    /// The connection dropped after part of the response was shown (roadmap 0141): what arrived was kept, and the model was asked to
+    /// carry on from where it stopped.
+    case continuedAfterDrop
     /// A summary of the conversation is being made, to compact it (roadmap 0099); `compacted` or `compactionFailed` follows.
     case compacting
     /// The conversation before the kept tail was replaced by `summary` in context; the session keeps it all.

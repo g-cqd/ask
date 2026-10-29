@@ -54,6 +54,9 @@ public final class PrintRenderer: Sendable {
             case .continuedAtOutputLimit:
                 endLine()
                 err("ask: the response hit the output limit; asking the model to continue.\n")
+            case .continuedAfterDrop:
+                endLine()
+                err("ask: the connection dropped; asking the model to carry on from where it stopped.\n")
             case .retrying(let attempt, let total, let delay, let reason):
                 endLine()
                 err("ask: \(RunNotices.retry(attempt: attempt, of: total, delay: delay, reason: reason))\n")

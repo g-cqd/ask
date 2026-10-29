@@ -11,7 +11,9 @@ public struct SessionSummary: Sendable, Equatable {
     public init(_ tree: SessionTree) {
         let prompts = tree.activeBranch()
             .compactMap { entry -> String? in
-                guard case .user(let text) = entry.payload, text != AgentLoop.continuationPrompt else { return nil }
+                guard case .user(let text) = entry.payload, text != AgentLoop.continuationPrompt,
+                    text != AgentLoop.reconnectionPrompt
+                else { return nil }
                 return SkillInvocation.shown(text)
             }
         firstPrompt = prompts.first
