@@ -13,8 +13,9 @@ extension ScreenComposer {
     ) -> [Line] {
         let item = transcript.items[index]
         let spaced = index > 0 && isSpaced(item) && isSpaced(transcript.items[index - 1])
+        let interrupted = transcript.interrupted.contains(index)
         if let rows = markdownItemLines(in: transcript, at: index, columns: columns, style: style) {
-            return framed(rows, kind: item, style: style, spacerAbove: spaced)
+            return framed(rows, kind: item, style: style, spacerAbove: spaced, interrupted: interrupted)
         }
         if transcript.markdown, case .assistant(let text) = item {
             return framed(
@@ -26,7 +27,8 @@ extension ScreenComposer {
             return lines(
                 for: item, folded: transcript.isFolded(index), block: index, columns: columns, style: style,
                 spacerAbove: spaced, progress: transcript.progress[index],
-                toolInput: transcript.shownToolInput(at: index), command: transcript.commandBlocks.contains(index))
+                toolInput: transcript.shownToolInput(at: index), command: transcript.commandBlocks.contains(index),
+                interrupted: interrupted)
         }
         // A placeholder is dim, like the other folds' headers; the rest of the message, open code included, is as it was.
         let margin = String(repeating: " ", count: style.inset)

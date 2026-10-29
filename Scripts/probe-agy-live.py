@@ -108,11 +108,10 @@ def main():
             time.sleep(5)
             terminal.pump()
             terminal.send(b"\x1b")
-            terminal.until(lambda: "Aborted" in terminal.text() and "· ready" in status(terminal))
+            terminal.until(lambda: "· ready" in status(terminal))
             terminal.repaint()
-            probe.check("Esc aborts a streaming answer, says so, and returns to the prompt",
-                        "Aborted. Results already known were kept." in transcript(terminal)
-                        and lines(terminal)[-1].startswith("ask>"))
+            probe.check("Esc aborts a streaming answer without a block, and returns to the prompt",
+                        "Aborted" not in transcript(terminal) and lines(terminal)[-1].startswith("ask>"))
             marker = "pong-" + token
             say(terminal, "Reply with exactly this one word and nothing else: " + marker)
             probe.check("the next turn after an abort works", transcript(terminal).count(marker) >= 2)
