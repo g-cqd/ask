@@ -46,3 +46,34 @@ captures outside the source repository. Scope the proxy environment to that term
 the first forwarded inference with the owner: even a minimal request might be billed as extra usage. Record upstream and downstream
 request/response differences without treating a successful response as proof of subscription billing. Kitty is installed; no terminal or
 proxy has been started yet. Reload first to make the newly installed REA tools available to this agent.
+
+## Expanded API research (owner, 2026-10-29)
+
+Capture which APIs the official client actually uses for usage, quota and adjacent account behaviour, not only Messages inference.
+
+### Scope
+
+- Usage and quota: utilization windows, reset timestamps, per-model limits, throttling, and whether figures come from separate requests,
+  inference response headers, or local calculations. Preserve the distinction between tokens, percentages, currency and plan allowances.
+- Extra usage: enabled/disabled status, available balance or spending limits when returned, and any explicit evidence of how a request was
+  classified. Do not infer paid fallback solely from a successful response or a depleted subscription window.
+- Account and subscription: plan/organization selection and model entitlement, with identifying values redacted.
+- Model discovery and relevant remote configuration/feature checks that could affect inference, quota presentation or routing.
+- Auth lifecycle: endpoint and flow shape if observed, never token values. Do not initiate login, logout or token rotation just to capture it.
+- Other calls: classify telemetry, updates and ancillary traffic by purpose; do not reproduce those calls merely to imitate the client.
+
+### Capture matrix and deliverable
+
+Observe startup/idle, the client's usage and status views (such as `/usage` and `/status`, if present), model selection, one agreed minimal
+inference and any naturally occurring limit/error. Do not deliberately exhaust quota. Compare with ask using the same account and exact
+model only when this can be verified safely; otherwise label that comparison unmatched.
+
+For each observed endpoint, record method, host/path with identifying path/query values removed, triggering action, auth **kind**, required
+header names, redacted request/response shape, relevant quota/header fields, units, refresh/cache cadence if observed, and response/error
+semantics. Mark evidence as live-observed, statically found, or hypothesis. Static discovery alone does not establish that a call is used,
+read-only, available to ask, or relevant to billing. No finding is established yet.
+
+Produce a sanitized endpoint inventory and a gap table against ask: already implemented, safe read-only candidate, unsupported/private or
+unresolved. Prefer documented APIs where available. Any adoption needs bounded refresh/backoff and no launch/input latency regression.
+A passive capture of an official-client action is distinct from replay: do not replay billing changes, top-ups, spend-limit edits, account
+changes or unknown mutations. Keep credentials, cookies, account identifiers and unrelated project content out of durable capture records.
