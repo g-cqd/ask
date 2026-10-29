@@ -13,6 +13,8 @@ public struct ScreenController: Sendable {
         case cancelRun
         /// Put this text on the clipboard.
         case copy(String)
+        /// Open a link the person clicked (roadmap 0075), as ``LinkOpener`` allows.
+        case openLink(String)
         /// Read the host's pasteboard and paste it, as a bracketed paste would (roadmap 0082).
         case pasteFromClipboard
         case answerApproval(id: Int, ApprovalChoice)

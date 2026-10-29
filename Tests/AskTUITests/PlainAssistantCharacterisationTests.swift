@@ -49,7 +49,9 @@ struct PlainAssistantCharacterisationTests {
     }
 
     @Test func `the rows of every message at every width are those ask drew before Markdown`() {
-        #expect(Self.digest() == 5_925_546_613_186_270_904)
+        // Re-pinned with roadmap 0075's links in every block and TerminalKit's `Style.linkID`: with the links left out and `linkID: nil`
+        // removed from the styles' text, the digest was the earlier 5_925_546_613_186_270_904, so nothing else moved.
+        #expect(Self.digest() == 14_380_504_095_244_129_318)
     }
 
     @Test func `a message draws as its wrapped source, markers and all, and a long fence folds to a dim line`() {
