@@ -137,3 +137,26 @@ Release build, the same 12 MB copy, interleaved against the full layout (the fir
 
 Page Up is 1.2 ms dearer, inside the 4 ms input budget: it lays out the page it reaches, which the full layout paid for at open. What is
 left of the 52.7 MiB is the session itself (its strings, about 16 MB in 38,000 string buffers, and the entries): step 3's lever.
+
+## Step 3, first part (2026-10-29): the session file is read a chunk at a time
+
+What the 52.7 MiB of the open 12 MB session is (`heap`, `vmmap`, `footprint`): live heap 19.1 MB (Swift strings 12.4 MB in 18,676; tool
+call inputs as bytes 2.5 MB; the entry array 1.5 MB; the transcript's items 0.4 MB), and **11.5 MiB of "Malloc Large (empty)"**: the
+buffer the whole file had been read into, freed after the open and still resident, because macOS reclaims large frees lazily. Paging up
+later let malloc return it (RSS 53.6 to 42.3 MiB in one run), which is why the figure moved between measurements.
+
+`SessionLogReader` reads 64 KB at a time into one reused buffer and recovers line by line (`SessionLogRecovery`, moved out of `SessionLog`);
+a line that spans chunks is gathered, one past the line limit is dropped as it arrives. Tests: 60 random damaged logs at 9 chunk sizes
+recover exactly what the whole-file reader recovers; a file read through a descriptor in 5-byte chunks; an empty file.
+
+| 12 MB session, release, interleaved, load average 6 to 9 | before | after |
+| --- | --- | --- |
+| resident size, open and quiet (3 x 3 runs) | 53.2-53.9 MiB | 41.5-43.8 MiB |
+| physical footprint, and its peak | 42 MB, 42 MB | 29 MB, 29 MB |
+| open, in process (`session/open 1000 entries`, p50) | 2.46 ms | 2.49 ms |
+| open, whole program | 250-500 ms | 270-680 ms (load; minimums 222 and 234) |
+
+Next in step 3: the payloads themselves. Of the file's 12 MB, responses are 7.1 MB (thinking signatures 3.6, tool call inputs 2.5, text
+0.25) and tool results 4.6 MB; the session has 22 compactions, so only what follows the last one is ever sent again. Keeping the entries
+before it as file offsets, read back when shown, opened or forked, is the lever on the 12.4 MB of strings.
+
