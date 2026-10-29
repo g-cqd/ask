@@ -36,7 +36,8 @@ enum ProviderStream {
         var framer = SSEDecoder()
         var frames: [SSEEvent] = []
         var events: [ModelEvent] = []
-        for try await chunk in body {
+        var chunks = body.makeAsyncIterator()
+        while let chunk = try await next(of: &chunks, failure: Decoder.Failure.self) {
             do {
                 try framer.feed(chunk.span, into: &frames)
             } catch {
@@ -52,5 +53,21 @@ enum ProviderStream {
         guard framer.finish() == .complete else { throw ProviderStreamError<Decoder.Failure>.truncated }
         do { try decoder.finish(into: &events) } catch { throw ProviderStreamError.stream(error) }
         for event in events { yield(event) }
+    }
+
+    /// The next chunk of the body. A connection that fails part way is this stream's error, so retry advice and wording apply to it; a
+    /// cancellation stays one.
+    private static func next<Failure: StreamDecodingFailure>(
+        of chunks: inout AsyncThrowingStream<[UInt8], any Error>.Iterator, failure: Failure.Type
+    ) async throws -> [UInt8]? {
+        do {
+            return try await chunks.next()
+        } catch let error as CancellationError {
+            throw error
+        } catch HTTPTransportError.interrupted(let reason) {
+            throw ProviderStreamError<Failure>.interrupted(reason)
+        } catch {
+            throw ProviderStreamError<Failure>.interrupted(String(describing: error))
+        }
     }
 }
