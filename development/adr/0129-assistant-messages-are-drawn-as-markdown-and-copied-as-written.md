@@ -24,6 +24,8 @@ bytes (TerminalKit ADR 0033); TerminalKit's `RowSegment` lets a row show several
    that line stays above the code and a click on it folds the block; the fence markers themselves are not drawn.
 6. Links: a hyperlink for `http`, `https` and `mailto`, and for `/` and `~/` paths (as `file://`, without a `:line[:column]` suffix); the
    target is written out when the text names another host. Bare paths in prose and in code spans are not linked with Markdown on.
+7. The pin: AemiMarkdown by revision, the same one TerminalKit pins, on the one `aemi` revision of the graph (TerminalKit ADR-0005). A move
+   of either is a move of both, in TerminalKit first; `BenchmarkDependencyTests` holds the benchmark manifest to the same TerminalKit.
 
 ## Consequences
 

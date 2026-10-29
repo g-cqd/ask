@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -27,3 +27,12 @@ not a feature. It is related to 0065 (markdown in the transcript, in progress).
 
 A short report in `development/research/`, with measurements and a recommendation for each question, then new roadmap
 entries for what the owner accepts.
+
+## Result (2026-10-29)
+
+`development/research/wrapping-and-input-markdown-2026-10.md`. Five findings (the input breaks words; a token wider than the row orphans
+the words before it; ideographs and hyphenated words do not break; no hanging indent outside Markdown) and a measured proposal for colour in
+the input: 24 µs per keystroke on a 2.5 KB draft and 0.37 ms on a 46 KB paste, a quarter of what `InputLayout` already costs, with setext
+headings and rules left uncoloured because typing `- a` under a line turns that line into a heading for two keystrokes. Five entries are
+proposed there; none is filed until the owner chooses.
+
