@@ -99,3 +99,9 @@ once are each sent once and answered.
 ## Open questions
 
 - What "REA" refers to: which server, and where it lives.
+
+## REA installed (2026-10-29)
+
+Owner requested it for the urgent Claude connector investigation (0144). `rea-agents@6.8.0`, isolated installation, absolute Node launcher
+in the user's ask configuration, all tools allowed. MCP initialize and enumeration: 229 tools; ask's `/mcp`: ready and all reachable through
+search/call. No reverse-engineering or traffic-capture tool exercised yet. Reload the session to expose the tools to the agent.

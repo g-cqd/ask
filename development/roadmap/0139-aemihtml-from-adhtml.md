@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: ["a consumer that parses HTML"]
 date: 2026-10-29
 ---
@@ -30,3 +30,7 @@ A tool that fetches web pages for the model (a `fetch` or `web` tool) would need
 in a bounded, non-recursive parser. That is the consumer to wait for. Then: extract `Parse/` into AemiHTML with the family's standards (no recursion,
 the `HTMLNode` walk is recursive today; tapes rather than a class tree; allocation ceilings; html5lib tokenizer tests; Aemi pin), and measure against a
 baseline before claiming anything.
+
+## Closed by the owner (2026-10-29)
+
+No implementation: the condition is not met. AemiMarkdown does not need HTML parsing. Reopen only for a concrete HTML-consuming feature.

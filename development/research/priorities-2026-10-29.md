@@ -78,3 +78,16 @@ consumer needs it). **Proposed to close:** AemiHTML (0139), which was conditiona
 - 0085: which of the five proposals to file.
 - 0088 step 3, second part: go ahead?
 - 0139: close?
+
+## Superseding owner decisions and urgent priority (later, 2026-10-29)
+
+- **0144 first:** investigate Claude extra-usage billing against the real current Claude Code client. REA is installed; session reload needed.
+- **0127 promoted:** automatic config-file updates are important, not routine low-priority infrastructure.
+- **0142 decided:** no interruption block; only the last ongoing blocks turn orange.
+- **0088 approved conditionally:** payloads on disk only without lag when session screens load; the proposed disk-read costs are not verified.
+- **0139 closed:** condition not met, no HTML-parser work.
+- **0085 needs a plain explanation**, not approval by shorthand: word wrapping; long URL/path wrapping; CJK/hyphen breaks; indentation;
+  optional Markdown colour while typing. No new feature is inferred approved merely from "go ahead".
+- Session history (user entries `3992`, `4188`, in `20261028T064028Z-412fcd46.jsonl`) already answers 0126 and 0123: rejected short timeout
+  spellings, asked for a typed display-setting proposal; approved more permissive, granular per-server MCP scopes. Do not re-ask those
+  general questions. The exact unapproved enum/custom-label design and sampling default are distinct from those settled directions.
