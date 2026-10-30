@@ -1,0 +1,166 @@
+// Every setting ask reads, with an example value. Generated from Sources/AskAgentCore/Configuration/SettingCatalog.swift:
+// do not edit; `ASK_WRITE_EXAMPLE=1 swift test --filter SettingCatalogTests` writes it again.
+// Copy only what you want to change into ~/.config/ask/config.json; see docs/configuration.md.
+{
+
+  // The model to use; /model changes it for the session. Default: the connection's default.
+  "model": "a-model-id",
+
+  // The connection to use. Default: the first account that can answer.
+  "provider": "a-connection",
+
+  // How much the model thinks. Default: default. One of: default, off, minimal, low, medium, high, xhigh, max.
+  "thinking": "default",
+
+  // The most model requests one prompt may make, or "none". Default: 100 in the sandbox, none without.
+  "maxTurns": 100,
+
+  // When the conversation is summarised: a share of the window or a number of tokens. Default: 75%.
+  "compactAt": "75%",
+
+  // When ask keeps the Mac from sleeping. Default: working. One of: off, working, always.
+  "keepAwake": "working",
+
+  // Whether the display stays on too. Default: false.
+  "keepDisplayAwake": false,
+
+  // Where keys and sign-in tokens are kept. Default: auto. One of: auto, keychain, file. Your own file only.
+  "credentials": "auto",
+
+  "ui": {
+    // ask handles clicks, selection and the wheel. Default: true.
+    "mouse": true,
+
+    // A finished selection is copied at once. Default: true.
+    "copyOnSelect": true,
+
+    // Tinted backgrounds for the input, your messages and tool calls. Default: true.
+    "tint": true,
+
+    // A rule between the conversation and the input. Default: true.
+    "separator": true,
+
+    // A row of padding around each block. Default: true.
+    "padding": true,
+
+    // Markdown drawn everywhere it can be. Default: true.
+    "markdown": true,
+
+    // When a job you watch ends, go back to the conversation. Default: true.
+    "leaveFinishedJob": true,
+
+    // Model lists also show models ask cannot use. Default: false.
+    "listAllModels": false,
+
+    "fold": {
+      // Tool calls start folded. Default: true.
+      "tools": true,
+
+      // The model's reasoning starts folded. Default: true.
+      "thinking": true,
+
+      // Long code blocks start folded. Default: true.
+      "code": true,
+
+      // How many lines make a code block long. Default: 20.
+      "codeLines": 20
+    },
+
+    // Lines per wheel step. Default: 3.
+    "scrollLines": 3,
+
+    // How many rows the input grows to before it scrolls. Default: 6.
+    "inputRows": 6,
+
+    // Whether the runner sidebar starts open. Default: closed. One of: closed, open.
+    "sidebar": "closed",
+
+    // Text the input line starts with. Default: none.
+    "inputPrefix": "> ",
+
+    // Where the tints come from. Default: auto. One of: auto, light, dark.
+    "appearance": "auto",
+
+    // Elapsed times as 1 hr, 40 min or as 1:40:00. Default: words. One of: words, clock.
+    "durations": "words",
+
+    // The spinner. Default: line. One of: braille, braillefull, braillequarter, snake, line, dot, star, random.
+    "spinner": "line",
+
+    // When a command's timeout is written in its header. Default: auto. One of: auto, always, never.
+    "showTimeout": "auto",
+
+    // The word in front of a command's timeout, 1 to 8 characters. Default: timeout.
+    "timeoutLabel": "timeout",
+
+    // Which keys stop a running turn. Default: both. One of: esc, ctrl-c, both.
+    "stopKeys": "both",
+
+    // The keys that must be pressed twice to stop a turn. Default: ["esc"].
+    "stopTwice": ["esc"],
+
+    // What happens to queued messages on a stop. Default: all. One of: none, next, all.
+    "queuedOnStop": "all"
+  },
+
+  "sandbox": {
+    // Where tools and commands may write. Default: workspace.
+    "write": "workspace",
+
+    // Where they may read. Default: anywhere.
+    "read": "anywhere",
+
+    // How far commands reach. Default: any. One of: none, localhost, any.
+    "network": "any",
+
+    // More paths to hide. Default: none.
+    "hide": ["~/notes"],
+
+    // Protected paths to make readable again. Default: none. Your own file only.
+    "readable": ["~/.aws"],
+
+    // Protected paths to make writable again. Default: none. Your own file only.
+    "writable": ["~/.zshrc"]
+  },
+
+  "approvals": {
+    // What a call no list names does. Default: ask. One of: ask, allow. Your own file only.
+    "default": "ask",
+
+    // Tools that run without asking. Default: none. Your own file only.
+    "allow": ["mcp__docs__*"],
+
+    // Tools that always ask. Default: none. Your own file only.
+    "ask": ["write"],
+
+    // What an "always" answer could write back to this file. Default: none. One of: anything, narrowing, none. Your own file only.
+    "remember": "none"
+  },
+
+  "skills": {
+    // Whether skills are offered; a project's file may only turn them off. Default: true.
+    "enabled": true,
+
+    // How many skills are listed to the model. Default: 32. Your own file only.
+    "maxListed": 32,
+
+    // Where to look, by harness. Default: every harness. Your own file only.
+    "sources": ["agents", "user"]
+  },
+
+  "environment": {
+    // More variables kept from commands. Default: ask's credential variables.
+    "withhold": ["AWS_*"],
+
+    // Withheld variables commands get anyway. Default: none. Your own file only.
+    "pass": ["GH_TOKEN"],
+
+    // The shell commands run in. Default: zsh, else bash, else your login shell. Your own file only.
+    "shell": "zsh"
+  },
+
+  // MCP servers whose tools are offered to the model, by name (docs/skills-and-mcp.md).
+  "mcp": {
+    "docs": {"url": "https://example.com/mcp", "enabled": false}
+  }
+}
