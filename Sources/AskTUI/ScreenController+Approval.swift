@@ -6,6 +6,7 @@ internal import TerminalKitInput
 /// question leaves nothing behind: the tool's own block says what happened (roadmap 0157).
 extension ScreenController {
     mutating func ask(id: Int, question: String, kind: ApprovalKind = .grant, detail: String? = nil) {
+        let question = HomePath.abbreviate(question, home: options.home)
         state.pendingApproval = PendingApproval(id: id, question: question, kind: kind, detail: detail)
         state.scrollback = 0
     }

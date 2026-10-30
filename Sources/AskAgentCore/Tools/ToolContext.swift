@@ -34,6 +34,8 @@ public struct ToolContext: Sendable, Equatable {
     public let callGate: ToolCallGate?
     /// What the model's provider accepts of images in one request, when it says; `read` fits pictures to it.
     public let imageLimits: ImageLimits?
+    /// Who answers the model's questions (roadmap 0117); nil where no one can, and then the `question` tool is not offered.
+    public let askPerson: PersonQuestion.Asker?
 
     /// A context rooted at `workingDirectory`.
     /// - Parameters:
@@ -46,13 +48,15 @@ public struct ToolContext: Sendable, Equatable {
     ///   - destructiveApprover: who answers when a server marks its tool destructive; nil, the default, allows.
     ///   - imageLimits: what the model's provider accepts of images, or nil when it did not say.
     ///   - callGate: what is asked before a call that changes things; nil, the default, asks nothing.
+    ///   - askPerson: who answers the model's questions; nil, the default, where no one can.
     public init(
         workingDirectory: String, outputDirectory: String? = nil, sandbox: SandboxPolicy = .unrestricted,
         approve: SandboxApprover? = nil, narrowing: SessionNarrowing? = nil,
         commandEnvironment: CommandEnvironment = .inherit, destructiveApprover: DestructiveApprover? = nil,
-        imageLimits: ImageLimits? = nil, callGate: ToolCallGate? = nil
+        imageLimits: ImageLimits? = nil, callGate: ToolCallGate? = nil, askPerson: PersonQuestion.Asker? = nil
     ) {
         self.callGate = callGate
+        self.askPerson = askPerson
         self.imageLimits = imageLimits
         self.workingDirectory = workingDirectory
         self.outputDirectory = outputDirectory

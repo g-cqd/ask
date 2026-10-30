@@ -17,9 +17,15 @@ public enum ToolSummary {
         let action: String?
         let timeoutSeconds: Int?
         let yieldSeconds: Int?
+        /// The `question` tool's questions (roadmap 0117): only their words are shown.
+        let questions: [Asked]?
+
+        struct Asked: Decodable {
+            let question: String?
+        }
 
         enum CodingKeys: String, CodingKey {
-            case command, path, content, offset, limit, job, action
+            case command, path, content, offset, limit, job, action, questions
             case oldText = "old_text"
             case newText = "new_text"
             case timeoutSeconds = "timeout_seconds"
@@ -34,7 +40,13 @@ public enum ToolSummary {
     /// The legacy one-line command/path, retained for logs and approval questions.
     public static func line(for input: JSONObject) -> String {
         let fields = fields(input)
-        return compact(fields?.command ?? fields?.path ?? String(decoding: input.bytes, as: UTF8.self))
+        return compact(fields?.command ?? fields?.path ?? asked(fields) ?? String(decoding: input.bytes, as: UTF8.self))
+    }
+
+    /// `What should change? (+1 more)`: the first of the model's questions, and how many follow.
+    private static func asked(_ fields: Fields?) -> String? {
+        guard let questions = fields?.questions, let first = questions.first?.question else { return nil }
+        return questions.count > 1 ? "\(first) (+\(questions.count - 1) more)" : first
     }
 
     /// Compact target and parameters; duration/status are drawn independently by the screen.

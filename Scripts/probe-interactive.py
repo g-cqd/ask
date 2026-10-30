@@ -1331,6 +1331,50 @@ def probe_protected_paths():
     return all(results)
 
 
+def probe_question_tool():
+    print("Q1: the model's questions are answered in a section above the input; ask -p does not offer them (0117)")
+    project = tempfile.mkdtemp()
+    questions = {"questions": [
+        {"question": "What should change?", "header": "Scope",
+         "choices": [{"label": "Only the parser"}, {"label": "Everything", "description": "parser and printer"}]},
+        {"question": "Which tests?", "header": "Tests", "choices": [{"label": "Unit"}, {"label": "Probes"}], "multiple": True}]}
+    server = agent.Server([agent.turn([("call", "q1", "question", questions)], "tool_use"),
+                           agent.turn([("text", "Thanks, noted.")], "end_turn")])
+    screen = Screen(server.url, project)
+
+    def wait(condition, seconds=15):
+        end = time.time() + seconds
+        while time.time() < end and not condition():
+            screen.until("\x00", 0.05)
+        return condition()
+
+    screen.ready()
+    offered = lambda: [tool["name"] for tool in server.requests[0]["body"].get("tools", [])] if server.requests else []
+    screen.type("Plan it\r")
+    results = [check("the tool is offered on the screen", wait(lambda: "question" in offered()), offered())]
+    results.append(check("the first question is shown with its choices",
+                         wait(lambda: "What should change?" in screen.screen.text() and "Everything" in screen.screen.text())))
+    for key in ["\x1b[B", " ", "k", "e", "e", "p", " ", "i", "t", "\t", " ", "\r"]:
+        screen.type(key)
+        time.sleep(0.05)
+    results.append(check("after the last, the review lists every answer",
+                         wait(lambda: "Review" in screen.screen.text() and "note: keep it" in screen.screen.text()), screen.screen.text()))
+    screen.type("\r")
+    got = lambda: json.dumps(server.requests[1]["body"]["messages"][-1]) if len(server.requests) > 1 else ""
+    results.append(check("the model gets one line per answer",
+                         wait(lambda: 'Scope: chose \\"Everything\\"; note: \\"keep it\\"' in got() and 'Tests: chose \\"Unit\\"' in got()), got()))
+    screen.until("Thanks, noted.", 15)
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    printed = agent.Server([agent.turn([("text", "ok")], "end_turn")])
+    state = tempfile.mkdtemp()
+    subprocess.run([ASK, "-p", "hi"], cwd=project, env=agent.environment(state, printed.url), capture_output=True, timeout=60)
+    names = [tool["name"] for tool in printed.requests[0]["body"].get("tools", [])] if printed.requests else ["no request"]
+    results.append(check("ask -p does not offer it", "question" not in names and "bash" in names, names))
+    return all(results)
+
+
 def probe_allow_commands():
     print("X2: --allow commands runs every command unasked, and a write still asks (0156)")
     project = tempfile.mkdtemp()
@@ -1568,7 +1612,7 @@ def probe_reset_ignores_unrelated_grants():
 
 
 if __name__ == "__main__":
-    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants, probe_call_approvals, probe_allow_commands, probe_protected_paths]
+    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants, probe_call_approvals, probe_allow_commands, probe_question_tool, probe_protected_paths]
     # --only A,F runs the probes whose heading starts with those letters (each prints "A: …" first).
     wanted = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
     ok = True

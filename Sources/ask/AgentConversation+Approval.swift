@@ -20,6 +20,8 @@ extension AgentConversation {
         /// Server tools the user allowed for the session, as `server/tool` (ADR-0111).
         var destructiveGrants: Set<String> = []
         var ask: (@Sendable (ConversationUpdate) -> Void)?
+        /// The model's questions waiting for the person (roadmap 0117).
+        var questions: [Int: CheckedContinuation<[PersonAnswer]?, Never>] = [:]
     }
 
     /// Asks the user about `approval`, unless a grant for the session covers it. Cancelling the run answers no.
