@@ -80,3 +80,10 @@ this entry lands, not before.
 
 `blocked-by` was `0001` and is now `0014`: `0001`'s remaining work is Atelier's consumer switch, which
 `ask` does not depend on — see roadmap `0005` for why that dependency was recorded in the first place.
+
+## Still owed (2026-10-30, close-out pass)
+
+- ask does not use `TerminalProbe` yet: the theme reads the background with OSC 11 (0074), nothing else is asked. Integrate the probe off the
+  startup path (answers arrive after the first frame; conservative defaults until then), cached for the session.
+- `TerminalCapabilities` still folds cell pixels and the kitty graphics protocol into one boolean; split them (see "Two axes").
+- Then the measurement of Esc latency with and without the kitty keyboard protocol.

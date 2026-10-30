@@ -29,7 +29,8 @@ struct MCPExposureTests {
         host.start()
         await host.waitUntilSettled()
         #expect(
-            world.offered.sorted() == (sample.2 ? ["mcp_call", "mcp_search"] : names.map { "mcp__s__\($0)" }).sorted())
+            world.offered.sorted()
+                == (sample.2 ? ["dispatch_call", "search_catalog"] : names.map { "mcp__s__\($0)" }).sorted())
         #expect(
             host.status.map(\.state) == [
                 sample.2 ? .searchable(tools: sample.1) : .ready(offered: sample.1, of: sample.1)
@@ -44,8 +45,8 @@ struct MCPExposureTests {
         host.start()
         await host.waitUntilSettled()
         if fields == "mode:'search'" {
-            #expect(try await world.call("mcp_search", #"{"query":""}"#).content == "s: allowed")
-            #expect(try await world.call("mcp_call", #"{"server":"s","tool":"secret"}"#).isError)
+            #expect(try await world.call("search_catalog", #"{"query":""}"#).content == "s: allowed")
+            #expect(try await world.call("dispatch_call", #"{"server":"s","tool":"secret"}"#).isError)
         } else {
             #expect(world.offered == ["mcp__s__allowed"])
         }
@@ -63,11 +64,11 @@ struct MCPExposureTests {
         let host = world.host([try setting("mode:'search'")], ["s": FakeMCPServer(tools: names)])
         host.start()
         await host.waitUntilSettled()
-        _ = try await world.call("mcp_search", #"{"query":""}"#)
-        #expect(world.offered.sorted() == ["mcp_call", "mcp_search"])
-        _ = try await world.call("mcp_search", #"{"query":"tool"}"#)
+        _ = try await world.call("search_catalog", #"{"query":""}"#)
+        #expect(world.offered.sorted() == ["dispatch_call", "search_catalog"])
+        _ = try await world.call("search_catalog", #"{"query":"tool"}"#)
         #expect(world.offered.filter { $0.hasPrefix("mcp__s__") }.count == 8)
-        _ = try await world.call("mcp_search", #"{"query":"tool12"}"#)
+        _ = try await world.call("search_catalog", #"{"query":"tool12"}"#)
         #expect(world.offered.filter { $0.hasPrefix("mcp__s__") } == ["mcp__s__tool12"])
         await host.stop()
         #expect(world.offered.isEmpty)
@@ -78,7 +79,7 @@ struct MCPExposureTests {
         let host = world.host([try setting("mode:'search'")], ["s": fake])
         host.start()
         await host.waitUntilSettled()
-        _ = try await world.call("mcp_search", #"{"query":"read"}"#)
+        _ = try await world.call("search_catalog", #"{"query":"read"}"#)
         #expect(world.offered.contains("mcp__s__read"))
         #expect(!world.offered.contains("mcp__s__write"))
         #expect(try await world.call("mcp__s__read") == ToolOutput("ran read"))

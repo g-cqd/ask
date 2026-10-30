@@ -25,7 +25,7 @@ struct ApprovalPolicyTests {
         #expect(asks(decide(policy, "job", #"{"job":"3","action":"input","text":"y"}"#)) == .tool("job"))
         for (tool, json) in [
             ("read", #"{"path":"a"}"#), ("job", #"{"job":"3","action":"status"}"#), ("job_stop", "{}"), ("wait", "{}"),
-            ("mcp_search", "{}"), ("skill", "{}"), ("narrow_sandbox", "{}")
+            ("search_catalog", "{}"), ("skill", "{}"), ("narrow_sandbox", "{}")
         ] {
             #expect(decide(policy, tool, json) == .run, "\(tool)")
         }

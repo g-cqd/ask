@@ -17,7 +17,7 @@ struct MCPReportTests {
         #expect(
             MCPReport.lines([status("a", .searchable(tools: 40))])
                 == [
-                    "a: ready, 40 tools reachable through mcp_search and mcp_call",
+                    "a: ready, 40 tools reachable through search_catalog and dispatch_call",
                     "    name the ones you want in mcp.a.tools to offer them directly"
                 ])
         #expect(MCPReport.lines([status("a", .failed("no thanks"))]) == ["a: not connected: no thanks"])
@@ -42,7 +42,7 @@ struct MCPReportTests {
 
     @Test func `a searchable server has a remark that says how it is reached and how to offer its tools whole`() {
         let remark = status("rea", .searchable(tools: 207)).remark
-        #expect(remark?.contains("207 tools") == true && remark?.contains("mcp_search") == true)
+        #expect(remark?.contains("207 tools") == true && remark?.contains("search_catalog") == true)
         #expect(remark?.contains("mcp.rea.tools") == true)
         for state: MCPServerStatus.State in [.off, .connecting, .ready(offered: 1, of: 1), .failed("x")] {
             #expect(status("a", state).remark == nil)

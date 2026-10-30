@@ -49,10 +49,11 @@ struct ToolCallGateTests {
         #expect(bash.count == 1 && read.count == 1 && asked.calls.withLock { $0.isEmpty })
     }
 
-    @Test func `mcp_call is judged under the name of the tool it calls`() {
+    @Test func `dispatch_call is judged under the name of the tool it calls`() {
         let policy = ApprovalPolicy(section: ApprovalsSection(ask: ["mcp__docs__read"]))
         let decision = policy.decide(
-            tool: "mcp_call", input: input(#"{"server":"docs","tool":"read","arguments":{}}"#), workingDirectory: "/p")
+            tool: "dispatch_call", input: input(#"{"server":"docs","tool":"read","arguments":{}}"#),
+            workingDirectory: "/p")
         guard case .ask(let approval) = decision else { return #expect(Bool(false), "not asked") }
         #expect(approval.scope == .tool("mcp__docs__read"))
     }

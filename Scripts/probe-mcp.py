@@ -120,8 +120,8 @@ def probe_b(binary):
     script = os.path.join(tempfile.mkdtemp(), "many.py")
     open(script, "w").write(MANY)
     config, state, project = setup({"many": {"command": "python3", "args": [script]}})
-    server = Server([turn([("call", "s1", "mcp_search", {"query": "t17"})], "tool_use"),
-                     turn([("call", "s2", "mcp_call", {"server": "many", "tool": "t17", "arguments": {"q": 1}})], "tool_use"),
+    server = Server([turn([("call", "s1", "search_catalog", {"query": "t17"})], "tool_use"),
+                     turn([("call", "s2", "dispatch_call", {"server": "many", "tool": "t17", "arguments": {"q": 1}})], "tool_use"),
                      turn([("text", "Done.")], "end_turn")])
     process = run(binary, "Hi.", config, state, project, server)
     server.httpd.shutdown()
@@ -129,12 +129,12 @@ def probe_b(binary):
     got = tool_results(server) if len(server.requests) == 3 else {}
     return all([
         check("the run finishes", process.returncode == 0 and len(server.requests) == 3, f"{process.returncode} {process.stderr[-300:]}"),
-        check("the two tools are offered and none of the server's 20", "mcp_search" in names and "mcp_call" in names
+        check("the two tools are offered and none of the server's 20", "search_catalog" in names and "dispatch_call" in names and "mcp_search" not in names and "mcp_call" not in names
               and not any(n.startswith("mcp__") for n in names), names),
         check("the search finds the tool and shows its schema", "many / t17" in got.get("s1", "") and '"type": "object"' in got.get("s1", "").replace('"type":"object"', '"type": "object"'), got.get("s1")),
         check("the search does not offer the others", "many / t3\n" not in got.get("s1", "") and "many / t18" not in got.get("s1", ""), got.get("s1")),
         check("the call reaches the server with the arguments", got.get("s2") == 'called t17 with {"q": 1}', got.get("s2")),
-        check("stderr says why, and how to offer them whole", "20 tools" in process.stderr and "mcp_search" in process.stderr
+        check("stderr says why, and how to offer them whole", "20 tools" in process.stderr and "search_catalog" in process.stderr
               and "mcp.many.tools" in process.stderr, process.stderr[-500:]),
     ])
 

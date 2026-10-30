@@ -74,6 +74,7 @@ Inventory taken 2026-10-30 from `docs/configuration.md`, `ask --help`, every sub
 | 37 | "Not permitted: PATH." (sandbox), "This call was blocked before it ran", "… was refused" | sandbox: "Not permitted"; hooks: "Blocked"; providers and servers: "refused" | three different causes keep three words, used only for their cause; listed so new messages follow it |
 | 38 | answers "Allow this time", "Allow for the session", "Allow the program for the session", "Deny" | unchanged | approved in 0116 |
 | 39 | `⊘` and the orange "interrupted" mark; "Sign-in stopped." | unchanged | *stop* is the act, *interrupted* the state (C3) |
+| 40 | the search-mode MCP tools `search_catalog`, `dispatch_call` (renamed from `mcp_search`, `mcp_call`, which Anthropic refuses on a subscription, 0144) | unchanged until another pair is checked live | the only names known to pass |
 
 ## After the answers
 

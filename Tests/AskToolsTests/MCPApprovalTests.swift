@@ -113,27 +113,28 @@ struct MCPApprovalTests {
         await host.stop()
     }
 
-    @Test func `a tool found by search and called through mcp_call is asked about too`() async throws {
+    @Test func `a tool found by search and called through dispatch_call is asked about too`() async throws {
         let world = MCPWorld()
         let fake = FakeMCPServer(tools: ["t1", "t2", "t3", "t4", "t5"], destructive: ["t3"], readOnly: ["t2"])
         let host = world.host([world.setting("big")], ["big": fake], maximumDirectTools: 4)
         host.start()
         await host.waitUntilSettled()
         let approver = RecordingApprover([true])
-        _ = try await world.call("mcp_search", #"{"query":"t3"}"#, in: context(approver))
-        let found = try await world.call("mcp_search", #"{"query":"t3"}"#, in: context(approver))
+        _ = try await world.call("search_catalog", #"{"query":"t3"}"#, in: context(approver))
+        let found = try await world.call("search_catalog", #"{"query":"t3"}"#, in: context(approver))
         #expect(found.content.contains("read-only"), "the search says the tool will be asked about")
         let output = try await world.call(
-            "mcp_call", #"{"server":"big","tool":"t3","arguments":{}}"#, in: context(approver))
+            "dispatch_call", #"{"server":"big","tool":"t3","arguments":{}}"#, in: context(approver))
         #expect(output == ToolOutput("ran t3") && approver.asked.map(\.tool) == ["t3"])
         #expect(
-            try await world.call("mcp_call", #"{"server":"big","tool":"t2","arguments":{}}"#, in: context(approver))
+            try await world.call(
+                "dispatch_call", #"{"server":"big","tool":"t2","arguments":{}}"#, in: context(approver))
                 == ToolOutput("ran t2"))
         #expect(approver.asked.count == 1, "the read-only tool was not asked about")
         await host.stop()
     }
 
-    @Test func `a refusal through mcp_call is an error, and the server is not called`() async throws {
+    @Test func `a refusal through dispatch_call is an error, and the server is not called`() async throws {
         let world = MCPWorld()
         let fake = FakeMCPServer(tools: ["t1", "t2", "t3", "t4", "t5"], destructive: ["t3"])
         let host = world.host([world.setting("big")], ["big": fake], maximumDirectTools: 4)
@@ -141,7 +142,7 @@ struct MCPApprovalTests {
         await host.waitUntilSettled()
         let approver = RecordingApprover([false])
         let output = try await world.call(
-            "mcp_call", #"{"server":"big","tool":"t3","arguments":{}}"#, in: context(approver))
+            "dispatch_call", #"{"server":"big","tool":"t3","arguments":{}}"#, in: context(approver))
         #expect(output.isError && output.content.contains("did not allow") && fake.calls.isEmpty)
         await host.stop()
     }

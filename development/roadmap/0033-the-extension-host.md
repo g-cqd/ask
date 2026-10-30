@@ -39,3 +39,9 @@ The version is fixed when the host ships. Items 2 to 5 are owed.
 ## Decision (2026-10-28, ADR-0123)
 
 The extension host is kept for hooks only (block, rewrite, observe); tools from outside arrive through MCP (0067). Remaining work is the hook points.
+
+## Still owed (2026-10-30, close-out pass)
+
+Per ADR-0123 the host is for hooks only. Owed: items 2, 3 and 5 for hooks (the host target over swift-subprocess, the configuration
+with project trust, the failure behaviour), item 4 as a reference extension with one `hooks/tool_call` that blocks a command, and the
+protocol document trimmed of tools.

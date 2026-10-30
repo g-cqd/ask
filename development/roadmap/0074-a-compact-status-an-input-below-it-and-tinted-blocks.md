@@ -62,3 +62,8 @@ Started, not finished.
 ## Done when
 
 The status line fits every width from 20 to 200 columns without cutting a piece, a test per width class; the input and blocks match the model above; a PTY probe shows the scroll case; the ADR supersedes the lines of 0015; the budgets (input delay, action delay) are re-measured and written down.
+
+## Still owed (2026-10-30, close-out pass)
+
+Steps 1 to 4 are built. Against "Done when": a test per width class from 20 to 200 columns for the status line, a PTY probe of the
+scroll case with tinted blocks, and the ADR that supersedes 0015's lines; the pixel separator waits for TerminalKit's pixel work (0014).
