@@ -73,3 +73,14 @@ deleting sessions; 0117 on the same section.
 Owner (2026-10-29): strokes rather than block characters, and boxes that do not stick together: `[✓]` and `[ ]` (the block-character
 `▐█▌` boxes joined into one bar down the rows).
 
+Owner (2026-10-29): more white space where it helps reading. A two-cell margin, a blank row under the question and one above the input,
+the shortcut letters in a column of their own, and wider gaps around the box and the number:
+
+      Allow it?
+
+    ›  [✓]  1   Allow this time         y
+       [ ]  2   Allow for the session   a
+       [ ]  3   Deny                    n
+
+When rows are short, the blank rows go first, then the question's rows; the answers always stay.
+
