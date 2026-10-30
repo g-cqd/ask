@@ -99,7 +99,8 @@ class Emulator:
     def control(self, params, final):
         if params.startswith("?"):
             return
-        numbers = [int(n) if n else 0 for n in params.split(";")] if params else []
+        # A colon sub-parameter (`4:1`, an underline style) counts as its first number.
+        numbers = [int(n.split(":")[0] or 0) for n in params.split(";")] if params else []
         if final == "H":
             self.row = max(1, numbers[0] if numbers else 1) - 1
             self.column = max(1, numbers[1] if len(numbers) > 1 else 1) - 1

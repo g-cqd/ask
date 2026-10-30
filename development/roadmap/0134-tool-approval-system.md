@@ -58,3 +58,12 @@ ten other screen probes pass with `--yes`.
 
 Not done: an "Always allow (saved to your config)" answer, which `approvals.scope` is for; 0153's protected paths behind this question.
 
+## Heredocs and quotes in the session answers (2026-10-30)
+
+Seen through `Scripts/showcase.py`: a heredoc command (`python3 - <<'PY'` and five lines of Python) offered "Allow `python3`, `import
+platform`, `for key`, …" for the session, because `CommandWords` split the line at every newline, `;`, `|` and `&`, quotes and heredoc
+bodies included. Safe (it asked for more, never less) but nonsense. `ShellSegments` now splits outside quotes, after backslashes and
+outside heredoc bodies; a body starts at the next line and ends at the first line that is its delimiter once trimmed, so a near-miss
+ends it early and names more commands, never fewer. Tests: `CommandWordsQuotingTests` (red first, 11 issues). The same question now
+offers "Allow `python3` for the session".
+
