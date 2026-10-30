@@ -1,0 +1,18 @@
+---
+status: not-started
+blocked-by: []
+date: 2026-10-30
+---
+
+# 0166 — Mutation testing on changed files, dependency checks and pin updates
+
+Owner (2026-10-30): plug mutation testing into CI and hooks, on edited files only; dependency graph checking and automated updates. The
+survey and the trials: `development/research/tooling-mutation-and-dependencies-2026-10-30.md`.
+
+Proposed, for the owner to confirm:
+1. `swift-mutation-testing` (pinned release) through `Scripts/mutate-changed.sh`: changed `Sources` files, a plan per target, a committed
+   baseline, `--max-new-survivors 0`; opt-in pre-push task (`ASK_MUTATE=1`), a CI job on `Sources/**` pushes, a weekly full run.
+2. Trials of `swift-dependency-audit` (declared against imported dependencies per target) and `spmgraph` (layering, the graph drawn).
+3. Dependabot for the versioned dependencies; `Scripts/update-pins.py` for the family's revision pins, in order, each repository's gate
+   between.
+4. Tests for the six mutants that survive in `ShellSegments.swift` (escapes, `<<` detection, lines 65 to 81).
