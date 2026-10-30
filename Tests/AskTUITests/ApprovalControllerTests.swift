@@ -1,3 +1,4 @@
+import Foundation
 import TerminalKitCodecs
 import TerminalKitInput
 import Testing
@@ -27,23 +28,43 @@ struct ApprovalControllerTests {
         ScreenComposer.pickerLines(for: controller.state, columns: 60, rows: 10).map(\.text)
     }
 
+    /// The answer rows only, in order.
+    private func answers(_ controller: ScreenController) -> [String] {
+        section(controller).filter { $0.contains("[ ]") || $0.contains("[✓]") }
+    }
+
     @Test
     func `the question and its three answers are drawn above the input, the default checked, and nothing is added yet`()
     {
         let controller = asking()
         let rows = section(controller)
-        #expect(rows.count == 4)
+        #expect(rows.count == 6)
+        let answers = answers(controller)
         #expect(rows[0].contains("bash wants network any. Allow it?"))
         #expect(
-            rows[1].contains("[✓]") && rows[1].contains("1") && rows[1].contains("Allow this time")
-                && rows[1].contains("y"))
+            answers[0].contains("[✓]") && answers[0].contains("1") && answers[0].contains("Allow this time")
+                && answers[0].contains("y"))
         #expect(
-            rows[2].contains("[ ]") && rows[2].contains("2") && rows[2].contains("Allow for the session")
-                && rows[2].contains("a"))
-        #expect(rows[3].contains("[ ]") && rows[3].contains("3") && rows[3].contains("Deny") && rows[3].contains("n"))
+            answers[1].contains("[ ]") && answers[1].contains("2") && answers[1].contains("Allow for the session")
+                && answers[1].contains("a"))
+        #expect(
+            answers[2].contains("[ ]") && answers[2].contains("3") && answers[2].contains("Deny")
+                && answers[2].contains("n"))
         #expect(
             controller.state.transcript.items.count == 1, "only the prompt: the question is in the section, not a block"
         )
+    }
+
+    @Test func `the section is spaced to read: a margin, a blank row under the question, the letters in one column`() {
+        let rows = section(asking())
+        #expect(rows.count == 6)
+        #expect(rows[0].hasPrefix("  bash wants"), "a margin of two")
+        #expect(
+            rows[1].trimmingCharacters(in: .whitespaces).isEmpty, "a blank row between the question and the answers")
+        #expect(rows[2] == "  ›  [✓]  1   Allow this time         y")
+        #expect(rows[3] == "     [ ]  2   Allow for the session   a")
+        #expect(rows[4] == "     [ ]  3   Deny                    n")
+        #expect(rows[5].isEmpty, "a blank row between the answers and the input")
     }
 
     @Test func `a long question wraps whole above its answers, which always fit`() {
@@ -52,8 +73,8 @@ struct ApprovalControllerTests {
             "The MCP server fx's tool boom ({\"path\":\"/tmp/a/very/long/path/to/a/victim.txt\"}) is marked destructive. Allow it?"
         controller.handle(.askApproval(id: 1, question: question, kind: .destructive))
         let rows = ScreenComposer.pickerLines(for: controller.state, columns: 40, rows: 10).map(\.text)
-        #expect(rows.suffix(3).allSatisfy { $0.contains("[") })
-        #expect(rows.dropLast(3).joined(separator: " ").contains("Allow it?"))
+        #expect(rows.dropLast().suffix(3).allSatisfy { $0.contains("[") } && rows.last?.isEmpty == true)
+        #expect(rows.dropLast(4).joined(separator: " ").contains("Allow it?"))
         #expect(rows.allSatisfy { $0.count <= 40 })
         let tight = ScreenComposer.pickerLines(for: controller.state, columns: 40, rows: 4).map(\.text)
         #expect(
@@ -66,10 +87,10 @@ struct ApprovalControllerTests {
         #expect(controller.handle(down, pageRows: 10).isEmpty)
         #expect(controller.handle(space, pageRows: 10).isEmpty, "checking is not answering")
         #expect(
-            section(controller)[2].contains("[✓]") && section(controller)[1].contains("[ ]"),
+            answers(controller)[1].contains("[✓]") && answers(controller)[0].contains("[ ]"),
             "one box checked at a time")
         _ = controller.handle(up, pageRows: 10)
-        #expect(section(controller)[2].contains("[✓]"), "moving does not check")
+        #expect(answers(controller)[1].contains("[✓]"), "moving does not check")
         #expect(controller.handle(enter, pageRows: 10) == [.answerApproval(id: 7, .session)])
         #expect(controller.state.pendingApproval == nil && section(controller).isEmpty)
         #expect(controller.handle(enter, pageRows: 10).isEmpty, "a second Enter answers nothing")
@@ -97,14 +118,14 @@ struct ApprovalControllerTests {
 
     @Test func `a destructive tool's question has Deny checked, so a stray Enter never allows it`() {
         var controller = asking(.destructive)
-        #expect(section(controller)[3].contains("[✓]"))
+        #expect(answers(controller)[2].contains("[✓]"))
         #expect(controller.handle(enter, pageRows: 10) == [.answerApproval(id: 7, .deny)])
     }
 
     @Test func `a question with nothing to remember is Yes or No, No checked`() {
         var controller = asking(.confirm)
-        let rows = section(controller)
-        #expect(rows.count == 3 && rows[1].contains("Yes") && rows[2].contains("No") && rows[2].contains("[✓]"))
+        let rows = answers(controller)
+        #expect(rows.count == 2 && rows[0].contains("Yes") && rows[1].contains("No") && rows[1].contains("[✓]"))
         _ = controller.handle(key("y"), pageRows: 10)
         #expect(controller.handle(enter, pageRows: 10) == [.answerApproval(id: 7, .once)])
         guard case .notice(let text, _) = controller.state.transcript.items.last else {
