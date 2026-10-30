@@ -3,8 +3,15 @@ internal import TerminalKitInput
 
 /// A submitted line: a prompt, a command, or a command that does not exist.
 extension ScreenController {
+    /// A prompt of the session being shown again (a resume): in the conversation, and in the history Up browses (roadmap 0111).
+    mutating func replayPrompt(_ text: String) {
+        state.transcript.addUser(text)
+        history.record(text)
+    }
+
     mutating func submit(_ line: String, followUp: Bool) -> [Effect] {
         leaveLane()
+        history.record(line)
         switch SlashInput(line) {
             case .prompt(let text):
                 return submitPrompt(Self.isContinueWord(text) ? Self.continueText : text, followUp: followUp)
