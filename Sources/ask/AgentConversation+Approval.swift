@@ -36,7 +36,7 @@ extension AgentConversation {
         if approvals.withLock({ $0.destructiveGrants.contains(call.grantKey) }) { return true }
         let question =
             "The MCP server \(call.server)'s tool \(call.tool) (\(ToolSummary.line(for: call.input))) "
-            + "is marked destructive: it may destroy or overwrite. Allow it?"
+            + "may change or destroy things: the server does not say it is read-only. Allow it?"
         return await ask(question, remembering: (nil, call.grantKey), kind: .destructive)
     }
 

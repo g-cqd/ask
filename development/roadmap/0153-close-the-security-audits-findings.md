@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: [0116, 0134]
 date: 2026-10-29
 ---
@@ -43,3 +43,14 @@ A default withhold list for well-known credential variables (`GITHUB_TOKEN`, `AW
 
 TLS and endpoint policy of the provider clients, the extension host, skills' loading and trust, the image, PDF and video readers'
 parsers, the session parser, supply chain beyond pinned revisions: a `standard` run with separate verifiers.
+
+## Done (2026-10-29): finding 4
+
+An MCP tool is asked about unless its server says it is read-only (`readOnlyHint: true`) or not destructive (`destructiveHint: false`),
+as the MCP spec (2025-06-18) defines the defaults: `MCPToolAnnotations.needsApproval`, used by the direct tools and by `mcp_call`. The
+question, the refusal and `mcp_search`'s mark now say "the server does not say it is read-only". The old tests that pinned "an unmarked
+tool is never asked about" are replaced; the fixture server's harmless tools are marked read-only, as a real server's should be. A mutation
+back to the old rule turns `MCPAnnotationApprovalTests` and `MCPApprovalTests` red; `probe-mcp.py` and `probe-mcp-screen.py` pass through
+the release binary. `ask -p` still runs such a tool, since naming the server was the consent (ADR-0111). Consequence to watch: a server
+that annotates nothing (the owner's apple-docs, lldb, xcode were not checked) now asks for each tool once per session.
+

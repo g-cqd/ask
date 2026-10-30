@@ -16,7 +16,7 @@ struct MCPToolAdapter: Tool {
     init(server: String, tool: MCPTool, name: String, connection: MCPConnection) {
         self.server = server
         self.original = tool.name
-        self.destructive = tool.annotations.destructive == true
+        self.destructive = tool.annotations.needsApproval
         self.connection = connection
         let words = tool.description.isEmpty ? (tool.title ?? tool.name) : tool.description
         definition = ToolDefinition(
@@ -37,7 +37,7 @@ struct MCPToolAdapter: Tool {
 
     /// What the model is told when the user did not allow a call the server marks destructive (ADR-0111).
     static func refused(server: String, tool: String) -> String {
-        "The user did not allow \(tool) on the MCP server \(server); the server marks it destructive. Ask the user, or do without it."
+        "The user did not allow \(tool) on the MCP server \(server); the server does not say it is read-only. Ask the user, or do without it."
     }
 
     /// What the model is told when the sandbox was narrowed.

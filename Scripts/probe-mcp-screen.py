@@ -100,7 +100,7 @@ def main():
         send(asking, "Use boom.", "Allow it?")
         shown = screen(terminal)
         check("a marked tool is put to the user before it runs",
-              "boom" in shown and "destructive" in shown and "Allow this time" in shown and "[✓]  3   Deny" in shown)
+              "boom" in shown and "read-only" in shown and "Allow this time" in shown and "[✓]  3   Deny" in shown)
         press(terminal, b"a")
         press(terminal, b"\r")
         terminal.until(lambda: "Done one." in terminal.text())

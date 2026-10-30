@@ -25,10 +25,15 @@ final class FakeMCPServer: MCPTransport {
     private let state: Mutex<State>
 
     private let destructive: Set<String>
+    private let readOnly: Set<String>
+    private let harmless: Set<String>
 
-    /// A server with tools of these names, marking `destructive` as the server would (ADR-0111).
-    init(tools: [String] = [], destructive: [String] = []) {
+    /// A server with tools of these names, marking `destructive` as the server would (ADR-0111), `readOnly` with `readOnlyHint`, and
+    /// `harmless` with `destructiveHint: false`; the others carry no annotations.
+    init(tools: [String] = [], destructive: [String] = [], readOnly: [String] = [], harmless: [String] = []) {
         self.destructive = Set(destructive)
+        self.readOnly = Set(readOnly)
+        self.harmless = Set(harmless)
         (incoming, continuation) = AsyncStream.makeStream(of: [UInt8].self)
         state = Mutex(State(tools: tools))
     }
@@ -93,7 +98,12 @@ final class FakeMCPServer: MCPTransport {
                     return state.tools
                 }
                 let tools = names.map { name -> String in
-                    let marked = destructive.contains(name) ? #","annotations":{"destructiveHint":true}"# : ""
+                    let marked =
+                        destructive.contains(name)
+                        ? #","annotations":{"destructiveHint":true}"#
+                        : readOnly.contains(name)
+                            ? #","annotations":{"readOnlyHint":true}"#
+                            : harmless.contains(name) ? #","annotations":{"destructiveHint":false}"# : ""
                     return
                         #"{"name":"\#(name)","description":"does \#(name)","inputSchema":{"type":"object","properties":{"q":{"type":"string"}}}\#(marked)}"#
                 }

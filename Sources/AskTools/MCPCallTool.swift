@@ -44,7 +44,7 @@ struct MCPCallTool: Tool {
                 ? "The server \(server) has no tool \(tool)" : "No searchable server is called \(server)"
             return .error("\(where_). Servers: \(known.joined(separator: ", ")). Use mcp_search to find the tools.")
         }
-        if found.tool.annotations.destructive == true, let approve = context.destructiveApprover {
+        if found.tool.annotations.needsApproval, let approve = context.destructiveApprover {
             guard await approve(DestructiveToolCall(server: server, tool: tool, input: arguments)) else {
                 return .error(MCPToolAdapter.refused(server: server, tool: tool))
             }
