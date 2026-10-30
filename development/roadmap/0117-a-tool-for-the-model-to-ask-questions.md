@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -65,8 +65,10 @@ never asks for approval. The block's header shows the first question and how man
 Two choices of mine, to confirm: a single question sends on Enter, without a review (the review of one answer repeats the screen); and
 Space checks only while the note is empty, since the note is typed in the same input.
 
-## Still owed
+## Clicks and a showcase scene (2026-10-30)
 
-- A click checks a choice or opens a tab (Q3): the keys work, the pointer does not yet.
-- Seen in a real terminal (the showcase could gain a scene).
+A click on a choice checks it (whatever the note holds), a click on a tab shows that question, and on "✓ Review" the review; the
+section reuses the approval's click regions, since only one of them is ever shown. Tests: `QuestionClickTests`, red first. The showcase
+has scene 9, checked in the emulator (shown, clicked, answered). Not yet seen in a real terminal: the owner's run of scene 9 would
+close that.
 

@@ -11,6 +11,7 @@ extension ScreenComposer {
     /// each other never touch), its number, its words, and its letter in a column of their own, and a blank row before the input. The
     /// row the arrows are on is marked `›`, bold and in colour. When rows are short the blank rows go first, then the rows above the
     /// answers from the bottom; the answers are kept.
+    // @dl:accept -- the questions and the approval each draw their section the same way: rows from a layout that also says where to click
     static func approvalLines(_ pending: PendingApproval, columns: Int, rows: Int) -> [Line] {
         approvalLayout(pending, columns: columns, rows: rows).lines
     }
