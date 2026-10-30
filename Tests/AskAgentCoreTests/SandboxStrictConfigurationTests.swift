@@ -66,7 +66,10 @@ struct SandboxStrictConfigurationTests {
         // The kernel's spelling (/private/var/…), which Foundation's resolvingSymlinksInPath would strip.
         let workspace = CanonicalPath.of(FileManager.default.temporaryDirectory.path, relativeTo: "/") ?? ""
         let inside = workspace + "/inside"
-        #expect(SandboxSection().writeScope(workspace: workspace, home: "/h") == .anywhere)
+        #expect(
+            SandboxSection().writeScope(workspace: workspace, home: "/h") == .roots([workspace]),
+            "the default is the workspace (owner, 2026-10-29)")
+        #expect(SandboxSection(write: [.anywhere]).writeScope(workspace: workspace, home: "/h") == .anywhere)
         #expect(SandboxSection(write: [.workspace]).writeScope(workspace: workspace, home: "/h") == .roots([workspace]))
         #expect(
             SandboxSection(write: [.workspace, .paths([inside, "/elsewhere"])])

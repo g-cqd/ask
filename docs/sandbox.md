@@ -5,7 +5,8 @@ sandbox with the same policy. It costs a few milliseconds per command.
 
 ## What it protects
 
-By default the model can read and write anywhere you can, and reach the network, **except**:
+By default the model can read anywhere you can, write in the project (and temporary directories, and the caches builds write such as
+`~/Library/Caches`), and reach the network, **except**:
 
 - ask's own files (`~/.config/ask`, its sessions and credentials);
 - `~/.aws`, `~/.gnupg`, your Keychains, `~/.netrc` and ssh private keys.
@@ -19,7 +20,7 @@ In any configuration file (see [Configuration](configuration.md#sandbox)):
 ```json5
 {
   sandbox: {
-    write: "workspace",      // only the project and temporary directories
+    write: ["~/out"],        // only these directories (the default is "workspace")
     read: "workspace",       // only the project, the system and developer tools
     network: "localhost",    // or "none"
     denyRead: ["~/notes"],   // hide more
@@ -27,7 +28,7 @@ In any configuration file (see [Configuration](configuration.md#sandbox)):
 }
 ```
 
-A file can only make these stricter. To loosen them for one run, use the flags: `--write anywhere`, `--read DIR`, `--network any`. The
+A file can only make these stricter. To loosen them for one run, use the flags: `--write anywhere` (or `sandbox.write: "anywhere"` in your own file), `--read DIR`, `--network any`. The
 status line says when the sandbox is strict.
 
 ## Making room
