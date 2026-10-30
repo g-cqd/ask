@@ -29,7 +29,7 @@ audit's High findings and the MCP annotation finding (0153), and the workspace a
 1. **0154 with 0118 and 0096: the settings schema.** First step, cheap and owner-facing: the table of every setting, flag and command as
    it is and as proposed, with the reason, for the owner to accept row by row. Then one `SettingDescriptor` list in code that the parser,
    `ask config`, the docs page and a generated `config.example.json5` all come from; renames read the old names with a notice.
-2. **A showcase for a real terminal** (`Scripts/showcase.py`): every block kind, the approval section, the status marks, links, on a light
+2. **A showcase for a real terminal** (`Scripts/showcase.py`, built 2026-10-30; the owner's run is owed): every block kind, the approval section, the status marks, links, on a light
    and a dark page. One run by the owner closes the "not seen in a real terminal" lines of 0049, 0051, 0065, 0075, 0108, 0116, 0141, 0142,
    0157.
 3. **Close-out pass:** each in-progress entry checked against the code, set done or given a "still owed" list.

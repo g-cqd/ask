@@ -41,20 +41,8 @@ public struct CommandWords: Sendable, Equatable {
         return words.filter { seen.insert($0).inserted }
     }
 
-    /// The commands of a line, split at `&&`, `||`, `;`, `|`, `&` and line ends.
-    private static func segments(of command: String) -> [String] {
-        var segments: [String] = []
-        var current = ""
-        for character in command {
-            if [";", "|", "&", "\n"].contains(character) {
-                segments.append(current)
-                current = ""
-            } else {
-                current.append(character)
-            }
-        }
-        return segments + [current]
-    }
+    /// The commands of a line, split at `&&`, `||`, `;`, `|`, `&` and line ends, outside quotes and heredoc bodies.
+    private static func segments(of command: String) -> [String] { ShellSegments.split(command) }
 
     /// A subcommand is a plain word: letters, digits and `-`, starting with a letter; not an option, a path or a file.
     private static func isSubcommand(_ word: String) -> Bool {
