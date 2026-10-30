@@ -89,7 +89,9 @@ struct MCPLazyHubTests {
         hub.apply([MCPServerSetting(name: "stuck", command: "x"), MCPServerSetting(name: "quick", command: "x")])
         let start = ContinuousClock.now
         let settled = await hub.connect(waitingAtMost: .milliseconds(200))
-        #expect(!settled && ContinuousClock.now - start < .seconds(5))
+        // The stuck server never answers, so without the cap this would never return. The bound is wide: on a CI runner with few
+        // cores, the other suites running at once kept the 200 ms timer from a thread for 13.7 s (run 41139622755).
+        #expect(!settled && ContinuousClock.now - start < .seconds(30))
         #expect(
             hub.pendingServers.first == "stuck",
             "the quick one may still be finishing under load; the stuck one never does")
