@@ -32,11 +32,12 @@ def text(value):
 
 
 TOOLS = [
-    {"name": "echo", "description": "Echoes.", "inputSchema": {"type": "object", "properties": {"message": {"type": "string"}}}},
-    {"name": "env", "description": "Names of the environment.", "inputSchema": {"type": "object"}},
-    {"name": "pwd", "description": "Working directory.", "inputSchema": {"type": "object"}},
-    {"name": "big", "description": "A large result.", "inputSchema": {"type": "object"}},
-    {"name": "log", "description": "Writes to stderr.", "inputSchema": {"type": "object"}},
+    {"name": "echo", "description": "Echoes.", "inputSchema": {"type": "object", "properties": {"message": {"type": "string"}}},
+     "annotations": {"readOnlyHint": True}},
+    {"name": "env", "description": "Names of the environment.", "inputSchema": {"type": "object"}, "annotations": {"readOnlyHint": True}},
+    {"name": "pwd", "description": "Working directory.", "inputSchema": {"type": "object"}, "annotations": {"readOnlyHint": True}},
+    {"name": "big", "description": "A large result.", "inputSchema": {"type": "object"}, "annotations": {"readOnlyHint": True}},
+    {"name": "log", "description": "Writes to stderr.", "inputSchema": {"type": "object"}, "annotations": {"readOnlyHint": True}},
     {
         "name": "boom",
         "description": "Deletes a file.",
