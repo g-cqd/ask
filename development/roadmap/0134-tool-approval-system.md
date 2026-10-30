@@ -26,3 +26,22 @@ and selector pickers).
 
 Read-only tools are exempt from approval by default. A configuration setting can make them require approval too (a per-tool or per-kind
 `ask` list already covers it; the default list is what changes).
+
+## Ready to build; questions for the owner (2026-10-29)
+
+The confirmation section (0116) and the MCP rule (0153 finding 4) are done, so this is next. What is settled: on by default; read-only
+tools exempt by default; a config list can make them ask; the answers are Allow this time · Allow for the session · Deny. Open:
+
+1. **What "Allow for the session" covers for `bash`:** every later command (simple, but one "a" opens everything), or the same command
+   word (`swift …`, `git status` but not `git push`?), or only the identical command line. Proposed: the same program and first word
+   (`git status`, `swift build`), so `rm` or `git push` still ask.
+2. **Which built-in tools count as read-only:** proposed `read`, file listing and search, `mcp_search`, job output; asking: `bash`,
+   `write`, `edit`, job input. Should `write` and `edit` ask, given the sandbox already keeps them in the workspace? Proposed: they ask
+   too, with "Allow for the session" covering further edits of the same file.
+3. **`ask -p`, with no one to answer:** today it runs what the sandbox allows. With approvals on, every bash call would be refused unless
+   allowed. Proposed: `-p` keeps today's behaviour (the command line is the consent), and `--ask` is an error with `-p`.
+4. **Flags:** `--yes` (allow everything for this run) and `--ask-always` (ask even what the config allows). Names to confirm.
+5. **Settings** (person's own file only, like `credentials`): `approvals.default` (`"ask"` | `"allow"`), `approvals.allow` and
+   `approvals.ask` (tool names, `mcp__server__*` patterns), `approvals.scope` (`"anything"`, `"narrowing-only"`, `"none"`: what an
+   "Always" answer may write back to the config from inside ask; until then no answer writes config).
+
