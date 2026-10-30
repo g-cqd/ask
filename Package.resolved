@@ -1,5 +1,5 @@
 {
-  "originHash" : "cf498141b8ee00d9693e6b56c4a8e0c3b84090aec9801b7b1484d5c5abe9e127",
+  "originHash" : "99069c5dbf51d856a1b088e3b644cb77a8b8ba8a6d48d48b3bc2cc161aff7f40",
   "pins" : [
     {
       "identity" : "aemi",
@@ -14,7 +14,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiJSON.git",
       "state" : {
-        "revision" : "a41279b175cf17ee85ba3edb0e829ef214e2d9bf"
+        "revision" : "844a77cb471d1f3e4d3d884710b00602a86c8c5b"
       }
     },
     {
