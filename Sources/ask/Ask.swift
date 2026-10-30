@@ -119,6 +119,10 @@ struct Ask: AsyncParsableCommand {
     @Option(name: .customLong("reload-started"), help: .hidden)
     var reloadStarted: Int?
 
+    /// The file a reload wrote the session's approval answers to (roadmap 0159).
+    @Option(name: .customLong("reload-grants"), help: .hidden)
+    var reloadGrants: String?
+
     @Option(name: .customLong("selected-provider"), help: .hidden)
     var selectedProvider: String?
 
@@ -186,6 +190,7 @@ struct Ask: AsyncParsableCommand {
             network: network,
             write: write, read: read,
             selfCheck: selfCheck, verbose: verbose, reloadedFrom: reloadedFrom, reloadStarted: reloadStarted,
+            reloadGrants: reloadGrants,
             selectedProvider: selectedProvider, selectedModel: selectedModel, continueLatest: continueLatest,
             resume: resume)
     }

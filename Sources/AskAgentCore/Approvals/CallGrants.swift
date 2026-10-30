@@ -8,6 +8,27 @@ public struct CallGrants: Sendable, Equatable {
 
     public init() {}
 
+    /// The grants as four lists, to write down and restore (roadmap 0159).
+    public struct Record: Sendable, Equatable {
+        public let phrases: [String]
+        public let programs: [String]
+        public let files: [String]
+        public let tools: [String]
+    }
+
+    /// The grants as a ``Record``.
+    public var record: Record {
+        Record(phrases: phrases.sorted(), programs: programs.sorted(), files: files.sorted(), tools: tools.sorted())
+    }
+
+    /// Grants restored from ``record``.
+    public init(phrases: [String], programs: [String], files: [String], tools: [String]) {
+        self.phrases = Set(phrases)
+        self.programs = Set(programs)
+        self.files = Set(files)
+        self.tools = Set(tools)
+    }
+
     /// Remembers what an "Allow for the session" answer to a question about `scope` allows.
     public mutating func grant(_ scope: CallScope) {
         switch scope {

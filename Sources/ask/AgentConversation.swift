@@ -59,10 +59,11 @@ final class AgentConversation: Conversation {
     ///   - source: where the settings come from, read again before each prompt, all or nothing.
     ///   - jobs: the jobs `/reload` must not orphan.
     ///   - mcp: the MCP servers, started with the settings and kept across loop rebuilds.
+    ///   - grants: what the person allowed for the session before a reload (roadmap 0159).
     ///   - makeLoop: builds the loop for some settings, on the first prompt and after a change.
     init(
         directory: SessionDirectory, resumed: SessionRecorder? = nil, settings: RunSettings,
-        source: ConfigurationSource, jobs: JobTable, mcp: MCPHub,
+        source: ConfigurationSource, jobs: JobTable, mcp: MCPHub, grants: SessionGrants? = nil,
         makeLoop: @escaping @Sendable (RunSettings, LoopHooks) throws -> AgentLoop
     ) {
         sourceState = Mutex(source)
@@ -75,6 +76,7 @@ final class AgentConversation: Conversation {
         keepAwake = KeepAwake(
             mode: settings.configuration.keepAwake.value, display: settings.configuration.keepDisplayAwake.value)
         Self.follow(jobs, with: keepAwake)
+        if let grants { approvals.withLock { $0.restore(grants) } }
     }
 
     /// Reads the configuration again and, when it changed, tells the screen what changed. The loop is rebuilt
@@ -217,6 +219,7 @@ func runInteractive(
         let files = instructionFiles(workingDirectory: workingDirectory)
         let conversation = AgentConversation(
             directory: directory, resumed: resumed, settings: settings, source: source, jobs: jobs, mcp: mcp,
+            grants: reloaded?.grantsPath.flatMap(SessionGrants.take(from:)),
             makeLoop: { settings, hooks in
                 try makeLoop(
                     settings, instructions: files, jobs: jobs, transport: URLSessionTransport(), approve: hooks.approve,
