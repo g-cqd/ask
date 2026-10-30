@@ -105,6 +105,12 @@ struct ConfigurationSource: Sendable {
         policy.network = section.network ?? .any
         let home = homes.last ?? NSHomeDirectory()
         policy.write = section.writeScope(workspace: workspace, home: home)
+        // Kept to the workspace, builds still write their caches (owner, 2026-10-29), in every home.
+        if case .roots(let roots) = policy.write {
+            let caches = homes.flatMap(SandboxPolicy.developerWrites(home:))
+                .map { CanonicalPath.of($0, relativeTo: "/") ?? $0 }
+            policy.write = .roots(roots + caches.filter { !roots.contains($0) })
+        }
         policy.read = section.readScope(
             workspace: workspace, home: home,
             // Every home's: the account's holds the toolchains, $HOME the configuration a command's `~` finds.

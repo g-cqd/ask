@@ -78,8 +78,11 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
     }
 
     /// Where writing is allowed: the intersection of every layer's scope, anywhere when none set one.
+    /// Where writing is allowed: the intersection of the layers' scopes, or the workspace when none set one (owner, 2026-10-29); an
+    /// explicit `anywhere` opens it.
     public func writeScope(workspace: String, home: String) -> PathScope {
-        write.reduce(PathScope.anywhere) { $0.intersecting($1.scope(workspace: workspace, home: home)) }
+        let chosen = write.isEmpty ? [PathSetting.workspace] : write
+        return chosen.reduce(PathScope.anywhere) { $0.intersecting($1.scope(workspace: workspace, home: home)) }
     }
 
     /// Where reading is allowed besides the system: `anywhere` unless some layer restricted it, else the intersection

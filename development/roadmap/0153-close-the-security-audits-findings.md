@@ -67,3 +67,13 @@ a request asks naming it protected, allowed it writes; a request for gh's creden
 Still open: whether the default write scope becomes the workspace, and the default network (to decide with the owner); finding 5
 (`ask -p` and terminal control sequences); the hardening notes; a `standard` audit run with separate verifiers.
 
+## Owner (2026-10-29): the default write scope is the workspace
+
+Done: with no `sandbox.write` set, tools and commands write in the workspace, temporary directories, and the caches builds write
+(`SandboxPolicy.developerWrites`: `~/Library/Caches`, where a `.build` linked out of the project lands, Xcode's DerivedData, SwiftPM's
+two directories); not toolchains or `~/.cache`. `write: "anywhere"` or `--write anywhere` opens it. Checked through the release binary
+with a home under `/Users/Shared`: a write in the project works, one to `$HOME` is refused, one under `~/Library/Caches` works, and a
+real `swift build --disable-sandbox` of a package completes. The verbose sandbox line says "the build caches" rather than a path per
+home: the long line pushed a resumed conversation off the screen (interactive probe D and H). The setup questions (gh, docker, `git push
+-u` needing allowances) wait for roadmap 0155.
+
