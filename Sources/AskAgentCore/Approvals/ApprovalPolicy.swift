@@ -30,7 +30,7 @@ public struct ApprovalPolicy: Sendable, Equatable {
 
     /// What to do with a call of `tool` with `input`; relative paths resolve against `workingDirectory`.
     public func decide(tool: String, input: JSONObject, workingDirectory: String) -> Decision {
-        // `mcp_call` is judged as the tool it calls, so the lists name MCP tools one way.
+        // `dispatch_call` is judged as the tool it calls, so the lists name MCP tools one way.
         let tool = Self.calledTool(tool, input) ?? tool
         if flag == .yes { return Self.isMCP(tool) ? .runWithoutServerQuestion : .run }
         let ask = ToolCallApproval(tool: tool, input: input, scope: Self.scope(of: tool, input, workingDirectory))
@@ -53,15 +53,15 @@ public struct ApprovalPolicy: Sendable, Equatable {
         }
     }
 
-    /// `mcp__server__tool` for an `mcp_call` of `tool` on `server`.
+    /// `mcp__server__tool` for an `dispatch_call` of `tool` on `server`.
     private static func calledTool(_ tool: String, _ input: JSONObject) -> String? {
-        guard tool == "mcp_call", let server = fields(of: input).server, let called = fields(of: input).tool else {
+        guard tool == "dispatch_call", let server = fields(of: input).server, let called = fields(of: input).tool else {
             return nil
         }
         return "mcp__\(server)__\(called)"
     }
 
-    private static func isMCP(_ tool: String) -> Bool { tool.hasPrefix("mcp__") || tool == "mcp_call" }
+    private static func isMCP(_ tool: String) -> Bool { tool.hasPrefix("mcp__") || tool == "dispatch_call" }
 
     /// Whether `names` holds `tool`, a pattern ending in `*` that it starts with, `all` (every tool), or `commands` (`bash`).
     private static func matches(_ names: [String]?, _ tool: String) -> Bool {

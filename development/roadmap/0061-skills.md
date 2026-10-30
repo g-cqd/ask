@@ -101,3 +101,9 @@ of the advertisement is measured and capped by default, and the owner's question
 
 Skills that run code on their own (a skill's scripts run through `bash` under the sandbox like anything else), a package manager for skills,
 and subagents (0063).
+
+## Still owed (2026-10-30, close-out pass)
+
+- Phase 5 (not started; see "Phases").
+- `/skill:NAME` in a queued message is not expanded.
+- The probes listed above, run against the release binary and recorded, and the advertisement's cost measured at the default of 32.

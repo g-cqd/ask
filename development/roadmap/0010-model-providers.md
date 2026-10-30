@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: 
 date: 2026-10-18
 decision: ADR-0007
@@ -128,3 +128,10 @@ Still owed from "Done when" and "Also owed":
 - **A concurrent-refresh guard.** Two asks refreshing the same OAuth token can invalidate one another's refresh
   token; a lock around the refresh would stop it. (A test I ran by hand this session broke the real sign-in that way
   through a symlinked credentials file, which is the same hazard.)
+
+## Done (2026-10-30, close-out pass)
+
+Every "Done when" item holds: Claude streams full turns with tool calls on a subscription; Spettro signs in and speaks
+OpenAI-completions (0037, ADR-0031); usage is recorded per response; dropped and overloaded streams retry or report (0141). The
+concurrent-refresh guard is `CredentialLock`, taken around every refresh by `ClaudeAccess`, `CodexAccess` and `CopilotAccess`. The
+gate-drift diagnostic exists for the refusal that actually happened (0144's honest message); a general one moves to 0144.

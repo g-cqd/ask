@@ -24,3 +24,8 @@ Xcode ships a programming-focused on-device model ("CodeLM"). The owner asked wh
 ## Done when
 
 Either a probe shows a supported way to send a prompt to the code model and read the answer (then a provider like `AskApple`'s, named `xcode`, with its budget and tests), or the findings say, with probes, that there is none and this entry closes as won't-do. Nothing private is linked into ask in the meantime.
+
+## Still owed (2026-10-30, close-out pass)
+
+Nothing tried since the probes above. Next, path 1: whether `xcrun mcpbridge` or the `IDEIntelligenceChat` services expose the code
+model (as opposed to Xcode's tools, which ask already reaches over MCP). Low priority (priorities file, "later").

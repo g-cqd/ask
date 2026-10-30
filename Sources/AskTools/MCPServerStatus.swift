@@ -33,7 +33,8 @@ public struct MCPServerStatus: Sendable, Equatable {
     /// What is worth saying about a server that works but not the plain way, or nil.
     public var remark: String? {
         guard case .searchable(let tools) = state else { return nil }
-        return "MCP server \(name) has \(tools) tools: they are searched with mcp_search and called with mcp_call. "
+        return
+            "MCP server \(name) has \(tools) tools: they are searched with search_catalog and called with dispatch_call. "
             + "Name the ones you want in mcp.\(name).tools to offer them directly."
     }
 }
