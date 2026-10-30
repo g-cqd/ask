@@ -1159,7 +1159,9 @@ def probe_strict_label():
                                     ((), None, "✓")]:
         screen = Screen(server.url, project, arguments=(*arguments, "--verbose"))
         screen.ready()
-        status, text = screen.status(), screen.screen.text()
+        status = screen.status()
+        # A long sentence wraps: read it as one.
+        text = " ".join(line.strip() for line in screen.screen.text().split("\n"))
         label = " ".join(arguments) or "the default"
         results.append(check(f"{label}: the status line leads with {mark}", status.lstrip().startswith(mark), status))
         if wanted:
@@ -1176,7 +1178,9 @@ def sandbox_row(screen):
     """The sandbox rows of the last `/config now` report: `sandbox   on` and the line under it naming writes, reads and the network."""
     lines = screen.screen.text().split("\n")
     start = max((i for i, line in enumerate(lines) if line.strip().startswith("sandbox ")), default=None)
-    return " ".join(line.strip() for line in lines[start:start + 2]) if start is not None else ""
+    # The row wraps on a narrow screen: up to the network, which ends it.
+    end = next((i for i in range(start, len(lines)) if "network" in lines[i]), start + 1) if start is not None else 0
+    return " ".join(line.strip() for line in lines[start:end + 1]) if start is not None else ""
 
 
 def probe_resume_strict():
@@ -1312,7 +1316,9 @@ def probe_protected_paths():
     screen.type("y\r")
     results.append(check("allowed, the write goes through", wait(lambda: "rc=0" in result(2))
                          and open(rc).read() == "allowed\n", result(2)[-200:]))
-    results.append(check("a request to read gh's credentials asks", wait(lambda: ".config/gh" in screen.screen.text().rsplit("→", 1)[-1])))
+    results.append(check("a request to read gh's credentials asks",
+                         wait(lambda: "Allow it?" in screen.screen.text() and "reading" in screen.screen.text()
+                              and ".config/gh" in screen.screen.text())))
     screen.type("n\r")
     results.append(check("denied, nothing of the token reaches the model",
                          wait(lambda: len(server.requests) > 3) and "gho_probe_secret" not in json.dumps(server.requests[3]["body"]),
@@ -1339,7 +1345,7 @@ def probe_call_approvals():
         return condition()
 
     result = lambda n: json.dumps(server.requests[n]["body"]["messages"][-1]) if len(server.requests) > n else ""
-    pending = lambda: screen.screen.text().rsplit("→", 1)[-1]
+    pending = lambda: screen.screen.text() if "Allow it?" in screen.screen.text() else ""
     screen.ready()
     screen.type("Go\r")
     results = [check("git status asks, offering the subcommand and the program for the session",
@@ -1347,13 +1353,13 @@ def probe_call_approvals():
                      screen.screen.text()[-500:])]
     screen.type("a\r")
     results.append(check("allowed for the session, it runs", wait(lambda: len(server.requests) > 1)))
-    results.append(check("git status --short is covered: no question", wait(lambda: len(server.requests) > 2)
-                         and "git status --short. Allow it?" not in screen.screen.text()))
-    results.append(check("git log is another subcommand: it asks", wait(lambda: "git log -1. Allow it?" in screen.screen.text())))
+    # A covered call runs without a question; one that asked would wait for an answer that never comes.
+    results.append(check("git status --short is covered: no question", wait(lambda: len(server.requests) > 2)))
+    results.append(check("git log is another subcommand: it asks, the whole command shown",
+                         wait(lambda: "Allow `git log` for the session" in pending() and "git log -1" in pending())))
     screen.type("p\r")
-    results.append(check("git diff is covered by the program grant", wait(lambda: len(server.requests) > 4)
-                         and "git diff. Allow it?" not in screen.screen.text()))
-    results.append(check("ls asks", wait(lambda: "ls. Allow it?" in screen.screen.text())))
+    results.append(check("git diff is covered by the program grant", wait(lambda: len(server.requests) > 4)))
+    results.append(check("ls asks", wait(lambda: "Allow `ls` for the session" in pending())))
     screen.type("n\r")
     results.append(check("denied, the model is told", wait(lambda: "did not allow" in result(5)), result(5)[-200:]))
     screen.until("All done.", 15)
@@ -1389,12 +1395,14 @@ def probe_sandbox_approval():
                      and "Allow this time" in screen.screen.text() and "[✓]" in screen.screen.text(), screen.screen.text()[-600:])]
     screen.type("y\r")
     results.append(check("y runs it, under what it asked for", wait(lambda: "HTTP 200 curl=0" in result(1)), result(1)[-200:]))
-    results.append(check("once is not remembered: the same request asks again", wait(lambda: questions() == 2)))
+    # An answered question leaves nothing behind (0157): "Allow it?" on the screen is the question waiting now.
+    results.append(check("once is not remembered: the same request asks again",
+                         wait(lambda: len(server.requests) > 1 and questions() == 1)))
     screen.type("a\r")
     results.append(check("a runs it and allows it for the session",
-                         wait(lambda: "HTTP 200 curl=0" in result(2)) and "→ allowed for the session" in screen.screen.text()))
+                         wait(lambda: "HTTP 200 curl=0" in result(2))))
     # Earlier questions scroll away: what follows the grant is what counts.
-    after_grant = lambda: screen.screen.text().rsplit("→ allowed for the session", 1)[-1]
+    after_grant = lambda: screen.screen.text() if questions() else ""
     results.append(check("a request the session grant covers runs without asking",
                          wait(lambda: "HTTP 200 curl=0" in result(3)) and "network any" not in after_grant(),
                          (after_grant()[-300:], result(3)[-200:])))
@@ -1516,7 +1524,7 @@ def probe_reset_ignores_unrelated_grants():
     screen.type("a\r")
     results.append(check("the write grant is remembered", wait(lambda: "granted" in result(1))))
     results.append(check("reset still asks separately",
-                         wait(lambda: screen.screen.text().count("Allow it?") == 2)
+                         wait(lambda: "granted" in result(1) and "Allow it?" in screen.screen.text())
                          and "narrowing" in screen.screen.text(), screen.screen.text()[-600:]))
     screen.type("n\r")
     results.append(check("no keeps the narrowing", wait(lambda: "that request is refused" in result(3)), result(3)[-200:]))

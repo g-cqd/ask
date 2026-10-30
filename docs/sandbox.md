@@ -59,6 +59,7 @@ such as `Operation not permitted`: `gh`, `docker`, `kubectl` or `npm` need their
 The model can ask to narrow its own sandbox for a call, or for the rest of the conversation; that needs no approval. If it asks for **more**
 than the sandbox allows, ask puts the question to you above the input, with a box for each answer: **Allow this time**, **Allow for
 the session**, **Deny**. Up and Down move, Space or a click checks a box (or press its number, or `y`, `a`, `n`), Enter confirms; Esc denies at once.
-Undoing a narrowing asks a plain Yes or No, and an MCP tool marked destructive starts with Deny checked. The question stays in the
-conversation with your answer. `ask -p` refuses,
+Undoing a narrowing asks a plain Yes or No, and an MCP tool marked destructive starts with Deny checked.
+The whole command is shown under the question, folded to one row: Ctrl+O or a click unfolds it. Once you answer, the question
+leaves nothing behind; the command's own block shows whether it ran. `ask -p` refuses,
 since nobody is there to answer. Anything granted this way lasts only until `/new`, `/resume` or a restart.

@@ -123,7 +123,9 @@ struct RunSettings: Equatable {
         // The build caches are one phrase, not a path per home (they would push the conversation off a resumed screen).
         let caches = Set(SandboxPolicy.developerWrites(home: "").map { $0.lowercased() })
         let roots = all.filter { root in !caches.contains { root.lowercased().hasSuffix($0) } }
-        return (roots.isEmpty ? "nowhere" : "only under " + roots.joined(separator: ", "))
+        let canonicalWorkspace = CanonicalPath.of(workspace, relativeTo: "/") ?? workspace
+        let named = roots.map { $0 == canonicalWorkspace ? "the workspace" : $0 }
+        return (roots.isEmpty ? "nowhere" : "only under " + named.joined(separator: ", "))
             + (roots.count == all.count ? "" : ", the build caches") + " and temporary directories"
     }
 
@@ -156,10 +158,9 @@ struct RunSettings: Equatable {
     var strictTag: String? {
         if sandbox.isUnrestricted { return "no sandbox" }
         var parts: [String] = []
-        if case .roots(let roots) = sandbox.write {
-            let canonicalWorkspace = CanonicalPath.of(workspace, relativeTo: "/") ?? workspace
-            parts.append(roots == [canonicalWorkspace] ? "workspace only" : "writes limited")
-        }
+        // The workspace is the default (owner, 2026-10-29): only a narrower or different write scope is strict.
+        let chosen = configuration.sandbox.value.write
+        if case .roots = sandbox.write, !chosen.isEmpty, chosen != [.workspace] { parts.append("writes limited") }
         if case .roots = sandbox.read {
             parts.append(configuration.sandbox.value.read == [.workspace] ? "reads workspace" : "reads limited")
         }

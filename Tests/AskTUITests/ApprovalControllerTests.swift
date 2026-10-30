@@ -7,7 +7,7 @@ import Testing
 
 /// The approval question is a section above the input (roadmap 0116): one checkbox per answer, drawn with block characters; the arrows
 /// move, Space checks, a number or a letter checks its row, Enter confirms. Esc denies at once and Ctrl+C stops the turn. Once answered,
-/// the question stays in the conversation as one block with its answer.
+/// nothing is left in the conversation (roadmap 0157).
 @Suite("An approval question is a section of checkboxes above the input")
 struct ApprovalControllerTests {
     private func key(_ text: String) -> InputEvent { .key(KeyEvent(keyCode: text.unicodeScalars.first!.value)) }
@@ -105,17 +105,6 @@ struct ApprovalControllerTests {
         #expect(controller.handle(enter, pageRows: 10) == [.answerApproval(id: 7, choice)])
     }
 
-    @Test func `the answered question stays as one block with its answer`() {
-        var controller = asking()
-        _ = controller.handle(key("a"), pageRows: 10)
-        _ = controller.handle(enter, pageRows: 10)
-        let notices = controller.state.transcript.items.compactMap { item -> String? in
-            if case .notice(let text, _) = item { return text }
-            return nil
-        }
-        #expect(notices == ["bash wants network any. Allow it? → allowed for the session"])
-    }
-
     @Test func `a destructive tool's question has Deny checked, so a stray Enter never allows it`() {
         var controller = asking(.destructive)
         #expect(answers(controller)[2].contains("[✓]"))
@@ -128,11 +117,6 @@ struct ApprovalControllerTests {
         #expect(rows.count == 2 && rows[0].contains("Yes") && rows[1].contains("No") && rows[1].contains("[✓]"))
         _ = controller.handle(key("y"), pageRows: 10)
         #expect(controller.handle(enter, pageRows: 10) == [.answerApproval(id: 7, .once)])
-        guard case .notice(let text, _) = controller.state.transcript.items.last else {
-            Issue.record("no block")
-            return
-        }
-        #expect(text.hasSuffix("→ yes"))
     }
 
     @Test func `Esc denies at once rather than aborting the turn`() {
@@ -141,13 +125,10 @@ struct ApprovalControllerTests {
         #expect(controller.state.running)
     }
 
-    @Test func `Ctrl-C still aborts the turn, and the question is kept as denied`() {
+    @Test func `Ctrl-C still aborts the turn, and the question goes with it`() {
         var controller = asking()
         #expect(controller.handle(.key(KeyEvent(keyCode: 0x03)), pageRows: 10) == [.cancelRun])
         #expect(controller.state.pendingApproval == nil)
-        #expect(
-            controller.state.transcript.items.contains(
-                .notice("bash wants network any. Allow it? → denied", isError: false)))
     }
 
     @Test func `other keys neither answer nor type into the prompt`() {
