@@ -53,7 +53,7 @@ struct RunnerApprovalTests {
         press(0x1B, &rig)
         rig.controller.handle(.askApproval(id: 5, question: "Allow it?"))
         rig.draw()
-        #expect((0 ..< 16).contains { rig.text(row: $0).hasPrefix("Allow it?") }, "in the section above the input")
+        #expect((0 ..< 16).contains { rig.text(row: $0).hasPrefix("  Allow it?") }, "in the section above the input")
         #expect((0 ..< 16).contains { rig.text(row: $0) == "✓ · m · 1 job" }, "the status line is the plain one")
     }
 
