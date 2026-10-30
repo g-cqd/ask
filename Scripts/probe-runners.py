@@ -53,7 +53,7 @@ def main():
         os.makedirs(project)
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
-            json.dump({"ui": {"prompt": "ask> ", "separator": "off", "tint": "off", "padding": "off", "localizedDurations": "off"}}, file)
+            json.dump({"ui": {"inputPrefix": "ask> ", "separator": "off", "tint": "off", "padding": "off", "durations": "clock"}}, file)
         turn = probe.agent.turn
         server = probe.agent.Server([
             turn([("call", "t1", "bash", {"command": command, "yield_seconds": 1})], "tool_use"),

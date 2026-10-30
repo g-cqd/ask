@@ -29,7 +29,7 @@ While the model is working, **Enter** queues your message as steering: it is sen
 | `/quit` | Quits, stopping a running turn first. |
 
 When you stop a turn, nothing is added to the conversation: what was still going (a command, the reasoning, a compaction) turns orange
-and ends with `⊘`, apart from a failure's red `✗`, and whatever it had already returned is kept. The messages you queued are sent by default; `ui.interruptSendsQueued` changes that. `ui.interruptKeys` and the two
+and ends with `⊘`, apart from a failure's red `✗`, and whatever it had already returned is kept. The messages you queued are sent by default; `ui.queuedOnStop` changes that. `ui.interruptKeys` and the two
 confirmation settings choose which keys stop a turn and how many presses it takes (see [Configuration](configuration.md#ui)).
 
 ## Editing
@@ -61,7 +61,7 @@ conversation copies what is shown, as soon as you let go.
 
 ## Background jobs
 
-The model can run commands in the background. The status line counts them (`· 2 jobs`). Click the count, or type `/tasks`, to list them
+The model can run commands in the background. The status line counts them (`· 2 jobs`). Click the count, or type `/jobs`, to list them
 below the input: Up and Down choose one, Enter shows its output in place of the conversation, and Esc goes back. On a wide screen,
 `/sidebar` or **Ctrl+\\** shows the same list beside the conversation. Jobs never outlive ask.
 
@@ -69,17 +69,17 @@ below the input: Up and Down choose one, Enter shows its output in place of the 
 
 | Command | What it does |
 |---|---|
-| `/model` | Choose the model, from every account you are signed in to. `/model NAME` sets it directly; `/model --reset` undoes it. |
+| `/model` | Choose the model, from every account you are signed in to. `/model NAME` sets it directly; `/model reset` undoes it. |
 | `/thinking` | Choose how much the model thinks, among the levels it accepts. |
 | `/login`, `/logout` | Sign in to or out of an account without leaving. |
 | `/new` | Start a new conversation; the old one stays saved. |
 | `/resume` | Switch to another saved conversation. |
-| `/tree`, `/fork` | Go back to an earlier prompt, or continue in a copy. See [Sessions](sessions.md). |
+| `/rewind`, `/fork` | Go back to an earlier prompt, or continue in a copy. See [Sessions](sessions.md). |
 | `/compact` | Summarise the conversation now to free room in the context window. |
-| `/config` | Edit settings, or `/config now` to re-read the files and show them. |
+| `/config` | Edit settings, or `/config show` to re-read the files and show them. |
 | `/mcp` | Show the MCP servers and their tools. |
 | `/skill:NAME` | Ask for a skill by name. |
-| `/tasks`, `/sidebar` | Show the background jobs. |
+| `/jobs`, `/sidebar` | Show the background jobs. |
 | `/verbose` | Show or hide details: the sandbox in force, the files read. |
 | `/help` | List the commands. |
 | `/quit` | Leave. |

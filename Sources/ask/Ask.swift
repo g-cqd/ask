@@ -58,9 +58,13 @@ struct Ask: AsyncParsableCommand {
         help: "Turn off ask's protections for this run: its own files and your secret stores become reachable.")
     var noSandbox = false
 
-    @Flag(help: "Run every tool call without asking first, for this run (roadmap 0134).")
+    @Flag(help: "Run every tool call without asking first, for this run: the same as --allow all.")
     var yes = false
 
+    @Flag(help: "No sandbox and no questions, for this run: --no-sandbox and --yes together.")
+    var yolo = false
+
+    // @dl:accept -- the --allow and --ask options mirror each other on purpose (roadmap 0154): same shape, opposite meaning
     @Option(
         help: ArgumentHelp(
             "Run these tool calls without asking, for this run: a tool's name, \"commands\" for every command, \"all\" for every "
@@ -68,9 +72,15 @@ struct Ask: AsyncParsableCommand {
             valueName: "tool"))
     var allow: [String] = []
 
-    @Flag(
-        name: .customLong("ask-always"),
-        help: "Ask before every call that changes things, even what config.json allows.")
+    @Option(
+        help: ArgumentHelp(
+            "Ask before these tool calls even when config.json allows them, for this run: a tool's name, \"commands\" for every "
+                + "command, \"all\" for every call that changes things; repeat it for several. Adds to config.json's approvals.ask.",
+            valueName: "tool"))
+    var ask: [String] = []
+
+    /// The name `--ask all` replaced (roadmap 0154), still read.
+    @Flag(name: .customLong("ask-always"), help: .hidden)
     var askAlways = false
 
     @Option(
@@ -135,12 +145,14 @@ struct Ask: AsyncParsableCommand {
         if let thinking, ThinkingLevel(rawValue: thinking) == nil {
             throw ValidationError("--thinking must be one of: \(ThinkingLevel.choices).")
         }
-        if yes, askAlways { throw ValidationError("--yes and --ask-always say opposite things; give one.") }
-        if !allow.isEmpty, askAlways {
-            throw ValidationError("--allow and --ask-always say opposite things; give one.")
+        let asksAll = askAlways || ask.contains("all")
+        if yes || yolo, asksAll || !ask.isEmpty {
+            throw ValidationError("\(yolo ? "--yolo" : "--yes") and --ask say opposite things; give one.")
         }
-        if noSandbox, network != nil || !write.isEmpty || !read.isEmpty {
-            throw ValidationError("--no-sandbox turns the sandbox off; --network, --write and --read need it on.")
+        if !allow.isEmpty, asksAll { throw ValidationError("--allow and --ask all say opposite things; give one.") }
+        if noSandbox || yolo, network != nil || !write.isEmpty || !read.isEmpty {
+            throw ValidationError(
+                "\(yolo ? "--yolo" : "--no-sandbox") turns the sandbox off; --network, --write and --read need it on.")
         }
         if let network, SandboxPolicy.Network(named: network) == nil {
             throw ValidationError("--network must be none, localhost or any.")
@@ -169,7 +181,9 @@ struct Ask: AsyncParsableCommand {
     private var request: LaunchRequest {
         LaunchRequest(
             budgets: budgets, prompt: prompt, model: model, provider: provider, thinking: thinking, maxTurns: maxTurns,
-            compactAt: compactAt, noSandbox: noSandbox, yes: yes, allow: allow, askAlways: askAlways, network: network,
+            compactAt: compactAt, noSandbox: noSandbox, yes: yes, yolo: yolo, allow: allow, ask: ask,
+            askAlways: askAlways,
+            network: network,
             write: write, read: read,
             selfCheck: selfCheck, verbose: verbose, reloadedFrom: reloadedFrom, reloadStarted: reloadStarted,
             selectedProvider: selectedProvider, selectedModel: selectedModel, continueLatest: continueLatest,

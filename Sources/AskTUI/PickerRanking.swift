@@ -12,7 +12,9 @@ enum PickerRanking {
         var summaries: [SlashCommand] = []
         for command in commands {
             let name = command.name.lowercased()
-            if name.hasPrefix(needle) {
+            // A name roadmap 0154 replaced still finds its command, as its own name would.
+            let old = SlashCommand.renamed.filter { $0.value == command.name }.map(\.key)
+            if name.hasPrefix(needle) || old.contains(where: { $0.hasPrefix(needle) }) {
                 prefixes.append(command)
             } else if name.contains(needle) {
                 names.append(command)

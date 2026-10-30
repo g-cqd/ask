@@ -2,16 +2,16 @@ import Testing
 
 @testable import AskAgentCore
 
-@Suite("ui.code and ui.codeFoldLines configure long code blocks")
+@Suite("ui.fold.code and ui.fold.codeLines configure long code blocks")
 struct CodeFoldConfigurationTests {
     private func parse(_ text: String) throws(ConfigurationError) -> ConfigurationFile {
         try ConfigurationFile.parse(Array(text.utf8), path: "c.json")
     }
 
     @Test func `a file reads both keys and reports them`() throws {
-        let file = try parse("{ui:{code:'open',codeFoldLines:30}}")
+        let file = try parse("{ui:{fold:{code:false,codeLines:30}}}")
         #expect(file.ui?.foldCode == false && file.ui?.codeFoldLines == 30)
-        #expect(file.ui?.description == "code open, codeFoldLines 30")
+        #expect(file.ui?.description == "fold.code false, fold.codeLines 30")
     }
 
     @Test func `a bad choice or a length below one is refused by name`() {
@@ -20,8 +20,9 @@ struct CodeFoldConfigurationTests {
                 path: "c.json", key: "ui.code", reason: "is \"hidden\": use \"folded\" or \"open\"")
         ) { try parse("{ui:{code:'hidden'}}") }
         #expect(
-            throws: ConfigurationError.outOfRange(path: "c.json", key: "ui.codeFoldLines", reason: "must be at least 1")
-        ) { try parse("{ui:{codeFoldLines:0}}") }
+            throws: ConfigurationError.outOfRange(
+                path: "c.json", key: "ui.fold.codeLines", reason: "must be at least 1")
+        ) { try parse("{ui:{fold:{codeLines:0}}}") }
     }
 
     @Test func `a layer replaces them without forgetting the other ui keys`() {

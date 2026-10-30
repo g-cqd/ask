@@ -6,9 +6,9 @@ internal import Foundation
 public struct SystemPowerActivities: PowerActivities {
     public init() {}
 
-    public func begin(_ mode: KeepAwakeMode, reason: String) -> any Sendable {
+    public func begin(_ mode: KeepAwakeMode, display: Bool, reason: String) -> any Sendable {
         let options: ProcessInfo.ActivityOptions =
-            mode == .display ? [.idleSystemSleepDisabled, .idleDisplaySleepDisabled] : [.idleSystemSleepDisabled]
+            display ? [.idleSystemSleepDisabled, .idleDisplaySleepDisabled] : [.idleSystemSleepDisabled]
         return Token(ProcessInfo.processInfo.beginActivity(options: options, reason: reason))
     }
 

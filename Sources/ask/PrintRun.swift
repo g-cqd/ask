@@ -102,7 +102,8 @@ func runPrompt(
 
 /// The Mac kept awake as `settings` say, already holding for the run that is about to start.
 private func awake(_ settings: RunSettings) -> KeepAwake {
-    let keepAwake = KeepAwake(mode: settings.configuration.keepAwake.value)
+    let keepAwake = KeepAwake(
+        mode: settings.configuration.keepAwake.value, display: settings.configuration.keepDisplayAwake.value)
     keepAwake.turnStarted()
     return keepAwake
 }

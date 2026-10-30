@@ -17,7 +17,7 @@ extension ScreenController {
                 return submitPrompt(Self.isContinueWord(text) ? Self.continueText : text, followUp: followUp)
             case .command(let name, let arguments):
                 state.transcript.addUser(line)
-                guard let command = commands.first(where: { $0.name == name }) else {
+                guard let command = SlashCommand.named(name, in: commands) else {
                     state.transcript.addNotice("There is no command /\(name); /help lists them.", isError: true)
                     return []
                 }
@@ -27,21 +27,21 @@ extension ScreenController {
                         state.transcript.addNotice(help, isError: false)
                         return []
                     case "quit": return [.quit]
-                    case "tasks": return toggleRunners(announcing: true)
+                    case "jobs": return toggleRunners(announcing: true)
                     case "sidebar": return toggleSidebar(announcing: true)
                     case "verbose": return toggleVerbose()
                     case "follow-up": return submitPrompt(arguments, followUp: true)
                     case "continue": return submitPrompt(Self.continueText(with: arguments), followUp: followUp)
                     default:
                         // A list known to be empty has nothing to open: the bare command runs and says why.
-                        let knownEmpty = state.choices[name].map { $0.rows.isEmpty && !$0.stale } ?? false
+                        let knownEmpty = state.choices[command.name].map { $0.rows.isEmpty && !$0.stale } ?? false
                         if command.takesChoices, arguments.isEmpty, !knownEmpty {
-                            state.editor.paste("/\(name) ")
+                            state.editor.paste("/\(command.name) ")
                             pickerScreenRows = Swift.max(pickerScreenRows, Self.pickerMinimumRows)
                             return refreshPicker(screenRows: pickerScreenRows, at: .now)
                         }
                         guard !busy() else { return [] }
-                        return begin(.runCommand(name: name, arguments: arguments))
+                        return begin(.runCommand(name: command.name, arguments: arguments))
                 }
         }
     }

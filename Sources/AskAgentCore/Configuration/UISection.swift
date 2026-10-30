@@ -105,22 +105,22 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         // @dl:accept -- the layering takes each key from the later section; the keys are the data
     }
 
-    /// The keys, in the order they are shown.
+    /// The keys, in the order they are shown, as a file writes them (roadmap 0154); `fold.*` are the keys of the `fold` object.
     public static let keys =
-        ["mouse", "copyOnSelect", "tools", "thinking", "scrollLines", "promptRows", "code", "codeFoldLines", "sidebar"]
+        [
+            "mouse", "copyOnSelect", "fold.tools", "fold.thinking", "fold.code", "fold.codeLines", "scrollLines",
+            "inputRows", "sidebar"
+        ]
         + lookKeys + behaviorKeys
 
     /// The keys that set the look of the screen (roadmap 0074).
     // @dl:accept -- the key table is schema data, a list of names like a test's list of names
     private static let lookKeys = [
         // @dl:accept -- a list of key names is data, like any other list of names
-        "prompt", "tint", "appearance", "separator", "padding", "markdown", "localizedDurations", "spinner", "timeout",
+        "inputPrefix", "tint", "appearance", "separator", "padding", "markdown", "durations", "spinner", "showTimeout",
         "timeoutLabel"
     ]
-    private static let behaviorKeys = [
-        "jobAutoReturnWhenFocused", "abortTurnRequiresConfirmation", "interruptKeys",
-        "escapeInterruptRequiresConfirmation", "interruptSendsQueued", "onlyUsefulModels"
-    ]
+    private static let behaviorKeys = ["leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels"]
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: UISection) -> UISection {
@@ -146,40 +146,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             timeoutLabel: section.timeoutLabel ?? timeoutLabel)
     }
 
+    /// The keys this section sets, as a file writes them: `inputRows 4, fold.tools false`.
     public var description: String {
-        var parts: [String] = []
-        func flag(_ name: String, _ value: Bool?) {
-            if let value { parts.append("\(name) \(value ? "on" : "off")") }
-        }
-        // @dl:accept -- one line per key, as data, in the order the keys are shown
-        flag("mouse", mouse)
-        flag("copyOnSelect", copyOnSelect)
-        // @dl:accept -- one line per key, as data, in the order the keys are shown
-        if let foldTools { parts.append("tools \(foldTools ? "folded" : "open")") }
-        // @dl:accept -- one line per key, as data, in the order the keys are shown
-        if let foldThinking { parts.append("thinking \(foldThinking ? "folded" : "open")") }
-        if let scrollLines { parts.append("scrollLines \(scrollLines)") }
-        if let promptRows { parts.append("promptRows \(promptRows)") }
-        if let foldCode { parts.append("code \(foldCode ? "folded" : "open")") }
-        if let codeFoldLines { parts.append("codeFoldLines \(codeFoldLines)") }
-        if let sidebarOpen { parts.append("sidebar \(sidebarOpen ? "open" : "closed")") }
-        // @dl:accept -- named UI fields form the user-facing configuration listing
-        if let prompt { parts.append(prompt.isEmpty ? "prompt none" : "prompt \"\(prompt)\"") }
-        flag("tint", tint)
-        if let appearance { parts.append("appearance \(appearance.rawValue)") }
-        flag("separator", separator)
-        flag("padding", padding)
-        flag("markdown", markdown)
-        flag("localizedDurations", localizedDurations)
-        if let spinner { parts.append("spinner \(spinner.rawValue)") }
-        if let timeout { parts.append("timeout \(timeout.rawValue)") }
-        if let timeoutLabel { parts.append("timeoutLabel \"\(timeoutLabel)\"") }
-        flag("jobAutoReturnWhenFocused", jobAutoReturnWhenFocused)
-        flag("abortTurnRequiresConfirmation", abortTurnRequiresConfirmation)
-        if let interruptKeys { parts.append("interruptKeys \(interruptKeys.rawValue)") }
-        flag("escapeInterruptRequiresConfirmation", escapeInterruptRequiresConfirmation)
-        if let interruptSendsQueued { parts.append("interruptSendsQueued \(interruptSendsQueued.rawValue)") }
-        flag("onlyUsefulModels", onlyUsefulModels)
-        return parts.isEmpty ? "defaults" : parts.joined(separator: ", ")
+        SectionText.describe(Self.keys, value(forKey:))
     }
 }

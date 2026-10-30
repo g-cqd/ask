@@ -2,7 +2,7 @@
 /// (ADR-0035), and the strict modes (roadmap 0042). Paths are absolute, or start with `~/` for the home directory.
 public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
     /// The keys a file may set under `sandbox`.
-    public static let keys = ["allowRead", "allowWrite", "denyRead", "write", "read", "network"]
+    public static let keys = ["readable", "writable", "hide", "write", "read", "network"]
 
     /// Secret stores the user allows reading despite the default: `~/.aws` for the aws CLI, say. ask's own
     /// directories are never lifted by this, and only the user's own file may set it: a project that could widen
@@ -46,8 +46,8 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
             settings.count == 1 ? settings[0].description : "\(settings)"
         }
         return [
-            allowRead.isEmpty ? nil : "allowRead \(allowRead)", allowWrite.isEmpty ? nil : "allowWrite \(allowWrite)",
-            denyRead.isEmpty ? nil : "denyRead \(denyRead)",
+            allowRead.isEmpty ? nil : "readable \(allowRead)", allowWrite.isEmpty ? nil : "writable \(allowWrite)",
+            denyRead.isEmpty ? nil : "hide \(denyRead)",
             write.isEmpty ? nil : "write " + scopes(write), read.isEmpty ? nil : "read " + scopes(read),
             network.map { "network \($0)" }
         ]

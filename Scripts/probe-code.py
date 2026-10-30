@@ -42,7 +42,7 @@ def scenario(markdown):
         os.makedirs(project)
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
-            json.dump({"ui": {"prompt": "ask> ", "codeFoldLines": 20, "markdown": "on" if markdown else "off"}}, file)
+            json.dump({"ui": {"inputPrefix": "ask> ", "fold": {"codeLines": 20}, "markdown": "on" if markdown else "off"}}, file)
         server = probe.agent.Server([probe.agent.turn([("text", REPLY)], "end_turn")])
         environment = probe.agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")

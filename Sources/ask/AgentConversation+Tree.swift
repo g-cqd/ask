@@ -26,7 +26,7 @@ extension AgentConversation {
         guard let number = Int(wanted), let turn = outline.turn(number) else {
             update(
                 .notice(
-                    "Usage: /tree to list the prompts, /tree N to go back to before prompt N (1 to \(outline.turns.count)).",
+                    "Usage: /rewind to list the prompts, /rewind N to go back to before prompt N (1 to \(outline.turns.count)).",
                     isError: true))
             return
         }
@@ -61,7 +61,7 @@ extension AgentConversation {
     private func list(_ outline: SessionOutline, update: @Sendable (ConversationUpdate) -> Void) {
         let lines = outline.lines()
         var report = [
-            "Prompts in this session (> is the path you are on). /tree N goes back to before prompt N and puts it back in the editor:"
+            "Prompts in this session (> is the path you are on). /rewind N goes back to before prompt N and puts it back in the editor:"
         ]
         report.append(contentsOf: lines.suffix(Self.treeListingLimit))
         if lines.count > Self.treeListingLimit {

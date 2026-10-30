@@ -12,7 +12,7 @@ extension ConfigurationFile {
             }
         }
         for (key, entries) in [
-            ("sandbox.allowRead", section.allowRead), ("sandbox.denyRead", section.denyRead),
+            ("sandbox.readable", section.allowRead), ("sandbox.hide", section.denyRead),
             ("sandbox.write", paths(section.write)), ("sandbox.read", paths(section.read))
         ] {
             for entry in entries where !(entry.hasPrefix("/") || entry == "~" || entry.hasPrefix("~/")) {
@@ -22,13 +22,13 @@ extension ConfigurationFile {
         }
         if isProject, !section.allowWrite.isEmpty {
             throw .outOfRange(
-                path: path, key: "sandbox.allowWrite",
+                path: path, key: "sandbox.writable",
                 reason:
                     "can only be set in your own config file: a project that could open its own hooks would defeat it")
         }
         if isProject, !section.allowRead.isEmpty {
             throw .outOfRange(
-                path: path, key: "sandbox.allowRead",
+                path: path, key: "sandbox.readable",
                 reason:
                     "can only be set in your own config file: a project that could widen the sandbox would defeat it")
         }

@@ -14,7 +14,7 @@ extension ScreenController {
             return nil
         }
         let name = String(text[text.index(after: text.startIndex) ..< space])
-        guard let command = commands.first(where: { $0.name == name && $0.takesChoices }) else { return nil }
+        guard let command = SlashCommand.named(name, in: commands), command.takesChoices else { return nil }
         let argumentsStart = text.index(after: space)
         let offset = text.distance(from: text.startIndex, to: argumentsStart)
         guard state.editor.cursor >= offset else { return nil }

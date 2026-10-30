@@ -21,11 +21,17 @@ public struct ApprovalPolicy: Sendable, Equatable {
     public let flag: Flag?
     /// What the command line allows for this run (`--allow`), added to the section's `allow` list (roadmap 0156).
     public let allowing: [String]
+    /// What the command line asks about for this run (`--ask NAME`), added to the section's `ask` list (roadmap 0154).
+    public let asking: [String]
 
-    public init(section: ApprovalsSection = ApprovalsSection(), flag: Flag? = nil, allowing: [String] = []) {
+    public init(
+        section: ApprovalsSection = ApprovalsSection(), flag: Flag? = nil, allowing: [String] = [],
+        asking: [String] = []
+    ) {
         self.section = section
         self.flag = flag
         self.allowing = allowing
+        self.asking = asking
     }
 
     /// What to do with a call of `tool` with `input`; relative paths resolve against `workingDirectory`.
@@ -34,7 +40,7 @@ public struct ApprovalPolicy: Sendable, Equatable {
         let tool = Self.calledTool(tool, input) ?? tool
         if flag == .yes { return Self.isMCP(tool) ? .runWithoutServerQuestion : .run }
         let ask = ToolCallApproval(tool: tool, input: input, scope: Self.scope(of: tool, input, workingDirectory))
-        if Self.matches(section.ask, tool) { return .ask(ask) }
+        if Self.matches((section.ask ?? []) + asking, tool) { return .ask(ask) }
         if flag != .askAlways, Self.matches((section.allow ?? []) + allowing, tool) {
             return Self.isMCP(tool) ? .runWithoutServerQuestion : .run
         }

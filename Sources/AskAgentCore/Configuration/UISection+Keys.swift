@@ -1,44 +1,50 @@
 extension UISection {
-    /// The value of `key` as a configuration file writes it (`"on"`, `"folded"`, `3`), or nil when this section does not set it. The names
-    /// are those of ``keys``, so `ask config` can show each key under the name a person types (roadmap 0103).
+    /// The value of `key` as a configuration file writes it (`true`, `words`, `3`; free text in quotes), or nil when this section does not set it. The
+    /// names are those of ``keys``, so `ask config` can show each key under the name a person types (roadmaps 0103 and 0154).
     public func value(forKey key: String) -> String? {
-        let onOff = Self.onOff
-        func fold(_ value: Bool?) -> String? { value.map { $0 ? "folded" : "open" } }
+        let flag = Self.flag
         switch key {
-            case "mouse": return onOff(mouse)
-            case "copyOnSelect": return onOff(copyOnSelect)
-            case "tools": return fold(foldTools)
-            case "thinking": return fold(foldThinking)
+            case "mouse": return flag(mouse)
+            case "copyOnSelect": return flag(copyOnSelect)
+            case "fold.tools": return flag(foldTools)
+            case "fold.thinking": return flag(foldThinking)
+            case "fold.code": return flag(foldCode)
+            case "fold.codeLines": return codeFoldLines.map(String.init)
             case "scrollLines": return scrollLines.map(String.init)
-            case "promptRows": return promptRows.map(String.init)
-            case "code": return fold(foldCode)
-            case "codeFoldLines": return codeFoldLines.map(String.init)
+            case "inputRows": return promptRows.map(String.init)
             case "sidebar": return sidebarOpen.map { $0 ? "open" : "closed" }
-            case "prompt": return prompt.map { $0.isEmpty ? "none" : "\"\($0)\"" }
-            case "tint": return onOff(tint)
+            case "inputPrefix": return prompt.map { "\"\($0)\"" }
+            case "tint": return flag(tint)
             case "appearance": return appearance?.rawValue
-            case "separator": return onOff(separator)
-            case "padding": return onOff(padding)
-            case "markdown": return onOff(markdown)
-            case "localizedDurations": return onOff(localizedDurations)
+            case "separator": return flag(separator)
+            case "padding": return flag(padding)
+            case "markdown": return flag(markdown)
+            case "durations": return localizedDurations.map { $0 ? "words" : "clock" }
             case "spinner": return spinner?.rawValue
-            case "timeout": return timeout?.rawValue
+            case "showTimeout": return timeout?.rawValue
             case "timeoutLabel": return timeoutLabel.map { "\"\($0)\"" }
             default: return behaviorValue(forKey: key)
         }
     }
 
-    private static func onOff(_ value: Bool?) -> String? { value.map { $0 ? "on" : "off" } }
+    private static func flag(_ value: Bool?) -> String? { value.map { $0 ? "true" : "false" } }
 
     private func behaviorValue(forKey key: String) -> String? {
-        let onOff = Self.onOff
         switch key {
-            case "jobAutoReturnWhenFocused": return onOff(jobAutoReturnWhenFocused)
-            case "abortTurnRequiresConfirmation": return onOff(abortTurnRequiresConfirmation)
-            case "interruptKeys": return interruptKeys?.rawValue
-            case "escapeInterruptRequiresConfirmation": return onOff(escapeInterruptRequiresConfirmation)
-            case "interruptSendsQueued": return interruptSendsQueued?.rawValue
-            case "onlyUsefulModels": return onOff(onlyUsefulModels)
+            case "leaveFinishedJob": return Self.flag(jobAutoReturnWhenFocused)
+            case "stopKeys": return interruptKeys?.rawValue
+            case "stopTwice":
+                guard escapeInterruptRequiresConfirmation != nil || abortTurnRequiresConfirmation != nil else {
+                    return nil
+                }
+                let keys = [
+                    ("esc", escapeInterruptRequiresConfirmation ?? true),
+                    ("ctrl-c", abortTurnRequiresConfirmation ?? false)
+                ]
+                let pressedTwice = keys.filter(\.1).map(\.0)
+                return pressedTwice.isEmpty ? "none" : pressedTwice.joined(separator: ", ")
+            case "queuedOnStop": return interruptSendsQueued?.rawValue
+            case "listAllModels": return Self.flag(onlyUsefulModels.map { !$0 })
             default: return nil
         }
     }

@@ -2,8 +2,7 @@ internal import AemiJSON
 public import AskAI
 internal import Foundation
 
-/// One `config.json`: JSON or JSON5 in a file named `.json` (ADR-0030). Every key is optional; a key that is
-/// absent leaves the layer below in force.
+/// One `config.json`: JSON or JSON5 in a file named `.json` (ADR-0030). Every key is optional; an absent key leaves the layer below.
 ///
 /// Read with AemiJSON's JSON5 mode, which parses plain JSON identically, and with duplicate keys refused: in a
 /// configuration file a repeated key is a typo that would silently override. Unknown keys are refused too.
@@ -18,16 +17,20 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var skills: SkillsSection?
     public var mcp: MCPSection?
     public var environment: EnvironmentSection?
+    /// What reading it noticed: old setting names read as new ones (roadmap 0154).
+    public var notices: [String] = []
     public var keepAwake: KeepAwakeMode?  // roadmap 0090; not in the initializer, set after it
+    public var keepDisplayAwake: Bool?  // roadmap 0154
     public var credentials: CredentialStorage?  // roadmap 0110; the person's own file only
     public var approvals: ApprovalsSection?  // roadmap 0134; the person's own file only
 
     /// The keys ask knows, in the order `ask config` shows them.
     // @dl:accept -- the list of keys is data; the sandbox policy's list of names is other data
     public static let keys = [
-        "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "credentials", "approvals", "sandbox",
-        "ui",
-        "skills", "mcp", "environment"
+        // @dl:accept -- the list of keys is data, like the sandbox policy's lists of paths
+        "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "keepDisplayAwake", "credentials",
+        "approvals",
+        "sandbox", "ui", "skills", "mcp", "environment"
     ]
 
     /// A file with these values.
@@ -52,26 +55,6 @@ public struct ConfigurationFile: Sendable, Equatable {
         self.environment = environment
     }
 
-    /// Whether the file sets the key `name`.
-    public func sets(_ name: String) -> Bool {
-        switch name {
-            case "model": model != nil
-            case "provider": provider != nil
-            case "thinking": thinking != nil
-            case "maxTurns": maxTurns != nil
-            case "compactAt": compactAt != nil
-            case "keepAwake": keepAwake != nil
-            case "credentials": credentials != nil
-            case "approvals": approvals != nil
-            case "sandbox": sandbox != nil
-            case "ui": ui != nil
-            case "skills": skills != nil
-            case "mcp": mcp != nil
-            case "environment": environment != nil
-            default: false
-        }
-    }
-
     /// The file at `path`, or nil when there is none.
     /// - Throws: ``ConfigurationError`` for a file that exists but is not a valid configuration.
     public static func load(_ path: String) throws(ConfigurationError) -> ConfigurationFile? {
@@ -92,9 +75,11 @@ public struct ConfigurationFile: Sendable, Equatable {
     ) throws(ConfigurationError) -> ConfigurationFile {
         var decoder = AemiJSON.JSONDecoder()
         decoder.options = JSONParseOptions(validation: .json5, duplicateKeys: .throwError)
-        let file: ConfigurationFile
+        var file: ConfigurationFile
         do {
+            let (bytes, notices) = try renamingOldNames(in: bytes, path: path)
             file = try decoder.decode(Decoded.self, from: bytes).file
+            file.notices = notices
         } catch let unknown as UnknownKey {
             throw .unknownKey(path: path, key: unknown.key, known: keys)
         } catch let bad as BadValue {
@@ -118,8 +103,8 @@ public struct ConfigurationFile: Sendable, Equatable {
                 reason: "says where your keys are kept: only your own config file can choose that")
         }
         for (key, count) in [
-            ("ui.scrollLines", file.ui?.scrollLines), ("ui.promptRows", file.ui?.promptRows),
-            ("ui.codeFoldLines", file.ui?.codeFoldLines)
+            ("ui.scrollLines", file.ui?.scrollLines), ("ui.inputRows", file.ui?.promptRows),
+            ("ui.fold.codeLines", file.ui?.codeFoldLines)
         ] {
             if let count, count < 1 { throw .outOfRange(path: path, key: key, reason: "must be at least 1") }
         }
@@ -197,9 +182,9 @@ public struct ConfigurationFile: Sendable, Equatable {
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
                 switch key.stringValue {
-                    case "allowRead": section.allowRead = try container.decode([String].self, forKey: key)
-                    case "allowWrite": section.allowWrite = try container.decode([String].self, forKey: key)
-                    case "denyRead": section.denyRead = try container.decode([String].self, forKey: key)
+                    case "readable": section.allowRead = try container.decode([String].self, forKey: key)
+                    case "writable": section.allowWrite = try container.decode([String].self, forKey: key)
+                    case "hide": section.denyRead = try container.decode([String].self, forKey: key)
                     case "write": section.write = [try ConfigurationFile.scope(container, key, name: "sandbox.write")]
                     case "read": section.read = [try ConfigurationFile.scope(container, key, name: "sandbox.read")]
                     case "network":
@@ -229,6 +214,9 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "compactAt": file.compactAt = try ConfigurationFile.decodeCompactAt(container, key: key)
                     case "keepAwake":
                         file.keepAwake = try ConfigurationFile.decodeChoice(container, key: key, as: KeepAwakeMode.self)
+                    case "keepDisplayAwake":
+                        file.keepDisplayAwake = try ConfigurationFile.decodeSwitch(
+                            container, key: key, name: "keepDisplayAwake")
                     case "credentials":
                         file.credentials = try ConfigurationFile.decodeChoice(
                             container, key: key, as: CredentialStorage.self)

@@ -11,13 +11,18 @@ extension ConfigEditor {
                 .init(path: ["thinking"], kind: .choice(ThinkingLevel.allCases.map(\.rawValue))),
                 readOnly("maxTurns"), readOnly("compactAt"),
                 .init(path: ["keepAwake"], kind: .choice(KeepAwakeMode.allCases.map(\.rawValue))),
+                .init(path: ["keepDisplayAwake"], kind: .boolean),
                 .init(path: ["credentials"], kind: .choice(CredentialStorage.allCases.map(\.rawValue))),
-                readOnly(["sandbox", "allowRead"]), readOnly(["sandbox", "denyRead"]),
+                // @dl:accept -- editor rows are data: a path and a kind each
+                readOnly(["sandbox", "readable"]), readOnly(["sandbox", "writable"]), readOnly(["sandbox", "hide"]),
                 // @dl:accept -- read-only rows across sections list real configuration keys; the lists are the data
                 readOnly(["sandbox", "write"]), readOnly(["sandbox", "read"]),
                 .init(path: ["sandbox", "network"], kind: .choice(["none", "localhost", "any"])),
+                .init(path: ["approvals", "default"], kind: .choice(["ask", "allow"])),
+                readOnly(["approvals", "allow"]), readOnly(["approvals", "ask"]),
+                .init(path: ["approvals", "remember"], kind: .choice(ApprovalsSection.Scope.allCases.map(\.rawValue))),
                 .init(path: ["skills", "enabled"], kind: .boolean),
-                readOnly(["skills", "maxAdvertised"]), readOnly(["skills", "sources"]),
+                readOnly(["skills", "maxListed"]), readOnly(["skills", "sources"]),
                 readOnly(["mcp"]), readOnly(["environment", "pass"]), readOnly(["environment", "withhold"]),
                 readOnly(["environment", "shell"])
             ]
@@ -30,32 +35,25 @@ extension ConfigEditor {
     /// A read-only row at top-level key `name`.
     private static func readOnly(_ name: String) -> Descriptor { readOnly([name]) }
 
-    /// The `ui` section's rows: two wire booleans, the on/off strings, three folded/open switches, then the rest.
-    // @dl:accept -- the `ui` key table is data: its three switch spellings differ only in their choice lists
+    /// The `ui` section's rows (roadmap 0154): the switches as booleans, the fold switches under `ui.fold`, then the rest.
+    // @dl:accept -- the `ui` key table is data: its rows differ only in their paths and choice lists
     private static let uiDescriptorTable: [Descriptor] =
-        ["mouse", "copyOnSelect"].map { .init(path: ["ui", $0], kind: .boolean) }
+        ["mouse", "copyOnSelect", "tint", "separator", "padding", "markdown", "leaveFinishedJob", "listAllModels"]
+        .map { .init(path: ["ui", $0], kind: .boolean) }
+        + ["tools", "thinking", "code"].map { .init(path: ["ui", "fold", $0], kind: .boolean) }
         + [
-            "tint", "separator", "padding", "markdown", "localizedDurations", "jobAutoReturnWhenFocused",
-            "abortTurnRequiresConfirmation", "escapeInterruptRequiresConfirmation", "onlyUsefulModels"
-        ]
-        .map { .init(path: ["ui", $0], kind: .onOff) }
-        + ["tools", "thinking", "code"]
-        .map {
-            .init(path: ["ui", $0], kind: .choice(["folded", "open"]))
-        }
-        + [
-            readOnly(["ui", "scrollLines"]), readOnly(["ui", "promptRows"]),
+            readOnly(["ui", "fold", "codeLines"]), readOnly(["ui", "scrollLines"]), readOnly(["ui", "inputRows"]),
             .init(path: ["ui", "sidebar"], kind: .choice(["open", "closed"])),
-            readOnly(["ui", "prompt"]),
+            readOnly(["ui", "inputPrefix"]),
+            .init(path: ["ui", "durations"], kind: .choice(["words", "clock"])),
             // @dl:accept -- one row per choice key, each naming its own enumeration; the rows are data
             .init(path: ["ui", "spinner"], kind: .choice(SpinnerPreference.allCases.map(\.rawValue))),
             .init(path: ["ui", "appearance"], kind: .choice(AppearancePreference.allCases.map(\.rawValue))),
-            .init(path: ["ui", "interruptKeys"], kind: .choice(InterruptKeysPreference.allCases.map(\.rawValue))),
-            .init(path: ["ui", "timeout"], kind: .choice(TimeoutPreference.allCases.map(\.rawValue))),
+            .init(path: ["ui", "stopKeys"], kind: .choice(InterruptKeysPreference.allCases.map(\.rawValue))),
+            readOnly(["ui", "stopTwice"]),
+            .init(path: ["ui", "showTimeout"], kind: .choice(TimeoutPreference.allCases.map(\.rawValue))),
             readOnly(["ui", "timeoutLabel"]),
-            .init(
-                path: ["ui", "interruptSendsQueued"],
-                kind: .choice(QueuedAfterInterruptPreference.allCases.map(\.rawValue)))
+            .init(path: ["ui", "queuedOnStop"], kind: .choice(QueuedAfterInterruptPreference.allCases.map(\.rawValue)))
         ]
 
     /// One descriptor as a row: its current value, and `unset` plus the choices when it can change.

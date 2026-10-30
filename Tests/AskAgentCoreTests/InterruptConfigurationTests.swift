@@ -2,7 +2,7 @@ import Testing
 
 @testable import AskAgentCore
 
-@Suite("ui.interruptKeys, ui.escapeInterruptRequiresConfirmation and ui.interruptSendsQueued (roadmap 0083)")
+@Suite("ui.stopKeys, ui.stopTwice and ui.queuedOnStop (roadmaps 0083 and 0154)")
 struct InterruptConfigurationTests {
     private func ui(_ json: String) throws -> UISection {
         try ConfigurationFile.parse(Array(#"{"ui": \#(json)}"#.utf8), path: "c.json").ui ?? UISection()
@@ -10,14 +10,13 @@ struct InterruptConfigurationTests {
 
     @Test func `they are read and described`() throws {
         let section = try ui(
-            #"{"interruptKeys": "ctrl-c", "escapeInterruptRequiresConfirmation": "off", "interruptSendsQueued": "next"}"#
+            #"{"stopKeys": "ctrl-c", "stopTwice": [], "queuedOnStop": "next"}"#
         )
         #expect(section.interruptKeys == .ctrlC)
-        #expect(section.escapeInterruptRequiresConfirmation == false)
+        #expect(section.escapeInterruptRequiresConfirmation == false && section.abortTurnRequiresConfirmation == false)
         #expect(section.interruptSendsQueued == .next)
         #expect(
-            section.description
-                == "interruptKeys ctrl-c, escapeInterruptRequiresConfirmation off, interruptSendsQueued next")
+            section.description == "stopKeys ctrl-c, stopTwice none, queuedOnStop next")
     }
 
     @Test func `a later layer replaces only what it sets`() {
@@ -27,15 +26,15 @@ struct InterruptConfigurationTests {
     }
 
     @Test(arguments: [
-        #"{"interruptKeys": "enter"}"#, #"{"interruptSendsQueued": "some"}"#,
-        #"{"escapeInterruptRequiresConfirmation": "maybe"}"#
+        #"{"stopKeys": "enter"}"#, #"{"queuedOnStop": "some"}"#, #"{"stopTwice": ["enter"]}"#,
+        #"{"escapeInterruptRequiresConfirmation": "maybe"}"#, #"{"interruptKeys": "enter"}"#
     ])
     func `a wrong value is refused`(json: String) {
         #expect(throws: (any Error).self) { try ui(json) }
     }
 
     @Test func `the keys are listed for the editor`() {
-        for key in ["interruptKeys", "escapeInterruptRequiresConfirmation", "interruptSendsQueued"] {
+        for key in ["stopKeys", "stopTwice", "queuedOnStop"] {
             #expect(UISection.keys.contains(key))
         }
     }

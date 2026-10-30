@@ -55,6 +55,7 @@ public struct ConfigurationLoader: Sendable {
         if let user = try ConfigurationFile.load(userPath) {
             configuration = configuration.applying(user, from: .file(userPath))
             applied.append(userPath)
+            notices += user.notices
         }
         if let bytes = try ConfigurationFileReader.read(projectPath) {
             switch try ProjectTrust.load(trustPath).standing(of: projectPath, bytes: bytes) {
@@ -62,6 +63,7 @@ public struct ConfigurationLoader: Sendable {
                     let project = try ConfigurationFile.parse(bytes, path: projectPath, isProject: true)
                     configuration = configuration.applying(project, from: .file(projectPath))
                     applied.append(projectPath)
+                    notices += project.notices
                 case .unknown:
                     notices.append("\(projectPath) is ignored: run `ask trust` here to use it.")
                 case .changed:

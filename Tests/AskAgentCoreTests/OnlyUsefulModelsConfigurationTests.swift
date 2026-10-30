@@ -9,9 +9,10 @@ struct OnlyUsefulModelsConfigurationTests {
     }
 
     @Test func `it is read, described, and layered`() throws {
-        let off = try ui(#"{"onlyUsefulModels": "off"}"#)
+        let off = try ui(#"{"listAllModels": true}"#)
         #expect(off.onlyUsefulModels == false)
-        #expect(off.description == "onlyUsefulModels off")
+        #expect(off.description == "listAllModels true")
+        #expect(try ui(#"{"onlyUsefulModels": "off"}"#).onlyUsefulModels == false, "the old name still reads")
         #expect(UISection(onlyUsefulModels: true).layered(with: off).onlyUsefulModels == false)
         #expect(off.layered(with: UISection()).onlyUsefulModels == false)
     }

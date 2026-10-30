@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-28
 ---
@@ -44,3 +44,6 @@ Built on the approval section (0116, 0157): the same checkboxes, spacing, keys a
 
 First slice once answered: Q1 to Q3 for one question; then the series with tabs and the confirmation.
 
+## Owner's answer (2026-10-30)
+
+"Everything presented is right, go ahead": Q1 to Q7 as proposed.

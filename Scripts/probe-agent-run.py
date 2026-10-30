@@ -519,7 +519,7 @@ def probe_sandbox_allowance():
     open(os.path.join(home, "clients", "notes.txt"), "w").write("CLIENT-NOTES")
     # The user's file names the aws store, ask's own directory (which must not be lifted), and a directory to hide.
     open(os.path.join(ask_dir, "config.json"), "w").write(
-        "{sandbox: {allowRead: ['~/.aws', '~/.config/ask'], denyRead: ['~/clients']}}")
+        "{sandbox: {readable: ['~/.aws', '~/.config/ask'], hide: ['~/clients']}}")
     server = Server([
         turn([("tool", "t1", f"cat '{home}/.aws/credentials'")], "tool_use"),
         turn([("tool", "t2", f"cat '{ask_dir}/credentials.json'")], "tool_use"),
@@ -537,7 +537,7 @@ def probe_sandbox_allowance():
                       "operation not permitted" in got.get("t2", "").lower() and "SECRET" not in got.get("t2", ""), got.get("t2")),
                 check("a directory the user asked to hide is hidden", "operation not permitted" in got.get("t3", "").lower(), got.get("t3")),
                 check("ask config shows the section and where it came from",
-                      "allowRead" in shown.stdout and "denyRead" in shown.stdout and "sandbox   on" in shown.stdout, shown.stdout)])
+                      "readable" in shown.stdout and "hide" in shown.stdout and "sandbox   on" in shown.stdout, shown.stdout)])
 
 
 def probe_damaged_session():

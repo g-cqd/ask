@@ -22,7 +22,7 @@ def main():
         config = root + "/config"
         os.makedirs(project)
         os.makedirs(config + "/ask")
-        Path(config + "/ask/config.json").write_text('{"ui":{"prompt":"ask> "}}')
+        Path(config + "/ask/config.json").write_text('{"ui":{"inputPrefix":"ask> "}}')
         server = folding.agent.Server([folding.agent.turn([("text", "BANNER ANSWER")], "end_turn")])
         environment = folding.agent.environment(root + "/state", server.url, config=config)
         terminal = folding.Terminal(project, environment)
