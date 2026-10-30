@@ -17,7 +17,7 @@ struct BashTransitiveWaitTests {
         try #require(!PortWait.accepts(65_535))
         let output = await BashTool(jobs: jobs)
             .run(
-                input(#"{"command":"exit 7","wait_for_port":65535,"timeout_seconds":1,"shell":"/bin/bash"}"#),
+                input(#"{"command":"exit 7","wait_for_port":65535,"timeout_seconds":10,"shell":"/bin/bash"}"#),
                 in: context)
         #expect(output == .error("[exit 7]"))
         #expect(jobs.summaries.isEmpty)

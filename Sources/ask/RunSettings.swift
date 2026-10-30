@@ -119,9 +119,12 @@ struct RunSettings: Equatable {
 
     /// Where the sandbox allows writing, in words.
     var writes: String {
-        guard case .roots(let roots) = sandbox.write else { return "anywhere" }
+        guard case .roots(let all) = sandbox.write else { return "anywhere" }
+        // The build caches are one phrase, not a path per home (they would push the conversation off a resumed screen).
+        let caches = Set(SandboxPolicy.developerWrites(home: "").map { $0.lowercased() })
+        let roots = all.filter { root in !caches.contains { root.lowercased().hasSuffix($0) } }
         return (roots.isEmpty ? "nowhere" : "only under " + roots.joined(separator: ", "))
-            + " and temporary directories"
+            + (roots.count == all.count ? "" : ", the build caches") + " and temporary directories"
     }
 
     /// Where the sandbox allows reading, in words.
