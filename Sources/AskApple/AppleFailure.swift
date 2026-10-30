@@ -47,21 +47,22 @@ enum AppleFailure {
             }
         }
 
-        private static func failure(_ cause: Cause) -> ProviderFailure {
-            switch cause {
-                case .overflow:
-                    ProviderFailure(
-                        kind: .contextOverflow, message: "The conversation does not fit the on-device model's window.",
-                        contextWindow: AppleModel.contextWindow)
-                case .declined:
-                    ProviderFailure(kind: .invalidRequest, message: "The on-device model declined this request.")
-                case .busy: ProviderFailure(kind: .overloaded, message: "The on-device model is busy; try again.")
-                case .assets: ProviderFailure(kind: .notFound, message: "The on-device model is not ready on this Mac.")
-                case .language:
-                    ProviderFailure(
-                        kind: .invalidRequest, message: "The on-device model does not support this language.")
-                case .other(let text): ProviderFailure(kind: .other("on-device"), message: text)
-            }
-        }
     #endif
+
+    private static func failure(_ cause: Cause) -> ProviderFailure {
+        switch cause {
+            case .overflow:
+                ProviderFailure(
+                    kind: .contextOverflow, message: "The conversation does not fit the on-device model's window.",
+                    contextWindow: AppleModel.contextWindow)
+            case .declined:
+                ProviderFailure(kind: .invalidRequest, message: "The on-device model declined this request.")
+            case .busy: ProviderFailure(kind: .overloaded, message: "The on-device model is busy; try again.")
+            case .assets: ProviderFailure(kind: .notFound, message: "The on-device model is not ready on this Mac.")
+            case .language:
+                ProviderFailure(
+                    kind: .invalidRequest, message: "The on-device model does not support this language.")
+            case .other(let text): ProviderFailure(kind: .other("on-device"), message: text)
+        }
+    }
 }
