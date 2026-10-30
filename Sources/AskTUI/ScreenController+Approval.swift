@@ -40,6 +40,14 @@ extension ScreenController {
         return []
     }
 
+    /// A click on answer `index`: it is checked and the cursor goes there, as Space would; Enter still confirms.
+    mutating func checkApproval(answer index: Int) {
+        guard var pending = state.pendingApproval, pending.options.indices.contains(index) else { return }
+        pending.cursor = index
+        pending.checked = index
+        state.pendingApproval = pending
+    }
+
     /// The row a number (from 1) or a letter names, if any.
     private static func shortcut(_ key: KeyEvent, in options: [ApprovalOption]) -> Int? {
         guard key.modifiers.isEmpty, let scalar = Unicode.Scalar(key.keyCode) else { return nil }

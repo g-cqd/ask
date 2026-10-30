@@ -29,6 +29,8 @@ struct FrameGeometry: Sendable {
     /// The picker's matches as drawn: the row of the first, which matches they are, and the word they were for, so a click on a row
     /// means the match the user saw, and means nothing if the list has since moved on.
     var pickerFirstRow = 0
+    /// The screen rows of the approval section's answers, first answer first, so a click on one checks it (roadmap 0116).
+    var approvalAnswers = 0 ..< 0
     var pickerWindow = 0 ..< 0
     var pickerTrigger: CompletionTrigger?
     /// The strip's rows as drawn: the screen row of the first, and the runner each shows, so a click means what the user saw.
