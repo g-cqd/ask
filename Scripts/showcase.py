@@ -152,9 +152,18 @@ def project(root):
 
 
 def main(arguments):
-    binary = os.path.abspath(next((a for a in arguments if not a.startswith("--") and "/" in a), ".build/release/ask"))
+    repository = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    given = next((a for a in arguments if not a.startswith("--") and a not in ("light", "dark", "auto")), None)
+    binary = os.path.abspath(given) if given else os.path.join(repository, ".build", "release", "ask")
     appearance = arguments[arguments.index("--appearance") + 1] if "--appearance" in arguments else "auto"
+    if not os.access(binary, os.X_OK):
+        print(f"showcase: no ask at {binary}; build it with `swift build -c release` in {repository}, or name one.")
+        return 2
+    if not (sys.stdin.isatty() and sys.stdout.isatty()):
+        print("showcase: run it in a terminal; ask draws its own screen.")
+        return 2
     root = tempfile.mkdtemp(prefix="ask-showcase-")
+    status = 1
     try:
         work, config, home = (os.path.join(root, name) for name in ("project", "config", "home"))
         project(work)
@@ -167,15 +176,21 @@ def main(arguments):
         env = {k: v for k, v in os.environ.items() if not k.startswith("ASK_")}
         env.update(ANTHROPIC_API_KEY="sk-ant-api-showcase", ANTHROPIC_BASE_URL=f"http://127.0.0.1:{server.server_address[1]}",
                    XDG_CONFIG_HOME=config, XDG_STATE_HOME=os.path.join(root, "state"), HOME=home)
-        print("ask showcase: a scripted model, a scratch project; type a scene's number as the prompt.\n")
+        print(f"ask showcase ({binary}): a scripted model, a scratch project; type a scene's number as the prompt.\n")
         for number, (title, _) in SCENES.items():
             print(f"  {number}. {title}")
-        print("\nAlso try: a click on a link or a path, Ctrl+O on a command, /help, /jobs or /tasks, a light and a dark terminal "
-              "page.\nPress Enter to start.")
+        print("\nAlso try: a click on a link or a path, Ctrl+O on a command, /help, /tasks, a light and a dark terminal page.\n"
+              "Press Enter to start.")
         input()
-        return subprocess.call([binary, "--provider", "anthropic", "--model", "showcase"], cwd=work, env=env)
+        status = subprocess.call([binary, "--provider", "anthropic", "--model", "showcase"], cwd=work, env=env)
+        return status
+    except KeyboardInterrupt:
+        return 130
     finally:
-        shutil.rmtree(root, ignore_errors=True)
+        if status == 0:
+            shutil.rmtree(root, ignore_errors=True)
+        else:
+            print(f"showcase: ask ended with status {status}; its files are kept in {root} for a look.")
 
 
 if __name__ == "__main__":
