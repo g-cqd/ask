@@ -3,9 +3,10 @@ internal import TerminalKitStyle
 internal import TerminalKitText
 
 extension ScreenComposer {
-    /// The picker's rows for this frame: none while an approval question waits, since the question has the keys.
+    /// The picker's rows for this frame; while an approval question waits, its section instead, since the question has the keys.
     static func pickerLines(for state: ScreenState, columns: Int, rows: Int) -> [Line] {
-        guard state.pendingApproval == nil, let picker = state.picker else { return [] }
+        if let pending = state.pendingApproval { return approvalLines(pending, columns: columns, rows: rows) }
+        guard let picker = state.picker else { return [] }
         return pickerLines(picker, columns: columns, rows: rows)
     }
 
@@ -88,7 +89,7 @@ extension ScreenComposer {
     }
 
     /// `text` cut to `columns` cells at a grapheme boundary, never wider.
-    private static func clipped(_ text: String, to columns: Int) -> String {
+    static func clipped(_ text: String, to columns: Int) -> String {
         guard UnicodeWidth.displayWidth(of: text) > columns else { return text }
         return ColumnSlicer.split(text, columns: 0 ..< columns).selected
     }

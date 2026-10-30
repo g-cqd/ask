@@ -229,7 +229,8 @@ struct CompletionPickerControllerTests {
         var screen = controller()
         type("/co", into: &screen)
         screen.handle(.askApproval(id: 7, question: "bash wants network any. Allow it?"))
-        #expect(type("y", into: &screen) == [.answerApproval(id: 7, .once)])
+        #expect(type("y", into: &screen).isEmpty, "the letter checks; Enter confirms (roadmap 0116)")
+        #expect(press(0x0D, into: &screen) == [.answerApproval(id: 7, .once)])
         #expect(screen.state.editor.text == "/co")
     }
 

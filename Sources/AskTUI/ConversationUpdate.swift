@@ -39,7 +39,7 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// Replaces the active conversation: clear its transcript, usage display and scrollback, keeping the draft.
     case clearConversation
     /// A tool call asks for more than the sandbox allows: ask the user, and send the answer to ``Conversation/answer(approval:with:)``.
-    case askApproval(id: Int, question: String)
+    case askApproval(id: Int, question: String, kind: ApprovalKind = .grant)
     /// Everything running beside the conversation, replacing the last list. The status line counts them and `/tasks` lists them.
     case runners([RunnerInfo])
     /// The project's files for the `@` picker, answering ``ScreenController/Effect/indexFiles``.

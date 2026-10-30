@@ -202,8 +202,8 @@ public struct ScreenController: Sendable {
                 state.detail = ""
                 state.context = ""
                 state.scrollback = 0
-            case .askApproval(let id, let question):
-                ask(id: id, question: HomePath.abbreviate(question, home: options.home))
+            case .askApproval(let id, let question, let kind):
+                ask(id: id, question: HomePath.abbreviate(question, home: options.home), kind: kind)
             case .compacting, .compactionFinished, .reconnecting, .connectingMCP, .waitingForNetwork:
                 applyBackgroundWork(update)
             case .runEnded:
