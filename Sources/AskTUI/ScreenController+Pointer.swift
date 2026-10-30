@@ -17,6 +17,8 @@ extension ScreenController {
     private static let stripTarget = 4
     /// The sidebar's rows, where a click focuses a runner.
     private static let sidebarTarget = 5
+    /// The approval section's answers, where a click checks one.
+    private static let approvalTarget = 6
 
     mutating func handle(mouse event: MouseEvent, at now: ContinuousClock.Instant) -> [Effect] {
         guard options.mouse else { return [] }
@@ -32,11 +34,10 @@ extension ScreenController {
         if frame.runnerColumns != nil || frame.belowColumns != nil || frame.markColumns != nil {
             regions.add(Self.statusTarget, at: CellRect(row: frame.statusRow, col: 0, rows: 1, cols: frame.columns))
         }
-        if !frame.stripIDs.isEmpty {
-            regions.add(
-                Self.stripTarget,
-                at: CellRect(row: frame.stripFirstRow, col: 0, rows: frame.stripIDs.count, cols: frame.columns))
+        func band(_ target: Int, from row: Int, rows count: Int) {
+            if count > 0 { regions.add(target, at: CellRect(row: row, col: 0, rows: count, cols: frame.columns)) }
         }
+        band(Self.stripTarget, from: frame.stripFirstRow, rows: frame.stripIDs.count)
         if !frame.sidebarIDs.isEmpty {
             regions.add(
                 Self.sidebarTarget,
@@ -44,11 +45,8 @@ extension ScreenController {
                     row: 0, col: frame.transcriptColumns + 1, rows: frame.sidebarIDs.count,
                     cols: Swift.max(0, frame.columns - frame.transcriptColumns - 1)))
         }
-        if !frame.pickerWindow.isEmpty {
-            regions.add(
-                Self.pickerTarget,
-                at: CellRect(row: frame.pickerFirstRow, col: 0, rows: frame.pickerWindow.count, cols: frame.columns))
-        }
+        band(Self.approvalTarget, from: frame.approvalAnswers.lowerBound, rows: frame.approvalAnswers.count)
+        band(Self.pickerTarget, from: frame.pickerFirstRow, rows: frame.pickerWindow.count)
         // Collected first: acting on an event changes the controller, which the recognizer is part of.
         var events: [PointerEvent<Int>] = []
         pointer.handle(event, at: now, in: regions) { events.append($0) }
@@ -101,6 +99,8 @@ extension ScreenController {
                 if frame.markColumns?.contains(cell.col) == true { return toggleSandboxNote() }
                 guard frame.runnerColumns?.contains(cell.col) == true else { return [] }
                 return toggleRunners()
+            case .click(let target, let cell, .left, _, _) where target == Self.approvalTarget:
+                checkApproval(answer: cell.row - frame.approvalAnswers.lowerBound)
             case .click(let target, let cell, .left, _, _) where target == Self.sidebarTarget:
                 return clickSidebar(row: cell.row)
             case .click(let target, let cell, .left, _, _) where target == Self.stripTarget:
