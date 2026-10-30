@@ -106,7 +106,7 @@ final class ScreenSession {
             case .update(let update):
                 effects = controller.handle(update)
                 if case .jobOutput(let job) = update, job.status != .running { jobOutput[job.id] = nil }
-                if update == .clearConversation {
+                if update == .clearConversation || update.clears {
                     for task in jobOutput.values { task.cancel() }
                     jobOutput.removeAll()
                 }
