@@ -190,3 +190,13 @@ count this request against your Claude subscription, and extra usage is off, so 
 Sending it again will not help; an Anthropic API key or another connection can serve it. Anthropic said: …". The quota clause appears only
 when the response's `anthropic-ratelimit-unified-5h-status` header says `allowed`. The kind stays `invalidRequest`, which is not retried.
 Tests: `AnthropicSubscriptionRefusalTests`. Not checked against a live refusal after the change.
+
+## The tool names, renamed (2026-10-30, close-out pass)
+
+The root cause above was found on 2026-10-29 but the names had not changed: any configuration putting an MCP server in search
+mode (more than 16 tools, as Xcode's 54) had every request on a Claude subscription refused. `mcp_search` and `mcp_call` are now
+`search_catalog` and `dispatch_call`, the two names checked live to pass; a comment on `MCPCallTool` says why, and `probe-mcp.py` checks the
+old names are never offered. Sessions that called the old names still replay (the history is accepted once the tools are not offered).
+
+Still owed: one live request with a search-mode server on the subscription (the owner's step); a general message for a refusal from the
+subscription gate (moved here from 0010); the naming table's row 40 lets the owner choose other names after a live check.

@@ -3,13 +3,14 @@ public import AskAI
 public import AskAgentCore
 internal import AskMCP
 
-/// `mcp_call`: calls a tool found with `mcp_search` (ADR-0100). It runs outside ask's sandbox like every server's tool, so it refuses a
-/// narrowed session.
+/// `dispatch_call`: calls a tool found with `search_catalog` (ADR-0100). It runs outside ask's sandbox like every server's tool, so it refuses a
+/// narrowed session. Not `mcp_call`: Anthropic refuses a Claude subscription request that offers a tool called `mcp_call` or `mcp_search`,
+/// with an "out of extra usage" message (roadmap 0144); these names were checked live to pass.
 struct MCPCallTool: Tool {
     let definition = ToolDefinition(
-        name: "mcp_call",
+        name: "dispatch_call",
         description: """
-            Call a tool of an MCP server that mcp_search found: the server, the tool's name, and its arguments as an object that fits the \
+            Call a tool of an MCP server that search_catalog found: the server, the tool's name, and its arguments as an object that fits the \
             schema the search showed.
             """
     ) {
@@ -29,7 +30,7 @@ struct MCPCallTool: Tool {
         }
         guard let document = try? AemiJSON.parse(input.bytes, options: JSONParseOptions(recordsContainerSpans: true)),
             let server = document.root["server"].string, let tool = document.root["tool"].string
-        else { return .error("Give the server and the tool, as mcp_search showed them.") }
+        else { return .error("Give the server and the tool, as search_catalog showed them.") }
         let given = document.root["arguments"]
         // Absent or null is no arguments; anything else that is not an object is a mistake to say, not to guess at.
         let isWrongKind = given.string != nil || given.bool != nil || given.double != nil || given.isArray
@@ -42,7 +43,7 @@ struct MCPCallTool: Tool {
             let where_ =
                 known.contains(server)
                 ? "The server \(server) has no tool \(tool)" : "No searchable server is called \(server)"
-            return .error("\(where_). Servers: \(known.joined(separator: ", ")). Use mcp_search to find the tools.")
+            return .error("\(where_). Servers: \(known.joined(separator: ", ")). Use search_catalog to find the tools.")
         }
         if found.tool.annotations.needsApproval, let approve = context.destructiveApprover {
             guard await approve(DestructiveToolCall(server: server, tool: tool, input: arguments)) else {

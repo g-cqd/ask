@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-24
 ---
@@ -76,3 +76,9 @@ A dedicated stop chord that works with text in the input; whether to kill only a
 ## Superseded in part (2026-10-28)
 
 The owner decided that Esc interrupts a running turn by default, with a second press as confirmation (a setting). "Esc never aborts" no longer holds; 0083 carries the survey and the settings. The rest of this entry stands until 0083 lands.
+
+## Done (2026-10-30, close-out pass)
+
+The key model is built (ADR-0104): Ctrl+C a ladder that clears, stops, then quits on a second press; a stop key; the help and README
+say so. The owner then decided Esc stops a running turn by default, confirmed by a second press (0083, `ui.escapeInterruptRequiresConfirmation`),
+which supersedes "Esc never aborts". "Not decided" stays undecided until someone needs it.

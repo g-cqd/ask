@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by:
 date: 2026-10-19
 ---
@@ -37,3 +37,8 @@ protected path; and the thinking level changes the request the provider receives
   regex (28.9 ms and 173 ms against about 20 ms); the token saving is real only for unbounded searches (2 of 5 natural tasks), which the
   existing 2,000-line / 50 KiB cap already bounds; three tool definitions would cost about 450 tokens on every request. A prompt sentence
   did not help conclusively. Open: a larger experiment on shaping what a search returns.
+
+## Done (2026-10-30, close-out pass)
+
+The thinking level is 0053's; the search tools were measured and not built (above). The open question, shaping what a search
+returns, is an experiment for when a search costs too many tokens, not owed work.

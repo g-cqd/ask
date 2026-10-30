@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: ["0064"]
 date: 2026-10-24
 ---
@@ -65,3 +65,9 @@ runners. Subagents (0063) then supply `agent` runners with no change to this UI.
 ## Not decided here
 
 The sidebar's width, what "context" lists, and the key that toggles the sidebar.
+
+## Done (2026-10-30, close-out pass)
+
+All four steps are built: the strip (ADR-0105), focus (ADR-0110), questions while a lane is shown (ADR-0112, ADR-0113; questions
+from other runners arrive with them, in 0063) and the character sidebar (ADR-0114), each with its tests and probes
+(`probe-runners.py`, `probe-sidebar.py`). Pixel strokes for the divider belong to 0014 and 0015.

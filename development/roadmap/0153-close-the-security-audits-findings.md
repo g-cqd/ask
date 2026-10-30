@@ -77,3 +77,7 @@ real `swift build --disable-sandbox` of a package completes. The verbose sandbox
 home: the long line pushed a resumed conversation off the screen (interactive probe D and H). The setup questions (gh, docker, `git push
 -u` needing allowances) wait for roadmap 0155.
 
+## Still owed (2026-10-30, close-out pass)
+
+The default write scope is the workspace (done, `175c674`). Owed: finding 5 (`ask -p` passes control sequences, OSC 52 among them, to
+the terminal), the hardening notes above, the default network (to decide with the owner), and a `standard` audit run over the result.

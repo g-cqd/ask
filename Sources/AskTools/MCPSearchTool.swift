@@ -3,7 +3,7 @@ public import AskAI
 public import AskAgentCore
 internal import Foundation
 
-/// `mcp_search`: finds tools among the servers that have too many to list (ADR-0100).
+/// `search_catalog`: finds tools among the servers that have too many to list (ADR-0100).
 struct MCPSearchTool: ArgumentTool {
     struct Arguments: Decodable, Sendable {
         let query: String
@@ -21,11 +21,11 @@ struct MCPSearchTool: ArgumentTool {
         self.catalog = catalog
         let reached = catalog.servers.map { "\($0.name) (\($0.tools) tools)" }.joined(separator: ", ")
         definition = ToolDefinition(
-            name: "mcp_search",
+            name: "search_catalog",
             description: """
                 Some MCP servers have too many tools to list here: \(reached). Find a tool among them by words from what you \
                 want to do (a part of a tool's name counts most); each match shows what the tool does and the schema of its \
-                arguments. Matches become directly callable on the next turn; mcp_call also works. An empty query lists names without promoting them.
+                arguments. Matches become directly callable on the next turn; dispatch_call also works. An empty query lists names without promoting them.
                 """
         ) {
             ToolProperty.string("query")
