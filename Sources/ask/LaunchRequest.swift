@@ -17,6 +17,7 @@ struct LaunchRequest {
     var compactAt: String?
     var noSandbox = false
     var yes = false
+    var allow: [String] = []
     var askAlways = false
     var network: String?
     var write: [String] = []
@@ -64,7 +65,7 @@ struct LaunchRequest {
                 model: model, provider: provider, maxTurns: maxTurns,
                 compactAt: compactAt.flatMap(CompactionThreshold.init(parsing:)),
                 thinking: thinking.flatMap(ThinkingLevel.init(rawValue:)), noSandbox: noSandbox,
-                approvalFlag: yes ? .yes : askAlways ? .askAlways : nil, verbose: verbose,
+                approvalFlag: yes ? .yes : askAlways ? .askAlways : nil, approvalAllow: allow, verbose: verbose,
                 network: network.flatMap(SandboxPolicy.Network.init(named:)), write: Self.scope(write),
                 read: Self.scope(read),
                 selected: selectedProvider.flatMap { provider in

@@ -28,6 +28,8 @@ struct ConfigurationSource: Sendable {
         var noSandbox = false
         /// `--yes` or `--ask-always`: over the `approvals` section (roadmap 0134).
         var approvalFlag: ApprovalPolicy.Flag?
+        /// `--allow`: tool calls run without asking for this run (roadmap 0156).
+        var approvalAllow: [String] = []
         /// `--verbose`: details are shown (ADR-0119).
         var verbose = false
         /// `--network`: how far the network reaches, replacing what the files say.
@@ -53,6 +55,7 @@ struct ConfigurationSource: Sendable {
                 case .askAlways?: arguments.append("--ask-always")
                 case nil: break
             }
+            for name in approvalAllow { arguments += ["--allow", name] }
             if verbose { arguments.append("--verbose") }
             if let network { arguments += ["--network", network.description] }
             for (flag, setting) in [("--write", write), ("--read", read)] {
@@ -192,6 +195,6 @@ struct ConfigurationSource: Sendable {
                 + (flags.noSandbox
                     ? ["The sandbox is off (--no-sandbox): ask's own files and your secret stores are not protected."]
                     : []),
-            verbose: flags.verbose, approvalFlag: flags.approvalFlag)
+            verbose: flags.verbose, approvalFlag: flags.approvalFlag, approvalAllow: flags.approvalAllow)
     }
 }

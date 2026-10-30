@@ -19,10 +19,13 @@ public struct ApprovalPolicy: Sendable, Equatable {
 
     public let section: ApprovalsSection
     public let flag: Flag?
+    /// What the command line allows for this run (`--allow`), added to the section's `allow` list (roadmap 0156).
+    public let allowing: [String]
 
-    public init(section: ApprovalsSection = ApprovalsSection(), flag: Flag? = nil) {
+    public init(section: ApprovalsSection = ApprovalsSection(), flag: Flag? = nil, allowing: [String] = []) {
         self.section = section
         self.flag = flag
+        self.allowing = allowing
     }
 
     /// What to do with a call of `tool` with `input`; relative paths resolve against `workingDirectory`.
@@ -32,7 +35,7 @@ public struct ApprovalPolicy: Sendable, Equatable {
         if flag == .yes { return Self.isMCP(tool) ? .runWithoutServerQuestion : .run }
         let ask = ToolCallApproval(tool: tool, input: input, scope: Self.scope(of: tool, input, workingDirectory))
         if Self.matches(section.ask, tool) { return .ask(ask) }
-        if flag != .askAlways, Self.matches(section.allow, tool) {
+        if flag != .askAlways, Self.matches((section.allow ?? []) + allowing, tool) {
             return Self.isMCP(tool) ? .runWithoutServerQuestion : .run
         }
         if Self.isMCP(tool) { return .run }
@@ -60,9 +63,16 @@ public struct ApprovalPolicy: Sendable, Equatable {
 
     private static func isMCP(_ tool: String) -> Bool { tool.hasPrefix("mcp__") || tool == "mcp_call" }
 
-    /// Whether `names` holds `tool`, or a pattern ending in `*` that it starts with.
+    /// Whether `names` holds `tool`, a pattern ending in `*` that it starts with, `all` (every tool), or `commands` (`bash`).
     private static func matches(_ names: [String]?, _ tool: String) -> Bool {
-        (names ?? []).contains { $0.hasSuffix("*") ? tool.hasPrefix($0.dropLast()) : $0 == tool }
+        (names ?? [])
+            .contains { name in
+                switch name {
+                    case "all": true
+                    case "commands": tool == "bash"
+                    default: name.hasSuffix("*") ? tool.hasPrefix(name.dropLast()) : name == tool
+                }
+            }
     }
 
     private static func scope(of tool: String, _ input: JSONObject, _ workingDirectory: String) -> CallScope {

@@ -61,6 +61,13 @@ struct Ask: AsyncParsableCommand {
     @Flag(help: "Run every tool call without asking first, for this run (roadmap 0134).")
     var yes = false
 
+    @Option(
+        help: ArgumentHelp(
+            "Run these tool calls without asking, for this run: a tool's name, \"commands\" for every command, \"all\" for every "
+                + "call; repeat it for several. Adds to config.json's approvals.allow.",
+            valueName: "tool"))
+    var allow: [String] = []
+
     @Flag(
         name: .customLong("ask-always"),
         help: "Ask before every call that changes things, even what config.json allows.")
@@ -129,6 +136,9 @@ struct Ask: AsyncParsableCommand {
             throw ValidationError("--thinking must be one of: \(ThinkingLevel.choices).")
         }
         if yes, askAlways { throw ValidationError("--yes and --ask-always say opposite things; give one.") }
+        if !allow.isEmpty, askAlways {
+            throw ValidationError("--allow and --ask-always say opposite things; give one.")
+        }
         if noSandbox, network != nil || !write.isEmpty || !read.isEmpty {
             throw ValidationError("--no-sandbox turns the sandbox off; --network, --write and --read need it on.")
         }
@@ -159,7 +169,7 @@ struct Ask: AsyncParsableCommand {
     private var request: LaunchRequest {
         LaunchRequest(
             budgets: budgets, prompt: prompt, model: model, provider: provider, thinking: thinking, maxTurns: maxTurns,
-            compactAt: compactAt, noSandbox: noSandbox, yes: yes, askAlways: askAlways, network: network,
+            compactAt: compactAt, noSandbox: noSandbox, yes: yes, allow: allow, askAlways: askAlways, network: network,
             write: write, read: read,
             selfCheck: selfCheck, verbose: verbose, reloadedFrom: reloadedFrom, reloadStarted: reloadStarted,
             selectedProvider: selectedProvider, selectedModel: selectedModel, continueLatest: continueLatest,

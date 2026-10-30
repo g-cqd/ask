@@ -29,6 +29,8 @@ struct RunSettings: Equatable {
     var verbose = false
     /// `--yes` or `--ask-always`, over the `approvals` section (roadmap 0134).
     var approvalFlag: ApprovalPolicy.Flag?
+    /// `--allow` (roadmap 0156).
+    var approvalAllow: [String] = []
 
     var limits: RunLimits {
         RunLimits(
@@ -169,5 +171,7 @@ struct RunSettings: Equatable {
     }
 
     /// Which tool calls ask before they run (roadmap 0134): the person's `approvals`, under the flag.
-    var approvalPolicy: ApprovalPolicy { ApprovalPolicy(section: configuration.approvals.value, flag: approvalFlag) }
+    var approvalPolicy: ApprovalPolicy {
+        ApprovalPolicy(section: configuration.approvals.value, flag: approvalFlag, allowing: approvalAllow)
+    }
 }
