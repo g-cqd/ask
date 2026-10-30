@@ -42,6 +42,14 @@ public struct ToolRegistry: Sendable {
         // The session's narrowing applies to every call, and a call may narrow further, never widen (roadmap 0019).
         var context = context
         if let session = context.narrowing?.policy { context = context.with(context.sandbox.intersecting(session)) }
+        if let gate = context.callGate {
+            switch gate.policy.decide(tool: name, input: input, workingDirectory: context.workingDirectory) {
+                case .run: break
+                case .runWithoutServerQuestion: context = context.withoutServerQuestion()
+                case .ask(let approval):
+                    guard await gate.ask(approval) else { return .error("The user did not allow this call.") }
+            }
+        }
         var output: ToolOutput
         if let tool = tools[name] {
             switch await applyingRequest(of: name, input: input, to: context) {

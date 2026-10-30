@@ -9,7 +9,7 @@ public struct ToolContext: Sendable, Equatable {
             && (left.approve == nil) == (right.approve == nil)
             && left.narrowing === right.narrowing && left.commandEnvironment == right.commandEnvironment
             && (left.destructiveApprover == nil) == (right.destructiveApprover == nil)
-            && left.imageLimits == right.imageLimits
+            && left.imageLimits == right.imageLimits && (left.callGate == nil) == (right.callGate == nil)
     }
 
     /// Relative paths resolve against this directory.
@@ -29,7 +29,9 @@ public struct ToolContext: Sendable, Equatable {
     /// What of ask's own environment a command may inherit (ADR-0106). Everything by default, so a caller that wants protection says so.
     public let commandEnvironment: CommandEnvironment
     /// Who is asked before a server's tool marked destructive runs; nil, the default, runs it unasked, as `ask -p` does (ADR-0111).
-    public let destructiveApprover: DestructiveApprover?
+    public private(set) var destructiveApprover: DestructiveApprover?
+    /// What is asked before a call that changes things runs (roadmap 0134); nil runs every call the sandbox allows, as `ask -p` does.
+    public let callGate: ToolCallGate?
     /// What the model's provider accepts of images in one request, when it says; `read` fits pictures to it.
     public let imageLimits: ImageLimits?
 
@@ -43,12 +45,14 @@ public struct ToolContext: Sendable, Equatable {
     ///   - commandEnvironment: which of ask's variables a command is denied.
     ///   - destructiveApprover: who answers when a server marks its tool destructive; nil, the default, allows.
     ///   - imageLimits: what the model's provider accepts of images, or nil when it did not say.
+    ///   - callGate: what is asked before a call that changes things; nil, the default, asks nothing.
     public init(
         workingDirectory: String, outputDirectory: String? = nil, sandbox: SandboxPolicy = .unrestricted,
         approve: SandboxApprover? = nil, narrowing: SessionNarrowing? = nil,
         commandEnvironment: CommandEnvironment = .inherit, destructiveApprover: DestructiveApprover? = nil,
-        imageLimits: ImageLimits? = nil
+        imageLimits: ImageLimits? = nil, callGate: ToolCallGate? = nil
     ) {
+        self.callGate = callGate
         self.imageLimits = imageLimits
         self.workingDirectory = workingDirectory
         self.outputDirectory = outputDirectory
@@ -58,6 +62,13 @@ public struct ToolContext: Sendable, Equatable {
         self.narrowing = narrowing
         self.commandEnvironment = commandEnvironment
         self.destructiveApprover = destructiveApprover
+    }
+
+    /// This context without a server's own question before its tool: the person's `approvals.allow` names the tool.
+    func withoutServerQuestion() -> ToolContext {
+        var copy = self
+        copy.destructiveApprover = nil
+        return copy
     }
 
     /// This context with `policy` for one call.

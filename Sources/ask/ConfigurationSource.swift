@@ -26,6 +26,8 @@ struct ConfigurationSource: Sendable {
         var thinking: ThinkingLevel?
         /// `--no-sandbox`: the user turned ask's protections off for this run.
         var noSandbox = false
+        /// `--yes` or `--ask-always`: over the `approvals` section (roadmap 0134).
+        var approvalFlag: ApprovalPolicy.Flag?
         /// `--verbose`: details are shown (ADR-0119).
         var verbose = false
         /// `--network`: how far the network reaches, replacing what the files say.
@@ -46,6 +48,11 @@ struct ConfigurationSource: Sendable {
             if let compactAt { arguments += ["--compact-at", compactAt.description] }
             if let thinking { arguments += ["--thinking", thinking.rawValue] }
             if noSandbox { arguments.append("--no-sandbox") }
+            switch approvalFlag {
+                case .yes?: arguments.append("--yes")
+                case .askAlways?: arguments.append("--ask-always")
+                case nil: break
+            }
             if verbose { arguments.append("--verbose") }
             if let network { arguments += ["--network", network.description] }
             for (flag, setting) in [("--write", write), ("--read", read)] {
@@ -175,6 +182,6 @@ struct ConfigurationSource: Sendable {
                 + (flags.noSandbox
                     ? ["The sandbox is off (--no-sandbox): ask's own files and your secret stores are not protected."]
                     : []),
-            verbose: flags.verbose)
+            verbose: flags.verbose, approvalFlag: flags.approvalFlag)
     }
 }

@@ -121,7 +121,7 @@ private func agyProvider(transport: URLSessionTransport) -> any ModelProvider {
 func makeLoop(
     _ run: RunSettings, instructions files: [ProjectInstructions.File], jobs: JobTable,
     transport: URLSessionTransport, approve: SandboxApprover? = nil, narrowing: SessionNarrowing = SessionNarrowing(),
-    live: LiveTools? = nil, destructiveApprover: DestructiveApprover? = nil
+    live: LiveTools? = nil, destructiveApprover: DestructiveApprover? = nil, callGate: ToolCallGate? = nil
 ) throws -> AgentLoop {
     let workingDirectory = run.workspace
     let resolved = run.model
@@ -145,7 +145,7 @@ func makeLoop(
             outputDirectory: SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values).path
                 + "/output", sandbox: sandbox,
             approve: approve, narrowing: narrowing, commandEnvironment: run.commandEnvironment,
-            destructiveApprover: destructiveApprover, imageLimits: run.model.imageLimits),
+            destructiveApprover: destructiveApprover, imageLimits: run.model.imageLimits, callGate: callGate),
         // Offline, a failed request waits for the network instead of spending its retries (roadmap 0141).
         network: SystemNetworkPath())
 }

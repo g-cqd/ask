@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-29
 ---
@@ -44,4 +44,17 @@ tools exempt by default; a config list can make them ask; the answers are Allow 
 5. **Settings** (person's own file only, like `credentials`): `approvals.default` (`"ask"` | `"allow"`), `approvals.allow` and
    `approvals.ask` (tool names, `mcp__server__*` patterns), `approvals.scope` (`"anything"`, `"narrowing-only"`, `"none"`: what an
    "Always" answer may write back to the config from inside ask; until then no answer writes config).
+
+## Owner's answers (2026-10-29), and done (ADR-0134)
+
+1. Another answer for commands: allow the program for the session. 2 to 5: as proposed.
+
+Built: `ApprovalPolicy`, `CommandWords`, `CallGrants`, `ToolCallGate` in `AskAgentCore/Approvals`; the `approvals` section; `--yes`,
+`--ask-always`; the four-answer command question. Tests: `CommandWordsTests`, `ApprovalPolicyTests`, `CallGrantsTests`,
+`ToolCallGateTests`, `ApprovalsConfigurationTests`, `CommandApprovalTests`; a mutation that runs a denied call turns the gate test red.
+Through the release binary: `probe-interactive.py` section X (git status asks with both session answers, `git status --short` then runs
+unasked, `git log` asks, a program grant covers `git diff`, `ls` denied and the model told), 272 checks in all; `probe-mcp-screen.py` 12;
+ten other screen probes pass with `--yes`.
+
+Not done: an "Always allow (saved to your config)" answer, which `approvals.scope` is for; 0153's protected paths behind this question.
 

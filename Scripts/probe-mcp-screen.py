@@ -95,7 +95,8 @@ def main():
         pp.probe.agent.turn([("call", "z1", "mcp__fx__zap", {"path": victim})], "tool_use"),
         pp.short_answer("Done three."),
     ]
-    with pp.Session(binary, turns, settings=servers) as asking:
+    # Its own questions are what this part checks: no --yes.
+    with pp.Session(binary, turns, settings=servers, approvals=True) as asking:
         terminal = asking.terminal
         send(asking, "Use boom.", "Allow it?")
         shown = screen(terminal)

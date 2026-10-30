@@ -27,6 +27,8 @@ struct RunSettings: Equatable {
     var details: [String] = []
     /// Whether `--verbose` was given.
     var verbose = false
+    /// `--yes` or `--ask-always`, over the `approvals` section (roadmap 0134).
+    var approvalFlag: ApprovalPolicy.Flag?
 
     var limits: RunLimits {
         RunLimits(
@@ -161,4 +163,7 @@ struct RunSettings: Equatable {
         if sandbox.network != .any { parts.append(sandbox.network == .none ? "no network" : "localhost only") }
         return parts.isEmpty ? nil : "sandbox: " + parts.joined(separator: ", ")
     }
+
+    /// Which tool calls ask before they run (roadmap 0134): the person's `approvals`, under the flag.
+    var approvalPolicy: ApprovalPolicy { ApprovalPolicy(section: configuration.approvals.value, flag: approvalFlag) }
 }
