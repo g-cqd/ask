@@ -1288,7 +1288,7 @@ def probe_sandbox_approval():
     screen.type("Go\r")
     results = [check("the question names the call and what it asks for",
                      wait(lambda: questions() == 1) and "asks for network any (this run allows localhost)" in screen.screen.text()
-                     and "Allow this time" in screen.screen.text() and "▐█▌" in screen.screen.text(), screen.screen.text()[-600:])]
+                     and "Allow this time" in screen.screen.text() and "[✓]" in screen.screen.text(), screen.screen.text()[-600:])]
     screen.type("y\r")
     results.append(check("y runs it, under what it asked for", wait(lambda: "HTTP 200 curl=0" in result(1)), result(1)[-200:]))
     results.append(check("once is not remembered: the same request asks again", wait(lambda: questions() == 2)))
