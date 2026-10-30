@@ -16,7 +16,7 @@ let package = Package(
         // The same revision ask pins; SwiftPM resolves one revision per package.
         .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "9f9ca6b7a8479ff51576802d459f47d1b6af7968"),
         // The same revision ask pins, for MCPStress's codec floor.
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "b59ce29617af52ec8585377d694e64becbe2ce81")
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "5189f9c42fbc77dca1eb4387b3116fb35b3459d5")
     ],
     targets: [
         .executableTarget(
