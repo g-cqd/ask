@@ -40,7 +40,10 @@ public enum AppleModel {
     /// Which variant of Apple's model this Mac runs (`AFM 3 Core Advanced`), from macOS 27; nil before. The system picks it by hardware and offers no
     /// way to choose another, so there is one local chat model per Mac and this names it (ADR-0120).
     public static var variantName: String? {
-        if #available(macOS 27.0, *) { return SystemLanguageModel.default.variant.displayName }
+        // Compiled only against the macOS 27 SDK (Foundation Models 2); with the macOS 26 SDK there is no variant to name.
+        #if canImport(FoundationModels, _version: 2)
+            if #available(macOS 27.0, *) { return SystemLanguageModel.default.variant.displayName }
+        #endif
         return nil
     }
 
