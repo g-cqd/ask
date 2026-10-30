@@ -18,6 +18,8 @@ public struct ScreenController: Sendable {
         /// Read the host's pasteboard and paste it, as a bracketed paste would (roadmap 0082).
         case pasteFromClipboard
         case answerApproval(id: Int, ApprovalChoice)
+        /// The answers to the model's questions, or nil when the person declined (roadmap 0117).
+        case answerQuestions(id: Int, [QuestionAnswer]?)
         /// List the project's files for the `@` picker; the answer is ``ConversationUpdate/files(_:)``.
         case indexFiles
         /// Read a runner's recent output for its lane; the answer is ``ConversationUpdate/runnerOutput(id:text:)``.
@@ -203,19 +205,11 @@ public struct ScreenController: Sendable {
                 state.context = ""
                 state.scrollback = 0
             case .askApproval(let id, let question, let kind, let detail):
-                ask(id: id, question: HomePath.abbreviate(question, home: options.home), kind: kind, detail: detail)
+                ask(id: id, question: question, kind: kind, detail: detail)
+            case .askQuestions(let id, let questions): askQuestions(id: id, questions: questions)
             case .compacting, .compactionFinished, .reconnecting, .connectingMCP, .waitingForNetwork:
                 applyBackgroundWork(update)
-            case .runEnded:
-                state.compacting = false
-                state.reconnecting = false
-                state.connectingMCP = false
-                state.waitingForNetwork = false
-                state.transcript.finishRunProgress()
-                state.pendingApproval = nil
-                state.pendingInput = nil
-                state.inputAnswer.clear()
-                return endRun()
+            case .runEnded: return runEnded()
         }
         return []
     }

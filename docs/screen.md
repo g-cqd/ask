@@ -59,6 +59,14 @@ conversation copies what is shown, as soon as you let go.
 - Scroll with the wheel or **Page Up**. The view stays on what you were reading while new text arrives, and the status line counts the lines
   below (`12 lines below`). Click that count, press **Page Down**, or **End** with an empty input, to return to the end.
 
+## When the model asks you
+
+The model can ask you up to four questions at once, each with choices and room for a note. They appear above the input, as a
+command's approval does: Up and Down move, Space or a number checks a choice (one, or several when the question allows it), and what
+you type in the input is your note for that question. Tab and Shift+Tab move between questions; Enter goes to the next one and, after
+the last, to a review of every answer, which Enter sends and Esc leaves. Esc on a question declines them all, and the model carries on
+with its own judgement. Whatever you had typed in the input before comes back afterwards. `ask -p` never offers the model this tool.
+
 ## Background jobs
 
 The model can run commands in the background. The status line counts them (`· 2 jobs`). Click the count, or type `/jobs`, to list them

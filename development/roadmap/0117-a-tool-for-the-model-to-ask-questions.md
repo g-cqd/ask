@@ -47,3 +47,26 @@ First slice once answered: Q1 to Q3 for one question; then the series with tabs 
 ## Owner's answer (2026-10-30)
 
 "Everything presented is right, go ahead": Q1 to Q7 as proposed.
+
+## Built (2026-10-30)
+
+Q1 to Q7, keys and drawing: the `question` tool (`QuestionTool`, `PersonQuestion`, `PersonAnswer`) validates the questions (1 to 4,
+headers of 1 to 12 characters, up to 8 choices, a label each, the note's three words) and refuses a malformed one with what is wrong;
+answers come back one line per question (`Scope: chose "Everything"; note: "keep it"`), and a refusal says the user declined. The
+screen (`ScreenQuestion`, `PendingQuestions`, `ScreenController+Questions`, `ScreenComposer+Questions`) draws it in the approval
+section's place: tabs for a series only, the question in bold, a box per choice with its meaning dimmed, a row of the keys. Up and Down
+move; Space or a number checks while the note is empty (after that they type); what is typed in the input is the question's note, kept
+per question; Tab and Shift+Tab move; Enter goes on, and after the last of a series to a review that Enter sends and Esc leaves; Esc on a
+question declines; Ctrl+C declines and stops the turn; a required note holds Enter. The draft in the input comes back afterwards, also
+when the run ends while they wait. In a lane, the status line leads with the question and Esc returns to it. Not offered in `ask -p`; it
+never asks for approval. The block's header shows the first question and how many more. Tests: `QuestionToolTests`,
+`QuestionSectionTests`, a `ToolSummaryTests` case; interactive probe section Q1 (6 checks).
+
+Two choices of mine, to confirm: a single question sends on Enter, without a review (the review of one answer repeats the screen); and
+Space checks only while the note is empty, since the note is typed in the same input.
+
+## Still owed
+
+- A click checks a choice or opens a tab (Q3): the keys work, the pointer does not yet.
+- Seen in a real terminal (the showcase could gain a scene).
+
