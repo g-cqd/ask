@@ -1330,6 +1330,34 @@ def probe_protected_paths():
     return all(results)
 
 
+def probe_allow_commands():
+    print("X2: --allow commands runs every command unasked, and a write still asks (0156)")
+    project = tempfile.mkdtemp()
+    calls = [("tool", "c1", "rm -f nothing-here; echo ran-one"), ("tool", "c2", "git status; echo ran-two"),
+             ("call", "w1", "write", {"path": "note.txt", "content": "x"})]
+    server = agent.Server([agent.turn([c], "tool_use") for c in calls] + [agent.turn([("text", "All done.")], "end_turn")])
+    screen = Screen(server.url, project, arguments=("--allow", "commands"), approvals=True)
+
+    def wait(condition, seconds=15):
+        end = time.time() + seconds
+        while time.time() < end and not condition():
+            screen.until("\x00", 0.05)
+        return condition()
+
+    screen.ready()
+    screen.type("Go\r")
+    results = [check("two commands ran without a question", wait(lambda: len(server.requests) > 2)
+                     and "ran-two" in json.dumps(server.requests[2]["body"]["messages"][-1]))]
+    results.append(check("the write asks", wait(lambda: "Allow it?" in screen.screen.text() and "note.txt" in screen.screen.text())))
+    screen.type("y\r")
+    results.append(check("allowed, it is written", wait(lambda: os.path.exists(os.path.join(project, "note.txt")))))
+    screen.until("All done.", 15)
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    return all(results)
+
+
 def probe_call_approvals():
     print("X: a call that changes things asks first: this time, the subcommand or the program for the session, or deny (0134)")
     project = tempfile.mkdtemp()
@@ -1539,7 +1567,7 @@ def probe_reset_ignores_unrelated_grants():
 
 
 if __name__ == "__main__":
-    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants, probe_call_approvals, probe_protected_paths]
+    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants, probe_call_approvals, probe_allow_commands, probe_protected_paths]
     # --only A,F runs the probes whose heading starts with those letters (each prints "A: …" first).
     wanted = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
     ok = True
