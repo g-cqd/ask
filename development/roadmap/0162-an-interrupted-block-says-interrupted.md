@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-30
 ---
@@ -12,3 +12,9 @@ include the word "interrupted"".
 Today a stopped command's header ends with `⊘` (0142), with the bracketed exit code when there is one. To do: the bracketed part reads
 `[interrupted]` (with the code when the process reported one: `[interrupted · 130]`), in the same orange as `⊘`; probes in
 `probe-interactive.py` updated.
+
+## Done (2026-10-30)
+
+A stopped block's status reads `[interrupted] ⊘` (`2 lines · [interrupted] ⊘`), where a failure reads `[1] ✗`: the word in brackets, the
+mark kept for anyone who cannot tell the orange apart. The process's exit code is not shown, because a stopped call has none to report
+(the call is cancelled, not waited for). Tests: `InterruptionColourTests`, red first.
