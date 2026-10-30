@@ -28,6 +28,7 @@ struct LaunchRequest {
     var verbose = false
     var reloadedFrom: String?
     var reloadStarted: Int?
+    var reloadGrants: String?
     var selectedProvider: String?
     var selectedModel: String?
     var continueLatest = false
@@ -85,7 +86,9 @@ struct LaunchRequest {
             checkSelf(settings)
             return
         }
-        let reloaded = reloadedFrom.map { ReloadNotice(from: $0, startedMilliseconds: reloadStarted ?? 0) }
+        let reloaded = reloadedFrom.map {
+            ReloadNotice(from: $0, startedMilliseconds: reloadStarted ?? 0, grantsPath: reloadGrants)
+        }
         if let prompt {
             await runPrompt(
                 prompt, source: source, settings: settings, resumed: restored, startupNotices: startupNotices)

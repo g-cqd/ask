@@ -579,6 +579,48 @@ def probe_reload_binary():
     return all(results)
 
 
+def probe_reload_keeps_grants():
+    print("H3: /reload keeps what was allowed for the session (0159)")
+    project, state, config, bin_dir = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(config, "ask"))
+    binary = install_build(bin_dir)
+    server = agent.Server([agent.turn([("tool", "c1", "touch first.txt")], "tool_use"), agent.turn([("text", "One.")], "end_turn"),
+                           agent.turn([("tool", "c2", "touch second.txt")], "tool_use"), agent.turn([("text", "Two.")], "end_turn")])
+    screen = Screen(server.url, project, state, config=config, binary=binary, approvals=True)
+
+    def wait(condition, seconds=20):
+        end = time.time() + seconds
+        while time.time() < end and not condition():
+            screen.until("\x00", 0.05)
+        return condition()
+
+    results = [check("prompt drawn", screen.ready())]
+    screen.type("one\r")
+    results.append(check("the first command asks", wait(lambda: "Allow it?" in screen.screen.text())))
+    screen.type("a\r")
+    results.append(check("allowed for the session, it runs", wait(lambda: os.path.exists(os.path.join(project, "first.txt")))))
+    screen.until("One.")
+    screen.until_status("ready")
+    install_build(bin_dir)
+    screen.until("A new ask binary appeared.")
+    screen.until_status("ready")
+    screen.type("/reload\r")
+    results.append(check("the new process starts", screen.until("Resumed session 20", 30) or screen.until("One.", 30)))
+    screen.until_status("ready")
+    screen.type("two\r")
+    results.append(check("after the reload the same program runs without a question",
+                         wait(lambda: os.path.exists(os.path.join(project, "second.txt")), 30)
+                         and "Allow it?" not in screen.screen.text(), screen.screen.text()))
+    leftovers = [name for name in os.listdir(tempfile.gettempdir()) if name.startswith("ask-reload-grants-")]
+    results.append(check("the file that carried them is gone", leftovers == [], leftovers))
+    screen.until("Two.", 30)
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("quits cleanly", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 def probe_reload_env_key():
     print("H2: /reload checks a new build with the key the provider reads from the environment (ADR-0113)")
     project, state, config, bin_dir = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
@@ -1612,7 +1654,7 @@ def probe_reset_ignores_unrelated_grants():
 
 
 if __name__ == "__main__":
-    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants, probe_call_approvals, probe_allow_commands, probe_question_tool, probe_protected_paths]
+    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_keeps_grants, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants, probe_call_approvals, probe_allow_commands, probe_question_tool, probe_protected_paths]
     # --only A,F runs the probes whose heading starts with those letters (each prints "A: …" first).
     wanted = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
     ok = True
