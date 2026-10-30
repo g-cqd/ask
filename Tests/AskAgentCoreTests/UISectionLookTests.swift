@@ -15,9 +15,9 @@ struct UISectionLookTests {
     }
 
     @Test func `an empty prompt is none, and is a setting`() throws {
-        let section = try ui(#"{"prompt": ""}"#)
+        let section = try ui(#"{"inputPrefix": ""}"#)
         #expect(section.prompt == "" && !section.isEmpty)
-        #expect(section.description == "prompt none")
+        #expect(section.description == #"inputPrefix """#)
     }
 
     @Test func `a layer that sets one replaces it and leaves the others`() {
@@ -29,45 +29,46 @@ struct UISectionLookTests {
 
     @Test func `the description lists them`() {
         #expect(
-            UISection(prompt: "$ ", tint: false, separator: true).description == #"prompt "$ ", tint off, separator on"#
+            UISection(prompt: "$ ", tint: false, separator: true).description
+                == #"inputPrefix "$ ", tint false, separator true"#
         )
     }
 
     @Test(arguments: [
-        "tint", "separator", "localizedDurations", "jobAutoReturnWhenFocused", "abortTurnRequiresConfirmation"
+        "tint", "separator", "durations", "leaveFinishedJob", "listAllModels", "localizedDurations",
+        "abortTurnRequiresConfirmation"
     ])
-    func `a value that is not on or off is refused by name`(key: String) {
+    func `a value that is not one of the key's is refused by name`(key: String) {
         #expect(throws: (any Error).self) { try ui(#"{"\#(key)": "maybe"}"#) }
     }
     @Test func `duration localization is parsed layered and shown`() throws {
-        let base = try ui(#"{"localizedDurations":"on","tint":"off"}"#)
-        let override = try ui(#"{"localizedDurations":"off"}"#)
-        #expect(!override.isEmpty)
-        #expect(override.description == "localizedDurations off")
-        #expect(UISection.keys.contains("localizedDurations"))
-        #expect(base.layered(with: override).description == "tint off, localizedDurations off")
+        let base = try ui(#"{"durations":"words","tint":false}"#)
+        let override = try ui(#"{"durations":"clock"}"#)
+        #expect(!override.isEmpty && override.localizedDurations == false)
+        #expect(override.description == "durations clock")
+        #expect(UISection.keys.contains("durations"))
+        #expect(base.layered(with: override).description == "tint false, durations clock")
     }
 
     @Test func `spinner preference is parsed, layered and shown`() throws {
-        let base = try ui(#"{"spinner": "braille", "tint": "off"}"#)
+        let base = try ui(#"{"spinner": "braille", "tint": false}"#)
         let override = try ui(#"{"spinner": "random"}"#)
         #expect(base.spinner == .braille)
         #expect(override.spinner == .random)
         #expect(override.description == "spinner random")
         #expect(UISection.keys.contains("spinner"))
-        #expect(base.layered(with: override).description == "tint off, spinner random")
+        #expect(base.layered(with: override).description == "tint false, spinner random")
     }
 
     @Test func `job safety settings are parsed layered and shown`() throws {
-        let base = try ui(#"{"jobAutoReturnWhenFocused":"on","abortTurnRequiresConfirmation":"off"}"#)
-        let override = try ui(#"{"jobAutoReturnWhenFocused":"off","abortTurnRequiresConfirmation":"on"}"#)
+        let base = try ui(#"{"leaveFinishedJob":true,"stopTwice":["esc"]}"#)
+        let override = try ui(#"{"leaveFinishedJob":false,"stopTwice":["esc","ctrl-c"]}"#)
         #expect(base.jobAutoReturnWhenFocused == true && base.abortTurnRequiresConfirmation == false)
         #expect(!override.isEmpty)
         #expect(base.layered(with: override) == override)
         #expect(base.layered(with: UISection()) == base)
-        #expect(override.description == "jobAutoReturnWhenFocused off, abortTurnRequiresConfirmation on")
-        #expect(UISection.keys.contains("jobAutoReturnWhenFocused"))
-        #expect(UISection.keys.contains("abortTurnRequiresConfirmation"))
+        #expect(override.description == "leaveFinishedJob false, stopTwice esc, ctrl-c")
+        #expect(UISection.keys.contains("leaveFinishedJob") && UISection.keys.contains("stopTwice"))
     }
 
     @Test func `an unknown spinner style is rejected`() {
@@ -75,9 +76,9 @@ struct UISectionLookTests {
     }
 
     @Test func `appearance is read, layered, shown, and refused when unknown`() throws {
-        let base = try ui(#"{"appearance": "light", "tint": "on"}"#)
+        let base = try ui(#"{"appearance": "light", "tint": true}"#)
         #expect(base.appearance == .light && base.value(forKey: "appearance") == "light")
-        #expect(base.description == "tint on, appearance light")
+        #expect(base.description == "tint true, appearance light")
         #expect(base.layered(with: try ui(#"{"appearance": "auto"}"#)).appearance == .auto)
         let dark = try ui(#"{"appearance": "dark"}"#)
         #expect(UISection.keys.contains("appearance") && !dark.isEmpty)

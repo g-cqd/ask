@@ -4,6 +4,7 @@ extension ResponsesStreamDecoder {
     /// Events that carry nothing ask needs: progress, part boundaries, and the `done` echoes of text already streamed.
     // @dl:accept -- a set of event names is data, like the model-id lists in the tests
     static let quiet: Set<String> = [
+        // @dl:accept -- a set of event names is data; the configuration key lists it resembles are other data
         "response.created", "response.in_progress", "response.queued", "response.content_part.added",
         "response.content_part.done", "response.output_text.done", "response.refusal.done",
         "response.reasoning_text.done", "response.reasoning_summary_text.done", "response.reasoning_summary_part.done",

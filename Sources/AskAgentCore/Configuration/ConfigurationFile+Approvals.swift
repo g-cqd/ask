@@ -11,9 +11,9 @@ extension ConfigurationFile {
                     case "default":
                         section.defaultMode = try ConfigurationFile.decodeChoice(
                             container, key: key, as: ApprovalsSection.Mode.self, named: "approvals.default")
-                    case "scope":
+                    case "remember":
                         section.scope = try ConfigurationFile.decodeChoice(
-                            container, key: key, as: ApprovalsSection.Scope.self, named: "approvals.scope")
+                            container, key: key, as: ApprovalsSection.Scope.self, named: "approvals.remember")
                     // @dl:accept -- a key table decoded by the shared walk; the keys are the data
                     case "allow": section.allow = try container.decode([String].self, forKey: key)
                     case "ask": section.ask = try container.decode([String].self, forKey: key)

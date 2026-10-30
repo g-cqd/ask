@@ -18,6 +18,14 @@ public struct SlashCommand: Sendable, Equatable {
     /// `/model ` opens it, narrowed by what follows, and Enter or a click runs the command with the row chosen.
     public let takesChoices: Bool
 
+    /// The names roadmap 0154 replaced, still typed: the old name runs the new command.
+    public static let renamed = ["tasks": "jobs", "tree": "rewind"]
+
+    /// The command in `commands` called `name`, or the one an old name now is.
+    public static func named(_ name: String, in commands: [SlashCommand]) -> SlashCommand? {
+        commands.first { $0.name == name } ?? renamed[name].flatMap { new in commands.first { $0.name == new } }
+    }
+
     /// A command called `name`.
     public init(name: String, summary: String, takesChoices: Bool = false, category: Category = .session) {
         self.name = name

@@ -14,13 +14,14 @@ extension AgentConversation {
             // @dl:accept -- this table's head matches the built-in table's head; the entries are the data
             SlashCommand(
                 name: "config",
-                summary: "Edit settings interactively, or /config now to read and show every setting and its source.",
+                summary: "Edit settings interactively, or /config show to read and show every setting and its source.",
                 takesChoices: true, category: .configuration),
             SlashCommand(name: "compact", summary: "Summarise the conversation now, keeping the recent messages."),
             SlashCommand(name: "new", summary: "Start a new session; the previous session stays saved."),
             SlashCommand(
                 name: "model",
-                summary: "Choose a model from every account you are signed in to, or /model [PROVIDER] MODEL, --reset.",
+                summary:
+                    "Choose a model from every account you are signed in to, or /model [CONNECTION] MODEL, or /model reset.",
                 takesChoices: true, category: .model),
             SlashCommand(
                 name: "thinking",
@@ -42,7 +43,8 @@ extension AgentConversation {
             // @dl:accept -- the conversation's list reads alike entry to entry because every entry is a name and a sentence
             // @dl:accept -- a tree entry beside the screen's follow-up shares a command table's shape; the sentences are the data
             SlashCommand(
-                name: "tree", summary: "Choose a prompt to go back to before it, or /tree N.", takesChoices: true),
+                name: "rewind", summary: "Go back to before a prompt: choose it, or /rewind N. Also /tree.",
+                takesChoices: true),
             SlashCommand(
                 name: "fork",
                 summary: "Continue in a new session: /fork, or /fork N from before prompt N. The original stays."),
@@ -73,7 +75,7 @@ extension AgentConversation {
                     self.keepAwake.turnEnded()
                 case "new": await self.newSession(arguments: arguments, update: update)
                 case "resume": await self.resumeSession(arguments: arguments, update: update)
-                case "tree": self.tree(arguments: arguments, update: update)
+                case "rewind", "tree": self.tree(arguments: arguments, update: update)
                 case "fork": await self.forkSession(arguments: arguments, update: update)
                 case "model": await self.model(arguments: arguments, update: update)
                 case "thinking": await self.thinking(arguments: arguments, update: update)

@@ -2,7 +2,7 @@
 public struct SkillsSection: Sendable, Equatable, CustomStringConvertible {
     /// `skills.enabled`: whether skills are advertised and the `skill` tool offered at all. Off costs the model nothing: no block, no tool.
     public var enabled: Bool?
-    /// `skills.maxAdvertised`: how many skills the system prompt lists. The rest can still be loaded by name; the prompt says how many are not listed.
+    /// `skills.maxListed`: how many skills the system prompt lists. The rest can still be loaded by name; the prompt says how many are not listed.
     public var maxAdvertised: Int?
     /// `skills.sources`: harness ids (and `user`, `project`, `bundled`) that narrow where skills are looked for. Directories are not accepted yet.
     public var sources: [String]?
@@ -19,7 +19,7 @@ public struct SkillsSection: Sendable, Equatable, CustomStringConvertible {
     public var isEmpty: Bool { enabled == nil && maxAdvertised == nil && sources == nil }
 
     /// The keys, in the order they are shown.
-    public static let keys = ["enabled", "maxAdvertised", "sources"]
+    public static let keys = ["enabled", "maxListed", "sources"]
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: SkillsSection) -> SkillsSection {
@@ -32,19 +32,14 @@ public struct SkillsSection: Sendable, Equatable, CustomStringConvertible {
     /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.
     public func value(forKey key: String) -> String? {
         switch key {
-            case "enabled": enabled.map { $0 ? "on" : "off" }
-            case "maxAdvertised": maxAdvertised.map(String.init)
+            case "enabled": enabled.map { $0 ? "true" : "false" }
+            case "maxListed": maxAdvertised.map(String.init)
             case "sources": sources.map { $0.joined(separator: ", ") }
             default: nil
         }
     }
 
     public var description: String {
-        var parts: [String] = []
-        // @dl:accept -- one line per key, as data
-        if let enabled { parts.append("enabled \(enabled ? "on" : "off")") }
-        if let maxAdvertised { parts.append("maxAdvertised \(maxAdvertised)") }
-        if let sources { parts.append("sources \(sources.joined(separator: ", "))") }
-        return parts.isEmpty ? "defaults" : parts.joined(separator: ", ")
+        SectionText.describe(Self.keys, value(forKey:))
     }
 }

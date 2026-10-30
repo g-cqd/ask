@@ -49,7 +49,9 @@ public struct Configuration: Sendable, Equatable {
     public var mcp: Setting<MCPSection>
     public var environment: Setting<EnvironmentSection>
     /// What ask keeps awake while it works (roadmap 0090): the Mac, by default, so a long turn is not cut short by idle sleep.
-    public var keepAwake = Setting(value: KeepAwakeMode.system, source: .defaults)
+    public var keepAwake = Setting(value: KeepAwakeMode.working, source: .defaults)
+    /// `keepDisplayAwake`: the display stays on too while ask keeps the Mac awake (roadmap 0154).
+    public var keepDisplayAwake = Setting(value: false, source: .defaults)
     public var credentials = Setting(value: CredentialStorage.auto, source: .defaults)  // where keys are kept, 0110
     public var approvals = Setting(value: ApprovalsSection(), source: .defaults)  // which calls ask first, 0134
     /// Where each `ui` and `skills` key came from, by its dotted name; read through `source(ofKey:)`.
@@ -79,6 +81,7 @@ public struct Configuration: Sendable, Equatable {
         if let compactAt = file.compactAt { next.compactAt = Setting(value: compactAt, source: source) }
         // @dl:accept -- one layer entry per key: the table is the data
         if let keepAwake = file.keepAwake { next.keepAwake = Setting(value: keepAwake, source: source) }
+        if let display = file.keepDisplayAwake { next.keepDisplayAwake = Setting(value: display, source: source) }
         if let credentials = file.credentials { next.credentials = Setting(value: credentials, source: source) }
         if let approvals = file.approvals { next.approvals = Setting(value: approvals, source: source) }
         return next
@@ -193,58 +196,5 @@ public struct Configuration: Sendable, Equatable {
         if let maxTurns { next.maxTurns = Setting(value: maxTurns, source: .flag("max-turns")) }
         if let compactAt { next.compactAt = Setting(value: compactAt, source: .flag("compact-at")) }
         return next
-    }
-}
-
-extension Configuration {
-    /// One line per setting that differs from `previous`, with its new value and where that came from: what a
-    /// reload tells the user.
-    public func changes(from previous: Configuration) -> [String] {
-        var lines: [String] = []
-        func compare<Value: Sendable & Equatable>(_ name: String, _ old: Setting<Value>, _ new: Setting<Value>) {
-            guard old != new else { return }
-            lines.append("\(name): \(Self.show(old.value)) → \(Self.show(new.value)) (\(new.source))")
-        }
-        // @dl:accept -- one compare per key: the change table is the data
-        compare("model", previous.model, model)
-        compare("provider", previous.provider, provider)
-        compare("thinking", previous.thinking, thinking)
-        compare("maxTurns", previous.maxTurns, maxTurns)
-        compare("compactAt", previous.compactAt, compactAt)
-        compare("keepAwake", previous.keepAwake, keepAwake)
-        compare("credentials", previous.credentials, credentials)
-        compare("approvals", previous.approvals, approvals)
-        compare("sandbox", previous.sandbox, sandbox)
-        compare("ui", previous.ui, ui)
-        compare("skills", previous.skills, skills)
-        compare("mcp", previous.mcp, mcp)
-        compare("environment", previous.environment, environment)
-        return lines
-    }
-
-    /// `maxTurns` with no limit (`"none"`, roadmap 0098): a count the loop never reaches.
-    public static let noTurnLimit = Int.max
-
-    /// The turn limit a run uses (roadmap 0098, owner's rule): a `maxTurns` set anywhere wins; unset, it is the default of 100 inside the
-    /// sandbox and no limit outside it, where the person has already chosen to let the model act freely.
-    public func turnLimit(sandboxed: Bool) -> Int {
-        maxTurns.source != .defaults || sandboxed ? maxTurns.value : Self.noTurnLimit
-    }
-
-    /// A turn limit as written: a whole number of at least 1, or `none`. Nil for anything else.
-    public static func turnLimit(parsing text: String) -> Int? {
-        if text == "none" { return noTurnLimit }
-        return Int(text).flatMap { $0 >= 1 ? $0 : nil }
-    }
-
-    /// A turn limit as a person writes it: `none` for no limit.
-    public static func describeTurns(_ turns: Int) -> String { turns == noTurnLimit ? "none" : String(turns) }
-
-    private static func show<Value>(_ value: Value) -> String {
-        if let turns = value as? Int, turns == noTurnLimit { return "none" }
-        if let text = value as? String { return "\"\(text)\"" }
-        if let optional = value as? String?, optional == nil { return "default" }
-        if let optional = value as? String? { return "\"\(optional ?? "")\"" }
-        return "\(value)"
     }
 }

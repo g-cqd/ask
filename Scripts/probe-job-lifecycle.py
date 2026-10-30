@@ -47,7 +47,7 @@ def main():
         project.mkdir()
         (config / "ask").mkdir(parents=True)
         (config / "ask/config.json").write_text(json.dumps({"ui": {
-            "prompt": "ask> ", "separator": "off", "tint": "off", "localizedDurations": "off"}}))
+            "inputPrefix": "ask> ", "separator": "off", "tint": "off", "durations": "clock"}}))
         command = ("printf 'STREAM_ONE\\n'; while [ ! -f second ]; do sleep .05; done; "
                    "printf 'STREAM_TWO\\n'; while [ ! -f finish ]; do sleep .05; done; exit 7")
         turn = probe.agent.turn

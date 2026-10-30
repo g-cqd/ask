@@ -104,7 +104,7 @@ def dropped_mid_answer():
         os.makedirs(project)
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
-            file.write('{"ui":{"prompt":"ask> ","separator":"off"}}')
+            file.write('{"ui":{"inputPrefix":"ask> ","separator":"off"}}')
         server = DroppingMidAnswer("FIRST HALF", agent.turn([("text", " SECOND HALF")], "end_turn"))
         environment = agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty", LANG="en_US.UTF-8")
@@ -136,7 +136,7 @@ def main():
         os.makedirs(project)
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
-            file.write('{"ui":{"prompt":"ask> ","separator":"off"}}')
+            file.write('{"ui":{"inputPrefix":"ask> ","separator":"off"}}')
         server = FailingFirst(1, agent.turn([("text", "PROBE ANSWER")], "end_turn"))
         environment = agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty", LANG="en_US.UTF-8")

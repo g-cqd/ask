@@ -2,21 +2,21 @@ import Testing
 
 @testable import AskAgentCore
 
-@Suite("ui.promptRows is a positive layered input row cap")
+@Suite("ui.inputRows is a positive layered input row cap")
 struct PromptRowsConfigurationTests {
     @Test func `a file reads the row limit and reports it`() throws {
-        let file = try ConfigurationFile.parse(Array("{ui:{promptRows:3}}".utf8), path: "c.json")
+        let file = try ConfigurationFile.parse(Array("{ui:{inputRows:3}}".utf8), path: "c.json")
         #expect(file.ui?.promptRows == 3)
-        #expect(file.ui?.description == "promptRows 3")
+        #expect(file.ui?.description == "inputRows 3")
         #expect(file.ui?.isEmpty == false)
     }
 
     @Test(arguments: [0, -1])
     func `a nonpositive row count is refused by name`(rows: Int) {
         #expect(
-            throws: ConfigurationError.outOfRange(path: "c.json", key: "ui.promptRows", reason: "must be at least 1")
+            throws: ConfigurationError.outOfRange(path: "c.json", key: "ui.inputRows", reason: "must be at least 1")
         ) {
-            try ConfigurationFile.parse(Array("{ui:{promptRows:\(rows)}}".utf8), path: "c.json")
+            try ConfigurationFile.parse(Array("{ui:{inputRows:\(rows)}}".utf8), path: "c.json")
         }
     }
 

@@ -23,7 +23,7 @@ In any configuration file (see [Configuration](configuration.md#sandbox)):
     write: ["~/out"],        // only these directories (the default is "workspace")
     read: "workspace",       // only the project, the system and developer tools
     network: "localhost",    // or "none"
-    denyRead: ["~/notes"],   // hide more
+    hide: ["~/notes"],       // hide more
   },
 }
 ```
@@ -33,7 +33,7 @@ status line says when the sandbox is strict.
 
 ## Making room
 
-- `allowRead: ["~/.aws"]` in your own file makes a protected path readable again. A project's file cannot.
+- `readable: ["~/.aws"]` in your own file makes a protected path readable again. A project's file cannot.
 - `ask --no-sandbox` turns the sandbox off for one run.
 - Separately from the sandbox, a call that changes things asks you first (`approvals` in the [configuration](configuration.md)).
 - SwiftPM needs `--disable-sandbox` to build inside ask's sandbox; ask's own sandbox still applies.
@@ -50,7 +50,7 @@ Besides ask's own files, the sandbox keeps commands and tools away from two kind
   Gemini, Claude Code, Copilot), and browsers' profiles and cookies.
 
 A call that needs one of them asks you, like any request for more (below); allowed, the protection is lifted for that call or for the
-session. `sandbox.allowRead` and `sandbox.allowWrite` open one for good. A command that runs into one fails with the system's own error,
+session. `sandbox.readable` and `sandbox.writable` open one for good. A command that runs into one fails with the system's own error,
 such as `Operation not permitted`: `gh`, `docker`, `kubectl` or `npm` need theirs allowed, and `git push -u` or `git remote add` need
 `.git/config`.
 

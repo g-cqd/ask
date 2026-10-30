@@ -11,7 +11,7 @@ spec = importlib.util.spec_from_file_location("pf", os.path.join(os.path.dirname
 agent = pf.agent
 with tempfile.TemporaryDirectory() as root:
     project, config = root + "/p", root + "/c"; os.makedirs(project); os.makedirs(config + "/ask")
-    open(config + "/ask/config.json", "w").write('{"ui":{"prompt":"ask> ","separator":"off","tools":"folded"}}')
+    open(config + "/ask/config.json", "w").write('{"ui":{"inputPrefix":"ask> ","separator":"off","fold":{"tools":true}}}')
     server = agent.Server([agent.turn([("text", "ANSWER 1")], "end_turn")])
     env = agent.environment(root + "/s", server.url, config=config); env.update(TERM="xterm-256color", TERM_PROGRAM="ghostty", LANG="en_US.UTF-8")
     t = pf.Terminal(project, env)

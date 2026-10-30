@@ -68,7 +68,7 @@ def start(root, appearance=None):
     os.makedirs(config + "/ask", exist_ok=True)
     extra = f',"appearance":"{appearance}"' if appearance else ""
     with open(config + "/ask/config.json", "w") as file:
-        file.write('{"ui":{"prompt":"ask> ","tint":"on","separator":"off"' + extra + '}}')
+        file.write('{"ui":{"inputPrefix":"ask> ","tint":"on","separator":"off"' + extra + '}}')
     server = agent.Server([headers.tool_turn("echo HI"), agent.turn([("text", "PROBE ANSWER")], "end_turn")])
     environment = agent.environment(root + "/state", server.url, config=config)
     environment.update(TERM="xterm-256color", TERM_PROGRAM="Apple_Terminal", LANG="en_US.UTF-8")

@@ -56,7 +56,7 @@ extension ScreenController {
         let offered = commands + (state.skills ?? [])
         let matches = PickerRanking.rank(offered, query: trigger.query)
         guard state.pickerDismissedAt != trigger.range.lowerBound, !matches.isEmpty,
-            !offered.contains(where: { $0.name == trigger.query })
+            SlashCommand.named(trigger.query, in: offered) == nil
         else {
             state.picker = nil
             return

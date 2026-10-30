@@ -56,7 +56,7 @@ def main():
         os.makedirs(project)
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
-            file.write('{"ui":{"prompt":"ask> ","tools":"folded","tint":"off","separator":"off","padding":"off"}}')
+            file.write('{"ui":{"inputPrefix":"ask> ","fold":{"tools":true},"tint":"off","separator":"off","padding":"off"}}')
         server = agent.Server([tool_turn(LONG, timeout=300, blank_thinking=True), tool_turn(MULTI),
                                tool_turn("echo DEFAULT_LIMIT", timeout=120),
                                agent.turn([("text", "PROBE ANSWER")], "end_turn")])

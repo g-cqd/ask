@@ -44,7 +44,7 @@ def prepare(project):
 
 
 def settings(project):
-    return {"sandbox": {"denyRead": [project + "/secret"]}}
+    return {"sandbox": {"hide": [project + "/secret"]}}
 
 
 def files_title(terminal):

@@ -77,7 +77,8 @@ final class AgentConversation: Conversation {
         self.directory = directory
         current = Mutex(Current(settings: settings))
         session.withLock { $0 = resumed }
-        keepAwake = KeepAwake(mode: settings.configuration.keepAwake.value)
+        keepAwake = KeepAwake(
+            mode: settings.configuration.keepAwake.value, display: settings.configuration.keepDisplayAwake.value)
         Self.follow(jobs, with: keepAwake)
     }
 
@@ -103,7 +104,7 @@ final class AgentConversation: Conversation {
             current.settings = fresh
             return updates
         }
-        keepAwake.use(fresh.configuration.keepAwake.value)
+        keepAwake.use(fresh.configuration.keepAwake.value, display: fresh.configuration.keepDisplayAwake.value)
         for item in updates { update(item) }
         update(contextUpdate())
     }

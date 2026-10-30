@@ -47,7 +47,7 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
         os.makedirs(project)
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
-            json.dump({"ui": {"promptRows": 2}}, file)
+            json.dump({"ui": {"inputRows": 2}}, file)
         server = probe.agent.Server([probe.agent.turn([("text", "CAPTURED")], "end_turn")])
         environment = probe.agent.environment(state, server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")

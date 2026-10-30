@@ -31,6 +31,8 @@ struct RunSettings: Equatable {
     var approvalFlag: ApprovalPolicy.Flag?
     /// `--allow` (roadmap 0156).
     var approvalAllow: [String] = []
+    /// `--ask` other than `all` (roadmap 0154).
+    var approvalAsk: [String] = []
 
     var limits: RunLimits {
         RunLimits(
@@ -86,6 +88,7 @@ struct RunSettings: Equatable {
                 c.maxTurns.source),
             row("compactAt", Self.describe(c.compactAt.value), c.compactAt.source),
             row("keepAwake", c.keepAwake.value.rawValue, c.keepAwake.source),
+            row("keepDisplayAwake", c.keepDisplayAwake.value ? "true" : "false", c.keepDisplayAwake.source),
             "sandbox   " + (sandbox.isUnrestricted ? "off (--no-sandbox)" : "on")
                 + (sandbox.isUnrestricted || c.sandbox.value.isEmpty
                     ? "" : ", \(c.sandbox.value)  [\(c.sandbox.source)]"),
@@ -172,6 +175,7 @@ struct RunSettings: Equatable {
 
     /// Which tool calls ask before they run (roadmap 0134): the person's `approvals`, under the flag.
     var approvalPolicy: ApprovalPolicy {
-        ApprovalPolicy(section: configuration.approvals.value, flag: approvalFlag, allowing: approvalAllow)
+        ApprovalPolicy(
+            section: configuration.approvals.value, flag: approvalFlag, allowing: approvalAllow, asking: approvalAsk)
     }
 }

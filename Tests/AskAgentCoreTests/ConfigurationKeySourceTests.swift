@@ -19,13 +19,16 @@ struct ConfigurationKeySourceTests {
     }
 
     @Test func `values are written as a file writes them`() {
-        #expect(Self.full.value(forKey: "copyOnSelect") == "off")
-        #expect(Self.full.value(forKey: "tools") == "folded")
-        #expect(Self.full.value(forKey: "thinking") == "open")
+        #expect(Self.full.value(forKey: "copyOnSelect") == "false")
+        #expect(Self.full.value(forKey: "fold.tools") == "true")
+        #expect(Self.full.value(forKey: "fold.thinking") == "false")
         #expect(Self.full.value(forKey: "sidebar") == "closed")
-        #expect(Self.full.value(forKey: "prompt") == "none")
-        #expect(Self.full.value(forKey: "interruptKeys") == "ctrl-c")
-        #expect(Self.full.value(forKey: "interruptSendsQueued") == "next")
+        #expect(Self.full.value(forKey: "inputPrefix") == "\"\"")
+        #expect(Self.full.value(forKey: "stopKeys") == "ctrl-c")
+        #expect(Self.full.value(forKey: "stopTwice") == "esc")
+        #expect(Self.full.value(forKey: "queuedOnStop") == "next")
+        #expect(Self.full.value(forKey: "listAllModels") == "false")
+        #expect(Self.full.value(forKey: "durations") == "words")
         #expect(UISection().value(forKey: "tint") == nil)
     }
 
@@ -39,7 +42,7 @@ struct ConfigurationKeySourceTests {
         #expect(configuration.source(ofKey: "ui.tint") == .file("user"))
         #expect(configuration.source(ofKey: "ui.padding") == .file("project"))
         #expect(configuration.source(ofKey: "ui.mouse") == .defaults)
-        #expect(configuration.source(ofKey: "skills.maxAdvertised") == .file("user"))
+        #expect(configuration.source(ofKey: "skills.maxListed") == .file("user"))
         #expect(configuration.source(ofKey: "skills.enabled") == .defaults)
     }
 }

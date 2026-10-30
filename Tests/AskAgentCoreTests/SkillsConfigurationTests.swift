@@ -9,9 +9,9 @@ struct SkillsConfigurationTests {
     }
 
     @Test func `a file reads all three keys and reports them`() throws {
-        let file = try parse("{skills:{enabled:true,maxAdvertised:12,sources:['claude','bundled']}}")
+        let file = try parse("{skills:{enabled:true,maxListed:12,sources:['claude','bundled']}}")
         #expect(file.skills == SkillsSection(enabled: true, maxAdvertised: 12, sources: ["claude", "bundled"]))
-        #expect(file.skills?.description == "enabled on, maxAdvertised 12, sources claude, bundled")
+        #expect(file.skills?.description == "enabled true, maxListed 12, sources claude, bundled")
     }
 
     @Test func `the default limit is the owner's 32`() {
@@ -22,19 +22,19 @@ struct SkillsConfigurationTests {
         #expect(throws: ConfigurationError.self) { try parse("{skills:{nope:1}}") }
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "skills.maxAdvertised", reason: "must be 0 or more")
-        ) { try parse("{skills:{maxAdvertised:-1}}") }
+                path: "c.json", key: "skills.maxListed", reason: "must be 0 or more")
+        ) { try parse("{skills:{maxListed:-1}}") }
         #expect(throws: ConfigurationError.self) { try parse("{skills:{sources:'claude'}}") }
     }
 
     @Test func `zero is allowed: nothing listed, the tool still there`() throws {
-        #expect(try parse("{skills:{maxAdvertised:0}}").skills?.maxAdvertised == 0)
+        #expect(try parse("{skills:{maxListed:0}}").skills?.maxAdvertised == 0)
     }
 
     @Test func `a project's file may turn skills off and nothing else`() throws {
         #expect(try parse("{skills:{enabled:false}}", project: true).skills?.enabled == false)
         #expect(throws: ConfigurationError.self) { try parse("{skills:{enabled:true}}", project: true) }
-        #expect(throws: ConfigurationError.self) { try parse("{skills:{maxAdvertised:5}}", project: true) }
+        #expect(throws: ConfigurationError.self) { try parse("{skills:{maxListed:5}}", project: true) }
         #expect(throws: ConfigurationError.self) { try parse("{skills:{sources:['codex']}}", project: true) }
     }
 

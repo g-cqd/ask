@@ -86,7 +86,7 @@ check("a quiet skill is not listed", "- loud:" in first_text(requests) and "quie
 check("and the model cannot load it", "only loaded when the user asks" in tool_result(requests)["content"], tool_result(requests))
 
 # 4. The limit: the rest are counted, and an unlisted skill still loads by name.
-done, requests = run({"sources": ["ask"], "maxAdvertised": 1}, [call(name="c"), finish],
+done, requests = run({"sources": ["ask"], "maxListed": 1}, [call(name="c"), finish],
                      setup=lambda config, project: [skill(config, name, body=f"body of {name}") for name in "abc"])
 text = first_text(requests)
 check("over the limit the prompt lists one and counts two", text.count("\n- ") == 1 and "2 more skills are not listed here" in text, text[-300:])

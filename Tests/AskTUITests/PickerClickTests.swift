@@ -46,12 +46,12 @@ struct PickerClickTests {
 
     @Test func `a click on a command inserts it and sends nothing`() throws {
         var rig = rig("/")
-        let target = try #require(row(of: "/tasks", in: rig))
+        let target = try #require(row(of: "/jobs", in: rig))
         let effects = rig.click(row: target, col: 3)
         #expect(effects.isEmpty, "nothing is sent, run or copied")
-        #expect(rig.controller.state.editor.text == "/tasks ")
+        #expect(rig.controller.state.editor.text == "/jobs ")
         #expect(rig.controller.state.picker == nil)
-        #expect(rig.text(row: Self.rows - 2) == "ask> /tasks")
+        #expect(rig.text(row: Self.rows - 2) == "ask> /jobs")
     }
 
     @Test func `a click anywhere across the row counts, the last cell as much as the first`() throws {
@@ -92,15 +92,15 @@ struct PickerClickTests {
 
     @Test func `after a click the list is closed, so a second click lands on nothing it drew`() throws {
         var rig = rig("/")
-        let target = try #require(row(of: "/tasks", in: rig))
+        let target = try #require(row(of: "/jobs", in: rig))
         rig.click(row: target, col: 3)
         rig.click(row: target, col: 3, after: .milliseconds(50))
-        #expect(rig.controller.state.editor.text == "/tasks ")
+        #expect(rig.controller.state.editor.text == "/jobs ")
     }
 
     @Test func `a click on a frame the list has moved on from is ignored`() throws {
         var rig = rig("/")
-        let target = try #require(row(of: "/tasks", in: rig))
+        let target = try #require(row(of: "/jobs", in: rig))
         type("t", into: &rig, draw: false)  // the list narrowed, but the frame the mouse holds is still the old one
         rig.clock = rig.clock.advanced(by: .seconds(1))
         for kind in [MouseEventKind.press, .release] {
@@ -113,10 +113,10 @@ struct PickerClickTests {
 
     @Test func `a click means the frame drawn when the button came up`() throws {
         var rig = rig("/")
-        let target = try #require(row(of: "/tasks", in: rig))
+        let target = try #require(row(of: "/jobs", in: rig))
         type("t", into: &rig)  // drawn: the list is shorter, and what the row says has changed
         let drawn = rig.text(row: target).split(separator: " ").first.map(String.init) ?? ""
-        #expect(drawn.hasPrefix("/") && drawn != "/tasks", "the row now holds another match: \(drawn)")
+        #expect(drawn.hasPrefix("/") && drawn != "/jobs", "the row now holds another match: \(drawn)")
         rig.click(row: target, col: 3)
         #expect(rig.controller.state.editor.text == drawn + " ")
     }
@@ -147,14 +147,14 @@ struct PickerClickTests {
     @Test func `with the mouse off nothing is clicked`() throws {
         var rig = rig(
             "/", options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false))
-        let target = try #require(row(of: "/tasks", in: rig))
+        let target = try #require(row(of: "/jobs", in: rig))
         rig.click(row: target, col: 3)
         #expect(rig.controller.state.editor.text == "/")
     }
 
     @Test func `a question waiting for an answer hides the list, and a click there chooses nothing`() throws {
         var rig = rig("/")
-        let target = try #require(row(of: "/tasks", in: rig))
+        let target = try #require(row(of: "/jobs", in: rig))
         rig.controller.handle(.askApproval(id: 7, question: "bash wants network any. Allow it?"))
         rig.draw()
         #expect(
@@ -165,7 +165,7 @@ struct PickerClickTests {
 
     @Test func `a question that arrives after the frame was drawn is not answered by a click on the old list`() throws {
         var rig = rig("/")
-        let target = try #require(row(of: "/tasks", in: rig))
+        let target = try #require(row(of: "/jobs", in: rig))
         rig.controller.handle(.askApproval(id: 7, question: "bash wants network any. Allow it?"))
         rig.clock = rig.clock.advanced(by: .seconds(1))
         for kind in [MouseEventKind.press, .release] {
@@ -177,14 +177,14 @@ struct PickerClickTests {
 
     @Test func `a drag that starts on a row selects nothing and inserts nothing`() throws {
         var rig = rig("/")
-        let target = try #require(row(of: "/tasks", in: rig))
+        let target = try #require(row(of: "/jobs", in: rig))
         rig.drag(from: (target, 2), to: (target, 8))
         #expect(rig.controller.state.editor.text == "/" && rig.controller.state.selection == nil)
     }
 
     @Test func `the wheel over the list still scrolls the transcript`() throws {
         var rig = rig("/", transcript: 40)
-        let target = try #require(row(of: "/tasks", in: rig))
+        let target = try #require(row(of: "/jobs", in: rig))
         rig.mouse(.scrollUp, .press, row: target, col: 3)
         #expect(rig.controller.state.scrollback > 0, "the transcript moved")
         #expect(rig.controller.state.editor.text == "/" && rig.controller.state.picker != nil)

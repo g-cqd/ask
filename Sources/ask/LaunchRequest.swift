@@ -17,7 +17,9 @@ struct LaunchRequest {
     var compactAt: String?
     var noSandbox = false
     var yes = false
+    var yolo = false
     var allow: [String] = []
+    var ask: [String] = []
     var askAlways = false
     var network: String?
     var write: [String] = []
@@ -51,7 +53,8 @@ struct LaunchRequest {
             FileHandle.standardOutput.write(Data(try Budget.reportJSON()))
             return
         }
-        var startupNotices: [String] = []
+        var startupNotices: [String] =
+            askAlways ? ["--ask-always is now --ask all; ask reads the old name for now."] : []
         let restored =
             selfCheck
             ? nil
@@ -64,8 +67,10 @@ struct LaunchRequest {
             flags: .init(
                 model: model, provider: provider, maxTurns: maxTurns,
                 compactAt: compactAt.flatMap(CompactionThreshold.init(parsing:)),
-                thinking: thinking.flatMap(ThinkingLevel.init(rawValue:)), noSandbox: noSandbox,
-                approvalFlag: yes ? .yes : askAlways ? .askAlways : nil, approvalAllow: allow, verbose: verbose,
+                thinking: thinking.flatMap(ThinkingLevel.init(rawValue:)), noSandbox: noSandbox || yolo,
+                approvalFlag: yes || yolo ? .yes : askAlways || ask.contains("all") ? .askAlways : nil,
+                approvalAllow: allow,
+                approvalAsk: ask.filter { $0 != "all" }, verbose: verbose,
                 network: network.flatMap(SandboxPolicy.Network.init(named:)), write: Self.scope(write),
                 read: Self.scope(read),
                 selected: selectedProvider.flatMap { provider in

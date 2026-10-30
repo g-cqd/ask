@@ -39,7 +39,7 @@ def main():
         project, config, bins = os.path.realpath(root) + "/p", root + "/c", root + "/bin"
         for path in (project, config + "/ask", bins):
             os.makedirs(path)
-        open(config + "/ask/config.json", "w").write('{"ui":{"prompt":"ask> "}}')
+        open(config + "/ask/config.json", "w").write('{"ui":{"inputPrefix":"ask> "}}')
         folding.BINARY = install_build(bins)
         server = agent.Server([agent.turn([("text", "Answer 1.")], "end_turn")])
         environment = agent.environment(root + "/state", server.url, config=config)

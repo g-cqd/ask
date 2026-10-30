@@ -144,7 +144,7 @@ def main():
         with open(project + "/note.txt", "w") as file:
             file.write("ALPHA OUTPUT\nBETA OUTPUT\n")
         with open(config + "/ask/config.json", "w") as file:
-            file.write('{"ui":{"prompt":"ask> ","thinking":"folded","tools":"folded","tint":"off","separator":"off"}}')
+            file.write('{"ui":{"inputPrefix":"ask> ","fold":{"thinking":true,"tools":true},"tint":"off","separator":"off"}}')
         server = agent.Server([thinking_turn(), agent.turn([("text", "PROBE ANSWER")], "end_turn")])
         environment = agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")

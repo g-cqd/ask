@@ -43,7 +43,9 @@ def run(root, mode, arguments):
     os.makedirs(project)
     os.makedirs(config + "/ask")
     with open(config + "/ask/config.json", "w") as file:
-        file.write('{"ui":{"prompt":"ask> "}' + (f',"keepAwake":"{mode}"' if mode else "") + "}")
+        # "display" is keepAwake "working" with keepDisplayAwake (roadmap 0154).
+        setting = ',"keepAwake":"working","keepDisplayAwake":true' if mode == "display" else (f',"keepAwake":"{mode}"' if mode else "")
+        file.write('{"ui":{"inputPrefix":"ask> "}' + setting + "}")
     server = agent.Server([agent.turn([("call", "t1", "bash", arguments)], "tool_use"),
                            agent.turn([("text", "PROBE ANSWER")], "end_turn")])
     environment = agent.environment(root + "/state", server.url, config=config)
