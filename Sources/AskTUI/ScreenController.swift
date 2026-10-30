@@ -54,6 +54,8 @@ public struct ScreenController: Sendable {
     var returningInput = false
     /// Whether the person stopped the turn (Esc or Ctrl+C), not a failure: only then do the queued messages follow `ui.interruptSendsQueued`.
     var interruptedByPerson = false
+    /// What was sent, for Up and Down (roadmap 0111).
+    var history = PromptHistory()
     let options: ScreenOptions
     /// What the last frame drew, set by the driver before it hands over a mouse event.
     var frame = FrameGeometry()
@@ -157,7 +159,7 @@ public struct ScreenController: Sendable {
     mutating func apply(_ update: ConversationUpdate) -> [Effect] {
         if update.showsTheModelIsBack { modelIsBack() }
         switch update {
-            case .userPrompt(let text): state.transcript.addUser(text)
+            case .userPrompt(let text): replayPrompt(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
             case .thinkingText(let text): state.transcript.addThinkingText(text)
             case .toolStarted(let name, let summary, let id, let input, let command):
@@ -229,6 +231,13 @@ public struct ScreenController: Sendable {
                 return interrupted(interrupt)
             case .endOfInput:
                 return state.running ? [] : [.quit]
+            case .ignored where key.modifiers.isEmpty && key.keyCode == Key.up.rawValue:
+                // Up from the input's first row: the sent line before (roadmap 0111).
+                if let older = history.older(than: state.editor.text) { state.editor.restore(older) }
+                return []
+            case .ignored where key.modifiers.isEmpty && key.keyCode == Key.down.rawValue:
+                if let newer = history.newer(than: state.editor.text) { state.editor.restore(newer) }
+                return []
             case .edited, .ignored:
                 return []
         }
