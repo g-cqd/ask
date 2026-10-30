@@ -15,6 +15,7 @@ extension AgentConversation {
                     .reconnecting(true),
                     .detail(RunNotices.retry(attempt: attempt, of: total, delay: delay, reason: reason))
                 ]
+            case .waitingForNetwork: return [.waitingForNetwork]
             case .compacted(let summary, _): return [.compactionFinished(.succeeded, text: summary)]
             case .compactionFailed(let reason): return [.compactionFinished(.failed("failed"), text: reason)]
             default: return update(for: event).map { [$0] } ?? []

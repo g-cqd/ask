@@ -11,6 +11,10 @@ public struct AgentLoop: Sendable {
     private let context: ToolContext
     let retry: RetryPolicy
     let clock: any Clock<Duration>
+    /// The system's route to the network, checked when a request fails (roadmap 0141); nil never waits.
+    let network: (any NetworkPath)?
+    /// The longest a request waits for the network to come back.
+    let networkWait: Duration
     private let hooks: [any AgentHook]
     let learnedWindow = LearnedWindow()
     /// Answers in a row that lost their connection part way (roadmap 0141).
@@ -40,8 +44,11 @@ public struct AgentLoop: Sendable {
     /// A loop over `provider` and `tools`, retrying transient failures per `retry` and waiting on `clock`.
     public init(
         provider: any ModelProvider, tools: ToolRegistry, settings: AgentSettings, context: ToolContext,
-        retry: RetryPolicy = .standard, clock: any Clock<Duration> = ContinuousClock(), hooks: [any AgentHook] = []
+        retry: RetryPolicy = .standard, clock: any Clock<Duration> = ContinuousClock(), hooks: [any AgentHook] = [],
+        network: (any NetworkPath)? = nil, networkWait: Duration = .seconds(300)
     ) {
+        self.network = network
+        self.networkWait = networkWait
         self.hooks = hooks
         self.provider = provider
         self.tools = tools

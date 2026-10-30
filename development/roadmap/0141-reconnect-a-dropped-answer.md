@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-29
 ---
@@ -55,5 +55,21 @@ Owner report (2026-10-29): a turn ended with the whole `NSError` of `NSURLErrorD
   replaced. `probe-reconnecting.py` gains a server that streams "FIRST HALF" on a chunked response and closes the socket: through the
   release binary, both halves are shown, no error block, and the second request carries the partial answer and the prompt.
 
-Still owed: item 2 (waiting for the network with `NWPathMonitor`, up to minutes, cancellable) and item 4's usage check.
+## Done (2026-10-29): item 2
+
+- **Offline, a failed request waits for the network.** On any retryable failure the loop asks the system's path (`SystemNetworkPath`,
+  `NWPathMonitor`, made only once a request has failed): with no route it says `waitingForNetwork` and waits for one, up to 5 minutes
+  (`networkWait`), then sends again at once; the wait spends no attempt and no backoff, since the network coming back is the signal. A
+  network that does not come back ends the turn with the failure; stopping the turn stops the wait. With a route, the usual backoff applies.
+  A drop part way waits the same way, then carries on. The status bar says `Offline, waiting for the network...` in the warning colour,
+  until the next attempt, the model's answer or the run's end; `ask -p` says it on standard error. No error classification was needed:
+  the path itself says whether the Mac is offline.
+- Tests: `AgentLoopNetworkWaitTests` with a played path (waits not counted as attempts, a ceiling, no wait online, a drop part way, a
+  permanent failure never waits; a mutation that never waits turns them red), `SystemNetworkPathTests` (a wait returns by its limit and when
+  stopped, whatever the Mac's network), `OfflineStatusTests`.
+- Cold start, linking the Network framework: median 13.34 ms against 13.10 ms for the previous commit (30 alternated runs), within noise.
+- Item 4: a carried-on answer is one partial response and one continuation in the session; its usage is the partial's (the provider billed
+  that request), not counted twice.
+
+Not verified: a real loss of the Mac's network (the wait was tested with a played path and the system path's limits only).
 
