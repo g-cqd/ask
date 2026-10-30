@@ -38,10 +38,10 @@ def picker_rows(session):
     """Opens the `/tree` picker and returns its rows with the spacing collapsed ("3 ● second question · branch after 1"), then closes it
     and clears the draft."""
     terminal = session.terminal
-    send(session, "/tree", "tree \u00b7")
+    send(session, "/rewind", "rewind \u00b7")
     terminal.until(lambda: "looking" not in terminal.text())
     shown = rows(terminal)
-    top = next(index for index, line in enumerate(shown) if line.startswith("tree \u00b7"))
+    top = next(index for index, line in enumerate(shown) if line.startswith("rewind \u00b7"))
     found = []
     for line in shown[top + 1:]:
         if not line or not line[0].isdigit():
@@ -106,7 +106,7 @@ def main():
               prompt_row(terminal) == "ask> first question" and "ANSWER ONE" not in screen(terminal))
 
         press(terminal, b"\x18")  # Ctrl-X clears the returned prompt
-        send(session, "/tree 9", "Usage: /tree")
+        send(session, "/tree 9", "Usage: /rewind")
         check("a number that is not a prompt is refused with the range", "1 to 3" in screen(terminal))
     print(f"{len(pp.checks)} checks passed")
 

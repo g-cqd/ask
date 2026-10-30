@@ -37,9 +37,8 @@ extension AgentConversation {
             return
         }
         usage.withLock { $0 = UsageTotals() }
-        update(.clearConversation)
-        for item in history() { update(item) }
-        update(.fillDraft(turn.text))
+        // One update, drawn once: item by item, a long session took seconds to draw again (roadmap 0160).
+        update(.batch([.clearConversation] + history() + [.fillDraft(turn.text)]))
         update(
             .notice(
                 "Went back to before prompt \(number). What you send next continues from here; the later turns are kept as another branch (/tree).",

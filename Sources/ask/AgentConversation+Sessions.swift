@@ -63,7 +63,7 @@ extension AgentConversation {
         promptInput.withLock { $0 = nil }
         usage.withLock { $0 = UsageTotals() }
         current.withLock { $0.loop = nil }
-        update(.clearConversation)
-        for item in history() { update(item) }
+        // One update, drawn once, as `/rewind` sends it (roadmap 0160).
+        update(.batch([.clearConversation] + history()))
     }
 }

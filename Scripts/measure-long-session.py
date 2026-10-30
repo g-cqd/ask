@@ -12,6 +12,8 @@ and configuration, signed out, at 120x40. Measured per run, then the median over
   page:     PageUp -> the end of its frame, median and worst of 30 pages up
   rss2:     resident size after the pages, so building and keeping far-off lines shows
   resize:   a new width (120 -> 100 columns) -> the end of the frame drawn at it
+  unfold:   at the top of the conversation, a click on each of its first 25 rows, column 30, -> the end of its frame; the slowest, which is the click
+            that unfolded a block (roadmap 0158)
 """
 import os
 import pty
@@ -98,6 +100,30 @@ def resize(fd, columns):
     return (got[0] - start) * 1000 if got else float("nan")
 
 
+def click(fd, row, column=30):
+    """A left click (SGR mouse) at a 1-based cell; the time to the end of the frame it causes, or nan when none comes."""
+    start = time.monotonic()
+    os.write(fd, f"\x1b[<0;{column};{row}M\x1b[<0;{column};{row}m".encode())
+    got = read_until(fd, lambda b: FRAME_END in b, 10.0)
+    return (got[0] - start) * 1000 if got else float("nan")
+
+
+def unfold_at_top(fd):
+    """Pages up until the frames stop coming (the top), then clicks each of the first rows; the slowest click."""
+    for _ in range(5000):
+        os.write(fd, PAGE_UP * 20)
+        if read_until(fd, lambda b: FRAME_END in b, 0.3) is None:
+            break
+    quiet(fd, 0.3)
+    times = []
+    for row in range(1, 26):
+        times.append(click(fd, row))
+        quiet(fd, 0.05)
+    found = [t for t in times if t == t]
+    print("    clicks ms:", " ".join(f"{t:.0f}" for t in times), file=sys.stderr)
+    return max(found) if found else float("nan")
+
+
 def one_run():
     root = tempfile.mkdtemp(prefix="ask-long-")
     project, config, state = (os.path.join(root, name) for name in ("project", "config", "state"))
@@ -125,7 +151,9 @@ def one_run():
         time.sleep(0.3)
         rss2 = rss_kib(pid)
         resized = resize(fd, 100)
-        return opened, rss / 1024, typed, statistics.median(pages), max(pages), rss2 / 1024, resized
+        quiet(fd, 0.2)
+        unfold = unfold_at_top(fd)
+        return opened, rss / 1024, typed, statistics.median(pages), max(pages), rss2 / 1024, resized, unfold
     finally:
         try:
             os.write(fd, b"\x15\x03\x03")
@@ -142,7 +170,7 @@ def main():
     rows = [r for r in (one_run() for _ in range(RUNS)) if r]
     if not rows:
         sys.exit("no run completed")
-    names = ["open ms", "rss MiB", "input ms", "page ms", "page worst ms", "rss after pages MiB", "resize ms"]
+    names = ["open ms", "rss MiB", "input ms", "page ms", "page worst ms", "rss after pages MiB", "resize ms", "unfold ms"]
     print(f"{os.path.basename(SESSION) if SESSION else 'fresh'}: {len(rows)} runs")
     for index, name in enumerate(names):
         values = [r[index] for r in rows]
