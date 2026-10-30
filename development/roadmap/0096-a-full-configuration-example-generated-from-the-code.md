@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -16,3 +16,10 @@ every build so that it never drifts. This may need a build plugin.
 - Generate `docs/config.example.jsonc` (comments) from it; a test fails when the checked-in file differs, which is cheaper than a build plugin
   and runs in the gate. A build plugin only if the owner wants the file inside the product.
 - Covers user-only keys (for example `environment.shell`) and says which a project file may set.
+
+## Done (2026-10-30)
+
+`SettingCatalog` lists every setting once (path, type, example, default in words, whether only your own file may set it, one line of
+help); `docs/config.example.jsonc` is generated from it and checked by `SettingCatalogTests`, which fails when the file differs
+(`ASK_WRITE_EXAMPLE=1 swift test --filter SettingCatalogTests` writes it). The example loads as a configuration file, sets every
+top-level key, and uses no old name. A test, not a build plugin, as planned.
