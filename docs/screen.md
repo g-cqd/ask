@@ -36,7 +36,7 @@ confirmation settings choose which keys stop a turn and how many presses it take
 
 | Key | What it does |
 |---|---|
-| Up, Down | Move between lines of the input. |
+| Up, Down | Move between lines of the input. From its first line, Up brings back what you sent before, commands included, and Down goes forward again to what you were typing. Once you change a message you brought back, Down goes no further. |
 | Home, End, Ctrl+A, Ctrl+E | Start and end of the line. |
 | Ctrl+U, Ctrl+K | Delete to the start or end of the line. |
 | Ctrl+W, Option+Backspace | Delete the previous word. Option+Delete deletes the next one. |

@@ -14,7 +14,8 @@ extension ScreenController {
     mutating func refreshPicker(screenRows: Int, at now: ContinuousClock.Instant) -> [Effect] {
         // The configuration editor is modal: keys belong to it, not to the draft or a word picker.
         if case .config = state.picker?.kind { return [] }
-        guard screenRows >= Self.pickerMinimumRows else { return closePicker() }
+        // A recalled command is not being typed: its picker would take the next Up from the history (roadmap 0111).
+        guard screenRows >= Self.pickerMinimumRows, !history.isShowing(state.editor.text) else { return closePicker() }
         if let trigger = commandTrigger() {
             refreshCommandPicker(trigger, screenRows: screenRows)
             // The skills are listed the first time a command picker could open, which is the first `/`, and never at launch.
