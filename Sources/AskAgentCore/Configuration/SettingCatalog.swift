@@ -72,6 +72,9 @@ enum SettingCatalog {
         row("ui.padding", .boolean, "true", "true", "A row of padding around each block."),
         row("ui.markdown", .boolean, "true", "true", "Markdown drawn everywhere it can be."),
         row("ui.leaveFinishedJob", .boolean, "true", "true", "When a job you watch ends, go back to the conversation."),
+        row(
+            "ui.sessionColor", words(SessionColorPreference.self), #""off""#, "off",
+            "A colour of the session's own on the status line: always, or only while another ask runs."),
         row("ui.listAllModels", .boolean, "false", "false", "Model lists also show models ask cannot use."),
         row("ui.fold.tools", .boolean, "true", "true", "Tool calls start folded."),
         row("ui.fold.thinking", .boolean, "true", "true", "The model's reasoning starts folded."),

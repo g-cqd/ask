@@ -8,11 +8,19 @@ extension ScreenComposer {
         for state: ScreenState, input: String = "", columns: Int = 200
     ) -> (line: Line, runners: Range<Int>?, below: Range<Int>?) {
         let mark = leadingMark(for: state)
-        return StatusLine(
+        var style = StatusLine.statusStyle
+        // The session's colour, when it has one (roadmap 0164), behind the whole line.
+        if let seed = state.sessionIdentity { style.bg = state.blocks.theme.sessionTint(seed: seed) }
+        var drawn = StatusLine(
             segments(for: state, input: input, mark: mark), columns: columns, markStyle: mark.style,
             markWidth: UnicodeWidth.displayWidth(of: mark.character)
         )
-        .line(style: StatusLine.statusStyle)
+        .line(style: style)
+        // The mark keeps its colour on the session's background, not a hole in it.
+        for index in drawn.line.accents.indices where drawn.line.accents[index].style.bg == .default {
+            drawn.line.accents[index].style.bg = style.bg
+        }
+        return drawn
     }
 
     /// The columns of the idle mark, which a click names (roadmap 0133); nil while anything else leads the line.

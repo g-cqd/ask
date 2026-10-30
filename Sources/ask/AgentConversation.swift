@@ -8,11 +8,9 @@ internal import System
 
 /// Runs prompts through the agent loop, recording them in one session.
 ///
-/// The loop and the session are both made on the first prompt, not at launch: nothing needs them before then,
-/// and building the loop measured about 1.2 ms of cold start.
+/// The loop and the session are made on the first prompt, not at launch (building the loop measured about 1.2 ms of cold start).
 ///
-/// Configuration is read again before every prompt (ADR-0031): a valid change takes effect on that prompt and is reported; an
-/// invalid one is reported once and the previous settings stay.
+/// Configuration is read again before every prompt (ADR-0031): a valid change applies and is reported, an invalid one is reported once.
 final class AgentConversation: Conversation {
     /// Where settings are read from; `/model` replaces it with one carrying the run's selection.
     let sourceState: Mutex<ConfigurationSource>
@@ -25,6 +23,8 @@ final class AgentConversation: Conversation {
     let directory: SessionDirectory
     let current: Mutex<Current>
     let session = Mutex<SessionRecorder?>(nil)
+    /// The file the next new session will be, named ahead so its colour holds from launch (roadmap 0164).
+    let plannedSession = Mutex<String?>(nil)
     /// Launch consent is consumed once, not reused to authorize an account replacement later in this process.
     private let destinationSelected = Mutex(false)
     /// Keeps the Mac awake while a turn or a job runs (`keepAwake`, roadmap 0090).
@@ -191,7 +191,7 @@ final class AgentConversation: Conversation {
                     recorder = existing
                 } else {
                     try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
-                    recorder = SessionRecorder(try SessionFile.create(at: FilePath(directory.newSessionPath())))
+                    recorder = SessionRecorder(try SessionFile.create(at: FilePath(takePlannedSession())))
                 }
                 try recorder.select(
                     destination,

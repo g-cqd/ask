@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-30
 ---
@@ -19,3 +19,19 @@ Two methods, chosen in the configuration:
 To settle before building, with the naming conventions of 0154: the keys (proposed `ui.sessionColor: "off" | "others" | "always"` and
 `ui.sessionColorTarget: "status"`), how a hue is mixed with the theme so text stays readable on light and dark pages (the tints of
 0074 already mix from the terminal's own colours), and whether a resumed session keeps its colour (it does, if seeded by the file).
+
+## Done (2026-10-30)
+
+`ui.sessionColor`: `"off"` (default), `"always"`, or `"others"` (only while another process called `ask` runs on this Mac). The colour
+is a hue seeded by the project's path and the session file's name (FNV-1a over the wheel, `SessionHue`), mixed into the terminal's own
+page as the status line's background (`ScreenTheme.sessionTint`), the leading mark included. A new session's file name is chosen at
+launch, so its colour holds from the first frame to the first prompt and after a resume. The setting is read every 3 seconds, so a change
+to the file applies without a restart; `others` lists processes then (`proc_listallpids`). ask itself is not sandboxed (only its tools
+are), so `others` works with the sandbox on, contrary to what the wish expected. One key, not two: the status line is the only place the
+colour goes for now.
+
+Tests: `SessionColourTests`, `SessionColorConfigurationTests`, the catalog and docs tests; `Scripts/probe-session-colour.py` (always is
+coloured, off is plain, others is coloured beside a copy of `sleep` named `ask`; "others, alone" is skipped where other asks run, as on
+the owner's Mac now). At the owner's request (the wish), `"sessionColor": "always"` is set in `~/.config/ask/config.json` (backup beside
+it).
+

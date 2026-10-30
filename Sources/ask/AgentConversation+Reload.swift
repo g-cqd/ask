@@ -31,6 +31,7 @@ extension AgentConversation {
                 // One watcher for the configuration files and the executable; the screen owns this task while it shows
                 // the conversation.
                 group.addTask { await self.watchFiles(since: startup, update: update) }
+                group.addTask { await self.showSessionColour(update: update) }
                 await group.waitForAll()
             }
         }

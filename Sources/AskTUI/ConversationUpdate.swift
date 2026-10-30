@@ -8,6 +8,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// Several updates applied as one, in order, and drawn once: a conversation rebuilt at once (`/rewind`, roadmap 0160) would
     /// otherwise draw a frame, and copy the transcript, for every item.
     indirect case batch([ConversationUpdate])
+    /// What names this session, for a colour of its own on the status line (roadmap 0164); nil takes the colour away.
+    case sessionIdentity(String?)
     case assistantText(String)
     /// A tool began. With `command`, the full input is a command, which heads the block after its limits, and `summary` is unused.
     case toolStarted(
