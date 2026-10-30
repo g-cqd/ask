@@ -91,9 +91,12 @@ jobs:
           restore-keys: spm-release-${{ runner.os }}-${{ env.SWIFT_VERSION }}-
       - name: Build release
         run: swift build -c release
-      - name: Measure the four budgets
-        # Exits non-zero when any budget is over. The limits come from the binary itself
-        # (`ask --budgets`), so there is one definition and no copy in a script to drift.
+      - name: Measure the budgets
+        # The limits come from the binary itself (`ask --budgets`), so there is one definition. They are the owner's Mac's
+        # (ADR-0122): a shared 3-core runner under full load measured 78 ms of cold start against about 27 ms there, so here
+        # they are reported in the job summary and not enforced. A run that does not complete still fails.
+        env:
+          ASK_BUDGETS_REPORT_ONLY: "1"
         run: python3 Scripts/measure-budgets.py .build/release/ask 12
       - name: Save the SwiftPM tree
         if: ${{ always() && github.ref == 'refs/heads/main' && steps.spm-release.outputs.cache-hit != 'true' }}
