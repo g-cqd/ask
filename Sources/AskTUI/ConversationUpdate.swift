@@ -5,6 +5,9 @@ internal import TerminalKitInput
 public enum ConversationUpdate: Sendable, Equatable {
     /// A prompt the user wrote earlier, shown when a recorded session is resumed.
     case userPrompt(String)
+    /// Several updates applied as one, in order, and drawn once: a conversation rebuilt at once (`/rewind`, roadmap 0160) would
+    /// otherwise draw a frame, and copy the transcript, for every item.
+    indirect case batch([ConversationUpdate])
     case assistantText(String)
     /// A tool began. With `command`, the full input is a command, which heads the block after its limits, and `summary` is unused.
     case toolStarted(

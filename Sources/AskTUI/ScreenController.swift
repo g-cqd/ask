@@ -161,6 +161,7 @@ public struct ScreenController: Sendable {
     mutating func apply(_ update: ConversationUpdate) -> [Effect] {
         if update.showsTheModelIsBack { modelIsBack() }
         switch update {
+            case .batch(let updates): return updates.flatMap { apply($0) }
             case .userPrompt(let text): replayPrompt(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
             case .thinkingText(let text): state.transcript.addThinkingText(text)

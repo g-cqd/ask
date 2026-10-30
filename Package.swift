@@ -78,7 +78,7 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "9f9ca6b7a8479ff51576802d459f47d1b6af7968"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "333c51172b9c1d72cad469cd25d320aeace5f244"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
         .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "5189f9c42fbc77dca1eb4387b3116fb35b3459d5"),
