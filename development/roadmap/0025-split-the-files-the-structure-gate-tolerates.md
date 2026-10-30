@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-19
 decision: ADR-0021
@@ -38,3 +38,10 @@ passes with an empty set, and the set itself can then be deleted so the gate has
 compiler to demand: imports chosen per file (an unused `public import` is an error here), and `fileprivate`
 members that cross the new file boundary made `internal`. Do it as its own commit, apart from any behaviour
 change.
+
+## Done (2026-10-30)
+
+`PrintRun.swift` and `InteractiveScreen.swift` had been split along the way and left the baseline; the last entry,
+`TerminalTeardownTests.swift`, now nests its two doubles in the suite. `SourceStructure.knownViolations`, `staleBaseline` and their two
+tests are deleted, so the structure rules have no exceptions; the `ask-structure` skill says so.
+

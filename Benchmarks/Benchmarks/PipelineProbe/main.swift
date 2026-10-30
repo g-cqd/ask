@@ -56,11 +56,13 @@ for (columns, rows) in [(120, 40), (300, 80)] {
     let bytes = BytesCounter()
     let scrolling = RenderPipeline(connection: bytes, columns: columns, rows: rows)
     var scrollingComposer = ScreenComposer()  // a composer belongs to one buffer
-    try? scrolling.draw(state, with: &scrollingComposer, full: true)
+    scrollingComposer.compose(state, into: scrolling)
+    try? scrolling.forceRedraw()
     var written = 0
     measure("streamed line: draw, scroll region") { iteration in
         state.transcript.addNotice("streamed line \(iteration) of ordinary length", isError: false)
-        try? scrolling.draw(state, with: &scrollingComposer)
+        scrollingComposer.compose(state, into: scrolling)
+        try? scrolling.flush()
         written = bytes.last
     }
     print("  bytes per streamed line with the scroll region: \(written)")
