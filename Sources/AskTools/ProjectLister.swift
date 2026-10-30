@@ -29,12 +29,13 @@ public enum ProjectLister {
     ///   - directory: the project directory, the working directory the picker's paths are relative to.
     ///   - policy: what ask may read.
     ///   - limit: the most paths to keep.
+    ///   - gitWait: how long git may take before the directory is walked instead.
     /// - Returns: the listing. Never throws: a directory that cannot be read lists nothing.
-    public static func list(in directory: String, policy: SandboxPolicy, limit: Int = defaultLimit) async
-        -> ProjectListing
-    {
+    public static func list(
+        in directory: String, policy: SandboxPolicy, limit: Int = defaultLimit, gitWait: Duration = gitTimeout
+    ) async -> ProjectListing {
         let candidates: [String]
-        if let listed = await gitFiles(in: directory) {
+        if let listed = await gitFiles(in: directory, waitingAtMost: gitWait) {
             candidates = listed
         } else {
             candidates = await onThread { walk(directory, limit: limit * 2) }
@@ -53,12 +54,12 @@ public enum ProjectLister {
     }
 
     /// git's list of the files in `directory`, or nil when it is not a git repository, git is missing, or it did not answer in time.
-    static func gitFiles(in directory: String) async -> [String]? {
+    static func gitFiles(in directory: String, waitingAtMost wait: Duration = gitTimeout) async -> [String]? {
         await withTaskGroup(of: [String]?.self) { group in
             group.addTask { await runGit(in: directory) }
             group.addTask {
                 // A cancelled sleep is git finishing first, and its answer is the one that counts.
-                try? await ContinuousClock().sleep(for: gitTimeout)
+                try? await ContinuousClock().sleep(for: wait)
                 return nil
             }
             let first = await group.next() ?? nil
