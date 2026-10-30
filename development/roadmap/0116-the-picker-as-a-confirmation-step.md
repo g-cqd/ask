@@ -56,7 +56,7 @@ proposal's; the note is left out.)
 - `ApprovalKind`: `grant` (Allow this time · Allow for the session · Deny, "this time" checked), `destructive` (same answers, Deny
   checked: MCP tools marked destructive), `confirm` (Yes · No, No checked: a request with nothing to remember, today the reset of the
   session's narrowing).
-- The section, where the picker is: the question wrapped in bold, then a row per answer, `› ▐█▌ 1  Allow this time  · y` (`▐ ▌`
+- The section, where the picker is: the question wrapped in bold, then a row per answer, `› [✓] 1  Allow this time  · y` (`[ ]`
   unchecked, `›` and colour on the row the arrows are on). When rows are short the answers are kept before the question's rows.
 - Keys: Up and Down move, Space checks the row (one at a time), a number or the letter checks its row, Enter confirms the checked one;
   Esc denies at once; Ctrl+C stops the turn and the question is kept as denied. In a job lane the status line names the shortcuts.
@@ -69,4 +69,7 @@ proposal's; the note is left out.)
 
 Still owed: clicking a row; using the section for 0153's protected paths, 0134's per-tool approvals, overwriting configuration and
 deleting sessions; 0117 on the same section.
+
+Owner (2026-10-29): strokes rather than block characters, and boxes that do not stick together: `[✓]` and `[ ]` (the block-character
+`▐█▌` boxes joined into one bar down the rows).
 

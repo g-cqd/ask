@@ -35,12 +35,12 @@ struct ApprovalControllerTests {
         #expect(rows.count == 4)
         #expect(rows[0].contains("bash wants network any. Allow it?"))
         #expect(
-            rows[1].contains("▐█▌") && rows[1].contains("1") && rows[1].contains("Allow this time")
+            rows[1].contains("[✓]") && rows[1].contains("1") && rows[1].contains("Allow this time")
                 && rows[1].contains("y"))
         #expect(
-            rows[2].contains("▐ ▌") && rows[2].contains("2") && rows[2].contains("Allow for the session")
+            rows[2].contains("[ ]") && rows[2].contains("2") && rows[2].contains("Allow for the session")
                 && rows[2].contains("a"))
-        #expect(rows[3].contains("▐ ▌") && rows[3].contains("3") && rows[3].contains("Deny") && rows[3].contains("n"))
+        #expect(rows[3].contains("[ ]") && rows[3].contains("3") && rows[3].contains("Deny") && rows[3].contains("n"))
         #expect(
             controller.state.transcript.items.count == 1, "only the prompt: the question is in the section, not a block"
         )
@@ -52,12 +52,12 @@ struct ApprovalControllerTests {
             "The MCP server fx's tool boom ({\"path\":\"/tmp/a/very/long/path/to/a/victim.txt\"}) is marked destructive. Allow it?"
         controller.handle(.askApproval(id: 1, question: question, kind: .destructive))
         let rows = ScreenComposer.pickerLines(for: controller.state, columns: 40, rows: 10).map(\.text)
-        #expect(rows.suffix(3).allSatisfy { $0.contains("▐") })
+        #expect(rows.suffix(3).allSatisfy { $0.contains("[") })
         #expect(rows.dropLast(3).joined(separator: " ").contains("Allow it?"))
         #expect(rows.allSatisfy { $0.count <= 40 })
         let tight = ScreenComposer.pickerLines(for: controller.state, columns: 40, rows: 4).map(\.text)
         #expect(
-            tight.count == 4 && tight.suffix(3).allSatisfy { $0.contains("▐") },
+            tight.count == 4 && tight.suffix(3).allSatisfy { $0.contains("[") },
             "the answers before the question's rows")
     }
 
@@ -66,10 +66,10 @@ struct ApprovalControllerTests {
         #expect(controller.handle(down, pageRows: 10).isEmpty)
         #expect(controller.handle(space, pageRows: 10).isEmpty, "checking is not answering")
         #expect(
-            section(controller)[2].contains("▐█▌") && section(controller)[1].contains("▐ ▌"),
+            section(controller)[2].contains("[✓]") && section(controller)[1].contains("[ ]"),
             "one box checked at a time")
         _ = controller.handle(up, pageRows: 10)
-        #expect(section(controller)[2].contains("▐█▌"), "moving does not check")
+        #expect(section(controller)[2].contains("[✓]"), "moving does not check")
         #expect(controller.handle(enter, pageRows: 10) == [.answerApproval(id: 7, .session)])
         #expect(controller.state.pendingApproval == nil && section(controller).isEmpty)
         #expect(controller.handle(enter, pageRows: 10).isEmpty, "a second Enter answers nothing")
@@ -97,14 +97,14 @@ struct ApprovalControllerTests {
 
     @Test func `a destructive tool's question has Deny checked, so a stray Enter never allows it`() {
         var controller = asking(.destructive)
-        #expect(section(controller)[3].contains("▐█▌"))
+        #expect(section(controller)[3].contains("[✓]"))
         #expect(controller.handle(enter, pageRows: 10) == [.answerApproval(id: 7, .deny)])
     }
 
     @Test func `a question with nothing to remember is Yes or No, No checked`() {
         var controller = asking(.confirm)
         let rows = section(controller)
-        #expect(rows.count == 3 && rows[1].contains("Yes") && rows[2].contains("No") && rows[2].contains("▐█▌"))
+        #expect(rows.count == 3 && rows[1].contains("Yes") && rows[2].contains("No") && rows[2].contains("[✓]"))
         _ = controller.handle(key("y"), pageRows: 10)
         #expect(controller.handle(enter, pageRows: 10) == [.answerApproval(id: 7, .once)])
         guard case .notice(let text, _) = controller.state.transcript.items.last else {
