@@ -3,7 +3,7 @@
 
     python3 Scripts/showcase.py [.build/release/ask] [--appearance light|dark|auto]
 
-Type a scene's number as the prompt (1 to 8) and look at what the guide printed before the start says to look at; `/quit` leaves. Each
+Type a scene's number as the prompt (1 to 9) and look at what the guide printed before the start says to look at; `/quit` leaves. Each
 scene goes on by itself when a tool returns, so answering no, or stopping a command, never puts the script out of step. ask runs in a
 scratch project with its own configuration, state and HOME, all removed at the end (development/research/priorities-2026-10-30.md, item 2).
 """
@@ -60,6 +60,13 @@ SCENES = {
            [("text", "The command moved to the background: the status line counts it until it ends, and /tasks shows it.")]]),
     "7": ("A dropped answer: the connection breaks mid-reply, and ask asks the model to carry on",
           [[("text", "This answer starts, and then the connection ")], [("text", "came back, and the answer went on where it stopped.")]]),
+    "9": ("The model asks you: two questions with tabs, a note typed in the input, a review; clicks work too",
+          [[("question", {"questions": [
+              {"question": "What should change first?", "header": "Scope",
+               "choices": [{"label": "Only the parser"}, {"label": "Everything", "description": "parser and printer"}]},
+              {"question": "Which tests should run?", "header": "Tests",
+               "choices": [{"label": "Unit"}, {"label": "Probes"}, {"label": "Benchmarks"}], "multiple": True}]})],
+           [("text", "Thanks: the model got one line per answer, as the tool's result.")]]),
     "8": ("Streaming: a long reply arriving word by word, with the spinner",
           [[("text", " ".join(["Streaming arrives a few words at a time, the way a real model sends it."] * 12))]]),
 }

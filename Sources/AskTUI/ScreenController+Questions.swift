@@ -83,6 +83,46 @@ extension ScreenController {
         return []
     }
 
+    /// A click in the section above the input: an approval's answer or command, or one of the model's choices or tabs (roadmap 0117).
+    mutating func clickSection(detail: Bool, at cell: CellPosition) {
+        let row = cell.row - frame.approvalAnswers.lowerBound
+        switch (detail, state.pendingQuestions != nil) {
+            case (true, false): toggleApprovalDetail()
+            case (true, true):
+                if let tab = frame.questionTabs.firstIndex(where: { $0.contains(cell.col) }) { clickQuestionTab(tab) }
+            case (false, false): checkApproval(answer: row)
+            case (false, true): clickQuestion(choice: row)
+        }
+    }
+
+    /// A click on choice `index` of the question shown: it is checked, as Space would, whatever the note holds (roadmap 0117).
+    mutating func clickQuestion(choice index: Int) {
+        guard var pending = state.pendingQuestions, !pending.reviewing,
+            pending.questions[pending.current].choices.indices.contains(index)
+        else { return }
+        pending.cursors[pending.current] = index
+        check(index, in: &pending)
+        state.pendingQuestions = pending
+    }
+
+    /// A click on tab `index`: that question, or the review after the last.
+    mutating func clickQuestionTab(_ index: Int) {
+        guard var pending = state.pendingQuestions else { return }
+        if pending.reviewing {
+            guard pending.questions.indices.contains(index) else { return }
+            pending.reviewing = false
+            pending.current = index
+            state.editor = Self.editor(holding: pending.notes[index])
+        } else if index == pending.questions.count {
+            pending.notes[pending.current] = state.editor.text
+            pending.reviewing = true
+            state.editor = PromptEditor()
+        } else {
+            show(index, in: &pending)
+        }
+        state.pendingQuestions = pending
+    }
+
     /// Shows question `index`, keeping the note of the one left and putting its own in the input.
     private mutating func show(_ index: Int, in pending: inout PendingQuestions) {
         guard pending.questions.indices.contains(index), index != pending.current else { return }
