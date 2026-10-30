@@ -46,3 +46,23 @@ done, 33 in progress, 44 not started. The wishes file (116 lines) gained one wis
 Unchanged: setup allowances (0155), pixel UI (0014, 0015), isolation (0020 to 0022), Aemi promotions without a consumer (0076, 0087),
 AskMCP conformance (0123), subagents (0063), Xcode's code model (0073), taking over a session (0115), distribution (0070), session
 conversion and the tool middleware (0149, 0150), Protobuf, MDM, Linux and Windows, compiled plugins, Mermaid, codemode, AemiHMMML.
+
+## Update (2026-10-30, later)
+
+Done since: item 1 (0158 and 0160, `60c2038`): an unfold at the top of a 23 MB session went from 2253 ms to about 3 ms, `/rewind 170`
+from 6 to 11 s to 0.3 to 0.4 s. No new wish; 89 done, 33 in progress, 42 not started.
+
+What changed in the order:
+
+- **0159 is half built** (the file that carries the grants to the new process, with its tests, uncommitted): finishing it stays next.
+- **The owner reported test runs exceeding memory.** Measured: no test target over 310 MiB at run time, the release test build of the
+  gate under 2 GiB, mostly in compiling AskAITests; not reproduced. It stays a question to the owner (which package and command) before
+  any work; if it is the release test build, the remedy is the gate's test configuration (testing in debug, or fewer parallel jobs),
+  to be decided with the owner since the gate tests in release on purpose.
+- **`/rewind` is still 300 to 400 ms** against an 8 ms action budget: the history is re-read and re-applied whole. Not urgent now that it
+  no longer blocks typing; recorded in 0160.
+- **0144's live check is now possible**: Xcode's server is enabled in the owner's file.
+
+The order from here is unchanged: 0159, then 0162 with 0163, then 0118 with 0096, then 0164, 0117's clicks, 0088 step 3, 0153's rest,
+0113.
+
