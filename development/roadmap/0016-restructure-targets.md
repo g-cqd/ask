@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by:
 date: 2026-10-18
 decision: ADR-0009
@@ -77,3 +77,17 @@ is green, and the four budgets have not regressed.
 ## Progress
 
 Step 1, `AskAI`, landed with the Claude path. Steps 2 and 3 land as the loop and the tools gain content (ADR-0019), not as a separate restructure.
+
+## Done (2026-10-30)
+
+Checked against the code rather than the plan. Seven targets have content, the graph as `Package.swift` declares it: AskCore and AskAI
+with no internal dependencies (AskAI never needed AskCore, unlike the sketch above), AskAgentCore on AskAI, AskMCP on AskAI, AskApple on
+AskAI and AskAgentCore, AskTools on AskAgentCore, AskAI and AskMCP, AskTUI on TerminalKit only; `ask` composes them. The manifest header
+now lists exactly that. AskCodeMode lands with its content, under 0012, not here. The products rule applied: the five libraries the
+Benchmarks package consumes stay, AskCore and AskApple are no longer products.
+
+Found on the way: the Benchmarks package had not compiled since 2026-10-19 (`c0e683e` replaced `RenderPipeline.draw` with
+`ScreenComposer.compose(_:into:)`; `PipelineProbe` still called the old one), because the gate builds only the root package. Fixed; the
+probe runs (a keystroke's layout and flush 0.1 to 0.2 ms median at 120×40 to 300×80). Building the Benchmarks package in the gate is left to
+0028.
+

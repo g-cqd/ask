@@ -133,35 +133,10 @@ enum SourceStructure {
         return found
     }
 
-    /// Files that break a structure rule today and are waiting for their split, so the rule can be enforced
-    /// everywhere else now.
-    ///
-    /// Each is being edited by someone else at the time of writing, and splitting it underneath them would
-    /// make their work unmergeable. The list is a ratchet: ``staleBaseline(_:)`` fails the build when an entry
-    /// is clean, so it can shrink and never grow, and a new violation is never added here, only fixed.
-    static let knownViolations: Set<String> = [
-        "Tests/AskTUITests/TerminalTeardownTests.swift"
-    ]
-
-    /// The entries of `baseline` that are clean or no longer exist, so should be removed from it.
-    static func staleBaseline(_ baseline: Set<String>) throws -> Set<String> {
-        var stale: Set<String> = []
-        for path in baseline {
-            let url = SourceStandards.repositoryRoot.appending(path: path)
-            guard let text = try? String(contentsOf: url, encoding: .utf8),
-                !violations(fileName: url.lastPathComponent, text: text).isEmpty
-            else {
-                stale.insert(path)
-                continue
-            }
-        }
-        return stale
-    }
-
-    /// `path: problem` for every file in `files`, other than those in `excluding`, that breaks a rule.
-    static func violations(in files: [URL], excluding baseline: Set<String> = []) throws -> [String] {
+    /// `path: problem` for every file in `files` that breaks a rule.
+    static func violations(in files: [URL]) throws -> [String] {
         var found: [String] = []
-        for file in files where !baseline.contains(relative(file)) {
+        for file in files {
             let text = try String(contentsOf: file, encoding: .utf8)
             for problem in violations(fileName: file.lastPathComponent, text: text) {
                 found.append("\(relative(file)) \(problem)")

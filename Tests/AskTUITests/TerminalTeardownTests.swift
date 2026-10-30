@@ -154,38 +154,38 @@ struct TerminalTeardownTests {
         #expect(conversation.cancelled)
         #expect(Self.endsWith(connection.writtenOutput, Self.expectedSuffix))
     }
-}
 
-/// Starts nothing.
-private struct IdleConversation: Conversation {
-    func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
-        Task { update(.runEnded) }
+    /// Starts nothing.
+    private struct IdleConversation: Conversation {
+        func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
+            Task { update(.runEnded) }
+        }
     }
-}
 
-/// Records prompts; optionally runs until cancelled, as a long tool call would.
-private final class RecordingConversation: Conversation {
-    private let state = Mutex<(prompts: [String], cancelled: Bool)>(([], false))
-    private let waitsForCancellation: Bool
+    /// Records prompts; optionally runs until cancelled, as a long tool call would.
+    private final class RecordingConversation: Conversation {
+        private let state = Mutex<(prompts: [String], cancelled: Bool)>(([], false))
+        private let waitsForCancellation: Bool
 
-    init(waitsForCancellation: Bool = false) { self.waitsForCancellation = waitsForCancellation }
+        init(waitsForCancellation: Bool = false) { self.waitsForCancellation = waitsForCancellation }
 
-    var prompts: [String] { state.withLock { $0.prompts } }
-    var cancelled: Bool { state.withLock { $0.cancelled } }
+        var prompts: [String] { state.withLock { $0.prompts } }
+        var cancelled: Bool { state.withLock { $0.cancelled } }
 
-    private func markCancelled() { state.withLock { $0.cancelled = true } }
+        private func markCancelled() { state.withLock { $0.cancelled = true } }
 
-    func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
-        state.withLock { $0.prompts.append(prompt) }
-        let waits = waitsForCancellation
-        // @al:accept -- a test double: the task ends only when the test cancels it, and the object lives for that test alone
-        return Task {
-            if waits {
-                let stream = AsyncStream<Never> { _ in }
-                for await _ in stream {}  // ends only when this task is cancelled
-                self.markCancelled()
+        func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
+            state.withLock { $0.prompts.append(prompt) }
+            let waits = waitsForCancellation
+            // @al:accept -- a test double: the task ends only when the test cancels it, and the object lives for that test alone
+            return Task {
+                if waits {
+                    let stream = AsyncStream<Never> { _ in }
+                    for await _ in stream {}  // ends only when this task is cancelled
+                    self.markCancelled()
+                }
+                update(.runEnded)
             }
-            update(.runEnded)
         }
     }
 }

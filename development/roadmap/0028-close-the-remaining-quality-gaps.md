@@ -72,3 +72,9 @@ argument parsing and wiring a person can see is wrong at a glance. Item 13 is ro
 ## Done when
 
 Each item is either closed or has a recorded reason it stays open.
+
+## The Benchmarks package is outside the gate (2026-10-30)
+
+It went eleven days without compiling (0016's close-out). The gate should build it (`swift build --package-path Benchmarks`), at the cost
+of about a minute warm; not added yet, because it lengthens every gate run and the owner sets that trade.
+

@@ -21,7 +21,7 @@ CI and `Scripts/quality.sh` all enforce them.
    `Sources/AskAI/Claude` and `Sources/ask`.
 6. A file that holds no type (free functions, constants) may have any name.
 
-`SourceStructure.knownViolations` is a ratchet baseline: it shrinks, and never takes a new entry.
+There is no baseline: every file meets every rule, and a file that cannot is split before it lands (roadmap 0025).
 
 ## Where things go
 

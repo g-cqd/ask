@@ -8,12 +8,14 @@ import PackageDescription
 // terminal stack comes from the shared TerminalKit package. `ask` layers the agent on top.
 //
 // The target graph is ADR-0009's; targets land when they have content, never as empty shells.
-//   AskCore        — budgets, documentation layout, source standards.               (exists)
-//   AskAgentCore   — session tree and context construction; later the loop.        (exists)
-//   AskTUI         — screen model, widgets, input routing, over TerminalKit only.   (exists)
-//   AskAI          — providers, streaming, protocol adapters, auth.                 (exists)
-//   AskTools       — read, write, edit, bash over swift-subprocess (ADR-0011).      (exists)
-//   AskCodeMode    — the codemode host.                                             (0012)
+//   AskCore        — budgets, documentation layout, source standards.               deps: none
+//   AskAI          — providers, streaming, protocol adapters, auth.                 deps: none
+//   AskAgentCore   — the loop, the session tree, context, sandbox, approvals.       deps: AskAI
+//   AskMCP         — the MCP client: transports and the protocol.                   deps: AskAI
+//   AskApple       — Apple's on-device model.                                       deps: AskAI, AskAgentCore
+//   AskTools       — read, write, edit, bash, jobs, MCP tools (ADR-0011).           deps: AskAgentCore, AskAI, AskMCP
+//   AskTUI         — screen model, widgets, input routing, over TerminalKit only.   deps: none of ask's
+//   AskCodeMode    — the codemode host, when it has content.                        (roadmap 0012)
 //   ask            — composition root, the only target that sees everything.
 //
 // AemiRuntime (kernel pools/seams) and any app-level concurrency provider are deliberately never
@@ -65,11 +67,10 @@ let package = Package(
     platforms: [.macOS(.v26)],
     products: [
         .executable(name: "ask", targets: ["ask"]),
-        .library(name: "AskCore", targets: ["AskCore"]),
-        // Consumed by the Benchmarks package (ADR-0016).
+        // A library product exists because something outside the package consumes it (roadmap 0016): these five, the Benchmarks
+        // package (ADR-0016). AskCore and AskApple are targets only.
         .library(name: "AskAgentCore", targets: ["AskAgentCore"]),
         .library(name: "AskAI", targets: ["AskAI"]),
-        .library(name: "AskApple", targets: ["AskApple"]),
         .library(name: "AskMCP", targets: ["AskMCP"]),
         .library(name: "AskTools", targets: ["AskTools"]),
         .library(name: "AskTUI", targets: ["AskTUI"])
