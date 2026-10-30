@@ -16,6 +16,7 @@ extension ConfigurationFile {
                 case "sandbox.network": "is \"\(value)\": use \"none\", \"localhost\" or \"any\""
                 // The names roadmap 0154 replaced, refused under the name the file used.
                 case "ui.tools", "ui.thinking", "ui.code": "is \"\(value)\": use \"folded\" or \"open\""
+                // @dl:accept -- one message per key: the table is the data, as the rows below it
                 case "ui.localizedDurations", "ui.onlyUsefulModels", "ui.escapeInterruptRequiresConfirmation",
                     "ui.abortTurnRequiresConfirmation":
                     "is \"\(value)\": use \"on\" or \"off\""
@@ -28,6 +29,7 @@ extension ConfigurationFile {
                     "ui.fold.code",
                     "keepDisplayAwake":
                     "is \"\(value)\": use true or false"
+                case "ui.sessionColor": "is \"\(value)\": use \"off\", \"always\" or \"others\""
                 case "ui.showTimeout": "is \"\(value)\": use \"auto\", \"always\" or \"never\""
                 case "ui.timeoutLabel": "must be 1 to 8 characters, with no control characters"
                 case "ui.stopKeys": "is \"\(value)\": use \"esc\", \"ctrl-c\" or \"both\""

@@ -49,6 +49,9 @@
     // When a job you watch ends, go back to the conversation. Default: true.
     "leaveFinishedJob": true,
 
+    // A colour of the session's own on the status line: always, or only while another ask runs. Default: off. One of: off, always, others.
+    "sessionColor": "off",
+
     // Model lists also show models ask cannot use. Default: false.
     "listAllModels": false,
 

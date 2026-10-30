@@ -45,6 +45,7 @@ extension UISection {
                 return pressedTwice.isEmpty ? "none" : pressedTwice.joined(separator: ", ")
             case "queuedOnStop": return interruptSendsQueued?.rawValue
             case "listAllModels": return Self.flag(onlyUsefulModels.map { !$0 })
+            case "sessionColor": return sessionColor?.rawValue
             default: return nil
         }
     }

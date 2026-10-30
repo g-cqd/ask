@@ -48,7 +48,8 @@ extension RunSettings {
             interruptSendsQueued: QueuedAfterInterruptPreference(rawValue: options.interruptSendsQueued.rawValue),
             onlyUsefulModels: configuration.ui.value.onlyUsefulModels ?? true,
             appearance: AppearancePreference(rawValue: options.appearance.rawValue),
-            timeout: TimeoutPreference(rawValue: options.timeoutDisplay.rawValue), timeoutLabel: options.timeoutLabel)
+            timeout: TimeoutPreference(rawValue: options.timeoutDisplay.rawValue), timeoutLabel: options.timeoutLabel,
+            sessionColor: configuration.ui.value.sessionColor ?? .off)
     }
 
     /// `compactAt` in words: a share of the window, a number of tokens, or only when the window is full.

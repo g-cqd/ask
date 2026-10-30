@@ -183,6 +183,7 @@ public struct ScreenController: Sendable {
                 state.label = first
                 state.labelVariants = forms
             case .sandboxActive(let active): state.sandboxed = active
+            case .sessionIdentity(let seed): state.sessionIdentity = seed
             case .status(let text): state.detail = text
             case .context(let text): state.context = text
             case .runners(let list): setRunners(list)

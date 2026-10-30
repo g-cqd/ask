@@ -52,6 +52,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var timeout: TimeoutPreference?
     /// `ui.timeoutLabel`: the word in front of a command's timeout, 1 to 8 characters (`"timeout"` by default).
     public var timeoutLabel: String?
+    /// `ui.sessionColor`: a colour of the session's own on the status line (roadmap 0164); off by default.
+    public var sessionColor: SessionColorPreference?
 
     public init(
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
@@ -63,8 +65,10 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         // @dl:accept -- optional settings are schema data: each parameter names a key
         interruptKeys: InterruptKeysPreference? = nil, escapeInterruptRequiresConfirmation: Bool? = nil,
         interruptSendsQueued: QueuedAfterInterruptPreference? = nil, onlyUsefulModels: Bool? = nil,
-        appearance: AppearancePreference? = nil, timeout: TimeoutPreference? = nil, timeoutLabel: String? = nil
+        appearance: AppearancePreference? = nil, timeout: TimeoutPreference? = nil, timeoutLabel: String? = nil,
+        sessionColor: SessionColorPreference? = nil
     ) {
+        self.sessionColor = sessionColor
         // @dl:accept -- optional configuration and resolved screen options deliberately assign the same UI keys
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
@@ -102,6 +106,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             && jobAutoReturnWhenFocused == nil && abortTurnRequiresConfirmation == nil && interruptKeys == nil
             && escapeInterruptRequiresConfirmation == nil && interruptSendsQueued == nil
             && onlyUsefulModels == nil && appearance == nil && timeout == nil && timeoutLabel == nil
+            && sessionColor == nil
         // @dl:accept -- the layering takes each key from the later section; the keys are the data
     }
 
@@ -120,7 +125,9 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         "inputPrefix", "tint", "appearance", "separator", "padding", "markdown", "durations", "spinner", "showTimeout",
         "timeoutLabel"
     ]
-    private static let behaviorKeys = ["leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels"]
+    private static let behaviorKeys = [
+        "leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels", "sessionColor"
+    ]
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: UISection) -> UISection {
@@ -143,7 +150,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             interruptSendsQueued: section.interruptSendsQueued ?? interruptSendsQueued,
             onlyUsefulModels: section.onlyUsefulModels ?? onlyUsefulModels,
             appearance: section.appearance ?? appearance, timeout: section.timeout ?? timeout,
-            timeoutLabel: section.timeoutLabel ?? timeoutLabel)
+            timeoutLabel: section.timeoutLabel ?? timeoutLabel, sessionColor: section.sessionColor ?? sessionColor)
     }
 
     /// The keys this section sets, as a file writes them: `inputRows 4, fold.tools false`.
