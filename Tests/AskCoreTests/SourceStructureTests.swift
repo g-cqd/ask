@@ -133,8 +133,7 @@ struct SourceStructureTests {
     // MARK: - The repository
 
     @Test func `every source file declares at most one type, named for it`() throws {
-        let offenders = try SourceStructure.violations(
-            in: SourceStandards.sources, excluding: SourceStructure.knownViolations)
+        let offenders = try SourceStructure.violations(in: SourceStandards.sources)
         #expect(
             offenders.isEmpty,
             """
@@ -146,8 +145,7 @@ struct SourceStructureTests {
     }
 
     @Test func `every test file declares at most one type, named for it`() throws {
-        let offenders = try SourceStructure.violations(
-            in: SourceStandards.tests, excluding: SourceStructure.knownViolations)
+        let offenders = try SourceStructure.violations(in: SourceStandards.tests)
         #expect(
             offenders.isEmpty,
             """
@@ -156,24 +154,6 @@ struct SourceStructureTests {
             \(offenders.joined(separator: "\n"))
             """
         )
-    }
-
-    @Test func `the baseline names only files that still break a rule`() throws {
-        let stale = try SourceStructure.staleBaseline(SourceStructure.knownViolations)
-        #expect(
-            stale.isEmpty,
-            """
-            These files no longer break a structure rule, or no longer exist. Remove them from \
-            `SourceStructure.knownViolations`: the baseline may shrink and never grow.
-            \(stale.sorted().joined(separator: "\n"))
-            """
-        )
-    }
-
-    @Test func `a clean file is reported as stale when it is in the baseline`() throws {
-        let clean = "Sources/AskCore/Budget.swift"
-        #expect(try SourceStructure.staleBaseline([clean]) == [clean])
-        #expect(try SourceStructure.staleBaseline(["Sources/AskCore/Gone.swift"]) == ["Sources/AskCore/Gone.swift"])
     }
 
     @Test func `no file outgrows the ceiling`() throws {
