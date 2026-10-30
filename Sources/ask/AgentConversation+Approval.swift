@@ -26,7 +26,9 @@ extension AgentConversation {
         let question =
             "\(approval.tool) \(ToolSummary.line(for: approval.input)) asks for "
             + approval.asked.joined(separator: " and ") + ". Allow it?"
-        return await ask(question, remembering: (approval.request, nil))
+        // Nothing to remember (a reset of the session's narrowing) is a yes or no.
+        return await ask(
+            question, remembering: (approval.request, nil), kind: approval.request == nil ? .confirm : .grant)
     }
 
     /// Asks the user about a server's tool that the server marks destructive (ADR-0111), unless they allowed it for the session.
@@ -35,13 +37,14 @@ extension AgentConversation {
         let question =
             "The MCP server \(call.server)'s tool \(call.tool) (\(ToolSummary.line(for: call.input))) "
             + "is marked destructive: it may destroy or overwrite. Allow it?"
-        return await ask(question, remembering: (nil, call.grantKey))
+        return await ask(question, remembering: (nil, call.grantKey), kind: .destructive)
     }
 
     /// Puts `question` to the user and waits; false when the run is cancelled or there is no one to ask. What a session grant
     /// remembers is `remembering`, for the answer's `a`.
-    private func ask(_ question: String, remembering: (request: SandboxRequest?, destructiveKey: String?)) async -> Bool
-    {
+    private func ask(
+        _ question: String, remembering: (request: SandboxRequest?, destructiveKey: String?), kind: ApprovalKind
+    ) async -> Bool {
         let id = approvals.withLock { state in
             state.nextID += 1
             return state.nextID
@@ -55,7 +58,7 @@ extension AgentConversation {
                 // Cancelled before the question was stored: the handler found nothing to answer, so answer here.
                 if Task.isCancelled { resolve(id, allowed: false) }
                 guard let ask else { return resolve(id, allowed: false) }
-                ask(.askApproval(id: id, question: question))
+                ask(.askApproval(id: id, question: question, kind: kind))
             }
         } onCancel: {
             resolve(id, allowed: false)

@@ -34,14 +34,15 @@ struct RunnerApprovalTests {
         var rig = lane()
         rig.controller.handle(.askApproval(id: 4, question: "bash wants network. Allow it?"))
         rig.draw()
-        #expect(status(rig).hasPrefix("bash wants network. Allow it?  y once · a for this session · n no · "))
+        #expect(status(rig).hasPrefix("bash wants network. Allow it?  y · a · n, then Enter · "))
         #expect(rig.controller.state.lane != nil, "the lane stays: the answer needs no change of view")
     }
 
-    @Test func `y answers it from the lane, and the line goes back to the route`() {
+    @Test func `y then Enter answers it from the lane, and the line goes back to the route`() {
         var rig = lane()
         rig.controller.handle(.askApproval(id: 4, question: "Allow it?"))
-        #expect(press(0x79, &rig) == [.answerApproval(id: 4, .once)])
+        #expect(press(0x79, &rig).isEmpty)
+        #expect(press(0x0D, &rig) == [.answerApproval(id: 4, .once)])
         #expect(
             !status(rig).contains("Allow it?") && status(rig).contains("main › job-1"))
     }
@@ -52,7 +53,7 @@ struct RunnerApprovalTests {
         press(0x1B, &rig)
         rig.controller.handle(.askApproval(id: 5, question: "Allow it?"))
         rig.draw()
-        #expect((0 ..< 16).contains { rig.text(row: $0).hasPrefix("Allow it?  y once") })
+        #expect((0 ..< 16).contains { rig.text(row: $0).hasPrefix("Allow it?") }, "in the section above the input")
         #expect((0 ..< 16).contains { rig.text(row: $0) == "✓ · m · 1 job" }, "the status line is the plain one")
     }
 
