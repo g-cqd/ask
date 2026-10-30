@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-29
 ---
@@ -200,3 +200,10 @@ old names are never offered. Sessions that called the old names still replay (th
 
 Still owed: one live request with a search-mode server on the subscription (the owner's step); a general message for a refusal from the
 subscription gate (moved here from 0010); the naming table's row 40 lets the owner choose other names after a live check.
+
+## Confirmed live (2026-10-30)
+
+The owner enabled Xcode's MCP server (54 tools, so search mode) and used every connected tool on the Claude subscription for a long
+conversation: no refusal. The renamed `search_catalog` and `dispatch_call` pass. The general message for a refusal from the subscription
+gate moves to 0165.
+
