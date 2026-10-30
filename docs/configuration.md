@@ -172,6 +172,7 @@ Switches take `"on"` or `"off"` (`true` and `false` work too).
 | `queuedOnStop` | `"all"` | What happens to messages you queued when you stop a turn: `"all"` sends them (the first starts a turn, the rest join it), `"next"` sends the first and keeps the rest queued, `"none"` puts them back in the input. |
 | `leaveFinishedJob` | `true` | When a background job you are watching ends, go back to the conversation. |
 | `listAllModels` | `false` | Model lists also show models ask cannot use (image, audio, completion-only, no tool calls), as `ask models --all` does. |
+| `sessionColor` | `"off"` | A colour of the session's own as the status line's background, to tell sessions apart: `"always"`, seeded by the project's path and the session file's name so a session keeps its colour; `"others"`, the same colour only while another ask runs on this Mac; `"off"`. |
 
 ### `sandbox`
 

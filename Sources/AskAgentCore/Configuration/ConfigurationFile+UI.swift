@@ -51,6 +51,9 @@ extension ConfigurationFile {
                 case "showTimeout":
                     section.timeout = try ConfigurationFile.decodeChoice(
                         container, key: key, as: TimeoutPreference.self, named: name)
+                case "sessionColor":
+                    section.sessionColor = try ConfigurationFile.decodeChoice(
+                        container, key: key, as: SessionColorPreference.self, named: name)
                 case "timeoutLabel":
                     section.timeoutLabel = try ConfigurationFile.decodeLabel(container, key: key, named: name)
                 default: throw UnknownKey(key: name)

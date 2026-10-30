@@ -64,6 +64,10 @@ public struct ScreenTheme: Sendable, Equatable {
         return style
     }
 
+    /// The status line's background for a session seeded by `seed` (roadmap 0164): its hue, mixed into the page a little more than the
+    /// block tints are, so it reads as the session's colour while its text keeps the terminal's contrast.
+    func sessionTint(seed: String) -> Color { page.tint(toward: SessionHue.rgb(seed: seed), share: 0.16) }
+
     /// Every tint, for checks.
     var tints: [Color] { [input, user, pending, success, failure, system, interrupted] }
 

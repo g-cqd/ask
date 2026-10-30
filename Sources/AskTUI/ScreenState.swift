@@ -60,6 +60,8 @@ public struct ScreenState: Sendable, Equatable {
     public var pendingApproval: PendingApproval?
     /// The model's questions while they wait (roadmap 0117): they take the keys they use, and the input holds the note.
     public var pendingQuestions: PendingQuestions?
+    /// What names this session for its colour (roadmap 0164); nil draws the status line as usual.
+    var sessionIdentity: String?
     /// A line a running command asked for, while it waits: the keys go to ``inputAnswer`` until Enter or Esc.
     public var pendingInput: PendingInput?
     /// What is typed for ``pendingInput``; never drawn but as dots when the input is a secret.
