@@ -81,7 +81,7 @@ let package = Package(
         .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "f7242d244762b4f392391dd4e5963b0aa28b7ef9"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "a41279b175cf17ee85ba3edb0e829ef214e2d9bf"),
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "844a77cb471d1f3e4d3d884710b00602a86c8c5b"),
         // Already resolved through AemiJSON; the linear-time engine also recognizes UI heredoc openers.
         .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "b0ce03833ede14c903345511a8ff4ae11c5f8f8c"),
         // The Markdown parser the transcript draws assistant messages with (roadmap 0065); the revision TerminalKitMarkdown pins.
