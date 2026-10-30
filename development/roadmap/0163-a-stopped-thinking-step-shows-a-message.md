@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-30
 ---
@@ -12,3 +12,10 @@ message".
 To do: when a turn is stopped while the model is still reasoning, the partial reasoning block is replaced by one block saying the turn was
 stopped while the model was thinking (a system block, in the interruption's colour), instead of a folded reasoning block left half
 written. What the session records for the model is unchanged.
+
+## Done (2026-10-30)
+
+Stopping a turn while the model is still reasoning replaces the half-written reasoning block with one notice on the interruption tint,
+"Stopped while the model was thinking."; reasoning that had finished stays as it was. The session file is unchanged, so a resumed session
+shows the reasoning that was recorded. Tests: `InterruptionColourTests` (the old test that kept the partial block, rewritten red first,
+and one for finished reasoning). Not probed in a PTY: no probe streams reasoning slowly enough to stop it midway.
