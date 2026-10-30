@@ -18,8 +18,24 @@ struct ApprovalOption: Sendable, Equatable {
     /// The answers of a question of `kind`, in the order they are drawn.
     static func options(for kind: ApprovalKind) -> [ApprovalOption] {
         switch kind {
-            case .grant, .destructive: [allowOnce, allowSession, deny]
-            case .confirm: [yes, no]
+            case .grant, .destructive: return [allowOnce, allowSession, deny]
+            case .confirm: return [yes, no]
+            case .command(let phrases, let programs):
+                guard !phrases.isEmpty else { return [allowOnce, deny] }
+                let named = quoted(phrases)
+                let session = ApprovalOption(
+                    label: "Allow \(named) for the session", letter: "a", choice: .session,
+                    said: "allowed \(named) for the session")
+                guard programs != phrases else { return [allowOnce, session, deny] }
+                let program = ApprovalOption(
+                    label: "Allow \(quoted(programs)) for the session", letter: "p", choice: .program,
+                    said: "allowed \(quoted(programs)) for the session")
+                return [allowOnce, session, program, deny]
         }
+    }
+
+    /// `git status`, `swift build`, each in backquotes.
+    private static func quoted(_ words: [String]) -> String {
+        words.map { "`\($0)`" }.joined(separator: ", ")
     }
 }

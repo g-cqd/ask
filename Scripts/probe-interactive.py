@@ -22,6 +22,19 @@ FRAME_END = b"\x1b[?2026l"
 ROWS, COLUMNS = 30, 100
 
 
+_YES = {}
+
+
+def yes_flag(binary):
+    """`--yes` when `binary` has it (roadmap 0134), so a probe about something else is not stopped by approval questions; an older
+    control binary has no such flag and asks nothing anyway."""
+    if binary not in _YES:
+        import subprocess as _subprocess
+        shown = _subprocess.run([binary, "--help"], capture_output=True, text=True).stdout
+        _YES[binary] = ["--yes"] if "--yes" in shown else []
+    return _YES[binary]
+
+
 class Emulator:
     """Just enough of a terminal to read a diff renderer's screen: cursor moves, text, erase, and the scroll
     region with scroll up and down. Bytes alone cannot show what is on screen, because a diff sends only the
@@ -115,10 +128,11 @@ class Emulator:
 
 
 class Screen:
-    def __init__(self, server_url, project, state=None, arguments=(), config=None, binary=None):
+    def __init__(self, server_url, project, state=None, arguments=(), config=None, binary=None, approvals=False):
         self.state = state or tempfile.mkdtemp()
         env = agent.environment(self.state, server_url, config)
         binary = binary or ASK
+        arguments = tuple(arguments) if approvals else tuple(yes_flag(binary)) + tuple(arguments)
         self.pid, self.fd = pty.fork()
         if self.pid == 0:
             os.chdir(project)
@@ -1265,6 +1279,45 @@ def probe_model_and_destination():
     return all(results)
 
 
+def probe_call_approvals():
+    print("X: a call that changes things asks first: this time, the subcommand or the program for the session, or deny (0134)")
+    project = tempfile.mkdtemp()
+    commands = ["git status", "git status --short", "git log -1", "git diff", "ls"]
+    calls = [("tool", f"c{n}", command) for n, command in enumerate(commands)]
+    server = agent.Server([agent.turn([c], "tool_use") for c in calls] + [agent.turn([("text", "All done.")], "end_turn")])
+    screen = Screen(server.url, project, approvals=True)
+
+    def wait(condition, seconds=15):
+        end = time.time() + seconds
+        while time.time() < end and not condition():
+            screen.until("\x00", 0.05)
+        return condition()
+
+    result = lambda n: json.dumps(server.requests[n]["body"]["messages"][-1]) if len(server.requests) > n else ""
+    pending = lambda: screen.screen.text().rsplit("→", 1)[-1]
+    screen.ready()
+    screen.type("Go\r")
+    results = [check("git status asks, offering the subcommand and the program for the session",
+                     wait(lambda: "Allow `git status` for the session" in pending() and "Allow `git` for the session" in pending()),
+                     screen.screen.text()[-500:])]
+    screen.type("a\r")
+    results.append(check("allowed for the session, it runs", wait(lambda: len(server.requests) > 1)))
+    results.append(check("git status --short is covered: no question", wait(lambda: len(server.requests) > 2)
+                         and "git status --short. Allow it?" not in screen.screen.text()))
+    results.append(check("git log is another subcommand: it asks", wait(lambda: "git log -1. Allow it?" in screen.screen.text())))
+    screen.type("p\r")
+    results.append(check("git diff is covered by the program grant", wait(lambda: len(server.requests) > 4)
+                         and "git diff. Allow it?" not in screen.screen.text()))
+    results.append(check("ls asks", wait(lambda: "ls. Allow it?" in screen.screen.text())))
+    screen.type("n\r")
+    results.append(check("denied, the model is told", wait(lambda: "did not allow" in result(5)), result(5)[-200:]))
+    screen.until("All done.", 15)
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    return all(results)
+
+
 def probe_sandbox_approval():
     print("V: a call asking for more than the sandbox allows is put to the user: once, for the session, or no")
     project = tempfile.mkdtemp()
@@ -1433,7 +1486,7 @@ def probe_reset_ignores_unrelated_grants():
 
 
 if __name__ == "__main__":
-    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants]
+    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants, probe_call_approvals]
     # --only A,F runs the probes whose heading starts with those letters (each prints "A: …" first).
     wanted = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
     ok = True

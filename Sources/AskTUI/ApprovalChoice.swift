@@ -4,6 +4,8 @@ public enum ApprovalChoice: Sendable, Equatable {
     case once
     /// Allow this call, and later ones it covers, until ask exits.
     case session
+    /// Allow this call, and every later use of its programs, until ask exits (roadmap 0134).
+    case program
     /// Refuse it.
     case deny
 }
