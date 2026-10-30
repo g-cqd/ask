@@ -42,20 +42,46 @@ extension AgentLoop {
             } catch {
                 failure = error
             }
-            switch outcome(of: failure, shown: shown, attempt: attempt, partial: assembler.partial()) {
-                case .overflow(let reason): throw .contextOverflow(reason)
-                case .fail(let error): throw error
-                case .carryOn(let delay, let reason, var partial):
-                    events(.retrying(attempt: attempt + 1, of: retry.maximumAttempts, delay: delay, reason: reason))
-                    do { try await clock.sleep(for: delay) } catch { throw .cancelled }
-                    partial.stopReason = Self.droppedStopReason
-                    return partial
-                case .retry(let delay, let reason):
-                    events(.retrying(attempt: attempt + 1, of: retry.maximumAttempts, delay: delay, reason: reason))
-                    do { try await clock.sleep(for: delay) } catch { throw .cancelled }
-                    attempt += 1
-            }
+            let decided = outcome(of: failure, shown: shown, attempt: attempt, partial: assembler.partial())
+            if let partial = try await recover(decided, attempt: &attempt, events: events) { return partial }
         }
+    }
+
+    /// Acts on what a failure means: throws for the end of the request, waits and returns the part that arrived to carry on from, or
+    /// waits and returns nil to send the request again.
+    private func recover(_ decided: FailureOutcome, attempt: inout Int, events: (AgentEvent) -> Void)
+        async throws(AgentError) -> AssembledResponse?
+    {
+        switch decided {
+            case .overflow(let reason): throw .contextOverflow(reason)
+            case .fail(let error): throw error
+            case .carryOn(let delay, let reason, var partial):
+                if try await !waitedForNetwork(reason: reason, events: events) {
+                    events(.retrying(attempt: attempt + 1, of: retry.maximumAttempts, delay: delay, reason: reason))
+                    do { try await clock.sleep(for: delay) } catch { throw .cancelled }
+                }
+                partial.stopReason = Self.droppedStopReason
+                return partial
+            case .retry(let delay, let reason):
+                // Offline, the wait is for the network, and costs no attempt: it is not the request that failed.
+                if try await waitedForNetwork(reason: reason, events: events) { return nil }
+                events(.retrying(attempt: attempt + 1, of: retry.maximumAttempts, delay: delay, reason: reason))
+                do { try await clock.sleep(for: delay) } catch { throw .cancelled }
+                attempt += 1
+                return nil
+        }
+    }
+
+    /// With the network gone, waits for it to come back, up to ``networkWait``.
+    /// - Returns: whether it waited, and the network is back; false when the network was there all along.
+    /// - Throws: ``AgentError/cancelled`` when the turn is stopped while waiting, or the failure when the network does not come back.
+    private func waitedForNetwork(reason: String, events: (AgentEvent) -> Void) async throws(AgentError) -> Bool {
+        guard let network, await !network.isSatisfied() else { return false }
+        events(.waitingForNetwork)
+        let back = await network.waitUntilSatisfied(atMost: networkWait)
+        guard !Task.isCancelled else { throw .cancelled }
+        guard back else { throw .provider(reason) }
+        return true
     }
 
     /// Decides what a failed attempt means. A refusal for length is never retried as it was, and teaches the loop

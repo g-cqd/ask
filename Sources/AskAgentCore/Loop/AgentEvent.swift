@@ -19,6 +19,8 @@ public enum AgentEvent: Sendable, Equatable {
     /// The connection dropped after part of the response was shown (roadmap 0141): what arrived was kept, and the model was asked to
     /// carry on from where it stopped.
     case continuedAfterDrop
+    /// A request failed with the network gone; the loop waits for it to come back before sending it again (roadmap 0141).
+    case waitingForNetwork
     /// A summary of the conversation is being made, to compact it (roadmap 0099); `compacted` or `compactionFailed` follows.
     case compacting
     /// The conversation before the kept tail was replaced by `summary` in context; the session keeps it all.

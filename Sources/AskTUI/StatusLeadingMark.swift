@@ -33,6 +33,11 @@ struct StatusLeadingMark: Sendable, Equatable {
         StatusLeadingMark(character: frame + " Connecting MCP...", style: compacting)
     }
 
+    /// The mark while ask waits for the network: `<spinner> Offline, waiting for the network...`, in the warning colour (roadmap 0141).
+    static func offlineMark(frame: String) -> StatusLeadingMark {
+        StatusLeadingMark(character: frame + " Offline, waiting for the network...", style: warning)
+    }
+
     /// The mark while ask waits to reconnect: `<spinner> Reconnecting...`, in the warning colour.
     static func reconnectingMark(frame: String) -> StatusLeadingMark {
         StatusLeadingMark(character: frame + " Reconnecting...", style: warning)
