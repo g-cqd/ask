@@ -10,10 +10,19 @@ extension ScreenController {
                 state.compacting = active
                 if active { startCompactionBlock() }
             case .compactionFinished(let status, let text): finishCompactionBlock(status, text: text)
-            case .reconnecting(let waiting): state.reconnecting = waiting
+            case .reconnecting(let waiting):
+                state.reconnecting = waiting
+                if waiting { state.waitingForNetwork = false }
+            case .waitingForNetwork: state.waitingForNetwork = true
             case .connectingMCP(let waiting): state.connectingMCP = waiting
             default: break
         }
+    }
+
+    /// The model answers again: whatever the status bar said about waiting for it is over.
+    mutating func modelIsBack() {
+        state.reconnecting = false
+        state.waitingForNetwork = false
     }
 
     mutating func startCompactionBlock() {

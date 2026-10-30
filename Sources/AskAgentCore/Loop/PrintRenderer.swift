@@ -54,6 +54,9 @@ public final class PrintRenderer: Sendable {
             case .continuedAtOutputLimit:
                 endLine()
                 err("ask: the response hit the output limit; asking the model to continue.\n")
+            case .waitingForNetwork:
+                endLine()
+                err("ask: the network is gone; waiting for it to come back.\n")
             case .continuedAfterDrop:
                 endLine()
                 err("ask: the connection dropped; asking the model to carry on from where it stopped.\n")

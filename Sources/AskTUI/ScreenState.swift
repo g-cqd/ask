@@ -21,6 +21,8 @@ public struct ScreenState: Sendable, Equatable {
     public var reconnecting = false
     /// Whether the turn waits for MCP servers to connect (`Connecting MCP...` in the status bar, roadmap 0143).
     public var connectingMCP = false
+    /// Whether ask waits for the network to come back (`Offline, waiting for the network...`, roadmap 0141).
+    public var waitingForNetwork = false
     /// Whether the sandbox is active for this session (false if unrestricted).
     public var sandboxed = true
     /// Current animated frame index for the status line spinner.

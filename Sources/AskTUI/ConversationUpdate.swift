@@ -61,6 +61,9 @@ public enum ConversationUpdate: Sendable, Equatable {
     case reconnecting(Bool)
     /// The turn waits for the MCP servers it connects on first need (roadmap 0143): the status bar says `Connecting MCP...` until false.
     case connectingMCP(Bool)
+    /// A request failed with the network gone, and ask waits for it to come back (roadmap 0141): the status bar says so until the next
+    /// attempt, the model's answer or the run's end.
+    case waitingForNetwork
     /// A compaction began (true) or ended (false): the status bar says `Compacting...` meanwhile (roadmap 0099).
     case compacting(Bool)
     /// A compaction ended, with its summary or the reason it failed (roadmap 0105). It finishes the block `compacting(true)` started; with

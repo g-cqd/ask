@@ -145,7 +145,9 @@ func makeLoop(
             outputDirectory: SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values).path
                 + "/output", sandbox: sandbox,
             approve: approve, narrowing: narrowing, commandEnvironment: run.commandEnvironment,
-            destructiveApprover: destructiveApprover, imageLimits: run.model.imageLimits))
+            destructiveApprover: destructiveApprover, imageLimits: run.model.imageLimits),
+        // Offline, a failed request waits for the network instead of spending its retries (roadmap 0141).
+        network: SystemNetworkPath())
 }
 
 /// The provider, with a control still to be looked up wrapped to look it up before the first request, not at startup.
