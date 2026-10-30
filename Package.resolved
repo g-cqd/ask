@@ -1,12 +1,12 @@
 {
-  "originHash" : "fbb2f7ffd40fbb8c43599702d141fdb6c298ce18c70ed8d59f9651dbf680be6b",
+  "originHash" : "cf498141b8ee00d9693e6b56c4a8e0c3b84090aec9801b7b1484d5c5abe9e127",
   "pins" : [
     {
       "identity" : "aemi",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Aemi-Studio/aemi.git",
       "state" : {
-        "revision" : "bfc4f5a701e8d80e5c63b13f606b578c5c0410c0"
+        "revision" : "5e5601495a2fa544661b7b9056b1141e9c3ad9dd"
       }
     },
     {
@@ -14,7 +14,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiJSON.git",
       "state" : {
-        "revision" : "1e0d930021be64548c7d52c648358324ad112008"
+        "revision" : "a41279b175cf17ee85ba3edb0e829ef214e2d9bf"
       }
     },
     {
@@ -22,7 +22,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiMarkdown.git",
       "state" : {
-        "revision" : "31859d3a5356121384e0a4b0936f2527d3c3362a"
+        "revision" : "0aa50fdfb4f0c6e916d1743ede4b871026ccff36"
       }
     },
     {
@@ -30,7 +30,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiRegex.git",
       "state" : {
-        "revision" : "509e923056790b716a372b4b896e2361fcd399dd"
+        "revision" : "b0ce03833ede14c903345511a8ff4ae11c5f8f8c"
       }
     },
     {
@@ -47,8 +47,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/apple/swift-collections.git",
       "state" : {
-        "revision" : "844289ac455816e193f1dbbe014f3c4dbe429410",
-        "version" : "1.7.4"
+        "revision" : "f96b909e1a9e469620bc5037c1e24e00153f376f",
+        "version" : "1.7.5"
       }
     },
     {
@@ -83,7 +83,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/TerminalKit.git",
       "state" : {
-        "revision" : "004cc398ffd00e0c6818e3977da7e835d35d63f1"
+        "revision" : "f7242d244762b4f392391dd4e5963b0aa28b7ef9"
       }
     }
   ],
