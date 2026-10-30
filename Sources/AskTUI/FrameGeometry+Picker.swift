@@ -8,9 +8,11 @@ extension FrameGeometry {
     func withPicker(state: ScreenState, firstRow: Int, rows: Int) -> FrameGeometry {
         if let pending = state.pendingApproval {
             var geometry = self
-            let answers = ScreenComposer.approvalLayout(pending, columns: columns, rows: rows).answers
+            let layout = ScreenComposer.approvalLayout(pending, columns: columns, rows: rows)
             // The section starts where the picker's title would, one row above its first match.
-            geometry.approvalAnswers = (firstRow - 1 + answers.lowerBound) ..< (firstRow - 1 + answers.upperBound)
+            let top = firstRow - 1
+            geometry.approvalAnswers = (top + layout.answers.lowerBound) ..< (top + layout.answers.upperBound)
+            geometry.approvalDetail = (top + layout.detail.lowerBound) ..< (top + layout.detail.upperBound)
             return geometry
         }
         guard let picker = state.picker else { return self }

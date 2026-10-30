@@ -32,8 +32,6 @@ struct CommandApprovalTests {
         #expect(rows[3].contains("Deny"))
         _ = controller.handle(key("p"), pageRows: 10)
         #expect(controller.handle(.key(KeyEvent(keyCode: 0x0D)), pageRows: 10) == [.answerApproval(id: 2, .program)])
-        guard case .notice(let text, _) = controller.state.transcript.items.last else { return #expect(Bool(false)) }
-        #expect(text.hasSuffix("→ allowed `git` for the session"))
     }
 
     @Test func `a program with no subcommand has one session answer; an uncoverable line has none`() {

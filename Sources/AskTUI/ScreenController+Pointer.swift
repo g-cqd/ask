@@ -19,6 +19,8 @@ extension ScreenController {
     private static let sidebarTarget = 5
     /// The approval section's answers, where a click checks one.
     private static let approvalTarget = 6
+    /// The approval's command, where a click unfolds it.
+    private static let approvalDetailTarget = 7
 
     mutating func handle(mouse event: MouseEvent, at now: ContinuousClock.Instant) -> [Effect] {
         guard options.mouse else { return [] }
@@ -46,6 +48,7 @@ extension ScreenController {
                     cols: Swift.max(0, frame.columns - frame.transcriptColumns - 1)))
         }
         band(Self.approvalTarget, from: frame.approvalAnswers.lowerBound, rows: frame.approvalAnswers.count)
+        band(Self.approvalDetailTarget, from: frame.approvalDetail.lowerBound, rows: frame.approvalDetail.count)
         band(Self.pickerTarget, from: frame.pickerFirstRow, rows: frame.pickerWindow.count)
         // Collected first: acting on an event changes the controller, which the recognizer is part of.
         var events: [PointerEvent<Int>] = []
@@ -99,6 +102,8 @@ extension ScreenController {
                 if frame.markColumns?.contains(cell.col) == true { return toggleSandboxNote() }
                 guard frame.runnerColumns?.contains(cell.col) == true else { return [] }
                 return toggleRunners()
+            case .click(let target, _, .left, _, _) where target == Self.approvalDetailTarget:
+                toggleApprovalDetail()
             case .click(let target, let cell, .left, _, _) where target == Self.approvalTarget:
                 checkApproval(answer: cell.row - frame.approvalAnswers.lowerBound)
             case .click(let target, let cell, .left, _, _) where target == Self.sidebarTarget:
