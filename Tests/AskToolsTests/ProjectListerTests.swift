@@ -23,6 +23,10 @@ struct ProjectListerTests {
         try await body(root)
     }
 
+    /// Long enough for a cold `/usr/bin/git` on a CI runner: these tests are about what git lists, not about the fallback (CI took more
+    /// than the 5 s ask allows, and the walk's listing was checked instead).
+    private static let gitWait = Duration.seconds(60)
+
     private func git(_ arguments: [String], in root: String) throws {
         let process = Process()
         process.executableURL = URL(filePath: "/usr/bin/git")
@@ -44,7 +48,7 @@ struct ProjectListerTests {
         ]) { root in
             try git(["init", "-q"], in: root)
             try git(["add", "a.txt", "src/b.swift", ".gitignore"], in: root)
-            let listing = await ProjectLister.list(in: root, policy: .unrestricted)
+            let listing = await ProjectLister.list(in: root, policy: .unrestricted, gitWait: Self.gitWait)
             #expect(listing.paths == [".gitignore", "a.txt", "new/untracked.md", "src/b.swift"])
             #expect(listing.hidden == 0 && !listing.truncated)
         }
@@ -55,7 +59,8 @@ struct ProjectListerTests {
             try git(["init", "-q"], in: root)
             try git(["add", "."], in: root)
             try FileManager.default.removeItem(atPath: root + "/gone.txt")
-            #expect(await ProjectLister.list(in: root, policy: .unrestricted).paths == ["keep.txt"])
+            #expect(
+                await ProjectLister.list(in: root, policy: .unrestricted, gitWait: Self.gitWait).paths == ["keep.txt"])
         }
     }
 
@@ -67,7 +72,7 @@ struct ProjectListerTests {
             ".build/debug/a.o": "o",
             "build/out.bin": "b", ".DS_Store": "s", ".git/config": "g"
         ]) { root in
-            let listing = await ProjectLister.list(in: root, policy: .unrestricted)
+            let listing = await ProjectLister.list(in: root, policy: .unrestricted, gitWait: Self.gitWait)
             #expect(listing.paths == [".config/tool.json", "README.md", "src/main.swift"])
         }
     }
@@ -93,7 +98,10 @@ struct ProjectListerTests {
             try FileManager.default.createSymbolicLink(atPath: root + "/link", withDestinationPath: "real")
             try git(["init", "-q"], in: root)
             try git(["add", "."], in: root)
-            #expect(await ProjectLister.list(in: root, policy: .unrestricted).paths == ["plain.txt", "real/a.txt"])
+            #expect(
+                await ProjectLister.list(in: root, policy: .unrestricted, gitWait: Self.gitWait).paths == [
+                    "plain.txt", "real/a.txt"
+                ])
         }
     }
 
@@ -114,7 +122,7 @@ struct ProjectListerTests {
         try await project(["with space/日本語 file.txt": "x", "plain.txt": "p"]) { root in
             try git(["init", "-q"], in: root)
             #expect(
-                await ProjectLister.list(in: root, policy: .unrestricted).paths == [
+                await ProjectLister.list(in: root, policy: .unrestricted, gitWait: Self.gitWait).paths == [
                     "plain.txt", "with space/日本語 file.txt"
                 ])
         }
