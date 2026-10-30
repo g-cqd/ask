@@ -25,7 +25,7 @@ Method, and why:
 Every figure is the median of N runs, with the spread reported, never the best run.
 Percentiles matter because users feel the tail; an average hides it.
 """
-import importlib.util, json, math, os, pty, select, statistics, subprocess, sys, tempfile, time
+import importlib.util, json, math, os, platform, pty, select, statistics, subprocess, sys, tempfile, time
 
 BINARY = sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask"
 RUNS = int(sys.argv[2]) if len(sys.argv) > 2 else 15
@@ -228,12 +228,20 @@ def measure(load_workers):
     print()
     print("  %-22s %12s %12s   %s" % ("budget", "median", "limit", "verdict"))
     failed = []
+    rows = []
     for name, idx, limit, unit in limits:
         med = statistics.median(r[idx] for r in runs)
         ok = med <= limit
         if not ok:
             failed.append(name)
+        rows.append((name, med, limit, unit, ok))
         print("  %-22s %12.2f %12.2f   %s" % (name, med, limit, "ok" if ok else "OVER BUDGET"))
+    summary = os.environ.get("GITHUB_STEP_SUMMARY")
+    if summary:
+        with open(summary, "a") as file:
+            file.write("### Budgets (%d runs, %s)\n\n| budget | median | limit | verdict |\n|---|--:|--:|---|\n" % (RUNS, platform.node()))
+            for name, med, limit, unit, ok in rows:
+                file.write("| %s | %.2f %s | %.2f %s | %s |\n" % (name, med, unit, limit, unit, "ok" if ok else "over"))
 
     print()
     if incomplete:
@@ -241,6 +249,11 @@ def measure(load_workers):
               (len(incomplete), RUNS, ", ".join(map(str, incomplete))))
     if failed:
         print("  OVER BUDGET: %s" % ", ".join(failed))
+        # ASK_BUDGETS_REPORT_ONLY=1 (CI): the budgets are this Mac's; on another machine they are reported, not enforced. Incomplete
+        # runs still fail below, since a crash is a defect on any machine.
+        if os.environ.get("ASK_BUDGETS_REPORT_ONLY") == "1" and not incomplete:
+            print("  Reported, not enforced: these budgets are measured on the owner's Mac (ASK_BUDGETS_REPORT_ONLY=1).")
+            return 0
         return 1
     if incomplete:
         return 1

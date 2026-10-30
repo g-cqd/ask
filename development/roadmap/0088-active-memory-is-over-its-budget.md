@@ -199,3 +199,9 @@ use a bounded cache or revise the design if synchronous disk reads move input/ac
 "I'd delay that way further down the pipe, we are much more efficient than any harness right now, let's focus on other topics." Step 3
 (payloads on disk) is parked with the later entries; active memory stays at 21.5 MiB against the 20 MiB budget until it is picked up.
 
+## Measured again (2026-10-30, night)
+
+`measure-budgets.py`, 12 runs each under full load, the build of the morning (`83ed86b`) and the evening's: idle memory 15.3 MiB then,
+15.9 MiB now (+0.6 MiB from the day's features), active 23.7 then 24.1 MiB; both over their budgets (15 and 20). Cold start and input
+delay move with the load (22 ms and 0.3 ms in quiet rounds, 77 to 82 ms and 10 ms under full load) and did not change between the builds.
+
