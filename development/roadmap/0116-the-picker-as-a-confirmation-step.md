@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-28
 ---
@@ -43,4 +43,30 @@ then add a second notice ("Allowed once."). Nothing can be clicked, the choices 
 
 **To decide:** the default rows above; whether "Refuse, and tell the model why" belongs in the first version; whether the answered
 question should stay in the conversation at all, or only in the session file.
+
+## Owner's decisions (2026-10-29)
+
+"Allow this time, allow for the session, deny", or yes or no when it only needs confirming; a section above the input with checkboxes
+built of block characters, checked with Space, rows chosen with the arrows, shortcuts with letters or numbers, Enter to confirm; the
+answered question stays in the conversation. (Defaults and the "tell the model why" note were not answered: the defaults below are the
+proposal's; the note is left out.)
+
+## Done (2026-10-29)
+
+- `ApprovalKind`: `grant` (Allow this time · Allow for the session · Deny, "this time" checked), `destructive` (same answers, Deny
+  checked: MCP tools marked destructive), `confirm` (Yes · No, No checked: a request with nothing to remember, today the reset of the
+  session's narrowing).
+- The section, where the picker is: the question wrapped in bold, then a row per answer, `› ▐█▌ 1  Allow this time  · y` (`▐ ▌`
+  unchecked, `›` and colour on the row the arrows are on). When rows are short the answers are kept before the question's rows.
+- Keys: Up and Down move, Space checks the row (one at a time), a number or the letter checks its row, Enter confirms the checked one;
+  Esc denies at once; Ctrl+C stops the turn and the question is kept as denied. In a job lane the status line names the shortcuts.
+- One block once answered: `<question> → allowed this time` (or for the session, denied, yes, no); nothing is added while it waits.
+- Tests: `ApprovalControllerTests` rewritten for the new behaviour, `RunnerApprovalTests` and a picker test updated; mutations (Space not
+  checking, destructive starting on Allow) turn them red. Probes through the release binary: `probe-mcp-screen.py` (12 pass) and
+  `probe-interactive.py` (264 checks, sections V, W, Y, Z answering with letter then Enter).
+- The interactive probe's own emulator did not skip OSC sequences, so since 0075's links in ask's messages it printed their bytes and most
+  of its text checks failed; it skips OSC now. Found only here: the probe had not been run after 0075.
+
+Still owed: clicking a row; using the section for 0153's protected paths, 0134's per-tool approvals, overwriting configuration and
+deleting sessions; 0117 on the same section.
 

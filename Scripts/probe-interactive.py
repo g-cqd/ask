@@ -55,6 +55,16 @@ class Emulator:
                     self.control(data[end + 1:j].decode(errors="replace"), chr(data[j]))
                     i = j + 1
                     continue
+                if data[end] == ord("]"):
+                    # OSC (a hyperlink, a colour query): nothing on screen, up to BEL or ESC \.
+                    j = end + 1
+                    while j < len(data) and data[j] != 0x07 and not (data[j] == 0x1B and j + 1 < len(data) and data[j + 1] == ord("\\")):
+                        j += 1
+                    if j >= len(data) or (data[j] == 0x1B and j + 1 >= len(data)):
+                        self.pending = data[i:]
+                        return
+                    i = j + (1 if data[j] == 0x07 else 2)
+                    continue
                 i = end + 1
                 continue
             if byte == 0x0D:
@@ -1278,20 +1288,20 @@ def probe_sandbox_approval():
     screen.type("Go\r")
     results = [check("the question names the call and what it asks for",
                      wait(lambda: questions() == 1) and "asks for network any (this run allows localhost)" in screen.screen.text()
-                     and "y once" in screen.screen.text(), screen.screen.text()[-600:])]
-    screen.type("y")
+                     and "Allow this time" in screen.screen.text() and "▐█▌" in screen.screen.text(), screen.screen.text()[-600:])]
+    screen.type("y\r")
     results.append(check("y runs it, under what it asked for", wait(lambda: "HTTP 200 curl=0" in result(1)), result(1)[-200:]))
     results.append(check("once is not remembered: the same request asks again", wait(lambda: questions() == 2)))
-    screen.type("a")
+    screen.type("a\r")
     results.append(check("a runs it and allows it for the session",
-                         wait(lambda: "HTTP 200 curl=0" in result(2)) and "Allowed for this session." in screen.screen.text()))
+                         wait(lambda: "HTTP 200 curl=0" in result(2)) and "→ allowed for the session" in screen.screen.text()))
     # Earlier questions scroll away: what follows the grant is what counts.
-    after_grant = lambda: screen.screen.text().rsplit("Allowed for this session.", 1)[-1]
+    after_grant = lambda: screen.screen.text().rsplit("→ allowed for the session", 1)[-1]
     results.append(check("a request the session grant covers runs without asking",
                          wait(lambda: "HTTP 200 curl=0" in result(3)) and "network any" not in after_grant(),
                          (after_grant()[-300:], result(3)[-200:])))
     results.append(check("a larger request asks", wait(lambda: "asks for writing under /Users/Shared" in after_grant())))
-    screen.type("n")
+    screen.type("n\r")
     # The model is told the least about the sandbox (ADR-0115): a refusal, not who could widen it.
     results.append(check("n refuses it",
                          wait(lambda: "that request is refused" in result(4)) and not os.path.exists(never), result(4)[-300:]))
@@ -1352,7 +1362,7 @@ def probe_session_narrowing_screen():
     screen.type("Go\r")
     results = [check("narrowed, a call cannot connect", wait(lambda: "curl=7" in result(2)), result(2)[-200:]),
                check("reset asks the user", wait(lambda: "Allow it?" in screen.screen.text()) and "narrowing" in screen.screen.text())]
-    screen.type("y")
+    screen.type("y\r")
     results.append(check("y restores the run's sandbox", wait(lambda: "HTTP 200 curl=0" in result(4)), result(4)[-200:]))
     screen.until("First done.")
     screen.until_status("ready")
@@ -1405,12 +1415,12 @@ def probe_reset_ignores_unrelated_grants():
     screen.ready()
     screen.type("Go\r")
     results = [check("a widening asks first", screen.until("Allow it?"))]
-    screen.type("a")
+    screen.type("a\r")
     results.append(check("the write grant is remembered", wait(lambda: "granted" in result(1))))
     results.append(check("reset still asks separately",
                          wait(lambda: screen.screen.text().count("Allow it?") == 2)
                          and "narrowing" in screen.screen.text(), screen.screen.text()[-600:]))
-    screen.type("n")
+    screen.type("n\r")
     results.append(check("no keeps the narrowing", wait(lambda: "that request is refused" in result(3)), result(3)[-200:]))
     results.append(check("and a later call cannot connect", wait(lambda: "curl=7" in result(4)), result(4)[-200:]))
     screen.until("Reset refused.")

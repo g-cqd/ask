@@ -50,7 +50,7 @@ extension ScreenComposer {
         if state.lane != nil, let pending = state.pendingApproval {
             pieces.append(
                 StatusSegment(
-                    "\(pending.question)  y once · a for this session · n no", priority: 100, droppable: false))
+                    "\(pending.question)  \(pending.shortcutHint)", priority: 100, droppable: false))
         }
         let labels = labelForms(of: state, mark: mark.character)
         pieces.append(StatusSegment(labels, priority: 90))
