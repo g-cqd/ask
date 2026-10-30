@@ -706,7 +706,7 @@ def probe_abort_queue():
     project, config = tempfile.mkdtemp(), tempfile.mkdtemp()
     # The default, "all", sends queued messages when a turn stops; "none" puts them back in the input, which is what this probes.
     os.makedirs(os.path.join(config, "ask"))
-    json.dump({"ui": {"interruptSendsQueued": "none"}}, open(os.path.join(config, "ask", "config.json"), "w"))
+    json.dump({"ui": {"queuedOnStop": "none"}}, open(os.path.join(config, "ask", "config.json"), "w"))
     server = agent.Server([
         agent.turn([gate("gate", "never-created")], "tool_use"),
         agent.turn([("text", "RECOVERED AFTER ABORT")], "end_turn")])
@@ -1105,7 +1105,7 @@ def model_selection_checks():
     dismiss_thinking_offer(screen)
     screen.until_status("ready")
     screen.type("/model one two three\r")
-    results.append(check("bad command syntax is refused", screen.until("Usage: /model [PROVIDER] MODEL"), screen.screen.text()))
+    results.append(check("bad command syntax is refused", screen.until("Usage: /model [CONNECTION] MODEL"), screen.screen.text()))
     dismiss_thinking_offer(screen)
     screen.until_status("ready")
     results.append(check("commands made no model requests", len(server.requests) == 2))

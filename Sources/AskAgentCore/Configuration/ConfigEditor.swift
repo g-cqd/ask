@@ -105,7 +105,14 @@ public struct ConfigEditor: Sendable {
                 path: path, line: position.0, column: position.1,
                 reason: ConfigurationFile.reason(of: error))
         }
-        root = JSONValue(document.root)
+        // Old setting names read as the new ones (roadmap 0154), so a save from here writes the new names.
+        do {
+            root = try SettingRenames.apply(to: JSONValue(document.root)).value
+        } catch let bad as ConfigurationFile.BadValue {
+            throw ConfigurationError.outOfRange(path: path, key: bad.key, reason: bad.reason)
+        } catch {
+            throw ConfigurationError.invalid(path: path, line: nil, column: nil, reason: String(describing: error))
+        }
         let text = String(decoding: bytes, as: UTF8.self)
         let format = ConfigEditorFormat(of: text)
         pretty = format.pretty
@@ -139,12 +146,12 @@ public struct ConfigEditor: Sendable {
                 path: self.path, key: path.joined(separator: "."), known: ConfigurationFile.keys)
         }
         if text == "unset" { return .unset }
-        if setting.wire == .boolean, setting.choices == ["unset", "on", "off"] { return .bool(text == "on") }
         guard setting.editable, setting.choices.contains(text) else {
             throw ConfigurationError.outOfRange(
                 path: self.path, key: path.joined(separator: "."),
                 reason: "must be one of: \(setting.choices.filter { $0 != "unset" }.joined(separator: ", "))")
         }
+        if setting.wire == .boolean, setting.choices == ["unset", "on", "off"] { return .bool(text == "on") }
         return .string(text)
     }
 }

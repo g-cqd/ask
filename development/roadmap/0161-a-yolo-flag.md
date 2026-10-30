@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-30
 ---
@@ -10,3 +10,8 @@ Owner wish (2026-10-30 14:43): "a yolo cli flag would be nice to set ask to use 
 
 `--yolo` is `--no-sandbox --yes`, carried into `/reload`, refused with `--ask-always`, and shown in the startup line as plainly as
 `--no-sandbox` is. Its name joins the naming table (0154, rows 24 and 25).
+
+## Done (2026-10-30)
+
+`--yolo` is `--no-sandbox` and `--yes`: refused with `--ask` and with `--network`, `--write` or `--read`, carried into `/reload` as the two
+flags it stands for, and shown at the start as `--no-sandbox` is.

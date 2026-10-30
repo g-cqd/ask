@@ -25,7 +25,7 @@ def run(label, word, mark, colour, yellow_names):
         project, config = os.path.realpath(root) + "/p", root + "/c"
         os.makedirs(project)
         os.makedirs(config + "/ask")
-        open(config + "/ask/config.json", "w").write('{"ui":{"prompt":"ask> ","separator":"off"}}')
+        open(config + "/ask/config.json", "w").write('{"ui":{"inputPrefix":"ask> ","separator":"off"}}')
         server = agent.Server([])
         environment = agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty", LANG="en_US.UTF-8")

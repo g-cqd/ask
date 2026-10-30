@@ -15,7 +15,7 @@ struct SandboxConfigurationTests {
             """
             {
               // for the aws CLI
-              sandbox: { allowRead: ['~/.aws'], denyRead: ["/Users/g/work/secrets", '~/clients'], },
+              sandbox: { readable: ['~/.aws'], hide: ["/Users/g/work/secrets", '~/clients'], },
             }
             """)
         #expect(
@@ -26,29 +26,29 @@ struct SandboxConfigurationTests {
     @Test func `a relative path, an unknown key or a wrong type is refused, naming the key`() {
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "sandbox.denyRead",
+                path: "c.json", key: "sandbox.hide",
                 reason: "has \"secrets\": use an absolute path, or one starting with ~/")
-        ) { try parse("{sandbox: {denyRead: ['secrets']}}") }
+        ) { try parse("{sandbox: {hide: ['secrets']}}") }
         #expect(
             throws: ConfigurationError.unknownKey(
                 path: "c.json", key: "sandbox.allowExecute", known: ConfigurationFile.keys)
         ) {
             try parse("{sandbox: {allowExecute: ['/tmp']}}")
         }
-        #expect(throws: ConfigurationError.self) { try parse("{sandbox: {allowRead: '~/.aws'}}") }
+        #expect(throws: ConfigurationError.self) { try parse("{sandbox: {readable: '~/.aws'}}") }
         #expect(throws: ConfigurationError.self) { try parse("{sandbox: ['~/.aws']}") }
     }
 
     @Test func `a project's file may narrow the sandbox but not widen it`() throws {
-        let narrowing = try parse("{sandbox: {denyRead: ['~/clients']}}", project: true)
+        let narrowing = try parse("{sandbox: {hide: ['~/clients']}}", project: true)
         #expect(narrowing.sandbox?.denyRead == ["~/clients"])
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "sandbox.allowRead",
+                path: "c.json", key: "sandbox.readable",
                 reason:
                     "can only be set in your own config file: a project that could widen the sandbox would defeat it")
-        ) { try parse("{sandbox: {allowRead: ['~/.aws']}}", project: true) }
-        #expect(try parse("{sandbox: {allowRead: ['~/.aws']}}").sandbox?.allowRead == ["~/.aws"])
+        ) { try parse("{sandbox: {readable: ['~/.aws']}}", project: true) }
+        #expect(try parse("{sandbox: {readable: ['~/.aws']}}").sandbox?.allowRead == ["~/.aws"])
     }
 
     @Test func `layers combine: what may be read is replaced, what is kept unreadable accumulates`() {
@@ -68,7 +68,7 @@ struct SandboxConfigurationTests {
         let before = Configuration.defaults
         let after = before.applying(
             ConfigurationFile(sandbox: SandboxSection(allowRead: ["~/.aws"])), from: .file("/u"))
-        #expect(after.changes(from: before) == ["sandbox: \(before.sandbox.value) → allowRead [\"~/.aws\"] (/u)"])
+        #expect(after.changes(from: before) == ["sandbox: \(before.sandbox.value) → readable [\"~/.aws\"] (/u)"])
     }
 
     @Test func `the home shorthand expands only at the start`() {

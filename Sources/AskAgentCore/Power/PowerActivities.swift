@@ -2,7 +2,7 @@
 public protocol PowerActivities: Sendable {
     /// Begins keeping the system (and with `display`, the display) awake, for `reason`, which `pmset -g assertions` shows. Never called
     /// with `off`.
-    func begin(_ mode: KeepAwakeMode, reason: String) -> any Sendable
+    func begin(_ mode: KeepAwakeMode, display: Bool, reason: String) -> any Sendable
     /// Ends what `begin` returned.
     func end(_ activity: any Sendable)
 }

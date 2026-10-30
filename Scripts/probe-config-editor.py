@@ -22,7 +22,7 @@ def main():
         os.makedirs(project)
         os.makedirs(config + "/ask")
         Path(config + "/ask/config.json").write_text(
-            '// a comment the editor does not keep\n{\n  "maxTurns": 40,\n  "thinking": "low",\n  "ui": {\n    "tint": "off",\n    "prompt": "ask> ",\n    "scrollLines": 2\n  }\n}\n')
+            '// a comment the editor does not keep\n{\n  "maxTurns": 40,\n  "thinking": "low",\n  "ui": {\n    "tint": "off",\n    "inputPrefix": "ask> ",\n    "scrollLines": 2\n  }\n}\n')
         server = probe.agent.Server([probe.agent.turn([("text", "OK")], "end_turn")])
         environment = probe.agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")
@@ -44,7 +44,7 @@ def main():
             terminal.until(lambda: b"Saved" in terminal.raw)
             saved = Path(config + "/ask/config.json").read_text()
             probe.check("the save changes only the edited key and keeps every other setting",
-                        '"tint": "on"' in saved and "maxTurns" in saved and "scrollLines" in saved
+                        '"tint": true' in saved and "maxTurns" in saved and "scrollLines" in saved
                         and "thinking" in saved and "mouse" not in saved and "model" not in saved)
             probe.check("the save is strict JSON with no comment left", "//" not in saved and " {" in saved)
             terminal.send(b"\x1b")

@@ -5,6 +5,7 @@ internal import Synchronization
 public final class KeepAwake: Sendable {
     private struct State {
         var mode: KeepAwakeMode
+        var display: Bool
         var turns = 0
         var jobsRunning = false
         var activity: (any Sendable)?
@@ -16,8 +17,12 @@ public final class KeepAwake: Sendable {
     private let state: Mutex<State>
     private let activities: any PowerActivities
 
-    public init(mode: KeepAwakeMode, activities: any PowerActivities = SystemPowerActivities()) {
-        state = Mutex(State(mode: mode))
+    /// - Parameters:
+    ///   - mode: when to hold the Mac awake.
+    ///   - display: whether the display stays on as well (`keepDisplayAwake`).
+    ///   - activities: the system's power activities, or a test's.
+    public init(mode: KeepAwakeMode, display: Bool = false, activities: any PowerActivities = SystemPowerActivities()) {
+        state = Mutex(State(mode: mode, display: display))
         self.activities = activities
         change { _ in }
     }
@@ -35,14 +40,15 @@ public final class KeepAwake: Sendable {
     public func jobsRunning(_ running: Bool) { change { $0.jobsRunning = running } }
 
     /// The mode the configuration names now. A held activity is ended, and begun again in the new mode if there is still work.
-    public func use(_ mode: KeepAwakeMode) {
+    public func use(_ mode: KeepAwakeMode, display: Bool = false) {
         let old: (any Sendable)? = state.withLock { state in
-            guard state.mode != mode else { return nil }
+            guard state.mode != mode || state.display != display else { return nil }
             state.mode = mode
+            state.display = display
             let old = state.activity
             state.activity = nil
             if mode != .off, Self.working(state) {
-                state.activity = activities.begin(mode, reason: Self.reason)
+                state.activity = activities.begin(mode, display: display, reason: Self.reason)
             }
             return old
         }
@@ -60,7 +66,7 @@ public final class KeepAwake: Sendable {
             edit(&state)
             let working = Self.working(state)
             if working, state.activity == nil, state.mode != .off {
-                state.activity = activities.begin(state.mode, reason: Self.reason)
+                state.activity = activities.begin(state.mode, display: state.display, reason: Self.reason)
             } else if !working, let activity = state.activity {
                 state.activity = nil
                 return activity

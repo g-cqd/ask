@@ -17,7 +17,7 @@ A session remembers the account it used and resumes on it.
 
 ## Going back, and branching
 
-`/tree` lists the prompts of this session, numbered. `/tree N` goes back to just before prompt N and puts that prompt in the input: edit it
+`/rewind` (or `/tree`) lists the prompts of this session, numbered. `/rewind N` goes back to just before prompt N and puts that prompt in the input: edit it
 and send, and the conversation continues from there as a new branch. Nothing is deleted; the earlier branch stays in the file.
 
 `/fork` continues the conversation in a new session file, leaving the original untouched. `/fork N` does so from before prompt N.

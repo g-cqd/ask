@@ -94,13 +94,13 @@ struct UIConfigurationTests {
             Issue.record("expected one change line, got \(lines)")
             return
         }
-        #expect(line.hasPrefix("ui: ") && line.contains("mouse off"), "\(line)")
+        #expect(line.hasPrefix("ui: ") && line.contains("mouse false"), "\(line)")
     }
 
     @Test func `the description says only what is set`() {
         #expect(UISection().description == "defaults")
-        #expect(UISection(mouse: false, scrollLines: 4).description == "mouse off, scrollLines 4")
-        #expect(UISection(foldTools: true).description == "tools folded")
-        #expect(UISection(foldThinking: false).description == "thinking open")
+        #expect(UISection(mouse: false, scrollLines: 4).description == "mouse false, scrollLines 4")
+        #expect(UISection(foldTools: true).description == "fold.tools true")
+        #expect(UISection(foldThinking: false).description == "fold.thinking false")
     }
 }

@@ -33,7 +33,7 @@ def main():
         os.makedirs(project)
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
-            file.write('{"ui":{"prompt":"ask> ","separator":"off"}}')
+            file.write('{"ui":{"inputPrefix":"ask> ","separator":"off"}}')
         server = agent.Server([agent.turn([("text", f"ANSWER {n}")], "end_turn") for n in range(1, 4)])
         environment = agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty", LANG="en_US.UTF-8")

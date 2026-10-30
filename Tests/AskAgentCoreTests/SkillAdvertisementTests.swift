@@ -43,9 +43,8 @@ struct SkillAdvertisementTests {
         let block = try #require(SkillAdvertisement.block(for: catalog, limit: 2))
         let lines = block.split(separator: "\n")
         #expect(lines.count == 4 && lines.last?.contains("2 more skills are not listed here") == true)
-        #expect(
-            lines.dropFirst().prefix(2).map { $0.prefix(5) }
-                == lines.dropFirst().prefix(2).map { $0.prefix(5) }.sorted())
+        let listed: [String] = lines.dropFirst().prefix(2).map { (line: Substring) -> String in String(line.prefix(5)) }
+        #expect(listed == listed.sorted())
         let one = try #require(SkillAdvertisement.block(for: catalog, limit: 3))
         #expect(one.contains("1 more skill is not listed here"))
         #expect(!(try #require(SkillAdvertisement.block(for: catalog, limit: 4))).contains("not listed"))

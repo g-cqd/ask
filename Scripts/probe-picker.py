@@ -83,7 +83,7 @@ class Session:
         self.project = os.path.realpath(project)
         # The prompt has no marker by default; the probes read the prompt row by one, so every session sets it unless the probe chose its own.
         chosen = settings(self.project) if settings is not None else {}
-        chosen.setdefault("ui", {}).setdefault("prompt", "ask> ")
+        chosen.setdefault("ui", {}).setdefault("inputPrefix", "ask> ")
         with open(config + "/ask/config.json", "w") as file:
             json.dump(chosen, file)
         if prepare is not None:
@@ -129,7 +129,7 @@ def control(binary, settings):
 
 def main():
     binary = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask")
-    settings = lambda project: {"ui": {"prompt": "ask> "}}
+    settings = lambda project: {"ui": {"inputPrefix": "ask> "}}
     if "--control" in sys.argv:
         control(sys.argv[sys.argv.index("--control") + 1], settings=settings)
 

@@ -56,7 +56,7 @@ struct CompletionPickerControllerTests {
         #expect(
             names(screen)
                 == [
-                    "help", "quit", "continue", "follow-up", "tasks", "config", "compact", "reload", "sidebar",
+                    "help", "quit", "continue", "follow-up", "jobs", "config", "compact", "reload", "sidebar",
                     "verbose"
                 ],
             "the session commands, then the tools")

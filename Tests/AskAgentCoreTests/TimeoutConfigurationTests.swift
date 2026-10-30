@@ -10,13 +10,13 @@ struct TimeoutConfigurationTests {
     }
 
     @Test func `both are read, layered, listed and shown`() throws {
-        let section = try #require(try ui(#"{"timeout": "never", "timeoutLabel": "⏱"}"#))
+        let section = try #require(try ui(#"{"showTimeout": "never", "timeoutLabel": "⏱"}"#))
         #expect(section.timeout == .never && section.timeoutLabel == "⏱")
-        #expect(section.description == "timeout never, timeoutLabel \"⏱\"")
-        #expect(section.value(forKey: "timeout") == "never" && section.value(forKey: "timeoutLabel") == "\"⏱\"")
+        #expect(section.description == "showTimeout never, timeoutLabel \"⏱\"")
+        #expect(section.value(forKey: "showTimeout") == "never" && section.value(forKey: "timeoutLabel") == "\"⏱\"")
         let layered = UISection(timeout: .always, timeoutLabel: "t").layered(with: UISection(timeout: .auto))
         #expect(layered.timeout == .auto && layered.timeoutLabel == "t")
-        #expect(UISection.keys.contains("timeout") && UISection.keys.contains("timeoutLabel"))
+        #expect(UISection.keys.contains("showTimeout") && UISection.keys.contains("timeoutLabel"))
         #expect(!UISection(timeout: .auto).isEmpty && !UISection(timeoutLabel: "t").isEmpty)
     }
 

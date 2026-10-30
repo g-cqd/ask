@@ -21,7 +21,7 @@ def main():
         project, config = root + "/project", root + "/config"
         os.makedirs(project)
         os.makedirs(config + "/ask")
-        Path(config + "/ask/config.json").write_text(json.dumps({"ui": {"prompt": "ask> ", "tools": "folded"}}))
+        Path(config + "/ask/config.json").write_text(json.dumps({"ui": {"inputPrefix": "ask> ", "fold": {"tools": True}}}))
         command = "cat << 'EOF' > note.txt\n" + "\n".join(f"payload{i}" for i in range(45)) + "\nEOF\nprintf DONE"
         server = probe.agent.Server([
             probe.agent.turn([("call", "t1", "bash", {"command": command, "shell": "/bin/bash", "timeout_seconds": 5})], "tool_use"),

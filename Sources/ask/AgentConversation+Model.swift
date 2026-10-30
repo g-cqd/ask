@@ -18,7 +18,7 @@ extension AgentConversation {
         let words = arguments.split(whereSeparator: \.isWhitespace).map(String.init)
         switch words.count {
             case 0: return .show
-            case 1 where words[0] == "--reset": return .reset
+            case 1 where words[0] == "reset" || words[0] == "--reset": return .reset
             case 1 where !words[0].hasPrefix("--"): return .choose(provider: nil, model: words[0])
             case 2 where !words[0].hasPrefix("--") && !words[1].hasPrefix("--"):
                 return .choose(provider: words[0], model: words[1])
@@ -29,7 +29,7 @@ extension AgentConversation {
     /// `/model`: shows the model, chooses one for this run, or goes back to what the configuration says.
     func model(arguments: String, update: @Sendable (ConversationUpdate) -> Void) async {
         guard let request = Self.parseModel(arguments) else {
-            update(.notice("Usage: /model [PROVIDER] MODEL, or /model --reset.", isError: true))
+            update(.notice("Usage: /model [CONNECTION] MODEL, or /model reset.", isError: true))
             return
         }
         switch request {

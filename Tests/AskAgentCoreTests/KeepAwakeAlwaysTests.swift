@@ -19,7 +19,7 @@ struct KeepAwakeAlwaysTests {
     @Test func `leaving always while idle lets go, and choosing it while idle holds`() {
         let system = KeepAwakeTests.Recorder()
         let awake = KeepAwake(mode: .always, activities: system)
-        awake.use(.system)
+        awake.use(.working)
         #expect(!awake.isHolding && system.log == ["begin always #1", "end #1"])
         awake.use(.always)
         #expect(awake.isHolding && system.log.last == "begin always #2")
@@ -28,5 +28,11 @@ struct KeepAwakeAlwaysTests {
     @Test func `always is read from a file`() throws {
         let file = try ConfigurationFile.parse(Array(#"{"keepAwake": "always"}"#.utf8), path: "c.json")
         #expect(file.keepAwake == .always)
+    }
+
+    @Test func `always with the display keeps both awake from launch, which one setting could not say`() {
+        let system = KeepAwakeTests.Recorder()
+        let awake = KeepAwake(mode: .always, display: true, activities: system)
+        #expect(awake.isHolding && system.log == ["begin always display #1"])
     }
 }

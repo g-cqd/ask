@@ -7,12 +7,12 @@ public struct ApprovalsSection: Sendable, Equatable, CustomStringConvertible {
     /// writes the configuration yet, so this is read and kept for that answer.
     public enum Scope: String, Sendable, CaseIterable {
         case anything
-        case narrowingOnly = "narrowing-only"
+        case narrowingOnly = "narrowing"
         case none
     }
 
     /// The keys a file may set under `approvals`.
-    public static let keys = ["default", "allow", "ask", "scope"]
+    public static let keys = ["default", "allow", "ask", "remember"]
 
     public var defaultMode: Mode?
     /// Tool names, or `mcp__server__*` patterns, that run without asking.
@@ -31,7 +31,7 @@ public struct ApprovalsSection: Sendable, Equatable, CustomStringConvertible {
     public var description: String {
         let parts = [
             defaultMode.map { "default \($0.rawValue)" }, allow.map { "allow " + $0.joined(separator: ", ") },
-            ask.map { "ask " + $0.joined(separator: ", ") }, scope.map { "scope \($0.rawValue)" }
+            ask.map { "ask " + $0.joined(separator: ", ") }, scope.map { "remember \($0.rawValue)" }
         ]
         let shown = parts.compactMap(\.self)
         return shown.isEmpty ? "defaults" : shown.joined(separator: "; ")
