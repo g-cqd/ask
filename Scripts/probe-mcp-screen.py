@@ -105,12 +105,13 @@ def main():
         press(terminal, b"a")
         press(terminal, b"\r")
         terminal.until(lambda: "Done one." in terminal.text())
-        check("allowing it for the session runs the call", "→ allowed for the session" in screen(terminal))
+        check("allowing it for the session runs the call, and the question leaves nothing behind (0157)",
+              "Done one." in screen(terminal) and "Allow it?" not in screen(terminal))
 
         send(asking, "again", "Done two.")
         shown = screen(terminal)
         check("a second call of the same tool is not asked about again",
-              shown.count("Allow it?") == 1 and "Done two." in shown)
+              "Allow it?" not in shown and "Done two." in shown)
 
         send(asking, "now zap", "tool zap")
         shown = screen(terminal)
@@ -121,7 +122,7 @@ def main():
         press(terminal, b"\r")
         terminal.until(lambda: "Done three." in terminal.text())
         shown = screen(terminal)
-        check("refusing it says so and the model is told", "→ denied" in shown and "Done three." in shown)
+        check("refusing it leaves no block, and the model is told", "Allow it?" not in shown and "Done three." in shown)
         results = [
             b for r in asking.server.requests for m in r["body"].get("messages", []) for b in m.get("content", [])
             if isinstance(b, dict) and b.get("type") == "tool_result"

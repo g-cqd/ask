@@ -31,6 +31,8 @@ struct FrameGeometry: Sendable {
     var pickerFirstRow = 0
     /// The screen rows of the approval section's answers, first answer first, so a click on one checks it (roadmap 0116).
     var approvalAnswers = 0 ..< 0
+    /// The screen rows of the approval's command, which a click unfolds (roadmap 0157).
+    var approvalDetail = 0 ..< 0
     var pickerWindow = 0 ..< 0
     var pickerTrigger: CompletionTrigger?
     /// The strip's rows as drawn: the screen row of the first, and the runner each shows, so a click means what the user saw.

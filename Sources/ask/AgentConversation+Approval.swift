@@ -1,3 +1,4 @@
+internal import AskAI
 internal import AskAgentCore
 internal import AskTUI
 internal import Synchronization
@@ -27,13 +28,13 @@ extension AgentConversation {
         if let request = approval.request, request.isCovered(by: grants, workingDirectory: source.workspace) {
             return true
         }
-        let question =
-            "\(approval.tool) \(ToolSummary.line(for: approval.input)) asks for "
-            + approval.asked.joined(separator: " and ") + ". Allow it?"
+        // The command is shown whole under the question, folded (roadmap 0157), so the question does not repeat it.
+        let question = "\(approval.tool) asks for " + approval.asked.joined(separator: " and ") + ". Allow it?"
         // Nothing to remember (a reset of the session's narrowing) is a yes or no.
         return await ask(
             // @dl:accept -- each kind of question ends by asking with its own grant to remember
-            question, remembering: (approval.request, nil), kind: approval.request == nil ? .confirm : .grant)
+            question, remembering: (approval.request, nil), kind: approval.request == nil ? .confirm : .grant,
+            detail: ToolSummary.fullInput(for: approval.input))
         // @dl:accept -- the approvers sit side by side, each with its own question and grant; their shape is the protocol
     }
 
@@ -42,9 +43,11 @@ extension AgentConversation {
         // @dl:accept -- each kind of question checks its own grants and says its own sentence
         if approvals.withLock({ $0.destructiveGrants.contains(call.grantKey) }) { return true }
         let question =
-            "The MCP server \(call.server)'s tool \(call.tool) (\(ToolSummary.line(for: call.input))) "
-            + "may change or destroy things: the server does not say it is read-only. Allow it?"
-        return await ask(question, remembering: (nil, call.grantKey), kind: .destructive)
+            "The MCP server \(call.server)'s tool \(call.tool) may change or destroy things: the server does not say it is read-only. "
+            + "Allow it?"
+        return await ask(
+            question, remembering: (nil, call.grantKey), kind: .destructive,
+            detail: String(decoding: call.input.bytes, as: UTF8.self))
     }
 
     /// What the loop for `settings` consults before a call that changes things (roadmap 0134).
@@ -55,7 +58,12 @@ extension AgentConversation {
     /// Asks the person about a call that changes things (roadmap 0134), unless a grant for the session covers it.
     func approveCall(_ approval: ToolCallApproval) async -> Bool {
         if approvals.withLock({ $0.calls.covers(approval.scope) }) { return true }
-        let question = "\(approval.tool) \(ToolSummary.line(for: approval.input)). Allow it?"
+        // A command is shown whole under the question; a file or a job is named in it.
+        let isCommand: Bool = if case .command = approval.scope { true } else { false }
+        let question =
+            isCommand
+            ? "\(approval.tool) wants to run this. Allow it?"
+            : "\(approval.tool) \(ToolSummary.line(for: approval.input)). Allow it?"
         let kind: ApprovalKind =
             switch approval.scope {
                 case .command(let words) where words.coverable:
@@ -63,14 +71,16 @@ extension AgentConversation {
                 case .command: .command(phrases: [], programs: [])
                 case .file, .tool: .grant
             }
-        return await ask(question, remembering: (nil, nil), kind: kind, scope: approval.scope)
+        return await ask(
+            question, remembering: (nil, nil), kind: kind, scope: approval.scope,
+            detail: isCommand ? ToolSummary.fullInput(for: approval.input) : nil)
     }
 
     /// Puts `question` to the user and waits; false when the run is cancelled or there is no one to ask. What a session grant
     /// remembers is `remembering`, for the answer's `a`.
     private func ask(
         _ question: String, remembering: (request: SandboxRequest?, destructiveKey: String?), kind: ApprovalKind,
-        scope: CallScope? = nil
+        scope: CallScope? = nil, detail: String? = nil
     ) async -> Bool {
         let id = approvals.withLock { state in
             state.nextID += 1
@@ -86,7 +96,7 @@ extension AgentConversation {
                 // Cancelled before the question was stored: the handler found nothing to answer, so answer here.
                 if Task.isCancelled { resolve(id, allowed: false) }
                 guard let ask else { return resolve(id, allowed: false) }
-                ask(.askApproval(id: id, question: question, kind: kind))
+                ask(.askApproval(id: id, question: question, kind: kind, detail: detail))
             }
         } onCancel: {
             resolve(id, allowed: false)

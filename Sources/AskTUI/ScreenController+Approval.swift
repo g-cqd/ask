@@ -2,11 +2,11 @@ internal import TerminalKitCodecs
 internal import TerminalKitInput
 
 /// The approval question (roadmaps 0019 and 0116): a section of checkboxes above the input. The arrows move, Space checks, a number or a
-/// letter checks its row, Enter confirms; Esc denies at once; Ctrl+C stops the turn. Once answered, the question stays in the
-/// conversation as one block with its answer.
+/// letter checks its row, Enter confirms; Esc denies at once; Ctrl+C stops the turn; Ctrl+O unfolds the command. Once answered, the
+/// question leaves nothing behind: the tool's own block says what happened (roadmap 0157).
 extension ScreenController {
-    mutating func ask(id: Int, question: String, kind: ApprovalKind = .grant) {
-        state.pendingApproval = PendingApproval(id: id, question: question, kind: kind)
+    mutating func ask(id: Int, question: String, kind: ApprovalKind = .grant, detail: String? = nil) {
+        state.pendingApproval = PendingApproval(id: id, question: question, kind: kind, detail: detail)
         state.scrollback = 0
     }
 
@@ -31,6 +31,7 @@ extension ScreenController {
             case Key.up.rawValue: pending.cursor = Swift.max(0, pending.cursor - 1)
             case Key.down.rawValue: pending.cursor = Swift.min(options.count - 1, pending.cursor + 1)
             case 0x20: pending.checked = pending.cursor
+            case 0x0F: pending.showsWholeDetail.toggle()
             default:
                 guard let row = Self.shortcut(key, in: options) else { return [] }
                 pending.cursor = row
@@ -56,9 +57,13 @@ extension ScreenController {
         return options.firstIndex { $0.letter == Character(character.lowercased()) }
     }
 
-    /// Ends the question, leaving it in the conversation as one block with its answer.
-    private mutating func settle(_ pending: PendingApproval, saying said: String) {
+    /// Ends the question. Nothing is added to the conversation: the tool's block shows whether it ran (roadmap 0157).
+    private mutating func settle(_ pending: PendingApproval, saying _: String) {
         state.pendingApproval = nil
-        state.transcript.addNotice(pending.question + " → " + said, isError: false)
+    }
+
+    /// A click on the command: unfolds it, or folds it again.
+    mutating func toggleApprovalDetail() {
+        state.pendingApproval?.showsWholeDetail.toggle()
     }
 }
