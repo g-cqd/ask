@@ -67,7 +67,7 @@ proposal's; the note is left out.)
 - The interactive probe's own emulator did not skip OSC sequences, so since 0075's links in ask's messages it printed their bytes and most
   of its text checks failed; it skips OSC now. Found only here: the probe had not been run after 0075.
 
-Still owed: clicking a row; using the section for 0153's protected paths, 0134's per-tool approvals, overwriting configuration and
+Still owed: using the section for 0153's protected paths, 0134's per-tool approvals, overwriting configuration and
 deleting sessions; 0117 on the same section.
 
 Owner (2026-10-29): strokes rather than block characters, and boxes that do not stick together: `[✓]` and `[ ]` (the block-character
@@ -83,4 +83,7 @@ the shortcut letters in a column of their own, and wider gaps around the box and
        [ ]  3   Deny                    n
 
 When rows are short, the blank rows go first, then the question's rows; the answers always stay.
+
+A click on an answer checks it and moves the cursor there, as Space does; Enter still confirms (`ApprovalClickTests`; an off-by-one
+mutation of the section's rows turns it red).
 

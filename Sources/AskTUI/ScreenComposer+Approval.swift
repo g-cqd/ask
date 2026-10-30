@@ -11,7 +11,14 @@ extension ScreenComposer {
     /// the arrows are on is marked `›`, bold and in colour. When rows are short the blank rows go first, then the question's rows; the
     /// answers are kept.
     static func approvalLines(_ pending: PendingApproval, columns: Int, rows: Int) -> [Line] {
-        guard columns > 0, rows >= 1 else { return [] }
+        approvalLayout(pending, columns: columns, rows: rows).lines
+    }
+
+    /// The section's rows, and which of them are the answers, so a click on one can check it.
+    static func approvalLayout(_ pending: PendingApproval, columns: Int, rows: Int) -> (
+        lines: [Line], answers: Range<Int>
+    ) {
+        guard columns > 0, rows >= 1 else { return ([], 0 ..< 0) }
         let margin = approvalMargin
         let question = TextWrap.rows(pending.question, width: Swift.max(1, columns - margin.count))
             .map { Line(text: margin + $0.text, style: Style(bold: true)) }
@@ -26,10 +33,10 @@ extension ScreenComposer {
                 return Line(text: clipped(text, to: columns), style: style)
             }
         let spare = rows - answers.count
-        guard spare > 0 else { return Array(answers.prefix(rows)) }
-        guard spare > 1 else { return [question[0]] + answers }
+        guard spare > 0 else { return (Array(answers.prefix(rows)), 0 ..< Swift.min(rows, answers.count)) }
+        guard spare > 1 else { return ([question[0]] + answers, 1 ..< 1 + answers.count) }
         let blank = Line(text: "", style: .default)
-        guard spare > 2 else { return question.prefix(spare - 1) + [blank] + answers }
-        return question.prefix(spare - 2) + [blank] + answers + [blank]
+        let above = Array(question.prefix(spare - (spare > 2 ? 2 : 1))) + [blank]
+        return (above + answers + (spare > 2 ? [blank] : []), above.count ..< above.count + answers.count)
     }
 }
