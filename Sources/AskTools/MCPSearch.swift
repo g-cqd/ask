@@ -52,8 +52,8 @@ enum MCPSearch {
     static func describe(_ matches: [Candidate], schemaBytes: Int) -> String {
         matches.map { match in
             let mark =
-                match.tool.annotations.destructive == true
-                ? " [the server marks this destructive: ask may ask before it runs]" : ""
+                match.tool.annotations.needsApproval
+                ? " [the server does not say this is read-only: ask asks the user before it runs]" : ""
             let schema = match.tool.inputSchema.bytes
             let shown = String(decoding: schema.prefix(schemaBytes), as: UTF8.self)
             let cut = schema.count > schemaBytes ? " (schema cut at \(schemaBytes) of \(schema.count) bytes)" : ""
