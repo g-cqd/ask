@@ -22,6 +22,18 @@ extension AgentConversation {
         var ask: (@Sendable (ConversationUpdate) -> Void)?
         /// The model's questions waiting for the person (roadmap 0117).
         var questions: [Int: CheckedContinuation<[PersonAnswer]?, Never>] = [:]
+
+        /// Takes what a reload carried over (roadmap 0159).
+        mutating func restore(_ carried: SessionGrants) {
+            calls = carried.calls
+            grants = carried.sandbox
+            destructiveGrants = carried.destructive
+        }
+    }
+
+    /// What the person allowed for the session, to carry across `/reload` (roadmap 0159).
+    var sessionGrants: SessionGrants {
+        approvals.withLock { SessionGrants(calls: $0.calls, sandbox: $0.grants, destructive: $0.destructiveGrants) }
     }
 
     /// Asks the user about `approval`, unless a grant for the session covers it. Cancelling the run answers no.

@@ -92,6 +92,9 @@ extension AgentConversation {
         arguments += [
             "--reloaded-from", startup.summary, "--reload-started", String(Int(Date().timeIntervalSince1970 * 1_000))
         ]
+        // What the person allowed for the session goes with it, in a file only they can read, taken once (roadmap 0159).
+        let grantsPath = NSTemporaryDirectory() + "ask-reload-grants-" + UUID().uuidString + ".json"
+        if (try? sessionGrants.write(to: grantsPath)) != nil { arguments += ["--reload-grants", grantsPath] }
         let failure = Reexec.replaceProcess(with: target.path, arguments: arguments)
         fail(
             "ask: could not start the new build (errno \(failure)). Your session is saved: run `ask --continue`.",

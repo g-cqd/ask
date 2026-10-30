@@ -8,6 +8,8 @@ struct ReloadNotice {
     var from: String
     /// When the reload began, in milliseconds since the epoch.
     var startedMilliseconds: Int
+    /// Where the old process wrote what the person allowed for the session (roadmap 0159), read once at start.
+    var grantsPath: String?
 }
 
 /// What a start says about itself that is not needed to read the conversation: the session it resumed, and the reload that made it (ADR-0119).
