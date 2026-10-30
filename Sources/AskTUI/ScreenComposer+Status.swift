@@ -39,19 +39,30 @@ extension ScreenComposer {
         return StatusLeadingMark.mark(running: state.running, sandboxed: state.sandboxed, frame: frame)
     }
 
-    /// The pieces, in the order they are shown, each with how long it is worth keeping.
-    static func segments(
-        for state: ScreenState, input: String, mark: StatusLeadingMark = StatusLeadingMark(character: "")
-    ) -> [StatusSegment] {
+    /// What waits on the person, first: a line a command asked for, and, while a lane is shown, an approval or the model's questions.
+    private static func waiting(_ state: ScreenState) -> [StatusSegment] {
         var pieces: [StatusSegment] = []
         if let pending = state.pendingInput {
             pieces.append(StatusSegment(pending.line(typed: state.inputAnswer.text), priority: 100, droppable: false))
         }
-        if state.lane != nil, let pending = state.pendingApproval {
+        guard state.lane != nil else { return pieces }
+        if let pending = state.pendingApproval {
             pieces.append(
-                StatusSegment(
-                    "\(pending.question)  \(pending.shortcutHint)", priority: 100, droppable: false))
+                StatusSegment("\(pending.question)  \(pending.shortcutHint)", priority: 100, droppable: false))
         }
+        if let pending = state.pendingQuestions {
+            let question = pending.questions[pending.current].question
+            pieces.append(
+                StatusSegment("The model asks: \(question)  Esc returns to answer", priority: 100, droppable: false))
+        }
+        return pieces
+    }
+
+    /// The pieces, in the order they are shown, each with how long it is worth keeping.
+    static func segments(
+        for state: ScreenState, input: String, mark: StatusLeadingMark = StatusLeadingMark(character: "")
+    ) -> [StatusSegment] {
+        var pieces = waiting(state)
         let labels = labelForms(of: state, mark: mark.character)
         pieces.append(StatusSegment(labels, priority: 90))
         if !state.context.isEmpty { pieces.append(StatusSegment(state.context, priority: 40)) }

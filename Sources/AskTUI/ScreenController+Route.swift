@@ -4,6 +4,15 @@ internal import TerminalKitText
 
 /// Routing an input event to whichever part of the screen has the keys.
 extension ScreenController {
+    /// A key for whatever is waiting on the person, before anything else may have it: an approval takes every key (roadmap 0019),
+    /// the model's questions the keys they use (the rest type the note, roadmap 0117), a line a command asked for every key.
+    private mutating func questionedKey(_ key: KeyEvent) -> [Effect]? {
+        if state.pendingApproval != nil { return answer(key) }
+        if let effects = questionKey(key) { return effects }
+        if state.pendingInput != nil { return answerInput(key) }
+        return nil
+    }
+
     mutating func route(
         _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant, columns: Int?
     ) -> [Effect] {
@@ -28,10 +37,7 @@ extension ScreenController {
                     state.scroll.followEnd()
                     return []
                 }
-                // A question waiting for y, a or n takes the keys first (roadmap 0019).
-                if state.pendingApproval != nil { return answer(key) }
-                // A line a command asked for, such as a pasted code or a key, takes every key but the scrolling ones above.
-                if state.pendingInput != nil { return answerInput(key) }
+                if let effects = questionedKey(key) { return effects }
                 // A configuration editor is modal: it takes every key, including keys another list would edit with.
                 if case .config = state.picker?.kind {
                     return pickerKey(key, screenRows: pageRows + 3) ?? []

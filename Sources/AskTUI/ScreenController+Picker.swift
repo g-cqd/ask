@@ -90,7 +90,8 @@ extension ScreenController {
     /// A click on the picker's match `index`, as the last frame drew it: the same as choosing it and pressing Enter. Nothing happens when
     /// the list has moved on since that frame, because the click meant a row that is no longer there, or while a question has the keys.
     mutating func clickPicker(match index: Int) -> [Effect] {
-        guard var picker = state.picker, state.pendingApproval == nil, state.pendingInput == nil,
+        guard var picker = state.picker, state.pendingApproval == nil, state.pendingQuestions == nil,
+            state.pendingInput == nil,
             picker.trigger == frame.pickerTrigger, picker.matches.indices.contains(index),
             !picker.matches[index].isHeading
         else { return [] }

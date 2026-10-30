@@ -121,7 +121,8 @@ private func agyProvider(transport: URLSessionTransport) -> any ModelProvider {
 func makeLoop(
     _ run: RunSettings, instructions files: [ProjectInstructions.File], jobs: JobTable,
     transport: URLSessionTransport, approve: SandboxApprover? = nil, narrowing: SessionNarrowing = SessionNarrowing(),
-    live: LiveTools? = nil, destructiveApprover: DestructiveApprover? = nil, callGate: ToolCallGate? = nil
+    live: LiveTools? = nil, destructiveApprover: DestructiveApprover? = nil, callGate: ToolCallGate? = nil,
+    askPerson: PersonQuestion.Asker? = nil
 ) throws -> AgentLoop {
     let workingDirectory = run.workspace
     let resolved = run.model
@@ -138,14 +139,15 @@ func makeLoop(
             FileTools.all + [
                 BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
                 NarrowSandboxTool(jobs: jobs)
-            ] + (skills.tool.map { [$0] } ?? []), live: live),
+            ] + (skills.tool.map { [$0] } ?? []) + (askPerson == nil ? [] : [QuestionTool()]), live: live),
         settings: agent,
         context: ToolContext(
             workingDirectory: workingDirectory,
             outputDirectory: SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values).path
                 + "/output", sandbox: sandbox,
             approve: approve, narrowing: narrowing, commandEnvironment: run.commandEnvironment,
-            destructiveApprover: destructiveApprover, imageLimits: run.model.imageLimits, callGate: callGate),
+            destructiveApprover: destructiveApprover, imageLimits: run.model.imageLimits, callGate: callGate,
+            askPerson: askPerson),
         // Offline, a failed request waits for the network instead of spending its retries (roadmap 0141).
         network: SystemNetworkPath())
 }

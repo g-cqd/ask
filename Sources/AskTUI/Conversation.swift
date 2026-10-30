@@ -14,6 +14,8 @@ public protocol Conversation: Sendable {
 
     /// The user's answer to the question ``ConversationUpdate/askApproval(id:question:)`` asked.
     func answer(approval id: Int, with choice: ApprovalChoice)
+    /// The person's answers to the questions ``ConversationUpdate/askQuestions(id:questions:)`` asked, or nil when they declined.
+    func answer(questions id: Int, with answers: [QuestionAnswer]?)
 
     /// The commands this conversation understands, beyond the screen's own `/help` and `/quit`.
     var commands: [SlashCommand] { get }
@@ -62,6 +64,9 @@ extension Conversation {
 
     /// Never asks, so never answered.
     public func answer(approval id: Int, with choice: ApprovalChoice) {}
+
+    /// Never asks questions, so never answered.
+    public func answer(questions id: Int, with answers: [QuestionAnswer]?) {}
 
     /// No commands of its own.
     public var commands: [SlashCommand] { [] }

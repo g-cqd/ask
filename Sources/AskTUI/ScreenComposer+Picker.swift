@@ -6,6 +6,7 @@ extension ScreenComposer {
     /// The picker's rows for this frame; while an approval question waits, its section instead, since the question has the keys.
     static func pickerLines(for state: ScreenState, columns: Int, rows: Int) -> [Line] {
         if let pending = state.pendingApproval { return approvalLines(pending, columns: columns, rows: rows) }
+        if let pending = state.pendingQuestions { return questionLines(pending, columns: columns, rows: rows) }
         guard let picker = state.picker else { return [] }
         return pickerLines(picker, columns: columns, rows: rows)
     }

@@ -166,8 +166,8 @@ final class ScreenSession {
                 conversation.enqueue(text, id: id, followUp: followUp)
             case .runCommand(let name, let arguments):
                 run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }
-            case .answerApproval(let id, let choice):
-                conversation.answer(approval: id, with: choice)
+            case .answerApproval(let id, let choice): conversation.answer(approval: id, with: choice)
+            case .answerQuestions(let id, let answers): conversation.answer(questions: id, with: answers)
             case .indexFiles:
                 let conversation = conversation
                 Task { sink.yield(.update(.files(await conversation.projectFiles()))) }
