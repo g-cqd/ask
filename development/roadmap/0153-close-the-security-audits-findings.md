@@ -1,6 +1,6 @@
 ---
 status: in-progress
-blocked-by: [0116, 0134]
+blocked-by: []
 date: 2026-10-29
 ---
 
@@ -53,4 +53,17 @@ tool is never asked about" are replaced; the fixture server's harmless tools are
 back to the old rule turns `MCPAnnotationApprovalTests` and `MCPApprovalTests` red; `probe-mcp.py` and `probe-mcp-screen.py` pass through
 the release binary. `ask -p` still runs such a tool, since naming the server was the consent (ADR-0111). Consequence to watch: a server
 that annotates nothing (the owner's apple-docs, lldb, xcode were not checked) now asks for each tool once per session.
+
+## Done (2026-10-29): findings 1, 2 and 3 (ADR-0135)
+
+Protections that ask: what runs later outside ask cannot be written, other tools' credentials cannot be read, and a call's request
+for one is put to the person, who can allow it for the call or the session; `sandbox.allowWrite` and `sandbox.allowRead` open one for
+good. Tests: `SandboxAskablePathsTests` (a mutation that lifts nothing turns it red), `SandboxAllowWriteTests`, `BashSandboxTests` under
+the real `sandbox-exec` (a startup file, a launch agent and an existing repository's hook stay unwritten; `git init` in a fresh workspace
+works; gh's token is unreadable). Through the release binary, `probe-interactive.py` section S2: a plain write to `$HOME/.zshrc` fails,
+a request asks naming it protected, allowed it writes; a request for gh's credentials asks, denied nothing of the token reaches the model.
+278 interactive checks and six other probes pass.
+
+Still open: whether the default write scope becomes the workspace, and the default network (to decide with the owner); finding 5
+(`ask -p` and terminal control sequences); the hardening notes; a `standard` audit run with separate verifiers.
 

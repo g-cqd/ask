@@ -20,6 +20,12 @@ extension ConfigurationFile {
                     path: path, key: key, reason: "has \"\(entry)\": use an absolute path, or one starting with ~/")
             }
         }
+        if isProject, !section.allowWrite.isEmpty {
+            throw .outOfRange(
+                path: path, key: "sandbox.allowWrite",
+                reason:
+                    "can only be set in your own config file: a project that could open its own hooks would defeat it")
+        }
         if isProject, !section.allowRead.isEmpty {
             throw .outOfRange(
                 path: path, key: "sandbox.allowRead",

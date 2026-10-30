@@ -37,6 +37,22 @@ status line says when the sandbox is strict.
 - Separately from the sandbox, a call that changes things asks you first (`approvals` in the [configuration](configuration.md)).
 - SwiftPM needs `--disable-sandbox` to build inside ask's sandbox; ask's own sandbox still applies.
 
+## What stays closed, unless you say so
+
+Besides ask's own files, the sandbox keeps commands and tools away from two kinds of places, whatever the write and read scopes say:
+
+- **What runs later outside ask**, which cannot be written: shell startup files (`~/.zshrc`, `~/.bash_profile`, …), launch agents and
+  login items, `~/.gitconfig` and `~/.config/git`, what ssh runs or lets in (`~/.ssh/authorized_keys`, `~/.ssh/config`), and, in a
+  repository, its `.git/hooks` and `.git/config`.
+- **Other tools' credentials**, which cannot be read: `~/.aws`, `~/.gnupg`, keychains, ssh private keys, `~/.config/gh`, `~/.kube`,
+  `~/.docker/config.json`, `~/.npmrc`, `~/.pypirc`, `~/.git-credentials`, gcloud's and Azure's, other agents' sign-ins (Codex,
+  Gemini, Claude Code, Copilot), and browsers' profiles and cookies.
+
+A call that needs one of them asks you, like any request for more (below); allowed, the protection is lifted for that call or for the
+session. `sandbox.allowRead` and `sandbox.allowWrite` open one for good. A command that runs into one fails with the system's own error,
+such as `Operation not permitted`: `gh`, `docker`, `kubectl` or `npm` need theirs allowed, and `git push -u` or `git remote add` need
+`.git/config`.
+
 ## When the model asks for more
 
 The model can ask to narrow its own sandbox for a call, or for the rest of the conversation; that needs no approval. If it asks for **more**

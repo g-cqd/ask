@@ -158,7 +158,8 @@ See [The sandbox](sandbox.md) for what it protects.
 | `read` | `"anywhere"` | Where they may read: `"workspace"` (the project, the system and developer tools), `"anywhere"`, or a list of directories. The protected paths stay hidden either way. |
 | `network` | `"any"` | How far commands reach: `"none"`, `"localhost"` or `"any"`. |
 | `denyRead` | none | More paths to hide. |
-| `allowRead` | none | Protected paths to make readable again, such as `"~/.aws"`. Your own file only. |
+| `allowRead` | none | Protected paths to make readable again, such as `"~/.aws"` or `"~/.config/gh"`. Your own file only. |
+| `allowWrite` | none | Protected paths to make writable again, such as `"~/.zshrc"`, or `".git/config"` for every repository (a relative entry is relative to the project). Your own file only. |
 
 Any file can make `write`, `read` and `network` stricter; only the `--write`, `--read` and `--network` flags widen them.
 
