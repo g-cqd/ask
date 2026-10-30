@@ -2,12 +2,15 @@
 /// (ADR-0035), and the strict modes (roadmap 0042). Paths are absolute, or start with `~/` for the home directory.
 public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
     /// The keys a file may set under `sandbox`.
-    public static let keys = ["allowRead", "denyRead", "write", "read", "network"]
+    public static let keys = ["allowRead", "allowWrite", "denyRead", "write", "read", "network"]
 
     /// Secret stores the user allows reading despite the default: `~/.aws` for the aws CLI, say. ask's own
     /// directories are never lifted by this, and only the user's own file may set it: a project that could widen
     /// the sandbox would defeat it.
     public var allowRead: [String]
+    /// Places protected from writing (what runs outside ask later, a repository's hooks and configuration) the user allows writing:
+    /// absolute, `~/`, or relative to the project. Only the user's own file may set it.
+    public var allowWrite: [String] = []
     /// Further directories kept unreadable. This only narrows, so a project's file may set it too.
     public var denyRead: [String]
     /// Where commands and tools may write, one entry per layer that set it. They are intersected, so every layer
@@ -35,7 +38,7 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
     public var strict: SandboxSection { SandboxSection(write: write, read: read, network: network) }
 
     public var isEmpty: Bool {
-        allowRead.isEmpty && denyRead.isEmpty && write.isEmpty && read.isEmpty && network == nil
+        allowRead.isEmpty && allowWrite.isEmpty && denyRead.isEmpty && write.isEmpty && read.isEmpty && network == nil
     }
 
     public var description: String {
@@ -43,7 +46,8 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
             settings.count == 1 ? settings[0].description : "\(settings)"
         }
         return [
-            allowRead.isEmpty ? nil : "allowRead \(allowRead)", denyRead.isEmpty ? nil : "denyRead \(denyRead)",
+            allowRead.isEmpty ? nil : "allowRead \(allowRead)", allowWrite.isEmpty ? nil : "allowWrite \(allowWrite)",
+            denyRead.isEmpty ? nil : "denyRead \(denyRead)",
             write.isEmpty ? nil : "write " + scopes(write), read.isEmpty ? nil : "read " + scopes(read),
             network.map { "network \($0)" }
         ]
@@ -54,13 +58,15 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
     /// (only the user's can); everything else only narrows: denials accumulate, write scopes intersect, and the
     /// network takes the lower level.
     func layered(with section: SandboxSection) -> SandboxSection {
-        SandboxSection(
+        var next = SandboxSection(
             allowRead: section.allowRead.isEmpty ? allowRead : section.allowRead,
             denyRead: denyRead + section.denyRead.filter { !denyRead.contains($0) },
             // A scope already present narrows nothing more; keeping it once stops a resumed record from growing.
             write: write + section.write.filter { !write.contains($0) },
             read: read + section.read.filter { !read.contains($0) },
             network: Self.lower(network, section.network))
+        next.allowWrite = section.allowWrite.isEmpty ? allowWrite : section.allowWrite
+        return next
     }
 
     /// The lower of two levels, either of which may be unset.
@@ -87,6 +93,12 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
     }
 
     /// `path` with a leading `~` replaced by `home`.
+    /// An `allowWrite` entry as a path: `~/` against the home, a relative one against the workspace.
+    public static func expandWrite(_ path: String, home: String, workspace: String) -> String {
+        if path == "~" || path.hasPrefix("~/") || path.hasPrefix("/") { return expand(path, home: home) }
+        return workspace + "/" + path
+    }
+
     public static func expand(_ path: String, home: String) -> String {
         if path == "~" { return home }
         return path.hasPrefix("~/") ? home + String(path.dropFirst()) : path

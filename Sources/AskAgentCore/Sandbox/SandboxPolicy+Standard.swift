@@ -1,3 +1,5 @@
+internal import Foundation
+
 extension SandboxPolicy {
     /// ask's own protections, applied unless the user turns them off (ADR-0035).
     ///
@@ -16,22 +18,40 @@ extension SandboxPolicy {
     ///   - allowRead: paths the user has chosen to allow reading, which lift any default rule that is exactly one of
     ///     them. ask's own two directories are never lifted: a flag turns the sandbox off, a file cannot.
     ///   - denyRead: further directories the user wants kept unreadable, which only ever narrow.
-    /// - Returns: the policy.
+    ///   - workspace: the run's workspace, whose git hooks and configuration are protected from writing; nil protects none.
+    ///   - allowWrite: places protected from writing that the user has chosen to allow, which lift a rule that is exactly one of them.
+    ///   - otherSecrets: more secret directories and files under the home, other agents' sign-ins, which the composition root names.
+    /// - Returns: the policy. Every protection but ask's own two directories is askable: a call's request for it is put to the person.
     public static func standard(
         home: String, configDirectory: String, stateDirectory: String, allowRead: [String] = [],
-        denyRead: [String] = []
+        denyRead: [String] = [], workspace: String? = nil, allowWrite: [String] = [],
+        otherSecrets: (directories: [String], files: [String]) = ([], [])
     ) -> SandboxPolicy {
         func canonical(_ path: String) -> String { CanonicalPath.of(path, relativeTo: "/") ?? path }
-        let allowed = Set(allowRead.map { canonical($0).lowercased() })
-        let secrets: [SandboxRule] =
-            [".aws", ".gnupg", "Library/Keychains"].map { SandboxRule(canonical(home + "/" + $0), .subpath) }
-            + [".netrc"].map { SandboxRule(canonical(home + "/" + $0), .literal) }
-            + ["id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "id_ecdsa_sk", "id_ed25519_sk"]
-            .map { SandboxRule(canonical(home + "/.ssh/" + $0), .literal) }
-        let kept = secrets.filter { !allowed.contains($0.path.lowercased()) }
+        func rules(_ base: String, _ subpaths: [String], _ literals: [String]) -> [SandboxRule] {
+            subpaths.map { SandboxRule(canonical(base + "/" + $0), .subpath) }
+                + literals.map { SandboxRule(canonical(base + "/" + $0), .literal) }
+        }
+        // An existing repository's hooks run at the person's next commit; a workspace with none yet can still be made one.
+        func repositoryRules(_ workspace: String) -> [SandboxRule]? {
+            FileManager.default.fileExists(atPath: workspace + "/.git")
+                ? rules(workspace, [".git/hooks"], [".git/config"]) : nil
+        }
+        let readable = Set(allowRead.map { canonical($0).lowercased() })
+        let writable = Set(allowWrite.map { canonical($0).lowercased() })
+        let secrets = rules(
+            home, StandardProtections.secretDirectories + otherSecrets.directories,
+            StandardProtections.secretFiles + otherSecrets.files
+        )
+        .filter { !readable.contains($0.path.lowercased()) }
+        let runsLater =
+            (rules(home, StandardProtections.runningDirectories, StandardProtections.runningFiles)
+            + rules("", StandardProtections.systemRunningDirectories, [])
+            + (workspace.flatMap(repositoryRules) ?? []))
+            .filter { !writable.contains($0.path.lowercased()) }
         return SandboxPolicy(
-            denyRead: [SandboxRule(canonical(configDirectory), .subpath)] + kept
+            denyRead: [SandboxRule(canonical(configDirectory), .subpath)] + secrets
                 + denyRead.map { SandboxRule(canonical($0), .subpath) },
-            denyWrite: [SandboxRule(canonical(stateDirectory), .subpath)])
+            denyWrite: [SandboxRule(canonical(stateDirectory), .subpath)] + runsLater, askable: secrets + runsLater)
     }
 }

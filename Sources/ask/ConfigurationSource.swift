@@ -95,7 +95,11 @@ struct ConfigurationSource: Sendable {
                     home: home, configDirectory: askConfigDirectory(environment: environment),
                     stateDirectory: SessionDirectory.stateRoot(environment: environment, home: home),
                     allowRead: section.allowRead.map { SandboxSection.expand($0, home: home) },
-                    denyRead: section.denyRead.map { SandboxSection.expand($0, home: home) })
+                    denyRead: section.denyRead.map { SandboxSection.expand($0, home: home) }, workspace: workspace,
+                    allowWrite: section.allowWrite.map {
+                        SandboxSection.expandWrite($0, home: home, workspace: workspace)
+                    },
+                    otherSecrets: (OtherAgentsSecrets.directories, OtherAgentsSecrets.files))
             }
             .reduce(SandboxPolicy.unrestricted) { $0.intersecting($1) }
         policy.network = section.network ?? .any

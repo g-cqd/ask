@@ -1,11 +1,19 @@
 extension SandboxRequest {
     /// `policy` widened to what this request asked for, once the user has granted it: the network level and the write
-    /// and read roots it named replace the run's. The protections stay.
+    /// and read roots it named replace the run's, and the askable protections it named are lifted. ask's own stay.
     public func granted(over policy: SandboxPolicy, workingDirectory: String) -> SandboxPolicy {
         var widened = policy
         if let network { widened.network = network }
-        if let write { widened.write = .roots(Self.canonical(write, workingDirectory)) }
-        if let read { widened.read = .roots(Self.canonical(read, workingDirectory)) }
+        if let write {
+            let roots = Self.canonical(write, workingDirectory)
+            widened.write = .roots(roots)
+            widened = widened.lifting(roots, for: .write)
+        }
+        if let read {
+            let roots = Self.canonical(read, workingDirectory)
+            widened.read = .roots(roots)
+            widened = widened.lifting(roots, for: .read)
+        }
         return widened
     }
 
