@@ -1279,6 +1279,51 @@ def probe_model_and_destination():
     return all(results)
 
 
+def probe_protected_paths():
+    print("S2: what runs later and other tools' credentials are closed; a request for one asks, and allowed opens it (0153)")
+    project = tempfile.mkdtemp()
+    state = tempfile.mkdtemp()
+    home = os.path.realpath(os.path.join(state, "home"))
+    os.makedirs(home + "/.config/gh", exist_ok=True)
+    open(home + "/.config/gh/hosts.yml", "w").write("oauth_token: gho_probe_secret\n")
+    rc = home + "/.zshrc"
+    calls = [
+        ("call", "p1", "bash", {"command": f"echo planted >> '{rc}'; echo rc=$?"}),
+        ("call", "p2", "bash", {"command": f"echo allowed >> '{rc}'; echo rc=$?", "sandbox": {"write": [rc]}}),
+        ("call", "p3", "bash", {"command": f"cat '{home}/.config/gh/hosts.yml'; echo rc=$?", "sandbox": {"read": [home + "/.config/gh"]}}),
+    ]
+    server = agent.Server([agent.turn([c], "tool_use") for c in calls] + [agent.turn([("text", "All done.")], "end_turn")])
+    screen = Screen(server.url, project, state)
+
+    def wait(condition, seconds=15):
+        end = time.time() + seconds
+        while time.time() < end and not condition():
+            screen.until("\x00", 0.05)
+        return condition()
+
+    result = lambda n: json.dumps(server.requests[n]["body"]["messages"][-1]) if len(server.requests) > n else ""
+    screen.ready()
+    screen.type("Go\r")
+    results = [check("a plain write to a shell startup file fails, and nothing is written",
+                     wait(lambda: "rc=1" in result(1)) and not os.path.exists(rc), result(1)[-200:])]
+    results.append(check("a request for it asks, naming it protected",
+                         wait(lambda: "protected" in screen.screen.text() and ".zshrc" in screen.screen.text()),
+                         screen.screen.text()[-400:]))
+    screen.type("y\r")
+    results.append(check("allowed, the write goes through", wait(lambda: "rc=0" in result(2))
+                         and open(rc).read() == "allowed\n", result(2)[-200:]))
+    results.append(check("a request to read gh's credentials asks", wait(lambda: ".config/gh" in screen.screen.text().rsplit("→", 1)[-1])))
+    screen.type("n\r")
+    results.append(check("denied, nothing of the token reaches the model",
+                         wait(lambda: len(server.requests) > 3) and "gho_probe_secret" not in json.dumps(server.requests[3]["body"]),
+                         result(3)[-200:]))
+    screen.until("All done.", 15)
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("clean exit", screen.finish() == 0))
+    return all(results)
+
+
 def probe_call_approvals():
     print("X: a call that changes things asks first: this time, the subcommand or the program for the session, or deny (0134)")
     project = tempfile.mkdtemp()
@@ -1486,7 +1531,7 @@ def probe_reset_ignores_unrelated_grants():
 
 
 if __name__ == "__main__":
-    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants, probe_call_approvals]
+    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants, probe_call_approvals, probe_protected_paths]
     # --only A,F runs the probes whose heading starts with those letters (each prints "A: …" first).
     wanted = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
     ok = True

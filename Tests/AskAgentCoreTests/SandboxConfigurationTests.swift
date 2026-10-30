@@ -31,9 +31,9 @@ struct SandboxConfigurationTests {
         ) { try parse("{sandbox: {denyRead: ['secrets']}}") }
         #expect(
             throws: ConfigurationError.unknownKey(
-                path: "c.json", key: "sandbox.allowWrite", known: ConfigurationFile.keys)
+                path: "c.json", key: "sandbox.allowExecute", known: ConfigurationFile.keys)
         ) {
-            try parse("{sandbox: {allowWrite: ['/tmp']}}")
+            try parse("{sandbox: {allowExecute: ['/tmp']}}")
         }
         #expect(throws: ConfigurationError.self) { try parse("{sandbox: {allowRead: '~/.aws'}}") }
         #expect(throws: ConfigurationError.self) { try parse("{sandbox: ['~/.aws']}") }

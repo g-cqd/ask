@@ -16,8 +16,12 @@ struct SandboxWorld {
     ///   - allowRead: default protections lifted, relative to the home.
     ///   - outsideScratch: put the home in /Users/Shared rather than the temporary directory, which a
     ///     restricted-read policy keeps readable as scratch space; the caller removes it.
+    ///   - existingRepository: make the workspace a git repository before the policy is made.
     /// - Throws: when the directories or files cannot be made.
-    init(extraDenyRead: [String] = [], allowRead: [String] = [], outsideScratch: Bool = false) throws {
+    init(
+        extraDenyRead: [String] = [], allowRead: [String] = [], outsideScratch: Bool = false,
+        existingRepository: Bool = false
+    ) throws {
         let base = outsideScratch ? URL(filePath: "/Users/Shared") : FileManager.default.temporaryDirectory
         let made = base.appending(path: "ask-sandbox-\(UUID().uuidString)")
         for directory in [".config/ask", ".local/state/ask/sessions", ".aws", ".ssh", "work", "elsewhere"] {
@@ -36,9 +40,13 @@ struct SandboxWorld {
         ] {
             try Data(text.utf8).write(to: URL(filePath: real + "/" + path))
         }
+        if existingRepository {
+            try FileManager.default.createDirectory(
+                atPath: real + "/work/.git/hooks", withIntermediateDirectories: true)
+        }
         policy = SandboxPolicy.standard(
             home: real, configDirectory: config, stateDirectory: state, allowRead: allowRead.map { real + "/" + $0 },
-            denyRead: extraDenyRead.map { real + "/" + $0 })
+            denyRead: extraDenyRead.map { real + "/" + $0 }, workspace: real + "/work")
     }
 
     var context: ToolContext { ToolContext(workingDirectory: workspace, sandbox: policy) }

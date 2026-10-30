@@ -85,6 +85,12 @@ public struct SandboxRequest: Sendable, Equatable {
                 refusals.append(
                     "\(isWrite ? "writing" : "reading") under \(root) (this run allows \(Self.describe(current)))")
             }
+            // A protected place the person can open: asked about whatever the scope allows (security audit 2026-10-29).
+            for root in roots {
+                guard let rule = policy.askableRule(protecting: root, from: isWrite ? .write : .read) else { continue }
+                refusals.append(
+                    "\(isWrite ? "writing" : "reading") \(root) (protected: \(SandboxPolicy.describe(rule)))")
+            }
             if isWrite { narrowed.write = .roots(roots) } else { narrowed.read = .roots(roots) }
         }
         return refusals.isEmpty ? .narrowed(narrowed) : .refused(refusals)

@@ -40,12 +40,16 @@ public struct SandboxPolicy: Sendable, Equatable {
     public private(set) var denyRead: [SandboxRule]
     /// Paths that may not be written, renamed or removed.
     public private(set) var denyWrite: [SandboxRule]
+    /// The rules of ``denyRead`` and ``denyWrite`` a call's request may ask the person to lift (security audit 2026-10-29): places that
+    /// run outside ask later, and other tools' credentials. The rest, ask's own directories, are never lifted.
+    public private(set) var askable: [SandboxRule]
 
     /// A policy. `denyRead` is added to `denyWrite`.
     public init(
         network: Network = .any, write: PathScope = .anywhere, read: PathScope = .anywhere,
-        denyRead: [SandboxRule] = [], denyWrite: [SandboxRule] = []
+        denyRead: [SandboxRule] = [], denyWrite: [SandboxRule] = [], askable: [SandboxRule] = []
     ) {
+        self.askable = askable
         self.network = network
         self.write = write
         self.read = read
@@ -64,7 +68,24 @@ public struct SandboxPolicy: Sendable, Equatable {
         SandboxPolicy(
             network: Swift.min(network, other.network), write: write.intersecting(other.write),
             read: read.intersecting(other.read), denyRead: Self.union(denyRead, other.denyRead),
-            denyWrite: Self.union(denyWrite, other.denyWrite))
+            denyWrite: Self.union(denyWrite, other.denyWrite), askable: Self.union(askable, other.askable))
+    }
+
+    /// The askable rule that protects `root` from `capability`, if one does: what a request for `root` must ask about.
+    func askableRule(protecting root: String, from capability: SandboxCapability) -> SandboxRule? {
+        let rules = capability == .read ? denyRead : denyWrite
+        return askable.first { rule in rule.matches(root) && rules.contains(rule) }
+    }
+
+    /// This policy with the askable rules protecting `roots` from `capability` lifted, once the person allowed it. Reading a
+    /// protected place does not make it writable.
+    func lifting(_ roots: [String], for capability: SandboxCapability) -> SandboxPolicy {
+        let lifted = Set(roots.compactMap { askableRule(protecting: $0, from: capability) })
+        guard !lifted.isEmpty else { return self }
+        var copy = self
+        if capability == .read { copy.denyRead.removeAll { lifted.contains($0) } }
+        if capability == .write { copy.denyWrite.removeAll { lifted.contains($0) } }
+        return copy
     }
 
     private static func union(_ left: [SandboxRule], _ right: [SandboxRule]) -> [SandboxRule] {

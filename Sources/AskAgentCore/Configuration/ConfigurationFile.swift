@@ -198,6 +198,7 @@ public struct ConfigurationFile: Sendable, Equatable {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
                 switch key.stringValue {
                     case "allowRead": section.allowRead = try container.decode([String].self, forKey: key)
+                    case "allowWrite": section.allowWrite = try container.decode([String].self, forKey: key)
                     case "denyRead": section.denyRead = try container.decode([String].self, forKey: key)
                     case "write": section.write = [try ConfigurationFile.scope(container, key, name: "sandbox.write")]
                     case "read": section.read = [try ConfigurationFile.scope(container, key, name: "sandbox.read")]
