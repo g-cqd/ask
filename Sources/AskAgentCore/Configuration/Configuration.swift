@@ -50,8 +50,8 @@ public struct Configuration: Sendable, Equatable {
     public var environment: Setting<EnvironmentSection>
     /// What ask keeps awake while it works (roadmap 0090): the Mac, by default, so a long turn is not cut short by idle sleep.
     public var keepAwake = Setting(value: KeepAwakeMode.system, source: .defaults)
-    /// Where keys and tokens are kept (roadmap 0110).
-    public var credentials = Setting(value: CredentialStorage.auto, source: .defaults)
+    public var credentials = Setting(value: CredentialStorage.auto, source: .defaults)  // where keys are kept, 0110
+    public var approvals = Setting(value: ApprovalsSection(), source: .defaults)  // which calls ask first, 0134
     /// Where each `ui` and `skills` key came from, by its dotted name; read through `source(ofKey:)`.
     var keySources: [String: Source] = [:]
 
@@ -71,13 +71,16 @@ public struct Configuration: Sendable, Equatable {
     /// `self` with the single-valued keys `file` sets replaced; the sections are layered by ``applying(_:from:)``.
     private func applyingScalars(_ file: ConfigurationFile, from source: Source) -> Configuration {
         var next = self
+        // @dl:accept -- one layer entry per key: the table is the data
         if let model = file.model { next.model = Setting(value: model, source: source) }
         if let provider = file.provider { next.provider = Setting(value: provider, source: source) }
         if let thinking = file.thinking { next.thinking = Setting(value: thinking, source: source) }
         if let turns = file.maxTurns { next.maxTurns = Setting(value: turns, source: source) }
         if let compactAt = file.compactAt { next.compactAt = Setting(value: compactAt, source: source) }
+        // @dl:accept -- one layer entry per key: the table is the data
         if let keepAwake = file.keepAwake { next.keepAwake = Setting(value: keepAwake, source: source) }
         if let credentials = file.credentials { next.credentials = Setting(value: credentials, source: source) }
+        if let approvals = file.approvals { next.approvals = Setting(value: approvals, source: source) }
         return next
     }
 
@@ -210,6 +213,7 @@ extension Configuration {
         compare("compactAt", previous.compactAt, compactAt)
         compare("keepAwake", previous.keepAwake, keepAwake)
         compare("credentials", previous.credentials, credentials)
+        compare("approvals", previous.approvals, approvals)
         compare("sandbox", previous.sandbox, sandbox)
         compare("ui", previous.ui, ui)
         compare("skills", previous.skills, skills)

@@ -15,7 +15,7 @@ public struct PendingApproval: Sendable, Equatable {
         self.kind = kind
         let start =
             switch kind {
-                case .grant: 0
+                case .grant, .command: 0
                 case .destructive, .confirm: ApprovalOption.options(for: kind).count - 1
             }
         cursor = start

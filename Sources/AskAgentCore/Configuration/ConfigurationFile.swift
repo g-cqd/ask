@@ -20,12 +20,14 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var environment: EnvironmentSection?
     public var keepAwake: KeepAwakeMode?  // roadmap 0090; not in the initializer, set after it
     public var credentials: CredentialStorage?  // roadmap 0110; the person's own file only
+    public var approvals: ApprovalsSection?  // roadmap 0134; the person's own file only
 
     /// The keys ask knows, in the order `ask config` shows them.
     // @dl:accept -- the list of keys is data; the sandbox policy's list of names is other data
     public static let keys = [
-        "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "credentials", "sandbox", "ui", "skills",
-        "mcp", "environment"
+        "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "credentials", "approvals", "sandbox",
+        "ui",
+        "skills", "mcp", "environment"
     ]
 
     /// A file with these values.
@@ -60,6 +62,7 @@ public struct ConfigurationFile: Sendable, Equatable {
             case "compactAt": compactAt != nil
             case "keepAwake": keepAwake != nil
             case "credentials": credentials != nil
+            case "approvals": approvals != nil
             case "sandbox": sandbox != nil
             case "ui": ui != nil
             case "skills": skills != nil
@@ -104,6 +107,11 @@ public struct ConfigurationFile: Sendable, Equatable {
         try validateSkills(file.skills, path: path, isProject: isProject)
         try validateMCP(file.mcp, path: path, isProject: isProject)
         try validateEnvironment(file.environment, path: path, isProject: isProject)
+        if isProject, file.approvals != nil {
+            throw .outOfRange(
+                path: path, key: "approvals",
+                reason: "says which calls ask you first: only your own config file can choose that")
+        }
         if isProject, file.credentials != nil {
             throw .outOfRange(
                 path: path, key: "credentials",
@@ -227,6 +235,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "ui": file.ui = try container.decode(UIDecoded.self, forKey: key).section
                     case "skills": file.skills = try container.decode(SkillsDecoded.self, forKey: key).section
                     case "mcp": file.mcp = try container.decode(MCPDecoded.self, forKey: key).section
+                    case "approvals": file.approvals = try container.decode(ApprovalsDecoded.self, forKey: key).section
                     case "environment":
                         file.environment = try container.decode(EnvironmentDecoded.self, forKey: key).section
                     default: throw UnknownKey(key: key.stringValue)

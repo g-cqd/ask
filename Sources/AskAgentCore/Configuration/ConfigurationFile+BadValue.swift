@@ -10,6 +10,8 @@ extension ConfigurationFile {
             switch key {
                 case "thinking": "must be one of: \(ThinkingLevel.choices)"
                 case "keepAwake": "is \"\(value)\": use \(KeepAwakeMode.choices)"
+                case "approvals.default": "is \"\(value)\": use \"ask\" or \"allow\""
+                case "approvals.scope": "is \"\(value)\": use \"anything\", \"narrowing-only\" or \"none\""
                 case "credentials": "is \"\(value)\": use \(CredentialStorage.choices)"
                 case "sandbox.network": "is \"\(value)\": use \"none\", \"localhost\" or \"any\""
                 case "ui.tools", "ui.thinking", "ui.code": "is \"\(value)\": use \"folded\" or \"open\""

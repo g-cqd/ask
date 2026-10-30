@@ -34,6 +34,7 @@ status line says when the sandbox is strict.
 
 - `allowRead: ["~/.aws"]` in your own file makes a protected path readable again. A project's file cannot.
 - `ask --no-sandbox` turns the sandbox off for one run.
+- Separately from the sandbox, a call that changes things asks you first (`approvals` in the [configuration](configuration.md)).
 - SwiftPM needs `--disable-sandbox` to build inside ask's sandbox; ask's own sandbox still applies.
 
 ## When the model asks for more

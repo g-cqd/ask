@@ -6,4 +6,7 @@ public enum ApprovalKind: Sendable, Equatable {
     case destructive
     /// Nothing to remember: yes or no, "no" checked.
     case confirm
+    /// A command line (roadmap 0134): this time, its subcommands for the session, its programs for the session, or deny; "this time"
+    /// checked. With no phrases (a line a grant cannot cover), only this time or deny.
+    case command(phrases: [String], programs: [String])
 }

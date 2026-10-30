@@ -89,7 +89,7 @@ Layers apply in this order, each one overriding the one before:
 3. the project's file, `.ask/config.json`;
 4. environment variables: `ASK_MODEL`, `ASK_PROVIDER`, `ASK_THINKING`, `ASK_MAX_TURNS`, `ASK_COMPACT_AT`;
 5. command-line flags: `--model`, `--provider`, `--thinking`, `--max-turns`, `--compact-at`, `--network`, `--write`, `--read`,
-   `--no-sandbox`.
+   `--no-sandbox`, `--yes`, `--ask-always`.
 
 Inside a section such as `ui`, a layer replaces only the keys it sets.
 
@@ -184,6 +184,21 @@ Each member names a server. Put servers in your own file; a project's file can n
 | `enabled` | `false` keeps the entry without connecting. |
 | `mode` | `"direct"` offers its tools directly, `"search"` through a search tool. By default, a server with more than 16 tools is searched. |
 | `maxDirectTools` | Changes that threshold of 16 for this server. |
+
+### `approvals`
+
+Before a call that changes things runs, ask asks you: a command, writing or editing a file, typing into a job. Reading, searching and
+listing never ask, and MCP tools ask unless their server says they are read-only. You answer **Allow this time**, **Allow for the
+session** (for a command: the same subcommand, `git status`; or the program, `git`; for a file: that file), or **Deny**. `ask -p` asks
+nothing: running it was the consent. `--yes` allows every call for one run, `--ask-always` asks even what this section allows; the sandbox
+still asks about anything beyond it either way. Your own file only.
+
+| Key | Default | What it does |
+|---|---|---|
+| `default` | `"ask"` | What a call no list names does: `"ask"`, or `"allow"` to run it. |
+| `allow` | none | Tools that run without asking: `["bash", "mcp__docs__*"]`. A name ending in `*` covers every tool that starts with the rest. |
+| `ask` | none | Tools that always ask, read-only ones included: `["read"]`. Wins over `allow`. |
+| `scope` | `"none"` | What an "always" answer could write back to this file: `"anything"`, `"narrowing-only"` or `"none"`. No answer writes the file yet. |
 
 ### `environment`
 

@@ -75,7 +75,7 @@ def press(terminal, data):
 class Session:
     """One ask in a PTY against a fake provider, torn down on exit."""
 
-    def __init__(self, binary, turns, columns=100, height=30, prepare=None, settings=None):
+    def __init__(self, binary, turns, columns=100, height=30, prepare=None, settings=None, approvals=False):
         self.root = tempfile.TemporaryDirectory()
         project, config, state = self.root.name + "/project", self.root.name + "/config", self.root.name + "/state"
         os.makedirs(project)
@@ -94,7 +94,7 @@ class Session:
         for key in ("SSH_TTY", "SSH_CONNECTION", "TMUX", "KITTY_WINDOW_ID"):
             environment.pop(key, None)
         probe.BINARY = os.path.abspath(binary)
-        self.terminal = probe.Terminal(project, environment, columns=columns, rows=height)
+        self.terminal = probe.Terminal(project, environment, columns=columns, rows=height, approvals=approvals)
         self.terminal.until(lambda: "ask>" in self.terminal.text() or "✓ ·" in self.terminal.text() or "! ·" in self.terminal.text())
 
     def requests(self):

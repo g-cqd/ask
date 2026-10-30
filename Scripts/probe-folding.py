@@ -48,13 +48,27 @@ def thinking_turn():
     return agent.sse(events)
 
 
+_YES = {}
+
+
+def yes_flag(binary):
+    """`--yes` when `binary` has it (roadmap 0134), so a probe about something else is not stopped by approval questions; an older
+    control binary has no such flag and asks nothing anyway."""
+    if binary not in _YES:
+        import subprocess as _subprocess
+        shown = _subprocess.run([binary, "--help"], capture_output=True, text=True).stdout
+        _YES[binary] = ["--yes"] if "--yes" in shown else []
+    return _YES[binary]
+
+
 class Terminal:
-    def __init__(self, project, environment, resume=False, columns=100, rows=30):
+    def __init__(self, project, environment, resume=False, columns=100, rows=30, approvals=False):
+        extra = [] if approvals else yes_flag(BINARY)
         self.pid, self.fd = pty.fork()
         if self.pid == 0:
             fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", rows, columns, 0, 0))
             os.chdir(project)
-            os.execve(BINARY, [BINARY] + (["--continue"] if resume else []), environment)
+            os.execve(BINARY, [BINARY] + extra + (["--continue"] if resume else []), environment)
         self.screen, self.stream = probe_screen.make(columns, rows)
         self.raw = bytearray()
 
