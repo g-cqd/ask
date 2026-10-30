@@ -193,3 +193,9 @@ work; the owner's go-ahead is the remaining step.
 Proceed **only if it does not introduce lag when session screens load**. Opening/resuming, paging to old blocks, expanding them, checkout,
 fork and resize must be measured against the current implementation. The source-design estimates above are not measured guarantees;
 use a bounded cache or revise the design if synchronous disk reads move input/action or screen-loading latency significantly.
+
+## Owner decision (2026-10-30, evening): deferred
+
+"I'd delay that way further down the pipe, we are much more efficient than any harness right now, let's focus on other topics." Step 3
+(payloads on disk) is parked with the later entries; active memory stays at 21.5 MiB against the 20 MiB budget until it is picked up.
+

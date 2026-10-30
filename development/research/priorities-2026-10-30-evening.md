@@ -66,3 +66,17 @@ What changed in the order:
 The order from here is unchanged: 0159, then 0162 with 0163, then 0118 with 0096, then 0164, 0117's clicks, 0088 step 3, 0153's rest,
 0113.
 
+## Update (2026-10-30, night)
+
+Done since: 0159, 0162, 0163, 0096 with 0118's first step, 0164, 0117 (clicks and a showcase scene); 0144 confirmed live by the owner.
+The owner parked 0088 step 3 ("much more efficient than any harness right now"). The order from here:
+
+1. **0153's rest:** finding 5 (`ask -p` passes control sequences, OSC 52 clipboard writes among them, from the model to the terminal),
+   then the hardening notes and the default network, then a `standard` audit run.
+2. **0113:** commands such as `/model` take effect at the next turn, not only when idle.
+3. **0165:** the subscription gate's other refusals in words.
+4. **0118's rest:** the parser driven by the settings catalog, typed `maxTurns` and `compactAt`, the docs tables generated.
+5. **0160's rest, if felt:** `/rewind` on a very long session still takes 300 to 400 ms.
+
+Parked, added to the list: 0088 step 3.
+
