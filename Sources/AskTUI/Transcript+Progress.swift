@@ -21,9 +21,10 @@ extension Transcript {
     /// The person stopped the turn (roadmap 0142): every block still going, reasoning and foreground tools, ends now and turns orange.
     /// Background jobs go on. A tool's result arriving later is still kept.
     mutating func interruptRunning(at now: ContinuousClock.Instant = .now) {
-        if let index = items.indices.last, case .thinking(let text) = items[index], Self.saysSomething(text),
-            progress[index]?.ended == nil
-        {
+        // Reasoning cut off midway is replaced by one message, not left half written (roadmap 0163); the session keeps what the model sent.
+        if let index = items.indices.last, case .thinking = items[index], progress[index]?.ended == nil {
+            items[index] = .notice(Self.stoppedWhileThinking, isError: false)
+            progress[index] = nil
             interrupted.insert(index)
             revisions[index] = bump()
         }
@@ -37,6 +38,9 @@ extension Transcript {
             revisions[index] = bump()
         }
     }
+
+    /// What a turn stopped during the model's reasoning shows in its place.
+    static let stoppedWhileThinking = "Stopped while the model was thinking."
 
     /// Adds a queued message with a spinner of its own.
     mutating func addQueued(_ text: String, now: ContinuousClock.Instant = .now) {

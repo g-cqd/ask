@@ -57,12 +57,16 @@ struct InterruptionColourTests {
         #expect(tools(controller).map(\.status) == [.failed("[exit 1]"), .interrupted])
     }
 
-    @Test func `a thinking block still going is drawn on the interruption tint`() {
+    @Test func `reasoning still going becomes one message on the interruption tint (roadmap 0163)`() {
         var controller = running()
         _ = controller.apply(.thinkingText("weighing the options"))
         _ = controller.handle(ctrlC, pageRows: 12)
         let transcript = controller.state.transcript
         let index = transcript.items.count - 1
+        #expect(transcript.items[index] == .notice(Transcript.stoppedWhileThinking, isError: false))
+        #expect(
+            !transcript.items.contains { if case .thinking = $0 { true } else { false } },
+            "no half-written reasoning left")
         #expect(transcript.interrupted.contains(index))
         let theme = controller.state.blocks.theme
         let rows = ScreenComposer.lines(in: transcript, at: index, columns: 60, style: controller.state.blocks)
@@ -82,5 +86,16 @@ struct InterruptionColourTests {
         #expect(
             metadata.hasSuffix("⊘"),
             "a mark of its own, not the failure's ✗, for a person who cannot tell the colours apart")
+        #expect(metadata == "[interrupted] ⊘", "said in words where a failure gives its exit code (roadmap 0162)")
+        let stopped = ScreenComposer.blockMetadata(status: .interrupted, output: "a\nb", progress: nil)
+        #expect(stopped == "2 lines · [interrupted] ⊘")
+    }
+
+    @Test func `reasoning that had finished stays as it was when a tool is stopped`() {
+        var controller = running()
+        _ = controller.apply(.thinkingText("done thinking"))
+        _ = controller.apply(.toolStarted(name: "shell", summary: "sleep", id: "s"))
+        _ = controller.handle(ctrlC, pageRows: 12)
+        #expect(controller.state.transcript.items.contains(.thinking("done thinking")))
     }
 }
