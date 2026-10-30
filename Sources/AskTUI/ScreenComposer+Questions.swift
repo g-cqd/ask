@@ -7,7 +7,15 @@ extension ScreenComposer {
     /// checked), its number, its words and, dimmed, what it means; a line under it when Enter was held; a dim row of the keys. The review
     /// lists each question's header and answer instead. When rows are short, the rows above the choices go first.
     static func questionLines(_ pending: PendingQuestions, columns: Int, rows: Int) -> [Line] {
-        guard columns > 0, rows >= 1 else { return [] }
+        questionLayout(pending, columns: columns, rows: rows).lines
+    }
+
+    /// The section's rows, which of them are the choices (or the review's answers), and the row of the tabs when it is shown, so a
+    /// click can act (roadmap 0117).
+    static func questionLayout(_ pending: PendingQuestions, columns: Int, rows: Int)
+        -> (lines: [Line], choices: Range<Int>, tabs: Int?)
+    {
+        guard columns > 0, rows >= 1 else { return ([], 0 ..< 0, nil) }
         let margin = "  "
         let width = Swift.max(1, columns - margin.count)
         let blank = Line(text: "", style: .default)
@@ -29,14 +37,33 @@ extension ScreenComposer {
             body = choiceLines(pending, columns: columns)
         }
         let hint = Line(text: clipped(margin + keys(pending), to: columns), style: Style(dim: true))
+        let choiceCount = body.count
         body += [blank, hint]
-        guard body.count < rows else { return Array(body.prefix(rows)) }
-        return Array(top.suffix(rows - body.count)) + body
+        guard body.count < rows else { return (Array(body.prefix(rows)), 0 ..< Swift.min(rows, choiceCount), nil) }
+        let kept = Array(top.suffix(rows - body.count))
+        let tabs = pending.isSeries && kept.count == top.count ? 0 : nil
+        return (kept + body, kept.count ..< kept.count + choiceCount, tabs)
+    }
+
+    /// The columns of each tab on the tab row, in order, the review last.
+    static func questionTabColumns(_ pending: PendingQuestions) -> [Range<Int>] {
+        var column = 2  // the margin
+        var spans: [Range<Int>] = []
+        for name in tabNames(pending) {
+            let width = UnicodeWidth.displayWidth(of: name) + 2
+            spans.append(column ..< column + width)
+            column += width + 2
+        }
+        return spans
+    }
+
+    private static func tabNames(_ pending: PendingQuestions) -> [String] {
+        pending.questions.enumerated().map { "\($0.offset + 1) \($0.element.header)" } + ["✓ Review"]
     }
 
     /// `[1 Scope]   2 Tests    ✓ Review`: the question shown, or the review, in brackets.
     private static func tabs(_ pending: PendingQuestions) -> String {
-        let names = pending.questions.enumerated().map { "\($0.offset + 1) \($0.element.header)" } + ["✓ Review"]
+        let names = tabNames(pending)
         let shown = pending.reviewing ? names.count - 1 : pending.current
         return names.enumerated().map { $0.offset == shown ? "[\($0.element)]" : " \($0.element) " }
             .joined(separator: "  ")

@@ -102,10 +102,9 @@ extension ScreenController {
                 if frame.markColumns?.contains(cell.col) == true { return toggleSandboxNote() }
                 guard frame.runnerColumns?.contains(cell.col) == true else { return [] }
                 return toggleRunners()
-            case .click(let target, _, .left, _, _) where target == Self.approvalDetailTarget:
-                toggleApprovalDetail()
-            case .click(let target, let cell, .left, _, _) where target == Self.approvalTarget:
-                checkApproval(answer: cell.row - frame.approvalAnswers.lowerBound)
+            case .click(let target, let cell, .left, _, _)
+            where target == Self.approvalTarget || target == Self.approvalDetailTarget:
+                clickSection(detail: target == Self.approvalDetailTarget, at: cell)
             case .click(let target, let cell, .left, _, _) where target == Self.sidebarTarget:
                 return clickSidebar(row: cell.row)
             case .click(let target, let cell, .left, _, _) where target == Self.stripTarget:
