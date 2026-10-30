@@ -97,6 +97,9 @@ Inside a section such as `ui`, a layer replaces only the keys it sets.
 the project, at a terminal, to trust it as it is now; if it changes, it is ignored again until you trust it again. `ask untrust` stops
 trusting it. Some settings can only come from your own file, as the tables below say.
 
+`docs/config.example.jsonc` holds every setting below with an example value and its default, generated from the code so it never
+drifts; copy from it only what you want to change.
+
 ## Older names
 
 Some settings were renamed on 2026-10-30. A file that uses an old name still loads, as the new name, and ask says so once at the start;
