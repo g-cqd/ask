@@ -4,25 +4,24 @@ blocked-by: []
 date: 2026-10-31
 ---
 
-# 0169 — An open thinking block keeps its header row
+# 0169 — An open thinking block's first line carries its status
 
 Owner (2026-10-31): when unfolded, thinking blocks should still use the first line, with the usual 4-character spacer, for the
-block's status information.
+block's status information. Clarified: the `Thinking...` text is replaced by the first line of the reasoning itself. A first
+attempt (`31955d1`) kept a separate `Thinking...` header row above the open reasoning. That was a misreading, and it is reverted.
 
 ## Before
 
-Opening a thinking block replaced its `Thinking...` row with the reasoning, and the status (duration, line count, spinner or ✓) was
-appended to the reasoning's first row. When that row had no room, the status got a row of its own above. A tool block, by contrast,
-keeps its header open and folded.
+Open, the reasoning's first row carried the status (duration, line count, spinner or ✓) at its right edge only when the row had room.
+Drawn as Markdown, the reasoning wraps at the full width, so a long first line pushed the status onto a row of its own above it.
+Without Markdown, the first line was already cut short of the status, as a tool's header is, with the rest wrapped below.
 
 ## Now
 
-Open or folded, the first row is `Thinking...`, then at least `headerGap` (4) cells, then the status at the right edge
-(`ScreenComposer.thinkingHeaderRow`, shared by plain and Markdown drawing). The reasoning starts on the row below.
+Drawn as Markdown, the reasoning's first top-level block wraps at the width less the status and `headerGap` (4).
+`ScreenComposer.markdownLines(firstBlockWidth:)` does this, and the first row then always has room for the status. The rest of the
+first block stays clear of the status column, and later blocks use the full width. A screen too narrow to leave 20 columns beside
+the status keeps the old behaviour: the status gets a row of its own. Folded, the block still reads `Thinking...`.
 
-- Open, the header row has no source, so a selection copies the reasoning as written and its rows keep source lines from 0. A click
-  on the header still folds the block (`foldBlock`).
-- Folded, nothing changed: the header is the block's one row and copies as `Thinking...`.
-
-Tests: `ThinkingFoldingTests` (open reasoning keeps its header row and status, plain and Markdown), written first and red. Updated to
-the new look: `BlockModelTests` and `MarkdownEverywhereTests`.
+Test: `ThinkingFoldingTests`, "open reasoning keeps its status on its first line, however long", plain and Markdown. Written first;
+the Markdown case was red.

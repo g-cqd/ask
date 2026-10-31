@@ -38,26 +38,32 @@ struct ThinkingFoldingTests {
     @Test func `a click on the header opens it, dim and italic, and another closes it`() {
         var rig = PointerRig(columns: 60, updates: Self.reasoning)
         rig.click(row: 9, col: 3)
-        #expect([7, 8, 9].map { rig.contentText(row: $0) } == ["Thinking...", "first thought", "second thought"])
+        #expect([8, 9].map { rig.contentText(row: $0) } == ["first thought", "second thought"])
         #expect(rig.buffer[8, 2].style.dim && rig.buffer[8, 2].style.italic)
         rig.click(row: 8, col: 3)
         #expect(rig.contentText(row: 9) == "Thinking...")
     }
 
-    /// Owner (2026-10-31): open, a thinking block keeps the header it has folded, with its status after the usual 4-cell spacer, and the
-    /// reasoning starts on the row below, as a tool's output does; the status no longer rides on the reasoning's first line.
+    /// Owner (2026-10-31): open, a thinking block's first row is the reasoning's own first line, with the block's status after the usual
+    /// 4-cell spacer, as a tool's header carries it, however long that line is. A line too long for both no longer pushes the status onto
+    /// a row of its own above the reasoning.
     @Test(arguments: [true, false])
-    func `open reasoning keeps its header row and status`(markdown: Bool) {
-        var rig = PointerRig(
+    func `open reasoning keeps its status on its first line, however long`(markdown: Bool) {
+        let long = "Weighing the options for the cache key carefully before choosing one of them for good"
+        let rig = PointerRig(
             columns: 60,
             options: ScreenOptions(
                 foldThinking: false, markdown: markdown, prompt: "ask> ", tint: false, separator: false, padding: false),
-            updates: Self.reasoning)
-        rig.draw()
-        let header = rig.text(row: 7)
-        #expect(header.hasPrefix("Thinking...    "), "\(header)")
-        #expect(header.hasSuffix("2 lines · |"), "the status, here still running: \(header)")
-        #expect(rig.text(row: 8) == "first thought" && rig.text(row: 9) == "second thought")
+            updates: [.thinkingText(long + "\nsecond thought")])
+        let shown = (0 ..< 10).map { rig.text(row: $0) }
+        let first = shown.firstIndex { $0.contains("Weighing") }
+        #expect(first != nil, "\(shown)")
+        guard let first else { return }
+        #expect(shown[first].hasPrefix("Weighing the options") && shown[first].hasSuffix("2 lines · |"), "\(shown)")
+        #expect(shown[first].contains("    2 lines"), "the usual spacer: \(shown)")
+        #expect(!shown[..<first].contains { $0.contains("lines") }, "no status row above: \(shown)")
+        #expect(shown.last == "second thought", "\(shown)")
+        #expect(shown.allSatisfy { $0.count <= 60 })
     }
 
     @Test func `with folding off reasoning is shown from the start`() {
