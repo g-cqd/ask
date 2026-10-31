@@ -190,7 +190,7 @@ final class AgentConversation: Conversation {
                 if let existing {
                     recorder = existing
                 } else {
-                    try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
+                    try directory.create()
                     recorder = SessionRecorder(try SessionFile.create(at: FilePath(takePlannedSession())))
                 }
                 try recorder.select(

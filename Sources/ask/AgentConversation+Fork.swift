@@ -32,7 +32,7 @@ extension AgentConversation {
         }
         guard maySwitchSession("fork", update: update) else { return }
         do {
-            try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
+            try directory.create()
             let replacement = try original.fork(upTo: leaf, to: FilePath(directory.newSessionPath()))
             activateSession(replacement, update: update)
             await adoptRecords(of: replacement, update: update)
