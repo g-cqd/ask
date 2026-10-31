@@ -25,6 +25,7 @@ def load(name):
 budgets = load('measure-budgets')
 action = load('measure-action')
 startup = load('measure-startup')
+request_size = load('measure-request-size')
 
 
 class ReachedExec(Exception):
@@ -163,6 +164,43 @@ class MeasurementTests(unittest.TestCase):
         row = self.fake_startup(b'TRACE arguments 123 456 4 21 25 5\n' + '────'.encode() + b'\x1b[?2026l')
         self.assertEqual(row['error'], 'phase probe reported a query error')
         self.assertIn('TRACE arguments', row['output_tail'])
+
+
+
+class RequestSizeTests(unittest.TestCase):
+    """roadmap 0137: what one request spends on tools, from the body ask sent."""
+    SANDBOX = {'type': 'object', 'properties': {'network': {'type': 'string'}}}
+
+    def body(self):
+        tool = lambda name, description, **properties: {
+            'name': name, 'description': description,
+            'input_schema': {'type': 'object', 'properties': properties}}
+        return {'system': [{'type': 'text', 'text': 'line'}],
+                'messages': [{'role': 'user', 'content': [{'type': 'text', 'text': 'é'}]}],
+                'tools': [tool('read', 'Read.', path={'type': 'string'}, sandbox=self.SANDBOX),
+                          tool('write', 'Write.', path={'type': 'string'}, sandbox=self.SANDBOX),
+                          tool('mcp__docs__search', 'Search.', q={'type': 'string'})]}
+
+    def test_sizes_are_compact_utf8_bytes_of_each_part(self):
+        compact = lambda value: len(request_size.compact(value))
+        body = self.body()
+        sizes = request_size.sizes(body)
+        self.assertEqual(sizes['total'], compact(body))
+        self.assertEqual(sizes['tools'], compact(body['tools']))
+        self.assertEqual(sizes['messages'], compact(body['messages']))
+        self.assertEqual(sizes['messages'], len('[{"role":"user","content":[{"type":"text","text":"é"}]}]'.encode()))
+        read = sizes['rows'][0]
+        self.assertEqual((read['name'], read['description']), ('read', 5))
+        self.assertEqual(read['schema'], compact(body['tools'][0]['input_schema']))
+
+    def test_mcp_tools_are_counted_apart_from_asks_own(self):
+        sizes = request_size.sizes(self.body())
+        self.assertEqual(sizes['mcp'], len(request_size.compact(self.body()['tools'][2])))
+
+    def test_a_property_repeated_across_tools_counts_its_extra_copies(self):
+        repeated = request_size.repeated(self.body())
+        copy = len(request_size.compact({'sandbox': self.SANDBOX})) - 2  # "sandbox":{...} without the braces
+        self.assertEqual(repeated, [('sandbox', 2, copy), ('path', 2, len(b'"path":{"type":"string"}'))], 'largest first')
 
 
 if __name__ == '__main__':
