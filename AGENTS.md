@@ -35,6 +35,7 @@ rather than trusting its source, and keep the notes in `development/research/`, 
 Scripts/quality.sh              # format, lint, build and test
 Scripts/quality.sh --check      # verify only; what CI would run (it has never started: billing, roadmap 0028)
 Scripts/analyzers.sh            # unused code, duplicated code, retain cycles; also a stage of quality.sh
+Scripts/mutate-changed.sh       # mutation testing of the Sources files changed against origin/main; no new survivor allowed
 Scripts/roadmap.sh open         # the open roadmap entries, read from their front matter
 ask --provider NAME --model ID  # a provider from ~/.config/ask/providers.json (ADR-0027)
 swift test -c release --enable-testable-imports   # tests, without re-linting
@@ -65,6 +66,12 @@ is a ratchet baseline: it shrinks and never takes a new entry.
 **Static analysis is gated too (ADR-0022).** deadwood, dolly and arcleak run under `--strict`, pinned by version
 and SHA-256 in the family's lock, `Scripts/analyzers.lock` in Aemi-Studio/aemi at the commit `Scripts/analyzers.sh` names. A finding is fixed, or accepted where it is with a reason
 (`// @dl:accept -- why`, `@dw:`, `@al:`, on the line above the anchor); there are no baselines.
+
+**Mutation testing, on changed files (roadmap 0166).** `Scripts/mutate-changed.sh [BASE]` runs swift-mutation-testing (pinned by version
+and SHA-256 in the script) on the `Sources` files changed against `BASE`, each with its target's tests, and fails on a surviving mutant
+not in `development/mutation-baseline.json`: kill it with a test. Minutes per file cold, seconds once its verdicts are cached; before
+a commit that changes logic, run it. `ASK_MUTATE=1 git push` runs it as a pre-push task; CI runs it on pushes that touch `Sources`,
+and weekly on every file, uploading a fresh baseline.
 
 **When a refactor or factorisation is on the table, ask what Swift already offers first** (white paper §8):
 result builders, scoped closures, protocol extensions with defaults, typed throws, `callAsFunction`, key paths,

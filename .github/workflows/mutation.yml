@@ -1,0 +1,56 @@
+name: mutation
+
+# Mutation testing (roadmap 0166): the Sources files a push changed, against the push's base, with no new surviving mutant allowed
+# beyond development/mutation-baseline.json; and a weekly run of every file that uploads a fresh baseline to commit by hand.
+on:
+  push:
+    branches: [main]
+    paths: ["Sources/**"]
+  schedule:
+    - cron: "17 3 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  SWIFT_VERSION: "6.4.1"
+
+jobs:
+  mutate:
+    runs-on: macos-26
+    timeout-minutes: 240
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # The base of the push must be in the clone for the diff.
+          fetch-depth: 0
+      - uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3.0.0-beta.1
+        with:
+          swift-version: ${{ env.SWIFT_VERSION }}
+      - name: Restore the tool and its verdicts
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          # The tool is pinned by version and SHA-256 in the script, which re-verifies a download; the verdict cache is keyed by
+          # mutant, so a stale one only costs reruns.
+          path: |
+            ~/Library/Caches/g-cqd-mutation
+            .swift-mutation-testing-cache
+          key: mutation-${{ hashFiles('Scripts/mutate-changed.sh') }}-${{ github.sha }}
+          restore-keys: mutation-${{ hashFiles('Scripts/mutate-changed.sh') }}-
+      - name: Changed files
+        if: ${{ github.event_name == 'push' }}
+        run: Scripts/mutate-changed.sh "${{ github.event.before }}"
+      - name: Every file, and the baseline
+        if: ${{ github.event_name != 'push' }}
+        run: Scripts/mutate-changed.sh --all
+      - name: Upload the baseline
+        if: ${{ github.event_name != 'push' && always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: mutation-baseline
+          path: development/mutation-baseline.json

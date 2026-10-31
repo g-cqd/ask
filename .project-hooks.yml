@@ -21,3 +21,7 @@ pre-push:
     - name: "Release tests"
       run: 'swift test -c release --enable-testable-imports --scratch-path "$HOME/Library/Caches/project-hooks/builds/ask-release"'
       timeout: 1200
+    # Mutation testing of the changed Sources files (roadmap 0166): minutes per file cold, so opt-in: ASK_MUTATE=1 git push.
+    - name: "Mutation testing (ASK_MUTATE=1)"
+      run: 'if [ "${ASK_MUTATE:-}" = 1 ]; then Scripts/mutate-changed.sh origin/main; else echo "skipped: set ASK_MUTATE=1"; fi'
+      timeout: 3600
