@@ -40,11 +40,11 @@ extension Configuration {
         return Int(text).flatMap { $0 >= 1 ? $0 : nil }
     }
 
-    /// A turn limit as a person writes it: `none` for no limit.
-    public static func describeTurns(_ turns: Int) -> String { turns == noTurnLimit ? "none" : String(turns) }
+    /// A turn limit as a file takes it: `null` for no limit.
+    public static func describeTurns(_ turns: Int) -> String { turns == noTurnLimit ? "null" : String(turns) }
 
     private static func show<Value>(_ value: Value) -> String {
-        if let turns = value as? Int, turns == noTurnLimit { return "none" }
+        if let turns = value as? Int, turns == noTurnLimit { return "null" }
         if let text = value as? String { return "\"\(text)\"" }
         if let optional = value as? String?, optional == nil { return "default" }
         if let optional = value as? String? { return "\"\(optional ?? "")\"" }

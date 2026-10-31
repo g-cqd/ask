@@ -22,8 +22,10 @@ extension ConfigurationFile {
         return label
     }
 
-    /// `maxTurns`: a whole number of at least 1, or `"none"` for no limit (roadmap 0098), kept as ``Configuration/noTurnLimit``.
+    /// `maxTurns`: a whole number of at least 1, or `null` for no limit (roadmap 0118; `"none"`, roadmap 0098, still read), kept as
+    /// ``Configuration/noTurnLimit``.
     static func decodeMaxTurns(_ container: KeyedDecodingContainer<Key>, key: Key) throws -> Int {
+        if try container.decodeNil(forKey: key) { return Configuration.noTurnLimit }
         if let turns = try? container.decode(Int.self, forKey: key) { return turns }
         let text = try container.decode(String.self, forKey: key)
         guard let turns = Configuration.turnLimit(parsing: text) else {
@@ -32,14 +34,17 @@ extension ConfigurationFile {
         return turns
     }
 
-    /// `compactAt`: a whole number of tokens (`150000`, `0`) or a share of the window as a string (`"75%"`), roadmap 0104.
+    /// `compactAt`: a number, a share of the window up to 1 (`0.75`) or tokens above it (`150000`, `0` for only when full), roadmap
+    /// 0118; a share as a string (`"75%"`, roadmap 0104) is still read.
     static func decodeCompactAt(_ container: KeyedDecodingContainer<Key>, key: Key) throws -> CompactionThreshold {
-        if let tokens = try? container.decode(Int.self, forKey: key) {
-            guard tokens >= 0 else { throw BadValue(key: "compactAt", value: String(tokens)) }
-            return .tokens(tokens)
+        if let number = try? container.decode(Double.self, forKey: key) {
+            guard let threshold = CompactionThreshold(number: number) else {
+                throw BadValue(key: "compactAt", value: String(number))
+            }
+            return threshold
         }
         let text = try container.decode(String.self, forKey: key)
-        guard let threshold = CompactionThreshold(parsing: text), threshold.percent != nil else {
+        guard text.trimmingWhitespace().hasSuffix("%"), let threshold = CompactionThreshold(parsing: text) else {
             throw BadValue(key: "compactAt", value: "\"\(text)\"")
         }
         return threshold
