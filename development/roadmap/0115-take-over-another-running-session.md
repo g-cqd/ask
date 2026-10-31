@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-28
 ---
@@ -20,3 +20,15 @@ in a colour of its own; a click on it goes back to it.
   own process kept alive headless).
 - Naming with Foundation Models: on-device only, its cost against the 8 ms action budget (run it off the input path).
 - The notification row and its colour, beside 0106 (purple) and 0107 (yellow).
+
+## Design entry (2026-10-31)
+
+`development/research/session-takeover-2026-10-31.md` surveys Claude Code (agent view, a supervisor with a process per session,
+`←` to background and attach), OpenCode (a server, `attach`), Codex (an app server, thread subscriptions), pi (RPC over JSONL) and Amp
+(cross-client threads). It proposes a headless host process per session holding the loop, tools and jobs, with the screen as a client
+over a Unix-domain socket. Sessions are found by their held locks plus a presence file, and a taken-over session moves only its
+screen. No supervisor in the first version. Five phases, the first (listing what runs elsewhere, read only) useful without the split.
+
+Waiting on the owner: two processes per session and the memory budgets; an unattached host's lifetime; what the screen that loses its
+session does; no supervisor at first. The investigation and the registry, liveness, sandbox and "what moves" items above are answered
+by the note; naming and the row's colour are proposed there.
