@@ -6,6 +6,8 @@ internal import Synchronization
 /// `out` and `err` injectable so the behaviour can be tested.
 public final class PrintRenderer: Sendable {
     private let midLine = Mutex(false)
+    /// The answer's filter, kept across deltas so a control sequence split between two is still removed (roadmap 0153, finding 5).
+    private let answerFilter = Mutex(TerminalTextFilter())
     private let usage = Mutex(UsageTotals())
     private let out: @Sendable (String) -> Void
     private let err: @Sendable (String) -> Void
@@ -13,7 +15,8 @@ public final class PrintRenderer: Sendable {
     /// A renderer writing to the standard handles.
     public init() {
         out = { @Sendable (text: String) in FileHandle.standardOutput.write(Data(text.utf8)) }
-        err = { @Sendable (text: String) in FileHandle.standardError.write(Data(text.utf8)) }
+        err = { @Sendable (text: String) in FileHandle.standardError.write(Data(TerminalTextFilter.filtered(text).utf8))
+        }
     }
 
     /// A renderer writing wherever `out` and `err` say.
@@ -22,7 +25,8 @@ public final class PrintRenderer: Sendable {
     ///   - err: where tool activity and diagnostics go.
     public init(out: @escaping @Sendable (String) -> Void, err: @escaping @Sendable (String) -> Void) {
         self.out = out
-        self.err = err
+        // Every line said on standard error carries the model's or a tool's text: none of it may act on the terminal.
+        self.err = { text in err(TerminalTextFilter.filtered(text)) }
     }
 
     /// Token usage over the run, for the closing line.
@@ -36,7 +40,9 @@ public final class PrintRenderer: Sendable {
             err("ask: \(notice)\n")
         }
         switch event {
-            case .model(.textDelta(_, let text)):
+            case .model(.textDelta(_, let delta)):
+                let text = answerFilter.withLock { $0.filter(delta) }
+                guard !text.isEmpty else { break }
                 out(text)
                 midLine.withLock { $0 = !text.hasSuffix("\n") }
             case .toolStarted(_, let name, let input):

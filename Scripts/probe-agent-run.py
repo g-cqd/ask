@@ -869,10 +869,20 @@ def probe_session_narrowing():
         check("and the session stays narrowed", "curl=7" in got.get("still", ""), got.get("still"))])
 
 
+def probe_control_sequences():
+    print("Z: ask -p writes no control sequence from the model to the terminal (0153, finding 5)")
+    server = Server([turn([("text", "copied \u001b]52;c;cGF3bmVk\u0007 and \u001b[31mred\u001b[0m.")], "end_turn")])
+    state = tempfile.mkdtemp()
+    run = subprocess.run([ASK, "-p", "hi"], cwd=tempfile.mkdtemp(), env=environment(state, server.url), capture_output=True, timeout=60)
+    return all([
+        check("the text arrives", run.stdout == b"copied  and red.\n", run.stdout),
+        check("no ESC or BEL on either handle", not any(b in run.stdout + run.stderr for b in (b"\x1b", b"\x07")), run.stderr[-200:])])
+
+
 if __name__ == "__main__":
     probes = [probe_round_trip, probe_interrupt, probe_resume, probe_crash_resume, probe_compaction, probe_jobs, probe_jobs_end_with_ask,
               probe_configuration, probe_sandbox, probe_sandbox_allowance, probe_damaged_session, probe_nested_sandbox, probe_strict_sandbox,
-              probe_session_sandbox, probe_read_allowlist, probe_call_sandbox, probe_session_narrowing]
+              probe_session_sandbox, probe_read_allowlist, probe_call_sandbox, probe_session_narrowing, probe_control_sequences]
     # --only F,J runs the probes whose heading starts with those letters (each prints "F: …" first).
     wanted = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
     ok = True
