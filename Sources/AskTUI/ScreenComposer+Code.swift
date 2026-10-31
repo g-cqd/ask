@@ -24,11 +24,16 @@ extension ScreenComposer {
                 spacerAbove: spaced)
         }
         guard let shown else {
-            return lines(
+            let output = transcript.shownToolOutput(at: index)
+            let rows = lines(
                 for: item, folded: transcript.isFolded(index), block: index, columns: columns, style: style,
                 spacerAbove: spaced, progress: transcript.progress[index],
                 toolInput: transcript.shownToolInput(at: index), command: transcript.commandBlocks.contains(index),
-                interrupted: interrupted)
+                interrupted: interrupted, toolOutput: output?.text)
+            guard let output else { return rows }
+            return withOutputMarker(
+                rows, output, before: transcript.outputMarkerLine(at: index, output), block: index, columns: columns,
+                style: style)
         }
         // A placeholder is dim, like the other folds' headers; the rest of the message, open code included, is as it was.
         let margin = String(repeating: " ", count: style.inset)

@@ -84,6 +84,12 @@ enum SettingCatalog {
         row("ui.fold.thinking", .boolean, "true", "true", "The model's reasoning starts folded."),
         row("ui.fold.code", .boolean, "true", "true", "Long code blocks start folded."),
         row("ui.fold.codeLines", .integer, "20", "20", "How many lines make a code block long."),
+        row(
+            "ui.fold.outputLines", .integer, "200", "200",
+            "A tool's output with more lines than this keeps its head and tail and folds its middle."),
+        row(
+            "ui.fold.outputBytes", .integer, "32768", "32768",
+            "A tool's output with more bytes than this keeps its head and tail and folds its middle."),
         row("ui.scrollLines", .integer, "3", "3", "Lines per wheel step."),
         row("ui.inputRows", .integer, "6", "6", "How many rows the input grows to before it scrolls."),
         row(

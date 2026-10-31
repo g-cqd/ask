@@ -68,10 +68,29 @@ Done now, each test first:
   An approval's MCP detail stays compact: it is folded to its first row, and `{` alone would say nothing.
 - The unused label helper is gone.
 
+### Centre fold of long output (2026-10-31)
+
+- **Rule:** an open tool block whose output has more than `ui.fold.outputLines` lines (default 200) or more than
+  `ui.fold.outputBytes` UTF-8 bytes (default 32768) keeps a head and a tail that share the budget: half the lines each (the head
+  takes the odd one) and half the bytes each, whole lines only, every line counted with its line feed. A single line too large for
+  either end is hidden whole. Minimums are 2 lines and 64 bytes; lower values are refused by name. The defaults are the record's
+  candidates, unchanged: nothing in the probes argued for others.
+- **Marker:** one dim row between the two ends, `⋯ 290 lines hidden (2 KiB) · click to show`, and once open
+  `⋯ 290 lines shown · click to fold`, cut to the width on a tiny screen. It is a decoration row with no source, so a selection
+  copies the two ends (or the whole output, open) and never the marker.
+- **Independence:** the choice is a code fold under ordinal `Transcript.outputFence` (−1), apart from the whole block's fold and the
+  input's heredocs (0 and on). A click on the marker toggles only it; Ctrl+G flips it with every other long block. Being keyed by
+  item, it survives later output (a job's updates). The header still counts the whole output (`300 lines`).
+- **Nothing is lost:** the fold is a projection of the retained text, so opening it shows the real middle. It is separate from
+  the transcript's 400-line hard cap, which still applies first and says so.
+- Tests: `ShownToolOutputTests` (bounds, odd share, UTF-8 bytes, a too-large line; two mutations turn them red),
+  `ToolOutputFoldTests` (marker, header count, copy, toggle, Ctrl+G, click; disabling the click branch turns it red) and
+  `OutputFoldConfigurationTests`. Probe: `Scripts/probe-output-fold.py`, 5 pass through the release binary.
+- On the side: `UISection.isEmpty` is now `self == UISection()`, so a new key cannot be left out of it; the count checks moved to
+  `ConfigurationFile+Counts.swift`.
+
 ## Still owed
 
-- Collapsing the centre of long output, with UI settings for the most lines and bytes left unfolded, a marker that unfolds on its
-  own, and the rest of the acceptance above.
 - An edit's replacement count as a typed fact in its header, not only in the result's sentence.
 - Strings inside unknown tools' JSON are shown escaped (`\n`), not as their text.
-
+- Fold choices are not kept across a resume: a resumed session starts from the defaults, as the other folds do.

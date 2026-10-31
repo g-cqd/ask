@@ -161,6 +161,8 @@ Switches take `true` or `false` (the older `"on"` and `"off"` still work).
 | `fold.thinking` | `true` | The model's reasoning starts folded to one line. |
 | `fold.code` | `true` | Long code blocks start folded. |
 | `fold.codeLines` | `20` | How many lines make a code block long (never more than half the screen). |
+| `fold.outputLines` | `200` | A tool's output with more lines than this keeps its head and tail and folds its middle; a click on the marker, or Ctrl+G, shows it. At least 2. |
+| `fold.outputBytes` | `32768` | The same, in bytes: each end keeps half. At least 64. |
 | `scrollLines` | `3` | Lines per wheel step. |
 | `inputRows` | `6` | How many rows the input grows to before it scrolls (at most a third of the screen). |
 | `sidebar` | `"closed"` | Whether the runner sidebar starts `"open"` (wide screens only). |

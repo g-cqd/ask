@@ -69,7 +69,13 @@
       "code": true,
 
       // How many lines make a code block long. Default: 20.
-      "codeLines": 20
+      "codeLines": 20,
+
+      // A tool's output with more lines than this keeps its head and tail and folds its middle. Default: 200.
+      "outputLines": 200,
+
+      // A tool's output with more bytes than this keeps its head and tail and folds its middle. Default: 32768.
+      "outputBytes": 32768
     },
 
     // Lines per wheel step. Default: 3.

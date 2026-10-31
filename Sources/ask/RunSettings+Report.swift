@@ -33,7 +33,7 @@ extension RunSettings {
     /// The `ui` section as the screen uses it: each key a file set, and the screen's own default for the rest.
     var effectiveUI: UISection {
         let options = screenOptions
-        return UISection(
+        var ui = UISection(
             mouse: options.mouse, copyOnSelect: options.copyOnSelect, foldTools: options.foldTools,
             foldThinking: options.foldThinking, scrollLines: options.scrollLines, promptRows: options.promptRows,
             foldCode: options.foldCode, codeFoldLines: options.codeFoldLines, sidebarOpen: options.sidebar,
@@ -50,6 +50,9 @@ extension RunSettings {
             appearance: AppearancePreference(rawValue: options.appearance.rawValue),
             timeout: TimeoutPreference(rawValue: options.timeoutDisplay.rawValue), timeoutLabel: options.timeoutLabel,
             sessionColor: configuration.ui.value.sessionColor ?? .off)
+        ui.outputFoldLines = options.outputFoldLines
+        ui.outputFoldBytes = options.outputFoldBytes
+        return ui
     }
 
     /// `compactAt` in words: a share of the window, a number of tokens, or only when the window is full.

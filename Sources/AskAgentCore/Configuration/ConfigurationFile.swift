@@ -107,15 +107,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                 path: path, key: "credentials",
                 reason: "says where your keys are kept: only your own config file can choose that")
         }
-        for (key, count) in [
-            ("ui.scrollLines", file.ui?.scrollLines), ("ui.inputRows", file.ui?.promptRows),
-            ("ui.fold.codeLines", file.ui?.codeFoldLines)
-        ] {
-            if let count, count < 1 { throw .outOfRange(path: path, key: key, reason: "must be at least 1") }
-        }
-        if let turns = file.maxTurns, turns < 1 {
-            throw .outOfRange(path: path, key: "maxTurns", reason: "must be at least 1")
-        }
+        try validateCounts(file, path: path)
         return file
     }
 

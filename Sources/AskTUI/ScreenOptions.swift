@@ -57,6 +57,10 @@ public struct ScreenOptions: Sendable, Equatable {
     public var timeoutDisplay = TimeoutDisplay.auto
     /// The word in front of a command's timeout (`ui.timeoutLabel`), drawn in at most 8 cells.
     public var timeoutLabel = "timeout"
+    /// A tool's output with more lines or bytes than these keeps its head and tail and folds its middle (roadmap 0078:
+    /// `ui.fold.outputLines`, `ui.fold.outputBytes`).
+    public var outputFoldLines = 200
+    public var outputFoldBytes = 32 * 1024
 
     /// The look before roadmap 0074: an `ask> ` prefix, no tint, no rule. What the screen's older tests were written against.
     public static let legacy = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)

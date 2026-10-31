@@ -52,6 +52,10 @@ public struct Transcript: Sendable, Equatable {
     public internal(set) var codeFoldedByDefault = true
     /// A code block with more lines than this can fold (ADR-0046: `ui.codeFoldLines`, never more than half the screen).
     public internal(set) var codeFoldLines = 20
+    /// A tool's output longer than either keeps its head and tail and folds its middle (roadmap 0078: `ui.fold.outputLines`,
+    /// `ui.fold.outputBytes`).
+    public internal(set) var outputFoldLines = 200
+    public internal(set) var outputFoldBytes = 32 * 1024
     /// Whether assistant messages are drawn as Markdown (roadmap 0065: `ui.markdown`) rather than as the text the model wrote.
     public internal(set) var markdown = false
     /// Which spinner style is used for progress indicators in live blocks.

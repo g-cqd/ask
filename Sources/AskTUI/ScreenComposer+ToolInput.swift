@@ -13,9 +13,11 @@ extension ScreenComposer {
 
     /// The whole input in the default colour, then the output dimmed, a blank row before each and no labels (roadmap 0078).
     static func toolInputLines(
-        item: Transcript.Item, input: String, block: Int, columns: Int, style: BlockStyle, progress: BlockProgress?
+        item: Transcript.Item, input: String, block: Int, columns: Int, style: BlockStyle, context: ToolContext
     ) -> [Line] {
         guard case .tool(let name, let summary, let status, let output, _) = item else { return [] }
+        let shownOutput = context.output ?? output
+        let progress = context.progress
         let inset = style.inset
         let width = Swift.max(1, columns - 2 * inset)
         let look = toolStatusStyle(status)
@@ -27,11 +29,11 @@ extension ScreenComposer {
             style: look)
             + [Line(text: "", style: .default)]
             + body(of: input, block: block, width: width, inset: inset, style: .default)
-            + (output.isEmpty
+            + (shownOutput.isEmpty
                 ? []
                 : [Line(text: "", style: .default)]
                     + body(
-                        of: output, block: block, width: width, inset: inset, style: Style(dim: true),
+                        of: shownOutput, block: block, width: width, inset: inset, style: Style(dim: true),
                         firstLine: 1 + TranscriptContent.hardLineCount(of: input)))
     }
 }

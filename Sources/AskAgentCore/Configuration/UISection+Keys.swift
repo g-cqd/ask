@@ -10,6 +10,8 @@ extension UISection {
             case "fold.thinking": return flag(foldThinking)
             case "fold.code": return flag(foldCode)
             case "fold.codeLines": return codeFoldLines.map(String.init)
+            case "fold.outputLines": return outputFoldLines.map(String.init)
+            case "fold.outputBytes": return outputFoldBytes.map(String.init)
             case "scrollLines": return scrollLines.map(String.init)
             case "inputRows": return promptRows.map(String.init)
             case "sidebar": return sidebarOpen.map { $0 ? "open" : "closed" }
