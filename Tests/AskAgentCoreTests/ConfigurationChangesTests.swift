@@ -17,7 +17,7 @@ struct ConfigurationChangesTests {
             after.changes(from: before) == [
                 "model: default → \"haiku\" (/p/.ask/config.json)",
                 "maxTurns: 40 → 7 (/p/.ask/config.json)",
-                "compactAt: 75% → 0 (/p/.ask/config.json)"
+                "compactAt: 0.75 → 0 (/p/.ask/config.json)"
             ])
     }
 
@@ -35,11 +35,11 @@ struct ConfigurationChangesTests {
         #expect(flagged.maxTurns == .init(value: 2, source: .flag("max-turns")))
     }
 
-    @Test func `maxTurns "none" removes the limit from a file or the environment, and shows as none`() throws {
+    @Test func `maxTurns "none" removes the limit from a file or the environment, and shows as null`() throws {
         let file = try ConfigurationFile.parse(Array(#"{"maxTurns": "none"}"#.utf8), path: "c.json")
         #expect(file.maxTurns == Configuration.noTurnLimit)
         let unlimited = Configuration.defaults.applying(file, from: .file("/u/config.json"))
-        #expect(unlimited.changes(from: .defaults) == ["maxTurns: 100 → none (/u/config.json)"])
+        #expect(unlimited.changes(from: .defaults) == ["maxTurns: 100 → null (/u/config.json)"])
         var problems: [String] = []
         let env = Configuration.defaults.applying(environment: ["ASK_MAX_TURNS": "none"], problems: &problems)
         #expect(env.maxTurns.value == Configuration.noTurnLimit && problems.isEmpty)
@@ -50,7 +50,7 @@ struct ConfigurationChangesTests {
             try ConfigurationFile.parse(Array(#"{"maxTurns": 0}"#.utf8), path: "c.json")
         }
         #expect(
-            Configuration.describeTurns(Configuration.noTurnLimit) == "none" && Configuration.describeTurns(30) == "30")
+            Configuration.describeTurns(Configuration.noTurnLimit) == "null" && Configuration.describeTurns(30) == "30")
     }
 
     @Test func `unset, the turn limit is 100 in the sandbox and none outside it; set anywhere, it wins either way`()

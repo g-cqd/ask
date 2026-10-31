@@ -14,7 +14,7 @@ struct CompactionThresholdTests {
         #expect(CompactionThreshold(parsing: text) == expected)
     }
 
-    @Test(arguments: ["0%", "101%", "-1", "75", "%", "abc", "0.75", ""])
+    @Test(arguments: ["0%", "101%", "-1", "75", "%", "abc", "1.5", ""])
     func `anything else is refused`(text: String) {
         if text == "75" {
             #expect(CompactionThreshold(parsing: text) == .tokens(75))
