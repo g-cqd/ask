@@ -6,4 +6,7 @@ public enum ThinkingControl: Sendable, Equatable {
     case betweenTools
     case effort(ThinkingLevel)
     case budget(tokens: Int, effort: ThinkingLevel?)
+    /// The model's own adaptive thinking at its default effort: what a model that always thinks does with no control, sent so that the
+    /// thinking's summary can be asked for (``providerDefault(descriptor:)``).
+    case adaptive
 }

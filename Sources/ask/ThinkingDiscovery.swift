@@ -18,6 +18,16 @@ enum ThinkingDiscovery {
 
     static func resolve(_ level: ThinkingLevel, model: ResolvedModel, environment: [String: String]) throws -> Result {
         if level == .providerDefault {
+            // A Claude model that always thinks is sent its default as adaptive thinking, so its summary can be asked for; read from the
+            // cached catalog only, never the network.
+            if model.provider == .anthropic,
+                let control = ThinkingControl.providerDefault(
+                    descriptor: cachedMetadata(model, environment: environment).0)
+            {
+                return Result(
+                    model: model, control: control, status: "provider default (adaptive), its thinking shown",
+                    notices: [])
+            }
             return Result(model: model, control: nil, status: "provider defaults; no control sent", notices: [])
         }
         let (descriptor, notices) = cachedMetadata(model, environment: environment)

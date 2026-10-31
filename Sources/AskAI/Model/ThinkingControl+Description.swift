@@ -4,6 +4,7 @@ extension ThinkingControl: CustomStringConvertible {
         switch self {
             case .disabled: "off"
             case .betweenTools: "between-tools (no pre-response thinking)"
+            case .adaptive: "adaptive, at the model's default effort"
             case .effort(let level): "effort \(level.rawValue)"
             case .budget(let tokens, let effort):
                 "budget \(tokens) tokens" + (effort.map { ", effort \($0.rawValue)" } ?? "")
