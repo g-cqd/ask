@@ -1,0 +1,16 @@
+{
+ "createdAt": "2026-10-31T13:21:50Z",
+ "formatVersion": 1,
+ "scope": {
+  "excludePatterns": [],
+  "operators": [
+   "LogicalOperatorReplacement",
+   "NegateConditional",
+   "SwapTernary"
+  ],
+  "sourcesPath": "Sources"
+ },
+ "score": 100,
+ "toolVersion": "1.6.4",
+ "undetected": []
+}
