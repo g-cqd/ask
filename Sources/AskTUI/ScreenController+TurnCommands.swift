@@ -73,8 +73,6 @@ extension ScreenController {
             state.transcript.addUser(text)
             return
         }
-        state.transcript.items[index] = .user(text)
-        state.transcript.progress[index] = nil
-        state.transcript.revisions[index] = state.transcript.bump()
+        state.transcript.replace(at: index, with: .user(text))
     }
 }

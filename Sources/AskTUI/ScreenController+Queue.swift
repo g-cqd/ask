@@ -95,9 +95,7 @@ extension ScreenController {
         let prompt = pending.remove(at: pendingIndex)
         let index = prompt.transcriptIndex
         if state.transcript.items.indices.contains(index), state.transcript.items[index] == .queued(prompt.text) {
-            state.transcript.items[index] = .notice("Not sent: \(prompt.text)", isError: true)
-            state.transcript.progress[index] = nil
-            state.transcript.revisions[index] = state.transcript.bump()
+            state.transcript.replace(at: index, with: .notice("Not sent: \(prompt.text)", isError: true))
         }
         fill(draft: prompt.text)
     }

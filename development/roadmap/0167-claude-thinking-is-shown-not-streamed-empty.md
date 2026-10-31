@@ -29,3 +29,25 @@ subscription.
 
 Not verified live: a summarized thinking block from the subscription in ask's own screen. Pi's use on the same subscription is the
 evidence that the gate accepts it.
+
+## Found live, fixed (2026-10-31, later)
+
+Owner (same day): ask still shows many empty thinking blocks where pi-integrations does not.
+
+**The bug.** With the morning's build, `claude-opus-5-5` on the subscription still streamed empty thinking (an `ask -p` run: a
+thinking block with a signature and no text; `ask config` said "provider defaults; no control sent"). The default level read the
+model's catalog entry from the cache only, and the cache is scoped by a fingerprint of the access token. A subscription token is
+refreshed every few hours, so after a refresh the cache belonged to "another" scope and read as nil, and nothing was sent. The tests
+and probe ran with a fresh cache, so they never saw it. Pi always sends `display`, so it never depends on a catalog.
+
+**The fix.** When the cache cannot be used, the default level is looked up just before the first request, as a chosen level
+already was (`ThinkingDiscovery`, `pending`). `ThinkingControl.select(.providerDefault, …)` gives the adaptive control on a Claude
+model that always thinks. A failed lookup for the default sends nothing, as before, rather than failing the request. The lookup
+also rewrites the cache under the current token.
+
+- Test: `ThinkingDisplayTests`, written first and red.
+- Checked live, same prompt, same model: the thinking block now holds the summary. The next start read the refreshed cache:
+  "provider default (adaptive), its thinking shown".
+
+Still to consider: the cache could be scoped by account, not by token, so a refresh does not cost a lookup. That needs a stable
+account identity in the subscription's credentials.
