@@ -166,6 +166,9 @@ final class ScreenSession {
                 conversation.enqueue(text, id: id, followUp: followUp)
             case .runCommand(let name, let arguments):
                 run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }
+            case .runCommandBeside(let name, let arguments):
+                // Not the screen's run: the turn's task stays the one Ctrl+C stops, and no end of run is sent.
+                _ = conversation.command(name, arguments: arguments, beside: true) { sink.yield(.update($0)) }
             case .answerApproval(let id, let choice): conversation.answer(approval: id, with: choice)
             case .answerQuestions(let id, let answers): conversation.answer(questions: id, with: answers)
             case .indexFiles:
@@ -210,7 +213,10 @@ final class ScreenSession {
         }
         return true
     }
+}
 
+/// The screen's timers and frames.
+extension ScreenSession {
     private func syncAutoscroll() {
         let sink = sink
         autoscroll.update(wanted: controller.isAutoscrolling) { sink.yield(.tick) }

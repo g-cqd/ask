@@ -14,8 +14,21 @@ extension AgentLoop {
     }
 
     /// Streams `request` and assembles the response, retrying transient failures.
-    func stream(_ request: ModelRequest, events: (AgentEvent) -> Void) async throws(AgentError)
-        -> AssembledResponse
+    func stream(_ request: ModelRequest, events: (AgentEvent) -> Void) async throws(AgentError) -> AssembledResponse {
+        // Without handing over, a retry is never cut short, so there is always a response or an error.
+        guard let response = try await stream(request, events: events, handsOver: false) else { throw .cancelled }
+        return response
+    }
+
+    /// Streams `request` and assembles the response, retrying transient failures.
+    /// - Parameters:
+    ///   - request: what is sent.
+    ///   - events: each event of the response, as it arrives.
+    ///   - handsOver: whether a change offered while a retry waits ends the wait, so the request goes to the new loop.
+    /// - Returns: the response, or nil when a change was offered while a retry waited: the caller sends the request again with it.
+    /// - Throws: an ``AgentError`` when the request fails for good, is too long for the window, or the turn is stopped.
+    func stream(_ request: ModelRequest, events: (AgentEvent) -> Void, handsOver: Bool) async throws(AgentError)
+        -> AssembledResponse?
     {
         var attempt = 1
         while true {
@@ -43,15 +56,28 @@ extension AgentLoop {
                 failure = error
             }
             let decided = outcome(of: failure, shown: shown, attempt: attempt, partial: assembler.partial())
-            if let partial = try await recover(decided, attempt: &attempt, events: events) { return partial }
+            switch try await recover(decided, attempt: &attempt, events: events, handsOver: handsOver) {
+                case .carryOn(let partial): return partial
+                case .handOver: return nil
+                case .again: continue
+            }
         }
     }
 
-    /// Acts on what a failure means: throws for the end of the request, waits and returns the part that arrived to carry on from, or
-    /// waits and returns nil to send the request again.
-    private func recover(_ decided: FailureOutcome, attempt: inout Int, events: (AgentEvent) -> Void)
-        async throws(AgentError) -> AssembledResponse?
-    {
+    /// What follows a failure the loop recovers from.
+    private enum Recovery {
+        /// Keep what arrived and ask the model to carry on.
+        case carryOn(AssembledResponse)
+        /// Send the request again.
+        case again
+        /// A change was offered while waiting: the turn takes it and sends the request with it.
+        case handOver
+    }
+
+    /// Acts on what a failure means: throws for the end of the request, or waits and says how to go on.
+    private func recover(
+        _ decided: FailureOutcome, attempt: inout Int, events: (AgentEvent) -> Void, handsOver: Bool
+    ) async throws(AgentError) -> Recovery {
         switch decided {
             case .overflow(let reason): throw .contextOverflow(reason)
             case .fail(let error): throw error
@@ -61,14 +87,14 @@ extension AgentLoop {
                     do { try await clock.sleep(for: delay) } catch { throw .cancelled }
                 }
                 partial.stopReason = Self.droppedStopReason
-                return partial
+                return .carryOn(partial)
             case .retry(let delay, let reason):
                 // Offline, the wait is for the network, and costs no attempt: it is not the request that failed.
-                if try await waitedForNetwork(reason: reason, events: events) { return nil }
+                if try await waitedForNetwork(reason: reason, events: events) { return .again }
                 events(.retrying(attempt: attempt + 1, of: retry.maximumAttempts, delay: delay, reason: reason))
-                do { try await clock.sleep(for: delay) } catch { throw .cancelled }
+                if try await pause(for: delay, handsOver: handsOver) { return .handOver }
                 attempt += 1
-                return nil
+                return .again
         }
     }
 

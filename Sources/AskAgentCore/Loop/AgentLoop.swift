@@ -5,18 +5,21 @@ internal import AskAI
 /// Everything the model or a tool produces is recorded as soon as it is complete, so an interrupted run
 /// resumes from exactly what happened. A response cut off mid-stream is not recorded as if it were complete.
 public struct AgentLoop: Sendable {
-    let provider: any ModelProvider
-    let tools: ToolRegistry
-    let settings: AgentSettings
-    private let context: ToolContext
-    let retry: RetryPolicy
+    // The model, tools and settings are `var` so that a running turn can take a newer loop's (``LoopHandover``, roadmap 0113).
+    var provider: any ModelProvider
+    var tools: ToolRegistry
+    var settings: AgentSettings
+    var context: ToolContext
+    var retry: RetryPolicy
     let clock: any Clock<Duration>
+    /// Where a change made during a turn is offered to it; nil for a loop that keeps its settings.
+    var handover: LoopHandover?
     /// The system's route to the network, checked when a request fails (roadmap 0141); nil never waits.
     let network: (any NetworkPath)?
     /// The longest a request waits for the network to come back.
     let networkWait: Duration
-    private let hooks: [any AgentHook]
-    let learnedWindow = LearnedWindow()
+    var hooks: [any AgentHook]
+    var learnedWindow = LearnedWindow()
     /// Answers in a row that lost their connection part way (roadmap 0141).
     let drops = DropCount()
     /// Repairs already reported, so an old session's damage is said once and not before every request.
@@ -45,8 +48,9 @@ public struct AgentLoop: Sendable {
     public init(
         provider: any ModelProvider, tools: ToolRegistry, settings: AgentSettings, context: ToolContext,
         retry: RetryPolicy = .standard, clock: any Clock<Duration> = ContinuousClock(), hooks: [any AgentHook] = [],
-        network: (any NetworkPath)? = nil, networkWait: Duration = .seconds(300)
+        network: (any NetworkPath)? = nil, networkWait: Duration = .seconds(300), handover: LoopHandover? = nil
     ) {
+        self.handover = handover
         self.network = network
         self.networkWait = networkWait
         self.hooks = hooks
@@ -105,20 +109,33 @@ public struct AgentLoop: Sendable {
     public func run(
         _ prompt: String, in session: SessionRecorder, input: PromptQueue? = nil, events: (AgentEvent) -> Void
     ) async throws(AgentError) {
+        var loop = self
+        try await loop.drive(prompt, in: session, input: input, events: events)
+    }
+
+    /// `run`'s body, on a copy that takes what is offered to it before each request.
+    private mutating func drive(
+        _ prompt: String, in session: SessionRecorder, input: PromptQueue?, events: (AgentEvent) -> Void
+    ) async throws(AgentError) {
         try record(.user(prompt), in: session)
         var watch = WindowWatch()
-        for turn in 0 ..< settings.maximumTurns {
+        var turn = 0
+        while turn < settings.maximumTurns {
+            takeOffered()
             if compactionDue(session, contextFull: watch.contextFull) {
                 try await compact(session, contextFull: watch.contextFull, events: events)
             }
             let allowedOutput = budget.maximumTokens
             let response: AssembledResponse
             do {
-                response = try await respond(to: session.tree, events: events)
+                // nil: a change was offered while a retry waited; the request goes again, to the new loop, without counting.
+                guard let answered = try await respond(to: session.tree, events: events) else { continue }
+                response = answered
             } catch .contextOverflow(let reason) {
                 // Refused for its length: compact and send the shorter conversation, once.
                 try watch.overflowed(reason)
                 try await compact(session, contextFull: true, events: events)
+                turn += 1
                 continue
             }
             watch.responded()
@@ -140,12 +157,14 @@ public struct AgentLoop: Sendable {
             if try acceptInput(
                 input, finished: !continuing, atLimit: turn + 1 == settings.maximumTurns, in: session, events: events)
             {
+                turn += 1
                 continue
             }
             if !continuing {
                 events(.finished(response.stopReason))
                 return
             }
+            turn += 1
         }
         throw .turnLimit(settings.maximumTurns)
     }
@@ -209,22 +228,9 @@ public struct AgentLoop: Sendable {
 
     /// Streams one response for the tree's context and assembles it.
     private func respond(to tree: SessionTree, events: (AgentEvent) -> Void) async throws(AgentError)
-        -> AssembledResponse
+        -> AssembledResponse?
     {
-        try await stream(request(for: tree.context(), events: events), events: events)
-    }
-
-    /// The request for `context`, reporting any repair it needed.
-    func request(for context: [SessionEntry], events: (AgentEvent) -> Void) -> ModelRequest {
-        let built = RequestContext(context)
-        let fresh = reportedRepairs.unreported(built.repairs)
-        if !fresh.isEmpty { events(.repaired(fresh)) }
-        return ModelRequest(
-            model: settings.model, maxTokens: budget.maximumTokens, systemPrompt: settings.systemPrompt,
-            messages: ImagePart.filtering(
-                built.messages, accepts: settings.acceptsImages, limits: settings.imageLimits),
-            tools: tools.definitions,
-            thinking: settings.thinking)
+        try await stream(request(for: tree.context(), events: events), events: events, handsOver: true)
     }
 
     func record(_ payload: SessionPayload, in session: SessionRecorder) throws(AgentError) {

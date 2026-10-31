@@ -42,3 +42,28 @@ rebuilt after a change, so a turn runs on the settings it started with.
 "After the turn" means the command is accepted, shown as waiting (as a queued message is), and runs when the turn ends; Esc or a
 stop cancels it. Nothing waits on the person to type it again.
 
+## Owner's decisions (2026-10-31)
+
+- `/model` and `/thinking` always apply on the very next request, inside the running turn, switching completely: another connection too,
+  not only at the next prompt.
+- `/config` (the editor, and a settings file's change) applies at once, not after the turn.
+- The rest of the table as proposed.
+
+## Step 1 done (2026-10-31): model, effort and settings on the next request
+
+- `LoopHandover` (AskAgentCore): a change is offered to the running turn, which takes it before its next request: provider, model,
+  system prompt, tools, tool context, retry policy. The turn keeps what it learned: repairs already said, drops counted, and the window
+  when the model is the same. A retry waiting on its backoff wakes when a change is offered and sends to the new loop, without
+  spending an attempt. Tests: `AgentLoopHandoverTests` (red first).
+- A provider switch inside a tool loop is safe at the protocol level: encoders drop reasoning another protocol issued (ADR-0033), and
+  Anthropic's documentation says a thinking change in the middle of a tool loop "doesn't error": the API disables thinking for that
+  request instead (platform.claude.com, "Thinking with tool use", read 2026-10-31).
+- The screen: `SlashCommand.duringTurn` (`.atOnce`) and `.runCommandBeside`; `/model`, `/thinking`, `/config` (show and the editor)
+  and `/mcp` run beside a turn. A settings file changed during a turn now applies at once (it waited for the turn's end, 0127).
+  Tests: `CommandsDuringTurnTests`; `Scripts/probe-mid-turn.py` A to E, red before.
+
+## Still owed
+
+- `/login`, `/logout` of another account and `/fork` at once; `/logout` of the account in use, `/compact`, `/new`, `/resume`,
+  `/rewind`, `/reload` queued for the turn's end and cancellable; `/skill` queued as a message.
+
