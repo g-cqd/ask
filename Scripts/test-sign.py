@@ -35,6 +35,12 @@ class SignTests(unittest.TestCase):
         self.assertIn("Identifier=ask", details(self.binary).splitlines())
         subprocess.run(["codesign", "--verify", str(self.binary)], check=True)
 
+    def test_signs_with_the_hardened_runtime_so_dyld_ignores_inserted_libraries(self):
+        # Without it, DYLD_INSERT_LIBRARIES runs a stranger's code as ask, which reads ask's Keychain items with no prompt.
+        result = self.sign("-")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertRegex(details(self.binary), r"flags=0x[0-9a-f]+\([^)]*\bruntime\b")
+
     def test_without_an_identity_it_leaves_the_binary_and_says_so(self):
         before = self.binary.read_bytes()
         result = self.sign(None)

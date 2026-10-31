@@ -70,6 +70,8 @@ python3 -B Scripts/check-layers.py || fail "a target depends on one ADR-0009's l
 printf '==> build and test (release)\n'
 # Explicit testability for optimized tests (ADR-0006). Benchmark/shipping binaries are built
 # separately with `swift build -c release`; do not treat a testable build as byte-identical.
-swift test -c release --enable-testable-imports
+# --force-resolved-versions: build exactly what Package.resolved pins, and fail rather than re-resolve when it disagrees with the
+# manifest, so a dependency's revision changes only in a reviewed commit.
+swift test -c release --enable-testable-imports --force-resolved-versions
 
 printf '\n[OK] clean\n'

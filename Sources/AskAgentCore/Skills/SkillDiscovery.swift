@@ -31,18 +31,29 @@ public enum SkillDiscovery {
         var seenFiles = Set<String>()
         var scannedRoots = Set<String>()
         var byName: [String: Skill] = [:]
+        let boundary = projectBoundary(workingDirectory: workingDirectory, home: home)
         for root in roots(workingDirectory: workingDirectory, home: home, sources: sources, selection: selection) {
             let exists = isDirectory(root.path)
             catalog.roots.append(
                 SkillCatalog.Root(path: root.path, source: root.source, scope: root.scope, exists: exists))
             // A directory already searched under another name (eight harness directories can be links to one) is not searched again.
-            guard exists, scannedRoots.insert(URL(fileURLWithPath: root.path).resolvingSymlinksInPath().path).inserted
-            else {
+            guard exists else { continue }
+            let resolved = URL(fileURLWithPath: root.path).resolvingSymlinksInPath().path
+            // A project's folder linked out of the project is searched as what it leads to, if that is the user's, and not as the project's.
+            if root.scope == .project, !resolved.hasPrefix(boundary + "/") {
+                catalog.skipped.append("\(root.path): links outside the project, so it is not read")
                 continue
             }
+            guard scannedRoots.insert(resolved).inserted else { continue }
             for candidate in candidates(in: root.path) {
                 let real = URL(fileURLWithPath: candidate.file).resolvingSymlinksInPath().path
                 guard !seenFiles.contains(real) else { continue }
+                // A link in a repository can point at any file on the machine; read outside the sandbox, trusting it would hand the model a
+                // file the sandbox asks about. The same file is still found through the user's own directories, so it is not marked seen.
+                if root.scope == .project, !real.hasPrefix(boundary + "/") {
+                    catalog.skipped.append("\(candidate.file): links outside the project, so it is not read")
+                    continue
+                }
                 switch read(candidate, real: real, source: root.source, scope: root.scope) {
                     case .failure(let reason):
                         seenFiles.insert(real)
@@ -127,6 +138,12 @@ public enum SkillDiscovery {
             current = (current as NSString).deletingLastPathComponent
         }
         return found
+    }
+
+    /// The topmost project directory, links resolved: a project's skill must be a file inside it.
+    static func projectBoundary(workingDirectory: String, home: String) -> String {
+        let top = projectDirectories(from: workingDirectory, home: home).last ?? workingDirectory
+        return URL(fileURLWithPath: top).resolvingSymlinksInPath().path
     }
 
     static func isDirectory(_ path: String) -> Bool {

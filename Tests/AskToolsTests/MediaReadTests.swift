@@ -99,6 +99,13 @@ struct MediaReadTests {
         #expect(PDFReader.pages("") == nil && PDFReader.pages("1,,2") == nil)
     }
 
+    /// The spec is the model's, so it is bounded as a whole: many wide ranges would otherwise build millions of pages, checked for
+    /// repeats one by one, before a single page is read.
+    @Test func `a page spec names at most ten thousand pages in all`() {
+        #expect(PDFReader.pages("1-9999,10000-19998,20000-29998") == nil)
+        #expect(PDFReader.pages("1-5000,1-5000,5001-10000")?.count == 10_000, "repeats count once")
+    }
+
     // MARK: - video
 
     /// A 3-second, 10 frames per second MP4 whose frames change colour.
@@ -175,6 +182,13 @@ struct MediaReadTests {
         #expect(plan(.init(every: 1, maximumImages: 3)).wanted == 11)
         #expect(plan(.init(at: [1, 99, -2], maximumImages: 8)).times == [1, 9.95, 0])
         #expect(plan(base).times.count == 4)
+    }
+
+    /// A file says how long it is, up to Int64 seconds: one frame every 0.04 s of that is past `Int.max`, which must not stop ask.
+    @Test func `a video that claims an enormous length is planned, not trapped on`() {
+        let planned = VideoReader.times(duration: 9e18, VideoReader.Request(every: 0.04, maximumImages: 8))
+        #expect(planned.times.count == 8)
+        #expect(planned.wanted == Int.max)
     }
 
     @Test func `the sniffer tells video from pictures that share the ISO container`() {

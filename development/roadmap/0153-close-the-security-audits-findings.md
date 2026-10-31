@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-29
 ---
@@ -39,7 +39,7 @@ each protected set and default is **tunable in the configuration** (documented i
 A default withhold list for well-known credential variables (`GITHUB_TOKEN`, `AWS_*`, ...), 0700 session directories, the Keychain
 (0110), and `/reload`'s self-check of a build the model could have written.
 
-## Not covered yet
+## Not covered yet (covered 2026-10-31, run 2 below)
 
 TLS and endpoint policy of the provider clients, the extension host, skills' loading and trust, the image, PDF and video readers'
 parsers, the session parser, supply chain beyond pinned revisions: a `standard` run with separate verifiers.
@@ -162,3 +162,20 @@ ask therefore saw the ad-hoc build's signature, took itself for unsigned ("The r
   signed.
 
 Open: the "Not covered yet" audit (TLS and endpoints, the extension host, skills, the media and session parsers, supply chain).
+
+## Done (2026-10-31): the Not-covered audit (run 2)
+
+`development/research/security-audit-2026-10-31.md`. Partial as run 1 was: one agent, no separate verifiers. Six findings, each
+reproduced and fixed test first:
+
+1. Medium: the signed build had no hardened runtime, so an inserted library ran as ask and could read its Keychain items.
+   `sign.sh` now passes `--options runtime`.
+2. Medium: a project skill or skills root linked outside the project was loaded once trusted. It is now skipped with a notice.
+3. Low–Medium: a session record's `write: anywhere` widened the default workspace on resume. A record now keeps only the scopes
+   that narrow.
+4. Low: `providers.json` headers went over plain http to another machine. Any header now counts as a credential.
+5. Low: an unbounded PDF page spec with a quadratic repeat check. It is now capped at 10,000 pages, with a set.
+6. Low: a video claiming an enormous length trapped converting its frame count. The count is clamped.
+
+Builds also use `--force-resolved-versions`. For the owner: whether skill trust should digest the whole skill folder (the report's
+hardening notes). The limited network level the owner asked for is 0021's. Nothing else of this record stays open.

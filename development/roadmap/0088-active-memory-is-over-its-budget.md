@@ -205,3 +205,10 @@ use a bounded cache or revise the design if synchronous disk reads move input/ac
 15.9 MiB now (+0.6 MiB from the day's features), active 23.7 then 24.1 MiB; both over their budgets (15 and 20). Cold start and input
 delay move with the load (22 ms and 0.3 ms in quiet rounds, 77 to 82 ms and 10 ms under full load) and did not change between the builds.
 
+## Measured again (2026-10-31, night)
+
+`measure-budgets.py` at load 7–10, `d1d8353` and the 0153 run-2 fixes built and measured alongside, both ad hoc: idle 16.0 and 16.1
+MiB, active 24.9 and 24.8 MiB. The fixes add nothing measurable. The same binary signed with the personal identity idles at 17.4 to
+17.5 MiB, with or without the hardened runtime: about 1.3 MiB more than ad hoc. The cause is probably the Keychain path a stably
+signed build takes, but that is not measured.
+

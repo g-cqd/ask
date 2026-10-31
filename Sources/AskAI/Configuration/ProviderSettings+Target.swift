@@ -66,7 +66,7 @@ extension ProviderSettings {
         return Target(name: name, entry: entry, preset: preset, api: api, baseURL: baseURL)
     }
 
-    /// The address and the key to send, after the endpoint policy has agreed the key may go there.
+    /// The address and the key to send, after the endpoint policy has agreed the key and the headers may go there.
     /// - Throws: a key problem from ``credential(of:entry:preset:environment:stored:)`` or
     ///   ``ProviderSettingsError/refusedEndpoint(provider:reason:)``.
     func endpoint(
@@ -79,7 +79,9 @@ extension ProviderSettings {
         guard let url = URL(string: trimmed) else {
             throw .refusedEndpoint(provider: target.name, reason: "it is not a URL")
         }
-        if let reason = EndpointPolicy.refusal(for: url, carriesCredential: key != nil) {
+        // A header is often a gateway's credential, so headers count as one, as an MCP server's do.
+        let carriesCredential = key != nil || !(target.entry.headers ?? [:]).isEmpty
+        if let reason = EndpointPolicy.refusal(for: url, carriesCredential: carriesCredential) {
             throw .refusedEndpoint(provider: target.name, reason: reason)
         }
         return (url, key)
