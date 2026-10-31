@@ -81,3 +81,13 @@ home: the long line pushed a resumed conversation off the screen (interactive pr
 
 The default write scope is the workspace (done, `175c674`). Owed: finding 5 (`ask -p` passes control sequences, OSC 52 among them, to
 the terminal), the hardening notes above, the default network (to decide with the owner), and a `standard` audit run over the result.
+
+## Done (2026-10-30): finding 5
+
+Validated: on the build of the morning, `ask -p` wrote a model's `ESC ] 52 ; c ; … BEL` (a clipboard write) and colour sequences to
+standard output as they came. `TerminalTextFilter` now removes every escape sequence whole (CSI, OSC, DCS, SOS, PM, APC, two-byte
+escapes, their 8-bit forms) and drops the other controls but tab and line feed; it keeps its state across streamed deltas, and a line
+feed or 4,096 scalars end a sequence that never ends. The answer goes through it, and every line on standard error. The interactive
+screen was already safe: TerminalKit's screen buffer replaces control characters with U+FFFD. Tests: `TerminalTextFilterTests` (red
+first); `probe-agent-run.py` section Z, red on the morning's build.
+
