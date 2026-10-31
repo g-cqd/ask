@@ -64,3 +64,19 @@ dead code. Regression test in `CommandWordsQuotingTests`. The mutation run to co
   went through git with the personal key; git in `g-cqd/` folders uses that key (`~/.gitconfig-g-cqd`).
 - **Muter: not reported again.** Its repository is active (last commit 2026-10-23), and the bug is already open as muter #321
   (2026-10-11), with the same root cause and fix.
+
+## Done (2026-10-31): part 2, dependency checks, both gate stages
+
+- **`Scripts/dependency-audit.sh`** runs swift-dependency-audit v2.0.8, pinned by version and archive SHA-256 (macOS universal) and
+  installed on first use. CI caches it with the analyzers. On first run it found six real problems:
+  - AskTools, AskToolsTests, AskAgentCoreTests and AskAITests imported `AemiJSON` without declaring it.
+  - AskTUITests imported `TerminalKitMarkdown` without declaring it.
+  - AskTUI declared `TerminalKitCore` and never imported it.
+
+  The undeclared imports compiled only because the modules arrive through another target. All six are fixed in `Package.swift`.
+  `FoundationModels` is a system framework and is whitelisted. The tool exits 1 on the old manifest and 0 on the new one.
+- **`Scripts/check-layers.py`** checks ADR-0009's graph over `swift package dump-package`, in 0.5 s. Each library target lists the
+  internal targets it may depend on; AskAI depends at most on AskCore, and AskTUI and AskCore on nothing. Nothing may depend on the
+  executable. A new library target fails until it is placed in the graph. Its self-test, `Scripts/test-layers.py`, plants each kind
+  of violation. Chosen over spmgraph, which publishes no binaries and would be built from source for a check this size; drawing the
+  graph is what it would add.

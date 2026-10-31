@@ -143,6 +143,7 @@ let package = Package(
             name: "AskTools",
             dependencies: [
                 "AskAgentCore", "AskAI", "AskMCP", .product(name: "AemiKernel", package: "aemi"),
+                .product(name: "AemiJSON", package: "AemiJSON"),
                 // File watching (aemi ADR 0016): the new build beside the running one, the configuration files.
                 .product(name: "AemiIO", package: "aemi"), .product(name: "Subprocess", package: "swift-subprocess")
             ],
@@ -152,7 +153,6 @@ let package = Package(
         .target(
             name: "AskTUI",
             dependencies: [
-                .product(name: "TerminalKitCore", package: "TerminalKit"),
                 .product(name: "TerminalKitCodecs", package: "TerminalKit"),
                 .product(name: "TerminalKitIO", package: "TerminalKit"),
                 .product(name: "TerminalKitInput", package: "TerminalKit"),
@@ -189,7 +189,8 @@ let package = Package(
         .testTarget(
             name: "AskAgentCoreTests",
             dependencies: [
-                "AskAgentCore", "AskAI", .product(name: "AemiIO", package: "aemi")
+                "AskAgentCore", "AskAI", .product(name: "AemiIO", package: "aemi"),
+                .product(name: "AemiJSON", package: "AemiJSON")
             ],
             path: "Tests/AskAgentCoreTests",
             swiftSettings: packageSettings
@@ -202,7 +203,7 @@ let package = Package(
         ),
         .testTarget(
             name: "AskAITests",
-            dependencies: ["AskAI"],
+            dependencies: ["AskAI", .product(name: "AemiJSON", package: "AemiJSON")],
             path: "Tests/AskAITests",
             swiftSettings: packageSettings
         ),
@@ -220,7 +221,7 @@ let package = Package(
             name: "AskToolsTests",
             dependencies: [
                 "AskTools", "AskAgentCore", "AskAI", "AskMCP", .product(name: "AemiTesting", package: "aemi"),
-                .product(name: "AemiRegex", package: "aemiregex")
+                .product(name: "AemiRegex", package: "aemiregex"), .product(name: "AemiJSON", package: "AemiJSON")
             ],
             path: "Tests/AskToolsTests",
             swiftSettings: packageSettings
@@ -235,7 +236,8 @@ let package = Package(
                 .product(name: "TerminalKitInput", package: "TerminalKit"),
                 .product(name: "TerminalKitRender", package: "TerminalKit"),
                 .product(name: "TerminalKitStyle", package: "TerminalKit"),
-                .product(name: "TerminalKitText", package: "TerminalKit")
+                .product(name: "TerminalKitText", package: "TerminalKit"),
+                .product(name: "TerminalKitMarkdown", package: "TerminalKit")
             ],
             path: "Tests/AskTUITests",
             swiftSettings: packageSettings
