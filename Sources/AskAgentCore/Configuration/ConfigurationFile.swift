@@ -76,15 +76,18 @@ public struct ConfigurationFile: Sendable, Equatable {
         var decoder = AemiJSON.JSONDecoder()
         decoder.options = JSONParseOptions(validation: .json5, duplicateKeys: .throwError)
         var file: ConfigurationFile
+        var read = bytes
         do {
-            let (bytes, notices) = try renamingOldNames(in: bytes, path: path)
-            file = try decoder.decode(Decoded.self, from: bytes).file
+            let (renamed, notices) = try renamingOldNames(in: bytes, path: path)
+            read = renamed
+            file = try decoder.decode(Decoded.self, from: renamed).file
             file.notices = notices
         } catch let unknown as UnknownKey {
             throw .unknownKey(path: path, key: unknown.key, known: keys)
         } catch let bad as BadValue {
             throw .outOfRange(path: path, key: bad.key, reason: bad.reason)
         } catch {
+            if let refusal = refusal(of: error, in: read, path: path) { throw refusal }
             let (line, column) = position(of: error, in: bytes)
             throw .invalid(path: path, line: line, column: column, reason: reason(of: error))
         }

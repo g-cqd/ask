@@ -143,7 +143,7 @@ Switches are `true` or `false`; `"on"` and `"off"` are still read.
 
 ### `ui`
 
-Switches take `"on"` or `"off"` (`true` and `false` work too).
+Switches take `true` or `false` (the older `"on"` and `"off"` still work).
 
 | Key | Default | What it does |
 |---|---|---|
@@ -196,8 +196,8 @@ See [Skills and MCP servers](skills-and-mcp.md).
 | Key | Default | What it does |
 |---|---|---|
 | `enabled` | `true` | Whether skills are offered at all. |
-| `maxListed` | `32` | How many skills are listed to the model; the rest can still be found and loaded by name. |
-| `sources` | every harness | Where to look, by harness: `agents`, `ask`, `claude`, `codex`, `pi`, `opencode`, `vibe`, `copilot`, and `user`, `project` or `bundled`. |
+| `maxListed` | `32` | How many skills are listed to the model; the rest can still be found and loaded by name. Your own file only. |
+| `sources` | every harness | Where to look, by harness: `agents`, `ask`, `claude`, `codex`, `pi`, `opencode`, `vibe`, `copilot`, and `user`, `project` or `bundled`. Your own file only. |
 
 ### `mcp`
 
