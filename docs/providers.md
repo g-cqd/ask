@@ -70,3 +70,8 @@ For Ollama, start it with `OLLAMA_CONTEXT_LENGTH=32768`: its default window can 
 
 `thinking` (`--thinking`, `/thinking`, `ASK_THINKING`) asks for `off`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max`. ask sends only
 what the model says it accepts, and refuses a level it lacks rather than quietly picking another. `default` leaves it to the provider.
+
+Claude's thinking is shown: ask asks for its summary (`display: "summarized"`), since Claude models from Opus 4.7 on otherwise send their
+thinking empty. On a model that always thinks (Opus 5.5, Sonnet 5.5), `default` is sent as the adaptive thinking it is, at the model's
+own effort, so that the summary can be asked for too. On a model where thinking is optional, `default` sends nothing; choose an effort
+to see its thinking.

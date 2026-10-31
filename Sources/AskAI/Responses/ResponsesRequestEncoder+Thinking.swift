@@ -15,7 +15,7 @@ extension ResponsesRequestEncoder {
                     $0.field("effort", level.rawValue)
                     $0.field("summary", "auto")
                 }
-            case .budget, .betweenTools: break
+            case .budget, .betweenTools, .adaptive: break
         }
     }
 }

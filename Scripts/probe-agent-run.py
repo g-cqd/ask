@@ -892,10 +892,36 @@ def probe_control_sequences():
         check("no ESC or BEL on either handle", not any(b in run.stdout + run.stderr for b in (b"\x1b", b"\x07")), run.stderr[-200:])])
 
 
+def probe_thinking_display():
+    print("Y: Claude's thinking is asked for as summaries, and a model that always thinks gets its default as adaptive thinking")
+    catalog = [{"id": "claude-opus-5-5", "max_input_tokens": 1000000, "max_tokens": 128000,
+                "capabilities": {"thinking": {"supported": True, "types": {"adaptive": {"supported": True}}},
+                                 "effort": {"high": {"supported": True}}}},
+               {"id": "claude-opus-4-8", "max_input_tokens": 1000000, "max_tokens": 128000,
+                "capabilities": {"thinking": {"supported": True, "types": {"adaptive": {"supported": True}, "disabled": {"supported": True}}},
+                                 "effort": {"high": {"supported": True}}}}]
+    state, config, project = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    server = Server([turn([("text", "ok")], "end_turn") for _ in range(3)], catalog=catalog)
+    env = environment(state, server.url, config)
+    # The first run's effort is looked up from the catalog, which fills the cache the default level reads (it never uses the network).
+    for model, level in (("claude-opus-5-5", "high"), ("claude-opus-5-5", None), ("claude-opus-4-8", None)):
+        subprocess.run([ASK, "-p", "hi", "--model", model] + (["--thinking", level] if level else []), cwd=project, env=env,
+                       capture_output=True, timeout=60)
+    sent = [(r["body"].get("thinking"), r["body"].get("output_config")) for r in server.requests]
+    server.httpd.shutdown()
+    summarized = {"type": "adaptive", "display": "summarized"}
+    return all([
+        check("three requests", len(sent) == 3, sent),
+        check("an effort asks for the summary", len(sent) > 0 and sent[0] == (summarized, {"effort": "high"}), sent[:1]),
+        check("the default on a model that always thinks is adaptive, summarized, at its own effort",
+              len(sent) > 1 and sent[1] == (summarized, None), sent[1:2]),
+        check("the default on a model that may not think sends nothing", len(sent) > 2 and sent[2] == (None, None), sent[2:3])])
+
+
 if __name__ == "__main__":
     probes = [probe_round_trip, probe_interrupt, probe_resume, probe_crash_resume, probe_compaction, probe_jobs, probe_jobs_end_with_ask,
               probe_configuration, probe_sandbox, probe_sandbox_allowance, probe_damaged_session, probe_nested_sandbox, probe_strict_sandbox,
-              probe_session_sandbox, probe_read_allowlist, probe_call_sandbox, probe_session_narrowing, probe_control_sequences]
+              probe_session_sandbox, probe_read_allowlist, probe_call_sandbox, probe_session_narrowing, probe_control_sequences, probe_thinking_display]
     # --only F,J runs the probes whose heading starts with those letters (each prints "F: …" first).
     wanted = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
     ok = True

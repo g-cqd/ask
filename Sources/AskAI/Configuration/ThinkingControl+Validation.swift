@@ -10,7 +10,8 @@ extension ThinkingControl {
     var responsesProblem: ThinkingError? {
         if let effortProblem { return effortProblem }
         switch self {
-            case .budget, .betweenTools: return .unsupportedProtocol("a native thinking mode on the Responses API")
+            case .budget, .betweenTools, .adaptive:
+                return .unsupportedProtocol("a native thinking mode on the Responses API")
             case .disabled, .effort: return nil
         }
     }
