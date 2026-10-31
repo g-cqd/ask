@@ -62,6 +62,21 @@ extension AgentConversation {
             return
         }
         update(.notice("Checking the new build (\(latest.summary))…", isError: false))
+        // A signed ask starts only a build signed as it is (roadmap 0153): the self-check would already run what is at the path.
+        switch BuildSignature.check(latest.path, against: BuildSignature.runningRequirement()) {
+            case .refused(let reason):
+                update(
+                    .notice(
+                        "Not reloading: \(reason). Build with Scripts/build-release.sh, which signs it. Staying on the running build.",
+                        isError: true))
+                return
+            case .unsignedRunning:
+                update(
+                    .notice(
+                        "The running build is not signed, so the new build's signature is not compared.", isError: false
+                    ))
+            case .sameSigner: break
+        }
         if case .failed(let reason) = await SelfCheck.run(
             latest.path, arguments: source.flags.arguments, environment: LaunchEnvironment.values)
         {
