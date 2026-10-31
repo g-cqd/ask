@@ -12,16 +12,11 @@ extension AccountLogin {
         }
         let credentials = try await ClaudeAuthClient(transport: transport)
             .complete(pending, pasted: pasted, now: Date().timeIntervalSince1970)
-        if let connection {
-            try NamedConnections.registry(environment: environment)
-                .saveClaude(credentials, for: connection, replaceAccount: replace)
-        } else {
-            try file.saveClaudeSubscription(credentials)
-        }
+        let placement = try store(.claude(credentials), named: connection, file: file, replace: replace)
         if let email = credentials.accountEmail {
-            NamedConnections.reportSharedAccount(.claude(email), connection: connection)
+            NamedConnections.reportSharedAccount(.claude(email), connection: placement.connection)
         }
-        return "Signed in to Claude\(credentials.accountEmail.map { " as \($0)" } ?? "")."
+        return "Signed in to Claude\(credentials.accountEmail.map { " as \($0)" } ?? "")." + placement.note
     }
 
     func codex(device: Bool, connection: ConnectionRecord?, file: CredentialFile, replace: Bool) async throws -> String
@@ -34,14 +29,9 @@ extension AccountLogin {
             credentials = try await CodexBrowserSignIn(transport: transport)
                 .run(show: self.show, paste: { await interaction.ask("Paste the address here:", secret: false) })
         }
-        if let connection {
-            try NamedConnections.registry(environment: environment)
-                .saveCodex(credentials, for: connection, replaceAccount: replace)
-        } else {
-            try file.saveCodex(credentials)
-        }
-        NamedConnections.reportSharedAccount(.codex(credentials.accountID), connection: connection)
-        return "Signed in to Codex."
+        let placement = try store(.codex(credentials), named: connection, file: file, replace: replace)
+        NamedConnections.reportSharedAccount(.codex(credentials.accountID), connection: placement.connection)
+        return "Signed in to Codex." + placement.note
     }
 
     /// The Antigravity sign-in, for the user's own Google account (ADR-0073). The application's client secret is found in the installed

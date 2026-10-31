@@ -80,6 +80,8 @@ def main():
             check("the model got the line, then the skill's body", message.startswith("/skill:review is this safe?\n\n--- skill review (ask, user) ---")
                   and "Measure first, then change one thing." in message)
             terminal.draw(lambda: terminal.send(b"/skill:nothing x\r"))
+            # The notice comes from the conversation, after the frame the Enter drew: wait for it, or the check races it.
+            terminal.until(lambda: "No skill is called" in terminal.text() or len(server.requests) > 1)
             check("an unknown skill says so and starts no run", "No skill is called \"nothing\"" in terminal.text() and len(server.requests) == 1)
         except AssertionError:
             if terminal:

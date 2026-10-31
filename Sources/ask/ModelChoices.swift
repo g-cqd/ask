@@ -33,17 +33,25 @@ enum ModelChoices {
         let currentName = current.connection?.name ?? current.providerName
         var ordered = listings.map(\.provider)
         if let index = ordered.firstIndex(of: currentName) { ordered.insert(ordered.remove(at: index), at: 0) }
-        var rows: [ChoiceRow] = []
+        let connections = ModelAccounts.connections(environment: environment)
+        var offers: [ModelOffer] = []
+        var models: [String: [String: CatalogModel]] = [:]
         var failed: [String] = []
         for provider in ordered {
             switch results[provider] {
-                case .success(let models):
-                    rows += ModelUsefulness.shown(models, onlyUseful: onlyUseful)
-                        .map { offer($0, provider: provider, current: current, currentName: currentName) }
+                case .success(let listed):
+                    let kind = ModelAccounts.kind(of: provider, connections: connections)
+                    for model in ModelUsefulness.shown(listed, onlyUseful: onlyUseful) {
+                        offers.append(ModelOffer(account: provider, kind: kind, model: model.id))
+                        models[provider, default: [:]][model.id] = model
+                    }
                 case .failure(let error): failed.append("\(provider): \(error)")
                 case nil: break
             }
         }
+        var rows = Self.rows(
+            ModelOfferGroup.grouped(offers), models: models, current: current, currentName: currentName,
+            environment: environment)
         if !failed.isEmpty {
             rows.append(
                 ChoiceRow(
@@ -52,7 +60,7 @@ enum ModelChoices {
         return rows
     }
 
-    private static func offer(_ model: CatalogModel, provider: String, current: ResolvedModel, currentName: String)
+    static func offer(_ model: CatalogModel, provider: String, current: ResolvedModel, currentName: String)
         -> ChoiceRow
     {
         var facts: [String] = []
