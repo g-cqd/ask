@@ -68,6 +68,15 @@ struct AgentLoopTests {
         #expect(events.contains(.toolFinished(id: "t1", name: "upper", output: ToolOutput("ABC"))))
     }
 
+    @Test func `a tool's typed facts are recorded with its result`() async throws {
+        let file = try newFile()
+        let provider = ScriptedProvider([.call(id: "t1", name: "count", input: "{}"), .reply("Done.")])
+        try await loop(provider, tools: [Counting()]).run("Go", in: file) { _ in }
+        #expect(
+            file.tree.entries[2].payload
+                == .toolResult(callID: "t1", content: "Replaced 2.", isError: false, facts: ToolFacts(replacements: 2)))
+    }
+
     @Test func `a paused turn is continued, not taken as the end`() async throws {
         let file = try newFile()
         let provider = ScriptedProvider([.pause("Working…"), .reply("Done.")])
@@ -96,7 +105,7 @@ struct AgentLoopTests {
         let file = try newFile()
         let provider = ScriptedProvider([.call(id: "t1", name: "rm", input: "{}"), .reply("Sorry.")])
         try await loop(provider).run("Delete it", in: file) { _ in }
-        guard case .toolResult("t1", let content, true, _) = file.tree.entries[2].payload else {
+        guard case .toolResult("t1", let content, true, _, _) = file.tree.entries[2].payload else {
             Issue.record("expected an error result, got \(file.tree.entries[2].payload)")
             return
         }
@@ -178,6 +187,17 @@ struct AgentLoopTests {
 
         func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
             ToolOutput(arguments.text.uppercased())
+        }
+    }
+
+    private struct Counting: Tool {
+        let definition = ToolDefinition(
+            name: "count", description: "Count.", inputSchema: try! JSONObject(validating: Array(#"{}"#.utf8)))
+
+        func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
+            var output = ToolOutput("Replaced 2.")
+            output.facts.replacements = 2
+            return output
         }
     }
 

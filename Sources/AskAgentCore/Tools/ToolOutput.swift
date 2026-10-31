@@ -9,6 +9,8 @@ public struct ToolOutput: Sendable, Equatable {
     public var backgroundJob: String?
     /// Images the tool returned (roadmap 0084), sent to a model that takes images.
     public var images: [ImagePart] = []
+    /// What the tool did, typed, for the screen; the model reads ``content`` only.
+    public var facts = ToolFacts()
 
     /// An output with this content.
     public init(_ content: String, isError: Bool = false, backgroundJob: String? = nil) {

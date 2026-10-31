@@ -89,8 +89,21 @@ Done now, each test first:
 - On the side: `UISection.isEmpty` is now `self == UISection()`, so a new key cannot be left out of it; the count checks moved to
   `ConfigurationFile+Counts.swift`.
 
+### Typed facts and readable strings (2026-10-31)
+
+- **An edit's replacement count** is a typed fact, `ToolFacts.replacements`, set by the edit (and by `write` with `old_text`, which
+  runs it), never parsed from its sentence. It is recorded with the result in the session file as an optional `replacements` key
+  (absent when unknown, so older sessions read as having none), replayed on resume, and kept out of what the model is sent. The
+  header shows it on the right, where a read counts its lines: `write · a.txt · exact replacement … 3 replacements · ✓`, singular
+  for one. Tests: `ToolFactsTests`, `AgentLoopTests`, `FileToolsTests`, `EditReplacementHeaderTests`; a mutation at each of the
+  six handoffs (tool, loop, wire, replay, transcript, composer) turns one red. Probe: `Scripts/probe-output-fold.py`, live and after
+  a resume.
+- **Multi-line strings in unknown tools' input** (an MCP server's SQL, a job's text) are shown as written, each under its name after
+  the JSON of the rest, in the model's order; with nothing else, no empty `{}`. A string in a nested value stays JSON. The session
+  keeps the call's own bytes; this is only how it is drawn (`ToolPresentationTests`).
+
 ## Still owed
 
-- An edit's replacement count as a typed fact in its header, not only in the result's sentence.
-- Strings inside unknown tools' JSON are shown escaped (`\n`), not as their text.
+- The skill tool's header is its raw JSON (`{"name":"pdf"}`): it wants a projection of its own (a name, a search or a browse).
+- Byte counts group thousands with a comma whatever the locale; the record asks for a deliberate locale, injected in tests.
 - Fold choices are not kept across a resume: a resumed session starts from the defaults, as the other folds do.

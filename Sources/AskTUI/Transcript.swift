@@ -39,6 +39,8 @@ public struct Transcript: Sendable, Equatable {
     /// The blocks still going when the person stopped the turn (roadmap 0142), drawn on the interruption tint.
     var interrupted: Set<Int> = []
     var jobBlocks: [String: Int] = [:]
+    /// How many occurrences each edit block's tool reported replacing (roadmap 0078), drawn where a read counts its lines.
+    var replacements: [Int: Int] = [:]
     var completedJobs: Set<String> = []
     /// Which tool blocks the user opened or closed, over the default for the kind (TerminalKit roadmap 0018).
     var folds = FoldStore<Int>()
@@ -87,6 +89,7 @@ public struct Transcript: Sendable, Equatable {
         commandBlocks.removeAll(keepingCapacity: true)
         interrupted.removeAll(keepingCapacity: true)
         jobBlocks.removeAll(keepingCapacity: true)
+        replacements.removeAll(keepingCapacity: true)
         completedJobs.removeAll(keepingCapacity: true)
         folds.clearChoices()
         codeFolds.clearChoices()
@@ -126,7 +129,7 @@ public struct Transcript: Sendable, Equatable {
     /// Ends the most recent running tool, keeping what it returned.
     public mutating func finishTool(
         _ status: ToolStatus, output: String = "", at now: ContinuousClock.Instant = .now,
-        id: String? = nil, backgroundJob: String? = nil
+        id: String? = nil, backgroundJob: String? = nil, replacements: Int? = nil
     ) {
         guard
             let index = id.flatMap({ toolBlocks[$0] }) ?? (id == nil ? latestForegroundTool : nil),
@@ -136,6 +139,7 @@ public struct Transcript: Sendable, Equatable {
         // A tool the person interrupted stays orange whatever it returned, unless it finished its work.
         let status = interrupted.contains(index) && status != .succeeded ? .interrupted : status
         items[index] = .tool(name: name, summary: summary, status: status, output: Self.kept(output), fullInput: input)
+        self.replacements[index] = replacements
         revisions[index] = bump()
         if let backgroundJob { jobBlocks[backgroundJob] = index }
     }

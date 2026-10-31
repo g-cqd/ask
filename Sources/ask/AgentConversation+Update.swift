@@ -44,7 +44,7 @@ extension AgentConversation {
                 let last = output.content.split(separator: "\n").last.map(String.init) ?? ""
                 return .toolFinished(
                     output.isError ? .failed(last) : .succeeded, output: output.content,
-                    id: id, backgroundJob: output.backgroundJob)
+                    id: id, backgroundJob: output.backgroundJob, replacements: output.facts.replacements)
             case .repaired(let repairs):
                 return .notice("Repaired the context: \(RequestContext.describe(repairs)).", isError: false)
             case .continuedAtOutputLimit:

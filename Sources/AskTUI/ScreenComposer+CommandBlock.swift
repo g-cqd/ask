@@ -37,7 +37,7 @@ extension ScreenComposer {
         let width = Swift.max(1, columns - 2 * inset)
         let metadata = blockMetadata(
             status: status, output: output, progress: context.progress, localizedDurations: style.localizedDurations,
-            toolName: name)
+            toolName: name, replacements: context.replacements)
         if folded {
             let header =
                 context.command

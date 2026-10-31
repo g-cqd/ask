@@ -40,7 +40,7 @@ public struct RequestContext: Sendable, Equatable {
             case .compaction(let summary, _): addUser(.text(Self.summaryPrefix + summary))
             case .assistant(let text): addAssistant([.text(text)])
             case .response(let response): addAssistant(response.blocks.compactMap { replayable($0) })
-            case .toolResult(let id, let content, let isError, let images):
+            case .toolResult(let id, let content, let isError, let images, _):
                 guard let index = unanswered.firstIndex(of: id) else {
                     repairs.append(.orphanedToolResult(id: id))
                     return

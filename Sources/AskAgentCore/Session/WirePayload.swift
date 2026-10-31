@@ -8,7 +8,7 @@ struct WirePayload: Codable {
 
     private enum CodingKeys: String, CodingKey {
         case kind, text, summary, firstKept, blocks, id, model, stopReason, usage, callID, content, isError,
-            destination, images
+            destination, images, replacements
     }
 
     private enum Kind: String, Codable {
@@ -47,7 +47,8 @@ struct WirePayload: Codable {
                 value = .toolResult(
                     callID: try container.decode(String.self, forKey: .callID),
                     content: try container.decode(String.self, forKey: .content) + Self.lostNote(lost),
-                    isError: try container.decode(Bool.self, forKey: .isError), images: images)
+                    isError: try container.decode(Bool.self, forKey: .isError), images: images,
+                    facts: ToolFacts(replacements: try container.decodeIfPresent(Int.self, forKey: .replacements)))
         }
     }
 
@@ -75,7 +76,7 @@ struct WirePayload: Codable {
                 try container.encode(response.blocks.map(WireBlock.init), forKey: .blocks)
                 try container.encodeIfPresent(response.stopReason?.wire, forKey: .stopReason)
                 try container.encode(WireUsage(response.usage), forKey: .usage)
-            case .toolResult(let callID, let content, let isError, let images):
+            case .toolResult(let callID, let content, let isError, let images, let facts):
                 try container.encode(Kind.toolResult, forKey: .kind)
                 if !images.isEmpty {
                     let store = encoder.userInfo[SessionImageStore.userInfoKey] as? SessionImageStore
@@ -84,6 +85,7 @@ struct WirePayload: Codable {
                 try container.encode(callID, forKey: .callID)
                 try container.encode(content, forKey: .content)
                 try container.encode(isError, forKey: .isError)
+                try container.encodeIfPresent(facts.replacements, forKey: .replacements)
         }
     }
 

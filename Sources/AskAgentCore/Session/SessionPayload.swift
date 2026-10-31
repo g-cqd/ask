@@ -11,8 +11,9 @@ public enum SessionPayload: Sendable, Equatable {
     /// A complete assistant response, kept whole so a resumed session replays requests exactly: thinking
     /// signatures, tool calls and usage included.
     case response(AssembledResponse)
-    /// The result of one tool call, recorded as soon as it is known.
-    case toolResult(callID: String, content: String, isError: Bool, images: [ImagePart] = [])
+    /// The result of one tool call, recorded as soon as it is known, with what the tool did for the screen (``ToolFacts``).
+    case toolResult(
+        callID: String, content: String, isError: Bool, images: [ImagePart] = [], facts: ToolFacts = ToolFacts())
     /// A summary followed in context by messages from an ancestor boundary onward.
     case compaction(summary: String, firstKept: EntryID)
 }

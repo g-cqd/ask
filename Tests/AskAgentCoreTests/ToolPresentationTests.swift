@@ -73,4 +73,31 @@ struct ToolPresentationTests {
         // Still the same JSON: what is shown parses back to the input's value.
         #expect(try JSONValue(AemiJSON.parse(Array(shown.utf8)).root) == JSONValue(AemiJSON.parse(json.bytes).root))
     }
+
+    /// A multi-line string is the text a person reads, so it is shown as written under its name, after the rest (roadmap 0078).
+    @Test func `an unknown tool's multi-line strings are shown as their text, in order, after the rest`() throws {
+        let json = try input(#"{"title":"one line","body":"first\n\tsecond \"quoted\"","n":2,"tail":"a\nb"}"#)
+        #expect(
+            ToolSummary.fullInput(for: json) == """
+                {
+                  "title": "one line",
+                  "n": 2
+                }
+                body:
+                first
+                \tsecond "quoted"
+                tail:
+                a
+                b
+                """)
+    }
+
+    @Test func `an input of only multi-line strings shows no empty object`() throws {
+        #expect(ToolSummary.fullInput(for: try input(#"{"sql":"select 1\nfrom t"}"#)) == "sql:\nselect 1\nfrom t")
+    }
+
+    @Test func `a multi-line string inside a nested value stays JSON`() throws {
+        let shown = ToolSummary.fullInput(for: try input(#"{"o":{"s":"a\nb"}}"#))
+        #expect(shown.contains(#""s": "a\nb""#))
+    }
 }

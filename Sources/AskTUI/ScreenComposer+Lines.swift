@@ -7,11 +7,12 @@ extension ScreenComposer {
     static func lines(
         for item: Transcript.Item, folded: Bool = false, block: Int = 0, columns: Int, style: BlockStyle = .plain,
         spacerAbove: Bool = false, progress: BlockProgress? = nil, toolInput: ShownToolInput? = nil,
-        command: Bool = false, interrupted: Bool = false, toolOutput: String? = nil
+        command: Bool = false, interrupted: Bool = false, toolOutput: String? = nil, replacements: Int? = nil
     ) -> [Line] {
+        let context = ToolContext(
+            progress: progress, toolInput: toolInput, command: command, output: toolOutput, replacements: replacements)
         let content = contentLines(
-            for: item, folded: folded, block: block, columns: columns, style: style,
-            context: ToolContext(progress: progress, toolInput: toolInput, command: command, output: toolOutput))
+            for: item, folded: folded, block: block, columns: columns, style: style, context: context)
         var result = framed(content, kind: item, style: style, spacerAbove: spacerAbove, interrupted: interrupted)
         switch item {
             case .tool, .thinking:

@@ -219,7 +219,9 @@ public struct AgentLoop: Sendable {
             var output = await runTool(call, events: events)
             if let limit { output.content = Compaction.clipped(output.content, toBytes: limit, note: Self.clipNote) }
             try record(
-                .toolResult(callID: call.id, content: output.content, isError: output.isError, images: output.images),
+                .toolResult(
+                    callID: call.id, content: output.content, isError: output.isError, images: output.images,
+                    facts: output.facts),
                 in: session)
             events(.toolFinished(id: call.id, name: call.name, output: output))
         }

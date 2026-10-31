@@ -130,6 +130,8 @@ struct FileToolsTests {
             .run(input(#"{"path":"d.txt","old_text":"x","new_text":"z","replace_all":true}"#), in: context)
         #expect(!all.isError)
         #expect(try contents("d.txt") == "z z z")
+        #expect(all.facts.replacements == 3, "the count is a typed fact for the header (roadmap 0078)")
+        #expect(none.facts.replacements == nil && many.facts.replacements == nil, "a refused edit replaced nothing")
     }
 
     @Test func `edit matches exact bytes, not canonically equivalent text`() async throws {
