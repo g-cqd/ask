@@ -55,6 +55,13 @@ def repinned(text, heads):
     return PIN.sub(replace, text), moved
 
 
+def staged(repo):
+    """What a pin commit stages: every manifest, and Package.resolved unless the repository ignores it, as AemiRegex does."""
+    paths = [str(path.relative_to(repo)) for path in manifests(repo)]
+    ignored = subprocess.run(["git", "-C", str(repo), "check-ignore", "-q", "Package.resolved"]).returncode == 0
+    return paths if ignored else paths + ["Package.resolved"]
+
+
 def gate(repo):
     """The repository's own gate: its quality script when it has one, else a build and the tests; its analyzers either way."""
     steps = []
@@ -114,7 +121,7 @@ def apply(root):
         if subprocess.run(["swift", "package", "resolve"], cwd=repo).returncode != 0 or not gate(repo):
             print(f"[FAIL] {name}: the gate failed with the new pins; the tree is left as it is")
             return 1
-        git(repo, "add", "-A", "--", *[str(p.relative_to(repo)) for p in manifests(repo)], "Package.resolved")
+        git(repo, "add", "-A", "--", *staged(repo))
         git(repo, "commit", "-S", "-q", "-m", f"build: pins {summary} (Scripts/update-pins.py in ask)")
         git(repo, "push", "-q", "origin", "main")
         print(f"[OK] {name}: {git(repo, 'rev-parse', '--short', 'HEAD')} pushed")
