@@ -48,8 +48,8 @@ struct Ask: AsyncParsableCommand {
 
     @Option(
         help: ArgumentHelp(
-            "Compact the conversation once its context reaches this share of the model's window (75%) or this many tokens; "
-                + "0 only when the window is full. Default: config.json, else 75%.",
+            "Compact the conversation once its context reaches this share of the model's window (0.75) or this many tokens; "
+                + "0 only when the window is full. Default: config.json, else 0.75.",
             valueName: "share-or-tokens"))
     var compactAt: String?
 

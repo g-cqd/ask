@@ -52,11 +52,11 @@ enum SettingCatalog {
         row("provider", .text, #""a-connection""#, "the first account that can answer", "The connection to use."),
         row("thinking", words(ThinkingLevel.self), #""default""#, "default", "How much the model thinks."),
         row(
-            "maxTurns", .structured, "100", "100 in the sandbox, none without",
-            "The most model requests one prompt may make, or \"none\"."),
+            "maxTurns", .structured, "100", "100 in the sandbox, no limit without",
+            "The most model requests one prompt may make, or null for no limit."),
         row(
-            "compactAt", .structured, #""75%""#, "75%",
-            "When the conversation is summarised: a share of the window or a number of tokens."),
+            "compactAt", .structured, "0.75", "0.75",
+            "When the conversation is summarised: a share of the window up to 1, or a number of tokens."),
         row("keepAwake", words(KeepAwakeMode.self), #""working""#, "working", "When ask keeps the Mac from sleeping."),
         row("keepDisplayAwake", .boolean, "false", "false", "Whether the display stays on too."),
         row(

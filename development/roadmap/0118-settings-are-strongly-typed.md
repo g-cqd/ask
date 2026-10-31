@@ -33,3 +33,18 @@ share), and `docs/configuration.md`'s tables from the catalog.
   the key named. `"75%"` and a bare number in `compactAt` stay read, with a notice naming the new key.
 - Alternative kept smaller: keep `compactAt` as is, since `"75%"` reads well and is validated.
 
+## Owner's decision and second step (2026-10-31)
+
+Owner: "we should prefer null instead of none wherever we want to use such things. for compact at we could either specify a number of
+token like 100000 or 0.95 for a share of it".
+
+- `maxTurns: null` is no limit; `/config show` and the change lines say `null`. `"none"` is still read, as 0154 still reads
+  `"on"`/`"off"`; `ASK_MAX_TURNS=none` stays, since a variable cannot be null.
+- `compactAt` is one number: `0` only when the window is full, above 0 up to `1` a share in whole percents (`0.955` refused), above 1 a
+  whole number of tokens. `--compact-at` and `ASK_COMPACT_AT` take the same numbers; `"75%"` is still read. The default shows as `0.75`.
+- Kept as words: `sandbox.network`, `ui.queuedOnStop` and `approvals.remember` take `"none"` as one named choice among others, not an
+  absence; `null` there would read as "unset, use the default", which is a different meaning.
+- Tests: `TypedSettingsTests` (red first).
+
+Still owed: the parser driven by the catalog, and `docs/configuration.md`'s tables generated from it.
+

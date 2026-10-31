@@ -26,4 +26,4 @@ and send, and the conversation continues from there as a new branch. Nothing is 
 
 A model can only read so much at once (its context window). When the conversation reaches 75% of the window, ask summarises the earlier part
 and keeps the recent messages word for word, then carries on. `/compact` does it now. The threshold is the `compactAt` setting
-([Configuration](configuration.md)): a share such as `"60%"`, a number of tokens, or `0` to wait until the window is full.
+([Configuration](configuration.md)): a share up to 1 such as `0.6`, a number of tokens such as `100000`, or `0` to wait until the window is full.

@@ -59,7 +59,7 @@ Make one Esc enough to stop a running turn, or keep Esc out of it entirely:
 Compact the conversation earlier, at half of the model's context window:
 
 ```json5
-{ compactAt: "50%" }
+{ compactAt: 0.5 }
 ```
 
 Keep commands from writing outside the project, and off the network:
@@ -130,8 +130,8 @@ Switches are `true` or `false`; `"on"` and `"off"` are still read.
 | `model` | the provider's default | The model to use. `/model` changes it for the session. |
 | `provider` | the first account that can answer | The connection to use: `anthropic`, `codex`, `agy`, `apple`, a named connection, or an entry of `providers.json`. See [Providers and accounts](providers.md). |
 | `thinking` | `default` | How much the model thinks: `default` (whatever the provider does), `off`, `minimal`, `low`, `medium`, `high`, `xhigh`, `max`. |
-| `maxTurns` | `100` in the sandbox, none with `--no-sandbox` | The most model requests one prompt may make before ask stops it, or `"none"` for no limit (also `ASK_MAX_TURNS=none`). A value you set applies in both cases. |
-| `compactAt` | `"75%"` | When the conversation is summarised to make room: a share of the model's window (`"75%"`), a number of tokens (`150000`), or `0` for only when the window is full. Whatever you set, ask compacts before a request would not fit. |
+| `maxTurns` | `100` in the sandbox, no limit with `--no-sandbox` | The most model requests one prompt may make before ask stops it, or `null` for no limit (`ASK_MAX_TURNS=none`). A value you set applies in both cases. |
+| `compactAt` | `0.75` | When the conversation is summarised to make room: a share of the model's window up to `1` (`0.75`, in whole percents), a number of tokens above it (`150000`), or `0` for only when the window is full. Whatever you set, ask compacts before a request would not fit. |
 | `keepAwake` | `"working"` | When ask keeps the Mac from sleeping when idle: `"working"` while a prompt runs or a background job does, `"always"` for as long as ask runs, working or not, `"off"` never. Released as soon as there is no reason left, and when ask exits. |
 | `keepDisplayAwake` | `false` | Whether the display stays on too, whenever `keepAwake` holds the Mac. |
 | `credentials` | `"auto"` | Where your API keys and sign-in tokens are kept: `"keychain"` in the macOS Keychain (only ask can read them without you being asked), `"file"` in `~/.config/ask/credentials.json`, or `"auto"`: the Keychain for a signed build of ask, the file for an unsigned one, whose every rebuild the Keychain would ask about. Emails, expiry dates and account names stay in the file either way. Changing it moves what is stored. Your own file only. |
