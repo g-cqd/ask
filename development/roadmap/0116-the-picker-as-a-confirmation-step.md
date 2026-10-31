@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -86,4 +86,20 @@ When rows are short, the blank rows go first, then the question's rows; the answ
 
 A click on an answer checks it and moves the cursor there, as Space does; Enter still confirms (`ApprovalClickTests`; an off-by-one
 mutation of the section's rows turns it red).
+
+## Closed (2026-10-31)
+
+The actions still listed as owed, each settled:
+
+- **0153's protected paths and 0134's per-tool approvals** already ask through this section (`.grant`, `.command`), and so do 0117's
+  questions, in the same lane.
+- **Deleting sessions:** no command deletes a session, so there is nothing to confirm.
+- **Signing out of everything** (owner, 2026-10-31: confirm, No checked): `/logout all`, typed or picked from the list, now asks
+  "Sign out of every account ask has stored? Their keys and tokens are forgotten." as a `.confirm` question. Enter alone keeps every
+  account. The question goes through the command's own screen updates (`AgentConversation.confirm(_:update:)`), since a command
+  run when no turn is running has no turn's channel to carry it. It is asked before waiting for a running turn's end.
+  `probe-accounts.py` section E: it asks, Enter keeps the key, `y` then Enter signs out, and ask keeps running. Before the change,
+  "it asks" and "Enter answers no" were red. Sections C and D, `probe-mid-turn.py` and `probe-interactive.py` still pass.
+- **Overwriting configuration:** the `/config` editor reads JSON5 and saves strict JSON, so its first change drops the file's
+  comments. The owner chose (2026-10-31) to preserve them rather than confirm: roadmap 0170.
 
