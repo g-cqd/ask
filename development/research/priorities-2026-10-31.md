@@ -11,6 +11,7 @@ The owner agreed to this order on 2026-10-31 ("go ahead, seems nice").
 2. **B: accounts and scopes.** 0092 (a second login adds an account; done) with 0046 and 0047's leftovers, then 0094 (the user's file
    limits which providers a repository sees, by path, remote or git identity; done, ADR-0137).
 3. **C: keys and security.** 0110 (the Keychain by default; first signing done 2026-10-31, by hash, see the record), then 0153's open findings.
+   Done 2026-10-31: the Not-covered audit (run 2), six findings fixed, see `security-audit-2026-10-31.md`.
 4. **D: tokens per turn.** 0137: measure what the tool definitions cost per request, then cut.
 5. **E: interaction.** 0116 (one confirmation picker, reusing 0117's lane), then 0078 (tool blocks without section labels).
 6. **F: larger.** 0152 with 0087 (syntax highlighting, Atelier's lexers promoted first), and a design entry for 0115 (taking over a

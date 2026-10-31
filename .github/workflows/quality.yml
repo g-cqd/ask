@@ -92,7 +92,7 @@ jobs:
           key: spm-release-${{ runner.os }}-${{ env.SWIFT_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
           restore-keys: spm-release-${{ runner.os }}-${{ env.SWIFT_VERSION }}-
       - name: Build release
-        run: swift build -c release
+        run: swift build -c release --force-resolved-versions
       - name: Measure the budgets
         # The limits come from the binary itself (`ask --budgets`), so there is one definition. They are the owner's Mac's
         # (ADR-0122): a shared 3-core runner under full load measured 78 ms of cold start against about 27 ms there, so here

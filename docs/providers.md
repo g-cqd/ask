@@ -67,7 +67,7 @@ Any server that speaks OpenAI chat completions (llama.cpp, MLX, Ollama, LM Studi
 ```
 
 `"api": "openai-responses"` is for servers that speak the Responses API instead. `apiKey` names an environment variable; ask never sends a
-key over plain `http` to another machine. `ask models local` refreshes the model list and the limits the server reports.
+key, or an entry's `headers`, over plain `http` to another machine. `ask models local` refreshes the model list and the limits the server reports.
 
 For Ollama, start it with `OLLAMA_CONTEXT_LENGTH=32768`: its default window can be as small as 4,096 tokens.
 
