@@ -47,12 +47,12 @@ enum SettingCatalog {
 
     private static let top: [Setting] = [
         row(
-            "model", .text, #""a-model-id""#, "the connection's default",
+            "model", .text, #""a-model-id""#, "the provider's default",
             "The model to use; /model changes it for the session."),
         row("provider", .text, #""a-connection""#, "the first account that can answer", "The connection to use."),
         row("thinking", words(ThinkingLevel.self), #""default""#, "default", "How much the model thinks."),
         row(
-            "maxTurns", .structured, "100", "100 in the sandbox, no limit without",
+            "maxTurns", .structured, "100", "100 in the sandbox, no limit with --no-sandbox",
             "The most model requests one prompt may make, or null for no limit."),
         row(
             "compactAt", .structured, "0.75", "0.75",

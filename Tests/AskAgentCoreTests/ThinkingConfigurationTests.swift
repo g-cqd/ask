@@ -27,7 +27,8 @@ struct ThinkingConfigurationTests {
     @Test func `the invalid spelling diagnostic names the thinking choices`() {
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "/fixture/config.json", key: "thinking", reason: "must be one of: \(ThinkingLevel.choices)")
+                path: "/fixture/config.json", key: "thinking",
+                reason: "is \"ultra\": use \(SettingCatalog.either(ThinkingLevel.allCases.map(\.rawValue)))")
         ) {
             try parse("{thinking: 'ultra'}")
         }
