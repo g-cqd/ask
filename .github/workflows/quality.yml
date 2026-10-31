@@ -44,9 +44,9 @@ jobs:
       - name: Restore the analyzers
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
-          # Pinned by version and SHA-256 in Scripts/analyzers.sh, which re-verifies the hash; the cache only
-          # saves the download.
-          path: ~/Library/Caches/ask/analyzers
+          # Pinned by version and SHA-256 in the family's lock (Aemi-Studio/aemi Scripts/analyzers.lock, at the
+          # commit Scripts/analyzers.sh names), which the script re-verifies; the cache only saves the download.
+          path: ~/Library/Caches/g-cqd-analyzers
           key: analyzers-${{ hashFiles('Scripts/analyzers.sh') }}
       - name: SwiftLint (metrics)
         # The runner image already ships SwiftLint; install only when it is missing.
