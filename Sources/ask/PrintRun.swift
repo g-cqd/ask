@@ -58,7 +58,7 @@ func runPrompt(
         session = resumed
     } else {
         do {
-            try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
+            try directory.create()
             session = SessionRecorder(try SessionFile.create(at: FilePath(directory.newSessionPath())))
         } catch {
             fail("ask: cannot create a session: \(error)", code: 73)

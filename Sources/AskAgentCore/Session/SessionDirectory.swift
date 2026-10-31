@@ -22,6 +22,19 @@ public struct SessionDirectory: Sendable, Equatable {
         return state + "/ask"
     }
 
+    /// Creates the directory if needed, and makes it and the two above it that ask owns (`sessions` and `ask`) the person's alone
+    /// (0700, roadmap 0153): the names say which projects were worked on. One made before with the default 0755 is tightened.
+    /// - Throws: what the file system says when the directory cannot be made.
+    public func create() throws {
+        let manager = FileManager.default
+        try manager.createDirectory(
+            atPath: path, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+        let sessions = (path as NSString).deletingLastPathComponent
+        for owned in [path, sessions, (sessions as NSString).deletingLastPathComponent] {
+            try? manager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: owned)
+        }
+    }
+
     /// A readable, flat name for a project path: separators become `-`, spaces `_`.
     static func projectName(_ project: String) -> String {
         let parts = project.split(separator: "/").map { $0.replacingOccurrences(of: " ", with: "_") }
