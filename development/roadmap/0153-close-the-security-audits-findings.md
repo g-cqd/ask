@@ -91,3 +91,17 @@ feed or 4,096 scalars end a sequence that never ends. The answer goes through it
 screen was already safe: TerminalKit's screen buffer replaces control characters with U+FFFD. Tests: `TerminalTextFilterTests` (red
 first); `probe-agent-run.py` section Z, red on the morning's build.
 
+## Hardening notes, reviewed (2026-10-30)
+
+- **0700 session directories: done.** The session files were already 0600 and the output directory 0700, but the session directories,
+  `sessions` and `ask` were 0755, so any user of the Mac could list which projects were worked on. `SessionDirectory.create()` makes
+  them 0700 and tightens older ones when a session is next written. Tests: `SessionDirectoryPermissionsTests`.
+- **The Keychain: done** (0110), pending the owner's signed build.
+- **A default withhold list for well-known credential variables: for the owner.** `CommandEnvironment` withholds only the variables ask
+  reads its own credentials from, by design ("a person's own variables are theirs to withhold"); withholding `GITHUB_TOKEN` or `AWS_*` by
+  default would stop the model's `gh` and `aws` commands. `environment.withhold` already lets the person add them.
+- **`/reload`'s self-check of a build the model could have written: for the owner.** The model may write in the build caches (the
+  default write scope), so it could replace the binary `/reload` checks and starts. Comparing the new build's code signature with the
+  running one's would close it for signed builds (0110); unsigned builds have nothing to compare.
+- **The default network, still for the owner:** `"any"` today.
+
