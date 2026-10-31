@@ -23,3 +23,13 @@ Switches are booleans (0154). The catalog (0096) is now the list of every key wi
 `/config` editor's rows come from it (the `ui` section first, as before), so a new key is missed in one place less. Still owed: the
 parser itself driven by the catalog, typed forms for the mixed keys (`maxTurns` as a number or `"none"`, `compactAt` as a number or a
 share), and `docs/configuration.md`'s tables from the catalog.
+
+## Proposal for the two mixed keys (2026-10-31), for the owner
+
+- `maxTurns`: a number, or `null` for no limit (`"none"` still read, and written back as `null` by the editor). `ASK_MAX_TURNS=none`
+  stays, since an environment variable has no null.
+- `compactAt`: split in two typed keys rather than one that is a number or a string: `compactAtShare` (a number from 1 to 100, the share
+  of the window; default 75) and `compactAtTokens` (a number, or `0` for only when the window is full). Setting both is refused with
+  the key named. `"75%"` and a bare number in `compactAt` stay read, with a notice naming the new key.
+- Alternative kept smaller: keep `compactAt` as is, since `"75%"` reads well and is validated.
+
