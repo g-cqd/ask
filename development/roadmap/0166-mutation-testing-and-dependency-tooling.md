@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-30
 ---
@@ -80,3 +80,22 @@ dead code. Regression test in `CommandWordsQuotingTests`. The mutation run to co
   executable. A new library target fails until it is placed in the graph. Its self-test, `Scripts/test-layers.py`, plants each kind
   of violation. Chosen over spmgraph, which publishes no binaries and would be built from source for a check this size; drawing the
   graph is what it would add.
+
+## Done (2026-10-31): part 3, pin updates
+
+- **`Scripts/update-pins.py`** reads the family's `revision:` pins in every manifest, benchmark and plugin packages included. By
+  default it prints the pins that would move to the upstreams' heads on GitHub (10 s, mostly `git fetch`). `--apply` moves them
+  repository by repository in dependency order (aemi, AemiRegex, AemiMarkdown, AemiJSON, TerminalKit, ask). Each needs a clean,
+  current `main`; the script runs `swift package resolve`, then the repository's gate (`Scripts/quality.sh --check` where there is
+  one, else build, tests and analyzers), then makes a signed commit and pushes. It stops at a failed gate and leaves the tree as it
+  is. Its self-test, `Scripts/test-update-pins.py`, is a gate stage.
+- **Today's dry run:** 15 pins behind, across five repositories. Some repositories also disagree with each other: AemiJSON pins
+  aemi `a20fb18` and AemiRegex `dcf5e3a`, where ask pins `2fbe4e4` and `d5bac1c`. **`--apply` was not run**, because another
+  session was committing to aemi and AemiRegex at the same time (`d1b496e`, `5366ebb`). Run it when the family's repositories are
+  quiet.
+- Dependabot already covered ask's versioned requirements (`/` and `/Benchmarks`) and its actions; its comment now names the script.
+
+## Not verified
+
+- The mutation workflow on CI: neither the push job nor the weekly full run, nor the time the full run takes.
+- aemi's Swift 6.3.3 build (CI only), and the merged Dependabot bumps on CI.
