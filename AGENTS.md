@@ -36,6 +36,8 @@ Scripts/quality.sh              # format, lint, build and test
 Scripts/quality.sh --check      # verify only; what CI would run (it has never started: billing, roadmap 0028)
 Scripts/analyzers.sh            # unused code, duplicated code, retain cycles; also a stage of quality.sh
 Scripts/mutate-changed.sh       # mutation testing of the Sources files changed against origin/main; no new survivor allowed
+Scripts/dependency-audit.sh     # each target declares what it imports and imports what it declares; a stage of quality.sh
+python3 Scripts/check-layers.py # ADR-0009's target layering over the manifest; a stage of quality.sh
 Scripts/roadmap.sh open         # the open roadmap entries, read from their front matter
 ask --provider NAME --model ID  # a provider from ~/.config/ask/providers.json (ADR-0027)
 swift test -c release --enable-testable-imports   # tests, without re-linting
