@@ -32,3 +32,12 @@ screen. No supervisor in the first version. Five phases, the first (listing what
 Waiting on the owner: two processes per session and the memory budgets; an unattached host's lifetime; what the screen that loses its
 session does; no supervisor at first. The investigation and the registry, liveness, sandbox and "what moves" items above are answered
 by the note; naming and the row's colour are proposed there.
+
+## Owner (2026-10-31): one process, and three answers
+
+- **No second process per session.** "Investigate various ways": the host-per-session design is set aside. Owed: a design that keeps
+  one process per session, comparing the ways a screen can reach a loop in another `ask` process (the owning process serving its own
+  session over a socket while it keeps its terminal; a hand-over through the session file with the loop restarted in the taker; others
+  found), with what each costs in jobs, approvals and a turn in flight.
+- **An unattached session's lifetime is the user's setting**, not a fixed hour.
+- **The screen that loses its session stays,** with a notice and a way to take it back, perhaps switching to the list of sessions.
