@@ -1,6 +1,6 @@
 ---
 status: in-progress
-blocked-by: []
+blocked-by: ["the owner: an API key for each preset still to probe"]
 date: 2026-10-19
 decision: ADR-0027
 ---
