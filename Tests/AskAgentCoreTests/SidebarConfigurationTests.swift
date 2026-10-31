@@ -17,7 +17,7 @@ struct SidebarConfigurationTests {
     @Test func `another word is refused by name`() {
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "ui.sidebar", reason: "is \"left\": use \"open\" or \"closed\"")
+                path: "c.json", key: "ui.sidebar", reason: "is \"left\": use \"closed\" or \"open\"")
         ) { try parse("{ui:{sidebar:'left'}}") }
     }
 

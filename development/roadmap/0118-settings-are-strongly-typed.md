@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -47,4 +47,18 @@ token like 100000 or 0.95 for a share of it".
 - Tests: `TypedSettingsTests` (red first).
 
 Still owed: the parser driven by the catalog, and `docs/configuration.md`'s tables generated from it.
+
+## Third step: the catalog says what each key takes (2026-10-31)
+
+- Each catalog row says what it takes (`SettingCatalog.Setting.expected`): from its kind (`true or false`, its words, `a whole number`,
+  `a string`), or written out for a structured key. Every refusal now reads `"key" is <value>: use <expected>`, both for a string the
+  key does not know and for a value of the wrong JSON type (`ConfigurationFile.refusal(of:in:path:)`, which shows the value from the
+  file). Before, a wrong type showed the decoder's text (`DecodingError.typeMismatch: Expected value of type String`, for a switch),
+  and a bad `maxTurns` or `ui.spinner` fell through to the sandbox scope's advice ("use workspace, anywhere or a list of paths").
+- `docs/configuration.md`'s tables are held to the catalog by `SettingDocsTests` (keys, sections, defaults, "Your own file only")
+  rather than generated: the docs' rows carry examples and caveats the catalog's one line of help does not, and are better written
+  in Markdown. It found `skills.maxListed` and `skills.sources` documented as settable by a project although the parser refuses
+  that, and two defaults worded differently.
+- The decoding stays a switch per key: each key writes its own typed field, so a table would only move that code. The catalog drives
+  the messages, the `/config` editor's rows and the example file, and tests hold the parser's keys, the example and the docs to it.
 

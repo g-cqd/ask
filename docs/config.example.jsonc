@@ -3,7 +3,7 @@
 // Copy only what you want to change into ~/.config/ask/config.json; see docs/configuration.md.
 {
 
-  // The model to use; /model changes it for the session. Default: the connection's default.
+  // The model to use; /model changes it for the session. Default: the provider's default.
   "model": "a-model-id",
 
   // The connection to use. Default: the first account that can answer.
@@ -12,7 +12,7 @@
   // How much the model thinks. Default: default. One of: default, off, minimal, low, medium, high, xhigh, max.
   "thinking": "default",
 
-  // The most model requests one prompt may make, or null for no limit. Default: 100 in the sandbox, no limit without.
+  // The most model requests one prompt may make, or null for no limit. Default: 100 in the sandbox, no limit with --no-sandbox.
   "maxTurns": 100,
 
   // When the conversation is summarised: a share of the window up to 1, or a number of tokens. Default: 0.75.

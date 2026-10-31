@@ -29,7 +29,7 @@ extension ConfigurationFile {
         if let turns = try? container.decode(Int.self, forKey: key) { return turns }
         let text = try container.decode(String.self, forKey: key)
         guard let turns = Configuration.turnLimit(parsing: text) else {
-            throw BadValue(key: "maxTurns", value: "\"\(text)\"")
+            throw BadValue(key: "maxTurns", value: text)
         }
         return turns
     }
@@ -39,13 +39,13 @@ extension ConfigurationFile {
     static func decodeCompactAt(_ container: KeyedDecodingContainer<Key>, key: Key) throws -> CompactionThreshold {
         if let number = try? container.decode(Double.self, forKey: key) {
             guard let threshold = CompactionThreshold(number: number) else {
-                throw BadValue(key: "compactAt", value: String(number))
+                throw BadValue(key: "compactAt", shown: String(number))
             }
             return threshold
         }
         let text = try container.decode(String.self, forKey: key)
         guard text.trimmingWhitespace().hasSuffix("%"), let threshold = CompactionThreshold(parsing: text) else {
-            throw BadValue(key: "compactAt", value: "\"\(text)\"")
+            throw BadValue(key: "compactAt", value: text)
         }
         return threshold
     }
