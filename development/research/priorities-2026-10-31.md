@@ -8,7 +8,7 @@ The owner agreed to this order on 2026-10-31 ("go ahead, seems nice").
 
 1. **A: the records.** Close what is built (0049, 0075, 0077, 0079), mark what waits on an account (0034, 0040), land through
    `Scripts/land.sh` once (0068), and finish 0101's guard against new subprocess calls.
-2. **B: accounts and scopes.** 0092 (a second login adds an account) with 0046 and 0047's leftovers, then 0094 (the user's file
+2. **B: accounts and scopes.** 0092 (a second login adds an account; done) with 0046 and 0047's leftovers, then 0094 (the user's file
    limits which providers a repository sees, by path, remote or git identity).
 3. **C: keys and security.** 0110 (the Keychain by default, after the owner's first signing), then 0153's open findings.
 4. **D: tokens per turn.** 0137: measure what the tool definitions cost per request, then cut.
@@ -37,7 +37,8 @@ Each is built and checked in a PTY or pyte, never in the owner's terminal. One s
   then "Always Allow"; and whether that identity, whose certificate's organisation reads "oculavis GmbH", is the one meant.
 - **The pin cascade** (0166): `Scripts/update-pins.py --apply` when aemi and AemiRegex are quiet.
 - **0092:** when two accounts serve one model, ask each time or remember a default per model. Built as "ask once, remember per model,
-  change with `/model`" unless the owner says otherwise.
+  change with `/model`" unless the owner says otherwise. Done in `afa33d4`; `--model` keeps the default's account rather than
+  refusing a shared model, so no script breaks.
 - **0127:** whether a "replace" layer setting is wanted. **0148:** the keep-awake restart test. **0117:** whether a single question
   sends on Enter without the review.
 - **From 0079:** whether the citations of `g-cqd/pi-integrations` (public, cited as provenance) stay; and an ADR recording that the
