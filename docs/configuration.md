@@ -172,6 +172,7 @@ Switches take `true` or `false` (the older `"on"` and `"off"` still work).
 | `separator` | `true` | A rule between the conversation and the input. |
 | `padding` | `true` | A row of padding around each block. |
 | `markdown` | `true` | Markdown everywhere it can be: the model's replies and reasoning and your own messages are drawn as Markdown (headings, emphasis, lists, quotes, tables, links), and your draft is coloured as you type, every character kept as typed. A selection still copies what was written. `false` shows all of it as written. |
+| `highlight` | `true` | Fenced code coloured by the language its fence names (` ```swift `, ` ```sh `, ` ```c++ `…), in your terminal's own palette, so the colours follow its theme. A language ask does not know is drawn plain. `false` draws code in one colour. |
 | `durations` | `"words"` | Elapsed times as `1 hr, 40 min` (`"words"`) or `1:40:00` (`"clock"`), and a command's limits as `timeout 2 min` or `timeout 2:00`. |
 | `spinner` | `"line"` | The spinner: `line`, `dot`, `star`, `snake`, `braille`, `braillefull`, `braillequarter` or `random`. |
 | `showTimeout` | `"auto"` | When a command's timeout is written in its header: `"auto"` only when the model chose one other than the 2-minute default, so the usual header is `shell · swift build`; `"always"` whenever the model set one; `"never"`. The time a command is left to run before it moves to the background (`yield`) is written unless this is `"never"`. |

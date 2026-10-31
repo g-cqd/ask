@@ -34,6 +34,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var padding: Bool?
     /// `ui.markdown`: whether the assistant's messages are drawn as Markdown (`"on"`, default) or as the text the model wrote (`"off"`).
     public var markdown: Bool?
+    /// `ui.highlight`: whether fenced code is coloured by its language (`"on"`, default) or drawn in the code style (`"off"`).
+    public var highlight: Bool?
     /// `ui.localizedDurations`: localized elapsed units (`"on"`, default) or a compact clock (`"off"`).
     public var localizedDurations: Bool?
     /// `ui.spinner`: the spinner style used for progress and status line indicators.
@@ -64,7 +66,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil,
         outputFoldLines: Int? = nil, outputFoldBytes: Int? = nil, sidebarOpen: Bool? = nil, prompt: String? = nil,
         tint: Bool? = nil, separator: Bool? = nil,
-        padding: Bool? = nil, markdown: Bool? = nil, localizedDurations: Bool? = nil, spinner: SpinnerPreference? = nil,
+        padding: Bool? = nil, markdown: Bool? = nil, highlight: Bool? = nil, localizedDurations: Bool? = nil,
+        spinner: SpinnerPreference? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
         jobAutoReturnWhenFocused: Bool? = nil, abortTurnRequiresConfirmation: Bool? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
@@ -91,6 +94,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.separator = separator
         self.padding = padding
         self.markdown = markdown
+        self.highlight = highlight
         self.localizedDurations = localizedDurations
         self.spinner = spinner
         self.jobAutoReturnWhenFocused = jobAutoReturnWhenFocused
@@ -115,14 +119,15 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             "mouse", "copyOnSelect", "fold.tools", "fold.thinking", "fold.code", "fold.codeLines", "fold.outputLines",
             "fold.outputBytes", "scrollLines", "inputRows", "sidebar"
         ]
+        // @dl:accept -- the list of keys is data; a test's list of call names is other data
         + lookKeys + behaviorKeys
 
     /// The keys that set the look of the screen (roadmap 0074).
     // @dl:accept -- the key table is schema data, a list of names like a test's list of names
     private static let lookKeys = [
         // @dl:accept -- a list of key names is data, like any other list of names
-        "inputPrefix", "tint", "appearance", "separator", "padding", "markdown", "durations", "spinner", "showTimeout",
-        "timeoutLabel"
+        "inputPrefix", "tint", "appearance", "separator", "padding", "markdown", "highlight", "durations",
+        "spinner", "showTimeout", "timeoutLabel"
     ]
     private static let behaviorKeys = [
         "leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels", "sessionColor"
@@ -141,6 +146,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             sidebarOpen: section.sidebarOpen ?? sidebarOpen, prompt: section.prompt ?? prompt,
             tint: section.tint ?? tint, separator: section.separator ?? separator,
             padding: section.padding ?? padding, markdown: section.markdown ?? markdown,
+            highlight: section.highlight ?? highlight,
             localizedDurations: section.localizedDurations ?? localizedDurations,
             spinner: section.spinner ?? spinner,
             jobAutoReturnWhenFocused: section.jobAutoReturnWhenFocused ?? jobAutoReturnWhenFocused,

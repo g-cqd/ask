@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-29
 ---
@@ -52,3 +52,32 @@ Atelier's lexers and 0087 their promotion; neither was built.
   draft; a 1 MB `read` is highlighted for the rows shown, not the whole file.
 - `ui.highlight` on by default, off draws as today, byte for byte (a characterisation test before the change).
 - A language the lexers do not know is plain, never approximated by another.
+
+## Progress (2026-10-31)
+
+**Phase 1, done.** The lexers are `AemiLexers`, a module of aemi (aemi ADR 0022, `61b67bc`; the owner chose a module over 0087's own
+package), then three gaps closed red first (`6e8279c`): an exponent's sign is part of the number, Rust raw strings (`r#"…"#`, any
+level), Lua long strings (`[[…]]`, `[==[…]==]`), each checked by a whole-text scan and a line-by-line scan of 29 tricky lines. Release
+throughput is unchanged (median ratio 1.00 over the corpus, Rust within 2 %). The pin cascade carried aemi `6e8279c` to ask (`814d97e`).
+
+**Phase 2, done.** `CodeHighlighter` (AskTUI) is the renderer's `MarkdownCodeHighlighter`: the fence's language through
+`Language(name:)` (aliases such as `sh`, `c++`, `js` resolve; an unknown name or `plain` gives nil, so the block draws plain), each line
+lexed from the state the previous one ended in, and each role, or the nearest role above it, given a palette colour: keyword 5, string
+2, number and escape 3, attribute and tag 4, type and property 6, comment dim italic. The palette is the terminal's, so the colours
+follow its theme and the system appearance. `ui.highlight` (default on) turns it off; off is pinned by a digest taken before the
+change (`CodeHighlightCharacterisationTests`, 5 messages × 80 widths × 2 looks).
+
+Measured (release, M3) with a 38,858-byte reply holding a 400-line Swift block at 120 columns: the whole message renders in 24.7 ms with
+highlighting off and 29.8 ms on, +5.1 ms. The hook itself is 0.22 ms; the rest is TerminalKit's `BlockWriter+Code.pieces`, which
+cuts a piece at every token, and ask's conversion of styled pieces to accents.
+
+**Deviation from the plan.** The plan had the lexer resume from the last line while a fence streams in. The renderer's hook is
+stateless and gets whole blocks, and each streamed delta lays the message out again (rows are cached per revision), so there is
+nothing to resume from. Lexing is 1 % of that re-render, so resuming would save nothing measurable; the per-token piece cost is the
+follow-up, in TerminalKit (merge adjacent pieces of one style) and in ask's accent conversion.
+
+**Known gaps** (the lexers', drawn plain or partly coloured, never wrongly as another language): Swift and JavaScript regex literals;
+JavaScript template literals nested inside `${…}`; Python's `f`/`r` prefix is outside the string token; C++ `R"(…)"` takes `R` as a
+type; Ruby `%w[]` and `:symbol`; HTML `<script>` and `<style>` bodies; Lua level comments `--[==[ … ]==]`.
+
+Phases 3 to 5 remain.

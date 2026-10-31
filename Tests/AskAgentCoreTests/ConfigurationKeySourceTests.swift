@@ -9,7 +9,7 @@ struct ConfigurationKeySourceTests {
         foldCode: true,
         codeFoldLines: 20, outputFoldLines: 200, outputFoldBytes: 32768, sidebarOpen: false, prompt: "", tint: true,
         separator: true, padding: false,
-        markdown: true, localizedDurations: true,
+        markdown: true, highlight: true, localizedDurations: true,
         spinner: .line, jobAutoReturnWhenFocused: true, abortTurnRequiresConfirmation: false, interruptKeys: .ctrlC,
         escapeInterruptRequiresConfirmation: true, interruptSendsQueued: .next, onlyUsefulModels: true,
         appearance: .auto, timeout: .never, timeoutLabel: "t", sessionColor: .always)

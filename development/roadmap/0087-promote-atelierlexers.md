@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-28
 ---
@@ -59,3 +59,10 @@ Measured the same day: the lexing core is the line lexer, its states, `SyntaxHig
 the model types they use (about 400 lines: `Language`, `HighlightRole`, `HighlightModifierSet`, `LineToken`, `UTF16Offsets`). It
 needs only the standard library: no TerminalKitText, no Foundation. Atelier's tier engine (`LexicalHighlightEngine`, `LexicalTier`),
 `ProgressiveHighlighting` (the one user of TerminalKitText) and the rest of `AtelierSyntaxModel` stay in Atelier, over `AemiLexers`.
+
+## Progress (2026-10-31)
+
+Steps 1, 2, 4 and 5 are done through 0152's phase 1 and 2: `AemiLexers` in aemi (`61b67bc`, `6e8279c`), its tests and the throughput
+benchmark there, ask colouring fenced code with it at aemi `6e8279c`. **Step 3 is owed**: Atelier (HEAD `cccdb44`, pinning aemi
+`bfc4f5a` and TerminalKit `8e39982`) still has its own copies; it must take aemi at `6e8279c` or later, delete them, map `Token` onto
+its `HighlightToken`, and show its tests and benchmarks unchanged. The entry stays in progress until then.

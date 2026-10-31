@@ -15,6 +15,7 @@ extension RunSettings {
             foldThinking: ui.foldThinking ?? defaults.foldThinking, scrollLines: ui.scrollLines ?? defaults.scrollLines,
             promptRows: ui.promptRows ?? defaults.promptRows, foldCode: ui.foldCode ?? defaults.foldCode,
             codeFoldLines: ui.codeFoldLines ?? defaults.codeFoldLines, markdown: ui.markdown ?? defaults.markdown,
+            highlight: ui.highlight ?? defaults.highlight,
             sidebar: ui.sidebarOpen ?? defaults.sidebar,
             verbose: verbose, prompt: ui.prompt ?? defaults.prompt, tint: ui.tint ?? defaults.tint,
             separator: ui.separator ?? defaults.separator, padding: ui.padding ?? defaults.padding,

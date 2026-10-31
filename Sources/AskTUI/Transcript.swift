@@ -60,6 +60,8 @@ public struct Transcript: Sendable, Equatable {
     public internal(set) var outputFoldBytes = 32 * 1024
     /// Whether assistant messages are drawn as Markdown (roadmap 0065: `ui.markdown`) rather than as the text the model wrote.
     public internal(set) var markdown = false
+    /// Whether fenced code in Markdown is coloured by its language (roadmap 0152: `ui.highlight`).
+    public internal(set) var highlight = false
     /// Which spinner style is used for progress indicators in live blocks.
     public var spinnerStyle: SpinnerStyle = .line
     /// Whether a command's limits are written in the locale's units or as a clock (`ui.localizedDurations`).

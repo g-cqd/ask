@@ -161,7 +161,9 @@ let package = Package(
                 .product(name: "TerminalKitText", package: "TerminalKit"),
                 .product(name: "TerminalKitMarkdown", package: "TerminalKit"),
                 .product(name: "AemiMarkdown", package: "AemiMarkdown"),
-                .product(name: "AemiRegex", package: "aemiregex")
+                .product(name: "AemiRegex", package: "aemiregex"),
+                // Fenced code's colours (roadmap 0152): aemi's lexers, standard library only.
+                .product(name: "AemiLexers", package: "aemi")
             ],
             path: "Sources/AskTUI",
             swiftSettings: packageSettings
