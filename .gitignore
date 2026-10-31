@@ -7,3 +7,6 @@ __pycache__/
 
 # TLC writes its explored-state files here; they are empty and not worth keeping.
 development/formal/states/
+
+# swift-mutation-testing verdicts, per mutant (Scripts/mutate-changed.sh)
+/.swift-mutation-testing-cache/
