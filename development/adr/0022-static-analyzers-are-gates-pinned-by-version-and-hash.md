@@ -55,8 +55,8 @@ Full ledger in `development/diary/2026-10-19-07.md`. What decided the shape:
 The script and the pins moved to the family (analyzerkit roadmap 0031): `Scripts/analyzers.sh` now names a commit of
 Aemi-Studio/aemi and runs its `Scripts/analyzers.sh` with its `Scripts/analyzers.lock`, which pins each tool's version
 and the SHA-256 of its macOS arm64 and Linux x86_64 archives. The downloads go to `~/Library/Caches/g-cqd-analyzers`.
-An upgrade moves that commit and reads the diff of findings. The decision is otherwise unchanged: deadwood 0.12.0,
-dolly 0.12.0 and arcleak 0.13.0 report nothing new here.
+An upgrade moves that commit and reads the diff of findings. The decision is otherwise unchanged: deadwood 0.13.0,
+dolly 0.13.0 and arcleak 0.14.0 (wave 2) report nothing new here.
 
 ## Consequences
 
