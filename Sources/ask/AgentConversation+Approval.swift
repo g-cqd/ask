@@ -90,11 +90,17 @@ extension AgentConversation {
             detail: isCommand ? ToolSummary.fullInput(for: approval.input) : nil)
     }
 
+    /// Asks the person to confirm what a command is about to do (roadmap 0116): yes or no, "no" checked, through the command's
+    /// own screen updates, since no run may be there to carry the question.
+    func confirm(_ question: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async -> Bool {
+        await ask(question, remembering: (nil, nil), kind: .confirm, channel: update)
+    }
+
     /// Puts `question` to the user and waits; false when the run is cancelled or there is no one to ask. What a session grant
-    /// remembers is `remembering`, for the answer's `a`.
+    /// remembers is `remembering`, for the answer's `a`. The question goes through `channel` when given, else the current run's.
     private func ask(
         _ question: String, remembering: (request: SandboxRequest?, destructiveKey: String?), kind: ApprovalKind,
-        scope: CallScope? = nil, detail: String? = nil
+        scope: CallScope? = nil, detail: String? = nil, channel: (@Sendable (ConversationUpdate) -> Void)? = nil
     ) async -> Bool {
         let id = approvals.withLock { state in
             state.nextID += 1
@@ -105,7 +111,7 @@ extension AgentConversation {
                 let ask = approvals.withLock { state in
                     state.waiting[id] = (remembering.request, remembering.destructiveKey, answer)
                     if let scope { state.callScopes[id] = scope }
-                    return state.ask
+                    return channel ?? state.ask
                 }
                 // Cancelled before the question was stored: the handler found nothing to answer, so answer here.
                 if Task.isCancelled { resolve(id, allowed: false) }

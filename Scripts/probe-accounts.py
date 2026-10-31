@@ -6,6 +6,7 @@ A: only Codex is signed in, nothing names a provider: the screen opens on Codex,
 B: /login claude api-key asks for the key in the status line, the key is stored, it is in neither the transcript nor the screen, and ask is still running.
 C: Esc cancels a question; /logout lists the accounts and signs one out without leaving.
 D: /login with the wrong words says so and stays.
+E: /logout all asks first, No checked: Enter closes it and keeps every account; y then Enter signs out of everything (roadmap 0116).
 
 Usage: Scripts/probe-accounts.py .build/release/ask [CONFIG_DIR_TO_COPY]
 """
@@ -144,6 +145,42 @@ def probe_cancel_and_logout():
     return all(results)
 
 
+def probe_logout_all_confirms():
+    print("E: /logout all asks first, and No is checked")
+    home = config(copy=False)
+    session = Session(tempfile.mkdtemp(), home)
+    session.until("ask>")
+    session.type("/login claude api-key\r")
+    session.until("Enter sends")
+    session.type(SECRET + "\r")
+    session.until("API key stored")
+    keys(session, "\x03")
+    path = os.path.join(home, "ask", "credentials.json")
+    stored = lambda: json.load(open(path)).get("keys") or {} if os.path.exists(path) else {}
+    session.type("\x15/logout all\r")
+    results = [interactive.check("it asks before signing out of everything", session.until("Sign out of every account"))]
+    session.until("\x00", 0.5)
+    session.type("\r")
+    session.until("\x00", 0.8)
+    # The answer adds no block (roadmap 0157): the question closes and nothing is said signed out.
+    text = session.screen.text()
+    results.append(interactive.check("Enter answers no", "Sign out of every" not in text and "Signed out" not in text))
+    results.append(interactive.check("and the key is kept", "anthropic" in stored(), stored()))
+    keys(session, "\x03")
+    session.type("\x15/logout all\r")
+    session.until("Sign out of every account")
+    session.until("\x00", 0.5)
+    session.type("y")
+    session.until("\x00", 0.3)
+    session.type("\r")
+    results.append(interactive.check("y then Enter signs out", session.until("Signed out of everything.")))
+    results.append(interactive.check("the key is gone", "anthropic" not in stored(), stored()))
+    for _ in range(3):
+        keys(session, "\x03", 0.7)
+    results.append(interactive.check("still there, quits cleanly", session.finish() == 0))
+    return all(results)
+
+
 def probe_wrong_words():
     print("D: /login with wrong words says so and stays")
     session = Session(tempfile.mkdtemp(), config(copy=False))
@@ -156,5 +193,8 @@ def probe_wrong_words():
 
 
 if __name__ == "__main__":
-    ok = [probe_models(), probe_login(), probe_cancel_and_logout(), probe_wrong_words()]
+    only = sys.argv[3:] or ['A', 'B', 'C', 'D', 'E']
+    sections = {'A': probe_models, 'B': probe_login, 'C': probe_cancel_and_logout, 'D': probe_wrong_words,
+                'E': probe_logout_all_confirms}
+    ok = [sections[name]() for name in only]
     sys.exit(0 if all(ok) else 1)
