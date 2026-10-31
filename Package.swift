@@ -78,18 +78,18 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "a7ed3d0f649037e5f721425f3a4c4581d3a7bf85"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "ee9af3de15dcf0ee0640d76682fb86b563a7ba1b"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "844a77cb471d1f3e4d3d884710b00602a86c8c5b"),
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "1dce09f7378cb219aa7783aa0f3cf6d156fc6552"),
         // Already resolved through AemiJSON; the linear-time engine also recognizes UI heredoc openers.
-        .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "b0ce03833ede14c903345511a8ff4ae11c5f8f8c"),
+        .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "834427785a01f5561d9074d6be46b6eca43d448c"),
         // The Markdown parser the transcript draws assistant messages with (roadmap 0065); the revision TerminalKitMarkdown pins.
         .package(
-            url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "0aa50fdfb4f0c6e916d1743ede4b871026ccff36"),
+            url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "f490ab75371257764f27813c2321175e974f6e7e"),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
-        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "5e5601495a2fa544661b7b9056b1141e9c3ad9dd"),
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "6e8279ce866307346c86e09927a506d494587855"),
         // Child processes for the bash tool (ADR-0011): the official package, added with the first tool that
         // runs one.
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", .upToNextMinor(from: "1.0.2")),
