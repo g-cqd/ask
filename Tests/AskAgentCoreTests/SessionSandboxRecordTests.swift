@@ -83,6 +83,20 @@ struct SessionSandboxRecordTests {
         #expect(again.sandbox.value.write == strict.write, "resuming its own record does not grow it")
     }
 
+    /// Writing defaults to the workspace (owner, 2026-10-29), so `anywhere` in a record would widen: a session file can come from anywhere
+    /// (`--session PATH`), and one run once with `--write anywhere` would keep it after the flag is gone.
+    @Test func `a record of write or read anywhere does not widen the default workspace`() {
+        let files = Configuration.defaults
+        let record = SandboxSection(write: [.anywhere], read: [.anywhere])
+        let resumed = files.applying(session: record, flaggedNetwork: false, flaggedWrite: false, flaggedRead: false)
+        #expect(resumed == files)
+        #expect(resumed.sandbox.value.writeScope(workspace: "/w", home: "/h") == .roots(["/w"]))
+        let narrowed = files.applying(
+            session: SandboxSection(write: [.anywhere, .workspace]), flaggedNetwork: false, flaggedWrite: false,
+            flaggedRead: false)
+        #expect(narrowed.sandbox.value.write == [.workspace], "a narrower scope in the record still narrows")
+    }
+
     @Test func `a file persists it, and a failed write leaves the session as it was`() throws {
         let path = FileManager.default.temporaryDirectory.appending(path: "ask-sbrec-\(UUID().uuidString).jsonl").path
         do {

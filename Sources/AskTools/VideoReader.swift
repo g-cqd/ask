@@ -54,7 +54,9 @@ enum VideoReader {
         let end = min(max(start, request.end ?? duration), duration)
         if let every = request.every, every > 0 {
             let step = max(0.04, every)
-            let wanted = Int(((end - start) / step).rounded(.down)) + 1
+            // The length is the file's word, up to Int64 seconds; converting a count past Int.max would trap.
+            let frames = ((end - start) / step).rounded(.down)
+            let wanted = frames < Double(Int.max - 1) ? Int(frames) + 1 : Int.max
             let times = (0 ..< min(wanted, request.maximumImages)).map { min(start + Double($0) * step, last) }
             return (times, wanted)
         }

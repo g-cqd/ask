@@ -10,6 +10,9 @@ if [ -z "${ASK_SIGNING_IDENTITY:-}" ]; then
     printf 'ASK_SIGNING_IDENTITY is not set: %s stays as it is (ad hoc), and credentials "auto" keeps keys in the file.\n' "$binary"
     exit 0
 fi
-codesign --force --sign "$ASK_SIGNING_IDENTITY" --identifier ask --timestamp=none "$binary"
+# The hardened runtime (--options runtime): dyld then ignores DYLD_INSERT_LIBRARIES and its kin, and loads only libraries signed by
+# Apple or this team, so no other process can run its code as ask and read ask's Keychain items without a prompt. ask needs none of
+# its exceptions: no JIT, no unsigned memory, and it links only system libraries.
+codesign --force --sign "$ASK_SIGNING_IDENTITY" --identifier ask --options runtime --timestamp=none "$binary"
 codesign --verify "$binary"
 printf 'signed %s as %s\n' "$binary" "$ASK_SIGNING_IDENTITY"

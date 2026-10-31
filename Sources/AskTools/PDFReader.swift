@@ -10,10 +10,14 @@ internal import Foundation
 enum PDFReader {
     static func isPDF(_ header: [UInt8]) -> Bool { header.starts(with: Array("%PDF-".utf8)) }
 
+    /// The most pages a spec may name: the model writes it, so it is bounded as a whole, not range by range.
+    static let maximumPages = 10_000
+
     /// The page numbers `spec` names, in order and without repeats: `"3"`, `"1-4"`, `"1-3,7,9-10"`.
-    /// - Returns: nil when `spec` is not that form or names page 0.
+    /// - Returns: nil when `spec` is not that form, names page 0, or names more than ``maximumPages`` pages in all.
     static func pages(_ spec: String) -> [Int]? {
         var result: [Int] = []
+        var seen = Set<Int>()
         for part in spec.split(separator: ",", omittingEmptySubsequences: false) {
             let ends = part.split(separator: "-", omittingEmptySubsequences: false)
                 .map {
@@ -21,8 +25,11 @@ enum PDFReader {
                 }
             guard (1 ... 2).contains(ends.count), let first = ends[0], first >= 1 else { return nil }
             let last = ends.count == 2 ? ends[1] : first
-            guard let last, last >= first, last - first < 10_000 else { return nil }
-            for page in first ... last where !result.contains(page) { result.append(page) }
+            guard let last, last >= first, last - first < maximumPages else { return nil }
+            for page in first ... last where seen.insert(page).inserted {
+                result.append(page)
+                if result.count > maximumPages { return nil }
+            }
         }
         return result.isEmpty ? nil : result
     }

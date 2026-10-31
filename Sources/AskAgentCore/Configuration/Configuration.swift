@@ -165,9 +165,12 @@ public struct Configuration: Sendable, Equatable {
     public func applying(
         session record: SandboxSection, flaggedNetwork: Bool, flaggedWrite: Bool, flaggedRead: Bool
     ) -> Configuration {
+        // `anywhere` narrows nothing, and with writing kept to the workspace by default it would widen: a record keeps only the scopes
+        // that narrow, so a session file, which may come from anywhere, can never open the sandbox.
+        let narrowing = { (scopes: [PathSetting]) in scopes.filter { $0 != .anywhere } }
         let narrowed = sandbox.value.layered(
             with: SandboxSection(
-                write: flaggedWrite ? [] : record.write, read: flaggedRead ? [] : record.read,
+                write: flaggedWrite ? [] : narrowing(record.write), read: flaggedRead ? [] : narrowing(record.read),
                 network: flaggedNetwork ? nil : record.network))
         guard narrowed != sandbox.value else { return self }
         var next = self

@@ -86,9 +86,8 @@ struct SkillTrustTests {
         try scratch.link("work/repo/.agents/skills/linked", to: scratch.home + "/.agents/skills/linked")
         let catalog = discover(scratch)
         #expect(catalog.skills.map(\.scope) == [.user])
-        #expect(
-            catalog.untrusted.map(\.skill.name) == ["linked"],
-            "reported for the person, and not loaded as the project's")
+        #expect(catalog.untrusted.isEmpty, "a link out of the project is not read as the project's (SkillLinkTests)")
+        #expect(catalog.skipped.contains { $0.contains("linked") && $0.contains("outside the project") })
     }
 
     @Test func `the file is checked again when it is loaded, and a skill changed since discovery is refused`() throws {

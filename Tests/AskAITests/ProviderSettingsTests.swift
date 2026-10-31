@@ -83,6 +83,14 @@ struct ProviderSettingsTests {
         #expect(throws: ProviderSettingsError.self) { try resolve(json, provider: "x") }
     }
 
+    /// A gateway's header is often its credential (`authorization`, `x-api-key`), as MCP's are treated (ADR-0024).
+    @Test func `headers over plain http to another machine are refused, as a key is`() {
+        let json =
+            #"{"providers":{"x":{"api":"openai-completions","baseUrl":"http://10.0.0.5/v1","#
+            + #""headers":{"authorization":"Bearer sk"},"models":[{"id":"m"}]}}}"#
+        #expect(throws: ProviderSettingsError.self) { try resolve(json, provider: "x") }
+    }
+
     @Test func `plain http without a key is allowed to another machine, as a LAN server needs`() throws {
         #expect(try resolve(provider: "lan").model == "qwen")
     }

@@ -113,3 +113,11 @@ Still owed:
   ("opens on codex") on an ad-hoc build as well, so this is not from signing.
 - `CredentialStorage.runningBuildIsStablySigned` also reads the signature from the file on disk. It is read at startup, before a
   new build can replace the file, so it holds in practice. It is not pinned as `LaunchSignature` is.
+
+## The hardened runtime (2026-10-31, 0153 run 2)
+
+Without it, `DYLD_INSERT_LIBRARIES` ran another process's code inside the signed ask, with ask's access to its Keychain items: a way
+around this record's protection. `Scripts/sign.sh` now signs with `--options runtime` (`flags=0x10000(runtime)`), and an inserted
+library no longer loads. Re-signing changes the flags, not the designated requirement (identifier `ask` and the certificate), so the
+Keychain items and `/reload`'s check still match. The seven signed probe suites pass, H4 included. Not verified: the owner's real items
+after the change, and Apple's on-device model under the runtime.
