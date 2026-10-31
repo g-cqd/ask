@@ -102,7 +102,7 @@ struct RunSettings: Equatable {
         return lines + notices.map { "note: \($0)" }
     }
 
-    /// What a command is not given of ask's environment, in words and never a value: ask's credential variables and prefixes, then what is configured.
+    /// What a command is not given of ask's environment, in words and never a value: ask's own and well-known credential variables and prefixes, then what is configured.
     var commandEnvironmentSummary: String {
         let policy = commandEnvironment
         let prefixes = policy.withheldPrefixes.map { $0 + "*" }.joined(separator: ", ")

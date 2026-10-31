@@ -244,9 +244,12 @@ still asks about anything beyond it either way. Your own file only.
 
 | Key | Default | What it does |
 |---|---|---|
-| `withhold` | ask's credential variables | More variables to keep from commands, by name or with `*` (`"AWS_*"`). A project's file may add to it. |
+| `withhold` | ask's and well-known credential variables | More variables to keep from commands, by name or with `*` (`"AWS_*"`). A project's file may add to it. |
 | `pass` | none | Variables ask withholds that commands should get anyway. Your own file only. |
 | `shell` | zsh, else bash, else your login shell | The shell commands run in: a name, or an absolute path from `/etc/shells`. Your own file only. |
 
-Commands get your environment except the credentials ask knows of, `ANTHROPIC_*` and `ASK_*`. A secret ask does not know of is passed on
-unless you withhold it. `/config` shows the policy, never the values.
+Commands get your environment except the credentials ask knows of: its own, `ANTHROPIC_*` and `ASK_*`, and well-known credential
+variables of other tools and services, such as `GITHUB_TOKEN`, `GH_TOKEN`, `AWS_SECRET_ACCESS_KEY`, `OPENAI_API_KEY` and `NPM_TOKEN`.
+A tool's other settings (`AWS_REGION`, `AWS_PROFILE`) still reach it. If `gh` or `aws` should use the token in your environment,
+pass it: `"pass": ["GH_TOKEN"]`. A secret ask does not know of is passed on unless you withhold it. `/config` shows the policy, never
+the values.

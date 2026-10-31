@@ -142,7 +142,7 @@ enum SettingCatalog {
 
     private static let environment: [Setting] = [
         row(
-            "environment.withhold", .structured, #"["AWS_*"]"#, "ask's credential variables",
+            "environment.withhold", .structured, #"["AWS_*"]"#, "ask's and well-known credential variables",
             "More variables kept from commands."),
         row(
             "environment.pass", .structured, #"["GH_TOKEN"]"#, "none", user: true,
