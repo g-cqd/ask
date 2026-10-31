@@ -48,6 +48,10 @@ printf '==> static analyzers (deadwood, dolly, arcleak)\n'
 # finish in well under a second, which is why they run before the tests rather than after.
 Scripts/analyzers.sh || fail "static analyzer findings"
 
+printf '==> declared dependencies (swift-dependency-audit)\n'
+# Every import declared by its target and every declared dependency imported; see Scripts/dependency-audit.sh.
+Scripts/dependency-audit.sh || fail "a target imports what it does not declare, or declares what it does not import"
+
 printf '==> measurement harness guards (Python standard library)\n'
 need python3 "Install Python 3 to run the external measurement guards."
 python3 Scripts/test-measurements.py || fail "measurement harness guards"
@@ -56,6 +60,10 @@ printf '==> documentation numbers and landing workflow guards\n'
 python3 Scripts/check-records.py || fail "duplicate documentation numbers"
 python3 -B Scripts/test-workflow.py || fail "landing workflow guards"
 python3 -B Scripts/test-sign.py || fail "signing script guards"
+
+printf '==> target layering (ADR-0009)\n'
+python3 -B Scripts/test-layers.py || fail "layering check self-test"
+python3 -B Scripts/check-layers.py || fail "a target depends on one ADR-0009's layering does not allow"
 
 printf '==> build and test (release)\n'
 # Explicit testability for optimized tests (ADR-0006). Benchmark/shipping binaries are built
