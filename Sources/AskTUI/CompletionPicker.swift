@@ -80,10 +80,8 @@ struct CompletionPicker: Sendable, Equatable {
     /// Moves the choice by `step` among the matches a heading never holds, wrapping at either end, and
     /// scrolls the window to keep it in view.
     mutating func move(_ step: Int) {
-        let choices = choiceIndexes
-        guard !choices.isEmpty else { return }
-        let current = choices.firstIndex(of: selected) ?? 0
-        selected = choices[((current + step) % choices.count + choices.count) % choices.count]
+        guard let next = choiceIndexes.cycled(from: selected, by: step) else { return }
+        selected = next
         settle()
     }
 

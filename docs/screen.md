@@ -62,10 +62,18 @@ conversation copies what is shown, as soon as you let go.
 ## When the model asks you
 
 The model can ask you up to four questions at once, each with choices and room for a note. They appear above the input, as a
-command's approval does: Up and Down move, Space or a number checks a choice (one, or several when the question allows it), and what
-you type in the input is your note for that question. Tab and Shift+Tab move between questions; Enter goes to the next one and, after
-the last, to a review of every answer, which Enter sends and Esc leaves. Esc on a question declines them all, and the model carries on
-with its own judgement. Whatever you had typed in the input before comes back afterwards. `ask -p` never offers the model this tool.
+command's approval does, with a tab per question when there are several. A choice is marked `( )` when you pick one, `[ ]` when you may
+check several. The note is the row after the last choice.
+
+- **Tab** and **Shift+Tab** move between the tabs, the choices and the note.
+- On the choices, **Up** and **Down** highlight one, and **Space** or its number selects it.
+- On the tabs, **Left** and **Right** change question.
+- On the note, you type as in the input; nothing you type reaches the note unless it has the focus.
+- **Enter** goes to the next question and, after the last, to a review of every answer, which Enter sends and Esc leaves.
+- **Esc** on a question declines them all, and the model carries on with its own judgement.
+
+A click picks a choice, focuses the note, or opens a tab. The input below keeps what you had typed. `ask -p` never offers the model
+this tool.
 
 ## Background jobs
 

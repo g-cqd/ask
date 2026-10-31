@@ -3,9 +3,10 @@ internal import TerminalKitText
 
 extension ScreenComposer {
     /// The model's questions above the input (roadmap 0117), spaced as the approval section is: for a series, a row of tabs with the
-    /// one shown in brackets and the review last; the question in bold; a row per choice with its box (`[✓]` or `[ ]`, ticked when
-    /// checked), its number, its words and, dimmed, what it means; a line under it when Enter was held; a dim row of the keys. The review
-    /// lists each question's header and answer instead. When rows are short, the rows above the choices go first.
+    /// one shown in brackets and the review last; the question in bold; a row per choice with its mark (`( )` for one choice, `[ ]` for
+    /// several, filled when checked), its number, its words and, dimmed, what it means; the note row after the last choice; a line under
+    /// it when Enter was held; a dim row of the keys. What has the focus is drawn in the accent colour. The review lists each question's
+    /// header and answer instead. When rows are short, the rows above the choices go first.
     static func questionLines(_ pending: PendingQuestions, columns: Int, rows: Int) -> [Line] {
         questionLayout(pending, columns: columns, rows: rows).lines
     }
@@ -19,8 +20,7 @@ extension ScreenComposer {
         let margin = "  "
         let width = Swift.max(1, columns - margin.count)
         let blank = Line(text: "", style: .default)
-        var top: [Line] =
-            pending.isSeries ? [Line(text: clipped(margin + tabs(pending), to: columns), style: .default), blank] : []
+        var top: [Line] = pending.isSeries ? [tabLine(pending, columns: columns), blank] : []
         var body: [Line]
         if pending.reviewing {
             body = pending.questions.indices.map { index in
@@ -34,7 +34,7 @@ extension ScreenComposer {
                 top.append(Line(text: clipped(margin + problem, to: columns), style: Style(fg: .indexed(1))))
             }
             top.append(blank)
-            body = choiceLines(pending, columns: columns)
+            body = choiceLines(pending, columns: columns) + noteLines(pending, columns: columns)
         }
         let hint = Line(text: clipped(margin + keys(pending), to: columns), style: Style(dim: true))
         let choiceCount = body.count
@@ -58,28 +58,37 @@ extension ScreenComposer {
     }
 
     private static func tabNames(_ pending: PendingQuestions) -> [String] {
-        pending.questions.enumerated().map { "\($0.offset + 1) \($0.element.header)" } + ["✓ Review"]
+        pending.questions.map(\.header) + ["✓ Review"]
     }
 
-    /// `[1 Scope]   2 Tests    ✓ Review`: the question shown, or the review, in brackets.
-    private static func tabs(_ pending: PendingQuestions) -> String {
+    /// `[Scope]   Tests    ✓ Review`: the question shown, or the review, in brackets, in the accent colour while the tabs have the focus.
+    /// No numbers: beside the question count they read as one (owner, 2026-10-31).
+    private static func tabLine(_ pending: PendingQuestions, columns: Int) -> Line {
         let names = tabNames(pending)
         let shown = pending.reviewing ? names.count - 1 : pending.current
-        return names.enumerated().map { $0.offset == shown ? "[\($0.element)]" : " \($0.element) " }
+        let text = names.enumerated().map { $0.offset == shown ? "[\($0.element)]" : " \($0.element) " }
             .joined(separator: "  ")
+        var line = Line(text: clipped("  " + text, to: columns), style: .default)
+        if pending.focus == .tabs, !pending.reviewing, questionTabColumns(pending).indices.contains(shown) {
+            let span = questionTabColumns(pending)[shown]
+            let end = Swift.min(span.upperBound, UnicodeWidth.displayWidth(of: line.text))
+            if span.lowerBound < end {
+                line.accents = [Accent(columns: span.lowerBound ..< end, style: Style(fg: .indexed(5), bold: true))]
+            }
+        }
+        return line
     }
 
-    /// One row per choice: cursor, box, number, words, and what it means.
+    /// One row per choice: cursor, mark, number, words, and what it means. The highlighted choice is marked only while the choices have
+    /// the focus.
     private static func choiceLines(_ pending: PendingQuestions, columns: Int) -> [Line] {
         let question = pending.questions[pending.current]
-        guard !question.choices.isEmpty else {
-            return [Line(text: clipped("  Type your answer in the input.", to: columns), style: Style(dim: true))]
-        }
-        let cursor = pending.cursors[pending.current]
+        let cursor = pending.focus == .choices ? pending.cursors[pending.current] : -1
         let widest = question.choices.map { UnicodeWidth.displayWidth(of: $0.label) }.max() ?? 0
         return question.choices.enumerated()
             .map { index, choice in
-                let box = pending.chosen[pending.current].contains(index) ? "[✓]" : "[ ]"
+                let checked = pending.chosen[pending.current].contains(index)
+                let box = question.multiple ? (checked ? "[✓]" : "[ ]") : (checked ? "(•)" : "( )")
                 let lead = index == cursor ? "›" : " "
                 let start = "  \(lead)  \(box)  \(index + 1)   \(choice.label)"
                 let gap = String(repeating: " ", count: widest - UnicodeWidth.displayWidth(of: choice.label))
@@ -111,17 +120,19 @@ extension ScreenComposer {
         return "\(question.header): " + (parts.isEmpty ? "no answer" : parts.joined(separator: "; "))
     }
 
-    /// The keys that act now.
+    /// The keys that act now, for what has the focus.
     private static func keys(_ pending: PendingQuestions) -> String {
         if pending.reviewing { return "Enter sends these answers · Esc goes back" }
         let question = pending.questions[pending.current]
         let last = pending.current == pending.questions.count - 1
         let enter = last ? (pending.isSeries ? "Enter reviews" : "Enter answers") : "Enter next"
-        var parts = question.choices.isEmpty ? [] : [question.multiple ? "Space checks several" : "Space checks"]
-        if question.note != .none {
-            parts.append(question.note == .required ? "a note is needed" : "type to add a note")
+        var parts: [String]
+        switch pending.focus {
+            case .tabs: parts = ["← → change question"]
+            case .choices: parts = ["↑ ↓ highlight", question.multiple ? "Space checks several" : "Space selects"]
+            case .note: parts = [question.note == .required ? "type the note (needed)" : "type a note"]
         }
-        if pending.isSeries { parts.append("Tab moves") }
+        if pending.focusOrder.count > 1 { parts.append("Tab moves") }
         return (parts + [enter, "Esc declines"]).joined(separator: " · ")
     }
 }
