@@ -198,6 +198,7 @@ enum ModelDiscovery {
         if case ConnectionError.signInRequired = error { return 77 }
         if error is ConfigurationError || error is ProviderSettingsError || error is ConnectionError
             || error is SessionDestinationError || error is ModelAliasError || error is ThinkingError
+            || error is ModelScopeRefusal
         {
             return 78
         }

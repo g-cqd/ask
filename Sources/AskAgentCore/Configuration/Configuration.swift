@@ -54,6 +54,7 @@ public struct Configuration: Sendable, Equatable {
     public var keepDisplayAwake = Setting(value: false, source: .defaults)
     public var credentials = Setting(value: CredentialStorage.auto, source: .defaults)  // where keys are kept, 0110
     public var approvals = Setting(value: ApprovalsSection(), source: .defaults)  // which calls ask first, 0134
+    public var modelScopes = Setting(value: [ModelScope](), source: .defaults)  // which providers serve here, 0094
     /// Where each `ui` and `skills` key came from, by its dotted name; read through `source(ofKey:)`.
     var keySources: [String: Source] = [:]
 
@@ -84,6 +85,7 @@ public struct Configuration: Sendable, Equatable {
         if let display = file.keepDisplayAwake { next.keepDisplayAwake = Setting(value: display, source: source) }
         if let credentials = file.credentials { next.credentials = Setting(value: credentials, source: source) }
         if let approvals = file.approvals { next.approvals = Setting(value: approvals, source: source) }
+        if let scopes = file.modelScopes { next.modelScopes = Setting(value: scopes, source: source) }
         return next
     }
 

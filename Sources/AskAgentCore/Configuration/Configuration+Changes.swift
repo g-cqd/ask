@@ -17,6 +17,7 @@ extension Configuration {
         compare("keepDisplayAwake", previous.keepDisplayAwake, keepDisplayAwake)
         compare("credentials", previous.credentials, credentials)
         compare("approvals", previous.approvals, approvals)
+        compare("modelScopes", previous.modelScopes, modelScopes)
         compare("sandbox", previous.sandbox, sandbox)
         compare("ui", previous.ui, ui)
         compare("skills", previous.skills, skills)

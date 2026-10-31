@@ -23,13 +23,14 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var keepDisplayAwake: Bool?  // roadmap 0154
     public var credentials: CredentialStorage?  // roadmap 0110; the person's own file only
     public var approvals: ApprovalsSection?  // roadmap 0134; the person's own file only
+    public var modelScopes: [ModelScope]?  // roadmap 0094; the person's own file only
 
     /// The keys ask knows, in the order `ask config` shows them.
     // @dl:accept -- the list of keys is data; the sandbox policy's list of names is other data
     public static let keys = [
         // @dl:accept -- the list of keys is data, like the sandbox policy's lists of paths
         "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "keepDisplayAwake", "credentials",
-        "approvals",
+        "approvals", "modelScopes",
         "sandbox", "ui", "skills", "mcp", "environment"
     ]
 
@@ -100,6 +101,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                 path: path, key: "approvals",
                 reason: "says which calls ask you first: only your own config file can choose that")
         }
+        try validateModelScopes(file.modelScopes, path: path, isProject: isProject)
         if isProject, file.credentials != nil {
             throw .outOfRange(
                 path: path, key: "credentials",
@@ -228,6 +230,8 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "skills": file.skills = try container.decode(SkillsDecoded.self, forKey: key).section
                     case "mcp": file.mcp = try container.decode(MCPDecoded.self, forKey: key).section
                     case "approvals": file.approvals = try container.decode(ApprovalsDecoded.self, forKey: key).section
+                    case "modelScopes":
+                        file.modelScopes = try container.decode([ModelScopeDecoded].self, forKey: key).map(\.scope)
                     case "environment":
                         file.environment = try container.decode(EnvironmentDecoded.self, forKey: key).section
                     default: throw UnknownKey(key: key.stringValue)

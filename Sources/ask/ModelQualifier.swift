@@ -1,4 +1,5 @@
 internal import AskAI
+internal import AskAgentCore
 internal import AskApple
 internal import Foundation
 
@@ -22,7 +23,8 @@ enum ModelQualifier {
 
     /// The provider whose cached list holds `model`, the first by preference when several do; nil when none does.
     static func infer(
-        model: String, thinking: ThinkingLevel, providers: ProviderSettings, environment: [String: String]
+        model: String, thinking: ThinkingLevel, providers: ProviderSettings, environment: [String: String],
+        scope: ModelScopeMatch? = nil
     ) -> String? {
         if model == ProviderSettings.appleModel { return ProviderSettings.apple }
         let file = CredentialFile.standard(environment: environment)
@@ -63,6 +65,8 @@ enum ModelQualifier {
             found.append(
                 (name, entry, .openAIResponses(name: name, baseURL: listing.baseURL, apiKey: nil, headers: [:])))
         }
+        // Only the providers the project's modelScopes rule allows (roadmap 0094).
+        found = found.filter { scope?.allows($0.provider) ?? true }
         let fits = found.filter { candidate in
             thinking == .providerDefault
                 || ThinkingOptions.choices(for: candidate.kind, descriptor: candidate.entry)?.levels.contains(thinking)
@@ -70,6 +74,8 @@ enum ModelQualifier {
         }
         // A model the effort rules out everywhere is still the model asked for: the effort is refused later, with its reason.
         return (fits.first ?? found.first)?.provider
-            ?? (model.hasPrefix("claude") && has(ProviderSettings.anthropic) ? ProviderSettings.anthropic : nil)
+            ?? (model.hasPrefix("claude") && has(ProviderSettings.anthropic)
+                && scope?.allows(ProviderSettings.anthropic) != false
+                ? ProviderSettings.anthropic : nil)
     }
 }

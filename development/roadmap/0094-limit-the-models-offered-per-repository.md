@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -21,7 +21,21 @@ configured providers. The rule can match by repo, git identity, filesystem locat
   missing git (no match). Measure against the 50 ms cold-start budget; a subprocess may be too slow, in which case read `.git/config`.
 - Tests: each matcher, precedence, no match, a project file cannot set it, refusal text.
 
-## Not decided
+## Done
 
-The matcher grammar (glob versus regular expression; AemiRegex is deferred) and whether `identity` means the repo's `user.email` or
-the signing key.
+Decided in ADR-0137: globs; `user.email` or `user.name` as identity; no flag overrides a rule. A provider a file, a resumed session or
+ask's own pick chose gives way to the rule's first provider instead of failing the run.
+
+- AskAgentCore `ModelScopes/`: `ModelScope`, `ScopeGlob`, `ModelScopeMatch` (`allows`, `verdict`, `refusal`), `ModelScopeVerdict`,
+  `RepositoryFacts.read` and `GitConfigFile` (remotes, identity, `include` and `includeIf "gitdir:"`, worktrees). Decoding and the
+  project refusal are in `ConfigurationFile+ModelScopes.swift`, and `Configuration.modelScope(for:)` gives the first match.
+- `ask`: `ModelScopeGate`, and `ConfigurationSource.resolveWithinScope` for launch, `/model` and reload. The `/model` list,
+  `ModelQualifier.infer` and `ask models NAME` filter or refuse too.
+- Tests: `ModelScopeTests` (9) and `RepositoryFactsTests` (5). Catalog row, the generated example, and `docs/configuration.md`.
+- Probe `Scripts/probe-model-scopes.py`, 12 checks with a control for each refusal: `--provider` refused before any request and
+  answered outside the rule; `ask models anthropic` and `claude` refused; the file's default replaced at start; `/model` listing only
+  the allowed accounts and refusing another.
+- Cold start, three non-matching rules: a median of 34–35 ms against 32.5 ms without rules.
+
+Not verified: a real work/personal setup with real accounts; a submodule's `.git` file (handled like a worktree's, no test);
+`/reload` after editing the rules in a real terminal.

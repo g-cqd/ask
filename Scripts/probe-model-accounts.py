@@ -84,4 +84,5 @@ def main():
     print('PASS', len(picker.checks), 'checks')
 
 
-main()
+if __name__ == "__main__":
+    main()

@@ -13,6 +13,7 @@ extension SettingCatalog {
     fileprivate static let structured: [String: String] = [
         "maxTurns": "a whole number of at least 1, or null for no limit",
         "compactAt": CompactionThreshold.expected,
+        "modelScopes": "a list of rules, each with a path, remote or identity and the providers it allows",
         "sandbox.write": #""workspace", "anywhere" or a list of paths"#,
         "sandbox.read": #""workspace", "anywhere" or a list of paths"#,
         "sandbox.hide": "a list of paths", "sandbox.readable": "a list of paths", "sandbox.writable": "a list of paths",

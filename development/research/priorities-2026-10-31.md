@@ -9,7 +9,7 @@ The owner agreed to this order on 2026-10-31 ("go ahead, seems nice").
 1. **A: the records.** Close what is built (0049, 0075, 0077, 0079), mark what waits on an account (0034, 0040), land through
    `Scripts/land.sh` once (0068), and finish 0101's guard against new subprocess calls.
 2. **B: accounts and scopes.** 0092 (a second login adds an account; done) with 0046 and 0047's leftovers, then 0094 (the user's file
-   limits which providers a repository sees, by path, remote or git identity).
+   limits which providers a repository sees, by path, remote or git identity; done, ADR-0137).
 3. **C: keys and security.** 0110 (the Keychain by default, after the owner's first signing), then 0153's open findings.
 4. **D: tokens per turn.** 0137: measure what the tool definitions cost per request, then cut.
 5. **E: interaction.** 0116 (one confirmation picker, reusing 0117's lane), then 0078 (tool blocks without section labels).
