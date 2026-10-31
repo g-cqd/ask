@@ -54,7 +54,8 @@ extension ScreenComposer {
     ) -> String {
         var parts: [String] = []
         if let duration = progress?.duration(localized: localizedDurations) { parts.append(duration) }
-        let isWriteAck = toolName == "write"
+        // Write and edit answer in one sentence: counting it reads as the file's size (roadmap 0078).
+        let isWriteAck = toolName == "write" || toolName == "edit"
         let count =
             isWriteAck
             ? 0

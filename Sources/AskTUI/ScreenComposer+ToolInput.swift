@@ -11,19 +11,13 @@ extension ScreenComposer {
         }
     }
 
-    /// Input/output sections have decorative labels/gaps, never copied as tool content.
+    /// The whole input in the default colour, then the output dimmed, a blank row before each and no labels (roadmap 0078).
     static func toolInputLines(
         item: Transcript.Item, input: String, block: Int, columns: Int, style: BlockStyle, progress: BlockProgress?
     ) -> [Line] {
         guard case .tool(let name, let summary, let status, let output, _) = item else { return [] }
         let inset = style.inset
         let width = Swift.max(1, columns - 2 * inset)
-        let margin = String(repeating: " ", count: inset)
-        func label(_ text: String) -> Line {
-            Line(
-                text: margin + ColumnSlicer.split("── \(text) ──", columns: 0 ..< width).selected,
-                style: Style(dim: true))
-        }
         let look = toolStatusStyle(status)
         return blockHeader(
             Transcript.Item.toolHeader(name: name, summary: summary, status: status, output: output, folded: false),

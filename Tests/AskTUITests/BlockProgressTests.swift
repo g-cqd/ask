@@ -72,6 +72,17 @@ struct BlockProgressTests {
         #expect(ScreenComposer.blockMetadata(status: .succeeded, output: "", progress: nil) == "✓")
     }
 
+    /// The write and edit tools answer in one sentence; counting it as `1 line` reads as the file's size (roadmap 0078).
+    @Test func `a write or an edit acknowledgement shows no line count`() {
+        for tool in ["write", "edit"] {
+            let said = ScreenComposer.blockMetadata(
+                status: .succeeded, output: "Replaced 1 occurrence in a.txt.", progress: nil, toolName: tool)
+            #expect(said == "✓", "\(tool)")
+        }
+        let read = ScreenComposer.blockMetadata(status: .succeeded, output: "one\ntwo", progress: nil, toolName: "read")
+        #expect(read == "2 lines · ✓")
+    }
+
     @Test func `clock alternative and locale choice use the same elapsed duration`() {
         let start = ContinuousClock.now
         var progress = BlockProgress(at: start)

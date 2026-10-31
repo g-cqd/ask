@@ -80,26 +80,42 @@ public enum ToolSummary {
         return (fields.timeoutSeconds, fields.yieldSeconds)
     }
 
-    /// Complete text, never the truncated header. Unknown tools retain their original JSON bytes.
+    /// Complete text, never the truncated header: a command or a file's content as itself, anything else as indented JSON.
     public static func fullInput(for input: JSONObject) -> String {
-        guard let fields = fields(input) else { return String(decoding: input.bytes, as: UTF8.self) }
+        guard let fields = fields(input) else { return indented(input) }
         if let command = fields.command { return command }
         if let old = fields.oldText, let new = fields.newText { return "old_text:\n\(old)\nnew_text:\n\(new)" }
-        return fields.content ?? fields.newText ?? String(decoding: input.bytes, as: UTF8.self)
+        return fields.content ?? fields.newText ?? indented(input)
     }
 
+    /// The input as JSON indented by two spaces, keys in the model's order (roadmap 0078); its own bytes if that fails.
+    static func indented(_ input: JSONObject) -> String {
+        let options = JSONEncodingOptions(prettyPrinted: true, prettyKeySeparator: .javaScript, indent: .spaces(2))
+        guard let document = try? AemiJSON.parse(input.bytes),
+            let bytes = try? JSONValue(document.root).encodedBytes(options: options)
+        else { return String(decoding: input.bytes, as: UTF8.self) }
+        return String(decoding: bytes, as: UTF8.self)
+    }
+
+    /// `512 B`, or the largest IEC unit that keeps the number at least one, to one decimal at most, with the exact count:
+    /// `1.5 KiB (1,536 B)`. The unit is chosen after rounding, so 1,048,575 B reads `1 MiB`, not `1024 KiB`.
     static func formatBytes(_ count: Int) -> String {
         guard count >= 1024 else { return "\(count) B" }
-        let kib = Double(count) / 1024.0
-        let tenths = Int((kib * 10).rounded())
-        let formattedKib = "\(tenths / 10)" + (tenths % 10 == 0 ? "" : ".\(tenths % 10)")
+        let units = ["KiB", "MiB", "GiB", "TiB"]
+        var unit = 0
+        var tenths = Int((Double(count) / 1024 * 10).rounded())
+        while tenths >= 10240, unit < units.count - 1 {
+            unit += 1
+            tenths = Int((Double(count) / Double(1 << (10 * (unit + 1))) * 10).rounded())
+        }
+        let number = "\(tenths / 10)" + (tenths % 10 == 0 ? "" : ".\(tenths % 10)")
         var exact = String(count)
         var offset = exact.count - 3
         while offset > 0 {
             exact.insert(",", at: exact.index(exact.startIndex, offsetBy: offset))
             offset -= 3
         }
-        return "\(formattedKib) KiB (\(exact) B)"
+        return "\(number) \(units[unit]) (\(exact) B)"
     }
 
     private static func compact(_ text: String) -> String {
