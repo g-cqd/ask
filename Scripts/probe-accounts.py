@@ -10,6 +10,8 @@ D: /login with the wrong words says so and stays.
 Usage: Scripts/probe-accounts.py .build/release/ask [CONFIG_DIR_TO_COPY]
 """
 import importlib.util, json, os, shutil, sys, tempfile, time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_keychain
 
 here = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("interactive", os.path.join(here, "probe-interactive.py"))
@@ -27,6 +29,7 @@ class Session(interactive.Screen):
         self.state = tempfile.mkdtemp()
         env = {"PATH": os.environ["PATH"], "HOME": self.state, "XDG_CONFIG_HOME": config_home, "XDG_STATE_HOME": self.state,
                "TERM": "xterm-256color"}
+        env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
         import pty, fcntl, struct, termios
         self.pid, self.fd = pty.fork()
         if self.pid == 0:

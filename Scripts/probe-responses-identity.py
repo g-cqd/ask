@@ -13,9 +13,12 @@ import os
 from pathlib import Path
 import statistics
 import subprocess
+import sys
 import tempfile
 import threading
 import time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_keychain
 
 FIXTURE = Path(__file__).resolve().parent.parent / 'Tests/Fixtures/Responses/copilot-rotating-ids.sse'
 
@@ -67,6 +70,7 @@ def main():
             environment = {key: value for key, value in os.environ.items()
                            if not key.startswith(('ASK_', 'ANTHROPIC_', 'OPENAI_', 'CODEX_'))}
             environment.update(XDG_CONFIG_HOME=str(root / 'config'), HOME=str(root))
+            environment["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
             for chunk in [7, 65536]:
                 delivery['chunk'] = chunk
                 for trial in range(args.runs):

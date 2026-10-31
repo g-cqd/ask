@@ -11,6 +11,8 @@ F: a provider name that is not a plain word lists, but keeps no cache file. G: w
 Nothing leaves the machine and no real credential is used.
 """
 import http.server, json, os, pathlib, stat, subprocess, sys, tempfile, threading
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_keychain
 
 binary = str(pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else '.build/release/ask').resolve())
 KEY = 'sk-probe-secret-value'
@@ -59,6 +61,7 @@ entry = {'api': 'openai-completions', 'baseUrl': url, 'apiKey': KEY}
 (config / 'providers.json').write_text(json.dumps({'providers': {'fake': entry, 'Odd.Name': entry, '': entry}}))
 env = {k: v for k, v in os.environ.items() if not k.startswith(('ANTHROPIC_', 'XDG_'))}
 env |= {'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_STATE_HOME': str(root / 'state')}
+env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
 cache = config / 'models-fake.json'
 
 

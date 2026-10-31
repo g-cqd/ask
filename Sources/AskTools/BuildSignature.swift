@@ -15,35 +15,60 @@ public enum BuildSignature {
         case refused(String)
     }
 
-    /// The running process's designated requirement, as text, when it is signed with a team's identity; nil for an ad-hoc or platform
-    /// signature, which names no team.
-    public static func runningRequirement() -> String? {
+    /// The running build's signature, as far as it can be known.
+    public enum Running: Sendable, Equatable {
+        /// Signed with a team's identity; its designated requirement as text.
+        case signed(String)
+        /// Ad hoc or platform signed: no team, so nothing to compare.
+        case unsigned
+        /// The executable's file no longer matches the running code (a new build replaced it), so its signature cannot be read.
+        case unreadable
+    }
+
+    /// Reads the running build's signature from its executable's file, then checks that the running code still matches that file.
+    /// The file is what a new build replaces: read after that, it would give the new build's signature, or none. A mismatch is
+    /// ``Running/unreadable``, never ``Running/unsigned``. ``LaunchSignature`` reads it once at launch.
+    public static func readRunning() -> Running {
         var code: SecCode?
-        guard SecCodeCopySelf([], &code) == errSecSuccess, let code else { return nil }
+        guard SecCodeCopySelf([], &code) == errSecSuccess, let code else { return .unreadable }
         var staticCode: SecStaticCode?
-        guard SecCodeCopyStaticCode(code, [], &staticCode) == errSecSuccess, let staticCode else { return nil }
+        guard SecCodeCopyStaticCode(code, [], &staticCode) == errSecSuccess, let staticCode else { return .unreadable }
+        let read = requirement(of: staticCode)
+        // After the read: a file swapped before or during it fails here.
+        guard SecCodeCheckValidity(code, [], nil) == errSecSuccess else { return .unreadable }
+        return read
+    }
+
+    private static func requirement(of staticCode: SecStaticCode) -> Running {
         var information: CFDictionary?
         guard
             SecCodeCopySigningInformation(staticCode, SecCSFlags(rawValue: kSecCSSigningInformation), &information)
                 == errSecSuccess,
-            let values = information as? [String: Any], values[kSecCodeInfoTeamIdentifier as String] is String
-        else { return nil }
+            let values = information as? [String: Any]
+        else { return .unreadable }
+        guard values[kSecCodeInfoTeamIdentifier as String] is String else { return .unsigned }
         var requirement: SecRequirement?
-        guard SecCodeCopyDesignatedRequirement(staticCode, [], &requirement) == errSecSuccess, let requirement else {
-            return nil
-        }
         var text: CFString?
-        guard SecRequirementCopyString(requirement, [], &text) == errSecSuccess else { return nil }
-        return text as String?
+        guard SecCodeCopyDesignatedRequirement(staticCode, [], &requirement) == errSecSuccess, let requirement,
+            SecRequirementCopyString(requirement, [], &text) == errSecSuccess, let text
+        else { return .unreadable }
+        return .signed(text as String)
     }
 
-    /// Checks the build at `path` against `requirement` (``runningRequirement()`` for a reload).
+    /// Checks the build at `path` against the running build's signature.
     /// - Parameters:
     ///   - path: the new build.
-    ///   - requirement: the running build's designated requirement as text, or nil when it has none.
+    ///   - running: the running build's signature (``LaunchSignature/running`` for a reload).
     /// - Returns: the verdict. Never throws: every way it can go wrong is a ``Verdict/refused(_:)``.
-    public static func check(_ path: String, against requirement: String?) -> Verdict {
-        guard let requirement else { return .unsignedRunning }
+    public static func check(_ path: String, against running: Running) -> Verdict {
+        let requirement: String
+        switch running {
+            case .signed(let text): requirement = text
+            case .unsigned: return .unsignedRunning
+            case .unreadable:
+                return .refused(
+                    "the running build's file has changed since it started, so its signature cannot be compared")
+        }
         var compiled: SecRequirement?
         guard SecRequirementCreateWithString(requirement as CFString, [], &compiled) == errSecSuccess, let compiled
         else {
