@@ -1,11 +1,15 @@
 import AemiJSON
 import AskAI
+import Foundation
 import Testing
 
 @testable import AskAgentCore
 
 @Suite("Tool presentation preserves full input and separates target from parameters")
 struct ToolPresentationTests {
+    static let english = Locale(identifier: "en_US")
+    static let german = Locale(identifier: "de_DE")
+
     private func input(_ json: String) throws -> JSONObject { try JSONObject(validating: Array(json.utf8)) }
 
     @Test func `complete multiline shell commands are not reduced to the header`() throws {
@@ -28,7 +32,11 @@ struct ToolPresentationTests {
         #expect(ToolSummary.header(for: try input(#"{"path":"a.txt","content":"é"}"#)) == "a.txt · 2 B")
         let kb = String(repeating: "a", count: 1024)
         #expect(
-            ToolSummary.header(for: try input(#"{"path":"b.txt","content":"\#(kb)"}"#)) == "b.txt · 1 KiB (1,024 B)")
+            ToolSummary.header(for: try input(#"{"path":"b.txt","content":"\#(kb)"}"#), locale: Self.english)
+                == "b.txt · 1 KiB (1,024 B)")
+        #expect(
+            ToolSummary.header(for: try input(#"{"path":"b.txt","content":"\#(kb)"}"#), locale: Self.german)
+                == "b.txt · 1 KiB (1.024 B)")
         #expect(ToolSummary.fullInput(for: try input(#"{"path":"a.txt","content":"é\nhello"}"#)) == "é\nhello")
     }
 
@@ -41,14 +49,21 @@ struct ToolPresentationTests {
 
     /// IEC units past KiB, one decimal at most, with the exact count beside them (roadmap 0078).
     @Test func `sizes use the largest IEC unit that keeps a number at least one`() {
-        #expect(ToolSummary.formatBytes(1023) == "1023 B")
-        #expect(ToolSummary.formatBytes(1536) == "1.5 KiB (1,536 B)")
+        #expect(ToolSummary.formatBytes(1023, locale: Self.english) == "1023 B")
+        #expect(ToolSummary.formatBytes(1536, locale: Self.english) == "1.5 KiB (1,536 B)")
         // Rounded to one decimal, 1,048,575 B is 1024.0 KiB: the unit is chosen after rounding.
-        #expect(ToolSummary.formatBytes(1_048_575) == "1 MiB (1,048,575 B)")
-        #expect(ToolSummary.formatBytes(1_000_000) == "976.6 KiB (1,000,000 B)")
-        #expect(ToolSummary.formatBytes(1_048_576) == "1 MiB (1,048,576 B)")
-        #expect(ToolSummary.formatBytes(3_250_586) == "3.1 MiB (3,250,586 B)")
-        #expect(ToolSummary.formatBytes(5 << 30) == "5 GiB (5,368,709,120 B)")
+        #expect(ToolSummary.formatBytes(1_048_575, locale: Self.english) == "1 MiB (1,048,575 B)")
+        #expect(ToolSummary.formatBytes(1_000_000, locale: Self.english) == "976.6 KiB (1,000,000 B)")
+        #expect(ToolSummary.formatBytes(1_048_576, locale: Self.english) == "1 MiB (1,048,576 B)")
+        #expect(ToolSummary.formatBytes(3_250_586, locale: Self.english) == "3.1 MiB (3,250,586 B)")
+        #expect(ToolSummary.formatBytes(5 << 30, locale: Self.english) == "5 GiB (5,368,709,120 B)")
+    }
+
+    /// The decimal mark and the thousands separator are the locale's, injected here and `.current` on screen (roadmap 0078).
+    @Test func `sizes are written in the locale's numbers`() {
+        #expect(ToolSummary.formatBytes(1536, locale: Self.german) == "1,5 KiB (1.536 B)")
+        #expect(ToolSummary.formatBytes(5 << 30, locale: Self.german) == "5 GiB (5.368.709.120 B)")
+        #expect(ToolSummary.formatBytes(1023, locale: Self.german) == "1023 B")
     }
 
     /// An MCP server's or another unknown tool's input is shown as indented JSON, keys in the model's order (roadmap 0078).

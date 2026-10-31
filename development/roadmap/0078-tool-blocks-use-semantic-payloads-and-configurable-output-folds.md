@@ -102,8 +102,14 @@ Done now, each test first:
   the JSON of the rest, in the model's order; with nothing else, no empty `{}`. A string in a nested value stays JSON. The session
   keeps the call's own bytes; this is only how it is drawn (`ToolPresentationTests`).
 
+- **The skill tool's header** (2026-10-31) says what the call does: the skill it loads (`pdf`), the words it searches for
+  (`search · swift testing`) or `browse` for an empty query, then `· from project, codex` when it narrows its sources. Only the skill
+  tool is read this way: another tool with a `name` field keeps its input (`SkillToolHeaderTests`).
+- **Sizes in the locale's numbers** (2026-10-31): the decimal mark and the thousands separator are the locale's (`1,5 KiB (1.536 B)`
+  in German), `.current` on screen and injected in the tests, which pin `en_US` and `de_DE` (`ToolPresentationTests`).
+
 ## Still owed
 
-- The skill tool's header is its raw JSON (`{"name":"pdf"}`): it wants a projection of its own (a name, a search or a browse).
-- Byte counts group thousands with a comma whatever the locale; the record asks for a deliberate locale, injected in tests.
-- Fold choices are not kept across a resume: a resumed session starts from the defaults, as the other folds do.
+- Fold choices are not kept across a resume: a resumed session starts from the defaults, as the other folds do. Keeping them needs
+  a place for screen state, either an entry in the session file that the loop ignores or a file beside it. That choice applies to
+  every fold, so it waits on the owner rather than being made here for one.
