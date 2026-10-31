@@ -63,7 +63,7 @@ no file over 250 lines, tests included; provider names only in `AskAI/Anthropic`
 is a ratchet baseline: it shrinks and never takes a new entry.
 
 **Static analysis is gated too (ADR-0022).** deadwood, dolly and arcleak run under `--strict`, pinned by version
-and SHA-256 in `Scripts/analyzers.sh`. A finding is fixed, or accepted where it is with a reason
+and SHA-256 in the family's lock, `Scripts/analyzers.lock` in Aemi-Studio/aemi at the commit `Scripts/analyzers.sh` names. A finding is fixed, or accepted where it is with a reason
 (`// @dl:accept -- why`, `@dw:`, `@al:`, on the line above the anchor); there are no baselines.
 
 **When a refactor or factorisation is on the table, ask what Swift already offers first** (white paper §8):
