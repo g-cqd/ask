@@ -27,12 +27,12 @@ struct BuildSignatureTests {
 
     @Test func `a build that meets the running build's requirement may be started`() throws {
         let build = try signedCopy(identifier: "ask")
-        #expect(BuildSignature.check(build, against: #"identifier "ask""#) == .sameSigner)
+        #expect(BuildSignature.check(build, against: .signed(#"identifier "ask""#)) == .sameSigner)
     }
 
     @Test func `a build signed as something else is refused, and says why`() throws {
         let build = try signedCopy(identifier: "not-ask")
-        guard case .refused(let reason) = BuildSignature.check(build, against: #"identifier "ask""#) else {
+        guard case .refused(let reason) = BuildSignature.check(build, against: .signed(#"identifier "ask""#)) else {
             Issue.record("a build under another identifier was accepted")
             return
         }
@@ -41,17 +41,33 @@ struct BuildSignatureTests {
 
     @Test func `an unsigned or missing build is refused`() throws {
         let unsigned = try signedCopy(identifier: nil)
-        #expect(BuildSignature.check(unsigned, against: #"identifier "ask""#) != .sameSigner)
-        #expect(BuildSignature.check("/nonexistent/ask", against: #"identifier "ask""#) != .sameSigner)
+        #expect(BuildSignature.check(unsigned, against: .signed(#"identifier "ask""#)) != .sameSigner)
+        #expect(BuildSignature.check("/nonexistent/ask", against: .signed(#"identifier "ask""#)) != .sameSigner)
     }
 
     @Test func `with no running identity nothing is compared, and that is said`() throws {
         let build = try signedCopy(identifier: "anything")
-        #expect(BuildSignature.check(build, against: nil) == .unsignedRunning)
+        #expect(BuildSignature.check(build, against: .unsigned) == .unsignedRunning)
     }
 
     /// The test runner is one of Apple's platform binaries, which carry no team identifier, as an ad-hoc build does not either.
     @Test func `a running process without a team identifier holds builds to nothing`() {
-        #expect(BuildSignature.runningRequirement() == nil)
+        #expect(BuildSignature.readRunning() == .unsigned)
+    }
+
+    /// The running build's signature is read from its file, which a new build replaces: read after that, a signed ask would find the
+    /// new build's signature, or none, and compare nothing (found by probe H4). Unreadable is refused, never taken as unsigned.
+    @Test func `a running build whose file has changed refuses every build`() throws {
+        let build = try signedCopy(identifier: "ask")
+        guard case .refused(let reason) = BuildSignature.check(build, against: .unreadable) else {
+            Issue.record("a build was accepted with the running signature unknown")
+            return
+        }
+        #expect(reason.contains("changed since it started"), "\(reason)")
+    }
+
+    @Test func `the signature read at launch is the running build's`() async {
+        LaunchSignature.start()
+        #expect(await LaunchSignature.running == BuildSignature.readRunning())
     }
 }

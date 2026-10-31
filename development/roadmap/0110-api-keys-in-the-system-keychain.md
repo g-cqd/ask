@@ -77,3 +77,39 @@ and `/reload` checks the new build's signature (0153). The first signing needs t
   `ASK_SIGNING_IDENTITY="Apple Development: Guillaume Coquard (B85BJQQ6R8)" Scripts/build-release.sh`, then "Always Allow".
 - Once the running ask is signed, `/reload` refuses unsigned builds (0153). From then on every build goes through
   `Scripts/build-release.sh`, with the variable set.
+
+## Done (2026-10-31): the first signing, and what a signed build found
+
+The owner asked for the first signing to be done for them, with the identity their Swift apps are signed with. The only identity of
+the personal team L2LRQKFJ3U is "Apple Development: Guillaume Coquard (B85BJQQ6R8)". Three certificates carry that name: two
+expired (organisation oculavis GmbH, January and April 2026) and one valid until 2027-01-27 (organisation Maintastic GmbH). So
+signing goes by the valid one's SHA-1, `0F1D77299FF47DC421EF91FB51DB0083C6B2FEC5`: `ASK_SIGNING_IDENTITY=0F1D…FEC5
+Scripts/build-release.sh`. `codesign` used the key with no prompt. The result is `Identifier=ask`, `TeamIdentifier=L2LRQKFJ3U`,
+with a designated requirement on the certificate's name and Apple's anchor.
+
+Running the probes on a signed build found three faults, each fixed test first:
+
+- **Items named by the path's spelling.** A Keychain item was named by the file's path as written, so a file reached through a
+  symlink, or through `/private/var` for `/var`, missed its own items. The account had disappeared from `/model`. Items are now named
+  by the folder with symlinks resolved. Test: `CredentialAccountNameTests`, both cases red first.
+- **Named connections ignored `credentials`.** `ConnectionRegistry.credentials(for:)` made a file with no store, so a named
+  connection's secrets stayed in the file under `keychain`. It now goes through `CredentialFile.preferred`. Test: in
+  `CredentialStorageChoiceTests`, red first.
+- **`ASK_KEYCHAIN_PATH` was lost after launch.** ask blanks its own `ASK_*` variables once the run's policy is known (ADR-0113). A
+  store made after that fell back to the login keychain, which a probe must never touch. The path is now read once, before the
+  blanking (`KeychainSecretStore.launchKeychainPath`). Found by `probe-model-accounts.py` on the signed build; no unit test, since it
+  needs the process's own environment blanked.
+
+The probes that start ask now give it a throwaway keychain (`Scripts/probe_keychain.py`, through `probe-agent-run.environment()`
+and the eleven probes that build their own environment). Signed, `interactive`, `picker`, `skill-picker`, `connections`,
+`agent-run`, `model-accounts` and `model-scopes` pass. Afterwards the login keychain holds no `ask` item and its search list is
+unchanged.
+
+Still owed:
+- The owner's real credentials move into the login keychain on their first run of a signed build. It was not triggered here. The file
+  keeps markers where the secrets were, so check with `security find-generic-password -s ask` after that run.
+- A locked keychain over SSH.
+- `probe-accounts.py` copies `~/.config/ask`, and its section A assumes only Codex is signed in. With today's credentials it fails
+  ("opens on codex") on an ad-hoc build as well, so this is not from signing.
+- `CredentialStorage.runningBuildIsStablySigned` also reads the signature from the file on disk. It is read at startup, before a
+  new build can replace the file, so it holds in practice. It is not pinned as `LaunchSignature` is.

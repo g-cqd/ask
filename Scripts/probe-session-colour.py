@@ -8,6 +8,8 @@ import os, pty, select, shutil, signal, subprocess, sys, tempfile, time
 
 sys.path.insert(0, os.environ.get("ASK_PYTE", "/tmp/ask-pty/lib"))
 import pyte
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_keychain
 
 BINARY = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask")
 ROWS, COLUMNS = 24, 100
@@ -35,6 +37,7 @@ def status_background(setting, seconds=6.0):
         os.chdir(project)
         env = {k: v for k, v in os.environ.items() if not k.startswith(("ASK_", "ANTHROPIC_", "OPENAI_"))}
         env.update(TERM="xterm-256color", XDG_CONFIG_HOME=config, XDG_STATE_HOME=state, HOME=home)
+        env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
         os.execve(BINARY, [BINARY], env)
     screen, stream = pyte.Screen(COLUMNS, ROWS), pyte.ByteStream()
     stream.attach(screen)

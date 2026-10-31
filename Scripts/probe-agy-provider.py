@@ -4,11 +4,14 @@
 Every run uses throwaway XDG directories, so nothing here reads or writes the real credentials. Usage: probe-agy-provider.py BINARY
 """
 import json, os, pathlib, subprocess, sys, tempfile
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_keychain
 
 binary = os.path.abspath(sys.argv[1])
 root = pathlib.Path(tempfile.mkdtemp(prefix='ask-agy-provider-'))
 env = {k: v for k, v in os.environ.items() if not k.startswith(('ANTHROPIC_', 'ASK_', 'XDG_', 'AGY_'))}
 env |= {'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_STATE_HOME': str(root / 'state'), 'HOME': str(root)}
+env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
 failures = []
 
 def run(args, expect_code, expect_text=None, forbid_text=None, label=None):

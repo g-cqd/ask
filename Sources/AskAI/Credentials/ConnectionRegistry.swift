@@ -72,8 +72,18 @@ public struct ConnectionRegistry: Sendable {
 
     /// The stable-id credential store for this registration, unaffected by a rename.
     public func credentials(for record: ConnectionRecord) -> CredentialFile {
-        CredentialFile(
-            url: directory.appending(path: record.id.uuidString.lowercased()).appending(path: "credentials.json"))
+        credentials(
+            for: record, choice: CredentialStorage.chosen, stablySigned: CredentialStorage.runningBuildIsStablySigned,
+            keychain: try? KeychainSecretStore())
+    }
+
+    /// The registration's file with its secrets where `choice` puts them, as ask's own file (roadmap 0110).
+    func credentials(
+        for record: ConnectionRecord, choice: CredentialStorage, stablySigned: Bool, keychain: (any SecretStore)?
+    ) -> CredentialFile {
+        CredentialFile.preferred(
+            url: directory.appending(path: record.id.uuidString.lowercased()).appending(path: "credentials.json"),
+            choice: choice, stablySigned: stablySigned, keychain: keychain)
     }
 
     /// The alias file in this registration's own folder, which a rename does not move.

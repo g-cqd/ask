@@ -14,6 +14,8 @@ import pty
 import re
 import socket, os, signal, subprocess, sys, tempfile, threading, time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_keychain
 
 ASK = os.path.abspath(sys.argv[1] if len(sys.argv) > 1 else ".build/release/ask")
 CANONICAL = "You are a Claude agent, built on Anthropic's Claude Agent SDK."
@@ -86,6 +88,8 @@ def environment(state, url, config=None):
     env = dict(os.environ, ANTHROPIC_API_KEY="sk-ant-api-fake", ANTHROPIC_BASE_URL=url, XDG_STATE_HOME=state, HOME=home)
     for name in [n for n in env if n.startswith("ASK_")]:
         del env[name]
+    # A signed build keeps credentials in the Keychain (roadmap 0110): never the person's own, a throwaway one for this process.
+    env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()
     if not config:
         config = os.path.join(state, "config")
         os.makedirs(config, exist_ok=True)

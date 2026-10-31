@@ -10,7 +10,7 @@ The owner agreed to this order on 2026-10-31 ("go ahead, seems nice").
    `Scripts/land.sh` once (0068), and finish 0101's guard against new subprocess calls.
 2. **B: accounts and scopes.** 0092 (a second login adds an account; done) with 0046 and 0047's leftovers, then 0094 (the user's file
    limits which providers a repository sees, by path, remote or git identity; done, ADR-0137).
-3. **C: keys and security.** 0110 (the Keychain by default, after the owner's first signing), then 0153's open findings.
+3. **C: keys and security.** 0110 (the Keychain by default; first signing done 2026-10-31, by hash, see the record), then 0153's open findings.
 4. **D: tokens per turn.** 0137: measure what the tool definitions cost per request, then cut.
 5. **E: interaction.** 0116 (one confirmation picker, reusing 0117's lane), then 0078 (tool blocks without section labels).
 6. **F: larger.** 0152 with 0087 (syntax highlighting, Atelier's lexers promoted first), and a design entry for 0115 (taking over a
@@ -29,12 +29,13 @@ Each is built and checked in a PTY or pyte, never in the owner's terminal. One s
 - The question lane: Tab through tabs, choices and the note; Space selects; the draft below is kept (0117).
 - A block changed in place keeps one blank row before the next (0168); an open thinking block's first row carries its status (0169).
 - Markdown in reasoning, in the person's messages and in the draft (0151).
-- `/reload` between two builds signed with the personal identity (0153), after the first signing.
+- `/reload` between two builds signed with the personal identity (0153): done by probe H4, 2026-10-31.
 
 ## Waiting for the owner
 
-- **The first signing** (0110): `ASK_SIGNING_IDENTITY="Apple Development: Guillaume Coquard (B85BJQQ6R8)" Scripts/build-release.sh`,
-  then "Always Allow"; and whether that identity, whose certificate's organisation reads "oculavis GmbH", is the one meant.
+- **The first signed run on the real credentials** (0110): signing is done, by hash (`0F1D77299FF47DC421EF91FB51DB0083C6B2FEC5`,
+  the valid certificate of team L2LRQKFJ3U). The owner's next run of a signed build moves the secrets into the login keychain;
+  check with `security find-generic-password -s ask`.
 - **The pin cascade** (0166): `Scripts/update-pins.py --apply` when aemi and AemiRegex are quiet.
 - **0092:** when two accounts serve one model, ask each time or remember a default per model. Built as "ask once, remember per model,
   change with `/model`" unless the owner says otherwise. Done in `afa33d4`; `--model` keeps the default's account rather than

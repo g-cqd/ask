@@ -53,8 +53,13 @@ extension CredentialFile {
         if moving { try write(stored, marked: marked) }
     }
 
-    /// The secret store's name for record `name` of this file.
-    func account(_ name: String) -> String { url.path + "#" + name }
+    /// The secret store's name for record `name` of this file: its folder with symlinks resolved, so every spelling of the path (a
+    /// symlinked `~/.config`, `/private/var` for `/var`) names the same items. The folder, since the file may not exist yet, and
+    /// Foundation drops `/private` only from a path that exists.
+    func account(_ name: String) -> String {
+        let folder = url.deletingLastPathComponent().resolvingSymlinksInPath()
+        return folder.appending(path: url.lastPathComponent).path + "#" + name
+    }
 
     /// Where marked secrets are read and removed: the store in use, else the vault, else the Keychain.
     func reader() throws(CredentialFileError) -> any SecretStore {

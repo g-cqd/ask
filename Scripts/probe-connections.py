@@ -9,12 +9,15 @@ exit 77. What it checks is what the unit tests cannot: that the commands, exit c
 actual binary. It prints one PASS line per step and stops at the first failure.
 """
 import json, os, pathlib, subprocess, sys, tempfile, time, uuid
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_keychain
 
 binary = str(pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else '.build/release/ask').resolve())
 root = pathlib.Path(tempfile.mkdtemp(prefix='ask-connections-probe-'))
 config = root / 'config' / 'ask'
 config.mkdir(parents=True, mode=0o700)
 env = {**os.environ, 'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_STATE_HOME': str(root / 'state')}
+env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
 for key in ['ASK_PROVIDER', 'ASK_MODEL', 'ANTHROPIC_API_KEY', 'ANTHROPIC_AUTH_TOKEN', 'ANTHROPIC_OAUTH_TOKEN']:
     env.pop(key, None)
 SECRETS = ['fixture-access-', 'fixture-refresh-']
