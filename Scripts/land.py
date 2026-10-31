@@ -95,7 +95,10 @@ def land(root, keep):
         if not keep:
             os.chdir(main)
             subprocess.run(["git", "-C", str(main), "worktree", "remove", str(root)], check=True)
-            subprocess.run(["git", "-C", str(main), "branch", "-d", name], check=True)
+            # `branch -d` compares with the branch's upstream (origin/main for a worktree made from it), which a landing never pushes
+            # to; main is what must hold the branch, so that is checked and the branch then deleted.
+            subprocess.run(["git", "-C", str(main), "merge-base", "--is-ancestor", name, "main"], check=True)
+            subprocess.run(["git", "-C", str(main), "branch", "-D", name], check=True)
         print("Landed on local main. Nothing pushed." + (" Task worktree kept." if keep else ""))
     finally:
         (lock / "owner").unlink(missing_ok=True)
