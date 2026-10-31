@@ -60,6 +60,10 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// The running command wants a line from the person: shown as a question in the status line, answered with Enter, cancelled with Esc, and sent to
     /// ``Conversation/answer(input:with:)``. A secret is hidden as it is typed and never reaches the transcript.
     case askInput(id: Int, prompt: String, secret: Bool)
+    /// The conversation did not take a queued message (a skill that cannot be loaded): it goes back to the input.
+    case promptRefused(id: Int)
+    /// A command run beside the screen's run ended (roadmap 0113).
+    case besideEnded
     /// A runner's recent output, answering ``ScreenController/Effect/readRunnerOutput(id:)``.
     case runnerOutput(id: String, text: String)
     /// Whether the sandbox is active for this session.

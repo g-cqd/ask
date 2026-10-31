@@ -58,7 +58,7 @@ public protocol Conversation: Sendable {
     ) -> Task<Void, Never>
 
     /// Runs the command `name` beside a running turn (roadmap 0113): its updates arrive through `update`, without
-    /// ``ConversationUpdate/runEnded``, since the screen's run is the turn's.
+    /// ``ConversationUpdate/runEnded``, since the screen's run is the turn's: its end is ``ConversationUpdate/besideEnded``.
     func command(
         _ name: String, arguments: String, beside: Bool, update: @escaping @Sendable (ConversationUpdate) -> Void
     ) -> Task<Void, Never>
@@ -117,7 +117,7 @@ extension Conversation {
     ) -> Task<Void, Never> {
         guard beside else { return command(name, arguments: arguments, update: update) }
         return command(name, arguments: arguments) { item in
-            if case .runEnded = item { return }
+            if case .runEnded = item { return update(.besideEnded) }
             update(item)
         }
     }

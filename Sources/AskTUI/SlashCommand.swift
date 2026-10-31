@@ -26,6 +26,8 @@ public struct SlashCommand: Sendable, Equatable {
         case refused
         /// Runs beside the turn, which goes on; what it changes applies from the turn's next request.
         case atOnce
+        /// Waits for the turn's end, shown as waiting, and follows the queued messages' rules when the turn is stopped.
+        case afterTurn
     }
 
     /// The names roadmap 0154 replaced, still typed: the old name runs the new command.

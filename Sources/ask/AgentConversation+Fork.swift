@@ -30,6 +30,7 @@ extension AgentConversation {
             }
             (leaf, returned) = (turn.before, turn.text)
         }
+        if turnRunning { return forkBeside(original, upTo: leaf, update: update) }
         guard maySwitchSession("fork", update: update) else { return }
         do {
             try directory.create()
@@ -42,6 +43,24 @@ extension AgentConversation {
             update(
                 .notice(
                     "Forked into session \(name). The original, \(was), is unchanged and still saved.", isError: false))
+        } catch {
+            update(.notice("Cannot fork: \(error)", isError: true))
+        }
+    }
+
+    /// `/fork` while a turn runs (roadmap 0113): the copy holds what the turn has written so far, every step written whole, and the
+    /// screen stays with the turn, which goes on in the original; `/resume` switches to the copy.
+    private func forkBeside(
+        _ original: SessionRecorder, upTo leaf: EntryID?, update: @Sendable (ConversationUpdate) -> Void
+    ) {
+        do {
+            try directory.create()
+            let copy = try original.fork(upTo: leaf, to: FilePath(directory.newSessionPath()))
+            let name = (copy.path as NSString).lastPathComponent
+            update(
+                .notice(
+                    "Forked into session \(name), up to what the turn has written so far. The turn goes on here; /resume \(name) "
+                        + "switches to the copy.", isError: false))
         } catch {
             update(.notice("Cannot fork: \(error)", isError: true))
         }

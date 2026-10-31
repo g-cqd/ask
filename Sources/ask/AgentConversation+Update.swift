@@ -28,7 +28,8 @@ extension AgentConversation {
             case .model(.textDelta(_, let text)): return .assistantText(text)
             case .model(.thinkingDelta(_, let text)): return .thinkingText(text)
             case .model(.notice(let text)): return .notice(text, isError: false)
-            case .promptAccepted(let prompt): return .promptAccepted(id: prompt.id, text: prompt.text)
+            case .promptAccepted(let prompt):
+                return .promptAccepted(id: prompt.id, text: SkillInvocation.shown(prompt.text))
             case .toolStarted(let id, let name, let input):
                 return .toolStarted(
                     name: name == "bash" ? "shell" : name, summary: ToolSummary.header(for: input), id: id,
