@@ -20,6 +20,9 @@ struct CommandWordsQuotingTests {
             CommandWords("cat <<EOF\nbody\nEOF \nrm x").programs == ["cat", "rm"],
             "a terminator with spaces ends it, the safe way")
         #expect(CommandWords("cat <<< \"x\"; ls").programs == ["cat", "ls"], "a here-string has no body")
+        #expect(
+            CommandWords("cat <<< x\nrm -rf build").programs == ["cat", "rm"],
+            "a here-string's next line is a command, not a body that hides it")
     }
 
     @Test func `separators and newlines inside quotes split nothing`() {

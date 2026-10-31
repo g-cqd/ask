@@ -24,6 +24,7 @@ struct ShellSegments {
                 case "'": quoted(closing: "'", escapes: false)
                 case "\"": quoted(closing: "\"", escapes: true)
                 case "\\": escaped()
+                case "<" where opensHereString: hereString()
                 case "<" where opensHeredoc: heredoc()
                 case "\n":
                     endSegment()
@@ -68,11 +69,20 @@ struct ShellSegments {
         index += 2
     }
 
-    /// `<<` here, not `<<<` (a here-string, which has no body).
-    private var opensHeredoc: Bool {
-        index + 1 < characters.count && characters[index + 1] == "<"
-            && (index + 2 >= characters.count || characters[index + 2] != "<")
+    /// `<<<` here: a here-string, whose word is on this line. Read before ``opensHeredoc``, or its last two `<` would open a heredoc whose
+    /// body hides the next lines' commands.
+    private var opensHereString: Bool {
+        index + 2 < characters.count && characters[index + 1] == "<" && characters[index + 2] == "<"
     }
+
+    /// A here-string's `<<<`, kept as written.
+    private mutating func hereString() {
+        current += "<<<"
+        index += 3
+    }
+
+    /// `<<` here; a here-string's `<<<` was read before this is asked.
+    private var opensHeredoc: Bool { index + 1 < characters.count && characters[index + 1] == "<" }
 
     /// `<<WORD`, `<<-WORD`, `<< 'WORD'`: notes the delimiter, whose body starts at the end of the line.
     private mutating func heredoc() {
