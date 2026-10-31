@@ -24,7 +24,7 @@ struct ConfigEditorModelTests {
         #expect(settings.contains { $0.path == ["thinking"] && $0.choices == thinkingChoices })
         #expect(
             settings.contains {
-                $0.path == ["sandbox", "network"] && $0.choices == ["unset", "none", "localhost", "any"]
+                $0.path == ["sandbox", "network"] && $0.choices == ["unset", "none", "localhost", "provider", "any"]
             })
         #expect(
             settings.contains {

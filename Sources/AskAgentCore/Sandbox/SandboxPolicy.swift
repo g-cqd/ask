@@ -5,15 +5,18 @@
 /// roots: then only those, the system's own directories and scratch space can be read (roadmap 0042), and commands
 /// run on a deny-default Seatbelt base (``SeatbeltBase``).
 public struct SandboxPolicy: Sendable, Equatable {
-    /// How far the network reaches, from nowhere to anywhere. Ordered, so the narrower of two is the lesser.
+    /// How far the network reaches, from nowhere to anywhere. Ordered, so the narrower of two is the lesser. `provider` reaches the
+    /// model providers' servers only, through ask's local proxy (roadmap 0021): Seatbelt cannot name a host, so a command under it may
+    /// reach localhost alone, and the proxy decides the rest.
     public enum Network: Int, Sendable, Equatable, Comparable, CustomStringConvertible {
-        case none, localhost, any
+        case none, localhost, provider, any
 
         /// The spelling a configuration file and the `--network` flag use.
         public var description: String {
             switch self {
                 case .none: "none"
                 case .localhost: "localhost"
+                case .provider: "provider"
                 case .any: "any"
             }
         }
@@ -23,6 +26,7 @@ public struct SandboxPolicy: Sendable, Equatable {
             switch name {
                 case "none": self = .none
                 case "localhost": self = .localhost
+                case "provider": self = .provider
                 case "any": self = .any
                 default: return nil
             }

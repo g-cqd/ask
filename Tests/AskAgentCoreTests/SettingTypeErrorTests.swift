@@ -20,7 +20,10 @@ struct SettingTypeErrorTests {
         (#"{"ui": {"scrollLines": "3"}}"#, #"c.json: "ui.scrollLines" is "3": use a whole number"#),
         (#"{"skills": {"maxListed": 1.5}}"#, #"c.json: "skills.maxListed" is 1.5: use a whole number"#),
         (#"{"model": 5}"#, #"c.json: "model" is 5: use a string"#),
-        (#"{"sandbox": {"network": true}}"#, #"c.json: "sandbox.network" is true: use "none", "localhost" or "any""#),
+        (
+            #"{"sandbox": {"network": true}}"#,
+            #"c.json: "sandbox.network" is true: use "none", "localhost", "provider" or "any""#
+        ),
         (#"{"ui": {"spinner": "wobble"}}"#, #"c.json: "ui.spinner" is "wobble": use "#),
         (
             #"{"maxTurns": "lots"}"#,

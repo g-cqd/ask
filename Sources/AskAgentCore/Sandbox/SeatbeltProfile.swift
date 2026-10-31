@@ -52,7 +52,8 @@ public struct SeatbeltProfile: Sendable, Equatable {
             rule("allow file-read*", roots(readable, "R"))
             switch policy.network {
                 case .any: lines.append("(allow network*)")
-                case .localhost: lines.append("(allow network* (remote ip \"localhost:*\"))")
+                // The provider level reaches the proxy on localhost, which reaches the providers (roadmap 0021).
+                case .localhost, .provider: lines.append("(allow network* (remote ip \"localhost:*\"))")
                 case .none: break
             }
             if case .roots(let writable) = policy.write {
@@ -65,7 +66,7 @@ public struct SeatbeltProfile: Sendable, Equatable {
             switch policy.network {
                 case .any: break
                 case .none: lines.append("(deny network*)")
-                case .localhost: lines += ["(deny network*)", "(allow network* (remote ip \"localhost:*\"))"]
+                case .localhost, .provider: lines += ["(deny network*)", "(allow network* (remote ip \"localhost:*\"))"]
             }
             if case .roots(let writable) = policy.write {
                 lines.append("(deny file-write*)")

@@ -22,7 +22,7 @@ In any configuration file (see [Configuration](configuration.md#sandbox)):
   sandbox: {
     write: ["~/out"],        // only these directories (the default is "workspace")
     read: "workspace",       // only the project, the system and developer tools
-    network: "localhost",    // or "none"
+    network: "provider",     // or "localhost", or "none"
     hide: ["~/notes"],       // hide more
   },
 }
@@ -30,6 +30,14 @@ In any configuration file (see [Configuration](configuration.md#sandbox)):
 
 A file can only make these stricter. To loosen them for one run, use the flags: `--write anywhere` (or `sandbox.write: "anywhere"` in your own file), `--read DIR`, `--network any`. The
 status line says when the sandbox is strict.
+
+### Only the model's provider
+
+With `network: "provider"`, commands reach only the server of the model in use, such as `api.anthropic.com`, and only over HTTPS.
+The sandbox lets them reach localhost alone, where ask runs a small proxy, and gives them `HTTPS_PROXY` and `ALL_PROXY` pointing at
+it. The proxy opens tunnels to the provider's host and refuses every other host (`403`). `curl`, `git`, Python and most tools read
+these variables. A tool that ignores them reaches nothing; it is refused, not let through. `/model` moves the allowed host to the
+new model's provider.
 
 ## Making room
 

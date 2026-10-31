@@ -188,7 +188,7 @@ See [The sandbox](sandbox.md) for what it protects.
 |---|---|---|
 | `write` | `"workspace"` | Where tools and commands may write: `"workspace"` (the project, temporary directories, and the caches builds write: `~/Library/Caches`, Xcode's DerivedData, SwiftPM's), `"anywhere"`, or a list of directories. |
 | `read` | `"anywhere"` | Where they may read: `"workspace"` (the project, the system and developer tools), `"anywhere"`, or a list of directories. The protected paths stay hidden either way. |
-| `network` | `"any"` | How far commands reach: `"none"`, `"localhost"` or `"any"`. |
+| `network` | `"any"` | How far commands reach: `"none"`, `"localhost"`, `"provider"` (only the model provider in use, through ask's proxy) or `"any"`. |
 | `hide` | none | More paths to hide. |
 | `readable` | none | Protected paths to make readable again, such as `"~/.aws"` or `"~/.config/gh"`. Your own file only. |
 | `writable` | none | Protected paths to make writable again, such as `"~/.zshrc"`, or `".git/config"` for every repository (a relative entry is relative to the project). Your own file only. |
