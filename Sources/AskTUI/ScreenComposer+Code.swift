@@ -29,7 +29,7 @@ extension ScreenComposer {
                 for: item, folded: transcript.isFolded(index), block: index, columns: columns, style: style,
                 spacerAbove: spaced, progress: transcript.progress[index],
                 toolInput: transcript.shownToolInput(at: index), command: transcript.commandBlocks.contains(index),
-                interrupted: interrupted, toolOutput: output?.text)
+                interrupted: interrupted, toolOutput: output?.text, replacements: transcript.replacements[index])
             guard let output else { return rows }
             return withOutputMarker(
                 rows, output, before: transcript.outputMarkerLine(at: index, output), block: index, columns: columns,

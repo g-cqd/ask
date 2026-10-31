@@ -26,12 +26,13 @@ public enum SessionReplay {
         }
         for entry in entries {
             if case .destination = entry.payload { continue }
-            if case .toolResult(let id, let content, let isError, _) = entry.payload,
+            if case .toolResult(let id, let content, let isError, _, let facts) = entry.payload,
                 let index = pending.firstIndex(where: { $0.id == id })
             {
                 let call = pending.remove(at: index)
                 steps.append(.event(.toolStarted(id: id, name: call.name, input: call.input)))
-                let output = ToolOutput(content, isError: isError)
+                var output = ToolOutput(content, isError: isError)
+                output.facts = facts
                 steps.append(.event(.toolFinished(id: id, name: call.name, output: output)))
                 continue
             }

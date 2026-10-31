@@ -88,13 +88,34 @@ public enum ToolSummary {
         return fields.content ?? fields.newText ?? indented(input)
     }
 
-    /// The input as JSON indented by two spaces, keys in the model's order (roadmap 0078); its own bytes if that fails.
+    /// The input as JSON indented by two spaces, keys in the model's order (roadmap 0078); its own bytes if that fails. A top-level
+    /// string with a line feed is text a person reads, so it is left out of the JSON and shown after it as written, under its name.
     static func indented(_ input: JSONObject) -> String {
+        guard let document = try? AemiJSON.parse(input.bytes) else {
+            return String(decoding: input.bytes, as: UTF8.self)
+        }
+        let root = JSONValue(document.root)
+        guard case .object(let members) = root else {
+            return pretty(root) ?? String(decoding: input.bytes, as: UTF8.self)
+        }
+        var json: [String] = []
+        var texts: [String] = []
+        for (key, value) in members {
+            if case .string(let text) = value, text.contains("\n") {
+                texts.append("\(key):\n\(text)")
+            } else if let name = pretty(.string(key)), let shown = pretty(value) {
+                json.append("  \(name): " + shown.replacing("\n", with: "\n  "))
+            } else {
+                return String(decoding: input.bytes, as: UTF8.self)
+            }
+        }
+        let object = json.isEmpty ? (texts.isEmpty ? ["{}"] : []) : ["{\n" + json.joined(separator: ",\n") + "\n}"]
+        return (object + texts).joined(separator: "\n")
+    }
+
+    private static func pretty(_ value: JSONValue) -> String? {
         let options = JSONEncodingOptions(prettyPrinted: true, prettyKeySeparator: .javaScript, indent: .spaces(2))
-        guard let document = try? AemiJSON.parse(input.bytes),
-            let bytes = try? JSONValue(document.root).encodedBytes(options: options)
-        else { return String(decoding: input.bytes, as: UTF8.self) }
-        return String(decoding: bytes, as: UTF8.self)
+        return (try? value.encodedBytes(options: options)).map { String(decoding: $0, as: UTF8.self) }
     }
 
     /// `512 B`, or the largest IEC unit that keeps the number at least one, to one decimal at most, with the exact count:

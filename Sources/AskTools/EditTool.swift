@@ -57,6 +57,8 @@ public struct EditTool: ArgumentTool {
         }
         let edited = String(decoding: editedBytes, as: UTF8.self)
         try FileTools.write(edited, to: url, shownAs: arguments.path, in: context)
-        return ToolOutput("Replaced \(count) occurrence\(count == 1 ? "" : "s") in \(arguments.path).")
+        var output = ToolOutput("Replaced \(count) occurrence\(count == 1 ? "" : "s") in \(arguments.path).")
+        output.facts.replacements = count
+        return output
     }
 }

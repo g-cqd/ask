@@ -50,7 +50,7 @@ extension ScreenComposer {
 
     static func blockMetadata(
         status: Transcript.ToolStatus, output: String, progress: BlockProgress?, localizedDurations: Bool = true,
-        lineCount: Int? = nil, toolName: String? = nil
+        lineCount: Int? = nil, toolName: String? = nil, replacements: Int? = nil
     ) -> String {
         var parts: [String] = []
         if let duration = progress?.duration(localized: localizedDurations) { parts.append(duration) }
@@ -63,6 +63,8 @@ extension ScreenComposer {
         if count > 0 {
             parts.append("\(count) \(count == 1 ? "line" : "lines")")
         }
+        // What an edit did, as its tool reported it (roadmap 0078), where a read counts what it returned.
+        if let replacements { parts.append("\(replacements) \(replacements == 1 ? "replacement" : "replacements")") }
         switch status {
             case .running: parts.append(progress?.indicator ?? "|")
             case .succeeded: parts.append("✓")

@@ -25,7 +25,8 @@ extension ScreenComposer {
             Transcript.Item.toolHeader(name: name, summary: summary, status: status, output: output, folded: false),
             metadata: blockMetadata(
                 status: status, output: output, progress: progress,
-                localizedDurations: style.localizedDurations, toolName: name), block: block, width: width, inset: inset,
+                localizedDurations: style.localizedDurations, toolName: name, replacements: context.replacements),
+            block: block, width: width, inset: inset,
             style: look)
             + [Line(text: "", style: .default)]
             + body(of: input, block: block, width: width, inset: inset, style: .default)

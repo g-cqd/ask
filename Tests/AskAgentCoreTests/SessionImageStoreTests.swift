@@ -26,7 +26,7 @@ struct SessionImageStoreTests {
     }
 
     private func images(of file: borrowing SessionFile) -> [ImagePart] {
-        guard case .toolResult(_, _, _, let images)? = file.tree.entries.last?.payload else { return [] }
+        guard case .toolResult(_, _, _, let images, _)? = file.tree.entries.last?.payload else { return [] }
         return images
     }
 
@@ -58,7 +58,7 @@ struct SessionImageStoreTests {
         try Data("tampered".utf8).write(to: URL(fileURLWithPath: path))
         for _ in 0 ..< 2 {
             let reopened = try SessionFile.open(at: sessionPath)
-            guard case .toolResult(_, let content, _, let images)? = reopened.tree.entries.last?.payload else {
+            guard case .toolResult(_, let content, _, let images, _)? = reopened.tree.entries.last?.payload else {
                 Issue.record("the result was lost")
                 return
             }

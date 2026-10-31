@@ -16,8 +16,11 @@ public enum ConversationUpdate: Sendable, Equatable {
         name: String, summary: String, id: String? = nil, fullInput: String = "", command: ToolCommand? = nil)
     /// More of the model's reasoning, shown as a block that starts folded.
     case thinkingText(String)
-    /// The tool ended; `output` is what it returned, kept so the block can be opened.
-    case toolFinished(Transcript.ToolStatus, output: String = "", id: String? = nil, backgroundJob: String? = nil)
+    /// The tool ended; `output` is what it returned, kept so the block can be opened. `replacements` is the count an edit
+    /// reported, shown after its target.
+    case toolFinished(
+        Transcript.ToolStatus, output: String = "", id: String? = nil, backgroundJob: String? = nil,
+        replacements: Int? = nil)
     /// A background process updates its original tool block independently of focused output.
     case jobOutput(JobUpdate)
     case notice(String, isError: Bool)

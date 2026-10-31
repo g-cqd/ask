@@ -4,7 +4,8 @@
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-output-fold.py .build/release/ask
 
 A read of a 300-line file under `ui.fold.outputLines` 10: the open block shows five lines from each end with a marker between, its
-header still counts 300 lines, a click on the marker shows the middle and Ctrl+G folds it again. Verifies ask's bytes through an
+header still counts 300 lines, a click on the marker shows the middle and Ctrl+G folds it again. A write with old_text and replace_all then
+says how many occurrences it replaced, live and after a resume, from the count the tool reported. Verifies ask's bytes through an
 emulator, not a physical terminal.
 """
 import importlib.util
@@ -31,6 +32,11 @@ def read_turn():
     return agent.turn([("call", "t1", "read", {"path": "long.txt"})], "tool_use")
 
 
+def edit_turn():
+    arguments = {"path": "edit.txt", "old_text": "x", "new_text": "y", "replace_all": True}
+    return agent.turn([("call", "t2", "write", arguments)], "tool_use")
+
+
 def main():
     with tempfile.TemporaryDirectory() as root:
         project, config = root + "/project", root + "/config"
@@ -38,10 +44,12 @@ def main():
         os.makedirs(config + "/ask")
         with open(project + "/long.txt", "w") as file:
             file.write("".join(f"out {n}\n" for n in range(1, 301)))
+        with open(project + "/edit.txt", "w") as file:
+            file.write("x x x\n")
         with open(config + "/ask/config.json", "w") as file:
             file.write('{"ui":{"inputPrefix":"ask> ","fold":{"tools":false,"outputLines":10},"tint":"off",'
                        '"separator":"off"}}')
-        server = agent.Server([read_turn(), agent.turn([("text", "PROBE ANSWER")], "end_turn")])
+        server = agent.Server([read_turn(), edit_turn(), agent.turn([("text", "PROBE ANSWER")], "end_turn")])
         environment = agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")
         for key in ("SSH_TTY", "SSH_CONNECTION", "TMUX", "KITTY_WINDOW_ID"):
@@ -67,6 +75,12 @@ def main():
             terminal.draw(lambda: terminal.send(b"\x07"))
             check("the second Ctrl+G folds the middle again", "⋯ 290 lines hidden" in terminal.text()
                   and "out 150" not in terminal.text())
+            check("the edit's header counts its replacements", "3 replacements · ✓" in terminal.text())
+            terminal.close()
+            terminal = folding.Terminal(project, environment, resume=True, columns=100, rows=40)
+            terminal.until(lambda: "PROBE ANSWER" in terminal.text())
+            terminal.repaint()
+            check("a resumed edit still counts them", "3 replacements · ✓" in terminal.text())
         except AssertionError:
             if terminal:
                 print(terminal.text(), file=sys.stderr)
