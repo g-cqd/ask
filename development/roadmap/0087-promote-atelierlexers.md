@@ -49,3 +49,13 @@ The package builds and passes its tests from its own repository; Atelier consume
 ## Folded into 0152 (2026-10-29)
 
 The promotion is phase 1 of 0152, syntax highlighting wherever code is shown; this entry stays as its record.
+
+## Owner (2026-10-31): a module inside aemi
+
+The lexers become **`AemiLexers`, a module of aemi**, not a repository of their own. That needs the family's pin cascade (0166's
+`update-pins.py --apply`) so ask, TerminalKit and Atelier reach the aemi revision that has it.
+
+Measured the same day: the lexing core is the line lexer, its states, `SyntaxHighlighter` and the scanners (about 1,900 lines), plus
+the model types they use (about 400 lines: `Language`, `HighlightRole`, `HighlightModifierSet`, `LineToken`, `UTF16Offsets`). It
+needs only the standard library: no TerminalKitText, no Foundation. Atelier's tier engine (`LexicalHighlightEngine`, `LexicalTier`),
+`ProgressiveHighlighting` (the one user of TerminalKitText) and the rest of `AtelierSyntaxModel` stay in Atelier, over `AemiLexers`.
