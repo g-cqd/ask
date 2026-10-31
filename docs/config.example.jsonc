@@ -152,7 +152,7 @@
   },
 
   "environment": {
-    // More variables kept from commands. Default: ask's credential variables.
+    // More variables kept from commands. Default: ask's and well-known credential variables.
     "withhold": ["AWS_*"],
 
     // Withheld variables commands get anyway. Default: none. Your own file only.
