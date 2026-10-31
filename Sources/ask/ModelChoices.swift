@@ -1,4 +1,5 @@
 internal import AskAI
+internal import AskAgentCore
 internal import AskApple
 internal import AskTUI
 internal import Foundation
@@ -20,7 +21,9 @@ enum ModelChoices {
     /// The rows, the current model's provider first.
     static func rows(current: ResolvedModel, environment: [String: String]) async -> [ChoiceRow] {
         let now = Date().timeIntervalSince1970
-        let listings = Self.listings(environment: environment, now: now)
+        // Only the providers the project's modelScopes rule allows (roadmap 0094).
+        let scope = ModelScopeGate.current(environment: environment)
+        let listings = Self.listings(environment: environment, now: now).filter { scope?.allows($0.provider) ?? true }
         let results = await withTaskGroup(of: (String, Result<[CatalogModel], any Error>).self) { group in
             for listing in listings {
                 group.addTask { (listing.provider, await Deadline.run(patience) { try await listing.load() }) }

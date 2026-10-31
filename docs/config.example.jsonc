@@ -27,6 +27,9 @@
   // Where keys and sign-in tokens are kept. Default: auto. One of: auto, keychain, file. Your own file only.
   "credentials": "auto",
 
+  // Which providers serve a repository, by its path, remote or git identity; the first rule that matches decides. Default: none. Your own file only.
+  "modelScopes": [{"path": "~/work", "providers": ["work"]}],
+
   "ui": {
     // ask handles clicks, selection and the wheel. Default: true.
     "mouse": true,
