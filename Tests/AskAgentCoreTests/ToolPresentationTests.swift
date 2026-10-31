@@ -1,3 +1,4 @@
+import AemiJSON
 import AskAI
 import Testing
 
@@ -38,8 +39,38 @@ struct ToolPresentationTests {
         #expect(ToolSummary.header(for: try input(##"{"job":"#abcd","action":"stop"}"##)) == "#abcd · stop")
     }
 
-    @Test func `unknown tools retain every input byte`() throws {
-        let json = try input(#"{"nested":{"a":1},"values":[2,3]}"#)
-        #expect(ToolSummary.fullInput(for: json) == String(decoding: json.bytes, as: UTF8.self))
+    /// IEC units past KiB, one decimal at most, with the exact count beside them (roadmap 0078).
+    @Test func `sizes use the largest IEC unit that keeps a number at least one`() {
+        #expect(ToolSummary.formatBytes(1023) == "1023 B")
+        #expect(ToolSummary.formatBytes(1536) == "1.5 KiB (1,536 B)")
+        // Rounded to one decimal, 1,048,575 B is 1024.0 KiB: the unit is chosen after rounding.
+        #expect(ToolSummary.formatBytes(1_048_575) == "1 MiB (1,048,575 B)")
+        #expect(ToolSummary.formatBytes(1_000_000) == "976.6 KiB (1,000,000 B)")
+        #expect(ToolSummary.formatBytes(1_048_576) == "1 MiB (1,048,576 B)")
+        #expect(ToolSummary.formatBytes(3_250_586) == "3.1 MiB (3,250,586 B)")
+        #expect(ToolSummary.formatBytes(5 << 30) == "5 GiB (5,368,709,120 B)")
+    }
+
+    /// An MCP server's or another unknown tool's input is shown as indented JSON, keys in the model's order (roadmap 0078).
+    @Test func `unknown tools show their input as indented JSON in its own order`() throws {
+        let json = try input(#"{"zeta":"z\"q","nested":{"b":1,"a":[2,3]},"empty":{},"flag":true}"#)
+        let shown = ToolSummary.fullInput(for: json)
+        #expect(
+            shown == """
+                {
+                  "zeta": "z\\"q",
+                  "nested": {
+                    "b": 1,
+                    "a": [
+                      2,
+                      3
+                    ]
+                  },
+                  "empty": {},
+                  "flag": true
+                }
+                """)
+        // Still the same JSON: what is shown parses back to the input's value.
+        #expect(try JSONValue(AemiJSON.parse(Array(shown.utf8)).root) == JSONValue(AemiJSON.parse(json.bytes).root))
     }
 }
