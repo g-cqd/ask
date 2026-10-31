@@ -141,6 +141,7 @@ Switches are `true` or `false`; `"on"` and `"off"` are still read.
 | `keepAwake` | `"working"` | When ask keeps the Mac from sleeping when idle: `"working"` while a prompt runs or a background job does, `"always"` for as long as ask runs, working or not, `"off"` never. Released as soon as there is no reason left, and when ask exits. |
 | `keepDisplayAwake` | `false` | Whether the display stays on too, whenever `keepAwake` holds the Mac. |
 | `credentials` | `"auto"` | Where your API keys and sign-in tokens are kept: `"keychain"` in the macOS Keychain (only ask can read them without you being asked), `"file"` in `~/.config/ask/credentials.json`, or `"auto"`: the Keychain for a signed build of ask, the file for an unsigned one, whose every rebuild the Keychain would ask about. Emails, expiry dates and account names stay in the file either way. Changing it moves what is stored. Your own file only. |
+| `modelScopes` | none | Which providers may serve a repository, by its folder, remote or git identity; the first rule that matches decides. See [`modelScopes`](#modelscopes). Your own file only. |
 | `sandbox` | on, see below | What the model's tools may read, write and reach. |
 | `ui` | see below | How the screen looks and behaves. |
 | `skills` | see below | Which skills are offered to the model. |
@@ -239,6 +240,27 @@ still asks about anything beyond it either way. Your own file only.
 | `allow` | none | Tools that run without asking: `["bash", "mcp__docs__*"]`; `"commands"` allows every command, `"all"` every tool call. A name ending in `*` covers every tool that starts with the rest. |
 | `ask` | none | Tools that always ask, read-only ones included: `["read"]`. Wins over `allow`. |
 | `remember` | `"none"` | What an "always" answer could write back to this file: `"anything"`, `"narrowing"` or `"none"`. No answer writes the file yet. |
+
+### `modelScopes`
+
+A list of rules that limit which providers serve a repository: work repositories only through the work account, say. Each rule names
+one or more of `path` (the project's folder and everything beneath it; `~` is your home folder), `remote` (any of the repository's
+remote URLs) and `identity` (the `user.email` or `user.name` the repository commits as, from its own git config, then
+`~/.gitconfig`, then `~/.config/git/config`), and `providers`, the connections and providers allowed there. Every matcher a rule
+names must match, and the first rule that matches decides; when none does, every provider may serve. Patterns ignore case; `*`
+stands for any run of characters, `/` included, and `?` for one.
+
+```jsonc
+"modelScopes": [
+  {"path": "~/work", "providers": ["work", "codex"]},
+  {"remote": "*github.com?acme/*", "identity": "*@acme.com", "providers": ["acme"]}
+]
+```
+
+Where a rule applies, `/model`, `ask models` and the choice of a default model leave out the other providers, and `--provider`,
+`--model` or `/model` naming one of them is refused with the rule's number: the rules are a policy, not a preference, so no flag
+overrides them. Edit or remove the rule instead. Git's files are read directly, without starting git; a folder outside any
+repository has no remote, and `include` lines in a git config are not followed. Your own file only: a project's file cannot set it.
 
 ### `environment`
 

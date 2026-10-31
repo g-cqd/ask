@@ -61,7 +61,11 @@ enum SettingCatalog {
         row("keepDisplayAwake", .boolean, "false", "false", "Whether the display stays on too."),
         row(
             "credentials", words(CredentialStorage.self), #""auto""#, "auto", user: true,
-            "Where keys and sign-in tokens are kept.")
+            "Where keys and sign-in tokens are kept."),
+        row(
+            "modelScopes", .structured, #"[{"path": "~/work", "providers": ["work"]}]"#, "none", user: true,
+            "Which providers serve a repository, by its path, remote or git identity; the first rule that matches decides."
+        )
     ]
 
     private static let ui: [Setting] = [

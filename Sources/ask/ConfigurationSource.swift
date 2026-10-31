@@ -165,11 +165,11 @@ struct ConfigurationSource: Sendable {
         // A flag or a /model choice is the user's say; otherwise a resumed session stays where it was sent (ADR-0048).
         let pinned = flags.provider == nil && flags.selected == nil ? resumedDestination : nil
         let selected = try pinned.map { try SessionRouting.pinnedProvider($0, environment: environment) }
-        let discovered = try await ModelDiscovery.resolve(
-            providers: providers, provider: selected ?? result.configuration.provider.value,
+        let discovered = try await resolveWithinScope(
+            result.configuration, providers: providers, provider: selected ?? result.configuration.provider.value,
             // A /model choice, then --model, then the resumed session's model, then the configuration.
             model: flags.selected?.model ?? flags.model ?? pinned?.model ?? result.configuration.model.value,
-            environment: environment, allowNetwork: allowNetwork,
+            allowNetwork: allowNetwork,
             choice: ModelDiscovery.Choice(
                 providerIsFlagged: flags.provider != nil || flags.selected != nil,
                 modelIsFlagged: flags.model != nil || flags.selected != nil,

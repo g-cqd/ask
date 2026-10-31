@@ -1,5 +1,6 @@
 internal import ArgumentParser
 internal import AskAI
+internal import AskAgentCore
 internal import AskApple
 internal import Foundation
 
@@ -17,6 +18,10 @@ struct ModelsCommand: AsyncParsableCommand {
 
     func run() async throws {
         let environment = LaunchEnvironment.values
+        let named = connection == "claude" ? ProviderSettings.anthropic : connection
+        if let scope = ModelScopeGate.current(environment: environment), !scope.allows(named) {
+            fail("ask: \(scope.refusal(of: named))", code: 78)
+        }
         do {
             let now = Date().timeIntervalSince1970
             if let record = try registered(connection, environment: environment) {

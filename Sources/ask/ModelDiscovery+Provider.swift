@@ -1,4 +1,5 @@
 internal import AskAI
+internal import AskAgentCore
 internal import Foundation
 
 extension ModelDiscovery {
@@ -19,6 +20,8 @@ extension ModelDiscovery {
         var providerIsFlagged = false
         var modelIsFlagged = false
         var thinking = ThinkingLevel.providerDefault
+        /// The project's `modelScopes` rule: inference passes over the providers it does not allow (roadmap 0094).
+        var scope: ModelScopeMatch?
     }
 
     /// The provider and model once `provider/model` is read and, for a model no provider was named for, the provider that serves it is found
@@ -37,7 +40,8 @@ extension ModelDiscovery {
         }
         guard !choice.providerIsFlagged, choice.modelIsFlagged || provider == nil,
             let found = ModelQualifier.infer(
-                model: model, thinking: choice.thinking, providers: providers, environment: environment),
+                model: model, thinking: choice.thinking, providers: providers, environment: environment,
+                scope: choice.scope),
             found != provider
         else { return (provider, model, []) }
         return (found, model, [detail("\(model) is served by \(found); \(found)/\(model) says so.")])
