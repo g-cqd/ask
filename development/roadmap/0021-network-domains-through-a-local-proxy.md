@@ -1,8 +1,8 @@
 ---
-status: not-started
+status: done
 blocked-by:
 date: 2026-10-19
-decision: ADR-0020
+decision: ADR-0020, ADR-0136
 ---
 
 # 0021 — Network by domain, through a local proxy
@@ -23,3 +23,24 @@ Claude Code does:
 
 Add a network level where commands reach only the model provider's server (the signed-in providers' hosts), alongside `none`,
 `localhost` and `any`. It needs this proxy, because the macOS sandbox can only allow every host or none.
+
+## Done (2026-10-31): the provider level (ADR-0136)
+
+- `SandboxPolicy.Network.provider` sits between `localhost` and `any`. Its Seatbelt profile is `localhost`'s. Config, flag and
+  per-call requests accept it, and the setting catalog lists it.
+- `ProviderProxy` is an HTTP CONNECT proxy on 127.0.0.1 with blocking POSIX sockets, one thread per tunnel. `ProxyRequest` decides
+  each request: a tunnel to an allowed host and port, else 403, 405 for other methods, 400 for a malformed head. The run's
+  provider is the allow list (`ProviderServer`, set through `ProviderAccess` whenever the run settings resolve). A job under the
+  level gets the proxy variables, and the proxy starts on first use.
+- Tests, written first:
+  - `ProviderNetworkLevelTests`: the name, the ordering, and the Seatbelt lines in both bases.
+  - `ProxyRequestTests`, `ProviderProxyTests`: a real socket, an echo server as the provider, a relay and a refusal.
+  - `ProviderNetworkJobTests`: a real sandboxed `bash`, which gets the variables and the 403.
+  - `ProviderServerTests`.
+- Live: Anthropic reached (401 without a key), example.com refused (403), and a direct connection cannot resolve the host.
+- Answers to the open questions:
+  - Tools that ignore the proxy variables fail closed.
+  - Certificate pinning is untouched: TLS passes through the tunnel.
+  - Local port binding is as at `localhost`.
+- Not done: SOCKS; the other signed-in accounts' hosts; Copilot enterprise hosts; per-domain lists beyond the provider (ADR-0020's
+  `domains([…])`).

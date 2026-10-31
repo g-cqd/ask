@@ -109,7 +109,9 @@ enum SettingCatalog {
     private static let sandbox: [Setting] = [
         row("sandbox.write", .structured, #""workspace""#, "workspace", "Where tools and commands may write."),
         row("sandbox.read", .structured, #""anywhere""#, "anywhere", "Where they may read."),
-        row("sandbox.network", .choice(["none", "localhost", "any"]), #""any""#, "any", "How far commands reach."),
+        row(
+            "sandbox.network", .choice(["none", "localhost", "provider", "any"]), #""any""#, "any",
+            "How far commands reach."),
         row("sandbox.hide", .structured, #"["~/notes"]"#, "none", "More paths to hide."),
         row(
             "sandbox.readable", .structured, #"["~/.aws"]"#, "none", user: true,

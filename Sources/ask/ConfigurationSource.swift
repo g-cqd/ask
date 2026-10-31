@@ -182,6 +182,14 @@ struct ConfigurationSource: Sendable {
         }
         let thinking = try ThinkingDiscovery.resolve(
             result.configuration.thinking.value, model: discovered.model, environment: environment)
+        // The `provider` network level lets commands reach this run's provider through ask's proxy (roadmap 0021); a later /model
+        // resolves again and moves it.
+        ProviderAccess.allow(
+            Set(
+                [ProviderServer.url(for: thinking.model, environment: environment)]
+                    .compactMap { url in
+                        url.flatMap { ProxyRequest.Target(url: $0.absoluteString) }
+                    }))
         let commandEnvironment = CommandEnvironment(providers: providers, configuration: result.configuration)
         // Everything that needed the credentials has read them: the snapshot keeps them, ask's own process does not (ADR-0113).
         LaunchEnvironment.conceal(commandEnvironment)

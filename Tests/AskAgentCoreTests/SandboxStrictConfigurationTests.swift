@@ -32,7 +32,8 @@ struct SandboxStrictConfigurationTests {
     @Test func `a value that is not one of them is refused, naming the key and the choices`() {
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "sandbox.network", reason: "is \"local\": use \"none\", \"localhost\" or \"any\"")
+                path: "c.json", key: "sandbox.network",
+                reason: "is \"local\": use \"none\", \"localhost\", \"provider\" or \"any\"")
         ) { try parse("{sandbox: {network: 'local'}}") }
         #expect(
             throws: ConfigurationError.outOfRange(
