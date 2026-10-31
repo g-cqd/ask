@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-20
 ---
@@ -41,3 +41,8 @@ Measure the input/render path before and after in release.
 
 - A real terminal check of Shift-Enter: the probe sends it as the CSI-u sequence a keyboard-protocol terminal
   reports, not from a physical key. Ctrl-J has no such dependence.
+
+## Closed (2026-10-31)
+
+Everything in "Done when" is built and probed. The one item left, Shift-Enter from a physical key, is a check in a real terminal, not
+work; it moved to the real-terminal list in `research/priorities-2026-10-31.md`.

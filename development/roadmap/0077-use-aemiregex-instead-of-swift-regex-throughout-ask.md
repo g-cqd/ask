@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-27
 ---
@@ -42,3 +42,8 @@ for heredoc opener matching before adopting a regex implementation.
   `wholeMatch(of:`, `matches(of:`, `.replacing(/` and `(#/` in `Sources` and `Tests`.
 - Not measured: cold compile, warm matching and binary size against Swift Regex (the roadmap asks for it). Python and
   shell helpers keep their own regexes by design.
+
+## Closed (2026-10-31)
+
+No Swift Regex is left in `Sources` or `Tests`, and `NoSwiftRegexTests` keeps it out. The measurement against Swift Regex that the
+entry asked for has nothing left to compare with: the one production use was replaced together with its test.
