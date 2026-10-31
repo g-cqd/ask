@@ -73,6 +73,7 @@ extension Transcript {
             switch items[index] {
                 case .assistant(let text) where ShownCode.mayContainFence(text): revisions[index] = bump()
                 case .tool(_, _, _, _, let input) where input.contains("<<"): revisions[index] = bump()
+                case .tool where shownToolOutput(at: index) != nil: revisions[index] = bump()
                 default: continue
             }
         }

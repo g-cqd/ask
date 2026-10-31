@@ -17,6 +17,10 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var foldCode: Bool?
     /// `ui.codeFoldLines`: a code block with more lines than this starts folded (never more than half the screen).
     public var codeFoldLines: Int?
+    /// `ui.fold.outputLines` and `ui.fold.outputBytes`: a tool's output longer than either keeps its head and tail and folds its
+    /// middle (roadmap 0078).
+    public var outputFoldLines: Int?
+    public var outputFoldBytes: Int?
     /// `ui.sidebar`: whether the runner sidebar starts open. `true` is `"open"`, `false` is `"closed"`.
     public var sidebarOpen: Bool?
     /// `ui.prompt`: what the input starts with, if anything. Empty is none, which is the default: the input is marked by its tint.
@@ -58,7 +62,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public init(
         mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
         scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil,
-        sidebarOpen: Bool? = nil, prompt: String? = nil, tint: Bool? = nil, separator: Bool? = nil,
+        outputFoldLines: Int? = nil, outputFoldBytes: Int? = nil, sidebarOpen: Bool? = nil, prompt: String? = nil,
+        tint: Bool? = nil, separator: Bool? = nil,
         padding: Bool? = nil, markdown: Bool? = nil, localizedDurations: Bool? = nil, spinner: SpinnerPreference? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
         jobAutoReturnWhenFocused: Bool? = nil, abortTurnRequiresConfirmation: Bool? = nil,
@@ -78,6 +83,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.promptRows = promptRows
         self.foldCode = foldCode
         self.codeFoldLines = codeFoldLines
+        self.outputFoldLines = outputFoldLines
+        self.outputFoldBytes = outputFoldBytes
         self.sidebarOpen = sidebarOpen
         self.prompt = prompt
         self.tint = tint
@@ -98,23 +105,15 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.timeoutLabel = timeoutLabel
     }
 
-    public var isEmpty: Bool {
-        mouse == nil && copyOnSelect == nil && foldTools == nil && foldThinking == nil && scrollLines == nil
-            && promptRows == nil && foldCode == nil && codeFoldLines == nil && sidebarOpen == nil && prompt == nil
-            && tint == nil && separator == nil && padding == nil && markdown == nil && localizedDurations == nil
-            && spinner == nil
-            && jobAutoReturnWhenFocused == nil && abortTurnRequiresConfirmation == nil && interruptKeys == nil
-            && escapeInterruptRequiresConfirmation == nil && interruptSendsQueued == nil
-            && onlyUsefulModels == nil && appearance == nil && timeout == nil && timeoutLabel == nil
-            && sessionColor == nil
-        // @dl:accept -- the layering takes each key from the later section; the keys are the data
-    }
+    /// Whether the section sets no key: equal to one that sets none, so a new key cannot be left out.
+    // @dl:accept -- the key list and the layering below are the schema's data, a list of names and one line per key
+    public var isEmpty: Bool { self == UISection() }
 
     /// The keys, in the order they are shown, as a file writes them (roadmap 0154); `fold.*` are the keys of the `fold` object.
     public static let keys =
         [
-            "mouse", "copyOnSelect", "fold.tools", "fold.thinking", "fold.code", "fold.codeLines", "scrollLines",
-            "inputRows", "sidebar"
+            "mouse", "copyOnSelect", "fold.tools", "fold.thinking", "fold.code", "fold.codeLines", "fold.outputLines",
+            "fold.outputBytes", "scrollLines", "inputRows", "sidebar"
         ]
         + lookKeys + behaviorKeys
 
@@ -137,6 +136,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             foldTools: section.foldTools ?? foldTools, foldThinking: section.foldThinking ?? foldThinking,
             scrollLines: section.scrollLines ?? scrollLines, promptRows: section.promptRows ?? promptRows,
             foldCode: section.foldCode ?? foldCode, codeFoldLines: section.codeFoldLines ?? codeFoldLines,
+            outputFoldLines: section.outputFoldLines ?? outputFoldLines,
+            outputFoldBytes: section.outputFoldBytes ?? outputFoldBytes,
             sidebarOpen: section.sidebarOpen ?? sidebarOpen, prompt: section.prompt ?? prompt,
             tint: section.tint ?? tint, separator: section.separator ?? separator,
             padding: section.padding ?? padding, markdown: section.markdown ?? markdown,

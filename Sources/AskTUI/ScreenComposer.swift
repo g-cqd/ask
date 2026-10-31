@@ -21,6 +21,8 @@ public struct ScreenComposer: Sendable {
         var source: Source?
         /// Click ownership, independent of selectable text (padding has no source).
         var foldBlock: Int?
+        /// Whether a click on the row toggles the middle of a long tool output rather than the whole block (roadmap 0078).
+        var foldsMiddle = false
         /// Runs of columns drawn in a style of their own over ``style``, such as a warning mark in colour.
         var accents: [Accent]
         /// File paths in the row, drawn as terminal hyperlinks over whatever style the column has.
@@ -73,6 +75,7 @@ public struct ScreenComposer: Sendable {
     /// The look those lines were laid out for.
     var blockStyle = BlockStyle.plain
     private var foldBlocks: [Int?] = []
+    private var middleFolds: [Bool] = []
     private var rowLinks: [[PathLinks.Link]] = []
     /// What each row of the buffer holds since the last frame, and the size it was composed at.
     private var shown: [Shown?] = []
@@ -132,7 +135,8 @@ public struct ScreenComposer: Sendable {
         let (sidebar, map, totalLines) = writeTranscript(
             state, rows: rows, transcriptRows: transcriptRows, columns: columns, into: &buffer)
         var geometry = FrameGeometry(
-            rows: map, foldBlocks: foldBlocks, transcriptRows: transcriptRows, columns: columns, totalLines: totalLines,
+            rows: map, foldBlocks: foldBlocks, middleFolds: middleFolds, transcriptRows: transcriptRows,
+            columns: columns, totalLines: totalLines,
             scrollback: state.scrollback,
             statusRow: transcriptRows + ruleRows + pickerLines.count + promptRows, runnerColumns: status.runners,
             belowColumns: status.below, markColumns: Self.markColumns(for: state),
@@ -165,6 +169,7 @@ public struct ScreenComposer: Sendable {
             rowsFromEnd: state.scrollback)[...]
         let map = Self.provenance(of: visible, rows: rows, transcriptRows: transcriptRows)
         foldBlocks = Array(repeating: nil, count: transcriptRows - visible.count) + visible.map(\.foldBlock)
+        middleFolds = Array(repeating: false, count: transcriptRows - visible.count) + visible.map(\.foldsMiddle)
         rowLinks = Array(repeating: [], count: transcriptRows - visible.count) + visible.map(\.links)
         var highlights = [Range<Int>?](repeating: nil, count: transcriptRows)
         if let selection = state.selection {

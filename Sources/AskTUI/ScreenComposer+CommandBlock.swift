@@ -28,9 +28,11 @@ extension ScreenComposer {
     /// A tool block's rows: folded, its one-row header; open, a command block, or a tool's header, its input and its output.
     static func toolContentLines(
         _ item: Transcript.Item, folded: Bool, block: Int, columns: Int, style: BlockStyle,
-        context: (progress: BlockProgress?, toolInput: ShownToolInput?, command: Bool)
+        context: ToolContext
     ) -> [Line] {
         guard case .tool(let name, let summary, let status, let output, let input) = item else { return [] }
+        // What the body shows: the output with its middle folded away (roadmap 0078); the header counts all of it.
+        let shownOutput = context.output ?? output
         let inset = style.inset
         let width = Swift.max(1, columns - 2 * inset)
         let metadata = blockMetadata(
@@ -47,22 +49,23 @@ extension ScreenComposer {
         if context.command {
             return commandLines(
                 item, block: block, width: width, inset: inset, style: style,
-                context: (context.progress, context.toolInput))
+                context: (context.progress, context.toolInput, shownOutput))
         }
         if !input.isEmpty {
             return toolInputLines(
                 item: item, input: context.toolInput?.text ?? ShownToolInput(input, isFolded: { _ in true }).text,
-                block: block, columns: columns, style: style, progress: context.progress)
+                block: block, columns: columns, style: style, context: context)
         }
         let header = Transcript.Item.toolHeader(
             name: name, summary: summary, status: status, output: output, folded: false)
-        return openBlock(header, metadata: metadata, item: item, block: block, width: width, inset: inset)
+        return openBlock(
+            header, metadata: metadata, item: item.showing(shownOutput), block: block, width: width, inset: inset)
     }
 
     /// An open command block: its header row starts the command, the command's other rows follow it, then the output.
     static func commandLines(
         _ item: Transcript.Item, block: Int, width: Int, inset: Int, style: BlockStyle,
-        context: (progress: BlockProgress?, toolInput: ShownToolInput?)
+        context: (progress: BlockProgress?, toolInput: ShownToolInput?, output: String)
     ) -> [Line] {
         guard case .tool(let name, let parameters, let status, let output, let input) = item else { return [] }
         let header = Transcript.Item.commandHeader(
@@ -72,8 +75,10 @@ extension ScreenComposer {
             toolName: name)
         let lead = Transcript.Item.commandHeader(name: name, parameters: parameters, command: "", folded: false).count
         let commandLines = TranscriptContent.hardLineCount(of: header)
-        return openBlock(header, metadata: metadata, item: item, block: block, width: width, inset: inset)
-            .map { brightened($0, block: block, lead: lead, commandLines: commandLines) }
+        return openBlock(
+            header, metadata: metadata, item: item.showing(context.output), block: block, width: width, inset: inset
+        )
+        .map { brightened($0, block: block, lead: lead, commandLines: commandLines) }
     }
 
     /// Open, the command is the block's subject, so it is drawn at full brightness, not in the dim of the lead and the status. Only the
@@ -100,13 +105,13 @@ extension ScreenComposer {
     private static func openBlock(
         _ header: String, metadata: String, item: Transcript.Item, block: Int, width: Int, inset: Int
     ) -> [Line] {
-        guard case .tool(_, _, let status, let output, _) = item else { return [] }
+        guard case .tool(_, _, let status, let shownOutput, _) = item else { return [] }
         let lines = blockHeader(
             header, metadata: metadata, block: block, width: width, inset: inset, style: toolStatusStyle(status))
-        guard !output.isEmpty else { return lines }
+        guard !shownOutput.isEmpty else { return lines }
         return lines + [Line(text: "", style: .default)]
             + body(
-                of: output, block: block, width: width, inset: inset, style: Style(dim: true),
+                of: shownOutput, block: block, width: width, inset: inset, style: Style(dim: true),
                 firstLine: TranscriptContent.hardLineCount(of: header))
     }
 }

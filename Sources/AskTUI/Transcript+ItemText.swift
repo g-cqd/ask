@@ -5,13 +5,15 @@ extension Transcript {
             ?? items[index]
             .contentText(
                 folded: isFolded(index), toolInput: shownToolInput(at: index)?.text,
-                command: commandBlocks.contains(index))
+                command: commandBlocks.contains(index), output: shownToolOutput(at: index)?.text)
     }
 }
 
 extension Transcript.Item {
     /// The text a selection can take from this item.
-    func contentText(folded: Bool, toolInput: String? = nil, command: Bool = false) -> String {
+    func contentText(folded: Bool, toolInput: String? = nil, command: Bool = false, output shown: String? = nil)
+        -> String
+    {
         switch self {
             case .user(let text), .assistant(let text), .notice(let text, _), .queued(let text): return text
             case .jobEnded(let label, _, _): return label
@@ -19,11 +21,13 @@ extension Transcript.Item {
                 let body = Transcript.kept(text)
                 let header = Self.thinkingHeader(body: body, folded: folded)
                 return folded || !Transcript.saysSomething(body) ? header : body
-            case .tool(let name, let summary, _, let output, let input) where command:
+            case .tool(let name, let summary, _, let whole, let input) where command:
+                let output = shown ?? whole
                 let header = Self.commandHeader(
                     name: name, parameters: summary, command: toolInput ?? input, folded: folded)
                 return folded || output.isEmpty ? header : header + "\n" + output
-            case .tool(let name, let summary, let status, let output, let input):
+            case .tool(let name, let summary, let status, let whole, let input):
+                let output = shown ?? whole
                 let header = Self.toolHeader(
                     name: name, summary: summary, status: status, output: output, folded: folded)
                 guard !folded else { return header }
@@ -51,4 +55,12 @@ extension Transcript.Item {
 
     /// The one line a thinking block starts with, folded or open: `Thinking...`, which a click folds and opens.
     static func thinkingHeader(body _: String, folded _: Bool) -> String { "Thinking..." }
+}
+
+extension Transcript.Item {
+    /// The same tool with `output` in place of its own: what the body draws once the middle of a long output is folded away.
+    func showing(_ output: String) -> Self {
+        guard case .tool(let name, let summary, let status, _, let input) = self else { return self }
+        return .tool(name: name, summary: summary, status: status, output: output, fullInput: input)
+    }
 }

@@ -78,6 +78,8 @@ extension ConfigurationFile {
             section.foldThinking = fold.thinking
             section.foldCode = fold.code
             section.codeFoldLines = fold.codeLines
+            section.outputFoldLines = fold.outputLines
+            section.outputFoldBytes = fold.outputBytes
         }
 
         /// `ui.stopTwice`: the keys that must be pressed twice to stop a turn, `"esc"` and `"ctrl-c"`.
@@ -88,12 +90,14 @@ extension ConfigurationFile {
         }
     }
 
-    /// `ui.fold`: which blocks start folded, and how many lines make a code block long.
+    /// `ui.fold`: which blocks start folded, how many lines make a code block long, and when a tool's output folds its middle.
     struct FoldDecoded: Decodable {
         var tools: Bool?
         var thinking: Bool?
         var code: Bool?
         var codeLines: Int?
+        var outputLines: Int?
+        var outputBytes: Int?
 
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
@@ -103,6 +107,8 @@ extension ConfigurationFile {
                     case "thinking": thinking = try ConfigurationFile.decodeSwitch(container, key: key, name: name)
                     case "code": code = try ConfigurationFile.decodeSwitch(container, key: key, name: name)
                     case "codeLines": codeLines = try container.decode(Int.self, forKey: key)
+                    case "outputLines": outputLines = try container.decode(Int.self, forKey: key)
+                    case "outputBytes": outputBytes = try container.decode(Int.self, forKey: key)
                     default: throw UnknownKey(key: name)
                 }
             }
