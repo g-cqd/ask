@@ -9,6 +9,8 @@ each one produces, that an empty variable does not mask a valid one, and that a 
 before any request is made. Prints one PASS line per case and stops at the first failure.
 """
 import http.server, json, os, pathlib, subprocess, sys, tempfile, threading
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_keychain
 
 binary = str(pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else '.build/release/ask').resolve())
 requests = []
@@ -35,6 +37,7 @@ root = pathlib.Path(tempfile.mkdtemp(prefix='ask-anthropic-env-'))
 base = {k: v for k, v in os.environ.items() if not k.startswith('ANTHROPIC_')}
 base |= {'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_STATE_HOME': str(root / 'state'),
          'ANTHROPIC_BASE_URL': 'http://127.0.0.1:%d' % server.server_address[1]}
+base["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
 
 
 def run(name, variables, expect_request, check=None, exit_code=None):

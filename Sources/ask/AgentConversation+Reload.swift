@@ -63,7 +63,7 @@ extension AgentConversation {
         }
         update(.notice("Checking the new build (\(latest.summary))…", isError: false))
         // A signed ask starts only a build signed as it is (roadmap 0153): the self-check would already run what is at the path.
-        switch BuildSignature.check(latest.path, against: BuildSignature.runningRequirement()) {
+        switch BuildSignature.check(latest.path, against: await LaunchSignature.running) {
             case .refused(let reason):
                 update(
                     .notice(

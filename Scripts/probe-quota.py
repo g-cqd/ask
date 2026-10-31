@@ -8,6 +8,8 @@ Tests/Fixtures/Codex/usage-limit-429.json). A usage limit lifts at a set time, s
 lifts. The control answers an ordinary rate limit, which must still be retried. Nothing leaves the machine and no credential is used.
 """
 import http.server, json, os, pathlib, subprocess, sys, tempfile, threading, time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_keychain
 
 here = pathlib.Path(__file__).resolve().parent.parent
 binary = str(pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else '.build/release/ask').resolve())
@@ -43,6 +45,7 @@ config.mkdir(parents=True, mode=0o700)
     'api': 'openai-responses', 'baseUrl': 'http://127.0.0.1:%d/v1' % server.server_address[1], 'models': [{'id': 'm'}]}}}))
 env = {k: v for k, v in os.environ.items() if not k.startswith('ANTHROPIC_')}
 env |= {'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_STATE_HOME': str(root / 'state')}
+env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
 
 
 def run(which):

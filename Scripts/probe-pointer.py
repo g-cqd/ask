@@ -19,6 +19,8 @@ import pyte
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import probe_screen
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_keychain
 
 ASK = os.path.abspath(
     sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", ".build", "debug", "ask")
@@ -39,6 +41,7 @@ class Terminal:
         if config:
             open(self.home + "/ask/config.json", "w").write(config)
         env = dict(os.environ, TERM="xterm-256color", TERM_PROGRAM=program, XDG_CONFIG_HOME=self.home, HOME=self.home)
+        env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
         for name in ("SSH_TTY", "SSH_CONNECTION", "TMUX", "KITTY_WINDOW_ID"):
             env.pop(name, None)
         self.pid, self.fd = pty.fork()

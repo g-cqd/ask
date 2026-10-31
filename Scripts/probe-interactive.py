@@ -518,15 +518,19 @@ def slash_checks():
     return all(results)
 
 
-def install_build(directory, name="ask", script=None):
+def install_build(directory, name="ask", script=None, sign=None):
     """Puts a build at `directory/name` the way a linker does: written beside, then renamed into place, so the
-    path names a new file. A copy of the real binary, or a shell `script` standing in for a broken build."""
+    path names a new file. A copy of the real binary, or a shell `script` standing in for a broken build; `sign` is
+    an identity to sign the copy with first, `-` for ad hoc."""
     staged = os.path.join(directory, f".{name}.new")
     if script is None:
         shutil.copy2(ASK, staged)
     else:
         open(staged, "w").write(script)
         os.chmod(staged, 0o755)
+    if sign is not None:
+        subprocess.run(["codesign", "--force", "--sign", sign, "--identifier", "ask", "--timestamp=none", staged],
+                       check=True, capture_output=True)
     os.rename(staged, os.path.join(directory, name))
     return os.path.join(directory, name)
 
@@ -649,11 +653,54 @@ def probe_reload_env_key():
     return all(results)
 
 
+def probe_reload_signed():
+    print("H4: a signed ask reloads into a build signed the same way, and refuses an ad-hoc one (0153)")
+    identity = os.environ.get("ASK_SIGNING_IDENTITY")
+    if not identity:
+        print("  skipped: ASK_SIGNING_IDENTITY is not set")
+        return True
+    project, state, config, bin_dir = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
+    os.makedirs(os.path.join(config, "ask"))
+    # A signed build would choose the Keychain under "auto": the probe keeps its throwaway credentials in its own file.
+    with open(os.path.join(config, "ask", "config.json"), "w") as file:
+        file.write('{"credentials": "file"}')
+    binary = install_build(bin_dir, sign=identity)
+    server = agent.Server([agent.turn([("text", "Answer 1.")], "end_turn"), agent.turn([("text", "Answer 2.")], "end_turn")])
+    screen = Screen(server.url, project, state, config=config, binary=binary, arguments=["--verbose"])
+    results = [check("prompt drawn", screen.ready())]
+    screen.type("one\r")
+    screen.until("Answer 1.")
+    screen.until_status("ready")
+    install_build(bin_dir, sign="-")
+    screen.until("A new ask binary appeared.")
+    screen.until_status("ready")
+    screen.type("/reload\r")
+    results.append(check("an ad-hoc build is refused before it runs", screen.until("Not reloading: the new build is not signed", 30)
+                         and screen.until("Staying on the running build")))
+    if not results[-1]:
+        print(screen.screen.text(), file=sys.stderr)
+    screen.until_status("ready")
+    install_build(bin_dir, sign=identity)
+    screen.type("/reload\r")
+    results += [check("a build signed the same way is checked", screen.until("Checking the new build", 30)),
+                check("without the unsigned notice", "running build is not signed" not in screen.screen.text()),
+                check("and reloads into the same session", screen.until("Reloaded ask: built ", 30) and screen.until("Resumed session 20"))]
+    screen.until_status("ready")
+    screen.type("two\r")
+    results.append(check("the next prompt works in the signed process", screen.until("Answer 2.", 30)))
+    screen.until_status("ready")
+    screen.type("/quit\r")
+    results.append(check("and quits cleanly", screen.finish() == 0))
+    server.httpd.shutdown()
+    return all(results)
+
+
 def probe_reload_refused():
     print("I: a broken build, and running jobs, stop a reload")
     project, state, config, bin_dir = tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp(), tempfile.mkdtemp()
     os.makedirs(os.path.join(config, "ask"))
-    binary = install_build(bin_dir)
+    # Ad hoc, so the broken build reaches the self-check: a signed ask refuses a script for its signature first (H4).
+    binary = install_build(bin_dir, sign="-")
     port = agent.free_port()
     server = agent.Server([
         agent.turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
@@ -678,7 +725,7 @@ def probe_reload_refused():
     screen.type("still there?\r")
     results.append(check("ask carries on after a refused reload", screen.until("Still here.", 30)))
     screen.until_status("ready")
-    install_build(bin_dir)
+    install_build(bin_dir, sign="-")
     screen.type("/reload now\r")
     results += [check("with a good build, /reload now reloads", screen.until("Reloaded ask: built ", 30)),
                 check("having stopped the job first", not agent.accepts(port)),
@@ -1655,7 +1702,7 @@ def probe_reset_ignores_unrelated_grants():
 
 
 if __name__ == "__main__":
-    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_keeps_grants, probe_reload_env_key, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants, probe_call_approvals, probe_allow_commands, probe_question_tool, probe_protected_paths]
+    probes = [probe_turn, probe_abort, probe_quit, probe_resume, probe_signal_stops_jobs, probe_reload, probe_slash, probe_reload_binary, probe_reload_keeps_grants, probe_reload_env_key, probe_reload_signed, probe_reload_refused, probe_steering, probe_abort_queue, probe_failed_queue, probe_multiline, probe_new_session, probe_session_job_guard, probe_resume_sessions, probe_model_selection, probe_strict_label, probe_resume_strict, probe_model_and_destination, probe_sandbox_approval, probe_approval_abort, probe_session_narrowing_screen, probe_reset_ignores_unrelated_grants, probe_call_approvals, probe_allow_commands, probe_question_tool, probe_protected_paths]
     # --only A,F runs the probes whose heading starts with those letters (each prints "A: …" first).
     wanted = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else None
     ok = True

@@ -9,6 +9,8 @@ behind, that a well-formed but fake code gets Google's own refusal, and that `lo
 client secret must appear in no output. Prints one PASS line per step and stops at the first failure.
 """
 import json, os, pathlib, re, subprocess, sys, tempfile, urllib.parse
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_keychain
 
 binary = str(pathlib.Path(sys.argv[1] if len(sys.argv) > 1 else '.build/release/ask').resolve())
 root = pathlib.Path(tempfile.mkdtemp(prefix='ask-agy-login-probe-'))
@@ -16,6 +18,7 @@ config = root / 'config'
 creds = config / 'ask' / 'credentials.json'
 base_env = {k: v for k, v in os.environ.items() if not k.startswith(('ASK_', 'XDG_', 'AGY_'))}
 base_env |= {'XDG_CONFIG_HOME': str(config), 'XDG_STATE_HOME': str(root / 'state')}
+base_env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
 SECRET_RE = re.compile(r'GOCSPX-[A-Za-z0-9_-]{10,}')
 
 

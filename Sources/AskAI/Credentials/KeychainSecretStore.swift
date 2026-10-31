@@ -17,9 +17,7 @@ public struct KeychainSecretStore: SecretStore {
     public init(service: String = "ask", keychainPath: String? = nil) throws(SecretStoreError) {
         self.service = service
         // A keychain file for end-to-end tests, so a run of the real binary never touches the person's keychain.
-        let keychainPath =
-            keychainPath
-            ?? ProcessInfo.processInfo.environment["ASK_KEYCHAIN_PATH"].flatMap { $0.hasPrefix("/") ? $0 : nil }
+        let keychainPath = keychainPath ?? Self.launchKeychainPath
         if let keychainPath {
             var reference: CFTypeRef?
             let status = keychainPath.withCString { askSecKeychainOpen($0, &reference) }
@@ -29,6 +27,12 @@ public struct KeychainSecretStore: SecretStore {
             keychain = nil
         }
     }
+
+    /// `ASK_KEYCHAIN_PATH` as ask was launched with it. Read once: ask blanks `ASK_*` variables in its own environment once a run's
+    /// policy is known (ADR-0113), and a store made after that would otherwise fall back to the person's own keychain. ask touches
+    /// this before blanking.
+    public static let launchKeychainPath: String? =
+        ProcessInfo.processInfo.environment["ASK_KEYCHAIN_PATH"].flatMap { $0.hasPrefix("/") ? $0 : nil }
 
     public func secrets(for account: String) throws(SecretStoreError) -> [String: String]? {
         var query = base(account)

@@ -145,3 +145,20 @@ saying so; refusing every unsigned rebuild would end `/reload` for unsigned use.
 - Docs: the `/reload` row in `screen.md`.
 - Not verified: a reload between two builds signed with the personal identity. That needs the first signing, the owner's one-time
   "Always Allow" (0110).
+
+## Done (2026-10-31): the check, on signed builds
+
+Probe H4 (`probe_reload_signed`, which needs `ASK_SIGNING_IDENTITY`) found the check passing everything. `runningRequirement()` read
+the running build's signature from its executable's file, and `/reload` runs only once a new build has replaced that file. A signed
+ask therefore saw the ad-hoc build's signature, took itself for unsigned ("The running build is not signed…"), and reloaded into it.
+
+- `LaunchSignature` reads the signature once, off the launch path, when the interactive screen starts. `/reload` waits for that read.
+- `BuildSignature.readRunning()` checks the running code against its file after reading (`SecCodeCheckValidity`). A mismatch is
+  `.unreadable`, which refuses every build, never `.unsigned`.
+- Tests: `BuildSignatureTests`, written first and red: an unreadable running signature refuses, and the launch read is the running
+  build's.
+- Probe H4, on a signed build: an ad-hoc build is refused before it runs; a build signed the same way reloads into the session, with
+  no unsigned notice. Section I now installs ad-hoc builds, so its broken build still reaches the self-check. H, H2 and H3 pass
+  signed.
+
+Open: the "Not covered yet" audit (TLS and endpoints, the extension host, skills, the media and session parsers, supply chain).
