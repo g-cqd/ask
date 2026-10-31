@@ -18,3 +18,8 @@ Claude Code does:
 - Tools that ignore proxy variables: these fail closed. Is that acceptable?
 - Certificate pinning.
 - Local port binding (`allowLocalBinding`).
+
+## Owner (2026-10-31): a provider-only level
+
+Add a network level where commands reach only the model provider's server (the signed-in providers' hosts), alongside `none`,
+`localhost` and `any`. It needs this proxy, because the macOS sandbox can only allow every host or none.

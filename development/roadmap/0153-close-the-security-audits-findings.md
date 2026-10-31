@@ -105,3 +105,13 @@ first); `probe-agent-run.py` section Z, red on the morning's build.
   running one's would close it for signed builds (0110); unsigned builds have nothing to compare.
 - **The default network, still for the owner:** `"any"` today.
 
+
+## Owner (2026-10-31): the open hardening notes
+
+- **Default network: stays `"any"`.** The owner also wants a limited level: commands may reach only the model provider's server,
+  alongside the existing levels. The macOS sandbox allows every host or none, so that level goes through the local proxy (0021).
+- **Default withhold list: yes.** Commands no longer get well-known credential variables by default: `GITHUB_TOKEN`, `GH_TOKEN`,
+  `AWS_*`, `OPENAI_API_KEY`, `NPM_TOKEN` and similar. `environment.pass` lets one back in, and the docs say why `gh` or `aws` then
+  fail.
+- **`/reload` signature check: yes**, with every build signed (0110). `/reload` refuses a new build whose signature is not the
+  running one's.

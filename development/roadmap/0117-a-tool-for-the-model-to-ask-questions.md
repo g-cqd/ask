@@ -72,3 +72,16 @@ section reuses the approval's click regions, since only one of them is ever show
 has scene 9, checked in the emulator (shown, clicked, answered). Not yet seen in a real terminal: the owner's run of scene 9 would
 close that.
 
+
+## Owner (2026-10-31): the redesign of the question lane
+
+- **The note moves into the question.** It is an input row right after the last choice, not the usual input below. It takes
+  typing only when focused, and wraps at the terminal's width, indented with the choices.
+- **Tab moves the focus** between the question tabs, the choices and the note row.
+- **The keys inside a question:**
+  - arrows highlight a choice;
+  - Space selects it;
+  - on the note row, typing works as in the normal input.
+- **Tab titles lose their numbers.** They were misleading next to the question count.
+- **Markers:** `[ ]` for a multiple-choice question, `( )` for a single choice.
+- Still open: whether a single question sends on Enter without a review. That stays as built until the owner says otherwise.
