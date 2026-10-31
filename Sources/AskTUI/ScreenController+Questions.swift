@@ -164,8 +164,11 @@ extension ScreenController {
             state.pendingQuestions = nil
             state.editor = Self.editor(holding: pending.draft)
         }
-        state.pendingInput = nil
-        state.inputAnswer.clear()
+        // A question a command beside the run asked is that command's to take away (roadmap 0113).
+        if runOwnsQuestion {
+            state.pendingInput = nil
+            state.inputAnswer.clear()
+        }
         return endRun()
     }
 

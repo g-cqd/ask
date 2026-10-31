@@ -6,6 +6,11 @@ B: /model typed while a tool runs: accepted at once, and the next request of the
 C: /thinking typed while a tool runs: accepted at once, and the next request asks for that effort.
 D: /config show reads the settings while a turn runs, and /mcp reports, without stopping it.
 E: the settings editor opens while a turn runs, and a value saved there applies to the turn's next request.
+F: /compact typed while a turn runs waits, shown as waiting, and runs when the turn ends.
+G: /new typed while a turn runs waits for the turn's end, then starts a new session.
+H: /fork while a turn runs makes the copy at once and stays with the turn.
+I: /skill:NAME typed while a turn runs reaches the model expanded, as at a turn's start.
+J: /logout of the account in use waits for the turn's end.
 
     ASK_PYTE=/tmp/ask-pty/lib python3 Scripts/probe-mid-turn.py [.build/release/ask]
 """
@@ -25,14 +30,19 @@ CATALOG = [{"id": "claude-sonnet-4-5", "max_input_tokens": 200000, "max_tokens":
                              "effort": {"low": {"supported": True}, "high": {"supported": True}}}}]
 
 
-def started(config_text):
-    """A screen on a fresh project whose first prompt runs a slow tool, then answers; the configuration is `config_text`."""
+def started(config_text, more=(), skill=None):
+    """A screen on a fresh project whose first prompt runs a slow tool, then answers; the configuration is `config_text`. `more` are
+    the responses after those, and `skill` a SKILL.md body to install as the user's skill `demo`."""
     project, config = tempfile.mkdtemp(), tempfile.mkdtemp()
     os.makedirs(os.path.join(config, "ask"))
+    if skill:
+        os.makedirs(os.path.join(config, "ask", "skills", "demo"))
+        open(os.path.join(config, "ask", "skills", "demo", "SKILL.md"), "w").write(
+            "---\nname: demo\ndescription: A demo skill for the probe.\n---\n" + skill + "\n")
     path = os.path.join(config, "ask", "config.json")
     open(path, "w").write(config_text)
-    server = agent.Server([agent.turn([("tool", "t1", SLOW)], "tool_use"), agent.turn([("text", "Answered after.")], "end_turn")],
-                          catalog=CATALOG)
+    server = agent.Server([agent.turn([("tool", "t1", SLOW)], "tool_use"), agent.turn([("text", "Answered after.")], "end_turn"),
+                           *more], catalog=CATALOG)
     screen = Screen(server.url, project, config=config)
     screen.ready()
     screen.type("go\r")
@@ -131,9 +141,89 @@ def probe_editor():
     return all(results)
 
 
+PLAIN = json.dumps({"model": "first-model", "provider": "anthropic"})
+
+
+def probe_compact():
+    print("F: /compact while a turn runs waits for its end, then runs")
+    screen, server, _, running = started(PLAIN, more=[agent.turn([("text", "A SUMMARY OF IT ALL")], "end_turn")])
+    screen.type("/compact\r")
+    waiting = screen.until("/compact", 3) and not screen.idle() and len(server.requests) == 1
+    early = "compact · " in screen.screen.text()
+    screen.until("Answered after.", 20)
+    ran = screen.until("compact · ", 10)
+    text = screen.screen.text()
+    screen.until_status("ready")
+    # This short session has nothing before its recent messages, so the compaction says so rather than asking for a summary: what is
+    # probed is when it runs.
+    results = [check("the turn was running", running),
+               check("waiting while the turn runs, nothing sent for it", waiting and not early, screen.screen.text()[-600:]),
+               check("run once the turn ended", ran and text.index("Answered after.") < text.index("compact · "), text[-600:]),
+               check("clean exit", finish(screen, server) == 0)]
+    return all(results)
+
+
+def probe_new():
+    print("G: /new while a turn runs waits for its end, then starts a new session")
+    screen, server, _, running = started(PLAIN)
+    screen.type("/new\r")
+    early = "New session." in screen.screen.text()
+    screen.until("Answered after.", 20)
+    started_new = screen.until("New session. The previous one is saved.", 10)
+    results = [check("the turn was running", running),
+               check("not before the turn ended", not early),
+               check("a new session once it ended", started_new, screen.screen.text()[-600:]),
+               check("clean exit", finish(screen, server) == 0)]
+    return all(results)
+
+
+def probe_fork():
+    print("H: /fork while a turn runs makes the copy at once and stays with the turn")
+    screen, server, _, running = started(PLAIN)
+    time.sleep(0.5)
+    screen.type("/fork\r")
+    forked = screen.until("Forked into session", 3) and not screen.idle()
+    body = second_request(server, screen)
+    results = [check("the turn was running", running),
+               check("forked during the turn", forked, screen.screen.text()[-600:]),
+               check("which went on and finished here", screen.screen.text().count("Answered after.") >= 1 and body.get("model") == "first-model"),
+               check("clean exit", finish(screen, server) == 0)]
+    return all(results)
+
+
+def probe_skill():
+    print("I: /skill:NAME typed while a turn runs reaches the model expanded")
+    screen, server, _, running = started(PLAIN, skill="DEMO SKILL BODY: always answer in haiku.")
+    screen.type("/skill:demo now in verse\r")
+    second_request(server, screen)
+    sent = json.dumps(server.requests[1]["body"]["messages"]) if len(server.requests) >= 2 else ""
+    results = [check("the turn was running", running),
+               check("the turn's next request carries the skill", "DEMO SKILL BODY" in sent, sent[-400:]),
+               check("the screen shows the line as typed, not the skill", "DEMO SKILL BODY" not in screen.screen.text()),
+               check("clean exit", finish(screen, server) == 0)]
+    return all(results)
+
+
+def probe_logout():
+    print("J: /logout of the account in use waits for the turn's end")
+    screen, server, _, running = started(PLAIN)
+    screen.type("/logout claude\r")
+    told = screen.until("when the running turn ends", 3) and not screen.idle()
+    signed = "Signed out of" in screen.screen.text() or "Not signed out" in screen.screen.text()
+    screen.until("Answered after.", 20)
+    after = screen.until("igned out", 10)
+    results = [check("the turn was running", running),
+               check("said it waits, while the turn runs", told, screen.screen.text()[-600:]),
+               check("did nothing before the turn ended", not signed),
+               check("signed out once it ended", after, screen.screen.text()[-600:]),
+               check("ask still runs and quits cleanly", finish(screen, server) == 0)]
+    return all(results)
+
+
 if __name__ == "__main__":
     ok = True
-    for probe in (probe_file, probe_model, probe_thinking, probe_reading, probe_editor):
+    for probe in (probe_file, probe_model, probe_thinking, probe_reading, probe_editor, probe_compact, probe_new, probe_fork,
+                  probe_skill, probe_logout):
         ok = probe() and ok
     print("PASS" if ok else "FAIL")
     sys.exit(0 if ok else 1)

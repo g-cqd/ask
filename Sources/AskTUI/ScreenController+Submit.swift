@@ -16,11 +16,13 @@ extension ScreenController {
             case .prompt(let text):
                 return submitPrompt(Self.isContinueWord(text) ? Self.continueText : text, followUp: followUp)
             case .command(let name, let arguments):
-                state.transcript.addUser(line)
                 guard let command = SlashCommand.named(name, in: commands) else {
+                    state.transcript.addUser(line)
                     state.transcript.addNotice("There is no command /\(name); /help lists them.", isError: true)
                     return []
                 }
+                // The conversation's commands decide below how their line is shown (roadmap 0113); the screen's own show it now.
+                if SlashCommand.named(name, in: Self.builtIn) != nil { state.transcript.addUser(line) }
                 switch command.name {
                     case "help":
                         let help = commands.map { "/\($0.name)  \($0.summary)" }.joined(separator: "\n")
@@ -36,11 +38,12 @@ extension ScreenController {
                         // A list known to be empty has nothing to open: the bare command runs and says why.
                         let knownEmpty = state.choices[command.name].map { $0.rows.isEmpty && !$0.stale } ?? false
                         if command.takesChoices, arguments.isEmpty, !knownEmpty {
+                            state.transcript.addUser(line)
                             state.editor.paste("/\(command.name) ")
                             pickerScreenRows = Swift.max(pickerScreenRows, Self.pickerMinimumRows)
                             return refreshPicker(screenRows: pickerScreenRows, at: .now)
                         }
-                        return runCommand(command, arguments: arguments)
+                        return runCommand(command, arguments: arguments, line: line)
                 }
         }
     }

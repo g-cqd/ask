@@ -40,6 +40,8 @@ extension ScreenController {
         state.abortArmedAt = nil
         state.abortArmedAction = nil
         acceptsInput = false
+        // A command typed during the turn that waited for its end goes first (roadmap 0113).
+        if startsWaitingCommand { return startWaitingCommand() }
         let sendQueued =
             returningInput && interruptedByPerson && options.interruptSendsQueued != .none
             && !pending.isEmpty && state.exitRequest == nil
@@ -50,12 +52,14 @@ extension ScreenController {
         }
         if returningInput {
             interruptedByPerson = false
-            for prompt in pending where state.transcript.items.indices.contains(prompt.transcriptIndex) {
-                if state.transcript.items[prompt.transcriptIndex] == .queued(prompt.text) {
-                    state.transcript.finishProgress(at: prompt.transcriptIndex)
+            let returned = (pending.map { (index: $0.transcriptIndex, text: $0.text) } + takeWaitingCommands())
+                .sorted { $0.index < $1.index }
+            for item in returned where state.transcript.items.indices.contains(item.index) {
+                if state.transcript.items[item.index] == .queued(item.text) {
+                    state.transcript.finishProgress(at: item.index)
                 }
             }
-            let texts = pending.map(\.text) + (state.editor.text.isEmpty ? [] : [state.editor.text])
+            let texts = returned.map(\.text) + (state.editor.text.isEmpty ? [] : [state.editor.text])
             state.editor.restore(texts.joined(separator: "\n\n"))
             pending.removeAll()
             returningInput = false
@@ -85,19 +89,23 @@ extension ScreenController {
         state.editor.restore(text)
     }
 
+    /// A queued message the conversation did not take: no longer waiting, said so where it stood, and back in the input.
+    mutating func refuseQueuedPrompt(id: Int) {
+        guard let pendingIndex = pending.firstIndex(where: { $0.id == id }) else { return }
+        let prompt = pending.remove(at: pendingIndex)
+        let index = prompt.transcriptIndex
+        if state.transcript.items.indices.contains(index), state.transcript.items[index] == .queued(prompt.text) {
+            state.transcript.items[index] = .notice("Not sent: \(prompt.text)", isError: true)
+            state.transcript.progress[index] = nil
+            state.transcript.revisions[index] = state.transcript.bump()
+        }
+        fill(draft: prompt.text)
+    }
+
     /// Replaces the queued steering notification with the user message in-place to avoid duplicate transcript noise.
     mutating func replaceQueuedPrompt(id: Int, text: String) {
         guard let pendingIndex = pending.firstIndex(where: { $0.id == id }) else { return }
         let prompt = pending.remove(at: pendingIndex)
-        let index = prompt.transcriptIndex
-        // Still the queued message it was: the spinner moves the revision on every tick, so the item is checked, not the revision.
-        guard state.transcript.items.indices.contains(index), state.transcript.items[index] == .queued(prompt.text)
-        else {
-            state.transcript.addUser(text)
-            return
-        }
-        state.transcript.items[index] = .user(text)
-        state.transcript.progress[index] = nil
-        state.transcript.revisions[index] = state.transcript.bump()
+        showSent(at: prompt.transcriptIndex, queued: prompt.text, as: text)
     }
 }

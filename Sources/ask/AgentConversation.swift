@@ -52,6 +52,8 @@ final class AgentConversation: Conversation {
         var shownError: String?
         /// A turn is running (roadmap 0127): a change made during it is offered to it (roadmap 0113).
         var turnRunning = false
+        /// What waits for the running turn's end (roadmap 0113).
+        var turnEndWaiters: [CheckedContinuation<Void, Never>] = []
     }
 
     /// - Parameters:
@@ -98,10 +100,16 @@ final class AgentConversation: Conversation {
     }
 
     func enqueue(_ text: String, id: Int, followUp: Bool) {
+        // A skill asked for during a turn is expanded as at a turn's start; one that cannot be loaded goes back to the input.
+        let update = approvals.withLock { $0.ask }
+        guard let sent = expandingSkill(text, update: update ?? { _ in }) else {
+            update?(.promptRefused(id: id))
+            return
+        }
         promptInput.withLock { $0 }?
             .append(
                 QueuedPrompt(
-                    id: id, text: text, delivery: followUp ? .followUp : .steering))
+                    id: id, text: sent, delivery: followUp ? .followUp : .steering))
     }
 
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
