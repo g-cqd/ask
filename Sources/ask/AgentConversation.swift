@@ -42,14 +42,16 @@ final class AgentConversation: Conversation {
     /// The build that is running, and the one a successful `/reload` chose, which ``reExecute()`` starts.
     let startup = BinaryIdentity.running()
     let reloadTarget = Mutex<BinaryIdentity?>(nil)
+    /// Where a settings change made during a turn is offered to it, for its next request (roadmap 0113).
+    let handover = LoopHandover()
 
     /// The settings in force, the loop built from them, and the last reload error shown.
     struct Current {
         var settings: RunSettings
         var loop: AgentLoop?
         var shownError: String?
-        /// A turn is running, and a configuration file changed during it (roadmap 0127).
-        var turnRunning = false, reloadPending = false
+        /// A turn is running (roadmap 0127): a change made during it is offered to it (roadmap 0113).
+        var turnRunning = false
     }
 
     /// - Parameters:
@@ -77,33 +79,6 @@ final class AgentConversation: Conversation {
             mode: settings.configuration.keepAwake.value, display: settings.configuration.keepDisplayAwake.value)
         Self.follow(jobs, with: keepAwake)
         if let grants { approvals.withLock { $0.restore(grants) } }
-    }
-
-    /// Reads the configuration again and, when it changed, tells the screen what changed. The loop is rebuilt
-    /// on the next use.
-    func refreshSettings(update: @Sendable (ConversationUpdate) -> Void) async {
-        let fresh: RunSettings
-        do {
-            fresh = try await source.load()
-        } catch {
-            let text = "Configuration not reloaded: \(error). Keeping the previous settings."
-            let isNew: Bool = current.withLock { current in
-                defer { current.shownError = text }
-                return current.shownError != text
-            }
-            if isNew { update(.notice(text, isError: true)) }
-            return
-        }
-        let updates: [ConversationUpdate] = current.withLock { current in
-            current.shownError = nil
-            let updates = fresh.updates(replacing: current.settings)
-            if fresh.differs(from: current.settings) { current.loop = nil }
-            current.settings = fresh
-            return updates
-        }
-        keepAwake.use(fresh.configuration.keepAwake.value, display: fresh.configuration.keepDisplayAwake.value)
-        for item in updates { update(item) }
-        update(contextUpdate())
     }
 
     /// What the screen shows first for a resumed session: its conversation, then its usage so far, which the
@@ -175,7 +150,7 @@ final class AgentConversation: Conversation {
                 approve: { [weak self] in await self?.approve($0) ?? false }, narrowing: narrowing,
                 destructiveApprover: { [weak self] in await self?.approveDestructive($0) ?? false },
                 callGate: callGate(for: current.settings), askPerson: { [weak self] in await self?.askPerson($0) })
-            let created = try makeLoop(current.settings, hooks)
+            let created = try makeLoop(current.settings, hooks).handing(over: handover)
             current.loop = created
             return created
         }

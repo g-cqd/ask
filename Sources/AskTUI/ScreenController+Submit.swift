@@ -40,8 +40,7 @@ extension ScreenController {
                             pickerScreenRows = Swift.max(pickerScreenRows, Self.pickerMinimumRows)
                             return refreshPicker(screenRows: pickerScreenRows, at: .now)
                         }
-                        guard !busy() else { return [] }
-                        return begin(.runCommand(name: command.name, arguments: arguments))
+                        return runCommand(command, arguments: arguments)
                 }
         }
     }

@@ -41,13 +41,26 @@ def turn(blocks, stop, input_tokens=1):
 
 
 class Server:
-    def __init__(self, responses):
+    def __init__(self, responses, catalog=None):
         self.responses, self.requests = list(responses), []
         outer = self
+        # A model catalog answered at GET /v1/models when given (a list of Anthropic catalog entries); refused otherwise.
+        self.catalog = catalog
 
         class Handler(BaseHTTPRequestHandler):
             def log_message(self, *args):
                 pass
+
+            def do_GET(self):
+                if outer.catalog is None or not self.path.startswith("/v1/models"):
+                    self.send_error(501)
+                    return
+                payload = json.dumps({"data": outer.catalog, "has_more": False}).encode()
+                self.send_response(200)
+                self.send_header("content-type", "application/json")
+                self.send_header("content-length", str(len(payload)))
+                self.end_headers()
+                self.wfile.write(payload)
 
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers["content-length"])))

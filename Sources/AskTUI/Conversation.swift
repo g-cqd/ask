@@ -56,6 +56,12 @@ public protocol Conversation: Sendable {
     func command(
         _ name: String, arguments: String, update: @escaping @Sendable (ConversationUpdate) -> Void
     ) -> Task<Void, Never>
+
+    /// Runs the command `name` beside a running turn (roadmap 0113): its updates arrive through `update`, without
+    /// ``ConversationUpdate/runEnded``, since the screen's run is the turn's.
+    func command(
+        _ name: String, arguments: String, beside: Bool, update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) -> Task<Void, Never>
 }
 
 extension Conversation {
@@ -104,6 +110,17 @@ extension Conversation {
 
     /// Nothing to watch.
     public func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>? { nil }
+
+    /// Beside a turn as alone, for a conversation that does not tell them apart: the end of run is not passed on.
+    public func command(
+        _ name: String, arguments: String, beside: Bool, update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) -> Task<Void, Never> {
+        guard beside else { return command(name, arguments: arguments, update: update) }
+        return command(name, arguments: arguments) { item in
+            if case .runEnded = item { return }
+            update(item)
+        }
+    }
 
     /// Ends at once, saying the command is unknown. A conversation with no commands is never asked to run one.
     public func command(
