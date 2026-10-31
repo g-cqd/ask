@@ -42,13 +42,18 @@ extension AgentConversation {
     }
 
     /// `/logout [TARGET]`: forgets one account, or all of them with `/logout all`.
-    func logout(arguments: String, update: @Sendable (ConversationUpdate) -> Void) async {
+    func logout(arguments: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async {
         let target = arguments.trimmingCharacters(in: .whitespaces)
         guard !target.isEmpty else {
             update(
                 .notice(
                     "Choose what to sign out of: type /logout and pick from the list, or /logout all.", isError: false))
             return
+        }
+        // Everything at once is asked about first, "no" checked, so a stray Enter forgets nothing (roadmap 0116).
+        if target == "all" {
+            let question = "Sign out of every account ask has stored? Their keys and tokens are forgotten."
+            guard await confirm(question, update: update) else { return }
         }
         // The turn running uses the account: signing out of it waits for the turn's end (roadmap 0113).
         if turnRunning, signsOutWhatIsInUse(target) {
