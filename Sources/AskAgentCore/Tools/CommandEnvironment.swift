@@ -1,8 +1,9 @@
 /// Which of ask's own environment variables a command the model runs may see (ADR-0106).
 ///
 /// A command inherits ask's environment, which holds whatever the person exported, and what a command prints comes back to the model and
-/// goes to the provider. So ask withholds the variables it reads credentials from itself, and what the person configures, and nothing else:
-/// a person's own variables are theirs to withhold, because ask cannot know which of them are secret.
+/// goes to the provider. So ask withholds the variables it reads credentials from itself, well-known credential variables
+/// (``wellKnownCredentials``), and what the person configures. Any other variable of the person's is theirs to withhold, because ask cannot
+/// know which of them are secret.
 public struct CommandEnvironment: Sendable, Equatable {
     /// Exact names a command is not given.
     public var withheld: Set<String>
@@ -26,7 +27,7 @@ public struct CommandEnvironment: Sendable, Equatable {
         self.passed = passed
     }
 
-    /// The policy for a run: the variables ask itself reads credentials from, then what the person configured.
+    /// The policy for a run: the variables ask itself reads credentials from and the well-known ones, then what the person configured.
     ///
     /// A configured `pass` lets a credential through, because the person asked. A name the configuration both passes and withholds is
     /// withheld, so that a project's file, which may only withhold, can take back what the user's file passed.
@@ -39,7 +40,8 @@ public struct CommandEnvironment: Sendable, Equatable {
         let prefixes = configured.withhold.filter { $0.hasSuffix("*") }.map { String($0.dropLast()) }
         let taken = { (name: String) in exact.contains(name) || prefixes.contains { name.hasPrefix($0) } }
         self.init(
-            withheld: credentials.union(exact), withheldPrefixes: credentialPrefixes + prefixes,
+            withheld: credentials.union(Self.wellKnownCredentials).union(exact),
+            withheldPrefixes: credentialPrefixes + prefixes,
             passed: Set(configured.pass.filter { !taken($0) }), shell: configured.shell)
     }
 

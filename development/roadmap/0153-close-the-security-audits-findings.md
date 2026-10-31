@@ -115,3 +115,16 @@ first); `probe-agent-run.py` section Z, red on the morning's build.
   fail.
 - **`/reload` signature check: yes**, with every build signed (0110). `/reload` refuses a new build whose signature is not the
   running one's.
+
+## Done (2026-10-31): the default withhold list
+
+`CommandEnvironment.wellKnownCredentials`, in `CommandEnvironment+WellKnown.swift`, holds about forty exact names. A run's policy
+withholds them along with ask's own credential variables. `environment.pass` lets one back in, and `CommandEnvironment.inherit` (the
+library's default) still withholds nothing.
+
+- **AWS: exact names, not the `AWS_*` prefix.** The list has `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `AWS_SESSION_TOKEN` and
+  `AWS_SECURITY_TOKEN`. `AWS_REGION` and `AWS_PROFILE` are not secret, and an `aws` command with a profile in `~/.aws` keeps
+  working. Credentials in files such as `~/.aws` and `gh`'s keychain entry are not environment variables, so this list does not
+  cover them; the sandbox's secret-store protection does.
+- Test: `WellKnownCredentialTests`, written first and red.
+- Docs: the `environment` table in `configuration.md` and the setting catalog's default, which regenerates `config.example.jsonc`.
