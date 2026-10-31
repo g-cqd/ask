@@ -44,3 +44,6 @@ Add a network level where commands reach only the model provider's server (the s
   - Local port binding is as at `localhost`.
 - Not done: SOCKS; the other signed-in accounts' hosts; Copilot enterprise hosts; per-domain lists beyond the provider (ADR-0020's
   `domains([…])`).
+- Mutation testing (`Scripts/mutate-changed.sh 15a2e19`), run after the commit (`b1291d8`), took about 32 minutes: 80 of 80 killed.
+  AskTools had 56 (the tunnel 22, the request 12, the job table 13, the proxy 8, the access 1), AskAgentCore 23 and AskAI 1. The
+  `Sources/ask` files have no test target and were skipped.
