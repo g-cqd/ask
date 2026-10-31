@@ -8,19 +8,30 @@ extension ConfigurationFile {
         init(from decoder: any Decoder) throws {
             // @dl:accept -- the walk the key tables share
             var servers: [MCPServerSetting] = []
+            var masks: [MCPServerMask] = []
             try ConfigurationFile.eachKey(of: decoder) { key, container in
-                servers.append(try container.decode(MCPServerDecoded.self, forKey: key).server(named: key.stringValue))
+                let entry = try container.decode(MCPServerDecoded.self, forKey: key)
+                // With neither a program nor an address, the entry changes a server a lower file defines (roadmap 0127).
+                if entry.server.command == nil, entry.server.url == nil {
+                    masks.append(entry.mask(named: key.stringValue))
+                } else {
+                    servers.append(entry.server(named: key.stringValue))
+                }
             }
-            section = MCPSection(servers: servers)
+            section = MCPSection(servers: servers, masks: masks)
         }
     }
 
     /// One server's keys; unknown keys are refused.
     struct MCPServerDecoded: Decodable {
         var server = MCPServerSetting(name: "")  // @dl:accept -- a key table decoded through the shared walk
+        /// The keys the entry set, in order.
+        var set: [String] = []
         init(from decoder: any Decoder) throws {
             // @dl:accept -- the walk the key tables share
             try ConfigurationFile.eachKey(of: decoder) { key, container in
+                set.append(key.stringValue)
+                // @dl:accept -- the key walk is shared; each section names its own keys, and this one records which were set
                 switch key.stringValue {
                     // @dl:accept -- the key tables are the data, and the walk over them is already shared
                     case "command": server.command = try container.decode(String.self, forKey: key)
@@ -46,6 +57,15 @@ extension ConfigurationFile {
             named.name = name
             return named
         }
+
+        /// The entry as a change to a lower file's server: only what it set.
+        func mask(named name: String) -> MCPServerMask {
+            let has = Set(set)
+            return MCPServerMask(
+                name: name, enabled: has.contains("enabled") ? server.enabled : nil, tools: server.tools,
+                mode: server.mode, maxDirectTools: server.maxDirectTools,
+                overreach: set.filter { !MCPServerMask.keys.contains($0) })
+        }
     }
 
     /// Whether each server is one thing or the other, with the keys that thing has, and named so a tool's name can carry it. A project's
@@ -53,6 +73,19 @@ extension ConfigurationFile {
     /// environment into them: `${NAME}` in a project's file could carry a key to a server the repository chose.
     static func validateMCP(_ section: MCPSection?, path: String, isProject: Bool) throws(ConfigurationError) {
         guard let section else { return }
+        for mask in section.masks {
+            // Your own file is the lowest layer: there is nothing below it to change.
+            guard isProject else {
+                throw .outOfRange(path: path, key: "mcp.\(mask.name)", reason: "needs a \"command\" or a \"url\"")
+            }
+            if let key = mask.overreach.first {
+                throw .outOfRange(
+                    path: path, key: "mcp.\(mask.name).\(key)",
+                    reason:
+                        "would change what your server runs or is given: with no \"command\" or \"url\", an entry only changes enabled, tools, mode and maxDirectTools"
+                )
+            }
+        }
         for server in section.servers {
             try validate(server, path: path)
             guard isProject else { continue }

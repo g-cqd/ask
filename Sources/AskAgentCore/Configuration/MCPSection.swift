@@ -5,16 +5,24 @@ internal import Foundation
 public struct MCPSection: Sendable, Equatable, CustomStringConvertible {
     /// The servers, sorted by name.
     public var servers: [MCPServerSetting]
+    /// Changes to servers a lower file defines, sorted by name (roadmap 0127); applied by ``layered(with:)``.
+    public var masks: [MCPServerMask]
 
-    /// A section of these servers.
-    public init(servers: [MCPServerSetting] = []) { self.servers = servers.sorted { $0.name < $1.name } }
+    /// A section of these servers and changes.
+    public init(servers: [MCPServerSetting] = [], masks: [MCPServerMask] = []) {
+        self.servers = servers.sorted { $0.name < $1.name }
+        self.masks = masks.sorted { $0.name < $1.name }
+    }
 
-    public var isEmpty: Bool { servers.isEmpty }
+    public var isEmpty: Bool { servers.isEmpty && masks.isEmpty }
 
-    /// `self` with every server `section` names replaced whole, and the others kept.
+    /// `self` with every server `section` defines replaced whole, the others kept, and then `section`'s changes applied to the servers
+    /// they name; a change naming no server is dropped (the loader says so).
     public func layered(with section: MCPSection) -> MCPSection {
         let replaced = Set(section.servers.map(\.name))
-        return MCPSection(servers: servers.filter { !replaced.contains($0.name) } + section.servers)
+        let masks = Dictionary(section.masks.map { ($0.name, $0) }, uniquingKeysWith: { _, last in last })
+        let kept = servers.filter { !replaced.contains($0.name) } + section.servers
+        return MCPSection(servers: kept.map { server in masks[server.name]?.applied(to: server) ?? server })
     }
 
     /// The servers and how each is reached, and never what it was given: environment and headers can hold secrets.
@@ -37,7 +45,7 @@ public struct MCPSection: Sendable, Equatable, CustomStringConvertible {
             }
             let address = server.url.flatMap(Self.withoutQuery) ?? "an address that does not parse"
             return "\(server.name): connects to \(address)\(off)"
-        }
+        } + masks.map { "\($0.name): changes your server: \($0.changes)" }
     }
 
     private static func withoutQuery(_ address: String) -> String? {

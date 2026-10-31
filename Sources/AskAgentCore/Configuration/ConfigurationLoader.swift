@@ -61,6 +61,12 @@ public struct ConfigurationLoader: Sendable {
             switch try ProjectTrust.load(trustPath).standing(of: projectPath, bytes: bytes) {
                 case .trusted:
                     let project = try ConfigurationFile.parse(bytes, path: projectPath, isProject: true)
+                    let defined = Set(configuration.mcp.value.servers.map(\.name))
+                    for mask in project.mcp?.masks ?? [] where !defined.contains(mask.name) {
+                        notices.append(
+                            "\(projectPath): \"mcp.\(mask.name)\" changes a server no lower file defines, so it is ignored."
+                        )
+                    }
                     configuration = configuration.applying(project, from: .file(projectPath))
                     applied.append(projectPath)
                     notices += project.notices
