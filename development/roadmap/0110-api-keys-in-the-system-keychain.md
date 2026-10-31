@@ -66,3 +66,14 @@ to use its key once), or the Keychain stays for signed builds only.
 
 Every build of ask is signed with the personal Apple Development identity (team L2LRQKFJ3U). The Keychain is the default store,
 and `/reload` checks the new build's signature (0153). The first signing needs the owner's one-time "Always Allow" for `codesign`.
+
+## State (2026-10-31): signing, waiting for the owner's first run
+
+- The identity is "Apple Development: Guillaume Coquard (B85BJQQ6R8)", with certificate OU `L2LRQKFJ3U`, the personal team. The
+  certificate's organisation field reads "oculavis GmbH"; the owner may want to confirm this is the identity meant. The machine's
+  other two Apple Development identities are `appleid-coquard@oculavis.de` (team W52SW93JSY) and must not be used.
+- `Scripts/build-release.sh` builds and signs when `ASK_SIGNING_IDENTITY` is set. The first signing opens macOS's keychain prompt;
+  an agent cannot answer it, so it was not run. The owner's one-time step:
+  `ASK_SIGNING_IDENTITY="Apple Development: Guillaume Coquard (B85BJQQ6R8)" Scripts/build-release.sh`, then "Always Allow".
+- Once the running ask is signed, `/reload` refuses unsigned builds (0153). From then on every build goes through
+  `Scripts/build-release.sh`, with the variable set.
