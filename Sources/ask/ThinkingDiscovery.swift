@@ -18,17 +18,23 @@ enum ThinkingDiscovery {
 
     static func resolve(_ level: ThinkingLevel, model: ResolvedModel, environment: [String: String]) throws -> Result {
         if level == .providerDefault {
-            // A Claude model that always thinks is sent its default as adaptive thinking, so its summary can be asked for; read from the
-            // cached catalog only, never the network.
-            if model.provider == .anthropic,
-                let control = ThinkingControl.providerDefault(
-                    descriptor: cachedMetadata(model, environment: environment).0)
-            {
-                return Result(
-                    model: model, control: control, status: "provider default (adaptive), its thinking shown",
-                    notices: [])
+            // A Claude model that always thinks is sent its default as adaptive thinking, so its summary can be asked for. Startup reads
+            // the cache only; when it cannot be used (absent, a day old, or written under a subscription token since refreshed), the
+            // model is looked up before the first request, as for a chosen level, or its thinking would stream empty (roadmap 0167).
+            guard model.provider == .anthropic else {
+                return Result(model: model, control: nil, status: "provider defaults; no control sent", notices: [])
             }
-            return Result(model: model, control: nil, status: "provider defaults; no control sent", notices: [])
+            guard let descriptor = cachedMetadata(model, environment: environment).0 else {
+                return Result(
+                    model: model, control: nil, status: "provider default; looked up before the first request",
+                    notices: [], pending: true)
+            }
+            let control = ThinkingControl.providerDefault(descriptor: descriptor)
+            return Result(
+                model: model, control: control,
+                status: control == nil
+                    ? "provider defaults; no control sent" : "provider default (adaptive), its thinking shown",
+                notices: [])
         }
         let (descriptor, notices) = cachedMetadata(model, environment: environment)
         if model.provider == .anthropic, descriptor == nil {
@@ -61,6 +67,11 @@ enum ThinkingDiscovery {
         _ level: ThinkingLevel, model: ResolvedModel, environment: [String: String], maximumTokens: Int
     ) async throws -> ThinkingControl? {
         let catalog = AnthropicModelDiscovery.catalog(environment: environment, connection: model.connection)
+        // The provider's default asked for nothing: a list that cannot be had leaves it as it was, rather than failing the request.
+        guard level != .providerDefault else {
+            let snapshot = try? await catalog.models(now: Date().timeIntervalSince1970)
+            return ThinkingControl.providerDefault(descriptor: snapshot?.models.first { $0.id == model.model })
+        }
         let snapshot = try await catalog.models(now: Date().timeIntervalSince1970)
         return try ThinkingControl.select(
             level, model: model, descriptor: snapshot.models.first { $0.id == model.model },

@@ -23,10 +23,8 @@ extension Transcript {
     mutating func interruptRunning(at now: ContinuousClock.Instant = .now) {
         // Reasoning cut off midway is replaced by one message, not left half written (roadmap 0163); the session keeps what the model sent.
         if let index = items.indices.last, case .thinking = items[index], progress[index]?.ended == nil {
-            items[index] = .notice(Self.stoppedWhileThinking, isError: false)
-            progress[index] = nil
+            replace(at: index, with: .notice(Self.stoppedWhileThinking, isError: false))
             interrupted.insert(index)
-            revisions[index] = bump()
         }
         finishThinking(now: now)
         while let index = latestForegroundTool,
@@ -37,6 +35,15 @@ extension Transcript {
             items[index] = .tool(name: name, summary: summary, status: .interrupted, output: output, fullInput: input)
             revisions[index] = bump()
         }
+    }
+
+    /// Puts `item` at `index`, a different kind of block than was there, laying out again both it and the block after it: whether a block
+    /// has a blank row above depends on the one before it (``ScreenComposer/isSpaced(_:)``), and the layout cache knows only revisions.
+    mutating func replace(at index: Int, with item: Item) {
+        items[index] = item
+        progress[index] = nil
+        revisions[index] = bump()
+        if revisions.indices.contains(index + 1) { revisions[index + 1] = bump() }
     }
 
     /// What a turn stopped during the model's reasoning shows in its place.

@@ -10,8 +10,12 @@ extension ThinkingControl {
     public static func select(
         _ level: ThinkingLevel, model: ResolvedModel, descriptor: CatalogModel?, maximumTokens: Int
     ) throws(ThinkingError) -> ThinkingControl? {
-        if level == .providerDefault { return nil }
         let matching = descriptor.flatMap { $0.id == model.model ? $0 : nil }
+        // The provider's default sends nothing, except on a Claude model that always thinks: there it is sent as that adaptive thinking,
+        // so its summary can be asked for (roadmap 0167).
+        if level == .providerDefault {
+            return model.provider == .anthropic ? providerDefault(descriptor: matching) : nil
+        }
         switch model.provider {
             case .anthropic:
                 guard let matching else { throw .missingCapabilities(model: model.model) }
