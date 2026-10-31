@@ -21,18 +21,28 @@ extension ScreenComposer {
                 let kept = Transcript.kept(text)
                 guard !transcript.isFolded(index), Transcript.saysSomething(kept) else { return nil }
                 let look = Style(dim: true, italic: true)
-                var rows =
-                    thinkingHeaderRow(
-                        kept, folded: false, progress: transcript.progress[index], block: index,
-                        width: Swift.max(1, columns - 2 * style.inset), style: style)
-                    + styled(
-                        markdownLines(kept, in: transcript, at: index, columns: columns, style: style), under: look)
+                let progress = transcript.progress[index]
+                let metadata = blockMetadata(
+                    status: progress?.ended == nil && progress != nil ? .running : .succeeded, output: kept,
+                    progress: progress, localizedDurations: style.localizedDurations)
+                // The first block wraps short of the status and its spacer, so the reasoning's first line keeps the status beside it
+                // however long it is, as a tool's header does (owner, 2026-10-31). Too narrow a screen for that keeps the full width.
+                let width = Swift.max(1, columns - 2 * style.inset)
+                let beside = width - UnicodeWidth.displayWidth(of: metadata) - headerGap
+                var rows = styled(
+                    markdownLines(
+                        kept, in: transcript, at: index, columns: columns, style: style,
+                        firstBlockWidth: beside >= minimumBesideStatus ? beside : nil), under: look)
+                rows = withMetadata(metadata, on: rows, width: width, inset: style.inset, look: look)
                 for row in rows.indices { rows[row].foldBlock = index }
                 return rows
             default:
                 return nil
         }
     }
+
+    /// The fewest columns the reasoning's first block wraps at beside the status; narrower, the status takes a row of its own.
+    static let minimumBesideStatus = 20
 
     /// `rows` with `look` as the row style and under every accent, so a mark adds to the item's look instead of replacing it.
     private static func styled(_ rows: [Line], under look: Style) -> [Line] {
@@ -52,5 +62,20 @@ extension ScreenComposer {
         if look.dim { style.dim = true }
         if look.italic { style.italic = true }
         return style
+    }
+
+    /// The block's status at the right edge of its first row, as a header carries it; on a row of its own above when the first row has no
+    /// room for it.
+    private static func withMetadata(_ metadata: String, on rows: [Line], width: Int, inset: Int, look: Style) -> [Line]
+    {
+        guard !metadata.isEmpty, var first = rows.first else { return rows }
+        let used = UnicodeWidth.displayWidth(of: first.text) - inset
+        let needed = UnicodeWidth.displayWidth(of: metadata)
+        guard used + headerGap + needed <= width else {
+            let margin = String(repeating: " ", count: inset + Swift.max(0, width - needed))
+            return [Line(text: margin + metadata, style: look)] + rows
+        }
+        first.text += String(repeating: " ", count: width - used - needed) + metadata
+        return [first] + rows.dropFirst()
     }
 }

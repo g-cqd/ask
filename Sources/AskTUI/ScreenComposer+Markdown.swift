@@ -10,9 +10,11 @@ extension ScreenComposer {
     /// GitHub's Markdown without math: a reply that mentions two prices is not a formula.
     static let markdownExtensions: MarkdownExtensions = [.gfm, .alerts]
 
-    /// The rows of the assistant message `text`, item `index` of `transcript`, drawn as Markdown at `columns`.
+    /// The rows of the assistant message `text`, item `index` of `transcript`, drawn as Markdown at `columns`. `firstBlockWidth`, when
+    /// given, is the width the first top-level block wraps at instead, so its first row leaves room beside it (a thinking block's status).
     static func markdownLines(
-        _ text: String, in transcript: Transcript, at index: Int, columns: Int, style: BlockStyle
+        _ text: String, in transcript: Transcript, at index: Int, columns: Int, style: BlockStyle,
+        firstBlockWidth: Int? = nil
     ) -> [Line] {
         let inset = style.inset
         let width = Swift.max(1, columns - 2 * inset)
@@ -24,7 +26,7 @@ extension ScreenComposer {
         var result: [Line] = []
         for block in document.topLevelBlocks {
             if !result.isEmpty { result.append(Line(text: "", style: .default)) }
-            var rows = renderer.lines(of: block, in: document, width: width)
+            var rows = renderer.lines(of: block, in: document, width: result.isEmpty ? firstBlockWidth ?? width : width)
             if block.node.kind == .codeBlock, let fence = longFence(of: rows, in: fences, source: &source) {
                 let header = foldHeader(fence.fence, block: index, inset: inset)
                 guard !fence.folded else {
