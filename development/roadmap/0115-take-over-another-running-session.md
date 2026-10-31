@@ -41,3 +41,21 @@ by the note; naming and the row's colour are proposed there.
   found), with what each costs in jobs, approvals and a turn in flight.
 - **An unattached session's lifetime is the user's setting**, not a fixed hour.
 - **The screen that loses its session stays,** with a notice and a way to take it back, perhaps switching to the list of sessions.
+
+## Design revision (2026-10-31): one process
+
+`development/research/session-takeover-one-process-2026-10-31.md` compares three ways to reach a loop in another `ask` process:
+- **A,** the owner serves its session over a socket;
+- **B,** a hand-over through the session file, with the loop restarted in the taker;
+- **C,** the owner borrows the taker's terminal, which the taker passes it with `SCM_RIGHTS`.
+
+It sets out what each costs in jobs, approvals and a turn in flight, from the code: jobs are the loop's children; a streaming reply
+and a waiting approval live only in memory; the sandbox is per command.
+
+It recommends **C**, because nothing moves except a terminal, with B kept for an owner that is ending. It applies the owner's answers:
+- **lifetime:** a setting with the values `end`, `whileWorking` (proposed default), a duration, or `always`; it needs SIGHUP handled;
+- **the screen that loses its session:** it stays, with a notice above the session list, and Enter takes the session back.
+
+Six phases. The third is a spike, two screens in one process measured against the budgets, and it decides between C and A.
+
+Waiting on the owner: C over A; the lifetime default; whether the 20 MiB active budget is per process.
