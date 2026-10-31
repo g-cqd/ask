@@ -6,7 +6,10 @@ extension AnthropicStreamDecoder {
     public static func failure(inErrorBody body: [UInt8], status: Int, headers: [String: String]) -> ProviderFailure? {
         let prefix = "anthropic-ratelimit-unified-"
         guard status == 429, headers[prefix + "overage-status"] != "allowed" else {
-            return failure(inErrorBody: body).map { status == 400 ? notCovered($0, headers: headers) : $0 }
+            return failure(inErrorBody: body)
+                .map {
+                    status == 400 ? credentialRefused(notCovered($0, headers: headers), headers: headers) : $0
+                }
         }
         // @dl:disable near-clone -- this provider's quota-name table is unrelated to sandbox test path tables
         var message = ""
@@ -24,7 +27,7 @@ extension AnthropicStreamDecoder {
                 message += " Resets at " + Date(timeIntervalSince1970: Double(seconds)).ISO8601Format() + " (UTC)."
             }
         }
-        guard !message.isEmpty else { return failure(inErrorBody: body) }
+        guard !message.isEmpty else { return failure(inErrorBody: body).map { gateSuspected($0, headers: headers) } }
         if headers[prefix + "overage-disabled-reason"] == "org_level_disabled" {
             message += " Paid overage is disabled by your organization."
         } else if headers[prefix + "overage-status"] == "rejected" {
@@ -42,6 +45,7 @@ extension AnthropicStreamDecoder {
         }
         var message =
             "Anthropic did not count this request against your Claude subscription, and extra usage is off, so it refused it"
+            + requestID(headers)
         if headers["anthropic-ratelimit-unified-5h-status"] == "allowed" {
             message += " (your five-hour quota still allows requests)"
         }
