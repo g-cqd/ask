@@ -38,10 +38,26 @@ struct ThinkingFoldingTests {
     @Test func `a click on the header opens it, dim and italic, and another closes it`() {
         var rig = PointerRig(columns: 60, updates: Self.reasoning)
         rig.click(row: 9, col: 3)
-        #expect([8, 9].map { rig.contentText(row: $0) } == ["first thought", "second thought"])
+        #expect([7, 8, 9].map { rig.contentText(row: $0) } == ["Thinking...", "first thought", "second thought"])
         #expect(rig.buffer[8, 2].style.dim && rig.buffer[8, 2].style.italic)
         rig.click(row: 8, col: 3)
         #expect(rig.contentText(row: 9) == "Thinking...")
+    }
+
+    /// Owner (2026-10-31): open, a thinking block keeps the header it has folded, with its status after the usual 4-cell spacer, and the
+    /// reasoning starts on the row below, as a tool's output does; the status no longer rides on the reasoning's first line.
+    @Test(arguments: [true, false])
+    func `open reasoning keeps its header row and status`(markdown: Bool) {
+        var rig = PointerRig(
+            columns: 60,
+            options: ScreenOptions(
+                foldThinking: false, markdown: markdown, prompt: "ask> ", tint: false, separator: false, padding: false),
+            updates: Self.reasoning)
+        rig.draw()
+        let header = rig.text(row: 7)
+        #expect(header.hasPrefix("Thinking...    "), "\(header)")
+        #expect(header.hasSuffix("2 lines · |"), "the status, here still running: \(header)")
+        #expect(rig.text(row: 8) == "first thought" && rig.text(row: 9) == "second thought")
     }
 
     @Test func `with folding off reasoning is shown from the start`() {

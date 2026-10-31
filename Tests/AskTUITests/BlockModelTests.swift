@@ -85,13 +85,15 @@ struct BlockModelTests {
         #expect(rows[1].style.italic && rows[1].style.dim)
     }
 
-    @Test func `an open thinking block replaces its header with its body, italic and faint`() {
+    @Test func `an open thinking block keeps its header, then its body, italic and faint`() {
         var transcript = Transcript()
         transcript.addThinkingText("one\ntwo")
         transcript.toggleFold(0)
         let rows = ScreenComposer.lines(in: transcript, at: 0, columns: columns, style: style)
-        #expect(texts(rows) == ["", " one", " two", ""])
-        #expect(rows[2].style.italic && rows[2].style.dim && rows[2].source?.col == 1)
+        #expect(rows.count == 5 && rows[1].text.hasPrefix(" Thinking...    "))
+        #expect(rows[1].source == nil, "the header is drawn, not copied: the block's text is the reasoning")
+        #expect(texts(rows)[2...] == [" one", " two", ""])
+        #expect(rows[2].style.italic && rows[2].style.dim && rows[2].source?.col == 1 && rows[2].source?.line == 0)
     }
 
     @Test func `command and authentication notices have one row of padding above and below`() {
@@ -130,7 +132,7 @@ struct BlockModelTests {
         let header = (0 ..< 16).first { rig.contentText(row: $0).contains("Thinking...") }!
         rig.click(row: header - 1 + offset, col: 39)
         #expect(!rig.controller.state.transcript.isFolded(0))
-        #expect(!(0 ..< 16).contains { rig.contentText(row: $0).contains("Thinking...") })
+        #expect((0 ..< 16).contains { rig.contentText(row: $0) == " one" })
         let content = (0 ..< 16).first { rig.contentText(row: $0) == " one" }!
         rig.click(row: content, col: 39)
         #expect(rig.controller.state.transcript.isFolded(0))
