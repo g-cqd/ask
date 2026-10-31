@@ -85,3 +85,28 @@ close that.
 - **Tab titles lose their numbers.** They were misleading next to the question count.
 - **Markers:** `[ ]` for a multiple-choice question, `( )` for a single choice.
 - Still open: whether a single question sends on Enter without a review. That stays as built until the owner says otherwise.
+
+## Built (2026-10-31): the redesign
+
+- **The note is a row of the question**, after its last choice: `Note`, under the choices' marks, then what is typed, wrapped at the
+  screen's width and indented to the text (`ScreenComposer+QuestionNote`). Each question has its own editor (`PromptEditor`), with
+  the input's editing keys. Focused, the row is drawn in the accent colour with an inverse-cell cursor. Empty and not focused, it
+  says dimly whether a note is optional or needed. **The input below keeps its draft and takes no key** while the questions wait.
+- **Focus** (`PendingQuestions.Focus`): the tabs (a series only), the choices, the note. Tab and Shift+Tab cycle them.
+  - On the tabs, Left and Right change question (Right after the last opens the review) and Down goes to the choices.
+  - On the choices, Up and Down highlight. Up past the first reaches the tabs, Down past the last reaches the note. Space or a
+    number selects.
+  - On the note, keys edit. Up from its first row goes back to the choices.
+  - A question opens on its choices, or on its note when it has none. A required note held by Enter moves the focus to the note.
+  - A click on a choice checks it, a click on the note row focuses it, and a click on a tab opens it.
+- **Tabs have no numbers** (`[Scope]   Tests    ✓ Review`), and the tab shown is in the accent colour while the tabs have the focus.
+- **Marks:** `( )` and `(•)` for one choice, `[ ]` and `[✓]` for several. The highlighted choice's `›` shows only while the
+  choices have the focus. The keys row follows the focus.
+- Unchanged, as the owner left it: a single question sends on Enter without a review.
+- Tests:
+  - `QuestionSectionTests` was rewritten to the redesign: 12 tests, among them the focus cycle, typing only into a focused note, the
+    marks, the unnumbered tabs, the wrapped note, and the draft kept.
+  - `QuestionClickTests` gained the note click.
+  - The new tests did not compile against the old types, which is where they were red.
+- Docs: `screen.md`. Probe section Q1 now types its note after Tab and goes on with Enter. Showcase scene 9 is relabelled.
+- Not seen in a real terminal.
