@@ -32,12 +32,17 @@ environment, in that order. A known service's key is read from its usual variabl
 
 ## Two accounts of one kind
 
-Sign in a second account under a name of your own, then use that name as the provider:
+Signing in to Claude or Codex with another account than the one already signed in adds it, and keeps the first. The new account is
+a connection named after its address (`claude-jane`) or numbered (`codex-2`); signing in to the same account again only refreshes it.
+`--replace-account` puts the new account in place of the default instead. To choose the name yourself:
 
 ```sh
 ask login codex --name work
 ask --provider work
 ```
+
+In `/model`, a model two accounts serve is one row. Choose it and its accounts are listed; the one you pick is remembered for that
+model, and `/model MODEL` uses it from then on. Type a space after the model's name to list the accounts again.
 
 `ask connections` lists them, with `rename` and `remove`. `ask connections alias work fast MODEL-ID` gives a model a short name
 (`--model fast`). A session remembers which account it used, and ask never moves a conversation to another account on its own.

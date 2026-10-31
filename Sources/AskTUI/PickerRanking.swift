@@ -29,8 +29,19 @@ enum PickerRanking {
 extension PickerRanking {
     /// The `rows` of a command's list that match `query`, best first: a label that starts with it, then one that contains it, then an
     /// argument or a gloss that does. Words of the query may come in any order, so `opus 5` finds `claude-opus-5-5`.
+    ///
+    /// A query that starts with a row's ``ChoiceRow/revealedBy`` lists only the rows it reveals, ranked by what follows; other rows that
+    /// reveal anything stay out of the list.
     static func rank(_ rows: [ChoiceRow], query: String) -> [ChoiceRow] {
-        let words = query.lowercased().split(whereSeparator: \.isWhitespace).map(String.init)
+        let typed = query.lowercased()
+        if let prefix = rows.compactMap(\.revealedBy).filter({ typed.hasPrefix($0) }).max(by: { $0.count < $1.count }) {
+            return rank(rows.filter { $0.revealedBy == prefix }, words: String(typed.dropFirst(prefix.count)))
+        }
+        return rank(rows.filter { $0.revealedBy == nil }, words: typed)
+    }
+
+    private static func rank(_ rows: [ChoiceRow], words query: String) -> [ChoiceRow] {
+        let words = query.split(whereSeparator: \.isWhitespace).map(String.init)
         guard !words.isEmpty else { return rows }
         var prefixes: [ChoiceRow] = []
         var labels: [ChoiceRow] = []
