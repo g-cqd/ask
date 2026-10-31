@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-29
 ---
@@ -39,4 +39,10 @@ and per tool, and properties repeated across tools (`--mcp-from CONFIG` copies o
 
 Not taken: dropping MCP's `$schema` (server schemas are carried byte for byte by design, and `$schema` governs `$ref`), and the
 enum list in the sandbox description (about 180 bytes; it goes with choice 2). Not verified: token counts (no provider was asked) and call success after a cut (needs a real model).
+
+## Owner (2026-10-31): no cut
+
+The per-server limit of 16 direct MCP tools stays, and the per-call `sandbox` parameter stays in all four tools with its text as is.
+The block is cached on Anthropic, so it costs mostly context window. `measure-request-size.py` stays, to measure again when tools or
+servers change.
 

@@ -51,3 +51,8 @@ know what to write, and the arguments a model writes are a few dozen bytes a cal
 - The call success the record asks to measure before and after a cut: it needs a real model. The scripted suite's fake provider
   replays fixed calls, so it cannot show a model calling a slimmer tool wrongly.
 - lldb's tools: the server did not start, so its share is missing.
+
+## Owner's decision (2026-10-31)
+
+Neither cut: the per-server limit of 16 stays, and so does the `sandbox` parameter in all four tools.
+
