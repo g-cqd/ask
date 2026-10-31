@@ -128,3 +128,20 @@ library's default) still withholds nothing.
   cover them; the sandbox's secret-store protection does.
 - Test: `WellKnownCredentialTests`, written first and red.
 - Docs: the `environment` table in `configuration.md` and the setting catalog's default, which regenerates `config.example.jsonc`.
+
+## Done (2026-10-31): the `/reload` signature check
+
+`BuildSignature` in AskTools. A running build signed with a team's identity reloads only into a build that meets its own designated
+requirement: `SecCodeCopySelf`, then `SecStaticCodeCheckValidity` of the new file, all architectures, strict. That requirement names
+the signing certificate, not the code, so every rebuild signed the same way passes, and anything else at the executable's path is
+refused before the self-check would start it. The notice says why, and that `Scripts/build-release.sh` builds and signs.
+
+A running build with no team identifier (ad hoc, as `swift build` makes) has nothing to compare, so the reload goes on with a notice
+saying so; refusing every unsigned rebuild would end `/reload` for unsigned use.
+
+- Tests: `BuildSignatureTests`, on copies of `/usr/bin/true` signed ad hoc under chosen identifiers (signing ad hoc needs no
+  keychain). `Scripts/mutate-changed.sh`: 10 of 10 mutants killed.
+- Probes: the reload sections H, H2, H3 and I pass, on unsigned builds.
+- Docs: the `/reload` row in `screen.md`.
+- Not verified: a reload between two builds signed with the personal identity. That needs the first signing, the owner's one-time
+  "Always Allow" (0110).

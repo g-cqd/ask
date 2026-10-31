@@ -94,6 +94,7 @@ below the input: Up and Down choose one, Enter shows its output in place of the 
 | `/compact` | Summarise the conversation now to free room in the context window. |
 | `/config` | Edit settings, or `/config show` to re-read the files and show them. |
 | `/mcp` | Show the MCP servers and their tools. |
+| `/reload` | Switch to a newer build of ask that appeared beside the running one, keeping the session; `/reload now` stops running jobs first. The new build must start (`--self-check`) and, when the running build is signed with a team's identity, be signed the same way: `Scripts/build-release.sh` builds and signs. |
 | `/skill:NAME` | Ask for a skill by name. |
 | `/jobs`, `/sidebar` | Show the background jobs. |
 | `/verbose` | Show or hide details: the sandbox in force, the files read. |
