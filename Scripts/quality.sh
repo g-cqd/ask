@@ -63,6 +63,7 @@ python3 -B Scripts/test-sign.py || fail "signing script guards"
 
 printf '==> target layering (ADR-0009)\n'
 python3 -B Scripts/test-layers.py || fail "layering check self-test"
+python3 -B Scripts/test-update-pins.py || fail "pin update script self-test"
 python3 -B Scripts/check-layers.py || fail "a target depends on one ADR-0009's layering does not allow"
 
 printf '==> build and test (release)\n'
