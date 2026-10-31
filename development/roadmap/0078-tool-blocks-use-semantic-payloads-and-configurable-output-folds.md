@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-27
 ---
@@ -52,3 +52,26 @@ Acceptance includes red/mutation controls for off-by-one intervals, Unicode byte
 counts, marker counts, head/tail bounds, fold independence, late job updates,
 pretty-printed payloads versus original copies, and no write-result `1 line`.
 Reusable formatting/search primitives belong in Aemi subpackages (roadmap 0076).
+
+## Progress (2026-10-31)
+
+Already in place before this pass: read windows as `[x:y]` (inclusive, from `offset` and `limit`); no input or output labels, input
+in the default colour and output dimmed; a write's size in its header; no `1 line` for a write.
+
+Done now, each test first:
+
+- **No `1 line` for an edit either:** its one-sentence acknowledgement is not counted (`BlockProgressTests`; a read still counts).
+- **Sizes past KiB:** `MiB`, `GiB` and `TiB`, one decimal at most, the exact count beside them, the unit chosen after rounding so
+  1,048,575 B reads `1 MiB (1,048,575 B)` and not `1024 KiB` (`ToolPresentationTests`).
+- **Unknown tools' input** (MCP servers' and any other without a known field) is shown as JSON indented by two spaces, keys in the
+  model's order, and it parses back to the same value. The session keeps the call's own bytes; if encoding fails the bytes are shown.
+  An approval's MCP detail stays compact: it is folded to its first row, and `{` alone would say nothing.
+- The unused label helper is gone.
+
+## Still owed
+
+- Collapsing the centre of long output, with UI settings for the most lines and bytes left unfolded, a marker that unfolds on its
+  own, and the rest of the acceptance above.
+- An edit's replacement count as a typed fact in its header, not only in the result's sentence.
+- Strings inside unknown tools' JSON are shown escaped (`\n`), not as their text.
+
