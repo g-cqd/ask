@@ -21,14 +21,12 @@ extension ScreenComposer {
                 let kept = Transcript.kept(text)
                 guard !transcript.isFolded(index), Transcript.saysSomething(kept) else { return nil }
                 let look = Style(dim: true, italic: true)
-                let progress = transcript.progress[index]
-                let metadata = blockMetadata(
-                    status: progress?.ended == nil && progress != nil ? .running : .succeeded, output: kept,
-                    progress: progress, localizedDurations: style.localizedDurations)
-                var rows = styled(
-                    markdownLines(kept, in: transcript, at: index, columns: columns, style: style), under: look)
-                rows = withMetadata(
-                    metadata, on: rows, width: Swift.max(1, columns - 2 * style.inset), inset: style.inset, look: look)
+                var rows =
+                    thinkingHeaderRow(
+                        kept, folded: false, progress: transcript.progress[index], block: index,
+                        width: Swift.max(1, columns - 2 * style.inset), style: style)
+                    + styled(
+                        markdownLines(kept, in: transcript, at: index, columns: columns, style: style), under: look)
                 for row in rows.indices { rows[row].foldBlock = index }
                 return rows
             default:
@@ -54,20 +52,5 @@ extension ScreenComposer {
         if look.dim { style.dim = true }
         if look.italic { style.italic = true }
         return style
-    }
-
-    /// The block's status at the right edge of its first row, as a header carries it; on a row of its own above when the first row has no
-    /// room for it.
-    private static func withMetadata(_ metadata: String, on rows: [Line], width: Int, inset: Int, look: Style) -> [Line]
-    {
-        guard !metadata.isEmpty, var first = rows.first else { return rows }
-        let used = UnicodeWidth.displayWidth(of: first.text) - inset
-        let needed = UnicodeWidth.displayWidth(of: metadata)
-        guard used + headerGap + needed <= width else {
-            let margin = String(repeating: " ", count: inset + Swift.max(0, width - needed))
-            return [Line(text: margin + metadata, style: look)] + rows
-        }
-        first.text += String(repeating: " ", count: width - used - needed) + metadata
-        return [first] + rows.dropFirst()
     }
 }
