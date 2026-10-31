@@ -16,3 +16,8 @@ Proposed, for the owner to confirm:
 3. Dependabot for the versioned dependencies; `Scripts/update-pins.py` for the family's revision pins, in order, each repository's gate
    between.
 4. Tests for the six mutants that survive in `ShellSegments.swift` (escapes, `<<` detection, lines 65 to 81).
+
+## Owner (2026-10-31): all four confirmed
+
+Build proposals 1 to 4. Muter's empty-`ApplySchemata` bug is reported upstream only if the repository is still active. The open
+Dependabot PRs (AemiRegex #1, aemi #4) are reviewed and merged when each repository's gate passes.

@@ -61,3 +61,8 @@ times a day through `/reload`) would prompt for every stored item after every bu
 
 **Waiting for the owner:** whether ask's builds are signed with the personal Apple Development identity (which needs `codesign` allowed
 to use its key once), or the Keychain stays for signed builds only.
+
+## Owner (2026-10-31): sign every build
+
+Every build of ask is signed with the personal Apple Development identity (team L2LRQKFJ3U). The Keychain is the default store,
+and `/reload` checks the new build's signature (0153). The first signing needs the owner's one-time "Always Allow" for `codesign`.
