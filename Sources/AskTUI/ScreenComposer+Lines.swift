@@ -91,13 +91,10 @@ extension ScreenComposer {
             case .thinking(let text):
                 let kept = Transcript.kept(text)
                 let look = Style(dim: true, italic: true)
-                let header = Transcript.Item.thinkingHeader(body: kept, folded: folded)
-                return blockHeader(
-                    folded || !Transcript.saysSomething(kept) ? header : kept,
-                    metadata: blockMetadata(
-                        status: progress?.ended == nil && progress != nil ? .running : .succeeded,
-                        output: kept, progress: progress, localizedDurations: style.localizedDurations), block: block,
-                    width: width, inset: inset, style: look)
+                let header = thinkingHeaderRow(
+                    kept, folded: folded, progress: progress, block: block, width: width, style: style)
+                guard !folded, Transcript.saysSomething(kept) else { return header }
+                return header + rows(kept, style: look)
             case .jobEnded(let label, let status, let lines):
                 return blockHeader(
                     label,

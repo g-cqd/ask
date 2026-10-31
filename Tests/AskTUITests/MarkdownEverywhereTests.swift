@@ -32,18 +32,19 @@ struct MarkdownEverywhereTests {
     @Test func `open reasoning draws its marks as styles, under its dim italic look`() {
         let rows = Self.opened("Plan **first** with `ls`\n\n- one\n- two")
         #expect(
-            rows.map(\.text).map { $0.trimmingCharacters(in: .whitespaces) }.prefix(1).first?
+            rows.map(\.text).map { $0.trimmingCharacters(in: .whitespaces) }.dropFirst().first?
                 .hasPrefix("Plan first with ls") == true)
         #expect(rows.contains { $0.text.hasPrefix("• one") })
         #expect(!rows.contains { $0.text.contains("**") || $0.text.contains("`") })
-        #expect(rows[0].style.dim && rows[0].style.italic)
-        #expect(rows[0].accents.contains { $0.columns == 5 ..< 10 && $0.style.bold && $0.style.dim && $0.style.italic })
+        #expect(rows[1].style.dim && rows[1].style.italic)
+        #expect(rows[1].accents.contains { $0.columns == 5 ..< 10 && $0.style.bold && $0.style.dim && $0.style.italic })
     }
 
-    @Test func `open reasoning keeps its status on the first row`() {
+    @Test func `open reasoning keeps its status on its header row`() {
         let rows = Self.opened("Plan **first**")
         let plain = Self.opened("Plan first", markdown: false)
-        #expect(rows[0].text == plain[0].text, "the same first row: the text, then the metadata at the right edge")
+        #expect(rows[0].text == plain[0].text, "the same header row: Thinking..., then the metadata at the right edge")
+        #expect(rows[0].text.hasPrefix("Thinking...    ") && rows[0].text.hasSuffix("1 line · ✓"))
     }
 
     @Test func `folded reasoning is still one line`() {
@@ -69,7 +70,8 @@ struct MarkdownEverywhereTests {
     }
 
     @Test func `with Markdown off, reasoning and the person's message are drawn as written`() {
-        #expect(Self.opened("Plan **first**", markdown: false).first?.text.hasPrefix("Plan **first**") == true)
+        #expect(
+            Self.opened("Plan **first**", markdown: false).dropFirst().first?.text.hasPrefix("Plan **first**") == true)
         let user = Self.lines({ $0.addUser("a **b**") }, markdown: false).map(\.text).filter { !$0.isEmpty }
         #expect(user == ["a **b**"])
     }
