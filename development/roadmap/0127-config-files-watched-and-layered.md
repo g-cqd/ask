@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -71,3 +71,40 @@ Atelier `1694d51` uses AemiIO's watcher (its ADR 0004); ask watches its configur
 
 Still owed here: what replacing versus adding does per section today (lists such as `mcp` servers and sandbox paths),
 and the setting that makes a layer replace, and its name.
+
+## Layering per section, and masks for MCP servers (2026-10-31)
+
+What a later file does to an earlier one today. The real ladder is two files, your own, then the trusted project's
+`.ask/config.json`; the environment and flags come after them.
+
+- **Scalars** (top level, `ui`, `skills.enabled`, `environment.shell`, and the like) are masked key by key: a layer replaces only
+  the keys it sets.
+- **Lists that protect add up.** `sandbox.hide` (`denyRead`) and `environment.withhold` keep every layer's entries.
+- **Scopes only narrow.** `sandbox.write` and `sandbox.read` are intersected over the layers, and `network` takes the lowest; only
+  flags widen them.
+- **Replaced, but from your own file only.** `skills.sources`, `skills.maxListed`, `sandbox.readable` and `sandbox.writable`,
+  `environment.pass`, and `approvals`. A project's file cannot set them, so no layer above your file ever replaces them.
+- **`mcp` goes by server name.** A server a later file defines in full replaces yours of that name, and the others are kept.
+
+The gap was MCP: a project could not turn off one of your servers, because `{"mcp": {"xcode": {"enabled": false}}}` was refused
+with `needs a "command" or a "url"`. It is fixed now. In a project's file, an entry with no `command` and no `url` is a mask
+(`MCPServerMask`). It changes the server of that name in your file, and may set only `enabled`, `tools`, `mode` and
+`maxDirectTools`.
+
+- It refuses `args`, `env`, `cwd` and `headers`. Otherwise a repository could hand your server, with the secrets you gave it, other
+  arguments, a different directory, or variables of its own.
+- A mask naming no lower server is ignored, with a notice.
+- In your own file, the lowest layer, such an entry is still refused.
+- `ask trust` lists what each mask changes.
+
+Tests: `MCPServerMaskTests`, written first; 4 of the 6 failed before the change. Docs: `configuration.md` ("Where a value comes
+from", `mcp`) and `skills-and-mcp.md`.
+
+**The "replace instead of add" setting is not built, and is for the owner.** No section is replaced across the real ladder any
+more: what a project may set adds, narrows or masks. A replace switch could only:
+
+- widen: drop the user's withheld variables or hidden paths, or reopen the write scope;
+- drop the user's MCP servers wholesale, which masks now do one server at a time, and visibly.
+
+Both would let a repository undo a protection in the user's file. Unless the owner names a case that needs it, this entry is done
+without it.
