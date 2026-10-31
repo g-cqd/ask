@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-25
 ---
@@ -43,3 +43,16 @@ Still owed: full repository gate and an actual local landing with the script.
 ## Not claimed
 
 That a claim removes every collision: a person typing a number by hand still can, so the test of item 4 stays.
+
+## Closed (2026-10-31): the first real landing
+
+The record cleanup of 2026-10-31 (`47856b7`) was landed with `Scripts/land.sh` from a worktree made from `origin/main`: it fetched,
+merged, validated the records, ran the full gate and fast-forwarded local main. It then failed to delete the task branch: `git branch
+-d` compares a branch with its upstream, `origin/main` here, which a landing never pushes to. The branch was deleted by hand once main
+was checked to hold it.
+
+- Fix: `land.py` checks that main holds the branch (`merge-base --is-ancestor`), then deletes it with `-D`.
+- `Scripts/test-land.py` (a gate stage): a scratch repository with a bare origin and a task worktree made from `origin/main` lands end to
+  end, with a stub gate; main moves to the task, the worktree and branch are gone, and origin is untouched. Red before the fix with the
+  live error, green after.
+- Open question, unchanged: an agent in a separate clone, which a claim ref does not reach.
