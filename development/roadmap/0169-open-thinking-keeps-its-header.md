@@ -25,3 +25,5 @@ the status keeps the old behaviour: the status gets a row of its own. Folded, th
 
 Test: `ThinkingFoldingTests`, "open reasoning keeps its status on its first line, however long", plain and Markdown. Written first;
 the Markdown case was red.
+
+Owner (2026-10-31): folded, the block shows only `Thinking...`, never the reasoning's first line.
