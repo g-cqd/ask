@@ -60,7 +60,7 @@ SCENES = {
            [("text", "The command moved to the background: the status line counts it until it ends, and /tasks shows it.")]]),
     "7": ("A dropped answer: the connection breaks mid-reply, and ask asks the model to carry on",
           [[("text", "This answer starts, and then the connection ")], [("text", "came back, and the answer went on where it stopped.")]]),
-    "9": ("The model asks you: two questions with tabs, a note typed in the input, a review; clicks work too",
+    "9": ("The model asks you: two questions with tabs, a note row under the choices, a review; clicks work too",
           [[("question", {"questions": [
               {"question": "What should change first?", "header": "Scope",
                "choices": [{"label": "Only the parser"}, {"label": "Everything", "description": "parser and printer"}]},

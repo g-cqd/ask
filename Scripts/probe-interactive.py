@@ -1396,7 +1396,8 @@ def probe_question_tool():
     results = [check("the tool is offered on the screen", wait(lambda: "question" in offered()), offered())]
     results.append(check("the first question is shown with its choices",
                          wait(lambda: "What should change?" in screen.screen.text() and "Everything" in screen.screen.text())))
-    for key in ["\x1b[B", " ", "k", "e", "e", "p", " ", "i", "t", "\t", " ", "\r"]:
+    # Down and Space pick "Everything", Tab reaches the note row, Enter goes to the next question, Space checks "Unit", Enter reviews.
+    for key in ["\x1b[B", " ", "\t", "k", "e", "e", "p", " ", "i", "t", "\r", " ", "\r"]:
         screen.type(key)
         time.sleep(0.05)
     results.append(check("after the last, the review lists every answer",

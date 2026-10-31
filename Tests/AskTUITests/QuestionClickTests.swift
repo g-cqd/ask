@@ -6,8 +6,8 @@ internal import Testing
 
 @testable import AskTUI
 
-/// A click on one of the model's choices checks it, as Space does, and a click on a tab shows that question or the review (roadmap
-/// 0117); Enter still answers.
+/// A click on one of the model's choices checks it, as Space does, a click on the note row focuses it, and a click on a tab shows that
+/// question or the review (roadmap 0117); Enter still answers.
 @Suite("Clicks on the model's questions")
 struct QuestionClickTests {
     private static let questions = [
@@ -42,9 +42,18 @@ struct QuestionClickTests {
         #expect(rig.controller.state.pendingQuestions?.cursors[0] == 1)
     }
 
+    @Test func `clicking the note row focuses it, and typing then goes there`() throws {
+        var rig = rig()
+        let note = try #require(find("Note", in: rig))
+        _ = rig.click(row: note.row, col: note.col)
+        #expect(rig.controller.state.pendingQuestions?.focus == .note)
+        _ = rig.controller.handle(.key(KeyEvent(keyCode: UInt32(Character("x").asciiValue!))), pageRows: 10)
+        #expect(rig.controller.state.pendingQuestions?.notes[0].text == "x")
+    }
+
     @Test func `clicking a tab shows that question, and the last tab the review`() throws {
         var rig = rig()
-        let tests = try #require(find("2 Tests", in: rig))
+        let tests = try #require(find("Tests", in: rig))
         _ = rig.click(row: tests.row, col: tests.col + 1)
         #expect(rig.controller.state.pendingQuestions?.current == 1)
         rig.draw()
@@ -52,7 +61,7 @@ struct QuestionClickTests {
         _ = rig.click(row: review.row, col: review.col)
         #expect(rig.controller.state.pendingQuestions?.reviewing == true)
         rig.draw()
-        let scope = try #require(find("1 Scope", in: rig))
+        let scope = try #require(find("Scope", in: rig))
         _ = rig.click(row: scope.row, col: scope.col + 1)
         #expect(
             rig.controller.state.pendingQuestions?.reviewing == false

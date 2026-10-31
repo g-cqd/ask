@@ -1,18 +1,18 @@
 internal import TerminalKitCodecs
 internal import TerminalKitInput
 
-/// The model's questions (roadmap 0117), in the approval section's place: Up and Down move, Space or a number checks while the note is
-/// empty, what is typed in the input is the question's note, Tab and Shift+Tab change question, Enter goes on (after the last of a
-/// series, to a review that Enter sends and Esc leaves), Esc on a question declines them all, Ctrl+C declines and stops the turn.
+/// The model's questions (roadmap 0117, redesigned 2026-10-31), in the approval section's place: Tab and Shift+Tab move the focus between
+/// the tabs, the choices and the note row; on the tabs Left and Right change question, on the choices Up and Down highlight and Space or
+/// a number checks, and the note row edits as the input does. Enter goes on (after the last of a series, to a review that Enter sends and
+/// Esc leaves), Esc on a question declines them all, Ctrl+C declines and stops the turn. The input keeps its draft and takes no key.
 extension ScreenController {
     mutating func askQuestions(id: Int, questions: [ScreenQuestion]) {
         guard !questions.isEmpty else { return }
-        state.pendingQuestions = PendingQuestions(id: id, questions: questions, draft: state.editor.text)
-        state.editor = PromptEditor()
+        state.pendingQuestions = PendingQuestions(id: id, questions: questions)
         state.scrollback = 0
     }
 
-    /// What a key does to the questions; nil when it is the note's, for the input.
+    /// What a key does to the questions; nil when no question waits, or in a lane for any key but Esc.
     mutating func questionKey(_ key: KeyEvent) -> [Effect]? {
         guard var pending = state.pendingQuestions else { return nil }
         if key.keyCode == 0x03 || (key.modifiers.contains(.ctrl) && (key.keyCode == 0x63 || key.keyCode == 0x43)) {
@@ -26,36 +26,65 @@ extension ScreenController {
         }
         pending.problem = nil
         if pending.reviewing { return reviewKey(key, &pending) }
-        let noteIsEmpty = state.editor.text.isEmpty
-        let count = pending.questions[pending.current].choices.count
         switch key.keyCode {
             case 0x1B: return finish(pending, with: nil)
-            case 0x0D: return enter(&pending)
-            case 0x09: show(pending.current + (key.modifiers.contains(.shift) ? -1 : 1), in: &pending)
-            case Key.up.rawValue: pending.cursors[pending.current] = Swift.max(0, pending.cursors[pending.current] - 1)
-            case Key.down.rawValue:
-                pending.cursors[pending.current] = Swift.min(
-                    Swift.max(0, count - 1), pending.cursors[pending.current] + 1)
-            case 0x20 where noteIsEmpty && count > 0: check(pending.cursors[pending.current], in: &pending)
+            case 0x0D where !key.modifiers.contains(.shift): return enter(&pending)
+            case 0x09: pending.moveFocus(by: key.modifiers.contains(.shift) ? -1 : 1)
             default:
-                guard noteIsEmpty, key.modifiers.isEmpty, let scalar = Unicode.Scalar(key.keyCode),
-                    let number = Character(scalar).wholeNumberValue, (1 ... Swift.max(1, count)).contains(number),
-                    count > 0
-                else { return pending.questions[pending.current].note == .none ? [] : nil }
-                pending.cursors[pending.current] = number - 1
-                check(number - 1, in: &pending)
+                switch pending.focus {
+                    case .tabs: tabsKey(key, &pending)
+                    case .choices: choicesKey(key, &pending)
+                    case .note: noteKey(key, &pending)
+                }
         }
         state.pendingQuestions = pending
         return []
+    }
+
+    /// On the tabs: Left and Right show the question before or after, Right after the last the review.
+    private mutating func tabsKey(_ key: KeyEvent, _ pending: inout PendingQuestions) {
+        switch key.keyCode {
+            case Key.left.rawValue: show(pending.current - 1, in: &pending, focus: .tabs)
+            case Key.right.rawValue where pending.current == pending.questions.count - 1: pending.reviewing = true
+            case Key.right.rawValue: show(pending.current + 1, in: &pending, focus: .tabs)
+            case Key.down.rawValue: pending.moveFocus(by: 1)
+            default: break
+        }
+    }
+
+    /// On the choices: Up and Down highlight (past the first, the tabs; past the last, the note), Space or a number checks.
+    private func choicesKey(_ key: KeyEvent, _ pending: inout PendingQuestions) {
+        let count = pending.questions[pending.current].choices.count
+        let cursor = pending.cursors[pending.current]
+        switch key.keyCode {
+            case Key.up.rawValue where cursor == 0: if pending.isSeries { pending.focus = .tabs }
+            case Key.up.rawValue: pending.cursors[pending.current] = cursor - 1
+            case Key.down.rawValue where cursor >= count - 1:
+                if pending.questions[pending.current].note != .none { pending.focus = .note }
+            case Key.down.rawValue: pending.cursors[pending.current] = cursor + 1
+            case 0x20: check(cursor, in: &pending)
+            default:
+                guard key.modifiers.isEmpty, let scalar = Unicode.Scalar(key.keyCode),
+                    let number = Character(scalar).wholeNumberValue, (1 ... Swift.max(1, count)).contains(number)
+                else { return }
+                pending.cursors[pending.current] = number - 1
+                check(number - 1, in: &pending)
+        }
+    }
+
+    /// On the note row: the input's editing keys; Up from its first row goes back to the choices.
+    private func noteKey(_ key: KeyEvent, _ pending: inout PendingQuestions) {
+        let outcome = pending.notes[pending.current].apply(key)
+        if outcome == .ignored, key.keyCode == Key.up.rawValue, !pending.questions[pending.current].choices.isEmpty {
+            pending.focus = .choices
+        }
     }
 
     /// In the review, Enter sends and Esc goes back to the last question; nothing is typed.
     private mutating func reviewKey(_ key: KeyEvent, _ pending: inout PendingQuestions) -> [Effect] {
         switch key.keyCode {
             case 0x0D: return finish(pending, with: pending.answers)
-            case 0x1B:
-                pending.reviewing = false
-                state.editor = Self.editor(holding: pending.notes[pending.current])
+            case 0x1B, Key.left.rawValue: pending.reviewing = false
             default: break
         }
         state.pendingQuestions = pending
@@ -64,10 +93,10 @@ extension ScreenController {
 
     /// Enter: the next question, or the review after the last of a series, or the answer; a required note holds it.
     private mutating func enter(_ pending: inout PendingQuestions) -> [Effect] {
-        pending.notes[pending.current] = state.editor.text
         let question = pending.questions[pending.current]
-        if question.note == .required, PendingQuestions.trimmed(state.editor.text).isEmpty {
-            pending.problem = "This question needs a note: type it in the input."
+        if question.note == .required, PendingQuestions.trimmed(pending.notes[pending.current].text).isEmpty {
+            pending.problem = "This question needs a note: Tab to the note row and type it."
+            pending.focus = .note
             state.pendingQuestions = pending
             return []
         }
@@ -75,7 +104,6 @@ extension ScreenController {
             show(pending.current + 1, in: &pending)
         } else if pending.isSeries {
             pending.reviewing = true
-            state.editor = PromptEditor()
         } else {
             return finish(pending, with: pending.answers)
         }
@@ -95,13 +123,17 @@ extension ScreenController {
         }
     }
 
-    /// A click on choice `index` of the question shown: it is checked, as Space would, whatever the note holds (roadmap 0117).
+    /// A click on row `index` under the question shown: a choice is checked, as Space would; a row of the note focuses it (roadmap 0117).
     mutating func clickQuestion(choice index: Int) {
-        guard var pending = state.pendingQuestions, !pending.reviewing,
-            pending.questions[pending.current].choices.indices.contains(index)
-        else { return }
-        pending.cursors[pending.current] = index
-        check(index, in: &pending)
+        guard var pending = state.pendingQuestions, !pending.reviewing, index >= 0 else { return }
+        let question = pending.questions[pending.current]
+        if question.choices.indices.contains(index) {
+            pending.cursors[pending.current] = index
+            pending.focus = .choices
+            check(index, in: &pending)
+        } else if question.note != .none {
+            pending.focus = .note
+        }
         state.pendingQuestions = pending
     }
 
@@ -112,23 +144,20 @@ extension ScreenController {
             guard pending.questions.indices.contains(index) else { return }
             pending.reviewing = false
             pending.current = index
-            state.editor = Self.editor(holding: pending.notes[index])
+            pending.focus = PendingQuestions.opening(pending.questions[index])
         } else if index == pending.questions.count {
-            pending.notes[pending.current] = state.editor.text
             pending.reviewing = true
-            state.editor = PromptEditor()
         } else {
             show(index, in: &pending)
         }
         state.pendingQuestions = pending
     }
 
-    /// Shows question `index`, keeping the note of the one left and putting its own in the input.
-    private mutating func show(_ index: Int, in pending: inout PendingQuestions) {
+    /// Shows question `index`, focused on `focus`, or where it opens.
+    private func show(_ index: Int, in pending: inout PendingQuestions, focus: PendingQuestions.Focus? = nil) {
         guard pending.questions.indices.contains(index), index != pending.current else { return }
-        pending.notes[pending.current] = state.editor.text
         pending.current = index
-        state.editor = Self.editor(holding: pending.notes[index])
+        pending.focus = focus ?? PendingQuestions.opening(pending.questions[index])
     }
 
     /// Checks choice `index`: one of several toggles; the only one replaces what was checked.
@@ -145,14 +174,13 @@ extension ScreenController {
         }
     }
 
-    /// Ends the questions with `answers` (nil: declined) and gives the input back its draft.
+    /// Ends the questions with `answers` (nil: declined).
     private mutating func finish(_ pending: PendingQuestions, with answers: [QuestionAnswer]?) -> [Effect] {
         state.pendingQuestions = nil
-        state.editor = Self.editor(holding: pending.draft)
         return [.answerQuestions(id: pending.id, answers)]
     }
 
-    /// The run ended: whatever still waited on the person goes, questions included, and the input gets its draft back.
+    /// The run ended: whatever still waited on the person goes, questions included.
     mutating func runEnded() -> [Effect] {
         state.compacting = false
         state.reconnecting = false
@@ -160,21 +188,12 @@ extension ScreenController {
         state.waitingForNetwork = false
         state.transcript.finishRunProgress()
         state.pendingApproval = nil
-        if let pending = state.pendingQuestions {
-            state.pendingQuestions = nil
-            state.editor = Self.editor(holding: pending.draft)
-        }
+        state.pendingQuestions = nil
         // A question a command beside the run asked is that command's to take away (roadmap 0113).
         if runOwnsQuestion {
             state.pendingInput = nil
             state.inputAnswer.clear()
         }
         return endRun()
-    }
-
-    private static func editor(holding text: String) -> PromptEditor {
-        var editor = PromptEditor()
-        if !text.isEmpty { editor.paste(text) }
-        return editor
     }
 }
