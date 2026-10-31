@@ -85,7 +85,7 @@ struct Ask: AsyncParsableCommand {
 
     @Option(
         help: ArgumentHelp(
-            "How far commands may reach the network: none, localhost or any. Replaces config.json's sandbox.network.",
+            "How far commands may reach the network: none, localhost, provider (the model providers only) or any. Replaces config.json's sandbox.network.",
             valueName: "level"))
     var network: String?
 
@@ -159,7 +159,7 @@ struct Ask: AsyncParsableCommand {
                 "\(yolo ? "--yolo" : "--no-sandbox") turns the sandbox off; --network, --write and --read need it on.")
         }
         if let network, SandboxPolicy.Network(named: network) == nil {
-            throw ValidationError("--network must be none, localhost or any.")
+            throw ValidationError("--network must be none, localhost, provider or any.")
         }
         try Self.validateScopes(write: write, read: read)
         if (selectedProvider == nil) != (selectedModel == nil) {

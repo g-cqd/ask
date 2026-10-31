@@ -113,7 +113,7 @@
     // Where they may read. Default: anywhere.
     "read": "anywhere",
 
-    // How far commands reach. Default: any. One of: none, localhost, any.
+    // How far commands reach. Default: any. One of: none, localhost, provider, any.
     "network": "any",
 
     // More paths to hide. Default: none.

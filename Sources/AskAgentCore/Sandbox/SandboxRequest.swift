@@ -36,13 +36,13 @@ public struct SandboxRequest: Sendable, Equatable {
         }
         let wire: Envelope.Wire?
         do { wire = try AemiJSON.JSONDecoder().decode(Envelope.self, from: input.bytes).sandbox } catch {
-            throw SandboxRequestError("write and read are lists of paths, network is none, localhost or any")
+            throw SandboxRequestError("write and read are lists of paths, network is none, localhost, provider or any")
         }
         guard let wire else { return nil }
         var request = SandboxRequest(write: wire.write, read: wire.read)
         if let name = wire.network {
             guard let level = SandboxPolicy.Network(named: name) else {
-                throw SandboxRequestError("network is none, localhost or any, not \"\(name)\"")
+                throw SandboxRequestError("network is none, localhost, provider or any, not \"\(name)\"")
             }
             request.network = level
         }
@@ -112,7 +112,7 @@ public struct SandboxRequest: Sendable, Equatable {
     public static let property =
         ToolProperty.schema(
             "sandbox",
-            #"{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}"#
+            #"{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost, provider or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","provider","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}"#
         )
         .optional
 }

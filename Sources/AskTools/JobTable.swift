@@ -102,7 +102,7 @@ public final class JobTable: Sendable {
                 id: id, displayID: displayIDs.withLock { $0.next() }, command: command,
                 workingDirectory: context.workingDirectory, outputPath: path,
                 keepsInputOpen: keepsInputOpen, keeping: keeping, sandbox: context.sandbox, watchdog: watchdog,
-                environment: context.commandEnvironment.filtered(environment), shell: shell),
+                environment: commandEnvironment(for: context), shell: shell),
             observe: observe)
         jobs.withLock { $0[id] = job }
         notifyObservers()
@@ -165,5 +165,17 @@ public final class JobTable: Sendable {
         let all = jobs.withLock { Array($0.values) }
         for job in all { job.signalGroup(SIGTERM) }
         for job in all { job.signalGroup(SIGKILL) }
+    }
+}
+
+extension JobTable {
+    /// What a command in `context` is given of ask's environment: the policy's filter, and under the `provider` network level the
+    /// proxy's address, so its traffic goes where the sandbox lets it (roadmap 0021).
+    func commandEnvironment(for context: ToolContext) -> [String: String] {
+        var values = context.commandEnvironment.filtered(environment)
+        if context.sandbox.network == .provider {
+            values.merge(ProviderAccess.commandEnvironment()) { _, proxy in proxy }
+        }
+        return values
     }
 }

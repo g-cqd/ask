@@ -169,7 +169,12 @@ struct RunSettings: Equatable {
         if case .roots = sandbox.read {
             parts.append(configuration.sandbox.value.read == [.workspace] ? "reads workspace" : "reads limited")
         }
-        if sandbox.network != .any { parts.append(sandbox.network == .none ? "no network" : "localhost only") }
+        switch sandbox.network {
+            case .none: parts.append("no network")
+            case .localhost: parts.append("localhost only")
+            case .provider: parts.append("the providers only")
+            case .any: break
+        }
         return parts.isEmpty ? nil : "sandbox: " + parts.joined(separator: ", ")
     }
 
