@@ -44,4 +44,18 @@ struct ThinkingDisplayTests {
         #expect(ThinkingControl.providerDefault(descriptor: legacy) == nil)
         #expect(ThinkingControl.providerDefault(descriptor: nil) == nil, "unknown: nothing is sent")
     }
+
+    /// The lookup made before the first request when the cached catalog cannot be used (a subscription's token was refreshed, so the
+    /// cache belongs to another scope) chooses through `select`; the default level must reach the same answer there.
+    @Test func `selecting the provider's default from a looked-up catalog asks for the summary`() throws {
+        let model = ResolvedModel(provider: .anthropic, model: "claude-opus-5-5")
+        let always = CatalogModel(id: "claude-opus-5-5", thinkingModes: [.adaptive])
+        let optional = CatalogModel(id: "claude-opus-5-5", thinkingModes: [.disabled, .adaptive])
+        #expect(
+            try ThinkingControl.select(.providerDefault, model: model, descriptor: always, maximumTokens: 64)
+                == .adaptive)
+        #expect(
+            try ThinkingControl.select(.providerDefault, model: model, descriptor: optional, maximumTokens: 64) == nil)
+        #expect(try ThinkingControl.select(.providerDefault, model: model, descriptor: nil, maximumTokens: 64) == nil)
+    }
 }
