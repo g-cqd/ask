@@ -43,9 +43,11 @@ extension AgentConversation {
             case .reset: await select(nil, announcing: "Model selection reset to configuration", update: update)
             case .choose(let provider, let model):
                 let (named, id) = provider.map { ($0, model) } ?? serving(model)
-                await select(
+                let chosen = await select(
                     ModelSelection(provider: named, model: id), announcing: "Model selected for this run",
                     update: update)
+                // An account named for a model is the one it is used with next time (roadmap 0092).
+                if chosen, provider != nil { ModelAccounts.remember(named, for: id) }
         }
     }
 
@@ -59,7 +61,8 @@ extension AgentConversation {
             word, providers: ModelQualifier.providerNames(providers, environment: environment))
         if let said = reference.provider { return (said, reference.model) }
         let found = ModelQualifier.infer(model: word, thinking: level, providers: providers, environment: environment)
-        return (found ?? model.providerName, word)
+        let provider = found ?? model.providerName
+        return (ModelAccounts.remembered(for: word, provider: provider, environment: environment) ?? provider, word)
     }
 
     /// Adopts `selection` only when the whole configuration, with it, resolves: a provider that is unknown, has no
@@ -67,9 +70,11 @@ extension AgentConversation {
     ///
     /// A thinking level the new model does not take is put back to the provider's default, and said, rather than refusing the model; a model
     /// that takes levels then offers them (`/thinking`), so choosing a model and its effort is one movement.
+    /// - Returns: whether `selection` is now in force.
+    @discardableResult
     private func select(
         _ selection: ModelSelection?, announcing: String, update: @Sendable (ConversationUpdate) -> Void
-    ) async {
+    ) async -> Bool {
         var candidate = source
         candidate.flags.selected = selection
         var resolved: RunSettings
@@ -78,15 +83,20 @@ extension AgentConversation {
             let was = candidate.flags.thinking.map(String.init(describing:)) ?? "the configured level"
             candidate.flags.thinking = .providerDefault
             do { resolved = try await candidate.load(allowNetwork: false) } catch {
-                return refused(selection, error, update)
+                refused(selection, error, update)
+                return false
             }
             notes.append("Thinking went back to the provider's default: \(was) is not available here (\(failure)).")
-        } catch { return refused(selection, error, update) }
+        } catch {
+            refused(selection, error, update)
+            return false
+        }
         sourceState.withLock { $0 = candidate }
         await refreshSettings(update: update)
         update(.notice("\(announcing): \(selection?.model ?? resolved.model.label).", isError: false))
         for note in notes { update(.notice(note, isError: false)) }
         if selection != nil, await modelTakesThinking() { update(.fillDraft("/thinking ")) }
+        return true
     }
 
     private func refused(

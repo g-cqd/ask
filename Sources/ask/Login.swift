@@ -15,9 +15,13 @@ struct Login: AsyncParsableCommand {
     @Argument(help: "Which sign-in to run: a provider, or custom NAME URL.") var words: [String] = []
     @Flag(help: "Sign in with an API key instead of an account.") var apiKey = false
     @Flag(help: "For codex: sign in with a code typed at a link, on a machine with no browser.") var device = false
-    @Option(help: "Register a separate named codex or claude connection, without replacing the default account.")
+    @Option(
+        help:
+            "Sign in to codex or claude as a named connection. Without it, another account than the default's is added as one."
+    )
     var name: String?
-    @Flag(help: "Authorize replacing the remote account bound to this named connection.") var replaceAccount = false
+    @Flag(help: "Replace the account of the named connection, or of the default without --name.") var replaceAccount =
+        false
 
     func run() async throws {
         var all = words
@@ -28,9 +32,6 @@ struct Login: AsyncParsableCommand {
         if replaceAccount { all.append("--replace-account") }
         let request: LoginRequest
         do { request = try LoginRequest(words: all) } catch { throw ValidationError("\(error)") }
-        if request.replaceAccount, request.connection == nil {
-            throw ValidationError("--replace-account requires --name.")
-        }
         do {
             print(try await AccountLogin(interaction: CommandLineInteraction()).run(request))
         } catch { fail("ask: sign-in failed: \(error)", code: 77) }

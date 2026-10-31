@@ -176,9 +176,18 @@ extension ScreenController {
             return run(row, command: title, arguments: arguments)
         }
         state.editor.replace(picker.trigger.range, with: row.insertion)
-        // A row that asked to be finished leaves the list closed, or it would offer itself again at once.
-        if case .choices = picker.kind { state.pickerDismissedAt = picker.trigger.range.lowerBound }
         state.picker = nil
+        if case .choices(let title) = picker.kind {
+            // A row that reveals others (a model several accounts serve) opens them; any other row that asked to be finished leaves the list
+            // closed, or it would offer itself again at once.
+            let revealed = (row.insertion + " ").lowercased()
+            if state.choices[title]?.rows.contains(where: { $0.revealedBy == revealed }) == true,
+                let found = choiceTrigger()
+            {
+                return refreshChoicePicker(found.command, found.trigger, screenRows: pickerScreenRows, at: .now)
+            }
+            state.pickerDismissedAt = picker.trigger.range.lowerBound
+        }
         return []
     }
 }
