@@ -91,7 +91,13 @@ Layers apply in this order, each one overriding the one before:
 5. command-line flags: `--model`, `--provider`, `--thinking`, `--max-turns`, `--compact-at`, `--network`, `--write`, `--read`,
    `--no-sandbox`, `--yes`, `--yolo`, `--allow`, `--ask`.
 
-Inside a section such as `ui`, a layer replaces only the keys it sets.
+Inside a section such as `ui`, a layer replaces only the keys it sets. A later file adds to an earlier one and never wipes it:
+
+- a list that protects adds up: `sandbox.hide` and `environment.withhold` keep every layer's entries;
+- `sandbox.write`, `sandbox.read` and `sandbox.network` only narrow: you get what every layer allows;
+- `mcp` goes by server name: a server the project defines in full replaces yours of that name, and an entry with no `command` or
+  `url` changes one of yours (see [`mcp`](#mcp)); servers it does not name are kept;
+- the settings marked "Your own file only" come from your file alone, so a project can neither add to nor replace them.
 
 **A project's file is ignored until you trust it.** It comes from a repository, so it could have been written by anyone. Run `ask trust` in
 the project, at a terminal, to trust it as it is now; if it changes, it is ignored again until you trust it again. `ask untrust` stops
@@ -211,6 +217,11 @@ Each member names a server. Put servers in your own file; a project's file can n
 | `enabled` | `false` keeps the entry without connecting. |
 | `mode` | `"direct"` offers its tools directly, `"search"` through a search tool. By default, a server with more than 16 tools is searched. |
 | `maxDirectTools` | Changes that threshold of 16 for this server. |
+
+In a project's file, an entry with no `command` and no `url` changes the server of that name in your file instead of replacing it, and may
+set only `enabled`, `tools`, `mode` and `maxDirectTools`. `{"mcp": {"xcode": {"enabled": false}}}` turns your `xcode` server off in that
+project and leaves your others alone. It cannot change what runs or what it is given (`args`, `env`, `cwd`, `headers`); an entry naming no
+server of yours is ignored, with a notice. `ask trust` lists what such an entry changes.
 
 ### `approvals`
 
