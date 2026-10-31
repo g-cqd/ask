@@ -78,3 +78,9 @@ Each item is either closed or has a recorded reason it stays open.
 It went eleven days without compiling (0016's close-out). The gate should build it (`swift build --package-path Benchmarks`), at the cost
 of about a minute warm; not added yet, because it lengthens every gate run and the owner sets that trade.
 
+## Moved here from 0079 (2026-10-31)
+
+8. **Code reachable only from tests** (deadwood, 15 notes): test hooks and credential `remove*` helpers. Move them to the test target or
+   behind `package` access.
+9. **Duplicated code** (dolly, 669 notes, 86 suppressed, mostly tests): triage the `Sources/` ones and record the count as a budget.
+10. **A `memory-safety` review** of the descriptors in `ConfigEditor.run` and `JobWatchdog`.

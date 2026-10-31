@@ -1,6 +1,6 @@
 ---
 status: in-progress
-blocked-by: []
+blocked-by: ["the owner: a direct OpenAI API account"]
 date: 2026-10-19
 decision: ADR-0062
 ---

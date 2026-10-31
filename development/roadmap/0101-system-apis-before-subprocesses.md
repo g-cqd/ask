@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -43,3 +43,11 @@ not found: security-entitlements"); 38.8 s, 478k input tokens (88% read from cac
   the pages it read do not say so.
 
 So the row stands: `sandbox-exec` stays, with no public replacement.
+
+## Closed (2026-10-31)
+
+- `SubprocessInventoryTests` (AskCoreTests) fails when a file outside the inventory starts a process (`Subprocess.run`, `posix_spawn`,
+  the `exec` family, `Process()`, `popen`, `system`, or an `import Subprocess`), and when an inventory entry starts nothing any more.
+  Each entry carries its reason. Red when `ProjectLister.swift` was taken out of the list, green with it.
+- The reason comments were already there: each file's own documentation says why it starts a process.
+- `caffeinate` was never built: 0090 keeps the Mac awake with a power assertion.

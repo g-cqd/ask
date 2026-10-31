@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-27
 ---
@@ -49,3 +49,9 @@ leading unquoted `~` so bash, zsh, and fish can expand it cleanly upon paste.
 - Relative paths are not linked (a row does not know its directory); a path wrapped over two rows links only the part
   on each row; no `id=` parameter joins them for hover.
 - ask pins TerminalKit at e0b13ab, which is pushed.
+
+## Closed (2026-10-31)
+
+Paths in tool rows, bodies and the exit banner open on click (absolute paths, OSC 8). What "Still owed" lists is either a check in a
+real terminal, moved to the list in `research/priorities-2026-10-31.md`, or a choice made and explained there: rows keep the path as printed, relative paths are not
+linked, and a wrapped path has no `id=`. Those come back as new entries if the owner asks.
