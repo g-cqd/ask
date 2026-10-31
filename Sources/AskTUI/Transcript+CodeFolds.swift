@@ -45,6 +45,17 @@ extension Transcript {
     public mutating func setMarkdown(_ on: Bool) {
         guard on != markdown else { return }
         markdown = on
+        relayOutMarkdown()
+    }
+
+    /// Colours fenced code by its language, or draws it in the code style. Every message drawn as Markdown is laid out again.
+    public mutating func setHighlight(_ on: Bool) {
+        guard on != highlight else { return }
+        highlight = on
+        relayOutMarkdown()
+    }
+
+    private mutating func relayOutMarkdown() {
         for index in items.indices {
             switch items[index] {
                 case .assistant, .user, .thinking: revisions[index] = bump()

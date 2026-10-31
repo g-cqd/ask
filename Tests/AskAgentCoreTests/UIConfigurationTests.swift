@@ -25,9 +25,12 @@ struct UIConfigurationTests {
 
     @Test func `a switch is "on" or "off", or true or false, whichever way it is written`() throws {
         let words = try parse(
-            "{ui: {mouse: 'off', copyOnSelect: 'on', tint: 'off', padding: 'on', markdown: 'off'}, skills: {enabled: 'off'}}"
+            "{ui: {mouse: 'off', copyOnSelect: 'on', tint: 'off', padding: 'on', markdown: 'off', highlight: 'off'}, skills: {enabled: 'off'}}"
         )
-        #expect(words.ui == UISection(mouse: false, copyOnSelect: true, tint: false, padding: true, markdown: false))
+        #expect(
+            words.ui
+                == UISection(
+                    mouse: false, copyOnSelect: true, tint: false, padding: true, markdown: false, highlight: false))
         #expect(words.skills?.enabled == false)
         let flags = try parse("{ui: {mouse: false, tint: false, onlyUsefulModels: true}, skills: {enabled: true}}")
         #expect(flags.ui == UISection(mouse: false, tint: false, onlyUsefulModels: true))

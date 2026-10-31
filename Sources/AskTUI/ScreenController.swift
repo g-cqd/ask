@@ -114,6 +114,7 @@ public struct ScreenController: Sendable {
         state.transcript.setCodeFoldLines(options.codeFoldLines)
         state.transcript.setOutputFoldLimits(lines: options.outputFoldLines, bytes: options.outputFoldBytes)
         state.transcript.setMarkdown(options.markdown)
+        state.transcript.setHighlight(options.highlight)
         state.transcript.spinnerStyle = options.spinner
         state.transcript.localizedDurations = options.localizedDurations
         state.transcript.timeoutDisplay = options.timeoutDisplay

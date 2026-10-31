@@ -21,7 +21,8 @@ extension ScreenComposer {
         let document = MarkdownParser.parse(Array(text.utf8), extensions: markdownExtensions)
         let fences = transcript.markdownFences(at: index) ?? []
         var renderer = MarkdownRenderer(
-            theme: .standard, links: markdownLinks(home: transcript.home), softBreaks: .lineBreak)
+            theme: .standard, links: markdownLinks(home: transcript.home),
+            highlighter: transcript.highlight ? CodeHighlighter.standard : nil, softBreaks: .lineBreak)
         var source = MarkdownSourceLines(text)
         var result: [Line] = []
         for block in document.topLevelBlocks {

@@ -19,6 +19,9 @@ public struct ScreenOptions: Sendable, Equatable {
     /// Whether the assistant's messages are drawn as Markdown (`ui.markdown`, roadmap 0065): headings, emphasis, lists, tables and links
     /// rather than the marks that make them. A selection still copies what the model wrote.
     public var markdown: Bool
+    /// Whether fenced code is coloured by the language its fence names (`ui.highlight`, roadmap 0152), in the terminal's palette. Off, it
+    /// draws in the code style, as before highlighting.
+    public var highlight: Bool
     /// Whether the runner sidebar starts open (`ui.sidebar`). Ctrl+\ and `/sidebar` toggle it; it needs 70 columns.
     public var sidebar: Bool
     /// Whether details are shown: what ask did on its own account, such as the sandbox in force or a build that appeared (`--verbose`).
@@ -68,7 +71,8 @@ public struct ScreenOptions: Sendable, Equatable {
     public init(
         mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
         scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20,
-        markdown: Bool = true, sidebar: Bool = false, verbose: Bool = false, prompt: String = "", tint: Bool = true,
+        markdown: Bool = true, highlight: Bool = true, sidebar: Bool = false, verbose: Bool = false,
+        prompt: String = "", tint: Bool = true,
         separator: Bool = true,
         padding: Bool = true, lightBackground: Bool = false, localizedDurations: Bool = true,
         spinner: SpinnerStyle = .line, jobAutoReturnWhenFocused: Bool = true,
@@ -84,6 +88,7 @@ public struct ScreenOptions: Sendable, Equatable {
         self.foldCode = foldCode
         self.codeFoldLines = Swift.max(1, codeFoldLines)
         self.markdown = markdown
+        self.highlight = highlight
         self.sidebar = sidebar
         self.verbose = verbose
         self.prompt = prompt

@@ -49,6 +49,9 @@
     // Markdown drawn everywhere it can be. Default: true.
     "markdown": true,
 
+    // Fenced code coloured by the language its fence names. Default: true.
+    "highlight": true,
+
     // When a job you watch ends, go back to the conversation. Default: true.
     "leaveFinishedJob": true,
 
