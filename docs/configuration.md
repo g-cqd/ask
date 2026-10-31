@@ -13,8 +13,8 @@ ask config
 ```
 
 Inside ask, `/config` opens an editor for the same settings, and `/config show` re-reads the files and shows them. ask watches the files while it
-runs: a saved change applies at once between turns, or as soon as the running turn ends, and your draft is left as it is (`/verbose`
-lists what changed). A project file is noticed even when its `.ask` folder did not exist when ask started. If an edit is broken, ask
+runs: a saved change applies at once, to a running turn from its next request, and your draft is left as it is (`/verbose` lists
+what changed). A project file is noticed even when its `.ask` folder did not exist when ask started. If an edit is broken, ask
 says so and keeps the previous settings.
 
 ## Common recipes

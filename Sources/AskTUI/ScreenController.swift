@@ -10,6 +10,8 @@ public struct ScreenController: Sendable {
         case startRun(String)
         case queuePrompt(id: Int, text: String, followUp: Bool)
         case runCommand(name: String, arguments: String)
+        /// Run a command beside the running turn, which goes on (roadmap 0113): it is not the screen's run.
+        case runCommandBeside(name: String, arguments: String)
         case cancelRun
         /// Put this text on the clipboard.
         case copy(String)
@@ -227,12 +229,11 @@ public struct ScreenController: Sendable {
                 return interrupted(interrupt)
             case .endOfInput:
                 return state.running ? [] : [.quit]
-            case .ignored where key.modifiers.isEmpty && key.keyCode == Key.up.rawValue:
-                // Up from the input's first row: the sent line before (roadmap 0111).
-                if let older = history.older(than: state.editor.text) { state.editor.restore(older) }
-                return []
-            case .ignored where key.modifiers.isEmpty && key.keyCode == Key.down.rawValue:
-                if let newer = history.newer(than: state.editor.text) { state.editor.restore(newer) }
+            case .ignored where key.modifiers.isEmpty && [Key.up.rawValue, Key.down.rawValue].contains(key.keyCode):
+                // Up from the input's first row: the sent line before; Down from its last: the one after (roadmap 0111).
+                let text = state.editor.text
+                let line = key.keyCode == Key.up.rawValue ? history.older(than: text) : history.newer(than: text)
+                if let line { state.editor.restore(line) }
                 return []
             case .edited, .ignored:
                 return []

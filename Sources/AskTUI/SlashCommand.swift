@@ -17,6 +17,16 @@ public struct SlashCommand: Sendable, Equatable {
     /// Whether the word after the command is chosen from a list the conversation offers (``Conversation/choices(for:)``): typing
     /// `/model ` opens it, narrowed by what follows, and Enter or a click runs the command with the row chosen.
     public let takesChoices: Bool
+    /// What the command does when typed while a turn runs (roadmap 0113).
+    public let duringTurn: DuringTurn
+
+    /// What a command does when typed while a turn runs (roadmap 0113).
+    public enum DuringTurn: Sendable, Equatable {
+        /// Refused: the person stops the turn first.
+        case refused
+        /// Runs beside the turn, which goes on; what it changes applies from the turn's next request.
+        case atOnce
+    }
 
     /// The names roadmap 0154 replaced, still typed: the old name runs the new command.
     public static let renamed = ["tasks": "jobs", "tree": "rewind"]
@@ -27,7 +37,11 @@ public struct SlashCommand: Sendable, Equatable {
     }
 
     /// A command called `name`.
-    public init(name: String, summary: String, takesChoices: Bool = false, category: Category = .session) {
+    public init(
+        name: String, summary: String, takesChoices: Bool = false, category: Category = .session,
+        duringTurn: DuringTurn = .refused
+    ) {
+        self.duringTurn = duringTurn
         self.name = name
         self.summary = summary
         self.takesChoices = takesChoices

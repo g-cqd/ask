@@ -15,18 +15,18 @@ extension AgentConversation {
             SlashCommand(
                 name: "config",
                 summary: "Edit settings interactively, or /config show to read and show every setting and its source.",
-                takesChoices: true, category: .configuration),
+                takesChoices: true, category: .configuration, duringTurn: .atOnce),
             SlashCommand(name: "compact", summary: "Summarise the conversation now, keeping the recent messages."),
             SlashCommand(name: "new", summary: "Start a new session; the previous session stays saved."),
             SlashCommand(
                 name: "model",
                 summary:
                     "Choose a model from every account you are signed in to, or /model [CONNECTION] MODEL, or /model reset.",
-                takesChoices: true, category: .model),
+                takesChoices: true, category: .model, duringTurn: .atOnce),
             SlashCommand(
                 name: "thinking",
                 summary: "Choose how hard the model thinks: the efforts it takes, or /thinking LEVEL.",
-                takesChoices: true, category: .model),
+                takesChoices: true, category: .model, duringTurn: .atOnce),
             SlashCommand(
                 name: "login",
                 summary: "Sign in to a provider with an account or an API key, without leaving: /login PROVIDER.",
@@ -50,7 +50,7 @@ extension AgentConversation {
                 summary: "Continue in a new session: /fork, or /fork N from before prompt N. The original stays."),
             SlashCommand(
                 name: "mcp", summary: "Show the MCP servers: which are connected and how many tools each offers.",
-                category: .tools),
+                category: .tools, duringTurn: .atOnce),
             SlashCommand(
                 name: "reload", summary: "Switch to a newly built ask, keeping this session. /reload now stops jobs.",
                 category: .tools)

@@ -91,3 +91,7 @@ below the input: Up and Down choose one, Enter shows its output in place of the 
 | `/verbose` | Show or hide details: the sandbox in force, the files read. |
 | `/help` | List the commands. |
 | `/quit` | Leave. |
+
+While the model works, `/model`, `/thinking`, `/config` and `/mcp` still work: a new model, effort or setting applies from the very
+next request, even in the middle of a run of tool calls, and a retry waiting on a busy model goes to the new one at once. The other
+commands wait for the turn to end, or for Ctrl+C.

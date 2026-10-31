@@ -87,8 +87,12 @@ extension ScreenController {
     mutating func run(_ row: PickerRow, command: String, arguments: String) -> [Effect] {
         state.picker = nil
         state.editor.clear()
-        guard !busy() else { return [] }
+        let known = SlashCommand.named(command, in: commands) ?? SlashCommand(name: command, summary: "")
+        if state.running, known.duringTurn != .atOnce {
+            _ = busy()
+            return []
+        }
         state.transcript.addUser("/\(command) \(arguments)")
-        return begin(.runCommand(name: command, arguments: arguments))
+        return runCommand(known, arguments: arguments)
     }
 }
