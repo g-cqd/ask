@@ -38,11 +38,30 @@ extension AgentConversation {
         current.withLock { $0.turnRunning = true }
     }
 
-    /// A turn ended.
+    /// A turn ended: what waited for it goes on.
     func endTurn(update: @escaping @Sendable (ConversationUpdate) -> Void) {
         keepAwake.turnEnded()
-        current.withLock { $0.turnRunning = false }
+        let waiters = current.withLock { current in
+            current.turnRunning = false
+            defer { current.turnEndWaiters = [] }
+            return current.turnEndWaiters
+        }
+        for waiter in waiters { waiter.resume() }
     }
+
+    /// Returns when no turn runs: at once between turns, else at the running turn's end.
+    func untilTurnEnds() async {
+        await withCheckedContinuation { (continuation: CheckedContinuation<Void, Never>) in
+            let running = current.withLock { current in
+                if current.turnRunning { current.turnEndWaiters.append(continuation) }
+                return current.turnRunning
+            }
+            if !running { continuation.resume() }
+        }
+    }
+
+    /// Whether a turn is running now.
+    var turnRunning: Bool { current.withLock { $0.turnRunning } }
 
     /// A configuration file changed: the files are read now, a running turn takes the change on its next request, and new or
     /// changed MCP servers start now rather than on the next prompt.

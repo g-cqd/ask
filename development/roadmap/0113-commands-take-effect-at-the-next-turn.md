@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -62,8 +62,15 @@ stop cancels it. Nothing waits on the person to type it again.
   and `/mcp` run beside a turn. A settings file changed during a turn now applies at once (it waited for the turn's end, 0127).
   Tests: `CommandsDuringTurnTests`; `Scripts/probe-mid-turn.py` A to E, red before.
 
-## Still owed
+## Step 2 done (2026-10-31): the rest of the table
 
-- `/login`, `/logout` of another account and `/fork` at once; `/logout` of the account in use, `/compact`, `/new`, `/resume`,
-  `/rewind`, `/reload` queued for the turn's end and cancellable; `/skill` queued as a message.
-
+- `SlashCommand.DuringTurn.afterTurn`: `/compact`, `/new`, `/resume`, `/rewind` and `/reload` typed during a turn wait, shown as
+  waiting, and run in order when it ends, before a follow-up queued after them; a stop follows `ui.queuedOnStop` (with `none` they
+  return to the input). `TurnCommands` keeps them.
+- `/login`, `/logout` and `/fork` run beside the turn. A question a command beside the turn asks (a code, a key) outlives the turn's
+  end (`.besideEnded`). Signing out of what the turn uses (everything, its connection, its provider's account; a doubtful name counts)
+  waits for the turn's end, and says so. `/fork` during a turn copies what has been written and stays with the turn.
+- `/skill:NAME` typed during a turn was sent unexpanded; it is now expanded as at a turn's start, and one that cannot be loaded comes
+  back to the input (`.promptRefused`). The screen shows the typed line, not the skill.
+- Tests: `CommandsDuringTurnTests` (red first); `Scripts/probe-mid-turn.py` F to J. Not probed: a real sign-in during a turn (the
+  question's survival is unit-tested only).

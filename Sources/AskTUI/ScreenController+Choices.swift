@@ -88,11 +88,6 @@ extension ScreenController {
         state.picker = nil
         state.editor.clear()
         let known = SlashCommand.named(command, in: commands) ?? SlashCommand(name: command, summary: "")
-        if state.running, known.duringTurn != .atOnce {
-            _ = busy()
-            return []
-        }
-        state.transcript.addUser("/\(command) \(arguments)")
-        return runCommand(known, arguments: arguments)
+        return runCommand(known, arguments: arguments, line: "/\(command) \(arguments)")
     }
 }

@@ -8,6 +8,7 @@ internal import TerminalKitInput
 extension ScreenController {
     mutating func askInput(id: Int, prompt: String, secret: Bool) {
         state.pendingInput = PendingInput(id: id, prompt: prompt, secret: secret)
+        noteQuestion(id: id)
         state.inputAnswer.clear()
         state.scrollback = 0
         state.transcript.addNotice(prompt, isError: false)

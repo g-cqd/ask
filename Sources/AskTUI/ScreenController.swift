@@ -47,6 +47,7 @@ public struct ScreenController: Sendable {
     /// The commands the screen answers itself (`/help`, `/quit`) and those the conversation runs.
     let commands: [SlashCommand]
     var pending: [Pending] = []
+    var turnCommands = TurnCommands()
     /// The screen's height as of the last key, which sizes the picker when a file listing arrives between keys.
     var pickerScreenRows = 0
     /// The commands whose lists were asked for and have not arrived, so a key does not ask twice.
@@ -214,6 +215,8 @@ public struct ScreenController: Sendable {
             case .compacting, .compactionFinished, .reconnecting, .connectingMCP, .waitingForNetwork:
                 applyBackgroundWork(update)
             case .runEnded: return runEnded()
+            case .besideEnded: besideEnded()
+            case .promptRefused(let id): refuseQueuedPrompt(id: id)
         }
         return []
     }

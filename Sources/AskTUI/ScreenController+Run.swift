@@ -7,16 +7,6 @@ extension ScreenController {
         return true
     }
 
-    /// Runs a conversation command: as the screen's run when idle; beside a running turn when the command applies at once (roadmap
-    /// 0113); else refused while a turn runs.
-    mutating func runCommand(_ command: SlashCommand, arguments: String) -> [Effect] {
-        if state.running, command.duringTurn == .atOnce {
-            return [.runCommandBeside(name: command.name, arguments: arguments)]
-        }
-        guard !busy() else { return [] }
-        return begin(.runCommand(name: command.name, arguments: arguments))
-    }
-
     mutating func begin(_ effect: Effect) -> [Effect] {
         if case .startRun = effect { acceptsInput = true } else { acceptsInput = false }
         returningInput = false
