@@ -18,6 +18,7 @@ extension Configuration {
         compare("sessionEncryption", previous.sessionEncryption, sessionEncryption)
         compare("sessionCompression", previous.sessionCompression, sessionCompression)
         compare("sessionPassword", previous.sessionPassword, sessionPassword)
+        compare("taskScope", previous.taskScope, taskScope)
         compare("credentials", previous.credentials, credentials)
         compare("approvals", previous.approvals, approvals)
         compare("modelScopes", previous.modelScopes, modelScopes)

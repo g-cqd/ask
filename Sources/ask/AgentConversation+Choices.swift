@@ -28,8 +28,22 @@ extension AgentConversation {
                     ChoiceRow(label: "on", detail: "encrypt this session's file", arguments: "on"),
                     ChoiceRow(label: "off", detail: "keep it unencrypted", arguments: "off")
                 ]
+            case "tasks": return taskRows()
             default: return []
         }
+    }
+
+    /// Each task, to show it in full, and the whole list with the done ones.
+    private func taskRows() -> [ChoiceRow] {
+        guard let list = try? SessionTasks.board.current(), !list.tasks.isEmpty else { return [] }
+        let rows = list.tasks.map { task in
+            ChoiceRow(
+                label: task.name,
+                detail: String(list.line(task).dropFirst(task.name.count + 1)),
+                arguments: task.name
+            )
+        }
+        return [ChoiceRow(label: "all", detail: "every task, done ones too", arguments: "all")] + rows
     }
 
     /// The accounts that can be forgotten, each as the name that forgets it, and everything at once.

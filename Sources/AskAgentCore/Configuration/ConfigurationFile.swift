@@ -24,6 +24,7 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var sessionEncryption: SessionEncryptionMode?  // roadmap 0182, ADR-0138
     public var sessionCompression: Bool?  // roadmap 0182
     public var sessionPassword: SessionPasswordMode?  // roadmap 0182
+    public var taskScope: TaskScope?  // roadmap 0179, ADR-0140
     public var credentials: CredentialStorage?  // roadmap 0110; the person's own file only
     public var approvals: ApprovalsSection?  // roadmap 0134; the person's own file only
     public var modelScopes: [ModelScope]?  // roadmap 0094; the person's own file only
@@ -33,7 +34,7 @@ public struct ConfigurationFile: Sendable, Equatable {
     public static let keys = [
         // @dl:accept -- the list of keys is data, like the sandbox policy's lists of paths
         "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "keepDisplayAwake", "credentials",
-        "approvals", "modelScopes", "sessionEncryption", "sessionCompression", "sessionPassword",
+        "approvals", "modelScopes", "sessionEncryption", "sessionCompression", "sessionPassword", "taskScope",
         "sandbox", "ui", "skills", "mcp", "environment"
     ]
 
@@ -195,7 +196,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "compactAt": file.compactAt = try ConfigurationFile.decodeCompactAt(container, key: key)
                     case "keepAwake":
                         file.keepAwake = try ConfigurationFile.decodeChoice(container, key: key, as: KeepAwakeMode.self)
-                    case "sessionEncryption", "sessionCompression", "sessionPassword":
+                    case "sessionEncryption", "sessionCompression", "sessionPassword", "taskScope":
                         try file.decodeSessionKey(key, in: container)
                     case "keepDisplayAwake":
                         file.keepDisplayAwake = try ConfigurationFile.decodeSwitch(

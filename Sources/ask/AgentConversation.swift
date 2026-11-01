@@ -82,6 +82,7 @@ final class AgentConversation: Conversation {
         self.directory = directory
         current = Mutex(Current(settings: settings))
         session.withLock { $0 = resumed }
+        _ = SessionTasks.follow(resumed, scope: settings.configuration.taskScope.value)
         keepAwake = KeepAwake(
             mode: settings.configuration.keepAwake.value,
             display: settings.configuration.keepDisplayAwake.value

@@ -43,7 +43,7 @@ struct SlashCommandsTests {
                     "/quit  Leave ask, stopping a running turn first.",
                     "/continue  Tell the agent to carry on where it stopped. Also: continue, resume, go ahead, go.",
                     "/follow-up  Queue a message after the agent finishes: /follow-up TEXT.",
-                    "/jobs  Show or hide the background jobs that are running. Also /tasks.",
+                    "/jobs  Show or hide the background jobs that are running.",
                     "/sidebar  Show or hide the runner sidebar (Ctrl+\\). Wide screens only.",
                     "/verbose  Show or hide details: the sandbox, the files read, builds that appeared.",
                     "/config  Edit settings interactively."
@@ -55,6 +55,12 @@ struct SlashCommandsTests {
         let rows = ScreenComposer.lines(in: transcript, at: 1, columns: 120, style: BlockStyle())
         #expect(rows.count == 11, "eight help entries share two padding rows and the blank row above a tinted block")
         #expect(rows.first?.text == "" && rows.last?.text == "")
+    }
+
+    @Test func `tasks is the task list's name now, no longer an old name of jobs, while tree still runs rewind`() {
+        let commands = [SlashCommand(name: "jobs", summary: "j"), SlashCommand(name: "rewind", summary: "r")]
+        #expect(SlashCommand.named("tasks", in: commands) == nil)
+        #expect(SlashCommand.named("tree", in: commands)?.name == "rewind")
     }
 
     @Test func `quit leaves, and works while a turn is running`() {

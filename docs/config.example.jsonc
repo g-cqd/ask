@@ -30,6 +30,9 @@
   // Whether session files are compressed. Default: false.
   "sessionCompression": false,
 
+  // A task list for each session, or one for the workspace. Default: session. One of: session, workspace.
+  "taskScope": "session",
+
   // Whether the key the password opens is kept in the keychain, or the password asked at every start. Default: asked at first start. One of: remember, everyStart.
   "sessionPassword": "remember",
 

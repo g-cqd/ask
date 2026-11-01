@@ -48,6 +48,9 @@ extension AgentConversation {
         }
         do {
             try recorder.change(to: format, keyring: keyring)
+            if current.withLock({ $0.settings.configuration.taskScope.value }) == .session {
+                try SessionTasks.board.convert(to: format)
+            }
             update(
                 .notice(
                     on ? "This session's file is now encrypted." : "This session's file is no longer encrypted.",

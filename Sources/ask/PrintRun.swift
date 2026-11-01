@@ -52,6 +52,7 @@ private func promptSession(
             fail("ask: cannot create a session: \(error)", code: 73)
         }
     }
+    if let notice = SessionTasks.follow(session, scope: settings.configuration.taskScope.value) { say([notice]) }
     do {
         try session.select(
             SessionRouting.destination(model),

@@ -88,6 +88,12 @@ extension AgentConversation {
                 duringTurn: .atOnce
             ),
             SlashCommand(
+                name: "tasks",
+                summary: "Show the session's task list: /tasks all with the done ones, /tasks t3 for one task.",
+                takesChoices: true,
+                duringTurn: .atOnce
+            ),
+            SlashCommand(
                 name: "mcp",
                 summary: "Show the MCP servers: which are connected and how many tools each offers.",
                 category: .tools,
@@ -129,6 +135,7 @@ extension AgentConversation {
                 case "thinking": await self.thinking(arguments: arguments, update: update)
                 case "login": await self.login(arguments: arguments, update: update)
                 case "logout": await self.logout(arguments: arguments, update: update)
+                case "tasks": update(.notice(SessionTasks.answer(to: arguments), isError: false))
                 case "mcp": update(.notice(MCPHub.report(self.mcp.status).joined(separator: "\n"), isError: false))
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))
