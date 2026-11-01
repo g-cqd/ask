@@ -26,6 +26,8 @@ extension ScreenController {
         if let found = choiceTrigger() {
             return refreshChoicePicker(found.command, found.trigger, screenRows: screenRows, at: now)
         }
+        // After a command's own list: in a command's arguments a `/` is the argument's (a path for /resume), not a skill.
+        if let trigger = inlineSkillTrigger() { return refreshInlineSkillPicker(trigger, screenRows: screenRows) }
         if let trigger = fileTrigger() { return refreshFilePicker(trigger, screenRows: screenRows, at: now) }
         return closePicker()
     }
@@ -200,6 +202,7 @@ extension ScreenController {
     /// Takes the skills the conversation listed, and refreshes the command picker the user may be waiting on.
     mutating func receive(skills: [SlashCommand]) {
         state.skills = skills
+        state.transcript.setSkillNames(Set(skills.map(\.name)))
         guard pickerScreenRows >= Self.pickerMinimumRows, let trigger = commandTrigger() else { return }
         refreshCommandPicker(trigger, screenRows: pickerScreenRows)
     }

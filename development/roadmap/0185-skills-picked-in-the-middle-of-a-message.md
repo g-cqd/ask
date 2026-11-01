@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-11-01
 ---
@@ -19,9 +19,16 @@ Today a `/command` is one only as the input's first word (0048); `@` already ope
   message that starts with it.
 - **Later**: `@` also points at ideas and tasks (0179, 0180), and `#` at pull requests, issues or tasks (0186).
 
-## Still owed
+## Done (2026-11-01)
 
-- The picker opening at a `/` that starts a word anywhere in the draft, offering skills only (and the commands this entry admits).
-- The draft's colouring of a recognised inline `/skill` (0151's draft colouring), and the same in the person's sent message.
-- Expansion: each inline skill attached once, in order, whether it starts the message or not; an unknown name stays text.
-- Tests: the picker's word rule mid-text, a path or address with a `/` inside a word never opening it, the sent text and attachment.
+- Sending: `SkillInvocation.expand` attaches every `/skill:name` that starts a word, after the line as typed, each skill once, in the
+  order named; a line that starts with one keeps its rules (`--from`, an unknown name refused), an unknown name later stays text, and
+  a `/` inside a word (a path, an address, `(/skill:x)`) names nothing. `shown` still cuts at the first skill, so every view shows the
+  line typed. Print runs and the screen share it.
+- The picker: a `/` that starts a later word lists the skills alone (commands stay first-word only); it comes after a command's own
+  list, so `/resume /tmp/…` keeps the sessions. Choosing one replaces the word.
+- The token: a known `/skill:name` is drawn in the link look in the draft (with Markdown colouring on or off) and in the sent message,
+  on its bold look; an unknown name stays plain. The transcript holds the skills' names, set when the list arrives.
+- Tests: `SkillInlineTests`, `InlineSkillPickerTests`, `SkillTokenTests`; 6 mutants, all killed; two guards they showed redundant were
+  removed (punctuation after a name, which the lookup ignores; the first-word check, which the command picker already takes).
+- Not done: the probe through the real binary, and a skill in a queued message, which is still not expanded (0061, task t30).
