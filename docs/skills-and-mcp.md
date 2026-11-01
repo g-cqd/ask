@@ -8,7 +8,9 @@ use, so the ones you wrote for Claude Code, Codex, pi, opencode, Mistral Vibe or
 
 - `ask skills` lists what was found, and anything odd about a skill.
 - The model sees a list of up to 32 skills; with more than 16 to offer, it gets a search instead and finds them by name or topic.
-- `/skill:NAME request` asks for one yourself, and `/` lists them.
+- `/skill:NAME request` asks for one yourself, and `/` lists them. A `/skill:NAME` later in a message attaches that skill too, drawn
+  like a link so you can see it will be: type `/` at the start of any word to pick one. Each skill named is attached once; a name ask
+  does not know stays text.
 - A skill only gives instructions; it grants no permission.
 - **A project's skills load only once you trust them**: run `ask trust --skills` at a terminal. Trust covers
   the `SKILL.md` file: when it changes, it needs trusting again. The files beside it (scripts, references) are not covered; the model reads

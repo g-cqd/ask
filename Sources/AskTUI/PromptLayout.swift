@@ -35,7 +35,8 @@ struct PromptLayout: Sendable {
         maximumRows: Int,
         selection: Range<Int>? = nil,
         scrollTop: Int? = nil,
-        markdown: Bool = false
+        markdown: Bool = false,
+        skills: Set<String> = []
     ) -> Frame {
         let prefix = Self.prefix(prompt, columns: columns)
         let layout: InputLayout
@@ -72,6 +73,7 @@ struct PromptLayout: Sendable {
             cursorVisible: viewport.cursorVisible,
             highlights: highlights
         )
+        var spans: [InputMarkdown.Span] = []
         if markdown {
             // Only the rows shown are parsed in a long draft, so the window is part of what the spans depend on.
             let rows = viewport.visibleRows
@@ -79,16 +81,18 @@ struct PromptLayout: Sendable {
             let high =
                 rows.upperBound < layout.rows.count
                 ? layout.offset(atRow: rows.upperBound, column: 0) : editor.text.count
-            let spans: [InputMarkdown.Span]
             if let markdownCache, markdownCache.text == editor.text, markdownCache.window == low ..< high {
                 spans = markdownCache.spans
             } else {
                 spans = InputMarkdown.spans(of: editor.text, visible: low ..< high)
                 markdownCache = (editor.text, low ..< high, spans)
             }
-            if !spans.isEmpty {
-                frame.accents = Self.accents(spans, rows: viewport.visibleRows, layout: layout, prefix: prefix)
-            }
+        }
+        // A named skill is drawn whether Markdown colouring is on or not, after it so the token wins (roadmap 0185).
+        spans += SkillTokens.ranges(in: editor.text, known: skills)
+            .map { InputMarkdown.Span(characters: $0, style: SkillTokens.style) }
+        if !spans.isEmpty {
+            frame.accents = Self.accents(spans, rows: viewport.visibleRows, layout: layout, prefix: prefix)
         }
         return frame
     }

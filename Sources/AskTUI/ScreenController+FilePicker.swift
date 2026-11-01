@@ -11,16 +11,16 @@ extension ScreenController {
     func fileTrigger() -> CompletionTrigger? {
         // Most drafts never contain an @, so one libc scan of the bytes decides before anything walks the draft to the cursor.
         // A native string is contiguous; the generic byte loop it replaces cost 8 µs a key on a 6 KB draft.
-        guard Self.containsAt(state.editor.text) else { return nil }
+        guard Self.contains(UInt8(ascii: "@"), in: state.editor.text) else { return nil }
         return CompletionTrigger.at(cursor: state.editor.cursor, in: state.editor.text, sigils: ["@"])
     }
 
-    /// Whether `text` holds an `@` anywhere.
-    private static func containsAt(_ text: String) -> Bool {
+    /// Whether `text` holds `byte` anywhere: one libc scan, so a draft without it costs nothing more per key (the `@` and `/` pickers).
+    static func contains(_ byte: UInt8, in text: String) -> Bool {
         var text = text
         return text.withUTF8 { bytes in
             guard let base = bytes.baseAddress else { return false }
-            return memchr(base, Int32(UInt8(ascii: "@")), bytes.count) != nil
+            return memchr(base, Int32(byte), bytes.count) != nil
         }
     }
 
