@@ -212,3 +212,22 @@ MiB, active 24.9 and 24.8 MiB. The fixes add nothing measurable. The same binary
 17.5 MiB, with or without the hardened runtime: about 1.3 MiB more than ad hoc. The cause is probably the Keychain path a stably
 signed build takes, but that is not measured.
 
+
+## Idle memory back under budget (2026-11-01)
+
+The idle figure grew from 14.6 MiB (`f042c10`, 2026-10-29) to 16.0 MiB. Both builds measured alternately, 10 runs each: 14.3 and
+15.8 MiB. The heap differs by 70 KB; the growth is ask's own code pages, `__TEXT` resident 2.8 → 3.4 MiB, as the code grew 5.7 → 6.9
+MiB. `mincore` read through lldb at the idle prompt: 189 of the 423 pages of `__text` referenced, the startup code spread over all of
+it.
+
+A linker order file puts the functions run from launch to the first keystroke first. The list from a profiling build
+(`-profile-generate`) did nothing (16.0 → 16.1 MiB): it names only the functions as written, while most of the pages touched hold what
+the compiler adds (witnesses, specialisations, metadata accessors, async continuations). Coverage tracing after optimisation
+(`-sanitize=address -sanitize-coverage=func,trace-pc-guard`, the sanitizer runtime's address dump) names them all: 1,527 functions.
+`Scripts/generate-order-file.py` writes `Scripts/ask-startup.order`, which `Package.swift` links the `ask` executable with in release.
+
+Measured, today's code without and with it: idle 15.6 → 14.1 MiB (10 alternating runs), and 16.5 → 14.8 MiB under load 7–10 in
+`measure-budgets.py` (12 runs, twice); active 25.5 → 25.1 MiB. Cold start is unchanged (30 alternating launches: median 13.0 ms both);
+the input delay was bimodal for both builds under that load (0.4–0.6 ms or about 10 ms). The file goes stale as the code changes;
+`generate-order-file.py --check` says how many of its names the release build still has (98 % today); regenerate after a large change.
+Still open here: the signed build's extra 1.3 MiB, and active memory.

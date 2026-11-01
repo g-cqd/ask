@@ -177,7 +177,14 @@ let package = Package(
                 .product(name: "TerminalKitInput", package: "TerminalKit")
             ],
             path: "Sources/ask",
-            swiftSettings: packageSettings
+            swiftSettings: packageSettings,
+            // The functions run from launch to the idle prompt first in the binary, so starting touches fewer pages of code and fewer
+            // stay resident (roadmap 0088: idle 15.6 -> 14.1 MiB). Scripts/generate-order-file.py writes the list; a stale name is skipped.
+            linkerSettings: [
+                .unsafeFlags(
+                    ["-Xlinker", "-order_file", "-Xlinker", Context.packageDirectory + "/Scripts/ask-startup.order"],
+                    .when(configuration: .release))
+            ]
         ),
         .testTarget(
             name: "AskCoreTests",
