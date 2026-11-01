@@ -23,3 +23,12 @@ issue; the model gets the task's or idea's text attached, as a skill's is (0185)
 - The model's side: what it is told, and when (a line in the context, or a tool it calls, as the task list is: 0179).
 - `#` in the input grammar (0048): a third sigil, for things that are tracked: `#123` a pull request or issue, `#t5` a task (0179).
   Decide the forms with the owner, and keep `#` inside a word, and a Markdown heading at a line's start, as text.
+
+## Research (2026-11-01)
+
+`development/research/git-integration-2026-11.md`: `git status --porcelain=v2 --branch` answers the whole status in one call (about
+10 ms on ask), refreshed when `.git/HEAD`, the index or the branch's ref changes and after a command runs, never on the input path; the
+forge read-only, unauthenticated for public repositories, never through `gh`; `#t3`, `#i2` and `#123` attached as skills are; no git
+tool for the model. Proposed order: `#t3` and `#i2` first (local), then the status segment, then the forge. Two questions for the
+owner in the note.
+
