@@ -48,11 +48,13 @@ extension Transcript {
         relayOutMarkdown()
     }
 
-    /// Colours fenced code by its language, or draws it in the code style. Every message drawn as Markdown is laid out again.
+    /// Colours fenced code and files' text by their language, or draws them plain. Every message drawn as Markdown, and every file
+    /// tool's block, is laid out again.
     public mutating func setHighlight(_ on: Bool) {
         guard on != highlight else { return }
         highlight = on
         relayOutMarkdown()
+        for index in toolPaths.keys where items.indices.contains(index) { revisions[index] = bump() }
     }
 
     private mutating func relayOutMarkdown() {

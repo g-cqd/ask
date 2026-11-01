@@ -7,10 +7,12 @@ extension ScreenComposer {
     static func lines(
         for item: Transcript.Item, folded: Bool = false, block: Int = 0, columns: Int, style: BlockStyle = .plain,
         spacerAbove: Bool = false, progress: BlockProgress? = nil, toolInput: ShownToolInput? = nil,
-        command: Bool = false, interrupted: Bool = false, toolOutput: String? = nil, replacements: Int? = nil
+        command: Bool = false, interrupted: Bool = false, toolOutput: String? = nil, replacements: Int? = nil,
+        code: FileCode? = nil
     ) -> [Line] {
         let context = ToolContext(
-            progress: progress, toolInput: toolInput, command: command, output: toolOutput, replacements: replacements)
+            progress: progress, toolInput: toolInput, command: command, output: toolOutput, replacements: replacements,
+            code: code)
         let content = contentLines(
             for: item, folded: folded, block: block, columns: columns, style: style, context: context)
         var result = framed(content, kind: item, style: style, spacerAbove: spacerAbove, interrupted: interrupted)
@@ -114,15 +116,20 @@ extension ScreenComposer {
     }
 
     /// A foldable block's body: hard lines 1 and on, drawn with the block's inset. What the block holds, not its own header line.
-    static func body(of text: String, block: Int, width: Int, inset: Int, style: Style, firstLine: Int = 1) -> [Line] {
+    /// With `code`, the text is a file's, its tokens coloured over `style` (roadmap 0152, phase 3).
+    static func body(
+        of text: String, block: Int, width: Int, inset: Int, style: Style, firstLine: Int = 1, code: FileCode? = nil
+    ) -> [Line] {
         guard !text.isEmpty else { return [] }
         let margin = String(repeating: " ", count: inset)
+        var accents = code.map { CodeAccents(text, code: $0) }
         return TextWrap.rows(text, width: width)
             .map { row in
                 Line(
                     text: margin + row.text, style: style,
                     source: Source(
-                        block: block, line: row.line + firstLine, offset: row.offset, col: inset, text: row.text))
+                        block: block, line: row.line + firstLine, offset: row.offset, col: inset, text: row.text),
+                    accents: accents?.accents(for: row, inset: inset, over: style) ?? [])
             }
     }
 }

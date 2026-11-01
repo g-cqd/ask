@@ -7,4 +7,6 @@ struct ToolContext {
     var output: String?
     /// The occurrences an edit reported replacing, counted on the header's right instead of its acknowledgement's line.
     var replacements: Int?
+    /// The part of the block that is a file's text, and its language, when it is coloured (roadmap 0152).
+    var code: FileCode?
 }

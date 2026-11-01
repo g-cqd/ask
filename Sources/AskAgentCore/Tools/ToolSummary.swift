@@ -85,6 +85,9 @@ public enum ToolSummary {
         return (fields.timeoutSeconds, fields.yieldSeconds)
     }
 
+    /// The file the call names, as the model wrote it; nil for a call that names none.
+    public static func path(for input: JSONObject) -> String? { fields(input)?.path }
+
     /// Complete text, never the truncated header: a command or a file's content as itself, anything else as indented JSON.
     public static func fullInput(for input: JSONObject) -> String {
         guard let fields = fields(input) else { return indented(input) }

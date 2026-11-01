@@ -106,4 +106,17 @@ each delta. A cold layout costs 3 % more (open 2.33 → 2.40 ms) for collecting 
 JavaScript template literals nested inside `${…}`; Python's `f`/`r` prefix is outside the string token; C++ `R"(…)"` takes `R` as a
 type; Ruby `%w[]` and `:symbol`; HTML `<script>` and `<style>` bodies; Lua level comments `--[==[ … ]==]`.
 
-Phases 3 to 5 remain.
+**Phase 3, first part, 2026-11-01: `read` and `write`.** The tool's start carries the path its call names (`ToolSummary.path`,
+`ConversationUpdate.toolStarted(path:)`), kept beside the block (`Transcript.toolPaths`); with `ui.highlight` on, a `read`'s output
+and a `write`'s content take the language of `Language(path:firstLine:)`: the file name, its extension, then a `#!` line. A failed
+call, another tool, or a plain language draws as before. `CodeAccents` lexes the text as the wrap measures it (tabs as four spaces)
+and places each token's colour on the rows `TextWrap` cuts, from each row's grapheme offset, walking on from the row before, so a long
+line is walked once; printable ASCII maps bytes to columns directly. Output keeps its dim under the colours. The read's notes
+(`[lines a–b of n]`, `… n more lines not shown`) stay plain, and a folded output's tail is lexed afresh rather than as the rest of the
+head. Tests: `FileToolCharacterisationTests` (a digest of 7 calls × 80 widths × 2 looks with highlighting off, taken before the
+change), `FileHighlightTests` (each guard fails its test when removed; an oracle that wrapping at 3–60 columns never changes a
+character's style). Measured (release, M3): a 400-line, 23 KB Swift `read` at 120 columns lays out in 0.43 ms off, 1.26 ms on, once
+per change to the block.
+
+Left of phase 3: `edit` as a diff (today its input reads `old_text:` / `new_text:`), with the `+`/`-` colour behind the tokens.
+Phases 4 and 5 remain.

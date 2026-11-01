@@ -22,6 +22,11 @@ struct ToolPresentationTests {
         #expect(!ToolSummary.header(for: json).contains("second line"))
     }
 
+    @Test func `the path a file call names is given as written, and nil for a call without one`() throws {
+        #expect(ToolSummary.path(for: try input(#"{"path":"~/src/a.swift","offset":10}"#)) == "~/src/a.swift")
+        #expect(ToolSummary.path(for: try input(#"{"command":"ls"}"#)) == nil)
+    }
+
     @Test func `read and write headers show concise window and size parameters`() throws {
         #expect(
             ToolSummary.header(for: try input(#"{"path":"src/a.swift","offset":10,"limit":36}"#))

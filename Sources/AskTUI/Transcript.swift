@@ -43,6 +43,8 @@ public struct Transcript: Sendable, Equatable {
     var jobBlocks: [String: Int] = [:]
     /// How many occurrences each edit block's tool reported replacing (roadmap 0078), drawn where a read counts its lines.
     var replacements: [Int: Int] = [:]
+    /// The file each file tool's call names (roadmap 0152), whose language colours the file's text in its block.
+    var toolPaths: [Int: String] = [:]
     var completedJobs: Set<String> = []
     /// Which tool blocks the user opened or closed, over the default for the kind (TerminalKit roadmap 0018).
     var folds = FoldStore<Int>()
@@ -94,6 +96,7 @@ public struct Transcript: Sendable, Equatable {
         interrupted.removeAll(keepingCapacity: true)
         jobBlocks.removeAll(keepingCapacity: true)
         replacements.removeAll(keepingCapacity: true)
+        toolPaths.removeAll(keepingCapacity: true)
         completedJobs.removeAll(keepingCapacity: true)
         folds.clearChoices()
         codeFolds.clearChoices()
@@ -119,7 +122,7 @@ public struct Transcript: Sendable, Equatable {
     public mutating func startTool(
         name: String, summary: String, at now: ContinuousClock.Instant = .now, id: String? = nil,
         fullInput: String = "",
-        command: ToolCommand? = nil
+        command: ToolCommand? = nil, path: String? = nil
     ) {
         let summary =
             command.map { $0.parameters(localized: localizedDurations, display: timeoutDisplay, label: timeoutLabel) }
@@ -127,6 +130,7 @@ public struct Transcript: Sendable, Equatable {
         append(.tool(name: name, summary: summary, status: .running, output: "", fullInput: fullInput))
         progress[items.count - 1] = BlockProgress(at: now, spinner: spinnerStyle)
         if command != nil { commandBlocks.insert(items.count - 1) }
+        if let path { toolPaths[items.count - 1] = path }
         if let id { toolBlocks[id] = items.count - 1 }
     }
 
