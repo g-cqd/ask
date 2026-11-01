@@ -9,7 +9,9 @@ internal import Testing
 struct ClaudeRefreshLockTests {
     private let file = CredentialFile(
         url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-claude-lock-\(UUID().uuidString)/ask/credentials.json"))
+            path: "ask-claude-lock-\(UUID().uuidString)/ask/credentials.json"
+        )
+    )
 
     private static let refreshed =
         #"{"token_type":"bearer","access_token":"sk-ant-oat-NEW","refresh_token":"sk-ant-ort-NEW","expires_in":3600,"scope":"user:inference"}"#
@@ -18,17 +20,29 @@ struct ClaudeRefreshLockTests {
     private func expire(email: String? = "a@b.example") throws {
         try file.saveClaude(
             ClaudeCredentials(
-                accessToken: "sk-ant-oat-OLD", refreshToken: "sk-ant-ort-OLD", expiresAt: 100, refreshExpiresAt: nil,
-                accountEmail: email, organizationName: nil, scopes: "user:inference"))
+                accessToken: "sk-ant-oat-OLD",
+                refreshToken: "sk-ant-ort-OLD",
+                expiresAt: 100,
+                refreshExpiresAt: nil,
+                accountEmail: email,
+                organizationName: nil,
+                scopes: "user:inference"
+            )
+        )
     }
 
     private func access(
-        _ transport: SequencedTransport, lockWait: Duration = .seconds(5), connection: ConnectionRecord? = nil,
+        _ transport: SequencedTransport,
+        lockWait: Duration = .seconds(5),
+        connection: ConnectionRecord? = nil,
         file override: CredentialFile? = nil
     ) -> ClaudeAccess {
         ClaudeAccess(
-            file: override ?? file, client: ClaudeAuthClient(transport: transport), lockWait: lockWait,
-            connection: connection)
+            file: override ?? file,
+            client: ClaudeAuthClient(transport: transport),
+            lockWait: lockWait,
+            connection: connection
+        )
     }
 
     @Test func `two processes that both find the credentials expired refresh once between them`() async throws {
@@ -41,7 +55,8 @@ struct ClaudeRefreshLockTests {
         #expect(a == b && a == .subscription(accessToken: "sk-ant-oat-NEW"))
         #expect(
             transport.sent.count == 1,
-            "the second process must find the first's refresh and use it, not offer a spent token")
+            "the second process must find the first's refresh and use it, not offer a spent token"
+        )
         #expect(try file.loadClaude()?.refreshToken == "sk-ant-ort-NEW")
     }
 
@@ -65,7 +80,8 @@ struct ClaudeRefreshLockTests {
         let transport = SequencedTransport([.json(200, Self.refreshed)])
         #expect(
             try await access(transport, lockWait: .seconds(3)).auth(now: 5_000)
-                == .subscription(accessToken: "sk-ant-oat-NEW"))
+                == .subscription(accessToken: "sk-ant-oat-NEW")
+        )
     }
 
     @Test func `a Codex refresh in progress does not block Claude's, since they are different grants`() async throws {
@@ -75,7 +91,8 @@ struct ClaudeRefreshLockTests {
         let transport = SequencedTransport([.json(200, Self.refreshed)])
         #expect(
             try await access(transport, lockWait: .milliseconds(300)).auth(now: 5_000)
-                == .subscription(accessToken: "sk-ant-oat-NEW"))
+                == .subscription(accessToken: "sk-ant-oat-NEW")
+        )
     }
 
     @Test func `credentials that were refreshed while this process waited are used without a request`() async throws {
@@ -86,9 +103,15 @@ struct ClaudeRefreshLockTests {
         // Another process finished its refresh and released the lock.
         try file.saveClaude(
             ClaudeCredentials(
-                accessToken: "sk-ant-oat-OTHER", refreshToken: "sk-ant-ort-OTHER", expiresAt: 90_000,
+                accessToken: "sk-ant-oat-OTHER",
+                refreshToken: "sk-ant-ort-OTHER",
+                expiresAt: 90_000,
                 refreshExpiresAt: nil,
-                accountEmail: "a@b.example", organizationName: nil, scopes: "user:inference"))
+                accountEmail: "a@b.example",
+                organizationName: nil,
+                scopes: "user:inference"
+            )
+        )
         held.release()
         #expect(try await waiting.value == .subscription(accessToken: "sk-ant-oat-OTHER"))
         #expect(transport.sent.isEmpty, "the stored credentials were fresh once the lock was taken")
@@ -120,8 +143,14 @@ struct ClaudeRefreshLockTests {
     {
         let (record, credentials) = try named()
         let stored = ClaudeCredentials(
-            accessToken: "sk-ant-oat-OLD", refreshToken: "sk-ant-ort-OLD", expiresAt: 100, refreshExpiresAt: nil,
-            accountEmail: "mine@example.com", organizationName: nil, scopes: "user:inference")
+            accessToken: "sk-ant-oat-OLD",
+            refreshToken: "sk-ant-ort-OLD",
+            expiresAt: 100,
+            refreshExpiresAt: nil,
+            accountEmail: "mine@example.com",
+            organizationName: nil,
+            scopes: "user:inference"
+        )
         try credentials.saveClaude(stored)
         let transport = SequencedTransport([.json(200, nameThe(account: "someone-else@example.com"))])
         await #expect(throws: ClaudeAccessError.accountChanged) {
@@ -134,8 +163,15 @@ struct ClaudeRefreshLockTests {
         let (record, credentials) = try named()
         try credentials.saveClaude(
             ClaudeCredentials(
-                accessToken: "sk-ant-oat-OLD", refreshToken: "sk-ant-ort-OLD", expiresAt: 100, refreshExpiresAt: nil,
-                accountEmail: "mine@example.com", organizationName: nil, scopes: "user:inference"))
+                accessToken: "sk-ant-oat-OLD",
+                refreshToken: "sk-ant-ort-OLD",
+                expiresAt: 100,
+                refreshExpiresAt: nil,
+                accountEmail: "mine@example.com",
+                organizationName: nil,
+                scopes: "user:inference"
+            )
+        )
         let transport = SequencedTransport([.json(200, nameThe(account: "mine@example.com"))])
         let auth = try await access(transport, connection: record, file: credentials).auth(now: 5_000)
         #expect(auth == .subscription(accessToken: "sk-ant-oat-NEW"))
@@ -158,6 +194,7 @@ struct ClaudeRefreshLockTests {
         #expect(ClaudeAccessError.signedOut.description.contains("ask login"))
         #expect(
             ClaudeAccessError.refreshFailed(.tokenEndpoint(status: 400, code: "invalid_grant")).description
-                .contains("ask login"))
+                .contains("ask login")
+        )
     }
 }

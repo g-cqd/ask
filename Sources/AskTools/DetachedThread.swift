@@ -16,12 +16,15 @@ enum DetachedThread {
         let box = Unmanaged.passRetained(Box(work))
         var thread = pthread_t(bitPattern: 0)
         let status = unsafe pthread_create(
-            &thread, &attributes,
+            &thread,
+            &attributes,
             { raw in
                 let box = unsafe Unmanaged<Box>.fromOpaque(raw).takeRetainedValue()
                 box.work()
                 return nil
-            }, box.toOpaque())
+            },
+            box.toOpaque()
+        )
         if status != 0 { box.release() }
     }
 

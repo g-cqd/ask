@@ -15,7 +15,7 @@ final class AgentConversation: Conversation {
     /// Where settings are read from; `/model` replaces it with one carrying the run's selection.
     let sourceState: Mutex<ConfigurationSource>
     var source: ConfigurationSource { sourceState.withLock { $0 } }
-    private let makeLoop: @Sendable (RunSettings, LoopHooks) throws -> AgentLoop
+    let makeLoop: @Sendable (RunSettings, LoopHooks) throws -> AgentLoop
     /// The sandbox the model narrowed this conversation to; it outlives loop rebuilds, not /new or /resume.
     let narrowing = SessionNarrowing()
     /// Approval questions waiting for an answer, the grants for this session, and where to ask (roadmap 0019).
@@ -26,7 +26,7 @@ final class AgentConversation: Conversation {
     /// The file the next new session will be, named ahead so its colour holds from launch (roadmap 0164).
     let plannedSession = Mutex<String?>(nil)
     /// Launch consent is consumed once, not reused to authorize an account replacement later in this process.
-    private let destinationSelected = Mutex(false)
+    let destinationSelected = Mutex(false)
     /// Keeps the Mac awake while a turn or a job runs (`keepAwake`, roadmap 0090).
     let keepAwake: KeepAwake
     let usage = Mutex(UsageTotals())
@@ -66,8 +66,13 @@ final class AgentConversation: Conversation {
     ///   - grants: what the person allowed for the session before a reload (roadmap 0159).
     ///   - makeLoop: builds the loop for some settings, on the first prompt and after a change.
     init(
-        directory: SessionDirectory, resumed: SessionRecorder? = nil, settings: RunSettings,
-        source: ConfigurationSource, jobs: JobTable, mcp: MCPHub, grants: SessionGrants? = nil,
+        directory: SessionDirectory,
+        resumed: SessionRecorder? = nil,
+        settings: RunSettings,
+        source: ConfigurationSource,
+        jobs: JobTable,
+        mcp: MCPHub,
+        grants: SessionGrants? = nil,
         makeLoop: @escaping @Sendable (RunSettings, LoopHooks) throws -> AgentLoop
     ) {
         sourceState = Mutex(source)
@@ -78,7 +83,9 @@ final class AgentConversation: Conversation {
         current = Mutex(Current(settings: settings))
         session.withLock { $0 = resumed }
         keepAwake = KeepAwake(
-            mode: settings.configuration.keepAwake.value, display: settings.configuration.keepDisplayAwake.value)
+            mode: settings.configuration.keepAwake.value,
+            display: settings.configuration.keepDisplayAwake.value
+        )
         Self.follow(jobs, with: keepAwake)
         if let grants { approvals.withLock { $0.restore(grants) } }
     }
@@ -109,7 +116,11 @@ final class AgentConversation: Conversation {
         promptInput.withLock { $0 }?
             .append(
                 QueuedPrompt(
-                    id: id, text: sent, delivery: followUp ? .followUp : .steering))
+                    id: id,
+                    text: sent,
+                    delivery: followUp ? .followUp : .steering
+                )
+            )
     }
 
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
@@ -148,88 +159,5 @@ final class AgentConversation: Conversation {
             update(contextUpdate())
         }
         for shown in Self.updates(for: event) { update(shown) }
-    }
-
-    func agentLoop() throws -> AgentLoop {
-        try current.withLock { current throws -> AgentLoop in
-            if let existing = current.loop { return existing }
-            mcp.apply(current.settings.configuration.mcp.value.servers)
-            let hooks = LoopHooks(
-                approve: { [weak self] in await self?.approve($0) ?? false }, narrowing: narrowing,
-                destructiveApprover: { [weak self] in await self?.approveDestructive($0) ?? false },
-                callGate: callGate(for: current.settings), askPerson: { [weak self] in await self?.askPerson($0) })
-            let created = try makeLoop(current.settings, hooks).handing(over: handover)
-            current.loop = created
-            return created
-        }
-    }
-
-    /// The session, created on the first prompt so that opening and closing ask leaves no empty sessions.
-    func recorder() throws -> SessionRecorder {
-        let destination = current.withLock { SessionRouting.destination($0.settings.model) }
-        return try destinationSelected.withLock { selected in
-            try session.withLock { existing throws -> SessionRecorder in
-                let recorder: SessionRecorder
-                if let existing {
-                    recorder = existing
-                } else {
-                    try directory.create()
-                    recorder = SessionRecorder(try SessionFile.create(at: FilePath(takePlannedSession())))
-                }
-                try recorder.select(
-                    destination,
-                    explicitlySelected: source.flags.selected != nil || (!selected && source.flags.provider != nil))
-                selected = true
-                existing = recorder
-                return recorder
-            }
-        }
-    }
-}
-
-/// The interactive screen in the working directory.
-func runInteractive(
-    source: ConfigurationSource, settings: RunSettings, resumed: SessionRecorder?, startupNotices: [String],
-    reloaded: ReloadNotice?, pickSession: Bool = false
-) async {
-    // Before a new build can replace this one's file, which /reload compares against (roadmap 0153).
-    LaunchSignature.start()
-    let workingDirectory = FileManager.default.currentDirectoryPath
-    let directory = SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values)
-    let details = startupDetails(resumed: resumed, reloaded: reloaded)
-    let jobs = JobTable(environment: LaunchEnvironment.values)
-    // Connected on the first message, not now (roadmap 0143): an idle ask holds no server's memory.
-    let mcp = startMCPServers(settings, jobs: jobs, connectsOnFirstNeed: true)
-    do {
-        let files = instructionFiles(workingDirectory: workingDirectory)
-        let conversation = AgentConversation(
-            directory: directory, resumed: resumed, settings: settings, source: source, jobs: jobs, mcp: mcp,
-            grants: reloaded?.grantsPath.flatMap(SessionGrants.take(from:)),
-            makeLoop: { settings, hooks in
-                try makeLoop(
-                    settings, instructions: files, jobs: jobs, transport: URLSessionTransport(), approve: hooks.approve,
-                    narrowing: hooks.narrowing, live: mcp.live, destructiveApprover: hooks.destructiveApprover,
-                    callGate: hooks.callGate, askPerson: hooks.askPerson)
-            })
-        // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
-        // stops them gracefully below.
-        let sessionPicker = pickSession ? conversation.sessionPickerOpening() : []
-        let exit = try await runInteractiveScreen(
-            conversation: conversation, label: settings.label,
-            history: [.labelVariants(settings.labelVariants), .sandboxActive(!settings.sandbox.isUnrestricted)]
-                + conversation.history() + sessionPicker,
-            notices: startupNotices + settings.description,
-            details: details + settings.detailLines + ProjectInstructions.describe(files),
-            options: settings.screenOptions, beforeSignalExit: { jobs.terminateAllNow() })
-        await jobs.stopAll()
-        await mcp.stop()
-        if exit == .quit { conversation.printResumeCommand() }
-        // The terminal is already restored: replace this process with the new build, resuming this session.
-        if exit == .reload { conversation.reExecute() }
-    } catch {
-        await jobs.stopAll()
-        await mcp.stop()
-        // The screen has already restored the terminal by the time an error reaches here.
-        fail("ask: \(error)", code: 70)
     }
 }

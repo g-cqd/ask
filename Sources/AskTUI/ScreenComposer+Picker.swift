@@ -39,12 +39,16 @@ extension ScreenComposer {
             }
             let label = row.label
             let padding = String(
-                repeating: " ", count: Swift.max(0, labelWidth - UnicodeWidth.displayWidth(of: label)) + 2)
+                repeating: " ",
+                count: Swift.max(0, labelWidth - UnicodeWidth.displayWidth(of: label)) + 2
+            )
             let chosen = start + offset == picker.selected
             lines.append(
                 Line(
                     text: clipped(row.detail.isEmpty ? label : label + padding + row.detail, to: columns),
-                    style: chosen ? Style(fg: .indexed(6), bold: true) : .default))
+                    style: chosen ? Style(fg: .indexed(6), bold: true) : .default
+                )
+            )
         }
         return lines
     }

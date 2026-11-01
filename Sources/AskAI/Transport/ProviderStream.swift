@@ -5,7 +5,9 @@
 enum ProviderStream {
     /// Sends `http` and streams the decoded events. The stream throws a ``ProviderStreamError``.
     static func events<Decoder: ModelEventDecoding>(
-        _ http: HTTPRequest, over transport: any HTTPTransport, decoder: Decoder.Type,
+        _ http: HTTPRequest,
+        over transport: any HTTPTransport,
+        decoder: Decoder.Type,
         succeeds: @escaping @Sendable (Int) -> Bool
     ) -> AsyncThrowingStream<ModelEvent, any Error> {
         .producing { yield in
@@ -30,7 +32,9 @@ enum ProviderStream {
 
     /// Frames `body`, decodes each event, and yields the events as soon as each chunk is decoded.
     private static func pump<Decoder: ModelEventDecoding>(
-        _ body: AsyncThrowingStream<[UInt8], any Error>, into decoder: Decoder, yield: (ModelEvent) -> Void
+        _ body: AsyncThrowingStream<[UInt8], any Error>,
+        into decoder: Decoder,
+        yield: (ModelEvent) -> Void
     ) async throws {
         var decoder = decoder
         var framer = SSEDecoder()
@@ -58,7 +62,8 @@ enum ProviderStream {
     /// The next chunk of the body. A connection that fails part way is this stream's error, so retry advice and wording apply to it; a
     /// cancellation stays one.
     private static func next<Failure: StreamDecodingFailure>(
-        of chunks: inout AsyncThrowingStream<[UInt8], any Error>.Iterator, failure: Failure.Type
+        of chunks: inout AsyncThrowingStream<[UInt8], any Error>.Iterator,
+        failure: Failure.Type
     ) async throws -> [UInt8]? {
         do {
             return try await chunks.next()

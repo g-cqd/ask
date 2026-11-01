@@ -41,7 +41,8 @@ struct TurnAbortConfirmationTests {
         let now = ContinuousClock.now
         _ = controller.handle(.key(KeyEvent(keyCode: 3)), pageRows: 12, at: now)
         #expect(
-            !controller.handle(.key(KeyEvent(keyCode: 3)), pageRows: 12, at: now + .seconds(3)).contains(.cancelRun))
+            !controller.handle(.key(KeyEvent(keyCode: 3)), pageRows: 12, at: now + .seconds(3)).contains(.cancelRun)
+        )
     }
 
     @Test func `the default still aborts with one press`() {

@@ -34,8 +34,11 @@ struct ModelListing: Sendable, Equatable {
             let output = listed.topProvider?.value?.maxCompletionTokens?.value.flatMap { $0 > 0 ? $0 : nil }
             kept.append(
                 CatalogModel(
-                    id: id, contextWindow: window, maxOutputTokens: output.flatMap { $0 < (window ?? .max) ? $0 : nil },
-                    unsuitable: listed.architecture?.value?.givesText == false ? "does not produce text" : nil)
+                    id: id,
+                    contextWindow: window,
+                    maxOutputTokens: output.flatMap { $0 < (window ?? .max) ? $0 : nil },
+                    unsuitable: listed.architecture?.value?.givesText == false ? "does not produce text" : nil
+                )
             )
         }
         guard !kept.isEmpty else { throw .noModels }

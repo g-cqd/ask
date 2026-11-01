@@ -12,7 +12,9 @@ internal import Testing
 struct CodexAccessTests {
     private let file = CredentialFile(
         url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-access-\(UUID().uuidString)/ask/credentials.json"))
+            path: "ask-access-\(UUID().uuidString)/ask/credentials.json"
+        )
+    )
     static let claims = #"{"https://api.openai.com/auth":{"chatgpt_account_id":"acct_a"}}"#
     static let freshAccess = [
         Base64URL.encode(Array(#"{"alg":"none"}"#.utf8)), Base64URL.encode(Array(claims.utf8)), "fresh"
@@ -20,9 +22,17 @@ struct CodexAccessTests {
     .joined(separator: ".")
     static let tokens = #"{"access_token":"\#(freshAccess)","refresh_token":"rt-2","expires_in":3600}"#
     private let expired = CodexCredentials(
-        accessToken: "old", refreshToken: "rt-1", expiresAt: 100, accountID: "acct_a")
+        accessToken: "old",
+        refreshToken: "rt-1",
+        expiresAt: 100,
+        accountID: "acct_a"
+    )
     private let valid = CodexCredentials(
-        accessToken: "still-good", refreshToken: "rt-1", expiresAt: 10_000, accountID: "acct_a")
+        accessToken: "still-good",
+        refreshToken: "rt-1",
+        expiresAt: 10_000,
+        accountID: "acct_a"
+    )
 
     private func access(_ transport: SequencedTransport, lockWait: Duration = .seconds(5)) -> CodexAccess {
         CodexAccess(file: file, client: CodexAuthClient(transport: transport), lockWait: lockWait)

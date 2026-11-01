@@ -30,7 +30,8 @@ struct MarkdownStreamBenchmark {
                             _ = ScreenComposer.lines(in: transcript, at: 0, columns: MarkdownRenderBenchmark.columns)
                         }
                     frames.append(
-                        Double(elapsed.components.seconds) * 1_000 + Double(elapsed.components.attoseconds) / 1e15)
+                        Double(elapsed.components.seconds) * 1_000 + Double(elapsed.components.attoseconds) / 1e15
+                    )
                 }
                 let mean = frames.reduce(0, +) / Double(frames.count)
                 let last = frames.suffix(20).sorted()[10]

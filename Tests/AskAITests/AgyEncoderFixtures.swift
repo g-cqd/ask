@@ -13,12 +13,21 @@ enum AgyEncoderFixtures {
     static func json(_ text: String) throws -> JSONObject { try JSONObject(validating: Array(text.utf8)) }
 
     static func request(
-        _ messages: [ModelMessage], model: String = gemini, system: [String] = [], tools: [ToolDefinition] = [],
-        maxTokens: Int = 1000, thinking: ThinkingControl? = nil
+        _ messages: [ModelMessage],
+        model: String = gemini,
+        system: [String] = [],
+        tools: [ToolDefinition] = [],
+        maxTokens: Int = 1000,
+        thinking: ThinkingControl? = nil
     ) -> ModelRequest {
         ModelRequest(
-            model: model, maxTokens: maxTokens, systemPrompt: system, messages: messages, tools: tools,
-            thinking: thinking)
+            model: model,
+            maxTokens: maxTokens,
+            systemPrompt: system,
+            messages: messages,
+            tools: tools,
+            thinking: thinking
+        )
     }
 
     static func encode(_ request: ModelRequest) throws -> JSON {
@@ -39,7 +48,8 @@ enum AgyEncoderFixtures {
     static func carrier(_ signature: String, model: String = gemini) -> RequestBlock {
         .thinking(
             text: "",
-            signature: ReasoningProvenance.mark(scheme: AgyThoughtSignature.scheme(model: model), payload: signature))
+            signature: ReasoningProvenance.mark(scheme: AgyThoughtSignature.scheme(model: model), payload: signature)
+        )
     }
 
     static func calls(in message: JSON) -> [JSON] {

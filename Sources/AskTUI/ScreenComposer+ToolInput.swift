@@ -13,7 +13,12 @@ extension ScreenComposer {
 
     /// The whole input in the default colour, then the output dimmed, a blank row before each and no labels (roadmap 0078).
     static func toolInputLines(
-        item: Transcript.Item, input: String, block: Int, columns: Int, style: BlockStyle, context: ToolContext
+        item: Transcript.Item,
+        input: String,
+        block: Int,
+        columns: Int,
+        style: BlockStyle,
+        context: ToolContext
     ) -> [Line] {
         guard case .tool(let name, let summary, let status, let output, _) = item else { return [] }
         let shownOutput = context.output ?? output
@@ -24,21 +29,39 @@ extension ScreenComposer {
         return blockHeader(
             Transcript.Item.toolHeader(name: name, summary: summary, status: status, output: output, folded: false),
             metadata: blockMetadata(
-                status: status, output: output, progress: progress,
-                localizedDurations: style.localizedDurations, toolName: name, replacements: context.replacements),
-            block: block, width: width, inset: inset,
-            style: look)
+                status: status,
+                output: output,
+                progress: progress,
+                localizedDurations: style.localizedDurations,
+                toolName: name,
+                replacements: context.replacements
+            ),
+            block: block,
+            width: width,
+            inset: inset,
+            style: look
+        )
             + [Line(text: "", style: .default)]
             + body(
-                of: input, block: block, width: width, inset: inset, style: .default,
+                of: input,
+                block: block,
+                width: width,
+                inset: inset,
+                style: .default,
                 code: context.code?.part == .input ? context.code : nil,
-                diff: name == "edit" ? DiffLook(theme: style.theme) : nil)
+                diff: name == "edit" ? DiffLook(theme: style.theme) : nil
+            )
             + (shownOutput.isEmpty
                 ? []
                 : [Line(text: "", style: .default)]
                     + body(
-                        of: shownOutput, block: block, width: width, inset: inset, style: Style(dim: true),
+                        of: shownOutput,
+                        block: block,
+                        width: width,
+                        inset: inset,
+                        style: Style(dim: true),
                         firstLine: 1 + TranscriptContent.hardLineCount(of: input),
-                        code: context.code?.part == .output ? context.code : nil))
+                        code: context.code?.part == .output ? context.code : nil
+                    ))
     }
 }

@@ -15,10 +15,12 @@ final class CopilotTestTransport: HTTPTransport {
     }
     static func reply(_ text: String, status: Int = 200) -> HTTPStreamingResponse {
         HTTPStreamingResponse(
-            status: status, headers: [:],
+            status: status,
+            headers: [:],
             body: AsyncThrowingStream { stream in
                 stream.yield(Array(text.utf8))
                 stream.finish()
-            })
+            }
+        )
     }
 }

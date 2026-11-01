@@ -48,7 +48,8 @@ struct MCPHandshakeTests {
 
     @Test func `a version the client does not know ends the connection and says which`() async throws {
         let (connection, transport) = connect(
-            answering: Self.result.replacingOccurrences(of: "2025-11-25", with: "2031-01-01"))
+            answering: Self.result.replacingOccurrences(of: "2025-11-25", with: "2031-01-01")
+        )
         await #expect(throws: MCPError.unsupportedVersion("2031-01-01")) { _ = try await connection.start() }
         #expect(transport.isClosed)
         #expect(transport.sent("notifications/initialized").isEmpty, "it never said it was ready")
@@ -74,7 +75,8 @@ struct MCPHandshakeTests {
         let info = try await connection.start()
         #expect(info.supportsTools && !info.toolsMayChange && info.instructions == nil && info.title == nil)
         let (bare, _) = connect(
-            answering: #"{"protocolVersion":"2025-11-25","capabilities":{},"serverInfo":{"name":"s","version":"1"}}"#)
+            answering: #"{"protocolVersion":"2025-11-25","capabilities":{},"serverInfo":{"name":"s","version":"1"}}"#
+        )
         #expect(try await bare.start().supportsTools == false)
     }
 

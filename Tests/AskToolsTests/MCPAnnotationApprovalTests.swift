@@ -12,7 +12,8 @@ struct MCPAnnotationApprovalTests {
         #expect(!MCPToolAnnotations(readOnly: true).needsApproval)
         #expect(
             !MCPToolAnnotations(readOnly: true, destructive: true).needsApproval,
-            "a read-only tool's destructive hint means nothing")
+            "a read-only tool's destructive hint means nothing"
+        )
         #expect(!MCPToolAnnotations(destructive: false).needsApproval)
     }
 }

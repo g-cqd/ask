@@ -44,13 +44,15 @@ struct MCPSearchTool: ArgumentTool {
         let matches = MCPSearch.rank(candidates, query: words, server: arguments.server, limit: Self.limit)
         guard !matches.isEmpty else {
             return ToolOutput(
-                "No tool matches \"\(words)\". Search with other words, or with an empty query to list the names.")
+                "No tool matches \"\(words)\". Search with other words, or with an empty query to list the names."
+            )
         }
         catalog.promote(matches)
         let more =
             matches.count == Self.limit
             ? "\n\n(The best \(Self.limit); narrow the words or name a server for others.)" : ""
         return ToolOutput(
-            MCPSearch.describe(matches, schemaBytes: MCPSearch.schemaBytes(forMatches: matches.count)) + more)
+            MCPSearch.describe(matches, schemaBytes: MCPSearch.schemaBytes(forMatches: matches.count)) + more
+        )
     }
 }

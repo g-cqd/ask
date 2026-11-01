@@ -16,7 +16,11 @@ struct CodexProvider: ModelProvider {
         return ModelStream.after {
             let credentials = try await access.credentials(now: Date().timeIntervalSince1970)
             let client = ResponsesClient.codex(
-                transport: transport, credentials: credentials, session: session, replay: replay)
+                transport: transport,
+                credentials: credentials,
+                session: session,
+                replay: replay
+            )
             return client.stream(request)
         }
     }

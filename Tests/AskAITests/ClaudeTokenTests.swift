@@ -18,31 +18,43 @@ struct ClaudeTokenTests {
         #expect(
             exchange == #"{"grant_type":"authorization_code","code":"C","#
                 + #""redirect_uri":"https://platform.claude.com/oauth/code/callback","#
-                + #""client_id":"9d1c250a-e61b-44d9-88ed-5944d1962f5e","code_verifier":"V","state":"S"}"#)
+                + #""client_id":"9d1c250a-e61b-44d9-88ed-5944d1962f5e","code_verifier":"V","state":"S"}"#
+        )
         let refresh = String(decoding: ClaudeToken.refreshBody(refreshToken: "R"), as: UTF8.self)
         #expect(
             refresh == #"{"grant_type":"refresh_token","refresh_token":"R","#
-                + #""client_id":"9d1c250a-e61b-44d9-88ed-5944d1962f5e"}"#)
+                + #""client_id":"9d1c250a-e61b-44d9-88ed-5944d1962f5e"}"#
+        )
     }
 
     @Test func `a sound response becomes credentials that expire early`() throws {
         let body = response(
             #","expires_in":28800,"scope":"user:inference","refresh_token_expires_in":604800,"#
-                + #""account":{"email_address":"a@b.c"},"organization":{"name":"Org"}"#)
+                + #""account":{"email_address":"a@b.c"},"organization":{"name":"Org"}"#
+        )
         let credentials = try ClaudeToken.credentials(status: 200, body: body, now: now)
         #expect(
             credentials
                 == ClaudeCredentials(
-                    accessToken: "sk-ant-oat-A", refreshToken: "sk-ant-ort-R",
-                    expiresAt: now + 28_800 - 300, refreshExpiresAt: now + 604_800,
-                    accountEmail: "a@b.c", organizationName: "Org", scopes: "user:inference"))
+                    accessToken: "sk-ant-oat-A",
+                    refreshToken: "sk-ant-ort-R",
+                    expiresAt: now + 28_800 - 300,
+                    refreshExpiresAt: now + 604_800,
+                    accountEmail: "a@b.c",
+                    organizationName: "Org",
+                    scopes: "user:inference"
+                )
+        )
         #expect(!credentials.needsRefresh(now: now + 28_800 - 301))
         #expect(credentials.needsRefresh(now: now + 28_800 - 300))
     }
 
     @Test func `a short lifetime keeps a tenth of it as margin`() throws {
         let credentials = try ClaudeToken.credentials(
-            status: 200, body: response(#","expires_in":600,"scope":"s""#), now: now)
+            status: 200,
+            body: response(#","expires_in":600,"scope":"s""#),
+            now: now
+        )
         #expect(credentials.expiresAt == now + 540)
     }
 
@@ -78,8 +90,10 @@ struct ClaudeTokenTests {
             _ = try ClaudeToken.credentials(
                 status: 200,
                 body: Array(
-                    #"{"token_type":"bearer","access_token":"A","refresh_token":"R","expires_in":1,"scope":""}"#.utf8),
-                now: now)
+                    #"{"token_type":"bearer","access_token":"A","refresh_token":"R","expires_in":1,"scope":""}"#.utf8
+                ),
+                now: now
+            )
         }
     }
 

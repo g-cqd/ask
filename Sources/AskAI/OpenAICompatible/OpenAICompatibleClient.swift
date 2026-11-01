@@ -16,7 +16,12 @@ public struct OpenAICompatibleClient: Sendable {
     ///   - headers: extra headers a gateway asks for.
     public init(transport: any HTTPTransport, baseURL: URL, apiKey: String? = nil, headers: [String: String] = [:]) {
         endpoint = ProviderEndpoint(
-            transport: transport, baseURL: baseURL, path: "chat/completions", apiKey: apiKey, headers: headers)
+            transport: transport,
+            baseURL: baseURL,
+            path: "chat/completions",
+            apiKey: apiKey,
+            headers: headers
+        )
     }
 
     /// Sends `request` and streams the response's events. The stream throws an ``OpenAICompatibleError``.

@@ -14,7 +14,9 @@ struct ProjectInstructionsTests {
         home = URL(fileURLWithPath: (root.path as NSString).resolvingSymlinksInPath).appending(path: "home")
         config = home.appending(path: ".config/ask")
         try FileManager.default.createDirectory(
-            at: home.appending(path: "code/app/sub"), withIntermediateDirectories: true)
+            at: home.appending(path: "code/app/sub"),
+            withIntermediateDirectories: true
+        )
         try FileManager.default.createDirectory(at: config, withIntermediateDirectories: true)
     }
 
@@ -24,7 +26,10 @@ struct ProjectInstructionsTests {
 
     private func discover(from relative: String) -> [ProjectInstructions.File] {
         ProjectInstructions.discover(
-            from: home.appending(path: relative).path, home: home.path, configDirectory: config.path)
+            from: home.appending(path: relative).path,
+            home: home.path,
+            configDirectory: config.path
+        )
     }
 
     @Test func `files are collected from home down to the working directory, global first`() throws {

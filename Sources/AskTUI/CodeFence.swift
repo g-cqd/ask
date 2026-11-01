@@ -29,7 +29,12 @@ struct CodeFence: Sendable, Equatable {
                 if fence.marker == current.marker, fence.length >= current.length, fence.info.isEmpty {
                     fences.append(
                         CodeFence(
-                            openingLine: current.line, lastLine: index, language: current.language, isClosed: true))
+                            openingLine: current.line,
+                            lastLine: index,
+                            language: current.language,
+                            isClosed: true
+                        )
+                    )
                     open = nil
                 }
             } else if fence.marker == "~" || !fence.info.contains("`") {
@@ -40,8 +45,12 @@ struct CodeFence: Sendable, Equatable {
         if let current = open {
             fences.append(
                 CodeFence(
-                    openingLine: current.line, lastLine: Swift.max(current.line, lines.count - 1),
-                    language: current.language, isClosed: false))
+                    openingLine: current.line,
+                    lastLine: Swift.max(current.line, lines.count - 1),
+                    language: current.language,
+                    isClosed: false
+                )
+            )
         }
         return fences
     }

@@ -21,14 +21,19 @@ struct ToolRegistrySandboxTests {
     private func call(_ spy: Spy, _ json: String, policy: SandboxPolicy) async throws -> ToolOutput {
         let registry = try ToolRegistry([spy])
         return await registry.run(
-            name: "spy", input: try JSONObject(validating: Array(json.utf8)),
-            in: ToolContext(workingDirectory: "/tmp", sandbox: policy))
+            name: "spy",
+            input: try JSONObject(validating: Array(json.utf8)),
+            in: ToolContext(workingDirectory: "/tmp", sandbox: policy)
+        )
     }
 
     @Test func `a narrowing call runs with the narrowed policy`() async throws {
         let spy = Spy()
         let output = try await call(
-            spy, #"{"x":"a","sandbox":{"network":"none"}}"#, policy: SandboxPolicy(network: .localhost))
+            spy,
+            #"{"x":"a","sandbox":{"network":"none"}}"#,
+            policy: SandboxPolicy(network: .localhost)
+        )
         #expect(output == ToolOutput("ran"))
         #expect(spy.seen.withLock { $0 } == [SandboxPolicy(network: SandboxPolicy.Network.none)])
     }

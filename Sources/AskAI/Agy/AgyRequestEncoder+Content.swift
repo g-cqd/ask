@@ -43,9 +43,13 @@ extension AgyRequestEncoder {
                         let nested = AgyImagePlacement.nests(model: model)
                         results.append(
                             .result(
-                                id: id, name: names[id] ?? "unknown_tool",
+                                id: id,
+                                name: names[id] ?? "unknown_tool",
                                 content: images.isEmpty || nested ? content : content + ImagePart.attachedNote,
-                                isError: isError, nested: nested ? images : []))
+                                isError: isError,
+                                nested: nested ? images : []
+                            )
+                        )
                         if !nested { pictures += images.map(Part.inline) }
                     case .text(let value) where !value.isEmpty: text.append(.text(value))
                     default: break
@@ -102,13 +106,18 @@ extension AgyRequestEncoder.Part {
                     if let signature { writer.field("thoughtSignature", signature) }
                 case .result(let id, let name, let content, let isError, let nested):
                     Self.writeInvocation(
-                        "functionResponse", id: id, name: name, payload: "response", into: &writer,
+                        "functionResponse",
+                        id: id,
+                        name: name,
+                        payload: "response",
+                        into: &writer,
                         { $0.object { $0.field(isError ? "error" : "output", content) } },
                         after: { writer in
                             guard !nested.isEmpty else { return }
                             writer.key("parts")
                             writer.array { parts in for image in nested { image.writeInline(into: &parts) } }
-                        })
+                        }
+                    )
                 case .inline(let image): image.writeInlineFields(into: &writer)
             }
         }
@@ -116,8 +125,13 @@ extension AgyRequestEncoder.Part {
 
     /// A call or a result: an object under `key` that names its call by id and name, then carries its payload.
     private static func writeInvocation(
-        _ key: String, id: String, name: String, payload: String, into writer: inout JSONStreamWriter,
-        _ body: (inout JSONStreamWriter) -> Void, after: (inout JSONStreamWriter) -> Void = { _ in }
+        _ key: String,
+        id: String,
+        name: String,
+        payload: String,
+        into writer: inout JSONStreamWriter,
+        _ body: (inout JSONStreamWriter) -> Void,
+        after: (inout JSONStreamWriter) -> Void = { _ in }
     ) {
         writer.key(key)
         writer.object { writer in

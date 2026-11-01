@@ -14,15 +14,24 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// A tool began. With `command`, the full input is a command, which heads the block after its limits, and `summary` is unused.
     /// `path` is the file the call names, whose language colours a file's text in the block (roadmap 0152).
     case toolStarted(
-        name: String, summary: String, id: String? = nil, fullInput: String = "", command: ToolCommand? = nil,
-        path: String? = nil)
+        name: String,
+        summary: String,
+        id: String? = nil,
+        fullInput: String = "",
+        command: ToolCommand? = nil,
+        path: String? = nil
+    )
     /// More of the model's reasoning, shown as a block that starts folded.
     case thinkingText(String)
     /// The tool ended; `output` is what it returned, kept so the block can be opened. `replacements` is the count an edit
     /// reported, shown after its target.
     case toolFinished(
-        Transcript.ToolStatus, output: String = "", id: String? = nil, backgroundJob: String? = nil,
-        replacements: Int? = nil)
+        Transcript.ToolStatus,
+        output: String = "",
+        id: String? = nil,
+        backgroundJob: String? = nil,
+        replacements: Int? = nil
+    )
     /// A background process updates its original tool block independently of focused output.
     case jobOutput(JobUpdate)
     case notice(String, isError: Bool)

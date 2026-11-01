@@ -50,10 +50,16 @@ public struct ToolContext: Sendable, Equatable {
     ///   - callGate: what is asked before a call that changes things; nil, the default, asks nothing.
     ///   - askPerson: who answers the model's questions; nil, the default, where no one can.
     public init(
-        workingDirectory: String, outputDirectory: String? = nil, sandbox: SandboxPolicy = .unrestricted,
-        approve: SandboxApprover? = nil, narrowing: SessionNarrowing? = nil,
-        commandEnvironment: CommandEnvironment = .inherit, destructiveApprover: DestructiveApprover? = nil,
-        imageLimits: ImageLimits? = nil, callGate: ToolCallGate? = nil, askPerson: PersonQuestion.Asker? = nil
+        workingDirectory: String,
+        outputDirectory: String? = nil,
+        sandbox: SandboxPolicy = .unrestricted,
+        approve: SandboxApprover? = nil,
+        narrowing: SessionNarrowing? = nil,
+        commandEnvironment: CommandEnvironment = .inherit,
+        destructiveApprover: DestructiveApprover? = nil,
+        imageLimits: ImageLimits? = nil,
+        callGate: ToolCallGate? = nil,
+        askPerson: PersonQuestion.Asker? = nil
     ) {
         self.callGate = callGate
         self.askPerson = askPerson

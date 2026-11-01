@@ -13,7 +13,10 @@ struct CompactionBlockTests {
 
     private func rows(_ controller: ScreenController, at index: Int = 0, columns: Int = 70) -> [String] {
         ScreenComposer.lines(
-            in: controller.state.transcript, at: index, columns: columns, style: controller.state.blocks
+            in: controller.state.transcript,
+            at: index,
+            columns: columns,
+            style: controller.state.blocks
         )
         .map(\.text)
     }
@@ -74,6 +77,7 @@ struct CompactionBlockTests {
         #expect(controller.state.transcript.items.count == 2)
         #expect(
             controller.state.transcript.contentText(at: 1).hasSuffix("Two.")
-                || controller.state.transcript.contentText(at: 1).contains("compact"))
+                || controller.state.transcript.contentText(at: 1).contains("compact")
+        )
     }
 }

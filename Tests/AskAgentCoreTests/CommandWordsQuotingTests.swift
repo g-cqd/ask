@@ -18,20 +18,26 @@ struct CommandWordsQuotingTests {
         #expect(CommandWords("cat <<EOF; rm -rf build\nbody\nEOF").programs == ["cat", "rm"])
         #expect(
             CommandWords("cat <<EOF\nbody\nEOF \nrm x").programs == ["cat", "rm"],
-            "a terminator with spaces ends it, the safe way")
+            "a terminator with spaces ends it, the safe way"
+        )
         #expect(CommandWords("cat <<< \"x\"; ls").programs == ["cat", "ls"], "a here-string has no body")
         #expect(
             CommandWords("cat <<< x\nrm -rf build").programs == ["cat", "rm"],
-            "a here-string's next line is a command, not a body that hides it")
+            "a here-string's next line is a command, not a body that hides it"
+        )
     }
 
     @Test func `separators and newlines inside quotes split nothing`() {
         #expect(CommandWords("echo \"a; b | c\" && git status").phrases == ["echo", "git status"])
         #expect(CommandWords("python3 -c 'import os\nprint(1)'").programs == ["python3"])
         #expect(
-            CommandWords("echo 'a\\'; rm x").programs == ["echo", "rm"], "a backslash ends nothing in single quotes")
+            CommandWords("echo 'a\\'; rm x").programs == ["echo", "rm"],
+            "a backslash ends nothing in single quotes"
+        )
         #expect(
-            CommandWords("echo \"a\\\"; rm x\"").programs == ["echo"], "an escaped double quote keeps the string open")
+            CommandWords("echo \"a\\\"; rm x\"").programs == ["echo"],
+            "an escaped double quote keeps the string open"
+        )
         #expect(CommandWords("echo a\\; rm x").programs == ["echo"], "an escaped separator is a word")
         #expect(CommandWords("git \\\n  status").phrases == ["git status"], "a continued line is one command")
     }

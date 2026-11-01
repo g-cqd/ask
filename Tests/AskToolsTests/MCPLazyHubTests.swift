@@ -94,7 +94,8 @@ struct MCPLazyHubTests {
         #expect(!settled && ContinuousClock.now - start < .seconds(30))
         #expect(
             hub.pendingServers.first == "stuck",
-            "the quick one may still be finishing under load; the stuck one never does")
+            "the quick one may still be finishing under load; the stuck one never does"
+        )
         #expect(!stuck.isClosed)
         await hub.stop()
     }

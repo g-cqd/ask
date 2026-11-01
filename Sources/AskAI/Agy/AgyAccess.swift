@@ -14,7 +14,9 @@ public struct AgyAccess: Sendable {
 
     /// Access backed by `file`, refreshing through `client`, onboarding through `cloud`, finding a new secret with `findSecret`.
     public init(
-        file: CredentialFile, client: AgyAuthClient, cloud: AgyCloudClient,
+        file: CredentialFile,
+        client: AgyAuthClient,
+        cloud: AgyCloudClient,
         findSecret: @escaping @Sendable () async throws -> String
             // @dl:accept -- Claude's, Codex's and Antigravity's accessors are twins over different credential types and errors; a protocol to share them would cost more than it saves (a refactor of the three, if it is ever worth it, is its own change)
     ) {

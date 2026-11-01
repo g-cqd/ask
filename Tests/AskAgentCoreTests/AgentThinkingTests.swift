@@ -10,8 +10,10 @@ struct AgentThinkingTests {
         let definition: ToolDefinition
         init() throws {
             definition = ToolDefinition(
-                name: "fixture", description: "Return the fixture result.",
-                inputSchema: try JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
+                name: "fixture",
+                description: "Return the fixture result.",
+                inputSchema: try JSONObject(validating: Array(#"{"type":"object"}"#.utf8))
+            )
         }
         func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput { ToolOutput("X") }
     }
@@ -22,11 +24,19 @@ struct AgentThinkingTests {
         -> AgentLoop
     {
         AgentLoop(
-            provider: provider, tools: try ToolRegistry([FixedReply()]),
+            provider: provider,
+            tools: try ToolRegistry([FixedReply()]),
             settings: AgentSettings(
-                model: "m", maximumTokens: 4096, systemPrompt: [], maximumTurns: 8, compactAtTokens: compactAt,
-                keepRecentBytes: 1, thinking: control),
-            context: ToolContext(workingDirectory: harness.directory.path))
+                model: "m",
+                maximumTokens: 4096,
+                systemPrompt: [],
+                maximumTurns: 8,
+                compactAtTokens: compactAt,
+                keepRecentBytes: 1,
+                thinking: control
+            ),
+            context: ToolContext(workingDirectory: harness.directory.path)
+        )
     }
 
     @Test func `an unset policy leaves normal requests unset`() async throws {

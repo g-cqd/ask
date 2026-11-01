@@ -6,7 +6,10 @@ import TerminalKitRender
 /// the same reply drawn as text.
 func registerMarkdownBenchmarks() {
     let configuration = Benchmark.Configuration(
-        metrics: [.wallClock, .mallocCountTotal], maxDuration: .seconds(1), maxIterations: 1_000)
+        metrics: [.wallClock, .mallocCountTotal],
+        maxDuration: .seconds(1),
+        maxIterations: 1_000
+    )
     /// A reply of `sections` sections, about 1.2 KB each, in the mix a model writes: a heading, prose with marks, a list, a table, a short fence.
     func reply(sections: Int) -> String {
         (0 ..< sections)
@@ -41,7 +44,8 @@ func registerMarkdownBenchmarks() {
             for index in 0 ..< 50 { state.transcript.addNotice("earlier item \(index)", isError: false) }
             state.transcript.addAssistantText(reply(sections: sections))
             Benchmark(
-                "markdown/stream delta, \(name) reply, \(markdown ? "markdown" : "text")", configuration: configuration
+                "markdown/stream delta, \(name) reply, \(markdown ? "markdown" : "text")",
+                configuration: configuration
             ) { benchmark in
                 var state = state
                 var buffer = ScreenBuffer(columns: 120, rows: 40)

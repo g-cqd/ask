@@ -40,7 +40,12 @@ struct SessionFileFailureTests {
         where info.proc_fdtype == PROX_FDTYPE_VNODE {
             var vnode = vnode_fdinfowithpath()
             let got = proc_pidfdinfo(
-                pid, info.proc_fd, PROC_PIDFDVNODEPATHINFO, &vnode, Int32(MemoryLayout<vnode_fdinfowithpath>.size))
+                pid,
+                info.proc_fd,
+                PROC_PIDFDVNODEPATHINFO,
+                &vnode,
+                Int32(MemoryLayout<vnode_fdinfowithpath>.size)
+            )
             guard got > 0 else { continue }
             let named = withUnsafeBytes(of: &vnode.pvip.vip_path) { raw in
                 String(decoding: raw.prefix { $0 != 0 }, as: UTF8.self)
@@ -152,14 +157,17 @@ struct SessionFileFailureTests {
         let onDisk = try bytes("s.jsonl")
         #expect(
             String(decoding: onDisk, as: UTF8.self).contains("flush failed"),
-            "the bytes were written, so they are there")
+            "the bytes were written, so they are there"
+        )
         failing.withLock { $0 = false }
         let second = try file.append(.user("two"))
         #expect(
             try SessionLog.decode(bytes("s.jsonl")).entries.map(\.id) == [first, second],
-            "the live file is memory's again")
+            "the live file is memory's again"
+        )
         #expect(
             try bytes("s.jsonl.damaged") == onDisk,
-            "and the file with the failed record is kept, not discarded (ADR-0013)")
+            "and the file with the failed record is kept, not discarded (ADR-0013)"
+        )
     }
 }

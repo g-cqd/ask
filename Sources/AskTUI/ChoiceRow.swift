@@ -15,7 +15,11 @@ public struct ChoiceRow: Sendable, Equatable {
 
     /// A row.
     public init(
-        label: String, detail: String = "", arguments: String, isCurrent: Bool = false, completes: Bool = false,
+        label: String,
+        detail: String = "",
+        arguments: String,
+        isCurrent: Bool = false,
+        completes: Bool = false,
         revealedBy: String? = nil
     ) {
         self.label = label

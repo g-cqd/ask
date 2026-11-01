@@ -11,8 +11,13 @@ struct ImageLimitsTests {
             role: .user,
             blocks: [
                 .toolResult(
-                    id: id, content: id, isError: false, images: types.map { ImagePart(mediaType: $0, data: [1]) })
-            ])
+                    id: id,
+                    content: id,
+                    isError: false,
+                    images: types.map { ImagePart(mediaType: $0, data: [1]) }
+                )
+            ]
+        )
     }
 
     private func counts(_ messages: [ModelMessage]) -> [Int] {
@@ -42,7 +47,8 @@ struct ImageLimitsTests {
         #expect(text(out[0]).contains("an older image, removed to stay within the 4"))
         #expect(
             counts(ImagePart.filtering(Array(messages.prefix(4)), accepts: true, limits: ImageLimits(maximumImages: 4)))
-                == [1, 1, 1, 1])
+                == [1, 1, 1, 1]
+        )
     }
 
     @Test func `a provider that says nothing is held to the default and an allowance of one keeps one`() {

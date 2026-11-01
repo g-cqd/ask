@@ -10,7 +10,12 @@ internal import Testing
 @Suite("An assistant message is drawn as Markdown and copied as written")
 struct MarkdownTranscriptTests {
     private static let options = ScreenOptions(
-        codeFoldLines: 3, prompt: "ask> ", tint: false, separator: false, padding: false)
+        codeFoldLines: 3,
+        prompt: "ask> ",
+        tint: false,
+        separator: false,
+        padding: false
+    )
     private static let reply = "intro\n```swift\na\nb\nc\nd\n```\nafter"
 
     private func rows(_ rig: PointerRig) -> [String] { (0 ..< rig.buffer.rows).map { rig.text(row: $0) } }
@@ -85,7 +90,8 @@ struct MarkdownTranscriptTests {
     @Test func `with Markdown off the message is the text the model wrote`() {
         let rig = PointerRig(
             options: ScreenOptions(markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false),
-            updates: [.assistantText("Some **bold**")])
+            updates: [.assistantText("Some **bold**")]
+        )
         #expect(row(rig, "Some **bold**") != nil)
     }
 

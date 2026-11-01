@@ -16,7 +16,8 @@ struct SessionSandboxRecordTests {
         let line = try SessionLog.line(forSandbox: strict)
         #expect(
             String(decoding: line, as: UTF8.self)
-                == #"{"network":"none","type":"sandbox","write":["workspace",["/a"]]}"# + "\n")
+                == #"{"network":"none","type":"sandbox","write":["workspace",["/a"]]}"# + "\n"
+        )
     }
 
     @Test func `a snapshot carries it, and the latest record wins on replay`() throws {
@@ -61,13 +62,17 @@ struct SessionSandboxRecordTests {
         bytes += try SessionLog.line(for: tree.entries[1])
         let recovered = try SessionLog.recover(bytes)
         #expect(
-            recovered.issues == [.malformedLine(line: 4)], "the header and an empty snapshot's leaf are lines 1 and 2")
+            recovered.issues == [.malformedLine(line: 4)],
+            "the header and an empty snapshot's leaf are lines 1 and 2"
+        )
         #expect(recovered.tree.entries == tree.entries, "nothing orphaned")
     }
 
     @Test func `resuming narrows the configuration by the session's record, except where a flag spoke`() {
         let files = Configuration.defaults.applying(
-            ConfigurationFile(sandbox: SandboxSection(network: .localhost)), from: .file("/u"))
+            ConfigurationFile(sandbox: SandboxSection(network: .localhost)),
+            from: .file("/u")
+        )
         let resumed = files.applying(session: strict, flaggedNetwork: false, flaggedWrite: false, flaggedRead: false)
         #expect(resumed.sandbox.value.network == SandboxPolicy.Network.none)
         #expect(resumed.sandbox.value.write == strict.write)
@@ -75,11 +80,19 @@ struct SessionSandboxRecordTests {
         let flagged = files.applying(session: strict, flaggedNetwork: true, flaggedWrite: true, flaggedRead: true)
         #expect(flagged == files, "a flag is the user widening; the record does not override it")
         let wider = files.applying(
-            session: SandboxSection(network: .any), flaggedNetwork: false, flaggedWrite: false, flaggedRead: false)
+            session: SandboxSection(network: .any),
+            flaggedNetwork: false,
+            flaggedWrite: false,
+            flaggedRead: false
+        )
         #expect(wider == files, "a record never widens the files either")
         #expect(Configuration.Source.session.description == "this session's record")
         let again = resumed.applying(
-            session: resumed.sandbox.value, flaggedNetwork: false, flaggedWrite: false, flaggedRead: false)
+            session: resumed.sandbox.value,
+            flaggedNetwork: false,
+            flaggedWrite: false,
+            flaggedRead: false
+        )
         #expect(again.sandbox.value.write == strict.write, "resuming its own record does not grow it")
     }
 
@@ -92,8 +105,11 @@ struct SessionSandboxRecordTests {
         #expect(resumed == files)
         #expect(resumed.sandbox.value.writeScope(workspace: "/w", home: "/h") == .roots(["/w"]))
         let narrowed = files.applying(
-            session: SandboxSection(write: [.anywhere, .workspace]), flaggedNetwork: false, flaggedWrite: false,
-            flaggedRead: false)
+            session: SandboxSection(write: [.anywhere, .workspace]),
+            flaggedNetwork: false,
+            flaggedWrite: false,
+            flaggedRead: false
+        )
         #expect(narrowed.sandbox.value.write == [.workspace], "a narrower scope in the record still narrows")
     }
 

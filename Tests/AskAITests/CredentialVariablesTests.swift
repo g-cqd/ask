@@ -12,7 +12,8 @@ struct CredentialVariablesTests {
         #expect(
             Set(AnthropicEnvironmentAuth.variables) == [
                 "ANTHROPIC_AUTH_TOKEN", "ANTHROPIC_OAUTH_TOKEN", "ANTHROPIC_API_KEY"
-            ])
+            ]
+        )
         for name in AnthropicEnvironmentAuth.variables {
             #expect(throws: Never.self) { _ = try AnthropicEnvironmentAuth.resolve(environment: [name: "x"]) }
             #expect((try? AnthropicEnvironmentAuth.resolve(environment: [name: "x"])) != nil, "\(name) is read")
@@ -52,7 +53,8 @@ struct CredentialVariablesTests {
 
     @Test func `the name in a key is read the way interpolation reads it`() {
         #expect(
-            ProviderSettings.variableName(in: "$KEY") == "KEY" && ProviderSettings.variableName(in: "${KEY}") == "KEY")
+            ProviderSettings.variableName(in: "$KEY") == "KEY" && ProviderSettings.variableName(in: "${KEY}") == "KEY"
+        )
         #expect(ProviderSettings.variableName(in: "$$KEY") == nil && ProviderSettings.variableName(in: "KEY") == nil)
         #expect(ProviderSettings.variableName(in: "$") == "", "an empty name is the caller's to drop")
     }

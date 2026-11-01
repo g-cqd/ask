@@ -62,27 +62,43 @@ public struct ReadTool: ArgumentTool {
         let maximumImages = min(Self.largestImages, max(1, arguments.maxImages ?? Self.defaultImages))
         if VideoReader.looksLikeVideo(header) {
             let request = VideoReader.Request(
-                at: arguments.at, count: arguments.count, every: arguments.every, start: arguments.start,
-                end: arguments.end, maximumImages: maximumImages)
+                at: arguments.at,
+                count: arguments.count,
+                every: arguments.every,
+                start: arguments.start,
+                end: arguments.end,
+                maximumImages: maximumImages
+            )
             let allowance = ImageReader.Allowance(context.imageLimits)
             if context.sandbox.isUnrestricted {
                 return try await VideoReader.read(url, path: arguments.path, request, allowance: allowance)
             }
             // AVFoundation opens a path, and a path can be swapped after the check: it reads a verified copy instead.
             return try await ScopedFile.withCopy(
-                of: url, shownAs: arguments.path, limit: FileTools.maximumMediaBytes, in: context
+                of: url,
+                shownAs: arguments.path,
+                limit: FileTools.maximumMediaBytes,
+                in: context
             ) { copy throws(ToolFailure) in
                 try await VideoReader.read(copy, path: arguments.path, request, allowance: allowance)
             }
         }
         let isMedia = ImageReader.mediaType(of: header) != nil || PDFReader.isPDF(header)
         let bytes = try FileTools.bytes(
-            at: url, shownAs: arguments.path, in: context,
-            limit: isMedia ? FileTools.maximumMediaBytes : FileTools.maximumFileBytes)
+            at: url,
+            shownAs: arguments.path,
+            in: context,
+            limit: isMedia ? FileTools.maximumMediaBytes : FileTools.maximumFileBytes
+        )
         if PDFReader.isPDF(bytes) {
             return try PDFReader.read(
-                bytes, path: arguments.path, pages: arguments.pages, maximumImages: maximumImages,
-                render: arguments.render ?? false, allowance: ImageReader.Allowance(context.imageLimits))
+                bytes,
+                path: arguments.path,
+                pages: arguments.pages,
+                maximumImages: maximumImages,
+                render: arguments.render ?? false,
+                allowance: ImageReader.Allowance(context.imageLimits)
+            )
         }
         if ImageReader.mediaType(of: bytes) != nil {
             return try image(bytes, shownAs: arguments.path, allowance: ImageReader.Allowance(context.imageLimits))
@@ -96,7 +112,8 @@ public struct ReadTool: ArgumentTool {
         }
         let last = Swift.min(lines.count, first + Swift.max(1, arguments.limit ?? lines.count) - 1)
         return ToolOutput(
-            lines[(first - 1) ..< last].joined(separator: "\n") + "\n[lines \(first)–\(last) of \(lines.count)]")
+            lines[(first - 1) ..< last].joined(separator: "\n") + "\n[lines \(first)–\(last) of \(lines.count)]"
+        )
     }
 
     /// An image file: a line saying what it is, and the image itself for a model that takes images (roadmap 0084).

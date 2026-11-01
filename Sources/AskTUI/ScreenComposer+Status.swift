@@ -5,14 +5,18 @@ extension ScreenComposer {
     /// The status line, fitted to `columns`, and where its clickable parts sit. Each piece is whole, shorter or gone, never cut (roadmap 0074).
     /// It says nothing that conveys nothing: no "ready", and a copy only when it went wrong.
     static func status(
-        for state: ScreenState, input: String = "", columns: Int = 200
+        for state: ScreenState,
+        input: String = "",
+        columns: Int = 200
     ) -> (line: Line, runners: Range<Int>?, below: Range<Int>?) {
         let mark = leadingMark(for: state)
         var style = StatusLine.statusStyle
         // The session's colour, when it has one (roadmap 0164), behind the whole line.
         if let seed = state.sessionIdentity { style.bg = state.blocks.theme.sessionTint(seed: seed) }
         var drawn = StatusLine(
-            segments(for: state, input: input, mark: mark), columns: columns, markStyle: mark.style,
+            segments(for: state, input: input, mark: mark),
+            columns: columns,
+            markStyle: mark.style,
             markWidth: UnicodeWidth.displayWidth(of: mark.character)
         )
         .line(style: style)
@@ -56,19 +60,23 @@ extension ScreenComposer {
         guard state.lane != nil else { return pieces }
         if let pending = state.pendingApproval {
             pieces.append(
-                StatusSegment("\(pending.question)  \(pending.shortcutHint)", priority: 100, droppable: false))
+                StatusSegment("\(pending.question)  \(pending.shortcutHint)", priority: 100, droppable: false)
+            )
         }
         if let pending = state.pendingQuestions {
             let question = pending.questions[pending.current].question
             pieces.append(
-                StatusSegment("The model asks: \(question)  Esc returns to answer", priority: 100, droppable: false))
+                StatusSegment("The model asks: \(question)  Esc returns to answer", priority: 100, droppable: false)
+            )
         }
         return pieces
     }
 
     /// The pieces, in the order they are shown, each with how long it is worth keeping.
     static func segments(
-        for state: ScreenState, input: String, mark: StatusLeadingMark = StatusLeadingMark(character: "")
+        for state: ScreenState,
+        input: String,
+        mark: StatusLeadingMark = StatusLeadingMark(character: "")
     ) -> [StatusSegment] {
         var pieces = waiting(state)
         let labels = labelForms(of: state, mark: mark.character)
@@ -80,7 +88,8 @@ extension ScreenComposer {
         }
         if let armed = state.abortArmedAction {
             pieces.append(
-                StatusSegment(["press \(armed) again to abort", "\(armed.lowercased()) again to abort"], priority: 82))
+                StatusSegment(["press \(armed) again to abort", "\(armed.lowercased()) again to abort"], priority: 82)
+            )
         }
         if let lane = state.lane {
             pieces.append(StatusSegment(["main › \(lane.name) · esc returns", "main › \(lane.name)"], priority: 65))

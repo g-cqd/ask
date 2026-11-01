@@ -21,7 +21,10 @@ private let chunks: [[UInt8]] = stride(from: 0, to: stream.count, by: 1_500)
 
 let benchmarks: @Sendable () -> Void = {
     Benchmark.defaultConfiguration = .init(
-        metrics: [.wallClock, .cpuTotal, .throughput], maxDuration: .seconds(3), maxIterations: 1_000)
+        metrics: [.wallClock, .cpuTotal, .throughput],
+        maxDuration: .seconds(3),
+        maxIterations: 1_000
+    )
 
     Benchmark("stream/frame 2000 events (\(stream.count / 1024) KiB)") { benchmark in
         for _ in benchmark.scaledIterations {
@@ -59,13 +62,21 @@ let benchmarks: @Sendable () -> Void = {
                         role: .assistant,
                         blocks: [
                             .text("Reading it."), .toolCall(id: "toolu_\(turn)", name: "read", input: input)
-                        ]),
+                        ]
+                    ),
                     ModelMessage(
-                        role: .user, blocks: [.toolResult(id: "toolu_\(turn)", content: result, isError: false)])
+                        role: .user,
+                        blocks: [.toolResult(id: "toolu_\(turn)", content: result, isError: false)]
+                    )
                 ]
             }
         let request = ModelRequest(
-            model: "claude-x", maxTokens: 8_192, systemPrompt: ["You are ask."], messages: messages, tools: [])
+            model: "claude-x",
+            maxTokens: 8_192,
+            systemPrompt: ["You are ask."],
+            messages: messages,
+            tools: []
+        )
         Benchmark("request/encode \(turns) turns (\(AnthropicRequestEncoder.encode(request).count / 1024) KiB)") {
             benchmark in
             for _ in benchmark.scaledIterations { blackHole(AnthropicRequestEncoder.encode(request)) }

@@ -11,7 +11,10 @@ struct ScreenClipboardTests {
         let connection = MockTerminalConnection()
         let recorder = ClipboardRecorder()
         var clipboard = ScreenClipboard(
-            connection: connection, environment: ["TERM_PROGRAM": "ghostty"], pasteboard: recorder.pasteboard)
+            connection: connection,
+            environment: ["TERM_PROGRAM": "ghostty"],
+            pasteboard: recorder.pasteboard
+        )
         _ = clipboard.copy("hello") { _, _ in }
         let output = String(decoding: connection.writtenOutput, as: UTF8.self)
         #expect(output.contains("\u{1B}]52;c;\(Data("hello".utf8).base64EncodedString())"))
@@ -22,7 +25,10 @@ struct ScreenClipboardTests {
         let connection = MockTerminalConnection()
         let recorder = ClipboardRecorder()
         var clipboard = ScreenClipboard(
-            connection: connection, environment: ["TERM_PROGRAM": "Apple_Terminal"], pasteboard: recorder.pasteboard)
+            connection: connection,
+            environment: ["TERM_PROGRAM": "Apple_Terminal"],
+            pasteboard: recorder.pasteboard
+        )
         _ = await recorder.copy(&clipboard, "hello")
         #expect(connection.writtenOutput.isEmpty)
         #expect(recorder.texts == ["hello"])
@@ -32,8 +38,10 @@ struct ScreenClipboardTests {
         let connection = MockTerminalConnection()
         let recorder = ClipboardRecorder()
         var clipboard = ScreenClipboard(
-            connection: connection, environment: ["TERM_PROGRAM": "Apple_Terminal", "SSH_TTY": "/dev/ttys001"],
-            pasteboard: recorder.pasteboard)
+            connection: connection,
+            environment: ["TERM_PROGRAM": "Apple_Terminal", "SSH_TTY": "/dev/ttys001"],
+            pasteboard: recorder.pasteboard
+        )
         _ = clipboard.copy("hello") { _, _ in }
         #expect(recorder.texts.isEmpty)
     }

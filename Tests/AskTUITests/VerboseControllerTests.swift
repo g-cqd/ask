@@ -44,7 +44,8 @@ struct VerboseControllerTests {
         _ = screen.handle(.key(KeyEvent(keyCode: 0x0D)), pageRows: 30)
         screen.handle(.detail("four"))
         #expect(
-            !texts(screen).contains("four") && texts(screen).contains("Details are hidden. /verbose shows them again."))
+            !texts(screen).contains("four") && texts(screen).contains("Details are hidden. /verbose shows them again.")
+        )
     }
 
     @Test func `only the latest few are held`() {
@@ -52,6 +53,7 @@ struct VerboseControllerTests {
         for index in 0 ..< 80 { screen.handle(.detail("d\(index)")) }
         #expect(
             screen.state.heldDetails.count == ScreenController.heldDetailLimit
-                && screen.state.heldDetails.first == "d30")
+                && screen.state.heldDetails.first == "d30"
+        )
     }
 }

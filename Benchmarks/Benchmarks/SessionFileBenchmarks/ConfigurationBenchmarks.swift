@@ -33,7 +33,10 @@ func configurationBenchmarks() {
         trust.trust(project + "/.ask/config.json", bytes: Array(projectText.utf8))
         try trust.save(to: config + "/trusted.json")
         let loader = ConfigurationLoader(
-            project: project, configDirectory: config, environment: ["ASK_MAX_TURNS": "30", "PATH": "/usr/bin"])
+            project: project,
+            configDirectory: config,
+            environment: ["ASK_MAX_TURNS": "30", "PATH": "/usr/bin"]
+        )
         benchmark.startMeasurement()
         for _ in benchmark.scaledIterations { blackHole(try loader.load(maxTurns: 10)) }
         benchmark.stopMeasurement()

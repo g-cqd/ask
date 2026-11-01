@@ -13,7 +13,9 @@ struct CanonicalPathTests {
     init() throws {
         let made = FileManager.default.temporaryDirectory.appending(path: "ask-canon-\(UUID().uuidString)")
         try FileManager.default.createDirectory(
-            at: made.appending(path: "real/inner"), withIntermediateDirectories: true)
+            at: made.appending(path: "real/inner"),
+            withIntermediateDirectories: true
+        )
         root = String(cString: realpath(made.path, nil))  // /var is a symlink to /private/var
     }
 

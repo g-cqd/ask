@@ -7,7 +7,11 @@ internal import Testing
 struct BlockStatusLayoutTests {
     @Test func `a folded header is one row, cut with an ellipsis just before the status`() throws {
         let item = Transcript.Item.tool(
-            name: "bash", summary: String(repeating: "x", count: 80), status: .succeeded, output: "a\nb")
+            name: "bash",
+            summary: String(repeating: "x", count: 80),
+            status: .succeeded,
+            output: "a\nb"
+        )
         let rows = ScreenComposer.lines(for: item, folded: true, columns: 50)
         let first = try #require(rows.first)
         #expect(rows.count == 1)

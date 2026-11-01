@@ -12,7 +12,9 @@ struct ConfigEditorModelTests {
     }
     private func write(_ path: String, _ text: String) throws {
         try FileManager.default.createDirectory(
-            atPath: (path as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
+            atPath: (path as NSString).deletingLastPathComponent,
+            withIntermediateDirectories: true
+        )
         try text.write(toFile: path, atomically: false, encoding: .utf8)
     }
 
@@ -25,11 +27,13 @@ struct ConfigEditorModelTests {
         #expect(
             settings.contains {
                 $0.path == ["sandbox", "network"] && $0.choices == ["unset", "none", "localhost", "provider", "any"]
-            })
+            }
+        )
         #expect(
             settings.contains {
                 $0.path == ["ui", "spinner"] && $0.choices.count == SpinnerPreference.allCases.count + 1
-            })
+            }
+        )
         #expect(settings.contains { $0.path == ["ui", "tint"] && $0.choices == ["unset", "on", "off"] })
         #expect(settings.contains { $0.path == ["skills", "enabled"] && $0.editable })
         for readOnly in [["model"], ["maxTurns"], ["ui", "inputPrefix"], ["mcp"], ["environment", "pass"]] {
@@ -59,7 +63,8 @@ struct ConfigEditorModelTests {
         #expect(saved.contains("\"model\": \"claude-sonnet-5-5\""))
         #expect(
             saved.contains("\"tint\": true") && saved.contains("\"inputPrefix\": \"ask> \""),
-            "an old name is saved as the new one")
+            "an old name is saved as the new one"
+        )
         #expect(saved.contains("\"future\": {") && saved.contains("\"keep\": true"))
         #expect(saved.hasSuffix("}\n"), "the file's trailing newline is preserved")
         #expect(!saved.contains("// a comment"), "AemiJSON re-encodes JSON5 as strict JSON; comments are not preserved")

@@ -14,7 +14,8 @@ struct CodexOAuthTests {
         let url = try #require(URL(string: CodexOAuth.authorizeURL(state: "st4te", challenge: "chal")))
         let items = Dictionary(
             uniqueKeysWithValues: try #require(URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems)
-                .map { ($0.name, $0.value ?? "") })
+                .map { ($0.name, $0.value ?? "") }
+        )
         #expect(url.absoluteString.hasPrefix("https://auth.openai.com/oauth/authorize?"))
         #expect(
             items == [
@@ -23,7 +24,8 @@ struct CodexOAuthTests {
                 "code_challenge_method": "S256",
                 "state": "st4te", "id_token_add_organizations": "true", "codex_cli_simplified_flow": "true",
                 "originator": "ask"
-            ])
+            ]
+        )
     }
 
     @Test(arguments: [

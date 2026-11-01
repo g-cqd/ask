@@ -8,16 +8,20 @@ import Testing
 struct AnthropicSubscriptionRefusalTests {
     static let body = Array(
         #"{"type":"error","error":{"type":"invalid_request_error","message":"You're out of extra usage. Add more at claude.ai/settings/usage and keep going."}}"#
-            .utf8)
+            .utf8
+    )
 
     @Test func `the refusal says the subscription did not cover the request`() throws {
         let failure = try #require(
             AnthropicStreamDecoder.failure(
-                inErrorBody: Self.body, status: 400,
+                inErrorBody: Self.body,
+                status: 400,
                 headers: [
                     "anthropic-ratelimit-unified-5h-status": "allowed",
                     "anthropic-ratelimit-unified-overage-disabled-reason": "org_level_disabled"
-                ]))
+                ]
+            )
+        )
         #expect(failure.kind == .invalidRequest)
         #expect(failure.message.contains("did not count this request against your Claude subscription"))
         #expect(failure.message.contains("five-hour quota still allows requests"))
@@ -34,9 +38,11 @@ struct AnthropicSubscriptionRefusalTests {
 
     @Test func `other invalid requests keep the provider's words`() {
         let body = Array(
-            #"{"type":"error","error":{"type":"invalid_request_error","message":"max_tokens: too large"}}"#.utf8)
+            #"{"type":"error","error":{"type":"invalid_request_error","message":"max_tokens: too large"}}"#.utf8
+        )
         #expect(
             AnthropicStreamDecoder.failure(inErrorBody: body, status: 400, headers: [:])?.message
-                == "max_tokens: too large")
+                == "max_tokens: too large"
+        )
     }
 }

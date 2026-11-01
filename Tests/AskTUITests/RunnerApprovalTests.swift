@@ -44,7 +44,8 @@ struct RunnerApprovalTests {
         #expect(press(0x79, &rig).isEmpty)
         #expect(press(0x0D, &rig) == [.answerApproval(id: 4, .once)])
         #expect(
-            !status(rig).contains("Allow it?") && status(rig).contains("main › job-1"))
+            !status(rig).contains("Allow it?") && status(rig).contains("main › job-1")
+        )
     }
 
     @Test func `no question, no change to the line, and main shows its question in the transcript as before`() {
@@ -61,7 +62,8 @@ struct RunnerApprovalTests {
         var rig = PointerRig(columns: 80, rows: 16)
         rig.controller.handle(
             .runners([RunnerInfo(name: "review", detail: "wants to run bash", kind: .agent, state: .waitingForApproval)]
-            ))
+            )
+        )
         rig.controller.state.runnersOpen = true
         rig.draw()
         let text = (0 ..< 16).map { rig.text(row: $0) }.joined(separator: "\n")

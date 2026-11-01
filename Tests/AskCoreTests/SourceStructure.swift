@@ -73,8 +73,12 @@ enum SourceStructure {
             let name = line[named] == "[" ? "Array" : String(line[named])
             found.append(
                 Declaration(
-                    kind: isExtension ? .extension : .type, name: name, line: index + 1,
-                    isFileLocalHelper: isExtension && hasOnlyPrivateMembers(lines[(index + 1)...])))
+                    kind: isExtension ? .extension : .type,
+                    name: name,
+                    line: index + 1,
+                    isFileLocalHelper: isExtension && hasOnlyPrivateMembers(lines[(index + 1)...])
+                )
+            )
         }
         return found
     }

@@ -24,8 +24,11 @@ extension SessionOutline {
                         case .branch(nil): "starts again"
                     }
                 return Pick(
-                    number: turn.number, text: Self.oneLine(turn.text, limit: textLimit),
-                    isOnActiveBranch: turn.isOnActiveBranch, note: note)
+                    number: turn.number,
+                    text: Self.oneLine(turn.text, limit: textLimit),
+                    isOnActiveBranch: turn.isOnActiveBranch,
+                    note: note
+                )
             }
     }
 }

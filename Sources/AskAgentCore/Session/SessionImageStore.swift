@@ -35,7 +35,10 @@ struct SessionImageStore: Sendable, Equatable {
         let manager = FileManager.default
         if manager.fileExists(atPath: path) { return name }
         try manager.createDirectory(
-            atPath: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            atPath: directory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         let temporary = path + ".\(UInt32.random(in: 0 ... .max)).tmp"
         guard manager.createFile(atPath: temporary, contents: Data(bytes), attributes: [.posixPermissions: 0o600])
         else {

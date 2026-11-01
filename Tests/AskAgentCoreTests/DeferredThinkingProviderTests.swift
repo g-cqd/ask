@@ -70,8 +70,12 @@ struct DeferredThinkingProviderTests {
         let inner = ScriptedProvider([.reply("a")])
         let provider = DeferredThinkingProvider(inner: inner) { .disabled }
         let original = ModelRequest(
-            model: "chosen", maxTokens: 777, systemPrompt: ["rules"],
-            messages: [ModelMessage(role: .user, blocks: [.text("hello")])], tools: [])
+            model: "chosen",
+            maxTokens: 777,
+            systemPrompt: ["rules"],
+            messages: [ModelMessage(role: .user, blocks: [.text("hello")])],
+            tools: []
+        )
         do { for try await _ in provider.stream(original) {} } catch { Issue.record("unexpected \(error)") }
         var expected = original
         expected.thinking = .disabled

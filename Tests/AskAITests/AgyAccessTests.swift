@@ -26,7 +26,9 @@ struct AgyAccessTests {
 
     @Test func `a damaged file is reported, never read as signed out`() async throws {
         try FileManager.default.createDirectory(
-            at: world.file.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            at: world.file.url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
         try Data("{broken".utf8).write(to: world.file.url)
         do { _ = try await world.access(SequencedTransport([.json(500, "")])).session(now: 1) } catch {
             guard case .storage = error else {
@@ -118,7 +120,8 @@ struct AgyAccessTests {
         let onboarding = try #require(transport.sent.dropFirst().first)
         #expect(
             onboarding.headers.contains { $0.name == "authorization" && $0.value == "Bearer at-2" },
-            "onboarded with the new token")
+            "onboarded with the new token"
+        )
         let stored = try #require(try world.file.loadAgy())
         #expect(stored.accessToken == "at-2" && stored.projectID == "proj-1" && stored.refreshToken == "rt-1")
         let again = SequencedTransport([.json(500, "")])

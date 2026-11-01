@@ -29,7 +29,8 @@ struct CodexAuthClientTests {
                 .map { pair in
                     let halves = pair.split(separator: "=", maxSplits: 1).map(String.init)
                     return (halves[0], (halves.count > 1 ? halves[1] : "").removingPercentEncoding ?? "")
-                })
+                }
+        )
     }
 
     @Test func `an authorization code is exchanged as a form, with the verifier and the redirect it was issued for`()
@@ -37,18 +38,24 @@ struct CodexAuthClientTests {
     {
         let (client, transport) = client([.json(200, Self.tokens)])
         let credentials = try await client.exchange(
-            code: "the-code", verifier: "the-verifier", redirectURI: "http://localhost:1455/auth/callback", now: 1000)
+            code: "the-code",
+            verifier: "the-verifier",
+            redirectURI: "http://localhost:1455/auth/callback",
+            now: 1000
+        )
         let request = transport.sent.first
         #expect(request?.url.absoluteString == "https://auth.openai.com/oauth/token")
         #expect(request?.method == "POST")
         #expect(
             request?.headers.contains { $0.name == "content-type" && $0.value == "application/x-www-form-urlencoded" }
-                == true)
+                == true
+        )
         #expect(
             fields(request) == [
                 "grant_type": "authorization_code", "client_id": "app_EMoamEEZ73f0CkXaXp7hrann", "code": "the-code",
                 "code_verifier": "the-verifier", "redirect_uri": "http://localhost:1455/auth/callback"
-            ])
+            ]
+        )
         #expect(credentials.accessToken == Self.access)
         #expect(credentials.refreshToken == "rt-new")
         #expect(credentials.accountID == "acct_9")
@@ -71,7 +78,8 @@ struct CodexAuthClientTests {
         #expect(
             fields(transport.sent.first) == [
                 "grant_type": "refresh_token", "refresh_token": "rt-old", "client_id": "app_EMoamEEZ73f0CkXaXp7hrann"
-            ])
+            ]
+        )
         #expect(fresh.refreshToken == "rt-new", "the old refresh token is spent; the new one must replace it")
         #expect(fresh.accessToken == Self.access)
         #expect(fresh.expiresAt == 2000 + 3600 - 300)

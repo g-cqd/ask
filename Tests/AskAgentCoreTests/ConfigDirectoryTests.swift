@@ -17,7 +17,8 @@ struct ConfigDirectoryTests {
     @Test func `a relative XDG_CONFIG_HOME is ignored`() {
         #expect(
             ConfigDirectory.path(environment: ["XDG_CONFIG_HOME": "relative/dir"], home: "/Users/x")
-                == "/Users/x/.config/ask")
+                == "/Users/x/.config/ask"
+        )
     }
 
     @Test func `an empty XDG_CONFIG_HOME is ignored`() {

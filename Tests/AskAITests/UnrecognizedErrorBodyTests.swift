@@ -24,7 +24,11 @@ struct UnrecognizedErrorBodyTests {
 
     @Test(arguments: UnrecognizedErrorBodyTests.bodies)
     func `the reason is the provider's sentence and the kind comes from the status`(
-        provider: String, status: Int, body: String, message: String, kind: ProviderFailure.Kind
+        provider: String,
+        status: Int,
+        body: String,
+        message: String,
+        kind: ProviderFailure.Kind
     ) {
         let failure = ProviderFailure(unrecognizedBody: Array(body.utf8), status: status)
         #expect(failure?.message == message, "\(provider)")
@@ -40,7 +44,9 @@ struct UnrecognizedErrorBodyTests {
 
     @Test func `the client reports such a body in the provider's words`() {
         let error = OpenAICompatibleError.status(
-            401, ProviderFailure(unrecognizedBody: Array("Missing API key".utf8), status: 401))
+            401,
+            ProviderFailure(unrecognizedBody: Array("Missing API key".utf8), status: 401)
+        )
         #expect("\(error)" == "the provider refused the request (HTTP 401): Missing API key")
     }
 }

@@ -30,10 +30,13 @@ final class MCPCatalog: Sendable {
                     server + "/promoted",
                     current.map {
                         MCPToolAdapter(
-                            server: server, tool: $0.tool,
-                            name: MCPToolName.make(server: server, tool: $0.tool.name), connection: entry.connection
+                            server: server,
+                            tool: $0.tool,
+                            name: MCPToolName.make(server: server, tool: $0.tool.name),
+                            connection: entry.connection
                         )
-                    })
+                    }
+                )
             }
         }
     }

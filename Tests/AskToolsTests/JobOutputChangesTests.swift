@@ -14,7 +14,10 @@ struct JobOutputChangesTests {
         let job = table.start(
             "read word; echo \"$word\"; read hold",
             in: ToolContext(workingDirectory: root.path, outputDirectory: root.path),
-            keepsInputOpen: true, keeping: 1000, observe: { _ in })
+            keepsInputOpen: true,
+            keeping: 1000,
+            observe: { _ in }
+        )
         var changes = job.outputChanges().makeAsyncIterator()
         #expect(await changes.next() != nil)
         #expect(job.write(Array("new output\n".utf8)))
@@ -23,7 +26,8 @@ struct JobOutputChangesTests {
         let waited = try await WaitTool(jobs: table)
             .run(
                 .init(job: job.id, outputContains: "new output", fileExists: nil, portOpen: nil, timeoutSeconds: 1),
-                in: ToolContext(workingDirectory: root.path))
+                in: ToolContext(workingDirectory: root.path)
+            )
         #expect(waited.content.contains("new output\n"))
         #expect(!waited.isError)
         await table.stopAll()
@@ -32,8 +36,12 @@ struct JobOutputChangesTests {
     @Test func `cancelling a lane subscription leaves the job running`() async {
         let table = JobTable()
         let job = table.start(
-            "read hold", in: ToolContext(workingDirectory: "/tmp"), keepsInputOpen: true, keeping: 1000,
-            observe: { _ in })
+            "read hold",
+            in: ToolContext(workingDirectory: "/tmp"),
+            keepsInputOpen: true,
+            keeping: 1000,
+            observe: { _ in }
+        )
         let stream = job.outputChanges()
         let reader = Task { for await _ in stream {} }
         reader.cancel()

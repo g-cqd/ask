@@ -14,8 +14,10 @@ struct SessionGrantsTests {
         calls.grant(.file("/p/notes.md"))
         calls.grant(.tool("job"))
         return SessionGrants(
-            calls: calls, sandbox: [SandboxRequest(network: .any), SandboxRequest(write: ["/p/out"], read: ["/data"])],
-            destructive: ["docs/delete"])
+            calls: calls,
+            sandbox: [SandboxRequest(network: .any), SandboxRequest(write: ["/p/out"], read: ["/data"])],
+            destructive: ["docs/delete"]
+        )
     }
 
     @Test func `written and read back, every grant still covers what it did`() throws {

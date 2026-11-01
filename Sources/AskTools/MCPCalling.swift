@@ -7,7 +7,10 @@ enum MCPCalling {
     /// Calls `tool` on `connection` and returns what the model reads: the result's text and its pictures made fit to send, an error output for a tool that failed, and the
     /// words for a call that did not happen.
     static func output(
-        _ tool: String, arguments: JSONObject, on connection: MCPConnection, server: String,
+        _ tool: String,
+        arguments: JSONObject,
+        on connection: MCPConnection,
+        server: String,
         allowance: ImageReader.Allowance = ImageReader.Allowance()
     ) async -> ToolOutput {
         do {

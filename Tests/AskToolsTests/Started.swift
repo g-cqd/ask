@@ -4,7 +4,8 @@ import Synchronization
 /// Resolves once the command has printed `child <pid>`.
 final class Started: Sendable {
     private let state = Mutex<(text: String, waiter: CheckedContinuation<pid_t, any Error>?, pid: pid_t?)>(
-        ("", nil, nil))
+        ("", nil, nil)
+    )
 
     func received(_ bytes: [UInt8]) {
         let ready: (CheckedContinuation<pid_t, any Error>, pid_t)? = state.withLock { state in

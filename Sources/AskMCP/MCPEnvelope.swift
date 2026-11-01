@@ -31,7 +31,9 @@ enum MCPEnvelope {
             return .response(
                 id: number,
                 outcome: .failure(
-                    .rpc(code: root["error"]["code"].int ?? 0, message: root["error"]["message"].string ?? "")))
+                    .rpc(code: root["error"]["code"].int ?? 0, message: root["error"]["message"].string ?? "")
+                )
+            )
         }
         guard root["result"].isObject else {
             return .response(id: number, outcome: .failure(.malformedResponse("the result is not an object")))

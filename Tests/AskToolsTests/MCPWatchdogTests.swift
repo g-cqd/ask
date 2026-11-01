@@ -33,7 +33,8 @@ struct MCPWatchdogTests {
     @Test func `without a job table there is no list, and a server still runs`() async throws {
         let factory = MCPHub.standardTransport(inheriting: ["PATH": "/usr/bin:/bin"])
         let transport = try #require(
-            try factory(MCPServerSetting(name: "a", command: "cat"), [:], [:]) as? StdioTransport)
+            try factory(MCPServerSetting(name: "a", command: "cat"), [:], [:]) as? StdioTransport
+        )
         #expect(await transport.waitUntilRunning() != nil)
         await transport.close()
         #expect(jobs.watchdog.watching.isEmpty)
@@ -44,8 +45,11 @@ struct MCPWatchdogTests {
     {
         let stubborn = try launch(
             MCPServerSetting(
-                name: "a", command: "sh",
-                args: ["-c", "trap '' TERM; exec 0<&-; while true; do sleep 1; done"]))
+                name: "a",
+                command: "sh",
+                args: ["-c", "trap '' TERM; exec 0<&-; while true; do sleep 1; done"]
+            )
+        )
         let pid = try #require(await stubborn.waitUntilRunning())
         await jobs.watchdog.waitForProtection { $0 != .idle && $0 != .starting }
         jobs.watchdog.simulateDeath()

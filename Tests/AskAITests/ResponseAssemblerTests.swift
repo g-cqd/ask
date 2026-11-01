@@ -12,7 +12,10 @@ struct ResponseAssemblerTests {
     }
 
     private let start = ModelEvent.messageStarted(
-        id: "msg_1", model: "claude-x", usage: TokenUsage(input: 25, output: 1, cacheRead: 7))
+        id: "msg_1",
+        model: "claude-x",
+        usage: TokenUsage(input: 25, output: 1, cacheRead: 7)
+    )
 
     @Test func `a notice is not part of the response, wherever it comes, even before the response started`() throws {
         let response = try assemble([
@@ -44,8 +47,12 @@ struct ResponseAssemblerTests {
                 .thinking(text: "Let me look.", signature: "sig"),
                 .text("Reading it."),
                 .toolCall(
-                    id: "toolu_1", name: "read", input: try JSONObject(validating: Array(#"{"path": "a.swift"}"#.utf8)))
-            ])
+                    id: "toolu_1",
+                    name: "read",
+                    input: try JSONObject(validating: Array(#"{"path": "a.swift"}"#.utf8))
+                )
+            ]
+        )
         #expect(response.stopReason == .toolUse)
         // Input and cache counts come from the start; output is the cumulative count from the delta.
         #expect(response.usage == TokenUsage(input: 25, output: 40, cacheRead: 7))
@@ -96,7 +103,8 @@ struct ResponseAssemblerTests {
             response.blocks == [
                 .text("Writing it."),
                 .toolCall(id: "done", name: "read", input: try JSONObject(validating: Array(#"{"path":"a"}"#.utf8)))
-            ])
+            ]
+        )
     }
 
     @Test func `redacted and unrecognized blocks are kept`() throws {

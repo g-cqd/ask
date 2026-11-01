@@ -63,8 +63,12 @@ extension ScreenController {
         }
         install(
             CompletionPicker(
-                kind: .commands, trigger: trigger, matches: Self.groupedByCategory(matches),
-                capacity: CompletionPicker.capacity(screenRows: screenRows)))
+                kind: .commands,
+                trigger: trigger,
+                matches: Self.groupedByCategory(matches),
+                capacity: CompletionPicker.capacity(screenRows: screenRows)
+            )
+        )
     }
 
     /// Commands under one dim heading per category, in the categories' fixed order.

@@ -17,10 +17,13 @@ struct ContinueTests {
     }
 
     private func right(
-        _ controller: inout ScreenController, at offset: Duration, type: KeyEventType = .press
+        _ controller: inout ScreenController,
+        at offset: Duration,
+        type: KeyEventType = .press
     ) -> [ScreenController.Effect] {
         controller.handle(
-            .key(KeyEvent(keyCode: Key.right.rawValue, eventType: type)), pageRows: 10,
+            .key(KeyEvent(keyCode: Key.right.rawValue, eventType: type)),
+            pageRows: 10,
             at: ContinuousClock.now.advanced(by: offset)
         )
     }

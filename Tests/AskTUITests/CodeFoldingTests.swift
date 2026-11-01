@@ -12,7 +12,13 @@ struct CodeFoldingTests {
     private static let reply = "intro\n```swift\na\nb\nc\nd\n```\nafter"
     private static let ctrlG = KeyEvent(keyCode: UInt32(Character("g").asciiValue!), modifiers: .ctrl)
     private static let three = ScreenOptions(
-        codeFoldLines: 3, markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false)
+        codeFoldLines: 3,
+        markdown: false,
+        prompt: "ask> ",
+        tint: false,
+        separator: false,
+        padding: false
+    )
 
     private func rig(_ options: ScreenOptions = Self.three, _ text: String = Self.reply) -> PointerRig {
         PointerRig(options: options, updates: [.assistantText(text)])
@@ -49,7 +55,14 @@ struct CodeFoldingTests {
     @Test func `a block no longer than the limit is never folded`() {
         var rig = rig(
             ScreenOptions(
-                codeFoldLines: 4, markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false))
+                codeFoldLines: 4,
+                markdown: false,
+                prompt: "ask> ",
+                tint: false,
+                separator: false,
+                padding: false
+            )
+        )
         #expect(rig.text(row: 3) == "```swift")
         rig.click(row: 3, col: 1)
         #expect(rig.text(row: 3) == "```swift")
@@ -66,15 +79,23 @@ struct CodeFoldingTests {
         #expect(
             rows(rig, 4 ... 9) == [
                 "intro", "code · swift · 4 lines", "after", "intro", "code · swift · 4 lines", "after"
-            ])
+            ]
+        )
         #expect(rig.controller.state.editor.text.isEmpty)
     }
 
     @Test func `with code open by default nothing is folded`() {
         let rig = rig(
             ScreenOptions(
-                foldCode: false, codeFoldLines: 3, markdown: false, prompt: "ask> ", tint: false, separator: false,
-                padding: false))
+                foldCode: false,
+                codeFoldLines: 3,
+                markdown: false,
+                prompt: "ask> ",
+                tint: false,
+                separator: false,
+                padding: false
+            )
+        )
         #expect(rig.text(row: 3) == "```swift")
     }
 
@@ -100,7 +121,10 @@ struct CodeFoldingTests {
 
     @Test func `opening a block while scrolled back keeps its line where it was`() {
         var rig = PointerRig(
-            options: Self.three, lines: (1 ... 12).map { "line \($0)" }, updates: [.assistantText(Self.reply)])
+            options: Self.three,
+            lines: (1 ... 12).map { "line \($0)" },
+            updates: [.assistantText(Self.reply)]
+        )
         rig.controller.handle(.notice("tail 1", isError: false))
         rig.controller.handle(.notice("tail 2", isError: false))
         rig.draw()

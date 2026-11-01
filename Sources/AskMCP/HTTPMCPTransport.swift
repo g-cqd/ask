@@ -48,8 +48,12 @@ public final class HTTPMCPTransport: MCPTransport {
     ///   - grace: how long closing may wait for the server to end its session.
     /// - Throws: ``MCPError/refusedEndpoint(_:)`` if a credential would cross the network unencrypted (ADR-0024).
     public init(
-        url: URL, headers: [(name: String, value: String)] = [], userAgent: String, http: any HTTPTransport,
-        clock: any Clock<Duration> = ContinuousClock(), grace: Duration = .seconds(2)
+        url: URL,
+        headers: [(name: String, value: String)] = [],
+        userAgent: String,
+        http: any HTTPTransport,
+        clock: any Clock<Duration> = ContinuousClock(),
+        grace: Duration = .seconds(2)
     ) throws(MCPError) {
         if let refusal = EndpointPolicy.refusal(for: url, carriesCredential: !headers.isEmpty) {
             throw .refusedEndpoint(refusal)

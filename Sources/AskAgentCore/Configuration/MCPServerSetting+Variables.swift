@@ -21,7 +21,8 @@ extension MCPServerSetting {
     /// - Returns: The expanded text; an unterminated reference remains literal.
     /// - Throws: The error from `value` when a reference cannot be resolved.
     public static func expandingVariables<E: Error>(
-        in text: String, value: (String) throws(E) -> String
+        in text: String,
+        value: (String) throws(E) -> String
     ) throws(E) -> String {
         var result = ""
         var rest = Substring(text)

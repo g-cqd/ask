@@ -8,7 +8,8 @@ struct SessionFileErrorDescriptionTests {
     @Test func `a missing file names the operation and the system's reason`() {
         #expect(
             String(describing: SessionFileError.io(.open, errno: 2))
-                == "could not open the file: No such file or directory")
+                == "could not open the file: No such file or directory"
+        )
     }
 
     @Test func `a session held elsewhere says so`() {

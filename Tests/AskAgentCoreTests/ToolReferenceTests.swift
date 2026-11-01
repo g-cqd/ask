@@ -17,7 +17,8 @@ struct ToolReferenceTests {
 
     @Test func `a block list in another harness's vocabulary is read, and mapped where ask has the tool`() {
         let file = DefinitionFile(
-            parsing: "---\ntools:\n  - send_message\n  - view_file\n  - grep_search\n  - run_command\n---\n")
+            parsing: "---\ntools:\n  - send_message\n  - view_file\n  - grep_search\n  - run_command\n---\n"
+        )
         let references = ToolReference.parse(file.value("tools"))
         #expect(references.map(\.token) == ["send_message", "view_file", "grep_search", "run_command"])
         #expect(references.map(\.ask) == [nil, "read", "grep", "bash"])
@@ -40,7 +41,8 @@ struct ToolReferenceTests {
         let references = ToolReference.parse(.list([.text("READ_FILE"), .text("readFile")]))
         #expect(
             references.map(\.ask) == ["read", "read"],
-            "the two spellings that differ are kept, each mapped; the exact repeat of one is not")
+            "the two spellings that differ are kept, each mapped; the exact repeat of one is not"
+        )
         #expect(ToolReference.parse(.text("Read, Read, Read")).count == 1)
     }
 

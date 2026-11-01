@@ -48,7 +48,9 @@ extension AgentConversation {
             update(
                 .notice(
                     "/\(command): Cannot switch sessions while jobs are running (\(running.joined(separator: ", "))). Stop them first.",
-                    isError: true))
+                    isError: true
+                )
+            )
             return false
         }
         return true

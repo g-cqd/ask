@@ -44,21 +44,28 @@ struct AccountLogin: Sendable {
         let connection = try request.connection.map { name in
             try NamedConnections.registry(environment: environment)
                 .register(
-                    name: name, provider: request.target == "codex" ? .codex : .anthropic,
-                    reserved: (try? NamedConnections.reserved()) ?? [])
+                    name: name,
+                    provider: request.target == "codex" ? .codex : .anthropic,
+                    reserved: (try? NamedConnections.reserved()) ?? []
+                )
         }
         let store = NamedConnections.file(for: connection, environment: environment)
         switch request.target {
             case "claude": return try await claude(connection: connection, file: store, replace: request.replaceAccount)
             case "codex":
                 return try await codex(
-                    device: request.method == .device, connection: connection, file: store,
-                    replace: request.replaceAccount)
+                    device: request.method == .device,
+                    connection: connection,
+                    file: store,
+                    replace: request.replaceAccount
+                )
             case "agy": return try await agy(file: store)
             case CopilotProtocol.name:
                 let credentials = try await SignInRunner(clock: ContinuousClock())
                     .run(
-                        CopilotDeviceSignIn(transport: transport), show: self.show)
+                        CopilotDeviceSignIn(transport: transport),
+                        show: self.show
+                    )
                 try store.saveCopilot(credentials)
                 return "Signed in to Copilot (VS Code-style, experimental). Choose a model with /model."
             case "spettro": return try await spettro(file: store)

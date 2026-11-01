@@ -14,18 +14,25 @@ enum LoginChoices {
             ChoiceRow(label: "claude api-key", detail: "Anthropic API key", arguments: "claude api-key"),
             ChoiceRow(label: "codex", detail: "ChatGPT account (Codex), in a browser", arguments: "codex"),
             ChoiceRow(
-                label: "codex device", detail: "ChatGPT account, with a code, no browser here",
-                arguments: "codex device"),
+                label: "codex device",
+                detail: "ChatGPT account, with a code, no browser here",
+                arguments: "codex device"
+            ),
             ChoiceRow(label: "codex api-key", detail: "OpenAI API key (stored as openai)", arguments: "codex api-key"),
             ChoiceRow(label: "agy", detail: "Google account for Antigravity", arguments: "agy"),
             ChoiceRow(
-                label: CopilotProtocol.name, detail: "GitHub Copilot — VS Code-style (experimental)",
-                arguments: CopilotProtocol.name),
+                label: CopilotProtocol.name,
+                detail: "GitHub Copilot — VS Code-style (experimental)",
+                arguments: CopilotProtocol.name
+            ),
             ChoiceRow(label: "spettro", detail: "Spettro, in a browser", arguments: "spettro"),
             ChoiceRow(label: "mistral-vibe", detail: "Mistral Vibe, in a browser", arguments: "mistral-vibe"),
             ChoiceRow(
-                label: "custom NAME URL", detail: "any OpenAI-compatible API, with a key", arguments: "custom",
-                completes: true)
+                label: "custom NAME URL",
+                detail: "any OpenAI-compatible API, with a key",
+                arguments: "custom",
+                completes: true
+            )
         ]
         let taken = Set(rows.map(\.arguments)).union(["spettro", "mistral-vibe"])
         for name in ProviderPreset.names where !taken.contains(name) && name != "openai" {

@@ -46,9 +46,16 @@ public struct AgentLoop: Sendable {
 
     /// A loop over `provider` and `tools`, retrying transient failures per `retry` and waiting on `clock`.
     public init(
-        provider: any ModelProvider, tools: ToolRegistry, settings: AgentSettings, context: ToolContext,
-        retry: RetryPolicy = .standard, clock: any Clock<Duration> = ContinuousClock(), hooks: [any AgentHook] = [],
-        network: (any NetworkPath)? = nil, networkWait: Duration = .seconds(300), handover: LoopHandover? = nil
+        provider: any ModelProvider,
+        tools: ToolRegistry,
+        settings: AgentSettings,
+        context: ToolContext,
+        retry: RetryPolicy = .standard,
+        clock: any Clock<Duration> = ContinuousClock(),
+        hooks: [any AgentHook] = [],
+        network: (any NetworkPath)? = nil,
+        networkWait: Duration = .seconds(300),
+        handover: LoopHandover? = nil
     ) {
         self.handover = handover
         self.network = network
@@ -80,7 +87,7 @@ public struct AgentLoop: Sendable {
 
     /// Runs one call through the hooks and the tool: each hook may rewrite or block it, then each may transform
     /// the result. A blocked call never runs; its result is an error naming the reason.
-    private func runTool(_ original: ToolInvocation, events: (AgentEvent) -> Void) async -> ToolOutput {
+    func runTool(_ original: ToolInvocation, events: (AgentEvent) -> Void) async -> ToolOutput {
         var call = original
         for hook in hooks {
             switch await hook.toolCall(call) {
@@ -107,7 +114,10 @@ public struct AgentLoop: Sendable {
     ///   - events: completed steps, including acknowledgments of persisted queued messages.
     /// - Throws: an ``AgentError``. Cancelling the task aborts the run as ``AgentError/cancelled``.
     public func run(
-        _ prompt: String, in session: SessionRecorder, input: PromptQueue? = nil, events: (AgentEvent) -> Void
+        _ prompt: String,
+        in session: SessionRecorder,
+        input: PromptQueue? = nil,
+        events: (AgentEvent) -> Void
     ) async throws(AgentError) {
         var loop = self
         try await loop.drive(prompt, in: session, input: input, events: events)
@@ -115,7 +125,10 @@ public struct AgentLoop: Sendable {
 
     /// `run`'s body, on a copy that takes what is offered to it before each request.
     private mutating func drive(
-        _ prompt: String, in session: SessionRecorder, input: PromptQueue?, events: (AgentEvent) -> Void
+        _ prompt: String,
+        in session: SessionRecorder,
+        input: PromptQueue?,
+        events: (AgentEvent) -> Void
     ) async throws(AgentError) {
         try record(.user(prompt), in: session)
         var watch = WindowWatch()
@@ -155,8 +168,12 @@ public struct AgentLoop: Sendable {
             }
             guard !Task.isCancelled else { throw .cancelled }
             if try acceptInput(
-                input, finished: !continuing, atLimit: turn + 1 == settings.maximumTurns, in: session, events: events)
-            {
+                input,
+                finished: !continuing,
+                atLimit: turn + 1 == settings.maximumTurns,
+                in: session,
+                events: events
+            ) {
                 turn += 1
                 continue
             }
@@ -175,67 +192,5 @@ public struct AgentLoop: Sendable {
             guard case .toolCall(let id, let name, let input) = block else { return nil }
             return ToolInvocation(id: id, name: name, input: input)
         }
-    }
-
-    /// What a reply without tool calls means: the run is done, or it goes on after recording why.
-    /// - Returns: whether the run continues.
-    private func continuesWithoutCalls(
-        _ response: AssembledResponse, filled: Bool, in session: SessionRecorder, events: (AgentEvent) -> Void
-    ) throws(AgentError) -> Bool {
-        if filled {
-            // The window filled: the next request is compacted first; say why the reply stopped.
-            try record(.user(Self.contextFullPrompt), in: session)
-            return true
-        }
-        if response.stopReason == Self.droppedStopReason {
-            try record(.user(Self.reconnectionPrompt), in: session)
-            events(.continuedAfterDrop)
-            return true
-        }
-        switch response.stopReason {
-            case .maxTokens:
-                // Cut off mid-thought or mid-call: say so in the session and ask the model to carry on.
-                try record(.user(Self.continuationPrompt), in: session)
-                events(.continuedAtOutputLimit)
-                return true
-            case .pauseTurn:
-                return true
-            default:
-                return false
-        }
-    }
-
-    /// Runs a turn's calls in order, recording each result as it arrives. The results cannot be split by
-    /// compaction, so with a window known they share what it allows, each keeping its head and tail.
-    private func runTurn(_ calls: [ToolInvocation], in session: SessionRecorder, events: (AgentEvent) -> Void)
-        async throws(AgentError)
-    {
-        let limit = budget.toolOutputBytes.map { Swift.max(512, $0 / calls.count) }
-        for (index, call) in calls.enumerated() {
-            guard !Task.isCancelled else {
-                try recordNotRun(calls[index...], in: session)
-                throw .cancelled
-            }
-            var output = await runTool(call, events: events)
-            if let limit { output.content = Compaction.clipped(output.content, toBytes: limit, note: Self.clipNote) }
-            try record(
-                .toolResult(
-                    callID: call.id, content: output.content, isError: output.isError, images: output.images,
-                    facts: output.facts),
-                in: session)
-            events(.toolFinished(id: call.id, name: call.name, output: output))
-        }
-        guard !Task.isCancelled else { throw .cancelled }
-    }
-
-    /// Streams one response for the tree's context and assembles it.
-    private func respond(to tree: SessionTree, events: (AgentEvent) -> Void) async throws(AgentError)
-        -> AssembledResponse?
-    {
-        try await stream(request(for: tree.context(), events: events), events: events, handsOver: true)
-    }
-
-    func record(_ payload: SessionPayload, in session: SessionRecorder) throws(AgentError) {
-        do { try session.append(payload) } catch { throw .session(error) }
     }
 }

@@ -14,7 +14,11 @@ struct SystemBlockTests {
         return (0 ..< controller.state.transcript.items.count)
             .flatMap {
                 ScreenComposer.lines(
-                    in: controller.state.transcript, at: $0, columns: columns, style: controller.state.blocks)
+                    in: controller.state.transcript,
+                    at: $0,
+                    columns: columns,
+                    style: controller.state.blocks
+                )
             }
     }
 
@@ -39,7 +43,8 @@ struct SystemBlockTests {
         let between = lines[(one + 1) ..< two]
         #expect(
             between.contains { $0.text.isEmpty && $0.style.bg == .default },
-            "an untinted row sits between the two purple blocks")
+            "an untinted row sits between the two purple blocks"
+        )
     }
 
     /// How far the red channel sits above the green one, against the page: purple pulls red up, blue pulls it down.
@@ -55,7 +60,8 @@ struct SystemBlockTests {
             let theme = ScreenTheme(page: page)
             #expect(
                 warmth(theme.system, page: page) - warmth(theme.user, page: page) >= 15,
-                "\(page): purple \(warmth(theme.system, page: page)), blue \(warmth(theme.user, page: page))")
+                "\(page): purple \(warmth(theme.system, page: page)), blue \(warmth(theme.user, page: page))"
+            )
         }
     }
 }

@@ -25,8 +25,12 @@ extension ProviderSettings {
     {
         let listed = catalog.first { $0.id == chosen }
         return ResolvedModel(
-            provider: provider, model: chosen, contextWindow: listed?.contextWindow,
-            maxOutputTokens: listed?.maxOutputTokens, acceptsImages: listed?.acceptsImages,
-            imageLimits: listed?.imageLimits)
+            provider: provider,
+            model: chosen,
+            contextWindow: listed?.contextWindow,
+            maxOutputTokens: listed?.maxOutputTokens,
+            acceptsImages: listed?.acceptsImages,
+            imageLimits: listed?.imageLimits
+        )
     }
 }

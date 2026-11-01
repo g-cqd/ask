@@ -60,8 +60,11 @@ public struct JobActionTool: ArgumentTool, JobTool {
             throw ToolFailure("Use action input to send text or close standard input.")
         }
         let readiness = try ShellReadiness.select(
-            output: arguments.waitForOutput, port: arguments.waitForPort,
-            file: arguments.waitForFile, in: context)
+            output: arguments.waitForOutput,
+            port: arguments.waitForPort,
+            file: arguments.waitForFile,
+            in: context
+        )
         let job = try access.job(arguments.job)
         switch action {
             case .status:
@@ -72,8 +75,12 @@ public struct JobActionTool: ArgumentTool, JobTool {
                 if action == .input { try job.sendInput(arguments.text, closing: arguments.closeInput == true) }
                 let seconds = Swift.min(Swift.max(1, arguments.timeoutSeconds ?? (action == .wait ? 60 : 1)), 600)
                 let outcome = try await JobWaiting.wait(
-                    for: job, readiness: readiness, seconds: seconds,
-                    clock: access.clock, in: context)
+                    for: job,
+                    readiness: readiness,
+                    seconds: seconds,
+                    clock: access.clock,
+                    in: context
+                )
                 if job.status != .running { return WaitTool.ended(job, headline: "[\(job.id) ended]") }
                 let headline =
                     switch outcome {

@@ -10,7 +10,9 @@ import Testing
 struct SessionImageStoreTests {
     private let directory: URL
     private let big = ImagePart(
-        mediaType: "image/png", data: (0 ..< 3_000_000).map { UInt8(truncatingIfNeeded: $0 &* 31) })
+        mediaType: "image/png",
+        data: (0 ..< 3_000_000).map { UInt8(truncatingIfNeeded: $0 &* 31) }
+    )
 
     init() throws {
         directory = FileManager.default.temporaryDirectory.appending(path: "ask-images-\(UUID().uuidString)")
@@ -66,7 +68,8 @@ struct SessionImageStoreTests {
             #expect(
                 content.hasSuffix(
                     "an image read here is no longer available: the file in the session's images directory is missing or damaged]"
-                ))
+                )
+            )
             try? FileManager.default.removeItem(atPath: path)
         }
     }

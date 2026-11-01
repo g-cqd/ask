@@ -43,15 +43,19 @@ struct ApprovalControllerTests {
         #expect(rows[0].contains("bash wants network any. Allow it?"))
         #expect(
             answers[0].contains("[✓]") && answers[0].contains("1") && answers[0].contains("Allow this time")
-                && answers[0].contains("y"))
+                && answers[0].contains("y")
+        )
         #expect(
             answers[1].contains("[ ]") && answers[1].contains("2") && answers[1].contains("Allow for the session")
-                && answers[1].contains("a"))
+                && answers[1].contains("a")
+        )
         #expect(
             answers[2].contains("[ ]") && answers[2].contains("3") && answers[2].contains("Deny")
-                && answers[2].contains("n"))
+                && answers[2].contains("n")
+        )
         #expect(
-            controller.state.transcript.items.count == 1, "only the prompt: the question is in the section, not a block"
+            controller.state.transcript.items.count == 1,
+            "only the prompt: the question is in the section, not a block"
         )
     }
 
@@ -60,7 +64,9 @@ struct ApprovalControllerTests {
         #expect(rows.count == 6)
         #expect(rows[0].hasPrefix("  bash wants"), "a margin of two")
         #expect(
-            rows[1].trimmingCharacters(in: .whitespaces).isEmpty, "a blank row between the question and the answers")
+            rows[1].trimmingCharacters(in: .whitespaces).isEmpty,
+            "a blank row between the question and the answers"
+        )
         #expect(rows[2] == "  ›  [✓]  1   Allow this time         y")
         #expect(rows[3] == "     [ ]  2   Allow for the session   a")
         #expect(rows[4] == "     [ ]  3   Deny                    n")
@@ -79,7 +85,8 @@ struct ApprovalControllerTests {
         let tight = ScreenComposer.pickerLines(for: controller.state, columns: 40, rows: 4).map(\.text)
         #expect(
             tight.count == 4 && tight.suffix(3).allSatisfy { $0.contains("[") },
-            "the answers before the question's rows")
+            "the answers before the question's rows"
+        )
     }
 
     @Test func `the arrows move, Space checks, Enter confirms`() {
@@ -88,7 +95,8 @@ struct ApprovalControllerTests {
         #expect(controller.handle(space, pageRows: 10).isEmpty, "checking is not answering")
         #expect(
             answers(controller)[1].contains("[✓]") && answers(controller)[0].contains("[ ]"),
-            "one box checked at a time")
+            "one box checked at a time"
+        )
         _ = controller.handle(up, pageRows: 10)
         #expect(answers(controller)[1].contains("[✓]"), "moving does not check")
         #expect(controller.handle(enter, pageRows: 10) == [.answerApproval(id: 7, .session)])

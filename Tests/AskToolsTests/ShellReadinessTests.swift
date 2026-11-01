@@ -24,7 +24,8 @@ struct ShellReadinessTests {
         let task = Task {
             await tool.run(
                 input(#"{"command":"echo ready; read hold","wait_for_file":"out/flag","timeout_seconds":7}"#),
-                in: context)
+                in: context
+            )
         }
         await seen.seen()
         try FileManager.default.createDirectory(at: root.appending(path: "out"), withIntermediateDirectories: true)
@@ -45,7 +46,9 @@ struct ShellReadinessTests {
             await tool.run(
                 input(
                     #"{"command":"echo ready; read hold","wait_for_file":"missing","yield_seconds":1,"timeout_seconds":7}"#
-                ), in: context)
+                ),
+                in: context
+            )
         }
         await seen.seen()
         try await clock.waitForSleepers(count: 1)
@@ -91,7 +94,9 @@ struct ShellReadinessTests {
                 network: .none,
                 denyRead: [
                     SandboxRule(CanonicalPath.of(root.appending(path: "protected").path, relativeTo: "/")!, .subpath)
-                ]))
+                ]
+            )
+        )
         for fields in [#""wait_for_file":"protected/flag""#, #""wait_for_port":65535"#] {
             let output = await BashTool(jobs: jobs).run(input(#"{"command":"true",\#(fields)}"#), in: context)
             #expect(output.isError && output.content.lowercased().contains("not permitted"))
@@ -106,7 +111,9 @@ struct ShellReadinessTests {
         let context = try context(policy)
         for directory in ["out", "protected"] {
             try FileManager.default.createDirectory(
-                at: root.appending(path: directory), withIntermediateDirectories: true)
+                at: root.appending(path: directory),
+                withIntermediateDirectories: true
+            )
         }
         try Data().write(to: root.appending(path: "protected/flag"))
         let seen = Printed("ready")
@@ -118,7 +125,8 @@ struct ShellReadinessTests {
         try FileManager.default.moveItem(at: root.appending(path: "out"), to: root.appending(path: "old"))
         try FileManager.default.createSymbolicLink(
             atPath: root.appending(path: "out").path,
-            withDestinationPath: root.appending(path: "protected").path)
+            withDestinationPath: root.appending(path: "protected").path
+        )
         let output = await task.value
         let running = jobs.running
         await jobs.stopAll()

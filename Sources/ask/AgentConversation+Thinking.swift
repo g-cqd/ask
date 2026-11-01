@@ -13,8 +13,11 @@ extension AgentConversation {
         guard let options = ThinkingOptions.choices(for: model.provider, descriptor: descriptor) else { return [] }
         var rows = [
             ChoiceRow(
-                label: "default", detail: "what the provider does when nothing is asked", arguments: "default",
-                isCurrent: level == .providerDefault)
+                label: "default",
+                detail: "what the provider does when nothing is asked",
+                arguments: "default",
+                isCurrent: level == .providerDefault
+            )
         ]
         for option in options.levels {
             var notes: [String] = []
@@ -22,8 +25,12 @@ extension AgentConversation {
             if !options.verified { notes.append("unverified") }
             rows.append(
                 ChoiceRow(
-                    label: option.rawValue, detail: notes.joined(separator: " · "), arguments: option.rawValue,
-                    isCurrent: level == option))
+                    label: option.rawValue,
+                    detail: notes.joined(separator: " · "),
+                    arguments: option.rawValue,
+                    isCurrent: level == option
+                )
+            )
         }
         return rows
     }
@@ -43,7 +50,9 @@ extension AgentConversation {
             update(
                 .notice(
                     "Thinking: \(settings.configuration.thinking.value) (\(settings.thinkingStatus)). /thinking LEVEL sets it; type /thinking to choose.",
-                    isError: false))
+                    isError: false
+                )
+            )
             return
         }
         guard let level = ThinkingLevel(rawValue: word) else {

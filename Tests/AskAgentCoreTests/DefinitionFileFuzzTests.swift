@@ -39,7 +39,8 @@ struct DefinitionFileFuzzTests {
         for _ in 0 ..< 3_000 {
             let text = String(
                 (0 ..< Int.random(in: 0 ... 120, using: &generator))
-                    .map { _ in alphabet.randomElement(using: &generator)! })
+                    .map { _ in alphabet.randomElement(using: &generator)! }
+            )
             let file = DefinitionFile(parsing: text)
             let again = DefinitionFile(parsing: text)
             #expect(summary(file) == summary(again), "\(text.debugDescription)")

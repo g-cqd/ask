@@ -62,9 +62,13 @@ extension ConfigurationFile {
         func mask(named name: String) -> MCPServerMask {
             let has = Set(set)
             return MCPServerMask(
-                name: name, enabled: has.contains("enabled") ? server.enabled : nil, tools: server.tools,
-                mode: server.mode, maxDirectTools: server.maxDirectTools,
-                overreach: set.filter { !MCPServerMask.keys.contains($0) })
+                name: name,
+                enabled: has.contains("enabled") ? server.enabled : nil,
+                tools: server.tools,
+                mode: server.mode,
+                maxDirectTools: server.maxDirectTools,
+                overreach: set.filter { !MCPServerMask.keys.contains($0) }
+            )
         }
     }
 
@@ -80,7 +84,8 @@ extension ConfigurationFile {
             }
             if let key = mask.overreach.first {
                 throw .outOfRange(
-                    path: path, key: "mcp.\(mask.name).\(key)",
+                    path: path,
+                    key: "mcp.\(mask.name).\(key)",
                     reason:
                         "would change what your server runs or is given: with no \"command\" or \"url\", an entry only changes enabled, tools, mode and maxDirectTools"
                 )
@@ -92,7 +97,8 @@ extension ConfigurationFile {
             for (part, values) in [("env", server.env), ("headers", server.headers)]
             where values.values.contains(where: MCPServerSetting.referencesEnvironment) {
                 throw .outOfRange(
-                    path: path, key: "mcp.\(server.name).\(part)",
+                    path: path,
+                    key: "mcp.\(server.name).\(part)",
                     reason:
                         "uses ${NAME} in a project's file: that would read your environment into a server the repository chose; write the value, or name the server in your own config file"
                 )

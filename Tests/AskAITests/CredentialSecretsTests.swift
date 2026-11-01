@@ -9,12 +9,18 @@ import Testing
 @Suite("Secrets live in the secret store, the rest in the file")
 struct CredentialSecretsTests {
     private let directory = FileManager.default.temporaryDirectory.appending(
-        path: "ask-secrets-\(UUID().uuidString)/ask")
+        path: "ask-secrets-\(UUID().uuidString)/ask"
+    )
     private let store = MemorySecretStore()
     private let claude = ClaudeCredentials(
-        accessToken: "sk-ant-oat-SECRET-A", refreshToken: "sk-ant-ort-SECRET-R", expiresAt: 1_000,
+        accessToken: "sk-ant-oat-SECRET-A",
+        refreshToken: "sk-ant-ort-SECRET-R",
+        expiresAt: 1_000,
         refreshExpiresAt: nil,
-        accountEmail: "a@b.c", organizationName: nil, scopes: "user:inference")
+        accountEmail: "a@b.c",
+        organizationName: nil,
+        scopes: "user:inference"
+    )
 
     private var url: URL { directory.appending(path: "credentials.json") }
     private var file: CredentialFile { CredentialFile(url: url, secrets: store) }

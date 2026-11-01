@@ -20,7 +20,10 @@ struct MCPToolAdapter: Tool {
         self.connection = connection
         let words = tool.description.isEmpty ? (tool.title ?? tool.name) : tool.description
         definition = ToolDefinition(
-            name: name, description: "[MCP server \(server)] \(words)", inputSchema: tool.inputSchema)
+            name: name,
+            description: "[MCP server \(server)] \(words)",
+            inputSchema: tool.inputSchema
+        )
     }
 
     func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
@@ -31,8 +34,12 @@ struct MCPToolAdapter: Tool {
             }
         }
         return await MCPCalling.output(
-            original, arguments: input, on: connection, server: server,
-            allowance: ImageReader.Allowance(context.imageLimits))
+            original,
+            arguments: input,
+            on: connection,
+            server: server,
+            allowance: ImageReader.Allowance(context.imageLimits)
+        )
     }
 
     /// What the model is told when the user did not allow a call the server marks destructive (ADR-0111).

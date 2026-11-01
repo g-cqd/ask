@@ -18,7 +18,8 @@ struct RunNoticesTests {
     @Test func `a compaction that failed says why and that the run goes on`() {
         #expect(
             RunNotices.compaction(for: .compactionFailed("the summarising request failed"))
-                == "Could not compact (the summarising request failed); continuing with the whole conversation.")
+                == "Could not compact (the summarising request failed); continuing with the whole conversation."
+        )
     }
 
     @Test func `anything else is not a compaction`() {
@@ -29,10 +30,12 @@ struct RunNoticesTests {
     @Test func `a retry says why, how long, and which attempt`() {
         #expect(
             RunNotices.retry(attempt: 2, of: 4, delay: .seconds(3), reason: "rate limited")
-                == "rate limited; retrying in 3 s (attempt 2 of 4).")
+                == "rate limited; retrying in 3 s (attempt 2 of 4)."
+        )
         #expect(
             RunNotices.retry(attempt: 1, of: 3, delay: .milliseconds(500), reason: "overloaded")
-                == "overloaded; retrying in 0.5 s (attempt 1 of 3).")
+                == "overloaded; retrying in 0.5 s (attempt 1 of 3)."
+        )
     }
 
     @Test func `a wait of a fraction says the fraction`() {

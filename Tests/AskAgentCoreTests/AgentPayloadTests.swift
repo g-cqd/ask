@@ -8,14 +8,21 @@ import Testing
 @Suite("Agent turns persist exactly and replay unchanged")
 struct AgentPayloadTests {
     private let response = AssembledResponse(
-        id: "msg_1", model: "claude-x",
+        id: "msg_1",
+        model: "claude-x",
         blocks: [
             .thinking(text: "Look first.", signature: "sig=="), .redactedThinking(data: "opaque"), .text("Reading."),
             .toolCall(
-                id: "toolu_1", name: "read", input: try! JSONObject(validating: Array(#"{"path": "a.swift"}"#.utf8))),
+                id: "toolu_1",
+                name: "read",
+                input: try! JSONObject(validating: Array(#"{"path": "a.swift"}"#.utf8))
+            ),
             .unrecognized(type: "server_tool_use")
         ],
-        stopReason: .toolUse, usage: TokenUsage(input: 25, output: 40, cacheRead: 7), unrecognized: [])
+        stopReason: .toolUse,
+        usage: TokenUsage(input: 25, output: 40, cacheRead: 7),
+        unrecognized: []
+    )
 
     @Test func `a response and a tool result are pinned on the wire`() throws {
         var tree = SessionTree()
@@ -27,10 +34,12 @@ struct AgentPayloadTests {
                 + #"{"data":"opaque","type":"redacted_thinking"},{"text":"Reading.","type":"text"},"#
                 + #"{"id":"toolu_1","input":"{\"path\": \"a.swift\"}","name":"read","type":"tool_call"},"#
                 + #"{"name":"server_tool_use","type":"unrecognized"}],"id":"msg_1","kind":"response","model":"claude-x","#
-                + #""stopReason":"tool_use","usage":{"cacheRead":7,"input":25,"output":40}},"type":"entry"}"#)
+                + #""stopReason":"tool_use","usage":{"cacheRead":7,"input":25,"output":40}},"type":"entry"}"#
+        )
         #expect(
             lines[2] == #"{"id":"1","parent":"\#(call)","payload":{"callID":"toolu_1","content":"let a = 1","#
-                + #""isError":false,"kind":"tool_result"},"type":"entry"}"#)
+                + #""isError":false,"kind":"tool_result"},"type":"entry"}"#
+        )
     }
 
     @Test func `agent turns round-trip unchanged`() throws {
@@ -56,7 +65,8 @@ struct AgentPayloadTests {
             ("{\"type\":\"session\",\"version\":1}\n"
                 + #"{"id":"0","payload":{"blocks":["# + block + #"],"id":"m","#
                 + #""kind":"response","model":"c","usage":{}},"type":"entry"}"# + "\n")
-                .utf8)
+                .utf8
+        )
         let recovered = try SessionLog.recover(bytes)
         #expect(recovered.tree.entries.isEmpty)
         #expect(!recovered.issues.isEmpty)

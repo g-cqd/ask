@@ -26,7 +26,11 @@ extension ScreenController {
     /// - Returns: asking for the list, when there is none or it has aged.
     mutating func refreshChoicePicker(
         // @dl:accept -- the file picker and this one both honour the word the user closed the list on and ask for a missing list once
-        _ command: SlashCommand, _ trigger: CompletionTrigger, screenRows: Int, at now: ContinuousClock.Instant
+        _ command: SlashCommand,
+        // @dl:accept -- the file picker and this one both honour the word the user closed the list on and ask for a missing list once
+        _ trigger: CompletionTrigger,
+        screenRows: Int,
+        at now: ContinuousClock.Instant
     ) -> [Effect] {
         guard state.pickerDismissedAt != trigger.range.lowerBound else {
             state.picker = nil
@@ -42,8 +46,13 @@ extension ScreenController {
         guard let held else {
             install(
                 CompletionPicker(
-                    kind: .choices(title: command.name), trigger: trigger, matches: [], capacity: capacity,
-                    caption: "looking…"))
+                    kind: .choices(title: command.name),
+                    trigger: trigger,
+                    matches: [],
+                    capacity: capacity,
+                    caption: "looking…"
+                )
+            )
             return effects
         }
         let ranked = PickerRanking.rank(held.rows, query: trigger.query)
@@ -54,16 +63,25 @@ extension ScreenController {
             if held.rows.isEmpty, trigger.query.isEmpty {
                 install(
                     CompletionPicker(
-                        kind: .choices(title: command.name), trigger: trigger, matches: [], capacity: capacity,
-                        caption: "nothing to choose"))
+                        kind: .choices(title: command.name),
+                        trigger: trigger,
+                        matches: [],
+                        capacity: capacity,
+                        caption: "nothing to choose"
+                    )
+                )
             }
             return effects
         }
         install(
             CompletionPicker(
-                kind: .choices(title: command.name), trigger: trigger,
-                matches: ranked.map { PickerRow($0, command: command.name) }, capacity: capacity,
-                caption: held.rows.count > ranked.count ? "\(ranked.count) of \(held.rows.count)" : ""))
+                kind: .choices(title: command.name),
+                trigger: trigger,
+                matches: ranked.map { PickerRow($0, command: command.name) },
+                capacity: capacity,
+                caption: held.rows.count > ranked.count ? "\(ranked.count) of \(held.rows.count)" : ""
+            )
+        )
         return effects
     }
 

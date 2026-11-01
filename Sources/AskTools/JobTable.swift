@@ -90,7 +90,10 @@ public final class JobTable: Sendable {
     ///   - observe: sees every chunk of output, for tests.
     /// - Returns: the running job.
     func start(
-        _ command: String, in context: ToolContext, keepsInputOpen: Bool, keeping: Int,
+        _ command: String,
+        in context: ToolContext,
+        keepsInputOpen: Bool,
+        keeping: Int,
         shell: String? = nil,
         observe: @escaping @Sendable ([UInt8]) -> Void
     ) -> Job {
@@ -99,11 +102,20 @@ public final class JobTable: Sendable {
         let path = context.outputDirectory.map { $0 + "/\(filePrefix)-\(number).log" }
         let job = Job.start(
             Job.Launch(
-                id: id, displayID: displayIDs.withLock { $0.next() }, command: command,
-                workingDirectory: context.workingDirectory, outputPath: path,
-                keepsInputOpen: keepsInputOpen, keeping: keeping, sandbox: context.sandbox, watchdog: watchdog,
-                environment: commandEnvironment(for: context), shell: shell),
-            observe: observe)
+                id: id,
+                displayID: displayIDs.withLock { $0.next() },
+                command: command,
+                workingDirectory: context.workingDirectory,
+                outputPath: path,
+                keepsInputOpen: keepsInputOpen,
+                keeping: keeping,
+                sandbox: context.sandbox,
+                watchdog: watchdog,
+                environment: commandEnvironment(for: context),
+                shell: shell
+            ),
+            observe: observe
+        )
         jobs.withLock { $0[id] = job }
         notifyObservers()
         // The table learns of an ending the way `job_stop` does, by waiting for it, so nothing polls.

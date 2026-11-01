@@ -27,7 +27,9 @@ extension AgentConversation {
             update(
                 .notice(
                     "Usage: /rewind to list the prompts, /rewind N to go back to before prompt N (1 to \(outline.turns.count)).",
-                    isError: true))
+                    isError: true
+                )
+            )
             return
         }
         do {
@@ -42,7 +44,9 @@ extension AgentConversation {
         update(
             .notice(
                 "Went back to before prompt \(number). What you send next continues from here; the later turns are kept as another branch (/tree).",
-                isError: false))
+                isError: false
+            )
+        )
     }
 
     /// The prompts as the rows of the `/tree` picker; choosing one is `/tree N`. The prompts on the path the session is at are marked.
@@ -53,7 +57,9 @@ extension AgentConversation {
                 ChoiceRow(
                     label: String(pick.number),
                     detail: ([pick.text, pick.note].filter { !$0.isEmpty }).joined(separator: "  ·  "),
-                    arguments: String(pick.number), isCurrent: pick.isOnActiveBranch)
+                    arguments: String(pick.number),
+                    isCurrent: pick.isOnActiveBranch
+                )
             }
     }
 

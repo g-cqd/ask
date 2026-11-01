@@ -62,7 +62,8 @@ struct RunnerCollapseTests {
         press(Key.down.rawValue, &rig)
         press(Key.left.rawValue, &rig)
         #expect(
-            rig.controller.state.collapsedRunners == ["explore"] && rig.controller.state.stripSelection == "explore")
+            rig.controller.state.collapsedRunners == ["explore"] && rig.controller.state.stripSelection == "explore"
+        )
         press(Key.left.rawValue, &rig)
         #expect(rig.controller.state.stripSelection == "review" && rig.controller.state.collapsedRunners == ["explore"])
     }

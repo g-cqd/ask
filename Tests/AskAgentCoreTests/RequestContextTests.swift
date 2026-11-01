@@ -12,7 +12,14 @@ struct RequestContextTests {
     private func response(_ blocks: [ContentBlock]) -> SessionPayload {
         .response(
             AssembledResponse(
-                id: "m", model: "c", blocks: blocks, stopReason: .toolUse, usage: TokenUsage(), unrecognized: []))
+                id: "m",
+                model: "c",
+                blocks: blocks,
+                stopReason: .toolUse,
+                usage: TokenUsage(),
+                unrecognized: []
+            )
+        )
     }
 
     private func entries(_ payloads: [SessionPayload]) throws -> [SessionEntry] {
@@ -37,7 +44,9 @@ struct RequestContextTests {
             messages.last
                 == ModelMessage(
                     role: .user,
-                    blocks: [.toolResult(id: "t1", content: "a.png: image", isError: false, images: [image])]))
+                    blocks: [.toolResult(id: "t1", content: "a.png: image", isError: false, images: [image])]
+                )
+        )
     }
 
     @Test func `text turns alternate as user and assistant messages`() throws {
@@ -47,7 +56,8 @@ struct RequestContextTests {
                 ModelMessage(role: .user, blocks: [.text("Hi")]),
                 ModelMessage(role: .assistant, blocks: [.text("Hello")]),
                 ModelMessage(role: .user, blocks: [.text("Bye")])
-            ])
+            ]
+        )
         #expect(context.repairs.isEmpty)
     }
 
@@ -62,7 +72,8 @@ struct RequestContextTests {
                 .toolResult(callID: "a", content: "A", isError: false),
                 .toolResult(callID: "b", content: "B", isError: true),
                 .user("Now explain")
-            ]))
+            ])
+        )
         #expect(
             context.messages == [
                 ModelMessage(role: .user, blocks: [.text("Read both")]),
@@ -71,15 +82,18 @@ struct RequestContextTests {
                     blocks: [
                         .thinking(text: "t", signature: "s"), .toolCall(id: "a", name: "read", input: input("{}")),
                         .toolCall(id: "b", name: "read", input: input("{}"))
-                    ]),
+                    ]
+                ),
                 ModelMessage(
                     role: .user,
                     blocks: [
                         .toolResult(id: "a", content: "A", isError: false),
                         .toolResult(id: "b", content: "B", isError: true),
                         .text("Now explain")
-                    ])
-            ])
+                    ]
+                )
+            ]
+        )
         #expect(context.repairs.isEmpty)
     }
 
@@ -92,7 +106,8 @@ struct RequestContextTests {
                     .toolCall(id: "b", name: "bash", input: input("{}"))
                 ]),
                 .toolResult(callID: "a", content: "A", isError: false)
-            ]))
+            ])
+        )
         #expect(
             midBatch.messages.last
                 == ModelMessage(
@@ -100,23 +115,29 @@ struct RequestContextTests {
                     blocks: [
                         .toolResult(id: "a", content: "A", isError: false),
                         .toolResult(id: "b", content: RequestContext.interruptedResult, isError: true)
-                    ]))
+                    ]
+                )
+        )
         #expect(midBatch.repairs == [.interruptedToolCall(id: "b")])
 
         let atEnd = RequestContext(
-            try entries([.user("go"), response([.toolCall(id: "a", name: "read", input: input("{}"))])]))
+            try entries([.user("go"), response([.toolCall(id: "a", name: "read", input: input("{}"))])])
+        )
         #expect(
             atEnd.messages.last
                 == ModelMessage(
                     role: .user,
                     blocks: [
                         .toolResult(id: "a", content: RequestContext.interruptedResult, isError: true)
-                    ]))
+                    ]
+                )
+        )
 
         let beforeText = RequestContext(
             try entries([
                 .user("go"), response([.toolCall(id: "a", name: "read", input: input("{}"))]), .user("stop that")
-            ]))
+            ])
+        )
         #expect(
             beforeText.messages.last
                 == ModelMessage(
@@ -124,18 +145,22 @@ struct RequestContextTests {
                     blocks: [
                         .toolResult(id: "a", content: RequestContext.interruptedResult, isError: true),
                         .text("stop that")
-                    ]))
+                    ]
+                )
+        )
     }
 
     @Test func `a result whose call is not in context is dropped`() throws {
         let context = RequestContext(
             try entries([
                 .user("go"), .toolResult(callID: "gone", content: "x", isError: false), .assistant("ok")
-            ]))
+            ])
+        )
         #expect(
             context.messages == [
                 ModelMessage(role: .user, blocks: [.text("go")]), ModelMessage(role: .assistant, blocks: [.text("ok")])
-            ])
+            ]
+        )
         #expect(context.repairs == [.orphanedToolResult(id: "gone")])
     }
 
@@ -144,12 +169,14 @@ struct RequestContextTests {
             try entries([
                 .user("a"), response([.unrecognized(type: "server_tool_use")]), .user("b"),
                 response([.text("kept"), .unrecognized(type: "x")])
-            ]))
+            ])
+        )
         #expect(
             context.messages == [
                 ModelMessage(role: .user, blocks: [.text("a"), .text("b")]),
                 ModelMessage(role: .assistant, blocks: [.text("kept")])
-            ])
+            ]
+        )
         #expect(context.repairs == [.droppedBlock(type: "server_tool_use"), .droppedBlock(type: "x")])
     }
 
@@ -164,7 +191,10 @@ struct RequestContextTests {
         #expect(
             context.messages == [
                 ModelMessage(
-                    role: .user, blocks: [.text(RequestContext.summaryPrefix + "We discussed X."), .text("recent")])
-            ])
+                    role: .user,
+                    blocks: [.text(RequestContext.summaryPrefix + "We discussed X."), .text("recent")]
+                )
+            ]
+        )
     }
 }

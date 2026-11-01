@@ -26,10 +26,44 @@ private func say(_ lines: [String]) {
     for line in lines { FileHandle.standardError.write(Data("ask: \(line)\n".utf8)) }
 }
 
+/// The session `ask -p` records into: the resumed one, else a new one, routed to the run's model, with the run's sandbox.
+private func promptSession(
+    resumed: SessionRecorder?,
+    in directory: SessionDirectory,
+    model: ResolvedModel,
+    source: ConfigurationSource,
+    settings: RunSettings
+) -> SessionRecorder {
+    let session: SessionRecorder
+    if let resumed {
+        session = resumed
+    } else {
+        do {
+            try directory.create()
+            session = SessionRecorder(try SessionFile.create(at: FilePath(directory.newSessionPath())))
+        } catch {
+            fail("ask: cannot create a session: \(error)", code: 73)
+        }
+    }
+    do {
+        try session.select(
+            SessionRouting.destination(model),
+            explicitlySelected: source.flags.provider != nil || source.flags.selected != nil
+        )
+    } catch { fail("ask: \(error)", code: 78) }
+    do { try settings.record(in: session) } catch {
+        fail("ask: cannot record the session's sandbox: \(error)", code: 73)
+    }
+    return session
+}
+
 /// Runs `prompt` to completion. SIGINT and SIGTERM abort the run, so a running command's whole process group
 /// is stopped, and then exit with 128 + the signal.
 func runPrompt(
-    _ prompt: String, source: ConfigurationSource, settings: RunSettings, resumed: SessionRecorder?,
+    _ prompt: String,
+    source: ConfigurationSource,
+    settings: RunSettings,
+    resumed: SessionRecorder?,
     startupNotices: [String]
 )
     async
@@ -49,29 +83,16 @@ func runPrompt(
     do {
         await waitForMCPServers(mcp)
         loop = try makeLoop(
-            settings, instructions: files, jobs: jobs, transport: transport, live: mcp.live)
+            settings,
+            instructions: files,
+            jobs: jobs,
+            transport: transport,
+            live: mcp.live
+        )
     } catch {
         fail("ask: \(error)", code: 70)
     }
-    let session: SessionRecorder
-    if let resumed {
-        session = resumed
-    } else {
-        do {
-            try directory.create()
-            session = SessionRecorder(try SessionFile.create(at: FilePath(directory.newSessionPath())))
-        } catch {
-            fail("ask: cannot create a session: \(error)", code: 73)
-        }
-    }
-    do {
-        try session.select(
-            SessionRouting.destination(model),
-            explicitlySelected: source.flags.provider != nil || source.flags.selected != nil)
-    } catch { fail("ask: \(error)", code: 78) }
-    do { try settings.record(in: session) } catch {
-        fail("ask: cannot record the session's sandbox: \(error)", code: 73)
-    }
+    let session = promptSession(resumed: resumed, in: directory, model: model, source: source, settings: settings)
     let sessionPath = session.path
     let renderer = PrintRenderer()
 
@@ -88,7 +109,8 @@ func runPrompt(
         onShutdown: { signal in
             interrupted.withLock { $0 = signal }
             run.cancel()
-        })
+        }
+    )
     try? signals.start()
     let result = await run.result
     // Jobs outlive turns, not ask: whatever ended the run, nothing it started keeps running.
@@ -103,7 +125,9 @@ func runPrompt(
 /// The Mac kept awake as `settings` say, already holding for the run that is about to start.
 private func awake(_ settings: RunSettings) -> KeepAwake {
     let keepAwake = KeepAwake(
-        mode: settings.configuration.keepAwake.value, display: settings.configuration.keepDisplayAwake.value)
+        mode: settings.configuration.keepAwake.value,
+        display: settings.configuration.keepDisplayAwake.value
+    )
     keepAwake.turnStarted()
     return keepAwake
 }

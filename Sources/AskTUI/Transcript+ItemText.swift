@@ -4,8 +4,11 @@ extension Transcript {
         shownCode(at: index)?.text
             ?? items[index]
             .contentText(
-                folded: isFolded(index), toolInput: shownToolInput(at: index)?.text,
-                command: commandBlocks.contains(index), output: shownToolOutput(at: index)?.text)
+                folded: isFolded(index),
+                toolInput: shownToolInput(at: index)?.text,
+                command: commandBlocks.contains(index),
+                output: shownToolOutput(at: index)?.text
+            )
     }
 }
 
@@ -24,12 +27,21 @@ extension Transcript.Item {
             case .tool(let name, let summary, _, let whole, let input) where command:
                 let output = shown ?? whole
                 let header = Self.commandHeader(
-                    name: name, parameters: summary, command: toolInput ?? input, folded: folded)
+                    name: name,
+                    parameters: summary,
+                    command: toolInput ?? input,
+                    folded: folded
+                )
                 return folded || output.isEmpty ? header : header + "\n" + output
             case .tool(let name, let summary, let status, let whole, let input):
                 let output = shown ?? whole
                 let header = Self.toolHeader(
-                    name: name, summary: summary, status: status, output: output, folded: folded)
+                    name: name,
+                    summary: summary,
+                    status: status,
+                    output: output,
+                    folded: folded
+                )
                 guard !folded else { return header }
                 let shown = toolInput ?? ShownToolInput(input, isFolded: { _ in true }).text
                 return ([header] + (shown.isEmpty ? [] : [shown]) + (output.isEmpty ? [] : [output]))
@@ -39,7 +51,11 @@ extension Transcript.Item {
 
     /// Selectable tool content, without the separately drawn status. Line feeds flatten to hard line zero.
     static func toolHeader(
-        name: String, summary: String, status _: Transcript.ToolStatus, output _: String, folded _: Bool
+        name: String,
+        summary: String,
+        status _: Transcript.ToolStatus,
+        output _: String,
+        folded _: Bool
     ) -> String {
         "\(name) · \(summary)".replacing("\n", with: " ")
     }

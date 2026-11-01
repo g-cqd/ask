@@ -33,7 +33,8 @@ enum HostPasteboard {
     static func read(from pasteboard: NSPasteboard) -> Reading {
         if pasteboard.accessBehavior == .alwaysDeny {
             return .denied(
-                "Paste refused: pasteboard access is denied for this terminal in System Settings, Privacy & Security.")
+                "Paste refused: pasteboard access is denied for this terminal in System Settings, Privacy & Security."
+            )
         }
         guard let text = pasteboard.string(forType: .string), !text.isEmpty else { return .empty }
         return .text(text)

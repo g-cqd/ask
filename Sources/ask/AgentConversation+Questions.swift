@@ -44,8 +44,11 @@ extension AgentConversation {
                 case .none: .none
             }
         return ScreenQuestion(
-            question: question.question, header: question.header,
+            question: question.question,
+            header: question.header,
             choices: question.choices.map { ScreenQuestion.Choice(label: $0.label, detail: $0.description) },
-            multiple: question.multiple, note: note)
+            multiple: question.multiple,
+            note: note
+        )
     }
 }

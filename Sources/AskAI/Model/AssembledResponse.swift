@@ -11,7 +11,11 @@ public struct AssembledResponse: Sendable, Equatable {
 
     /// A response with these fields.
     public init(
-        id: String, model: String, blocks: [ContentBlock], stopReason: StopReason?, usage: TokenUsage,
+        id: String,
+        model: String,
+        blocks: [ContentBlock],
+        stopReason: StopReason?,
+        usage: TokenUsage,
         unrecognized: [String]
     ) {
         self.id = id

@@ -11,7 +11,11 @@ struct CommandApprovalTests {
         var controller = ScreenController(label: "m", options: .legacy)
         controller.handle(
             .askApproval(
-                id: 2, question: "bash git status. Allow it?", kind: .command(phrases: phrases, programs: programs)))
+                id: 2,
+                question: "bash git status. Allow it?",
+                kind: .command(phrases: phrases, programs: programs)
+            )
+        )
         return controller
     }
 

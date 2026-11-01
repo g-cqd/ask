@@ -15,7 +15,10 @@ struct SkillSearchTests {
     ]
 
     private func make(
-        _ name: String, description: String = "description", root: String = ".agents/skills", quiet: Bool = false
+        _ name: String,
+        description: String = "description",
+        root: String = ".agents/skills",
+        quiet: Bool = false
     ) throws {
         let directory = home + "/" + root + "/" + name
         try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
@@ -28,8 +31,11 @@ struct SkillSearchTests {
     private func tool() -> SkillTool {
         let known = sources.map(\.id)
         let catalog = SkillDiscovery.discover(
-            workingDirectory: home + "/project", home: home, sources: sources,
-            selection: SkillSelection(tokens: ["user", "project", "bundled"], knownSources: known))
+            workingDirectory: home + "/project",
+            home: home,
+            sources: sources,
+            selection: SkillSelection(tokens: ["user", "project", "bundled"], knownSources: known)
+        )
         return SkillTool(catalog: catalog, knownSources: known)
     }
 

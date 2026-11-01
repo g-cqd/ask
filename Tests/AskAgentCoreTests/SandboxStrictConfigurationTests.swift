@@ -26,24 +26,31 @@ struct SandboxStrictConfigurationTests {
         #expect(try parse("{sandbox: {network: 'localhost'}}").sandbox?.network == .localhost)
         #expect(
             try parse("{sandbox: {network: 'none', write: 'workspace'}}", project: true).sandbox?.network
-                == SandboxPolicy.Network.none)
+                == SandboxPolicy.Network.none
+        )
     }
 
     @Test func `a value that is not one of them is refused, naming the key and the choices`() {
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "sandbox.network",
-                reason: "is \"local\": use \"none\", \"localhost\", \"provider\" or \"any\"")
+                path: "c.json",
+                key: "sandbox.network",
+                reason: "is \"local\": use \"none\", \"localhost\", \"provider\" or \"any\""
+            )
         ) { try parse("{sandbox: {network: 'local'}}") }
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "sandbox.write",
-                reason: "is \"project\": use \"workspace\", \"anywhere\" or a list of paths")
+                path: "c.json",
+                key: "sandbox.write",
+                reason: "is \"project\": use \"workspace\", \"anywhere\" or a list of paths"
+            )
         ) { try parse("{sandbox: {write: 'project'}}") }
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "sandbox.write",
-                reason: "has \"out\": use an absolute path, or one starting with ~/")
+                path: "c.json",
+                key: "sandbox.write",
+                reason: "has \"out\": use an absolute path, or one starting with ~/"
+            )
         ) { try parse("{sandbox: {write: ['out']}}") }
         #expect(throws: ConfigurationError.self) { try parse("{sandbox: {network: 3}}") }
     }
@@ -52,7 +59,8 @@ struct SandboxStrictConfigurationTests {
         #expect(layered(SandboxSection(network: .localhost), SandboxSection(network: .any)).network == .localhost)
         #expect(
             layered(SandboxSection(network: .any), SandboxSection(network: SandboxPolicy.Network.none)).network
-                == SandboxPolicy.Network.none)
+                == SandboxPolicy.Network.none
+        )
         #expect(layered(SandboxSection(network: .localhost), SandboxSection()).network == .localhost)
         #expect(layered().network == nil, "unset means ask's default, which is any")
     }
@@ -69,24 +77,36 @@ struct SandboxStrictConfigurationTests {
         let inside = workspace + "/inside"
         #expect(
             SandboxSection().writeScope(workspace: workspace, home: "/h") == .roots([workspace]),
-            "the default is the workspace (owner, 2026-10-29)")
+            "the default is the workspace (owner, 2026-10-29)"
+        )
         #expect(SandboxSection(write: [.anywhere]).writeScope(workspace: workspace, home: "/h") == .anywhere)
         #expect(SandboxSection(write: [.workspace]).writeScope(workspace: workspace, home: "/h") == .roots([workspace]))
         #expect(
             SandboxSection(write: [.workspace, .paths([inside, "/elsewhere"])])
                 .writeScope(workspace: workspace, home: "/h")
-                == .roots([inside]), "an unrelated root drops out; one inside the workspace stays")
+                == .roots([inside]),
+            "an unrelated root drops out; one inside the workspace stays"
+        )
         #expect(
             SandboxSection(write: [.paths(["~/out"])]).writeScope(workspace: workspace, home: "/h")
-                == .roots(["/h/out"]))
+                == .roots(["/h/out"])
+        )
     }
 
     @Test func `flags replace the file layers, which is how only the user widens`() {
         let files = layered(SandboxSection(write: [.workspace], network: SandboxPolicy.Network.none))
         let configuration = Configuration.defaults.applying(
-            ConfigurationFile(sandbox: files), from: .file("/u"))
+            ConfigurationFile(sandbox: files),
+            from: .file("/u")
+        )
         let flagged = configuration.applying(
-            model: nil, provider: nil, maxTurns: nil, compactAt: nil, network: .any, write: .anywhere)
+            model: nil,
+            provider: nil,
+            maxTurns: nil,
+            compactAt: nil,
+            network: .any,
+            write: .anywhere
+        )
         #expect(flagged.sandbox.value.network == .any && flagged.sandbox.value.write == [.anywhere])
         #expect(flagged.sandbox.source == .flag("network/write/read"))
         let untouched = configuration.applying(model: nil, provider: nil, maxTurns: nil, compactAt: nil)

@@ -16,8 +16,14 @@ struct SignInPlacementTests {
 
     private func claude(_ email: String?) -> ClaudeCredentials {
         ClaudeCredentials(
-            accessToken: "a", refreshToken: "r", expiresAt: 9, refreshExpiresAt: nil, accountEmail: email,
-            organizationName: nil, scopes: "user:inference")
+            accessToken: "a",
+            refreshToken: "r",
+            expiresAt: 9,
+            refreshExpiresAt: nil,
+            accountEmail: email,
+            organizationName: nil,
+            scopes: "user:inference"
+        )
     }
 
     private func place(_ identity: AccountIdentity?, _ kind: ConnectionKind, replace: Bool = false) throws

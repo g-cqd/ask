@@ -33,25 +33,34 @@ extension ConfigurationFile {
             }
             for name in names where !isValid(name, allowingPrefix: prefixes) {
                 throw .outOfRange(
-                    path: path, key: key,
-                    reason: "\"\(name)\" is not a variable name" + (prefixes ? " or a prefix such as \"AWS_*\"" : ""))
+                    path: path,
+                    key: key,
+                    reason: "\"\(name)\" is not a variable name" + (prefixes ? " or a prefix such as \"AWS_*\"" : "")
+                )
             }
         }
         if let shell = section.shell {
             if isProject {
                 throw .outOfRange(
-                    path: path, key: "environment.shell", reason: "only the user's file may choose the shell")
+                    path: path,
+                    key: "environment.shell",
+                    reason: "only the user's file may choose the shell"
+                )
             }
             if !EnvironmentSection.shellNames.contains(shell), !shell.hasPrefix("/") || shell.utf8.count > 256 {
                 throw .outOfRange(
-                    path: path, key: "environment.shell",
+                    path: path,
+                    key: "environment.shell",
                     reason: "\"\(shell)\" is neither a shell name (zsh, bash, fish, sh, dash, ksh) nor an absolute path"
                 )
             }
         }
         if isProject, !section.pass.isEmpty {
             throw .outOfRange(
-                path: path, key: "environment.pass", reason: "a project's file may withhold more, not pass any")
+                path: path,
+                key: "environment.pass",
+                reason: "a project's file may withhold more, not pass any"
+            )
         }
     }
 

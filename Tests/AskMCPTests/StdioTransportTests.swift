@@ -12,13 +12,18 @@ struct StdioTransportTests {
         .appending(path: "Fixtures/fixture-server.py").path
 
     private func launch(
-        _ mode: String = "", inheriting: [String: String] = ProcessInfo.processInfo.environment,
+        _ mode: String = "",
+        inheriting: [String: String] = ProcessInfo.processInfo.environment,
         adding: [String: String] = [:],
         directory: String? = nil
     ) -> StdioLaunch {
         StdioLaunch(
-            executable: "python3", arguments: mode.isEmpty ? [Self.script] : [Self.script, mode], environment: adding,
-            workingDirectory: directory, inheriting: inheriting)
+            executable: "python3",
+            arguments: mode.isEmpty ? [Self.script] : [Self.script, mode],
+            environment: adding,
+            workingDirectory: directory,
+            inheriting: inheriting
+        )
     }
 
     private func connect(_ launch: StdioLaunch, clock: any Clock<Duration> = ContinuousClock()) -> (
@@ -66,7 +71,8 @@ struct StdioTransportTests {
         let reported = text(try await connection.callTool("pwd", arguments: .empty))
         await connection.close()
         #expect(
-            URL(fileURLWithPath: reported).resolvingSymlinksInPath().path == directory.resolvingSymlinksInPath().path)
+            URL(fileURLWithPath: reported).resolvingSymlinksInPath().path == directory.resolvingSymlinksInPath().path
+        )
     }
 
     @Test func `what the child writes to stderr is kept apart, and never mistaken for a message`() async throws {
@@ -131,7 +137,9 @@ struct StdioTransportTests {
     @Test func `an observer is not told of a program that never started`() async throws {
         let observer = RecordingObserver()
         let transport = StdioTransport(
-            StdioLaunch(executable: "/nonexistent/mcp-server", arguments: [], inheriting: [:]), observer: observer)
+            StdioLaunch(executable: "/nonexistent/mcp-server", arguments: [], inheriting: [:]),
+            observer: observer
+        )
         #expect(await transport.waitUntilRunning() == nil)
         await transport.close()
         #expect(observer.started.isEmpty && observer.ended.isEmpty)
@@ -150,8 +158,13 @@ struct StdioTransportTests {
     @Test func `a program that cannot be started is an ended conversation with a reason, not a hang`() async throws {
         let (connection, transport) = connect(
             StdioLaunch(
-                executable: "/nonexistent/mcp-server", arguments: [], environment: [:], workingDirectory: nil,
-                inheriting: [:]))
+                executable: "/nonexistent/mcp-server",
+                arguments: [],
+                environment: [:],
+                workingDirectory: nil,
+                inheriting: [:]
+            )
+        )
         await #expect(throws: MCPError.disconnected) { _ = try await connection.start() }
         #expect(transport.failure?.isEmpty == false)
         #expect(transport.diagnostic == transport.failure, "a program that cannot start says why")

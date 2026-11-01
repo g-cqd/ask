@@ -27,8 +27,10 @@ struct ThinkingConfigurationTests {
     @Test func `the invalid spelling diagnostic names the thinking choices`() {
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "/fixture/config.json", key: "thinking",
-                reason: "is \"ultra\": use \(SettingCatalog.either(ThinkingLevel.allCases.map(\.rawValue)))")
+                path: "/fixture/config.json",
+                key: "thinking",
+                reason: "is \"ultra\": use \(SettingCatalog.either(ThinkingLevel.allCases.map(\.rawValue)))"
+            )
         ) {
             try parse("{thinking: 'ultra'}")
         }
@@ -51,7 +53,12 @@ struct ThinkingConfigurationTests {
         let environment = file.applying(environment: ["ASK_THINKING": "low"], problems: &notices)
         #expect(environment.thinking.value == .low && environment.thinking.source == .environment("ASK_THINKING"))
         let flag = environment.applying(
-            model: nil, provider: nil, maxTurns: nil, compactAt: nil, thinking: .providerDefault)
+            model: nil,
+            provider: nil,
+            maxTurns: nil,
+            compactAt: nil,
+            thinking: .providerDefault
+        )
         #expect(flag.thinking.value == .providerDefault && flag.thinking.source == .flag("thinking"))
         #expect(notices.isEmpty)
     }
@@ -90,6 +97,7 @@ struct ThinkingConfigurationTests {
         let reset = try loader.load(thinking: .providerDefault)
         #expect(
             reset.configuration.thinking.value == .providerDefault
-                && reset.configuration.thinking.source == .flag("thinking"))
+                && reset.configuration.thinking.source == .flag("thinking")
+        )
     }
 }

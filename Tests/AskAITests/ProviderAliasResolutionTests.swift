@@ -28,8 +28,13 @@ struct ProviderAliasResolutionTests {
     {
         let work = try connection()
         let resolved = try ProviderSettings.none.resolve(
-            provider: "work", model: "fast", environment: [:], catalog: catalog, connection: work,
-            aliases: try aliases())
+            provider: "work",
+            model: "fast",
+            environment: [:],
+            catalog: catalog,
+            connection: work,
+            aliases: try aliases()
+        )
         #expect(resolved.model == "gpt-6-luna")
         #expect(resolved.alias == "fast")
         #expect(resolved.contextWindow == 8000, "the user's figure wins")
@@ -39,8 +44,13 @@ struct ProviderAliasResolutionTests {
 
     @Test func `without an alias the catalog's own limits apply`() throws {
         let resolved = try ProviderSettings.none.resolve(
-            provider: "work", model: "deep", environment: [:], catalog: catalog, connection: try connection(),
-            aliases: try aliases())
+            provider: "work",
+            model: "deep",
+            environment: [:],
+            catalog: catalog,
+            connection: try connection(),
+            aliases: try aliases()
+        )
         #expect(resolved.model == "gpt-6-sol" && resolved.alias == "deep" && resolved.contextWindow == 272_000)
     }
 
@@ -48,7 +58,12 @@ struct ProviderAliasResolutionTests {
         var value = try aliases()
         try value.setDefault("deep")
         let resolved = try ProviderSettings.none.resolve(
-            provider: "work", model: nil, environment: [:], connection: try connection(), aliases: value)
+            provider: "work",
+            model: nil,
+            environment: [:],
+            connection: try connection(),
+            aliases: value
+        )
         #expect(resolved.model == "gpt-6-sol" && resolved.alias == "deep")
     }
 
@@ -57,10 +72,20 @@ struct ProviderAliasResolutionTests {
         try value.setDefault("deep")
         let work = try connection()
         let explicit = try ProviderSettings.none.resolve(
-            provider: "work", model: "fast", environment: [:], connection: work, aliases: value)
+            provider: "work",
+            model: "fast",
+            environment: [:],
+            connection: work,
+            aliases: value
+        )
         #expect(explicit.model == "gpt-6-luna")
         let raw = try ProviderSettings.none.resolve(
-            provider: "work", model: "gpt-9-unlisted", environment: [:], connection: work, aliases: value)
+            provider: "work",
+            model: "gpt-9-unlisted",
+            environment: [:],
+            connection: work,
+            aliases: value
+        )
         #expect(raw.model == "gpt-9-unlisted" && raw.alias == nil)
     }
 
@@ -69,15 +94,25 @@ struct ProviderAliasResolutionTests {
         try value.set("gpt-6-sol", to: "gpt-6-luna")
         #expect(throws: ProviderSettingsError.alias(.ambiguous("gpt-6-sol"))) {
             try ProviderSettings.none.resolve(
-                provider: "work", model: "gpt-6-sol", environment: [:], catalog: catalog, connection: try connection(),
-                aliases: value)
+                provider: "work",
+                model: "gpt-6-sol",
+                environment: [:],
+                catalog: catalog,
+                connection: try connection(),
+                aliases: value
+            )
         }
     }
 
     @Test func `the default connection and other providers ignore aliases`() throws {
         let value = try aliases()
         let codex = try ProviderSettings.none.resolve(
-            provider: "codex", model: "fast", environment: [:], catalog: catalog, aliases: value)
+            provider: "codex",
+            model: "fast",
+            environment: [:],
+            catalog: catalog,
+            aliases: value
+        )
         #expect(codex.model == "fast" && codex.alias == nil, "an alias is not honoured without a named connection")
     }
 
@@ -85,7 +120,12 @@ struct ProviderAliasResolutionTests {
         var value = ModelAliases()
         try value.set("sonnet", to: "claude-sonnet-5-5")
         let resolved = try ProviderSettings.none.resolve(
-            provider: "work", model: "sonnet", environment: [:], connection: try connection(.anthropic), aliases: value)
+            provider: "work",
+            model: "sonnet",
+            environment: [:],
+            connection: try connection(.anthropic),
+            aliases: value
+        )
         #expect(resolved.model == "claude-sonnet-5-5" && resolved.alias == "sonnet")
     }
 }

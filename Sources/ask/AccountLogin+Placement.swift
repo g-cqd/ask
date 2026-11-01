@@ -20,7 +20,8 @@ extension AccountLogin {
         let registry = NamedConnections.registry(environment: environment)
         guard let named else {
             return try described(
-                registry.storeSignIn(signIn, defaultFile: file, replace: replace, reserved: reservedNames), in: registry
+                registry.storeSignIn(signIn, defaultFile: file, replace: replace, reserved: reservedNames),
+                in: registry
             )
         }
         try registry.save(signIn, for: named, replaceAccount: replace)
@@ -34,7 +35,8 @@ extension AccountLogin {
             case .connection(let name):
                 return Placement(
                     connection: try registry.list().records.first { $0.name == name },
-                    note: " It is the account of the connection \(name), which now uses this sign-in.")
+                    note: " It is the account of the connection \(name), which now uses this sign-in."
+                )
             case .newConnection(let name):
                 return Placement(
                     connection: try registry.list().records.first { $0.name == name },
@@ -42,7 +44,8 @@ extension AccountLogin {
                          It is another account than the default's, so it was added as the connection \(name), and the default is \
                         unchanged. Choose it with /model or --provider \(name); rename it with `ask connections rename \(name) NEW`; \
                         sign in with --replace-account to replace the default instead.
-                        """)
+                        """
+                )
         }
     }
 }

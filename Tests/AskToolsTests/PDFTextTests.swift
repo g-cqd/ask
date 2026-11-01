@@ -33,7 +33,10 @@ struct PDFTextTests {
                 let font = CTFontCreateWithName("Helvetica" as CFString, 12, nil)
                 let line = CTLineCreateWithAttributedString(
                     NSAttributedString(
-                        string: text, attributes: [NSAttributedString.Key(kCTFontAttributeName as String): font]))
+                        string: text,
+                        attributes: [NSAttributedString.Key(kCTFontAttributeName as String): font]
+                    )
+                )
                 context.textPosition = CGPoint(x: 20, y: 200)
                 CTLineDraw(line, context)
             }
@@ -71,7 +74,12 @@ struct PDFTextTests {
         let page = sentence
         let url = try pdf(Array(repeating: page, count: 3))
         let output = try PDFReader.read(
-            [UInt8](try Data(contentsOf: url)), path: "d.pdf", pages: nil, maximumImages: 8, textBytes: 150)
+            [UInt8](try Data(contentsOf: url)),
+            path: "d.pdf",
+            pages: nil,
+            maximumImages: 8,
+            textBytes: 150
+        )
         #expect(output.content.contains("text of page 1;") && output.content.contains("2 more pages, not shown"))
         #expect(output.content.contains("pass pages to read them"))
         let rest = try await read(#","pages":"2""#)

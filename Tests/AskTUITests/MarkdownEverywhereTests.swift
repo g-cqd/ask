@@ -26,14 +26,17 @@ struct MarkdownEverywhereTests {
                 transcript.addThinkingText(text)
                 transcript.finishRunProgress()
                 _ = transcript.toggleFold(0)
-            }, markdown: markdown)
+            },
+            markdown: markdown
+        )
     }
 
     @Test func `open reasoning draws its marks as styles, under its dim italic look`() {
         let rows = Self.opened("Plan **first** with `ls`\n\n- one\n- two")
         #expect(
             rows.map(\.text).map { $0.trimmingCharacters(in: .whitespaces) }.prefix(1).first?
-                .hasPrefix("Plan first with ls") == true)
+                .hasPrefix("Plan first with ls") == true
+        )
         #expect(rows.contains { $0.text.hasPrefix("• one") })
         #expect(!rows.contains { $0.text.contains("**") || $0.text.contains("`") })
         #expect(rows[0].style.dim && rows[0].style.italic)
@@ -77,7 +80,8 @@ struct MarkdownEverywhereTests {
     @Test func `a selection in the person's message copies what was typed, marks and all`() {
         var rig = PointerRig(
             options: ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false),
-            updates: [.userPrompt("Some **bold** text")])
+            updates: [.userPrompt("Some **bold** text")]
+        )
         guard let row = (0 ..< rig.buffer.rows).first(where: { rig.text(row: $0) == "Some bold text" }) else {
             Issue.record("\((0 ..< rig.buffer.rows).map { rig.text(row: $0) })")
             return

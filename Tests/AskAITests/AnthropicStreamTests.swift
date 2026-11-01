@@ -25,7 +25,8 @@ struct AnthropicStreamTests {
             #"{"type":"message_start","message":{"id":"msg_1","type":"message","role":"assistant","#
                 + #""model":"claude-x","content":[],"stop_reason":null,"stop_sequence":null,"#
                 + #""usage":{"input_tokens":25,"output_tokens":1,"cache_read_input_tokens":7,"#
-                + #""cache_creation_input_tokens":null}}}"#)
+                + #""cache_creation_input_tokens":null}}}"#
+        )
     }
 
     @Test func `a text turn decodes start to stop`() throws {
@@ -33,14 +34,17 @@ struct AnthropicStreamTests {
             messageStart,
             frame(
                 "content_block_start",
-                #"{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}"#),
+                #"{"type":"content_block_start","index":0,"content_block":{"type":"text","text":""}}"#
+            ),
             frame("ping", #"{"type": "ping"}"#),
             frame(
                 "content_block_delta",
-                #"{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hel"}}"#),
+                #"{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"Hel"}}"#
+            ),
             frame(
                 "content_block_delta",
-                #"{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"lo \"é\""}}"#),
+                #"{"type":"content_block_delta","index":0,"delta":{"type":"text_delta","text":"lo \"é\""}}"#
+            ),
             frame("content_block_stop", #"{"type":"content_block_stop","index":0}"#),
             frame(
                 "message_delta",
@@ -58,7 +62,8 @@ struct AnthropicStreamTests {
                 .blockStopped(index: 0),
                 .messageDelta(stopReason: .endTurn, usage: TokenUsage(output: 15)),
                 .messageStopped
-            ])
+            ]
+        )
     }
 
     @Test func `a trailing data DONE frame is ignored without error`() throws {
@@ -78,7 +83,8 @@ struct AnthropicStreamTests {
             ),
             frame(
                 "content_block_delta",
-                #"{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":""}}"#),
+                #"{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":""}}"#
+            ),
             frame(
                 "content_block_delta",
                 #"{"type":"content_block_delta","index":1,"delta":{"type":"input_json_delta","partial_json":"{\"path\": \"a"}}"#
@@ -90,7 +96,8 @@ struct AnthropicStreamTests {
             frame("content_block_stop", #"{"type":"content_block_stop","index":1}"#),
             frame(
                 "message_delta",
-                #"{"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":40}}"#),
+                #"{"type":"message_delta","delta":{"stop_reason":"tool_use"},"usage":{"output_tokens":40}}"#
+            ),
             ""
         ])
         #expect(
@@ -101,7 +108,8 @@ struct AnthropicStreamTests {
                 .toolInputDelta(index: 1, #".swift"}"#),
                 .blockStopped(index: 1),
                 .messageDelta(stopReason: .toolUse, usage: TokenUsage(output: 40))
-            ])
+            ]
+        )
     }
 
     @Test func `thinking streams its text and then its signature`() throws {
@@ -112,10 +120,12 @@ struct AnthropicStreamTests {
             ),
             frame(
                 "content_block_delta",
-                #"{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"Hmm"}}"#),
+                #"{"type":"content_block_delta","index":0,"delta":{"type":"thinking_delta","thinking":"Hmm"}}"#
+            ),
             frame(
                 "content_block_delta",
-                #"{"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"sig=="}}"#),
+                #"{"type":"content_block_delta","index":0,"delta":{"type":"signature_delta","signature":"sig=="}}"#
+            ),
             frame(
                 "content_block_start",
                 #"{"type":"content_block_start","index":1,"content_block":{"type":"redacted_thinking","data":"opaque"}}"#
@@ -126,7 +136,8 @@ struct AnthropicStreamTests {
             events == [
                 .blockStarted(index: 0, .thinking), .thinkingDelta(index: 0, "Hmm"), .signatureDelta(index: 0, "sig=="),
                 .blockStarted(index: 1, .redactedThinking(data: "opaque"))
-            ])
+            ]
+        )
     }
 
     @Test(arguments: [
@@ -138,7 +149,8 @@ struct AnthropicStreamTests {
         let events = try decode([
             frame(
                 "message_delta",
-                #"{"type":"message_delta","delta":{"stop_reason":"\#(wire)"},"usage":{"output_tokens":1}}"#), ""
+                #"{"type":"message_delta","delta":{"stop_reason":"\#(wire)"},"usage":{"output_tokens":1}}"#
+            ), ""
         ])
         #expect(events == [.messageDelta(stopReason: reason, usage: TokenUsage(output: 1))])
     }
@@ -151,7 +163,8 @@ struct AnthropicStreamTests {
             ),
             frame(
                 "content_block_delta",
-                #"{"type":"content_block_delta","index":2,"delta":{"type":"citations_delta","citation":{}}}"#),
+                #"{"type":"content_block_delta","index":2,"delta":{"type":"citations_delta","citation":{}}}"#
+            ),
             frame("brand_new_event", #"{"type":"brand_new_event"}"#),
             ""
         ])
@@ -160,7 +173,8 @@ struct AnthropicStreamTests {
                 .blockStarted(index: 2, .unrecognized(type: "server_tool_use")),
                 .unrecognized(event: "content_block_delta", type: "citations_delta"),
                 .unrecognized(event: "brand_new_event", type: "brand_new_event")
-            ])
+            ]
+        )
     }
 
     @Test(arguments: [
@@ -183,7 +197,9 @@ struct AnthropicStreamTests {
         #expect(throws: AnthropicStreamError.malformed(event: "content_block_delta")) {
             _ = try decode([
                 frame(
-                    "content_block_delta", #"{"type":"content_block_delta","delta":{"type":"text_delta","text":"x"}}"#),
+                    "content_block_delta",
+                    #"{"type":"content_block_delta","delta":{"type":"text_delta","text":"x"}}"#
+                ),
                 ""
             ])
         }

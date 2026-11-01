@@ -32,8 +32,10 @@ extension ConfigEditor {
     private func takeLock() throws(ConfigEditor.Error) -> Int32 {
         let target = URL(fileURLWithPath: path).resolvingSymlinksInPath().path
         try? FileManager.default.createDirectory(
-            atPath: (target as NSString).deletingLastPathComponent, withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700])
+            atPath: (target as NSString).deletingLastPathComponent,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         let descriptor = open((target as NSString).deletingLastPathComponent, O_RDONLY | O_DIRECTORY | O_CLOEXEC)
         guard descriptor >= 0 else {
             throw .cannotWrite(path: path, reason: "cannot lock the directory: \(String(cString: strerror(errno)))")
@@ -67,8 +69,12 @@ extension ConfigEditor {
         let strippedBytes: [UInt8]
         do {
             strippedBytes = try Self.encoding(
-                of: stripped.value, pretty: false, indent: "", separator: .javaScript,
-                trailingNewline: false)
+                of: stripped.value,
+                pretty: false,
+                indent: "",
+                separator: .javaScript,
+                trailingNewline: false
+            )
         } catch {
             throw .cannotWrite(path: self.path, reason: String(describing: error))
         }
@@ -80,8 +86,12 @@ extension ConfigEditor {
         let bytes: [UInt8]
         do {
             bytes = try Self.encoding(
-                of: candidate, pretty: pretty, indent: indent,
-                separator: foundationSeparator ? .foundation : .javaScript, trailingNewline: trailingNewline)
+                of: candidate,
+                pretty: pretty,
+                indent: indent,
+                separator: foundationSeparator ? .foundation : .javaScript,
+                trailingNewline: trailingNewline
+            )
         } catch {
             throw .cannotWrite(path: self.path, reason: String(describing: error))
         }
@@ -148,7 +158,10 @@ extension ConfigEditor {
         let directory = (path as NSString).deletingLastPathComponent
         do {
             try FileManager.default.createDirectory(
-                atPath: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+                atPath: directory,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700]
+            )
         } catch {
             throw ConfigEditor.Error.cannotWrite(path: path, reason: String(describing: error))
         }

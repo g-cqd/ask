@@ -8,7 +8,8 @@ public import Foundation
 public struct AgyClient: Sendable {
     /// Where streaming requests go; the query is part of the address, which is why this is not a path under a base.
     private static let address = URL(
-        string: AgyCloud.baseURL.absoluteString + "/v1internal:streamGenerateContent?alt=sse")!
+        string: AgyCloud.baseURL.absoluteString + "/v1internal:streamGenerateContent?alt=sse"
+    )!
     private let transport: any HTTPTransport
     private let newID: @Sendable () -> String
 
@@ -24,11 +25,18 @@ public struct AgyClient: Sendable {
         let body: [UInt8]
         do {
             body = try AgyRequestEncoder.encode(
-                request, project: session.projectID, requestID: "ask-" + newID(), promptID: newID())
+                request,
+                project: session.projectID,
+                requestID: "ask-" + newID(),
+                promptID: newID()
+            )
         } catch { return error.failedStream }
         let endpoint = ProviderEndpoint(
-            transport: transport, url: Self.address, apiKey: session.accessToken,
-            headers: ["user-agent": AgyCloud.userAgent])
+            transport: transport,
+            url: Self.address,
+            apiKey: session.accessToken,
+            headers: ["user-agent": AgyCloud.userAgent]
+        )
         return endpoint.stream(body, decoder: AgyStreamDecoder.self)
     }
 }

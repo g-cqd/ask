@@ -7,14 +7,19 @@ struct MCPServerVariablesTests {
     @Test
     func `a value names a variable as ${NAME}, alone or inside a longer value, in the environment and the headers`() {
         let server = MCPServerSetting(
-            name: "s", env: ["TOKEN": "${GH_TOKEN}", "MIX": "a-${A}-b-${B}"],
-            headers: ["authorization": "Bearer ${API_KEY}"])
+            name: "s",
+            env: ["TOKEN": "${GH_TOKEN}", "MIX": "a-${A}-b-${B}"],
+            headers: ["authorization": "Bearer ${API_KEY}"]
+        )
         #expect(server.referencedVariables == ["GH_TOKEN", "A", "B", "API_KEY"])
     }
 
     @Test func `a dollar without braces, an unterminated or empty reference and a literal are not variables`() {
         let server = MCPServerSetting(
-            name: "s", env: ["A": "$HOME", "B": "${UNTERMINATED", "C": "${}", "D": "plain", "E": "$$"], headers: [:])
+            name: "s",
+            env: ["A": "$HOME", "B": "${UNTERMINATED", "C": "${}", "D": "plain", "E": "$$"],
+            headers: [:]
+        )
         #expect(server.referencedVariables.isEmpty)
     }
 

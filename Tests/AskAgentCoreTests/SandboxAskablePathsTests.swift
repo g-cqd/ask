@@ -20,8 +20,13 @@ struct SandboxAskablePathsTests {
 
     private func standard(allowRead: [String] = [], allowWrite: [String] = []) -> SandboxPolicy {
         SandboxPolicy.standard(
-            home: home, configDirectory: home + "/.config/ask", stateDirectory: home + "/.local/state/ask",
-            allowRead: allowRead, workspace: workspace, allowWrite: allowWrite)
+            home: home,
+            configDirectory: home + "/.config/ask",
+            stateDirectory: home + "/.local/state/ask",
+            allowRead: allowRead,
+            workspace: workspace,
+            allowWrite: allowWrite
+        )
     }
 
     private func may(_ policy: SandboxPolicy, _ capability: SandboxCapability, _ path: String) -> Bool {
@@ -50,8 +55,11 @@ struct SandboxAskablePathsTests {
         try FileManager.default.createDirectory(at: fresh, withIntermediateDirectories: true)
         let path = String(cString: realpath(fresh.path, nil))
         let policy = SandboxPolicy.standard(
-            home: home, configDirectory: home + "/.config/ask", stateDirectory: home + "/.local/state/ask",
-            workspace: path)
+            home: home,
+            configDirectory: home + "/.config/ask",
+            stateDirectory: home + "/.local/state/ask",
+            workspace: path
+        )
         #expect(policy.authorize(.write, path: ".git/hooks/pre-commit", relativeTo: path).isAllowed)
     }
 
@@ -70,8 +78,11 @@ struct SandboxAskablePathsTests {
 
     @Test func `more secret stores can be added, and are askable like the rest`() throws {
         let policy = SandboxPolicy.standard(
-            home: home, configDirectory: home + "/.config/ask", stateDirectory: home + "/.local/state/ask",
-            otherSecrets: ([".agent"], [".other/token.json"]))
+            home: home,
+            configDirectory: home + "/.config/ask",
+            stateDirectory: home + "/.local/state/ask",
+            otherSecrets: ([".agent"], [".other/token.json"])
+        )
         #expect(!may(policy, .read, home + "/.agent/auth.json") && !may(policy, .read, home + "/.other/token.json"))
         let request = try #require(try SandboxRequest.in(input(#"{"sandbox":{"read":["/Users/someone/.agent"]}}"#)))
         #expect(may(request.granted(over: policy, workingDirectory: workspace), .read, home + "/.agent/auth.json"))
@@ -94,16 +105,22 @@ struct SandboxAskablePathsTests {
     @Test func `ask's own directories are never lifted, whatever is granted`() throws {
         let policy = standard()
         let request = try #require(
-            try SandboxRequest.in(input(#"{"sandbox":{"read":["/Users/someone/.config/ask"]}}"#)))
+            try SandboxRequest.in(input(#"{"sandbox":{"read":["/Users/someone/.config/ask"]}}"#))
+        )
         #expect(
             !may(
-                request.granted(over: policy, workingDirectory: workspace), .read,
-                home + "/.config/ask/credentials.json"))
+                request.granted(over: policy, workingDirectory: workspace),
+                .read,
+                home + "/.config/ask/credentials.json"
+            )
+        )
     }
 
     @Test func `the person's allowRead and allowWrite lift them from the configuration`() {
         let policy = standard(
-            allowRead: [home + "/.config/gh"], allowWrite: [workspace + "/.git/config", home + "/.zshrc"])
+            allowRead: [home + "/.config/gh"],
+            allowWrite: [workspace + "/.git/config", home + "/.zshrc"]
+        )
         #expect(may(policy, .read, home + "/.config/gh/hosts.yml") && !may(policy, .read, home + "/.kube/config"))
         #expect(may(policy, .write, ".git/config") && may(policy, .write, home + "/.zshrc"))
         #expect(!may(policy, .write, ".git/hooks/pre-commit"))

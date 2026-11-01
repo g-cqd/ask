@@ -26,7 +26,11 @@ struct CodeAccents {
             let skip = code.diff ? DiffLook.markerWidth(of: line) : 0
             tokens.removeAll(keepingCapacity: true)
             sides.scan(
-                line.dropFirst(skip), kind: code.diff ? DiffLook.kind(of: line) : .kept, lexer: lexer, into: &tokens)
+                line.dropFirst(skip),
+                kind: code.diff ? DiffLook.kind(of: line) : .kept,
+                lexer: lexer,
+                into: &tokens
+            )
             let styled = tokens.compactMap { token in
                 CodeHighlighter.style(of: token.role)
                     .map { (token.range.lowerBound + skip ..< token.range.upperBound + skip, $0) }
@@ -49,7 +53,10 @@ struct CodeAccents {
             if high > low {
                 result.append(
                     ScreenComposer.Accent(
-                        columns: inset + low ..< inset + high, style: Self.style(token.style, over: base)))
+                        columns: inset + low ..< inset + high,
+                        style: Self.style(token.style, over: base)
+                    )
+                )
             }
         }
         return result

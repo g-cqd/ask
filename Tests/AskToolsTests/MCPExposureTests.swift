@@ -30,11 +30,13 @@ struct MCPExposureTests {
         await host.waitUntilSettled()
         #expect(
             world.offered.sorted()
-                == (sample.2 ? ["dispatch_call", "search_catalog"] : names.map { "mcp__s__\($0)" }).sorted())
+                == (sample.2 ? ["dispatch_call", "search_catalog"] : names.map { "mcp__s__\($0)" }).sorted()
+        )
         #expect(
             host.status.map(\.state) == [
                 sample.2 ? .searchable(tools: sample.1) : .ready(offered: sample.1, of: sample.1)
-            ])
+            ]
+        )
         await host.stop()
     }
 

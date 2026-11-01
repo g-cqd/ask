@@ -16,8 +16,12 @@ extension ScreenController {
                 state.transcript.addQueued(line)
                 turnCommands.waiting.append(
                     TurnCommands.Waiting(
-                        line: line, name: command.name, arguments: arguments,
-                        transcriptIndex: state.transcript.items.count - 1))
+                        line: line,
+                        name: command.name,
+                        arguments: arguments,
+                        transcriptIndex: state.transcript.items.count - 1
+                    )
+                )
                 return []
             case .refused:
                 state.transcript.addUser(line)

@@ -17,18 +17,24 @@ struct AgentLoopRetryTests {
     private func session() throws -> SessionRecorder {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return SessionRecorder(
-            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none))
+            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none)
+        )
     }
 
     private func loop(_ provider: Provider, clock: ImmediateClock, attempts: Int = 5) throws -> AgentLoop {
         AgentLoop(
-            provider: provider, tools: try ToolRegistry([]),
+            provider: provider,
+            tools: try ToolRegistry([]),
             settings: AgentSettings(model: "m", maximumTokens: 64, systemPrompt: [], maximumTurns: 4),
             context: ToolContext(workingDirectory: directory.path),
             retry: RetryPolicy(
-                maximumAttempts: attempts, baseDelay: .seconds(1), maximumDelay: .seconds(30),
-                maximumRequestedDelay: .seconds(120)),
-            clock: clock)
+                maximumAttempts: attempts,
+                baseDelay: .seconds(1),
+                maximumDelay: .seconds(30),
+                maximumRequestedDelay: .seconds(120)
+            ),
+            clock: clock
+        )
     }
 
     /// Runs the loop to its end and returns how it ended and every event.
@@ -103,7 +109,8 @@ struct AgentLoopRetryTests {
         let policy = RetryPolicy.standard
         #expect(
             (1 ... 7).map { policy.delay(after: $0, requested: nil) }
-                == [.seconds(1), .seconds(2), .seconds(4), .seconds(8), .seconds(16), .seconds(30), .seconds(30)])
+                == [.seconds(1), .seconds(2), .seconds(4), .seconds(8), .seconds(16), .seconds(30), .seconds(30)]
+        )
         #expect(policy.delay(after: 1, requested: .seconds(600)) == .seconds(120))
         #expect(policy.delay(after: 1, requested: .seconds(-5)) == .zero)
     }

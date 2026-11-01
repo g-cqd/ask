@@ -8,10 +8,12 @@ internal import Foundation
 struct TrustCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "trust",
-        abstract: "Trust this project's .ask/config.json, as it is now. A later change untrusts it again.")
+        abstract: "Trust this project's .ask/config.json, as it is now. A later change untrusts it again."
+    )
 
     @Flag(
-        name: .customLong("skills"), help: "Trust this project's skills, as they are now, instead of its configuration."
+        name: .customLong("skills"),
+        help: "Trust this project's skills, as they are now, instead of its configuration."
     )
     var skills = false
 

@@ -103,11 +103,19 @@ struct AgentLoopWindowTests {
             .calls([("a", "big", "{}"), ("b", "big", "{}"), ("c", "big", "{}"), ("d", "big", "{}")]), .reply("Done.")
         ])
         let loop = AgentLoop(
-            provider: provider, tools: try ToolRegistry([Fixed(name: "big", output: big)]),
+            provider: provider,
+            tools: try ToolRegistry([Fixed(name: "big", output: big)]),
             settings: AgentSettings(
-                model: "m", maximumTokens: 1_024, systemPrompt: [], maximumTurns: 4, compactAtTokens: nil,
-                keepRecentBytes: 1, toolOutputBytes: 8_192),
-            context: ToolContext(workingDirectory: directory.path))
+                model: "m",
+                maximumTokens: 1_024,
+                systemPrompt: [],
+                maximumTurns: 4,
+                compactAtTokens: nil,
+                keepRecentBytes: 1,
+                toolOutputBytes: 8_192
+            ),
+            context: ToolContext(workingDirectory: directory.path)
+        )
         try await loop.run("go", in: file) { _ in }
         let results = file.tree.entries.compactMap { entry -> String? in
             if case .toolResult(_, let content, _, _, _) = entry.payload { content } else { nil }
@@ -163,9 +171,11 @@ struct AgentLoopWindowTests {
         let provider = ScriptedProvider(
             [.call(id: "t1", name: "missing", input: "{}")]
                 + Array(
-                    repeating: [.contextExhausted("partial", prompt: 3_000, output: 500), .reply("SUMMARY")], count: 5
+                    repeating: [.contextExhausted("partial", prompt: 3_000, output: 500), .reply("SUMMARY")],
+                    count: 5
                 )
-                .flatMap { $0 })
+                .flatMap { $0 }
+        )
         await #expect(throws: AgentError.self) {
             try await loop(provider, compactAt: nil).run("go", in: file) { _ in }
         }

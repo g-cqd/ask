@@ -14,7 +14,8 @@ extension ScreenComposer {
             case .user(let text):
                 let rows = styled(
                     markdownLines(text, in: transcript, at: index, columns: columns, style: style),
-                    under: Style(bold: true))
+                    under: Style(bold: true)
+                )
                 // The older look set the user's message off with a blank row above it; the padded one has a row of padding for that.
                 return (style.padded ? [] : [Line(text: "", style: .default)]) + rows
             case .thinking(let text):
@@ -23,16 +24,26 @@ extension ScreenComposer {
                 let look = Style(dim: true, italic: true)
                 let progress = transcript.progress[index]
                 let metadata = blockMetadata(
-                    status: progress?.ended == nil && progress != nil ? .running : .succeeded, output: kept,
-                    progress: progress, localizedDurations: style.localizedDurations)
+                    status: progress?.ended == nil && progress != nil ? .running : .succeeded,
+                    output: kept,
+                    progress: progress,
+                    localizedDurations: style.localizedDurations
+                )
                 // The first block wraps short of the status and its spacer, so the reasoning's first line keeps the status beside it
                 // however long it is, as a tool's header does (owner, 2026-10-31). Too narrow a screen for that keeps the full width.
                 let width = Swift.max(1, columns - 2 * style.inset)
                 let beside = width - UnicodeWidth.displayWidth(of: metadata) - headerGap
                 var rows = styled(
                     markdownLines(
-                        kept, in: transcript, at: index, columns: columns, style: style,
-                        firstBlockWidth: beside >= minimumBesideStatus ? beside : nil), under: look)
+                        kept,
+                        in: transcript,
+                        at: index,
+                        columns: columns,
+                        style: style,
+                        firstBlockWidth: beside >= minimumBesideStatus ? beside : nil
+                    ),
+                    under: look
+                )
                 rows = withMetadata(metadata, on: rows, width: width, inset: style.inset, look: look)
                 for row in rows.indices { rows[row].foldBlock = index }
                 return rows

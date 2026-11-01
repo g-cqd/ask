@@ -26,7 +26,10 @@ struct MCPStandardTransportTests {
     @Test func `a credential to a plain http address on another machine is refused`() {
         #expect(throws: MCPError.self) {
             _ = try factory(
-                MCPServerSetting(name: "a", url: "http://example.test/mcp"), [:], ["Authorization": "Bearer x"])
+                MCPServerSetting(name: "a", url: "http://example.test/mcp"),
+                [:],
+                ["Authorization": "Bearer x"]
+            )
         }
     }
 

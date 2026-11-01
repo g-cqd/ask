@@ -62,18 +62,36 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var sessionColor: SessionColorPreference?
 
     public init(
-        mouse: Bool? = nil, copyOnSelect: Bool? = nil, foldTools: Bool? = nil, foldThinking: Bool? = nil,
-        scrollLines: Int? = nil, promptRows: Int? = nil, foldCode: Bool? = nil, codeFoldLines: Int? = nil,
-        outputFoldLines: Int? = nil, outputFoldBytes: Int? = nil, sidebarOpen: Bool? = nil, prompt: String? = nil,
-        tint: Bool? = nil, separator: Bool? = nil,
-        padding: Bool? = nil, markdown: Bool? = nil, highlight: Bool? = nil, localizedDurations: Bool? = nil,
+        mouse: Bool? = nil,
+        copyOnSelect: Bool? = nil,
+        foldTools: Bool? = nil,
+        foldThinking: Bool? = nil,
+        scrollLines: Int? = nil,
+        promptRows: Int? = nil,
+        foldCode: Bool? = nil,
+        codeFoldLines: Int? = nil,
+        outputFoldLines: Int? = nil,
+        outputFoldBytes: Int? = nil,
+        sidebarOpen: Bool? = nil,
+        prompt: String? = nil,
+        tint: Bool? = nil,
+        separator: Bool? = nil,
+        padding: Bool? = nil,
+        markdown: Bool? = nil,
+        highlight: Bool? = nil,
+        localizedDurations: Bool? = nil,
         spinner: SpinnerPreference? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
-        jobAutoReturnWhenFocused: Bool? = nil, abortTurnRequiresConfirmation: Bool? = nil,
+        jobAutoReturnWhenFocused: Bool? = nil,
+        abortTurnRequiresConfirmation: Bool? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
-        interruptKeys: InterruptKeysPreference? = nil, escapeInterruptRequiresConfirmation: Bool? = nil,
-        interruptSendsQueued: QueuedAfterInterruptPreference? = nil, onlyUsefulModels: Bool? = nil,
-        appearance: AppearancePreference? = nil, timeout: TimeoutPreference? = nil, timeoutLabel: String? = nil,
+        interruptKeys: InterruptKeysPreference? = nil,
+        escapeInterruptRequiresConfirmation: Bool? = nil,
+        interruptSendsQueued: QueuedAfterInterruptPreference? = nil,
+        onlyUsefulModels: Bool? = nil,
+        appearance: AppearancePreference? = nil,
+        timeout: TimeoutPreference? = nil,
+        timeoutLabel: String? = nil,
         sessionColor: SessionColorPreference? = nil
     ) {
         self.sessionColor = sessionColor
@@ -137,15 +155,22 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public func layered(with section: UISection) -> UISection {
         UISection(
             // @dl:accept -- each configuration field independently takes its later non-nil value
-            mouse: section.mouse ?? mouse, copyOnSelect: section.copyOnSelect ?? copyOnSelect,
-            foldTools: section.foldTools ?? foldTools, foldThinking: section.foldThinking ?? foldThinking,
-            scrollLines: section.scrollLines ?? scrollLines, promptRows: section.promptRows ?? promptRows,
-            foldCode: section.foldCode ?? foldCode, codeFoldLines: section.codeFoldLines ?? codeFoldLines,
+            mouse: section.mouse ?? mouse,
+            copyOnSelect: section.copyOnSelect ?? copyOnSelect,
+            foldTools: section.foldTools ?? foldTools,
+            foldThinking: section.foldThinking ?? foldThinking,
+            scrollLines: section.scrollLines ?? scrollLines,
+            promptRows: section.promptRows ?? promptRows,
+            foldCode: section.foldCode ?? foldCode,
+            codeFoldLines: section.codeFoldLines ?? codeFoldLines,
             outputFoldLines: section.outputFoldLines ?? outputFoldLines,
             outputFoldBytes: section.outputFoldBytes ?? outputFoldBytes,
-            sidebarOpen: section.sidebarOpen ?? sidebarOpen, prompt: section.prompt ?? prompt,
-            tint: section.tint ?? tint, separator: section.separator ?? separator,
-            padding: section.padding ?? padding, markdown: section.markdown ?? markdown,
+            sidebarOpen: section.sidebarOpen ?? sidebarOpen,
+            prompt: section.prompt ?? prompt,
+            tint: section.tint ?? tint,
+            separator: section.separator ?? separator,
+            padding: section.padding ?? padding,
+            markdown: section.markdown ?? markdown,
             highlight: section.highlight ?? highlight,
             localizedDurations: section.localizedDurations ?? localizedDurations,
             spinner: section.spinner ?? spinner,
@@ -156,8 +181,11 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
                 ?? escapeInterruptRequiresConfirmation,
             interruptSendsQueued: section.interruptSendsQueued ?? interruptSendsQueued,
             onlyUsefulModels: section.onlyUsefulModels ?? onlyUsefulModels,
-            appearance: section.appearance ?? appearance, timeout: section.timeout ?? timeout,
-            timeoutLabel: section.timeoutLabel ?? timeoutLabel, sessionColor: section.sessionColor ?? sessionColor)
+            appearance: section.appearance ?? appearance,
+            timeout: section.timeout ?? timeout,
+            timeoutLabel: section.timeoutLabel ?? timeoutLabel,
+            sessionColor: section.sessionColor ?? sessionColor
+        )
     }
 
     /// The keys this section sets, as a file writes them: `inputRows 4, fold.tools false`.

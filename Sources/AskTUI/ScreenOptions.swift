@@ -69,15 +69,30 @@ public struct ScreenOptions: Sendable, Equatable {
     public static let legacy = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
 
     public init(
-        mouse: Bool = true, copyOnSelect: Bool = true, foldTools: Bool = true, foldThinking: Bool = true,
-        scrollLines: Int = 3, promptRows: Int = 6, foldCode: Bool = true, codeFoldLines: Int = 20,
-        markdown: Bool = true, highlight: Bool = true, sidebar: Bool = false, verbose: Bool = false,
-        prompt: String = "", tint: Bool = true,
+        mouse: Bool = true,
+        copyOnSelect: Bool = true,
+        foldTools: Bool = true,
+        foldThinking: Bool = true,
+        scrollLines: Int = 3,
+        promptRows: Int = 6,
+        foldCode: Bool = true,
+        codeFoldLines: Int = 20,
+        markdown: Bool = true,
+        highlight: Bool = true,
+        sidebar: Bool = false,
+        verbose: Bool = false,
+        prompt: String = "",
+        tint: Bool = true,
         separator: Bool = true,
-        padding: Bool = true, lightBackground: Bool = false, localizedDurations: Bool = true,
-        spinner: SpinnerStyle = .line, jobAutoReturnWhenFocused: Bool = true,
-        abortTurnRequiresConfirmation: Bool = false, interruptKeys: InterruptKeys = .both,
-        escapeInterruptRequiresConfirmation: Bool = true, interruptSendsQueued: QueuedAfterInterrupt = .all
+        padding: Bool = true,
+        lightBackground: Bool = false,
+        localizedDurations: Bool = true,
+        spinner: SpinnerStyle = .line,
+        jobAutoReturnWhenFocused: Bool = true,
+        abortTurnRequiresConfirmation: Bool = false,
+        interruptKeys: InterruptKeys = .both,
+        escapeInterruptRequiresConfirmation: Bool = true,
+        interruptSendsQueued: QueuedAfterInterrupt = .all
     ) {
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect

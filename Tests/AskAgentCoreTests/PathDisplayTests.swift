@@ -12,7 +12,8 @@ struct PathDisplayTests {
         #expect(PathDisplay.tilde("/Users/testuser/Developer/project", home: home) == "~/Developer/project")
         #expect(
             PathDisplay.tilde("/Users/testuser/.local/state/ask/sessions/s1.jsonl", home: home)
-                == "~/.local/state/ask/sessions/s1.jsonl")
+                == "~/.local/state/ask/sessions/s1.jsonl"
+        )
         #expect(PathDisplay.tilde("/var/folders/temp", home: home) == "/var/folders/temp")
         #expect(PathDisplay.tilde("/Users/other/file", home: home) == "/Users/other/file")
     }
@@ -31,7 +32,8 @@ struct PathDisplayTests {
         #expect(PathDisplay.shellArgument("/Users/testuser/Developer/ask", home: home) == "~/Developer/ask")
         #expect(
             PathDisplay.shellArgument("/Users/testuser/.local/state/ask/sessions/s1.jsonl", home: home)
-                == "~/.local/state/ask/sessions/s1.jsonl")
+                == "~/.local/state/ask/sessions/s1.jsonl"
+        )
     }
 
     @Test func `shell argument escapes spaces and special characters while keeping leading tilde unquoted`() {

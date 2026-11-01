@@ -41,10 +41,17 @@ public struct AgentSettings: Sendable, Equatable {
     ///   - acceptsImages: whether the model takes images; anything but true withholds them.
     ///   - imageLimits: what the provider accepts of images, or nil when it did not say.
     public init(
-        model: String, maximumTokens: Int, systemPrompt: [String], maximumTurns: Int,
+        model: String,
+        maximumTokens: Int,
+        systemPrompt: [String],
+        maximumTurns: Int,
         // @dl:accept -- an initializer's optional parameters with nil defaults; the lists are the data
-        compactAtTokens: Int? = defaultCompactAtTokens, keepRecentBytes: Int = 80_000, toolOutputBytes: Int? = nil,
-        thinking: ThinkingControl? = nil, acceptsImages: Bool? = nil, imageLimits: ImageLimits? = nil
+        compactAtTokens: Int? = defaultCompactAtTokens,
+        keepRecentBytes: Int = 80_000,
+        toolOutputBytes: Int? = nil,
+        thinking: ThinkingControl? = nil,
+        acceptsImages: Bool? = nil,
+        imageLimits: ImageLimits? = nil
     ) {
         self.imageLimits = imageLimits
         self.acceptsImages = acceptsImages

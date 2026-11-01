@@ -14,9 +14,16 @@ extension ScreenComposer {
             .enumerated()
             .map { index, row in
                 Line(
-                    text: margin + (index == 0 ? lead : hanging) + row.text, style: Style(dim: true),
+                    text: margin + (index == 0 ? lead : hanging) + row.text,
+                    style: Style(dim: true),
                     source: Source(
-                        block: block, line: row.line, offset: row.offset, col: inset + leadWidth, text: row.text))
+                        block: block,
+                        line: row.line,
+                        offset: row.offset,
+                        col: inset + leadWidth,
+                        text: row.text
+                    )
+                )
             }
     }
 }

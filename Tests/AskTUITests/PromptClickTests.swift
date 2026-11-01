@@ -88,7 +88,8 @@ struct PromptClickTests {
         _ = rig.controller.handle(.key(KeyEvent(keyCode: Key.down.rawValue)), pageRows: 10, columns: 30)
         #expect(
             rig.controller.state.editor.cursor == 12,
-            "the wanted column, 8 cells in, is past the end of the shorter second line")
+            "the wanted column, 8 cells in, is past the end of the shorter second line"
+        )
     }
 
     @Test func `a click forgets the column an earlier Up or Down was aiming for`() {
@@ -112,7 +113,8 @@ struct PromptClickTests {
 
     @Test func `with the mouse off, or a question waiting, a click leaves the cursor`() {
         var off = rig(
-            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false))
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false)
+        )
         paste("hello", into: &off)
         #expect(place(&off, row: 10, col: 6) == 5)
         var asking = rig()

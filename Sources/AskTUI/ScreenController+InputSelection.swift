@@ -53,8 +53,13 @@ extension ScreenController {
         state.inputSelection = nil
         state.promptScroll = nil
         inputDrag = InputDrag(
-            isActive: true, anchorBefore: offsets.before, anchorAfter: offsets.after, headBefore: offsets.before,
-            headAfter: offsets.after, press: cell)
+            isActive: true,
+            anchorBefore: offsets.before,
+            anchorAfter: offsets.after,
+            headBefore: offsets.before,
+            headAfter: offsets.after,
+            press: cell
+        )
     }
 
     mutating func moveInputDrag(to cell: CellPosition) {
@@ -112,7 +117,8 @@ extension ScreenController {
         return String(
             text[
                 text.index(text.startIndex, offsetBy: range.lowerBound) ..< text.index(text.startIndex, offsetBy: upper)
-            ])
+            ]
+        )
     }
 
     /// Deletes what is selected, so what is typed or pasted replaces it. Returns whether anything was.

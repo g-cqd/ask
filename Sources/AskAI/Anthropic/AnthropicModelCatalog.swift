@@ -22,7 +22,9 @@ public struct AnthropicModelCatalog: Sendable {
     ///   - authorize: the credential owner's authorization for a request at the given wall time.
     ///   - cachedAuthorization: current authorization without a network or a write; nil when none is available.
     public init(
-        endpoint: URL = AnthropicModelCatalog.endpoint, cache: ModelCatalogFile?, transport: any HTTPTransport,
+        endpoint: URL = AnthropicModelCatalog.endpoint,
+        cache: ModelCatalogFile?,
+        transport: any HTTPTransport,
         connectionID: UUID? = nil,
         authorize: @escaping @Sendable (Double) async throws -> AnthropicClient.Auth,
         cachedAuthorization: @escaping @Sendable (Double) throws -> AnthropicClient.Auth?
@@ -67,8 +69,10 @@ public struct AnthropicModelCatalog: Sendable {
     public func models(now: Double, refresh: Bool = false) async throws -> CatalogSnapshot {
         var notices = cacheDisabled ? ["Model list not cached: its address might contain a credential."] : []
         if let current = try ModelCatalogCachePolicy.reuse(
-            unless: refresh, notices: &notices, read: { try cached(now: now) })
-        {
+            unless: refresh,
+            notices: &notices,
+            read: { try cached(now: now) }
+        ) {
             return current
         }
         let auth = try await authorize(now)
@@ -101,7 +105,10 @@ public struct AnthropicModelCatalog: Sendable {
         }
         let fingerprint = Base64URL.encode(Array(SHA256.hash(data: Array(identity.value.utf8))))
         return ModelCatalogScope(
-            provider: ProviderSettings.anthropic, accountID: identity.kind + ":" + fingerprint,
-            endpoint: url, connectionID: connectionID)
+            provider: ProviderSettings.anthropic,
+            accountID: identity.kind + ":" + fingerprint,
+            endpoint: url,
+            connectionID: connectionID
+        )
     }
 }

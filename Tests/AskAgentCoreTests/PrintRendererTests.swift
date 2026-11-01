@@ -87,15 +87,21 @@ struct PrintRendererTests {
                 "ask: rate limited; retrying in 1 s (attempt 1 of 2).",
                 "ask: Compacted the conversation: earlier messages are now a 1-character summary. The session file keeps them all.",
                 "ask: the response hit the output limit; asking the model to continue."
-            ])
+            ]
+        )
     }
 
     @Test func `the tokens of the run are counted, responses and compactions both`() {
         let written = Recorded()
         let renderer = PrintRenderer(out: written.sink("out"), err: written.sink("err"))
         let response = AssembledResponse(
-            id: "m", model: "any", blocks: [], stopReason: nil,
-            usage: TokenUsage(input: 10, output: 2, cacheRead: 4, cacheCreation: 1), unrecognized: [])
+            id: "m",
+            model: "any",
+            blocks: [],
+            stopReason: nil,
+            usage: TokenUsage(input: 10, output: 2, cacheRead: 4, cacheCreation: 1),
+            unrecognized: []
+        )
         renderer.render(.responded(response))
         renderer.render(.compacted(summary: "s", usage: TokenUsage(input: 30, output: 40)))
         // The prompt counts every input token the server billed: the input of both requests, plus what was

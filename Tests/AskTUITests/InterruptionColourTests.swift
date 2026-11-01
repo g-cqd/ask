@@ -66,7 +66,8 @@ struct InterruptionColourTests {
         #expect(transcript.items[index] == .notice(Transcript.stoppedWhileThinking, isError: false))
         #expect(
             !transcript.items.contains { if case .thinking = $0 { true } else { false } },
-            "no half-written reasoning left")
+            "no half-written reasoning left"
+        )
         #expect(transcript.interrupted.contains(index))
         let theme = controller.state.blocks.theme
         let rows = ScreenComposer.lines(in: transcript, at: index, columns: 60, style: controller.state.blocks)
@@ -79,13 +80,15 @@ struct InterruptionColourTests {
             #expect(theme.interrupted != theme.failure && theme.interrupted != theme.system)
             #expect(
                 theme.tint(for: .tool(name: "shell", summary: "", status: .interrupted, output: ""))
-                    == theme.interrupted)
+                    == theme.interrupted
+            )
         }
         #expect(ScreenComposer.toolStatusStyle(.interrupted) != ScreenComposer.toolStatusStyle(.failed("x")))
         let metadata = ScreenComposer.blockMetadata(status: .interrupted, output: "", progress: nil)
         #expect(
             metadata.hasSuffix("⊘"),
-            "a mark of its own, not the failure's ✗, for a person who cannot tell the colours apart")
+            "a mark of its own, not the failure's ✗, for a person who cannot tell the colours apart"
+        )
         #expect(metadata == "[interrupted] ⊘", "said in words where a failure gives its exit code (roadmap 0162)")
         let stopped = ScreenComposer.blockMetadata(status: .interrupted, output: "a\nb", progress: nil)
         #expect(stopped == "2 lines · [interrupted] ⊘")

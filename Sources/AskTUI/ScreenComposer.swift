@@ -57,7 +57,7 @@ public struct ScreenComposer: Sendable {
 
     /// What a buffer row holds: the part of a ``Line`` that can be seen. Provenance is not in it, so a row that only moved, with the
     /// same text, is not rewritten.
-    private struct Shown: Equatable {
+    struct Shown: Equatable {
         var text: String
         var style: Style
         var accents: [Accent]
@@ -74,14 +74,14 @@ public struct ScreenComposer: Sendable {
     var transcriptLines = WindowedLayout<Line>()
     /// The look those lines were laid out for.
     var blockStyle = BlockStyle.plain
-    private var foldBlocks: [Int?] = []
-    private var middleFolds: [Bool] = []
-    private var rowLinks: [[PathLinks.Link]] = []
+    var foldBlocks: [Int?] = []
+    var middleFolds: [Bool] = []
+    var rowLinks: [[PathLinks.Link]] = []
     /// What each row of the buffer holds since the last frame, and the size it was composed at.
-    private var shown: [Shown?] = []
+    var shown: [Shown?] = []
     private var shownSize = (columns: -1, rows: -1)
     /// The theme the shown rows were drawn in; a new one redraws every row, because their colours come from it.
-    private var theme: ScreenTheme?
+    var theme: ScreenTheme?
 
     /// Whether the last frame showed the cursor: not while the wheel has scrolled the input's window away from it.
     public private(set) var cursorIsVisible = true
@@ -100,6 +100,27 @@ public struct ScreenComposer: Sendable {
     /// Forgets what the buffer holds, so the next frame writes every row.
     public mutating func reset() { shownSize = (-1, -1) }
 
+    /// The input's frame for `state`, after forgetting every row shown when the size or the theme changed.
+    private mutating func inputFrame(for state: ScreenState, columns: Int, rows: Int) -> PromptLayout.Frame {
+        if shownSize != (columns, rows) || theme != state.theme {
+            shown = Array(repeating: nil, count: rows)
+            shownSize = (columns, rows)
+            theme = state.theme
+        }
+        let editor = input.frame(
+            state.editor,
+            prompt: state.promptPrefix,
+            columns: columns,
+            screenRows: rows,
+            maximumRows: state.promptRows,
+            selection: state.inputSelection,
+            scrollTop: state.promptScroll,
+            markdown: state.transcript.markdown
+        )
+        cursorIsVisible = editor.cursorVisible
+        return editor
+    }
+
     /// Writes `state` into `buffer`.
     /// - Returns: where the cursor belongs: in the prompt, at the editor's cursor.
     public mutating func compose(_ state: ScreenState, into buffer: inout ScreenBuffer) -> (row: Int, column: Int) {
@@ -109,22 +130,17 @@ public struct ScreenComposer: Sendable {
             frames?.store(FrameGeometry(columns: columns))
             return (0, 0)
         }
-        if shownSize != (columns, rows) || theme != state.theme {
-            shown = Array(repeating: nil, count: rows)
-            shownSize = (columns, rows)
-            theme = state.theme
-        }
-        let editor = input.frame(
-            state.editor, prompt: state.promptPrefix, columns: columns, screenRows: rows, maximumRows: state.promptRows,
-            selection: state.inputSelection, scrollTop: state.promptScroll, markdown: state.transcript.markdown)
-        cursorIsVisible = editor.cursorVisible
+        let editor = inputFrame(for: state, columns: columns, rows: rows)
         let promptRows = editor.lines.count
         let statusRows = rows > 1 ? 1 : 0
         // Character rules enclose the input without extra blank rows.
         let ruleRows = state.separator && rows >= 6 ? 2 : 0
         let upperRuleRows = ruleRows / 2
         let strip = RunnerStrip(
-            state, available: Swift.max(0, rows - promptRows - statusRows - ruleRows - 2), columns: columns)
+            state,
+            available: Swift.max(0, rows - promptRows - statusRows - ruleRows - 2),
+            columns: columns
+        )
         let panel = strip.lines.isEmpty ? [] : [Line(text: "", style: .default)] + strip.lines
         let status = Self.status(for: state, input: editor.indicator, columns: columns)
         let pickerRows = rows - promptRows - statusRows - ruleRows - panel.count - 1
@@ -132,17 +148,23 @@ public struct ScreenComposer: Sendable {
         let transcriptRows = rows - promptRows - statusRows - ruleRows - panel.count - pickerLines.count
         self.transcriptRows = transcriptRows
 
-        let (sidebar, map, totalLines) = writeTranscript(
-            state, rows: rows, transcriptRows: transcriptRows, columns: columns, into: &buffer)
+        let (sidebar, map, totalLines) = writeTranscript(state, rows: rows, columns: columns, into: &buffer)
         var geometry = FrameGeometry(
-            rows: map, foldBlocks: foldBlocks, middleFolds: middleFolds, transcriptRows: transcriptRows,
-            columns: columns, totalLines: totalLines,
+            rows: map,
+            foldBlocks: foldBlocks,
+            middleFolds: middleFolds,
+            transcriptRows: transcriptRows,
+            columns: columns,
+            totalLines: totalLines,
             scrollback: state.scrollback,
-            statusRow: transcriptRows + ruleRows + pickerLines.count + promptRows, runnerColumns: status.runners,
-            belowColumns: status.below, markColumns: Self.markColumns(for: state),
+            statusRow: transcriptRows + ruleRows + pickerLines.count + promptRows,
+            runnerColumns: status.runners,
+            belowColumns: status.below,
+            markColumns: Self.markColumns(for: state),
             promptRow: transcriptRows + upperRuleRows + pickerLines.count,
             promptRows: promptRows,
-            promptTop: editor.top, prompt: editor.layout
+            promptTop: editor.top,
+            prompt: editor.layout
         )
         .withPicker(state: state, firstRow: transcriptRows + upperRuleRows + 1, rows: pickerRows)
         geometry.links = rowLinks
@@ -151,72 +173,15 @@ public struct ScreenComposer: Sendable {
         frames?.store(geometry)
 
         return writeBottom(
-            panel: panel, status: statusRows > 0 ? status.line : nil, picker: pickerLines, editor: editor,
+            panel: panel,
+            status: statusRows > 0 ? status.line : nil,
+            picker: pickerLines,
+            editor: editor,
             rule: ruleRows > 0
                 ? Line(text: String(repeating: "─", count: columns), style: StatusLine.statusStyle) : nil,
-            inputStyle: Style(bg: ruleRows > 0 ? .default : state.theme.inputBackground), from: transcriptRows,
-            into: &buffer)
-    }
-
-    /// Draws the transcript's visible rows, with the sidebar beside them, and says what each row shows.
-    private mutating func writeTranscript(
-        _ state: ScreenState, rows: Int, transcriptRows: Int, columns: Int, into buffer: inout ScreenBuffer
-    ) -> (sidebar: Sidebar, map: RowMap<Int>, totalLines: Int) {
-        let sidebar = Sidebar(state, columns: columns, rows: transcriptRows)
-        let wrapColumns = sidebar.transcriptColumns(of: columns)
-        let visible = transcriptWindow(
-            state.transcript, columns: wrapColumns, style: state.blocks, rows: transcriptRows,
-            rowsFromEnd: state.scrollback)[...]
-        let map = Self.provenance(of: visible, rows: rows, transcriptRows: transcriptRows)
-        foldBlocks = Array(repeating: nil, count: transcriptRows - visible.count) + visible.map(\.foldBlock)
-        middleFolds = Array(repeating: false, count: transcriptRows - visible.count) + visible.map(\.foldsMiddle)
-        rowLinks = Array(repeating: [], count: transcriptRows - visible.count) + visible.map(\.links)
-        var highlights = [Range<Int>?](repeating: nil, count: transcriptRows)
-        if let selection = state.selection {
-            for span in map.highlights(of: selection, in: ShownTranscriptContent(transcript: state.transcript))
-            where span.row < transcriptRows {
-                // A row of Markdown can have a span per stretch it shows; the row paints them as one.
-                let earlier = highlights[span.row]
-                highlights[span.row] =
-                    Swift.min(earlier?.lowerBound ?? span.startCol, span.startCol)
-                    ..< Swift.max(earlier?.upperBound ?? span.endCol, span.endCol)
-            }
-        }
-        for row in 0 ..< transcriptRows {
-            let index = row - (transcriptRows - visible.count)
-            let line = index >= 0 ? visible[visible.startIndex + index] : Line(text: "", style: .default)
-            write(
-                line, highlight: highlights[row], side: sidebar.cells.isEmpty ? nil : sidebar.cells[row], row: row,
-                into: &buffer)
-        }
-        return (sidebar, map, transcriptLines.rowCount)
-    }
-
-    /// Writes a whole row, the text then blanks to the edge, unless the row already holds exactly this.
-    mutating func write(
-        _ line: Line, highlight: Range<Int>? = nil, side: Sidebar.Cell? = nil, row: Int, into buffer: inout ScreenBuffer
-    ) {
-        let now = Shown(
-            text: line.text, style: line.style, accents: line.accents, links: line.links, highlight: highlight,
-            side: side)
-        guard shown[row] != now else { return }
-        shown[row] = now
-        var column = 0
-        for (part, style) in Self.spans(of: line, highlight: highlight, row: row) {
-            buffer.write(part, row: row, col: column, style: theme?.legible(style) ?? style)
-            column += UnicodeWidth.displayWidth(of: part)
-        }
-        let edge = side?.column ?? buffer.columns
-        let used = Swift.min(edge, UnicodeWidth.displayWidth(of: line.text))
-        if used < buffer.columns {
-            // The rest of the row carries the row's own background, so a tinted block is tinted to the edge.
-            buffer.fill(
-                row: row, col: used, width: buffer.columns - used, height: 1,
-                cell: Cell(character: " ", style: Style(bg: line.style.bg), width: 1))
-        }
-        if let side {
-            buffer.write("│", row: row, col: side.column, style: Style(dim: true))
-            buffer.write(side.text, row: row, col: side.column + 1, style: side.style)
-        }
+            inputStyle: Style(bg: ruleRows > 0 ? .default : state.theme.inputBackground),
+            from: transcriptRows,
+            into: &buffer
+        )
     }
 }

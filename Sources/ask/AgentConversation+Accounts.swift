@@ -15,7 +15,9 @@ extension AgentConversation {
             update(
                 .notice(
                     "Choose what to sign in to: type /login and pick from the list. " + LoginChoices.usage,
-                    isError: false))
+                    isError: false
+                )
+            )
             return
         }
         let request: LoginRequest
@@ -33,7 +35,8 @@ extension AgentConversation {
             return
         } catch {
             update(
-                .notice(Task.isCancelled ? "Sign-in stopped." : "Sign-in failed: \(error)", isError: !Task.isCancelled))
+                .notice(Task.isCancelled ? "Sign-in stopped." : "Sign-in failed: \(error)", isError: !Task.isCancelled)
+            )
             return
         }
         // A sign-in can make a provider available that nothing named: the settings are read again, so the run follows it.
@@ -47,7 +50,10 @@ extension AgentConversation {
         guard !target.isEmpty else {
             update(
                 .notice(
-                    "Choose what to sign out of: type /logout and pick from the list, or /logout all.", isError: false))
+                    "Choose what to sign out of: type /logout and pick from the list, or /logout all.",
+                    isError: false
+                )
+            )
             return
         }
         // Everything at once is asked about first, "no" checked, so a stray Enter forgets nothing (roadmap 0116).
@@ -58,7 +64,8 @@ extension AgentConversation {
         // The turn running uses the account: signing out of it waits for the turn's end (roadmap 0113).
         if turnRunning, signsOutWhatIsInUse(target) {
             update(
-                .notice("Signing out of \(target) when the running turn ends: it uses that account.", isError: false))
+                .notice("Signing out of \(target) when the running turn ends: it uses that account.", isError: false)
+            )
             await untilTurnEnds()
         }
         do {

@@ -44,7 +44,9 @@ struct BinaryIdentityTests {
     @Test func `a symlink is followed to the real file, so the build directory's alias changes nothing`() throws {
         try write("one")
         try FileManager.default.createSymbolicLink(
-            at: directory.appending(path: "alias"), withDestinationURL: directory.appending(path: "ask"))
+            at: directory.appending(path: "alias"),
+            withDestinationURL: directory.appending(path: "ask")
+        )
         let viaAlias = try #require(BinaryIdentity(path: directory.appending(path: "alias").path))
         let direct = try #require(BinaryIdentity(path: path))
         #expect(viaAlias == direct)

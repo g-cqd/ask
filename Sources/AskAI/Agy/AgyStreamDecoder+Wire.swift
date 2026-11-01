@@ -20,7 +20,10 @@ extension AgyStreamDecoder {
         let thoughts = usage["thoughtsTokenCount"].int
         let output = answer == nil && thoughts == nil ? nil : (answer ?? 0) + (thoughts ?? 0)
         return TokenUsage(
-            prompt: usage["promptTokenCount"].int, completion: output, cached: usage["cachedContentTokenCount"].int)
+            prompt: usage["promptTokenCount"].int,
+            completion: output,
+            cached: usage["cachedContentTokenCount"].int
+        )
     }
 
     /// Why a prompt was blocked, when the feedback names a reason.
@@ -37,8 +40,10 @@ extension AgyStreamDecoder {
         var kind = ProviderFailure.Kind(status: error["code"].int)
         if kind == .invalidRequest, ProviderFailure.Kind.describesContextOverflow(message) { kind = .contextOverflow }
         return ProviderFailure(
-            kind: kind, message: message.isEmpty ? "the provider reported an error" : message,
-            contextWindow: kind == .contextOverflow ? ProviderFailure.Kind.contextWindow(describedIn: message) : nil)
+            kind: kind,
+            message: message.isEmpty ? "the provider reported an error" : message,
+            contextWindow: kind == .contextOverflow ? ProviderFailure.Kind.contextWindow(describedIn: message) : nil
+        )
     }
 
     /// The server's reason in the body of a non-2xx response.

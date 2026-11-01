@@ -22,9 +22,12 @@ enum JobProcess {
             executable = "/usr/bin/sandbox-exec"
         }
         return Configuration(
-            executable: .path(FilePath(executable)), arguments: Arguments(arguments),
+            executable: .path(FilePath(executable)),
+            arguments: Arguments(arguments),
             environment: environment(launch.environment),
-            workingDirectory: FilePath(launch.workingDirectory), platformOptions: groupOptions(graceSeconds: 2))
+            workingDirectory: FilePath(launch.workingDirectory),
+            platformOptions: groupOptions(graceSeconds: 2)
+        )
     }
 
     /// Exactly `values` as a child's environment, less any entry whose name cannot be one.
@@ -34,7 +37,9 @@ enum JobProcess {
                 uniqueKeysWithValues: values.compactMap { name, value in
                     // `=` and NUL cannot occur in an environment entry's name.
                     isEntryName(name) ? Environment.Key(rawValue: name).map { ($0, value) } : nil
-                }))
+                }
+            )
+        )
     }
 
     /// Whether `name` can be the name of an environment entry.
@@ -58,8 +63,15 @@ enum JobProcess {
     static func createFile(_ path: String) -> FileDescriptor? {
         let directory = (path as NSString).deletingLastPathComponent
         try? FileManager.default.createDirectory(
-            atPath: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            atPath: directory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         return try? FileDescriptor.open(
-            FilePath(path), .writeOnly, options: [.create, .exclusiveCreate], permissions: [.ownerReadWrite])
+            FilePath(path),
+            .writeOnly,
+            options: [.create, .exclusiveCreate],
+            permissions: [.ownerReadWrite]
+        )
     }
 }

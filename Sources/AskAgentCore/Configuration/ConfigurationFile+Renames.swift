@@ -10,7 +10,12 @@ extension ConfigurationFile {
         let result = try SettingRenames.apply(to: JSONValue(document.root))
         guard !result.notices.isEmpty,
             let encoded = try? ConfigEditor.encoding(
-                of: result.value, pretty: false, indent: "", separator: .javaScript, trailingNewline: false)
+                of: result.value,
+                pretty: false,
+                indent: "",
+                separator: .javaScript,
+                trailingNewline: false
+            )
         else { return (bytes, []) }
         return (encoded, result.notices.map { "\(path): \($0)" })
     }

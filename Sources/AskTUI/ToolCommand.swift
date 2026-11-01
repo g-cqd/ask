@@ -28,7 +28,10 @@ public struct ToolCommand: Sendable, Equatable {
     ///   - locale: the locale of the units.
     /// - Returns: `timeout 2 min · yield 5 sec`, or `timeout 2:00 · yield 0:05`; empty when nothing is to be written.
     func parameters(
-        localized: Bool, display: TimeoutDisplay = .always, label: String = "timeout", locale: Locale = .current
+        localized: Bool,
+        display: TimeoutDisplay = .always,
+        label: String = "timeout",
+        locale: Locale = .current
     ) -> String {
         func text(_ duration: Duration) -> String {
             let seconds = duration.components.seconds

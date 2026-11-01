@@ -18,14 +18,16 @@ struct Ask: AsyncParsableCommand {
             Login.self, Logout.self, ModelsCommand.self, ConnectionsCommand.self, Sessions.self, ConfigCommand.self,
             TrustCommand.self, SkillsCommand.self,
             UntrustCommand.self
-        ])
+        ]
+    )
 
     @Flag(help: "Print the four performance budgets as JSON and exit. Read by Scripts/measure-budgets.py.")
     var budgets = false
 
     @Option(
         name: [.short, .customLong("print")],
-        help: "Run one prompt with the tools, stream the answer to standard output, and exit.")
+        help: "Run one prompt with the tools, stream the answer to standard output, and exit."
+    )
     var prompt: String?
 
     @Option(help: "The model to use. Default: config.json, else the provider's default model.")
@@ -50,12 +52,15 @@ struct Ask: AsyncParsableCommand {
         help: ArgumentHelp(
             "Compact the conversation once its context reaches this share of the model's window (0.75) or this many tokens; "
                 + "0 only when the window is full. Default: config.json, else 0.75.",
-            valueName: "share-or-tokens"))
+            valueName: "share-or-tokens"
+        )
+    )
     var compactAt: String?
 
     @Flag(
         name: .customLong("no-sandbox"),
-        help: "Turn off ask's protections for this run: its own files and your secret stores become reachable.")
+        help: "Turn off ask's protections for this run: its own files and your secret stores become reachable."
+    )
     var noSandbox = false
 
     @Flag(help: "Run every tool call without asking first, for this run: the same as --allow all.")
@@ -69,14 +74,18 @@ struct Ask: AsyncParsableCommand {
         help: ArgumentHelp(
             "Run these tool calls without asking, for this run: a tool's name, \"commands\" for every command, \"all\" for every "
                 + "call; repeat it for several. Adds to config.json's approvals.allow.",
-            valueName: "tool"))
+            valueName: "tool"
+        )
+    )
     var allow: [String] = []
 
     @Option(
         help: ArgumentHelp(
             "Ask before these tool calls even when config.json allows them, for this run: a tool's name, \"commands\" for every "
                 + "command, \"all\" for every call that changes things; repeat it for several. Adds to config.json's approvals.ask.",
-            valueName: "tool"))
+            valueName: "tool"
+        )
+    )
     var ask: [String] = []
 
     /// The name `--ask all` replaced (roadmap 0154), still read.
@@ -86,21 +95,27 @@ struct Ask: AsyncParsableCommand {
     @Option(
         help: ArgumentHelp(
             "How far commands may reach the network: none, localhost, provider (the model providers only) or any. Replaces config.json's sandbox.network.",
-            valueName: "level"))
+            valueName: "level"
+        )
+    )
     var network: String?
 
     @Option(
         help: ArgumentHelp(
             "Where commands and tools may write: workspace (this directory), anywhere, or a directory; repeat it "
                 + "for several directories. Replaces config.json's sandbox.write.",
-            valueName: "scope"))
+            valueName: "scope"
+        )
+    )
     var write: [String] = []
 
     @Option(
         help: ArgumentHelp(
             "Where commands and tools may read: workspace (this directory, the system and developer tools), "
                 + "anywhere, or a directory; repeat it for several directories. Replaces config.json's sandbox.read.",
-            valueName: "scope"))
+            valueName: "scope"
+        )
+    )
     var read: [String] = []
 
     @Flag(
@@ -133,8 +148,11 @@ struct Ask: AsyncParsableCommand {
     var continueLatest = false
 
     @Option(
-        name: [.short, .customLong("resume")], defaultAsFlag: "", parsing: .next,
-        help: "Choose a session, or resume directly with --resume NAME, PREFIX or PATH.")
+        name: [.short, .customLong("resume")],
+        defaultAsFlag: "",
+        parsing: .next,
+        help: "Choose a session, or resume directly with --resume NAME, PREFIX or PATH."
+    )
     var resume: String? = nil
 
     func validate() throws {
@@ -156,7 +174,8 @@ struct Ask: AsyncParsableCommand {
         if !allow.isEmpty, asksAll { throw ValidationError("--allow and --ask all say opposite things; give one.") }
         if noSandbox || yolo, network != nil || !write.isEmpty || !read.isEmpty {
             throw ValidationError(
-                "\(yolo ? "--yolo" : "--no-sandbox") turns the sandbox off; --network, --write and --read need it on.")
+                "\(yolo ? "--yolo" : "--no-sandbox") turns the sandbox off; --network, --write and --read need it on."
+            )
         }
         if let network, SandboxPolicy.Network(named: network) == nil {
             throw ValidationError("--network must be none, localhost, provider or any.")
@@ -173,7 +192,8 @@ struct Ask: AsyncParsableCommand {
             for value in values
             where !["workspace", "anywhere"].contains(value) && !value.hasPrefix("/") && !value.hasPrefix("~/") {
                 throw ValidationError(
-                    "\(flag) must be workspace, anywhere, or an absolute path (or one starting with ~/).")
+                    "\(flag) must be workspace, anywhere, or an absolute path (or one starting with ~/)."
+                )
             }
             if values.count > 1, values.contains(where: { ["workspace", "anywhere"].contains($0) }) {
                 throw ValidationError("\(flag) given several times takes directories only, not workspace or anywhere.")
@@ -184,15 +204,32 @@ struct Ask: AsyncParsableCommand {
     /// What this command line asks for, as plain values (see ``LaunchRequest``).
     private var request: LaunchRequest {
         LaunchRequest(
-            budgets: budgets, prompt: prompt, model: model, provider: provider, thinking: thinking, maxTurns: maxTurns,
-            compactAt: compactAt, noSandbox: noSandbox, yes: yes, yolo: yolo, allow: allow, ask: ask,
+            budgets: budgets,
+            prompt: prompt,
+            model: model,
+            provider: provider,
+            thinking: thinking,
+            maxTurns: maxTurns,
+            compactAt: compactAt,
+            noSandbox: noSandbox,
+            yes: yes,
+            yolo: yolo,
+            allow: allow,
+            ask: ask,
             askAlways: askAlways,
             network: network,
-            write: write, read: read,
-            selfCheck: selfCheck, verbose: verbose, reloadedFrom: reloadedFrom, reloadStarted: reloadStarted,
+            write: write,
+            read: read,
+            selfCheck: selfCheck,
+            verbose: verbose,
+            reloadedFrom: reloadedFrom,
+            reloadStarted: reloadStarted,
             reloadGrants: reloadGrants,
-            selectedProvider: selectedProvider, selectedModel: selectedModel, continueLatest: continueLatest,
-            resume: resume)
+            selectedProvider: selectedProvider,
+            selectedModel: selectedModel,
+            continueLatest: continueLatest,
+            resume: resume
+        )
     }
 
     func run() async throws { try await request.run() }

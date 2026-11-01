@@ -5,14 +5,16 @@ internal import Foundation
 /// `ask sessions`: this project's sessions, the one written last first, with how each began.
 struct Sessions: ParsableCommand {
     static let configuration = CommandConfiguration(
-        abstract: "List this project's sessions, newest first, for --resume.")
+        abstract: "List this project's sessions, newest first, for --resume."
+    )
 
     @Option(help: "How many to list.")
     var limit = 20
 
     func run() {
         let listed = SessionDirectory(
-            project: FileManager.default.currentDirectoryPath, environment: LaunchEnvironment.values
+            project: FileManager.default.currentDirectoryPath,
+            environment: LaunchEnvironment.values
         )
         .sessions()
         guard !listed.isEmpty else {

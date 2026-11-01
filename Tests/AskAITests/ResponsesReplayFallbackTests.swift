@@ -22,24 +22,38 @@ struct ResponsesReplayFallbackTests {
     private static func request(replaying: Bool = true) throws -> ModelRequest {
         let signature = ReasoningProvenance.mark(
             scheme: "responses",
-            payload: ResponsesStreamDecoder.reasoningPayload(id: "rs_1", summaries: [], sealed: "SEALED"))
+            payload: ResponsesStreamDecoder.reasoningPayload(id: "rs_1", summaries: [], sealed: "SEALED")
+        )
         let call = RequestBlock.toolCall(
-            id: "c1", name: "read", input: try JSONObject(validating: Array(#"{"path":"x"}"#.utf8)))
+            id: "c1",
+            name: "read",
+            input: try JSONObject(validating: Array(#"{"path":"x"}"#.utf8))
+        )
         let assistant: [RequestBlock] = replaying ? [.thinking(text: "", signature: signature), call] : [call]
         return ModelRequest(
-            model: "m", maxTokens: 10, systemPrompt: [],
+            model: "m",
+            maxTokens: 10,
+            systemPrompt: [],
             messages: [
                 ModelMessage(role: .user, blocks: [.text("go")]), ModelMessage(role: .assistant, blocks: assistant),
                 ModelMessage(role: .user, blocks: [.toolResult(id: "c1", content: "data", isError: false)])
-            ], tools: [])
+            ],
+            tools: []
+        )
     }
 
     private func run(
-        _ replies: [SequencedTransport.Reply], request: ModelRequest, gate: ReasoningReplayGate? = ReasoningReplayGate()
+        _ replies: [SequencedTransport.Reply],
+        request: ModelRequest,
+        gate: ReasoningReplayGate? = ReasoningReplayGate()
     ) async -> (transport: SequencedTransport, events: [ModelEvent], failure: (any Error)?) {
         let transport = SequencedTransport(replies)
         let client = ResponsesClient(
-            transport: transport, baseURL: URL(string: "https://example.test/v1")!, dialect: Self.dialect, replay: gate)
+            transport: transport,
+            baseURL: URL(string: "https://example.test/v1")!,
+            dialect: Self.dialect,
+            replay: gate
+        )
         var events: [ModelEvent] = []
         do { for try await event in client.stream(request) { events.append(event) } } catch {
             return (transport, events, error)
@@ -74,7 +88,10 @@ struct ResponsesReplayFallbackTests {
     {
         let gate = ReasoningReplayGate()
         _ = await run(
-            [.json(400, Self.refusal), .json(200, try Self.answer())], request: try Self.request(), gate: gate)
+            [.json(400, Self.refusal), .json(200, try Self.answer())],
+            request: try Self.request(),
+            gate: gate
+        )
         #expect(!gate.isOpen)
         let later = await run([.json(200, try Self.answer())], request: try Self.request(), gate: gate)
         #expect(later.failure == nil)
@@ -85,14 +102,20 @@ struct ResponsesReplayFallbackTests {
 
     @Test func `without a gate each request may retry, and nothing is remembered`() async throws {
         let result = await run(
-            [.json(400, Self.refusal), .json(200, try Self.answer())], request: try Self.request(), gate: nil)
+            [.json(400, Self.refusal), .json(200, try Self.answer())],
+            request: try Self.request(),
+            gate: nil
+        )
         #expect(result.failure == nil && result.transport.sent.count == 2)
     }
 
     @Test func `any other refusal is not retried and is not taken for a reasoning problem`() async throws {
         let gate = ReasoningReplayGate()
         let result = await run(
-            [.json(400, Self.otherRefusal), .json(200, try Self.answer())], request: try Self.request(), gate: gate)
+            [.json(400, Self.otherRefusal), .json(200, try Self.answer())],
+            request: try Self.request(),
+            gate: gate
+        )
         #expect(result.failure != nil)
         #expect(result.transport.sent.count == 1)
         #expect(gate.isOpen)
@@ -107,8 +130,10 @@ struct ResponsesReplayFallbackTests {
     @Test func `a request that carries no reasoning is never retried for this refusal`() async throws {
         let gate = ReasoningReplayGate()
         let result = await run(
-            [.json(400, Self.refusal), .json(200, try Self.answer())], request: try Self.request(replaying: false),
-            gate: gate)
+            [.json(400, Self.refusal), .json(200, try Self.answer())],
+            request: try Self.request(replaying: false),
+            gate: gate
+        )
         #expect(result.failure != nil)
         #expect(result.transport.sent.count == 1)
         #expect(gate.isOpen)
@@ -149,7 +174,11 @@ struct ResponsesReplayFallbackTests {
         let transport = ScriptedTransport(status: 200, chunks: [started, refused])
         let gate = ReasoningReplayGate()
         let client = ResponsesClient(
-            transport: transport, baseURL: URL(string: "https://example.test/v1")!, dialect: Self.dialect, replay: gate)
+            transport: transport,
+            baseURL: URL(string: "https://example.test/v1")!,
+            dialect: Self.dialect,
+            replay: gate
+        )
         var events: [ModelEvent] = []
         var failure: (any Error)?
         do { for try await event in client.stream(try Self.request()) { events.append(event) } } catch {
@@ -157,7 +186,9 @@ struct ResponsesReplayFallbackTests {
         }
         #expect(failure != nil)
         #expect(
-            events.contains { if case .messageStarted = $0 { true } else { false } }, "the start was delivered first")
+            events.contains { if case .messageStarted = $0 { true } else { false } },
+            "the start was delivered first"
+        )
         #expect(gate.isOpen)
         #expect(!events.contains { if case .notice = $0 { true } else { false } })
     }
@@ -167,7 +198,10 @@ struct ResponsesReplayFallbackTests {
             "event: error\ndata: {\"type\":\"error\",\"code\":\"invalid_encrypted_content\",\"message\":\"early\"}\n\n"
         let gate = ReasoningReplayGate()
         let result = await run(
-            [.json(200, first), .json(200, try Self.answer())], request: try Self.request(), gate: gate)
+            [.json(200, first), .json(200, try Self.answer())],
+            request: try Self.request(),
+            gate: gate
+        )
         #expect(result.failure == nil && result.transport.sent.count == 2)
         #expect(!gate.isOpen)
         #expect(!bodies(result.transport)[1].contains("SEALED"))

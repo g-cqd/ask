@@ -11,7 +11,9 @@ struct RepositoryFactsTests {
 
     private func write(_ text: String, to path: String) throws {
         try FileManager.default.createDirectory(
-            atPath: (path as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
+            atPath: (path as NSString).deletingLastPathComponent,
+            withIntermediateDirectories: true
+        )
         try text.write(toFile: path, atomically: true, encoding: .utf8)
     }
 
@@ -35,7 +37,9 @@ struct RepositoryFactsTests {
             [user]
             \temail = jane@acme.com ; trailing comment
             \tname = Jane Doe
-            """, to: root + "/repo/.git/config")
+            """,
+            to: root + "/repo/.git/config"
+        )
         try FileManager.default.createDirectory(atPath: root + "/repo/src/deep", withIntermediateDirectories: true)
         let facts = RepositoryFacts.read(project: root + "/repo/src/deep", environment: environment())
         #expect(facts.project == root + "/repo/src/deep")
@@ -64,7 +68,9 @@ struct RepositoryFactsTests {
             \tpath = names.inc
             [includeIf "gitdir:~/work/"]
             \tpath = ~/work.inc
-            """, to: root + "/home/.gitconfig")
+            """,
+            to: root + "/home/.gitconfig"
+        )
         try write("[user]\n\tname = Included Name\n", to: root + "/home/names.inc")
         try write("[user]\n\temail = me@acme.com\n", to: root + "/home/work.inc")
         let work = RepositoryFacts.read(project: root + "/home/work/app", environment: environment())

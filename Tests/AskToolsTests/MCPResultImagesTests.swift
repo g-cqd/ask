@@ -13,8 +13,14 @@ import UniformTypeIdentifiers
 struct MCPResultImagesTests {
     private func png(_ side: Int) -> String {
         let context = CGContext(
-            data: nil, width: side, height: side, bitsPerComponent: 8, bytesPerRow: 0,
-            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)!
+            data: nil,
+            width: side,
+            height: side,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
+        )!
         context.setFillColor(red: 0.9, green: 0.4, blue: 0.1, alpha: 1)
         context.fill(CGRect(x: 0, y: 0, width: side, height: side))
         let output = NSMutableData()
@@ -42,13 +48,15 @@ struct MCPResultImagesTests {
         #expect(images.parts.isEmpty)
         #expect(images.lines[0]?.contains("not shown, the bytes are not an image") == true)
         #expect(
-            MCPResultImages(result([.image(mimeType: "image/png", base64: "!!!")]), allowance: .init()).parts.isEmpty)
+            MCPResultImages(result([.image(mimeType: "image/png", base64: "!!!")]), allowance: .init()).parts.isEmpty
+        )
     }
 
     @Test func `a result shows only so many pictures, and names the rest`() {
         let one = png(8)
         let given = result(
-            Array(repeating: .image(mimeType: "image/png", base64: one), count: MCPResultImages.maximum + 2))
+            Array(repeating: .image(mimeType: "image/png", base64: one), count: MCPResultImages.maximum + 2)
+        )
         let images = MCPResultImages(given, allowance: .init())
         #expect(images.parts.count == MCPResultImages.maximum)
         #expect(images.lines[MCPResultImages.maximum]?.contains("over the") == true)

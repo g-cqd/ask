@@ -44,7 +44,8 @@ public enum SessionReplay {
     }
 
     private static func replayed(
-        _ payload: SessionPayload, calls: inout [(id: String, name: String, input: JSONObject)]
+        _ payload: SessionPayload,
+        calls: inout [(id: String, name: String, input: JSONObject)]
     ) -> [Step] {
         switch payload {
             case .destination: return []

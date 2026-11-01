@@ -4,7 +4,9 @@ internal import AskAI
 /// Renaming changes a local label, never the credential or cache location.
 struct RenameConnectionCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "rename", abstract: "Rename a connection without moving its credentials.")
+        commandName: "rename",
+        abstract: "Rename a connection without moving its credentials."
+    )
     @Argument var name: String
     @Argument var newName: String
 

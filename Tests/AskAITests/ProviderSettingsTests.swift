@@ -24,7 +24,10 @@ struct ProviderSettingsTests {
     }
 
     private func resolve(
-        _ json: String = local, provider: String? = nil, model: String? = nil, environment: [String: String] = [:]
+        _ json: String = local,
+        provider: String? = nil,
+        model: String? = nil,
+        environment: [String: String] = [:]
     ) throws -> ResolvedModel {
         try settings(json).resolve(provider: provider, model: model, environment: environment)
     }

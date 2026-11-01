@@ -55,7 +55,9 @@ struct RunnerProgressTests {
         controller.setRunners(
             [
                 RunnerInfo(name: "job-1", detail: String(repeating: "界é", count: 40), startedAt: start)
-            ], at: start + .seconds(3661))
+            ],
+            at: start + .seconds(3661)
+        )
         controller.state.runnersOpen = true
         for columns in 1 ... 80 {
             let text = RunnerStrip(controller.state, available: 5, columns: columns).lines[0].text
@@ -65,13 +67,16 @@ struct RunnerProgressTests {
         let text = RunnerStrip(controller.state, available: 5, columns: 80).lines[0].text
         #expect(
             text.hasSuffix("…    1:01:01 · |"),
-            "a cut command ends with an ellipsis, four cells before the time (roadmap 0100)")
+            "a cut command ends with an ellipsis, four cells before the time (roadmap 0100)"
+        )
     }
 
     @Test func `a row with no clock that is too wide ends with an ellipsis at the edge`() {
         var controller = ScreenController(label: "test")
         controller.setRunners(
-            [RunnerInfo(name: "job-1", detail: String(repeating: "x", count: 100), state: .done)], at: .now)
+            [RunnerInfo(name: "job-1", detail: String(repeating: "x", count: 100), state: .done)],
+            at: .now
+        )
         controller.state.runnersOpen = true
         for columns in [10, 33, 60] {
             let text = RunnerStrip(controller.state, available: 5, columns: columns).lines[0].text

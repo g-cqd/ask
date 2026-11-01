@@ -16,16 +16,21 @@ public struct CopilotDeviceSignIn: BrowserSignIn {
 
     public func start() async throws(SignInError) -> SignInStart<Device> {
         let begun = try await http.form(
-            "login/device/code", values: [("client_id", CopilotProtocol.clientID), ("scope", "user:email")],
-            as: Begun.self)
+            "login/device/code",
+            values: [("client_id", CopilotProtocol.clientID), ("scope", "user:email")],
+            as: Begun.self
+        )
         guard SignInSecret.isValid(begun.device_code), SignInSecret.isValid(begun.user_code),
             (1 ... 3600).contains(begun.expires_in), (1 ... begun.expires_in).contains(begun.interval),
             begun.verification_uri == "https://github.com/login/device"
         else { throw .invalidResponse("GitHub device response") }
         return SignInStart(
-            session: Device(code: begun.device_code), url: URL(string: begun.verification_uri)!,
-            window: .seconds(begun.expires_in), interval: .seconds(begun.interval),
-            instructions: "Enter this code there: \(begun.user_code)")
+            session: Device(code: begun.device_code),
+            url: URL(string: begun.verification_uri)!,
+            window: .seconds(begun.expires_in),
+            interval: .seconds(begun.interval),
+            instructions: "Enter this code there: \(begun.user_code)"
+        )
     }
 
     public func poll(_ session: Device) async throws(SignInError) -> SignInPoll<String> {
@@ -34,7 +39,9 @@ public struct CopilotDeviceSignIn: BrowserSignIn {
             values: [
                 ("client_id", CopilotProtocol.clientID), ("device_code", session.code),
                 ("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
-            ], as: GrantBody.self)
+            ],
+            as: GrantBody.self
+        )
         if let token = result.access_token, SignInSecret.isValid(token) { return .complete(token) }
         switch result.error {
             case "authorization_pending": return .pending
@@ -46,7 +53,11 @@ public struct CopilotDeviceSignIn: BrowserSignIn {
     public func finish(_ session: Device, grant: String) async throws(SignInError) -> CopilotCredentials {
         try await CopilotAuthClient(transport: http.transport)
             .exchange(
-                githubToken: grant, machineID: UUID().uuidString, deviceID: UUID().uuidString, now: now())
+                githubToken: grant,
+                machineID: UUID().uuidString,
+                deviceID: UUID().uuidString,
+                now: now()
+            )
     }
 
     private struct Begun: Decodable {

@@ -28,14 +28,16 @@ struct ApprovalAllowWordsTests {
     @Test func `all allows every tool call, MCP tools' own questions included`() {
         let policy = ApprovalPolicy(section: ApprovalsSection(allow: ["all"]))
         #expect(
-            decide(policy, "bash", #"{"command":"rm x"}"#) == .run && decide(policy, "write", #"{"path":"a"}"#) == .run)
+            decide(policy, "bash", #"{"command":"rm x"}"#) == .run && decide(policy, "write", #"{"path":"a"}"#) == .run
+        )
         #expect(decide(policy, "mcp__srv__boom") == .runWithoutServerQuestion)
     }
 
     @Test func `the command line adds to the file's list for the run`() {
         let policy = ApprovalPolicy(section: ApprovalsSection(allow: ["write"]), allowing: ["commands"])
         #expect(
-            decide(policy, "bash", #"{"command":"ls"}"#) == .run && decide(policy, "write", #"{"path":"a"}"#) == .run)
+            decide(policy, "bash", #"{"command":"ls"}"#) == .run && decide(policy, "write", #"{"path":"a"}"#) == .run
+        )
         #expect(asks(decide(policy, "edit", #"{"path":"a"}"#)))
     }
 
@@ -43,8 +45,12 @@ struct ApprovalAllowWordsTests {
         #expect(
             asks(
                 decide(
-                    ApprovalPolicy(section: ApprovalsSection(allow: ["all"], ask: ["write"])), "write", #"{"path":"a"}"#
-                )))
+                    ApprovalPolicy(section: ApprovalsSection(allow: ["all"], ask: ["write"])),
+                    "write",
+                    #"{"path":"a"}"#
+                )
+            )
+        )
         #expect(asks(decide(ApprovalPolicy(flag: .askAlways, allowing: ["all"]), "bash", #"{"command":"ls"}"#)))
     }
 }

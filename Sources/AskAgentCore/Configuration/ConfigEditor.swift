@@ -29,7 +29,11 @@ public struct ConfigEditor: Sendable {
         public let wire: Wire
 
         public init(
-            path: [String], title: String, value: String, choices: [String] = [], editable: Bool = false,
+            path: [String],
+            title: String,
+            value: String,
+            choices: [String] = [],
+            editable: Bool = false,
             wire: Wire = .string
         ) {
             self.path = path
@@ -98,12 +102,17 @@ public struct ConfigEditor: Sendable {
         let document: JSONDocument
         do {
             document = try AemiJSON.parse(
-                bytes, options: JSONParseOptions(validation: .json5, duplicateKeys: .throwError))
+                bytes,
+                options: JSONParseOptions(validation: .json5, duplicateKeys: .throwError)
+            )
         } catch {
             let position = ConfigurationFile.position(of: error, in: bytes)
             throw ConfigurationError.invalid(
-                path: path, line: position.0, column: position.1,
-                reason: ConfigurationFile.reason(of: error))
+                path: path,
+                line: position.0,
+                column: position.1,
+                reason: ConfigurationFile.reason(of: error)
+            )
         }
         // Old setting names read as the new ones (roadmap 0154), so a save from here writes the new names.
         do {
@@ -124,8 +133,12 @@ public struct ConfigEditor: Sendable {
         let strippedBytes: [UInt8]
         do {
             strippedBytes = try Self.encoding(
-                of: stripped.value, pretty: false, indent: "", separator: .javaScript,
-                trailingNewline: false)
+                of: stripped.value,
+                pretty: false,
+                indent: "",
+                separator: .javaScript,
+                trailingNewline: false
+            )
         } catch {
             throw ConfigurationError.invalid(path: path, line: nil, column: nil, reason: String(describing: error))
         }
@@ -143,13 +156,18 @@ public struct ConfigEditor: Sendable {
     public func value(_ text: String, at path: [String]) throws(ConfigurationError) -> Value {
         guard let setting = setting(path) else {
             throw ConfigurationError.unknownKey(
-                path: self.path, key: path.joined(separator: "."), known: ConfigurationFile.keys)
+                path: self.path,
+                key: path.joined(separator: "."),
+                known: ConfigurationFile.keys
+            )
         }
         if text == "unset" { return .unset }
         guard setting.editable, setting.choices.contains(text) else {
             throw ConfigurationError.outOfRange(
-                path: self.path, key: path.joined(separator: "."),
-                reason: "must be one of: \(setting.choices.filter { $0 != "unset" }.joined(separator: ", "))")
+                path: self.path,
+                key: path.joined(separator: "."),
+                reason: "must be one of: \(setting.choices.filter { $0 != "unset" }.joined(separator: ", "))"
+            )
         }
         if setting.wire == .boolean, setting.choices == ["unset", "on", "off"] { return .bool(text == "on") }
         return .string(text)

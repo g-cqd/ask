@@ -52,7 +52,8 @@ struct AgyClientSecretVerifierTests {
         (400, #"{"error":"invalid_request"}"#)
     ])
     func `an answer that is neither pairing nor rejection stops the search instead of guessing on`(
-        _ status: Int, _ body: String
+        _ status: Int,
+        _ body: String
     ) async {
         let transport = SequencedTransport([.json(status, body), .json(400, Self.right)])
         await #expect(throws: AgySecretError.inconclusive(status: status)) {

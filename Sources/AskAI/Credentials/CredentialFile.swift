@@ -25,7 +25,10 @@ public struct CredentialFile: Sendable {
     ///   - vault: where secrets the file marks as kept elsewhere are read from when `secrets` is nil (a file switched back to file
     ///     mode); nil means the Keychain.
     public init(
-        url: URL, lockWait: Duration = .seconds(5), secrets: (any SecretStore)? = nil, vault: (any SecretStore)? = nil
+        url: URL,
+        lockWait: Duration = .seconds(5),
+        secrets: (any SecretStore)? = nil,
+        vault: (any SecretStore)? = nil
     ) {
         self.url = url
         self.lockWait = lockWait
@@ -63,7 +66,9 @@ public struct CredentialFile: Sendable {
     /// - Returns: false when they changed or were removed meanwhile, and nothing was written.
     /// - Throws: as ``saveClaude(_:)``.
     public func saveClaude(
-        _ credentials: ClaudeCredentials, ifStill expected: ClaudeCredentials, connection: ConnectionRecord? = nil
+        _ credentials: ClaudeCredentials,
+        ifStill expected: ClaudeCredentials,
+        connection: ConnectionRecord? = nil
     )
         throws(CredentialFileError) -> Bool
     {
@@ -74,7 +79,9 @@ public struct CredentialFile: Sendable {
     /// - Returns: false when they changed or were removed meanwhile, and nothing was written.
     /// - Throws: as ``saveClaude(_:)``.
     public func saveCodex(
-        _ credentials: CodexCredentials, ifStill expected: CodexCredentials, connection: ConnectionRecord? = nil
+        _ credentials: CodexCredentials,
+        ifStill expected: CodexCredentials,
+        connection: ConnectionRecord? = nil
     )
         throws(CredentialFileError) -> Bool
     {
@@ -177,7 +184,9 @@ public struct CredentialFile: Sendable {
 
     /// Replaces the record at `record` only while it is still `expected`; false, and nothing written, when it is not.
     func replace<T: Equatable>(
-        _ record: WritableKeyPath<StoredCredentials, T?>, with value: T, ifStill expected: T,
+        _ record: WritableKeyPath<StoredCredentials, T?>,
+        with value: T,
+        ifStill expected: T,
         connection: ConnectionRecord?
     )
         throws(CredentialFileError) -> Bool
@@ -203,7 +212,9 @@ public struct CredentialFile: Sendable {
         let directory = url.deletingLastPathComponent()
         do {
             try FileManager.default.createDirectory(
-                at: directory.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: directory.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
         } catch {
             throw .io(path: directory.deletingLastPathComponent().path, errno: EACCES)
         }

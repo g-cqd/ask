@@ -18,15 +18,21 @@ struct AgentLoopReconnectTests {
     {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let recorder = SessionRecorder(
-            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none))
+            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none)
+        )
         let loop = AgentLoop(
-            provider: provider, tools: try ToolRegistry([]),
+            provider: provider,
+            tools: try ToolRegistry([]),
             settings: AgentSettings(model: "m", maximumTokens: 64, systemPrompt: [], maximumTurns: 8),
             context: ToolContext(workingDirectory: directory.path),
             retry: RetryPolicy(
-                maximumAttempts: attempts, baseDelay: .seconds(1), maximumDelay: .seconds(30),
-                maximumRequestedDelay: .seconds(120)),
-            clock: clock)
+                maximumAttempts: attempts,
+                baseDelay: .seconds(1),
+                maximumDelay: .seconds(30),
+                maximumRequestedDelay: .seconds(120)
+            ),
+            clock: clock
+        )
         return (loop, recorder)
     }
 
@@ -51,7 +57,9 @@ struct AgentLoopReconnectTests {
         #expect(sent.first?.role == .assistant && sent.first?.blocks == [.text("The first half")])
         #expect(sent.last?.role == .user && sent.last?.blocks == [.text(AgentLoop.reconnectionPrompt)])
         #expect(
-            events.contains { if case .retrying = $0 { true } else { false } }, "the status says it is reconnecting")
+            events.contains { if case .retrying = $0 { true } else { false } },
+            "the status says it is reconnecting"
+        )
         #expect(events.contains { if case .continuedAfterDrop = $0 { true } else { false } })
         #expect(clock.sleeps == [.seconds(1)])
     }
@@ -101,6 +109,7 @@ struct AgentLoopReconnectTests {
         let replay = SessionReplay.steps(recorder.tree.context())
         #expect(replay.contains { if case .event(.continuedAfterDrop) = $0 { true } else { false } })
         #expect(
-            !replay.contains { if case .prompt(let text) = $0 { text == AgentLoop.reconnectionPrompt } else { false } })
+            !replay.contains { if case .prompt(let text) = $0 { text == AgentLoop.reconnectionPrompt } else { false } }
+        )
     }
 }

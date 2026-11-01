@@ -6,7 +6,11 @@ internal import Testing
 /// The observed Codex catalog, with its large instruction fields deliberately omitted from the fixture.
 struct CodexCatalogClientTests {
     private static let credentials = CodexCredentials(
-        accessToken: "access-test", refreshToken: "refresh-test", expiresAt: 100, accountID: "account-test")
+        accessToken: "access-test",
+        refreshToken: "refresh-test",
+        expiresAt: 100,
+        accountID: "account-test"
+    )
 
     private func read(_ json: String, status: Int = 200) async throws -> [CatalogModel] {
         try await CodexCatalogClient(transport: SequencedTransport([.json(status, json)]))
@@ -22,7 +26,8 @@ struct CodexCatalogClientTests {
         #expect(
             models.map(\.id) == [
                 "gpt-6.1-sol", "gpt-6-astra", "gpt-6-sol", "gpt-6-luna", "gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"
-            ])
+            ]
+        )
         #expect(models.first?.contextWindow == 500_000)
         #expect(models.first?.maxOutputTokens == nil)
     }
@@ -94,7 +99,8 @@ struct CodexCatalogClientTests {
 
     @Test func `server priority orders defaults and ties keep server order`() async throws {
         let models = try await read(
-            #"{"models":[{"slug":"third","priority":9},{"slug":"first","priority":1},{"slug":"second","priority":1}]}"#)
+            #"{"models":[{"slug":"third","priority":9},{"slug":"first","priority":1},{"slug":"second","priority":1}]}"#
+        )
         #expect(models.map(\.id) == ["first", "second", "third"])
     }
 
@@ -104,7 +110,8 @@ struct CodexCatalogClientTests {
         )
         #expect(
             ModelUsefulness.shown(models, onlyUseful: true)
-                == [CatalogModel(id: "ok"), CatalogModel(id: "other", contextWindow: 8192, maxOutputTokens: 1024)])
+                == [CatalogModel(id: "ok"), CatalogModel(id: "other", contextWindow: 8192, maxOutputTokens: 1024)]
+        )
         let marks = Dictionary(uniqueKeysWithValues: models.map { ($0.id, $0.unsuitable) })
         #expect(marks["hidden"] == "hidden by the provider")
         #expect(marks["unavailable"] == "not supported in the API")

@@ -17,7 +17,9 @@ struct ProjectListerTests {
         for (path, text) in files {
             let url = URL(filePath: root + "/" + path)
             try FileManager.default.createDirectory(
-                at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             try Data(text.utf8).write(to: url)
         }
         try await body(root)
@@ -60,7 +62,8 @@ struct ProjectListerTests {
             try git(["add", "."], in: root)
             try FileManager.default.removeItem(atPath: root + "/gone.txt")
             #expect(
-                await ProjectLister.list(in: root, policy: .unrestricted, gitWait: Self.gitWait).paths == ["keep.txt"])
+                await ProjectLister.list(in: root, policy: .unrestricted, gitWait: Self.gitWait).paths == ["keep.txt"]
+            )
         }
     }
 
@@ -101,14 +104,19 @@ struct ProjectListerTests {
             #expect(
                 await ProjectLister.list(in: root, policy: .unrestricted, gitWait: Self.gitWait).paths == [
                     "plain.txt", "real/a.txt"
-                ])
+                ]
+            )
         }
     }
 
     @Test func `a path listed twice, as git does for a file in a merge conflict, is offered once`() async throws {
         try await project(["a.txt": "a", "b.txt": "b"]) { root in
             let listing = ProjectLister.readable(
-                ["b.txt", "a.txt", "b.txt", "a.txt", "a.txt"], in: root, policy: .unrestricted, limit: 10)
+                ["b.txt", "a.txt", "b.txt", "a.txt", "a.txt"],
+                in: root,
+                policy: .unrestricted,
+                limit: 10
+            )
             #expect(listing.paths == ["a.txt", "b.txt"] && listing.hidden == 0)
         }
     }
@@ -124,7 +132,8 @@ struct ProjectListerTests {
             #expect(
                 await ProjectLister.list(in: root, policy: .unrestricted, gitWait: Self.gitWait).paths == [
                     "plain.txt", "with space/日本語 file.txt"
-                ])
+                ]
+            )
         }
     }
 }

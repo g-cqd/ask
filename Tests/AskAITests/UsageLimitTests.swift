@@ -60,7 +60,8 @@ struct UsageLimitTests {
     @Test(arguments: [#"-5"#, #"2592001"#, #""soon""#, #"1181.5"#, #"null"#, #"[1]"#, #"{"a":1}"#, #"true"#])
     func `a reset time that is not a sensible number of seconds is ignored, not trusted`(_ value: String) {
         let reason = failure(
-            #"{"error":{"type":"usage_limit_reached","message":"Limit","resets_in_seconds":\#(value)}}"#)
+            #"{"error":{"type":"usage_limit_reached","message":"Limit","resets_in_seconds":\#(value)}}"#
+        )
         #expect(reason?.kind == .usageLimit)
         #expect(reason?.resetsInSeconds == nil)
         #expect(reason?.sentence == "Limit")

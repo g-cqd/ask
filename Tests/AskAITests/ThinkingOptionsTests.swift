@@ -10,11 +10,15 @@ struct ThinkingOptionsTests {
 
     @Test func `a Codex model offers its own levels, none as off, and marks its default`() {
         let entry = CatalogModel(
-            id: "m", reasoningLevels: ["none", "low", "medium", "ultra"], defaultReasoningLevel: "medium")
+            id: "m",
+            reasoningLevels: ["none", "low", "medium", "ultra"],
+            defaultReasoningLevel: "medium"
+        )
         let choices = ThinkingOptions.choices(for: .codex, descriptor: entry)
         #expect(
             choices?.levels == [.off, .low, .medium],
-            "ultra is advertised and refused by live inference, so it is not offered")
+            "ultra is advertised and refused by live inference, so it is not offered"
+        )
         #expect(choices?.verified == true)
         #expect(choices?.serverDefault == .medium)
     }
@@ -31,7 +35,11 @@ struct ThinkingOptionsTests {
 
     @Test func `an adaptive native model offers its levels, and off when it can be disabled`() {
         let entry = CatalogModel(
-            id: "m", reasoningLevels: ["low", "high"], supportsThinking: true, thinkingModes: [.adaptive, .disabled])
+            id: "m",
+            reasoningLevels: ["low", "high"],
+            supportsThinking: true,
+            thinkingModes: [.adaptive, .disabled]
+        )
         #expect(ThinkingOptions.choices(for: .anthropic, descriptor: entry)?.levels == [.off, .low, .high])
     }
 
@@ -46,7 +54,9 @@ struct ThinkingOptionsTests {
         #expect(ThinkingOptions.choices(for: .agy, descriptor: nil) == nil)
         #expect(
             ThinkingOptions.choices(
-                for: .openAICompatible(name: "x", baseURL: provider, apiKey: nil, headers: [:]), descriptor: nil) == nil
+                for: .openAICompatible(name: "x", baseURL: provider, apiKey: nil, headers: [:]),
+                descriptor: nil
+            ) == nil
         )
     }
 

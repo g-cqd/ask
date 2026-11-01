@@ -37,7 +37,8 @@ public struct BinaryIdentity: Sendable, Equatable {
         var buffer = [CChar](repeating: 0, count: Int(length))
         guard _NSGetExecutablePath(&buffer, &length) == 0 else { return nil }
         return BinaryIdentity(
-            path: String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self))
+            path: String(decoding: buffer.prefix { $0 != 0 }.map { UInt8(bitPattern: $0) }, as: UTF8.self)
+        )
     }
 
     /// The same file, unchanged: path, file identity, size and modification time all agree.
@@ -52,7 +53,8 @@ public struct BinaryIdentity: Sendable, Equatable {
     /// For people: the build's time and size, such as `built 14:02:11, 8.1 MB`.
     public var summary: String {
         let time = modified.formatted(
-            .dateTime.hour(.twoDigits(amPM: .omitted)).minute().second().locale(Locale(identifier: "en_GB")))
+            .dateTime.hour(.twoDigits(amPM: .omitted)).minute().second().locale(Locale(identifier: "en_GB"))
+        )
         return "built \(time), \(String(format: "%.1f", Double(size) / 1_000_000)) MB"
     }
 }

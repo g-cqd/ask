@@ -30,7 +30,11 @@ public struct ProviderModelCatalog: Sendable {
     ///     is not cached: any of those can carry a credential, and the cache must not copy it.
     ///   - transport: what sends the request.
     public init(
-        name: String, baseURL: URL, apiKey: String?, headers: [String: String], cache: ModelCatalogFile?,
+        name: String,
+        baseURL: URL,
+        apiKey: String?,
+        headers: [String: String],
+        cache: ModelCatalogFile?,
         transport: any HTTPTransport
     ) {
         self.name = name
@@ -76,8 +80,10 @@ public struct ProviderModelCatalog: Sendable {
             ]
             : []
         if let current = try ModelCatalogCachePolicy.reuse(
-            unless: refresh, notices: &notices, read: { try cached(now: now) })
-        {
+            unless: refresh,
+            notices: &notices,
+            read: { try cached(now: now) }
+        ) {
             return current
         }
         var request = HTTPRequest.account("GET", url)
@@ -88,7 +94,8 @@ public struct ProviderModelCatalog: Sendable {
         let listing = try ModelListing(decoding: reply.body)
         if listing.skipped > 0 {
             notices.append(
-                "\(listing.skipped) listed entries were left out: no usable id, a repeat, or the catalog limit.")
+                "\(listing.skipped) listed entries were left out: no usable id, a repeat, or the catalog limit."
+            )
         }
         do { try cache?.save(listing.models, scope: scope, now: now) } catch {
             notices.append("Downloaded model catalog could not be cached: \(error)")
@@ -98,6 +105,9 @@ public struct ProviderModelCatalog: Sendable {
 
     private var scope: ModelCatalogScope {
         ModelCatalogScope(
-            provider: name, accountID: apiKey == nil ? Self.keylessScope : Self.keyScope, endpoint: url)
+            provider: name,
+            accountID: apiKey == nil ? Self.keylessScope : Self.keyScope,
+            endpoint: url
+        )
     }
 }

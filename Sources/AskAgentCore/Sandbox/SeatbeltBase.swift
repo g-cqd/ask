@@ -44,7 +44,8 @@ enum SeatbeltBase {
         com.apple.system.logger com.apple.diagnosticd com.apple.system.notification_center com.apple.trustd
         com.apple.trustd.agent com.apple.secinitd com.apple.cfprefsd.daemon com.apple.cfprefsd.agent
         com.apple.analyticsd com.apple.espd
-        """)
+        """
+    )
 
     /// The sysctls runtimes read, by exact name, then by prefix.
     private static let sysctls: [(name: String, prefix: Bool)] =

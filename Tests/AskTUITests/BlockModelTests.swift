@@ -151,7 +151,11 @@ struct BlockModelTests {
 
     @Test func `open thinking selection copies content without a hidden header`() {
         var rig = PointerRig(
-            columns: 40, rows: 16, options: ScreenOptions(foldThinking: false), updates: [.thinkingText("one\ntwo")])
+            columns: 40,
+            rows: 16,
+            options: ScreenOptions(foldThinking: false),
+            updates: [.thinkingText("one\ntwo")]
+        )
         let content = (0 ..< 16).first { rig.contentText(row: $0) == " one" }!
         #expect(rig.drag(from: (content, 1), to: (content + 1, 4)) == [.copy("one\ntwo")])
     }

@@ -12,7 +12,9 @@ struct ChoicePickerClickTests {
     private func rig() -> PointerRig {
         var rig = PointerRig(columns: 60, rows: Self.rows, lines: ["one", "two"])
         rig.controller = ScreenController(
-            label: "m", commands: [SlashCommand(name: "model", summary: "Choose a model.", takesChoices: true)])
+            label: "m",
+            commands: [SlashCommand(name: "model", summary: "Choose a model.", takesChoices: true)]
+        )
         for scalar in "/model ".unicodeScalars {
             _ = rig.controller.handle(.key(KeyEvent(keyCode: scalar.value)), pageRows: Self.rows - 3)
         }
@@ -22,7 +24,9 @@ struct ChoicePickerClickTests {
                 rows: [
                     ChoiceRow(label: "codex/gpt-6-sol", arguments: "codex gpt-6-sol"),
                     ChoiceRow(label: "apple/on-device", arguments: "apple on-device")
-                ]))
+                ]
+            )
+        )
         rig.draw()
         return rig
     }

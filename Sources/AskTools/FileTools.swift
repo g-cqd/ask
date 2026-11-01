@@ -22,7 +22,9 @@ public enum FileTools {
     /// With nothing restricted the path is used as given and nothing is looked up.
     /// - Throws: a ``ToolFailure`` that names the path the model gave and nothing of the policy that refused it (ADR-0115).
     static func authorized(
-        _ path: String, for capabilities: [SandboxCapability], in context: ToolContext
+        _ path: String,
+        for capabilities: [SandboxCapability],
+        in context: ToolContext
     ) throws(ToolFailure) -> URL {
         guard !context.sandbox.isUnrestricted else { return url(path, in: context) }
         for capability in capabilities {
@@ -47,14 +49,20 @@ public enum FileTools {
     /// - Returns: the text.
     /// - Throws: a ``ToolFailure`` for a missing, protected, oversized, binary or unreadable file.
     static func text(
-        at url: URL, shownAs path: String, in context: ToolContext, between: () -> Void = {}
+        at url: URL,
+        shownAs path: String,
+        in context: ToolContext,
+        between: () -> Void = {}
     ) throws(ToolFailure) -> String {
         try text(from: try bytes(at: url, shownAs: path, in: context, between: between), shownAs: path)
     }
 
     /// The file's bytes, checked the same way ``text(at:shownAs:in:between:)`` checks them before it decodes.
     static func bytes(
-        at url: URL, shownAs path: String, in context: ToolContext, limit: Int = maximumFileBytes,
+        at url: URL,
+        shownAs path: String,
+        in context: ToolContext,
+        limit: Int = maximumFileBytes,
         between: () -> Void = {}
     ) throws(ToolFailure) -> [UInt8] {
         between()
@@ -103,7 +111,11 @@ public enum FileTools {
     ///   - between: runs after the path was authorized and before it is used; only tests give one, to change the file system there.
     /// - Throws: a ``ToolFailure`` if the write is protected or cannot be done.
     static func write(
-        _ text: String, to url: URL, shownAs path: String, in context: ToolContext, between: () -> Void = {}
+        _ text: String,
+        to url: URL,
+        shownAs path: String,
+        in context: ToolContext,
+        between: () -> Void = {}
     ) throws(ToolFailure) {
         between()
         guard context.sandbox.isUnrestricted else {
@@ -112,7 +124,9 @@ public enum FileTools {
         }
         do {
             try FileManager.default.createDirectory(
-                at: url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             try Data(text.utf8).write(to: url, options: .atomic)
         } catch {
             throw ToolFailure("Cannot write \(path): \(error.localizedDescription)")

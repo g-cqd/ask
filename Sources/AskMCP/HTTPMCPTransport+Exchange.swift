@@ -49,7 +49,8 @@ extension HTTPMCPTransport {
             case 200 ..< 300:
                 fail(
                     requestID,
-                    "the server replied with \(type.isEmpty ? "no content type" : type), which is not JSON or events")
+                    "the server replied with \(type.isEmpty ? "no content type" : type), which is not JSON or events"
+                )
             default:
                 let body = (try? await reply.collect(limit: 1024)) ?? []
                 let text = String(decoding: body.prefix(200), as: UTF8.self)

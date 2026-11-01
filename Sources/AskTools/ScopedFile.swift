@@ -111,7 +111,10 @@ enum ScopedFile {
     /// - Returns: what `body` returns.
     /// - Throws: a ``ToolFailure`` for a missing, protected, oversized or uncopyable file, or what `body` throws.
     static func withCopy<Result>(
-        of url: URL, shownAs path: String, limit: Int, in context: ToolContext,
+        of url: URL,
+        shownAs path: String,
+        limit: Int,
+        in context: ToolContext,
         _ body: (URL) async throws(ToolFailure) -> Result
     ) async throws(ToolFailure) -> Result {
         let (source, _) = try openRegular(url, shownAs: path, limit: limit, in: context)
@@ -119,7 +122,10 @@ enum ScopedFile {
         let directory = FileManager.default.temporaryDirectory.appending(path: "ask-read-\(UUID().uuidString)")
         guard
             (try? FileManager.default.createDirectory(
-                at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])) != nil
+                at: directory,
+                withIntermediateDirectories: false,
+                attributes: [.posixPermissions: 0o700]
+            )) != nil
         else { throw ToolFailure("Cannot read \(path).") }
         defer { try? FileManager.default.removeItem(at: directory) }
         let copy = directory.appending(path: "file." + url.pathExtension)
@@ -141,7 +147,10 @@ enum ScopedFile {
     ///   - flush: how a descriptor is made durable; only tests give one, to see when and to make it fail.
     /// - Throws: a ``ToolFailure`` if the write is protected, or cannot be done.
     static func write(
-        _ bytes: [UInt8], to url: URL, shownAs path: String, in context: ToolContext,
+        _ bytes: [UInt8],
+        to url: URL,
+        shownAs path: String,
+        in context: ToolContext,
         flush: (Int32) -> Int32 = FileFlush.barrier
     ) throws(ToolFailure) {
         let name = url.lastPathComponent
@@ -173,7 +182,11 @@ enum ScopedFile {
 
     /// Writes `bytes` beside `name` under a name of its own, then renames it over `name`, keeping the permissions of what it replaces.
     private static func replace(
-        _ name: String, in directory: Int32, with bytes: [UInt8], shownAs path: String, flush: (Int32) -> Int32
+        _ name: String,
+        in directory: Int32,
+        with bytes: [UInt8],
+        shownAs path: String,
+        flush: (Int32) -> Int32
     ) throws(ToolFailure) {
         let temporary = ".ask-write-\(UUID().uuidString)"
         let file = openat(directory, temporary, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW | O_CLOEXEC, 0o666)
@@ -207,13 +220,17 @@ enum ScopedFile {
         // After it, so the new name is on the disk before the model is told the file is written. The file is in place and stays.
         guard flush(directory) == 0 else {
             throw ToolFailure(
-                "Cannot write \(path): the directory could not be flushed (\(String(cString: strerror(errno)))).")
+                "Cannot write \(path): the directory could not be flushed (\(String(cString: strerror(errno))))."
+            )
         }
     }
 
     /// Refuses unless the policy allows `capability` at the real location of `descriptor`, with `name` below it when given.
     static func verify(
-        _ descriptor: Int32, for capability: SandboxCapability, appending name: String?, shownAs path: String,
+        _ descriptor: Int32,
+        for capability: SandboxCapability,
+        appending name: String?,
+        shownAs path: String,
         in context: ToolContext
     ) throws(ToolFailure) {
         var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN))

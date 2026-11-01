@@ -15,13 +15,20 @@ struct AnthropicModelCatalogTests {
     }
 
     private func catalog(
-        _ transport: SequencedTransport, file: ModelCatalogFile?,
+        _ transport: SequencedTransport,
+        file: ModelCatalogFile?,
         auth: AnthropicClient.Auth = .subscription(accessToken: "fixture-one"),
-        connection: UUID? = nil, endpoint: URL = AnthropicModelCatalog.endpoint
+        connection: UUID? = nil,
+        endpoint: URL = AnthropicModelCatalog.endpoint
     ) -> AnthropicModelCatalog {
         AnthropicModelCatalog(
-            endpoint: endpoint, cache: file, transport: transport, connectionID: connection,
-            authorize: { _ in auth }, cachedAuthorization: { _ in auth })
+            endpoint: endpoint,
+            cache: file,
+            transport: transport,
+            connectionID: connection,
+            authorize: { _ in auth },
+            cachedAuthorization: { _ in auth }
+        )
     }
 
     @Test func `a fresh scoped cache avoids another request and a single lookup retains capabilities`() async throws {
@@ -50,7 +57,10 @@ struct AnthropicModelCatalogTests {
             let id = UUID()
             _ = try await catalog(transport, file: file, connection: id).models(now: 10)
             let differentGrant = try catalog(
-                transport, file: file, auth: .subscription(accessToken: "fixture-two"), connection: id
+                transport,
+                file: file,
+                auth: .subscription(accessToken: "fixture-two"),
+                connection: id
             )
             .cached(now: 11)
             #expect(differentGrant == nil)
@@ -60,7 +70,10 @@ struct AnthropicModelCatalogTests {
             let registration = try catalog(transport, file: file, connection: UUID()).cached(now: 11)
             #expect(registration == nil)
             let endpoint = try catalog(
-                transport, file: file, connection: id, endpoint: URL(string: "https://other.example.test/v1/models")!
+                transport,
+                file: file,
+                connection: id,
+                endpoint: URL(string: "https://other.example.test/v1/models")!
             )
             .cached(now: 11)
             #expect(endpoint == nil)
@@ -84,14 +97,18 @@ struct AnthropicModelCatalogTests {
     @Test func `a missing file does not ask the credential reader or create anything`() throws {
         let count = Mutex(0)
         let file = ModelCatalogFile(
-            url: FileManager.default.temporaryDirectory.appending(path: "ask-absent-\(UUID()).json"))
+            url: FileManager.default.temporaryDirectory.appending(path: "ask-absent-\(UUID()).json")
+        )
         let transport = SequencedTransport([.json(200, Self.reply)])
         let target = AnthropicModelCatalog(
-            cache: file, transport: transport, authorize: { _ in .bearer("t") },
+            cache: file,
+            transport: transport,
+            authorize: { _ in .bearer("t") },
             cachedAuthorization: { _ in
                 count.withLock { $0 += 1 }
                 return .bearer("t")
-            })
+            }
+        )
         let cached = try target.cached(now: 1)
         let model = try target.cachedModel("m", now: 1)
         #expect(cached == nil && model == nil)
@@ -104,8 +121,11 @@ struct AnthropicModelCatalogTests {
             let current = Mutex<AnthropicClient.Auth?>(.bearer("t"))
             let transport = SequencedTransport([.json(200, Self.reply)])
             let target = AnthropicModelCatalog(
-                cache: file, transport: transport, authorize: { _ in .bearer("t") },
-                cachedAuthorization: { _ in current.withLock { $0 } })
+                cache: file,
+                transport: transport,
+                authorize: { _ in .bearer("t") },
+                cachedAuthorization: { _ in current.withLock { $0 } }
+            )
             _ = try await target.models(now: 10)
             current.withLock { $0 = nil }
             let cached = try target.cached(now: 11)
@@ -149,7 +169,9 @@ struct AnthropicModelCatalogTests {
     @Test func `a damaged cache is reported and a new download can still be used`() async throws {
         try await withFile { file in
             try FileManager.default.createDirectory(
-                at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: file.url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             try Data("not json".utf8).write(to: file.url)
             let transport = SequencedTransport([.json(200, Self.reply)])
             let result = try await catalog(transport, file: file).models(now: 10)

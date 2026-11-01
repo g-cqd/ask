@@ -58,7 +58,9 @@ struct AliasThinkingTests {
     func `a hand-edited unknown level makes the file damaged, not quietly ignored`(_ level: String) throws {
         try withFile { file in
             try FileManager.default.createDirectory(
-                at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: file.url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             try Data(#"{"version":2,"aliases":{"deep":{"model":"gpt-6-sol","thinking":\#(level)}}}"#.utf8)
                 .write(to: file.url)
             #expect(throws: ModelAliasError.damaged(path: file.url.path)) { try file.load() }
@@ -68,7 +70,9 @@ struct AliasThinkingTests {
     @Test func `a level in a file still marked version 1 is read rather than lost`() throws {
         try withFile { file in
             try FileManager.default.createDirectory(
-                at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: file.url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             try Data(#"{"version":1,"aliases":{"deep":{"model":"gpt-6-sol","thinking":"low"}}}"#.utf8)
                 .write(to: file.url)
             #expect(try file.load().aliases["deep"]?.thinking == .low)
@@ -78,7 +82,9 @@ struct AliasThinkingTests {
     @Test func `a version this build does not know is still refused`() throws {
         try withFile { file in
             try FileManager.default.createDirectory(
-                at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: file.url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             try Data(#"{"version":3,"aliases":{}}"#.utf8).write(to: file.url)
             #expect(throws: ModelAliasError.newerFormat(path: file.url.path)) { try file.load() }
         }
@@ -91,10 +97,19 @@ struct AliasThinkingTests {
         var aliases = ModelAliases()
         try aliases.set("deep", to: "gpt-6-sol", thinking: .xhigh)
         let resolved = try ProviderSettings.none.resolve(
-            provider: "work", model: "deep", environment: [:], connection: work, aliases: aliases)
+            provider: "work",
+            model: "deep",
+            environment: [:],
+            connection: work,
+            aliases: aliases
+        )
         #expect(resolved.thinking == .xhigh)
         let plain = try ProviderSettings.none.resolve(
-            provider: "codex", model: "gpt-6-sol", environment: [:], aliases: aliases)
+            provider: "codex",
+            model: "gpt-6-sol",
+            environment: [:],
+            aliases: aliases
+        )
         #expect(plain.thinking == nil)
     }
 }

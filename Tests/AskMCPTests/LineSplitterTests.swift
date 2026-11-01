@@ -19,7 +19,8 @@ struct LineSplitterTests {
         for cut in 1 ..< whole.count {
             let index = whole.index(whole.startIndex, offsetBy: cut)
             #expect(
-                lines([String(whole[..<index]), String(whole[index...])]) == ["alpha", "beta", "gamma"], "cut at \(cut)"
+                lines([String(whole[..<index]), String(whole[index...])]) == ["alpha", "beta", "gamma"],
+                "cut at \(cut)"
             )
         }
     }
@@ -54,7 +55,8 @@ struct LineSplitterTests {
         #expect(splitter.overflowed)
         #expect(
             splitter.feed(Array("more\nlines\n".utf8)).isEmpty,
-            "nothing more is taken from a stream that has gone wrong")
+            "nothing more is taken from a stream that has gone wrong"
+        )
     }
 
     @Test func `a line exactly at the limit is a line`() {

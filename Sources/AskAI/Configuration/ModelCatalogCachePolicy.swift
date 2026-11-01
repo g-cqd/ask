@@ -10,7 +10,9 @@ enum ModelCatalogCachePolicy {
     /// Reuse a fresh cache unless explicitly refreshing. Damage is reported and costs only that cache; errors from
     /// a credential reader are not swallowed as cache damage. The nonescaping read is not invoked for refresh.
     static func reuse(
-        unless refresh: Bool, notices: inout [String], read: () throws -> CatalogSnapshot?
+        unless refresh: Bool,
+        notices: inout [String],
+        read: () throws -> CatalogSnapshot?
     ) throws -> CatalogSnapshot? {
         guard !refresh else { return nil }
         do { return try read() } catch let error as ModelCatalogError {

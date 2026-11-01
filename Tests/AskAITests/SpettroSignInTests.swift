@@ -12,7 +12,9 @@ struct SpettroSignInTests {
     private static let pending = #"{"status":"pending"}"#
 
     private func run(
-        _ replies: [SequencedTransport.Reply], base: String = "https://api.spettro.app", clock: StepClock = StepClock()
+        _ replies: [SequencedTransport.Reply],
+        base: String = "https://api.spettro.app",
+        clock: StepClock = StepClock()
     ) async throws -> (key: StoredKey, transport: SequencedTransport, links: [URL], clock: StepClock) {
         let transport = SequencedTransport(replies)
         let flow = try SpettroSignIn(transport: transport, base: base, sessionID: "sess-1", now: { 42 })
@@ -40,13 +42,20 @@ struct SpettroSignInTests {
         ] {
             #expect(throws: SignInError.self, "\(base)") {
                 try SpettroSignIn(
-                    transport: SequencedTransport([.json(200, "{}")]), base: base, sessionID: "s", now: { 0 })
+                    transport: SequencedTransport([.json(200, "{}")]),
+                    base: base,
+                    sessionID: "s",
+                    now: { 0 }
+                )
             }
         }
         #expect(throws: Never.self) {
             try SpettroSignIn(
-                transport: SequencedTransport([.json(200, "{}")]), base: "http://127.0.0.1:9000", sessionID: "s",
-                now: { 0 })
+                transport: SequencedTransport([.json(200, "{}")]),
+                base: "http://127.0.0.1:9000",
+                sessionID: "s",
+                now: { 0 }
+            )
         }
     }
 
@@ -70,7 +79,9 @@ struct SpettroSignInTests {
         (500, "oops", SignInError.rejected(status: 500)), (200, "not json", SignInError.invalidResponse("body"))
     ])
     func `every answer that is not a key or still pending ends the sign-in`(
-        status: Int, body: String, expected: SignInError
+        status: Int,
+        body: String,
+        expected: SignInError
     ) async throws {
         do {
             _ = try await run([.json(200, Self.browser), .json(status, body)])

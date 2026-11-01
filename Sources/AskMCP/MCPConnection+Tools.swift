@@ -10,7 +10,10 @@ extension MCPConnection {
         var cursor: String?
         for _ in 0 ..< Self.maximumListPages {
             let reply = try await request(
-                "tools/list", params: cursor.map(Self.cursorParams), timeout: requestTimeout)
+                "tools/list",
+                params: cursor.map(Self.cursorParams),
+                timeout: requestTimeout
+            )
             reply["tools"]
                 .forEachElement { element in
                     if let tool = MCPToolParsing.tool(element) { tools.append(tool) }
@@ -30,15 +33,19 @@ extension MCPConnection {
     /// - Returns: the tool's result. A tool that ran and failed returns a result with ``MCPToolResult/isError`` set.
     /// - Throws: the server's protocol error (an unknown tool, say), a timeout, or ``MCPError/cancelled``.
     public func callTool(
-        _ name: String, arguments: JSONObject, timeout: Duration? = nil,
+        _ name: String,
+        arguments: JSONObject,
+        timeout: Duration? = nil,
         onProgress: (@Sendable (MCPProgress) -> Void)? = nil
     ) async throws(MCPError) -> MCPToolResult {
         let token = onProgress == nil ? nil : state.withLock { "ask-\($0.nextID + 1)" }
         if let token, let onProgress { state.withLock { $0.progress[token] = onProgress } }
         defer { if let token { state.withLock { $0.progress[token] = nil } } }
         let reply = try await request(
-            "tools/call", params: Self.callParams(name: name, arguments: arguments, token: token),
-            timeout: timeout ?? requestTimeout)
+            "tools/call",
+            params: Self.callParams(name: name, arguments: arguments, token: token),
+            timeout: timeout ?? requestTimeout
+        )
         return MCPToolParsing.result(reply)
     }
 

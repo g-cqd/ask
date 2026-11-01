@@ -7,7 +7,9 @@ internal import Foundation
 // @dl:accept -- the two commands share the ParsableCommand shape; each is one screen
 struct UntrustCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "untrust", abstract: "Stop trusting this project's .ask/config.json.")
+        commandName: "untrust",
+        abstract: "Stop trusting this project's .ask/config.json."
+    )
 
     @Flag(name: .customLong("skills"), help: "Stop trusting this project's skills instead of its configuration.")
     var skills = false

@@ -39,7 +39,11 @@ enum PDFReader {
     /// Text is a quarter of the tokens of a picture of the same page (roadmap 0084, diary 2026-10-28-08), exact where a picture is read,
     /// and the only thing a model without images can use. A page with no text layer is a scan or a drawing, so it is shown as a picture.
     static func read(
-        _ bytes: [UInt8], path: String, pages spec: String?, maximumImages: Int, render: Bool = false,
+        _ bytes: [UInt8],
+        path: String,
+        pages spec: String?,
+        maximumImages: Int,
+        render: Bool = false,
         textBytes: Int = Shown.textBytes,
         allowance: ImageReader.Allowance = ImageReader.Allowance()
     ) throws(ToolFailure) -> ToolOutput {
@@ -86,7 +90,11 @@ enum PDFReader {
         /// Adds a page, as text when it has enough and as a picture otherwise.
         /// - Returns: false when the page does not fit the budgets, so reading stops before it.
         mutating func add(
-            _ page: CGPDFPage, number: Int, text pageText: String, allowance: ImageReader.Allowance, path: String
+            _ page: CGPDFPage,
+            number: Int,
+            text pageText: String,
+            allowance: ImageReader.Allowance,
+            path: String
         ) throws(ToolFailure) -> Bool {
             if pageText.count >= Self.minimumText {
                 let block = "[page \(number)]\n\(pageText)"
@@ -134,7 +142,8 @@ enum PDFReader {
                 parts.append(
                     end - start >= 2
                         ? "\(pages[start])-\(pages[end])"
-                        : pages[start ... end].map(String.init).joined(separator: ", "))
+                        : pages[start ... end].map(String.init).joined(separator: ", ")
+                )
                 start = end + 1
             }
             return (pages.count == 1 ? "page " : "pages ") + parts.joined(separator: ", ")
@@ -168,15 +177,25 @@ enum PDFReader {
             guard
                 // @dl:accept -- a bitmap context is made the same way for a scaled image and a drawn page; the arguments differ, so sharing would take as many
                 let context = CGContext(
-                    data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
-                    space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
+                    data: nil,
+                    width: width,
+                    height: height,
+                    bitsPerComponent: 8,
+                    bytesPerRow: 0,
+                    space: CGColorSpaceCreateDeviceRGB(),
+                    bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
+                )
             else { return nil }
             context.setFillColor(gray: 1, alpha: 1)
             context.fill(CGRect(x: 0, y: 0, width: width, height: height))
             context.concatenate(
                 page.getDrawingTransform(
-                    .cropBox, rect: CGRect(x: 0, y: 0, width: width, height: height), rotate: 0,
-                    preserveAspectRatio: true))
+                    .cropBox,
+                    rect: CGRect(x: 0, y: 0, width: width, height: height),
+                    rotate: 0,
+                    preserveAspectRatio: true
+                )
+            )
             context.drawPDFPage(page)
             return context.makeImage()
         }

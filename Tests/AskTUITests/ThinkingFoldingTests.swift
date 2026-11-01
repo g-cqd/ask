@@ -53,8 +53,15 @@ struct ThinkingFoldingTests {
         let rig = PointerRig(
             columns: 60,
             options: ScreenOptions(
-                foldThinking: false, markdown: markdown, prompt: "ask> ", tint: false, separator: false, padding: false),
-            updates: [.thinkingText(long + "\nsecond thought")])
+                foldThinking: false,
+                markdown: markdown,
+                prompt: "ask> ",
+                tint: false,
+                separator: false,
+                padding: false
+            ),
+            updates: [.thinkingText(long + "\nsecond thought")]
+        )
         let shown = (0 ..< 10).map { rig.text(row: $0) }
         let first = shown.firstIndex { $0.contains("Weighing") }
         #expect(first != nil, "\(shown)")
@@ -70,7 +77,8 @@ struct ThinkingFoldingTests {
         let rig = PointerRig(
             columns: 60,
             options: ScreenOptions(foldThinking: false, prompt: "ask> ", tint: false, separator: false, padding: false),
-            updates: Self.reasoning)
+            updates: Self.reasoning
+        )
         #expect(rig.contentText(row: 8) == "first thought")
     }
 
@@ -132,7 +140,9 @@ struct ThinkingFoldingTests {
 
     @Test func `a long reasoning is cut and the cut is said`() {
         var rig = PointerRig(
-            columns: 60, updates: [.thinkingText((1 ... 1000).map { "t \($0)" }.joined(separator: "\n"))])
+            columns: 60,
+            updates: [.thinkingText((1 ... 1000).map { "t \($0)" }.joined(separator: "\n"))]
+        )
         #expect(rig.contentText(row: 9) == "Thinking...")
         rig.click(row: 9, col: 3)
         #expect(rig.contentText(row: 9) == "… 600 more lines not shown")

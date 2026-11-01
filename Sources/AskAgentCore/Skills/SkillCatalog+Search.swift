@@ -24,7 +24,8 @@ extension SkillCatalog {
                 if score == 0 {
                     fuzzy += Swift.max(
                         Self.fuzzyScore(word, tokens: nameTokens) * 3,
-                        Self.fuzzyScore(word, tokens: descriptionTokens))
+                        Self.fuzzyScore(word, tokens: descriptionTokens)
+                    )
                 }
             }
             return words.isEmpty || literal > 0 || fuzzy > 0 ? (skill, literal, fuzzy) : nil

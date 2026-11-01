@@ -21,7 +21,10 @@ extension ConfigEditor {
     }
 
     private static func strippedSection(
-        _ value: JSONValue, path: [String], section: String, warnings: inout [String]
+        _ value: JSONValue,
+        path: [String],
+        section: String,
+        warnings: inout [String]
     ) -> JSONValue {
         guard case .object(let object) = value else { return value }
         let known: Set<String>
@@ -38,7 +41,9 @@ extension ConfigEditor {
 
     /// Keeps the members whose names a section knows, warning about the rest without deleting them.
     private static func filterKnown(
-        _ object: OrderedDictionary<String, JSONValue>, known: Set<String>, path: [String],
+        _ object: OrderedDictionary<String, JSONValue>,
+        known: Set<String>,
+        path: [String],
         warnings: inout [String]
     ) -> OrderedDictionary<String, JSONValue> {
         var kept = OrderedDictionary<String, JSONValue>()
@@ -55,7 +60,9 @@ extension ConfigEditor {
 
     /// Under `mcp`, every member names a server; only the server's own keys are a fixed table.
     private static func strippedServers(
-        _ object: OrderedDictionary<String, JSONValue>, path: [String], warnings: inout [String]
+        _ object: OrderedDictionary<String, JSONValue>,
+        path: [String],
+        warnings: inout [String]
     ) -> JSONValue {
         let known = Set(MCPServerSetting.keys)
         var kept = OrderedDictionary<String, JSONValue>()
@@ -66,7 +73,8 @@ extension ConfigEditor {
                 continue
             }
             kept[server] = .object(
-                Self.filterKnown(fields, known: known, path: path + [server], warnings: &warnings))
+                Self.filterKnown(fields, known: known, path: path + [server], warnings: &warnings)
+            )
         }
         return .object(kept)
     }
@@ -90,12 +98,17 @@ extension ConfigEditor {
 
     /// Encodes a value with the editor's stable JSON dialect: declaration order, strict JSON, detected layout.
     static func encoding(
-        of value: JSONValue, pretty: Bool, indent: String, separator: JSONEncodingOptions.KeySeparator,
+        of value: JSONValue,
+        pretty: Bool,
+        indent: String,
+        separator: JSONEncodingOptions.KeySeparator,
         trailingNewline: Bool
     ) throws -> [UInt8] {
         let options = JSONEncodingOptions(
-            prettyPrinted: pretty, prettyKeySeparator: separator,
-            indent: indent == "\t" ? .string("\t") : .spaces(indent.count))
+            prettyPrinted: pretty,
+            prettyKeySeparator: separator,
+            indent: indent == "\t" ? .string("\t") : .spaces(indent.count)
+        )
         var bytes = try value.encodedBytes(options: options)
         if trailingNewline { bytes.append(0x0A) }
         return bytes

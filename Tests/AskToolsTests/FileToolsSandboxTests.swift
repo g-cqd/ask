@@ -42,7 +42,8 @@ struct FileToolsSandboxTests {
         let output = await EditTool()
             .run(
                 world.input(#"{"path":"\#(world.config)/credentials.json","old_text":"sk-ant","new_text":"x"}"#),
-                in: world.context)
+                in: world.context
+            )
         #expect(output.isError && output.content.hasPrefix("Not permitted:"))
         #expect(!output.content.contains("sk-ant-secret"))
         #expect(world.text(".config/ask/credentials.json") == "sk-ant-secret")
@@ -74,7 +75,9 @@ struct FileToolsSandboxTests {
         let work = world.workspace
         try FileManager.default.createSymbolicLink(atPath: work + "/cfg", withDestinationPath: world.config)
         try FileManager.default.createSymbolicLink(
-            atPath: work + "/dangling", withDestinationPath: world.config + "/planted.json")
+            atPath: work + "/dangling",
+            withDestinationPath: world.config + "/planted.json"
+        )
         #expect((await read("cfg/credentials.json")).isError)
         #expect((await write("cfg/config.json")).isError)
         #expect((await write("dangling")).isError)
@@ -91,7 +94,8 @@ struct FileToolsSandboxTests {
         #expect(
             !(await EditTool()
                 .run(world.input(#"{"path":"file.txt","old_text":"workspace","new_text":"edited"}"#), in: world.context))
-                .isError)
+                .isError
+        )
         #expect(world.text("work/file.txt") == "edited file")
     }
 
@@ -99,7 +103,9 @@ struct FileToolsSandboxTests {
         async throws
     {
         try FileManager.default.createSymbolicLink(
-            atPath: world.workspace + "/alias", withDestinationPath: world.home + "/elsewhere")
+            atPath: world.workspace + "/alias",
+            withDestinationPath: world.home + "/elsewhere"
+        )
         #expect(!(await write("alias/out.txt")).isError)
         #expect(world.text("elsewhere/out.txt") == "tampered")
     }
@@ -109,7 +115,9 @@ struct FileToolsSandboxTests {
         throws
     {
         try FileManager.default.createSymbolicLink(
-            atPath: world.workspace + "/alias", withDestinationPath: world.home + "/elsewhere")
+            atPath: world.workspace + "/alias",
+            withDestinationPath: world.home + "/elsewhere"
+        )
         let url = try FileTools.authorized("alias/./../elsewhere/out.txt", for: [.write], in: world.context)
         #expect(url.path == world.home + "/elsewhere/out.txt")
         let plain = try FileTools.authorized("file.txt", for: [.read], in: world.context)
@@ -118,7 +126,9 @@ struct FileToolsSandboxTests {
 
     @Test func `a path that cannot be resolved is refused`() async throws {
         try FileManager.default.createSymbolicLink(
-            atPath: world.workspace + "/loop", withDestinationPath: world.workspace + "/loop")
+            atPath: world.workspace + "/loop",
+            withDestinationPath: world.workspace + "/loop"
+        )
         #expect((await read("loop")).content == "Not permitted: loop.")
     }
 }

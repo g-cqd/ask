@@ -39,7 +39,9 @@ public struct ConnectionRegistry: Sendable {
             notices.append("Ambiguous connection name '\(name)'; neither registration was selected.")
         }
         return ConnectionListing(
-            records: records.filter { !duplicates.contains($0.name) }.sorted { $0.name < $1.name }, notices: notices)
+            records: records.filter { !duplicates.contains($0.name) }.sorted { $0.name < $1.name },
+            notices: notices
+        )
     }
 
     /// Creates a signed-out registration, or returns the same-provider registration already named `name`.
@@ -73,23 +75,33 @@ public struct ConnectionRegistry: Sendable {
     /// The stable-id credential store for this registration, unaffected by a rename.
     public func credentials(for record: ConnectionRecord) -> CredentialFile {
         credentials(
-            for: record, choice: CredentialStorage.chosen, stablySigned: CredentialStorage.runningBuildIsStablySigned,
-            keychain: try? KeychainSecretStore())
+            for: record,
+            choice: CredentialStorage.chosen,
+            stablySigned: CredentialStorage.runningBuildIsStablySigned,
+            keychain: try? KeychainSecretStore()
+        )
     }
 
     /// The registration's file with its secrets where `choice` puts them, as ask's own file (roadmap 0110).
     func credentials(
-        for record: ConnectionRecord, choice: CredentialStorage, stablySigned: Bool, keychain: (any SecretStore)?
+        for record: ConnectionRecord,
+        choice: CredentialStorage,
+        stablySigned: Bool,
+        keychain: (any SecretStore)?
     ) -> CredentialFile {
         CredentialFile.preferred(
             url: directory.appending(path: record.id.uuidString.lowercased()).appending(path: "credentials.json"),
-            choice: choice, stablySigned: stablySigned, keychain: keychain)
+            choice: choice,
+            stablySigned: stablySigned,
+            keychain: keychain
+        )
     }
 
     /// The alias file in this registration's own folder, which a rename does not move.
     public func aliases(for record: ConnectionRecord) -> ModelAliasFile {
         ModelAliasFile(
-            url: directory.appending(path: record.id.uuidString.lowercased()).appending(path: "aliases.json"))
+            url: directory.appending(path: record.id.uuidString.lowercased()).appending(path: "aliases.json")
+        )
     }
 
     /// Renames a registration, retaining its id, credentials, authorization identity and cache location.
@@ -144,7 +156,10 @@ public struct ConnectionRegistry: Sendable {
 
     private func locked<T>(_ body: () throws -> T) throws -> T {
         try FileManager.default.createDirectory(
-            at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            at: directory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         let path = directory.appending(path: ".registry")
         let lock: CredentialLock
         do { lock = try CredentialLock.acquireBlocking(beside: path, wait: lockWait, name: "") } catch CredentialLock
@@ -183,7 +198,10 @@ public struct ConnectionRegistry: Sendable {
     }
 
     private func install(
-        _ record: ConnectionRecord, identity: String?, replaceAccount: Bool, _ grant: (inout StoredCredentials) -> Void
+        _ record: ConnectionRecord,
+        identity: String?,
+        replaceAccount: Bool,
+        _ grant: (inout StoredCredentials) -> Void
     ) throws {
         try locked {
             let error: ConnectionError? = try credentials(for: record)

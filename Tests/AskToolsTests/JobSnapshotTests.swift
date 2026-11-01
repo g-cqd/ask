@@ -14,8 +14,11 @@ struct JobSnapshotTests {
         let job = table.start(
             "read word; printf '%s\\n' \"$word\"; read hold",
             in:
-                ToolContext(workingDirectory: root.path, outputDirectory: root.path), keepsInputOpen: true,
-            keeping: 1000, observe: { _ in })
+                ToolContext(workingDirectory: root.path, outputDirectory: root.path),
+            keepsInputOpen: true,
+            keeping: 1000,
+            observe: { _ in }
+        )
         job.markBackgrounded()
         var changes = job.outputChanges().makeAsyncIterator()
         _ = await changes.next()

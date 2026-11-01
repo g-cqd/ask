@@ -23,16 +23,20 @@ private struct InstantProvider: ModelProvider {
 /// of growing length, without flushing: ask's overhead per turn, which roadmap 0007's budget needs.
 func loopBenchmarks(input: PromptQueue? = nil) {
     let loop = AgentLoop(
-        provider: InstantProvider(), tools: try! ToolRegistry([]),
+        provider: InstantProvider(),
+        tools: try! ToolRegistry([]),
         settings: AgentSettings(model: "c", maximumTokens: 1_024, systemPrompt: ["You are ask."], maximumTurns: 4),
-        context: ToolContext(workingDirectory: "/tmp"))
+        context: ToolContext(workingDirectory: "/tmp")
+    )
     for history in [0, 50, 500] {
         Benchmark("loop/one turn after \(history) turns\(input == nil ? "" : ", empty input")") { benchmark in
             let directory = FileManager.default.temporaryDirectory.appending(
-                path: "ask-bench-loop-\(UUID().uuidString)")
+                path: "ask-bench-loop-\(UUID().uuidString)"
+            )
             try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
             let file = SessionRecorder(
-                try SessionFile.create(at: FilePath(directory.appending(path: "s.jsonl").path), durability: .none))
+                try SessionFile.create(at: FilePath(directory.appending(path: "s.jsonl").path), durability: .none)
+            )
             for turn in 0 ..< history {
                 try file.append(.user("Step \(turn)."))
                 try file.append(.assistant("Reply \(turn), with a sentence of ordinary length in it."))

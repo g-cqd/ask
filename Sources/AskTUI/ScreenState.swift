@@ -131,7 +131,8 @@ public struct ScreenState: Sendable, Equatable {
             page: options.appearance == .auto
                 ? (options.lightBackground ? .light : .dark)
                 : options.appearance == .light ? .light : .dark,
-            known: options.appearance != .auto)
+            known: options.appearance != .auto
+        )
         blocks = BlockStyle(padded: options.padding, theme: theme, localizedDurations: options.localizedDurations)
     }
 

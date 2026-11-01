@@ -29,7 +29,10 @@ final class ScreenSession {
     private var colours: TerminalColours?
 
     init(
-        _ screen: ScreenTerminal, conversation: any Conversation, label: String, options: ScreenOptions,
+        _ screen: ScreenTerminal,
+        conversation: any Conversation,
+        label: String,
+        options: ScreenOptions,
         opening: consuming [ConversationUpdate]
     ) {
         terminal = screen.session
@@ -178,7 +181,10 @@ final class ScreenSession {
                 ScreenTimer.after(ScreenController.quitWindow, send: .quitWindowEnded(generation: generation), to: sink)
             case .armSandboxNoteTimer(let generation):
                 ScreenTimer.after(
-                    ScreenController.sandboxNoteWindow, send: .sandboxNoteEnded(generation: generation), to: sink)
+                    ScreenController.sandboxNoteWindow,
+                    send: .sandboxNoteEnded(generation: generation),
+                    to: sink
+                )
             case .readRunnerOutput(let id):
                 runnerOutput.watch(id, in: conversation, sink: sink)
             case .watchJob(let id):

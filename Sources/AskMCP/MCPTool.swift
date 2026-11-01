@@ -17,7 +17,11 @@ public struct MCPTool: Sendable, Equatable {
 
     /// A tool.
     public init(
-        name: String, title: String?, description: String, inputSchema: JSONObject, annotations: MCPToolAnnotations,
+        name: String,
+        title: String?,
+        description: String,
+        inputSchema: JSONObject,
+        annotations: MCPToolAnnotations,
         hasOutputSchema: Bool
     ) {
         self.name = name

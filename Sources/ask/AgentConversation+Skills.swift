@@ -15,13 +15,15 @@ extension AgentConversation {
             .map {
                 SlashCommand(
                     name: "skill:" + $0.name,
-                    summary: ($0.scope == .project ? "project skill · " : "skill · ") + $0.description)
+                    summary: ($0.scope == .project ? "project skill · " : "skill · ") + $0.description
+                )
             }
         let waiting = book.catalog.untrusted.map {
             SlashCommand(
                 name: "skill:" + $0.skill.name,
                 summary: "project skill, not trusted · look at it, then ask trust --skills in a terminal",
-                category: .tools)
+                category: .tools
+            )
         }
         return loaded + waiting
     }
@@ -42,13 +44,16 @@ extension AgentConversation {
         update(
             .notice(
                 "\(count) project skill\(count == 1 ? " is" : "s are") not loaded: not trusted as \(count == 1 ? "it is" : "they are") now. ask skills lists \(count == 1 ? "it" : "them"); ask trust --skills, in a terminal, trusts what you have read.",
-                isError: false))
+                isError: false
+            )
+        )
     }
 
     /// What to send for `prompt`: itself, or, for `/skill:name request`, the request with the skill after it.
     /// - Returns: nil with a notice shown when the line asked for a skill that cannot be loaded; nothing is sent then.
     func expandingSkill(
-        _ prompt: String, update: @Sendable (ConversationUpdate) -> Void
+        _ prompt: String,
+        update: @Sendable (ConversationUpdate) -> Void
     ) -> String? {
         guard SkillInvocation.asksForSkill(prompt) else { return prompt }
         let settings = current.withLock { $0.settings }

@@ -12,7 +12,9 @@ struct ImageWireTests {
     private var messages: [ModelMessage] {
         [
             ModelMessage(
-                role: .user, blocks: [.toolResult(id: "t1", content: "a.png: image", isError: false, images: [image])])
+                role: .user,
+                blocks: [.toolResult(id: "t1", content: "a.png: image", isError: false, images: [image])]
+            )
         ]
     }
 
@@ -25,11 +27,14 @@ struct ImageWireTests {
         #expect(
             body.contains(
                 #"{"role":"tool","tool_call_id":"t1","content":"a.png: image\n[the image is attached in the next message]"}"#
-            ))
+            )
+        )
         #expect(
             body.contains(
                 #"{"role":"user","content":[{"type":"text","text":"\#(ImagePart.attachedLead)"},"#
-                    + #"{"type":"image_url","image_url":{"url":"data:image/png;base64,AQIDBA==","detail":"auto"}}]}"#))
+                    + #"{"type":"image_url","image_url":{"url":"data:image/png;base64,AQIDBA==","detail":"auto"}}]}"#
+            )
+        )
     }
 
     @Test func `the Responses wire does the same with input_image`() {

@@ -10,9 +10,14 @@ struct CopilotVisionTests {
         let file = CredentialFile(url: root.appending(path: "config/credentials.json"))
         try file.saveCopilot(
             CopilotCredentials(
-                githubToken: "GITHUB-SECRET", accessToken: "SHORT-SECRET",
+                githubToken: "GITHUB-SECRET",
+                accessToken: "SHORT-SECRET",
                 expiresAt: Date().timeIntervalSince1970 + 3600,
-                apiURL: CopilotProtocol.defaultAPI, machineID: "machine", deviceID: "device"))
+                apiURL: CopilotProtocol.defaultAPI,
+                machineID: "machine",
+                deviceID: "device"
+            )
+        )
         return file
     }
 
@@ -28,9 +33,11 @@ struct CopilotVisionTests {
         "{\"data\":["
         + [
             entry(
-                "sees", ",\"vision\":true",
+                "sees",
+                ",\"vision\":true",
                 ",\"vision\":{\"max_prompt_images\":5,\"max_prompt_image_size\":3145728,"
-                    + "\"supported_media_types\":[\"image/jpeg\",\"image/png\",\"application/pdf\"]}"),
+                    + "\"supported_media_types\":[\"image/jpeg\",\"image/png\",\"application/pdf\"]}"
+            ),
             entry("blind", ",\"vision\":false", ""),
             entry("silent", "", "")
         ]
@@ -47,8 +54,11 @@ struct CopilotVisionTests {
         #expect(
             sees.imageLimits
                 == ImageLimits(
-                    maximumImages: 5, maximumBytes: 3_145_728,
-                    mediaTypes: ["image/jpeg", "image/png", "application/pdf"]))
+                    maximumImages: 5,
+                    maximumBytes: 3_145_728,
+                    mediaTypes: ["image/jpeg", "image/png", "application/pdf"]
+                )
+        )
         #expect(models.first { $0.id == "blind" }?.acceptsImages == false)
         #expect(models.first { $0.id == "silent" }?.acceptsImages == nil)
     }
@@ -59,7 +69,8 @@ struct CopilotVisionTests {
         let sse = try String(
             contentsOf: URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
                 .appending(path: "Fixtures/OpenAICompatible/llamacpp-text.sse"),
-            encoding: .utf8)
+            encoding: .utf8
+        )
         let transport = CopilotTestTransport {
             CopilotTestTransport.reply($0.url.path == "/models" ? Self.catalog : sse)
         }
@@ -68,8 +79,13 @@ struct CopilotVisionTests {
             role: .user,
             blocks: [
                 .toolResult(
-                    id: "t", content: "x", isError: false, images: [ImagePart(mediaType: "image/png", data: [1])])
-            ])
+                    id: "t",
+                    content: "x",
+                    isError: false,
+                    images: [ImagePart(mediaType: "image/png", data: [1])]
+                )
+            ]
+        )
         let plain = ModelMessage(role: .user, blocks: [.text("hi")])
         for (messages, expected) in [([plain], false), ([plain, picture], true)] {
             let request = ModelRequest(model: "sees", maxTokens: 10, systemPrompt: [], messages: messages, tools: [])

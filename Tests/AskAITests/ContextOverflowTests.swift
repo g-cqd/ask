@@ -49,7 +49,8 @@ struct ContextOverflowTests {
             #"{"type":"error","error":{"type":"invalid_request_error","message":"prompt is too long: 210000 tokens > 200000 maximum"}}"#
         #expect(
             AnthropicClientError.status(400, AnthropicStreamDecoder.failure(inErrorBody: Array(body.utf8)))
-                .isContextOverflow)
+                .isContextOverflow
+        )
     }
 
     @Test func `other refusals are not overflows`() {
@@ -57,21 +58,24 @@ struct ContextOverflowTests {
             #"{"error":{"message":"Unknown parameter: foo","type":"invalid_request_error","code":"unknown_parameter"}}"#
         #expect(
             !OpenAICompatibleError.status(400, OpenAIStreamDecoder.failure(inErrorBody: Array(bad.utf8)))
-                .isContextOverflow)
+                .isContextOverflow
+        )
         #expect(!OpenAICompatibleError.status(429, nil).isContextOverflow)
         #expect(!OpenAICompatibleError.truncated.isContextOverflow)
         let anthropic =
             #"{"type":"error","error":{"type":"invalid_request_error","message":"messages: roles must alternate"}}"#
         #expect(
             !AnthropicClientError.status(400, AnthropicStreamDecoder.failure(inErrorBody: Array(anthropic.utf8)))
-                .isContextOverflow)
+                .isContextOverflow
+        )
     }
 
     @Test func `a body with an error object but no type still classifies by its message`() {
         let body = #"{"error":{"message":"the request exceeds the available context size, try increasing it"}}"#
         #expect(
             OpenAICompatibleError.status(400, OpenAIStreamDecoder.failure(inErrorBody: Array(body.utf8)))
-                .isContextOverflow)
+                .isContextOverflow
+        )
     }
 
     @Test func `the window a refusal names is read from each server's wording`() {

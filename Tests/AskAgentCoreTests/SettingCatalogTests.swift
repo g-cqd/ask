@@ -15,7 +15,8 @@ struct SettingCatalogTests {
     private func catalogKeys(under section: String) -> Set<String> {
         Set(
             SettingCatalog.all.filter { $0.path.count > 1 && $0.path[0] == section }
-                .map { $0.path.dropFirst().joined(separator: ".") })
+                .map { $0.path.dropFirst().joined(separator: ".") }
+        )
     }
 
     @Test func `the catalog holds exactly the keys the parser reads`() {
@@ -51,10 +52,12 @@ struct SettingCatalogTests {
         let rows = ConfigEditor.descriptors
         #expect(
             Set(rows.map(\.path)) == Set(SettingCatalog.all.map(\.path) + [["mcp"]])
-                && rows.count == SettingCatalog.all.count + 1)
+                && rows.count == SettingCatalog.all.count + 1
+        )
         #expect(
             rows.prefix(3).map(\.path) == [["ui", "mouse"], ["ui", "copyOnSelect"], ["ui", "tint"]],
-            "the ui switches lead")
+            "the ui switches lead"
+        )
         #expect(rows.first { $0.path == ["ui", "tint"] }?.kind == .boolean)
         #expect(rows.first { $0.path == ["keepAwake"] }?.kind == .choice(KeepAwakeMode.allCases.map(\.rawValue)))
         #expect(rows.first { $0.path == ["ui", "stopTwice"] }?.kind == .readOnly)

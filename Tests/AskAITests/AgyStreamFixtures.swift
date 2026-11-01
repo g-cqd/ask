@@ -47,7 +47,8 @@ enum AgyStreamFixtures {
     }
 
     static func chunk(
-        parts: String, finish: String? = nil,
+        parts: String,
+        finish: String? = nil,
         usage: String = #""usageMetadata":{"promptTokenCount":3,"candidatesTokenCount":2}"#,
         extra: String = ""
     ) -> String {

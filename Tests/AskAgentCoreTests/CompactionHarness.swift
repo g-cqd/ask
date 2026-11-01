@@ -11,16 +11,24 @@ struct CompactionHarness {
     func newFile() throws -> SessionRecorder {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return SessionRecorder(
-            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none))
+            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none)
+        )
     }
 
     func loop(_ provider: ScriptedProvider, compactAt: Int?, keepRecentBytes: Int = 1) -> AgentLoop {
         AgentLoop(
-            provider: provider, tools: try! ToolRegistry([]),
+            provider: provider,
+            tools: try! ToolRegistry([]),
             settings: AgentSettings(
-                model: "claude-x", maximumTokens: 1_024, systemPrompt: ["Be brief."], maximumTurns: 8,
-                compactAtTokens: compactAt, keepRecentBytes: keepRecentBytes),
-            context: ToolContext(workingDirectory: directory.path))
+                model: "claude-x",
+                maximumTokens: 1_024,
+                systemPrompt: ["Be brief."],
+                maximumTurns: 8,
+                compactAtTokens: compactAt,
+                keepRecentBytes: keepRecentBytes
+            ),
+            context: ToolContext(workingDirectory: directory.path)
+        )
     }
 
     /// Each entry's kind, in order.

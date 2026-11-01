@@ -86,7 +86,10 @@ public struct ProjectTrust: Sendable, Equatable {
     func save(to path: String, flush: (Int32) -> Int32) throws(ConfigurationError) {
         let directory = (path as NSString).deletingLastPathComponent
         try? FileManager.default.createDirectory(
-            atPath: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            atPath: directory,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         var encoder = AemiJSON.JSONEncoder()
         encoder.prettyPrinted = true
         encoder.options.keyOrder = .sorted

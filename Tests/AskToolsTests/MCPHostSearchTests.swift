@@ -35,7 +35,8 @@ struct MCPHostSearchTests {
         let said = MCPHub.report(host.status).joined(separator: "\n")
         #expect(
             said.contains("big") && said.contains("5 tools") && said.contains("search_catalog")
-                && said.contains("mcp.big.tools"))
+                && said.contains("mcp.big.tools")
+        )
         await host.stop()
     }
 
@@ -64,7 +65,8 @@ struct MCPHostSearchTests {
         await host.waitUntilSettled()
         let nothing = try await world.call("search_catalog", #"{"query":"zebra"}"#)
         #expect(
-            !nothing.isError && nothing.content.contains("No tool matches") && nothing.content.contains("empty query"))
+            !nothing.isError && nothing.content.contains("No tool matches") && nothing.content.contains("empty query")
+        )
         await host.stop()
     }
 
@@ -73,7 +75,9 @@ struct MCPHostSearchTests {
         host.start()
         await host.waitUntilSettled()
         let output = try await world.call(
-            "dispatch_call", #"{"server":"big","tool":"t3","arguments":{"q":"urlsession"}}"#)
+            "dispatch_call",
+            #"{"server":"big","tool":"t3","arguments":{"q":"urlsession"}}"#
+        )
         #expect(output == ToolOutput("ran t3"))
         #expect(fake.calls.map(\.name) == ["t3"] && fake.calls.first?.arguments == #"{"q":"urlsession"}"#)
         await host.stop()
@@ -136,7 +140,10 @@ struct MCPHostSearchTests {
         let one = FakeMCPServer(tools: ["alpha1", "alpha2", "alpha3"])
         let two = FakeMCPServer(tools: ["alpha9", "beta2", "beta3"])
         let host = world.host(
-            [world.setting("one"), world.setting("two")], ["one": one, "two": two], maximumDirectTools: 2)
+            [world.setting("one"), world.setting("two")],
+            ["one": one, "two": two],
+            maximumDirectTools: 2
+        )
         host.start()
         await host.waitUntilSettled()
         #expect(world.offered == ["search_catalog", "dispatch_call"])
@@ -200,8 +207,10 @@ struct MCPHostSearchTests {
         let narrowed = ToolContext(workingDirectory: "/tmp", sandbox: .unrestricted, narrowing: narrowing)
         let output = try await ToolRegistry([], live: world.live)
             .run(
-                name: "dispatch_call", input: try JSONObject(validating: Array(#"{"server":"big","tool":"t1"}"#.utf8)),
-                in: narrowed)
+                name: "dispatch_call",
+                input: try JSONObject(validating: Array(#"{"server":"big","tool":"t1"}"#.utf8)),
+                in: narrowed
+            )
         #expect(output.isError && output.content.contains("sandbox") && fake.calls.isEmpty)
         await host.stop()
     }

@@ -14,13 +14,18 @@ extension AccountLogin {
             }
             do {
                 provider = try ProviderFile.addEndpoint(
-                    name: name, baseURL: address, at: askConfigDirectory(environment: environment) + "/providers.json")
+                    name: name,
+                    baseURL: address,
+                    at: askConfigDirectory(environment: environment) + "/providers.json"
+                )
             } catch { throw Failure("\(error)") }
         }
         let label = request.target == "codex" ? "OpenAI" : (request.target == "claude" ? "Anthropic" : provider)
         guard
             let typed = await interaction.ask(
-                "Paste the \(label) API key (it is not shown or kept anywhere else):", secret: true)
+                "Paste the \(label) API key (it is not shown or kept anywhere else):",
+                secret: true
+            )
         else { throw Failure.nothingEntered }
         // A custom endpoint may be a local server that wants none: an empty answer stores nothing and keeps the endpoint.
         if request.target == "custom", typed.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {

@@ -39,7 +39,12 @@ struct FileToolsDurabilityTests {
 
     private func write(_ text: String, flush: @escaping (Int32) -> Int32) throws(ToolFailure) {
         try ScopedFile.write(
-            Array(text.utf8), to: URL(filePath: target), shownAs: "target.txt", in: world.context, flush: flush)
+            Array(text.utf8),
+            to: URL(filePath: target),
+            shownAs: "target.txt",
+            in: world.context,
+            flush: flush
+        )
     }
 
     @Test func `the bytes are flushed while the old file is still there, and the directory once the new one is`() throws
@@ -65,7 +70,8 @@ struct FileToolsDurabilityTests {
         #expect(throws: ToolFailure.self) { try write("new", flush: recording(events, failing: "file")) }
         #expect(try String(contentsOfFile: target, encoding: .utf8) == "old")
         #expect(
-            try FileManager.default.contentsOfDirectory(atPath: world.workspace).sorted() == ["file.txt", "target.txt"])
+            try FileManager.default.contentsOfDirectory(atPath: world.workspace).sorted() == ["file.txt", "target.txt"]
+        )
     }
 
     @Test func `when the directory cannot be flushed the model is told, not left to think it is safe`() throws {

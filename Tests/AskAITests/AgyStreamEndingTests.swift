@@ -16,16 +16,22 @@ struct AgyStreamEndingTests {
         ])
         #expect(
             events.contains(
-                .messageDelta(stopReason: .endTurn, usage: TokenUsage(input: 60, output: 12, cacheRead: 40))))
+                .messageDelta(stopReason: .endTurn, usage: TokenUsage(input: 60, output: 12, cacheRead: 40))
+            )
+        )
     }
 
     @Test func `usage is the last the server reported, and unknown when it reported none`() throws {
         let later = try AgyStreamFixtures.decode(lines: [
             AgyStreamFixtures.chunk(
-                parts: #"{"text":"x"}"#, usage: #""usageMetadata":{"promptTokenCount":1,"candidatesTokenCount":1}"#),
+                parts: #"{"text":"x"}"#,
+                usage: #""usageMetadata":{"promptTokenCount":1,"candidatesTokenCount":1}"#
+            ),
             AgyStreamFixtures.chunk(
-                parts: #"{"text":""}"#, finish: "STOP",
-                usage: #""usageMetadata":{"promptTokenCount":1,"candidatesTokenCount":9}"#)
+                parts: #"{"text":""}"#,
+                finish: "STOP",
+                usage: #""usageMetadata":{"promptTokenCount":1,"candidatesTokenCount":9}"#
+            )
         ])
         #expect(later.contains(.messageDelta(stopReason: .endTurn, usage: TokenUsage(input: 1, output: 9))))
         let none = try AgyStreamFixtures.decode(lines: [
@@ -47,7 +53,9 @@ struct AgyStreamEndingTests {
                 AgyStreamFixtures.chunk(parts: #"{"text":"x"}"#, finish: wire)
             ])
             #expect(
-                events.contains(.messageDelta(stopReason: expected, usage: TokenUsage(input: 3, output: 2))), "\(wire)")
+                events.contains(.messageDelta(stopReason: expected, usage: TokenUsage(input: 3, output: 2))),
+                "\(wire)"
+            )
         }
     }
 
@@ -56,7 +64,9 @@ struct AgyStreamEndingTests {
         for (wire, expected) in [("STOP", StopReason.toolUse), ("MAX_TOKENS", .maxTokens), ("SAFETY", .refusal)] {
             let events = try AgyStreamFixtures.decode(lines: [AgyStreamFixtures.chunk(parts: call, finish: wire)])
             #expect(
-                events.contains(.messageDelta(stopReason: expected, usage: TokenUsage(input: 3, output: 2))), "\(wire)")
+                events.contains(.messageDelta(stopReason: expected, usage: TokenUsage(input: 3, output: 2))),
+                "\(wire)"
+            )
         }
     }
 
@@ -94,11 +104,15 @@ struct AgyStreamEndingTests {
     @Test func `an HTTP error body gives the same failure, from the shape Cloud Code was observed to send`() {
         let body = Array(
             #"{"error":{"code":503,"message":"No capacity available for model gemini-2.5-pro on the server","status":"UNAVAILABLE"}}"#
-                .utf8)
+                .utf8
+        )
         #expect(
             AgyStreamDecoder.failure(inErrorBody: body)
                 == ProviderFailure(
-                    kind: .overloaded, message: "No capacity available for model gemini-2.5-pro on the server"))
+                    kind: .overloaded,
+                    message: "No capacity available for model gemini-2.5-pro on the server"
+                )
+        )
         #expect(AgyStreamDecoder.failure(inErrorBody: Array("not json".utf8)) == nil)
         #expect(AgyStreamDecoder.failure(inErrorBody: Array(#"{"nothing":1}"#.utf8)) == nil)
         #expect(AgyStreamDecoder.failure(inErrorBody: Array(#"{"error":{"message":"m"}}"#.utf8))?.message == "m")
@@ -136,7 +150,10 @@ struct AgyStreamEndingTests {
     @Test func `a usage with only a prompt count has an unknown output, not zero`() throws {
         let events = try AgyStreamFixtures.decode(lines: [
             AgyStreamFixtures.chunk(
-                parts: #"{"text":"x"}"#, finish: "STOP", usage: #""usageMetadata":{"promptTokenCount":5}"#)
+                parts: #"{"text":"x"}"#,
+                finish: "STOP",
+                usage: #""usageMetadata":{"promptTokenCount":5}"#
+            )
         ])
         #expect(events.contains(.messageDelta(stopReason: .endTurn, usage: TokenUsage(input: 5))))
     }
@@ -163,12 +180,15 @@ struct AgyStreamEndingTests {
     @Test func `a refusal for length is a context overflow, with the window the server named`() {
         let body = Array(
             #"{"error":{"code":400,"message":"prompt is too long: the maximum context length is 1000 tokens","status":"INVALID_ARGUMENT"}}"#
-                .utf8)
+                .utf8
+        )
         let failure = AgyStreamDecoder.failure(inErrorBody: body)
         #expect(failure?.kind == .contextOverflow && failure?.contextWindow == 1000)
         let other = Array(#"{"error":{"code":500,"message":"the maximum context length is 1000 tokens"}}"#.utf8)
         #expect(
-            AgyStreamDecoder.failure(inErrorBody: other)?.kind == .server, "only a 400 is read as a refusal for length")
+            AgyStreamDecoder.failure(inErrorBody: other)?.kind == .server,
+            "only a 400 is read as a refusal for length"
+        )
     }
 
     /// Recorded 2026-10-28 (roadmap 0069 U1): 137,838 tokens sent to `gpt-oss-120b-medium`. The message is the server's;

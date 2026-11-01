@@ -30,18 +30,22 @@ struct ToolPresentationTests {
     @Test func `read and write headers show concise window and size parameters`() throws {
         #expect(
             ToolSummary.header(for: try input(#"{"path":"src/a.swift","offset":10,"limit":36}"#))
-                == "src/a.swift · [10:45]")
+                == "src/a.swift · [10:45]"
+        )
         #expect(
             ToolSummary.header(for: try input(#"{"path":"src/b.swift","offset":15}"#))
-                == "src/b.swift · [15:]")
+                == "src/b.swift · [15:]"
+        )
         #expect(ToolSummary.header(for: try input(#"{"path":"a.txt","content":"é"}"#)) == "a.txt · 2 B")
         let kb = String(repeating: "a", count: 1024)
         #expect(
             ToolSummary.header(for: try input(#"{"path":"b.txt","content":"\#(kb)"}"#), locale: Self.english)
-                == "b.txt · 1 KiB (1,024 B)")
+                == "b.txt · 1 KiB (1,024 B)"
+        )
         #expect(
             ToolSummary.header(for: try input(#"{"path":"b.txt","content":"\#(kb)"}"#), locale: Self.german)
-                == "b.txt · 1 KiB (1.024 B)")
+                == "b.txt · 1 KiB (1.024 B)"
+        )
         #expect(ToolSummary.fullInput(for: try input(#"{"path":"a.txt","content":"é\nhello"}"#)) == "é\nhello")
     }
 
@@ -104,7 +108,8 @@ struct ToolPresentationTests {
                   "empty": {},
                   "flag": true
                 }
-                """)
+                """
+        )
         // Still the same JSON: what is shown parses back to the input's value.
         #expect(try JSONValue(AemiJSON.parse(Array(shown.utf8)).root) == JSONValue(AemiJSON.parse(json.bytes).root))
     }
@@ -124,7 +129,8 @@ struct ToolPresentationTests {
                 tail:
                 a
                 b
-                """)
+                """
+        )
     }
 
     @Test func `an input of only multi-line strings shows no empty object`() throws {

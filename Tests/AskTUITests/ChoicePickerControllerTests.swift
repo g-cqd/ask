@@ -10,14 +10,17 @@ import Testing
 struct ChoicePickerControllerTests {
     @Test func `startup can open preloaded session choices before any key is pressed`() {
         var screen = ScreenController(
-            label: "m", commands: [SlashCommand(name: "resume", summary: "Choose a session.", takesChoices: true)])
+            label: "m",
+            commands: [SlashCommand(name: "resume", summary: "Choose a session.", takesChoices: true)]
+        )
         screen.setScreenRows(30)
         let rows = [ChoiceRow(label: "session", detail: "first prompt", arguments: "/tmp/session.jsonl")]
         #expect(screen.handle(.choices(command: "resume", rows: rows)).isEmpty)
         #expect(screen.handle(.fillDraft("/resume ")).isEmpty)
         #expect(labels(screen) == ["session"])
         #expect(
-            press(Key.enter.rawValue, into: &screen) == [.runCommand(name: "resume", arguments: "/tmp/session.jsonl")])
+            press(Key.enter.rawValue, into: &screen) == [.runCommand(name: "resume", arguments: "/tmp/session.jsonl")]
+        )
     }
 
     private static let models = [
@@ -32,7 +35,8 @@ struct ChoicePickerControllerTests {
             commands: [
                 SlashCommand(name: "model", summary: "Choose a model.", takesChoices: true),
                 SlashCommand(name: "config", summary: "Show the settings.")
-            ])
+            ]
+        )
     }
 
     /// What typing asked the driver for, without the skills' listing a first `/` always asks for.
@@ -112,7 +116,9 @@ struct ChoicePickerControllerTests {
     /// found `/tree` still offering two prompts after a third was sent (roadmap 0131): the held list was under 30 s old.
     @Test func `a list held across a finished run is asked for again, and shown meanwhile`() {
         var screen = ScreenController(
-            label: "m", commands: [SlashCommand(name: "tree", summary: "Go back.", takesChoices: true)])
+            label: "m",
+            commands: [SlashCommand(name: "tree", summary: "Go back.", takesChoices: true)]
+        )
         screen.setScreenRows(30)
         screen.handle(.choices(command: "tree", rows: [ChoiceRow(label: "1", detail: "first", arguments: "1")]))
         screen.handle(.runEnded)
@@ -124,7 +130,9 @@ struct ChoicePickerControllerTests {
                 rows: [
                     ChoiceRow(label: "2", detail: "second", arguments: "2"),
                     ChoiceRow(label: "1", detail: "first", arguments: "1")
-                ]))
+                ]
+            )
+        )
         #expect(labels(screen) == ["2", "1"])
         #expect(type("x", into: &screen).isEmpty, "fresh again until the next run ends")
     }
@@ -133,7 +141,9 @@ struct ChoicePickerControllerTests {
     /// it again (roadmap 0131).
     @Test func `an empty list says there is nothing to choose, and Enter then runs the bare command`() {
         var screen = ScreenController(
-            label: "m", commands: [SlashCommand(name: "resume", summary: "Choose a session.", takesChoices: true)])
+            label: "m",
+            commands: [SlashCommand(name: "resume", summary: "Choose a session.", takesChoices: true)]
+        )
         screen.setScreenRows(30)
         type("/resume", into: &screen)
         #expect(press(Key.enter.rawValue, into: &screen) == [.listChoices(command: "resume")])
@@ -144,12 +154,16 @@ struct ChoicePickerControllerTests {
 
     @Test func `a row that needs more words is written in the draft, and the list stays closed`() {
         var screen = ScreenController(
-            label: "m", commands: [SlashCommand(name: "login", summary: "Sign in.", takesChoices: true)])
+            label: "m",
+            commands: [SlashCommand(name: "login", summary: "Sign in.", takesChoices: true)]
+        )
         type("/login ", into: &screen)
         screen.handle(
             .choices(
                 command: "login",
-                rows: [ChoiceRow(label: "custom NAME URL", arguments: "custom", completes: true)]))
+                rows: [ChoiceRow(label: "custom NAME URL", arguments: "custom", completes: true)]
+            )
+        )
         #expect(press(Key.enter.rawValue, into: &screen).isEmpty)
         #expect(screen.state.editor.text == "/login custom ")
         #expect(screen.state.picker == nil)
@@ -157,7 +171,9 @@ struct ChoicePickerControllerTests {
 
     @Test func `a model choice that offers efforts fills the draft and opens that list at once`() {
         var screen = ScreenController(
-            label: "m", commands: [SlashCommand(name: "thinking", summary: "Effort.", takesChoices: true)])
+            label: "m",
+            commands: [SlashCommand(name: "thinking", summary: "Effort.", takesChoices: true)]
+        )
         _ = screen.handle(.key(KeyEvent(keyCode: 0x61)), pageRows: 30)
         _ = screen.handle(.key(KeyEvent(keyCode: 0x7F)), pageRows: 30)
         #expect(screen.handle(.fillDraft("/thinking ")) == [.listChoices(command: "thinking")])

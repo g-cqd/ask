@@ -9,8 +9,13 @@ enum ProcessExit {
         guard queue >= 0 else { throw Failed() }
         defer { close(queue) }
         var change = kevent(
-            ident: UInt(pid), filter: Int16(EVFILT_PROC), flags: UInt16(EV_ADD | EV_ONESHOT), fflags: NOTE_EXIT,
-            data: 0, udata: nil)
+            ident: UInt(pid),
+            filter: Int16(EVFILT_PROC),
+            flags: UInt16(EV_ADD | EV_ONESHOT),
+            fflags: NOTE_EXIT,
+            data: 0,
+            udata: nil
+        )
         var event = kevent()
         // Registering fails with ESRCH when the process is already gone, which is the answer.
         let registered = unsafe kevent(queue, &change, 1, nil, 0, nil)

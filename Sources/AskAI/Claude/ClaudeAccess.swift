@@ -19,7 +19,10 @@ public struct ClaudeAccess: Sendable {
     /// Access backed by `file`, refreshing through `client`, waiting up to `lockWait` for another process's refresh.
     public init(
         // @dl:accept -- Claude's and Codex's accessors are twins over different credential types and errors; a protocol to share them would cost more than it saves
-        file: CredentialFile, client: ClaudeAuthClient, lockWait: Duration = .seconds(30),
+        file: CredentialFile,
+        // @dl:accept -- Claude's and Codex's accessors are twins over different credential types and errors; a protocol to share them would cost more than it saves
+        client: ClaudeAuthClient,
+        lockWait: Duration = .seconds(30),
         connection: ConnectionRecord? = nil
     ) {
         self.file = file

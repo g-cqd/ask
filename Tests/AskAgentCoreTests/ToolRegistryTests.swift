@@ -10,8 +10,10 @@ struct ToolRegistryTests {
     private struct Echo: ArgumentTool {
         struct Arguments: Decodable, Sendable { let text: String }
         let definition = ToolDefinition(
-            name: "echo", description: "Echo text.",
-            inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
+            name: "echo",
+            description: "Echo text.",
+            inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8))
+        )
 
         func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
             ToolOutput(arguments.text)

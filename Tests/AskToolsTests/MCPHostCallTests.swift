@@ -30,12 +30,19 @@ struct MCPHostCallTests {
         let host = MCPHost(
             servers: [
                 MCPServerSetting(
-                    name: "srv", url: "https://h.test/mcp", headers: ["Authorization": "Bearer ${TOKEN}"])
-            ], live: world.live, environment: ["TOKEN": "abc"], maximumDirectTools: 16,
+                    name: "srv",
+                    url: "https://h.test/mcp",
+                    headers: ["Authorization": "Bearer ${TOKEN}"]
+                )
+            ],
+            live: world.live,
+            environment: ["TOKEN": "abc"],
+            maximumDirectTools: 16,
             transport: { _, environment, headers in
                 seen.set(environment, headers)
                 return FakeMCPServer(tools: ["a"])
-            })
+            }
+        )
         host.start()
         await host.waitUntilSettled()
         #expect(seen.headers == ["Authorization": "Bearer abc"])
@@ -45,13 +52,15 @@ struct MCPHostCallTests {
     @Test func `a variable that is not set fails that server and starts nothing`() async throws {
         let seen = Seen()
         let host = MCPHost(
-            servers: [MCPServerSetting(name: "srv", command: "x", env: ["K": "${MISSING}"])], live: world.live,
+            servers: [MCPServerSetting(name: "srv", command: "x", env: ["K": "${MISSING}"])],
+            live: world.live,
             environment: [:],
             maximumDirectTools: 16,
             transport: { _, environment, headers in
                 seen.set(environment, headers)
                 return FakeMCPServer()
-            })
+            }
+        )
         host.start()
         await host.waitUntilSettled()
         guard case .failed(let reason) = host.status[0].state else {
@@ -71,7 +80,10 @@ struct MCPHostCallTests {
         let narrowed = ToolContext(workingDirectory: "/tmp", sandbox: .unrestricted, narrowing: narrowing)
         let output = try await ToolRegistry([], live: world.live)
             .run(
-                name: "mcp__srv__a", input: try JSONObject(validating: Array("{}".utf8)), in: narrowed)
+                name: "mcp__srv__a",
+                input: try JSONObject(validating: Array("{}".utf8)),
+                in: narrowed
+            )
         #expect(output.isError && output.content.contains("sandbox") && fake.calls.isEmpty)
         await host.stop()
     }

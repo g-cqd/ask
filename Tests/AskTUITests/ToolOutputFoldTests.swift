@@ -69,11 +69,13 @@ struct ToolOutputFoldTests {
 
     @Test func `a click on the marker opens the middle, not the whole block`() throws {
         var rig = PointerRig(
-            columns: 80, rows: 340,
+            columns: 80,
+            rows: 340,
             updates: [
                 .toolStarted(name: "shell", summary: "seq", id: "call", fullInput: "seq 300"),
                 .toolFinished(.succeeded, output: Self.output, id: "call")
-            ])
+            ]
+        )
         rig.controller.state.transcript.setToolsFoldedByDefault(false)
         rig.controller.state.transcript.setOutputFoldLimits(lines: 10, bytes: 1 << 20)
         rig.draw()

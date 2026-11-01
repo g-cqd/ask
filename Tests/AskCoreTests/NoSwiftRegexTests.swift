@@ -19,7 +19,9 @@ struct NoSwiftRegexTests {
         var offenders: [String] = []
         for directory in ["Sources", "Tests"] {
             let walker = FileManager.default.enumerator(
-                at: root.appending(path: directory), includingPropertiesForKeys: nil)
+                at: root.appending(path: directory),
+                includingPropertiesForKeys: nil
+            )
             for case let url as URL in walker ?? FileManager.default.enumerator(atPath: "/")!
             where url.pathExtension == "swift" {
                 guard url.lastPathComponent != "NoSwiftRegexTests.swift" else { continue }

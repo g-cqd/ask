@@ -90,14 +90,17 @@ public enum SessionLog {
     ///   ``SessionLogError/unsupportedVersion(_:)``.
     /// - Complexity: O(n) in the archive size, plus tree validation.
     public static func recover(
-        _ bytes: [UInt8], limits: Limits = .standard
+        _ bytes: [UInt8],
+        limits: Limits = .standard
     ) throws(SessionLogError) -> RecoveredSession {
         try recover(bytes, limits: limits, images: nil)
     }
 
     /// ``recover(_:limits:)`` reading the pictures of tool results from `images`. A picture it cannot find becomes a line of text.
     static func recover(
-        _ bytes: [UInt8], limits: Limits, images: SessionImageStore?
+        _ bytes: [UInt8],
+        limits: Limits,
+        images: SessionImageStore?
     ) throws(SessionLogError) -> RecoveredSession {
         guard bytes.count <= limits.maximumArchiveBytes else { throw .archiveTooLarge(bytes.count) }
         guard !bytes.isEmpty else { return RecoveredSession(tree: SessionTree(), issues: [.missingHeader]) }
@@ -119,7 +122,8 @@ public enum SessionLog {
     /// - Returns: the session.
     /// - Throws: the first issue ``recover(_:limits:)`` would have repaired, as a ``SessionLogError``.
     public static func decode(
-        _ bytes: [UInt8], limits: Limits = .standard
+        _ bytes: [UInt8],
+        limits: Limits = .standard
     ) throws(SessionLogError) -> SessionTree {
         let recovered = try recover(bytes, limits: limits)
         if let issue = recovered.issues.first { throw issue.strictError }
@@ -127,7 +131,8 @@ public enum SessionLog {
     }
 
     private static func encode(
-        _ record: SessionLogRecord, images: SessionImageStore? = nil
+        _ record: SessionLogRecord,
+        images: SessionImageStore? = nil
     ) throws(SessionLogError) -> [UInt8] {
         var encoder = AemiJSON.JSONEncoder()
         if let images { encoder.userInfo[SessionImageStore.userInfoKey] = images }

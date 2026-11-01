@@ -25,7 +25,8 @@ struct ApprovalClickTests {
         #expect(rig.click(row: target, col: 10).isEmpty)
         #expect(rig.controller.state.pendingApproval?.checked == 1 && rig.controller.state.pendingApproval?.cursor == 1)
         #expect(
-            rig.controller.handle(.key(KeyEvent(keyCode: 0x0D)), pageRows: 10) == [.answerApproval(id: 3, .session)])
+            rig.controller.handle(.key(KeyEvent(keyCode: 0x0D)), pageRows: 10) == [.answerApproval(id: 3, .session)]
+        )
     }
 
     @Test func `clicking the question or a blank row checks nothing`() throws {

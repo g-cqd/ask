@@ -25,7 +25,12 @@ struct AliasThinkingPrecedenceTests {
         let environment = Configuration.defaults.applying(environment: ["ASK_THINKING": "medium"], problems: &notices)
         #expect(environment.applying(aliasThinking: .xhigh, alias: "work/deep") == environment)
         let flagged = Configuration.defaults.applying(
-            model: nil, provider: nil, maxTurns: nil, compactAt: nil, thinking: .off)
+            model: nil,
+            provider: nil,
+            maxTurns: nil,
+            compactAt: nil,
+            thinking: .off
+        )
         #expect(flagged.applying(aliasThinking: .xhigh, alias: "work/deep") == flagged)
     }
 

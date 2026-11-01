@@ -17,7 +17,9 @@ struct ChoicePickerAccountTests {
 
     private func screen() -> ScreenController {
         var screen = ScreenController(
-            label: "m", commands: [SlashCommand(name: "model", summary: "Choose a model.", takesChoices: true)])
+            label: "m",
+            commands: [SlashCommand(name: "model", summary: "Choose a model.", takesChoices: true)]
+        )
         screen.setScreenRows(30)
         _ = screen.handle(.choices(command: "model", rows: Self.models))
         return screen

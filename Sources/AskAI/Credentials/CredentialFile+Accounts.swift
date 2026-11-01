@@ -12,7 +12,8 @@ extension CredentialFile {
         var accounts: [SignedInAccount] = []
         if stored?.claude != nil {
             accounts.append(
-                SignedInAccount(target: "claude", provider: ProviderSettings.anthropic, method: "subscription"))
+                SignedInAccount(target: "claude", provider: ProviderSettings.anthropic, method: "subscription")
+            )
         }
         if stored?.keys?[Self.claudeKeyName] != nil {
             accounts.append(SignedInAccount(target: "claude", provider: ProviderSettings.anthropic, method: "API key"))
@@ -20,8 +21,12 @@ extension CredentialFile {
         if let variable = AnthropicEnvironmentAuth.variables.first(where: { !(environment[$0] ?? "").isEmpty }) {
             accounts.append(
                 SignedInAccount(
-                    target: "claude", provider: ProviderSettings.anthropic, method: "environment (\(variable))",
-                    removable: false))
+                    target: "claude",
+                    provider: ProviderSettings.anthropic,
+                    method: "environment (\(variable))",
+                    removable: false
+                )
+            )
         }
         if stored?.codex != nil {
             accounts.append(SignedInAccount(target: "codex", provider: ProviderSettings.codex, method: "subscription"))
@@ -32,8 +37,11 @@ extension CredentialFile {
         if stored?.copilot != nil {
             accounts.append(
                 SignedInAccount(
-                    target: CopilotProtocol.name, provider: CopilotProtocol.name,
-                    method: "GitHub account (experimental)"))
+                    target: CopilotProtocol.name,
+                    provider: CopilotProtocol.name,
+                    method: "GitHub account (experimental)"
+                )
+            )
         }
         for name in (stored?.keys ?? [:]).keys.sorted() where name != Self.claudeKeyName {
             accounts.append(SignedInAccount(target: name, provider: name, method: "API key"))
@@ -44,7 +52,12 @@ extension CredentialFile {
             else { continue }
             accounts.append(
                 SignedInAccount(
-                    target: preset.name, provider: preset.name, method: "environment (\(variable))", removable: false))
+                    target: preset.name,
+                    provider: preset.name,
+                    method: "environment (\(variable))",
+                    removable: false
+                )
+            )
         }
         return accounts
     }

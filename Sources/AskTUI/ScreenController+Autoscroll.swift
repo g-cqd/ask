@@ -30,7 +30,11 @@ extension ScreenController {
         let before = (state.scrollback, selector.selection)
         if autoscroll.extendedAt != state.scrollback {
             let update = selector.drag(
-                row: autoscroll.row, col: autoscroll.col, rows: frame.rows, scrollableRows: 0 ..< frame.transcriptRows)
+                row: autoscroll.row,
+                col: autoscroll.col,
+                rows: frame.rows,
+                scrollableRows: 0 ..< frame.transcriptRows
+            )
             state.selection = selector.selection
             autoscroll.request = update.scroll
             autoscroll.extendedAt = state.scrollback

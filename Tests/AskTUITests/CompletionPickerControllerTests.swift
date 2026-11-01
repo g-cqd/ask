@@ -9,19 +9,20 @@ import Testing
 /// too small to show it does not take the keys.
 @Suite("The command picker inserts and never sends")
 struct CompletionPickerControllerTests {
-    private static let commands = commandTable(
+    static let commands = commandTable(
         """
         config | Show the settings.
         compact | Compact the conversation.
         reload | Reload the binary.
-        """)
+        """
+    )
 
-    private func controller() -> ScreenController {
+    func controller() -> ScreenController {
         ScreenController(label: "m", commands: Self.commands, options: .legacy)
     }
 
     @discardableResult
-    private func type(_ text: String, into controller: inout ScreenController, pageRows: Int = 30) -> [ScreenController
+    func type(_ text: String, into controller: inout ScreenController, pageRows: Int = 30) -> [ScreenController
         .Effect]
     {
         var effects: [ScreenController.Effect] = []
@@ -32,18 +33,21 @@ struct CompletionPickerControllerTests {
     }
 
     @discardableResult
-    private func press(
-        _ code: UInt32, _ modifiers: KeyModifiers = [], into controller: inout ScreenController, pageRows: Int = 30
+    func press(
+        _ code: UInt32,
+        _ modifiers: KeyModifiers = [],
+        into controller: inout ScreenController,
+        pageRows: Int = 30
     ) -> [ScreenController.Effect] {
         controller.handle(.key(KeyEvent(keyCode: code, modifiers: modifiers)), pageRows: pageRows)
     }
 
-    private func names(_ controller: ScreenController) -> [String] {
+    func names(_ controller: ScreenController) -> [String] {
         controller.state.picker?.matches.filter { !$0.isHeading }.map { String($0.label.dropFirst()) } ?? []
     }
 
     /// The headings the picker draws, in order.
-    private func headings(_ controller: ScreenController) -> [String] {
+    func headings(_ controller: ScreenController) -> [String] {
         controller.state.picker?.matches.filter { $0.isHeading }.map { $0.detail } ?? []
     }
 
@@ -52,14 +56,16 @@ struct CompletionPickerControllerTests {
         type("/", into: &screen)
         #expect(
             Set(names(screen)) == Set((ScreenController.builtIn + Self.commands).map(\.name)),
-            "the screen's own and the conversation's, headings aside")
+            "the screen's own and the conversation's, headings aside"
+        )
         #expect(
             names(screen)
                 == [
                     "help", "quit", "continue", "follow-up", "jobs", "config", "compact", "reload", "sidebar",
                     "verbose"
                 ],
-            "the session commands, then the tools")
+            "the session commands, then the tools"
+        )
         #expect(headings(screen) == ["session", "tools"], "commands group under their categories")
         #expect(screen.state.picker?.selected == 1, "the first command follows the first heading")
     }
@@ -104,7 +110,8 @@ struct CompletionPickerControllerTests {
         press(Key.up.rawValue, into: &screen)
         #expect(
             screen.state.picker?.selected == screen.state.picker!.choiceIndexes.last,
-            "Up from the first wraps to the last")
+            "Up from the first wraps to the last"
+        )
         press(Key.down.rawValue, into: &screen)
         #expect(screen.state.picker?.selected == 1, "Down from the last wraps to the first")
         press(Key.down.rawValue, into: &screen)
@@ -156,7 +163,9 @@ struct CompletionPickerControllerTests {
         #expect(press(Key.enter.rawValue, into: &screen).isEmpty)
         #expect(
             screen.state.transcript.items.contains(
-                .notice("There is no command /zzz; /help lists them.", isError: true)))
+                .notice("There is no command /zzz; /help lists them.", isError: true)
+            )
+        )
         var path = controller()
         type("/etc/hosts: what is this", into: &path)
         #expect(path.state.picker == nil)
@@ -209,39 +218,5 @@ struct CompletionPickerControllerTests {
         var screen = controller()
         _ = screen.handle(.paste("/co"), pageRows: 30)
         #expect(screen.state.picker != nil)
-    }
-
-    @Test func `a screen too small to show it does not take the keys`() {
-        var screen = controller()
-        type("/co", into: &screen, pageRows: 4)
-        #expect(screen.state.picker == nil)
-        let effects = press(Key.enter.rawValue, into: &screen, pageRows: 4)
-        #expect(effects.isEmpty && screen.state.transcript.items.contains(.user("/co")))
-    }
-
-    @Test func `how many rows it may list follows the screen`() {
-        #expect(CompletionPicker.capacity(screenRows: 12) == 3)
-        #expect(CompletionPicker.capacity(screenRows: 20) == 7)
-        #expect(CompletionPicker.capacity(screenRows: 80) == 7)
-    }
-
-    @Test func `an approval question takes the keys before the picker`() {
-        var screen = controller()
-        type("/co", into: &screen)
-        screen.handle(.askApproval(id: 7, question: "bash wants network any. Allow it?"))
-        #expect(type("y", into: &screen).isEmpty, "the letter checks; Enter confirms (roadmap 0116)")
-        #expect(press(0x0D, into: &screen) == [.answerApproval(id: 7, .once)])
-        #expect(screen.state.editor.text == "/co")
-    }
-
-    @Test func `moving past the visible window scrolls it, and the choice is always inside it`() throws {
-        let many = (0 ..< 12).map { SlashCommand(name: "cmd\($0)", summary: "Command \($0).") }
-        var screen = ScreenController(label: "m", commands: many, options: .legacy)
-        type("/cmd", into: &screen, pageRows: 17)
-        for _ in 0 ..< 9 { press(Key.down.rawValue, into: &screen, pageRows: 17) }
-        let picker = try #require(screen.state.picker)
-        #expect(picker.matches.first?.isHeading == true, "the group's heading takes the first row")
-        #expect(picker.selected == 10 && picker.visible.contains { $0.label == "/cmd9" })
-        #expect(picker.visible.count == 7 && picker.firstVisible == 4)
     }
 }

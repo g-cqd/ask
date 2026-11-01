@@ -15,10 +15,16 @@ public struct AgyCredentials: Sendable, Equatable, Codable {
 
     /// Credentials with these values.
     public init(
-        accessToken: String, refreshToken: String, expiresAt: Double, scopes: String? = nil,
+        accessToken: String,
+        refreshToken: String,
+        expiresAt: Double,
+        scopes: String? = nil,
         accountEmail: String? = nil,
         // @dl:accept -- optional plain fields resemble CatalogModel's initializer by shape, not shared credential semantics
-        projectID: String? = nil, tierID: String? = nil, clientSecret: String? = nil
+        projectID: String? = nil,
+        // @dl:accept -- optional plain fields resemble CatalogModel's initializer by shape, not shared credential semantics
+        tierID: String? = nil,
+        clientSecret: String? = nil
     ) {
         self.accessToken = accessToken
         self.refreshToken = refreshToken

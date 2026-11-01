@@ -8,11 +8,17 @@ enum ProviderModelDiscovery {
     /// A provider name that is not a plain word (one a `providers.json` could hold, with a slash or a dot-dot) keeps no cache:
     /// the name would become part of a path.
     static func catalog(
-        for listing: ProviderSettings.Listing, environment: [String: String]
+        for listing: ProviderSettings.Listing,
+        environment: [String: String]
     ) -> ProviderModelCatalog {
         ProviderModelCatalog(
-            name: listing.name, baseURL: listing.baseURL, apiKey: listing.apiKey, headers: listing.headers,
-            cache: cache(named: listing.name, environment: environment), transport: URLSessionTransport())
+            name: listing.name,
+            baseURL: listing.baseURL,
+            apiKey: listing.apiKey,
+            headers: listing.headers,
+            cache: cache(named: listing.name, environment: environment),
+            transport: URLSessionTransport()
+        )
     }
 
     /// The catalog of the provider a resolved model goes to, or nil for a provider with its own catalog.
@@ -23,7 +29,8 @@ enum ProviderModelDiscovery {
                 .openAIResponses(let name, let baseURL, let apiKey, let headers):
                 catalog(
                     for: ProviderSettings.Listing(name: name, baseURL: baseURL, apiKey: apiKey, headers: headers),
-                    environment: environment)
+                    environment: environment
+                )
         }
     }
 
@@ -32,6 +39,7 @@ enum ProviderModelDiscovery {
             name.utf8.allSatisfy({ ($0 >= 0x61 && $0 <= 0x7A) || ($0 >= 0x30 && $0 <= 0x39) || $0 == 0x2D })
         else { return nil }
         return ModelCatalogFile(
-            url: URL(fileURLWithPath: askConfigDirectory(environment: environment) + "/models-\(name).json"))
+            url: URL(fileURLWithPath: askConfigDirectory(environment: environment) + "/models-\(name).json")
+        )
     }
 }

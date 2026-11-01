@@ -44,7 +44,9 @@ struct SessionLogReaderTests {
 
     private static func recoverInChunks(_ bytes: [UInt8], chunk: Int) throws -> RecoveredSession {
         var lines = SessionLogReader.Lines(
-            recovery: SessionLogRecovery(limits: limits, images: nil), limit: limits.maximumLineBytes)
+            recovery: SessionLogRecovery(limits: limits, images: nil),
+            limit: limits.maximumLineBytes
+        )
         var start = 0
         while start < bytes.count {
             let end = Swift.min(bytes.count, start + chunk)

@@ -15,8 +15,14 @@ struct SignInStoreTests {
 
     private func claude(_ email: String, _ token: String) -> ClaudeCredentials {
         ClaudeCredentials(
-            accessToken: token, refreshToken: "r", expiresAt: 9, refreshExpiresAt: nil, accountEmail: email,
-            organizationName: nil, scopes: "user:inference")
+            accessToken: token,
+            refreshToken: "r",
+            expiresAt: 9,
+            refreshExpiresAt: nil,
+            accountEmail: email,
+            organizationName: nil,
+            scopes: "user:inference"
+        )
     }
 
     @Test func `a second Codex account is a new connection and the default keeps the first`() throws {
@@ -26,7 +32,8 @@ struct SignInStoreTests {
         )
         #expect(
             try registry.storeSignIn(.codex(codex("acct_2", "two")), defaultFile: defaultFile, replace: false)
-                == .newConnection("codex-2"))
+                == .newConnection("codex-2")
+        )
         #expect(try defaultFile.loadCodex()?.accessToken == "one")
         let added = try #require(try registry.list().records.first { $0.name == "codex-2" })
         #expect(added.provider == .codex)
@@ -38,7 +45,8 @@ struct SignInStoreTests {
         _ = try registry.storeSignIn(.codex(codex("acct_2", "two")), defaultFile: defaultFile, replace: false)
         #expect(
             try registry.storeSignIn(.codex(codex("acct_2", "new")), defaultFile: defaultFile, replace: false)
-                == .connection("codex-2"))
+                == .connection("codex-2")
+        )
         let added = try #require(try registry.list().records.first { $0.name == "codex-2" })
         #expect(try registry.credentials(for: added).loadCodex(connection: added)?.accessToken == "new")
         #expect(try registry.list().records.count == 1)
@@ -48,13 +56,21 @@ struct SignInStoreTests {
         _ = try registry.storeSignIn(.claude(claude("me@example.com", "one")), defaultFile: defaultFile, replace: false)
         #expect(
             try registry.storeSignIn(
-                .claude(claude("jane@corp.example", "two")), defaultFile: defaultFile, replace: false)
-                == .newConnection("claude-jane"))
+                .claude(claude("jane@corp.example", "two")),
+                defaultFile: defaultFile,
+                replace: false
+            )
+                == .newConnection("claude-jane")
+        )
         #expect(try defaultFile.loadClaude()?.accessToken == "one")
         #expect(
             try registry.storeSignIn(
-                .claude(claude("bob@corp.example", "three")), defaultFile: defaultFile, replace: true)
-                == .defaultSignIn)
+                .claude(claude("bob@corp.example", "three")),
+                defaultFile: defaultFile,
+                replace: true
+            )
+                == .defaultSignIn
+        )
         #expect(try defaultFile.loadClaude()?.accountEmail == "bob@corp.example")
     }
 }

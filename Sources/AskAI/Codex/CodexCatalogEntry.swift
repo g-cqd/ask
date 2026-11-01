@@ -59,10 +59,13 @@ struct CodexCatalogEntry: Decodable {
         }
         let standard = try? fields?.decode(String.self, forKey: .defaultLevel)
         model = CatalogModel(
-            id: id, contextWindow: context.flatMap { $0 > 0 ? $0 : nil },
-            maxOutputTokens: output.flatMap { $0 > 0 ? $0 : nil }, reasoningLevels: levels,
+            id: id,
+            contextWindow: context.flatMap { $0 > 0 ? $0 : nil },
+            maxOutputTokens: output.flatMap { $0 > 0 ? $0 : nil },
+            reasoningLevels: levels,
             defaultReasoningLevel: standard.flatMap { levels.contains($0) ? $0 : nil },
             acceptsImages: (try? fields?.decode([String].self, forKey: .inputModalities))?.contains("image"),
-            unsuitable: unsuitable)
+            unsuitable: unsuitable
+        )
     }
 }

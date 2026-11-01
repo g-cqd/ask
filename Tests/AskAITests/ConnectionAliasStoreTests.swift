@@ -16,7 +16,8 @@ struct ConnectionAliasStoreTests {
             let file = registry.aliases(for: record)
             #expect(
                 file.url.deletingLastPathComponent()
-                    == registry.credentials(for: record).url.deletingLastPathComponent())
+                    == registry.credentials(for: record).url.deletingLastPathComponent()
+            )
             try file.set("fast", to: "gpt-6-luna")
             try registry.rename(record, to: "employer")
             let renamed = try #require(registry.list().records.first)
@@ -38,7 +39,8 @@ struct ConnectionAliasStoreTests {
             #expect(again.id != work.id)
             #expect(
                 try registry.aliases(for: again).load() == .empty,
-                "a new registration never inherits an old one's aliases")
+                "a new registration never inherits an old one's aliases"
+            )
         }
     }
 }

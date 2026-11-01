@@ -31,7 +31,10 @@ public struct EnvironmentSection: Sendable, Equatable, CustomStringConvertible {
     /// `self` with the names `section` adds: layers add to each other, and what a later layer withholds a pass cannot undo.
     public func layered(with section: EnvironmentSection) -> EnvironmentSection {
         EnvironmentSection(
-            pass: pass + section.pass, withhold: withhold + section.withhold, shell: section.shell ?? shell)
+            pass: pass + section.pass,
+            withhold: withhold + section.withhold,
+            shell: section.shell ?? shell
+        )
     }
 
     /// The names and nothing else: never a value.

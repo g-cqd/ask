@@ -20,7 +20,8 @@ public struct DefinitionReport: Sendable {
                     + tools.map { reference in
                         reference.ask.map { "\(reference.token)→\($0)" } ?? "\(reference.token)→?"
                     }
-                    .joined(separator: ", "))
+                    .joined(separator: ", ")
+            )
         }
         let models = ModelPreference(file)
         if !models.tokens.isEmpty || models.inheritsParent {

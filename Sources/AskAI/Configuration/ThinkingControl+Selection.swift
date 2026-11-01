@@ -8,7 +8,10 @@ extension ThinkingControl {
     /// - Returns: nil for provider defaults or an already non-thinking model's off request.
     /// - Throws: ``ThinkingError`` when the request cannot be represented.
     public static func select(
-        _ level: ThinkingLevel, model: ResolvedModel, descriptor: CatalogModel?, maximumTokens: Int
+        _ level: ThinkingLevel,
+        model: ResolvedModel,
+        descriptor: CatalogModel?,
+        maximumTokens: Int
     ) throws(ThinkingError) -> ThinkingControl? {
         let matching = descriptor.flatMap { $0.id == model.model ? $0 : nil }
         // The provider's default sends nothing, except on a Claude model that always thinks: there it is sent as that adaptive thinking,
@@ -43,7 +46,9 @@ extension ThinkingControl {
     }
 
     private static func native(
-        _ level: ThinkingLevel, descriptor: CatalogModel, maximumTokens: Int
+        _ level: ThinkingLevel,
+        descriptor: CatalogModel,
+        maximumTokens: Int
     ) throws(ThinkingError) -> ThinkingControl? {
         if descriptor.supportsThinking == false {
             if level == .off { return nil }
@@ -68,7 +73,9 @@ extension ThinkingControl {
     /// Legacy policy, not a provider's named effort: 1/2/8/16/32/64 Ki tokens, capped to reserve 1024 answer tokens.
     /// The concrete cap is reported by the composition layer. A separately supported effort is also sent when known.
     private static func legacyBudget(
-        _ level: ThinkingLevel, descriptor: CatalogModel, maximumTokens: Int
+        _ level: ThinkingLevel,
+        descriptor: CatalogModel,
+        maximumTokens: Int
     ) throws(ThinkingError) -> ThinkingControl {
         guard maximumTokens >= 2048 else { throw .insufficientOutput(minimum: 2048, available: maximumTokens) }
         let preferred: Int
@@ -83,6 +90,7 @@ extension ThinkingControl {
         }
         return .budget(
             tokens: min(preferred, maximumTokens - 1024),
-            effort: descriptor.reasoningLevels.contains(level.rawValue) ? level : nil)
+            effort: descriptor.reasoningLevels.contains(level.rawValue) ? level : nil
+        )
     }
 }

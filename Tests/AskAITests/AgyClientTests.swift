@@ -8,8 +8,12 @@ internal import Testing
 struct AgyClientTests {
     private static let session = AgySession(accessToken: "at-1", projectID: "proj-1")
     private static let request = ModelRequest(
-        model: "claude-sonnet-5-5-low", maxTokens: 500, systemPrompt: ["s"],
-        messages: [ModelMessage(role: .user, blocks: [.text("hi")])], tools: [])
+        model: "claude-sonnet-5-5-low",
+        maxTokens: 500,
+        systemPrompt: ["s"],
+        messages: [ModelMessage(role: .user, blocks: [.text("hi")])],
+        tools: []
+    )
 
     private static func fixture(_ name: String) throws -> String {
         let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
@@ -18,7 +22,8 @@ struct AgyClientTests {
     }
 
     private static func events(
-        _ transport: SequencedTransport, _ request: ModelRequest = request
+        _ transport: SequencedTransport,
+        _ request: ModelRequest = request
     ) async throws -> [ModelEvent] {
         var events: [ModelEvent] = []
         for try await event in AgyClient(transport: transport, newID: { "id-1" }).stream(request, session: session) {
@@ -36,7 +41,8 @@ struct AgyClientTests {
         #expect(sent.method == "POST")
         #expect(
             sent.url.absoluteString
-                == "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse")
+                == "https://daily-cloudcode-pa.googleapis.com/v1internal:streamGenerateContent?alt=sse"
+        )
         func values(_ name: String) -> [String] { sent.headers.filter { $0.name == name }.map(\.value) }
         #expect(values("authorization") == ["Bearer at-1"])
         #expect(values("user-agent") == ["antigravity/cli/1.4.0 ask/0 (Antigravity subscription connector)"])

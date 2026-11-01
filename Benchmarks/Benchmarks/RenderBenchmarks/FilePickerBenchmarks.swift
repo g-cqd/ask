@@ -10,7 +10,10 @@ import TerminalKitRender
 /// at sign is in `PickerBenchmarks`, which builds on both.
 func registerFilePickerBenchmarks() {
     let configuration = Benchmark.Configuration(
-        metrics: [.wallClock, .cpuTotal], maxDuration: .seconds(1), maxIterations: 1_000)
+        metrics: [.wallClock, .cpuTotal],
+        maxDuration: .seconds(1),
+        maxIterations: 1_000
+    )
     let pageRows = 37
     func key(_ character: Character) -> InputEvent {
         .key(KeyEvent(keyCode: UInt32(character.asciiValue!)))

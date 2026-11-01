@@ -91,6 +91,11 @@ struct MarkdownRowCacheTests {
         #expect(
             drawn
                 == Self.fresh(
-                    "dddd *eeee*\n\n```swift\nvar y = 2\n```\n\nffff", thinking: false, folded: false, columns: 80))
+                    "dddd *eeee*\n\n```swift\nvar y = 2\n```\n\nffff",
+                    thinking: false,
+                    folded: false,
+                    columns: 80
+                )
+        )
     }
 }

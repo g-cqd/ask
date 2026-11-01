@@ -46,7 +46,9 @@ extension YAMLParser {
 
     /// A quoted scalar or a flow collection that may run over several lines, read once it closes (or the limit is reached).
     mutating func gathered(
-        _ cursor: inout Int, text: String, isClosed: (String) -> Bool
+        _ cursor: inout Int,
+        text: String,
+        isClosed: (String) -> Bool
     ) -> DefinitionValue {
         var gathered = text
         var count = 0

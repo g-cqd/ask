@@ -9,16 +9,29 @@ internal import Testing
 struct CredentialFileAgyTests {
     private let file = CredentialFile(
         url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-agy-cred-\(UUID().uuidString)/ask/credentials.json"))
+            path: "ask-agy-cred-\(UUID().uuidString)/ask/credentials.json"
+        )
+    )
 
     private let agy = AgyCredentials(
-        accessToken: "ya29.access", refreshToken: "1//refresh", expiresAt: 5_000, scopes: "openid",
+        accessToken: "ya29.access",
+        refreshToken: "1//refresh",
+        expiresAt: 5_000,
+        scopes: "openid",
         accountEmail: "a@b.example",
-        projectID: "project-1", tierID: "tier-1", clientSecret: "GOCSPX-" + String(repeating: "s", count: 28))
+        projectID: "project-1",
+        tierID: "tier-1",
+        clientSecret: "GOCSPX-" + String(repeating: "s", count: 28)
+    )
     private let claude = ClaudeCredentials(
-        accessToken: "c", refreshToken: "r", expiresAt: 9, refreshExpiresAt: nil, accountEmail: nil,
+        accessToken: "c",
+        refreshToken: "r",
+        expiresAt: 9,
+        refreshExpiresAt: nil,
+        accountEmail: nil,
         organizationName: nil,
-        scopes: "user:inference")
+        scopes: "user:inference"
+    )
     private let codex = CodexCredentials(accessToken: "x", refreshToken: "y", expiresAt: 9, accountID: "acct")
 
     @Test func `nothing stored is nil and creates nothing`() throws {
@@ -52,8 +65,10 @@ struct CredentialFileAgyTests {
 
     @Test func `a record this build does not know is kept verbatim, large numbers and all`() throws {
         try FileManager.default.createDirectory(
-            at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700])
+            at: file.url.deletingLastPathComponent(),
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         let future = #"{"futureProvider":{"id":12345678901234567890,"ratio":0.1000000000000000055511151231257827}}"#
         try Data(future.utf8).write(to: file.url)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.url.path)
@@ -75,8 +90,10 @@ struct CredentialFileAgyTests {
 
     @Test func `a record written by an older build, with no client secret, reads with none`() throws {
         try FileManager.default.createDirectory(
-            at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700])
+            at: file.url.deletingLastPathComponent(),
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         try Data(#"{"agy":{"accessToken":"a","refreshToken":"r","expiresAt":7}}"#.utf8).write(to: file.url)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.url.path)
         let loaded = try file.loadAgy()
@@ -101,8 +118,10 @@ struct CredentialFileAgyTests {
 
     @Test func `a damaged file is reported and never overwritten`() throws {
         try FileManager.default.createDirectory(
-            at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700])
+            at: file.url.deletingLastPathComponent(),
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         let bytes = Data("{broken".utf8)
         try bytes.write(to: file.url)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.url.path)

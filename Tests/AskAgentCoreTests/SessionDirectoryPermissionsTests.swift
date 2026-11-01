@@ -23,7 +23,10 @@ struct SessionDirectoryPermissionsTests {
         let state = NSTemporaryDirectory() + "ask-perm-" + UUID().uuidString
         let directory = SessionDirectory(project: "/Users/g/work", environment: ["XDG_STATE_HOME": state])
         try FileManager.default.createDirectory(
-            atPath: directory.path, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o755])
+            atPath: directory.path,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o755]
+        )
         try directory.create()
         #expect(try mode(directory.path) == 0o700 && mode(state + "/ask") == 0o700)
     }

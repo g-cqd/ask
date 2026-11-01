@@ -44,7 +44,8 @@ struct CodexDeviceSignInTests {
                 "https://auth.openai.com/api/accounts/deviceauth/token",
                 "https://auth.openai.com/api/accounts/deviceauth/token",
                 "https://auth.openai.com/oauth/token"
-            ])
+            ]
+        )
         #expect(sent[0].bodyText == #"{"client_id":"app_EMoamEEZ73f0CkXaXp7hrann"}"#)
         #expect(sent[1].bodyText == #"{"device_auth_id":"dev-1","user_code":"ABCD-1234"}"#)
         #expect(sent[3].bodyText.contains("code=auth-code-xyz"))
@@ -54,7 +55,8 @@ struct CodexDeviceSignInTests {
 
     @Test(arguments: [("\"7\"", 7), ("7", 7), ("0", 1), ("500", 60), ("\" 9 \"", 9)])
     func `the server's interval is read as text or number and kept between one and sixty seconds`(
-        raw: String, seconds: Int
+        raw: String,
+        seconds: Int
     ) async throws {
         let body = #"{"device_auth_id":"d","user_code":"ABC-123","interval":\#(raw)}"#
         let done = try await run([.json(200, body), .json(200, Self.granted), .json(200, Self.tokens)])

@@ -51,7 +51,11 @@ struct MCPCallTool: Tool {
             }
         }
         return await MCPCalling.output(
-            tool, arguments: arguments, on: found.connection, server: server,
-            allowance: ImageReader.Allowance(context.imageLimits))
+            tool,
+            arguments: arguments,
+            on: found.connection,
+            server: server,
+            allowance: ImageReader.Allowance(context.imageLimits)
+        )
     }
 }

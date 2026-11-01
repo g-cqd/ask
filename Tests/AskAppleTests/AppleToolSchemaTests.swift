@@ -10,7 +10,10 @@ internal import Testing
 struct AppleToolSchemaTests {
     private func schema(_ json: String) -> GenerationSchema? {
         AppleToolSchema.schema(
-            named: "read", description: "Read a file. Second sentence.", inputSchema: Array(json.utf8))
+            named: "read",
+            description: "Read a file. Second sentence.",
+            inputSchema: Array(json.utf8)
+        )
     }
 
     @Test func `scalars, arrays, enums, nested objects and optional properties are all expressible`() {
@@ -45,10 +48,12 @@ struct AppleToolSchemaTests {
     @Test func `a brief description is its first sentence, shortened, and a full one keeps every sentence`() {
         #expect(
             AppleToolSchema.clipped("Read a file. Second sentence.", limit: AppleToolSchema.Detail.brief.limit)
-                == "Read a file")
+                == "Read a file"
+        )
         #expect(
             AppleToolSchema.clipped("Read a file. Second sentence.", limit: AppleToolSchema.Detail.full.limit)
-                == "Read a file. Second sentence.")
+                == "Read a file. Second sentence."
+        )
         #expect(AppleToolSchema.clipped(String(repeating: "w", count: 300))?.count == 120)
         #expect(AppleToolSchema.clipped("") == nil && AppleToolSchema.clipped(nil) == nil)
     }
@@ -58,13 +63,18 @@ struct AppleToolSchemaTests {
     {
         let long = String(repeating: "A long sentence about the tool. ", count: 12)
         let definition = ToolDefinition(
-            name: "read", description: long,
+            name: "read",
+            description: long,
             inputSchema: try JSONObject(
                 validating: Array(
-                    #"{"type":"object","properties":{"path":{"type":"string","description":"The path."}}}"#.utf8)))
+                    #"{"type":"object","properties":{"path":{"type":"string","description":"The path."}}}"#.utf8
+                )
+            )
+        )
         #expect(
             AppleToolSchema.footprint(of: definition, detail: .full)
-                > AppleToolSchema.footprint(of: definition, detail: .brief))
+                > AppleToolSchema.footprint(of: definition, detail: .brief)
+        )
         #expect(AppleToolSchema.footprint(of: definition, detail: .brief) > "read".count)
     }
 }

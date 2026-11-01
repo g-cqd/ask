@@ -65,7 +65,8 @@ struct AnthropicModelListingTests {
     @Test(arguments: [#""big""#, "1.5", "-1", "0", "100000001", "null", "[1]", "true"])
     func `a limit that is not a believable whole number becomes unknown`(_ value: String) throws {
         let listing = try page(
-            #"{"data":[{"id":"m","max_input_tokens":\#(value),"max_tokens":\#(value)}],"has_more":false}"#)
+            #"{"data":[{"id":"m","max_input_tokens":\#(value),"max_tokens":\#(value)}],"has_more":false}"#
+        )
         #expect(listing.models.first?.id == "m")
         #expect(listing.models.first?.contextWindow == nil)
         #expect(listing.models.first?.maxOutputTokens == nil)
@@ -116,7 +117,10 @@ struct AnthropicModelListingTests {
 
     @Test func `capability metadata round-trips as data and duplicate modes are invalid`() throws {
         let original = CatalogModel(
-            id: "m", reasoningLevels: ["low", "high"], supportsThinking: true, thinkingModes: [.adaptive, .betweenTools]
+            id: "m",
+            reasoningLevels: ["low", "high"],
+            supportsThinking: true,
+            thinkingModes: [.adaptive, .betweenTools]
         )
         let bytes = try AemiJSON.JSONEncoder().encodeToBytes(original)
         let decoded = try AemiJSON.JSONDecoder().decode(CatalogModel.self, from: bytes)

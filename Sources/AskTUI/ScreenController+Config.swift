@@ -8,7 +8,9 @@ extension ScreenController {
         let picker = CompletionPicker(
             kind: .config(scope: snapshot.scope, file: snapshot.file),
             trigger: CompletionTrigger(range: 0 ..< 0, query: ""),
-            matches: snapshot.rows.map(PickerRow.init), capacity: 7)
+            matches: snapshot.rows.map(PickerRow.init),
+            capacity: 7
+        )
         install(picker)
         if !snapshot.warnings.isEmpty {
             state.transcript.addNotice(snapshot.warnings.joined(separator: "\n"), isError: false)

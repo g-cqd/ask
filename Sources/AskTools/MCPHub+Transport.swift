@@ -20,16 +20,24 @@ extension MCPHub {
             if let command = server.command {
                 return StdioTransport(
                     StdioLaunch(
-                        executable: command, arguments: server.args, environment: environment,
-                        workingDirectory: server.cwd, inheriting: inheriting),
-                    observer: observer)
+                        executable: command,
+                        arguments: server.args,
+                        environment: environment,
+                        workingDirectory: server.cwd,
+                        inheriting: inheriting
+                    ),
+                    observer: observer
+                )
             }
             guard let address = server.url, let url = URL(string: address) else {
                 throw MCPError.refusedEndpoint("the setting has no usable address")
             }
             return try HTTPMCPTransport(
-                url: url, headers: headers.sorted { $0.key < $1.key }.map { (name: $0.key, value: $0.value) },
-                userAgent: userAgent, http: URLSessionTransport())
+                url: url,
+                headers: headers.sorted { $0.key < $1.key }.map { (name: $0.key, value: $0.value) },
+                userAgent: userAgent,
+                http: URLSessionTransport()
+            )
         }
     }
 }

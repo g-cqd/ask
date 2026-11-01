@@ -15,7 +15,9 @@ struct LaunchRequestParityTests {
 
     private static func properties(in file: String, attributed: Bool) throws -> [Property] {
         let text = try String(
-            contentsOf: SourceStandards.repositoryRoot.appending(path: file), encoding: .utf8)
+            contentsOf: SourceStandards.repositoryRoot.appending(path: file),
+            encoding: .utf8
+        )
         var found: [Property] = []
         var pending = false
         for line in text.split(separator: "\n", omittingEmptySubsequences: false) {

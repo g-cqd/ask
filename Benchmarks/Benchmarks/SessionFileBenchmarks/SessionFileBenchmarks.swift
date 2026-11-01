@@ -15,7 +15,10 @@ private func scratchPath() -> FilePath {
 
 let benchmarks: @Sendable () -> Void = {
     Benchmark.defaultConfiguration = .init(
-        metrics: [.wallClock, .cpuTotal, .syscalls], maxDuration: .seconds(3), maxIterations: 2_000)
+        metrics: [.wallClock, .cpuTotal, .syscalls],
+        maxDuration: .seconds(3),
+        maxIterations: 2_000
+    )
 
     // Does a change cost more as the session grows? Measured without flushing, so only ask's work shows.
     for size in [0, 10_000, 100_000] {

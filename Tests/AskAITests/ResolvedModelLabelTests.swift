@@ -19,9 +19,13 @@ struct ResolvedModelLabelTests {
 
     @Test func `a configured provider is prefixed with the name the configuration gave it`() {
         let chat = ResolvedModel(
-            provider: .openAICompatible(name: "local", baseURL: url, apiKey: nil, headers: [:]), model: "llama")
+            provider: .openAICompatible(name: "local", baseURL: url, apiKey: nil, headers: [:]),
+            model: "llama"
+        )
         let responses = ResolvedModel(
-            provider: .openAIResponses(name: "gateway", baseURL: url, apiKey: nil, headers: [:]), model: "gpt")
+            provider: .openAIResponses(name: "gateway", baseURL: url, apiKey: nil, headers: [:]),
+            model: "gpt"
+        )
         #expect(chat.label == "local/llama" && responses.label == "gateway/gpt")
     }
 

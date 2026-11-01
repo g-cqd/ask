@@ -24,7 +24,10 @@ public enum SkillDiscovery {
     ///     the default trusts nothing, so a caller that forgets to pass it gets no project skill, not every one.
     /// - Returns: the skills that load, the project skills that wait for trust, the ones that lost a name, what was skipped, and where it looked.
     public static func discover(
-        workingDirectory: String, home: String, sources: [SkillSource], selection: SkillSelection = .standard,
+        workingDirectory: String,
+        home: String,
+        sources: [SkillSource],
+        selection: SkillSelection = .standard,
         trust: ProjectTrust = ProjectTrust()
     ) -> SkillCatalog {
         var catalog = SkillCatalog()
@@ -35,7 +38,8 @@ public enum SkillDiscovery {
         for root in roots(workingDirectory: workingDirectory, home: home, sources: sources, selection: selection) {
             let exists = isDirectory(root.path)
             catalog.roots.append(
-                SkillCatalog.Root(path: root.path, source: root.source, scope: root.scope, exists: exists))
+                SkillCatalog.Root(path: root.path, source: root.source, scope: root.scope, exists: exists)
+            )
             // A directory already searched under another name (eight harness directories can be links to one) is not searched again.
             guard exists else { continue }
             let resolved = URL(fileURLWithPath: root.path).resolvingSymlinksInPath().path

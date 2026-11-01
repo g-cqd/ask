@@ -21,7 +21,9 @@ final class SkillScratch {
     func write(_ path: String, _ text: String) throws -> String {
         let full = path.hasPrefix("/") ? path : home + "/" + path
         try FileManager.default.createDirectory(
-            atPath: (full as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
+            atPath: (full as NSString).deletingLastPathComponent,
+            withIntermediateDirectories: true
+        )
         try text.write(toFile: full, atomically: true, encoding: .utf8)
         return full
     }
@@ -33,13 +35,16 @@ final class SkillScratch {
     {
         try write(
             root + "/" + name + "/SKILL.md",
-            "---\nname: \(name)\ndescription: \(description)\n\(extra)---\n# \(name)\nBody.\n")
+            "---\nname: \(name)\ndescription: \(description)\n\(extra)---\n# \(name)\nBody.\n"
+        )
     }
 
     func link(_ path: String, to target: String) throws {
         let full = home + "/" + path
         try FileManager.default.createDirectory(
-            atPath: (full as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
+            atPath: (full as NSString).deletingLastPathComponent,
+            withIntermediateDirectories: true
+        )
         try FileManager.default.createSymbolicLink(atPath: full, withDestinationPath: target)
     }
 
@@ -48,12 +53,20 @@ final class SkillScratch {
     func discover(_ tokens: [String] = [], from directory: String? = nil, trusting: Bool = true) -> SkillCatalog {
         let selection = SkillSelection(tokens: tokens, knownSources: SkillSource.fixtureIDs)
         let first = SkillDiscovery.discover(
-            workingDirectory: directory ?? project, home: home, sources: SkillSource.fixture, selection: selection)
+            workingDirectory: directory ?? project,
+            home: home,
+            sources: SkillSource.fixture,
+            selection: selection
+        )
         guard trusting, !first.untrusted.isEmpty else { return first }
         var trust = ProjectTrust()
         for item in first.untrusted { trust.trust(item.skill.realFile, digest: item.skill.digest) }
         return SkillDiscovery.discover(
-            workingDirectory: directory ?? project, home: home, sources: SkillSource.fixture, selection: selection,
-            trust: trust)
+            workingDirectory: directory ?? project,
+            home: home,
+            sources: SkillSource.fixture,
+            selection: selection,
+            trust: trust
+        )
     }
 }

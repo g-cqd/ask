@@ -237,7 +237,8 @@ struct AgyCloudClientTests {
             .models(accessToken: "access-test", project: "ask-test-project-1")
         let request = try #require(transport.sent.first)
         #expect(
-            request.url.absoluteString == "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels")
+            request.url.absoluteString == "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels"
+        )
         #expect(try AemiJSON.parse(request.body).root["project"].string == "ask-test-project-1")
         let untouched = SequencedTransport([.json(200, try Self.fixture("model-list.json"))])
         await #expect(throws: AgyCloudError.invalidResponse) {

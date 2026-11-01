@@ -10,7 +10,10 @@ extension ConnectionRegistry {
     /// - Returns: where to store the sign-in.
     /// - Throws: when the default file or a registration cannot be read.
     public func placement(
-        of identity: AccountIdentity?, kind: ConnectionKind, defaultFile: CredentialFile, replace: Bool,
+        of identity: AccountIdentity?,
+        kind: ConnectionKind,
+        defaultFile: CredentialFile,
+        replace: Bool,
         reserved: [String] = []
     ) throws -> SignInPlacement {
         let current: (signedIn: Bool, identity: AccountIdentity?)
@@ -58,10 +61,18 @@ extension ConnectionRegistry {
     /// - Returns: where it went.
     /// - Throws: a file, lock or registration error; nothing is stored then.
     public func storeSignIn(
-        _ signIn: SubscriptionSignIn, defaultFile: CredentialFile, replace: Bool, reserved: [String] = []
+        _ signIn: SubscriptionSignIn,
+        defaultFile: CredentialFile,
+        replace: Bool,
+        reserved: [String] = []
     ) throws -> SignInPlacement {
         let placement = try placement(
-            of: signIn.identity, kind: signIn.kind, defaultFile: defaultFile, replace: replace, reserved: reserved)
+            of: signIn.identity,
+            kind: signIn.kind,
+            defaultFile: defaultFile,
+            replace: replace,
+            reserved: reserved
+        )
         if let record = try record(for: placement, kind: signIn.kind, reserved: reserved) {
             try save(signIn, for: record)
         } else {

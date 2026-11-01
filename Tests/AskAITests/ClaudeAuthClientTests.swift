@@ -22,7 +22,11 @@ struct ClaudeAuthClientTests {
         #expect(
             sent.body
                 == ClaudeToken.exchangeBody(
-                    code: "AbCdEfGhIjKlMnOpQrStUv", verifier: "verifier-value", state: "0123abcd"))
+                    code: "AbCdEfGhIjKlMnOpQrStUv",
+                    verifier: "verifier-value",
+                    state: "0123abcd"
+                )
+        )
     }
 
     @Test func `a code from another sign-in never reaches the network`() async {
@@ -38,9 +42,14 @@ struct ClaudeAuthClientTests {
     @Test func `refresh sends the refresh token and returns new credentials`() async throws {
         let transport = ScriptedTransport(status: 200, chunks: [sound])
         let old = ClaudeCredentials(
-            accessToken: "old", refreshToken: "sk-ant-ort-O", expiresAt: 0, refreshExpiresAt: nil,
+            accessToken: "old",
+            refreshToken: "sk-ant-ort-O",
+            expiresAt: 0,
+            refreshExpiresAt: nil,
             accountEmail: "a@b.c",
-            organizationName: nil, scopes: "s")
+            organizationName: nil,
+            scopes: "s"
+        )
         let refreshed = try await ClaudeAuthClient(transport: transport).refresh(old, now: 100)
         #expect(refreshed.accessToken == "sk-ant-oat-N")
         #expect(refreshed.expiresAt == 100 + 3_600 - 300)
@@ -51,8 +60,14 @@ struct ClaudeAuthClientTests {
     @Test func `a refused refresh reports the endpoint's code`() async {
         let transport = ScriptedTransport(status: 400, chunks: [#"{"error":"invalid_grant"}"#])
         let old = ClaudeCredentials(
-            accessToken: "a", refreshToken: "r", expiresAt: 0, refreshExpiresAt: nil, accountEmail: nil,
-            organizationName: nil, scopes: "s")
+            accessToken: "a",
+            refreshToken: "r",
+            expiresAt: 0,
+            refreshExpiresAt: nil,
+            accountEmail: nil,
+            organizationName: nil,
+            scopes: "s"
+        )
         await #expect(throws: ClaudeAuthError.tokenEndpoint(status: 400, code: "invalid_grant")) {
             _ = try await ClaudeAuthClient(transport: transport).refresh(old, now: 0)
         }

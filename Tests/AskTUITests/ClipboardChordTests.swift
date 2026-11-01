@@ -13,8 +13,10 @@ struct ClipboardChordTests {
 
     private func rig(_ draft: String) -> PointerRig {
         var rig = PointerRig(
-            columns: 100, options: ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false),
-            lines: ["one", "two"])
+            columns: 100,
+            options: ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false),
+            lines: ["one", "two"]
+        )
         _ = rig.controller.handle(.paste(draft), pageRows: 10)
         rig.draw()
         return rig

@@ -120,9 +120,13 @@ public struct Transcript: Sendable, Equatable {
     }
 
     public mutating func startTool(
-        name: String, summary: String, at now: ContinuousClock.Instant = .now, id: String? = nil,
+        name: String,
+        summary: String,
+        at now: ContinuousClock.Instant = .now,
+        id: String? = nil,
         fullInput: String = "",
-        command: ToolCommand? = nil, path: String? = nil
+        command: ToolCommand? = nil,
+        path: String? = nil
     ) {
         let summary =
             command.map { $0.parameters(localized: localizedDurations, display: timeoutDisplay, label: timeoutLabel) }
@@ -136,8 +140,12 @@ public struct Transcript: Sendable, Equatable {
 
     /// Ends the most recent running tool, keeping what it returned.
     public mutating func finishTool(
-        _ status: ToolStatus, output: String = "", at now: ContinuousClock.Instant = .now,
-        id: String? = nil, backgroundJob: String? = nil, replacements: Int? = nil
+        _ status: ToolStatus,
+        output: String = "",
+        at now: ContinuousClock.Instant = .now,
+        id: String? = nil,
+        backgroundJob: String? = nil,
+        replacements: Int? = nil
     ) {
         guard
             let index = id.flatMap({ toolBlocks[$0] }) ?? (id == nil ? latestForegroundTool : nil),

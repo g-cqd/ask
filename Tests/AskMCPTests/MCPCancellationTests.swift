@@ -21,7 +21,12 @@ struct MCPCancellationTests {
         transport.on("initialize") { [$0.result(Self.initResult)] }
         transport.on("tools/call") { _ in [] }  // never answered, unless the test pushes an answer
         let connection = MCPConnection(
-            transport: transport, clientName: "ask", clientVersion: "1", clock: clock, requestTimeout: timeout)
+            transport: transport,
+            clientName: "ask",
+            clientVersion: "1",
+            clock: clock,
+            requestTimeout: timeout
+        )
         _ = try await connection.start()
         return (connection, transport)
     }
@@ -95,7 +100,8 @@ struct MCPCancellationTests {
         clock.advance(by: .seconds(300))
         #expect(
             transport.sent("notifications/cancelled").isEmpty,
-            "a timer that was not stopped would cancel a finished call")
+            "a timer that was not stopped would cancel a finished call"
+        )
     }
 
     @Test func `a call can ask for its own time, longer than the connection's`() async throws {

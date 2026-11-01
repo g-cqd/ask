@@ -7,7 +7,9 @@ internal import Testing
 /// list), no file may redefine it, and no named connection may take its name.
 struct AgyProviderSettingsTests {
     private func resolve(
-        _ json: String = "{}", provider: String? = nil, model: String? = nil
+        _ json: String = "{}",
+        provider: String? = nil,
+        model: String? = nil
     ) throws -> ResolvedModel {
         try ProviderSettings(decoding: Array(json.utf8)).resolve(provider: provider, model: model, environment: [:])
     }
@@ -59,7 +61,8 @@ struct AgyProviderSettingsTests {
             try ThinkingControl.select(.high, model: model, descriptor: nil, maximumTokens: 10_000)
         }
         #expect(
-            try ThinkingControl.select(.providerDefault, model: model, descriptor: nil, maximumTokens: 10_000) == nil)
+            try ThinkingControl.select(.providerDefault, model: model, descriptor: nil, maximumTokens: 10_000) == nil
+        )
     }
 
     @Test func `a registration called agy is refused, as one called codex is`() throws {
@@ -67,7 +70,11 @@ struct AgyProviderSettingsTests {
             let record = ConnectionRecord(name: name, provider: .codex)
             #expect(throws: ProviderSettingsError.reservedName(name)) {
                 try ProviderSettings.none.resolve(
-                    provider: name, model: "m", environment: [:], connection: record)
+                    provider: name,
+                    model: "m",
+                    environment: [:],
+                    connection: record
+                )
             }
         }
     }

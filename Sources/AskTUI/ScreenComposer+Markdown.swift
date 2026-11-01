@@ -13,7 +13,11 @@ extension ScreenComposer {
     /// The rows of the assistant message `text`, item `index` of `transcript`, drawn as Markdown at `columns`. `firstBlockWidth`, when
     /// given, is the width the first top-level block wraps at instead, so its first row leaves room beside it (a thinking block's status).
     static func markdownLines(
-        _ text: String, in transcript: Transcript, at index: Int, columns: Int, style: BlockStyle,
+        _ text: String,
+        in transcript: Transcript,
+        at index: Int,
+        columns: Int,
+        style: BlockStyle,
         firstBlockWidth: Int? = nil
     ) -> [Line] {
         let inset = style.inset
@@ -25,14 +29,25 @@ extension ScreenComposer {
                     MarkdownMessageLayout.Fence(fence: $0.fence, ordinal: $0.ordinal, folded: $0.folded)
                 },
             renderer: MarkdownRenderer(
-                theme: .standard, links: markdownLinks(home: transcript.home),
-                highlighter: transcript.highlight ? CodeHighlighter.standard : nil, softBreaks: .lineBreak),
-            source: MarkdownSourceLines(text), item: index, inset: inset)
+                theme: .standard,
+                links: markdownLinks(home: transcript.home),
+                highlighter: transcript.highlight ? CodeHighlighter.standard : nil,
+                softBreaks: .lineBreak
+            ),
+            source: MarkdownSourceLines(text),
+            item: index,
+            inset: inset
+        )
         // A block drawn before from the same events and bytes keeps its rows (roadmap 0152).
         let cache = transcript.markdownRows
         let settings = MarkdownRowCache.Settings(
-            item: index, columns: columns, inset: inset, firstBlockWidth: firstBlockWidth,
-            highlight: transcript.highlight, home: transcript.home)
+            item: index,
+            columns: columns,
+            inset: inset,
+            firstBlockWidth: firstBlockWidth,
+            highlight: transcript.highlight,
+            home: transcript.home
+        )
         let kept = cache.kept(for: settings, text: text)
         var blocks: [MarkdownRowCache.Block] = []
         var result: [Line] = []
@@ -51,7 +66,12 @@ extension ScreenComposer {
             }
             blocks.append(
                 MarkdownRowCache.Block(
-                    events: events, reach: MarkdownRowCache.reach(of: events), fence: fence, lines: lines))
+                    events: events,
+                    reach: MarkdownRowCache.reach(of: events),
+                    fence: fence,
+                    lines: lines
+                )
+            )
             result += lines
         }
         cache.keep(blocks, for: settings, text: text)

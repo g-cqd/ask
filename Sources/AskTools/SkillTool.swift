@@ -66,7 +66,8 @@ public struct SkillTool: ArgumentTool {
                 selection.unknown.isEmpty ? "" : "\nIgnored in from: \(selection.unknown.joined(separator: ", "))"
             return ToolOutput(
                 lines.joined(separator: "\n")
-                    + "\nLoad full instructions with skill(name: …); narrow query for other matches." + note)
+                    + "\nLoad full instructions with skill(name: …); narrow query for other matches." + note
+            )
         }
         guard arguments.query == nil else { return .error("Supply name to load or query to search, not both.") }
         switch catalog.find(name, selection: selection) {

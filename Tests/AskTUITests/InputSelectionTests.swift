@@ -86,10 +86,22 @@ struct InputSelectionTests {
         editor.paste("ab\ncd\nef")
         var layout = PromptLayout()
         let frame = layout.frame(
-            editor, prompt: "ask> ", columns: 30, screenRows: 12, maximumRows: 6, selection: 1 ..< 4)
+            editor,
+            prompt: "ask> ",
+            columns: 30,
+            screenRows: 12,
+            maximumRows: 6,
+            selection: 1 ..< 4
+        )
         #expect(frame.highlights == [6 ..< 7, 0 ..< 1, nil])
         let wide = layout.frame(
-            editor, prompt: "ask> ", columns: 30, screenRows: 12, maximumRows: 6, selection: 0 ..< 8)
+            editor,
+            prompt: "ask> ",
+            columns: 30,
+            screenRows: 12,
+            maximumRows: 6,
+            selection: 0 ..< 8
+        )
         #expect(wide.highlights == [5 ..< 7, 0 ..< 2, 0 ..< 2])
         #expect(layout.frame(editor, prompt: "ask> ", columns: 30, screenRows: 12, maximumRows: 6).highlights.isEmpty)
     }
@@ -126,7 +138,8 @@ struct InputSelectionTests {
         var rig = PointerRig(
             columns: 100,
             options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false, padding: false),
-            lines: ["one", "two"])
+            lines: ["one", "two"]
+        )
         _ = rig.controller.handle(.paste("hello world"), pageRows: 10)
         rig.draw()
         let effects5 = rig.drag(from: (10, 6), to: (10, 9))
@@ -151,7 +164,8 @@ struct InputSelectionTests {
     @Test func `with the mouse off, or a question waiting, a drag selects nothing`() {
         var off = rig(
             "hello",
-            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false))
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false)
+        )
         let effects6 = off.drag(from: (10, 6), to: (10, 9))
         #expect(effects6.isEmpty && off.controller.state.inputSelection == nil)
         var asking = rig("hello")

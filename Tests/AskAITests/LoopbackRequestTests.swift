@@ -11,7 +11,8 @@ struct LoopbackRequestTests {
 
     @Test func `a browser's callback is read into its path, query and host`() throws {
         let request = try #require(
-            parse("GET /auth/callback?code=abc%20d&state=s1 HTTP/1.1\r\nHost: localhost:1455\r\nAccept: */*\r\n\r\n"))
+            parse("GET /auth/callback?code=abc%20d&state=s1 HTTP/1.1\r\nHost: localhost:1455\r\nAccept: */*\r\n\r\n")
+        )
         #expect(request.method == "GET")
         #expect(request.path == "/auth/callback")
         #expect(request.value(of: "code") == "abc d")

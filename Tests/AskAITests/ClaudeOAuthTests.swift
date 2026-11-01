@@ -31,7 +31,8 @@ struct ClaudeOAuthTests {
                 + "&response_type=code&redirect_uri=https%3A%2F%2Fplatform.claude.com%2Foauth%2Fcode%2Fcallback"
                 + "&scope=org%3Acreate_api_key+user%3Aprofile+user%3Ainference+user%3Asessions%3Aclaude_code"
                 + "+user%3Amcp_servers+user%3Afile_upload+user%3Aplugins&state=0123abcd"
-                + "&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256")
+                + "&code_challenge=E9Melhoa2OwvFrEMTJguCHaoeK1t8URWbuGJSstw-cM&code_challenge_method=S256"
+        )
     }
 
     @Test(arguments: [
@@ -54,7 +55,8 @@ struct ClaudeOAuthTests {
         ("xAbCdEfGhIjKlMnOpQrStUv#0123abcd#extra", false)
     ])
     func `a pasted response is accepted exactly when the working implementation accepts it`(
-        pasted: String, accepted: Bool
+        pasted: String,
+        accepted: Bool
     ) {
         let code = ClaudeOAuth.authorizationCode(fromPasted: pasted, expectedState: "0123abcd")
         #expect((code == "AbCdEfGhIjKlMnOpQrStUv") == accepted)

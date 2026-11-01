@@ -16,7 +16,8 @@ struct OutputBufferTests {
 
     @Test(arguments: [(0, 0), (3, 5), (8, 8), (9, 8), (40, 8)])
     func `a stream no longer than twice the limit is kept whole, and a longer one loses exactly the excess`(
-        length: Int, keeping: Int
+        length: Int,
+        keeping: Int
     ) {
         let stream = String((0 ..< length).map { Character(UnicodeScalar(UInt8(97 + $0 % 26))) })
         let kept = buffer(stream, keeping: keeping)
@@ -42,14 +43,17 @@ struct OutputBufferTests {
         let kept = buffer(stream, keeping: 4)
         #expect(!stream.contains("Read"))
         #expect(
-            !kept.contains(Array("Read".utf8)), "the head and the tail are not adjacent, so a text cannot span them")
+            !kept.contains(Array("Read".utf8)),
+            "the head and the tail are not adjacent, so a text cannot span them"
+        )
     }
 
     @Test func `text inside the head, or inside the tail, is found whether or not bytes were omitted`() {
         let kept = buffer("Head" + "zzzzzzzz" + "Tail", keeping: 4)
         #expect(kept.omitted == 8)
         #expect(
-            kept.contains(Array("Head".utf8)) && kept.contains(Array("ead".utf8)) && kept.contains(Array("Tail".utf8)))
+            kept.contains(Array("Head".utf8)) && kept.contains(Array("ead".utf8)) && kept.contains(Array("Tail".utf8))
+        )
         #expect(!kept.contains(Array("zz".utf8)), "what was dropped is not there to find")
     }
 

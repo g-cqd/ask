@@ -38,10 +38,13 @@ struct AnthropicCatalogEntry: Decodable {
             return left == right ? $0 < $1 : left < right
         }
         return CatalogModel(
-            id: id, contextWindow: maxInput?.value.flatMap(Self.limit),
+            id: id,
+            contextWindow: maxInput?.value.flatMap(Self.limit),
             maxOutputTokens: maxOutput?.value.flatMap(Self.limit),
             reasoningLevels: levels.count <= CatalogModel.levelLimit ? levels : [],
-            supportsThinking: thinking?.supported?.value, thinkingModes: modes)
+            supportsThinking: thinking?.supported?.value,
+            thinkingModes: modes
+        )
     }
 
     /// A generous safety bound, not a claimed provider limit. Never size a run from a hostile or nonsensical integer.

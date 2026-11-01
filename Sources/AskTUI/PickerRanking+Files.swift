@@ -66,7 +66,11 @@ extension PickerRanking {
 
     /// Whether `needle` is what `bytes` holds at `start` (`anchored`), or occurs anywhere from `start` to `end`.
     private static func found(
-        _ needle: [UInt8], in bytes: ContiguousArray<UInt8>, from start: Int, before end: Int, anchored: Bool
+        _ needle: [UInt8],
+        in bytes: ContiguousArray<UInt8>,
+        from start: Int,
+        before end: Int,
+        anchored: Bool
     ) -> Bool {
         let last = end - needle.count
         guard last >= start else { return false }

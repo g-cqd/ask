@@ -24,7 +24,8 @@ struct RotationNoticeTests {
         let notice = RotationNotice(provider: "Claude")
         #expect(notice.message(unsavedBecause: "disk full") != nil)
         #expect(
-            notice.message(unsavedBecause: "disk full") == nil && notice.message(unsavedBecause: "disk full") == nil)
+            notice.message(unsavedBecause: "disk full") == nil && notice.message(unsavedBecause: "disk full") == nil
+        )
     }
 
     @Test func `once it was saved a later failure is announced again`() {

@@ -7,7 +7,8 @@ public import Foundation
 public struct AgyModelCatalog: Sendable {
     /// The endpoint the list comes from, which is also part of the cache's scope.
     public static let endpoint = URL(
-        string: "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels")!
+        string: "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels"
+    )!
     private let credentials: CredentialFile
     private let cache: ModelCatalogFile
     private let cloud: AgyCloudClient
@@ -53,7 +54,9 @@ public struct AgyModelCatalog: Sendable {
             notices.append("Downloaded model catalog could not be cached: \(error)")
         }
         return AgyListing(
-            snapshot: CatalogSnapshot(models: list.models, notices: notices), defaultModelID: list.defaultModelID)
+            snapshot: CatalogSnapshot(models: list.models, notices: notices),
+            defaultModelID: list.defaultModelID
+        )
     }
 
     private func storedScope() throws -> ModelCatalogScope? {

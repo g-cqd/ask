@@ -19,18 +19,23 @@ struct AgyRequestEncoderTests {
 
     @Test func `ids with quotes and control characters stay inside their strings`() throws {
         let bytes = try AgyRequestEncoder.encode(
-            AgyEncoderFixtures.request([AgyEncoderFixtures.user("x")]), project: "p\",\"x\":\"y", requestID: "r\n\u{1}",
-            promptID: "a\\b")
+            AgyEncoderFixtures.request([AgyEncoderFixtures.user("x")]),
+            project: "p\",\"x\":\"y",
+            requestID: "r\n\u{1}",
+            promptID: "a\\b"
+        )
         let root = try AemiJSON.parse(bytes).root
         #expect(
             root["project"].string == "p\",\"x\":\"y" && root["requestId"].string == "r\n\u{1}"
-                && root["x"].string == nil)
+                && root["x"].string == nil
+        )
         #expect(root["userPromptId"].string == "a\\b")
     }
 
     @Test func `the output limit is the request's, and thoughts are asked for`() throws {
         let root = try AgyEncoderFixtures.encode(
-            AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")], maxTokens: 777))
+            AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")], maxTokens: 777)
+        )
         #expect(root["request"]["generationConfig"]["maxOutputTokens"].int == 777)
         #expect(root["request"]["generationConfig"]["thinkingConfig"]["includeThoughts"].bool == true)
     }
@@ -39,14 +44,16 @@ struct AgyRequestEncoderTests {
         for control in [ThinkingControl.disabled, .betweenTools, .effort(.high)] {
             #expect(throws: ThinkingError.unsupportedProtocol("Antigravity")) {
                 try AgyEncoderFixtures.encode(
-                    AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")], thinking: control))
+                    AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")], thinking: control)
+                )
             }
         }
     }
 
     @Test func `instructions travel as one system instruction, or not at all`() throws {
         let some = try AgyEncoderFixtures.encode(
-            AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")], system: ["one", "two"]))
+            AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")], system: ["one", "two"])
+        )
         #expect(some["request"]["systemInstruction"]["parts"].array?.first?["text"].string == "one\n\ntwo")
         let none = try AgyEncoderFixtures.encode(AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")]))
         #expect(!none["request"]["systemInstruction"].exists)
@@ -57,12 +64,15 @@ struct AgyRequestEncoderTests {
     @Test func `tools are one group of declarations with their schemas spliced in, and the mode is automatic`() throws {
         let tools = [
             ToolDefinition(
-                name: "calc", description: "Multiply.",
-                inputSchema: try AgyEncoderFixtures.json(#"{"type":"object","properties":{"a":{"type":"integer"}}}"#)),
+                name: "calc",
+                description: "Multiply.",
+                inputSchema: try AgyEncoderFixtures.json(#"{"type":"object","properties":{"a":{"type":"integer"}}}"#)
+            ),
             ToolDefinition(name: "other", description: "d", inputSchema: .empty)
         ]
         let root = try AgyEncoderFixtures.encode(
-            AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")], tools: tools))
+            AgyEncoderFixtures.request([AgyEncoderFixtures.user("hi")], tools: tools)
+        )
         let groups = root["request"]["tools"].array ?? []
         #expect(groups.count == 1)
         let declarations = groups.first?["functionDeclarations"].array ?? []
@@ -98,30 +108,36 @@ struct AgyRequestEncoderTests {
         let messages = [
             ModelMessage(
                 role: .assistant,
-                blocks: [try AgyEncoderFixtures.call("c1", "calc"), try AgyEncoderFixtures.call("c2", "read")]),
+                blocks: [try AgyEncoderFixtures.call("c1", "calc"), try AgyEncoderFixtures.call("c2", "read")]
+            ),
             ModelMessage(
                 role: .user,
                 blocks: [
                     .toolResult(id: "c2", content: "boom", isError: true),
                     .toolResult(id: "c1", content: "901", isError: false)
-                ])
+                ]
+            )
         ]
         let results = try AgyEncoderFixtures.contents(messages)[1]["parts"].array ?? []
         #expect(results.count == 2)
         #expect(
             results[0]["functionResponse"]["id"].string == "c2"
-                && results[0]["functionResponse"]["name"].string == "read")
+                && results[0]["functionResponse"]["name"].string == "read"
+        )
         #expect(results[0]["functionResponse"]["response"]["error"].string == "boom")
         #expect(!results[0]["functionResponse"]["response"]["output"].exists)
         #expect(
             results[1]["functionResponse"]["id"].string == "c1"
-                && results[1]["functionResponse"]["name"].string == "calc")
+                && results[1]["functionResponse"]["name"].string == "calc"
+        )
         #expect(results[1]["functionResponse"]["response"]["output"].string == "901")
     }
 
     @Test func `results come before the text of the same turn, and a result with no known call keeps a name`() throws {
         let message = ModelMessage(
-            role: .user, blocks: [.text("after"), .toolResult(id: "ghost", content: "r", isError: false)])
+            role: .user,
+            blocks: [.text("after"), .toolResult(id: "ghost", content: "r", isError: false)]
+        )
         let parts = try AgyEncoderFixtures.contents([message])[0]["parts"].array ?? []
         #expect(parts.count == 2)
         #expect(parts[0]["functionResponse"]["id"].string == "ghost")
@@ -132,7 +148,8 @@ struct AgyRequestEncoderTests {
     @Test func `a turn that encodes to nothing is left out`() throws {
         let empty = ModelMessage(
             role: .assistant,
-            blocks: [.thinking(text: "t", signature: "plain"), .redactedThinking(data: "d"), .text("")])
+            blocks: [.thinking(text: "t", signature: "plain"), .redactedThinking(data: "d"), .text("")]
+        )
         let contents = try AgyEncoderFixtures.contents([
             AgyEncoderFixtures.user("a"), empty, AgyEncoderFixtures.user("b")
         ])
@@ -140,7 +157,8 @@ struct AgyRequestEncoderTests {
         #expect(try AgyEncoderFixtures.contents([ModelMessage(role: .user, blocks: [])]).isEmpty)
         #expect(
             try AgyEncoderFixtures.contents([ModelMessage(role: .user, blocks: [.text("")])]).isEmpty,
-            "an empty user text is not a part")
+            "an empty user text is not a part"
+        )
     }
 
     @Test func `reasoning that is not this protocol's never reaches the wire, for any model`() throws {
@@ -155,10 +173,16 @@ struct AgyRequestEncoderTests {
                 decoding: try AgyRequestEncoder.encode(
                     AgyEncoderFixtures.request([ModelMessage(role: .assistant, blocks: blocks)], model: model),
                     project: "p",
-                    requestID: "r", promptID: "q"), as: UTF8.self)
+                    requestID: "r",
+                    promptID: "q"
+                ),
+                as: UTF8.self
+            )
             #expect(
                 text.contains("visible") && !text.contains("private thoughts")
-                    && !text.contains("an-anthropic-signature"), "\(model)")
+                    && !text.contains("an-anthropic-signature"),
+                "\(model)"
+            )
             #expect(!text.contains("secret") && !text.contains("rs"), "\(model)")
         }
     }

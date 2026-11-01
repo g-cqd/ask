@@ -35,14 +35,20 @@ extension ScreenComposer {
         var lines = shown.enumerated()
             .map { index, row in
                 noteRow(
-                    index == 0 ? label : String(repeating: " ", count: indent), row.text, columns: columns,
-                    label: labelStyle, text: .default)
+                    index == 0 ? label : String(repeating: " ", count: indent),
+                    row.text,
+                    columns: columns,
+                    label: labelStyle,
+                    text: .default
+                )
             }
         if focused, let (row, column) = noteCursor(editor, rows: shown) {
             let at = indent + column
             if at >= UnicodeWidth.displayWidth(of: lines[row].text) {
                 lines[row].text += String(
-                    repeating: " ", count: at + 1 - UnicodeWidth.displayWidth(of: lines[row].text))
+                    repeating: " ",
+                    count: at + 1 - UnicodeWidth.displayWidth(of: lines[row].text)
+                )
             }
             lines[row].accents.append(Accent(columns: at ..< at + 1, style: Style(inverse: true)))
         }

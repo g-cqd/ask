@@ -15,9 +15,15 @@ func contextBenchmarks() {
             try! tree.append(
                 .response(
                     AssembledResponse(
-                        id: "m\(turn)", model: "c",
+                        id: "m\(turn)",
+                        model: "c",
                         blocks: [.text("Reading."), .toolCall(id: "t\(turn)", name: "read", input: input)],
-                        stopReason: .toolUse, usage: TokenUsage(), unrecognized: [])))
+                        stopReason: .toolUse,
+                        usage: TokenUsage(),
+                        unrecognized: []
+                    )
+                )
+            )
             try! tree.append(.toolResult(callID: "t\(turn)", content: result, isError: false))
         }
         let context = tree.context()
@@ -74,7 +80,11 @@ func bashBenchmarks() {
     let protected = ToolContext(
         workingDirectory: FileManager.default.temporaryDirectory.path,
         sandbox: .standard(
-            home: home, configDirectory: home + "/.config/ask", stateDirectory: home + "/.local/state/ask"))
+            home: home,
+            configDirectory: home + "/.config/ask",
+            stateDirectory: home + "/.local/state/ask"
+        )
+    )
     Benchmark("tools/bash echo sandboxed", configuration: .init(maxDuration: .seconds(3), maxIterations: 300)) {
         benchmark in
         for _ in benchmark.scaledIterations { blackHole(await BashTool().run(echo, in: protected)) }

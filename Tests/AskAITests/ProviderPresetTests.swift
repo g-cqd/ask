@@ -10,12 +10,19 @@ internal import Testing
 @Suite("Built-in presets reach the known OpenAI-compatible services from a key alone")
 struct ProviderPresetTests {
     private func resolve(
-        _ json: String? = nil, provider: String, model: String? = "m", environment: [String: String] = [:],
+        _ json: String? = nil,
+        provider: String,
+        model: String? = "m",
+        environment: [String: String] = [:],
         stored: [String: String] = [:]
     ) throws -> ResolvedModel {
         let settings = try json.map { (text) throws in try ProviderSettings(decoding: Array(text.utf8)) } ?? .none
         return try settings.resolve(
-            provider: provider, model: model, environment: environment, storedKeys: { stored })
+            provider: provider,
+            model: model,
+            environment: environment,
+            storedKeys: { stored }
+        )
     }
 
     private func damaged() throws(CredentialFileError) -> [String: String] {
@@ -30,12 +37,14 @@ struct ProviderPresetTests {
         #expect(endpoint(groq)?.key == "k")
         #expect(
             try settings.resolve(provider: "anthropic", model: nil, environment: [:], storedKeys: damaged).provider
-                == .anthropic)
+                == .anthropic
+        )
         let local =
             #"{ "providers": { "local": { "api": "openai-completions", "baseUrl": "http://127.0.0.1:1/v1", "defaultModel": "m" } } }"#
         #expect(
             try ProviderSettings(decoding: Array(local.utf8))
-                .resolve(provider: "local", model: nil, environment: [:], storedKeys: damaged).model == "m")
+                .resolve(provider: "local", model: nil, environment: [:], storedKeys: damaged).model == "m"
+        )
         // Asked for, and the damage is reported rather than read as "signed out".
         #expect(throws: ProviderSettingsError.credentials(.damaged(path: "/p/credentials.json"))) {
             try settings.resolve(provider: "spettro", model: "m", environment: [:], storedKeys: damaged)
@@ -58,17 +67,22 @@ struct ProviderPresetTests {
         let env = ["MISTRAL_API_KEY": "from-env", "OTHER": "from-entry"]
         #expect(
             endpoint(try resolve(provider: "mistral", environment: env, stored: ["mistral": "stored"]))?.key
-                == "from-env")
+                == "from-env"
+        )
         let json = #"{ "providers": { "mistral": { "apiKey": "$OTHER" } } }"#
         #expect(
             endpoint(try resolve(json, provider: "mistral", environment: env, stored: ["mistral": "s"]))?.key
-                == "from-entry")
+                == "from-entry"
+        )
     }
 
     @Test func `a preset with a sign-in and no key says how to sign in, and which variable also works`() {
         #expect(
             throws: ProviderSettingsError.notSignedIn(
-                provider: "mistral", variable: "MISTRAL_API_KEY", login: "mistral-vibe")
+                provider: "mistral",
+                variable: "MISTRAL_API_KEY",
+                login: "mistral-vibe"
+            )
         ) { try resolve(provider: "mistral") }
         #expect(throws: ProviderSettingsError.notSignedIn(provider: "spettro", variable: nil, login: "spettro")) {
             try resolve(provider: "spettro")
@@ -81,15 +95,23 @@ struct ProviderPresetTests {
     @Test func `Spettro's address can be moved by its variable, but the key still needs https or this machine`() throws
     {
         let moved = try resolve(
-            provider: "spettro", environment: ["SPETTRO_API_URL": "https://eu.spettro.example"],
-            stored: ["spettro": "k"])
+            provider: "spettro",
+            environment: ["SPETTRO_API_URL": "https://eu.spettro.example"],
+            stored: ["spettro": "k"]
+        )
         #expect(endpoint(moved)?.url == "https://eu.spettro.example/v1")
         let local = try resolve(
-            provider: "spettro", environment: ["SPETTRO_API_URL": "http://127.0.0.1:9000"], stored: ["spettro": "k"])
+            provider: "spettro",
+            environment: ["SPETTRO_API_URL": "http://127.0.0.1:9000"],
+            stored: ["spettro": "k"]
+        )
         #expect(endpoint(local)?.url == "http://127.0.0.1:9000/v1")
         #expect(throws: ProviderSettingsError.self) {
             try resolve(
-                provider: "spettro", environment: ["SPETTRO_API_URL": "http://other.example"], stored: ["spettro": "k"])
+                provider: "spettro",
+                environment: ["SPETTRO_API_URL": "http://other.example"],
+                stored: ["spettro": "k"]
+            )
         }
     }
 
@@ -98,8 +120,12 @@ struct ProviderPresetTests {
         #expect(
             resolved.provider
                 == .openAICompatible(
-                    name: "groq", baseURL: URL(string: "https://api.groq.com/openai/v1")!, apiKey: "gsk-1",
-                    headers: [:]))
+                    name: "groq",
+                    baseURL: URL(string: "https://api.groq.com/openai/v1")!,
+                    apiKey: "gsk-1",
+                    headers: [:]
+                )
+        )
         #expect(resolved.model == "m")
     }
 

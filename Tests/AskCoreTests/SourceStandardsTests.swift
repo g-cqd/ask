@@ -63,7 +63,9 @@ struct SourceStandardsTests {
         let uses = try SourceStandards.occurrences(of: "CommandLine.arguments", in: SourceStandards.sources)
         #expect(uses.count == 1 && uses.allSatisfy { $0.hasPrefix(Self.rawArgumentsPermittedIn) }, "found: \(uses)")
         let ask = try String(
-            contentsOf: SourceStandards.repositoryRoot.appending(path: "Sources/ask/Ask.swift"), encoding: .utf8)
+            contentsOf: SourceStandards.repositoryRoot.appending(path: "Sources/ask/Ask.swift"),
+            encoding: .utf8
+        )
         #expect(ask.contains("guard CommandLine.arguments.count == 1 else"), "only the count is read, never the values")
     }
 
@@ -89,7 +91,9 @@ struct SourceStandardsTests {
     /// A test that yields, sleeps or polls is a test that can pass for the wrong reason.
     @Test func `no test yields or sleeps`() throws {
         let offenders = try SourceStandards.occurrences(
-            of: "Task.yield", in: SourceStandards.tests)
+            of: "Task.yield",
+            in: SourceStandards.tests
+        )
         #expect(
             offenders.isEmpty,
             """

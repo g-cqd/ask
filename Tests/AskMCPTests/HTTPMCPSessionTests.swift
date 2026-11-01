@@ -7,7 +7,9 @@ internal import Testing
 
 /// What the HTTP transport remembers and sends: the session and version headers, concurrency, closing, and where a credential may go.
 @Suite(
-    "An HTTP transport keeps a session, names itself, ends politely and protects a credential", .timeLimit(.minutes(1)))
+    "An HTTP transport keeps a session, names itself, ends politely and protects a credential",
+    .timeLimit(.minutes(1))
+)
 struct HTTPMCPSessionTests {
     @Test func `a request is a POST that says what it sends, what it accepts, and who is asking`() async throws {
         let http = ScriptedHTTP { _ in ScriptedHTTP.status(202) }
@@ -57,7 +59,8 @@ struct HTTPMCPSessionTests {
         try await HTTPMCP.send(HTTPMCP.ping, on: transport)
         #expect(
             await HTTPMCP.next(&incoming) == nil,
-            "the stream ends, which is how the connection learns the server is gone")
+            "the stream ends, which is how the connection learns the server is gone"
+        )
         await transport.close()
     }
 
@@ -76,7 +79,8 @@ struct HTTPMCPSessionTests {
         try await HTTPMCP.send(#"{"jsonrpc":"2.0","id":8,"method":"ping"}"#, on: transport)
         #expect(
             await HTTPMCP.next(&incoming)?.contains(#""id":8"#) == true,
-            "the second is answered while the first is still waiting")
+            "the second is answered while the first is still waiting"
+        )
         release.yield()
         #expect(await HTTPMCP.next(&incoming)?.contains(#""id":7"#) == true)
         await transport.close()
@@ -118,12 +122,17 @@ struct HTTPMCPSessionTests {
         let insecure = URL(string: "http://example.test/mcp")!
         #expect(throws: MCPError.self) {
             _ = try HTTPMCP.transport(
-                ScriptedHTTP(), url: insecure, headers: [(name: "Authorization", value: "Bearer t")])
+                ScriptedHTTP(),
+                url: insecure,
+                headers: [(name: "Authorization", value: "Bearer t")]
+            )
         }
         _ = try HTTPMCP.transport(ScriptedHTTP(), url: insecure)
         _ = try HTTPMCP.transport(
-            ScriptedHTTP(), url: URL(string: "http://localhost:8080/mcp")!,
-            headers: [(name: "Authorization", value: "Bearer t")])
+            ScriptedHTTP(),
+            url: URL(string: "http://localhost:8080/mcp")!,
+            headers: [(name: "Authorization", value: "Bearer t")]
+        )
     }
 
     @Test func `a whole conversation through a connection: start, list, call`() async throws {
@@ -133,7 +142,8 @@ struct HTTPMCPSessionTests {
                 case "initialize":
                     return ScriptedHTTP.json(
                         #"{"jsonrpc":"2.0","id":\#(id),"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"web","version":"1"}}}"#,
-                        headers: ["mcp-session-id": "s"])
+                        headers: ["mcp-session-id": "s"]
+                    )
                 case "tools/list":
                     return ScriptedHTTP.events([
                         #"data: {"jsonrpc":"2.0","id":\#(id),"result":{"tools":[{"name":"t","inputSchema":{"type":"object"}}]}}"#
@@ -141,7 +151,8 @@ struct HTTPMCPSessionTests {
                     ])
                 case "tools/call":
                     return ScriptedHTTP.json(
-                        #"{"jsonrpc":"2.0","id":\#(id),"result":{"content":[{"type":"text","text":"ok"}]}}"#)
+                        #"{"jsonrpc":"2.0","id":\#(id),"result":{"content":[{"type":"text","text":"ok"}]}}"#
+                    )
                 default: return ScriptedHTTP.status(202)
             }
         }
@@ -153,7 +164,8 @@ struct HTTPMCPSessionTests {
         let later = http.requests.filter { $0.rpcMethod == "tools/call" }
         #expect(
             later.first?.headers["mcp-session-id"] == "s"
-                && later.first?.headers["mcp-protocol-version"] == "2025-06-18")
+                && later.first?.headers["mcp-protocol-version"] == "2025-06-18"
+        )
         #expect(http.requests.last?.method == "DELETE")
     }
 }

@@ -7,7 +7,9 @@ struct SkillLookupTests {
     private func lookup(_ scratch: SkillScratch, _ name: String, from words: [String] = []) -> SkillLookup {
         scratch.discover(["user", "bundled"])
             .find(
-                name, selection: SkillSelection(tokens: words, knownSources: SkillSource.fixtureIDs))
+                name,
+                selection: SkillSelection(tokens: words, knownSources: SkillSource.fixtureIDs)
+            )
     }
 
     @Test func `a name is found without regard to case or punctuation`() throws {

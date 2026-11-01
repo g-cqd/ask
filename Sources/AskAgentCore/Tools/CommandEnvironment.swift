@@ -19,7 +19,10 @@ public struct CommandEnvironment: Sendable, Equatable {
 
     /// A policy with these names.
     public init(
-        withheld: Set<String> = [], withheldPrefixes: [String] = [], passed: Set<String> = [], shell: String? = nil
+        withheld: Set<String> = [],
+        withheldPrefixes: [String] = [],
+        passed: Set<String> = [],
+        shell: String? = nil
     ) {
         self.shell = shell
         self.withheld = withheld
@@ -42,7 +45,9 @@ public struct CommandEnvironment: Sendable, Equatable {
         self.init(
             withheld: credentials.union(Self.wellKnownCredentials).union(exact),
             withheldPrefixes: credentialPrefixes + prefixes,
-            passed: Set(configured.pass.filter { !taken($0) }), shell: configured.shell)
+            passed: Set(configured.pass.filter { !taken($0) }),
+            shell: configured.shell
+        )
     }
 
     /// Whether a command is denied the variable called `name`. Names are matched as written: the environment is case-sensitive.

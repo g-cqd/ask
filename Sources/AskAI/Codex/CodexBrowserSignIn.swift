@@ -12,7 +12,8 @@ public struct CodexBrowserSignIn: Sendable {
 
     /// A sign-in over `transport`. `bind` starts the listener; a test supplies its own.
     public init(
-        transport: any HTTPTransport, now: @escaping @Sendable () -> Double = { Date().timeIntervalSince1970 },
+        transport: any HTTPTransport,
+        now: @escaping @Sendable () -> Double = { Date().timeIntervalSince1970 },
         bind: @escaping @Sendable (UInt16) throws(LoopbackError) -> LoopbackListener = {
             try LoopbackListener.bind(port: $0)
         }
@@ -55,7 +56,11 @@ public struct CodexBrowserSignIn: Sendable {
         }
         do {
             return try await auth.exchange(
-                code: code, verifier: pkce.verifier, redirectURI: CodexOAuth.redirectURI, now: now())
+                code: code,
+                verifier: pkce.verifier,
+                redirectURI: CodexOAuth.redirectURI,
+                now: now()
+            )
         } catch { throw SignInError(error) }
     }
 }

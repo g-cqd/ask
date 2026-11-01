@@ -23,7 +23,9 @@ public enum ProcessEnvironment {
             if let equals = unsafe memchr(entry, 0x3D, length) {
                 let nameLength = unsafe UnsafeRawPointer(equals) - UnsafeRawPointer(entry)
                 let name = unsafe String(
-                    decoding: UnsafeRawBufferPointer(start: entry, count: nameLength), as: UTF8.self)
+                    decoding: UnsafeRawBufferPointer(start: entry, count: nameLength),
+                    as: UTF8.self
+                )
                 if hidden(name) { unsafe _ = memset(equals + 1, 0, length - nameLength - 1) }
             }
             unsafe cursor += 1

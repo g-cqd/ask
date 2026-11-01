@@ -13,7 +13,11 @@ extension MCPConnection {
         }
         launchLoops()
         let root = try await request(
-            "initialize", params: initializeParams(), timeout: startTimeout, beforeStart: true)
+            "initialize",
+            params: initializeParams(),
+            timeout: startTimeout,
+            beforeStart: true
+        )
         guard let version = root["protocolVersion"].string else {
             await close()
             throw .malformedResponse("the answer to initialize has no protocolVersion")
@@ -32,10 +36,14 @@ extension MCPConnection {
         state.withLock { $0.started = true }
         let tools = root["capabilities"]["tools"]
         return MCPServerInfo(
-            protocolVersion: version, name: root["serverInfo"]["name"].string ?? "",
-            title: root["serverInfo"]["title"].string, version: root["serverInfo"]["version"].string ?? "",
-            instructions: root["instructions"].string, supportsTools: tools.isObject,
-            toolsMayChange: tools["listChanged"].bool ?? false)
+            protocolVersion: version,
+            name: root["serverInfo"]["name"].string ?? "",
+            title: root["serverInfo"]["title"].string,
+            version: root["serverInfo"]["version"].string ?? "",
+            instructions: root["instructions"].string,
+            supportsTools: tools.isObject,
+            toolsMayChange: tools["listChanged"].bool ?? false
+        )
     }
 
     private func initializeParams() -> [UInt8] {

@@ -33,7 +33,8 @@ struct UserDocumentationTests {
     @Test func `only the guide's index points at the development records`() throws {
         for page in try Self.guidePages() where page != "README.md" {
             #expect(
-                !(try Self.text("docs/" + page)).contains("development/"), "docs/\(page) sends a user into development/"
+                !(try Self.text("docs/" + page)).contains("development/"),
+                "docs/\(page) sends a user into development/"
             )
         }
     }

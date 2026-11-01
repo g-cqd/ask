@@ -15,7 +15,9 @@ struct SessionLogReader {
     /// The session in the file behind `descriptor`, read from its start.
     /// - Throws: ``SessionFileError`` for a read that fails or an archive past `limits`, and what recovery cannot repair.
     func recover(
-        _ descriptor: FileDescriptor, limits: SessionLog.Limits, images: SessionImageStore?
+        _ descriptor: FileDescriptor,
+        limits: SessionLog.Limits,
+        images: SessionImageStore?
     ) throws(SessionFileError) -> RecoveredSession {
         let size = Int(try SessionFileIO.io(.read) { try descriptor.seek(offset: 0, from: .end) })
         guard size <= limits.maximumArchiveBytes else { throw .log(.archiveTooLarge(size)) }

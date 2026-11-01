@@ -21,13 +21,19 @@ struct ScreenMouseModeTests {
         // Control-D at an empty prompt ends the screen.
         connection.feedInput([0x04])
         _ = try await runInteractiveScreen(
-            on: connection, conversation: Idle(), label: "m", options: options, resizes: resizes)
+            on: connection,
+            conversation: Idle(),
+            label: "m",
+            options: options,
+            resizes: resizes
+        )
         return String(decoding: connection.writtenOutput, as: UTF8.self)
     }
 
     @Test func `the screen asks for mouse reports and gives them up again`() async throws {
         let output = try await connectionOutput(
-            options: ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false))
+            options: ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false)
+        )
         let enable = String(decoding: EscapeSequences.enableMouseSGR, as: UTF8.self)
         let disable = String(decoding: EscapeSequences.disableMouseSGR, as: UTF8.self)
         #expect(output.contains(enable))
@@ -37,7 +43,8 @@ struct ScreenMouseModeTests {
 
     @Test func `with the mouse off the terminal is never asked to report it`() async throws {
         let output = try await connectionOutput(
-            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false))
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false)
+        )
         #expect(!output.contains(String(decoding: EscapeSequences.enableMouseSGR, as: UTF8.self)))
     }
 }

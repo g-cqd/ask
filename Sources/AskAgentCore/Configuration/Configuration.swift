@@ -60,7 +60,8 @@ public struct Configuration: Sendable, Equatable {
 
     /// Built-in defaults only.
     public static let defaults = Configuration(
-        model: Setting(value: nil, source: .defaults), provider: Setting(value: nil, source: .defaults),
+        model: Setting(value: nil, source: .defaults),
+        provider: Setting(value: nil, source: .defaults),
         thinking: Setting(value: .providerDefault, source: .defaults),
         maxTurns: Setting(value: 100, source: .defaults),
         compactAt: Setting(value: .standard, source: .defaults),
@@ -144,8 +145,10 @@ public struct Configuration: Sendable, Equatable {
             next.maxTurns = Setting(value: turns, source: .environment("ASK_MAX_TURNS"))
         }
         if let threshold = parsed(
-            "ASK_COMPACT_AT", CompactionThreshold.init(parsing:), must: CompactionThreshold.expected)
-        {
+            "ASK_COMPACT_AT",
+            CompactionThreshold.init(parsing:),
+            must: CompactionThreshold.expected
+        ) {
             next.compactAt = threshold
         }
         return next
@@ -163,15 +166,21 @@ public struct Configuration: Sendable, Equatable {
     /// `self` narrowed by the strict sandbox a resumed session recorded, except for what a flag set: a flag is the
     /// user widening on purpose. The record only ever narrows; the source changes only when it did.
     public func applying(
-        session record: SandboxSection, flaggedNetwork: Bool, flaggedWrite: Bool, flaggedRead: Bool
+        session record: SandboxSection,
+        flaggedNetwork: Bool,
+        flaggedWrite: Bool,
+        flaggedRead: Bool
     ) -> Configuration {
         // `anywhere` narrows nothing, and with writing kept to the workspace by default it would widen: a record keeps only the scopes
         // that narrow, so a session file, which may come from anywhere, can never open the sandbox.
         let narrowing = { (scopes: [PathSetting]) in scopes.filter { $0 != .anywhere } }
         let narrowed = sandbox.value.layered(
             with: SandboxSection(
-                write: flaggedWrite ? [] : narrowing(record.write), read: flaggedRead ? [] : narrowing(record.read),
-                network: flaggedNetwork ? nil : record.network))
+                write: flaggedWrite ? [] : narrowing(record.write),
+                read: flaggedRead ? [] : narrowing(record.read),
+                network: flaggedNetwork ? nil : record.network
+            )
+        )
         guard narrowed != sandbox.value else { return self }
         var next = self
         next.sandbox = Setting(value: narrowed, source: .session)
@@ -181,9 +190,14 @@ public struct Configuration: Sendable, Equatable {
     /// `self` with the flags the user gave. A nil flag was not given. `network` and `write` replace what the files
     /// set rather than narrowing it: a flag is the user, and only the user widens the sandbox.
     public func applying(
-        model: String?, provider: String?, maxTurns: Int?, compactAt: CompactionThreshold?,
+        model: String?,
+        provider: String?,
+        maxTurns: Int?,
+        compactAt: CompactionThreshold?,
         network: SandboxPolicy.Network? = nil,
-        write: PathSetting? = nil, read: PathSetting? = nil, thinking: ThinkingLevel? = nil
+        write: PathSetting? = nil,
+        read: PathSetting? = nil,
+        thinking: ThinkingLevel? = nil
     ) -> Configuration {
         var next = self
         if network != nil || write != nil || read != nil {

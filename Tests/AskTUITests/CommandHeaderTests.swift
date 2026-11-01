@@ -9,7 +9,10 @@ internal import Testing
 @Suite("A command heads its block and opens in place")
 struct CommandHeaderTests {
     private func transcript(
-        _ command: String, output: String = "RESULT", limits: ToolCommand = ToolCommand(), localized: Bool = true,
+        _ command: String,
+        output: String = "RESULT",
+        limits: ToolCommand = ToolCommand(),
+        localized: Bool = true,
         folded: Bool = true
     ) -> Transcript {
         var result = Transcript()
@@ -108,7 +111,8 @@ struct CommandHeaderTests {
     @Test func `open, the command is drawn bright while its lead, status and output stay dim`() throws {
         let open = rows(
             transcript("cd /tmp\nls -la", output: "a", limits: ToolCommand(timeout: .seconds(5)), folded: false),
-            columns: 60)
+            columns: 60
+        )
         let header = try #require(open.first)
         #expect(header.style.dim, "the lead and the status keep the status colour")
         let lead = "shell · timeout 5 sec · "
@@ -119,7 +123,8 @@ struct CommandHeaderTests {
         #expect(next.style == ScreenComposer.commandStyle)
         #expect(try #require(open.last { $0.text == "a" }).style.dim, "the output stays dim")
         let folded = try #require(
-            rows(transcript("cd /tmp", limits: ToolCommand(timeout: .seconds(5))), columns: 60).first)
+            rows(transcript("cd /tmp", limits: ToolCommand(timeout: .seconds(5))), columns: 60).first
+        )
         #expect(folded.style.dim && folded.accents.isEmpty, "a folded block is unchanged")
     }
 }

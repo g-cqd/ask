@@ -6,18 +6,21 @@ enum NamedConnections {
     static func registry(environment: [String: String] = LaunchEnvironment.values) -> ConnectionRegistry {
         ConnectionRegistry(
             directory: CredentialFile.standard(environment: environment).url.deletingLastPathComponent()
-                .appending(path: "connections"))
+                .appending(path: "connections")
+        )
     }
 
     static func file(
-        for connection: ConnectionRecord?, environment: [String: String] = LaunchEnvironment.values
+        for connection: ConnectionRecord?,
+        environment: [String: String] = LaunchEnvironment.values
     ) -> CredentialFile {
         connection.map { registry(environment: environment).credentials(for: $0) }
             ?? .standard(environment: environment)
     }
 
     static func aliases(
-        for record: ConnectionRecord, environment: [String: String] = LaunchEnvironment.values
+        for record: ConnectionRecord,
+        environment: [String: String] = LaunchEnvironment.values
     ) -> ModelAliasFile {
         registry(environment: environment).aliases(for: record)
     }

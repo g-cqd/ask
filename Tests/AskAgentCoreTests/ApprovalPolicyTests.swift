@@ -33,7 +33,8 @@ struct ApprovalPolicyTests {
 
     @Test func `the person's lists win over the defaults, and patterns cover MCP tools`() {
         let policy = ApprovalPolicy(
-            section: ApprovalsSection(allow: ["bash", "mcp__docs__*"], ask: ["read", "mcp__x__look"]))
+            section: ApprovalsSection(allow: ["bash", "mcp__docs__*"], ask: ["read", "mcp__x__look"])
+        )
         #expect(decide(policy, "bash", #"{"command":"rm x"}"#) == .run)
         #expect(asks(decide(policy, "read", #"{"path":"a"}"#)) == .tool("read"))
         #expect(decide(policy, "mcp__docs__search") == .runWithoutServerQuestion)

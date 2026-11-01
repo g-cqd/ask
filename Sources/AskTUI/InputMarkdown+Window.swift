@@ -22,7 +22,8 @@ extension InputMarkdown {
             .map { span in
                 Span(
                     characters: span.characters.lowerBound + shift ..< span.characters.upperBound + shift,
-                    style: span.style)
+                    style: span.style
+                )
             }
     }
 

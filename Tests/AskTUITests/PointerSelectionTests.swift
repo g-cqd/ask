@@ -90,7 +90,8 @@ struct PointerSelectionTests {
     @Test func `with the mouse off, nothing the pointer does is heard`() {
         var rig = PointerRig(
             options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false),
-            lines: Self.two)
+            lines: Self.two
+        )
         #expect(rig.drag(from: (8, 0), to: (8, 4)).isEmpty)
         rig.mouse(.scrollUp, .press, row: 5, col: 5)
         #expect(rig.controller.state.selection == nil)
@@ -111,7 +112,8 @@ struct PointerSelectionTests {
     @Test func `the wheel scrolls by the configured lines and stops at both ends`() {
         var rig = PointerRig(
             options: ScreenOptions(scrollLines: 4, prompt: "ask> ", tint: false, separator: false, padding: false),
-            lines: Self.long)
+            lines: Self.long
+        )
         rig.mouse(.scrollUp, .press, row: 3, col: 3)
         #expect(rig.controller.state.scrollback == 4)
         rig.mouse(.scrollDown, .press, row: 3, col: 3)
@@ -131,7 +133,8 @@ struct PointerSelectionTests {
     @Test func `a selection stays on its text while the wheel scrolls it`() {
         var rig = PointerRig(
             options: ScreenOptions(scrollLines: 2, prompt: "ask> ", tint: false, separator: false, padding: false),
-            lines: Self.long)
+            lines: Self.long
+        )
         rig.drag(from: (9, 0), to: (9, 6))  // "line 40"
         #expect(rig.inverse(row: 9) == Array(0 ..< 7))
         rig.mouse(.scrollUp, .press, row: 3, col: 3)
@@ -172,7 +175,8 @@ struct PointerSelectionTests {
 
         // Select inside one item: block 11 is the last, bottom-aligned at row 21.
         state.selection = ContentSelection(
-            anchor: ContentPosition(block: 11, line: 0, offset: 0), head: ContentPosition(block: 11, line: 0, offset: 9)
+            anchor: ContentPosition(block: 11, line: 0, offset: 0),
+            head: ContentPosition(block: 11, line: 0, offset: 9)
         )
         connection.clearOutput()
         pipeline.beginFrame()

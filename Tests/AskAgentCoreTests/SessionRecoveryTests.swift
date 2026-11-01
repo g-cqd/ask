@@ -63,7 +63,8 @@ struct SessionRecoveryTests {
         #expect(
             recovered.issues == [
                 .malformedLine(line: 3), .orphanedEntry(EntryID("c"), missingParent: EntryID("b"), line: 4)
-            ])
+            ]
+        )
     }
 
     @Test func `an overlong line is skipped and the rest still loads`() throws {

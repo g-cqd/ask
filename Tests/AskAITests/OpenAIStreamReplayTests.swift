@@ -67,7 +67,8 @@ struct OpenAIStreamReplayTests {
         #expect(
             !response.blocks.contains {
                 if case .text(let text) = $0 { text.allSatisfy(\.isWhitespace) } else { false }
-            })
+            }
+        )
     }
 
     @Test(arguments: OpenAIStreamReplayTests.servers)
@@ -122,7 +123,8 @@ struct OpenAIStreamReplayTests {
             response.blocks == [
                 .thinking(text: #"The user wants me to say "hi" in one word. Simple request."#, signature: ""),
                 .text("Hi")
-            ])
+            ]
+        )
         #expect(response.stopReason == .endTurn)
         #expect(response.usage == TokenUsage(input: 18, output: 19, cacheRead: 0))
     }
@@ -135,7 +137,10 @@ struct OpenAIStreamReplayTests {
         #expect(
             response.blocks.first
                 == .thinking(
-                    text: "The user wants me to call the add tool with a=2, b=2. Let me do that.", signature: ""))
+                    text: "The user wants me to call the add tool with a=2, b=2. Let me do that.",
+                    signature: ""
+                )
+        )
         let calls = Self.toolCalls(response)
         #expect(calls.count == 1)
         #expect(calls.first?.name == "add")

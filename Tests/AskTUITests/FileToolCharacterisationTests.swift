@@ -20,21 +20,37 @@ struct FileToolCharacterisationTests {
     static let calls = [
         Call(name: "read", path: "Sources/a.swift", input: "{\n  \"path\": \"Sources/a.swift\"\n}", output: swift),
         Call(
-            name: "read", path: "tool.py", input: "{\n  \"path\": \"tool.py\",\n  \"offset\": 2\n}",
-            output: "def f(a=1.5e-3): '''doc\nmore'''\n[lines 2–3 of 3]"),
+            name: "read",
+            path: "tool.py",
+            input: "{\n  \"path\": \"tool.py\",\n  \"offset\": 2\n}",
+            output: "def f(a=1.5e-3): '''doc\nmore'''\n[lines 2–3 of 3]"
+        ),
         Call(name: "read", path: "run", input: "{\n  \"path\": \"run\"\n}", output: "#!/bin/sh\necho \"$HOME\" # c"),
         Call(
-            name: "read", path: "gone.swift", input: "{\n  \"path\": \"gone.swift\"\n}", output: "no such file",
-            failed: true),
+            name: "read",
+            path: "gone.swift",
+            input: "{\n  \"path\": \"gone.swift\"\n}",
+            output: "no such file",
+            failed: true
+        ),
         Call(
-            name: "read", path: "long.rs", input: "{\n  \"path\": \"long.rs\"\n}",
-            output: (1 ... 30).map { "let v\($0) = r#\"x\"#; // \($0)" }.joined(separator: "\n")),
+            name: "read",
+            path: "long.rs",
+            input: "{\n  \"path\": \"long.rs\"\n}",
+            output: (1 ... 30).map { "let v\($0) = r#\"x\"#; // \($0)" }.joined(separator: "\n")
+        ),
         Call(
-            name: "write", path: "b.json", input: "{\"key\": [1, true, null, \"s\"]}",
-            output: "Wrote 30 bytes to b.json."),
+            name: "write",
+            path: "b.json",
+            input: "{\"key\": [1, true, null, \"s\"]}",
+            output: "Wrote 30 bytes to b.json."
+        ),
         Call(
-            name: "edit", path: "c.lua", input: "old_text:\nlocal s = 1\nnew_text:\nlocal s = [[long\nstring]] -- c",
-            output: "Replaced 1 occurrence in c.lua.")
+            name: "edit",
+            path: "c.lua",
+            input: "old_text:\nlocal s = 1\nnew_text:\nlocal s = [[long\nstring]] -- c",
+            output: "Replaced 1 occurrence in c.lua."
+        )
     ]
 
     static func transcript(_ call: Call) -> Transcript {

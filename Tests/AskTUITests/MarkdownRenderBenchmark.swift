@@ -24,8 +24,11 @@ struct MarkdownRenderBenchmark {
         for highlight in [false, true] {
             report += Self.step("renderer-\(highlight ? "on" : "off")") {
                 var renderer = MarkdownRenderer(
-                    theme: .standard, links: ScreenComposer.markdownLinks(home: "/home"),
-                    highlighter: highlight ? CodeHighlighter.standard : nil, softBreaks: .lineBreak)
+                    theme: .standard,
+                    links: ScreenComposer.markdownLinks(home: "/home"),
+                    highlighter: highlight ? CodeHighlighter.standard : nil,
+                    softBreaks: .lineBreak
+                )
                 for block in document.topLevelBlocks {
                     _ = renderer.lines(of: block, in: document, width: Self.columns)
                 }
@@ -49,7 +52,8 @@ struct MarkdownRenderBenchmark {
             let elapsed = ContinuousClock().measure(body)
             if iteration >= 3 {
                 samples.append(
-                    Double(elapsed.components.seconds) * 1_000 + Double(elapsed.components.attoseconds) / 1e15)
+                    Double(elapsed.components.seconds) * 1_000 + Double(elapsed.components.attoseconds) / 1e15
+                )
             }
         }
         let median = samples.sorted()[samples.count / 2]

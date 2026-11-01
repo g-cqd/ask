@@ -7,7 +7,10 @@ import TerminalKitText
 
 func registerInputBenchmarks() {
     let configuration = Benchmark.Configuration(
-        metrics: [.wallClock, .cpuTotal, .mallocCountTotal], maxDuration: .seconds(1), maxIterations: 1_000)
+        metrics: [.wallClock, .cpuTotal, .mallocCountTotal],
+        maxDuration: .seconds(1),
+        maxIterations: 1_000
+    )
     let text = (0 ..< 100).map { _ in String(repeating: "word ", count: 12) }.joined(separator: "\n")
     let count = text.count
     let old = LegacyPromptLayout.rows(text, cursorOffset: count, columns: 80)

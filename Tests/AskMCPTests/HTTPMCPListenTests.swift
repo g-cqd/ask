@@ -58,7 +58,9 @@ struct HTTPMCPListenTests {
                         stream.yield(
                             Array(
                                 "event: message\ndata: {\"jsonrpc\":\"2.0\",\"method\":\"notifications/tools/list_changed\"}\n\n"
-                                    .utf8))
+                                    .utf8
+                            )
+                        )
                     }
                     stream.finish()
                 }
@@ -91,7 +93,9 @@ struct HTTPMCPListenTests {
         #expect(await HTTPMCP.next(&incoming)?.contains("notifications/message") == true)
         try await HTTPMCP.send(HTTPMCP.ping, on: transport)
         #expect(
-            await HTTPMCP.next(&incoming)?.contains(#""result""#) == true, "a POST still works after the stream ended")
+            await HTTPMCP.next(&incoming)?.contains(#""result""#) == true,
+            "a POST still works after the stream ended"
+        )
         await transport.close()
     }
 

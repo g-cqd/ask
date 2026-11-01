@@ -48,7 +48,8 @@ func httpFloor(_ server: HTTPServer, calls: Int, size: Int, sse: Bool) async thr
     ]
     func call(_ id: Int) async throws -> Int {
         let response = try await http.send(
-            HTTPRequest(url: server.url, method: "POST", headers: headers, body: Payloads.request(id: id, size: size)))
+            HTTPRequest(url: server.url, method: "POST", headers: headers, body: Payloads.request(id: id, size: size))
+        )
         var body = try await response.collect(limit: 64 << 20)
         if sse, let start = body.firstIndex(of: UInt8(ascii: "{")) {
             body = Array(body[start...])

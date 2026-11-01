@@ -24,14 +24,23 @@ struct NarrowSandboxToolTests {
     private let spy = Spy()
 
     private func call(
-        _ name: String, _ json: String, narrowing: SessionNarrowing, sandbox: SandboxPolicy = SandboxPolicy(),
+        _ name: String,
+        _ json: String,
+        narrowing: SessionNarrowing,
+        sandbox: SandboxPolicy = SandboxPolicy(),
         approve: SandboxApprover? = nil
     ) async throws -> ToolOutput {
         let registry = try ToolRegistry([spy, NarrowSandboxTool()])
         return await registry.run(
-            name: name, input: try JSONObject(validating: Array(json.utf8)),
+            name: name,
+            input: try JSONObject(validating: Array(json.utf8)),
             in: ToolContext(
-                workingDirectory: workspace, sandbox: sandbox, approve: approve, narrowing: narrowing))
+                workingDirectory: workspace,
+                sandbox: sandbox,
+                approve: approve,
+                narrowing: narrowing
+            )
+        )
     }
 
     private var last: SandboxPolicy? { spy.seen.withLock { $0.last } }
@@ -96,9 +105,14 @@ struct NarrowSandboxToolTests {
         narrowing.policy = SandboxPolicy(network: .any)
         let registry = try ToolRegistry([spy])
         _ = await registry.run(
-            name: "spy", input: try JSONObject(validating: Array("{}".utf8)),
+            name: "spy",
+            input: try JSONObject(validating: Array("{}".utf8)),
             in: ToolContext(
-                workingDirectory: workspace, sandbox: SandboxPolicy(network: .localhost), narrowing: narrowing))
+                workingDirectory: workspace,
+                sandbox: SandboxPolicy(network: .localhost),
+                narrowing: narrowing
+            )
+        )
         #expect(last?.network == .localhost)
     }
 
@@ -108,7 +122,10 @@ struct NarrowSandboxToolTests {
         let narrowing = SessionNarrowing()
         let policy = SandboxPolicy(network: .localhost)
         let output = try await call(
-            "narrow_sandbox", #"{"sandbox":{"network":"any"}}"#, narrowing: narrowing, sandbox: policy
+            "narrow_sandbox",
+            #"{"sandbox":{"network":"any"}}"#,
+            narrowing: narrowing,
+            sandbox: policy
         ) { _ in true }
         #expect(output.content == "Narrowed for the rest of the session.", "the ceiling is not told to the model")
         #expect(narrowing.policy?.network == .localhost)
@@ -123,8 +140,10 @@ struct NarrowSandboxToolTests {
         defer { job.stop() }
         let output = try await ToolRegistry([NarrowSandboxTool(jobs: jobs)])
             .run(
-                name: "narrow_sandbox", input: JSONObject(validating: Array(#"{"sandbox":{"network":"none"}}"#.utf8)),
-                in: context)
+                name: "narrow_sandbox",
+                input: JSONObject(validating: Array(#"{"sandbox":{"network":"none"}}"#.utf8)),
+                in: context
+            )
         job.stop()
         await job.ended()
         #expect(output.isError && output.content.contains("Stop running jobs first"))

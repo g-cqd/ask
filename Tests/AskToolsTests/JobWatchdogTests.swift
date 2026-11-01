@@ -56,8 +56,10 @@ struct JobWatchdogTests {
         let ready = Printed("ready")
         let output = Mutex("")
         let job = jobs.start(
-            "trap 'echo terminated; sleep 1; echo graceful; exit 0' TERM; echo ready; sleep 300 & wait", in: context,
-            keepsInputOpen: false, keeping: 1_000
+            "trap 'echo terminated; sleep 1; echo graceful; exit 0' TERM; echo ready; sleep 300 & wait",
+            in: context,
+            keepsInputOpen: false,
+            keeping: 1_000
         ) { bytes in
             ready.received(bytes)
             output.withLock { $0 += String(decoding: bytes, as: UTF8.self) }
@@ -134,7 +136,9 @@ struct JobWatchdogTests {
         #expect(try await ProcessExit.observed(process))
         await watchdog.waitForProtection { $0 == .unavailable }
         #expect(
-            watchdog.protection == .unavailable, "a shell that ended while ask holds the pipe is noticed, not assumed")
+            watchdog.protection == .unavailable,
+            "a shell that ended while ask holds the pipe is noticed, not assumed"
+        )
         for number in 0 ..< 50 { watchdog.watch(pid_t(2_000_000_100 + number)) }
         watchdog.release(2_000_000_002)
         #expect(watchdog.watching.count == 50, "ask still runs, and still knows what it started")
@@ -185,12 +189,16 @@ struct JobWatchdogTests {
         let descriptor = try #require(jobs.watchdog.openDescriptorForTesting())
         let output = Mutex("")
         let job = jobs.start(
-            "[ -e /dev/fd/\(descriptor) ] && echo open || echo closed", in: context, keepsInputOpen: false,
+            "[ -e /dev/fd/\(descriptor) ] && echo open || echo closed",
+            in: context,
+            keepsInputOpen: false,
             keeping: 1_000
         ) { bytes in output.withLock { $0 += String(decoding: bytes, as: UTF8.self) } }
         await job.ended()
         #expect(
-            output.withLock { $0 }.contains("closed"), "an inherited write end would keep the pipe open after ask dies")
+            output.withLock { $0 }.contains("closed"),
+            "an inherited write end would keep the pipe open after ask dies"
+        )
     }
 
     @Test func `once the pipe is closed nothing opens another`() {

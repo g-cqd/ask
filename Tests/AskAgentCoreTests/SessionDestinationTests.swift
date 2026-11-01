@@ -4,11 +4,19 @@ internal import Testing
 
 struct SessionDestinationTests {
     private let original = SessionDestination(
-        connectionID: "connection-1", authorizationID: "grant-1", name: "work", model: "one")
+        connectionID: "connection-1",
+        authorizationID: "grant-1",
+        name: "work",
+        model: "one"
+    )
 
     @Test func `legacy history continues on an unnamed provider, as it always could`() throws {
         let unnamed = SessionDestination(
-            connectionID: "provider:local", authorizationID: nil, name: "local", model: "m")
+            connectionID: "provider:local",
+            authorizationID: nil,
+            name: "local",
+            model: "m"
+        )
         try unnamed.check(replacing: nil, hasHistory: true, explicitlySelected: false)
         #expect(!unnamed.isNamed)
     }
@@ -33,7 +41,11 @@ struct SessionDestinationTests {
 
     @Test func `a rename or model selection does not change which account receives history`() throws {
         let renamed = SessionDestination(
-            connectionID: "connection-1", authorizationID: "grant-1", name: "employer", model: "two")
+            connectionID: "connection-1",
+            authorizationID: "grant-1",
+            name: "employer",
+            model: "two"
+        )
         try renamed.check(replacing: original, hasHistory: true, explicitlySelected: false)
     }
 
@@ -41,7 +53,11 @@ struct SessionDestinationTests {
         try original.check(replacing: nil, hasHistory: false, explicitlySelected: false)
         try original.check(replacing: nil, hasHistory: true, explicitlySelected: true)
         let other = SessionDestination(
-            connectionID: "connection-2", authorizationID: "grant-2", name: "other", model: "two")
+            connectionID: "connection-2",
+            authorizationID: "grant-2",
+            name: "other",
+            model: "two"
+        )
         try other.check(replacing: original, hasHistory: true, explicitlySelected: true)
     }
 }

@@ -59,8 +59,11 @@ public final class MCPConnection: Sendable {
     ///   - requestTimeout: how long a request may wait for its answer.
     ///   - startTimeout: how long ``start()`` may wait, longer because a server may have to be fetched and launched first.
     public init(
-        transport: any MCPTransport, clientName: String, clientVersion: String,
-        clock: any Clock<Duration> = ContinuousClock(), requestTimeout: Duration = .seconds(120),
+        transport: any MCPTransport,
+        clientName: String,
+        clientVersion: String,
+        clock: any Clock<Duration> = ContinuousClock(),
+        requestTimeout: Duration = .seconds(120),
         startTimeout: Duration = .seconds(60)
     ) {
         self.transport = transport
@@ -127,7 +130,10 @@ public final class MCPConnection: Sendable {
         guard resolve(id, result) else { return }
         enqueue(
             MCPWire.notification(
-                method: "notifications/cancelled", params: MCPWire.cancelledParams(id: id, reason: reason)))
+                method: "notifications/cancelled",
+                params: MCPWire.cancelledParams(id: id, reason: reason)
+            )
+        )
     }
 
     /// Queues a message, in order after every one before it, from where nothing can wait: a task is started to send it when nothing else

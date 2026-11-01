@@ -92,7 +92,8 @@ struct MCPIncomingTests {
         #expect(
             seen.withLock { $0 } == [
                 MCPProgress(progress: 1, total: 3, message: "one"), MCPProgress(progress: 2.5, total: nil, message: nil)
-            ])
+            ]
+        )
     }
 
     @Test func `a call that does not ask for progress carries no token`() async throws {

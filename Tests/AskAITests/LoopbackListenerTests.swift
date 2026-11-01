@@ -8,7 +8,8 @@ internal import Testing
 /// has open while they sign in.
 @Suite(
     "The callback listener returns the code from the first valid callback, and ignores everything else",
-    .timeLimit(.minutes(1)))
+    .timeLimit(.minutes(1))
+)
 struct LoopbackListenerTests {
     private static let path = "/auth/callback"
 
@@ -64,7 +65,8 @@ struct LoopbackListenerTests {
         let wrongPath = await RawClient.get("/other?code=x&state=s", port: listener.port)
         let post = await RawClient.send(
             "POST \(Self.path)?code=x&state=s HTTP/1.1\r\nHost: 127.0.0.1:\(listener.port)\r\nContent-Length: 0\r\n\r\n",
-            to: listener.port)
+            to: listener.port
+        )
         #expect(wrongPath?.hasPrefix("HTTP/1.1 404") == true)
         #expect(post?.hasPrefix("HTTP/1.1 404") == true)
         _ = await RawClient.get("\(Self.path)?code=ok&state=s", port: listener.port)

@@ -15,13 +15,17 @@ struct SandboxReadConfigurationTests {
         #expect(try parse("{sandbox: {read: ['~/notes']}}").sandbox?.read == [.paths(["~/notes"])])
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "sandbox.read",
-                reason: "is \"home\": use \"workspace\", \"anywhere\" or a list of paths")
+                path: "c.json",
+                key: "sandbox.read",
+                reason: "is \"home\": use \"workspace\", \"anywhere\" or a list of paths"
+            )
         ) { try parse("{sandbox: {read: 'home'}}") }
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "sandbox.read",
-                reason: "has \"notes\": use an absolute path, or one starting with ~/")
+                path: "c.json",
+                key: "sandbox.read",
+                reason: "has \"notes\": use an absolute path, or one starting with ~/"
+            )
         ) { try parse("{sandbox: {read: ['notes']}}") }
     }
 
@@ -40,7 +44,9 @@ struct SandboxReadConfigurationTests {
 
     @Test func `the flag replaces what the files said`() {
         let files = Configuration.defaults.applying(
-            ConfigurationFile(sandbox: SandboxSection(read: [.workspace])), from: .file("/u"))
+            ConfigurationFile(sandbox: SandboxSection(read: [.workspace])),
+            from: .file("/u")
+        )
         let flagged = files.applying(model: nil, provider: nil, maxTurns: nil, compactAt: nil, read: .anywhere)
         #expect(flagged.sandbox.value.read == [.anywhere])
     }
@@ -55,7 +61,11 @@ struct SandboxReadConfigurationTests {
         let decoded = try SessionLog.decode(old)
         #expect(decoded.sandbox == SandboxSection(network: SandboxPolicy.Network.none))
         let resumed = Configuration.defaults.applying(
-            session: SandboxSection(read: [.workspace]), flaggedNetwork: false, flaggedWrite: false, flaggedRead: false)
+            session: SandboxSection(read: [.workspace]),
+            flaggedNetwork: false,
+            flaggedWrite: false,
+            flaggedRead: false
+        )
         #expect(resumed.sandbox.value.read == [.workspace])
     }
 

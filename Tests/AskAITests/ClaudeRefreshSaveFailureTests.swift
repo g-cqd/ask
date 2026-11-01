@@ -11,8 +11,10 @@ internal import Testing
 struct ClaudeRefreshSaveFailureTests {
     private let file = CredentialFile(
         url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-claude-save-failure-\(UUID().uuidString)/ask/credentials.json"),
-        lockWait: .milliseconds(50))
+            path: "ask-claude-save-failure-\(UUID().uuidString)/ask/credentials.json"
+        ),
+        lockWait: .milliseconds(50)
+    )
 
     private static func tokens(_ name: String) -> String {
         #"{"token_type":"bearer","access_token":"sk-ant-oat-\#(name)","refresh_token":"sk-ant-ort-\#(name)","expires_in":3600,"scope":"user:inference"}"#
@@ -21,8 +23,14 @@ struct ClaudeRefreshSaveFailureTests {
 
     private func credentials(_ name: String, expiresAt: Double = 100) -> ClaudeCredentials {
         ClaudeCredentials(
-            accessToken: "sk-ant-oat-\(name)", refreshToken: "sk-ant-ort-\(name)", expiresAt: expiresAt,
-            refreshExpiresAt: nil, accountEmail: "a@b.example", organizationName: nil, scopes: "user:inference")
+            accessToken: "sk-ant-oat-\(name)",
+            refreshToken: "sk-ant-ort-\(name)",
+            expiresAt: expiresAt,
+            refreshExpiresAt: nil,
+            accountEmail: "a@b.example",
+            organizationName: nil,
+            scopes: "user:inference"
+        )
     }
 
     private func holdingTheSaveLock() throws -> CredentialLock {
@@ -90,7 +98,9 @@ struct ClaudeRefreshSaveFailureTests {
         held.release()
         _ = try await access.auth(now: 100_000)
         #expect(
-            try file.loadClaude()?.refreshToken == "sk-ant-ort-NEWER", "the file was brought up to date in one step")
+            try file.loadClaude()?.refreshToken == "sk-ant-ort-NEWER",
+            "the file was brought up to date in one step"
+        )
         #expect(!access.rotationIsUnsaved)
     }
 
@@ -101,13 +111,17 @@ struct ClaudeRefreshSaveFailureTests {
         let inner = SequencedTransport([.json(200, Self.tokens("NEW")), .json(200, Self.tokens("NEWER"))])
         let held = try holdingTheSaveLock()
         let access = ClaudeAccess(
-            file: file, client: ClaudeAuthClient(transport: ReleaseOnSendTransport(inner, releasing: held, at: 2)))
+            file: file,
+            client: ClaudeAuthClient(transport: ReleaseOnSendTransport(inner, releasing: held, at: 2))
+        )
         _ = try await access.auth(now: 5_000)
         #expect(access.rotationIsUnsaved)
         let later = try await access.auth(now: 100_000)
         #expect(token(later) == "sk-ant-oat-NEWER")
         #expect(
-            try file.loadClaude()?.refreshToken == "sk-ant-ort-NEWER", "saved over the spent token the file still held")
+            try file.loadClaude()?.refreshToken == "sk-ant-ort-NEWER",
+            "saved over the spent token the file still held"
+        )
         #expect(!access.rotationIsUnsaved)
     }
 
@@ -135,12 +149,16 @@ struct ClaudeRefreshSaveFailureTests {
         // The limit ADR-0082 does not remove: the held pair lives in the first process's memory, and the file still holds the spent token.
         try file.saveClaude(credentials("OLD"))
         let first = ClaudeAccess(
-            file: file, client: ClaudeAuthClient(transport: SequencedTransport([.json(200, Self.tokens("NEW"))])))
+            file: file,
+            client: ClaudeAuthClient(transport: SequencedTransport([.json(200, Self.tokens("NEW"))]))
+        )
         let held = try holdingTheSaveLock()
         _ = try await first.auth(now: 5_000)
         held.release()
         let second = ClaudeAccess(
-            file: file, client: ClaudeAuthClient(transport: SequencedTransport([.json(400, Self.spent)])))
+            file: file,
+            client: ClaudeAuthClient(transport: SequencedTransport([.json(400, Self.spent)]))
+        )
         do {
             _ = try await second.auth(now: 5_000)
             Issue.record("the spent token was accepted")
@@ -155,7 +173,8 @@ struct ClaudeRefreshSaveFailureTests {
         let recovered = try await second.auth(now: 5_000)
         #expect(
             token(recovered) == "sk-ant-oat-NEW",
-            "and the second process can use what the first saved, with nothing sent")
+            "and the second process can use what the first saved, with nothing sent"
+        )
     }
 
     @Test func `a refresh that is saved the first time holds nothing back`() async throws {

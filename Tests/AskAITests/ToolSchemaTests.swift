@@ -26,7 +26,8 @@ struct ToolSchemaTests {
                 {"type":"object","properties":{"page":{"type":"integer","minimum":1},"query":{"type":"string"},\#
                 "take":{"type":"integer","minimum":1}},"required":["page"]}
                 """#
-                .replacingOccurrences(of: "\n", with: ""))
+                .replacingOccurrences(of: "\n", with: "")
+        )
     }
 
     @Test func `every property required keeps declaration order`() {
@@ -52,7 +53,8 @@ struct ToolSchemaTests {
                 {"type":"object","properties":{"target":{"type":"string"},"label":{"type":"string","minLength":1},\#
                 "force":{"type":"boolean"}},"required":["target","label"]}
                 """#
-                .replacingOccurrences(of: "\n", with: ""))
+                .replacingOccurrences(of: "\n", with: "")
+        )
     }
 
     @Test func `an integer can be bounded on both sides`() {
@@ -66,7 +68,8 @@ struct ToolSchemaTests {
                 {"type":"object","properties":{"reason":{"type":"string"},\#
                 "seconds":{"type":"integer","minimum":1,"maximum":60}},"required":["reason"]}
                 """#
-                .replacingOccurrences(of: "\n", with: ""))
+                .replacingOccurrences(of: "\n", with: "")
+        )
     }
 
     @Test func `no required property omits the required list`() {

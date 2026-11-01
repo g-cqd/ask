@@ -72,8 +72,13 @@ public final class Job: Sendable {
     private let watchdog: JobWatchdog?
 
     private init(
-        id: String, displayID: String?, command: String, outputPath: String?, keeping: Int,
-        sandbox: SandboxPolicy, watchdog: JobWatchdog?
+        id: String,
+        displayID: String?,
+        command: String,
+        outputPath: String?,
+        keeping: Int,
+        sandbox: SandboxPolicy,
+        watchdog: JobWatchdog?
     ) {
         self.watchdog = watchdog
         self.sandbox = sandbox
@@ -92,9 +97,14 @@ public final class Job: Sendable {
     /// - Returns: the running job.
     static func start(_ launch: Launch, observe: @escaping @Sendable ([UInt8]) -> Void) -> Job {
         let job = Job(
-            id: launch.id, displayID: launch.displayID, command: launch.command, outputPath: launch.outputPath,
+            id: launch.id,
+            displayID: launch.displayID,
+            command: launch.command,
+            outputPath: launch.outputPath,
             keeping: launch.keeping,
-            sandbox: launch.sandbox, watchdog: launch.watchdog)
+            sandbox: launch.sandbox,
+            watchdog: launch.watchdog
+        )
         let (input, feed) = AsyncStream<[UInt8]>.makeStream()
         if !launch.keepsInputOpen { feed.finish() }
         let file = launch.outputPath.flatMap(JobProcess.createFile)
@@ -108,12 +118,17 @@ public final class Job: Sendable {
     }
 
     private func execute(
-        _ configuration: Configuration, input: AsyncStream<[UInt8]>, observe: @escaping @Sendable ([UInt8]) -> Void
+        _ configuration: Configuration,
+        input: AsyncStream<[UInt8]>,
+        observe: @escaping @Sendable ([UInt8]) -> Void
     ) async {
         let ending: JobStatus
         do {
             let result = try await Subprocess.run(
-                configuration, input: .inputWriter, output: .sequence, error: .combinedWithOutput
+                configuration,
+                input: .inputWriter,
+                output: .sequence,
+                error: .combinedWithOutput
             ) { execution in
                 self.state.withLock { $0.pid = execution.processIdentifier.value }
                 // The job leads its own session, so its group is its process id.
@@ -214,34 +229,5 @@ public final class Job: Sendable {
     func discardFile() {
         guard let outputPath, !state.withLock({ $0.backgrounded }) else { return }
         _ = unlink(outputPath)
-    }
-
-    // MARK: - Input and stopping
-
-    /// Sends `bytes` to standard input.
-    /// - Returns: false when input is closed or the job has ended.
-    func write(_ bytes: [UInt8]) -> Bool {
-        state.withLock { state in
-            guard let input = state.input else { return false }
-            if case .terminated = input.yield(bytes) { return false }
-            return true
-        }
-    }
-
-    /// Closes standard input, so the command sees end-of-file.
-    func closeInput() {
-        state.withLock { state in
-            state.input?.finish()
-            state.input = nil
-        }
-    }
-
-    /// Asks the job to stop; ``ended()`` says when it has.
-    func stop() { state.withLock { $0.task }?.cancel() }
-
-    /// Signals the job's whole process group at once, for exit paths that cannot wait.
-    func signalGroup(_ signal: Int32) {
-        guard let pid = state.withLock({ $0.status == .running ? $0.pid : nil }) else { return }
-        kill(-pid, signal)
     }
 }

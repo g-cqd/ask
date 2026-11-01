@@ -34,7 +34,9 @@ struct SelfCheckTests {
             #"[ "$1 $2 $3 $4 $5" = "--self-check --selected-provider local --selected-model a/b:c" ] && echo "ask self-check ok" || exit 9"#
         )
         let outcome = await SelfCheck.run(
-            path, arguments: ["--selected-provider", "local", "--selected-model", "a/b:c"])
+            path,
+            arguments: ["--selected-provider", "local", "--selected-model", "a/b:c"]
+        )
         #expect(outcome == .passed("ask self-check ok"))
         #expect(await SelfCheck.run(path) == .failed("it exited 9"), "without them the same build fails")
     }
@@ -88,7 +90,8 @@ struct SelfCheckTests {
         clock.advance(by: .seconds(10))
         #expect(await outcome == .failed("it did not finish within 10 s, so it was stopped"))
         let child = try #require(
-            pid_t(String(contentsOfFile: pidFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines)))
+            pid_t(String(contentsOfFile: pidFile, encoding: .utf8).trimmingCharacters(in: .whitespacesAndNewlines))
+        )
         #expect(try await ProcessExit.observed(child), "the build's child must die with it")
     }
 }

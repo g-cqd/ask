@@ -10,10 +10,13 @@ import Testing
 struct ReasoningProvenanceTests {
     @Test func `a marked signature gives its payload back to its own scheme only`() {
         let signature = ReasoningProvenance.mark(
-            scheme: "responses", payload: #"{"id":"rs_1","encrypted_content":"abc"}"#)
+            scheme: "responses",
+            payload: #"{"id":"rs_1","encrypted_content":"abc"}"#
+        )
         #expect(
             ReasoningProvenance.payload(of: signature, scheme: "responses")
-                == #"{"id":"rs_1","encrypted_content":"abc"}"#)
+                == #"{"id":"rs_1","encrypted_content":"abc"}"#
+        )
         #expect(ReasoningProvenance.payload(of: signature, scheme: "other") == nil)
     }
 

@@ -14,21 +14,32 @@ extension SkillSource {
         // @dl:accept -- the test fixture repeats these rows on purpose: a test must not depend on the table it checks
         SkillSource(
             // @dl:accept -- the test fixture repeats these rows on purpose: a test must not depend on the table it checks
-            id: "ask", userRoots: [askConfigDirectory() + "/skills"], projectRoots: [".ask/skills"], bundledRoots: []),
+            id: "ask",
+            userRoots: [askConfigDirectory() + "/skills"],
+            // @dl:accept -- the test fixture repeats these rows on purpose: a test must not depend on the table it checks
+            projectRoots: [".ask/skills"],
+            bundledRoots: []
+        ),
         SkillSource(id: "claude", userRoots: [".claude/skills"], projectRoots: [".claude/skills"], bundledRoots: []),
         // @dl:accept -- a table of harnesses: each row is data
         SkillSource(id: "codex", userRoots: [".codex/skills"], projectRoots: [".codex/skills"], bundledRoots: []),
         SkillSource(id: "pi", userRoots: [".pi/agent/skills"], projectRoots: [".pi/skills"], bundledRoots: []),
         SkillSource(
-            id: "opencode", userRoots: [".config/opencode/skills", ".config/opencode/skill"],
+            id: "opencode",
+            userRoots: [".config/opencode/skills", ".config/opencode/skill"],
             // @dl:accept -- the test fixture repeats these rows on purpose: a test must not depend on the table it checks
-            projectRoots: [".opencode/skills", ".opencode/skill"], bundledRoots: []),
+            projectRoots: [".opencode/skills", ".opencode/skill"],
+            bundledRoots: []
+        ),
         // @dl:accept -- a table of harnesses: each row is data
         SkillSource(id: "vibe", userRoots: [".vibe/skills"], projectRoots: [".vibe/skills"], bundledRoots: []),
         SkillSource(id: "copilot", userRoots: [".copilot/skills"], projectRoots: [".github/skills"], bundledRoots: []),
         SkillSource(
-            id: "agy", userRoots: [".gemini/config/skills"], projectRoots: [".gemini/skills"],
-            bundledRoots: [".gemini/antigravity-cli/builtin/skills"])
+            id: "agy",
+            userRoots: [".gemini/config/skills"],
+            projectRoots: [".gemini/skills"],
+            bundledRoots: [".gemini/antigravity-cli/builtin/skills"]
+        )
     ]
 
     /// The ids `from` may name, bundled included.

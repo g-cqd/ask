@@ -5,7 +5,10 @@ import TerminalKitRender
 /// A long reply with fenced code, against the same reply without fence markers: the cost of finding fences on every streamed delta.
 func registerCodeBenchmarks() {
     let configuration = Benchmark.Configuration(
-        metrics: [.wallClock, .mallocCountTotal], maxDuration: .seconds(1), maxIterations: 1_000)
+        metrics: [.wallClock, .mallocCountTotal],
+        maxDuration: .seconds(1),
+        maxIterations: 1_000
+    )
     func reply(fenced: Bool) -> String {
         var lines: [String] = []
         for block in 0 ..< 4 {

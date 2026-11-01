@@ -33,7 +33,13 @@ public struct ResponseAssembler: Sendable {
         if case .messageStarted(let id, let model, let usage) = event {
             guard response == nil else { throw .startedTwice }
             response = AssembledResponse(
-                id: id, model: model, blocks: [], stopReason: nil, usage: usage, unrecognized: [])
+                id: id,
+                model: model,
+                blocks: [],
+                stopReason: nil,
+                usage: usage,
+                unrecognized: []
+            )
             return
         }
         guard response != nil else { throw .notStarted }
@@ -103,7 +109,8 @@ public struct ResponseAssembler: Sendable {
         guard case .toolCall = block.kind else { return }
         // Invalid input leaves `validatedInput` nil; `finish` decides what that means once the stop reason is known.
         blocks[index]?.validatedInput = try? JSONObject(
-            validating: block.input.isEmpty ? Array("{}".utf8) : block.input)
+            validating: block.input.isEmpty ? Array("{}".utf8) : block.input
+        )
     }
 
     private mutating func applyDelta(_ reason: StopReason?, _ usage: TokenUsage) {

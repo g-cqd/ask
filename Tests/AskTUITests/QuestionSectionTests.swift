@@ -22,11 +22,16 @@ struct QuestionSectionTests {
     private let backTab = InputEvent.key(KeyEvent(keyCode: 0x09, modifiers: .shift))
 
     private static let scope = ScreenQuestion(
-        question: "What should change?", header: "Scope",
-        choices: [.init(label: "Only the parser"), .init(label: "Everything", detail: "parser and printer")])
+        question: "What should change?",
+        header: "Scope",
+        choices: [.init(label: "Only the parser"), .init(label: "Everything", detail: "parser and printer")]
+    )
     private static let tests = ScreenQuestion(
-        question: "Which tests?", header: "Tests", choices: [.init(label: "Unit"), .init(label: "Probes")],
-        multiple: true)
+        question: "Which tests?",
+        header: "Tests",
+        choices: [.init(label: "Unit"), .init(label: "Probes")],
+        multiple: true
+    )
 
     private func asking(_ questions: [ScreenQuestion], draft: String = "") -> ScreenController {
         var controller = ScreenController(label: "m", options: .legacy)
@@ -127,12 +132,14 @@ struct QuestionSectionTests {
         #expect(section(controller).contains { $0.contains("Scope") && $0.contains("note: a") })
         _ = press([escape], &controller)
         #expect(
-            controller.state.pendingQuestions?.reviewing == false && controller.state.pendingQuestions?.current == 1)
+            controller.state.pendingQuestions?.reviewing == false && controller.state.pendingQuestions?.current == 1
+        )
         let effects = press([enter, enter], &controller)
         #expect(
             effects == [
                 .answerQuestions(id: 7, [QuestionAnswer(chosen: [], note: "a"), QuestionAnswer(chosen: [0], note: "")])
-            ])
+            ]
+        )
     }
 
     @Test func `Esc on a question declines them all`() {
@@ -150,7 +157,8 @@ struct QuestionSectionTests {
         #expect(
             press(type("speed") + [enter], &controller) == [
                 .answerQuestions(id: 7, [QuestionAnswer(chosen: [], note: "speed")])
-            ])
+            ]
+        )
     }
 
     @Test func `the section shows unnumbered tabs for a series only, the question, the choices, then the note row`() {

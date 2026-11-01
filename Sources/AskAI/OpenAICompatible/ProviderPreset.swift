@@ -34,22 +34,40 @@ public struct ProviderPreset: Sendable, Equatable {
         ProviderPreset("openai", "https://api.openai.com/v1", "OPENAI_API_KEY"),
         ProviderPreset("openrouter", "https://openrouter.ai/api/v1", "OPENROUTER_API_KEY"),
         ProviderPreset(
-            "qwen-token-plan", "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
-            "QWEN_TOKEN_PLAN_API_KEY"),
+            "qwen-token-plan",
+            "https://token-plan.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+            "QWEN_TOKEN_PLAN_API_KEY"
+        ),
         ProviderPreset(
-            "qwen-token-plan-cn", "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
-            "QWEN_TOKEN_PLAN_CN_API_KEY"),
+            "qwen-token-plan-cn",
+            "https://token-plan.cn-beijing.maas.aliyuncs.com/compatible-mode/v1",
+            "QWEN_TOKEN_PLAN_CN_API_KEY"
+        ),
         ProviderPreset(
-            "spettro", "https://api.spettro.app/v1", nil, login: "spettro", addressVariable: "SPETTRO_API_URL"),
+            "spettro",
+            "https://api.spettro.app/v1",
+            nil,
+            login: "spettro",
+            addressVariable: "SPETTRO_API_URL"
+        ),
         ProviderPreset("together", "https://api.together.ai/v1", "TOGETHER_API_KEY"),
         ProviderPreset("xai", "https://api.x.ai/v1", "XAI_API_KEY"),
         ProviderPreset("xiaomi", "https://api.xiaomimimo.com/v1", "XIAOMI_API_KEY"),
         ProviderPreset(
-            "xiaomi-token-plan-ams", "https://token-plan-ams.xiaomimimo.com/v1", "XIAOMI_TOKEN_PLAN_AMS_API_KEY"),
+            "xiaomi-token-plan-ams",
+            "https://token-plan-ams.xiaomimimo.com/v1",
+            "XIAOMI_TOKEN_PLAN_AMS_API_KEY"
+        ),
         ProviderPreset(
-            "xiaomi-token-plan-cn", "https://token-plan-cn.xiaomimimo.com/v1", "XIAOMI_TOKEN_PLAN_CN_API_KEY"),
+            "xiaomi-token-plan-cn",
+            "https://token-plan-cn.xiaomimimo.com/v1",
+            "XIAOMI_TOKEN_PLAN_CN_API_KEY"
+        ),
         ProviderPreset(
-            "xiaomi-token-plan-sgp", "https://token-plan-sgp.xiaomimimo.com/v1", "XIAOMI_TOKEN_PLAN_SGP_API_KEY"),
+            "xiaomi-token-plan-sgp",
+            "https://token-plan-sgp.xiaomimimo.com/v1",
+            "XIAOMI_TOKEN_PLAN_SGP_API_KEY"
+        ),
         ProviderPreset("zai", "https://api.z.ai/api/coding/paas/v4", "ZAI_API_KEY"),
         ProviderPreset("zai-coding-cn", "https://open.bigmodel.cn/api/coding/paas/v4", "ZAI_CODING_CN_API_KEY")
     ]
@@ -61,7 +79,11 @@ public struct ProviderPreset: Sendable, Equatable {
     static func named(_ name: String) -> ProviderPreset? { all.first { $0.name == name } }
 
     private init(
-        _ name: String, _ baseURL: String, _ keyVariable: String?, login: String? = nil, addressVariable: String? = nil
+        _ name: String,
+        _ baseURL: String,
+        _ keyVariable: String?,
+        login: String? = nil,
+        addressVariable: String? = nil
     ) {
         self.name = name
         self.baseURL = baseURL

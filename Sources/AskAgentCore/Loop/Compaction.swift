@@ -88,8 +88,10 @@ public enum Compaction {
         entries.map { entry in
             guard case .toolResult(let id, let content, let isError, _, _) = entry.payload else { return entry }
             return SessionEntry(
-                id: entry.id, parentID: entry.parentID,
-                payload: .toolResult(callID: id, content: clipped(content, toBytes: bytes), isError: isError))
+                id: entry.id,
+                parentID: entry.parentID,
+                payload: .toolResult(callID: id, content: clipped(content, toBytes: bytes), isError: isError)
+            )
         }
     }
 

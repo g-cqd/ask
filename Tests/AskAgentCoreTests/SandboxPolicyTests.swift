@@ -13,7 +13,9 @@ struct SandboxPolicyTests {
         let made = FileManager.default.temporaryDirectory.appending(path: "ask-policy-\(UUID().uuidString)")
         for directory in ["home/.config/ask", "home/.ssh", "home/work", "elsewhere"] {
             try FileManager.default.createDirectory(
-                at: made.appending(path: directory), withIntermediateDirectories: true)
+                at: made.appending(path: directory),
+                withIntermediateDirectories: true
+            )
         }
         root = String(cString: realpath(made.path, nil))
     }
@@ -52,9 +54,13 @@ struct SandboxPolicyTests {
     @Test func `a protected path is refused by symlink, by dangling link, by dot-dot and by spelling`() throws {
         let work = root + "/home/work"
         try FileManager.default.createSymbolicLink(
-            atPath: work + "/to-config", withDestinationPath: root + "/home/.config/ask")
+            atPath: work + "/to-config",
+            withDestinationPath: root + "/home/.config/ask"
+        )
         try FileManager.default.createSymbolicLink(
-            atPath: work + "/dangling", withDestinationPath: root + "/home/.config/ask/new-file")
+            atPath: work + "/dangling",
+            withDestinationPath: root + "/home/.config/ask/new-file"
+        )
         #expect(!decide(standard, .write, "to-config/config.json").isAllowed)
         #expect(!decide(standard, .read, "to-config/credentials.json").isAllowed)
         #expect(!decide(standard, .write, "dangling").isAllowed)
@@ -65,7 +71,9 @@ struct SandboxPolicyTests {
 
     @Test func `a path that cannot be resolved is refused, not allowed for want of an answer`() throws {
         try FileManager.default.createSymbolicLink(
-            atPath: root + "/home/work/loop", withDestinationPath: root + "/home/work/loop")
+            atPath: root + "/home/work/loop",
+            withDestinationPath: root + "/home/work/loop"
+        )
         for capability in [SandboxCapability.read, .write] {
             guard case .denied(capability, let why) = decide(standard, capability, "loop") else {
                 Issue.record("\(capability) of a loop was allowed")

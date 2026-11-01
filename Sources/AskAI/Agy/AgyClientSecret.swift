@@ -110,7 +110,10 @@ public enum AgyClientSecret {
             ("code", "not-a-real-code"), ("redirect_uri", AgyOAuth.redirectURI)
         ]
         return HTTPRequest.account(
-            "POST", URL(string: AgyOAuth.tokenURL)!, contentType: "application/x-www-form-urlencoded",
-            body: Array(FormEncoding.query(fields).utf8))
+            "POST",
+            URL(string: AgyOAuth.tokenURL)!,
+            contentType: "application/x-www-form-urlencoded",
+            body: Array(FormEncoding.query(fields).utf8)
+        )
     }
 }

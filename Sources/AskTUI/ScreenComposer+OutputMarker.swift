@@ -5,7 +5,12 @@ internal import TerminalKitText
 /// click reaches it, and with no source, so a selection across it copies the two ends and not the marker.
 extension ScreenComposer {
     static func withOutputMarker(
-        _ rows: [Line], _ output: ShownToolOutput, before line: Int, block: Int, columns: Int, style: BlockStyle
+        _ rows: [Line],
+        _ output: ShownToolOutput,
+        before line: Int,
+        block: Int,
+        columns: Int,
+        style: BlockStyle
     ) -> [Line] {
         let width = Swift.max(1, columns - 2 * style.inset)
         let text = ColumnSlicer.split(output.marker, columns: 0 ..< width).selected

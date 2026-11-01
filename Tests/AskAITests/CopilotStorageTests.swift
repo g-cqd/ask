@@ -10,8 +10,14 @@ struct CopilotStorageTests {
         try file.saveKey(StoredKey(key: "unrelated", obtainedAt: 1), for: "other")
         try file.saveCopilot(
             CopilotCredentials(
-                githubToken: "grant", accessToken: "expired", expiresAt: 0,
-                apiURL: CopilotProtocol.defaultAPI, machineID: "machine", deviceID: "device"))
+                githubToken: "grant",
+                accessToken: "expired",
+                expiresAt: 0,
+                apiURL: CopilotProtocol.defaultAPI,
+                machineID: "machine",
+                deviceID: "device"
+            )
+        )
         return file
     }
     private static let envelope = #"{"token":"renewed","expires_at":1,"refresh_in":600}"#

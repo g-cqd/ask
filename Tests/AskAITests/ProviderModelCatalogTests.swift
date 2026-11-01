@@ -15,11 +15,21 @@ struct ProviderModelCatalogTests {
     }
 
     private func catalog(
-        _ transport: SequencedTransport, cache: ModelCatalogFile?, key: String? = "sk-one", base: URL = base,
-        name: String = "p", headers: [String: String] = [:]
+        _ transport: SequencedTransport,
+        cache: ModelCatalogFile?,
+        key: String? = "sk-one",
+        base: URL = base,
+        name: String = "p",
+        headers: [String: String] = [:]
     ) -> ProviderModelCatalog {
         ProviderModelCatalog(
-            name: name, baseURL: base, apiKey: key, headers: headers, cache: cache, transport: transport)
+            name: name,
+            baseURL: base,
+            apiKey: key,
+            headers: headers,
+            cache: cache,
+            transport: transport
+        )
     }
 
     @Test func `the list is read from models beneath the base, with the key, and keeps the window the server states`()
@@ -68,7 +78,8 @@ struct ProviderModelCatalogTests {
             #expect(try catalog(transport, cache: cache, name: "other").cached(now: 11) == nil)
             #expect(
                 try catalog(transport, cache: cache, base: URL(string: "https://elsewhere.test/v1")!).cached(now: 11)
-                    == nil)
+                    == nil
+            )
             #expect(try catalog(transport, cache: cache, key: nil).cached(now: 11) == nil)
         }
     }
@@ -119,7 +130,9 @@ struct ProviderModelCatalogTests {
     @Test func `a damaged cache is reported and the download still serves the run`() async throws {
         try await withCache { cache in
             try FileManager.default.createDirectory(
-                at: cache.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: cache.url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             try Data("not json".utf8).write(to: cache.url)
             let transport = SequencedTransport([.json(200, Self.list)])
             let snapshot = try await catalog(transport, cache: cache).models(now: 10)

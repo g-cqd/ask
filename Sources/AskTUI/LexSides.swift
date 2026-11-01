@@ -9,7 +9,10 @@ struct LexSides {
 
     /// Scans `line`, the code of a line of `kind`, into `tokens`, from the state its side ended the line before in.
     mutating func scan(
-        _ line: Substring, kind: DiffLook.Kind, lexer: LexicalLineLexer, into tokens: inout [LineToken]
+        _ line: Substring,
+        kind: DiffLook.Kind,
+        lexer: LexicalLineLexer,
+        into tokens: inout [LineToken]
     ) {
         var bytes = line
         switch kind {

@@ -23,7 +23,8 @@ struct PathScopeTests {
                 for path in paths {
                     #expect(
                         both.contains(path) == (left.contains(path) && right.contains(path)),
-                        "\(left) ∩ \(right) on \(path)")
+                        "\(left) ∩ \(right) on \(path)"
+                    )
                 }
             }
         }

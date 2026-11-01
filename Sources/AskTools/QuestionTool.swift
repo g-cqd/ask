@@ -81,8 +81,12 @@ public struct QuestionTool: Tool {
         }
         let multiple = if case .bool(true)? = fields["multiple"] { true } else { false }
         return PersonQuestion(
-            question: text, header: header, choices: try choices(fields["choices"], number: number), multiple: multiple,
-            note: note)
+            question: text,
+            header: header,
+            choices: try choices(fields["choices"], number: number),
+            multiple: multiple,
+            note: note
+        )
     }
 
     private static func choices(_ value: JSONValue?, number: Int) throws(Malformed) -> [PersonQuestion.Choice] {

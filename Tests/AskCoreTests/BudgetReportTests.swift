@@ -22,7 +22,9 @@ struct BudgetReportTests {
                     idleMemoryMebibytes: Budget.idleMemoryMebibytes,
                     activeMemoryMebibytes: Budget.activeMemoryMebibytes,
                     inputDelayMilliseconds: Budget.inputDelayMilliseconds,
-                    actionToActionMilliseconds: Budget.actionToActionMilliseconds))
+                    actionToActionMilliseconds: Budget.actionToActionMilliseconds
+                )
+        )
     }
 
     @Test func `the report is newline terminated for a line-reading consumer`() throws {

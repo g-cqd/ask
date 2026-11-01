@@ -20,7 +20,8 @@ struct ResponsesStreamDecoderTests {
     }
 
     private func completed(
-        _ extra: String = #""output":[]"#, usage: String = #""usage":{"input_tokens":10,"output_tokens":4}"#
+        _ extra: String = #""output":[]"#,
+        usage: String = #""usage":{"input_tokens":10,"output_tokens":4}"#
     )
         -> String
     { #"{"type":"response.completed","response":{"status":"completed",\#(extra),\#(usage)}}"# }
@@ -35,7 +36,8 @@ struct ResponsesStreamDecoderTests {
             #"{"type":"response.output_text.done","item_id":"msg_1","text":"Hello"}"#,
             #"{"type":"response.output_item.done","item":{"type":"message","id":"msg_1","role":"assistant"}}"#,
             completed(
-                usage: #""usage":{"input_tokens":10,"output_tokens":4,"input_tokens_details":{"cached_tokens":6}}"#)
+                usage: #""usage":{"input_tokens":10,"output_tokens":4,"input_tokens_details":{"cached_tokens":6}}"#
+            )
         ])
         #expect(
             events == [
@@ -43,7 +45,8 @@ struct ResponsesStreamDecoderTests {
                 .textDelta(index: 0, "Hel"), .textDelta(index: 0, "lo"), .blockStopped(index: 0),
                 .messageDelta(stopReason: .endTurn, usage: TokenUsage(input: 4, output: 4, cacheRead: 6)),
                 .messageStopped
-            ])
+            ]
+        )
     }
 
     @Test func `reasoning with encrypted content carries a marked signature, summary parts as paragraphs`() throws {

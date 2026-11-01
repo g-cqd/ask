@@ -7,7 +7,12 @@ extension Transcript {
         let prefix = "[\(job.label)] "
         let title = summary.hasPrefix(prefix) ? summary : prefix + summary
         items[index] = .tool(
-            name: name, summary: title, status: job.status, output: Self.kept(job.output), fullInput: input)
+            name: name,
+            summary: title,
+            status: job.status,
+            output: Self.kept(job.output),
+            fullInput: input
+        )
         var clock = BlockProgress(at: job.startedAt, spinner: progress[index]?.spinner ?? spinnerStyle)
         clock.sampled = instant
         clock.ended = job.endedAt

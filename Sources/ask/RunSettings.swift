@@ -37,7 +37,8 @@ struct RunSettings: Equatable {
     var limits: RunLimits {
         RunLimits(
             maximumTurns: configuration.turnLimit(sandboxed: !sandbox.isUnrestricted),
-            compactAt: configuration.compactAt.value)
+            compactAt: configuration.compactAt.value
+        )
     }
 
     /// Whether a run built for `other` would behave differently: its layers or its model changed.
@@ -85,7 +86,8 @@ struct RunSettings: Equatable {
                 Configuration.describeTurns(limits.maximumTurns)
                     + (c.maxTurns.source == .defaults
                         ? (sandbox.isUnrestricted ? " (no sandbox)" : " (sandbox on)") : ""),
-                c.maxTurns.source),
+                c.maxTurns.source
+            ),
             row("compactAt", Self.describe(c.compactAt.value), c.compactAt.source),
             row("keepAwake", c.keepAwake.value.rawValue, c.keepAwake.source),
             row("keepDisplayAwake", c.keepDisplayAwake.value ? "true" : "false", c.keepDisplayAwake.source),
@@ -181,6 +183,10 @@ struct RunSettings: Equatable {
     /// Which tool calls ask before they run (roadmap 0134): the person's `approvals`, under the flag.
     var approvalPolicy: ApprovalPolicy {
         ApprovalPolicy(
-            section: configuration.approvals.value, flag: approvalFlag, allowing: approvalAllow, asking: approvalAsk)
+            section: configuration.approvals.value,
+            flag: approvalFlag,
+            allowing: approvalAllow,
+            asking: approvalAsk
+        )
     }
 }

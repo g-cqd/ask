@@ -14,7 +14,8 @@ struct AgentLoopTests {
     private func newFile() throws -> SessionRecorder {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return SessionRecorder(
-            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none))
+            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none)
+        )
     }
 
     private func input(_ json: String) -> JSONObject { try! JSONObject(validating: Array(json.utf8)) }
@@ -23,10 +24,16 @@ struct AgentLoopTests {
         -> AgentLoop
     {
         AgentLoop(
-            provider: provider, tools: try ToolRegistry(tools),
+            provider: provider,
+            tools: try ToolRegistry(tools),
             settings: AgentSettings(
-                model: "claude-x", maximumTokens: 1_024, systemPrompt: ["Be brief."], maximumTurns: maximumTurns),
-            context: ToolContext(workingDirectory: directory.path))
+                model: "claude-x",
+                maximumTokens: 1_024,
+                systemPrompt: ["Be brief."],
+                maximumTurns: maximumTurns
+            ),
+            context: ToolContext(workingDirectory: directory.path)
+        )
     }
 
     @Test func `a reply without tool calls ends the run after one turn`() async throws {
@@ -63,7 +70,8 @@ struct AgentLoopTests {
         #expect(provider.requests.count == 2)
         #expect(
             provider.requests[1].messages.last
-                == ModelMessage(role: .user, blocks: [.toolResult(id: "t1", content: "ABC", isError: false)]))
+                == ModelMessage(role: .user, blocks: [.toolResult(id: "t1", content: "ABC", isError: false)])
+        )
         #expect(events.contains(.toolStarted(id: "t1", name: "upper", input: input(#"{"text":"abc"}"#))))
         #expect(events.contains(.toolFinished(id: "t1", name: "upper", output: ToolOutput("ABC"))))
     }
@@ -74,7 +82,8 @@ struct AgentLoopTests {
         try await loop(provider, tools: [Counting()]).run("Go", in: file) { _ in }
         #expect(
             file.tree.entries[2].payload
-                == .toolResult(callID: "t1", content: "Replaced 2.", isError: false, facts: ToolFacts(replacements: 2)))
+                == .toolResult(callID: "t1", content: "Replaced 2.", isError: false, facts: ToolFacts(replacements: 2))
+        )
     }
 
     @Test func `a paused turn is continued, not taken as the end`() async throws {
@@ -97,7 +106,8 @@ struct AgentLoopTests {
         #expect(provider.requests.count == 2)
         #expect(
             provider.requests[1].messages.last
-                == ModelMessage(role: .user, blocks: [.text(AgentLoop.continuationPrompt)]))
+                == ModelMessage(role: .user, blocks: [.text(AgentLoop.continuationPrompt)])
+        )
         #expect(events.last == .finished(.endTurn))
     }
 
@@ -125,7 +135,8 @@ struct AgentLoopTests {
     @Test func `the turn limit stops a model that never stops calling tools`() async throws {
         let file = try newFile()
         let provider = ScriptedProvider(
-            Array(repeating: .call(id: "t", name: "upper", input: #"{"text":"a"}"#), count: 5))
+            Array(repeating: .call(id: "t", name: "upper", input: #"{"text":"a"}"#), count: 5)
+        )
         await #expect(throws: AgentError.turnLimit(3)) {
             try await loop(provider, maximumTurns: 3).run("Loop", in: file) { _ in }
         }
@@ -135,7 +146,8 @@ struct AgentLoopTests {
     @Test func `with no turn limit a run goes past the old default of 100 and ends when the model does`() async throws {
         let file = try newFile()
         let provider = ScriptedProvider(
-            Array(repeating: .call(id: "t", name: "upper", input: #"{"text":"a"}"#), count: 150) + [.reply("done")])
+            Array(repeating: .call(id: "t", name: "upper", input: #"{"text":"a"}"#), count: 150) + [.reply("done")]
+        )
         try await loop(provider, maximumTurns: Configuration.noTurnLimit).run("Loop", in: file) { _ in }
         #expect(provider.requests.count == 151)
     }
@@ -153,7 +165,8 @@ struct AgentLoopTests {
             payloads.suffix(2) == [
                 .toolResult(callID: "a", content: "stopping", isError: false),
                 .toolResult(callID: "b", content: AgentLoop.notRunResult, isError: true)
-            ])
+            ]
+        )
         #expect(RequestContext(file.tree.context()).repairs.isEmpty, "the next request is valid as recorded")
     }
 
@@ -165,8 +178,15 @@ struct AgentLoopTests {
         _ = try file.append(
             .response(
                 AssembledResponse(
-                    id: "m", model: "c", blocks: [.toolCall(id: "old", name: "upper", input: input("{}"))],
-                    stopReason: .toolUse, usage: TokenUsage(), unrecognized: [])))
+                    id: "m",
+                    model: "c",
+                    blocks: [.toolCall(id: "old", name: "upper", input: input("{}"))],
+                    stopReason: .toolUse,
+                    usage: TokenUsage(),
+                    unrecognized: []
+                )
+            )
+        )
         let provider = ScriptedProvider([.reply("one"), .reply("two")])
         let agent = try loop(provider)
         let repairs = Mutex<[[RequestContext.Repair]]>([])
@@ -182,8 +202,10 @@ struct AgentLoopTests {
     private struct Upper: ArgumentTool {
         struct Arguments: Decodable, Sendable { let text: String }
         let definition = ToolDefinition(
-            name: "upper", description: "Uppercase text.",
-            inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
+            name: "upper",
+            description: "Uppercase text.",
+            inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8))
+        )
 
         func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
             ToolOutput(arguments.text.uppercased())
@@ -192,7 +214,10 @@ struct AgentLoopTests {
 
     private struct Counting: Tool {
         let definition = ToolDefinition(
-            name: "count", description: "Count.", inputSchema: try! JSONObject(validating: Array(#"{}"#.utf8)))
+            name: "count",
+            description: "Count.",
+            inputSchema: try! JSONObject(validating: Array(#"{}"#.utf8))
+        )
 
         func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
             var output = ToolOutput("Replaced 2.")
@@ -204,8 +229,10 @@ struct AgentLoopTests {
     /// Cancels the task running the loop, as an abort would, and still returns its result.
     private struct AbortingTool: Tool {
         let definition = ToolDefinition(
-            name: "abort", description: "Abort.",
-            inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
+            name: "abort",
+            description: "Abort.",
+            inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8))
+        )
 
         func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
             withUnsafeCurrentTask { $0?.cancel() }

@@ -11,9 +11,13 @@ internal import Testing
 struct ThinkingDisplayTests {
     private func body(_ control: ThinkingControl?) throws -> JSON {
         let request = ModelRequest(
-            model: "m", maxTokens: 32000, systemPrompt: [],
+            model: "m",
+            maxTokens: 32000,
+            systemPrompt: [],
             messages: [ModelMessage(role: .user, blocks: [.text("hi")])],
-            tools: [], thinking: control)
+            tools: [],
+            thinking: control
+        )
         return try AemiJSON.parse(AnthropicRequestEncoder.encode(request, caching: false)).root
     }
 
@@ -53,9 +57,11 @@ struct ThinkingDisplayTests {
         let optional = CatalogModel(id: "claude-opus-5-5", thinkingModes: [.disabled, .adaptive])
         #expect(
             try ThinkingControl.select(.providerDefault, model: model, descriptor: always, maximumTokens: 64)
-                == .adaptive)
+                == .adaptive
+        )
         #expect(
-            try ThinkingControl.select(.providerDefault, model: model, descriptor: optional, maximumTokens: 64) == nil)
+            try ThinkingControl.select(.providerDefault, model: model, descriptor: optional, maximumTokens: 64) == nil
+        )
         #expect(try ThinkingControl.select(.providerDefault, model: model, descriptor: nil, maximumTokens: 64) == nil)
     }
 }

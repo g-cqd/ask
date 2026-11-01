@@ -10,8 +10,14 @@ extension Job {
             let note = state.totalBytes > state.recent.count ? "… earlier output not shown\n" : ""
             let lines = state.totalLines + (state.recent.last.map { $0 == 0x0A ? 0 : 1 } ?? 0)
             return JobSnapshot(
-                id: id, output: output ?? note + tail, status: state.status, startedAt: startedAt,
-                endedAt: state.endedAt, lines: lines, displayID: displayID)
+                id: id,
+                output: output ?? note + tail,
+                status: state.status,
+                startedAt: startedAt,
+                endedAt: state.endedAt,
+                lines: lines,
+                displayID: displayID
+            )
         }
     }
 }

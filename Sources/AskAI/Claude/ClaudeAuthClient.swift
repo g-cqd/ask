@@ -17,7 +17,9 @@ public struct ClaudeAuthClient: Sendable {
             throw .invalidPastedCode
         }
         return try await post(
-            ClaudeToken.exchangeBody(code: code, verifier: pending.pkce.verifier, state: pending.state), now: now)
+            ClaudeToken.exchangeBody(code: code, verifier: pending.pkce.verifier, state: pending.state),
+            now: now
+        )
     }
 
     /// New credentials for `credentials`. Account details the response omits are kept.

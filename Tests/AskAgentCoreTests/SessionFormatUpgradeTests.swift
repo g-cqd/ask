@@ -7,7 +7,8 @@ internal import Testing
 struct SessionFormatUpgradeTests {
     private let legacy = Array(
         "{\"type\":\"session\",\"version\":1}\n{\"type\":\"entry\",\"id\":\"0\",\"payload\":{\"kind\":\"user\",\"text\":\"legacy history\"}}\n{\"type\":\"leaf\",\"id\":\"0\"}\n"
-            .utf8)
+            .utf8
+    )
 
     @Test func `new snapshots carry version two so older readers cannot discard routing protection`() throws {
         #expect(SessionLog.formatVersion == 2)
@@ -33,7 +34,11 @@ struct SessionFormatUpgradeTests {
         #expect(try Data(contentsOf: path) == Data(legacy))
         #expect(!FileManager.default.fileExists(atPath: path.path + ".version-1"))
         let route = SessionDestination(
-            connectionID: "stable", authorizationID: "revision", name: "work", model: "model")
+            connectionID: "stable",
+            authorizationID: "revision",
+            name: "work",
+            model: "model"
+        )
         try file.append(.destination(route))
         #expect(file.formatVersion == 2)
         let written = try Data(contentsOf: path)

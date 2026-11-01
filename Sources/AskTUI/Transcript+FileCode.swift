@@ -21,8 +21,11 @@ extension Transcript {
                 let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
                 let notes = lines.indices.suffix(2).filter { FileCode.isNote(lines[$0]) }
                 return FileCode(
-                    part: .output, language: language, plainLines: Set(notes),
-                    restart: shown?.folded == true ? shown?.markerLine : nil)
+                    part: .output,
+                    language: language,
+                    plainLines: Set(notes),
+                    restart: shown?.folded == true ? shown?.markerLine : nil
+                )
             default: return nil
         }
     }

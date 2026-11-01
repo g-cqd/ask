@@ -8,7 +8,8 @@ internal import Foundation
 struct ModelsCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "models",
-        abstract: "List the models a connection or provider offers, with the limits it states.")
+        abstract: "List the models a connection or provider offers, with the limits it states."
+    )
 
     @Argument(help: "codex, agy, apple, anthropic (or claude), a named connection, or an OpenAI-compatible provider.")
     var connection = ProviderSettings.codex
@@ -88,10 +89,12 @@ struct ModelsCommand: AsyncParsableCommand {
     private func show(provider name: String, environment: [String: String], now: Double) async throws {
         let settings = try ProviderSettings.load(from: askConfigDirectory(environment: environment) + "/providers.json")
         let listing = try settings.listing(
-            provider: name, environment: environment,
+            provider: name,
+            environment: environment,
             storedKeys: { () throws(CredentialFileError) in
                 try CredentialFile.standard(environment: environment).loadKeys().mapValues(\.key)
-            })
+            }
+        )
         guard let listing else {
             throw ValidationError("\(name) has its own sign-in; this list covers providers reached with a key.")
         }

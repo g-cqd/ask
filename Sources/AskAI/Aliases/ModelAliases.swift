@@ -31,8 +31,12 @@ public struct ModelAliases: Codable, Sendable, Equatable {
         guard !catalog.contains(where: { $0.id.lowercased() == key }) else { throw .ambiguous(key) }
         guard aliases[alias.model.lowercased()] == nil else { throw .chained(key) }
         return ModelChoice(
-            model: alias.model, alias: key, contextWindow: alias.contextWindow, maxOutputTokens: alias.maxOutputTokens,
-            thinking: alias.thinking)
+            model: alias.model,
+            alias: key,
+            contextWindow: alias.contextWindow,
+            maxOutputTokens: alias.maxOutputTokens,
+            thinking: alias.thinking
+        )
     }
 
     /// Adds or replaces an alias.
@@ -45,8 +49,12 @@ public struct ModelAliases: Codable, Sendable, Equatable {
     ///   - known: the model ids this account lists, when known.
     /// - Throws: a `ModelAliasError` and changes nothing.
     public mutating func set(
-        _ name: String, to model: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil,
-        thinking: ThinkingLevel? = nil, known: [String] = []
+        _ name: String,
+        to model: String,
+        contextWindow: Int? = nil,
+        maxOutputTokens: Int? = nil,
+        thinking: ThinkingLevel? = nil,
+        known: [String] = []
     ) throws(ModelAliasError) {
         let key = name.lowercased()
         guard Self.validName(key) else { throw .invalidName }
@@ -57,7 +65,11 @@ public struct ModelAliases: Codable, Sendable, Equatable {
         guard !known.contains(where: { $0.lowercased() == key }) else { throw .shadowsModel(key) }
         guard aliases[key] != nil || aliases.count < Self.limit else { throw .tooMany }
         aliases[key] = ModelAlias(
-            model: model, contextWindow: contextWindow, maxOutputTokens: maxOutputTokens, thinking: thinking)
+            model: model,
+            contextWindow: contextWindow,
+            maxOutputTokens: maxOutputTokens,
+            thinking: thinking
+        )
     }
 
     /// Removes an alias.

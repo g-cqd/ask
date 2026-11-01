@@ -8,6 +8,8 @@ extension CommandEnvironment {
         let mcp = configuration.mcp.value.servers.reduce(into: Set<String>()) { $0.formUnion($1.referencedVariables) }
         self.init(
             credentials: CredentialVariables.names(settings: providers).union(mcp),
-            credentialPrefixes: CredentialVariables.prefixes, configured: configuration.environment.value)
+            credentialPrefixes: CredentialVariables.prefixes,
+            configured: configuration.environment.value
+        )
     }
 }

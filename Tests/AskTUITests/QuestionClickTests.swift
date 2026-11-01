@@ -12,10 +12,16 @@ internal import Testing
 struct QuestionClickTests {
     private static let questions = [
         ScreenQuestion(
-            question: "What should change?", header: "Scope", choices: [.init(label: "Parser"), .init(label: "All")]),
+            question: "What should change?",
+            header: "Scope",
+            choices: [.init(label: "Parser"), .init(label: "All")]
+        ),
         ScreenQuestion(
-            question: "Which tests?", header: "Tests", choices: [.init(label: "Unit"), .init(label: "Probes")],
-            multiple: true)
+            question: "Which tests?",
+            header: "Tests",
+            choices: [.init(label: "Unit"), .init(label: "Probes")],
+            multiple: true
+        )
     ]
 
     private func rig() -> PointerRig {
@@ -65,6 +71,7 @@ struct QuestionClickTests {
         _ = rig.click(row: scope.row, col: scope.col + 1)
         #expect(
             rig.controller.state.pendingQuestions?.reviewing == false
-                && rig.controller.state.pendingQuestions?.current == 0)
+                && rig.controller.state.pendingQuestions?.current == 0
+        )
     }
 }

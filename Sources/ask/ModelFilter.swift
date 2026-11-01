@@ -10,7 +10,8 @@ enum ModelFilter {
         let loader = ConfigurationLoader(
             project: FileManager.default.currentDirectoryPath,
             configDirectory: askConfigDirectory(environment: environment),
-            environment: environment)
+            environment: environment
+        )
         return (try? loader.load().configuration.ui.value.onlyUsefulModels) ?? true
     }
 }

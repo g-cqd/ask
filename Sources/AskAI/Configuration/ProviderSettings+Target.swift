@@ -35,7 +35,8 @@ extension ProviderSettings {
     /// - Throws: a ``ProviderSettingsError`` naming what cannot be honoured. A preset with no key is an error, as it is for a
     ///   run: the list is never asked for without the key the provider's requests would carry.
     public func listing(
-        provider: String?, environment: [String: String],
+        provider: String?,
+        environment: [String: String],
         storedKeys: () throws(CredentialFileError) -> [String: String] = { [:] }
     ) throws(ProviderSettingsError) -> Listing? {
         let name = selectedProvider(provider)
@@ -49,7 +50,9 @@ extension ProviderSettings {
     /// - Throws: ``ProviderSettingsError/unknownProvider(_:known:)``, ``ProviderSettingsError/incomplete(provider:field:)``
     ///   or ``ProviderSettingsError/unsupportedAPI(provider:api:)``.
     func target(
-        _ name: String, environment: [String: String], storedKeys: () throws(CredentialFileError) -> [String: String]
+        _ name: String,
+        environment: [String: String],
+        storedKeys: () throws(CredentialFileError) -> [String: String]
     ) throws(ProviderSettingsError) -> Target {
         let preset = ProviderPreset.named(name)
         guard let entry = entries[name] ?? (preset != nil ? Entry() : nil) else {
@@ -70,11 +73,17 @@ extension ProviderSettings {
     /// - Throws: a key problem from ``credential(of:entry:preset:environment:stored:)`` or
     ///   ``ProviderSettingsError/refusedEndpoint(provider:reason:)``.
     func endpoint(
-        of target: Target, environment: [String: String],
+        of target: Target,
+        environment: [String: String],
         storedKeys: () throws(CredentialFileError) -> [String: String]
     ) throws(ProviderSettingsError) -> (url: URL, key: String?) {
         let key = try credential(
-            of: target.name, entry: target.entry, preset: target.preset, environment: environment, stored: storedKeys)
+            of: target.name,
+            entry: target.entry,
+            preset: target.preset,
+            environment: environment,
+            stored: storedKeys
+        )
         let trimmed = target.baseURL.hasSuffix("/") ? String(target.baseURL.dropLast()) : target.baseURL
         guard let url = URL(string: trimmed) else {
             throw .refusedEndpoint(provider: target.name, reason: "it is not a URL")

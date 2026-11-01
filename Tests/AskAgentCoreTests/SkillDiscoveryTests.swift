@@ -17,10 +17,12 @@ struct SkillDiscoveryTests {
         let catalog = scratch.discover()
         #expect(catalog.byName.map(\.name) == ["alpha", "beta", "delta", "epsilon", "gamma", "zeta"])
         let sources = Dictionary(
-            uniqueKeysWithValues: catalog.skills.map { ($0.name, "\($0.source)/\($0.scope.rawValue)") })
+            uniqueKeysWithValues: catalog.skills.map { ($0.name, "\($0.source)/\($0.scope.rawValue)") }
+        )
         #expect(
             sources["alpha"] == "agents/user" && sources["epsilon"] == "opencode/user"
-                && sources["zeta"] == "agents/project")
+                && sources["zeta"] == "agents/project"
+        )
     }
 
     @Test func `eight harness directories that are links to one directory give each skill once`() throws {
@@ -72,7 +74,8 @@ struct SkillDiscoveryTests {
         #expect(scratch.discover(["bundled"]).skills.map(\.name) == ["builtin"])
         #expect(
             Set(scratch.discover(["agy", "bundled"]).skills.map(\.name)) == ["builtin"],
-            "the bundled skills of the harness named")
+            "the bundled skills of the harness named"
+        )
         #expect(Set(scratch.discover(["agents", "agy", "bundled"]).skills.map(\.name)) == ["mine", "builtin"])
         #expect(scratch.discover(["bundled"]).skills.first?.scope == .bundled)
     }
@@ -100,7 +103,8 @@ struct SkillDiscoveryTests {
         let byName = Dictionary(uniqueKeysWithValues: scratch.discover().skills.map { ($0.name, $0) })
         #expect(
             byName["openai-docs"] != nil
-                && byName["openai-docs"]?.diagnostics.contains { $0.contains("differs from its directory") } == true)
+                && byName["openai-docs"]?.diagnostics.contains { $0.contains("differs from its directory") } == true
+        )
         #expect(byName["headless"]?.description == "Does the thing over two lines.")
         #expect(byName["nodescription"]?.description == "First line of the body.")
         #expect(byName["grouped"] != nil)
@@ -128,8 +132,10 @@ struct SkillDiscoveryTests {
     @Test func `tools and models in a skill are read, shown, and unknown names are kept`() throws {
         let scratch = try SkillScratch()
         try scratch.skill(
-            "t", in: ".agents/skills",
-            extra: "allowed-tools: Read, Bash(git diff:*), LSP\nmodel: opus\n# fallback_models: sonnet\nlicense: MIT\n")
+            "t",
+            in: ".agents/skills",
+            extra: "allowed-tools: Read, Bash(git diff:*), LSP\nmodel: opus\n# fallback_models: sonnet\nlicense: MIT\n"
+        )
         let skill = try #require(scratch.discover().skills.first)
         #expect(skill.tools.map(\.token) == ["Read", "Bash(git diff:*)", "LSP"])
         #expect(skill.tools.map(\.ask) == ["read", "bash", nil])

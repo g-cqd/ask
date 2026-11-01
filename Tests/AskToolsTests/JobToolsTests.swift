@@ -14,7 +14,8 @@ struct JobToolsTests {
     private let root: URL
     private let context: ToolContext
     private let jobs = JobTable(
-        environment: ProcessInfo.processInfo.environment.merging(["SHELL": "/bin/bash"]) { _, shell in shell })
+        environment: ProcessInfo.processInfo.environment.merging(["SHELL": "/bin/bash"]) { _, shell in shell }
+    )
 
     init() throws {
         root = FileManager.default.temporaryDirectory.appending(path: "ask-jobs-\(UUID().uuidString)")
@@ -77,7 +78,9 @@ struct JobToolsTests {
         async let waiting =
             WaitTool(jobs: jobs, clock: clock)
             .run(
-                input(#"{"job":"job-1","output_contains":"READY"}"#), in: context)
+                input(#"{"job":"job-1","output_contains":"READY"}"#),
+                in: context
+            )
         try await clock.waitForSleepers(count: 1)
         #expect(jobs.job("job-1")?.write(Array("go\n".utf8)) == true)
         let output = await waiting
@@ -116,7 +119,9 @@ struct JobToolsTests {
         async let waiting =
             WaitTool(jobs: jobs, clock: clock)
             .run(
-                input(#"{"job":"job-1","timeout_seconds":7}"#), in: context)
+                input(#"{"job":"job-1","timeout_seconds":7}"#),
+                in: context
+            )
         try await clock.waitForSleepers(count: 1)
         clock.advance(by: .seconds(7))
         #expect(await waiting == ToolOutput("[nothing happened within 7 s]\n[job-1 still running]"))
@@ -200,11 +205,14 @@ struct JobToolsTests {
         let wait = WaitTool(jobs: jobs, clock: TestClock())
         #expect(await wait.run(input(#"{"job":"job-9"}"#), in: context) == .error("No job named job-9."))
         #expect(
-            await wait.run(input("{}"), in: context) == .error("Give at least one of job, file_exists or port_open."))
+            await wait.run(input("{}"), in: context) == .error("Give at least one of job, file_exists or port_open.")
+        )
         #expect(
             await wait.run(input(#"{"file_exists":"x","output_contains":"y"}"#), in: context)
-                == .error("output_contains needs a job."))
+                == .error("output_contains needs a job.")
+        )
         #expect(
-            await JobStopTool(jobs: jobs).run(input(#"{"job":"nope"}"#), in: context) == .error("No job named nope."))
+            await JobStopTool(jobs: jobs).run(input(#"{"job":"nope"}"#), in: context) == .error("No job named nope.")
+        )
     }
 }

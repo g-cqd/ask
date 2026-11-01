@@ -13,7 +13,11 @@ extension SignInPoll where Grant == String {
     /// - Throws: the reason in `ending` for a status that ends the sign-in, else ``SignInError/invalidResponse(_:)``
     ///   for a status not named or a secret not fit to use.
     static func reading(
-        status: String?, secret: String?, complete: String, secretField: String, ending: [String: SignInError]
+        status: String?,
+        secret: String?,
+        complete: String,
+        secretField: String,
+        ending: [String: SignInError]
     ) throws(SignInError) -> SignInPoll<String> {
         if status == "pending" { return .pending }
         if let status, let reason = ending[status] { throw reason }

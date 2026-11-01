@@ -9,9 +9,14 @@ struct CopilotClientTests {
         let file = CredentialFile(url: root.appending(path: "config/credentials.json"))
         try file.saveCopilot(
             CopilotCredentials(
-                githubToken: "GITHUB-SECRET", accessToken: "SHORT-SECRET",
+                githubToken: "GITHUB-SECRET",
+                accessToken: "SHORT-SECRET",
                 expiresAt: Date().timeIntervalSince1970 + 3600,
-                apiURL: CopilotProtocol.defaultAPI, machineID: "machine", deviceID: "device"))
+                apiURL: CopilotProtocol.defaultAPI,
+                machineID: "machine",
+                deviceID: "device"
+            )
+        )
         return file
     }
     private static func catalog(_ api: String) -> String {
@@ -41,8 +46,12 @@ struct CopilotClientTests {
         }
         let client = CopilotClient(file: file, transport: transport)
         let request = ModelRequest(
-            model: "m", maxTokens: 10, systemPrompt: [], messages: [ModelMessage(role: .user, blocks: [.text("hi")])],
-            tools: [])
+            model: "m",
+            maxTokens: 10,
+            systemPrompt: [],
+            messages: [ModelMessage(role: .user, blocks: [.text("hi")])],
+            tools: []
+        )
         var count = 0
         for try await _ in client.stream(request) { count += 1 }
         #expect(count > 0)
@@ -117,7 +126,8 @@ struct CopilotClientTests {
         let url = URL(string: "https://api.githubcopilot.com/responses")!
         let guarded = CopilotTransport(inner: transport, url: url)
         let response = try await guarded.send(
-            HTTPRequest(url: url, method: "POST", headers: [], body: [], allowsRedirects: false))
+            HTTPRequest(url: url, method: "POST", headers: [], body: [], allowsRedirects: false)
+        )
         #expect(response.status == status)
         #expect(!String(decoding: try await response.collect(), as: UTF8.self).contains("LEAKED-SECRET"))
     }

@@ -14,7 +14,9 @@ struct AgyAuthClientTests {
     }
 
     private static func tokens(
-        access: String = "ya29.access-1", refresh: String? = "1//refresh-1", expires: Double = 3599,
+        access: String = "ya29.access-1",
+        refresh: String? = "1//refresh-1",
+        expires: Double = 3599,
         extra: String =
             #","id_token":"\#(idToken(#"{"email":"person@example.com"}"#))","scope":"openid https://www.googleapis.com/auth/cloud-platform""#
     ) -> String {
@@ -23,7 +25,9 @@ struct AgyAuthClientTests {
     }
 
     private let pending = AgyPendingSignIn(
-        pkce: PKCE(verifier: "verifier-value-0123456789"), state: "state-value-abcdefghijkl")
+        pkce: PKCE(verifier: "verifier-value-0123456789"),
+        state: "state-value-abcdefghijkl"
+    )
 
     private func client(_ replies: [SequencedTransport.Reply]) -> (AgyAuthClient, SequencedTransport) {
         let transport = SequencedTransport(replies)
@@ -40,12 +44,14 @@ struct AgyAuthClientTests {
         #expect(
             request.headers.contains {
                 $0.name.lowercased() == "content-type" && $0.value == "application/x-www-form-urlencoded"
-            })
+            }
+        )
         #expect(
             request.bodyText
                 == "grant_type=authorization_code&client_id=\(AgyOAuth.clientID)&client_secret=\(Self.secret)"
                 + "&code=4%2F0AeaYSHDqabcdefghij&code_verifier=verifier-value-0123456789"
-                + "&redirect_uri=https%3A%2F%2Fantigravity.google%2Foauth-callback")
+                + "&redirect_uri=https%3A%2F%2Fantigravity.google%2Foauth-callback"
+        )
         #expect(credentials.accessToken == "ya29.access-1" && credentials.refreshToken == "1//refresh-1")
         #expect(credentials.expiresAt == 1_000 + 3599 - 300, "renewed 300 s early, as the other sign-ins are")
         #expect(credentials.accountEmail == "person@example.com")
@@ -57,7 +63,11 @@ struct AgyAuthClientTests {
         let (client, transport) = client([.json(200, Self.tokens())])
         await #expect(throws: AgyAuthError.invalidPastedCode) {
             try await client.complete(
-                pending, pasted: "code=4/0AeaYSHDqabcdefg&state=wrong", secret: Self.secret, now: 0)
+                pending,
+                pasted: "code=4/0AeaYSHDqabcdefg&state=wrong",
+                secret: Self.secret,
+                now: 0
+            )
         }
         #expect(transport.sent.isEmpty)
     }
@@ -73,9 +83,14 @@ struct AgyAuthClientTests {
         async throws
     {
         let old = AgyCredentials(
-            accessToken: "ya29.old", refreshToken: "1//keep", expiresAt: 5, scopes: "openid",
+            accessToken: "ya29.old",
+            refreshToken: "1//keep",
+            expiresAt: 5,
+            scopes: "openid",
             accountEmail: "a@b.example",
-            projectID: "project-1", tierID: "free-tier")
+            projectID: "project-1",
+            tierID: "free-tier"
+        )
         let (client, transport) = client([.json(200, Self.tokens(access: "ya29.new", refresh: nil, extra: ""))])
         let renewed = try await client.refresh(old, secret: Self.secret, now: 2_000)
         #expect(
@@ -85,7 +100,8 @@ struct AgyAuthClientTests {
         #expect(renewed.accessToken == "ya29.new" && renewed.refreshToken == "1//keep")
         #expect(renewed.expiresAt == 2_000 + 3599 - 300)
         #expect(
-            renewed.accountEmail == "a@b.example" && renewed.projectID == "project-1" && renewed.tierID == "free-tier")
+            renewed.accountEmail == "a@b.example" && renewed.projectID == "project-1" && renewed.tierID == "free-tier"
+        )
         #expect(renewed.scopes == "openid")
         #expect(renewed.clientSecret == Self.secret, "the secret that worked is the one kept")
     }
@@ -113,7 +129,10 @@ struct AgyAuthClientTests {
             let (client, _) = client([.json(500, body)])
             await #expect(throws: AgyAuthError.tokenEndpoint(status: 500, code: nil)) {
                 try await client.refresh(
-                    AgyCredentials(accessToken: "a", refreshToken: "r", expiresAt: 0), secret: Self.secret, now: 0)
+                    AgyCredentials(accessToken: "a", refreshToken: "r", expiresAt: 0),
+                    secret: Self.secret,
+                    now: 0
+                )
             }
         }
     }
@@ -170,7 +189,8 @@ struct AgyAuthClientTests {
         for token in [payload + ".extra", String(payload.dropLast(4)), ".payload"] {
             let (client, _) = client([.json(200, Self.tokens(extra: #","id_token":"\#(token)""#))])
             #expect(
-                try await client.complete(pending, pasted: Self.code, secret: Self.secret, now: 0).accountEmail == nil)
+                try await client.complete(pending, pasted: Self.code, secret: Self.secret, now: 0).accountEmail == nil
+            )
         }
     }
 
@@ -178,7 +198,8 @@ struct AgyAuthClientTests {
         for token in ["", "one-part", "a.b", "a.!!!.c", Self.idToken("not json")] {
             let (client, _) = client([.json(200, Self.tokens(extra: #","id_token":"\#(token)""#))])
             #expect(
-                try await client.complete(pending, pasted: Self.code, secret: Self.secret, now: 0).accountEmail == nil)
+                try await client.complete(pending, pasted: Self.code, secret: Self.secret, now: 0).accountEmail == nil
+            )
         }
     }
 
@@ -190,7 +211,8 @@ struct AgyAuthClientTests {
         #expect(
             all.allSatisfy {
                 !$0.description.contains("GOCSPX") && !$0.description.contains("ya29") && !$0.description.isEmpty
-            })
+            }
+        )
         #expect(AgyAuthError.tokenEndpoint(status: 400, code: "invalid_grant").description.contains("ask login agy"))
     }
 }

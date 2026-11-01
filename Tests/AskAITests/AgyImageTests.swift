@@ -9,17 +9,24 @@ struct AgyImageTests {
     private func body(model: String) throws -> String {
         let call = ModelMessage(
             role: .assistant,
-            blocks: [.toolCall(id: "c1", name: "read", input: try .init(validating: Array("{}".utf8)))])
+            blocks: [.toolCall(id: "c1", name: "read", input: try .init(validating: Array("{}".utf8)))]
+        )
         let result = ModelMessage(
             role: .user,
             blocks: [
                 .toolResult(
-                    id: "c1", content: "a.png: image", isError: false,
-                    images: [ImagePart(mediaType: "image/png", data: [1, 2, 3, 4])])
-            ])
+                    id: "c1",
+                    content: "a.png: image",
+                    isError: false,
+                    images: [ImagePart(mediaType: "image/png", data: [1, 2, 3, 4])]
+                )
+            ]
+        )
         let request = ModelRequest(model: model, maxTokens: 1, systemPrompt: [], messages: [call, result], tools: [])
         return String(
-            decoding: try AgyRequestEncoder.encode(request, project: "p", requestID: "r", promptID: "q"), as: UTF8.self)
+            decoding: try AgyRequestEncoder.encode(request, project: "p", requestID: "r", promptID: "q"),
+            as: UTF8.self
+        )
     }
 
     private let inline = #"{"inlineData":{"mimeType":"image/png","data":"AQIDBA=="}}"#

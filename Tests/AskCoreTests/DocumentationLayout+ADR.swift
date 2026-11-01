@@ -32,7 +32,10 @@ extension DocumentationLayout {
     }
 
     private static func successorProblems(
-        of name: String, number: String, _ fields: [String: String], in byNumber: [String: [String: String]]
+        of name: String,
+        number: String,
+        _ fields: [String: String],
+        in byNumber: [String: [String: String]]
     ) -> [String] {
         guard let successor = fields["superseded-by"] else { return ["\(name): superseded, but names no successor"] }
         let successorNumber = String(successor.drop(while: { !$0.isNumber }))

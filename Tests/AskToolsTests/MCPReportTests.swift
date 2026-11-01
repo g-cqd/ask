@@ -19,14 +19,16 @@ struct MCPReportTests {
                 == [
                     "a: ready, 40 tools reachable through search_catalog and dispatch_call",
                     "    name the ones you want in mcp.a.tools to offer them directly"
-                ])
+                ]
+        )
         #expect(MCPReport.lines([status("a", .failed("no thanks"))]) == ["a: not connected: no thanks"])
     }
 
     @Test func `a note follows its server's line, indented`() {
         #expect(
             MCPReport.lines([status("a", .ready(offered: 1, of: 2), notes: ["listed but missing: x"])])
-                == ["a: ready, 1 of 2 tools offered", "    listed but missing: x"])
+                == ["a: ready, 1 of 2 tools offered", "    listed but missing: x"]
+        )
     }
 
     @Test func `no servers says how to add one`() {

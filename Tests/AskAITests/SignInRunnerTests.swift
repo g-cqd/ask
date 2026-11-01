@@ -27,8 +27,12 @@ struct SignInRunnerTests {
 
         func start() async throws(SignInError) -> SignInStart<String> {
             SignInStart(
-                session: "s", url: URL(string: "https://example.test/device")!, window: .seconds(600),
-                interval: interval, instructions: "Enter ABCD-1234")
+                session: "s",
+                url: URL(string: "https://example.test/device")!,
+                window: .seconds(600),
+                interval: interval,
+                instructions: "Enter ABCD-1234"
+            )
         }
 
         func poll(_ session: String) async throws(SignInError) -> SignInPoll<[String]> {
@@ -50,14 +54,16 @@ struct SignInRunnerTests {
 
     @Test func `the flow's own interval is waited between polls, and its outcome is returned as it is`() async throws {
         let done = try await run(
-            Scripted(script: [.pending, .pending, .complete(["code", "verifier"])], interval: .seconds(4)))
+            Scripted(script: [.pending, .pending, .complete(["code", "verifier"])], interval: .seconds(4))
+        )
         #expect(done.outcome == "code+verifier")
         #expect(done.clock.sleeps == [.seconds(4), .seconds(4), .seconds(4)])
     }
 
     @Test func `each slow down adds five seconds to every wait after it`() async throws {
         let done = try await run(
-            Scripted(script: [.pending, .slowDown, .slowDown, .complete(["x"])], interval: .seconds(2)))
+            Scripted(script: [.pending, .slowDown, .slowDown, .complete(["x"])], interval: .seconds(2))
+        )
         #expect(done.clock.sleeps == [.seconds(2), .seconds(2), .seconds(7), .seconds(12)])
     }
 
@@ -66,6 +72,7 @@ struct SignInRunnerTests {
         #expect(
             done.prompts == [
                 SignInPrompt(url: URL(string: "https://example.test/device")!, instructions: "Enter ABCD-1234")
-            ])
+            ]
+        )
     }
 }

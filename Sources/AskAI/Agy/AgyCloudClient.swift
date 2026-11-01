@@ -36,7 +36,10 @@ public struct AgyCloudClient: Sendable {
             throw AgyCloudError.invalidResponse
         }
         return AgyAccount(
-            projectID: project, currentTierID: Self.tier(root["currentTier"]), paidTierID: Self.tier(root["paidTier"]))
+            projectID: project,
+            currentTierID: Self.tier(root["currentTier"]),
+            paidTierID: Self.tier(root["paidTier"])
+        )
     }
 
     /// The chat models the account lists.
@@ -49,7 +52,11 @@ public struct AgyCloudClient: Sendable {
         guard Self.validProject(project) else { throw AgyCloudError.invalidResponse }
         struct Body: Encodable { let project: String }
         let reply = try await post(
-            "/v1internal:fetchAvailableModels", Body(project: project), accessToken: accessToken, limit: 2 << 20)
+            "/v1internal:fetchAvailableModels",
+            Body(project: project),
+            accessToken: accessToken,
+            limit: 2 << 20
+        )
         guard reply.status == 200 else { throw ModelCatalogError.refused(status: reply.status) }
         return try AgyModelListing.parse(reply.body)
     }

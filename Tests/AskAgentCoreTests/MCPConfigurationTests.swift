@@ -25,20 +25,30 @@ struct MCPConfigurationTests {
               rea:{command:'bunx',args:['rea-agents@6.5.0','mcp'],env:{HOPPER:'/x'},cwd:'/work',tools:['a','b']},
               docs:{url:'https://example.test/mcp',headers:{Authorization:'Bearer ${TOKEN}'},enabled:false}
             }}
-            """)
+            """
+        )
         let servers = try #require(file.mcp?.servers)
         #expect(servers.map(\.name) == ["docs", "rea"], "sorted by name, not by the order a decoder happens to give")
         #expect(
             servers[1]
                 == MCPServerSetting(
-                    name: "rea", command: "bunx", args: ["rea-agents@6.5.0", "mcp"], env: ["HOPPER": "/x"],
+                    name: "rea",
+                    command: "bunx",
+                    args: ["rea-agents@6.5.0", "mcp"],
+                    env: ["HOPPER": "/x"],
                     cwd: "/work",
-                    tools: ["a", "b"]))
+                    tools: ["a", "b"]
+                )
+        )
         #expect(
             servers[0]
                 == MCPServerSetting(
-                    name: "docs", url: "https://example.test/mcp", headers: ["Authorization": "Bearer ${TOKEN}"],
-                    enabled: false))
+                    name: "docs",
+                    url: "https://example.test/mcp",
+                    headers: ["Authorization": "Bearer ${TOKEN}"],
+                    enabled: false
+                )
+        )
     }
 
     @Test func `a server is on unless it says it is off, and takes every tool unless it lists some`() throws {
@@ -51,7 +61,8 @@ struct MCPConfigurationTests {
             try parse(
                 "{mcp:{a:{command:'x',env:{K:'secret'}},b:{url:'https://h.test/m',headers:{Authorization:'secret'}},c:{command:'y',enabled:false}}}"
             )
-            .mcp)
+            .mcp
+        )
         #expect(section.description == "a (command), b (url), c (command, off)")
         #expect(!section.description.contains("secret"))
     }
@@ -117,7 +128,8 @@ struct MCPConfigurationTests {
     {
         let file = try parse(
             "{mcp:{a:{command:'bunx',args:['rea-agents@6.5.0','mcp'],env:{K:'secret'}},b:{url:'https://h.test/m?token=x',headers:{A:'secret'}},c:{command:'y',enabled:false}}}",
-            project: true)
+            project: true
+        )
         let lines = try #require(file.mcp).consent
         #expect(lines == ["a: runs bunx rea-agents@6.5.0 mcp", "b: connects to https://h.test/m", "c: runs y (off)"])
         #expect(!lines.joined().contains("secret") && !lines.joined().contains("token"))
@@ -131,13 +143,15 @@ struct MCPConfigurationTests {
         let first = ConfigurationFile(
             mcp: MCPSection(servers: [
                 MCPServerSetting(name: "a", command: "one", args: ["x"]), MCPServerSetting(name: "b", command: "b")
-            ]))
+            ])
+        )
         let second = ConfigurationFile(mcp: MCPSection(servers: [MCPServerSetting(name: "a", command: "two")]))
         let combined = Configuration.defaults.applying(first, from: .file("u")).applying(second, from: .file("v"))
         #expect(
             combined.mcp.value.servers == [
                 MCPServerSetting(name: "a", command: "two"), MCPServerSetting(name: "b", command: "b")
-            ])
+            ]
+        )
         #expect(combined.changes(from: .defaults).contains { $0.hasPrefix("mcp:") })
     }
 

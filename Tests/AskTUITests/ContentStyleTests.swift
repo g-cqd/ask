@@ -18,7 +18,8 @@ struct ContentStyleTests {
             updates: [
                 .thinkingText("one\ntwo"), .toolStarted(name: "read", summary: "file"),
                 .toolFinished(.succeeded, output: "result")
-            ])
+            ]
+        )
         #expect(rig.contentText(row: 8) == "Thinking...")
         #expect(rig.contentText(row: 9) == "read · file")
     }

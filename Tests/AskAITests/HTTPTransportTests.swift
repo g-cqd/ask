@@ -11,8 +11,11 @@ struct HTTPTransportTests {
 
     private func request(_ name: String) -> HTTPRequest {
         HTTPRequest(
-            url: URL(string: "https://stub.invalid/\(name)")!, method: "POST",
-            headers: [("content-type", "application/json"), ("x-app", "cli")], body: Array(#"{"a":1}"#.utf8))
+            url: URL(string: "https://stub.invalid/\(name)")!,
+            method: "POST",
+            headers: [("content-type", "application/json"), ("x-app", "cli")],
+            body: Array(#"{"a":1}"#.utf8)
+        )
     }
 
     @Test func `the status arrives first and the body follows in order`() async throws {
@@ -47,7 +50,9 @@ struct HTTPTransportTests {
         // The failure is held until the first chunk has been received, as on a real connection. A stub that
         // fails in the same call makes URLSession drop the response it already had.
         StubProtocol.script(
-            request.url, Script(status: 200, chunks: ["data: partial"], heldFailure: URLError(.networkConnectionLost)))
+            request.url,
+            Script(status: 200, chunks: ["data: partial"], heldFailure: URLError(.networkConnectionLost))
+        )
         let response = try await transport.send(request)
         var iterator = response.body.makeAsyncIterator()
         #expect(try await iterator.next() == Array("data: partial".utf8))
@@ -62,7 +67,9 @@ struct HTTPTransportTests {
     @Test func `a body that goes quiet too long throws how long it waited`() async throws {
         let request = request(#function)
         StubProtocol.script(
-            request.url, Script(status: 200, chunks: ["data: partial"], heldFailure: URLError(.timedOut)))
+            request.url,
+            Script(status: 200, chunks: ["data: partial"], heldFailure: URLError(.timedOut))
+        )
         let response = try await transport.send(request)
         var iterator = response.body.makeAsyncIterator()
         _ = try await iterator.next()
@@ -136,15 +143,20 @@ struct HTTPTransportTests {
             guard let url = request.url, let script = Self.scripts.withLock({ $0[url] }) else { return }
             Self.requests.withLock {
                 $0[url] = Received(
-                    method: request.httpMethod ?? "", headers: request.allHTTPHeaderFields ?? [:],
-                    body: Self.body(of: request))
+                    method: request.httpMethod ?? "",
+                    headers: request.allHTTPHeaderFields ?? [:],
+                    body: Self.body(of: request)
+                )
             }
             if let status = script.status {
                 // With no Content-Type, URLSession withholds the response until it can sniff a type from enough
                 // body bytes, so a short streamed body never reaches the delegate. Real event streams declare it.
                 let response = HTTPURLResponse(
-                    url: url, statusCode: status, httpVersion: "HTTP/1.1",
-                    headerFields: ["Content-Type": "text/event-stream"])!
+                    url: url,
+                    statusCode: status,
+                    httpVersion: "HTTP/1.1",
+                    headerFields: ["Content-Type": "text/event-stream"]
+                )!
                 client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
                 for chunk in script.chunks { client?.urlProtocol(self, didLoad: Data(chunk.utf8)) }
             }

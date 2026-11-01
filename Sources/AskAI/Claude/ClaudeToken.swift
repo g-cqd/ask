@@ -35,10 +35,14 @@ public enum ClaudeToken {
             throw .invalidResponse
         }
         return ClaudeCredentials(
-            accessToken: token.accessToken, refreshToken: token.refreshToken,
+            accessToken: token.accessToken,
+            refreshToken: token.refreshToken,
             expiresAt: TokenSanity.renewal(from: now, lifetime: token.expiresIn),
-            refreshExpiresAt: token.refreshTokenExpiresIn.map { now + $0 }, accountEmail: token.account?.emailAddress,
-            organizationName: token.organization?.name, scopes: token.scope)
+            refreshExpiresAt: token.refreshTokenExpiresIn.map { now + $0 },
+            accountEmail: token.account?.emailAddress,
+            organizationName: token.organization?.name,
+            scopes: token.scope
+        )
     }
 
     private struct ErrorBody: Decodable {

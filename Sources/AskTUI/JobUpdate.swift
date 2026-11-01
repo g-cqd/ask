@@ -10,9 +10,14 @@ public struct JobUpdate: Sendable, Equatable {
     public let ending: String
 
     public init(
-        id: String, label: String, output: String, status: Transcript.ToolStatus,
-        startedAt: ContinuousClock.Instant, endedAt: ContinuousClock.Instant? = nil,
-        lines: Int = 0, ending: String = "ended"
+        id: String,
+        label: String,
+        output: String,
+        status: Transcript.ToolStatus,
+        startedAt: ContinuousClock.Instant,
+        endedAt: ContinuousClock.Instant? = nil,
+        lines: Int = 0,
+        ending: String = "ended"
     ) {
         self.id = id
         self.label = label

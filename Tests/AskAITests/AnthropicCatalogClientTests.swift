@@ -78,7 +78,9 @@ struct AnthropicCatalogClientTests {
         let replies = (0 ..< AnthropicCatalogClient.maximumPages + 1)
             .map { index in
                 SequencedTransport.Reply.json(
-                    200, #"{"data":[{"id":"m\#(index)"}],"has_more":true,"last_id":"m\#(index)"}"#)
+                    200,
+                    #"{"data":[{"id":"m\#(index)"}],"has_more":true,"last_id":"m\#(index)"}"#
+                )
             }
         let transport = SequencedTransport(replies)
         let result = try await AnthropicCatalogClient(transport: transport).models(auth: .bearer("t"))

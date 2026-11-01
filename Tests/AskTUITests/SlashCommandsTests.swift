@@ -49,7 +49,8 @@ struct SlashCommandsTests {
                     "/config  Edit settings interactively."
                 ]
                 .joined(separator: "\n")
-            ])
+            ]
+        )
         let transcript = controller.state.transcript
         let rows = ScreenComposer.lines(in: transcript, at: 1, columns: 120, style: BlockStyle())
         #expect(rows.count == 11, "eight help entries share two padding rows and the blank row above a tinted block")

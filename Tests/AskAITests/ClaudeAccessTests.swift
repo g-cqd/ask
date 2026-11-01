@@ -8,7 +8,9 @@ import Testing
 struct ClaudeAccessTests {
     private let file = CredentialFile(
         url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-access-\(UUID().uuidString)/ask/credentials.json"))
+            path: "ask-access-\(UUID().uuidString)/ask/credentials.json"
+        )
+    )
     private let refreshed =
         #"{"token_type":"bearer","access_token":"sk-ant-oat-NEW","refresh_token":"sk-ant-ort-NEW","#
         + #""expires_in":3600,"scope":"user:inference"}"#
@@ -16,14 +18,22 @@ struct ClaudeAccessTests {
     private func stored(expiresAt: Double) throws {
         try file.saveClaude(
             ClaudeCredentials(
-                accessToken: "sk-ant-oat-OLD", refreshToken: "sk-ant-ort-OLD", expiresAt: expiresAt,
+                accessToken: "sk-ant-oat-OLD",
+                refreshToken: "sk-ant-ort-OLD",
+                expiresAt: expiresAt,
                 refreshExpiresAt: nil,
-                accountEmail: "a@b.c", organizationName: nil, scopes: "user:inference"))
+                accountEmail: "a@b.c",
+                organizationName: nil,
+                scopes: "user:inference"
+            )
+        )
     }
 
     @Test func `signed out is its own error`() async {
         let access = ClaudeAccess(
-            file: file, client: ClaudeAuthClient(transport: ScriptedTransport(status: 500, chunks: [])))
+            file: file,
+            client: ClaudeAuthClient(transport: ScriptedTransport(status: 500, chunks: []))
+        )
         await #expect(throws: ClaudeAccessError.signedOut) { _ = try await access.auth(now: 0) }
     }
 

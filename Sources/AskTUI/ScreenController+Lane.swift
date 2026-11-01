@@ -32,7 +32,11 @@ extension ScreenController {
         var view = Transcript(revisionBase: state.laneSerial << 40)
         view.addNotice("\(runner.name) · reading its output…", isError: false)
         state.lane = LaneView(
-            id: runner.id, name: runner.name, stashed: state.transcript, stashedScrollback: state.scrollback)
+            id: runner.id,
+            name: runner.name,
+            stashed: state.transcript,
+            stashedScrollback: state.scrollback
+        )
         state.transcript = view
         state.scrollback = 0
         state.stripSelection = nil

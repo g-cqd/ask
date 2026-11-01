@@ -11,7 +11,8 @@ import Testing
 /// a run with no one to ask allows the call, because naming the server was the user's consent.
 @Suite(
     "A tool that may change things is asked about; one the server says is read-only or harmless is not",
-    .timeLimit(.minutes(1)))
+    .timeLimit(.minutes(1))
+)
 struct MCPApprovalTests {
     /// Remembers what it was asked and answers what it was told.
     private final class RecordingApprover: Sendable {
@@ -41,7 +42,11 @@ struct MCPApprovalTests {
     private func world() -> (MCPWorld, MCPHost, FakeMCPServer) {
         let world = MCPWorld()
         let fake = FakeMCPServer(
-            tools: ["plain", "boom", "look", "add"], destructive: ["boom"], readOnly: ["look"], harmless: ["add"])
+            tools: ["plain", "boom", "look", "add"],
+            destructive: ["boom"],
+            readOnly: ["look"],
+            harmless: ["add"]
+        )
         let host = world.host([world.setting("srv")], ["srv": fake])
         return (world, host, fake)
     }
@@ -124,12 +129,19 @@ struct MCPApprovalTests {
         let found = try await world.call("search_catalog", #"{"query":"t3"}"#, in: context(approver))
         #expect(found.content.contains("read-only"), "the search says the tool will be asked about")
         let output = try await world.call(
-            "dispatch_call", #"{"server":"big","tool":"t3","arguments":{}}"#, in: context(approver))
+            "dispatch_call",
+            #"{"server":"big","tool":"t3","arguments":{}}"#,
+            in: context(approver)
+        )
         #expect(output == ToolOutput("ran t3") && approver.asked.map(\.tool) == ["t3"])
         #expect(
             try await world.call(
-                "dispatch_call", #"{"server":"big","tool":"t2","arguments":{}}"#, in: context(approver))
-                == ToolOutput("ran t2"))
+                "dispatch_call",
+                #"{"server":"big","tool":"t2","arguments":{}}"#,
+                in: context(approver)
+            )
+                == ToolOutput("ran t2")
+        )
         #expect(approver.asked.count == 1, "the read-only tool was not asked about")
         await host.stop()
     }
@@ -142,7 +154,10 @@ struct MCPApprovalTests {
         await host.waitUntilSettled()
         let approver = RecordingApprover([false])
         let output = try await world.call(
-            "dispatch_call", #"{"server":"big","tool":"t3","arguments":{}}"#, in: context(approver))
+            "dispatch_call",
+            #"{"server":"big","tool":"t3","arguments":{}}"#,
+            in: context(approver)
+        )
         #expect(output.isError && output.content.contains("did not allow") && fake.calls.isEmpty)
         await host.stop()
     }

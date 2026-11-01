@@ -23,7 +23,8 @@ struct PathLinksTests {
     @Test func `a url is not taken for a path, and comments and relative paths are left alone`() {
         #expect(
             found("https://example.com/a/b") == ["https://example.com/a/b"],
-            "the address whole, none of its parts as a path")
+            "the address whole, none of its parts as a path"
+        )
         #expect(found("// comment /").isEmpty)
         #expect(found("Sources/ask/main.swift:3").isEmpty)
     }
@@ -46,7 +47,11 @@ struct PathLinksTests {
 
     @Test func `a block's rows carry the links and the drawn spans open them`() {
         let item = Transcript.Item.tool(
-            name: "read", summary: "/opt/a.swift", status: .succeeded, output: "/opt/b.swift:3: note")
+            name: "read",
+            summary: "/opt/a.swift",
+            status: .succeeded,
+            output: "/opt/b.swift:3: note"
+        )
         let lines = ScreenComposer.lines(for: item, columns: 80)
         #expect(lines.contains { !$0.links.isEmpty })
         let linked = lines.flatMap { ScreenComposer.spans(of: $0, highlight: nil) }.filter { $0.1.link != nil }
@@ -54,6 +59,7 @@ struct PathLinksTests {
         let reply = ScreenComposer.lines(for: .assistant("/opt/b.swift"), columns: 80)
         #expect(
             reply.contains { $0.links.map(\.uri) == ["file:///opt/b.swift"] },
-            "any block's paths open, not only a tool's")
+            "any block's paths open, not only a tool's"
+        )
     }
 }

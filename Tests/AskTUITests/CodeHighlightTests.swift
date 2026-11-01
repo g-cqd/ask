@@ -33,7 +33,8 @@ struct CodeHighlightTests {
         let lines = Self.lines("```rust\n/* open\nstill */ let x = 1;\n```")
         #expect(
             lines.first { $0.text == "  still */ let x = 1;" }?.accents.first { $0.columns == 2 ..< 10 }?.style.dim
-                == true)
+                == true
+        )
         #expect(Self.colour(lines, row: "  still */ let x = 1;", 11 ..< 14) == .indexed(5))
     }
 
@@ -41,7 +42,8 @@ struct CodeHighlightTests {
         #expect(Self.colour(Self.lines("```sh\necho hi\n```"), row: "  echo hi", 2 ..< 6) == .indexed(5))
         for message in ["```brainfuck\nlet ++\n```", "```\nlet a = 1\n```", "```text\nlet a = 1\n```"] {
             #expect(
-                Self.lines(message).map(\.accents) == Self.lines(message, highlight: false).map(\.accents), "\(message)"
+                Self.lines(message).map(\.accents) == Self.lines(message, highlight: false).map(\.accents),
+                "\(message)"
             )
         }
     }

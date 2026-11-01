@@ -41,8 +41,10 @@ public enum ThinkingOptions {
                     $0 == "none" ? ThinkingLevel.off : ThinkingLevel(rawValue: $0)
                 }
                 return Choices(
-                    levels: levels, verified: true,
-                    serverDefault: descriptor.defaultReasoningLevel.flatMap(ThinkingLevel.init(rawValue:)))
+                    levels: levels,
+                    verified: true,
+                    serverDefault: descriptor.defaultReasoningLevel.flatMap(ThinkingLevel.init(rawValue:))
+                )
         }
     }
 

@@ -11,7 +11,8 @@ struct ApprovalsConfigurationTests {
         let file = try ConfigurationFile.parse(Array(json.utf8), path: "c.json")
         #expect(
             file.approvals
-                == ApprovalsSection(defaultMode: .allow, allow: ["bash"], ask: ["mcp__x__*"], scope: .narrowingOnly))
+                == ApprovalsSection(defaultMode: .allow, allow: ["bash"], ask: ["mcp__x__*"], scope: .narrowingOnly)
+        )
         let configured = Configuration.defaults.applying(file, from: .file("/u/config.json"))
         #expect(configured.approvals.value.defaultMode == .allow)
         #expect(configured.changes(from: .defaults).first?.hasPrefix("approvals: ") == true)

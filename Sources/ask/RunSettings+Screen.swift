@@ -10,15 +10,22 @@ extension RunSettings {
         let spinnerStyle = ui.spinner.flatMap { SpinnerStyle(rawValue: $0.rawValue) } ?? defaults.spinner
         let appearance = ui.appearance.flatMap { ScreenAppearance(rawValue: $0.rawValue) } ?? defaults.appearance
         var options = ScreenOptions(
-            mouse: ui.mouse ?? defaults.mouse, copyOnSelect: ui.copyOnSelect ?? defaults.copyOnSelect,
+            mouse: ui.mouse ?? defaults.mouse,
+            copyOnSelect: ui.copyOnSelect ?? defaults.copyOnSelect,
             foldTools: ui.foldTools ?? defaults.foldTools,
-            foldThinking: ui.foldThinking ?? defaults.foldThinking, scrollLines: ui.scrollLines ?? defaults.scrollLines,
-            promptRows: ui.promptRows ?? defaults.promptRows, foldCode: ui.foldCode ?? defaults.foldCode,
-            codeFoldLines: ui.codeFoldLines ?? defaults.codeFoldLines, markdown: ui.markdown ?? defaults.markdown,
+            foldThinking: ui.foldThinking ?? defaults.foldThinking,
+            scrollLines: ui.scrollLines ?? defaults.scrollLines,
+            promptRows: ui.promptRows ?? defaults.promptRows,
+            foldCode: ui.foldCode ?? defaults.foldCode,
+            codeFoldLines: ui.codeFoldLines ?? defaults.codeFoldLines,
+            markdown: ui.markdown ?? defaults.markdown,
             highlight: ui.highlight ?? defaults.highlight,
             sidebar: ui.sidebarOpen ?? defaults.sidebar,
-            verbose: verbose, prompt: ui.prompt ?? defaults.prompt, tint: ui.tint ?? defaults.tint,
-            separator: ui.separator ?? defaults.separator, padding: ui.padding ?? defaults.padding,
+            verbose: verbose,
+            prompt: ui.prompt ?? defaults.prompt,
+            tint: ui.tint ?? defaults.tint,
+            separator: ui.separator ?? defaults.separator,
+            padding: ui.padding ?? defaults.padding,
             lightBackground: appearance == .auto ? Self.isLightBackground : appearance == .light,
             localizedDurations: ui.localizedDurations ?? defaults.localizedDurations,
             spinner: spinnerStyle,
@@ -28,7 +35,8 @@ extension RunSettings {
             escapeInterruptRequiresConfirmation: ui.escapeInterruptRequiresConfirmation
                 ?? defaults.escapeInterruptRequiresConfirmation,
             interruptSendsQueued: ui.interruptSendsQueued.flatMap { QueuedAfterInterrupt(rawValue: $0.rawValue) }
-                ?? defaults.interruptSendsQueued)
+                ?? defaults.interruptSendsQueued
+        )
         options.appearance = appearance
         options.timeoutDisplay = ui.timeout.flatMap { TimeoutDisplay(rawValue: $0.rawValue) } ?? defaults.timeoutDisplay
         options.timeoutLabel = ui.timeoutLabel ?? defaults.timeoutLabel

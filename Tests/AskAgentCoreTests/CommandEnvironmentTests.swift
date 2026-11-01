@@ -51,7 +51,8 @@ struct CommandEnvironmentTests {
     @Test func `a configured name is withheld too, exactly or by prefix`() {
         let kept = policy(EnvironmentSection(withhold: ["MY_SERVICE_TOKEN", "AWS_*"]))
             .filtered(
-                Self.environment.merging(["AWS_PROFILE": "p", "AWS_SECRET_ACCESS_KEY": "s", "AWSOME": "a"]) { $1 })
+                Self.environment.merging(["AWS_PROFILE": "p", "AWS_SECRET_ACCESS_KEY": "s", "AWSOME": "a"]) { $1 }
+            )
         #expect(kept["MY_SERVICE_TOKEN"] == nil && kept["AWS_PROFILE"] == nil && kept["AWS_SECRET_ACCESS_KEY"] == nil)
         #expect(kept["AWSOME"] == "a", "`AWS_*` is a prefix of `AWS_`, not of `AWS`")
     }
@@ -66,7 +67,9 @@ struct CommandEnvironmentTests {
     func `a name the configuration both passes and withholds is withheld, so a project can narrow what a user passed`()
     {
         let section = EnvironmentSection(
-            pass: ["MY_SERVICE_TOKEN", "AWS_PROFILE"], withhold: ["MY_SERVICE_TOKEN", "AWS_*"])
+            pass: ["MY_SERVICE_TOKEN", "AWS_PROFILE"],
+            withhold: ["MY_SERVICE_TOKEN", "AWS_*"]
+        )
         let kept = policy(section).filtered(Self.environment.merging(["AWS_PROFILE": "p"]) { $1 })
         #expect(kept["MY_SERVICE_TOKEN"] == nil && kept["AWS_PROFILE"] == nil)
     }

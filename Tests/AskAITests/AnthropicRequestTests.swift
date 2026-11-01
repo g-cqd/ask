@@ -26,18 +26,21 @@ struct AnthropicRequestTests {
         let encoded = body(request([ModelMessage(role: .user, blocks: [.text("Hi")])]))
         #expect(
             encoded == head + #""messages":[{"role":"user","content":["#
-                + #"{"type":"text","text":"Be brief."},{"type":"text","text":"Hi"}]}]}"#)
+                + #"{"type":"text","text":"Be brief."},{"type":"text","text":"Hi"}]}]}"#
+        )
     }
 
     @Test func `the prompt follows the tool results that must lead a user message`() {
         let encoded = body(
             request([
                 ModelMessage(role: .user, blocks: [.toolResult(id: "t1", content: "42", isError: false), .text("and?")])
-            ]))
+            ])
+        )
         #expect(
             encoded == head + #""messages":[{"role":"user","content":["#
                 + #"{"type":"tool_result","tool_use_id":"t1","content":"42"},"#
-                + #"{"type":"text","text":"Be brief."},{"type":"text","text":"and?"}]}]}"#)
+                + #"{"type":"text","text":"Be brief."},{"type":"text","text":"and?"}]}]}"#
+        )
     }
 
     @Test func `without a leading user message, one is added to carry the prompt`() {
@@ -47,7 +50,8 @@ struct AnthropicRequestTests {
         let encoded = body(request([ModelMessage(role: .assistant, blocks: [.text("Hello")])]))
         #expect(
             encoded == head + #""messages":[{"role":"user","content":[{"type":"text","text":"Be brief."}]},"#
-                + #"{"role":"assistant","content":[{"type":"text","text":"Hello"}]}]}"#)
+                + #"{"role":"assistant","content":[{"type":"text","text":"Hello"}]}]}"#
+        )
     }
 
     @Test func `no prompt adds nothing`() {
@@ -69,17 +73,24 @@ struct AnthropicRequestTests {
                             .thinking(text: "Hmm", signature: "sig=="), .redactedThinking(data: "opaque"),
                             .text("Reading."),
                             .toolCall(id: "toolu_1", name: "read", input: input)
-                        ]),
+                        ]
+                    ),
                     ModelMessage(
-                        role: .user, blocks: [.toolResult(id: "toolu_1", content: "no such file", isError: true)])
-                ], prompt: []))
+                        role: .user,
+                        blocks: [.toolResult(id: "toolu_1", content: "no such file", isError: true)]
+                    )
+                ],
+                prompt: []
+            )
+        )
         #expect(
             encoded == head + #""messages":[{"role":"user","content":[{"type":"text","text":"Go"}]},"#
                 + #"{"role":"assistant","content":[{"type":"thinking","thinking":"Hmm","signature":"sig=="},"#
                 + #"{"type":"redacted_thinking","data":"opaque"},{"type":"text","text":"Reading."},"#
                 + #"{"type":"tool_use","id":"toolu_1","name":"read","input":{"path": "a.swift"}}]},"#
                 + #"{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_1","content":"no such file","#
-                + #""is_error":true}]}]}"#)
+                + #""is_error":true}]}]}"#
+        )
     }
 
     @Test func `reasoning another protocol signed is not sent to Anthropic, and Anthropic's own still is`() {
@@ -124,7 +135,9 @@ struct AnthropicRequestTests {
         let encoded = body(request([ModelMessage(role: .user, blocks: [.text("Hi")])], prompt: [], tools: [tool]))
         #expect(
             encoded.hasSuffix(
-                #"}]}],"tools":[{"name":"read","description":"Read a file.","input_schema":{"type":"object"}}]}"#))
+                #"}]}],"tools":[{"name":"read","description":"Read a file.","input_schema":{"type":"object"}}]}"#
+            )
+        )
     }
 
     @Test func `text is escaped, and non-ASCII is kept as UTF-8`() {
@@ -149,7 +162,11 @@ struct AnthropicRequestTests {
                     ModelMessage(role: .user, blocks: [.text("Hi")]),
                     ModelMessage(role: .assistant, blocks: [.text("Hello")]),
                     ModelMessage(role: .user, blocks: [.text("Again")])
-                ], prompt: ["One.", "Two."], tools: [tool]))
+                ],
+                prompt: ["One.", "Two."],
+                tools: [tool]
+            )
+        )
         #expect(encoded.contains(#"{"type":"text","text":"One."},{"type":"text","text":"Two.""# + mark + "}"))
         #expect(encoded.contains(#"{"type":"text","text":"Again""# + mark + "}"))
         #expect(encoded.contains(#""input_schema":{"type":"object"}"# + mark + "}"))
@@ -161,7 +178,9 @@ struct AnthropicRequestTests {
         let encoded = cached(
             request(
                 [ModelMessage(role: .assistant, blocks: [.text("Answer"), .thinking(text: "t", signature: "s")])],
-                prompt: []))
+                prompt: []
+            )
+        )
         #expect(encoded.contains(#"{"type":"text","text":"Answer""# + mark + "}"))
         #expect(!encoded.contains(#""signature":"s""# + mark))
     }
@@ -174,7 +193,10 @@ struct AnthropicRequestTests {
     @Test func `tool results carry the conversation breakpoint`() {
         let encoded = cached(
             request(
-                [ModelMessage(role: .user, blocks: [.toolResult(id: "t", content: "42", isError: false)])], prompt: []))
+                [ModelMessage(role: .user, blocks: [.toolResult(id: "t", content: "42", isError: false)])],
+                prompt: []
+            )
+        )
         #expect(encoded.contains(#""content":"42""# + mark + "}"))
     }
 

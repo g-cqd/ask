@@ -19,11 +19,20 @@ public struct ResponsesClient: Sendable {
     ///   - dialect: how this server's requests differ from the plain API's.
     ///   - replay: remembers a refusal of replayed reasoning for the run; nil retries each time it is refused.
     public init(
-        transport: any HTTPTransport, baseURL: URL, apiKey: String? = nil, headers: [String: String] = [:],
-        dialect: ResponsesDialect = .standard, replay: ReasoningReplayGate? = nil
+        transport: any HTTPTransport,
+        baseURL: URL,
+        apiKey: String? = nil,
+        headers: [String: String] = [:],
+        dialect: ResponsesDialect = .standard,
+        replay: ReasoningReplayGate? = nil
     ) {
         endpoint = ProviderEndpoint(
-            transport: transport, baseURL: baseURL, path: "responses", apiKey: apiKey, headers: headers)
+            transport: transport,
+            baseURL: baseURL,
+            path: "responses",
+            apiKey: apiKey,
+            headers: headers
+        )
         self.dialect = dialect
         self.replay = replay
     }
@@ -40,7 +49,9 @@ public struct ResponsesClient: Sendable {
         var sent = dialect
         sent.replaysReasoning = replaying
         let first = endpoint.stream(
-            ResponsesRequestEncoder.encode(request, dialect: sent), decoder: ResponsesStreamDecoder.self)
+            ResponsesRequestEncoder.encode(request, dialect: sent),
+            decoder: ResponsesStreamDecoder.self
+        )
         guard replaying else { return first }
         var withoutReplay = dialect
         withoutReplay.replaysReasoning = false
@@ -61,7 +72,8 @@ public struct ResponsesClient: Sendable {
                     continuation.yield(
                         .notice(
                             "The server could not verify the reasoning ask sent back, so this run continues without it."
-                        ))
+                        )
+                    )
                 } catch {
                     continuation.finish(throwing: error)
                     return

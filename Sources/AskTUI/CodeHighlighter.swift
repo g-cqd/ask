@@ -19,7 +19,8 @@ struct CodeHighlighter: MarkdownCodeHighlighter {
             tokens.removeAll(keepingCapacity: true)
             state = lexer.scan(line.utf8.span, from: state, into: &tokens)
             result.append(
-                tokens.compactMap { token in Self.style(of: token.role).map { .init(bytes: token.range, style: $0) } })
+                tokens.compactMap { token in Self.style(of: token.role).map { .init(bytes: token.range, style: $0) } }
+            )
         }
         return result
     }

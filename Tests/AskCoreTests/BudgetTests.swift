@@ -15,7 +15,12 @@ struct BudgetTests {
     @Test func `a measurement well inside every budget passes`() {
         #expect(
             Budget.isWithinBudget(
-                coldStart: 11.06, idleMemoryMebibytes: 5.7, inputDelay: 0.12, action: 0.05))
+                coldStart: 11.06,
+                idleMemoryMebibytes: 5.7,
+                inputDelay: 0.12,
+                action: 0.05
+            )
+        )
     }
 
     @Test func `the measured baseline itself passes`() {
@@ -24,7 +29,12 @@ struct BudgetTests {
         // raised on the first bad day rather than defended.
         #expect(
             Budget.isWithinBudget(
-                coldStart: 11.06, idleMemoryMebibytes: 5712.0 / 1024, inputDelay: 0.12, action: 3.06))
+                coldStart: 11.06,
+                idleMemoryMebibytes: 5712.0 / 1024,
+                inputDelay: 0.12,
+                action: 3.06
+            )
+        )
     }
 
     @Test func `the action budget is the real action's, not the old trivial one`() {
@@ -37,33 +47,49 @@ struct BudgetTests {
     @Test func `a cold start over budget fails`() {
         #expect(
             !Budget.isWithinBudget(
-                coldStart: Budget.coldStartMilliseconds + 1, idleMemoryMebibytes: 5.7,
-                inputDelay: 0.12, action: 0.05),
-            "a cold start over budget passed")
+                coldStart: Budget.coldStartMilliseconds + 1,
+                idleMemoryMebibytes: 5.7,
+                inputDelay: 0.12,
+                action: 0.05
+            ),
+            "a cold start over budget passed"
+        )
     }
 
     @Test func `idle memory over budget fails`() {
         #expect(
             !Budget.isWithinBudget(
-                coldStart: 5, idleMemoryMebibytes: Double(Budget.idleMemoryMebibytes) + 0.5,
-                inputDelay: 0.12, action: 0.05),
-            "idle memory over budget passed")
+                coldStart: 5,
+                idleMemoryMebibytes: Double(Budget.idleMemoryMebibytes) + 0.5,
+                inputDelay: 0.12,
+                action: 0.05
+            ),
+            "idle memory over budget passed"
+        )
     }
 
     @Test func `input delay over budget fails`() {
         #expect(
             !Budget.isWithinBudget(
-                coldStart: 5, idleMemoryMebibytes: 5.7,
-                inputDelay: Budget.inputDelayMilliseconds + 0.1, action: 0.05),
-            "input delay over budget passed")
+                coldStart: 5,
+                idleMemoryMebibytes: 5.7,
+                inputDelay: Budget.inputDelayMilliseconds + 0.1,
+                action: 0.05
+            ),
+            "input delay over budget passed"
+        )
     }
 
     @Test func `action delay over budget fails`() {
         #expect(
             !Budget.isWithinBudget(
-                coldStart: 5, idleMemoryMebibytes: 5.7, inputDelay: 0.12,
-                action: Budget.actionToActionMilliseconds + 0.1),
-            "action delay over budget passed")
+                coldStart: 5,
+                idleMemoryMebibytes: 5.7,
+                inputDelay: 0.12,
+                action: Budget.actionToActionMilliseconds + 0.1
+            ),
+            "action delay over budget passed"
+        )
     }
 
     @Test func `the boundary is inclusive`() {
@@ -74,8 +100,10 @@ struct BudgetTests {
                 coldStart: Budget.coldStartMilliseconds,
                 idleMemoryMebibytes: Double(Budget.idleMemoryMebibytes),
                 inputDelay: Budget.inputDelayMilliseconds,
-                action: Budget.actionToActionMilliseconds),
-            "a measurement exactly on every limit was rejected")
+                action: Budget.actionToActionMilliseconds
+            ),
+            "a measurement exactly on every limit was rejected"
+        )
     }
 
     @Test func `every budget is positive and finite`() {
@@ -108,10 +136,22 @@ struct BudgetTests {
         #expect(Budget.inputDelayMilliseconds == 4)
         #expect(
             !Budget.isWithinBudget(
-                coldStart: 5, idleMemoryMebibytes: 5, inputDelay: 0.1, action: 1, activeMemoryMebibytes: 20.5))
+                coldStart: 5,
+                idleMemoryMebibytes: 5,
+                inputDelay: 0.1,
+                action: 1,
+                activeMemoryMebibytes: 20.5
+            )
+        )
         #expect(
             Budget.isWithinBudget(
-                coldStart: 5, idleMemoryMebibytes: 5, inputDelay: 0.1, action: 1, activeMemoryMebibytes: 20))
+                coldStart: 5,
+                idleMemoryMebibytes: 5,
+                inputDelay: 0.1,
+                action: 1,
+                activeMemoryMebibytes: 20
+            )
+        )
     }
 
     @Test func `every budget sits above what was measured`() {

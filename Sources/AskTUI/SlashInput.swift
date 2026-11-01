@@ -31,6 +31,7 @@ public enum SlashInput: Sendable, Equatable {
         }
         self = .command(
             name: String(name),
-            arguments: String(trimmed.dropFirst(word.count)).trimmingCharacters(in: .whitespaces))
+            arguments: String(trimmed.dropFirst(word.count)).trimmingCharacters(in: .whitespaces)
+        )
     }
 }

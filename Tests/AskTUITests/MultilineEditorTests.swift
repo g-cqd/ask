@@ -139,7 +139,8 @@ struct MultilineEditorTests {
                         .compactMap { column -> Character? in
                             let cell = buffer[row, column]
                             return cell.isContinuation ? nil : cell.character
-                        })
+                        }
+                )
                 while line.last == " " { line.removeLast() }
                 return line
             }

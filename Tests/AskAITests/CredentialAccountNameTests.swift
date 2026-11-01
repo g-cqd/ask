@@ -10,8 +10,14 @@ import Testing
 struct CredentialAccountNameTests {
     private let store = MemorySecretStore()
     private let claude = ClaudeCredentials(
-        accessToken: "sk-ant-oat-SECRET-A", refreshToken: "sk-ant-ort-SECRET-R", expiresAt: 1_000,
-        refreshExpiresAt: nil, accountEmail: "a@b.c", organizationName: nil, scopes: "user:inference")
+        accessToken: "sk-ant-oat-SECRET-A",
+        refreshToken: "sk-ant-ort-SECRET-R",
+        expiresAt: 1_000,
+        refreshExpiresAt: nil,
+        accountEmail: "a@b.c",
+        organizationName: nil,
+        scopes: "user:inference"
+    )
 
     private func directory() throws -> URL {
         let made = FileManager.default.temporaryDirectory.appending(path: "ask-account-\(UUID().uuidString)")
@@ -25,14 +31,18 @@ struct CredentialAccountNameTests {
         try FileManager.default.createSymbolicLink(at: link, withDestinationURL: real)
         try CredentialFile(url: link.appending(path: "credentials.json"), secrets: store).saveClaude(claude)
         #expect(
-            try CredentialFile(url: real.appending(path: "credentials.json"), secrets: store).loadClaude() == claude)
+            try CredentialFile(url: real.appending(path: "credentials.json"), secrets: store).loadClaude() == claude
+        )
         try CredentialFile(url: real.appending(path: "credentials.json"), secrets: store)
             .saveKey(
-                StoredKey(key: "sk-SECRET", obtainedAt: 1), for: "mistral")
+                StoredKey(key: "sk-SECRET", obtainedAt: 1),
+                for: "mistral"
+            )
         #expect(
             try CredentialFile(url: link.appending(path: "credentials.json"), secrets: store).loadKey(for: "mistral")?
                 .key
-                == "sk-SECRET")
+                == "sk-SECRET"
+        )
     }
 
     @Test func `saved under /var, it loads under /private/var`() throws {

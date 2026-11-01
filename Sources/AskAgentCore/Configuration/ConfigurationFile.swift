@@ -36,11 +36,18 @@ public struct ConfigurationFile: Sendable, Equatable {
 
     /// A file with these values.
     public init(
-        model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: CompactionThreshold? = nil,
+        model: String? = nil,
+        provider: String? = nil,
+        maxTurns: Int? = nil,
+        compactAt: CompactionThreshold? = nil,
         // @dl:accept -- an initializer that takes every key; adding a section adds a parameter
-        sandbox: SandboxSection? = nil, ui: UISection? = nil, thinking: ThinkingLevel? = nil,
+        sandbox: SandboxSection? = nil,
+        ui: UISection? = nil,
+        thinking: ThinkingLevel? = nil,
         // @dl:accept -- configuration's optional section parameters are not agent-loop settings; no shared initializer contract
-        skills: SkillsSection? = nil, mcp: MCPSection? = nil,
+        skills: SkillsSection? = nil,
+        // @dl:accept -- configuration's optional section parameters are not agent-loop settings; no shared initializer contract
+        mcp: MCPSection? = nil,
         environment: EnvironmentSection? = nil  // @dl:accept -- an initializer that takes every key
     ) {
         // @dl:accept -- member assignments in configuration section initializers
@@ -72,7 +79,9 @@ public struct ConfigurationFile: Sendable, Equatable {
     /// - Returns: the validated file.
     /// - Throws: ``ConfigurationError``.
     public static func parse(
-        _ bytes: [UInt8], path: String, isProject: Bool = false
+        _ bytes: [UInt8],
+        path: String,
+        isProject: Bool = false
     ) throws(ConfigurationError) -> ConfigurationFile {
         var decoder = AemiJSON.JSONDecoder()
         decoder.options = JSONParseOptions(validation: .json5, duplicateKeys: .throwError)
@@ -98,51 +107,22 @@ public struct ConfigurationFile: Sendable, Equatable {
         try validateEnvironment(file.environment, path: path, isProject: isProject)
         if isProject, file.approvals != nil {
             throw .outOfRange(
-                path: path, key: "approvals",
-                reason: "says which calls ask you first: only your own config file can choose that")
+                path: path,
+                key: "approvals",
+                reason: "says which calls ask you first: only your own config file can choose that"
+            )
         }
         try validateModelScopes(file.modelScopes, path: path, isProject: isProject)
         if isProject, file.credentials != nil {
             throw .outOfRange(
-                path: path, key: "credentials",
-                reason: "says where your keys are kept: only your own config file can choose that")
+                path: path,
+                key: "credentials",
+                reason: "says where your keys are kept: only your own config file can choose that"
+            )
         }
         try validateCounts(file, path: path)
         return file
     }
-
-    /// An error in words: a parser's `unexpectedCharacter(93, at: 28)` as "unexpected ']'".
-    static func reason(of error: any Error) -> String {
-        let text = String(describing: error)
-        if let range = text.range(of: #"unexpectedCharacter\(\d+"#, options: .regularExpression),
-            let byte = UInt8(text[range].dropFirst("unexpectedCharacter(".count)), byte >= 0x20, byte < 0x7F
-        {
-            return "unexpected '\(Character(UnicodeScalar(byte)))'"
-        }
-        if text.hasPrefix("unexpectedEndOfInput") { return "the file ends in the middle of a value" }
-        return text
-    }
-
-    /// The 1-based line and column of the byte offset a parse error names (`at: N`), when it names one.
-    static func position(of error: any Error, in bytes: [UInt8]) -> (Int?, Int?) {
-        let text = String(describing: error)
-        guard let range = text.range(of: #"at: \d+"#, options: .regularExpression),
-            let offset = Int(text[range].dropFirst(4)), offset <= bytes.count
-        else { return (nil, nil) }
-        var line = 1
-        var column = 1
-        for byte in bytes[..<offset] {
-            if byte == 0x0A {
-                line += 1
-                column = 1
-            } else if byte & 0xC0 != 0x80 {
-                column += 1
-            }
-        }
-        return (line, column)
-    }
-
-    struct UnknownKey: Error { let key: String }
 
     /// A write or read scope: "workspace", "anywhere", or a list of paths.
     private static func scope(_ container: KeyedDecodingContainer<Key>, _ key: Key, name: String) throws -> PathSetting
@@ -165,7 +145,8 @@ public struct ConfigurationFile: Sendable, Equatable {
 
     /// Calls `body` with each key of the object being decoded, and the container to read its value from.
     static func eachKey(
-        of decoder: any Decoder, _ body: (Key, KeyedDecodingContainer<Key>) throws -> Void
+        of decoder: any Decoder,
+        _ body: (Key, KeyedDecodingContainer<Key>) throws -> Void
     ) throws {
         let container = try decoder.container(keyedBy: Key.self)
         // @dl:accept -- the walk the key tables share; the analyzer matches it against their closing lines
@@ -213,10 +194,16 @@ public struct ConfigurationFile: Sendable, Equatable {
                         file.keepAwake = try ConfigurationFile.decodeChoice(container, key: key, as: KeepAwakeMode.self)
                     case "keepDisplayAwake":
                         file.keepDisplayAwake = try ConfigurationFile.decodeSwitch(
-                            container, key: key, name: "keepDisplayAwake")
+                            container,
+                            key: key,
+                            name: "keepDisplayAwake"
+                        )
                     case "credentials":
                         file.credentials = try ConfigurationFile.decodeChoice(
-                            container, key: key, as: CredentialStorage.self)
+                            container,
+                            key: key,
+                            as: CredentialStorage.self
+                        )
                     case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
                     case "ui": file.ui = try container.decode(UIDecoded.self, forKey: key).section
                     case "skills": file.skills = try container.decode(SkillsDecoded.self, forKey: key).section

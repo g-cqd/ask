@@ -36,8 +36,11 @@ public struct NarrowSandboxTool: Tool {
         guard SandboxRequest.resets(input) else { return .error("Give a sandbox to narrow to, or reset: true.") }
         guard narrowing.policy != nil else { return ToolOutput("The session was not narrowed; nothing to reset.") }
         let question = SandboxApproval(
-            tool: definition.name, input: input,
-            asked: ["the run's own sandbox back, undoing the session's narrowing"], request: nil)
+            tool: definition.name,
+            input: input,
+            asked: ["the run's own sandbox back, undoing the session's narrowing"],
+            request: nil
+        )
         guard let approve = context.approve, await approve(question) else {
             return .error("Not permitted: that request is refused.")
         }

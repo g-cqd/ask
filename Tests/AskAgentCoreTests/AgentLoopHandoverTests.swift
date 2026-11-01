@@ -18,21 +18,30 @@ struct AgentLoopHandoverTests {
     private func session() throws -> SessionRecorder {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return SessionRecorder(
-            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none))
+            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none)
+        )
     }
 
     private func loop(
-        _ provider: Provider, model: String, handover: LoopHandover? = nil,
+        _ provider: Provider,
+        model: String,
+        handover: LoopHandover? = nil,
         clock: any Clock<Duration> = ImmediateClock()
     ) throws -> AgentLoop {
         AgentLoop(
-            provider: provider, tools: try ToolRegistry([]),
+            provider: provider,
+            tools: try ToolRegistry([]),
             settings: AgentSettings(model: model, maximumTokens: 64, systemPrompt: ["for \(model)"], maximumTurns: 6),
             context: ToolContext(workingDirectory: directory.path),
             retry: RetryPolicy(
-                maximumAttempts: 5, baseDelay: .seconds(60), maximumDelay: .seconds(60),
-                maximumRequestedDelay: .seconds(120)),
-            clock: clock, handover: handover)
+                maximumAttempts: 5,
+                baseDelay: .seconds(60),
+                maximumDelay: .seconds(60),
+                maximumRequestedDelay: .seconds(120)
+            ),
+            clock: clock,
+            handover: handover
+        )
     }
 
     @Test func `the request after a tool goes to the loop offered while the turn ran`() async throws {
@@ -53,7 +62,8 @@ struct AgentLoopHandoverTests {
         let request = try #require(after.requests.first)
         #expect(
             request.model == "new" && request.systemPrompt == ["for new"],
-            "the new loop's settings, its system prompt too")
+            "the new loop's settings, its system prompt too"
+        )
         #expect(request.messages.count == 3, "the whole turn so far: the prompt, the call, and its result")
     }
 

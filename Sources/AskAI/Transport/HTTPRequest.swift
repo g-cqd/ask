@@ -13,7 +13,11 @@ public struct HTTPRequest: Sendable, Equatable {
 
     /// A request with these fields.
     public init(
-        url: URL, method: String, headers: [(name: String, value: String)], body: [UInt8], allowsRedirects: Bool = true
+        url: URL,
+        method: String,
+        headers: [(name: String, value: String)],
+        body: [UInt8],
+        allowsRedirects: Bool = true
     ) {
         self.url = url
         self.method = method

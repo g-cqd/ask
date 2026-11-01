@@ -35,9 +35,13 @@ public struct SessionGrants: Sendable, Equatable {
     public func write(to path: String) throws {
         let record = calls.record
         let wire = Wire(
-            phrases: record.phrases, programs: record.programs, files: record.files, tools: record.tools,
+            phrases: record.phrases,
+            programs: record.programs,
+            files: record.files,
+            tools: record.tools,
             sandbox: sandbox.map { Wire.Request(network: $0.network?.description, write: $0.write, read: $0.read) },
-            destructive: destructive.sorted())
+            destructive: destructive.sorted()
+        )
         let bytes = try AemiJSON.JSONEncoder().encode(wire)
         guard
             FileManager.default.createFile(atPath: path, contents: Data(bytes), attributes: [.posixPermissions: 0o600])
@@ -54,8 +58,12 @@ public struct SessionGrants: Sendable, Equatable {
             calls: CallGrants(phrases: wire.phrases, programs: wire.programs, files: wire.files, tools: wire.tools),
             sandbox: wire.sandbox.map {
                 SandboxRequest(
-                    network: $0.network.flatMap(SandboxPolicy.Network.init(named:)), write: $0.write, read: $0.read)
+                    network: $0.network.flatMap(SandboxPolicy.Network.init(named:)),
+                    write: $0.write,
+                    read: $0.read
+                )
             },
-            destructive: Set(wire.destructive))
+            destructive: Set(wire.destructive)
+        )
     }
 }

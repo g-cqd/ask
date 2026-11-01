@@ -7,12 +7,19 @@ internal import Testing
 /// them all cost 2 ms of a 12 ms start with OpenRouter's 468 (diary 55).
 struct ModelCatalogLookupTests {
     private static let scope = ModelCatalogScope(
-        provider: "p", accountID: "api-key", endpoint: URL(string: "https://example.test/v1/models")!)
+        provider: "p",
+        accountID: "api-key",
+        endpoint: URL(string: "https://example.test/v1/models")!
+    )
     private static let models = [
         CatalogModel(id: "org/first", contextWindow: 8192, maxOutputTokens: 1000),
         CatalogModel(id: "second"),
         CatalogModel(
-            id: "third:free", contextWindow: 1_000_000, reasoningLevels: ["low", "high"], defaultReasoningLevel: "low"),
+            id: "third:free",
+            contextWindow: 1_000_000,
+            reasoningLevels: ["low", "high"],
+            defaultReasoningLevel: "low"
+        ),
         CatalogModel(id: "~last", contextWindow: 32768)
     ]
 
@@ -57,7 +64,10 @@ struct ModelCatalogLookupTests {
             let found8 = try file.model("second", scope: other, now: 11)
             #expect(found8 == nil)
             let elsewhere = ModelCatalogScope(
-                provider: "p", accountID: "api-key", endpoint: URL(string: "https://other.test/v1/models")!)
+                provider: "p",
+                accountID: "api-key",
+                endpoint: URL(string: "https://other.test/v1/models")!
+            )
             let found9 = try file.model("second", scope: elsewhere, now: 11)
             #expect(found9 == nil)
             let keyless = ModelCatalogScope(provider: "p", accountID: "no-key", endpoint: Self.scope.endpoint)
@@ -65,7 +75,8 @@ struct ModelCatalogLookupTests {
             #expect(found10 == nil)
         }
         let absent = ModelCatalogFile(
-            url: FileManager.default.temporaryDirectory.appending(path: "ask-none-\(UUID()).json"))
+            url: FileManager.default.temporaryDirectory.appending(path: "ask-none-\(UUID()).json")
+        )
         let found11 = try absent.model("second", scope: Self.scope, now: 11)
         #expect(found11 == nil)
     }
@@ -102,7 +113,10 @@ struct ModelCatalogLookupTests {
             #expect(text.contains(#""version":1"#))
             try text.replacingOccurrences(of: #""version":1"#, with: #""version":2"#)
                 .write(
-                    to: file.url, atomically: true, encoding: .utf8)
+                    to: file.url,
+                    atomically: true,
+                    encoding: .utf8
+                )
             #expect(throws: ModelCatalogError.cache(path: file.url.path)) {
                 try file.model("second", scope: Self.scope, now: 11)
             }
@@ -152,8 +166,13 @@ struct ModelCatalogLookupTests {
         defer { try? FileManager.default.removeItem(at: root) }
         let transport = SequencedTransport([.json(200, #"{"data":[{"id":"a/b","context_length":64000},{"id":"c"}]}"#)])
         let catalog = ProviderModelCatalog(
-            name: "p", baseURL: URL(string: "https://example.test/v1")!, apiKey: "k", headers: [:],
-            cache: ModelCatalogFile(url: root.appending(path: "models-p.json")), transport: transport)
+            name: "p",
+            baseURL: URL(string: "https://example.test/v1")!,
+            apiKey: "k",
+            headers: [:],
+            cache: ModelCatalogFile(url: root.appending(path: "models-p.json")),
+            transport: transport
+        )
         let found12 = try catalog.cachedModel("a/b", now: 10)
         #expect(found12 == nil)
         _ = try await catalog.models(now: 10)
@@ -163,8 +182,13 @@ struct ModelCatalogLookupTests {
         #expect(found13 == nil)
         #expect(transport.sent.count == 1)
         let uncached = ProviderModelCatalog(
-            name: "p", baseURL: URL(string: "https://example.test/v1")!, apiKey: nil, headers: [:], cache: nil,
-            transport: transport)
+            name: "p",
+            baseURL: URL(string: "https://example.test/v1")!,
+            apiKey: nil,
+            headers: [:],
+            cache: nil,
+            transport: transport
+        )
         let found14 = try uncached.cachedModel("a/b", now: 11)
         #expect(found14 == nil)
     }

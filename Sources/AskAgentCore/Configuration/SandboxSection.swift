@@ -24,7 +24,10 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
 
     /// A section with these settings.
     public init(
-        allowRead: [String] = [], denyRead: [String] = [], write: [PathSetting] = [], read: [PathSetting] = [],
+        allowRead: [String] = [],
+        denyRead: [String] = [],
+        write: [PathSetting] = [],
+        read: [PathSetting] = [],
         network: SandboxPolicy.Network? = nil
     ) {
         self.allowRead = allowRead
@@ -64,7 +67,8 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
             // A scope already present narrows nothing more; keeping it once stops a resumed record from growing.
             write: write + section.write.filter { !write.contains($0) },
             read: read + section.read.filter { !read.contains($0) },
-            network: Self.lower(network, section.network))
+            network: Self.lower(network, section.network)
+        )
         next.allowWrite = section.allowWrite.isEmpty ? allowWrite : section.allowWrite
         return next
     }

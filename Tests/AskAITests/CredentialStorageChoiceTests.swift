@@ -20,7 +20,8 @@ struct CredentialStorageChoiceTests {
     /// process's choice changed: other suites reach the registry in parallel, and must never meet the person's keychain.
     @Test func `a named connection's file uses the chosen store too`() {
         let registry = ConnectionRegistry(
-            directory: FileManager.default.temporaryDirectory.appending(path: "connections"))
+            directory: FileManager.default.temporaryDirectory.appending(path: "connections")
+        )
         let record = ConnectionRecord(name: "codex-2", provider: .codex)
         let store = MemorySecretStore()
         let kept = registry.credentials(for: record, choice: .keychain, stablySigned: false, keychain: store)

@@ -18,11 +18,17 @@ struct OutputFoldConfigurationTests {
     @Test func `too few lines or bytes are refused by name`() {
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "ui.fold.outputLines", reason: "must be at least 2")
+                path: "c.json",
+                key: "ui.fold.outputLines",
+                reason: "must be at least 2"
+            )
         ) { try parse("{ui:{fold:{outputLines:1}}}") }
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "ui.fold.outputBytes", reason: "must be at least 64")
+                path: "c.json",
+                key: "ui.fold.outputBytes",
+                reason: "must be at least 64"
+            )
         ) { try parse("{ui:{fold:{outputBytes:63}}}") }
     }
 

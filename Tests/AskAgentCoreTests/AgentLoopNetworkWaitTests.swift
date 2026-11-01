@@ -18,16 +18,24 @@ struct AgentLoopNetworkWaitTests {
     {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let recorder = SessionRecorder(
-            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none))
+            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none)
+        )
         let clock = ImmediateClock()
         let loop = AgentLoop(
-            provider: provider, tools: try ToolRegistry([]),
+            provider: provider,
+            tools: try ToolRegistry([]),
             settings: AgentSettings(model: "m", maximumTokens: 64, systemPrompt: [], maximumTurns: 8),
             context: ToolContext(workingDirectory: directory.path),
             retry: RetryPolicy(
-                maximumAttempts: attempts, baseDelay: .seconds(1), maximumDelay: .seconds(30),
-                maximumRequestedDelay: .seconds(120)),
-            clock: clock, network: network, networkWait: .seconds(300))
+                maximumAttempts: attempts,
+                baseDelay: .seconds(1),
+                maximumDelay: .seconds(30),
+                maximumRequestedDelay: .seconds(120)
+            ),
+            clock: clock,
+            network: network,
+            networkWait: .seconds(300)
+        )
         let events = Mutex<[AgentEvent]>([])
         do throws(AgentError) {
             try await loop.run("go", in: recorder) { event in events.withLock { $0.append(event) } }

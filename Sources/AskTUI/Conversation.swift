@@ -33,7 +33,11 @@ public protocol Conversation: Sendable {
 
     /// Commits one value in the interactive configuration editor; updates report the saved rows or the refusal.
     func commitConfig(
-        scope: String, path: [String], value: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async
+        scope: String,
+        path: [String],
+        value: String,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) async
 
     /// The answer to a question ``ConversationUpdate/askInput(id:prompt:secret:)`` put; nil when the person cancelled it.
     func answer(input id: Int, with text: String?)
@@ -54,13 +58,18 @@ public protocol Conversation: Sendable {
     /// Runs the command `name`, one of ``commands``. It is a run like a prompt's: updates arrive through
     /// `update`, ending with ``ConversationUpdate/runEnded``, and cancelling the task aborts it.
     func command(
-        _ name: String, arguments: String, update: @escaping @Sendable (ConversationUpdate) -> Void
+        _ name: String,
+        arguments: String,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
     ) -> Task<Void, Never>
 
     /// Runs the command `name` beside a running turn (roadmap 0113): its updates arrive through `update`, without
     /// ``ConversationUpdate/runEnded``, since the screen's run is the turn's: its end is ``ConversationUpdate/besideEnded``.
     func command(
-        _ name: String, arguments: String, beside: Bool, update: @escaping @Sendable (ConversationUpdate) -> Void
+        _ name: String,
+        arguments: String,
+        beside: Bool,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
     ) -> Task<Void, Never>
 }
 
@@ -84,7 +93,10 @@ extension Conversation {
     public func choices(for command: String) async -> [ChoiceRow] { [] }
 
     public func commitConfig(
-        scope: String, path: [String], value: String, update: @escaping @Sendable (ConversationUpdate) -> Void
+        scope: String,
+        path: [String],
+        value: String,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
     ) async {
         update(.notice("Configuration editing is unavailable.", isError: true))
     }
@@ -113,7 +125,10 @@ extension Conversation {
 
     /// Beside a turn as alone, for a conversation that does not tell them apart: the end of run is not passed on.
     public func command(
-        _ name: String, arguments: String, beside: Bool, update: @escaping @Sendable (ConversationUpdate) -> Void
+        _ name: String,
+        arguments: String,
+        beside: Bool,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
     ) -> Task<Void, Never> {
         guard beside else { return command(name, arguments: arguments, update: update) }
         return command(name, arguments: arguments) { item in
@@ -124,7 +139,9 @@ extension Conversation {
 
     /// Ends at once, saying the command is unknown. A conversation with no commands is never asked to run one.
     public func command(
-        _ name: String, arguments: String, update: @escaping @Sendable (ConversationUpdate) -> Void
+        _ name: String,
+        arguments: String,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
     ) -> Task<Void, Never> {
         Task {
             update(.notice("There is no command /\(name).", isError: true))

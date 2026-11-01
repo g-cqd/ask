@@ -11,8 +11,10 @@ struct LiveToolsTests {
         let reply: String
         init(_ name: String, reply: String = "ok") {
             definition = ToolDefinition(
-                name: name, description: name,
-                inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
+                name: name,
+                description: name,
+                inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8))
+            )
             self.reply = reply
         }
         func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
@@ -82,8 +84,10 @@ struct LiveToolsTests {
     @Test func `a foreign tool runs under the policy the session narrowed to, which it can see`() async throws {
         struct Spy: Tool {
             let definition = ToolDefinition(
-                name: "spy", description: "",
-                inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
+                name: "spy",
+                description: "",
+                inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8))
+            )
             func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
                 ToolOutput(context.sandbox == context.runSandbox ? "whole" : "narrowed")
             }

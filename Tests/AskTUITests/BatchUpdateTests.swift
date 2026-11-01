@@ -10,7 +10,8 @@ struct BatchUpdateTests {
         var controller = ScreenController(label: "m", options: .legacy)
         controller.handle(.notice("before", isError: false))
         _ = controller.handle(
-            .batch([.clearConversation, .userPrompt("one"), .assistantText("reply"), .fillDraft("again")]))
+            .batch([.clearConversation, .userPrompt("one"), .assistantText("reply"), .fillDraft("again")])
+        )
         #expect(controller.state.transcript.items == [.user("one"), .assistant("reply")])
         #expect(controller.state.editor.text == "again")
     }
