@@ -13,10 +13,11 @@ versioning), by a setting, global or per workspace.
 
 "Still a lot to refine, ask questions."
 
+Owner (2026-11-01): per session or per workspace, never a Markdown file: JSON and/or protobuf, either one compressed or encrypted as
+0182 specifies.
+
 ## Questions for the owner before a design
 
-- One list per session, per workspace, or both?
-- The workspace format: a Markdown file people edit by hand, or a JSON file ask owns?
 - Does the model see the list on every turn (costs tokens), or only through a tool it calls?
 - Dependencies: just "blocked by", or more?
 
