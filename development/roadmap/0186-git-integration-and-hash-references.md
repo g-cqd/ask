@@ -9,6 +9,12 @@ date: 2026-11-01
 Owner (2026-11-01): a git integration that polls, from the workspace's git setup, the information worth showing in the screen and
 passing to the model; and `#` designating pull requests, issues or tasks.
 
+## Owner (2026-11-01): `#` for tasks and ideas too
+
+`@` stays for files. Tasks and ideas are pointed at with this item's sigil, `#t3` and `#i2`, beside `#123` for a pull request or an
+issue; the model gets the task's or idea's text attached, as a skill's is (0185). This replaces the `@task` and `@idea` of 0179 and
+0180.
+
 ## Still owed
 
 - A research note first: what to show (branch, ahead/behind, dirty files, the current pull request and its checks), where it comes from
