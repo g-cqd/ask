@@ -3,6 +3,7 @@ public import AskAgentCore
 
 /// `tasks` (ADR-0140, roadmap 0179): the session's task list, read and changed by the model when it calls this; nothing of it is sent on
 /// other turns. Ids are `t1`, `t2`, … in the order made.
+// @dl:accept -- the tasks and ideas tools are two faces of one store: the declaration and the shared run read alike, the actions differ
 public struct TasksTool: ArgumentTool {
     public typealias Arguments = TaskRequest
 
@@ -23,6 +24,7 @@ public struct TasksTool: ArgumentTool {
         ToolProperty.string("before").optional
         ToolProperty.string("after").optional
         ToolProperty.schema("blocked_by", #"{"type":["string","array"],"items":{"type":"string"}}"#).optional
+        // @dl:accept -- the tasks and ideas tools are two faces of one store: the declaration and the shared run read alike, the actions differ
         ToolProperty.schema("related", #"{"type":["string","array"],"items":{"type":"string"}}"#).optional
     }
 
@@ -31,18 +33,12 @@ public struct TasksTool: ArgumentTool {
     public init(board: TaskBoard) { self.board = board }
 
     public func run(_ request: TaskRequest, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
-        guard board.isAttached else {
-            throw ToolFailure("No task list is open for this session; the person can see why with /tasks.")
-        }
-        do {
-            return try perform(request)
-        } catch let error as TaskListError {
-            throw ToolFailure(Self.words(error))
-        } catch let error as ToolFailure {
-            throw error
-        } catch {
-            throw ToolFailure("The task list could not be changed: \(error)")
-        }
+        try ListToolRun.run(
+            attached: board.isAttached,
+            missing: "No task list is open for this session; the person can see why with /tasks.",
+            refusal: TaskListError.self,
+            words: Self.words
+        ) { try perform(request) }
     }
 
     private func perform(_ request: TaskRequest) throws -> ToolOutput {

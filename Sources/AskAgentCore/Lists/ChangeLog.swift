@@ -5,20 +5,20 @@ internal import Foundation
 internal import Synchronization
 internal import System
 
-/// A task list's file (ADR-0140): one record per change, in the session's format (JSONL, or ADR-0138's framed file under a data key of
+/// A list's file (ADR-0140): one record per change, in the session's format (JSONL, or ADR-0138's framed file under a data key of
 /// its own), the list rebuilt by replaying them. A torn or unreadable record is dropped, and the next change writes the file again from
 /// the changes that read. Each change is made under a lock beside the file, after reading what another process appended since, so a list
 /// a workspace's sessions share stays one list.
-final class TaskLog: Sendable {
-    static let largest = 16 << 20
+final class ChangeLog<List: ChangeList>: Sendable {
+    static var largest: Int { 16 << 20 }
     let path: String
     let keyring: SessionKeyring?
     private let state: Mutex<State>
 
     /// What was read: the list, the changes that make it, and how the file stands.
     struct State: ~Copyable {
-        var list = TaskList()
-        var changes: [TaskChange] = []
+        var list = List()
+        var changes: [List.Change] = []
         var format: SessionFormat
         var fileKey: FileKey?
         var framer: FramedWriter?
@@ -35,10 +35,10 @@ final class TaskLog: Sendable {
         state = Mutex(try Self.read(path, format: format, keyring: keyring))
     }
 
-    var list: TaskList { state.withLock { $0.list } }
+    var list: List { state.withLock { $0.list } }
 
     /// The list as the file now holds it, read again if another process changed it.
-    func current() throws -> TaskList {
+    func current() throws -> List {
         try withFileLock {
             try state.withLock { (state) throws in
                 try refresh(&state)
@@ -49,7 +49,7 @@ final class TaskLog: Sendable {
 
     /// Makes the change `make` returns for the current list, and keeps it; a refused change writes nothing.
     @discardableResult
-    func change(_ make: (TaskList) -> TaskChange) throws -> TaskList {
+    func change(_ make: (List) -> List.Change) throws -> List {
         try withFileLock {
             try state.withLock { (state) throws in
                 try refresh(&state)
@@ -92,7 +92,7 @@ final class TaskLog: Sendable {
     }
 
     /// `change` as the bytes that append it: a JSON line, or a frame; nil when it must be written with the whole file.
-    private func record(_ change: TaskChange, _ state: inout State) throws -> [UInt8]? {
+    private func record(_ change: List.Change, _ state: inout State) throws -> [UInt8]? {
         let json = try AemiJSON.JSONEncoder().encodeToBytes(change)
         guard state.format.isFramed else { return json + [0x0A] }
         guard state.framer != nil else { return nil }
@@ -112,7 +112,7 @@ final class TaskLog: Sendable {
     }
 
     /// The whole file again, from `changes`: beside it, flushed, then renamed over it.
-    private func rewrite(_ changes: [TaskChange], _ state: inout State) throws {
+    private func rewrite(_ changes: [List.Change], _ state: inout State) throws {
         if state.format.encrypted, state.fileKey == nil {
             guard let keyring else { throw SessionFileError.locked }
             state.fileKey = try keyring.newFileKey()
@@ -154,3 +154,6 @@ final class TaskLog: Sendable {
         return stat(path, &status) == 0 ? Int(status.st_size) : 0
     }
 }
+
+/// The task list's file.
+typealias TaskLog = ChangeLog<TaskList>

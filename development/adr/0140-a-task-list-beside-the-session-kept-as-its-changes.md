@@ -36,3 +36,12 @@ across the workspace by a setting; `/tasks` for the person; open, in progress an
 - The list costs tokens only when read. A model that forgets to read it forgets it: the tool's description says to read it at the
   start of a piece of work.
 - `@task` (roadmap 0185) and `#t5` (0186) can point at a task later by its id.
+
+## Ideas on the same store (roadmap 0180, 2026-11-01)
+
+The store is generic: `ChangeLog` and `ChangeBoard` keep any `ChangeList`, which names its file (`<session>.<suffix>`, or one beside
+the workspace's sessions) and refuses an unsound change. The ideas are the second: `<session>.ideas` or `ideas.ask` by `taskScope`, in
+the session's format, copied by `/fork`, converted by `/encrypt`, as the tasks are. An idea is not a task: it has no title, detail or
+links, its text is the person's verbatim and only the person edits it, and its states are new, acknowledged, fulfilled and dismissed.
+The `ideas` tool reads and marks them and cannot write one.
+

@@ -55,6 +55,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// Put a prompt back in the editor for rewriting, as after `/tree N`. An editor that already holds a draft keeps it, and the
     /// prompt is shown in a notice instead (ADR-0093).
     case fillDraft(String)
+    /// Like `fillDraft`, with the draft's list closed: a draft to edit, whose own words would match a row of it (roadmap 0180).
+    case editDraft(String)
     /// Replaces the active conversation: clear its transcript, usage display and scrollback, keeping the draft.
     case clearConversation
     /// A tool call asks for more than the sandbox allows: ask the user, and send the answer to ``Conversation/answer(approval:with:)``.

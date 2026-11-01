@@ -86,7 +86,8 @@ func makeLoop(
         tools: try ToolRegistry(
             FileTools.all + [
                 BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
-                NarrowSandboxTool(jobs: jobs), TasksTool(board: SessionTasks.board)
+                NarrowSandboxTool(jobs: jobs), TasksTool(board: SessionTasks.board),
+                IdeasTool(board: SessionTasks.ideas)
             ] + (skills.tool.map { [$0] } ?? []) + (askPerson == nil ? [] : [QuestionTool()]),
             live: live
         ),
