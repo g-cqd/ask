@@ -23,8 +23,13 @@ check_only=0
 fail() { printf '\n[FAIL] %s\n' "$1" >&2; exit 1; }
 need() { command -v "$1" >/dev/null 2>&1 || { printf '[FAIL] %s not found. %s\n' "$1" "$2" >&2; exit 2; }; }
 
-SF=$(command -v swift-format || xcrun -f swift-format 2>/dev/null || true)
-[ -n "$SF" ] || { printf '[FAIL] swift-format not found. Install a Swift 6.4 toolchain.\n' >&2; exit 2; }
+# One toolchain, named by .swift-version, here and in CI: the compiler must be it, and swift-format comes from it (xcrun follows
+# TOOLCHAINS, which a CI toolchain install sets), so a format or a build never depends on which other toolchain is on PATH.
+wanted=$(cat .swift-version)
+running=$(swift --version 2>/dev/null | sed -n 's/.*Swift version \([0-9.]*\).*/\1/p' | head -1)
+[ "$running" = "$wanted" ] || { printf '[FAIL] swift is %s; .swift-version names %s.\n' "${running:-missing}" "$wanted" >&2; exit 2; }
+if [ "$(uname -s)" = Darwin ]; then SF=$(xcrun -f swift-format 2>/dev/null || true); else SF=$(command -v swift-format || true); fi
+[ -n "$SF" ] || { printf '[FAIL] swift-format not found in the Swift %s toolchain.\n' "$wanted" >&2; exit 2; }
 need swiftlint "Install with: brew install swiftlint"
 
 [ -f .swift-format ] || fail ".swift-format missing — sync it with Aemi/scripts/sync-config.sh"
