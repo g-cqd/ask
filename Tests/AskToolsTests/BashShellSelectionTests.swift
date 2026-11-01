@@ -4,7 +4,7 @@ import Testing
 
 @testable import AskTools
 
-@Suite("Commands run in the configured shell, else zsh, bash or the login shell (roadmap 0091)")
+@Suite("Commands run in the configured shell, else bash, zsh or the login shell (roadmaps 0091 and 0188)")
 struct BashShellSelectionTests {
     private let context = ToolContext(workingDirectory: "/tmp")
 
@@ -23,14 +23,14 @@ struct BashShellSelectionTests {
         return await tool.run(input(json), in: scoped)
     }
 
-    @Test func `nothing chosen, zsh comes first even when the login shell is another`() async {
-        #expect(await shell(login: "/bin/sh") == ToolOutput("/bin/zsh\n[exit 0]"))
+    @Test func `nothing chosen, bash comes first even when the login shell is another`() async {
+        #expect(await shell(login: "/bin/zsh") == ToolOutput("/bin/bash\n[exit 0]"))
     }
 
-    @Test func `the order is zsh, then bash, then the login shell`() {
+    @Test func `the order is bash on the PATH, then /bin/bash, then zsh, then the login shell`() {
         let table = JobTable(environment: ["SHELL": "/bin/sh"])
         let chosen = table.commandShell(nil, policy: .inherit)
-        #expect(chosen == (JobTable.isShell("/bin/zsh") ? "/bin/zsh" : "/bin/bash"))
+        #expect(chosen == "/bin/bash")
         #expect(JobTable(environment: [:]).commandShell(nil, policy: .inherit) == chosen)
     }
 
@@ -44,7 +44,7 @@ struct BashShellSelectionTests {
     }
 
     @Test func `a configured shell that is missing or not listed falls back to the default`() async {
-        let expected = ToolOutput("/bin/zsh\n[exit 0]")
+        let expected = ToolOutput("/bin/bash\n[exit 0]")
         #expect(await shell(configured: "nonexistentshell") == expected)
         #expect(await shell(configured: "/usr/bin/python3") == expected)
         #expect(await shell(configured: "/nonexistent/shell") == expected)
@@ -56,6 +56,11 @@ struct BashShellSelectionTests {
 
     @Test func `an executable that is not a shell cannot be named by the model`() async {
         #expect(await shell(configured: "sh", argument: "/usr/bin/python3") == ToolOutput("/bin/sh\n[exit 0]"))
+    }
+
+    @Test func `macOS's own bash is named as 3.2 in the description, so the model writes for it`() {
+        let tool = BashTool(jobs: JobTable(environment: ["PATH": "/bin"]))
+        #expect(tool.definition.description.contains("/bin/bash") && tool.definition.description.contains("3.2"))
     }
 
     @Test func `the tool's description names the shell it will use`() {

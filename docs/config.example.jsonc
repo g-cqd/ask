@@ -182,7 +182,7 @@
     // Withheld variables commands get anyway. Default: none. Your own file only.
     "pass": ["GH_TOKEN"],
 
-    // The shell commands run in. Default: zsh, else bash, else your login shell. Your own file only.
+    // The shell commands run in. Default: the first bash on your PATH, else /bin/bash, else zsh, else your login shell. Your own file only.
     "shell": "zsh"
   },
 

@@ -5,7 +5,7 @@ import Testing
 
 @testable import AskTools
 
-@Suite("The default shell is the first zsh on the PATH, then the first bash, then SHELL (roadmap 0091)")
+@Suite("The default shell is the first bash on the PATH, then /bin/bash, then zsh, then SHELL (roadmaps 0091 and 0188)")
 struct ShellPathOrderTests {
     /// A directory holding links called `names`, each to a real shell, placed on a test PATH.
     private func directory(_ names: [String: String]) throws -> String {
@@ -21,25 +21,24 @@ struct ShellPathOrderTests {
         JobTable(environment: environment).commandShell(nil, policy: CommandEnvironment(shell: shell))
     }
 
-    @Test func `the first zsh on the PATH wins over a later one and over bash`() throws {
-        let first = try directory(["zsh": "/bin/zsh"])
+    @Test func `the first bash on the PATH wins over a later one and over zsh`() throws {
+        let first = try directory(["bash": "/bin/bash"])
         let second = try directory(["zsh": "/bin/zsh", "bash": "/bin/bash"])
         defer { for dir in [first, second] { try? FileManager.default.removeItem(atPath: dir) } }
-        #expect(chosen(["PATH": "\(first):\(second)"]) == first + "/zsh")
-        #expect(chosen(["PATH": "\(second):\(first)"]) == second + "/zsh")
+        #expect(chosen(["PATH": "\(first):\(second)"]) == first + "/bash")
+        #expect(chosen(["PATH": "\(second):\(first)"]) == second + "/bash")
     }
 
-    @Test func `without zsh on the PATH, the first bash`() throws {
-        let only = try directory(["bash": "/bin/bash"])
+    @Test func `without bash on the PATH, the system's bash before any zsh`() throws {
+        let only = try directory(["zsh": "/bin/zsh"])
         defer { try? FileManager.default.removeItem(atPath: only) }
-        #expect(chosen(["PATH": only, "SHELL": "/bin/sh"]) == only + "/bash")
+        #expect(chosen(["PATH": only, "SHELL": "/bin/sh"]) == "/bin/bash")
     }
 
-    @Test func `with neither on the PATH, the login shell`() throws {
+    @Test func `with nothing on the PATH, the system's bash`() throws {
         let empty = try directory([:])
         defer { try? FileManager.default.removeItem(atPath: empty) }
-        #expect(chosen(["PATH": empty, "SHELL": "/bin/sh"]) == "/bin/sh")
-        #expect(chosen(["PATH": empty]) == "/bin/bash", "nothing at all: bash, as before")
+        #expect(chosen(["PATH": empty, "SHELL": "/bin/sh"]) == "/bin/bash")
     }
 
     @Test func `a configured name is looked for on the PATH first`() throws {
@@ -55,7 +54,7 @@ struct ShellPathOrderTests {
         let missing = JobTable.unusableShellNotice(CommandEnvironment(shell: "nosuchshell"), environment: environment)
         #expect(
             missing
-                == "environment.shell \"nosuchshell\" is not used: it is not on the PATH. Commands run in \(dir)/zsh."
+                == "environment.shell \"nosuchshell\" is not used: it is not on the PATH. Commands run in /bin/bash."
         )
         let unlisted = JobTable.unusableShellNotice(
             CommandEnvironment(shell: "/usr/bin/python3"),

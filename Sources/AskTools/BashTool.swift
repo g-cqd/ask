@@ -80,6 +80,15 @@ public struct BashTool: ArgumentTool {
                 "shell must name a shell's absolute path, such as /bin/bash; the command to run goes in command."
             )
         }
+        let shell = access.jobs.commandShell(arguments.shell, in: context)
+        let checked = await CommandCheck.check(
+            arguments.command,
+            shell: shell,
+            path: access.jobs.visiblePath(in: context)
+        )
+        if let syntaxError = checked.syntaxError {
+            throw ToolFailure("The command does not parse in \(shell), so it was not run:\n\(syntaxError)")
+        }
         let yield = arguments.yieldSeconds.map { Swift.min(Swift.max(1, $0), Self.maximumTimeout) }
         let timeout = Swift.min(Swift.max(1, arguments.timeoutSeconds ?? Self.defaultTimeout), Self.maximumTimeout)
         let limit = readiness == nil ? (yield ?? timeout) : timeout
@@ -89,7 +98,7 @@ public struct BashTool: ArgumentTool {
             in: context,
             keepsInputOpen: yield != nil || readiness != nil,
             keeping: Self.keptBytes,
-            shell: access.jobs.commandShell(arguments.shell, in: context)
+            shell: shell
         ) {
             observe(.output($0))
         }
@@ -101,7 +110,12 @@ public struct BashTool: ArgumentTool {
                 clock: access.clock,
                 in: context
             )
-            return await Self.output(of: outcome, job: job, readiness: readiness, yield: yield, limit: limit)
+            var result = await Self.output(of: outcome, job: job, readiness: readiness, yield: yield, limit: limit)
+            // Told when the command failed, where they may say why; a command that succeeded needs no lint.
+            if result.isError, !checked.findings.isEmpty {
+                result.content += "\n[shellcheck] " + checked.findings.joined(separator: "\n[shellcheck] ")
+            }
+            return result
         } catch {
             job.stop()
             await job.ended()

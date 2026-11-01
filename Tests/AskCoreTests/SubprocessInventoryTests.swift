@@ -15,7 +15,9 @@ struct SubprocessInventoryTests {
         "ProjectLister.swift": "git is the authority on what it ignores",
         "StdioTransport.swift": "an MCP stdio server is a process by the protocol",
         "StdioTransport+Run.swift": "an MCP stdio server is a process by the protocol",
-        "Reexec.swift": "/reload replaces ask with its new build: execve, not a child"
+        "Reexec.swift": "/reload replaces ask with its new build: execve, not a child",
+        "CommandCheck.swift":
+            "a command is parsed by the shell that will run it, and read by shellcheck, before it runs (ADR-0139)"
     ]
 
     private static let launches = [
