@@ -16,7 +16,7 @@ struct Ask: AsyncParsableCommand {
         abstract: "A terminal coding agent: reliable, fast, light.",
         subcommands: [
             Login.self, Logout.self, ModelsCommand.self, ConnectionsCommand.self, Sessions.self, ConfigCommand.self,
-            TrustCommand.self, SkillsCommand.self,
+            TrustCommand.self, SkillsCommand.self, KeysCommand.self,
             UntrustCommand.self
         ]
     )

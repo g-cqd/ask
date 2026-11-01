@@ -36,7 +36,14 @@ extension AgentConversation {
                     recorder = existing
                 } else {
                     try directory.create()
-                    recorder = SessionRecorder(try SessionFile.create(at: FilePath(takePlannedSession())))
+                    let protection = SessionKeyAccess.protection
+                    recorder = SessionRecorder(
+                        try SessionFile.create(
+                            at: FilePath(takePlannedSession()),
+                            format: protection.format,
+                            keyring: protection.keyring
+                        )
+                    )
                 }
                 try recorder.select(
                     destination,

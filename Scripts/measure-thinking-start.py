@@ -39,7 +39,7 @@ def sample(config, state, cwd, base, flags):
     if pid == 0:
         fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 120, 0, 0))
         env = {k: v for k, v in os.environ.items() if not k.startswith(('ANTHROPIC_', 'ASK_'))}
-        env.update(TERM='xterm-kitty', TERM_PROGRAM='kitty', XDG_CONFIG_HOME=str(config), XDG_STATE_HOME=str(state),
+        env.update(TERM='xterm-kitty', TERM_PROGRAM='kitty', XDG_CONFIG_HOME=str(config), XDG_STATE_HOME=str(state), ASK_SESSION_ENCRYPTION='off',
                    ANTHROPIC_BASE_URL=base, ANTHROPIC_API_KEY='fixture-start-key')
         os.chdir(cwd)
         os.execve(BINARY, [BINARY, '--provider', 'anthropic', '--model', 'model-07'] + flags, env)
@@ -86,7 +86,7 @@ def main():
             cache = config / 'ask' / 'models-anthropic.json'
             hidden = config / 'ask' / 'models-anthropic.hidden'
             listed = subprocess.run([BINARY, 'models', 'anthropic'], cwd=root, capture_output=True, timeout=30, env={
-                **os.environ, 'XDG_CONFIG_HOME': str(config), 'XDG_STATE_HOME': str(state), 'ANTHROPIC_BASE_URL': base,
+                **os.environ, 'XDG_CONFIG_HOME': str(config), 'XDG_STATE_HOME': str(state), 'ASK_SESSION_ENCRYPTION': 'off', 'ANTHROPIC_BASE_URL': base,
                 'ANTHROPIC_API_KEY': 'fixture-start-key'})
             assert listed.returncode == 0 and cache.exists(), listed.stderr.decode(errors='replace')
             print('binary %d B; cache %d B, 14 synthetic models' % (os.stat(BINARY).st_size, cache.stat().st_size))

@@ -104,4 +104,12 @@ public final class SessionRecorder: Sendable {
 
     /// Where the session lives.
     public var path: String { file.withLock { $0.path.string } }
+
+    /// How the file is kept (ADR-0138).
+    public var format: SessionFormat { file.withLock { $0.format } }
+
+    /// Rewrites the file in `format`, for `/encrypt`; see ``SessionFile/change(to:keyring:)``.
+    public func change(to format: SessionFormat, keyring: SessionKeyring?) throws(SessionFileError) {
+        try file.withLock { (file) throws(SessionFileError) in try file.change(to: format, keyring: keyring) }
+    }
 }

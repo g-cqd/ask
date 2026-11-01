@@ -33,8 +33,15 @@ task and idea store (0179, 0180).
      (`format:`, `keyring:`), read a chunk at a time (`FrameScanner`), a record's decompressed size and the archive's capped; a torn or
      damaged frame is an issue, so the first change rewrites the file and keeps the original. `change(to:)` keeps no copy of the file
      as it was. 8 tests and 2 for the scanner; each of 9 guards, mutated, turns them red.
-   - 3b, the app: the settings, `keys.json` and the keychain at start, the first-start question, the recovery code shown once,
-     `/encrypt`, locked sessions in `/sessions`, `/tree` and resume, and a session's pictures encrypted with it.
+   - ~~3b, the app~~ Done, 2026-11-01: `sessionEncryption` (`off`, `on`, `ask`), `sessionCompression`, `sessionPassword`
+     (`remember`, `everyStart`), and `ASK_SESSION_ENCRYPTION` for scripts; before the screen, on the terminal: the first-start
+     question (its answer kept in `session-encryption.json`, the settings winning over it), the password typed twice and the recovery
+     code shown once, or the password asked (three tries, then the recovery code) unless the keychain holds the key; `--continue` and
+     `--resume` unlock an encrypted session there; `/encrypt [on|off]`; `ask sessions` and `/resume` show a session without keys as
+     locked; `ask keys password|forget`. `Scripts/probe-session-encryption.py` drives all of it through the release binary (10 checks).
+     Every probe and measurement sets `ASK_SESSION_ENCRYPTION=off`, so none stops at the question.
+   - 3c: a session's pictures encrypted with it (the image store is shared by a project's sessions, so under a key derived from the
+     user key, named by an HMAC rather than a hash).
 
 ## Still owed
 

@@ -55,7 +55,7 @@ def sample(config, state, cwd):
     if pid == 0:
         # Set the size before exec: changing it from the parent races ask's first terminal-size read.
         fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack('HHHH', 40, 120, 0, 0))
-        os.environ.update(TERM='xterm-kitty', TERM_PROGRAM='kitty', XDG_CONFIG_HOME=str(config), XDG_STATE_HOME=str(state))
+        os.environ.update(TERM='xterm-kitty', TERM_PROGRAM='kitty', XDG_CONFIG_HOME=str(config), XDG_STATE_HOME=str(state), ASK_SESSION_ENCRYPTION='off')
         os.chdir(cwd)
         os.execv(BINARY, [BINARY, '--provider', 'probe', '--model', MODEL])
         os._exit(127)
@@ -96,7 +96,7 @@ def main():
         try:
             (home / 'providers.json').write_text(json.dumps({'providers': {'probe': {
                 'api': 'openai-completions', 'baseUrl': 'http://127.0.0.1:%d/v1' % server.server_address[1]}}}))
-            env = dict(os.environ, XDG_CONFIG_HOME=str(config), XDG_STATE_HOME=str(root / 'state'))
+            env = dict(os.environ, XDG_CONFIG_HOME=str(config), XDG_STATE_HOME=str(root / 'state'), ASK_SESSION_ENCRYPTION='off')
             listed = subprocess.run([BINARY, 'models', 'probe'], cwd=root, env=env, capture_output=True, timeout=30)
             if listed.returncode:
                 raise RuntimeError(listed.stderr.decode(errors='replace'))

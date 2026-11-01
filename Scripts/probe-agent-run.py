@@ -90,6 +90,8 @@ def environment(state, url, config=None):
         del env[name]
     # A signed build keeps credentials in the Keychain (roadmap 0110): never the person's own, a throwaway one for this process.
     env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()
+    # No first-start question about encrypting sessions (roadmap 0182): a probe that wants one sets its own.
+    env["ASK_SESSION_ENCRYPTION"] = "off"
     if not config:
         config = os.path.join(state, "config")
         os.makedirs(config, exist_ok=True)

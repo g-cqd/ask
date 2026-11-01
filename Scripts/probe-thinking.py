@@ -106,7 +106,7 @@ config.mkdir(parents=True, mode=0o700)
 (root / 'input.txt').write_text('LOCAL_TOOL_RESULT')
 base = 'http://127.0.0.1:%d' % server.server_address[1]
 env = {k: v for k, v in os.environ.items() if not k.startswith(('ANTHROPIC_', 'ASK_', 'XDG_'))}
-env |= {'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_STATE_HOME': str(root / 'state'),
+env |= {'XDG_CONFIG_HOME': str(root / 'config'), 'XDG_STATE_HOME': str(root / 'state'), 'ASK_SESSION_ENCRYPTION': 'off',
         'ANTHROPIC_BASE_URL': base, 'ANTHROPIC_API_KEY': KEY}
 env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
 (config / 'providers.json').write_text(json.dumps({'providers': {

@@ -40,7 +40,14 @@ private func promptSession(
     } else {
         do {
             try directory.create()
-            session = SessionRecorder(try SessionFile.create(at: FilePath(directory.newSessionPath())))
+            let protection = SessionKeyAccess.protection
+            session = SessionRecorder(
+                try SessionFile.create(
+                    at: FilePath(directory.newSessionPath()),
+                    format: protection.format,
+                    keyring: protection.keyring
+                )
+            )
         } catch {
             fail("ask: cannot create a session: \(error)", code: 73)
         }
