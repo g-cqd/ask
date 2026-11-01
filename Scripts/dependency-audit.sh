@@ -6,7 +6,8 @@
 #   Scripts/dependency-audit.sh            install if absent, then audit the package
 #   Scripts/dependency-audit.sh install    install only
 #
-# FoundationModels is a system framework, not a package dependency, so it is whitelisted.
+# FoundationModels and zlib are system modules, not package dependencies, so they are whitelisted (zlib: the framed session files'
+# compression, ADR-0138).
 # Exit: 0 clean, 1 a missing or unused dependency, 2 the tool could not be installed.
 set -eu
 
@@ -40,4 +41,4 @@ fi
 [ "${1:-}" = install ] && exit 0
 
 cd "$(dirname "$0")/.."
-"$tool" . --no-color --quiet --whitelist FoundationModels
+"$tool" . --no-color --quiet --whitelist FoundationModels,zlib
