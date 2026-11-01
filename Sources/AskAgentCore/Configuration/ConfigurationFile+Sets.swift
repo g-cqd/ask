@@ -10,7 +10,7 @@ extension ConfigurationFile {
             case "compactAt": compactAt != nil
             case "keepAwake": keepAwake != nil
             case "keepDisplayAwake": keepDisplayAwake != nil
-            case "sessionEncryption", "sessionCompression", "sessionPassword": setsSessionKey(name)
+            case "sessionEncryption", "sessionCompression", "sessionPassword", "taskScope": setsSessionKey(name)
             // @dl:accept -- one row per key, each naming its own field: the table is the data
             case "credentials": credentials != nil
             case "approvals": approvals != nil

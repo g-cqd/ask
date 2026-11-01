@@ -119,7 +119,7 @@ struct PickerClickTests {
     @Test func `a click means the frame drawn when the button came up`() throws {
         var rig = rig("/")
         let target = try #require(row(of: "/jobs", in: rig))
-        type("t", into: &rig)  // drawn: the list is shorter, and what the row says has changed
+        type("o", into: &rig)  // drawn: the list is shorter, and what the row says has changed
         let drawn = rig.text(row: target).split(separator: " ").first.map(String.init) ?? ""
         #expect(drawn.hasPrefix("/") && drawn != "/jobs", "the row now holds another match: \(drawn)")
         rig.click(row: target, col: 3)

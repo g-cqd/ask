@@ -90,6 +90,13 @@ enum SettingCatalog {
         ),
         row("sessionCompression", .boolean, "false", "false", "Whether session files are compressed."),
         row(
+            "taskScope",
+            words(TaskScope.self),
+            #""session""#,
+            "session",
+            "A task list for each session, or one for the workspace."
+        ),
+        row(
             "sessionPassword",
             words(SessionPasswordMode.self),
             #""remember""#,

@@ -7,7 +7,7 @@ import Testing
 
 @Suite("The runner strip lives below the one input, and Escape closes it without touching the draft")
 struct RunnerStripTests {
-    @Test func `tasks opens the strip below the input with the status between them`() {
+    @Test func `jobs opens the strip below the input with the status between them`() {
         var rig = PointerRig(columns: 60, rows: 14, lines: ["one", "two"])
         rig.controller.handle(.runners([RunnerInfo(name: "job-1", detail: "sleep 9")]))
         rig.controller.state.runnersOpen = true

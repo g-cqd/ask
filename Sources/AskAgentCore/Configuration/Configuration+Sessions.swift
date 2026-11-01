@@ -4,5 +4,6 @@ extension Configuration {
         if let mode = file.sessionEncryption { sessionEncryption = Setting(value: mode, source: source) }
         if let compress = file.sessionCompression { sessionCompression = Setting(value: compress, source: source) }
         if let password = file.sessionPassword { sessionPassword = Setting(value: password, source: source) }
+        if let scope = file.taskScope { taskScope = Setting(value: scope, source: source) }
     }
 }

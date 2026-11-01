@@ -37,8 +37,7 @@ extension AgentConversation {
         if turnRunning { return forkBeside(original, upTo: leaf, update: update) }
         guard maySwitchSession("fork", update: update) else { return }
         do {
-            try directory.create()
-            let replacement = try original.fork(upTo: leaf, to: FilePath(directory.newSessionPath()))
+            let replacement = try forked(original, upTo: leaf)
             activateSession(replacement, update: update)
             await adoptRecords(of: replacement, update: update)
             if let returned { update(.fillDraft(returned)) }
@@ -55,6 +54,15 @@ extension AgentConversation {
         }
     }
 
+    /// A new session holding `original` up to `leaf`, with a copy of its task list when the list is its own (ADR-0140).
+    private func forked(_ original: SessionRecorder, upTo leaf: EntryID?) throws -> SessionRecorder {
+        try directory.create()
+        let copy = try original.fork(upTo: leaf, to: FilePath(directory.newSessionPath()))
+        let scope = current.withLock { $0.settings.configuration.taskScope.value }
+        TaskBoard.copyForFork(from: original.path, to: copy.path, scope: scope)
+        return copy
+    }
+
     /// `/fork` while a turn runs (roadmap 0113): the copy holds what the turn has written so far, every step written whole, and the
     /// screen stays with the turn, which goes on in the original; `/resume` switches to the copy.
     private func forkBeside(
@@ -63,8 +71,7 @@ extension AgentConversation {
         update: @Sendable (ConversationUpdate) -> Void
     ) {
         do {
-            try directory.create()
-            let copy = try original.fork(upTo: leaf, to: FilePath(directory.newSessionPath()))
+            let copy = try forked(original, upTo: leaf)
             let name = (copy.path as NSString).lastPathComponent
             update(
                 .notice(

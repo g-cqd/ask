@@ -57,6 +57,8 @@ public struct Configuration: Sendable, Equatable {
     public var sessionEncryption = Setting(value: SessionEncryptionMode?.none, source: .defaults)
     public var sessionCompression = Setting(value: false, source: .defaults)
     public var sessionPassword = Setting(value: SessionPasswordMode?.none, source: .defaults)
+    /// `taskScope` (roadmap 0179, ADR-0140): a task list for each session, or one for the workspace.
+    public var taskScope = Setting(value: TaskScope.session, source: .defaults)
     public var credentials = Setting(value: CredentialStorage.auto, source: .defaults)  // where keys are kept, 0110
     public var approvals = Setting(value: ApprovalsSection(), source: .defaults)  // which calls ask first, 0134
     public var modelScopes = Setting(value: [ModelScope](), source: .defaults)  // which providers serve here, 0094

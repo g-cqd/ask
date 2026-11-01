@@ -1,4 +1,4 @@
-/// What is running beside the conversation: the status line counts it, and a click on the count or `/tasks` opens the list.
+/// What is running beside the conversation: the status line counts it, and a click on the count or `/jobs` opens the list.
 extension ScreenController {
     mutating func setRunners(_ list: [RunnerInfo], at instant: ContinuousClock.Instant = .now) {
         var progress: [String: BlockProgress] = [:]

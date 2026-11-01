@@ -44,6 +44,8 @@ extension AgentConversation {
                             keyring: protection.keyring
                         )
                     )
+                    let scope = current.withLock { $0.settings.configuration.taskScope.value }
+                    _ = SessionTasks.follow(recorder, scope: scope)
                 }
                 try recorder.select(
                     destination,

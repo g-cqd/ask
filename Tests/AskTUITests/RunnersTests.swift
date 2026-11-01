@@ -5,7 +5,7 @@ internal import Testing
 
 @testable import AskTUI
 
-/// What runs beside the conversation: counted in the status line, listed by a click on the count or by /tasks.
+/// What runs beside the conversation: counted in the status line, listed by a click on the count or by /jobs.
 @Suite("The status line counts the running jobs, and the count opens their list")
 struct RunnersTests {
     private static let two = [
@@ -87,16 +87,16 @@ struct RunnersTests {
         #expect(!rig.controller.state.runnersOpen)
     }
 
-    @Test func `slash tasks does the same, with the mouse off too, and says when nothing is running`() {
+    @Test func `slash jobs does the same, with the mouse off too, and says when nothing is running`() {
         var rig = rig(ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false))
-        for character in "/tasks" {
+        for character in "/jobs" {
             _ = rig.controller.handle(.key(KeyEvent(keyCode: UInt32(character.asciiValue!))), pageRows: 10)
         }
         _ = rig.controller.handle(.key(KeyEvent(keyCode: 0x0D)), pageRows: 10)
         rig.draw()
         #expect(rig.controller.state.runnersOpen && rig.text(row: 13).hasPrefix("job-2"))
         var empty = PointerRig(columns: 40, rows: 14)
-        for character in "/tasks" {
+        for character in "/jobs" {
             _ = empty.controller.handle(.key(KeyEvent(keyCode: UInt32(character.asciiValue!))), pageRows: 10)
         }
         _ = empty.controller.handle(.key(KeyEvent(keyCode: 0x0D)), pageRows: 10)
