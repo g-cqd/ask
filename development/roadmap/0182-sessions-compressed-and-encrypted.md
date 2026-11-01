@@ -40,8 +40,24 @@ task and idea store (0179, 0180).
      `--resume` unlock an encrypted session there; `/encrypt [on|off]`; `ask sessions` and `/resume` show a session without keys as
      locked; `ask keys password|forget`. `Scripts/probe-session-encryption.py` drives all of it through the release binary (10 checks).
      Every probe and measurement sets `ASK_SESSION_ENCRYPTION=off`, so none stops at the question.
-   - 3c: a session's pictures encrypted with it (the image store is shared by a project's sessions, so under a key derived from the
-     user key, named by an HMAC rather than a hash).
+   - ~~3c~~ Done, 2026-11-01: an encrypted session's pictures are sealed in the shared store under a key derived from the user key,
+     named by an HMAC of their bytes rather than their hash; a reader without the key gets the line of text a missing picture leaves.
+     2 tests; each of 4 guards, mutated, turns them red.
+
+## Measured (2026-11-01, M3, release)
+
+- A process that set up keys keeps 17.6 MiB resident once the screen is open, against 16.6 for a plain start, after aemi 8087a01 maps
+  Argon2's memory (36.5 MiB before: a freed large malloc block stays resident). While a derivation runs, the peak is 33 MiB for about
+  10 ms (19 MiB of Argon2id memory).
+- `Scripts/measure-budgets.py`, this binary against f82148c (before this work), same load: idle memory 15.30 against 15.01 MiB (limit
+  15.36); active memory 25.4 against 25.1–25.2 MiB; cold start and input delay vary run to run more than between the binaries (cold
+  start 43.6 against 60.1 and 75.5 ms, input 10.15 against 6.6 and 10.1 ms). Active memory, input delay and cold start were already over
+  their budgets at f82148c under this load.
+
+## Still owed
+
+- Plaintext left behind: after `/encrypt on`, pictures the session stored before stay in the shared store unencrypted (other sessions may
+  name them); a rewritten file's old blocks may survive on an SSD or APFS until reused. Say so in the docs, or rewrite the pictures.
 
 ## Still owed
 

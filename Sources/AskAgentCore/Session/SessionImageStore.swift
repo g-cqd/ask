@@ -9,16 +9,33 @@ internal import Foundation
 /// would cost the whole record on resume. In the store it is written once however often it is read, by every session of the project,
 /// and a record carries only its hash. Files are private to the user (0600, in a 0700 directory). A file that is missing or whose
 /// bytes no longer match its name is not trusted: the record degrades to a line of text (see ``WirePayload``).
+///
+/// An encrypted session's pictures (ADR-0138) are sealed under ``key``, a key derived from the user key so that every encrypted session
+/// of the project can share them, and named by an HMAC of their bytes rather than a hash, which would say which picture it is.
 struct SessionImageStore: Sendable, Equatable {
     /// The directory the pictures are in.
     let directory: String
+    /// The key of an encrypted session's pictures; nil for a plain session's.
+    let key: SymmetricKey?
 
     /// Key for the encoder's and the decoder's `userInfo`.
     static let userInfoKey = CodingUserInfoKey(rawValue: "ask.session.imageStore")!
 
     /// The store beside the session file at `sessionPath`.
-    init(besideSessionAt sessionPath: String) {
-        directory = (sessionPath as NSString).deletingLastPathComponent + "/images"
+    init(besideSessionAt sessionPath: String, key: SymmetricKey? = nil) {
+        self.init(directory: (sessionPath as NSString).deletingLastPathComponent + "/images", key: key)
+    }
+
+    /// The store in `directory`, under `key` when given.
+    init(directory: String, key: SymmetricKey?) {
+        self.directory = directory
+        self.key = key
+    }
+
+    /// The name of `bytes` in this store: their SHA-256, or under ``key`` their HMAC-SHA256; 64 lowercase hexadecimal digits either way.
+    func name(of bytes: [UInt8]) -> String {
+        guard let key else { return Self.hash(of: bytes) }
+        return HMAC<SHA256>.authenticationCode(for: bytes, using: key).map { String(format: "%02x", $0) }.joined()
     }
 
     /// The hash that names `bytes`: 64 lowercase hexadecimal digits.
@@ -30,7 +47,7 @@ struct SessionImageStore: Sendable, Equatable {
     /// - Returns: their hash.
     /// - Throws: the error of the file system when they cannot be written; a record then keeps them inline.
     func put(_ bytes: [UInt8]) throws -> String {
-        let name = Self.hash(of: bytes)
+        let name = name(of: bytes)
         let path = directory + "/" + name
         let manager = FileManager.default
         if manager.fileExists(atPath: path) { return name }
@@ -40,7 +57,14 @@ struct SessionImageStore: Sendable, Equatable {
             attributes: [.posixPermissions: 0o700]
         )
         let temporary = path + ".\(UInt32.random(in: 0 ... .max)).tmp"
-        guard manager.createFile(atPath: temporary, contents: Data(bytes), attributes: [.posixPermissions: 0o600])
+        var contents = Data(bytes)
+        if let key {
+            guard let sealed = try? AES.GCM.seal(bytes, using: key, authenticating: Data(name.utf8)).combined else {
+                throw CocoaError(.fileWriteUnknown)
+            }
+            contents = sealed
+        }
+        guard manager.createFile(atPath: temporary, contents: contents, attributes: [.posixPermissions: 0o600])
         else {
             throw CocoaError(.fileWriteUnknown)
         }
@@ -58,7 +82,13 @@ struct SessionImageStore: Sendable, Equatable {
         guard hash.utf8.count == 64, hash.utf8.allSatisfy({ ($0 >= 0x30 && $0 <= 0x39) || ($0 >= 0x61 && $0 <= 0x66) }),
             let data = FileManager.default.contents(atPath: directory + "/" + hash)
         else { return nil }
-        let bytes = [UInt8](data)
-        return Self.hash(of: bytes) == hash ? bytes : nil
+        var bytes = [UInt8](data)
+        if let key {
+            guard let box = try? AES.GCM.SealedBox(combined: data),
+                let opened = try? AES.GCM.open(box, using: key, authenticating: Data(hash.utf8))
+            else { return nil }
+            bytes = [UInt8](opened)
+        }
+        return name(of: bytes) == hash ? bytes : nil
     }
 }

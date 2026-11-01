@@ -16,6 +16,11 @@ extension SessionLogReader {
         var fileKey: FileKey?
         var scanner = FrameScanner(recordLimit: limits.maximumLineBytes) { header throws(FramedFileError) in
             guard let keyring else { throw .needsKey }
+            // Called before any record: an encrypted session's pictures are read under its image key.
+            recovery = SessionLogRecovery(
+                limits: limits,
+                images: images.map { SessionImageStore(directory: $0.directory, key: keyring.imageKey) }
+            )
             do throws(SessionKeyError) {
                 fileKey = try keyring.fileKey(envelope: header.envelope)
             } catch .otherUserKey {
