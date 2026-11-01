@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-11-01
 ---
@@ -23,3 +23,32 @@ on its own line. Done in arcleak, dolly, deadwood, fcheck, modeler and analyzerk
 4. Check how AemiMarkdown, AemiProtobuf, TerminalKit and ask get the config in CI, where no pinned `swift-quality.yml` call was found.
 
 Not covered: AemiSwift, AemiUI and AemiUtilities have no swift-format config; swift-search and SwiftStaticAnalysis own theirs.
+
+## Done (2026-11-01)
+
+| Repository | Commit | Files | Split to stay within the limits |
+|---|---|---|---|
+| aemi | `0ef4279` | 189 | `AemiKernels`' UTF-8 scans |
+| AemiRegex | `66992fa` | 51 | none |
+| AemiMarkdown | `8203c3c` | 28 | none |
+| AemiJSON | `b1412a5` | 93 | `SchemableMacro`'s scalar fragments |
+| AemiProtobuf | `fcccfc3` | 153 | five files past its own 250-line rule (`SourceStructureTests`) |
+| TerminalKit | `c1d021c` | 93 | `RopeNode`'s edits |
+| ask | `47eef6b` | 749 | 12 files, 8 types, 12 functions |
+| Atelier | `abd7b1c` | 725 | 13 types and files, 10 functions |
+
+- Formatted with the layout settings alone (a copy of the config with every rule off), so only line breaks and indentation
+  changed. A full `swift-format format` also applies the rules, which in aemi rewrote access levels and turned a `fileprivate`
+  test class `private`, breaking the Loggable macro test; files that already broke a rule were formatted with the rules only
+  where the commit check asked.
+- Nothing is exempted: each split moves a section into an extension file of its type, or a helper, or joins a call that fits on
+  one line. Members the moved code reads go from `private` to `internal` (or `package` where the module uses it).
+- dolly's fingerprints hash the line, so AemiJSON's and AemiProtobuf's baselines were rewritten after checking the findings by
+  rule, file and message were the same (no new warning). In ask, one argument per line made 13 clones visible that its
+  line-anchored `@dl:accept` directives had covered; each directive now sits on the clone's new first line, with its reason
+  unchanged.
+- The workflow pins of AemiRegex, AemiJSON and Atelier name aemi `0ef4279`. The `.swiftlint.yml` files that differ from aemi's
+  were left as they are, not synced.
+- Package pins still name aemi `6d8e862`; the change is formatting only, and the next `Scripts/update-pins.py` run moves them.
+- Not covered, as the report found: AemiSDR (its own config), swift-search and SwiftStaticAnalysis (their own), AemiSwift,
+  AemiUI and AemiUtilities (no swift-format config).
