@@ -21,6 +21,11 @@ public enum SessionLogIssue: Sendable, Equatable {
     case droppedCompaction(EntryID, boundary: EntryID, line: Int)
     /// A leaf record named an entry not yet written. It was ignored; the leaf stays where it was.
     case ignoredLeaf(EntryID, line: Int)
+    /// A framed file's last frame was cut off by an interrupted write (ADR-0138), and was dropped.
+    case tornFinalFrame(frame: Int)
+    /// A framed file's frame did not check and frames followed it: the file was changed or damaged. What preceded it was kept, and the
+    /// file is kept as it was beside the rewritten one.
+    case damagedFrame(frame: Int)
 
     /// What was repaired, in a clause: `line 12 was not a valid record and was skipped`.
     public var explanation: String {
@@ -37,6 +42,9 @@ public enum SessionLogIssue: Sendable, Equatable {
             case .droppedCompaction(_, _, let line):
                 "line \(line) was a compaction pointing off its own branch, and was removed"
             case .ignoredLeaf(_, let line): "line \(line) selected an entry that does not exist, and was ignored"
+            case .tornFinalFrame(let frame):
+                "the last record (frame \(frame + 1)) was cut off mid-write and was dropped"
+            case .damagedFrame(let frame): "record \(frame + 1) was damaged; it and what followed it were not read"
         }
     }
 
@@ -52,6 +60,8 @@ public enum SessionLogIssue: Sendable, Equatable {
             case .orphanedEntry(_, let missing, _): .invalidArchive(.unknownEntry(missing))
             case .droppedCompaction(_, let boundary, _): .invalidArchive(.invalidCompactionBoundary(boundary))
             case .ignoredLeaf(let id, _): .invalidArchive(.unknownEntry(id))
+            case .tornFinalFrame(let frame): .tornFinalLine(line: frame + 1)
+            case .damagedFrame(let frame): .malformedLine(line: frame + 1)
         }
     }
 }

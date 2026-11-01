@@ -2,7 +2,7 @@ internal import CryptoKit
 
 /// A framed file's header: what the frames are, and, for an encrypted file, the envelope its data key is wrapped in (ADR-0138, sections
 /// 2 and 4; this layer stores the envelope and does not read it).
-struct FramedHeader: Equatable {
+struct FramedHeader: Equatable, Sendable {
     let compressed: Bool
     let encrypted: Bool
     let payload: FramedPayload
@@ -30,6 +30,8 @@ struct FramedHeader: Equatable {
 
     /// The header at the start of `bytes`.
     static func parse(_ bytes: [UInt8]) throws(FramedFileError) -> FramedHeader {
+        // Fewer bytes than the magic, but its start: a header still arriving.
+        if bytes.count < FrameFormat.magic.count, FrameFormat.magic.starts(with: bytes) { throw .truncatedHeader }
         guard bytes.starts(with: FrameFormat.magic) else { throw .notFramed }
         guard bytes.count > 4 else { throw .truncatedHeader }
         guard bytes[4] == FrameFormat.version else { throw .unsupportedVersion(bytes[4]) }

@@ -6,7 +6,7 @@ internal import Foundation
 /// `keys.json` (ADR-0138, section 4): the user key, wrapped twice, by a key Argon2id derives from the password and by one derived from
 /// the recovery code, and the derivation's parameters. Nothing in it opens anything without the password or the code. The user key, in
 /// turn, seals each encrypted file's own data key (``envelope(for:userKey:)``), so changing the password rewraps one key, not every file.
-struct SessionKeys: Codable, Equatable {
+struct SessionKeys: Codable, Equatable, Sendable {
     static let version = 1
 
     let version: Int

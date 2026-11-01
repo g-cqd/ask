@@ -17,15 +17,48 @@ struct SessionLogReader {
     func recover(
         _ descriptor: FileDescriptor,
         limits: SessionLog.Limits,
-        images: SessionImageStore?
+        images: SessionImageStore?,
+        keyring: SessionKeyring? = nil
     ) throws(SessionFileError) -> RecoveredSession {
         let size = Int(try SessionFileIO.io(.read) { try descriptor.seek(offset: 0, from: .end) })
         guard size <= limits.maximumArchiveBytes else { throw .log(.archiveTooLarge(size)) }
         _ = try SessionFileIO.io(.read) { try descriptor.seek(offset: 0, from: .start) }
         var lines = Lines(recovery: SessionLogRecovery(limits: limits, images: images), limit: limits.maximumLineBytes)
-        var chunk = [UInt8](repeating: 0, count: chunkBytes)
         var total = 0
-        // Never past the size checked above: a file that grows while it is read is read as it was.
+        var framed: RecoveredSession?
+        try readChunks(descriptor, size: size) { chunk throws(SessionFileError) in
+            if total == 0, chunk.first == FrameFormat.magic[0] {
+                // A framed file (ADR-0138) starts with its magic, a JSONL one with `{`.
+                framed = try recoverFramed(
+                    first: chunk,
+                    descriptor,
+                    size: size,
+                    limits: limits,
+                    images: images,
+                    keyring: keyring
+                )
+                return false
+            }
+            total += chunk.count
+            do throws(SessionLogError) { try lines.feed(chunk) } catch { throw .log(error) }
+            return true
+        }
+        if let framed { return framed }
+        guard total > 0 else { return RecoveredSession(tree: SessionTree(), issues: [.missingHeader]) }
+        do { try lines.finish() } catch { throw .log(error) }
+        return lines.recovery.result
+    }
+
+    /// Reads the file behind `descriptor` from where it stands, a chunk at a time, never past `size` (a file that grows while it is read is
+    /// read as it was), and gives each chunk to `body` until it returns false or the file ends.
+    func readChunks(
+        _ descriptor: FileDescriptor,
+        size: Int,
+        from start: Int = 0,
+        _ body: (ArraySlice<UInt8>) throws(SessionFileError) -> Bool
+    ) throws(SessionFileError) {
+        var chunk = [UInt8](repeating: 0, count: chunkBytes)
+        var total = start
         while total < size {
             let wanted = Swift.min(chunkBytes, size - total)
             let count = try SessionFileIO.io(.read) {
@@ -33,13 +66,10 @@ struct SessionLogReader {
                     try descriptor.read(into: UnsafeMutableRawBufferPointer(rebasing: raw[..<wanted]))
                 }
             }
-            if count == 0 { break }  // The file shrank while being read; recover what was there.
+            if count == 0 { return }  // The file shrank while being read; recover what was there.
             total += count
-            do { try lines.feed(chunk[..<count]) } catch { throw .log(error) }
+            guard try body(chunk[..<count]) else { return }
         }
-        guard total > 0 else { return RecoveredSession(tree: SessionTree(), issues: [.missingHeader]) }
-        do { try lines.finish() } catch { throw .log(error) }
-        return lines.recovery.result
     }
 
     /// Splits chunks into lines for the recovery: a line inside one chunk is passed as a slice of it, and one that spans chunks is gathered,

@@ -15,4 +15,10 @@ public enum SessionFileError: Error, Sendable, Equatable {
     case log(SessionLogError)
     /// The change itself was invalid; nothing was written.
     case tree(SessionTreeError)
+    /// The session is encrypted and no key was given: it is locked until the password or recovery code opens the user key (ADR-0138).
+    case locked
+    /// The session was encrypted under another user key: another `keys.json` than the one in use.
+    case otherKey
+    /// A framed session's header is damaged, so nothing in it can be read.
+    case unreadableHeader
 }

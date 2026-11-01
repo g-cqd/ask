@@ -19,6 +19,7 @@ public enum CodexAccessError: Error, Sendable, Equatable, CustomStringConvertibl
     public var description: String {
         switch self {
             case .signedOut: "not signed in to Codex: run `ask login codex`"
+            // @dl:accept -- describing an error enum case by case is the shape of every one; the sentences are its own
             case .storage(let error): "the stored Codex credentials cannot be used: \(error)"
             case .refreshFailed(let error): "the Codex sign-in could not be refreshed: \(error)"
             case .lockUnavailable: "another ask is refreshing the Codex sign-in and did not finish; try again"

@@ -11,8 +11,9 @@ final class Inflater {
         )
     }
 
-    /// What `bytes`, one frame's deflate data, decompress to; nil when they are not valid deflate data for this stream.
-    func decompress(_ bytes: ArraySlice<UInt8>) -> [UInt8]? {
-        stream.run(bytes, step: { unsafe inflate($0, Z_SYNC_FLUSH) })
+    /// What `bytes`, one frame's deflate data, decompress to, kept up to `limit` bytes; a record over it is consumed and dropped, so
+    /// the frames after it still decode.
+    func decompress(_ bytes: ArraySlice<UInt8>, limit: Int = .max) -> ZStream.Output {
+        stream.run(bytes, limit: limit, step: { unsafe inflate($0, Z_SYNC_FLUSH) })
     }
 }

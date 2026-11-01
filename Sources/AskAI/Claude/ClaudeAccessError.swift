@@ -18,6 +18,7 @@ public enum ClaudeAccessError: Error, Sendable, Equatable, CustomStringConvertib
     public var description: String {
         switch self {
             case .signedOut: "not signed in to Claude: run `ask login claude`"
+            // @dl:accept -- describing an error enum case by case is the shape of every one; the sentences are its own
             case .storage(let error): "the stored Claude credentials cannot be used: \(error)"
             case .refreshFailed(let error):
                 "the Claude sign-in could not be refreshed (\(error)); run `ask login claude` again"
