@@ -17,6 +17,8 @@ The owner agreed to this order on 2026-10-31 ("go ahead, seems nice").
 5. **E: interaction.** 0116 (one confirmation picker, reusing 0117's lane), then 0078 (tool blocks without section labels).
 6. **F: larger.** 0152 with 0087 (syntax highlighting, Atelier's lexers promoted first), and a design entry for 0115 (taking over a
    running session).
+   Done 2026-10-31: 0152 phases 1 and 2 (fenced code coloured), 0087 (Atelier consumes `AemiLexers`), the 0115 design
+   (`session-takeover-one-process-2026-10-31.md`). The pin cascade (0166) ran twice the same day, to aemi `6e8279c` then `00f8ea2`.
 
 Parked until asked: 0088 (deferred by the owner), 0109, 0130, 0122, 0121, 0135, 0140, 0149, 0150, 0020, 0022, the pixel work (0003,
 0012, 0014, 0015), 0070, 0032, 0063, 0107, 0055. Ongoing, the owner's: 0071 (daily use and a defect log).
@@ -38,7 +40,6 @@ Each is built and checked in a PTY or pyte, never in the owner's terminal. One s
 - **The first signed run on the real credentials** (0110): signing is done, by hash (`<certificate-sha-1>`,
   the valid certificate of team <team-id>). The owner's next run of a signed build moves the secrets into the login keychain;
   check with `security find-generic-password -s ask`.
-- **The pin cascade** (0166): `Scripts/update-pins.py --apply` when aemi and AemiRegex are quiet.
 - **0092:** when two accounts serve one model, ask each time or remember a default per model. Built as "ask once, remember per model,
   change with `/model`" unless the owner says otherwise. Done in `afa33d4`; `--model` keeps the default's account rather than
   refusing a shared model, so no script breaks.

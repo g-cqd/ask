@@ -58,7 +58,8 @@ Atelier's lexers and 0087 their promotion; neither was built.
 **Phase 1, done.** The lexers are `AemiLexers`, a module of aemi (aemi ADR 0022, `61b67bc`; the owner chose a module over 0087's own
 package), then three gaps closed red first (`6e8279c`): an exponent's sign is part of the number, Rust raw strings (`r#"…"#`, any
 level), Lua long strings (`[[…]]`, `[==[…]==]`), each checked by a whole-text scan and a line-by-line scan of 29 tricky lines. Release
-throughput is unchanged (median ratio 1.00 over the corpus, Rust within 2 %). The pin cascade carried aemi `6e8279c` to ask (`814d97e`).
+throughput is unchanged (median ratio 1.00 over the corpus, Rust within 2 %). The pin cascade carried aemi `6e8279c` to ask (`814d97e`). Atelier
+consumes the module since its `41e0ec0` (0087, done).
 
 **Phase 2, done.** `CodeHighlighter` (AskTUI) is the renderer's `MarkdownCodeHighlighter`: the fence's language through
 `Language(name:)` (aliases such as `sh`, `c++`, `js` resolve; an unknown name or `plain` gives nil, so the block draws plain), each line
