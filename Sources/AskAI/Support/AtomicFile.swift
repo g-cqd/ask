@@ -16,7 +16,9 @@ public enum AtomicFile {
     ///   - flush: how a descriptor is made durable; only tests give one, to see when and to make it fail.
     /// - Throws: a `Failure` naming the errno; the old file is untouched and no temporary file is left.
     public static func replace(
-        _ url: URL, with bytes: [UInt8], flush: (Int32) -> Int32 = FileFlush.barrier
+        _ url: URL,
+        with bytes: [UInt8],
+        flush: (Int32) -> Int32 = FileFlush.barrier
     ) throws(Failure) {
         let temporary = url.deletingLastPathComponent()
             .appending(path: ".\(url.lastPathComponent)-\(UUID().uuidString).tmp")

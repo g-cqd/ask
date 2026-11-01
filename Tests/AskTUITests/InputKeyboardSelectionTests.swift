@@ -18,12 +18,18 @@ struct InputKeyboardSelectionTests {
 
     @discardableResult
     private func press(
-        _ rig: inout PointerRig, _ code: UInt32, shift: Bool = true, control: Bool = false
+        _ rig: inout PointerRig,
+        _ code: UInt32,
+        shift: Bool = true,
+        control: Bool = false
     ) -> [ScreenController.Effect] {
         var modifiers: KeyModifiers = shift ? [.shift] : []
         if control { modifiers.insert(.ctrl) }
         let effects = rig.controller.handle(
-            .key(KeyEvent(keyCode: code, modifiers: modifiers)), pageRows: 10, columns: 30)
+            .key(KeyEvent(keyCode: code, modifiers: modifiers)),
+            pageRows: 10,
+            columns: 30
+        )
         rig.draw()
         return effects
     }

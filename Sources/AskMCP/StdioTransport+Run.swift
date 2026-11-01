@@ -34,12 +34,18 @@ extension StdioTransport {
 
     /// Runs the child to its end: writes what is queued, splits what it prints into messages, keeps a little of what it complains of.
     static func drive(
-        _ launch: StdioLaunch, outbound: AsyncStream<[UInt8]>, shared: Shared, maximumMessageBytes: Int
+        _ launch: StdioLaunch,
+        outbound: AsyncStream<[UInt8]>,
+        shared: Shared,
+        maximumMessageBytes: Int
     ) async {
         defer { shared.incoming.finish() }
         do {
             let result = try await Subprocess.run(
-                configuration(launch), input: .inputWriter, output: .sequence, error: .sequence
+                configuration(launch),
+                input: .inputWriter,
+                output: .sequence,
+                error: .sequence
             ) { execution in
                 shared.launched(execution.processIdentifier.value)
                 let writer = execution.standardInputWriter
@@ -55,7 +61,8 @@ extension StdioTransport {
                             let bytes = buffer.withUnsafeBytes { Array($0) }
                             shared.outcome.withLock { outcome in
                                 outcome.standardError = Array(
-                                    (outcome.standardError + bytes).suffix(standardErrorBytes))
+                                    (outcome.standardError + bytes).suffix(standardErrorBytes)
+                                )
                             }
                         }
                     } catch {}
@@ -111,7 +118,11 @@ extension StdioTransport {
                 Dictionary(
                     uniqueKeysWithValues: environment.compactMap { name, value in
                         Environment.Key(rawValue: name).map { ($0, value) }
-                    })),
-            workingDirectory: launch.workingDirectory.map { FilePath($0) }, platformOptions: options)
+                    }
+                )
+            ),
+            workingDirectory: launch.workingDirectory.map { FilePath($0) },
+            platformOptions: options
+        )
     }
 }

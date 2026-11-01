@@ -94,7 +94,10 @@ public final class SessionRecorder: Sendable {
         try file.withLock { file in
             let previous = file.tree.destination
             try destination.check(
-                replacing: previous, hasHistory: !file.tree.entries.isEmpty, explicitlySelected: explicitlySelected)
+                replacing: previous,
+                hasHistory: !file.tree.entries.isEmpty,
+                explicitlySelected: explicitlySelected
+            )
             if destination != previous { try file.append(.destination(destination)) }
         }
     }

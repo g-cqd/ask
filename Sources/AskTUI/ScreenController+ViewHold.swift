@@ -27,7 +27,10 @@ extension ScreenController {
             .reduce(0) {
                 $0
                     + ScreenComposer.lines(
-                        in: state.transcript, at: $1, columns: frame.transcriptColumns, style: state.blocks
+                        in: state.transcript,
+                        at: $1,
+                        columns: frame.transcriptColumns,
+                        style: state.blocks
                     )
                     .count
             }

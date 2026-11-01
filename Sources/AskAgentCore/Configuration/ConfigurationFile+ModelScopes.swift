@@ -19,7 +19,10 @@ extension ConfigurationFile {
                 }
             }
             scope = ModelScope(
-                path: patterns["path"], remote: patterns["remote"], identity: patterns["identity"], providers: providers
+                path: patterns["path"],
+                remote: patterns["remote"],
+                identity: patterns["identity"],
+                providers: providers
             )
         }
     }
@@ -29,19 +32,26 @@ extension ConfigurationFile {
         guard let scopes else { return }
         if isProject {
             throw .outOfRange(
-                path: path, key: "modelScopes",
-                reason: "limits which providers serve your repositories: only your own config file can choose that")
+                path: path,
+                key: "modelScopes",
+                reason: "limits which providers serve your repositories: only your own config file can choose that"
+            )
         }
         for (index, scope) in scopes.enumerated() {
             let number = index + 1
             if scope.matchers.isEmpty || scope.matchers.contains(where: { $0.pattern.isEmpty }) {
                 throw .outOfRange(
-                    path: path, key: "modelScopes",
-                    reason: "rule \(number) needs a non-empty path, remote or identity to match")
+                    path: path,
+                    key: "modelScopes",
+                    reason: "rule \(number) needs a non-empty path, remote or identity to match"
+                )
             }
             if scope.providers.isEmpty || scope.providers.contains(where: \.isEmpty) {
                 throw .outOfRange(
-                    path: path, key: "modelScopes", reason: "rule \(number) needs the providers it allows, by name")
+                    path: path,
+                    key: "modelScopes",
+                    reason: "rule \(number) needs the providers it allows, by name"
+                )
             }
         }
     }

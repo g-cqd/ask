@@ -19,7 +19,10 @@ struct SessionColorConfigurationTests {
     @Test func `another word is refused, naming the key`() {
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "ui.sessionColor", reason: #"is "blue": use "off", "always" or "others""#)
+                path: "c.json",
+                key: "ui.sessionColor",
+                reason: #"is "blue": use "off", "always" or "others""#
+            )
         ) { try ui(#"{"sessionColor": "blue"}"#) }
     }
 }

@@ -12,7 +12,9 @@ public struct ResponsesDialect: Sendable, Equatable {
 
     /// A dialect with these differences.
     public init(
-        sendsOutputLimit: Bool = true, promptCacheKey: String? = nil, fallbackInstructions: String? = nil,
+        sendsOutputLimit: Bool = true,
+        promptCacheKey: String? = nil,
+        fallbackInstructions: String? = nil,
         replaysReasoning: Bool = false
     ) {
         self.sendsOutputLimit = sendsOutputLimit

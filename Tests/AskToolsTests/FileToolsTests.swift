@@ -109,7 +109,9 @@ struct FileToolsTests {
     @Test func `edit replaces the one exact match and keeps permissions`() async throws {
         try file("c.sh", "echo one\necho two\n")
         try FileManager.default.setAttributes(
-            [.posixPermissions: 0o755], ofItemAtPath: root.appending(path: "c.sh").path)
+            [.posixPermissions: 0o755],
+            ofItemAtPath: root.appending(path: "c.sh").path
+        )
         let output = await EditTool()
             .run(input(#"{"path":"c.sh","old_text":"echo two","new_text":"echo 2"}"#), in: context)
         #expect(!output.isError)

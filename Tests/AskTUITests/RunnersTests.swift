@@ -101,7 +101,8 @@ struct RunnersTests {
         }
         _ = empty.controller.handle(.key(KeyEvent(keyCode: 0x0D)), pageRows: 10)
         #expect(
-            empty.controller.state.transcript.items.last == .notice("No background jobs are running.", isError: false))
+            empty.controller.state.transcript.items.last == .notice("No background jobs are running.", isError: false)
+        )
     }
 
     @Test func `the list closes by itself when nothing is running`() {
@@ -125,7 +126,8 @@ struct RunnersTests {
             (9 ... 12).map { String(rig.text(row: $0).prefix(24)) } == [
                 "job-1  sleep 1 · running", "job-2  sleep 2 · running", "job-3  sleep 3 · running",
                 "job-4  sleep 4 · running"
-            ])
+            ]
+        )
         #expect(rig.text(row: 13) == "… 4 more")
         #expect(rig.text(row: 7) == "✓ · m · 8 jobs")
         #expect(rig.text(row: 8).isEmpty)
@@ -151,6 +153,7 @@ struct RunnersTests {
         #expect(
             rig.drag(from: (rig.composer.transcriptRows - 1, 0), to: (rig.composer.transcriptRows - 1, 2)) == [
                 .copy("two"[...].prefix(3).description)
-            ])
+            ]
+        )
     }
 }

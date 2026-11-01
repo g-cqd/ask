@@ -28,6 +28,7 @@ struct AgyAccessErrorTests {
         #expect(damaged.contains("/x/credentials.json") && damaged.contains("Antigravity"))
         #expect(
             AgyAccessError.onboarding(.noProject(reasons: ["UNSUPPORTED_LOCATION"])).description
-                .contains("UNSUPPORTED_LOCATION"))
+                .contains("UNSUPPORTED_LOCATION")
+        )
     }
 }

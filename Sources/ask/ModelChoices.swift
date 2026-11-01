@@ -53,12 +53,21 @@ enum ModelChoices {
             }
         }
         var rows = Self.rows(
-            ModelOfferGroup.grouped(offers), models: models, current: current, currentName: currentName,
-            environment: environment)
+            ModelOfferGroup.grouped(offers),
+            models: models,
+            current: current,
+            currentName: currentName,
+            environment: environment
+        )
         if !failed.isEmpty {
             rows.append(
                 ChoiceRow(
-                    label: "· not listed", detail: failed.joined(separator: "; "), arguments: "", isCurrent: false))
+                    label: "· not listed",
+                    detail: failed.joined(separator: "; "),
+                    arguments: "",
+                    isCurrent: false
+                )
+            )
         }
         return rows
     }
@@ -71,9 +80,11 @@ enum ModelChoices {
         if let window = model.contextWindow { facts.append(window >= 1000 ? "\(window / 1000)k ctx" : "\(window) ctx") }
         if !model.reasoningLevels.isEmpty { facts.append("effort " + model.reasoningLevels.joined(separator: " ")) }
         return ChoiceRow(
-            label: "\(provider)/\(model.id)", detail: facts.joined(separator: " · "),
+            label: "\(provider)/\(model.id)",
+            detail: facts.joined(separator: " · "),
             arguments: "\(provider) \(model.id)",
-            isCurrent: provider == currentName && model.id == current.model)
+            isCurrent: provider == currentName && model.id == current.model
+        )
     }
 
     /// The providers that can be listed: what is signed in, what providers.json names, Apple's model, and the named connections.
@@ -94,13 +105,15 @@ enum ModelChoices {
             listings.append(
                 Listing(provider: ProviderSettings.anthropic) {
                     try await AnthropicModelDiscovery.catalog(environment: environment).models(now: now).models
-                })
+                }
+            )
         }
         if has(ProviderSettings.codex) {
             listings.append(
                 Listing(provider: ProviderSettings.codex) {
                     try await ModelDiscovery.codex(environment: environment).models(now: now).models
-                })
+                }
+            )
         }
         if has(ProviderSettings.agy) {
             listings.append(
@@ -108,13 +121,15 @@ enum ModelChoices {
                     let agy = ModelDiscovery.agy(environment: environment)
                     if let cached = try agy.cached(now: now) { return cached.models }
                     return try await agy.refreshed(now: now).snapshot.models
-                })
+                }
+            )
         }
         if has(CopilotProtocol.name) {
             listings.append(
                 Listing(provider: CopilotProtocol.name) {
                     try await ModelDiscovery.copilot(environment: environment).models(now: now)
-                })
+                }
+            )
         }
         if AppleModel.availability().isAvailable {
             listings.append(Listing(provider: ProviderSettings.apple) { [AppleModel.catalogEntry] })
@@ -124,7 +139,10 @@ enum ModelChoices {
 
     /// Every provider reached with a key, stored or in the environment, and every one providers.json names.
     private static func keyed(
-        _ accounts: [SignedInAccount], file: CredentialFile, environment: [String: String], now: Double
+        _ accounts: [SignedInAccount],
+        file: CredentialFile,
+        environment: [String: String],
+        now: Double
     ) -> [Listing] {
         let providers =
             (try? ProviderSettings.load(from: askConfigDirectory(environment: environment) + "/providers.json"))
@@ -138,8 +156,10 @@ enum ModelChoices {
                 Listing(provider: name) {
                     guard
                         let listing = try providers.listing(
-                            provider: name, environment: environment,
-                            storedKeys: { () throws(CredentialFileError) in try file.loadKeys().mapValues(\.key) })
+                            provider: name,
+                            environment: environment,
+                            storedKeys: { () throws(CredentialFileError) in try file.loadKeys().mapValues(\.key) }
+                        )
                     else { return [] }
                     return try await ProviderModelDiscovery.catalog(for: listing, environment: environment)
                         .models(now: now).models

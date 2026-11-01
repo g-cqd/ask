@@ -18,7 +18,10 @@ private func transcript(lines: Int, width: Int) -> ScreenState {
 }
 
 private func frame(
-    _ state: ScreenState, composer: inout ScreenComposer, front: inout ScreenBuffer, back: inout ScreenBuffer
+    _ state: ScreenState,
+    composer: inout ScreenComposer,
+    front: inout ScreenBuffer,
+    back: inout ScreenBuffer
 )
     -> Int
 {
@@ -38,7 +41,10 @@ let benchmarks: @Sendable () -> Void = {
     registerPickerBenchmarks()
     registerFilePickerBenchmarks()
     Benchmark.defaultConfiguration = .init(
-        metrics: [.wallClock, .cpuTotal], maxDuration: .seconds(2), maxIterations: 2_000)
+        metrics: [.wallClock, .cpuTotal],
+        maxDuration: .seconds(2),
+        maxIterations: 2_000
+    )
     print(
         "Cell: size \(MemoryLayout<Cell>.size) B, stride \(MemoryLayout<Cell>.stride) B; Style stride \(MemoryLayout<Style>.stride) B; Character stride \(MemoryLayout<Character>.stride) B"
     )

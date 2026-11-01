@@ -39,17 +39,21 @@ enum AgyModelListing {
                 // Not named for agent use and not a thinking model: the server does not offer it for chat.
                 let offered = named.contains(id) || capable.contains(id)
                 return CatalogModel(
-                    id: id, contextWindow: positive(entry["maxTokens"]),
+                    id: id,
+                    contextWindow: positive(entry["maxTokens"]),
                     maxOutputTokens: positive(entry["maxOutputTokens"]),
                     supportsThinking: entry["supportsThinking"].bool,
-                    unsuitable: chat && !offered ? "not offered for chat" : unsuitable)
+                    unsuitable: chat && !offered ? "not offered for chat" : unsuitable
+                )
             }
         // The default and the emptiness test are about the useful models, as before this list also held the rest.
         let kept = all.filter { $0.unsuitable == nil }
         guard !kept.isEmpty else { throw ModelCatalogError.noModels }
         let standard = root["defaultAgentModelId"].string
         return AgyModelList(
-            models: all, defaultModelID: standard.flatMap { id in kept.contains { $0.id == id } ? id : nil })
+            models: all,
+            defaultModelID: standard.flatMap { id in kept.contains { $0.id == id } ? id : nil }
+        )
     }
 
     /// The ids the server names for agent use: its groups in order, then command models, then tiered models by tier name.

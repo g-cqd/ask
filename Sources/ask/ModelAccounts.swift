@@ -32,7 +32,9 @@ enum ModelAccounts {
 
     /// The account last chosen for `model`, when `provider` is one of a subscription's accounts and the remembered one is still there.
     static func remembered(
-        for model: String, provider: String, environment: [String: String] = LaunchEnvironment.values
+        for model: String,
+        provider: String,
+        environment: [String: String] = LaunchEnvironment.values
     )
         -> String?
     {

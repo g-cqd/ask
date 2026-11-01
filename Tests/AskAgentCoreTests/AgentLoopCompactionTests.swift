@@ -94,8 +94,13 @@ struct AgentLoopCompactionTests {
         var tree = SessionTree()
         try tree.append(.user("one"))
         let big = AssembledResponse(
-            id: "m", model: "x", blocks: [.text("a")], stopReason: .endTurn,
-            usage: TokenUsage(input: 10, output: 5, cacheRead: 100, cacheCreation: 20), unrecognized: [])
+            id: "m",
+            model: "x",
+            blocks: [.text("a")],
+            stopReason: .endTurn,
+            usage: TokenUsage(input: 10, output: 5, cacheRead: 100, cacheCreation: 20),
+            unrecognized: []
+        )
         try tree.append(.response(big))
         #expect(Compaction.contextTokens(sinceCompactionIn: tree) == 135)
         let kept = try tree.append(.user("two"))
@@ -148,8 +153,13 @@ struct AgentLoopCompactionTests {
     @Test func `the kept tail never starts at a tool result, which would orphan it from its call`() throws {
         let input = try JSONObject(validating: Array("{}".utf8))
         let call = AssembledResponse(
-            id: "m", model: "x", blocks: [.toolCall(id: "t1", name: "bash", input: input)], stopReason: .toolUse,
-            usage: TokenUsage(), unrecognized: [])
+            id: "m",
+            model: "x",
+            blocks: [.toolCall(id: "t1", name: "bash", input: input)],
+            stopReason: .toolUse,
+            usage: TokenUsage(),
+            unrecognized: []
+        )
         let entries = [
             SessionPayload.user("start"), .response(call),
             .toolResult(callID: "t1", content: "0123456789", isError: false)

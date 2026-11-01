@@ -21,7 +21,8 @@ struct ModelPreferenceTests {
 
     @Test func `a comment that names fallbacks adds them after the model, without repeats`() {
         let model = preference(
-            "---\nmodel: opus\n# fallback_models: claude-opus-5-5, claude-opus-4-8, sonnet, Opus\n---\n")
+            "---\nmodel: opus\n# fallback_models: claude-opus-5-5, claude-opus-4-8, sonnet, Opus\n---\n"
+        )
         #expect(model.tokens == ["opus", "claude-opus-5-5", "claude-opus-4-8", "sonnet"])
     }
 
@@ -30,13 +31,16 @@ struct ModelPreferenceTests {
         #expect(yaml.tokens == ["flash_lite", "flash"] && yaml.inheritsParent)
         let vibe = preference(
             "# tier_models = [\"devstral-small-latest\", \"devstral-latest\"] (effort = \"low\")\nname = \"x\"\n",
-            toml: true)
+            toml: true
+        )
         #expect(vibe.tokens == ["devstral-small-latest", "devstral-latest"])
     }
 
     @Test func `a TOML model with a TOML fallback comment reads the same way`() {
         let model = preference(
-            "model = \"gpt-6-luna\"\n# fallback_models = [\"gpt-5.6-luna\", \"gpt-5.5\"]\n", toml: true)
+            "model = \"gpt-6-luna\"\n# fallback_models = [\"gpt-5.6-luna\", \"gpt-5.5\"]\n",
+            toml: true
+        )
         #expect(model.tokens == ["gpt-6-luna", "gpt-5.6-luna", "gpt-5.5"])
     }
 

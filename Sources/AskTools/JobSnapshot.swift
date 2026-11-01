@@ -9,8 +9,13 @@ public struct JobSnapshot: Sendable, Equatable {
     public let lines: Int
 
     public init(
-        id: String, output: String, status: JobStatus, startedAt: ContinuousClock.Instant,
-        endedAt: ContinuousClock.Instant?, lines: Int, displayID: String? = nil
+        id: String,
+        output: String,
+        status: JobStatus,
+        startedAt: ContinuousClock.Instant,
+        endedAt: ContinuousClock.Instant?,
+        lines: Int,
+        displayID: String? = nil
     ) {
         self.id = id
         self.displayID = displayID ?? id

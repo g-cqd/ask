@@ -60,7 +60,8 @@ struct DefinitionFileYAMLTests {
 
     @Test func `a flow list may run over lines, and text that only looks like one is text`() {
         let file = read(
-            "---\nmodel: [\"Claude Opus 5.5\",\n  \"GPT-6 Astra\"]\ndescription: [WIP] fix the thing\n---\n")
+            "---\nmodel: [\"Claude Opus 5.5\",\n  \"GPT-6 Astra\"]\ndescription: [WIP] fix the thing\n---\n"
+        )
         #expect(file.value("model") == .list([.text("Claude Opus 5.5"), .text("GPT-6 Astra")]))
         #expect(file.text("description") == "[WIP] fix the thing")
     }
@@ -87,7 +88,8 @@ struct DefinitionFileYAMLTests {
                 == .map([
                     DefinitionEntry(key: "author", value: .text("me")),
                     DefinitionEntry(key: "version", value: .text("1"))
-                ]))
+                ])
+        )
         #expect(file.text("maxTurns") == "40")
         #expect(file.value("hooks") != nil && file.diagnostics.isEmpty)
         #expect(file.value("hooks")?.scalars.contains("Bash") == true)

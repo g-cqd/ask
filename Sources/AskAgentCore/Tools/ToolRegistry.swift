@@ -75,7 +75,9 @@ public struct ToolRegistry: Sendable {
 
     /// The context a built-in tool runs in once the call's own `sandbox` request, if it made one, is applied; or the refusal to return.
     private func applyingRequest(
-        of name: String, input: JSONObject, to context: ToolContext
+        of name: String,
+        input: JSONObject,
+        to context: ToolContext
     ) async -> Applied {
         do {
             guard let request = try SandboxRequest.in(input) else { return .run(context) }
@@ -87,7 +89,9 @@ public struct ToolRegistry: Sendable {
                     if let approve = context.approve, await approve(question) {
                         return .run(
                             context.with(
-                                request.granted(over: context.sandbox, workingDirectory: context.workingDirectory)))
+                                request.granted(over: context.sandbox, workingDirectory: context.workingDirectory)
+                            )
+                        )
                     }
                     return .refused(.error("Not permitted: that request is refused."))
                 case .invalid(let reason): return .refused(.error("Invalid sandbox for \(name): \(reason)."))

@@ -13,7 +13,8 @@ struct AnthropicQuotaTests {
             headers: [
                 stem + "status": "rejected", stem + "reset": "1793160000",
                 "anthropic-ratelimit-unified-overage-disabled-reason": "org_level_disabled"
-            ])
+            ]
+        )
         let sut = AnthropicClient(transport: transport)
         let request = ModelRequest(model: "m", maxTokens: 16, systemPrompt: [], messages: [], tools: [])
         do {
@@ -34,11 +35,13 @@ struct AnthropicQuotaTests {
     @Test(arguments: ["", "NaN", "Infinity", "-1", "1e100"])
     func `quota rejection survives an unreadable body and invalid reset`(reset: String) {
         let failure = AnthropicStreamDecoder.failure(
-            inErrorBody: [], status: 429,
+            inErrorBody: [],
+            status: 429,
             headers: [
                 "anthropic-ratelimit-unified-7d-status": "rejected",
                 "anthropic-ratelimit-unified-7d-reset": reset
-            ])
+            ]
+        )
         #expect(failure?.kind == .usageLimit)
         #expect(failure?.message.contains("weekly") == true)
     }

@@ -8,7 +8,9 @@ struct AgyModelCatalogTests {
     private let world = AgyAccessWorld()
     private let cacheFile = ModelCatalogFile(
         url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-agy-catalog-\(UUID().uuidString)/models-agy.json"))
+            path: "ask-agy-catalog-\(UUID().uuidString)/models-agy.json"
+        )
+    )
 
     private static func list() throws -> String {
         let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
@@ -18,8 +20,11 @@ struct AgyModelCatalogTests {
 
     private func catalog(_ transport: any HTTPTransport) -> AgyModelCatalog {
         AgyModelCatalog(
-            credentials: world.file, cache: cacheFile, cloud: AgyCloudClient(transport: transport),
-            access: world.access(transport))
+            credentials: world.file,
+            cache: cacheFile,
+            cloud: AgyCloudClient(transport: transport),
+            access: world.access(transport)
+        )
     }
 
     private func scope(project: String = "proj-0") -> ModelCatalogScope {
@@ -32,14 +37,16 @@ struct AgyModelCatalogTests {
         let listing = try await catalog(transport).refreshed(now: 5_000)
         #expect(
             ModelUsefulness.shown(listing.snapshot.models, onlyUseful: true).count == 21
-                && listing.snapshot.notices.isEmpty)
+                && listing.snapshot.notices.isEmpty
+        )
         #expect(listing.defaultModelID == "gemini-4-argon-medium")
         let sent = try #require(transport.sent.first)
         #expect(sent.url == AgyModelCatalog.endpoint)
         #expect(sent.headers.contains { $0.name == "authorization" && $0.value == "Bearer at-ok" })
         #expect(
             try cacheFile.load(scope: scope(), now: 5_000).map { ModelUsefulness.shown($0, onlyUseful: true).count }
-                == 21)
+                == 21
+        )
     }
 
     @Test func `the cache is read with no request, and says what the download did`() async throws {
@@ -55,7 +62,8 @@ struct AgyModelCatalogTests {
         try world.file.saveAgy(world.valid)
         _ = try await catalog(SequencedTransport([.json(200, try Self.list())])).refreshed(now: 5_000)
         let found = try #require(
-            try catalog(SequencedTransport([.json(500, "")])).cachedModel("gpt-oss-120b-medium", now: 5_100))
+            try catalog(SequencedTransport([.json(500, "")])).cachedModel("gpt-oss-120b-medium", now: 5_100)
+        )
         #expect(found.contextWindow == 131_072 && found.maxOutputTokens == 32_768 && found.supportsThinking == true)
         #expect(try catalog(SequencedTransport([.json(500, "")])).cachedModel("nonesuch", now: 5_100) == nil)
     }
@@ -74,7 +82,8 @@ struct AgyModelCatalogTests {
         try world.file.saveAgy(other)
         #expect(
             try catalog(quiet).cached(now: 5_100) == nil
-                && catalog(quiet).cachedModel("gemini-3-flash", now: 5_100) == nil)
+                && catalog(quiet).cachedModel("gemini-3-flash", now: 5_100) == nil
+        )
         var bare = world.valid
         bare.projectID = nil
         try world.file.saveAgy(bare)
@@ -85,7 +94,9 @@ struct AgyModelCatalogTests {
     @Test func `a damaged cache is reported and never rewritten by a read`() async throws {
         try world.file.saveAgy(world.valid)
         try FileManager.default.createDirectory(
-            at: cacheFile.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            at: cacheFile.url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
         try Data("{broken".utf8).write(to: cacheFile.url)
         #expect(throws: ModelCatalogError.self) { try catalog(SequencedTransport([.json(500, "")])).cached(now: 5_000) }
         #expect(throws: ModelCatalogError.self) {
@@ -121,13 +132,16 @@ struct AgyModelCatalogTests {
     @Test func `a cache that cannot be written is a notice, and the list is still returned`() async throws {
         try world.file.saveAgy(world.valid)
         let parent = FileManager.default.temporaryDirectory.appending(
-            path: "ask-agy-catalog-blocked-\(UUID().uuidString)")
+            path: "ask-agy-catalog-blocked-\(UUID().uuidString)"
+        )
         try Data("x".utf8).write(to: parent)
         let blocked = ModelCatalogFile(url: parent.appending(path: "models-agy.json"))
         let catalog = AgyModelCatalog(
-            credentials: world.file, cache: blocked,
+            credentials: world.file,
+            cache: blocked,
             cloud: AgyCloudClient(transport: SequencedTransport([.json(200, try Self.list())])),
-            access: world.access(SequencedTransport([.json(500, "")])))
+            access: world.access(SequencedTransport([.json(500, "")]))
+        )
         let listing = try await catalog.refreshed(now: 5_000)
         #expect(ModelUsefulness.shown(listing.snapshot.models, onlyUseful: true).count == 21)
         #expect(listing.snapshot.notices.count == 1 && listing.snapshot.notices[0].contains("could not be cached"))
@@ -149,7 +163,9 @@ struct AgyModelCatalogTests {
         _ = try await catalog(SequencedTransport([.json(200, try Self.list())])).refreshed(now: 5_000)
         let whole = String(decoding: try Data(contentsOf: cacheFile.url), as: UTF8.self)
         let damaged = whole.replacingOccurrences(
-            of: #""models":["#, with: #""models":[{"id":"bad id","contextWindow":-1},"#)
+            of: #""models":["#,
+            with: #""models":[{"id":"bad id","contextWindow":-1},"#
+        )
         #expect(damaged != whole)
         try Data(damaged.utf8).write(to: cacheFile.url)
         let quiet = SequencedTransport([.json(500, "")])

@@ -23,11 +23,13 @@ struct FileRankingTests {
     @Test func `a path that starts with the query comes first, then a file name, then the rest`() {
         #expect(
             paths("read") == ["README.md", "docs/readme-notes.md", "scripts/Read.sh"],
-            "a path prefix, then names, in listing order")
+            "a path prefix, then names, in listing order"
+        )
         #expect(
             paths("trans") == [
                 "Sources/AskTUI/Transcript.swift", "Tests/AskTUITests/TranscriptTests.swift"
-            ])
+            ]
+        )
         #expect(paths("askt") == ["Sources/AskTUI/Transcript.swift", "Tests/AskTUITests/TranscriptTests.swift"])
     }
 
@@ -109,6 +111,7 @@ struct FileRankingTests {
             list.baseStarts.enumerated()
                 .map { String(decoding: list.lowered[$0.element ..< list.starts[$0.offset + 1]], as: UTF8.self) } == [
                     "c.txt", "plain.txt", ""
-                ])
+                ]
+        )
     }
 }

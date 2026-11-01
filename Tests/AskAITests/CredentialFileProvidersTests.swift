@@ -11,10 +11,18 @@ import Testing
 struct CredentialFileProvidersTests {
     private let file = CredentialFile(
         url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-creds-\(UUID().uuidString)/ask/credentials.json"))
+            path: "ask-creds-\(UUID().uuidString)/ask/credentials.json"
+        )
+    )
     private let claude = ClaudeCredentials(
-        accessToken: "sk-ant-oat-A", refreshToken: "sk-ant-ort-R", expiresAt: 1_000, refreshExpiresAt: nil,
-        accountEmail: nil, organizationName: nil, scopes: "user:inference")
+        accessToken: "sk-ant-oat-A",
+        refreshToken: "sk-ant-ort-R",
+        expiresAt: 1_000,
+        refreshExpiresAt: nil,
+        accountEmail: nil,
+        organizationName: nil,
+        scopes: "user:inference"
+    )
 
     @Test func `saving a provider's key keeps Claude signed in, and the reverse`() throws {
         try file.saveClaude(claude)
@@ -55,7 +63,8 @@ struct CredentialFileProvidersTests {
         #expect(
             try file.loadKeys() == [
                 "spettro": StoredKey(key: "b", obtainedAt: 2), "mistral": StoredKey(key: "a", obtainedAt: 1)
-            ])
+            ]
+        )
     }
 
     @Test func `signing out of Claude keeps the other providers' keys`() throws {

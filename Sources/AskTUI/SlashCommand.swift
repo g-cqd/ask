@@ -40,7 +40,10 @@ public struct SlashCommand: Sendable, Equatable {
 
     /// A command called `name`.
     public init(
-        name: String, summary: String, takesChoices: Bool = false, category: Category = .session,
+        name: String,
+        summary: String,
+        takesChoices: Bool = false,
+        category: Category = .session,
         duringTurn: DuringTurn = .refused
     ) {
         self.duringTurn = duringTurn

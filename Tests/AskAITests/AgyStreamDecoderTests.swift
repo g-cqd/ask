@@ -18,7 +18,8 @@ struct AgyStreamDecoderTests {
                 .blockStarted(index: 1, .toolUse(id: "call_1218103", name: "calc")),
                 .toolInputDelta(index: 1, #"{"b":53,"a":17}"#), .blockStopped(index: 1),
                 .messageDelta(stopReason: .toolUse, usage: TokenUsage(input: 76, output: 18)), .messageStopped
-            ])
+            ]
+        )
     }
 
     @Test func `only the first of two parallel Gemini calls carries a signature, as the server sent it`() throws {
@@ -33,7 +34,8 @@ struct AgyStreamDecoderTests {
                 .blockStarted(index: 2, .toolUse(id: "call_1252421", name: "calc")),
                 .toolInputDelta(index: 2, #"{"b":5,"a":4}"#), .blockStopped(index: 2),
                 .messageDelta(stopReason: .toolUse, usage: TokenUsage(input: 88, output: 32)), .messageStopped
-            ])
+            ]
+        )
     }
 
     @Test
@@ -52,7 +54,8 @@ struct AgyStreamDecoderTests {
             events.suffix(3) == [
                 .blockStopped(index: 0), .messageDelta(stopReason: .endTurn, usage: TokenUsage(input: 9, output: 22)),
                 .messageStopped
-            ])
+            ]
+        )
     }
 
     @Test func `a Claude call has no signature and the empty text around it makes no block`() throws {
@@ -63,18 +66,21 @@ struct AgyStreamDecoderTests {
                 .blockStarted(index: 0, .toolUse(id: "toolu_vrtx_016J7m5JCVqQ8Eq4i6xe8MVB", name: "calc")),
                 .toolInputDelta(index: 0, #"{"a":17,"b":53}"#), .blockStopped(index: 0),
                 .messageDelta(stopReason: .toolUse, usage: TokenUsage(input: 408, output: 67)), .messageStopped
-            ])
+            ]
+        )
     }
 
     @Test func `a long Claude answer is one text block`() throws {
         let events = try AgyStreamFixtures.decode(fixture: "stream-claude-text")
         #expect(
-            events.filter { if case .blockStarted = $0 { true } else { false } } == [.blockStarted(index: 0, .text)])
+            events.filter { if case .blockStarted = $0 { true } else { false } } == [.blockStarted(index: 0, .text)]
+        )
         #expect(events.contains { if case .textDelta(0, let piece) = $0 { !piece.isEmpty } else { false } })
         #expect(
             events.suffix(2) == [
                 .messageDelta(stopReason: .endTurn, usage: TokenUsage(input: 20, output: 43)), .messageStopped
-            ])
+            ]
+        )
     }
 
     @Test func `GPT-OSS thoughts are one thinking block before its call, with cached tokens taken out of the input`()
@@ -90,7 +96,8 @@ struct AgyStreamDecoderTests {
             events.suffix(2) == [
                 .messageDelta(stopReason: .toolUse, usage: TokenUsage(input: 78, output: 55, cacheRead: 64)),
                 .messageStopped
-            ])
+            ]
+        )
     }
 
     @Test func `how the network cuts the stream does not change the events`() throws {
@@ -124,7 +131,8 @@ struct AgyStreamDecoderTests {
                 .blockStarted(index: 3, .toolUse(id: "1", name: "f")), .toolInputDelta(index: 3, "{}"),
                 .blockStopped(index: 3),
                 .messageDelta(stopReason: .toolUse, usage: TokenUsage(input: 3, output: 2)), .messageStopped
-            ])
+            ]
+        )
     }
 
     @Test func `whitespace before the first real text leads it, and whitespace alone makes no block`() throws {
@@ -177,7 +185,8 @@ struct AgyStreamDecoderTests {
         #expect(events.contains(.textDelta(index: 0, "\nx")) && events.contains(.textDelta(index: 2, "y")))
         let across = try AgyStreamFixtures.decode(lines: [
             AgyStreamFixtures.chunk(
-                parts: #"{"text":"\n"},{"functionCall":{"id":"1","name":"f","args":{}}},{"text":"z"}"#),
+                parts: #"{"text":"\n"},{"functionCall":{"id":"1","name":"f","args":{}}},{"text":"z"}"#
+            ),
             AgyStreamFixtures.stop
         ])
         #expect(across.contains(.textDelta(index: 1, "z")), "the whitespace held before the call is gone")
@@ -204,6 +213,7 @@ struct AgyStreamDecoderTests {
         #expect(
             inside.filter { if case .textDelta = $0 { true } else { false } } == [
                 .textDelta(index: 0, "a"), .textDelta(index: 0, "b")
-            ])
+            ]
+        )
     }
 }

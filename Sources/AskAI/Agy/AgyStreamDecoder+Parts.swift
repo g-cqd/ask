@@ -48,7 +48,9 @@ extension AgyStreamDecoder {
             events.append(
                 .signatureDelta(
                     index: carrier,
-                    ReasoningProvenance.mark(scheme: Self.schemePrefix + model, payload: signature)))
+                    ReasoningProvenance.mark(scheme: Self.schemePrefix + model, payload: signature)
+                )
+            )
             events.append(.blockStopped(index: carrier))
         }
         let index = begin(.toolUse(id: id, name: wire["name"].string ?? ""), into: &events)

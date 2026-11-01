@@ -8,9 +8,12 @@ import Testing
 @Suite("The Anthropic client streams model events and types every failure")
 struct AnthropicClientTests {
     private let request = ModelRequest(
-        model: "claude-x", maxTokens: 64, systemPrompt: [],
+        model: "claude-x",
+        maxTokens: 64,
+        systemPrompt: [],
         messages: [ModelMessage(role: .user, blocks: [.text("Hi")])],
-        tools: [])
+        tools: []
+    )
 
     private func events(_ client: AnthropicClient, auth: AnthropicClient.Auth) async throws -> [ModelEvent] {
         var collected: [ModelEvent] = []
@@ -34,7 +37,8 @@ struct AnthropicClientTests {
             received == [
                 .messageStarted(id: "m", model: "claude-x", usage: TokenUsage(input: 3, output: 1)),
                 .blockStarted(index: 0, .text), .textDelta(index: 0, "Hello"), .messageStopped
-            ])
+            ]
+        )
         let sent = try #require(transport.sent)
         #expect(sent.url.absoluteString == "https://api.anthropic.com/v1/messages")
         #expect(sent.method == "POST")
@@ -49,13 +53,16 @@ struct AnthropicClientTests {
         #expect(AnthropicClient.endpoint(environment: [:]).absoluteString == "https://api.anthropic.com/v1/messages")
         #expect(
             AnthropicClient.endpoint(environment: ["ANTHROPIC_BASE_URL": "http://127.0.0.1:8080/"]).absoluteString
-                == "http://127.0.0.1:8080/v1/messages")
+                == "http://127.0.0.1:8080/v1/messages"
+        )
         #expect(
             AnthropicClient.endpoint(environment: ["ANTHROPIC_BASE_URL": "https://gw.example/anthropic"]).absoluteString
-                == "https://gw.example/anthropic/v1/messages")
+                == "https://gw.example/anthropic/v1/messages"
+        )
         #expect(
             AnthropicClient.endpoint(environment: ["ANTHROPIC_BASE_URL": "not a url"]).absoluteString
-                == "https://api.anthropic.com/v1/messages")
+                == "https://api.anthropic.com/v1/messages"
+        )
     }
 
     @Test func `an API key request uses x-api-key and no OAuth betas`() async throws {
@@ -68,10 +75,14 @@ struct AnthropicClientTests {
 
     @Test func `an error status becomes a typed failure with the provider's reason`() async {
         let transport = ScriptedTransport(
-            status: 429, chunks: [#"{"type":"error","error":{"type":"rate_limit_error","message":"Slow down"}}"#])
+            status: 429,
+            chunks: [#"{"type":"error","error":{"type":"rate_limit_error","message":"Slow down"}}"#]
+        )
         await #expect(
             throws: AnthropicClientError.status(
-                429, ProviderFailure(kind: .rateLimited, message: "Slow down"))
+                429,
+                ProviderFailure(kind: .rateLimited, message: "Slow down")
+            )
         ) {
             _ = try await events(AnthropicClient(transport: transport), auth: .apiKey("k"))
         }
@@ -83,8 +94,10 @@ struct AnthropicClientTests {
 
     @Test func `retry-after is read from an error response, and transient statuses say they are retryable`() async {
         let overloaded = ScriptedTransport(
-            status: 529, chunks: [#"{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"#],
-            headers: ["retry-after": "3"])
+            status: 529,
+            chunks: [#"{"type":"error","error":{"type":"overloaded_error","message":"Overloaded"}}"#],
+            headers: ["retry-after": "3"]
+        )
         do {
             _ = try await events(AnthropicClient(transport: overloaded), auth: .apiKey("k"))
             Issue.record("expected a failure")
@@ -113,7 +126,9 @@ struct AnthropicClientTests {
 
     @Test func `a stream that ends mid-event is truncated, not complete`() async {
         let transport = ScriptedTransport(
-            status: 200, chunks: [turn[0], turn[1], turn[2], "data: {\"type\":\"content_bl"])
+            status: 200,
+            chunks: [turn[0], turn[1], turn[2], "data: {\"type\":\"content_bl"]
+        )
         await #expect(throws: AnthropicClientError.truncated) {
             _ = try await events(AnthropicClient(transport: transport), auth: .apiKey("k"))
         }
@@ -123,8 +138,10 @@ struct AnthropicClientTests {
     /// it; it used to escape as the transport's raw error.
     @Test func `a body that breaks part way is an interruption, in words`() async {
         let transport = ScriptedTransport(
-            status: 200, chunks: [turn[0], turn[1]],
-            failure: HTTPTransportError.interrupted("no data arrived for 600 seconds"))
+            status: 200,
+            chunks: [turn[0], turn[1]],
+            failure: HTTPTransportError.interrupted("no data arrived for 600 seconds")
+        )
         await #expect(throws: AnthropicClientError.interrupted("no data arrived for 600 seconds")) {
             _ = try await events(AnthropicClient(transport: transport), auth: .apiKey("k"))
         }
@@ -136,7 +153,8 @@ struct AnthropicClientTests {
             chunks: [
                 turn[0], turn[1], turn[2],
                 "event: error\ndata: {\"type\":\"error\",\"error\":{\"type\":\"overloaded_error\",\"message\":\"Overloaded\"}}\n\n"
-            ])
+            ]
+        )
         await #expect(
             throws: AnthropicClientError.stream(.provider(ProviderFailure(kind: .overloaded, message: "Overloaded")))
         ) {
@@ -148,7 +166,8 @@ struct AnthropicClientTests {
         let transport = ScriptedTransport(status: 200, chunks: turn)
         _ = try await events(AnthropicClient(transport: transport), auth: .bearer("gateway-token"))
         let headers = Dictionary(
-            uniqueKeysWithValues: try #require(transport.sent).headers.map { ($0.name.lowercased(), $0.value) })
+            uniqueKeysWithValues: try #require(transport.sent).headers.map { ($0.name.lowercased(), $0.value) }
+        )
         #expect(headers["authorization"] == "Bearer gateway-token")
         #expect(headers["x-api-key"] == nil)
         #expect(headers["anthropic-beta"] == nil, "a gateway token is not a subscription token")
@@ -159,13 +178,15 @@ struct AnthropicClientTests {
         let sub = ScriptedTransport(status: 200, chunks: turn)
         _ = try await events(AnthropicClient(transport: sub), auth: .subscription(accessToken: "sk-ant-oat-1"))
         let subHeaders = Dictionary(
-            uniqueKeysWithValues: try #require(sub.sent).headers.map { ($0.name.lowercased(), $0.value) })
+            uniqueKeysWithValues: try #require(sub.sent).headers.map { ($0.name.lowercased(), $0.value) }
+        )
         #expect(subHeaders["authorization"] == "Bearer sk-ant-oat-1")
         #expect(subHeaders["anthropic-beta"] == AnthropicClient.oauthBetas)
         let key = ScriptedTransport(status: 200, chunks: turn)
         _ = try await events(AnthropicClient(transport: key), auth: .apiKey("sk-ant-api-1"))
         let keyHeaders = Dictionary(
-            uniqueKeysWithValues: try #require(key.sent).headers.map { ($0.name.lowercased(), $0.value) })
+            uniqueKeysWithValues: try #require(key.sent).headers.map { ($0.name.lowercased(), $0.value) }
+        )
         #expect(keyHeaders["x-api-key"] == "sk-ant-api-1")
         #expect(keyHeaders["authorization"] == nil)
     }

@@ -153,7 +153,8 @@ struct SessionFileTests {
         }
         var failuresLeft = 1
         var reopened = try SessionFile.open(at: path("s.jsonl"), durability: .barrier) {
-            record, descriptor throws(SessionFileError) in
+            record,
+            descriptor throws(SessionFileError) in
             // Once: write half the record, as a full disk would, then report the failure.
             let torn = failuresLeft > 0
             failuresLeft -= 1

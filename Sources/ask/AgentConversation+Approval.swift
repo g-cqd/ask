@@ -47,8 +47,11 @@ extension AgentConversation {
         // Nothing to remember (a reset of the session's narrowing) is a yes or no.
         return await ask(
             // @dl:accept -- each kind of question ends by asking with its own grant to remember
-            question, remembering: (approval.request, nil), kind: approval.request == nil ? .confirm : .grant,
-            detail: ToolSummary.fullInput(for: approval.input))
+            question,
+            remembering: (approval.request, nil),
+            kind: approval.request == nil ? .confirm : .grant,
+            detail: ToolSummary.fullInput(for: approval.input)
+        )
         // @dl:accept -- the approvers sit side by side, each with its own question and grant; their shape is the protocol
     }
 
@@ -60,8 +63,11 @@ extension AgentConversation {
             "The MCP server \(call.server)'s tool \(call.tool) may change or destroy things: the server does not say it is read-only. "
             + "Allow it?"
         return await ask(
-            question, remembering: (nil, call.grantKey), kind: .destructive,
-            detail: String(decoding: call.input.bytes, as: UTF8.self))
+            question,
+            remembering: (nil, call.grantKey),
+            kind: .destructive,
+            detail: String(decoding: call.input.bytes, as: UTF8.self)
+        )
     }
 
     /// What the loop for `settings` consults before a call that changes things (roadmap 0134).
@@ -86,8 +92,12 @@ extension AgentConversation {
                 case .file, .tool: .grant
             }
         return await ask(
-            question, remembering: (nil, nil), kind: kind, scope: approval.scope,
-            detail: isCommand ? ToolSummary.fullInput(for: approval.input) : nil)
+            question,
+            remembering: (nil, nil),
+            kind: kind,
+            scope: approval.scope,
+            detail: isCommand ? ToolSummary.fullInput(for: approval.input) : nil
+        )
     }
 
     /// Asks the person to confirm what a command is about to do (roadmap 0116): yes or no, "no" checked, through the command's
@@ -99,8 +109,12 @@ extension AgentConversation {
     /// Puts `question` to the user and waits; false when the run is cancelled or there is no one to ask. What a session grant
     /// remembers is `remembering`, for the answer's `a`. The question goes through `channel` when given, else the current run's.
     private func ask(
-        _ question: String, remembering: (request: SandboxRequest?, destructiveKey: String?), kind: ApprovalKind,
-        scope: CallScope? = nil, detail: String? = nil, channel: (@Sendable (ConversationUpdate) -> Void)? = nil
+        _ question: String,
+        remembering: (request: SandboxRequest?, destructiveKey: String?),
+        kind: ApprovalKind,
+        scope: CallScope? = nil,
+        detail: String? = nil,
+        channel: (@Sendable (ConversationUpdate) -> Void)? = nil
     ) async -> Bool {
         let id = approvals.withLock { state in
             state.nextID += 1

@@ -32,7 +32,10 @@ public enum ProjectLister {
     ///   - gitWait: how long git may take before the directory is walked instead.
     /// - Returns: the listing. Never throws: a directory that cannot be read lists nothing.
     public static func list(
-        in directory: String, policy: SandboxPolicy, limit: Int = defaultLimit, gitWait: Duration = gitTimeout
+        in directory: String,
+        policy: SandboxPolicy,
+        limit: Int = defaultLimit,
+        gitWait: Duration = gitTimeout
     ) async -> ProjectListing {
         let candidates: [String]
         if let listed = await gitFiles(in: directory, waitingAtMost: gitWait) {
@@ -74,10 +77,12 @@ public enum ProjectLister {
             let result = try await Subprocess.run(
                 .path(FilePath("/usr/bin/git")),
                 arguments: ["ls-files", "-z", "--cached", "--others", "--exclude-standard"],
-                workingDirectory: FilePath(directory), platformOptions: JobProcess.groupOptions(graceSeconds: 1),
+                workingDirectory: FilePath(directory),
+                platformOptions: JobProcess.groupOptions(graceSeconds: 1),
                 input: .none,
                 output: .data(limit: 32 << 20),
-                error: .discarded)
+                error: .discarded
+            )
             guard result.terminationStatus == .exited(0) else { return nil }
             return result.standardOutput.split(separator: 0).compactMap { String(bytes: $0, encoding: .utf8) }
         } catch {

@@ -44,7 +44,14 @@ extension AgentConversation {
                 ending = "failed"
         }
         return JobUpdate(
-            id: snapshot.id, label: "#" + snapshot.displayID, output: snapshot.output, status: status,
-            startedAt: snapshot.startedAt, endedAt: snapshot.endedAt, lines: snapshot.lines, ending: ending)
+            id: snapshot.id,
+            label: "#" + snapshot.displayID,
+            output: snapshot.output,
+            status: status,
+            startedAt: snapshot.startedAt,
+            endedAt: snapshot.endedAt,
+            lines: snapshot.lines,
+            ending: ending
+        )
     }
 }

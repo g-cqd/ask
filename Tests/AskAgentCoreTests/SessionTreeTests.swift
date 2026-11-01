@@ -79,7 +79,8 @@ struct SessionTreeTests {
         #expect(
             tree.context().map(\.payload) == [
                 .compaction(summary: "checkpoint", firstKept: kept), .assistant("retain"), .user("new")
-            ])
+            ]
+        )
         #expect(tree.entry(old)?.payload == .user("old"))
         #expect(tree.count == 4)
     }

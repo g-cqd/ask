@@ -47,8 +47,12 @@ public struct CodexDeviceSignIn: BrowserSignIn {
             let seconds = begun.interval?.seconds, seconds.isFinite, seconds >= 0
         else { throw .invalidResponse("device") }
         return SignInStart(
-            session: Device(id: id, userCode: code), url: Self.verification, window: .seconds(900),
-            interval: .seconds(Swift.min(60, Swift.max(1, seconds))), instructions: "Enter this code there: \(code)")
+            session: Device(id: id, userCode: code),
+            url: Self.verification,
+            window: .seconds(900),
+            interval: .seconds(Swift.min(60, Swift.max(1, seconds))),
+            instructions: "Enter this code there: \(code)"
+        )
     }
 
     public func poll(_ session: Device) async throws(SignInError) -> SignInPoll<DeviceGrant> {
@@ -73,7 +77,11 @@ public struct CodexDeviceSignIn: BrowserSignIn {
     public func finish(_ session: Device, grant: DeviceGrant) async throws(SignInError) -> CodexCredentials {
         do {
             return try await auth.exchange(
-                code: grant.code, verifier: grant.verifier, redirectURI: Self.redirectURI, now: now())
+                code: grant.code,
+                verifier: grant.verifier,
+                redirectURI: Self.redirectURI,
+                now: now()
+            )
         } catch { throw SignInError(error) }
     }
 

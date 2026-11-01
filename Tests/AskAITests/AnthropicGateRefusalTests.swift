@@ -15,7 +15,8 @@ struct AnthropicGateRefusalTests {
 
     @Test func `a 429 while every quota allows requests may be the gate, and is still retried`() throws {
         let failure = try #require(
-            AnthropicStreamDecoder.failure(inErrorBody: Self.rateLimited, status: 429, headers: Self.allowed))
+            AnthropicStreamDecoder.failure(inErrorBody: Self.rateLimited, status: 429, headers: Self.allowed)
+        )
         #expect(failure.kind == .rateLimited)
         #expect(ProviderFailure.isRetryable(status: 429, failure: failure))
         #expect(failure.message.contains("quotas still allow requests"), "\(failure.message)")
@@ -31,7 +32,8 @@ struct AnthropicGateRefusalTests {
         #expect(failure.message == "Error")
         let window = Self.allowed.merging(["anthropic-ratelimit-unified-5h-status": "allowed_warning"]) { $1 }
         let warned = try #require(
-            AnthropicStreamDecoder.failure(inErrorBody: Self.rateLimited, status: 429, headers: window))
+            AnthropicStreamDecoder.failure(inErrorBody: Self.rateLimited, status: 429, headers: window)
+        )
         #expect(!warned.message.contains("quotas still allow"), "a window near its limit is not evidence of the gate")
     }
 
@@ -39,20 +41,29 @@ struct AnthropicGateRefusalTests {
         // Reported publicly for subscription tokens sent without the expected identity; not met in ask's own recordings.
         let body = Array(
             #"{"type":"error","error":{"type":"invalid_request_error","message":"This credential is only authorized for use with Claude Code and cannot be used for other API requests."}}"#
-                .utf8)
+                .utf8
+        )
         let failure = try #require(
-            AnthropicStreamDecoder.failure(inErrorBody: body, status: 400, headers: ["request-id": "req_2"]))
+            AnthropicStreamDecoder.failure(inErrorBody: body, status: 400, headers: ["request-id": "req_2"])
+        )
         #expect(
-            failure.message.contains("refused this request's shape for a Claude subscription"), "\(failure.message)")
+            failure.message.contains("refused this request's shape for a Claude subscription"),
+            "\(failure.message)"
+        )
         #expect(
-            failure.message.contains("req_2") && failure.message.contains("only authorized for use with Claude Code"))
+            failure.message.contains("req_2") && failure.message.contains("only authorized for use with Claude Code")
+        )
         #expect(!ProviderFailure.isRetryable(status: 400, failure: failure))
     }
 
     @Test func `the out-of-extra-usage refusal carries the request id too`() throws {
         let failure = try #require(
             AnthropicStreamDecoder.failure(
-                inErrorBody: AnthropicSubscriptionRefusalTests.body, status: 400, headers: ["request-id": "req_3"]))
+                inErrorBody: AnthropicSubscriptionRefusalTests.body,
+                status: 400,
+                headers: ["request-id": "req_3"]
+            )
+        )
         #expect(failure.message.contains("did not count this request") && failure.message.contains("req_3"))
     }
 }

@@ -50,8 +50,12 @@ public struct SandboxPolicy: Sendable, Equatable {
 
     /// A policy. `denyRead` is added to `denyWrite`.
     public init(
-        network: Network = .any, write: PathScope = .anywhere, read: PathScope = .anywhere,
-        denyRead: [SandboxRule] = [], denyWrite: [SandboxRule] = [], askable: [SandboxRule] = []
+        network: Network = .any,
+        write: PathScope = .anywhere,
+        read: PathScope = .anywhere,
+        denyRead: [SandboxRule] = [],
+        denyWrite: [SandboxRule] = [],
+        askable: [SandboxRule] = []
     ) {
         self.askable = askable
         self.network = network
@@ -70,9 +74,13 @@ public struct SandboxPolicy: Sendable, Equatable {
     /// What both policies allow, and nothing more.
     public func intersecting(_ other: SandboxPolicy) -> SandboxPolicy {
         SandboxPolicy(
-            network: Swift.min(network, other.network), write: write.intersecting(other.write),
-            read: read.intersecting(other.read), denyRead: Self.union(denyRead, other.denyRead),
-            denyWrite: Self.union(denyWrite, other.denyWrite), askable: Self.union(askable, other.askable))
+            network: Swift.min(network, other.network),
+            write: write.intersecting(other.write),
+            read: read.intersecting(other.read),
+            denyRead: Self.union(denyRead, other.denyRead),
+            denyWrite: Self.union(denyWrite, other.denyWrite),
+            askable: Self.union(askable, other.askable)
+        )
     }
 
     /// The askable rule that protects `root` from `capability`, if one does: what a request for `root` must ask about.
@@ -130,7 +138,10 @@ public struct SandboxPolicy: Sendable, Equatable {
 
     /// The refusal for `canonical` when one of `rules` covers it, naming the rule.
     private static func refusal(
-        _ capability: SandboxCapability, by rules: [SandboxRule], for canonical: String, verb: String
+        _ capability: SandboxCapability,
+        by rules: [SandboxRule],
+        for canonical: String,
+        verb: String
     ) -> SandboxDecision? {
         rules.first { $0.matches(canonical) }
             .map {

@@ -28,7 +28,10 @@ extension ModelDiscovery {
     /// (ADR-0118). A provider the person named on the command line is never overridden, a prefix equal to it is only dropped, and a model the
     /// configuration chose is not second-guessed.
     static func qualified(
-        _ provider: String?, _ model: String?, providers: ProviderSettings, environment: [String: String],
+        _ provider: String?,
+        _ model: String?,
+        providers: ProviderSettings,
+        environment: [String: String],
         choice: Choice
     ) -> (provider: String?, model: String?, notices: [String]) {
         guard let model else { return (provider, nil, []) }
@@ -40,8 +43,12 @@ extension ModelDiscovery {
         }
         guard !choice.providerIsFlagged, choice.modelIsFlagged || provider == nil,
             let found = ModelQualifier.infer(
-                model: model, thinking: choice.thinking, providers: providers, environment: environment,
-                scope: choice.scope),
+                model: model,
+                thinking: choice.thinking,
+                providers: providers,
+                environment: environment,
+                scope: choice.scope
+            ),
             found != provider
         else { return (provider, model, []) }
         return (found, model, [detail("\(model) is served by \(found); \(found)/\(model) says so.")])
@@ -50,7 +57,9 @@ extension ModelDiscovery {
     /// The provider to use when nothing named one (not a flag, the configuration or providers.json's default): one that can answer now. Said
     /// once, so a run never silently goes somewhere the person did not choose.
     static func automatic(
-        _ provider: String?, providers: ProviderSettings, environment: [String: String]
+        _ provider: String?,
+        providers: ProviderSettings,
+        environment: [String: String]
     ) -> (provider: String?, notices: [String]) {
         guard provider == nil, !providers.namesDefault else { return (provider, []) }
         let picked = AutoProvider.pick(environment: environment)

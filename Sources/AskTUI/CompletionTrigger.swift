@@ -36,6 +36,8 @@ struct CompletionTrigger: Sendable, Equatable {
             endOffset += 1
         }
         return CompletionTrigger(
-            range: startOffset ..< endOffset, query: String(text[text.index(after: start) ..< end]))
+            range: startOffset ..< endOffset,
+            query: String(text[text.index(after: start) ..< end])
+        )
     }
 }

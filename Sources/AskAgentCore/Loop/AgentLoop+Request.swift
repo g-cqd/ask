@@ -7,10 +7,16 @@ extension AgentLoop {
         let fresh = reportedRepairs.unreported(built.repairs)
         if !fresh.isEmpty { events(.repaired(fresh)) }
         return ModelRequest(
-            model: settings.model, maxTokens: budget.maximumTokens, systemPrompt: settings.systemPrompt,
+            model: settings.model,
+            maxTokens: budget.maximumTokens,
+            systemPrompt: settings.systemPrompt,
             messages: ImagePart.filtering(
-                built.messages, accepts: settings.acceptsImages, limits: settings.imageLimits),
+                built.messages,
+                accepts: settings.acceptsImages,
+                limits: settings.imageLimits
+            ),
             tools: tools.definitions,
-            thinking: settings.thinking)
+            thinking: settings.thinking
+        )
     }
 }

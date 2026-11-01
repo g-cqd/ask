@@ -6,7 +6,11 @@ internal import Testing
 struct CodexModelCatalogTests {
     private static let reply = #"{"models":[{"slug":"live-model","context_window":12000}]}"#
     private static let credentials = CodexCredentials(
-        accessToken: "access-one", refreshToken: "refresh-one", expiresAt: 1_000_000, accountID: "account-one")
+        accessToken: "access-one",
+        refreshToken: "refresh-one",
+        expiresAt: 1_000_000,
+        accountID: "account-one"
+    )
 
     private func withFiles(_ body: (CredentialFile, ModelCatalogFile) async throws -> Void) async throws {
         let root = FileManager.default.temporaryDirectory.appending(path: "ask-discovery-\(UUID().uuidString)")
@@ -50,14 +54,19 @@ struct CodexModelCatalogTests {
             await #expect(throws: CodexAccessError.signedOut) { try await catalog.models(now: 11) }
             try file.saveCodex(
                 CodexCredentials(
-                    accessToken: "access-two", refreshToken: "refresh-two", expiresAt: 1_000_000,
-                    accountID: "account-two"))
+                    accessToken: "access-two",
+                    refreshToken: "refresh-two",
+                    expiresAt: 1_000_000,
+                    accountID: "account-two"
+                )
+            )
             #expect(try catalog.cached(now: 12) == nil)
             _ = try await catalog.models(now: 12)
             #expect(transport.sent.count == 2)
             #expect(
                 transport.sent.last?.headers.contains { $0.name == "chatgpt-account-id" && $0.value == "account-two" }
-                    == true)
+                    == true
+            )
         }
     }
 
@@ -79,7 +88,10 @@ struct CodexModelCatalogTests {
         try await withFiles { file, cache in
             try Data("{bad".utf8).write(to: cache.url)
             let catalog = CodexModelCatalog(
-                credentials: file, cache: cache, transport: SequencedTransport([.json(200, Self.reply)]))
+                credentials: file,
+                cache: cache,
+                transport: SequencedTransport([.json(200, Self.reply)])
+            )
             let result = try await catalog.models(now: 10)
             #expect(result.models.map(\.id) == ["live-model"])
             #expect(result.notices.count == 1)
@@ -92,7 +104,10 @@ struct CodexModelCatalogTests {
             try Data("not a directory".utf8).write(to: cache.url)
             let blocked = ModelCatalogFile(url: cache.url.appending(path: "child.json"))
             let catalog = CodexModelCatalog(
-                credentials: file, cache: blocked, transport: SequencedTransport([.json(200, Self.reply)]))
+                credentials: file,
+                cache: blocked,
+                transport: SequencedTransport([.json(200, Self.reply)])
+            )
             let result = try await catalog.models(now: 10)
             #expect(result.models.map(\.id) == ["live-model"])
             #expect(result.notices.count == 1)

@@ -14,7 +14,9 @@ public struct CodexAccess: Sendable {
 
     /// Access backed by `file`, refreshing through `client`, waiting up to `lockWait` for another process's refresh.
     public init(
-        file: CredentialFile, client: CodexAuthClient, lockWait: Duration = .seconds(30),
+        file: CredentialFile,
+        client: CodexAuthClient,
+        lockWait: Duration = .seconds(30),
         connection: ConnectionRecord? = nil
     ) {
         self.file = file

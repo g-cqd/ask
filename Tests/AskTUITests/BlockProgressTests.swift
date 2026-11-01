@@ -13,7 +13,8 @@ struct BlockProgressTests {
         transcript.advanceProgress(at: start.advanced(by: .seconds(3661)))
         #expect(
             transcript.progress[0]?.duration(localized: true, locale: Locale(identifier: "en_US"))
-                == "1 hr, 1 min, 1 sec")
+                == "1 hr, 1 min, 1 sec"
+        )
         let frame = transcript.progress[0]?.indicator
         #expect(frame != "|")
         #expect(UnicodeWidth.displayWidth(of: frame ?? "") == 1)
@@ -22,7 +23,8 @@ struct BlockProgressTests {
         transcript.advanceProgress(at: start.advanced(by: .seconds(9999)))
         #expect(
             transcript.progress[0]?.duration(localized: true, locale: Locale(identifier: "en_US"))
-                == "1 hr, 1 min, 2 sec")
+                == "1 hr, 1 min, 2 sec"
+        )
         #expect(transcript.revisions == revisions)
         #expect(!transcript.hasLiveProgress)
     }
@@ -76,7 +78,11 @@ struct BlockProgressTests {
     @Test func `a write or an edit acknowledgement shows no line count`() {
         for tool in ["write", "edit"] {
             let said = ScreenComposer.blockMetadata(
-                status: .succeeded, output: "Replaced 1 occurrence in a.txt.", progress: nil, toolName: tool)
+                status: .succeeded,
+                output: "Replaced 1 occurrence in a.txt.",
+                progress: nil,
+                toolName: tool
+            )
             #expect(said == "✓", "\(tool)")
         }
         let read = ScreenComposer.blockMetadata(status: .succeeded, output: "one\ntwo", progress: nil, toolName: "read")
@@ -91,7 +97,8 @@ struct BlockProgressTests {
         #expect(progress.duration(localized: true, locale: Locale(identifier: "en_US")) == "1 hr, 40 min, 30 sec")
         #expect(
             progress.duration(localized: true, locale: Locale(identifier: "fr_FR"))
-                != progress.duration(localized: true, locale: Locale(identifier: "en_US")))
+                != progress.duration(localized: true, locale: Locale(identifier: "en_US"))
+        )
         progress.sampled = start.advanced(by: .seconds(61))
         #expect(progress.duration(localized: false) == "1:01")
         progress.sampled = start.advanced(by: .seconds(2))

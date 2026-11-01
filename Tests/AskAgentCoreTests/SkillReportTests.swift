@@ -23,7 +23,8 @@ struct SkillReportTests {
         let lines = SkillReport(catalog: scratch.discover(), selection: .standard, verbose: true).lines
         #expect(lines.contains { $0.contains("tools (shown, never honoured): read, ?LSP") })
         #expect(
-            lines.contains { $0.contains("models: opus") } && lines.contains { $0.contains("other fields: license") })
+            lines.contains { $0.contains("models: opus") } && lines.contains { $0.contains("other fields: license") }
+        )
         #expect(lines.contains("searched:") && lines.contains { $0.contains("absent") && $0.contains(".codex/skills") })
     }
 
@@ -33,7 +34,11 @@ struct SkillReportTests {
         try scratch.skill("same", in: ".claude/skills", description: "two")
         let selection = SkillSelection(tokens: ["agents", "claude", "wat"], knownSources: SkillSource.fixtureIDs)
         let catalog = SkillDiscovery.discover(
-            workingDirectory: scratch.project, home: scratch.home, sources: SkillSource.fixture, selection: selection)
+            workingDirectory: scratch.project,
+            home: scratch.home,
+            sources: SkillSource.fixture,
+            selection: selection
+        )
         let lines = SkillReport(catalog: catalog, selection: selection, verbose: false).lines
         #expect(lines.contains("not a harness or a scope, so ignored: wat"))
         #expect(lines.contains { $0.hasPrefix("name taken by an earlier skill") })

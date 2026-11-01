@@ -18,8 +18,12 @@ struct ApprovalCommandTests {
         _ = controller.handle(.key(KeyEvent(keyCode: 0x0D)), pageRows: 10)
         controller.handle(
             .askApproval(
-                id: 4, question: "bash: allow it?", kind: .command(phrases: ["git add"], programs: ["git"]),
-                detail: detail ?? command))
+                id: 4,
+                question: "bash: allow it?",
+                kind: .command(phrases: ["git add"], programs: ["git"]),
+                detail: detail ?? command
+            )
+        )
         return controller
     }
 
@@ -72,8 +76,12 @@ struct ApprovalCommandTests {
         var rig = PointerRig(columns: 60, rows: 20)
         rig.controller.handle(
             .askApproval(
-                id: 4, question: "bash: allow it?", kind: .command(phrases: ["git add"], programs: ["git"]),
-                detail: command))
+                id: 4,
+                question: "bash: allow it?",
+                kind: .command(phrases: ["git add"], programs: ["git"]),
+                detail: command
+            )
+        )
         rig.draw()
         let row = try #require((0 ..< rig.buffer.rows).first { rig.text(row: $0).contains("+2 lines") })
         _ = rig.click(row: row, col: 6)

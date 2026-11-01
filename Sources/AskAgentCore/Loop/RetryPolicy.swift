@@ -20,7 +20,11 @@ public struct RetryPolicy: Sendable, Equatable {
 
     /// Five attempts: waits of 1, 2, 4 and 8 seconds, or what the provider asked for, up to two minutes.
     public static let standard = RetryPolicy(
-        maximumAttempts: 5, baseDelay: .seconds(1), maximumDelay: .seconds(30), maximumRequestedDelay: .seconds(120))
+        maximumAttempts: 5,
+        baseDelay: .seconds(1),
+        maximumDelay: .seconds(30),
+        maximumRequestedDelay: .seconds(120)
+    )
 
     /// The wait before attempt `attempt + 1`, after `attempt` failed (attempts count from 1).
     public func delay(after attempt: Int, requested: Duration?) -> Duration {

@@ -33,9 +33,17 @@ public struct MCPServerSetting: Sendable, Equatable {
 
     /// A server with these settings.
     public init(
-        name: String, command: String? = nil, args: [String] = [], env: [String: String] = [:], cwd: String? = nil,
-        url: String? = nil, headers: [String: String] = [:], tools: [String]? = nil, enabled: Bool = true,
-        mode: Mode? = nil, maxDirectTools: Int? = nil
+        name: String,
+        command: String? = nil,
+        args: [String] = [],
+        env: [String: String] = [:],
+        cwd: String? = nil,
+        url: String? = nil,
+        headers: [String: String] = [:],
+        tools: [String]? = nil,
+        enabled: Bool = true,
+        mode: Mode? = nil,
+        maxDirectTools: Int? = nil
     ) {
         // @dl:accept -- synthesized-looking initializer assignments preserve this public configuration model's defaults
         self.name = name

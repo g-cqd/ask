@@ -44,7 +44,9 @@ struct CommandsDuringTurnTests {
         #expect(submit("/other", to: &controller).isEmpty)
         #expect(
             controller.state.transcript.items.contains(
-                .notice("A turn is still running; press Ctrl+C to stop it first.", isError: false)))
+                .notice("A turn is still running; press Ctrl+C to stop it first.", isError: false)
+            )
+        )
     }
 
     @Test func `a command that needs the turn's end waits for it, shown as waiting, then runs`() {
@@ -55,7 +57,8 @@ struct CommandsDuringTurnTests {
         #expect(controller.state.running, "the command is now the screen's run")
         #expect(
             controller.state.transcript.items.contains(.user("/compact"))
-                && !controller.state.transcript.items.contains(.queued("/compact")))
+                && !controller.state.transcript.items.contains(.queued("/compact"))
+        )
     }
 
     @Test func `waiting commands run in order, before a message queued after them`() {

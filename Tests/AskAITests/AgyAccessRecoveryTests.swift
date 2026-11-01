@@ -89,7 +89,12 @@ struct AgyAccessRecoveryTests {
     @Test func `a sign-in made meanwhile stands, and is used if it is current`() async throws {
         let file = world.file
         let theirs = AgyCredentials(
-            accessToken: "theirs", refreshToken: "rt-9", expiresAt: 10_000, projectID: "p9", clientSecret: "s9")
+            accessToken: "theirs",
+            refreshToken: "rt-9",
+            expiresAt: 10_000,
+            projectID: "p9",
+            clientSecret: "s9"
+        )
         let (access, _) = try refreshing { try? file.saveAgy(theirs) }
         #expect(try await access.session(now: 5_000) == AgySession(accessToken: "theirs", projectID: "p9"))
         #expect(try file.loadAgy() == theirs)
@@ -106,7 +111,12 @@ struct AgyAccessRecoveryTests {
     {
         let file = world.file
         let other = AgyCredentials(
-            accessToken: "other", refreshToken: "rt-9", expiresAt: 200, projectID: "p9", clientSecret: "s9")
+            accessToken: "other",
+            refreshToken: "rt-9",
+            expiresAt: 200,
+            projectID: "p9",
+            clientSecret: "s9"
+        )
         let (access, _) = try refreshing { try? file.saveAgy(other) }
         await #expect(throws: AgyAccessError.changedDuringRefresh) { _ = try await access.session(now: 5_000) }
         #expect(try file.loadAgy() == other)
@@ -167,13 +177,15 @@ struct AgyAccessRecoveryTests {
         #expect(later.accessToken == "at-3" && access.rotationIsUnsaved)
         #expect(
             world.body(transport.sent[1]).contains("refresh_token=rt-2"),
-            "refreshed from the rotated token, not the spent one")
+            "refreshed from the rotated token, not the spent one"
+        )
         #expect(try world.file.loadAgy() == world.expired, "the file has still taken nothing")
         held.release()
         _ = try await access.session(now: 100_000)
         #expect(
             try world.file.loadAgy()?.refreshToken == "rt-3",
-            "what the file held was replaced by the latest, not by the first")
+            "what the file held was replaced by the latest, not by the first"
+        )
         #expect(!access.rotationIsUnsaved && transport.sent.count == 2)
     }
 

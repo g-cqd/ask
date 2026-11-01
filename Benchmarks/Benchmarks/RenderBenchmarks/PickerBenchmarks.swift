@@ -9,7 +9,10 @@ import TerminalKitRender
 /// draft. Public API only, so the identical code measures a tree that has no picker: there the slash cases are plain typing.
 func registerPickerBenchmarks() {
     let configuration = Benchmark.Configuration(
-        metrics: [.wallClock, .cpuTotal, .mallocCountTotal], maxDuration: .seconds(1), maxIterations: 1_000)
+        metrics: [.wallClock, .cpuTotal, .mallocCountTotal],
+        maxDuration: .seconds(1),
+        maxIterations: 1_000
+    )
     let commands = ["config", "compact", "reload", "new", "resume", "model", "models", "connections", "sessions"]
         .map { SlashCommand(name: $0, summary: "Does the thing the name says, for \($0).") }
     let pageRows = 37

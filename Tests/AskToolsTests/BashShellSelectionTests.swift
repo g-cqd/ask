@@ -13,7 +13,9 @@ struct BashShellSelectionTests {
     private let printShell = #"{"command":"printf '%s' \"$0\""}"#
 
     private func shell(
-        login: String? = "/bin/sh", configured: String? = nil, argument: String? = nil
+        login: String? = "/bin/sh",
+        configured: String? = nil,
+        argument: String? = nil
     ) async -> ToolOutput {
         let tool = BashTool(jobs: JobTable(environment: login.map { ["SHELL": $0] } ?? [:]))
         let scoped = ToolContext(workingDirectory: "/tmp", commandEnvironment: CommandEnvironment(shell: configured))

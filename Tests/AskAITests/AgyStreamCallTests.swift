@@ -10,7 +10,8 @@ struct AgyStreamCallTests {
         let line = AgyStreamFixtures.chunk(
             parts:
                 #"{"functionCall":{"name":"a","args":{}}},{"functionCall":{"id":"","name":"b","args":{}}},{"functionCall":{"id":"x","name":"c","args":{}}},{"functionCall":{"id":"x","name":"d","args":{}}}"#,
-            finish: "STOP")
+            finish: "STOP"
+        )
         let events = try AgyStreamFixtures.decode(lines: [line])
         let ids = events.compactMap { if case .blockStarted(_, .toolUse(let id, _)) = $0 { id } else { nil } }
         #expect(ids.count == 4 && Set(ids).count == 4)
@@ -22,7 +23,8 @@ struct AgyStreamCallTests {
         let line = AgyStreamFixtures.chunk(
             parts:
                 #"{"functionCall":{"id":"1","name":"a"}},{"functionCall":{"id":"2","name":"b","args":[1]}},{"functionCall":{"id":"3","name":"c","args":"x"}}"#,
-            finish: "STOP")
+            finish: "STOP"
+        )
         let inputs = try AgyStreamFixtures.decode(lines: [line])
             .compactMap { if case .toolInputDelta(_, let json) = $0 { json } else { nil } }
         #expect(inputs == ["{}", "{}", "{}"])
@@ -44,10 +46,13 @@ struct AgyStreamCallTests {
         let named = try AgyStreamFixtures.decode(lines: [AgyStreamFixtures.chunk(parts: call), AgyStreamFixtures.stop])
         #expect(
             named.contains(
-                .signatureDelta(index: 0, ReasoningProvenance.mark(scheme: "gemini/gemini-3-flash", payload: "SIG"))))
+                .signatureDelta(index: 0, ReasoningProvenance.mark(scheme: "gemini/gemini-3-flash", payload: "SIG"))
+            )
+        )
         let bare = #"{"response":{"candidates":[{"content":{"parts":[\#(call)]},"finishReason":"STOP"}]}}"#
         let unnamed = try AgyStreamFixtures.decode(lines: [bare])
         #expect(
-            unnamed.contains(.signatureDelta(index: 0, ReasoningProvenance.mark(scheme: "gemini/", payload: "SIG"))))
+            unnamed.contains(.signatureDelta(index: 0, ReasoningProvenance.mark(scheme: "gemini/", payload: "SIG")))
+        )
     }
 }

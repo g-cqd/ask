@@ -16,7 +16,10 @@ extension FrameGeometry {
             // The questions use the approval's regions: their choices as its answers, their tab row as its command.
             let layout = ScreenComposer.questionLayout(pending, columns: columns, rows: rows)
             var geometry = section(
-                answers: layout.choices, detail: layout.tabs.map { $0 ..< $0 + 1 } ?? 0 ..< 0, top: top)
+                answers: layout.choices,
+                detail: layout.tabs.map { $0 ..< $0 + 1 } ?? 0 ..< 0,
+                top: top
+            )
             geometry.questionTabs = ScreenComposer.questionTabColumns(pending)
             return geometry
         }

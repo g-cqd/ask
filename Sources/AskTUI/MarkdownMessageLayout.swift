@@ -56,7 +56,9 @@ struct MarkdownMessageLayout {
     private static func foldHeader(_ fence: CodeFence, block: Int, inset: Int) -> ScreenComposer.Line {
         let text = ShownCode.placeholder(for: fence)
         return ScreenComposer.Line(
-            text: String(repeating: " ", count: inset) + text, style: Style(dim: true),
-            source: ScreenComposer.Source(block: block, line: fence.openingLine, offset: 0, col: inset, text: ""))
+            text: String(repeating: " ", count: inset) + text,
+            style: Style(dim: true),
+            source: ScreenComposer.Source(block: block, line: fence.openingLine, offset: 0, col: inset, text: "")
+        )
     }
 }

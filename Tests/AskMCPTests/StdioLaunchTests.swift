@@ -19,7 +19,8 @@ struct StdioLaunchTests {
         #expect(
             Set(environment.keys) == [
                 "PATH", "HOME", "USER", "LOGNAME", "SHELL", "TERM", "TMPDIR", "LANG", "LC_ALL", "LC_CTYPE"
-            ])
+            ]
+        )
         #expect(environment["PATH"] == "/usr/bin:/bin")
     }
 
@@ -34,7 +35,9 @@ struct StdioLaunchTests {
 
     @Test func `what the configuration names is added, and wins over what was inherited`() {
         let environment = StdioLaunch.childEnvironment(
-            inheriting: ask, adding: ["GITHUB_TOKEN": "ghp_chosen", "HOME": "/elsewhere"])
+            inheriting: ask,
+            adding: ["GITHUB_TOKEN": "ghp_chosen", "HOME": "/elsewhere"]
+        )
         #expect(environment["GITHUB_TOKEN"] == "ghp_chosen" && environment["HOME"] == "/elsewhere")
     }
 

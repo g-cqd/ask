@@ -53,7 +53,11 @@ extension AgentConversation {
                 let first =
                     SessionSummary(readingFrom: item.path)?.firstPrompt.map { Sessions.oneLine($0, limit: 80) } ?? ""
                 return ChoiceRow(
-                    label: item.name, detail: first, arguments: item.path, isCurrent: item.path == currentPath)
+                    label: item.name,
+                    detail: first,
+                    arguments: item.path,
+                    isCurrent: item.path == currentPath
+                )
             }
     }
 }

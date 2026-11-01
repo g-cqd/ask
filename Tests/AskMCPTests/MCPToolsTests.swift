@@ -40,7 +40,8 @@ struct MCPToolsTests {
         #expect(tool.hasOutputSchema)
         #expect(
             tool.annotations
-                == MCPToolAnnotations(readOnly: true, destructive: false, idempotent: true, openWorld: false))
+                == MCPToolAnnotations(readOnly: true, destructive: false, idempotent: true, openWorld: false)
+        )
     }
 
     @Test func `a tool with nothing but a name is still a tool, with an empty object schema`() async throws {
@@ -114,7 +115,8 @@ struct MCPToolsTests {
                 .resourceLink(uri: "file:///a", name: "a", mimeType: "text/plain"),
                 .resource(uri: "file:///b", mimeType: "text/plain", text: "inline"),
                 .audio(mimeType: "audio/wav", base64: "AAAA"), .unknown(type: "hologram")
-            ])
+            ]
+        )
         #expect(result.structuredContent == Array(#"{"x":1}"#.utf8))
     }
 
@@ -123,7 +125,8 @@ struct MCPToolsTests {
         transport.on("tools/call") {
             [
                 $0.result(
-                    #"{"content":[{"type":"text","text":"Input validation error: expected string"}],"isError":true}"#)
+                    #"{"content":[{"type":"text","text":"Input validation error: expected string"}],"isError":true}"#
+                )
             ]
         }
         let result = try await connection.callTool("echo", arguments: .empty)

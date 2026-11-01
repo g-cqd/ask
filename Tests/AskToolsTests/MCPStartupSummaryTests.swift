@@ -26,13 +26,16 @@ struct MCPStartupSummaryTests {
         #expect(
             MCPStartupSummary.text([
                 status("a", ready), status("b", .searchable(tools: 229)), status("c", ready), status("d", ready)
-            ]) == "4 MCP servers connected.")
+            ]) == "4 MCP servers connected."
+        )
         #expect(
             MCPStartupSummary.text([status("a", ready), status("b", .failed("boom")), status("c", .off)])
-                == "1 MCP server connected. 1 failed to connect:\n  b: boom")
+                == "1 MCP server connected. 1 failed to connect:\n  b: boom"
+        )
         #expect(
             MCPStartupSummary.text([status("a", .failed("x")), status("b", .failed("y"))])
-                == "No MCP server connected. 2 failed to connect:\n  a: x\n  b: y")
+                == "No MCP server connected. 2 failed to connect:\n  a: x\n  b: y"
+        )
     }
 
     @Test func `nothing is said with no server, only servers that are off, or one still connecting`() {
@@ -46,7 +49,8 @@ struct MCPStartupSummaryTests {
         bad.refuseInitialize()
         let host = world.host(
             [world.setting("a"), world.setting("bad"), world.setting("big"), world.setting("off", enabled: false)],
-            ["a": FakeMCPServer(tools: ["x"]), "bad": bad, "big": FakeMCPServer(tools: (1 ... 300).map { "t\($0)" })])
+            ["a": FakeMCPServer(tools: ["x"]), "bad": bad, "big": FakeMCPServer(tools: (1 ... 300).map { "t\($0)" })]
+        )
         host.start()
         await host.waitUntilSettled()
         let lines = await said(by: host)
@@ -58,7 +62,9 @@ struct MCPStartupSummaryTests {
         let slow = FakeMCPServer(tools: ["x"])
         slow.holdInitialize()
         let host = world.host(
-            [world.setting("fast"), world.setting("slow")], ["fast": FakeMCPServer(tools: ["y"]), "slow": slow])
+            [world.setting("fast"), world.setting("slow")],
+            ["fast": FakeMCPServer(tools: ["y"]), "slow": slow]
+        )
         host.start()
         await host.waitUntilListed("fast", times: 1)
         await slow.waitForInitialize()

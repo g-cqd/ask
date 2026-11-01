@@ -27,8 +27,13 @@ public struct RunnerInfo: Sendable, Equatable {
 
     /// A runner. An omitted id is its name, for jobs whose name is already stable.
     public init(
-        name: String, detail: String, id: String? = nil, parentID: String? = nil, kind: Kind = .job,
-        state: State = .running, startedAt: ContinuousClock.Instant? = nil
+        name: String,
+        detail: String,
+        id: String? = nil,
+        parentID: String? = nil,
+        kind: Kind = .job,
+        state: State = .running,
+        startedAt: ContinuousClock.Instant? = nil
     ) {
         self.id = id ?? name
         self.parentID = parentID

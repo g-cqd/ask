@@ -14,7 +14,10 @@ extension ScreenController {
     }
 
     mutating func route(
-        _ event: InputEvent, pageRows: Int, at now: ContinuousClock.Instant, columns: Int?
+        _ event: InputEvent,
+        pageRows: Int,
+        at now: ContinuousClock.Instant,
+        columns: Int?
     ) -> [Effect] {
         switch event {
             case .key(let key):

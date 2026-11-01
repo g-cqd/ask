@@ -87,7 +87,11 @@ extension ImagePart {
                     index += 1
                 }
                 return .toolResult(
-                    id: id, content: ([content] + notes).joined(separator: "\n"), isError: isError, images: kept)
+                    id: id,
+                    content: ([content] + notes).joined(separator: "\n"),
+                    isError: isError,
+                    images: kept
+                )
             }
             return message
         }

@@ -27,7 +27,8 @@ struct WirePayload: Codable {
             case .compaction:
                 value = .compaction(
                     summary: try container.decode(String.self, forKey: .summary),
-                    firstKept: EntryID(try container.decode(String.self, forKey: .firstKept)))
+                    firstKept: EntryID(try container.decode(String.self, forKey: .firstKept))
+                )
             case .response:
                 value = .response(
                     AssembledResponse(
@@ -36,7 +37,10 @@ struct WirePayload: Codable {
                         blocks: try container.decode([WireBlock].self, forKey: .blocks).map { try $0.block() },
                         stopReason: try container.decodeIfPresent(String.self, forKey: .stopReason)
                             .map(StopReason.init(wire:)),
-                        usage: try container.decode(WireUsage.self, forKey: .usage).tokens, unrecognized: []))
+                        usage: try container.decode(WireUsage.self, forKey: .usage).tokens,
+                        unrecognized: []
+                    )
+                )
             case .toolResult:
                 let store = decoder.userInfo[SessionImageStore.userInfoKey] as? SessionImageStore
                 var images: [ImagePart] = []
@@ -47,8 +51,10 @@ struct WirePayload: Codable {
                 value = .toolResult(
                     callID: try container.decode(String.self, forKey: .callID),
                     content: try container.decode(String.self, forKey: .content) + Self.lostNote(lost),
-                    isError: try container.decode(Bool.self, forKey: .isError), images: images,
-                    facts: ToolFacts(replacements: try container.decodeIfPresent(Int.self, forKey: .replacements)))
+                    isError: try container.decode(Bool.self, forKey: .isError),
+                    images: images,
+                    facts: ToolFacts(replacements: try container.decodeIfPresent(Int.self, forKey: .replacements))
+                )
         }
     }
 
@@ -143,14 +149,23 @@ struct WirePayload: Codable {
                 case .redactedThinking(let data): self.init(type: "redacted_thinking", data: data)
                 case .toolCall(let id, let name, let input):
                     self.init(
-                        type: "tool_call", id: id, name: name, input: String(decoding: input.bytes, as: UTF8.self))
+                        type: "tool_call",
+                        id: id,
+                        name: name,
+                        input: String(decoding: input.bytes, as: UTF8.self)
+                    )
                 case .unrecognized(let type): self.init(type: "unrecognized", name: type)
             }
         }
 
         private init(
-            type: String, text: String? = nil, signature: String? = nil, data: String? = nil, id: String? = nil,
-            name: String? = nil, input: String? = nil
+            type: String,
+            text: String? = nil,
+            signature: String? = nil,
+            data: String? = nil,
+            id: String? = nil,
+            name: String? = nil,
+            input: String? = nil
         ) {
             (self.type, self.text, self.signature, self.data) = (type, text, signature, data)
             (self.id, self.name, self.input) = (id, name, input)

@@ -8,7 +8,12 @@ public struct CopilotCredentials: Codable, Sendable, Equatable {
     public let deviceID: String
 
     public init(
-        githubToken: String, accessToken: String, expiresAt: Double, apiURL: String, machineID: String, deviceID: String
+        githubToken: String,
+        accessToken: String,
+        expiresAt: Double,
+        apiURL: String,
+        machineID: String,
+        deviceID: String
     ) {
         self.githubToken = githubToken
         self.accessToken = accessToken

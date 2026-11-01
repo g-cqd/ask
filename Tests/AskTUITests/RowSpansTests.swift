@@ -16,7 +16,10 @@ struct RowSpansTests {
 
     @Test func `an accent is its own run in its own style, and the rest keeps the row's`() {
         let line = ScreenComposer.Line(
-            text: "⚠ codex", style: Style(dim: true), accents: [.init(columns: 0 ..< 1, style: warning)])
+            text: "⚠ codex",
+            style: Style(dim: true),
+            accents: [.init(columns: 0 ..< 1, style: warning)]
+        )
         let spans = ScreenComposer.spans(of: line, highlight: nil)
         #expect(spans.map(\.0) == ["⚠", " codex"])
         #expect(spans[0].1 == warning && spans[1].1 == Style(dim: true))
@@ -24,7 +27,10 @@ struct RowSpansTests {
 
     @Test func `the selection is inverse over an accent, and nothing else changes`() {
         let line = ScreenComposer.Line(
-            text: "abcdef", style: .default, accents: [.init(columns: 2 ..< 4, style: warning)])
+            text: "abcdef",
+            style: .default,
+            accents: [.init(columns: 2 ..< 4, style: warning)]
+        )
         let spans = ScreenComposer.spans(of: line, highlight: 3 ..< 5)
         #expect(spans.map(\.0) == ["ab", "c", "d", "e", "f"])
         #expect(spans.map(\.1.inverse) == [false, false, true, true, false])
@@ -34,7 +40,10 @@ struct RowSpansTests {
     @Test func `an accent without a background takes the row's, so a tinted row stays tinted under it`() {
         let tint = Color.rgb(r: 40, g: 40, b: 50)
         let line = ScreenComposer.Line(
-            text: "⚠ x", style: Style(bg: tint), accents: [.init(columns: 0 ..< 1, style: warning)])
+            text: "⚠ x",
+            style: Style(bg: tint),
+            accents: [.init(columns: 0 ..< 1, style: warning)]
+        )
         #expect(ScreenComposer.spans(of: line, highlight: nil).allSatisfy { $0.1.bg == tint })
     }
 

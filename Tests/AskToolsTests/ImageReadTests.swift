@@ -24,8 +24,14 @@ struct ImageReadTests {
     private func encoded(_ width: Int, _ height: Int, as type: UTType) throws -> Data {
         let space = CGColorSpaceCreateDeviceRGB()
         let pixels = CGContext(
-            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0, space: space,
-            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: space,
+            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+        )!
         pixels.setFillColor(red: 0.2, green: 0.5, blue: 0.8, alpha: 1)
         pixels.fill(CGRect(x: 0, y: 0, width: width, height: height))
         let output = NSMutableData()
@@ -71,10 +77,18 @@ struct ImageReadTests {
         let noise = (0 ..< side * side * 4).map { _ in UInt8.random(in: 0 ... 255, using: &generator) }
         let provider = CGDataProvider(data: Data(noise) as CFData)!
         let image = CGImage(
-            width: side, height: side, bitsPerComponent: 8, bitsPerPixel: 32, bytesPerRow: side * 4,
+            width: side,
+            height: side,
+            bitsPerComponent: 8,
+            bitsPerPixel: 32,
+            bytesPerRow: side * 4,
             space: CGColorSpaceCreateDeviceRGB(),
             bitmapInfo: CGBitmapInfo(rawValue: CGImageAlphaInfo.noneSkipLast.rawValue),
-            provider: provider, decode: nil, shouldInterpolate: false, intent: .defaultIntent)!
+            provider: provider,
+            decode: nil,
+            shouldInterpolate: false,
+            intent: .defaultIntent
+        )!
         let output = NSMutableData()
         let destination = CGImageDestinationCreateWithData(output, UTType.png.identifier as CFString, 1, nil)!
         CGImageDestinationAddImage(destination, image, nil)

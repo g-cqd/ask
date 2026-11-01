@@ -13,14 +13,21 @@ struct BackgroundJobBlockTests {
         controller.handle(.toolStarted(name: "bash", summary: "build", id: "tool-a"))
         #expect(
             controller.handle(.toolFinished(.succeeded, output: "initial", id: "tool-a", backgroundJob: "job-1"))
-                == [.watchJob(id: "job-1")])
+                == [.watchJob(id: "job-1")]
+        )
         return controller
     }
 
     private func snapshot(_ status: Transcript.ToolStatus = .running) -> JobUpdate {
         JobUpdate(
-            id: "job-1", label: "#7a2f", output: "initial\nnew output", status: status,
-            startedAt: start, endedAt: status == .running ? nil : start + .seconds(12), lines: 45)
+            id: "job-1",
+            label: "#7a2f",
+            output: "initial\nnew output",
+            status: status,
+            startedAt: start,
+            endedAt: status == .running ? nil : start + .seconds(12),
+            lines: 45
+        )
     }
 
     @Test func `updates replace the originating tool without touching a newer call or its folds`() {
@@ -32,9 +39,15 @@ struct BackgroundJobBlockTests {
         #expect(
             controller.state.transcript.items[0]
                 == .tool(
-                    name: "bash", summary: "[#7a2f] build", status: .running, output: "initial\nnew output"))
+                    name: "bash",
+                    summary: "[#7a2f] build",
+                    status: .running,
+                    output: "initial\nnew output"
+                )
+        )
         #expect(
-            controller.state.transcript.items[2] == .tool(name: "read", summary: "next", status: .running, output: ""))
+            controller.state.transcript.items[2] == .tool(name: "read", summary: "next", status: .running, output: "")
+        )
         #expect(!controller.state.transcript.isFolded(0))
         controller.handle(.toolFinished(.succeeded, output: "read done", id: "tool-b"))
         controller.handle(.runEnded)
@@ -64,8 +77,12 @@ struct BackgroundJobBlockTests {
         #expect(transcript.items[1] == .jobEnded(label: "[#7a2f] ended", status: .failed("[exit 7]"), lines: 45))
         let style = BlockStyle(padded: false, theme: ScreenTheme(), localizedDurations: false)
         let rows = ScreenComposer.lines(
-            for: transcript.items[1], block: 1, columns: 70,
-            style: style, progress: transcript.progress[1])
+            for: transcript.items[1],
+            block: 1,
+            columns: 70,
+            style: style,
+            progress: transcript.progress[1]
+        )
         #expect(rows[0].style.dim && rows[0].style.italic)
         #expect(rows[0].text.hasPrefix("[#7a2f] ended    "))
         #expect(rows[0].text.hasSuffix("12 · 45 lines · [7] ✗"))
@@ -89,7 +106,8 @@ struct BackgroundJobBlockTests {
         controller.state.transcript.toggleFold(0)
         let output = (0 ..< 600).map { "line \($0)" }.joined(separator: "\n")
         controller.handle(
-            .jobOutput(JobUpdate(id: "job-1", label: "#7a2f", output: output, status: .running, startedAt: start)))
+            .jobOutput(JobUpdate(id: "job-1", label: "#7a2f", output: output, status: .running, startedAt: start))
+        )
         let transcript = controller.state.transcript
         #expect(transcript.contentText(at: 0).contains("… 200 more lines not shown"))
         let rows = ScreenComposer.lines(for: transcript.items[0], columns: 80)

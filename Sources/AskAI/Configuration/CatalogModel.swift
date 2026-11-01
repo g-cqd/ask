@@ -24,11 +24,18 @@ public struct CatalogModel: Codable, Sendable, Equatable {
 
     /// A catalog entry; an absent limit is unknown, not an invented default.
     public init(
-        id: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil, reasoningLevels: [String] = [],
+        id: String,
+        contextWindow: Int? = nil,
+        maxOutputTokens: Int? = nil,
+        reasoningLevels: [String] = [],
         // @dl:accept -- optional descriptor fields resemble credential initializer fields only by shape
-        defaultReasoningLevel: String? = nil, supportsThinking: Bool? = nil, thinkingModes: [ThinkingMode] = [],
+        defaultReasoningLevel: String? = nil,
+        supportsThinking: Bool? = nil,
+        thinkingModes: [ThinkingMode] = [],
         // @dl:accept -- initializer parameters repeat the stored fields by design
-        api: String? = nil, acceptsImages: Bool? = nil, imageLimits: ImageLimits? = nil,
+        api: String? = nil,
+        acceptsImages: Bool? = nil,
+        imageLimits: ImageLimits? = nil,
         // @dl:accept -- initializer parameters repeat the stored fields by design
         unsuitable: String? = nil
     ) {
@@ -97,6 +104,10 @@ public struct CatalogModel: Codable, Sendable, Equatable {
     static func validID(_ id: String) -> Bool {
         guard id.utf8.count <= 128 else { return false }
         return PlainToken.word(
-            id.hasPrefix("~") ? String(id.dropFirst()) : id, length: 1 ... 128, lowercase: false, marks: "/:")
+            id.hasPrefix("~") ? String(id.dropFirst()) : id,
+            length: 1 ... 128,
+            lowercase: false,
+            marks: "/:"
+        )
     }
 }

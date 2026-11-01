@@ -14,7 +14,8 @@ struct AppleCapturingTool: Tool {
 
     func call(arguments: GeneratedContent) async throws -> String {
         capture.record(
-            .init(id: "apple_" + UUID().uuidString.prefix(8).lowercased(), name: name, arguments: arguments.jsonString))
+            .init(id: "apple_" + UUID().uuidString.prefix(8).lowercased(), name: name, arguments: arguments.jsonString)
+        )
         throw Handoff()
     }
 }

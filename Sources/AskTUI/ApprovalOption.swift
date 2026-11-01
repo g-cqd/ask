@@ -8,9 +8,17 @@ struct ApprovalOption: Sendable, Equatable {
     let said: String
 
     static let allowOnce = ApprovalOption(
-        label: "Allow this time", letter: "y", choice: .once, said: "allowed this time")
+        label: "Allow this time",
+        letter: "y",
+        choice: .once,
+        said: "allowed this time"
+    )
     static let allowSession = ApprovalOption(
-        label: "Allow for the session", letter: "a", choice: .session, said: "allowed for the session")
+        label: "Allow for the session",
+        letter: "a",
+        choice: .session,
+        said: "allowed for the session"
+    )
     static let deny = ApprovalOption(label: "Deny", letter: "n", choice: .deny, said: "denied")
     static let yes = ApprovalOption(label: "Yes", letter: "y", choice: .once, said: "yes")
     static let no = ApprovalOption(label: "No", letter: "n", choice: .deny, said: "no")
@@ -24,12 +32,18 @@ struct ApprovalOption: Sendable, Equatable {
                 guard !phrases.isEmpty else { return [allowOnce, deny] }
                 let named = quoted(phrases)
                 let session = ApprovalOption(
-                    label: "Allow \(named) for the session", letter: "a", choice: .session,
-                    said: "allowed \(named) for the session")
+                    label: "Allow \(named) for the session",
+                    letter: "a",
+                    choice: .session,
+                    said: "allowed \(named) for the session"
+                )
                 guard programs != phrases else { return [allowOnce, session, deny] }
                 let program = ApprovalOption(
-                    label: "Allow \(quoted(programs)) for the session", letter: "p", choice: .program,
-                    said: "allowed \(quoted(programs)) for the session")
+                    label: "Allow \(quoted(programs)) for the session",
+                    letter: "p",
+                    choice: .program,
+                    said: "allowed \(quoted(programs)) for the session"
+                )
                 return [allowOnce, session, program, deny]
         }
     }

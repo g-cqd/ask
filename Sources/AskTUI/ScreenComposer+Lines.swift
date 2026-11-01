@@ -5,16 +5,36 @@ extension ScreenComposer {
     /// The rows an item is drawn as: its content, and with a padded style one row of padding around it (tinted to the edge when the kind has a tint),
     /// and a blank row above when this block and the one before are both tool calls or the user's messages.
     static func lines(
-        for item: Transcript.Item, folded: Bool = false, block: Int = 0, columns: Int, style: BlockStyle = .plain,
-        spacerAbove: Bool = false, progress: BlockProgress? = nil, toolInput: ShownToolInput? = nil,
-        command: Bool = false, interrupted: Bool = false, toolOutput: String? = nil, replacements: Int? = nil,
+        for item: Transcript.Item,
+        folded: Bool = false,
+        block: Int = 0,
+        columns: Int,
+        style: BlockStyle = .plain,
+        spacerAbove: Bool = false,
+        progress: BlockProgress? = nil,
+        toolInput: ShownToolInput? = nil,
+        command: Bool = false,
+        interrupted: Bool = false,
+        toolOutput: String? = nil,
+        replacements: Int? = nil,
         code: FileCode? = nil
     ) -> [Line] {
         let context = ToolContext(
-            progress: progress, toolInput: toolInput, command: command, output: toolOutput, replacements: replacements,
-            code: code)
+            progress: progress,
+            toolInput: toolInput,
+            command: command,
+            output: toolOutput,
+            replacements: replacements,
+            code: code
+        )
         let content = contentLines(
-            for: item, folded: folded, block: block, columns: columns, style: style, context: context)
+            for: item,
+            folded: folded,
+            block: block,
+            columns: columns,
+            style: style,
+            context: context
+        )
         var result = framed(content, kind: item, style: style, spacerAbove: spacerAbove, interrupted: interrupted)
         switch item {
             case .tool, .thinking:
@@ -28,7 +48,11 @@ extension ScreenComposer {
 
     /// Wraps every block, including command and authentication notices, in padding, tint and spacing.
     static func framed(
-        _ content: [Line], kind: Transcript.Item, style: BlockStyle, spacerAbove: Bool, interrupted: Bool = false
+        _ content: [Line],
+        kind: Transcript.Item,
+        style: BlockStyle,
+        spacerAbove: Bool,
+        interrupted: Bool = false
     ) -> [Line] {
         // Paths, web and email addresses become links in every block (roadmap 0075), beside a Markdown row's own links. Once per layout
         // of the block, not per frame; the row cache then redraws only what changed.
@@ -68,7 +92,11 @@ extension ScreenComposer {
     }
 
     private static func contentLines(
-        for item: Transcript.Item, folded: Bool, block: Int, columns: Int, style: BlockStyle,
+        for item: Transcript.Item,
+        folded: Bool,
+        block: Int,
+        columns: Int,
+        style: BlockStyle,
         context: ToolContext
     ) -> [Line] {
         let progress = context.progress
@@ -79,8 +107,10 @@ extension ScreenComposer {
             TextWrap.rows(text, width: width)
                 .map { row in
                     Line(
-                        text: margin + row.text, style: style,
-                        source: Source(block: block, line: row.line, offset: row.offset, col: inset, text: row.text))
+                        text: margin + row.text,
+                        style: style,
+                        source: Source(block: block, line: row.line, offset: row.offset, col: inset, text: row.text)
+                    )
                 }
         }
         switch item {
@@ -91,24 +121,30 @@ extension ScreenComposer {
                 return rows(text, style: .default)
             case .tool:
                 return toolContentLines(
-                    item, folded: folded, block: block, columns: columns, style: style, context: context)
+                    item,
+                    folded: folded,
+                    block: block,
+                    columns: columns,
+                    style: style,
+                    context: context
+                )
             case .thinking(let text):
-                let kept = Transcript.kept(text)
-                let look = Style(dim: true, italic: true)
-                let header = Transcript.Item.thinkingHeader(body: kept, folded: folded)
-                return blockHeader(
-                    folded || !Transcript.saysSomething(kept) ? header : kept,
-                    metadata: blockMetadata(
-                        status: progress?.ended == nil && progress != nil ? .running : .succeeded,
-                        output: kept, progress: progress, localizedDurations: style.localizedDurations), block: block,
-                    width: width, inset: inset, style: look)
+                return thinkingLines(text, folded: folded, block: block, width: width, style: style, progress: progress)
             case .jobEnded(let label, let status, let lines):
                 return blockHeader(
                     label,
                     metadata: blockMetadata(
-                        status: status, output: "", progress: progress,
-                        localizedDurations: style.localizedDurations, lineCount: lines),
-                    block: block, width: width, inset: inset, style: Style(dim: true, italic: true))
+                        status: status,
+                        output: "",
+                        progress: progress,
+                        localizedDurations: style.localizedDurations,
+                        lineCount: lines
+                    ),
+                    block: block,
+                    width: width,
+                    inset: inset,
+                    style: Style(dim: true, italic: true)
+                )
             case .notice(let text, let isError):
                 return rows(text, style: isError ? Style(fg: .indexed(1)) : Style(dim: true))
             case .queued(let text):
@@ -116,11 +152,43 @@ extension ScreenComposer {
         }
     }
 
+    /// A thinking block's rows: folded, or when it says nothing, its header; open, what it says, dim and italic.
+    private static func thinkingLines(
+        _ text: String,
+        folded: Bool,
+        block: Int,
+        width: Int,
+        style: BlockStyle,
+        progress: BlockProgress?
+    ) -> [Line] {
+        let kept = Transcript.kept(text)
+        let header = Transcript.Item.thinkingHeader(body: kept, folded: folded)
+        return blockHeader(
+            folded || !Transcript.saysSomething(kept) ? header : kept,
+            metadata: blockMetadata(
+                status: progress?.ended == nil && progress != nil ? .running : .succeeded,
+                output: kept,
+                progress: progress,
+                localizedDurations: style.localizedDurations
+            ),
+            block: block,
+            width: width,
+            inset: style.inset,
+            style: Style(dim: true, italic: true)
+        )
+    }
+
     /// A foldable block's body: hard lines 1 and on, drawn with the block's inset. What the block holds, not its own header line.
     /// With `code`, the text is a file's, its tokens coloured over `style`; with `diff`, an edit's, each row tinted by its line's
     /// marker (roadmap 0152, phase 3).
     static func body(
-        of text: String, block: Int, width: Int, inset: Int, style: Style, firstLine: Int = 1, code: FileCode? = nil,
+        of text: String,
+        block: Int,
+        width: Int,
+        inset: Int,
+        style: Style,
+        firstLine: Int = 1,
+        code: FileCode? = nil,
         diff: DiffLook? = nil
     ) -> [Line] {
         guard !text.isEmpty else { return [] }
@@ -133,11 +201,18 @@ extension ScreenComposer {
                 let rowStyle = diff?.style(kind, over: style) ?? style
                 let marker = row.offset == 0 ? diff?.marker(kind, inset: inset, over: rowStyle) : nil
                 return Line(
-                    text: margin + row.text, style: rowStyle,
+                    text: margin + row.text,
+                    style: rowStyle,
                     source: Source(
-                        block: block, line: row.line + firstLine, offset: row.offset, col: inset, text: row.text),
+                        block: block,
+                        line: row.line + firstLine,
+                        offset: row.offset,
+                        col: inset,
+                        text: row.text
+                    ),
                     accents: (marker.map { [$0] } ?? [])
-                        + (accents?.accents(for: row, inset: inset, over: rowStyle) ?? []))
+                        + (accents?.accents(for: row, inset: inset, over: rowStyle) ?? [])
+                )
             }
     }
 }

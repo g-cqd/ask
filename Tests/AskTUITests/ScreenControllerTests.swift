@@ -55,7 +55,8 @@ struct ScreenControllerTests {
             controller.state.transcript.items == [
                 .assistant("Reading."), .tool(name: "read", summary: "a.swift", status: .succeeded, output: ""),
                 .notice("done", isError: false)
-            ])
+            ]
+        )
     }
 
     @Test func `page keys scroll, stop with the first line at the top, and submitting returns to the bottom`() {
@@ -71,7 +72,8 @@ struct ScreenControllerTests {
         let shown = (0 ..< 12).map { rig.text(row: $0) }
         #expect(
             shown.contains("line 0") && !(shown[0].isEmpty && shown[1].isEmpty),
-            "the first line is shown, not empty rows")
+            "the first line is shown, not empty rows"
+        )
         _ = rig.controller.handle(key(Key.pageDown.rawValue), pageRows: 7)
         #expect(rig.controller.state.scrollback == furthest - 7)
         type("x", into: &rig.controller)

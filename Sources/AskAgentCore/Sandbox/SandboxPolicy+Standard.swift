@@ -23,8 +23,13 @@ extension SandboxPolicy {
     ///   - otherSecrets: more secret directories and files under the home, other agents' sign-ins, which the composition root names.
     /// - Returns: the policy. Every protection but ask's own two directories is askable: a call's request for it is put to the person.
     public static func standard(
-        home: String, configDirectory: String, stateDirectory: String, allowRead: [String] = [],
-        denyRead: [String] = [], workspace: String? = nil, allowWrite: [String] = [],
+        home: String,
+        configDirectory: String,
+        stateDirectory: String,
+        allowRead: [String] = [],
+        denyRead: [String] = [],
+        workspace: String? = nil,
+        allowWrite: [String] = [],
         otherSecrets: (directories: [String], files: [String]) = ([], [])
     ) -> SandboxPolicy {
         func canonical(_ path: String) -> String { CanonicalPath.of(path, relativeTo: "/") ?? path }
@@ -40,7 +45,8 @@ extension SandboxPolicy {
         let readable = Set(allowRead.map { canonical($0).lowercased() })
         let writable = Set(allowWrite.map { canonical($0).lowercased() })
         let secrets = rules(
-            home, StandardProtections.secretDirectories + otherSecrets.directories,
+            home,
+            StandardProtections.secretDirectories + otherSecrets.directories,
             StandardProtections.secretFiles + otherSecrets.files
         )
         .filter { !readable.contains($0.path.lowercased()) }
@@ -52,6 +58,8 @@ extension SandboxPolicy {
         return SandboxPolicy(
             denyRead: [SandboxRule(canonical(configDirectory), .subpath)] + secrets
                 + denyRead.map { SandboxRule(canonical($0), .subpath) },
-            denyWrite: [SandboxRule(canonical(stateDirectory), .subpath)] + runsLater, askable: secrets + runsLater)
+            denyWrite: [SandboxRule(canonical(stateDirectory), .subpath)] + runsLater,
+            askable: secrets + runsLater
+        )
     }
 }

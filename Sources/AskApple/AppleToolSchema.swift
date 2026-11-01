@@ -18,11 +18,16 @@ enum AppleToolSchema {
 
     /// The generation schema for `inputSchema`, a JSON Schema object's bytes; nil when it is not an object schema this can express.
     static func schema(
-        named name: String, description: String, inputSchema: [UInt8], detail: Detail = .full
+        named name: String,
+        description: String,
+        inputSchema: [UInt8],
+        detail: Detail = .full
     ) -> GenerationSchema? {
         guard let root = Self.root(of: inputSchema) else { return nil }
         return try? GenerationSchema(
-            root: object(root, name: name, description: description, detail: detail), dependencies: [])
+            root: object(root, name: name, description: description, detail: detail),
+            dependencies: []
+        )
     }
 
     private static func root(of bytes: [UInt8]) -> JSON? {
@@ -39,12 +44,17 @@ enum AppleToolSchema {
             .compactMap { key -> DynamicGenerationSchema.Property? in
                 guard let property = properties[key], property.isObject else { return nil }
                 return DynamicGenerationSchema.Property(
-                    name: key, description: clipped(property["description"].string, limit: detail.limit),
-                    schema: value(property, name: name + "." + key, detail: detail), isOptional: !required.contains(key)
+                    name: key,
+                    description: clipped(property["description"].string, limit: detail.limit),
+                    schema: value(property, name: name + "." + key, detail: detail),
+                    isOptional: !required.contains(key)
                 )
             }
         return DynamicGenerationSchema(
-            name: name, description: clipped(description, limit: detail.limit), properties: kept)
+            name: name,
+            description: clipped(description, limit: detail.limit),
+            properties: kept
+        )
     }
 
     private static func value(_ schema: JSON, name: String, detail: Detail) -> DynamicGenerationSchema {
@@ -61,7 +71,8 @@ enum AppleToolSchema {
                 let items = schema["items"]
                 return DynamicGenerationSchema(
                     arrayOf: items.isObject
-                        ? value(items, name: name + "[]", detail: detail) : DynamicGenerationSchema(type: String.self))
+                        ? value(items, name: name + "[]", detail: detail) : DynamicGenerationSchema(type: String.self)
+                )
             case "object": return object(schema, name: name, description: nil, detail: detail)
             default: return DynamicGenerationSchema(type: String.self)
         }

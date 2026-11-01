@@ -31,8 +31,12 @@ public struct CopilotCatalog: Sendable {
         if !refresh, let held = try cached(now: now) { return held }
         let credential = try await access.credentials(now: now)
         let request = HTTPRequest(
-            url: try CopilotProtocol.endpoint(credential.apiURL).appending(path: "models"), method: "GET",
-            headers: CopilotProtocol.headers(credential, session: UUID().uuidString), body: [], allowsRedirects: false)
+            url: try CopilotProtocol.endpoint(credential.apiURL).appending(path: "models"),
+            method: "GET",
+            headers: CopilotProtocol.headers(credential, session: UUID().uuidString),
+            body: [],
+            allowsRedirects: false
+        )
         let response = try await CopilotHTTP(transport: transport).json(request, as: Payload.self, limit: 2 << 20)
         let models = Self.parse(response.data)
         // Never publish an old account's response after a concurrent sign-in/out.
@@ -63,10 +67,15 @@ public struct CopilotCatalog: Sendable {
                 id: item.id,
                 contextWindow: positive(caps.limits?.max_context_window_tokens)
                     ?? positive(caps.limits?.max_prompt_tokens),
-                maxOutputTokens: positive(caps.limits?.max_output_tokens), reasoningLevels: Array(Set(levels)).sorted(),
+                maxOutputTokens: positive(caps.limits?.max_output_tokens),
+                reasoningLevels: Array(Set(levels)).sorted(),
                 supportsThinking: thinking,
-                thinkingModes: adaptive ? [.adaptive, .disabled] : (thinking ? [.enabled, .disabled] : []), api: api,
-                acceptsImages: images?.accepts, imageLimits: images?.limits, unsuitable: unsuitable(item, caps))
+                thinkingModes: adaptive ? [.adaptive, .disabled] : (thinking ? [.enabled, .disabled] : []),
+                api: api,
+                acceptsImages: images?.accepts,
+                imageLimits: images?.limits,
+                unsuitable: unsuitable(item, caps)
+            )
             return model.isValid ? model : nil
         }
     }
@@ -90,8 +99,10 @@ public struct CopilotCatalog: Sendable {
         guard flag != nil || block != nil else { return nil }
         let limits = block.map {
             ImageLimits(
-                maximumImages: positive($0.max_prompt_images), maximumBytes: positive($0.max_prompt_image_size),
-                mediaTypes: Array(types))
+                maximumImages: positive($0.max_prompt_images),
+                maximumBytes: positive($0.max_prompt_image_size),
+                mediaTypes: Array(types)
+            )
         }
         return (flag == true || listsImages, limits)
     }

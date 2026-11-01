@@ -9,11 +9,17 @@ internal import Testing
 struct CodexRefreshSaveFailureTests {
     private let file = CredentialFile(
         url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-codex-save-failure-\(UUID().uuidString)/ask/credentials.json"),
-        lockWait: .milliseconds(50))
+            path: "ask-codex-save-failure-\(UUID().uuidString)/ask/credentials.json"
+        ),
+        lockWait: .milliseconds(50)
+    )
     private static let spent = #"{"error":"refresh_token_reused"}"#
     private let expired = CodexCredentials(
-        accessToken: "old", refreshToken: "rt-1", expiresAt: 100, accountID: "acct_a")
+        accessToken: "old",
+        refreshToken: "rt-1",
+        expiresAt: 100,
+        accountID: "acct_a"
+    )
 
     private func holdingTheSaveLock() throws -> CredentialLock {
         try CredentialLock.acquireBlocking(beside: file.url, wait: .seconds(1), name: "write")
@@ -54,7 +60,8 @@ struct CodexRefreshSaveFailureTests {
         let later = try await access.credentials(now: 100_000)
         #expect(later.refreshToken == "rt-3")
         #expect(
-            String(decoding: transport.sent[1].body, as: UTF8.self).contains("rt-2"), "refreshed from the rotated token"
+            String(decoding: transport.sent[1].body, as: UTF8.self).contains("rt-2"),
+            "refreshed from the rotated token"
         )
     }
 
@@ -65,7 +72,9 @@ struct CodexRefreshSaveFailureTests {
         let inner = SequencedTransport([.json(200, CodexAccessTests.tokens), .json(200, Self.third)])
         let held = try holdingTheSaveLock()
         let access = CodexAccess(
-            file: file, client: CodexAuthClient(transport: ReleaseOnSendTransport(inner, releasing: held, at: 2)))
+            file: file,
+            client: CodexAuthClient(transport: ReleaseOnSendTransport(inner, releasing: held, at: 2))
+        )
         _ = try await access.credentials(now: 5_000)
         let later = try await access.credentials(now: 100_000)
         #expect(later.refreshToken == "rt-3")
@@ -94,7 +103,11 @@ struct CodexRefreshSaveFailureTests {
         _ = try await access.credentials(now: 5_000)
         held.release()
         let login = CodexCredentials(
-            accessToken: "login", refreshToken: "rt-9", expiresAt: 1_000_000, accountID: "acct_a")
+            accessToken: "login",
+            refreshToken: "rt-9",
+            expiresAt: 1_000_000,
+            accountID: "acct_a"
+        )
         try file.saveCodex(login)
         #expect(try await access.credentials(now: 5_000) == login)
         #expect(!access.rotationIsUnsaved)

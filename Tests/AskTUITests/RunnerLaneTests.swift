@@ -120,7 +120,9 @@ struct RunnerLaneTests {
         #expect(rig.controller.state.stripSelection == "job-1")
         #expect(press(0x1B, &rig).isEmpty)
         #expect(
-            rig.controller.state.stripSelection == nil && rig.controller.state.lane != nil, "first, back to the input")
+            rig.controller.state.stripSelection == nil && rig.controller.state.lane != nil,
+            "first, back to the input"
+        )
         press(0x1B, &rig)
         #expect(rig.controller.state.lane == nil && screen(rig).contains("second"), "then back to main")
         #expect(rig.controller.state.runnersOpen)
@@ -186,9 +188,11 @@ struct RunnerLaneTests {
 
     @Test func `with the mouse off the keys still do everything`() {
         var rig = PointerRig(
-            columns: 60, rows: 16,
+            columns: 60,
+            rows: 16,
             options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false),
-            lines: ["first"])
+            lines: ["first"]
+        )
         rig.controller.handle(.runners(Self.jobs))
         rig.controller.state.runnersOpen = true
         rig.draw()

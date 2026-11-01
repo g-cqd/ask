@@ -25,8 +25,12 @@ extension SkillDiscovery {
             if depth > 0, let skill = names.first(where: { $0.lowercased() == "skill.md" }) {
                 found.append(
                     Candidate(
-                        file: directory + "/" + skill, directory: directory,
-                        fallbackName: (directory as NSString).lastPathComponent, isBareFile: false))
+                        file: directory + "/" + skill,
+                        directory: directory,
+                        fallbackName: (directory as NSString).lastPathComponent,
+                        isBareFile: false
+                    )
+                )
                 continue
             }
             for name in names where name != ".git" && name != "node_modules" {
@@ -36,7 +40,12 @@ extension SkillDiscovery {
                 } else if depth == 0, name.lowercased().hasSuffix(".md"), name.lowercased() != "readme.md" {
                     found.append(
                         Candidate(
-                            file: path, directory: directory, fallbackName: String(name.dropLast(3)), isBareFile: true))
+                            file: path,
+                            directory: directory,
+                            fallbackName: String(name.dropLast(3)),
+                            isBareFile: true
+                        )
+                    )
                 }
             }
         }
@@ -77,12 +86,22 @@ extension SkillDiscovery {
         ]
         return .success(
             Skill(
-                name: name, description: description, file: candidate.file, realFile: real,
-                directory: URL(fileURLWithPath: real).deletingLastPathComponent().path, source: source, scope: scope,
-                modelInvocable: !isTrue(head.text("disable-model-invocation")), tools: tools,
-                disallowedTools: ToolReference.parse(head.value("disallowed-tools")), models: ModelPreference(head),
+                name: name,
+                description: description,
+                file: candidate.file,
+                realFile: real,
+                directory: URL(fileURLWithPath: real).deletingLastPathComponent().path,
+                source: source,
+                scope: scope,
+                modelInvocable: !isTrue(head.text("disable-model-invocation")),
+                tools: tools,
+                disallowedTools: ToolReference.parse(head.value("disallowed-tools")),
+                models: ModelPreference(head),
                 otherKeys: head.entries.map(\.key).filter { !known.contains($0.canonicalKey) },
-                diagnostics: diagnostics, digest: ProjectTrust.digest(bytes)))
+                diagnostics: diagnostics,
+                digest: ProjectTrust.digest(bytes)
+            )
+        )
     }
 
     /// The file read for its head. A skill's body is never needed to find it, so only the first `headBytes` are read as text; a head that does not end

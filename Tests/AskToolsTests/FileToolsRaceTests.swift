@@ -43,7 +43,8 @@ struct FileToolsRaceTests {
         #expect(text != "sk-ant-secret", "the file the sandbox protects was read")
         #expect(
             failure?.hasPrefix("Not permitted:") == true,
-            "refused as the sandbox refuses, not as an accident: \(failure ?? "read \(text ?? "")")")
+            "refused as the sandbox refuses, not as an accident: \(failure ?? "read \(text ?? "")")"
+        )
     }
 
     // MARK: - Writing
@@ -58,7 +59,9 @@ struct FileToolsRaceTests {
         } catch { failure = error.output.content }
         #expect(!exists(world.config + "/pwn.txt"), "a file was created in ask's configuration directory")
         #expect(
-            failure?.hasPrefix("Not permitted:") == true, "refused as the sandbox refuses: \(failure ?? "no failure")")
+            failure?.hasPrefix("Not permitted:") == true,
+            "refused as the sandbox refuses: \(failure ?? "no failure")"
+        )
     }
 
     @Test func `a write that creates directories cannot be redirected by a swapped ancestor either`() throws {
@@ -107,7 +110,9 @@ struct FileToolsRaceTests {
             symlink(world.config + "/config.json", work + "/target.txt")
         }
         #expect(
-            world.text(".config/ask/config.json") == "{maxTurns: 5}", "the protected file was written through the link")
+            world.text(".config/ask/config.json") == "{maxTurns: 5}",
+            "the protected file was written through the link"
+        )
     }
 
     // MARK: - What keeps working
@@ -120,19 +125,26 @@ struct FileToolsRaceTests {
         try Data("old".utf8).write(to: URL(filePath: existing))
         chmod(existing, 0o640)
         try FileTools.write(
-            "new", to: try FileTools.authorized("d/keep.txt", for: [.write], in: world.context), shownAs: "d/keep.txt",
-            in: world.context)
+            "new",
+            to: try FileTools.authorized("d/keep.txt", for: [.write], in: world.context),
+            shownAs: "d/keep.txt",
+            in: world.context
+        )
         #expect(try String(contentsOfFile: existing, encoding: .utf8) == "new")
         var info = stat()
         stat(existing, &info)
         #expect(info.st_mode & 0o7777 == 0o640)
         try FileTools.write(
-            "deep", to: try FileTools.authorized("d/a/b/c.txt", for: [.write], in: world.context),
-            shownAs: "d/a/b/c.txt", in: world.context)
+            "deep",
+            to: try FileTools.authorized("d/a/b/c.txt", for: [.write], in: world.context),
+            shownAs: "d/a/b/c.txt",
+            in: world.context
+        )
         #expect(try String(contentsOfFile: work + "/d/a/b/c.txt", encoding: .utf8) == "deep")
         #expect(
             try FileManager.default.contentsOfDirectory(atPath: work + "/d/a/b") == ["c.txt"],
-            "no temporary file is left")
+            "no temporary file is left"
+        )
     }
 
     @Test func `a read under a restricted policy still reads, and refuses a binary or an oversized file as before`()
@@ -142,16 +154,24 @@ struct FileToolsRaceTests {
         try Data([0, 1, 2]).write(to: URL(filePath: work + "/d/b.bin"))
         #expect(
             try FileTools.text(
-                at: try FileTools.authorized("d/a.txt", for: [.read], in: world.context), shownAs: "d/a.txt",
-                in: world.context) == "hello")
+                at: try FileTools.authorized("d/a.txt", for: [.read], in: world.context),
+                shownAs: "d/a.txt",
+                in: world.context
+            ) == "hello"
+        )
         #expect(throws: ToolFailure.self) {
             _ = try FileTools.text(
-                at: try FileTools.authorized("d/b.bin", for: [.read], in: world.context), shownAs: "d/b.bin",
-                in: world.context)
+                at: try FileTools.authorized("d/b.bin", for: [.read], in: world.context),
+                shownAs: "d/b.bin",
+                in: world.context
+            )
         }
         #expect(throws: ToolFailure.self) {
             _ = try FileTools.text(
-                at: URL(filePath: work + "/d/missing.txt"), shownAs: "d/missing.txt", in: world.context)
+                at: URL(filePath: work + "/d/missing.txt"),
+                shownAs: "d/missing.txt",
+                in: world.context
+            )
         }
     }
 
@@ -173,8 +193,10 @@ struct FileToolsRaceTests {
         func failure(_ path: String) -> String {
             do {
                 _ = try FileTools.text(
-                    at: try FileTools.authorized(path, for: [.read], in: world.context), shownAs: path,
-                    in: world.context)
+                    at: try FileTools.authorized(path, for: [.read], in: world.context),
+                    shownAs: path,
+                    in: world.context
+                )
                 return "no failure"
             } catch { return error.output.content }
         }

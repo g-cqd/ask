@@ -54,8 +54,11 @@ struct WireEvent: Decodable {
 
         var tokens: TokenUsage {
             TokenUsage(
-                input: inputTokens, output: outputTokens, cacheRead: cacheReadInputTokens,
-                cacheCreation: cacheCreationInputTokens)
+                input: inputTokens,
+                output: outputTokens,
+                cacheRead: cacheReadInputTokens,
+                cacheCreation: cacheCreationInputTokens
+            )
         }
     }
 
@@ -90,14 +93,19 @@ extension WireEvent {
             case "message_delta":
                 guard let delta else { throw .malformed(event: name) }
                 return .messageDelta(
-                    stopReason: delta.stopReason.map(StopReason.init(wire:)), usage: usage?.tokens ?? .init())
+                    stopReason: delta.stopReason.map(StopReason.init(wire:)),
+                    usage: usage?.tokens ?? .init()
+                )
             case "message_stop": return .messageStopped
             case "error":
                 guard let error else { throw .malformed(event: name) }
                 throw .provider(
                     ProviderFailure(
-                        kind: .init(wire: error.type, message: error.message), message: error.message,
-                        contextWindow: ProviderFailure.Kind.contextWindow(describedIn: error.message)))
+                        kind: .init(wire: error.type, message: error.message),
+                        message: error.message,
+                        contextWindow: ProviderFailure.Kind.contextWindow(describedIn: error.message)
+                    )
+                )
             default: return .unrecognized(event: name, type: type)
         }
     }

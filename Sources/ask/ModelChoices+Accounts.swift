@@ -6,7 +6,9 @@ internal import AskTUI
 extension ModelChoices {
     /// The rows of `groups`, each offered model looked up in `models` by account and id.
     static func rows(
-        _ groups: [ModelOfferGroup], models: [String: [String: CatalogModel]], current: ResolvedModel,
+        _ groups: [ModelOfferGroup],
+        models: [String: [String: CatalogModel]],
+        current: ResolvedModel,
         currentName: String,
         environment: [String: String]
     ) -> [ChoiceRow] {
@@ -26,21 +28,35 @@ extension ModelChoices {
             {
                 rows.append(
                     ChoiceRow(
-                        label: group.model, detail: "\(chosen), of \(accounts) · a space after the model for another",
-                        arguments: "\(chosen) \(group.model)", isCurrent: isCurrent))
+                        label: group.model,
+                        detail: "\(chosen), of \(accounts) · a space after the model for another",
+                        arguments: "\(chosen) \(group.model)",
+                        isCurrent: isCurrent
+                    )
+                )
             } else {
                 rows.append(
                     ChoiceRow(
-                        label: group.model, detail: "\(accounts) · choose the account next", arguments: group.model,
-                        isCurrent: isCurrent, completes: true))
+                        label: group.model,
+                        detail: "\(accounts) · choose the account next",
+                        arguments: group.model,
+                        isCurrent: isCurrent,
+                        completes: true
+                    )
+                )
             }
             for account in group.accounts {
                 guard let entry = models[account]?[group.model] else { continue }
                 let row = offer(entry, provider: account, current: current, currentName: currentName)
                 rows.append(
                     ChoiceRow(
-                        label: "\(group.model) · \(account)", detail: row.detail, arguments: row.arguments,
-                        isCurrent: row.isCurrent, revealedBy: reveal))
+                        label: "\(group.model) · \(account)",
+                        detail: row.detail,
+                        arguments: row.arguments,
+                        isCurrent: row.isCurrent,
+                        revealedBy: reveal
+                    )
+                )
             }
         }
         return rows

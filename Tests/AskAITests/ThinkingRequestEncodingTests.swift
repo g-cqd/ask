@@ -7,8 +7,13 @@ internal import Testing
 struct ThinkingRequestEncodingTests {
     private func request(_ control: ThinkingControl? = nil, maxTokens: Int = 32000) -> ModelRequest {
         ModelRequest(
-            model: "m", maxTokens: maxTokens, systemPrompt: [],
-            messages: [ModelMessage(role: .user, blocks: [.text("hi")])], tools: [], thinking: control)
+            model: "m",
+            maxTokens: maxTokens,
+            systemPrompt: [],
+            messages: [ModelMessage(role: .user, blocks: [.text("hi")])],
+            tools: [],
+            thinking: control
+        )
     }
     private func root(_ bytes: [UInt8]) throws -> JSON { try AemiJSON.parse(bytes).root }
 
@@ -37,7 +42,8 @@ struct ThinkingRequestEncodingTests {
 
     @Test func `Codex keeps its no-output-limit dialect while selecting an effort`() throws {
         let body = try root(
-            ResponsesRequestEncoder.encode(request(.effort(.high)), dialect: ResponsesDialect(sendsOutputLimit: false)))
+            ResponsesRequestEncoder.encode(request(.effort(.high)), dialect: ResponsesDialect(sendsOutputLimit: false))
+        )
         #expect(body["reasoning"]["effort"].string == "high")
         #expect(!body["max_output_tokens"].exists)
     }
@@ -61,12 +67,14 @@ struct ThinkingRequestEncodingTests {
 
     @Test func `legacy thinking carries its concrete budget and only a selected supported effort`() throws {
         let plain = try root(
-            AnthropicRequestEncoder.encode(request(.budget(tokens: 8192, effort: nil)), caching: false))
+            AnthropicRequestEncoder.encode(request(.budget(tokens: 8192, effort: nil)), caching: false)
+        )
         #expect(plain["thinking"]["type"].string == "enabled")
         #expect(plain["thinking"]["budget_tokens"].int == 8192)
         #expect(!plain["output_config"].exists)
         let effort = try root(
-            AnthropicRequestEncoder.encode(request(.budget(tokens: 8192, effort: .medium)), caching: false))
+            AnthropicRequestEncoder.encode(request(.budget(tokens: 8192, effort: .medium)), caching: false)
+        )
         #expect(effort["output_config"]["effort"].string == "medium")
     }
 

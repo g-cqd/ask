@@ -10,7 +10,8 @@ struct Login: AsyncParsableCommand {
             claude, codex: a subscription in a browser; add --api-key to use an API key instead (codex's is OpenAI's, stored as `openai`).
             agy: a Google account for Antigravity. spettro, mistral-vibe: a browser sign-in that issues an API key.
             Any provider with a key preset (groq, openrouter, …): its API key. custom NAME URL: any OpenAI-compatible server.
-            """)
+            """
+    )
 
     @Argument(help: "Which sign-in to run: a provider, or custom NAME URL.") var words: [String] = []
     @Flag(help: "Sign in with an API key instead of an account.") var apiKey = false

@@ -17,7 +17,9 @@ struct OpenAIRequestEncoderTests {
 
     @Test func `a conversation with a tool round trip`() throws {
         let request = ModelRequest(
-            model: "m", maxTokens: 100, systemPrompt: ["Be brief.", "Use tools."],
+            model: "m",
+            maxTokens: 100,
+            systemPrompt: ["Be brief.", "Use tools."],
             messages: [
                 ModelMessage(role: .user, blocks: [.text("hi")]),
                 ModelMessage(
@@ -25,12 +27,19 @@ struct OpenAIRequestEncoderTests {
                     blocks: [
                         .thinking(text: "private", signature: ""), .text("Reading."),
                         .toolCall(
-                            id: "c1", name: "read", input: try JSONObject(validating: Array(#"{"path":"x"}"#.utf8)))
-                    ]),
+                            id: "c1",
+                            name: "read",
+                            input: try JSONObject(validating: Array(#"{"path":"x"}"#.utf8))
+                        )
+                    ]
+                ),
                 ModelMessage(
-                    role: .user, blocks: [.toolResult(id: "c1", content: "data", isError: false), .text("next")])
+                    role: .user,
+                    blocks: [.toolResult(id: "c1", content: "data", isError: false), .text("next")]
+                )
             ],
-            tools: [ToolDefinition(name: "read", description: "Read.", inputSchema: Self.schema)])
+            tools: [ToolDefinition(name: "read", description: "Read.", inputSchema: Self.schema)]
+        )
         #expect(
             encode(request)
                 == #"{"model":"m","max_tokens":100,"stream":true,"stream_options":{"include_usage":true},"messages":["#
@@ -44,33 +53,45 @@ struct OpenAIRequestEncoderTests {
 
     @Test func `a turn that only calls tools sends null content, as every server checked accepts`() throws {
         let request = ModelRequest(
-            model: "m", maxTokens: 1, systemPrompt: [],
+            model: "m",
+            maxTokens: 1,
+            systemPrompt: [],
             messages: [ModelMessage(role: .assistant, blocks: [.toolCall(id: "c", name: "t", input: .empty)])],
-            tools: [])
+            tools: []
+        )
         #expect(
             encode(request)
                 == #"{"model":"m","max_tokens":1,"stream":true,"stream_options":{"include_usage":true},"messages":["#
                 + #"{"role":"assistant","content":null,"tool_calls":[{"id":"c","type":"function","function":"#
-                + #"{"name":"t","arguments":"{}"}}]}]}"#)
+                + #"{"name":"t","arguments":"{}"}}]}]}"#
+        )
     }
 
     @Test func `no system prompt and no tools leave both out`() {
         let request = ModelRequest(
-            model: "m", maxTokens: 5, systemPrompt: [], messages: [ModelMessage(role: .user, blocks: [.text("x")])],
-            tools: [])
+            model: "m",
+            maxTokens: 5,
+            systemPrompt: [],
+            messages: [ModelMessage(role: .user, blocks: [.text("x")])],
+            tools: []
+        )
         #expect(!encode(request).contains("system"))
         #expect(!encode(request).contains("tools"))
     }
 
     @Test func `reasoning and redacted reasoning are never sent back`() {
         let request = ModelRequest(
-            model: "m", maxTokens: 5, systemPrompt: [],
+            model: "m",
+            maxTokens: 5,
+            systemPrompt: [],
             messages: [
                 ModelMessage(
                     role: .assistant,
-                    blocks: [.thinking(text: "secret", signature: "s"), .redactedThinking(data: "r"), .text("done")])
+                    blocks: [.thinking(text: "secret", signature: "s"), .redactedThinking(data: "r"), .text("done")]
+                )
             ],
-            tools: [])
+            tools: []
+        )
         let body = encode(request)
         #expect(!body.contains("secret"))
         #expect(!body.contains("\"r\""))
@@ -79,9 +100,12 @@ struct OpenAIRequestEncoderTests {
 
     @Test func `text and results that need escaping produce valid JSON`() throws {
         let request = ModelRequest(
-            model: "m", maxTokens: 5, systemPrompt: ["quote \" and\nnewline"],
+            model: "m",
+            maxTokens: 5,
+            systemPrompt: ["quote \" and\nnewline"],
             messages: [ModelMessage(role: .user, blocks: [.toolResult(id: "c", content: "tab\tand ✓", isError: true)])],
-            tools: [])
+            tools: []
+        )
         let parsed = try JSONSerialization.jsonObject(with: Data(OpenAIRequestEncoder.encode(request)))
         let messages = try #require((parsed as? [String: Any])?["messages"] as? [[String: Any]])
         #expect(messages.first?["content"] as? String == "quote \" and\nnewline")

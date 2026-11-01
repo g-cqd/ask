@@ -10,8 +10,10 @@ final class CountingTool: Tool {
 
     init(_ name: String) {
         definition = ToolDefinition(
-            name: name, description: "Counts.",
-            inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8)))
+            name: name,
+            description: "Counts.",
+            inputSchema: try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8))
+        )
     }
 
     var count: Int { runs.withLock { $0 } }

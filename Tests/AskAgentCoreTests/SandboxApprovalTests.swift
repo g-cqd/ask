@@ -16,7 +16,10 @@ struct SandboxApprovalTests {
 
     @Test func `a granted request runs under what it asked for, protections kept`() throws {
         let policy = SandboxPolicy(
-            network: .localhost, write: .roots([workspace]), denyRead: [SandboxRule(workspace + "/secret", .subpath)])
+            network: .localhost,
+            write: .roots([workspace]),
+            denyRead: [SandboxRule(workspace + "/secret", .subpath)]
+        )
         let granted = try request(#"{"sandbox":{"network":"any","write":["/opt/other"]}}"#)
             .granted(over: policy, workingDirectory: workspace)
         #expect(granted.network == .any && granted.write == .roots(["/opt/other"]))
@@ -28,14 +31,17 @@ struct SandboxApprovalTests {
         #expect(try request(#"{"sandbox":{"network":"none"}}"#).isCovered(by: grants, workingDirectory: workspace))
         #expect(
             try request(#"{"sandbox":{"write":["/opt/other/deeper"]}}"#)
-                .isCovered(by: grants, workingDirectory: workspace))
+                .isCovered(by: grants, workingDirectory: workspace)
+        )
         #expect(!(try request(#"{"sandbox":{"network":"any"}}"#).isCovered(by: grants, workingDirectory: workspace)))
         #expect(
             !(try request(#"{"sandbox":{"write":["/opt/elsewhere"]}}"#)
-                .isCovered(by: grants, workingDirectory: workspace)))
+                .isCovered(by: grants, workingDirectory: workspace))
+        )
         #expect(
             !(try request(#"{"sandbox":{"read":["/opt/other"]}}"#).isCovered(by: grants, workingDirectory: workspace)),
-            "a write grant is not a read grant")
+            "a write grant is not a read grant"
+        )
         #expect(!(try request(#"{"sandbox":{"network":"none"}}"#).isCovered(by: [], workingDirectory: workspace)))
     }
 
@@ -53,9 +59,14 @@ struct SandboxApprovalTests {
         let spy = Spy()
         let output = try await ToolRegistry([spy])
             .run(
-                name: "spy", input: try JSONObject(validating: Array(json.utf8)),
+                name: "spy",
+                input: try JSONObject(validating: Array(json.utf8)),
                 in: ToolContext(
-                    workingDirectory: workspace, sandbox: SandboxPolicy(network: .localhost), approve: approve))
+                    workingDirectory: workspace,
+                    sandbox: SandboxPolicy(network: .localhost),
+                    approve: approve
+                )
+            )
         return (output, spy.seen.withLock { $0 })
     }
 

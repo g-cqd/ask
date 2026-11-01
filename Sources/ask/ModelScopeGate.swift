@@ -17,7 +17,10 @@ enum ModelScopeGate {
     static func current(environment: [String: String] = LaunchEnvironment.values) -> ModelScopeMatch? {
         let project = FileManager.default.currentDirectoryPath
         let loader = ConfigurationLoader(
-            project: project, configDirectory: askConfigDirectory(environment: environment), environment: environment)
+            project: project,
+            configDirectory: askConfigDirectory(environment: environment),
+            environment: environment
+        )
         guard let configuration = try? loader.load().configuration else { return nil }
         return match(configuration, project: project, environment: environment)
     }

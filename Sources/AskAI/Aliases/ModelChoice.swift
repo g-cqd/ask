@@ -13,7 +13,10 @@ public struct ModelChoice: Sendable, Equatable {
 
     /// A choice of `model`.
     public init(
-        model: String, alias: String? = nil, contextWindow: Int? = nil, maxOutputTokens: Int? = nil,
+        model: String,
+        alias: String? = nil,
+        contextWindow: Int? = nil,
+        maxOutputTokens: Int? = nil,
         thinking: ThinkingLevel? = nil
     ) {
         self.thinking = thinking

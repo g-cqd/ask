@@ -37,10 +37,12 @@ struct CompactionThresholdTests {
 
     @Test func `a file takes a share as a string and tokens as a number`() throws {
         #expect(
-            try ConfigurationFile.parse(Array(#"{"compactAt": "60%"}"#.utf8), path: "c.json").compactAt == .share(60))
+            try ConfigurationFile.parse(Array(#"{"compactAt": "60%"}"#.utf8), path: "c.json").compactAt == .share(60)
+        )
         #expect(
             try ConfigurationFile.parse(Array(#"{"compactAt": 90000}"#.utf8), path: "c.json").compactAt
-                == .tokens(90_000))
+                == .tokens(90_000)
+        )
         for bad in [#"{"compactAt": "150%"}"#, #"{"compactAt": "90000"}"#, #"{"compactAt": -1}"#] {
             #expect(throws: ConfigurationError.self) { try ConfigurationFile.parse(Array(bad.utf8), path: "c.json") }
         }
@@ -56,7 +58,12 @@ struct CompactionThresholdTests {
 
     @Test func `a window the server shows later is compacted at the same share of it`() {
         var settings = AgentSettings(
-            model: "m", maximumTokens: 1_024, systemPrompt: [], maximumTurns: 1, compactAtTokens: 150_000)
+            model: "m",
+            maximumTokens: 1_024,
+            systemPrompt: [],
+            maximumTurns: 1,
+            compactAtTokens: 150_000
+        )
         settings.compactAtShare = 50
         #expect(AgentLoop.budget(for: settings, window: 100_000).compactAtTokens == 50_000)
         #expect(AgentLoop.budget(for: settings, window: nil).compactAtTokens == 150_000)

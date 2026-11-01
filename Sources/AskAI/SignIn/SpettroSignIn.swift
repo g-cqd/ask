@@ -27,7 +27,9 @@ public struct SpettroSignIn: KeySignIn {
     /// A sign-in against `base`, with a session named `sessionID`.
     /// - Throws: ``SignInError/untrustedURL(_:)`` when `base` is not `https`, or `http` to this machine.
     public init(
-        transport: any HTTPTransport, base: String = defaultBase, sessionID: String = UUID().uuidString,
+        transport: any HTTPTransport,
+        base: String = defaultBase,
+        sessionID: String = UUID().uuidString,
         now: @escaping @Sendable () -> Double = { Date().timeIntervalSince1970 }
     ) throws(SignInError) {
         http = SignInHTTP(transport: transport)
@@ -39,7 +41,8 @@ public struct SpettroSignIn: KeySignIn {
     public func start() async throws(SignInError) -> SignInStart<String> {
         let reply =
             try await http.post(
-                endpoint("auth/initiate"), json: JSONStreamWriter.object(of: [("session_id", sessionID)])
+                endpoint("auth/initiate"),
+                json: JSONStreamWriter.object(of: [("session_id", sessionID)])
             )
             .succeeded()
         let link = try SignInURL.browser(reply.decode(Initiated.self).browser_url, field: "browser_url")
@@ -52,8 +55,12 @@ public struct SpettroSignIn: KeySignIn {
         if reply.status == 404 { throw .expired }
         let polled = try reply.succeeded().decode(Polled.self)
         return try .reading(
-            status: polled.status, secret: polled.api_key, complete: "complete", secretField: "api_key",
-            ending: ["expired": .expired])
+            status: polled.status,
+            secret: polled.api_key,
+            complete: "complete",
+            secretField: "api_key",
+            ending: ["expired": .expired]
+        )
     }
 
     public func timestamp() -> Double { now() }

@@ -20,7 +20,11 @@ public struct ToolProperty: Sendable {
     }
 
     private init(
-        _ name: String, type: String, isRequired: Bool = true, constraints: [Constraint] = [], schema: [UInt8]? = nil
+        _ name: String,
+        type: String,
+        isRequired: Bool = true,
+        constraints: [Constraint] = [],
+        schema: [UInt8]? = nil
     ) {
         self.name = name
         self.type = type
@@ -43,8 +47,10 @@ public struct ToolProperty: Sendable {
     /// An integer, optionally bounded on either side.
     public static func integer(_ name: String, minimum: Int? = nil, maximum: Int? = nil) -> ToolProperty {
         ToolProperty(
-            name, type: "integer",
-            constraints: (minimum.map { [.minimum($0)] } ?? []) + (maximum.map { [.maximum($0)] } ?? []))
+            name,
+            type: "integer",
+            constraints: (minimum.map { [.minimum($0)] } ?? []) + (maximum.map { [.maximum($0)] } ?? [])
+        )
     }
 
     /// A boolean.

@@ -37,7 +37,10 @@ extension AgentLoop {
     ///   - events: where completed steps are reported.
     /// - Throws: ``AgentError``, only when `contextFull` or on abort.
     func compact(
-        _ session: SessionRecorder, contextFull: Bool, explicit: Bool = false, events: (AgentEvent) -> Void
+        _ session: SessionRecorder,
+        contextFull: Bool,
+        explicit: Bool = false,
+        events: (AgentEvent) -> Void
     ) async throws(AgentError) {
         let context = session.tree.context()
         if !contextFull, !explicit, Compaction.cut(context, keepingRecentBytes: budget.keepRecentBytes) == nil {

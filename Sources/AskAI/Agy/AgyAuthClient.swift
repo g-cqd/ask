@@ -30,10 +30,13 @@ public struct AgyAuthClient: Sendable {
             ])
         guard let refresh = token.refreshToken else { throw AgyAuthError.noRefreshToken }
         return AgyCredentials(
-            accessToken: token.accessToken, refreshToken: refresh, expiresAt: token.expiry(from: now),
+            accessToken: token.accessToken,
+            refreshToken: refresh,
+            expiresAt: token.expiry(from: now),
             scopes: token.scope,
             accountEmail: token.idToken.flatMap(Self.email),
-            clientSecret: secret)
+            clientSecret: secret
+        )
     }
 
     /// New credentials for `credentials`; what the response omits is kept, including the refresh token.
@@ -55,13 +58,18 @@ public struct AgyAuthClient: Sendable {
 
     private func post(_ fields: [(String, String)]) async throws -> Token {
         let request = HTTPRequest.account(
-            "POST", URL(string: AgyOAuth.tokenURL)!, contentType: "application/x-www-form-urlencoded",
-            body: Array(FormEncoding.query(fields).utf8))
+            "POST",
+            URL(string: AgyOAuth.tokenURL)!,
+            contentType: "application/x-www-form-urlencoded",
+            body: Array(FormEncoding.query(fields).utf8)
+        )
         let reply = try await transport.collecting(request)
         guard (200 ..< 300).contains(reply.status) else {
             let code = (try? AemiJSON.parse(reply.body))?.root["error"].string
             throw AgyAuthError.tokenEndpoint(
-                status: reply.status, code: code.flatMap { Self.errorCodes.contains($0) ? $0 : nil })
+                status: reply.status,
+                code: code.flatMap { Self.errorCodes.contains($0) ? $0 : nil }
+            )
         }
         guard let token = try? AemiJSON.JSONDecoder().decode(Token.self, from: reply.body), token.isSound else {
             throw AgyAuthError.invalidResponse

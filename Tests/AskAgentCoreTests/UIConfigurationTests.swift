@@ -16,10 +16,12 @@ struct UIConfigurationTests {
               // the mouse belongs to the terminal here
               ui: { mouse: false, copyOnSelect: false, tools: 'open', thinking: 'folded', scrollLines: 5, },
             }
-            """)
+            """
+        )
         #expect(
             file.ui
-                == UISection(mouse: false, copyOnSelect: false, foldTools: false, foldThinking: true, scrollLines: 5))
+                == UISection(mouse: false, copyOnSelect: false, foldTools: false, foldThinking: true, scrollLines: 5)
+        )
         #expect(file.sets("ui") && !ConfigurationFile().sets("ui"))
     }
 
@@ -30,7 +32,14 @@ struct UIConfigurationTests {
         #expect(
             words.ui
                 == UISection(
-                    mouse: false, copyOnSelect: true, tint: false, padding: true, markdown: false, highlight: false))
+                    mouse: false,
+                    copyOnSelect: true,
+                    tint: false,
+                    padding: true,
+                    markdown: false,
+                    highlight: false
+                )
+        )
         #expect(words.skills?.enabled == false)
         let flags = try parse("{ui: {mouse: false, tint: false, onlyUsefulModels: true}, skills: {enabled: true}}")
         #expect(flags.ui == UISection(mouse: false, tint: false, onlyUsefulModels: true))
@@ -48,7 +57,10 @@ struct UIConfigurationTests {
         #expect(file.ui?.foldThinking == false && file.ui?.foldTools == true)
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "ui.thinking", reason: "is \"hidden\": use \"folded\" or \"open\"")
+                path: "c.json",
+                key: "ui.thinking",
+                reason: "is \"hidden\": use \"folded\" or \"open\""
+            )
         ) { try parse("{ui: {thinking: 'hidden'}}") }
     }
 
@@ -59,7 +71,10 @@ struct UIConfigurationTests {
         ) { try parse("{ui: {images: 'open'}}") }
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "ui.tools", reason: "is \"hidden\": use \"folded\" or \"open\"")
+                path: "c.json",
+                key: "ui.tools",
+                reason: "is \"hidden\": use \"folded\" or \"open\""
+            )
         ) { try parse("{ui: {tools: 'hidden'}}") }
         #expect(
             throws: ConfigurationError.outOfRange(path: "c.json", key: "ui.scrollLines", reason: "must be at least 1")
@@ -76,7 +91,8 @@ struct UIConfigurationTests {
         let project = ConfigurationFile(ui: UISection(copyOnSelect: false, scrollLines: 2))
         let layered = Configuration.defaults.applying(user, from: .file("u")).applying(project, from: .file("p"))
         #expect(
-            layered.ui.value == UISection(mouse: false, copyOnSelect: false, foldTools: nil, scrollLines: 2))
+            layered.ui.value == UISection(mouse: false, copyOnSelect: false, foldTools: nil, scrollLines: 2)
+        )
         #expect(layered.ui.source == .file("p"))
         // A layer that sets one key leaves what the layers below set for the rest.
         let third = layered.applying(ConfigurationFile(ui: UISection(mouse: true)), from: .file("q"))

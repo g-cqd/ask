@@ -5,7 +5,10 @@ internal import Testing
 
 struct ModelCatalogFileTests {
     private static let scope = ModelCatalogScope(
-        provider: "codex", accountID: "account-a", endpoint: URL(string: "https://example.test/models?v=1")!)
+        provider: "codex",
+        accountID: "account-a",
+        endpoint: URL(string: "https://example.test/models?v=1")!
+    )
     private static let models = [CatalogModel(id: "one", contextWindow: 8192, maxOutputTokens: 1000)]
 
     private func withFile(_ body: (ModelCatalogFile) throws -> Void) throws {
@@ -49,13 +52,22 @@ struct ModelCatalogFileTests {
             try file.save(Self.models, scope: Self.scope, now: 10)
             for scope in [
                 ModelCatalogScope(
-                    provider: "codex", accountID: "account-a", endpoint: Self.scope.endpoint, connectionID: UUID()),
+                    provider: "codex",
+                    accountID: "account-a",
+                    endpoint: Self.scope.endpoint,
+                    connectionID: UUID()
+                ),
                 ModelCatalogScope(provider: "codex", accountID: "account-b", endpoint: Self.scope.endpoint),
                 ModelCatalogScope(provider: "other", accountID: "account-a", endpoint: Self.scope.endpoint),
                 ModelCatalogScope(
-                    provider: "codex", accountID: "account-a", endpoint: URL(string: "https://other.test/models?v=1")!),
+                    provider: "codex",
+                    accountID: "account-a",
+                    endpoint: URL(string: "https://other.test/models?v=1")!
+                ),
                 ModelCatalogScope(
-                    provider: "codex", accountID: "account-a", endpoint: URL(string: "https://example.test/models?v=2")!
+                    provider: "codex",
+                    accountID: "account-a",
+                    endpoint: URL(string: "https://example.test/models?v=2")!
                 )
             ] {
                 #expect(try file.load(scope: scope, now: 11) == nil)
@@ -66,7 +78,9 @@ struct ModelCatalogFileTests {
     @Test func `malformed and oversized caches are reported and not rewritten by reading`() throws {
         try withFile { file in
             try FileManager.default.createDirectory(
-                at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: file.url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             for bytes in [Data("{broken".utf8), Data(repeating: 120, count: (2 << 20) + 1)] {
                 try bytes.write(to: file.url)
                 #expect(throws: ModelCatalogError.cache(path: file.url.path)) {
@@ -80,7 +94,11 @@ struct ModelCatalogFileTests {
     @Test func `reasoning levels round trip, and a cache written before they existed still loads`() throws {
         try withFile { file in
             let model = CatalogModel(
-                id: "m", contextWindow: 8192, reasoningLevels: ["low", "high"], defaultReasoningLevel: "low")
+                id: "m",
+                contextWindow: 8192,
+                reasoningLevels: ["low", "high"],
+                defaultReasoningLevel: "low"
+            )
             try file.save([model], scope: Self.scope, now: 10)
             #expect(try file.load(scope: Self.scope, now: 11) == [model])
             let text = try String(contentsOf: file.url, encoding: .utf8)

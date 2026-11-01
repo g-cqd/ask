@@ -25,7 +25,9 @@ extension ConfigurationFile {
                     case "mouse", "copyOnSelect", "tint", "separator", "padding", "markdown", "highlight",
                         "leaveFinishedJob", "listAllModels":
                         decodeSwitch(
-                            key.stringValue, try ConfigurationFile.decodeSwitch(container, key: key, name: name))
+                            key.stringValue,
+                            try ConfigurationFile.decodeSwitch(container, key: key, name: name)
+                        )
                     default: try decodeChoice(key, from: container)
                 }
             }
@@ -38,22 +40,46 @@ extension ConfigurationFile {
                 // @dl:accept -- one decode per choice key, each naming its own enumeration; the rows are data
                 case "appearance":
                     section.appearance = try ConfigurationFile.decodeChoice(
-                        container, key: key, as: AppearancePreference.self, named: name)
+                        container,
+                        key: key,
+                        as: AppearancePreference.self,
+                        named: name
+                    )
                 case "spinner":
                     section.spinner = try ConfigurationFile.decodeChoice(
-                        container, key: key, as: SpinnerPreference.self, named: name)
+                        container,
+                        key: key,
+                        as: SpinnerPreference.self,
+                        named: name
+                    )
                 case "stopKeys":
                     section.interruptKeys = try ConfigurationFile.decodeChoice(
-                        container, key: key, as: InterruptKeysPreference.self, named: name)
+                        container,
+                        key: key,
+                        as: InterruptKeysPreference.self,
+                        named: name
+                    )
                 case "queuedOnStop":
                     section.interruptSendsQueued = try ConfigurationFile.decodeChoice(
-                        container, key: key, as: QueuedAfterInterruptPreference.self, named: name)
+                        container,
+                        key: key,
+                        as: QueuedAfterInterruptPreference.self,
+                        named: name
+                    )
                 case "showTimeout":
                     section.timeout = try ConfigurationFile.decodeChoice(
-                        container, key: key, as: TimeoutPreference.self, named: name)
+                        container,
+                        key: key,
+                        as: TimeoutPreference.self,
+                        named: name
+                    )
                 case "sessionColor":
                     section.sessionColor = try ConfigurationFile.decodeChoice(
-                        container, key: key, as: SessionColorPreference.self, named: name)
+                        container,
+                        key: key,
+                        as: SessionColorPreference.self,
+                        named: name
+                    )
                 case "timeoutLabel":
                     section.timeoutLabel = try ConfigurationFile.decodeLabel(container, key: key, named: name)
                 default: throw UnknownKey(key: name)

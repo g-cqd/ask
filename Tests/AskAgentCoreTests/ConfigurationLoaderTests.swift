@@ -12,7 +12,9 @@ struct ConfigurationLoaderTests {
 
     private func write(_ path: String, _ text: String) throws {
         try FileManager.default.createDirectory(
-            atPath: (path as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
+            atPath: (path as NSString).deletingLastPathComponent,
+            withIntermediateDirectories: true
+        )
         try Data(text.utf8).write(to: URL(filePath: path))
     }
 

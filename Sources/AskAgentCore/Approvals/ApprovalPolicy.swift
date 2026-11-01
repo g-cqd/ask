@@ -25,7 +25,9 @@ public struct ApprovalPolicy: Sendable, Equatable {
     public let asking: [String]
 
     public init(
-        section: ApprovalsSection = ApprovalsSection(), flag: Flag? = nil, allowing: [String] = [],
+        section: ApprovalsSection = ApprovalsSection(),
+        flag: Flag? = nil,
+        allowing: [String] = [],
         asking: [String] = []
     ) {
         self.section = section

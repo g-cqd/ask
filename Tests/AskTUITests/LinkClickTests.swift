@@ -27,7 +27,8 @@ struct LinkClickTests {
             updates: [
                 .toolStarted(name: "read", summary: "/tmp/a.swift", id: "r"),
                 .toolFinished(.succeeded, output: "one\ntwo", id: "r")
-            ])
+            ]
+        )
         let at = try find("/tmp/a.swift", in: rig)
         let folded = rig.controller.state.transcript.isFolded(0)
         #expect(rig.click(row: at.row, col: at.col + 2) == [.openLink("file:///tmp/a.swift")])
@@ -40,7 +41,8 @@ struct LinkClickTests {
             updates: [
                 .toolStarted(name: "read", summary: "/tmp/a.swift", id: "r"),
                 .toolFinished(.succeeded, output: "one\ntwo", id: "r")
-            ])
+            ]
+        )
         let at = try find("read", in: rig)
         let folded = rig.controller.state.transcript.isFolded(0)
         #expect(!rig.click(row: at.row, col: at.col).contains { if case .openLink = $0 { true } else { false } })

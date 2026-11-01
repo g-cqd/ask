@@ -100,19 +100,22 @@ enum ImageReader {
         {
             return Result(
                 part: ImagePart(mediaType: type, data: bytes),
-                summary: "image \(name), \(width)×\(height), \(bytes.count) bytes")
+                summary: "image \(name), \(width)×\(height), \(bytes.count) bytes"
+            )
         }
 
         let fitted = try fit(favoursPNG: favoursPNG, longSide: max(width, height), allowance: allowance) { side in
             // ImageIO decodes JPEG and HEIC at reduced size, which a full decode and a separate scale cannot do
             // (diary 2026-10-28-05 and -06: faster, and 3–15× less memory than vImage, Core Image or Metal).
             CGImageSourceCreateThumbnailAtIndex(
-                source, 0,
+                source,
+                0,
                 [
                     kCGImageSourceCreateThumbnailFromImageAlways: true,
                     kCGImageSourceCreateThumbnailWithTransform: true,
                     kCGImageSourceThumbnailMaxPixelSize: side
-                ] as CFDictionary)
+                ] as CFDictionary
+            )
         }
         return Result(
             part: fitted.part,
@@ -135,7 +138,10 @@ enum ImageReader {
     /// - Returns: the encoded picture and its size.
     /// - Throws: ``Failure/undecodable`` when `render` gives nothing, ``Failure/cannotFit`` when even one pixel is too big.
     static func fit(
-        favoursPNG: Bool, longSide: Int, allowance: Allowance = Allowance(), render: (Int) -> CGImage?
+        favoursPNG: Bool,
+        longSide: Int,
+        allowance: Allowance = Allowance(),
+        render: (Int) -> CGImage?
     ) throws(Failure) -> Fitted {
         var side = min(maximumSide, longSide)
         while true {
@@ -148,8 +154,10 @@ enum ImageReader {
                     allowance.admits(count: encoded.count)
                 else { continue }
                 return Fitted(
-                    part: ImagePart(mediaType: mediaType, data: [UInt8](encoded)), width: scaled.width,
-                    height: scaled.height)
+                    part: ImagePart(mediaType: mediaType, data: [UInt8](encoded)),
+                    width: scaled.width,
+                    height: scaled.height
+                )
             }
             guard side > 1 else { throw .cannotFit }
             side = max(1, side * 3 / 4)
@@ -165,8 +173,14 @@ enum ImageReader {
         guard
             // @dl:accept -- a bitmap context is made the same way for a scaled image and a drawn page; the arguments differ, so sharing would take as many
             let context = CGContext(
-                data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
-                space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+                data: nil,
+                width: width,
+                height: height,
+                bitsPerComponent: 8,
+                bytesPerRow: 0,
+                space: CGColorSpaceCreateDeviceRGB(),
+                bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue
+            )
         else { return nil }
         context.interpolationQuality = .high
         context.draw(image, in: CGRect(x: 0, y: 0, width: width, height: height))

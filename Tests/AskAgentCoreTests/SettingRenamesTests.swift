@@ -31,17 +31,21 @@ struct SettingRenamesTests {
     @Test func `values that change words are translated`() throws {
         #expect(
             try renamed(#"{"ui": {"localizedDurations": "off"}}"#).value
-                == (try json(#"{"ui": {"durations": "clock"}}"#)))
+                == (try json(#"{"ui": {"durations": "clock"}}"#))
+        )
         #expect(
             try renamed(#"{"ui": {"localizedDurations": true}}"#).value
-                == (try json(#"{"ui": {"durations": "words"}}"#)))
+                == (try json(#"{"ui": {"durations": "words"}}"#))
+        )
         #expect(
             try renamed(#"{"ui": {"onlyUsefulModels": "off"}}"#).value
-                == (try json(#"{"ui": {"listAllModels": true}}"#)))
+                == (try json(#"{"ui": {"listAllModels": true}}"#))
+        )
         #expect(try renamed(#"{"ui": {"timeout": "never"}}"#).value == (try json(#"{"ui": {"showTimeout": "never"}}"#)))
         #expect(
             try renamed(#"{"approvals": {"scope": "narrowing-only"}}"#).value
-                == (try json(#"{"approvals": {"remember": "narrowing"}}"#)))
+                == (try json(#"{"approvals": {"remember": "narrowing"}}"#))
+        )
     }
 
     @Test func `the two confirmation switches become the keys pressed twice`() throws {
@@ -50,19 +54,25 @@ struct SettingRenamesTests {
                 #"{"ui": {"escapeInterruptRequiresConfirmation": "off", "abortTurnRequiresConfirmation": "on"}}"#
             )
             .value
-                == (try json(#"{"ui": {"stopTwice": ["ctrl-c"]}}"#)))
+                == (try json(#"{"ui": {"stopTwice": ["ctrl-c"]}}"#))
+        )
         #expect(
             try renamed(#"{"ui": {"abortTurnRequiresConfirmation": true}}"#).value
-                == (try json(#"{"ui": {"stopTwice": ["esc", "ctrl-c"]}}"#)), "esc keeps its default, on")
+                == (try json(#"{"ui": {"stopTwice": ["esc", "ctrl-c"]}}"#)),
+            "esc keeps its default, on"
+        )
     }
 
     @Test func `keepAwake's display becomes its own switch`() throws {
         #expect(
             try renamed(#"{"keepAwake": "display"}"#).value
-                == (try json(#"{"keepAwake": "working", "keepDisplayAwake": true}"#)))
+                == (try json(#"{"keepAwake": "working", "keepDisplayAwake": true}"#))
+        )
         #expect(try renamed(#"{"keepAwake": "system"}"#).value == (try json(#"{"keepAwake": "working"}"#)))
         #expect(
-            try renamed(#"{"keepAwake": "always"}"#).notices.isEmpty, "a value that did not change is not an old name")
+            try renamed(#"{"keepAwake": "always"}"#).notices.isEmpty,
+            "a value that did not change is not an old name"
+        )
     }
 
     @Test func `the sandbox's exceptions and the skills' count are renamed`() throws {
@@ -73,7 +83,8 @@ struct SettingRenamesTests {
             result.value
                 == (try json(
                     #"{"sandbox": {"hide": ["~/a"], "readable": ["~/b"], "writable": ["~/c"]}, "skills": {"maxListed": 8}}"#
-                )))
+                ))
+        )
     }
 
     @Test func `a new name wins over its old one, and the old one is reported as ignored`() throws {

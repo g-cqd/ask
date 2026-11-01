@@ -76,7 +76,10 @@ extension AgentLoop {
 
     /// Acts on what a failure means: throws for the end of the request, or waits and says how to go on.
     private func recover(
-        _ decided: FailureOutcome, attempt: inout Int, events: (AgentEvent) -> Void, handsOver: Bool
+        _ decided: FailureOutcome,
+        attempt: inout Int,
+        events: (AgentEvent) -> Void,
+        handsOver: Bool
     ) async throws(AgentError) -> Recovery {
         switch decided {
             case .overflow(let reason): throw .contextOverflow(reason)
@@ -130,7 +133,10 @@ extension AgentLoop {
             let drops = drops.dropped()
             guard drops < retry.maximumAttempts else { return failed }
             return .carryOn(
-                after: retry.delay(after: drops, requested: advice.retryAfter), reason: reason, partial: partial)
+                after: retry.delay(after: drops, requested: advice.retryAfter),
+                reason: reason,
+                partial: partial
+            )
         }
         guard attempt < retry.maximumAttempts else { return failed }
         return .retry(after: retry.delay(after: attempt, requested: advice.retryAfter), reason: reason)

@@ -9,8 +9,12 @@ internal import Testing
 struct OpenAICompatibleClientTests {
     private static let base = URL(string: "http://127.0.0.1:8181/v1")!
     private static let request = ModelRequest(
-        model: "m", maxTokens: 10, systemPrompt: [], messages: [ModelMessage(role: .user, blocks: [.text("x")])],
-        tools: [])
+        model: "m",
+        maxTokens: 10,
+        systemPrompt: [],
+        messages: [ModelMessage(role: .user, blocks: [.text("x")])],
+        tools: []
+    )
 
     private static let recorded: [String] = {
         let url = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
@@ -81,7 +85,8 @@ struct OpenAICompatibleClientTests {
         ]
         do {
             _ = try await collect(
-                OpenAICompatibleClient(transport: ScriptedTransport(status: 200, chunks: cut), baseURL: Self.base))
+                OpenAICompatibleClient(transport: ScriptedTransport(status: 200, chunks: cut), baseURL: Self.base)
+            )
             Issue.record("an unfinished stream did not throw")
         } catch let error as OpenAICompatibleError {
             #expect(error == .stream(.unfinished))

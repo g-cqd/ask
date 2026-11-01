@@ -13,19 +13,26 @@ extension ResponsesClient {
     ///   - replay: remembers a refusal of replayed reasoning for the run.
     /// - Returns: a client for that backend.
     public static func codex(
-        transport: any HTTPTransport, credentials: CodexCredentials, session: String,
+        transport: any HTTPTransport,
+        credentials: CodexCredentials,
+        session: String,
         replay: ReasoningReplayGate? = nil
     ) -> ResponsesClient {
         ResponsesClient(
-            transport: transport, baseURL: URL(string: "https://chatgpt.com/backend-api/codex")!,
+            transport: transport,
+            baseURL: URL(string: "https://chatgpt.com/backend-api/codex")!,
             apiKey: credentials.accessToken,
             headers: [
                 "chatgpt-account-id": credentials.accountID, "originator": CodexOAuth.originator,
                 "OpenAI-Beta": "responses=experimental", "session-id": session, "x-client-request-id": session
             ],
             dialect: ResponsesDialect(
-                sendsOutputLimit: false, promptCacheKey: session, fallbackInstructions: "You are a helpful assistant.",
-                replaysReasoning: true),
-            replay: replay)
+                sendsOutputLimit: false,
+                promptCacheKey: session,
+                fallbackInstructions: "You are a helpful assistant.",
+                replaysReasoning: true
+            ),
+            replay: replay
+        )
     }
 }

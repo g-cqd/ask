@@ -58,7 +58,9 @@ extension SessionLogRecord: Codable {
                     SessionEntry(
                         id: EntryID(try container.decode(String.self, forKey: .id)),
                         parentID: try container.decodeIfPresent(String.self, forKey: .parent).map(EntryID.init),
-                        payload: try container.decode(WirePayload.self, forKey: .payload).value))
+                        payload: try container.decode(WirePayload.self, forKey: .payload).value
+                    )
+                )
             case .leaf:
                 self = .leaf(try container.decodeIfPresent(String.self, forKey: .id).map(EntryID.init))
             case .sandbox:
@@ -67,7 +69,10 @@ extension SessionLogRecord: Codable {
                     .map { name throws in
                         guard let level = SandboxPolicy.Network(named: name) else {
                             throw DecodingError.dataCorruptedError(
-                                forKey: .network, in: fields, debugDescription: "unknown network level")
+                                forKey: .network,
+                                in: fields,
+                                debugDescription: "unknown network level"
+                            )
                         }
                         return level
                     }
@@ -75,7 +80,9 @@ extension SessionLogRecord: Codable {
                     SandboxSection(
                         write: try fields.decode([WireScope].self, forKey: .write).map(\.setting),
                         read: try fields.decodeIfPresent([WireScope].self, forKey: .read)?.map(\.setting) ?? [],
-                        network: network))
+                        network: network
+                    )
+                )
         }
     }
 

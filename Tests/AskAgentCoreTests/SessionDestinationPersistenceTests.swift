@@ -6,7 +6,11 @@ internal import Testing
 
 struct SessionDestinationPersistenceTests {
     private let selected = SessionDestination(
-        connectionID: "connection-one", authorizationID: "revision-one", name: "work-label", model: "server-model")
+        connectionID: "connection-one",
+        authorizationID: "revision-one",
+        name: "work-label",
+        model: "server-model"
+    )
 
     @Test func `routing round trips but never becomes model input or a replayed prompt`() throws {
         var tree = SessionTree()
@@ -30,7 +34,11 @@ struct SessionDestinationPersistenceTests {
         try tree.append(.compaction(summary: "summary", firstKept: kept))
         #expect(tree.destination == selected)
         let other = SessionDestination(
-            connectionID: "connection-two", authorizationID: "revision-two", name: "other", model: "another-model")
+            connectionID: "connection-two",
+            authorizationID: "revision-two",
+            name: "other",
+            model: "another-model"
+        )
         try tree.continuing(from: root, with: .destination(other))
         #expect(tree.destination == other)
         try tree.moveLeaf(to: kept)
@@ -47,7 +55,11 @@ struct SessionDestinationPersistenceTests {
         try recorder.append(.user("hello"))
         let before = try Data(contentsOf: path)
         let other = SessionDestination(
-            connectionID: "connection-two", authorizationID: "revision-two", name: "other", model: "another-model")
+            connectionID: "connection-two",
+            authorizationID: "revision-two",
+            name: "other",
+            model: "another-model"
+        )
         #expect(throws: SessionDestinationError.changed) { try recorder.select(other, explicitlySelected: false) }
         #expect(try Data(contentsOf: path) == before)
         try recorder.select(other, explicitlySelected: true)

@@ -9,16 +9,23 @@ import Testing
 struct SessionReplayTests {
     private func response(_ blocks: [ContentBlock], output: Int = 1) -> AssembledResponse {
         AssembledResponse(
-            id: "m", model: "x", blocks: blocks, stopReason: .endTurn, usage: TokenUsage(output: output),
-            unrecognized: [])
+            id: "m",
+            model: "x",
+            blocks: blocks,
+            stopReason: .endTurn,
+            usage: TokenUsage(output: output),
+            unrecognized: []
+        )
     }
 
     private func entries(_ payloads: [SessionPayload]) -> [SessionEntry] {
         payloads.enumerated()
             .map { index, payload in
                 SessionEntry(
-                    id: EntryID("e\(index)"), parentID: index == 0 ? nil : EntryID("e\(index - 1)"),
-                    payload: payload)
+                    id: EntryID("e\(index)"),
+                    parentID: index == 0 ? nil : EntryID("e\(index - 1)"),
+                    payload: payload
+                )
             }
     }
 
@@ -31,7 +38,8 @@ struct SessionReplayTests {
                 .user("What is in a?"), .response(asked),
                 .toolResult(callID: "t1", content: "one\ntwo", isError: false),
                 .response(answered)
-            ]))
+            ])
+        )
         #expect(
             steps == [
                 .prompt("What is in a?"),
@@ -42,7 +50,8 @@ struct SessionReplayTests {
                 .event(.model(.thinkingDelta(index: 0, "hm"))),
                 .event(.model(.textDelta(index: 1, "Done."))),
                 .event(.responded(answered))
-            ])
+            ]
+        )
     }
 
     @Test func `replay shows thinking text but not its signature or redacted data`() {
@@ -69,9 +78,14 @@ struct SessionReplayTests {
                 .event(.toolStarted(id: "t1", name: "bash", input: input)),
                 .event(
                     .toolFinished(
-                        id: "t1", name: "bash", output: ToolOutput(RequestContext.interruptedResult, isError: true))),
+                        id: "t1",
+                        name: "bash",
+                        output: ToolOutput(RequestContext.interruptedResult, isError: true)
+                    )
+                ),
                 .event(.continuedAtOutputLimit)
-            ])
+            ]
+        )
     }
 
     @Test func `a session that ended mid-tool, as a crash leaves it, replays the call as interrupted`() throws {
@@ -83,8 +97,13 @@ struct SessionReplayTests {
                 .event(.toolStarted(id: "t1", name: "bash", input: input)),
                 .event(
                     .toolFinished(
-                        id: "t1", name: "bash", output: ToolOutput(RequestContext.interruptedResult, isError: true)))
-            ])
+                        id: "t1",
+                        name: "bash",
+                        output: ToolOutput(RequestContext.interruptedResult, isError: true)
+                    )
+                )
+            ]
+        )
     }
 
     @Test func `routing inserted between a tool call and its result is invisible to replay and context`() {
@@ -95,8 +114,10 @@ struct SessionReplayTests {
         var routed = payloads
         routed.insert(
             .destination(
-                SessionDestination(connectionID: "stable", authorizationID: "grant", name: "renamed", model: "model")),
-            at: 2)
+                SessionDestination(connectionID: "stable", authorizationID: "grant", name: "renamed", model: "model")
+            ),
+            at: 2
+        )
         #expect(SessionReplay.steps(entries(routed)) == SessionReplay.steps(entries(payloads)))
         #expect(RequestContext(entries(routed)) == RequestContext(entries(payloads)))
     }

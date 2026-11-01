@@ -13,7 +13,8 @@ struct QueuedSteeringReplacementTests {
         #expect(
             controller.state.transcript.items == [
                 .user("same"), .queued("same")
-            ])
+            ]
+        )
     }
 
     @Test func `a prompt restarted after the final boundary replaces its placeholder`() {

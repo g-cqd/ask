@@ -10,17 +10,26 @@ struct ImageResultRequestTests {
 
     private func message() -> ModelMessage {
         ModelMessage(
-            role: .user, blocks: [.toolResult(id: "t1", content: "a.png: image", isError: false, images: [image])])
+            role: .user,
+            blocks: [.toolResult(id: "t1", content: "a.png: image", isError: false, images: [image])]
+        )
     }
 
     @Test func `Anthropic carries the image inside the tool result, after its text`() {
         let request = ModelRequest(
-            model: "claude-x", maxTokens: 1, systemPrompt: [], messages: [message()], tools: [])
+            model: "claude-x",
+            maxTokens: 1,
+            systemPrompt: [],
+            messages: [message()],
+            tools: []
+        )
         let body = String(decoding: AnthropicRequestEncoder.encode(request, caching: false), as: UTF8.self)
         #expect(
             body.contains(
                 #"{"type":"tool_result","tool_use_id":"t1","content":[{"type":"text","text":"a.png: image"},"#
-                    + #"{"type":"image","source":{"type":"base64","media_type":"image/png","data":"AQIDBA=="}}]}"#))
+                    + #"{"type":"image","source":{"type":"base64","media_type":"image/png","data":"AQIDBA=="}}]}"#
+            )
+        )
     }
 
     @Test func `a result with no image keeps the plain string content`() {

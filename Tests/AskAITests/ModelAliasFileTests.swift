@@ -31,7 +31,8 @@ struct ModelAliasFileTests {
             let directory = file.url.deletingLastPathComponent().path
             #expect(
                 (try FileManager.default.attributesOfItem(atPath: directory)[.posixPermissions] as? NSNumber)?.intValue
-                    == 0o700)
+                    == 0o700
+            )
         }
     }
 
@@ -49,7 +50,9 @@ struct ModelAliasFileTests {
     @Test func `a damaged file is reported and never overwritten`() async throws {
         try await withFile { file in
             try FileManager.default.createDirectory(
-                at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: file.url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             for bytes in [Data("{broken".utf8), Data("[]".utf8), Data(repeating: 120, count: (1 << 20) + 1)] {
                 try bytes.write(to: file.url)
                 #expect(throws: ModelAliasError.damaged(path: file.url.path)) { try file.load() }
@@ -73,7 +76,9 @@ struct ModelAliasFileTests {
     {
         try await withFile { file in
             try FileManager.default.createDirectory(
-                at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: file.url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             try Data(text.utf8).write(to: file.url)
             #expect(throws: ModelAliasError.damaged(path: file.url.path)) { try file.load() }
             #expect(try Data(contentsOf: file.url) == Data(text.utf8))
@@ -83,7 +88,9 @@ struct ModelAliasFileTests {
     @Test func `a file from a newer ask is refused, not rewritten`() async throws {
         try await withFile { file in
             try FileManager.default.createDirectory(
-                at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+                at: file.url.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
             let bytes = Data(#"{"version":3,"aliases":{},"extra":{"keep":true}}"#.utf8)
             try bytes.write(to: file.url)
             #expect(throws: ModelAliasError.newerFormat(path: file.url.path)) { try file.load() }

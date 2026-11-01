@@ -10,7 +10,8 @@ struct AppleRun {
         if case .unavailable(let reason) = AppleModel.availability() {
             throw ProviderFailure(
                 kind: .notFound,
-                message: "The on-device model is unavailable: \(reason). /login signs in to another provider.")
+                message: "The on-device model is unavailable: \(reason). /login signs in to another provider."
+            )
         }
         let window = AppleModel.contextWindow
         let budget = AppleBudget(window: window, requested: request.maxTokens)
@@ -18,21 +19,29 @@ struct AppleRun {
         let offered = tools(within: budget.toolTokens, capture: capture)
         let instructed = ApplePrompt.instructions(
             request.systemPrompt,
-            budget: budget.instructionTokens(tools: offered.tokens) * ApplePrompt.charactersPerToken)
+            budget: budget.instructionTokens(tools: offered.tokens) * ApplePrompt.charactersPerToken
+        )
         let instructions = Self.hint(hasTools: !offered.tools.isEmpty) + instructed.text
         let used = ApplePrompt.estimatedTokens(instructions)
         let room = budget.conversationTokens(instructions: used, tools: offered.tokens)
         let prompt = await fitted(
-            ApplePrompt.turns(request.messages), instructions: instructions, tools: offered.tools, budget: budget,
-            tokens: room)
+            ApplePrompt.turns(request.messages),
+            instructions: instructions,
+            tools: offered.tools,
+            budget: budget,
+            tokens: room
+        )
         let session = LanguageModelSession(model: .default, tools: offered.tools, instructions: instructions)
         let options = GenerationOptions(maximumResponseTokens: budget.reply)
         let inputTokens = used + offered.tokens + ApplePrompt.estimatedTokens(prompt)
 
         emit(
             .messageStarted(
-                id: "apple_" + UUID().uuidString.prefix(8).lowercased(), model: request.model,
-                usage: TokenUsage(input: inputTokens)))
+                id: "apple_" + UUID().uuidString.prefix(8).lowercased(),
+                model: request.model,
+                usage: TokenUsage(input: inputTokens)
+            )
+        )
         var text = ""
         var block: Int?
         do {
@@ -50,6 +59,11 @@ struct AppleRun {
             // A call the model made ends the response by design; only a failure with no call is one.
             guard capture.call != nil else { throw error }
         }
+        finish(text: text, block: block, capture: capture, emit: emit)
+    }
+
+    /// Ends the response: the text block closed, the tool call the model made, if any, as a block of its own, and why it stopped.
+    private func finish(text: String, block: Int?, capture: AppleCapture, emit: (ModelEvent) -> Void) {
         if block != nil { emit(.blockStopped(index: 0)) }
         var reason = StopReason.endTurn
         if let call = capture.call {
@@ -70,8 +84,11 @@ struct AppleRun {
             let built = request.tools.compactMap { definition -> (ToolDefinition, GenerationSchema, Int)? in
                 guard
                     let schema = AppleToolSchema.schema(
-                        named: definition.name, description: definition.description,
-                        inputSchema: definition.inputSchema.bytes, detail: detail)
+                        named: definition.name,
+                        description: definition.description,
+                        inputSchema: definition.inputSchema.bytes,
+                        detail: detail
+                    )
                 else { return nil }
                 return (
                     definition, schema,
@@ -89,7 +106,9 @@ struct AppleRun {
                 AppleCapturingTool(
                     name: definition.name,
                     description: AppleToolSchema.clipped(definition.description, limit: detail.limit) ?? "",
-                    parameters: schema, capture: capture)
+                    parameters: schema,
+                    capture: capture
+                )
             }
             let dropped = built.dropFirst(kept.count).map(\.0.name)
             var notes: [String] = []
@@ -106,7 +125,11 @@ struct AppleRun {
 
     /// The conversation that fits `tokens`: estimated first, then, where the system can count, checked and cut again until it fits.
     private func fitted(
-        _ turns: [String], instructions: String, tools: [any Tool], budget: AppleBudget, tokens: Int
+        _ turns: [String],
+        instructions: String,
+        tools: [any Tool],
+        budget: AppleBudget,
+        tokens: Int
     ) async -> String {
         var allowed = tokens
         var prompt = ApplePrompt.fit(turns, budget: allowed * ApplePrompt.charactersPerToken)

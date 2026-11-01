@@ -39,7 +39,8 @@ struct InputCutTests {
     @Test func `it cuts even when copy on select is off, which only governs what a selection does by itself`() {
         var rig = rig(
             "hello world",
-            options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false, padding: false))
+            options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false, padding: false)
+        )
         select(&rig, from: 6, to: 10)
         let effects = rig.controller.handle(.key(KeyEvent(keyCode: 0x18)), pageRows: 10)
         #expect(effects == [.copy("world")])

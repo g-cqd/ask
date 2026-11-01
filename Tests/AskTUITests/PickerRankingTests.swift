@@ -14,7 +14,8 @@ struct PickerRankingTests {
         compact | Compact the conversation.
         reload | Reload the configuration and the binary.
         resume | Resume another session.
-        """)
+        """
+    )
 
     private func names(_ query: String, in list: [SlashCommand]? = nil) -> [String] {
         PickerRanking.rank(list ?? commands, query: query).map(\.name)

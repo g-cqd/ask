@@ -55,9 +55,12 @@ struct ShellPathOrderTests {
         let missing = JobTable.unusableShellNotice(CommandEnvironment(shell: "nosuchshell"), environment: environment)
         #expect(
             missing
-                == "environment.shell \"nosuchshell\" is not used: it is not on the PATH. Commands run in \(dir)/zsh.")
+                == "environment.shell \"nosuchshell\" is not used: it is not on the PATH. Commands run in \(dir)/zsh."
+        )
         let unlisted = JobTable.unusableShellNotice(
-            CommandEnvironment(shell: "/usr/bin/python3"), environment: environment)
+            CommandEnvironment(shell: "/usr/bin/python3"),
+            environment: environment
+        )
         #expect(unlisted?.contains("not an executable shell listed in /etc/shells") == true)
         #expect(JobTable.unusableShellNotice(CommandEnvironment(shell: "zsh"), environment: environment) == nil)
         #expect(JobTable.unusableShellNotice(CommandEnvironment(), environment: environment) == nil)

@@ -11,7 +11,9 @@ struct ModelScopeTests {
     }
 
     private func facts(
-        _ project: String = "/Users/me/work/app", remotes: [String] = [], identities: [String] = []
+        _ project: String = "/Users/me/work/app",
+        remotes: [String] = [],
+        identities: [String] = []
     ) -> RepositoryFacts {
         RepositoryFacts(project: project, home: "/Users/me", remotes: remotes, identities: identities)
     }
@@ -25,7 +27,8 @@ struct ModelScopeTests {
         #expect(
             file.modelScopes == [
                 work, ModelScope(remote: "*acme/*", identity: "*@acme.com", providers: ["anthropic"])
-            ])
+            ]
+        )
         #expect(file.sets("modelScopes"))
         let configured = Configuration.defaults.applying(file, from: .file("/u/config.json"))
         #expect(configured.modelScopes.value.count == 2)
@@ -82,7 +85,8 @@ struct ModelScopeTests {
         var configuration = Configuration.defaults
         configuration.modelScopes = Configuration.Setting(
             value: [ModelScope(path: "~/other", providers: ["x"]), work, ModelScope(path: "~", providers: ["y"])],
-            source: .file("/u/config.json"))
+            source: .file("/u/config.json")
+        )
         let match = configuration.modelScope(for: facts())
         #expect(match?.number == 2)
         #expect(match?.allows("work") == true && match?.allows("Codex") == true)
@@ -99,7 +103,10 @@ struct ModelScopeTests {
         #expect(
             match.verdict(on: "anthropic", named: false)
                 == .replaced(
-                    by: "codex", "modelScopes rule 2 (path ~/work) does not allow anthropic here: using codex."))
+                    by: "codex",
+                    "modelScopes rule 2 (path ~/work) does not allow anthropic here: using codex."
+                )
+        )
     }
 
     @Test func `a refusal names the provider, the rule and what it allows`() {
@@ -107,6 +114,7 @@ struct ModelScopeTests {
         #expect(
             match.refusal(of: "anthropic")
                 == "anthropic is not allowed here: modelScopes rule 2 (path ~/work) allows only codex, work. "
-                + "Choose one of them with --provider or /model.")
+                + "Choose one of them with --provider or /model."
+        )
     }
 }

@@ -15,7 +15,9 @@ struct CommandEnvironmentJobTests {
     private let root = FileManager.default.temporaryDirectory.appending(path: "ask-env-\(UUID().uuidString)")
 
     private func run(
-        _ text: String, policy: CommandEnvironment, table: [String: String] = environment,
+        _ text: String,
+        policy: CommandEnvironment,
+        table: [String: String] = environment,
         sandbox: SandboxPolicy = .unrestricted
     ) async throws -> String {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -32,7 +34,9 @@ struct CommandEnvironmentJobTests {
 
     @Test func `a withheld variable is empty to the command and the others are given`() async throws {
         let output = try await run(
-            probe, policy: CommandEnvironment(withheld: ["SECRET_X"], withheldPrefixes: ["ANTHROPIC_"]))
+            probe,
+            policy: CommandEnvironment(withheld: ["SECRET_X"], withheldPrefixes: ["ANTHROPIC_"])
+        )
         #expect(output == "[][kept][][p]\n[exit 0]")
     }
 

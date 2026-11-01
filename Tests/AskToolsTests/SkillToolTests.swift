@@ -25,15 +25,20 @@ struct SkillToolTests {
     private func write(_ path: String, _ text: String) throws {
         let full = home + "/" + path
         try FileManager.default.createDirectory(
-            atPath: (full as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
+            atPath: (full as NSString).deletingLastPathComponent,
+            withIntermediateDirectories: true
+        )
         try text.write(toFile: full, atomically: true, encoding: .utf8)
     }
 
     private func tool() -> SkillTool {
         let known = sources.map(\.id)
         let catalog = SkillDiscovery.discover(
-            workingDirectory: home, home: home, sources: sources,
-            selection: SkillSelection(tokens: ["user", "bundled"], knownSources: known))
+            workingDirectory: home,
+            home: home,
+            sources: sources,
+            selection: SkillSelection(tokens: ["user", "bundled"], knownSources: known)
+        )
         return SkillTool(catalog: catalog, knownSources: known)
     }
 
@@ -44,12 +49,14 @@ struct SkillToolTests {
     @Test func `a skill's body comes back with where it lives, and its head does not`() async throws {
         try write(
             ".agents/skills/demo/SKILL.md",
-            "---\nname: demo\ndescription: A demo.\nallowed-tools: Read\n---\n# Demo\n\nDo the thing.\n")
+            "---\nname: demo\ndescription: A demo.\nallowed-tools: Read\n---\n# Demo\n\nDo the thing.\n"
+        )
         let output = try await run(#"{"name":"demo"}"#)
         #expect(!output.isError)
         #expect(output.content.hasPrefix("Skill: demo (agents, user)\nDirectory: "))
         #expect(
-            output.content.contains("relative to that directory") && output.content.contains("grants no permission"))
+            output.content.contains("relative to that directory") && output.content.contains("grants no permission")
+        )
         #expect(output.content.hasSuffix("# Demo\n\nDo the thing."))
         #expect(!output.content.contains("allowed-tools"))
     }
@@ -77,14 +84,16 @@ struct SkillToolTests {
         let output = try await run(#"{"name":"nope","from":"wat"}"#)
         #expect(
             output.isError && output.content.contains("No skill is called \"nope\"")
-                && output.content.contains("Available: swift."))
+                && output.content.contains("Available: swift.")
+        )
         #expect(output.content.contains("ignored: wat"))
     }
 
     @Test func `a skill that asked not to be loaded by the model is refused with a reason`() async throws {
         try write(
             ".agents/skills/quiet/SKILL.md",
-            "---\nname: quiet\ndescription: d\ndisable-model-invocation: true\n---\nb\n")
+            "---\nname: quiet\ndescription: d\ndisable-model-invocation: true\n---\nb\n"
+        )
         let output = try await run(#"{"name":"quiet"}"#)
         #expect(output.isError && output.content.contains("only loaded when the user asks"))
     }

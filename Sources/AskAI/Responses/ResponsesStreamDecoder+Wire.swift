@@ -34,8 +34,10 @@ extension ResponsesStreamDecoder {
         // A Responses error has a code and no type, and codes are worded as OpenAI's types are (`rate_limit_exceeded`).
         let kind = ProviderFailure.Kind(openAIType: named, status: status, code: named, message: message)
         return ProviderFailure(
-            kind: kind, message: message,
-            contextWindow: kind == .contextOverflow ? ProviderFailure.Kind.contextWindow(describedIn: message) : nil)
+            kind: kind,
+            message: message,
+            contextWindow: kind == .contextOverflow ? ProviderFailure.Kind.contextWindow(describedIn: message) : nil
+        )
     }
 
     /// The reasoning item in the form it is sent back: its id, its summary and its sealed content.

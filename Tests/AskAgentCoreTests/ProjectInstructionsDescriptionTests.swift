@@ -23,7 +23,8 @@ struct ProjectInstructionsDescriptionTests {
         #expect(
             ProjectInstructions.describe(files) == [
                 "Instructions loaded from /a/AGENTS.md.", "Skipped /a/b/AGENTS.md: unreadable."
-            ])
+            ]
+        )
     }
 
     @Test func `no files, no lines`() {

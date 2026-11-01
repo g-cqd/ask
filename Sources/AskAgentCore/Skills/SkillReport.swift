@@ -36,7 +36,8 @@ public struct SkillReport: Sendable {
             lines.append("searched:")
             for root in catalog.roots {
                 lines.append(
-                    "  \(root.exists ? "found  " : "absent ") \(root.source)/\(root.scope.rawValue)  \(root.path)")
+                    "  \(root.exists ? "found  " : "absent ") \(root.source)/\(root.scope.rawValue)  \(root.path)"
+                )
             }
         }
         return lines
@@ -59,7 +60,8 @@ public struct SkillReport: Sendable {
         if !skill.disallowedTools.isEmpty {
             lines.append(
                 "      disallowed tools (shown, never honoured): "
-                    + skill.disallowedTools.map(\.token).joined(separator: ", "))
+                    + skill.disallowedTools.map(\.token).joined(separator: ", ")
+            )
         }
         if skill.realFile != skill.file { lines.append("      is the file: \(skill.realFile)") }
         if !skill.models.tokens.isEmpty {

@@ -6,7 +6,11 @@ import Testing
 @Suite("A command-selected model replaces both provider and model and names its own source")
 struct ConfigurationSelectionTests {
     private let layered = Configuration.defaults.applying(
-        model: "flag-model", provider: "flag-provider", maxTurns: 9, compactAt: nil)
+        model: "flag-model",
+        provider: "flag-provider",
+        maxTurns: 9,
+        compactAt: nil
+    )
 
     @Test func `the selection pins provider and model and leaves other settings alone`() {
         let selected = layered.applying(selectedProvider: "pinned", model: "vendor/model:tag", command: "/model")

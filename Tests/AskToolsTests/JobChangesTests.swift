@@ -16,7 +16,8 @@ struct JobChangesTests {
 
     /// Reads until a list satisfies `done`: a slow reader may be shown only the newest.
     private func next(
-        _ iterator: inout AsyncStream<[JobSummary]>.AsyncIterator, until done: ([JobSummary]) -> Bool
+        _ iterator: inout AsyncStream<[JobSummary]>.AsyncIterator,
+        until done: ([JobSummary]) -> Bool
     ) async -> [JobSummary] {
         while let list = await iterator.next() {
             if done(list) { return list }
@@ -34,14 +35,16 @@ struct JobChangesTests {
             both == [
                 JobSummary(id: "job-1", command: "sleep 60", startedAt: first.startedAt, displayID: first.displayID),
                 JobSummary(id: "job-2", command: "sleep 61", startedAt: second.startedAt, displayID: second.displayID)
-            ])
+            ]
+        )
         first.stop()
         await first.ended()
         let one = await next(&iterator) { $0.count == 1 }
         #expect(
             one == [
                 JobSummary(id: "job-2", command: "sleep 61", startedAt: second.startedAt, displayID: second.displayID)
-            ])
+            ]
+        )
         second.stop()
         await second.ended()
         #expect(await next(&iterator) { $0.isEmpty } == [])

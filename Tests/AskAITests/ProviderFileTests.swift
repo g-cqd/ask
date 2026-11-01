@@ -22,7 +22,9 @@ struct ProviderFileTests {
 
     @Test func `what the file already holds is kept`() throws {
         try FileManager.default.createDirectory(
-            atPath: (path as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
+            atPath: (path as NSString).deletingLastPathComponent,
+            withIntermediateDirectories: true
+        )
         try Data(
             #"{"default":"local","providers":{"local":{"api":"openai-completions","baseUrl":"http://127.0.0.1:1/v1","models":[{"id":"x"}]}}}"#
                 .utf8
@@ -73,7 +75,9 @@ struct ProviderFileTests {
 
     @Test func `a file that is not a JSON object is left alone`() throws {
         try FileManager.default.createDirectory(
-            atPath: (path as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
+            atPath: (path as NSString).deletingLastPathComponent,
+            withIntermediateDirectories: true
+        )
         try Data("[1,2]".utf8).write(to: URL(fileURLWithPath: path))
         #expect(throws: ProviderFile.Failure.self) {
             try ProviderFile.addEndpoint(name: "x", baseURL: "https://example.com/v1", at: path)

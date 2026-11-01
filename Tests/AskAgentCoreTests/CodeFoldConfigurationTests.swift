@@ -17,11 +17,17 @@ struct CodeFoldConfigurationTests {
     @Test func `a bad choice or a length below one is refused by name`() {
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "ui.code", reason: "is \"hidden\": use \"folded\" or \"open\"")
+                path: "c.json",
+                key: "ui.code",
+                reason: "is \"hidden\": use \"folded\" or \"open\""
+            )
         ) { try parse("{ui:{code:'hidden'}}") }
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "ui.fold.codeLines", reason: "must be at least 1")
+                path: "c.json",
+                key: "ui.fold.codeLines",
+                reason: "must be at least 1"
+            )
         ) { try parse("{ui:{fold:{codeLines:0}}}") }
     }
 

@@ -9,10 +9,16 @@ struct SessionNarrowingTests {
     @Test func `narrowing the session leaves the prompt as it was`() throws {
         let narrowing = SessionNarrowing()
         let loop = AgentLoop(
-            provider: ScriptedProvider([]), tools: try ToolRegistry([]),
+            provider: ScriptedProvider([]),
+            tools: try ToolRegistry([]),
             settings: AgentSettings(
-                model: "test", maximumTokens: 1_024, systemPrompt: ["Stable prefix."], maximumTurns: 4),
-            context: ToolContext(workingDirectory: "/opt/ask-narrow", narrowing: narrowing))
+                model: "test",
+                maximumTokens: 1_024,
+                systemPrompt: ["Stable prefix."],
+                maximumTurns: 4
+            ),
+            context: ToolContext(workingDirectory: "/opt/ask-narrow", narrowing: narrowing)
+        )
         narrowing.policy = SandboxPolicy(network: .none, write: .roots([]))
         #expect(loop.request(for: [], events: { _ in }).systemPrompt == ["Stable prefix."])
         narrowing.policy = nil

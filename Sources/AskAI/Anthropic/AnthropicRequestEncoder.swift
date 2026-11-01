@@ -30,7 +30,9 @@ public enum AnthropicRequestEncoder {
     /// - Returns: the JSON body.
     public static func encode(_ request: ModelRequest, caching: Bool = true) -> [UInt8] {
         let (messages, promptEnd) = carryingPromptMarkingItsEnd(
-            request.systemPrompt, in: withoutForeignReasoning(request.messages))
+            request.systemPrompt,
+            in: withoutForeignReasoning(request.messages)
+        )
         let marks = caching ? [promptEnd, conversationEnd(messages)].compactMap { $0 } : []
         return JSONStreamWriter.streamingRequest(model: request.model, maxTokens: request.maxTokens) { writer in
             encodeThinking(request.thinking, into: &writer)
@@ -55,7 +57,8 @@ public enum AnthropicRequestEncoder {
 
     /// The messages with the prompt moved in, and where its last block landed.
     private static func carryingPromptMarkingItsEnd(
-        _ prompt: [String], in messages: [ModelMessage]
+        _ prompt: [String],
+        in messages: [ModelMessage]
     ) -> (messages: [ModelMessage], promptEnd: (message: Int, block: Int)?) {
         guard !prompt.isEmpty else { return (messages, nil) }
         let promptBlocks = prompt.map(RequestBlock.text)

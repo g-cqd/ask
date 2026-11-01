@@ -18,7 +18,8 @@ struct HomePathTests {
             "wrote /Users/gigi/a.txt and (/Users/gigi/b) then \"/Users/gigi/c\"; not /Users/gigi2/x or /tmp/Users/gigi/y or /Users/gigix"
         #expect(
             HomePath.abbreviate(text, home: home)
-                == "wrote ~/a.txt and (~/b) then \"~/c\"; not /Users/gigi2/x or /tmp/Users/gigi/y or /Users/gigix")
+                == "wrote ~/a.txt and (~/b) then \"~/c\"; not /Users/gigi2/x or /tmp/Users/gigi/y or /Users/gigix"
+        )
         #expect(HomePath.abbreviate("a=/Users/gigi/x:/Users/gigi/y", home: home) == "a=~/x:~/y")
     }
 
@@ -27,7 +28,9 @@ struct HomePathTests {
             #expect(HomePath.abbreviate("/Users/gigi/a /x", home: none) == "/Users/gigi/a /x")
         }
         #expect(
-            HomePath.abbreviate("/Users/gigi/a", home: "/Users/gigi/") == "~/a", "a trailing slash on home is ignored")
+            HomePath.abbreviate("/Users/gigi/a", home: "/Users/gigi/") == "~/a",
+            "a trailing slash on home is ignored"
+        )
     }
 
     private func screen(_ updates: [ConversationUpdate]) -> ScreenController {
@@ -48,7 +51,8 @@ struct HomePathTests {
             controller.state.transcript.items == [
                 .notice("Configuration read from ~/.config/ask/config.json", isError: false),
                 .notice("session ~/s.jsonl", isError: false)
-            ])
+            ]
+        )
         controller.handle(.askApproval(id: 1, question: "Write /Users/gigi/x?"))
         #expect(controller.state.pendingApproval?.question == "Write ~/x?")
     }
@@ -56,10 +60,19 @@ struct HomePathTests {
     @Test func `a tool's path in its header shows ~, but a command, its input and the output stay as they were`() {
         let controller = screen([
             .toolStarted(
-                name: "read", summary: "/Users/gigi/a.swift", id: "r", fullInput: "{\"path\":\"/Users/gigi/a.swift\"}"),
+                name: "read",
+                summary: "/Users/gigi/a.swift",
+                id: "r",
+                fullInput: "{\"path\":\"/Users/gigi/a.swift\"}"
+            ),
             .toolFinished(.succeeded, output: "let home = \"/Users/gigi\"", id: "r"),
             .toolStarted(
-                name: "shell", summary: "", id: "c", fullInput: "ls /Users/gigi/src", command: ToolCommand()),
+                name: "shell",
+                summary: "",
+                id: "c",
+                fullInput: "ls /Users/gigi/src",
+                command: ToolCommand()
+            ),
             .toolFinished(.succeeded, output: "/Users/gigi/src/a", id: "c")
         ])
         let items = controller.state.transcript.items
@@ -69,7 +82,8 @@ struct HomePathTests {
         }
         #expect(
             summary == "~/a.swift" && output == "let home = \"/Users/gigi\""
-                && input == "{\"path\":\"/Users/gigi/a.swift\"}")
+                && input == "{\"path\":\"/Users/gigi/a.swift\"}"
+        )
         guard case .tool(_, _, _, let shellOutput, let command) = items[1] else {
             Issue.record("no shell")
             return

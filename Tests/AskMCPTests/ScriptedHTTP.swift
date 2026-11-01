@@ -19,7 +19,8 @@ final class ScriptedHTTP: HTTPTransport {
     }
 
     private let state = Mutex<(seen: [Seen], waiters: [(count: Int, continuation: CheckedContinuation<Void, Never>)])>(
-        ([], []))
+        ([], [])
+    )
     private let handler: Mutex<@Sendable (Seen) async throws -> HTTPStreamingResponse>
 
     init(

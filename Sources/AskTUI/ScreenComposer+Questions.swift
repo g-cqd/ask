@@ -94,10 +94,13 @@ extension ScreenComposer {
                 let gap = String(repeating: " ", count: widest - UnicodeWidth.displayWidth(of: choice.label))
                 var line = Line(
                     text: clipped(start + (choice.detail.map { gap + "   " + $0 } ?? ""), to: columns),
-                    style: index == cursor ? Style(fg: .indexed(5), bold: true) : .default)
+                    style: index == cursor ? Style(fg: .indexed(5), bold: true) : .default
+                )
                 if choice.detail != nil {
                     let from = Swift.min(
-                        UnicodeWidth.displayWidth(of: start + gap), UnicodeWidth.displayWidth(of: line.text))
+                        UnicodeWidth.displayWidth(of: start + gap),
+                        UnicodeWidth.displayWidth(of: line.text)
+                    )
                     line.accents = [
                         Accent(columns: from ..< UnicodeWidth.displayWidth(of: line.text), style: Style(dim: true))
                     ]

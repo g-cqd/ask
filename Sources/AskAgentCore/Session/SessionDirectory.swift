@@ -8,7 +8,8 @@ public struct SessionDirectory: Sendable, Equatable {
 
     /// The directory for the project at `project`, an absolute path.
     public init(
-        project: String, environment: [String: String] = ProcessInfo.processInfo.environment,
+        project: String,
+        environment: [String: String] = ProcessInfo.processInfo.environment,
         home: String = NSHomeDirectory()
     ) {
         path = Self.stateRoot(environment: environment, home: home) + "/sessions/" + Self.projectName(project)
@@ -16,7 +17,8 @@ public struct SessionDirectory: Sendable, Equatable {
 
     /// ask's state directory: `$XDG_STATE_HOME/ask`, else `~/.local/state/ask`. Sessions live under it.
     public static func stateRoot(
-        environment: [String: String] = ProcessInfo.processInfo.environment, home: String = NSHomeDirectory()
+        environment: [String: String] = ProcessInfo.processInfo.environment,
+        home: String = NSHomeDirectory()
     ) -> String {
         let state = environment["XDG_STATE_HOME"].flatMap { $0.hasPrefix("/") ? $0 : nil } ?? home + "/.local/state"
         return state + "/ask"
@@ -28,7 +30,10 @@ public struct SessionDirectory: Sendable, Equatable {
     public func create() throws {
         let manager = FileManager.default
         try manager.createDirectory(
-            atPath: path, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+            atPath: path,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         let sessions = (path as NSString).deletingLastPathComponent
         for owned in [path, sessions, (sessions as NSString).deletingLastPathComponent] {
             try? manager.setAttributes([.posixPermissions: 0o700], ofItemAtPath: owned)

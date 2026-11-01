@@ -16,7 +16,11 @@ struct ScreenExitTests {
         let (resizes, done) = AsyncStream<Void>.makeStream()
         done.finish()
         return try await runInteractiveScreen(
-            on: connection, conversation: conversation, label: "m", resizes: resizes)
+            on: connection,
+            conversation: conversation,
+            label: "m",
+            resizes: resizes
+        )
     }
 
     @Test func `a request to exit is remembered by the controller, and nothing closes before it is made`() {

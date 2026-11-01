@@ -13,12 +13,18 @@ enum MCPToolParsing {
             : nil
         let hints = element["annotations"]
         return MCPTool(
-            name: name, title: element["title"].string, description: element["description"].string ?? "",
+            name: name,
+            title: element["title"].string,
+            description: element["description"].string ?? "",
             inputSchema: schema ?? (try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8))),
             annotations: MCPToolAnnotations(
-                readOnly: hints["readOnlyHint"].bool, destructive: hints["destructiveHint"].bool,
-                idempotent: hints["idempotentHint"].bool, openWorld: hints["openWorldHint"].bool),
-            hasOutputSchema: element["outputSchema"].isObject)
+                readOnly: hints["readOnlyHint"].bool,
+                destructive: hints["destructiveHint"].bool,
+                idempotent: hints["idempotentHint"].bool,
+                openWorld: hints["openWorldHint"].bool
+            ),
+            hasOutputSchema: element["outputSchema"].isObject
+        )
     }
 
     /// A `tools/call` result, read from the object the envelope already parsed (it is always an object there).
@@ -27,8 +33,10 @@ enum MCPToolParsing {
         root["content"].forEachElement { content.append(block($0)) }
         let structured = root["structuredContent"]
         return MCPToolResult(
-            content: content, structuredContent: structured.isObject ? structured.withRawJSONBytes { Array($0) } : nil,
-            isError: root["isError"].bool ?? false)
+            content: content,
+            structuredContent: structured.isObject ? structured.withRawJSONBytes { Array($0) } : nil,
+            isError: root["isError"].bool ?? false
+        )
     }
 
     /// One block of a result.
@@ -42,13 +50,17 @@ enum MCPToolParsing {
                 return .audio(mimeType: element["mimeType"].string ?? "", base64: element["data"].string ?? "")
             case "resource_link":
                 return .resourceLink(
-                    uri: element["uri"].string ?? "", name: element["name"].string, mimeType: element["mimeType"].string
+                    uri: element["uri"].string ?? "",
+                    name: element["name"].string,
+                    mimeType: element["mimeType"].string
                 )
             case "resource":
                 let resource = element["resource"]
                 return .resource(
-                    uri: resource["uri"].string ?? "", mimeType: resource["mimeType"].string,
-                    text: resource["text"].string)
+                    uri: resource["uri"].string ?? "",
+                    mimeType: resource["mimeType"].string,
+                    text: resource["text"].string
+                )
             default: return .unknown(type: type)
         }
     }

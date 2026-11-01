@@ -19,7 +19,11 @@ struct QueuedBlockTests {
         var controller = running()
         _ = controller.queue("then fix the tests", followUp: false)
         let rows = ScreenComposer.lines(
-            in: controller.state.transcript, at: 1, columns: 40, style: controller.state.blocks)
+            in: controller.state.transcript,
+            at: 1,
+            columns: 40,
+            style: controller.state.blocks
+        )
         let row = try #require(rows.first { $0.text.contains("then fix") })
         let frame = try #require(controller.state.transcript.spinnerStyle.frames.first)
         #expect(row.text.contains(frame + " · then fix the tests"))
@@ -33,7 +37,10 @@ struct QueuedBlockTests {
         _ = controller.queue(String(repeating: "word ", count: 12), followUp: true)
         let rows =
             ScreenComposer.lines(
-                in: controller.state.transcript, at: 1, columns: 30, style: controller.state.blocks
+                in: controller.state.transcript,
+                at: 1,
+                columns: 30,
+                style: controller.state.blocks
             )
             .filter { !$0.text.allSatisfy(\.isWhitespace) }
         #expect(rows.count > 1)
@@ -55,7 +62,11 @@ struct QueuedBlockTests {
         controller.handle(.runEnded)
         #expect(controller.state.editor.text.contains("later"))
         let rows = ScreenComposer.lines(
-            in: controller.state.transcript, at: 1, columns: 40, style: controller.state.blocks)
+            in: controller.state.transcript,
+            at: 1,
+            columns: 40,
+            style: controller.state.blocks
+        )
         #expect(rows.contains { $0.text.contains("↩ · later") })
         #expect(controller.state.transcript.progress[1]?.ended != nil)
     }
@@ -83,7 +94,9 @@ struct QueuedBlockTests {
             let theme = ScreenTheme(page: page)
             let user = blueness(theme.tint(for: .user("x")), page: page)
             let tool = blueness(
-                theme.tint(for: .tool(name: "t", summary: "", status: .running, output: "")), page: page)
+                theme.tint(for: .tool(name: "t", summary: "", status: .running, output: "")),
+                page: page
+            )
             #expect(user > tool + 3, "\(page): user \(user) against running tool \(tool)")
             #expect(abs(tool) <= 2, "\(page): a running tool is grey, not tinted by a hue (\(tool))")
         }

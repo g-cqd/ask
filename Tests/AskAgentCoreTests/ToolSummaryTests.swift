@@ -17,7 +17,8 @@ struct ToolSummaryTests {
 
     @Test func `the model's questions are shown as the first question, and how many more`() {
         #expect(
-            summary(#"{"questions":[{"question":"What should change?","header":"Scope"}]}"#) == "What should change?")
+            summary(#"{"questions":[{"question":"What should change?","header":"Scope"}]}"#) == "What should change?"
+        )
         #expect(
             summary(#"{"questions":[{"question":"A?","header":"a"},{"question":"B?","header":"b"}]}"#) == "A? (+1 more)"
         )

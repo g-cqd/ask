@@ -31,7 +31,8 @@ struct ModelStreamTests {
             ModelStream.after {
                 order.withLock { $0.append("prepared") }
                 return source(["a", "b", "c"])
-            })
+            }
+        )
         #expect(result.texts == ["a", "b", "c"] && result.failure == nil)
         #expect(order.withLock { $0 } == ["prepared"])
     }

@@ -32,7 +32,9 @@ public final class MCPHub: Sendable {
     ///     session's hub. A one-shot run's connects at once.
     ///   - transport: how a server's transport is made; ``standardTransport(userAgent:)`` for real ones.
     public init(
-        environment: [String: String], connectsOnFirstNeed: Bool = false, transport: @escaping MCPHost.TransportFactory
+        environment: [String: String],
+        connectsOnFirstNeed: Bool = false,
+        transport: @escaping MCPHost.TransportFactory
     ) {
         self.environment = environment
         self.transport = transport
@@ -70,8 +72,12 @@ public final class MCPHub: Sendable {
             state.servers.isEmpty
             ? nil
             : MCPHost(
-                servers: state.servers, live: live, environment: environment, transport: transport,
-                forwarding: { sink.yield($0) })
+                servers: state.servers,
+                live: live,
+                environment: environment,
+                transport: transport,
+                forwarding: { sink.yield($0) }
+            )
         state.host = next
         state.chain = Task {
             await before?.value

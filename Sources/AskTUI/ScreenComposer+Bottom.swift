@@ -15,8 +15,14 @@ extension ScreenComposer {
     ///   - buffer: where the rows go.
     /// - Returns: where the cursor belongs, in the prompt.
     mutating func writeBottom(
-        panel: [Line], status: Line?, picker: [Line], editor: PromptLayout.Frame, rule: Line? = nil,
-        inputStyle: Style = .default, from row: Int, into buffer: inout ScreenBuffer
+        panel: [Line],
+        status: Line?,
+        picker: [Line],
+        editor: PromptLayout.Frame,
+        rule: Line? = nil,
+        inputStyle: Style = .default,
+        from row: Int,
+        into buffer: inout ScreenBuffer
     ) -> (row: Int, column: Int) {
         var next = row
         if let rule {
@@ -37,8 +43,10 @@ extension ScreenComposer {
                 }
             write(
                 Line(text: text, style: inputStyle, accents: accents),
-                highlight: editor.highlights.isEmpty ? nil : editor.highlights[offset], row: next + offset,
-                into: &buffer)
+                highlight: editor.highlights.isEmpty ? nil : editor.highlights[offset],
+                row: next + offset,
+                into: &buffer
+            )
         }
         var below = next + editor.lines.count
         if let rule {

@@ -10,7 +10,9 @@ enum ModelTable {
         NamedConnections.report(full.notices)
         let filtering = !showAll && ModelFilter.onlyUseful()
         let snapshot = CatalogSnapshot(
-            models: ModelUsefulness.shown(full.models, onlyUseful: filtering), notices: full.notices)
+            models: ModelUsefulness.shown(full.models, onlyUseful: filtering),
+            notices: full.notices
+        )
         defer { reportHidden(full.models, filtering: filtering) }
         let efforts = snapshot.models.contains { !$0.reasoningLevels.isEmpty }
         let modes = snapshot.models.contains { $0.supportsThinking != nil || !$0.thinkingModes.isEmpty }

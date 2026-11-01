@@ -18,9 +18,11 @@ struct SidebarTests {
     private func rig(columns: Int = 100, sidebar: Bool = true, runners: [RunnerInfo] = SidebarTests.jobs) -> PointerRig
     {
         var rig = PointerRig(
-            columns: columns, rows: 20,
+            columns: columns,
+            rows: 20,
             options: ScreenOptions(sidebar: sidebar, prompt: "ask> ", tint: false, separator: false, padding: false),
-            lines: [Self.long, "short"])
+            lines: [Self.long, "short"]
+        )
         rig.controller.handle(.runners(runners))
         rig.draw()
         return rig
@@ -41,7 +43,8 @@ struct SidebarTests {
         let rig = rig(sidebar: false)
         #expect(
             dividerColumn(rig) == nil && rig.controller.frame.transcriptColumns == 100
-                && rig.controller.frame.sidebarIDs.isEmpty)
+                && rig.controller.frame.sidebarIDs.isEmpty
+        )
     }
 
     @Test
@@ -98,24 +101,30 @@ struct SidebarTests {
         press(0x0D, &rig)
         #expect(
             rig.controller.state.transcript.items.contains(
-                .notice("The sidebar needs 70 columns; this screen has 60.", isError: false)))
+                .notice("The sidebar needs 70 columns; this screen has 60.", isError: false)
+            )
+        )
     }
 
     @Test func `the strip, the sidebar and the count are one tree: a change shows in all three`() {
         var rig = rig()
         rig.controller.state.runnersOpen = true
         rig.controller.handle(
-            .runners(Self.jobs + [RunnerInfo(name: "job-3", detail: "make", state: .waitingForApproval)]))
+            .runners(Self.jobs + [RunnerInfo(name: "job-3", detail: "make", state: .waitingForApproval)])
+        )
         rig.draw()
         let all = (0 ..< 20).map { rig.text(row: $0) }.joined(separator: "\n")
         #expect(
-            all.components(separatedBy: "job-3  make").count == 3, "the sidebar and the strip")
+            all.components(separatedBy: "job-3  make").count == 3,
+            "the sidebar and the strip"
+        )
         #expect(all.contains("3 jobs"))
         rig.controller.handle(.runners([Self.jobs[0]]))
         rig.draw()
         #expect(
             !(0 ..< 20).map { rig.text(row: $0) }.joined().contains("job-3")
-                && rig.controller.frame.sidebarIDs == ["job-1"])
+                && rig.controller.frame.sidebarIDs == ["job-1"]
+        )
     }
 
     @Test func `Down enters it with the strip closed, the selected row is bold, and Enter focuses that runner`() {
@@ -133,7 +142,8 @@ struct SidebarTests {
         let column = rig.controller.frame.transcriptColumns + 3
         #expect(rig.click(row: 5, col: column).isEmpty)
         #expect(
-            rig.click(row: 0, col: rig.controller.frame.transcriptColumns).isEmpty && rig.controller.state.lane == nil)
+            rig.click(row: 0, col: rig.controller.frame.transcriptColumns).isEmpty && rig.controller.state.lane == nil
+        )
         #expect(rig.click(row: 1, col: column) == [.readRunnerOutput(id: "job-2")])
     }
 

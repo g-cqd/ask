@@ -6,24 +6,36 @@ public struct CopilotAuthClient: Sendable {
     public init(transport: any HTTPTransport) { http = CopilotHTTP(transport: transport) }
 
     public func exchange(
-        githubToken: String, machineID: String, deviceID: String, now: Double
+        githubToken: String,
+        machineID: String,
+        deviceID: String,
+        now: Double
     ) async throws(SignInError) -> CopilotCredentials {
         guard SignInSecret.isValid(githubToken), now.isFinite else { throw .invalidResponse("GitHub grant") }
         let envelope = try await http.json(
             HTTPRequest(
-                url: URL(string: "https://api.github.com/copilot_internal/v2/token")!, method: "GET",
+                url: URL(string: "https://api.github.com/copilot_internal/v2/token")!,
+                method: "GET",
                 headers: [
                     ("authorization", "token \(githubToken)"), ("accept", "application/json"),
                     ("user-agent", CopilotProtocol.userAgent), ("x-github-api-version", "2025-04-01")
                 ],
-                body: [], allowsRedirects: false), as: Envelope.self)
+                body: [],
+                allowsRedirects: false
+            ),
+            as: Envelope.self
+        )
         guard SignInSecret.isValid(envelope.token), envelope.expires_at > 0,
             (1 ... 86_400).contains(envelope.refresh_in), (now + Double(envelope.refresh_in)).isFinite
         else { throw .invalidResponse("Copilot token envelope") }
         let api = try CopilotProtocol.endpoint(envelope.endpoints?.api ?? CopilotProtocol.defaultAPI)
         return try CopilotCredentials(
-            githubToken: githubToken, accessToken: envelope.token, expiresAt: now + Double(envelope.refresh_in),
-            apiURL: api.absoluteString, machineID: machineID, deviceID: deviceID
+            githubToken: githubToken,
+            accessToken: envelope.token,
+            expiresAt: now + Double(envelope.refresh_in),
+            apiURL: api.absoluteString,
+            machineID: machineID,
+            deviceID: deviceID
         )
         .validated()
     }

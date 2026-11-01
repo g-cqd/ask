@@ -56,7 +56,11 @@ struct RenderThreadScreenTests {
         done.finish()
         let screen = Task {
             try await runInteractiveScreen(
-                on: connection, conversation: Prompts(sink: sink), label: "m", resizes: resizes)
+                on: connection,
+                conversation: Prompts(sink: sink),
+                label: "m",
+                resizes: resizes
+            )
         }
 
         connection.waitUntilStalled()  // the first frame is in a write that will not return
@@ -75,7 +79,12 @@ struct RenderThreadScreenTests {
         done.finish()
 
         try await runInteractiveScreen(
-            on: connection, conversation: StubConversation(), label: "m", notices: ["the notice"], resizes: resizes)
+            on: connection,
+            conversation: StubConversation(),
+            label: "m",
+            notices: ["the notice"],
+            resizes: resizes
+        )
 
         let output = String(decoding: connection.writtenOutput, as: UTF8.self)
         let noticeAt = try #require(output.range(of: "the notice"))

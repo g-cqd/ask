@@ -8,7 +8,10 @@ extension MCPConnection {
     /// Time running out and being cancelled both tell the server the request is abandoned and then stop waiting, because a server
     /// that was told may carry on all the same, and its late answer is dropped.
     func request(
-        _ method: String, params: [UInt8]?, timeout: Duration, beforeStart: Bool = false
+        _ method: String,
+        params: [UInt8]?,
+        timeout: Duration,
+        beforeStart: Bool = false
     ) async throws(MCPError) -> JSON {
         guard !Task.isCancelled else { throw .cancelled }
         let id = try register(method, beforeStart: beforeStart, timeout: timeout)

@@ -6,7 +6,9 @@ import Testing
 struct EnvironmentShellConfigurationTests {
     private func parse(_ shell: String, project: Bool = false) throws -> EnvironmentSection? {
         try ConfigurationFile.parse(
-            Array(#"{"environment": {"shell": "\#(shell)"}}"#.utf8), path: "c.json", isProject: project
+            Array(#"{"environment": {"shell": "\#(shell)"}}"#.utf8),
+            path: "c.json",
+            isProject: project
         )
         .environment
     }

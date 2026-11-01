@@ -19,7 +19,10 @@ struct PointerRig {
     var clock = ContinuousClock.now
 
     init(
-        columns: Int = 30, rows: Int = 12, options: ScreenOptions = .legacy, lines: [String] = [],
+        columns: Int = 30,
+        rows: Int = 12,
+        options: ScreenOptions = .legacy,
+        lines: [String] = [],
         updates: [ConversationUpdate] = []
     ) {
         frames = FrameBox()
@@ -40,7 +43,11 @@ struct PointerRig {
     /// One mouse report, at zero-based cells, then a new frame.
     @discardableResult
     mutating func mouse(
-        _ button: MouseButton, _ kind: MouseEventKind, row: Int, col: Int, after delay: Duration = .zero
+        _ button: MouseButton,
+        _ kind: MouseEventKind,
+        row: Int,
+        col: Int,
+        after delay: Duration = .zero
     ) -> [ScreenController.Effect] {
         clock = clock.advanced(by: delay)
         let event = MouseEvent(button: button, row: row + 1, col: col + 1, kind: kind)
@@ -88,7 +95,8 @@ struct PointerRig {
     /// What a row shows, as text, trailing blanks dropped.
     func text(row: Int) -> String {
         var line = String(
-            (0 ..< buffer.columns).compactMap { buffer[row, $0].isContinuation ? nil : buffer[row, $0].character })
+            (0 ..< buffer.columns).compactMap { buffer[row, $0].isContinuation ? nil : buffer[row, $0].character }
+        )
         while let last = line.last, last.isWhitespace { line.removeLast() }
         return line
     }

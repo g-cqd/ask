@@ -46,7 +46,8 @@ public struct WriteTool: ArgumentTool {
             return try await EditTool()
                 .run(
                     .init(path: arguments.path, oldText: oldText, newText: newText, replaceAll: arguments.replaceAll),
-                    in: context)
+                    in: context
+                )
         }
 
         guard let payload = arguments.content ?? arguments.newText else {

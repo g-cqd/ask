@@ -9,11 +9,15 @@ import Testing
 @Suite("The file picker asks for the files, lists them, and inserts without sending")
 struct FilePickerControllerTests {
     private static let listing = ProjectFiles(
-        paths: ["Package.swift", "README.md", "docs/readme-notes.md", "Sources/AskTUI/Transcript.swift"], hidden: 2)
+        paths: ["Package.swift", "README.md", "docs/readme-notes.md", "Sources/AskTUI/Transcript.swift"],
+        hidden: 2
+    )
 
     private func controller(loaded: Bool = true) -> ScreenController {
         var screen = ScreenController(
-            label: "m", commands: [SlashCommand(name: "config", summary: "Show the settings.")])
+            label: "m",
+            commands: [SlashCommand(name: "config", summary: "Show the settings.")]
+        )
         if loaded { screen.handle(.files(Self.listing)) }
         return screen
     }
@@ -53,7 +57,8 @@ struct FilePickerControllerTests {
         type("@re", into: &typed)
         #expect(
             press(Key.enter.rawValue, into: &typed) == [.startRun("@re")],
-            "Enter is an ordinary Enter with nothing to choose")
+            "Enter is an ordinary Enter with nothing to choose"
+        )
     }
 
     @Test func `the listing arriving fills the picker the user is waiting at`() {
@@ -77,7 +82,8 @@ struct FilePickerControllerTests {
         press(Key.down.rawValue, into: &screen)
         #expect(press(Key.enter.rawValue, into: &screen).isEmpty)
         #expect(
-            screen.state.editor.text == "@docs/readme-notes.md " && screen.state.picker == nil && !screen.state.running)
+            screen.state.editor.text == "@docs/readme-notes.md " && screen.state.picker == nil && !screen.state.running
+        )
         var tab = controller()
         type("@trans", into: &tab)
         #expect(press(Key.tab.rawValue, into: &tab).isEmpty)

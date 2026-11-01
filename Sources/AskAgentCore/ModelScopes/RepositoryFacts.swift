@@ -34,8 +34,11 @@ public struct RepositoryFacts: Sendable, Equatable {
         let local = repository.map { GitConfigFile.read($0.shared + "/config", context: context) } ?? GitConfigFile()
         merged.merge(local)
         return RepositoryFacts(
-            project: project, home: home, remotes: local.remotes,
-            identities: [merged.email, merged.name].compactMap { $0 })
+            project: project,
+            home: home,
+            remotes: local.remotes,
+            identities: [merged.email, merged.name].compactMap { $0 }
+        )
     }
 
     /// The git directory of the repository `folder` is in, and the one it shares its config with: the same `.git` folder, or for

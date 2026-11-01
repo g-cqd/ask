@@ -50,6 +50,10 @@ public enum AppleModel {
     /// The model as a catalog entry, for the model list and for sizing a run.
     public static var catalogEntry: CatalogModel {
         CatalogModel(
-            id: id, contextWindow: contextWindow, maxOutputTokens: maximumOutputTokens, supportsThinking: false)
+            id: id,
+            contextWindow: contextWindow,
+            maxOutputTokens: maximumOutputTokens,
+            supportsThinking: false
+        )
     }
 }

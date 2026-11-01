@@ -8,15 +8,30 @@ struct ThinkingControlTests {
     private static let codex = ResolvedModel(provider: .codex, model: "gpt-6.1-sol")
     private static let responses = ResolvedModel(
         provider: .openAIResponses(
-            name: "api", baseURL: URL(string: "https://example.test/v1")!, apiKey: nil, headers: [:]), model: "m")
+            name: "api",
+            baseURL: URL(string: "https://example.test/v1")!,
+            apiKey: nil,
+            headers: [:]
+        ),
+        model: "m"
+    )
     private static let adaptive = CatalogModel(
-        id: "native", reasoningLevels: ["low", "medium", "high", "xhigh", "max"], supportsThinking: true,
-        thinkingModes: [.adaptive, .betweenTools])
+        id: "native",
+        reasoningLevels: ["low", "medium", "high", "xhigh", "max"],
+        supportsThinking: true,
+        thinkingModes: [.adaptive, .betweenTools]
+    )
 
     @Test func `default means no request override on every protocol`() throws {
         let chat = ResolvedModel(
             provider: .openAICompatible(
-                name: "chat", baseURL: URL(string: "https://example.test/v1")!, apiKey: nil, headers: [:]), model: "m")
+                name: "chat",
+                baseURL: URL(string: "https://example.test/v1")!,
+                apiKey: nil,
+                headers: [:]
+            ),
+            model: "m"
+        )
         for model in [Self.native, Self.codex, Self.responses, chat] {
             let chosen = try ThinkingControl.select(.providerDefault, model: model, descriptor: nil, maximumTokens: 64)
             #expect(chosen == nil)
@@ -28,7 +43,11 @@ struct ThinkingControlTests {
         #expect(between == .betweenTools)
         let disabledModel = CatalogModel(id: "native", supportsThinking: true, thinkingModes: [.adaptive, .disabled])
         let disabled = try ThinkingControl.select(
-            .off, model: Self.native, descriptor: disabledModel, maximumTokens: 64)
+            .off,
+            model: Self.native,
+            descriptor: disabledModel,
+            maximumTokens: 64
+        )
         #expect(disabled == .disabled)
         let alwaysOn = CatalogModel(id: "native", supportsThinking: true, thinkingModes: [.adaptive])
         #expect(throws: ThinkingError.self) {
@@ -39,7 +58,11 @@ struct ThinkingControlTests {
     @Test(arguments: [ThinkingLevel.low, .medium, .high, .xhigh, .max])
     func `a reported native effort is used exactly`(_ level: ThinkingLevel) throws {
         let chosen = try ThinkingControl.select(
-            level, model: Self.native, descriptor: Self.adaptive, maximumTokens: 128)
+            level,
+            model: Self.native,
+            descriptor: Self.adaptive,
+            maximumTokens: 128
+        )
         #expect(chosen == .effort(level))
     }
 
@@ -54,7 +77,11 @@ struct ThinkingControlTests {
         let high = try ThinkingControl.select(.high, model: Self.native, descriptor: descriptor, maximumTokens: 16384)
         #expect(high == .budget(tokens: 15360, effort: nil))
         let minimal = try ThinkingControl.select(
-            .minimal, model: Self.native, descriptor: descriptor, maximumTokens: 2048)
+            .minimal,
+            model: Self.native,
+            descriptor: descriptor,
+            maximumTokens: 2048
+        )
         #expect(minimal == .budget(tokens: 1024, effort: nil))
         let max = try ThinkingControl.select(.max, model: Self.native, descriptor: descriptor, maximumTokens: 8192)
         #expect(max == .budget(tokens: 7168, effort: nil))
@@ -65,11 +92,19 @@ struct ThinkingControlTests {
 
     @Test func `a legacy model's separately reported effort accompanies the budget only when supported`() throws {
         let descriptor = CatalogModel(
-            id: "native", reasoningLevels: ["low", "high"], supportsThinking: true, thinkingModes: [.enabled])
+            id: "native",
+            reasoningLevels: ["low", "high"],
+            supportsThinking: true,
+            thinkingModes: [.enabled]
+        )
         let high = try ThinkingControl.select(.high, model: Self.native, descriptor: descriptor, maximumTokens: 32000)
         #expect(high == .budget(tokens: 16384, effort: .high))
         let medium = try ThinkingControl.select(
-            .medium, model: Self.native, descriptor: descriptor, maximumTokens: 32000)
+            .medium,
+            model: Self.native,
+            descriptor: descriptor,
+            maximumTokens: 32000
+        )
         #expect(medium == .budget(tokens: 8192, effort: nil))
     }
 
@@ -88,16 +123,24 @@ struct ThinkingControlTests {
         }
         #expect(throws: ThinkingError.missingCapabilities(model: "native")) {
             try ThinkingControl.select(
-                .high, model: Self.native,
+                .high,
+                model: Self.native,
                 descriptor: CatalogModel(
-                    id: "other", reasoningLevels: ["high"], supportsThinking: true, thinkingModes: [.adaptive]),
-                maximumTokens: 2048)
+                    id: "other",
+                    reasoningLevels: ["high"],
+                    supportsThinking: true,
+                    thinkingModes: [.adaptive]
+                ),
+                maximumTokens: 2048
+            )
         }
     }
 
     @Test func `Codex efforts follow known reported choices and off is not secretly low`() throws {
         let descriptor = CatalogModel(
-            id: "gpt-6.1-sol", reasoningLevels: ["low", "medium", "high", "xhigh", "max", "ultra"])
+            id: "gpt-6.1-sol",
+            reasoningLevels: ["low", "medium", "high", "xhigh", "max", "ultra"]
+        )
         let high = try ThinkingControl.select(.high, model: Self.codex, descriptor: descriptor, maximumTokens: 64)
         #expect(high == .effort(.high))
         #expect(throws: ThinkingError.self) {
@@ -121,7 +164,13 @@ struct ThinkingControlTests {
     @Test func `unverified chat-completions thinking is refused rather than ignored`() {
         let chat = ResolvedModel(
             provider: .openAICompatible(
-                name: "chat", baseURL: URL(string: "https://example.test/v1")!, apiKey: nil, headers: [:]), model: "m")
+                name: "chat",
+                baseURL: URL(string: "https://example.test/v1")!,
+                apiKey: nil,
+                headers: [:]
+            ),
+            model: "m"
+        )
         #expect(throws: ThinkingError.self) {
             try ThinkingControl.select(.high, model: chat, descriptor: nil, maximumTokens: 2048)
         }

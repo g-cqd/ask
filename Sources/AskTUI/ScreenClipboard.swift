@@ -12,7 +12,8 @@ struct ScreenClipboard {
     let read: @Sendable () async -> HostPasteboard.Reading
 
     init(
-        connection: any TerminalConnection, environment: [String: String],
+        connection: any TerminalConnection,
+        environment: [String: String],
         pasteboard: @escaping @Sendable (String) async -> PasteboardResult,
         read: @escaping @Sendable () async -> HostPasteboard.Reading = { .empty }
     ) {

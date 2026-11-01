@@ -17,9 +17,11 @@ struct SteeringTests {
 
     private func loop(_ provider: ScriptedProvider, turns: Int = 12) throws -> AgentLoop {
         AgentLoop(
-            provider: provider, tools: try ToolRegistry([]),
+            provider: provider,
+            tools: try ToolRegistry([]),
             settings: AgentSettings(model: "m", maximumTokens: 1_024, systemPrompt: [], maximumTurns: turns),
-            context: ToolContext(workingDirectory: "/tmp"))
+            context: ToolContext(workingDirectory: "/tmp")
+        )
     }
 
     private func prompts(_ session: SessionRecorder) -> [String] {
@@ -48,7 +50,8 @@ struct SteeringTests {
                 .allSatisfy {
                     if case .toolResult = $0 { return true }
                     return false
-                })
+                }
+        )
         #expect(
             provider.requests.last?.messages.last
                 == ModelMessage(
@@ -57,7 +60,9 @@ struct SteeringTests {
                         .toolResult(id: "a", content: "No tool is named unknown. Available: .", isError: true),
                         .toolResult(id: "b", content: "No tool is named unknown. Available: .", isError: true),
                         .text("Change direction")
-                    ]))
+                    ]
+                )
+        )
         #expect(input.remaining.isEmpty)
     }
 
@@ -123,16 +128,19 @@ struct SteeringTests {
 
     @Test func `a queued prompt that fails to persist stays queued and is never acknowledged`() async throws {
         let path = FileManager.default.temporaryDirectory.appending(
-            path: "ask-steering-write-\(UUID().uuidString).jsonl")
+            path: "ask-steering-write-\(UUID().uuidString).jsonl"
+        )
         _ = try SessionFile.create(at: FilePath(path.path), durability: .none)
         var writes = 0
         let file = SessionRecorder(
             try SessionFile.open(at: FilePath(path.path), durability: .none) {
-                bytes, descriptor throws(SessionFileError) in
+                bytes,
+                descriptor throws(SessionFileError) in
                 writes += 1
                 if writes == 3 { throw .io(.write, errno: EIO) }
                 try SessionFileIO.writeAll(bytes, to: descriptor)
-            })
+            }
+        )
         let input = PromptQueue()
         let pending = QueuedPrompt(id: 1, text: "Unsent")
         input.append(pending)

@@ -28,7 +28,9 @@ public enum SelfCheck {
     ///   - clock: what the timeout is measured on.
     /// - Returns: the outcome. Never throws: every way it can go wrong is a ``Outcome/failed(_:)``.
     public static func run(
-        _ executable: String, arguments: [String] = [], environment: [String: String]? = nil,
+        _ executable: String,
+        arguments: [String] = [],
+        environment: [String: String]? = nil,
         timeout: Duration = defaultTimeout,
         clock: any Clock<Duration> = ContinuousClock()
     ) async -> Outcome {
@@ -51,10 +53,14 @@ public enum SelfCheck {
         let options = JobProcess.groupOptions(graceSeconds: 1)
         do {
             let result = try await Subprocess.run(
-                .path(FilePath(executable)), arguments: .init(["--self-check"] + arguments),
-                environment: environment.map(JobProcess.environment) ?? .inherit, platformOptions: options,
+                .path(FilePath(executable)),
+                arguments: .init(["--self-check"] + arguments),
+                environment: environment.map(JobProcess.environment) ?? .inherit,
+                platformOptions: options,
                 input: .none,
-                output: .string(limit: 16 << 10), error: .string(limit: 16 << 10))
+                output: .string(limit: 16 << 10),
+                error: .string(limit: 16 << 10)
+            )
             if Task.isCancelled { return .failed("the check was cancelled") }
             let out = result.standardOutput.trimmingCharacters(in: .whitespacesAndNewlines)
             let err = result.standardError.trimmingCharacters(in: .whitespacesAndNewlines)

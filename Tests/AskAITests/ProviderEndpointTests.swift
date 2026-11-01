@@ -45,7 +45,8 @@ struct ProviderEndpointTests {
     @Test func `other extra headers are added after the defaults, in name order`() async throws {
         // A dictionary's order differs from run to run, so eight names make "in name order" unlikely to be luck.
         let extras = Dictionary(
-            uniqueKeysWithValues: ["x-h", "x-c", "x-a", "x-g", "x-e", "x-b", "x-f", "x-d"].map { ($0, "v") })
+            uniqueKeysWithValues: ["x-h", "x-c", "x-a", "x-g", "x-e", "x-b", "x-f", "x-d"].map { ($0, "v") }
+        )
         let request = try await sent { ProviderEndpoint(transport: $0, url: Self.base, apiKey: nil, headers: extras) }
         let names = request.headers.map(\.name)
         #expect(names.suffix(8) == ["x-a", "x-b", "x-c", "x-d", "x-e", "x-f", "x-g", "x-h"])

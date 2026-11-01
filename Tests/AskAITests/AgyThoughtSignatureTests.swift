@@ -12,7 +12,8 @@ struct AgyThoughtSignatureTests {
 
     private func firstTurn(_ blocks: [RequestBlock], model: String = "gemini-3-flash") throws -> [JSON] {
         AgyEncoderFixtures.calls(
-            in: try AgyEncoderFixtures.contents([ModelMessage(role: .assistant, blocks: blocks)], model: model)[0])
+            in: try AgyEncoderFixtures.contents([ModelMessage(role: .assistant, blocks: blocks)], model: model)[0]
+        )
     }
 
     @Test func `a signature the same model issued goes back on the very part of its call`() throws {
@@ -57,7 +58,8 @@ struct AgyThoughtSignatureTests {
         ]
         let contents = try AgyEncoderFixtures.contents(messages)
         #expect(
-            AgyEncoderFixtures.calls(in: contents[0]).first?["thoughtSignature"].string == AgyThoughtSignature.sentinel)
+            AgyEncoderFixtures.calls(in: contents[0]).first?["thoughtSignature"].string == AgyThoughtSignature.sentinel
+        )
         #expect(!String(decoding: try contents[2].encodedBytes(), as: UTF8.self).contains("thoughtSignature"))
         #expect(AgyEncoderFixtures.calls(in: contents[4]).first?["thoughtSignature"].string == "K")
     }
@@ -66,12 +68,14 @@ struct AgyThoughtSignatureTests {
         let contents = try AgyEncoderFixtures.contents([
             ModelMessage(
                 role: .assistant,
-                blocks: [AgyEncoderFixtures.carrier("LOST"), .text("then text"), try AgyEncoderFixtures.call("c1")])
+                blocks: [AgyEncoderFixtures.carrier("LOST"), .text("then text"), try AgyEncoderFixtures.call("c1")]
+            )
         ])
         let text = String(decoding: try contents[0].encodedBytes(), as: UTF8.self)
         #expect(!text.contains("LOST"))
         #expect(
-            AgyEncoderFixtures.calls(in: contents[0]).first?["thoughtSignature"].string == AgyThoughtSignature.sentinel)
+            AgyEncoderFixtures.calls(in: contents[0]).first?["thoughtSignature"].string == AgyThoughtSignature.sentinel
+        )
     }
 
     @Test func `models that do not take a signature never get one, not even a matching one`() throws {
@@ -83,10 +87,13 @@ struct AgyThoughtSignatureTests {
             let text = String(
                 decoding:
                     try AgyEncoderFixtures.contents([ModelMessage(role: .assistant, blocks: blocks)], model: model)[0]
-                    .encodedBytes(), as: UTF8.self)
+                    .encodedBytes(),
+                as: UTF8.self
+            )
             #expect(
                 !text.contains("thoughtSignature") && !text.contains("REAL") && !text.contains("skip_thought"),
-                "\(model)")
+                "\(model)"
+            )
         }
     }
 

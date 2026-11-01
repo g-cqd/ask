@@ -23,13 +23,15 @@ struct GitConfigReadsTests {
             GitConfigReads.paths(in: text, directory: "/Users/a", home: "/Users/a") == [
                 "/Users/a/Library/Mobile Documents/git/gitconfig", "/Users/a/work.gitconfig",
                 "/Users/a/.gitignore_global"
-            ])
+            ]
+        )
     }
 
     @Test func `a relative include is relative to the file that includes it`() {
         #expect(
             GitConfigReads.paths(in: "[include]\n  path = shared/config", directory: "/Users/a/.config/git", home: "/h")
-                == ["/Users/a/.config/git/shared/config"])
+                == ["/Users/a/.config/git/shared/config"]
+        )
     }
 
     @Test func `keys and section names are case-insensitive, comments are ignored`() {

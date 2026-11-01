@@ -26,8 +26,12 @@ struct JobDisplayIDsTests {
     @Test func `the short identity with or without hash addresses the same native job`() async {
         let table = JobTable()
         let job = table.start(
-            "read hold", in: ToolContext(workingDirectory: "/tmp"),
-            keepsInputOpen: true, keeping: 1000, observe: { _ in })
+            "read hold",
+            in: ToolContext(workingDirectory: "/tmp"),
+            keepsInputOpen: true,
+            keeping: 1000,
+            observe: { _ in }
+        )
         #expect(job.displayID.count == 4)
         #expect(table.job(job.id) === job)
         #expect(table.job(job.displayID) === job)

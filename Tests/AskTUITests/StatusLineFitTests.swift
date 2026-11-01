@@ -76,7 +76,8 @@ struct StatusLineFitTests {
     @Test func `at a generous width everything is said, in order`() {
         #expect(
             text(state(), columns: 200)
-                == "| · codex/gpt-6.1-sol/medium · ↑12.3k ↓456 · 12 lines below")
+                == "| · codex/gpt-6.1-sol/medium · ↑12.3k ↓456 · 12 lines below"
+        )
     }
 
     @Test func `there is no ready, and no sandbox word`() {
@@ -126,7 +127,9 @@ struct StatusLineFitTests {
         #expect(line.accents[0].style.fg == StatusLeadingMark.warning.fg)
         #expect(
             ScreenComposer.status(for: ScreenState(label: "codex/x"), columns: 80).line.accents.first?.style.fg
-                == StatusLeadingMark.protected.fg, "a sandboxed ask leads with a green check")
+                == StatusLeadingMark.protected.fg,
+            "a sandboxed ask leads with a green check"
+        )
     }
 
     @Test func `a click's columns follow the shortening`() {

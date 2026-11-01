@@ -25,8 +25,14 @@ struct MediaReadTests {
 
     private func picture(_ width: Int, _ height: Int) -> CGImage {
         let context = CGContext(
-            data: nil, width: width, height: height, bitsPerComponent: 8, bytesPerRow: 0,
-            space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)!
+            data: nil,
+            width: width,
+            height: height,
+            bitsPerComponent: 8,
+            bytesPerRow: 0,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
+        )!
         context.setFillColor(red: 0.2, green: 0.5, blue: 0.8, alpha: 1)
         context.fill(CGRect(x: 0, y: 0, width: width, height: height))
         return context.makeImage()!
@@ -114,13 +120,15 @@ struct MediaReadTests {
         let writer = try AVAssetWriter(outputURL: url, fileType: .mp4)
         let input = AVAssetWriterInput(
             mediaType: .video,
-            outputSettings: [AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: 64, AVVideoHeightKey: 48])
+            outputSettings: [AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: 64, AVVideoHeightKey: 48]
+        )
         let adaptor = AVAssetWriterInputPixelBufferAdaptor(
             assetWriterInput: input,
             sourcePixelBufferAttributes: [
                 kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32ARGB,
                 kCVPixelBufferWidthKey as String: 64, kCVPixelBufferHeightKey as String: 48
-            ])
+            ]
+        )
         writer.add(input)
         writer.startWriting()
         writer.startSession(atSourceTime: .zero)
@@ -159,12 +167,15 @@ struct MediaReadTests {
         try FileManager.default.copyItem(at: root.appending(path: "v.mp4"), to: secret.appending(path: "v.mp4"))
         let restricted = ToolContext(
             workingDirectory: root.path,
-            sandbox: SandboxPolicy(denyRead: [SandboxRule(secret.path, .subpath)]))
+            sandbox: SandboxPolicy(denyRead: [SandboxRule(secret.path, .subpath)])
+        )
         let allowed = await ReadTool().run(try JSONObject(validating: Array(#"{"path":"v.mp4"}"#.utf8)), in: restricted)
         #expect(!allowed.isError && allowed.images.count == 4, "\(allowed.content)")
         let denied = await ReadTool()
             .run(
-                try JSONObject(validating: Array(#"{"path":"secret/v.mp4"}"#.utf8)), in: restricted)
+                try JSONObject(validating: Array(#"{"path":"secret/v.mp4"}"#.utf8)),
+                in: restricted
+            )
         #expect(denied.isError && denied.images.isEmpty, "\(denied.content) \(denied.images.count)")
         let temporary = try FileManager.default.contentsOfDirectory(atPath: FileManager.default.temporaryDirectory.path)
         #expect(!temporary.contains { $0.hasPrefix("ask-read-") })

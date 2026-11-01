@@ -26,7 +26,12 @@ extension AgentConversation {
     static func configSnapshot(_ editor: ConfigEditor, trustPath: String) -> ConfigEditorSnapshot {
         let rows = editor.settings.map {
             ConfigSettingRow(
-                path: $0.path, title: $0.title, value: $0.value, choices: $0.choices, editable: $0.editable)
+                path: $0.path,
+                title: $0.title,
+                value: $0.value,
+                choices: $0.choices,
+                editable: $0.editable
+            )
         }
         var warnings = editor.warnings.map {
             "\($0) is not known to ask; it is preserved, but ask refuses the file until it is removed."
@@ -48,7 +53,10 @@ extension AgentConversation {
 
     /// Commits one row, then reads the file again and refreshes settings so the next prompt uses the validated result.
     func commitConfig(
-        scope: String, path: [String], value: String, update: @Sendable (ConversationUpdate) -> Void
+        scope: String,
+        path: [String],
+        value: String,
+        update: @Sendable (ConversationUpdate) -> Void
     ) async {
         guard let parsedScope = ConfigEditor.Scope(rawValue: scope) else {
             update(.notice("Unknown configuration scope \"\(scope)\".", isError: true))

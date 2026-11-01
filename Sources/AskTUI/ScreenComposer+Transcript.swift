@@ -17,8 +17,14 @@ extension ScreenComposer {
             map.set(
                 row: row,
                 to: RowProvenance(
-                    block: source.block, ordinal: source.block, line: source.line, firstOffset: source.offset,
-                    col: source.col, text: source.text))
+                    block: source.block,
+                    ordinal: source.block,
+                    line: source.line,
+                    firstOffset: source.offset,
+                    col: source.col,
+                    text: source.text
+                )
+            )
         }
         return map
     }
@@ -26,7 +32,11 @@ extension ScreenComposer {
     /// The transcript's rows from `rowsFromEnd` up to `rows` above it, laid out from the end as far as the window and a margin need
     /// (TerminalKit roadmap 0023): a long conversation is not laid out whole to open, to take a new width, or to be held.
     mutating func transcriptWindow(
-        _ transcript: Transcript, columns: Int, style: BlockStyle, rows: Int, rowsFromEnd: Int
+        _ transcript: Transcript,
+        columns: Int,
+        style: BlockStyle,
+        rows: Int,
+        rowsFromEnd: Int
     ) -> [Line] {
         // A different look lays every block out again.
         if style != blockStyle {
@@ -35,11 +45,20 @@ extension ScreenComposer {
         }
         let layout = { (index: Int) in
             Self.lines(
-                in: transcript, at: index, shown: transcript.shownCode(at: index), columns: columns, style: style)
+                in: transcript,
+                at: index,
+                shown: transcript.shownCode(at: index),
+                columns: columns,
+                style: style
+            )
         }
         // A window above the shown rows is known too, so a scroll up by a page always has rows to go to.
         transcriptLines.update(
-            width: columns, revisions: transcript.revisions, keepingFromEnd: rowsFromEnd + 2 * rows, layout: layout)
+            width: columns,
+            revisions: transcript.revisions,
+            keepingFromEnd: rowsFromEnd + 2 * rows,
+            layout: layout
+        )
         return transcriptLines.lines(fromEnd: rowsFromEnd, rows: rows, layout: layout)
     }
 }

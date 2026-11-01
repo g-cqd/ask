@@ -9,11 +9,19 @@ internal import Testing
 struct CredentialFileCodexTests {
     private let file = CredentialFile(
         url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-codex-\(UUID().uuidString)/ask/credentials.json"))
+            path: "ask-codex-\(UUID().uuidString)/ask/credentials.json"
+        )
+    )
     private let codex = CodexCredentials(accessToken: "at", refreshToken: "rt", expiresAt: 1234.5, accountID: "acct_1")
     private let claude = ClaudeCredentials(
-        accessToken: "sk-ant-oat-A", refreshToken: "sk-ant-ort-R", expiresAt: 1_000, refreshExpiresAt: nil,
-        accountEmail: nil, organizationName: nil, scopes: "user:inference")
+        accessToken: "sk-ant-oat-A",
+        refreshToken: "sk-ant-ort-R",
+        expiresAt: 1_000,
+        refreshExpiresAt: nil,
+        accountEmail: nil,
+        organizationName: nil,
+        scopes: "user:inference"
+    )
 
     @Test func `saved credentials load back whole`() throws {
         try file.saveCodex(codex)

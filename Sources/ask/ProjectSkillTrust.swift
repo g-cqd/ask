@@ -10,9 +10,12 @@ enum ProjectSkillTrust {
     static func skills(named names: [String]) -> (skills: [Skill], missing: [String]) {
         let trust = SkillBook.trust()
         let catalog = SkillDiscovery.discover(
-            workingDirectory: FileManager.default.currentDirectoryPath, home: NSHomeDirectory(),
-            sources: SkillSource.standard, selection: SkillSelection(tokens: ["project"], knownSources: []),
-            trust: trust)
+            workingDirectory: FileManager.default.currentDirectoryPath,
+            home: NSHomeDirectory(),
+            sources: SkillSource.standard,
+            selection: SkillSelection(tokens: ["project"], knownSources: []),
+            trust: trust
+        )
         let all = catalog.skills.filter { $0.scope == .project } + catalog.untrusted.map(\.skill)
         guard !names.isEmpty else { return (all, []) }
         let wanted = Set(names.map { $0.lowercased() })

@@ -8,9 +8,12 @@ enum DurationText {
         Duration.seconds(seconds)
             .formatted(
                 Duration.UnitsFormatStyle(
-                    allowedUnits: [.hours, .minutes, .seconds], width: .abbreviated, zeroValueUnits: .hide
+                    allowedUnits: [.hours, .minutes, .seconds],
+                    width: .abbreviated,
+                    zeroValueUnits: .hide
                 )
-                .locale(locale))
+                .locale(locale)
+            )
     }
 
     /// A clock: `1:05:00`, `2:00`, and below a minute bare seconds, or `0:30` when `minutes` asks for the minutes always.

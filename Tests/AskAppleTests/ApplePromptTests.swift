@@ -19,7 +19,9 @@ struct ApplePromptTests {
     @Test func `a tool call and its result are turns that name the tool, whose id is not repeated`() throws {
         let turns = ApplePrompt.turns([
             ModelMessage(
-                role: .assistant, blocks: [.toolCall(id: "t1", name: "read", input: try object(#"{"path":"a"}"#))]),
+                role: .assistant,
+                blocks: [.toolCall(id: "t1", name: "read", input: try object(#"{"path":"a"}"#))]
+            ),
             ModelMessage(role: .user, blocks: [.toolResult(id: "t1", content: "contents", isError: false)])
         ])
         #expect(turns[0] == #"Assistant called read with {"path":"a"}"#)
@@ -69,10 +71,13 @@ struct ApplePromptTests {
 
     @Test func `instructions keep ask's own block whole and add the others only while they fit`() {
         let result = ApplePrompt.instructions(
-            ["first block", "second", String(repeating: "z", count: 500)], budget: 100)
+            ["first block", "second", String(repeating: "z", count: 500)],
+            budget: 100
+        )
         #expect(
             result.text == "first block\n\nsecond" && result.omitted == 1,
-            "the left-out block is counted, so it can be said")
+            "the left-out block is counted, so it can be said"
+        )
     }
 
     @Test func `ask's own block is cut rather than dropped when it alone is over budget`() {

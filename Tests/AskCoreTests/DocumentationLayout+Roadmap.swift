@@ -30,7 +30,8 @@ extension DocumentationLayout {
             guard let fields = fieldsByName[entry.name] else { continue }
             guard let status = fields["status"], statuses.contains(status) else {
                 problems.append(
-                    "\(entry.name): status is \(fields["status"] ?? "missing"), not not-started, in-progress or done")
+                    "\(entry.name): status is \(fields["status"] ?? "missing"), not not-started, in-progress or done"
+                )
                 continue
             }
             for blocker in numbers(in: fields["blocked-by", default: ""]) {

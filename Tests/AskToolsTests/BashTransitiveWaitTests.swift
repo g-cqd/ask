@@ -18,7 +18,8 @@ struct BashTransitiveWaitTests {
         let output = await BashTool(jobs: jobs)
             .run(
                 input(#"{"command":"exit 7","wait_for_port":65535,"timeout_seconds":10,"shell":"/bin/bash"}"#),
-                in: context)
+                in: context
+            )
         #expect(output == .error("[exit 7]"))
         #expect(jobs.summaries.isEmpty)
     }
@@ -29,7 +30,8 @@ struct BashTransitiveWaitTests {
             input(
                 #"{"command":"echo step1; echo step2_ready; read hold","wait_for_output":"step2_ready","timeout_seconds":5,"shell":"/bin/bash"}"#
             ),
-            in: context)
+            in: context
+        )
         #expect(!output.isError)
         #expect(output.content.contains("step2_ready"))
         #expect(output.content.contains("still running"))

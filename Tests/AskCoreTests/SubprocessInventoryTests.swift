@@ -33,7 +33,9 @@ struct SubprocessInventoryTests {
         var offenders: [String] = []
         var used: Set<String> = []
         let walker = FileManager.default.enumerator(
-            at: root.appending(path: "Sources"), includingPropertiesForKeys: nil)
+            at: root.appending(path: "Sources"),
+            includingPropertiesForKeys: nil
+        )
         for case let url as URL in walker ?? FileManager.default.enumerator(atPath: "/")!
         where url.pathExtension == "swift" {
             let text = try String(contentsOf: url, encoding: .utf8)
@@ -54,6 +56,7 @@ struct SubprocessInventoryTests {
         )
         #expect(
             used == Set(Self.inventory.keys),
-            "Inventory entries that start nothing any more: \(Set(Self.inventory.keys).subtracting(used))")
+            "Inventory entries that start nothing any more: \(Set(Self.inventory.keys).subtracting(used))"
+        )
     }
 }

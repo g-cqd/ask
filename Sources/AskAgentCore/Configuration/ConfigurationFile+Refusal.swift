@@ -22,7 +22,12 @@ extension ConfigurationFile {
         let shown =
             value.flatMap {
                 try? ConfigEditor.encoding(
-                    of: $0, pretty: false, indent: "", separator: .javaScript, trailingNewline: false)
+                    of: $0,
+                    pretty: false,
+                    indent: "",
+                    separator: .javaScript,
+                    trailingNewline: false
+                )
             }
             .map { String(decoding: $0, as: UTF8.self) }
         return .outOfRange(path: path, key: key, reason: (shown.map { "is \($0): " } ?? "") + "use \(expected)")

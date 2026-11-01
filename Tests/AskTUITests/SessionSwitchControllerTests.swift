@@ -14,7 +14,10 @@ struct SessionSwitchControllerTests {
 
     @Test func `clearing a conversation keeps the draft and the active command while removing old display state`() {
         var controller = ScreenController(
-            label: "model", commands: [SlashCommand(name: "new", summary: "New")], options: .legacy)
+            label: "model",
+            commands: [SlashCommand(name: "new", summary: "New")],
+            options: .legacy
+        )
         controller.handle(.userPrompt("Old"))
         controller.handle(.assistantText("Old answer"))
         controller.handle(.status("old usage"))
@@ -47,12 +50,17 @@ struct SessionSwitchControllerTests {
     @Test(arguments: ["new", "resume", "model"])
     func `a switch command cannot run while a turn and queued input are active`(name: String) {
         var controller = ScreenController(
-            label: "m", commands: [SlashCommand(name: name, summary: "Switch")], options: .legacy)
+            label: "m",
+            commands: [SlashCommand(name: name, summary: "Switch")],
+            options: .legacy
+        )
         _ = submit("Start", to: &controller)
         _ = submit("Queued", to: &controller)
         #expect(submit("/" + name, to: &controller).isEmpty)
         #expect(controller.state.running)
         #expect(
-            controller.handle(.runEnded) == [.startRun("Queued")], "the refused command did not remove pending input")
+            controller.handle(.runEnded) == [.startRun("Queued")],
+            "the refused command did not remove pending input"
+        )
     }
 }

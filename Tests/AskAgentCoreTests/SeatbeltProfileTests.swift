@@ -51,7 +51,8 @@ struct SeatbeltProfileTests {
     @Test func `a write scope denies all writes first, then allows its roots and scratch space`() {
         let text = SeatbeltProfile(SandboxPolicy(write: .roots(["/h/work", "/h/more"]))).text
         #expect(
-            text.contains("(deny file-write*)\n(allow file-write* (subpath (param \"W0\")) (subpath (param \"W1\"))"))
+            text.contains("(deny file-write*)\n(allow file-write* (subpath (param \"W0\")) (subpath (param \"W1\"))")
+        )
         #expect(text.contains("(literal \"/dev/null\")") && text.contains("(subpath \"/private/tmp\")"))
     }
 

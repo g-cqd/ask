@@ -13,8 +13,13 @@ public struct ClaudeCredentials: Sendable, Equatable, Codable {
 
     /// Credentials with these fields.
     public init(
-        accessToken: String, refreshToken: String, expiresAt: Double, refreshExpiresAt: Double?,
-        accountEmail: String?, organizationName: String?, scopes: String
+        accessToken: String,
+        refreshToken: String,
+        expiresAt: Double,
+        refreshExpiresAt: Double?,
+        accountEmail: String?,
+        organizationName: String?,
+        scopes: String
     ) {
         self.accessToken = accessToken
         self.refreshToken = refreshToken

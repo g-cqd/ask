@@ -12,7 +12,8 @@ struct ManualSelectionTests {
     @Test func `control C copies a selection with copy on select off and consumes it`() {
         var rig = PointerRig(
             options: ScreenOptions(copyOnSelect: false, prompt: "ask> ", tint: false, separator: false, padding: false),
-            lines: ["alpha beta"])
+            lines: ["alpha beta"]
+        )
         #expect(rig.drag(from: (9, 0), to: (9, 4)).isEmpty)
         let effects = rig.controller.handle(.key(controlC), pageRows: 10)
         #expect(effects == [.copy("alpha")])
@@ -20,7 +21,8 @@ struct ManualSelectionTests {
         #expect(rig.controller.state.editor.text.isEmpty)
         #expect(
             rig.controller.handle(.key(controlC), pageRows: 10) == [.armQuitTimer(generation: 1)],
-            "the next press only arms the quit")
+            "the next press only arms the quit"
+        )
     }
 
     @Test func `legacy control C copies during a run instead of aborting it`() {
@@ -70,6 +72,7 @@ struct ManualSelectionTests {
     private func tool() -> PointerRig {
         PointerRig(
             columns: 60,
-            updates: [.toolStarted(name: "bash", summary: "ls"), .toolFinished(.succeeded, output: "one\ntwo")])
+            updates: [.toolStarted(name: "bash", summary: "ls"), .toolFinished(.succeeded, output: "one\ntwo")]
+        )
     }
 }

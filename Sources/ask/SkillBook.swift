@@ -22,15 +22,24 @@ struct SkillBook {
         // The user's skills, a project's, and the bundled ones for `from`. A project's skill is text from a repository: discovery loads it only when
         // the user has trusted its file as it is now (`ask trust --skills`), and sets the others aside for `ask skills` to report.
         let catalog = SkillDiscovery.discover(
-            workingDirectory: workingDirectory, home: NSHomeDirectory(), sources: SkillSource.standard,
+            workingDirectory: workingDirectory,
+            home: NSHomeDirectory(),
+            sources: SkillSource.standard,
             selection: SkillSelection(
-                tokens: ["user", "project", "bundled"] + (section.sources ?? []), knownSources: known),
-            trust: Self.trust())
+                tokens: ["user", "project", "bundled"] + (section.sources ?? []),
+                knownSources: known
+            ),
+            trust: Self.trust()
+        )
         let block = SkillAdvertisement.block(
-            for: catalog, limit: section.maxAdvertised ?? SkillsSection.defaultMaxAdvertised)
+            for: catalog,
+            limit: section.maxAdvertised ?? SkillsSection.defaultMaxAdvertised
+        )
         self.init(
-            block: block, tool: catalog.skills.isEmpty ? nil : SkillTool(catalog: catalog, knownSources: known),
-            catalog: catalog)
+            block: block,
+            tool: catalog.skills.isEmpty ? nil : SkillTool(catalog: catalog, knownSources: known),
+            catalog: catalog
+        )
     }
 
     /// What the user has trusted. A store that cannot be read trusts nothing: the project's skills are then not loaded, which is the safe way to be wrong.

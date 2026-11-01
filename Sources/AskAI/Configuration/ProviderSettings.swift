@@ -108,8 +108,12 @@ public struct ProviderSettings: Sendable, Equatable {
     /// - Returns: the provider, with its endpoint and key, and the model.
     /// - Throws: a ``ProviderSettingsError`` naming what cannot be honoured.
     public func resolve(
-        provider: String?, model: String?, environment: [String: String], catalog: [CatalogModel] = [],
-        connection: ConnectionRecord? = nil, aliases: ModelAliases = .empty,
+        provider: String?,
+        model: String?,
+        environment: [String: String],
+        catalog: [CatalogModel] = [],
+        connection: ConnectionRecord? = nil,
+        aliases: ModelAliases = .empty,
         storedKeys: () throws(CredentialFileError) -> [String: String] = { [:] }
     ) throws(ProviderSettingsError) -> ResolvedModel {
         let name = selectedProvider(provider)
@@ -130,14 +134,21 @@ public struct ProviderSettings: Sendable, Equatable {
             provider: target.api == Self.openAIResponses
                 ? .openAIResponses(name: name, baseURL: url, apiKey: key, headers: headers)
                 : .openAICompatible(name: name, baseURL: url, apiKey: key, headers: headers),
-            model: chosen, contextWindow: stated?.contextWindow ?? listed?.contextWindow,
+            model: chosen,
+            contextWindow: stated?.contextWindow ?? listed?.contextWindow,
             maxOutputTokens: stated?.maxTokens ?? listed?.maxOutputTokens,
-            acceptsImages: stated?.images ?? listed?.acceptsImages, imageLimits: listed?.imageLimits)
+            acceptsImages: stated?.images ?? listed?.acceptsImages,
+            imageLimits: listed?.imageLimits
+        )
     }
 
     /// A registration must identify exactly the selected name and must not shadow configured or built-in authority.
     private func named(
-        _ connection: ConnectionRecord, name: String, model: String?, catalog: [CatalogModel], aliases: ModelAliases
+        _ connection: ConnectionRecord,
+        name: String,
+        model: String?,
+        catalog: [CatalogModel],
+        aliases: ModelAliases
     )
         throws(ProviderSettingsError) -> ResolvedModel
     {
@@ -163,7 +174,10 @@ public struct ProviderSettings: Sendable, Equatable {
     /// The key to send: the entry's own, else the preset's variable, else the key a sign-in stored. A preset that
     /// has none is an error, never a request without a key. An entry that is no preset has the key stored under its name, or none.
     func credential(
-        of name: String, entry: Entry, preset: ProviderPreset?, environment: [String: String],
+        of name: String,
+        entry: Entry,
+        preset: ProviderPreset?,
+        environment: [String: String],
         stored: () throws(CredentialFileError) -> [String: String]
     ) throws(ProviderSettingsError) -> String? {
         if let raw = entry.apiKey { return try Self.interpolate(raw, provider: name, environment: environment) }

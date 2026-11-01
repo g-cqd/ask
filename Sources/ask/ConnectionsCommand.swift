@@ -4,11 +4,13 @@ internal import AskAI
 /// Lists local names and credential presence, never remote account identities or tokens.
 struct ConnectionsCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "connections", abstract: "List named subscription connections.",
+        commandName: "connections",
+        abstract: "List named subscription connections.",
         subcommands: [
             RenameConnectionCommand.self, RemoveConnectionCommand.self, AliasConnectionCommand.self,
             UnaliasConnectionCommand.self, DefaultModelCommand.self
-        ])
+        ]
+    )
 
     func run() throws {
         let registry = NamedConnections.registry()
@@ -25,7 +27,8 @@ struct ConnectionsCommand: ParsableCommand {
             let shared = present ? try sharing(of: record, in: registry)?.summary : nil
             print(
                 "\(record.name)  \(record.provider.rawValue)  \(present ? "credentials stored" : "signed out")"
-                    + (shared.map { "  (\($0))" } ?? ""))
+                    + (shared.map { "  (\($0))" } ?? "")
+            )
         }
     }
 
@@ -41,6 +44,7 @@ struct ConnectionsCommand: ParsableCommand {
         return AccountSharing(
             connections: try registry.connections(as: identity, excluding: record),
             defaultSignIn: (try? CredentialFile.standard(environment: LaunchEnvironment.values).isSignedIn(as: identity))
-                ?? false)
+                ?? false
+        )
     }
 }

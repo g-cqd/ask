@@ -53,8 +53,14 @@ public struct SessionOutline: Sendable, Equatable {
             }
             built.append(
                 Turn(
-                    number: number, entry: entry.id, before: entry.parentID, text: SkillInvocation.shown(text),
-                    isOnActiveBranch: onPath.contains(entry.id), follows: follows))
+                    number: number,
+                    entry: entry.id,
+                    before: entry.parentID,
+                    text: SkillInvocation.shown(text),
+                    isOnActiveBranch: onPath.contains(entry.id),
+                    follows: follows
+                )
+            )
         }
         turns = built
     }

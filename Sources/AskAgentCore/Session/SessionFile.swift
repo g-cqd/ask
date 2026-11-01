@@ -51,9 +51,14 @@ public struct SessionFile: ~Copyable {
 
     /// Internal for the opening extension only; sessions are made by ``create(at:durability:)`` and ``open(at:durability:limits:)``.
     init(
-        path: FilePath, tree: SessionTree, issues: [SessionLogIssue], durability: Durability,
-        appender: FileDescriptor?, lock: consuming SessionLock,
-        calls: SessionFileCalls = .system, formatVersion: Int = SessionLog.formatVersion
+        path: FilePath,
+        tree: SessionTree,
+        issues: [SessionLogIssue],
+        durability: Durability,
+        appender: FileDescriptor?,
+        lock: consuming SessionLock,
+        calls: SessionFileCalls = .system,
+        formatVersion: Int = SessionLog.formatVersion
     ) {
         self.lock = lock
         self.calls = calls
@@ -91,7 +96,8 @@ public struct SessionFile: ~Copyable {
     /// - Throws: ``SessionFileError/tree(_:)`` for an invalid change, with nothing written, or an I/O error.
     @discardableResult
     public mutating func continuing(
-        from parent: EntryID, with payload: SessionPayload
+        from parent: EntryID,
+        with payload: SessionPayload
     ) throws(SessionFileError) -> EntryID {
         let checkpoint = tree.checkpoint
         let id: EntryID
@@ -121,7 +127,8 @@ public struct SessionFile: ~Copyable {
         tree.recordSandbox(record)
         do throws(SessionFileError) {
             try persist(
-                try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(forSandbox: record) })
+                try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(forSandbox: record) }
+            )
         } catch {
             tree.rewind(to: checkpoint)
             throw error
@@ -138,7 +145,8 @@ public struct SessionFile: ~Copyable {
             try persist(
                 try SessionFileIO.encoded { () throws(SessionLogError) in
                     try SessionLog.line(for: entry, images: images)
-                })
+                }
+            )
         } catch {
             tree.rewind(to: checkpoint)
             throw error
@@ -180,7 +188,11 @@ public struct SessionFile: ~Copyable {
         }
         let descriptor = try SessionFileIO.io(.open) {
             try FileDescriptor.open(
-                temporary, .writeOnly, options: [.create, .truncate], permissions: [.ownerReadWrite])
+                temporary,
+                .writeOnly,
+                options: [.create, .truncate],
+                permissions: [.ownerReadWrite]
+            )
         }
         do {
             try SessionFileIO.writeAll(snapshot, to: descriptor)

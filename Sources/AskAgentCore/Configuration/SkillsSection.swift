@@ -25,8 +25,10 @@ public struct SkillsSection: Sendable, Equatable, CustomStringConvertible {
     public func layered(with section: SkillsSection) -> SkillsSection {
         SkillsSection(
             // @dl:accept -- each section layers its keys the same way; the key lists are the data
-            enabled: section.enabled ?? enabled, maxAdvertised: section.maxAdvertised ?? maxAdvertised,
-            sources: section.sources ?? sources)
+            enabled: section.enabled ?? enabled,
+            maxAdvertised: section.maxAdvertised ?? maxAdvertised,
+            sources: section.sources ?? sources
+        )
     }
 
     /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.

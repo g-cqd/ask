@@ -51,7 +51,8 @@ struct TerminalColoursTests {
                 let kept = TerminalPage.contrast(page.foreground, try channels(tint)) / own
                 #expect(kept >= 0.8, "\(name): text on \(tint) keeps \(kept) of its contrast")
                 #expect(
-                    TerminalPage.contrast(try channels(tint), page.background) > 1.04, "\(name): \(tint) is visible"
+                    TerminalPage.contrast(try channels(tint), page.background) > 1.04,
+                    "\(name): \(tint) is visible"
                 )
             }
         }
@@ -93,7 +94,8 @@ struct TerminalColoursTests {
         #expect(TerminalColours(following: fixed, connection: connection) == nil)
         #expect(
             TerminalColours(following: ScreenOptions(tint: false), connection: connection) != nil,
-            "secondary text needs the page")
+            "secondary text needs the page"
+        )
     }
 
     @Test func `secondary text is never faint, and on a known page it is a grey that stays readable`() throws {

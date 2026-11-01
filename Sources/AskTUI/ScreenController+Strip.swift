@@ -71,7 +71,8 @@ extension ScreenController {
         state.sidebarOpen.toggle()
         if announcing, state.sidebarOpen, frame.columns > 0, frame.columns < Sidebar.minimumColumns {
             state.transcript.addNotice(
-                "The sidebar needs \(Sidebar.minimumColumns) columns; this screen has \(frame.columns).", isError: false
+                "The sidebar needs \(Sidebar.minimumColumns) columns; this screen has \(frame.columns).",
+                isError: false
             )
         }
         return []

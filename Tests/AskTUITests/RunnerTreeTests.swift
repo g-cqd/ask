@@ -52,7 +52,8 @@ struct RunnerTreeTests {
             rows == [
                 "a  work · running", "b  work · waiting for approval", "c  work · done",
                 "d  work · failed", "e  work · stopped"
-            ])
+            ]
+        )
     }
 
     @Test func `the status counts agents as runners and the strip and count come from the same deduplicated tree`() {
@@ -63,7 +64,8 @@ struct RunnerTreeTests {
         #expect(ScreenComposer.status(for: state).line.text == "✓ · m · 2 runners")
         #expect(
             ScreenComposer.runnerRows(for: state, available: 10, columns: 100).map(\.text)
-                == ["review  reading · running", "  job  work · running"])
+                == ["review  reading · running", "  job  work · running"]
+        )
     }
 
     @Test func `an empty tree has no rows or active count`() {

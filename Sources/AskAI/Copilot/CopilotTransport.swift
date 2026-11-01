@@ -25,10 +25,12 @@ struct CopilotTransport: HTTPTransport {
         }
         let bytes = JSONStreamWriter.object(of: [("message", message)])
         return HTTPStreamingResponse(
-            status: response.status, headers: ["content-type": "application/json"],
+            status: response.status,
+            headers: ["content-type": "application/json"],
             body: AsyncThrowingStream { stream in
                 stream.yield(bytes)
                 stream.finish()
-            })
+            }
+        )
     }
 }

@@ -12,13 +12,16 @@ struct ConfigurationChangesTests {
     @Test func `each changed setting is a line with both values and the new source`() {
         let before = Configuration.defaults.applying(ConfigurationFile(maxTurns: 40), from: .file("/u/config.json"))
         let after = before.applying(
-            ConfigurationFile(model: "haiku", maxTurns: 7, compactAt: .tokens(0)), from: .file("/p/.ask/config.json"))
+            ConfigurationFile(model: "haiku", maxTurns: 7, compactAt: .tokens(0)),
+            from: .file("/p/.ask/config.json")
+        )
         #expect(
             after.changes(from: before) == [
                 "model: default → \"haiku\" (/p/.ask/config.json)",
                 "maxTurns: 40 → 7 (/p/.ask/config.json)",
                 "compactAt: 0.75 → 0 (/p/.ask/config.json)"
-            ])
+            ]
+        )
     }
 
     @Test func `a value that stays the same but comes from elsewhere is a change of source`() {
@@ -50,7 +53,8 @@ struct ConfigurationChangesTests {
             try ConfigurationFile.parse(Array(#"{"maxTurns": 0}"#.utf8), path: "c.json")
         }
         #expect(
-            Configuration.describeTurns(Configuration.noTurnLimit) == "null" && Configuration.describeTurns(30) == "30")
+            Configuration.describeTurns(Configuration.noTurnLimit) == "null" && Configuration.describeTurns(30) == "30"
+        )
     }
 
     @Test func `unset, the turn limit is 100 in the sandbox and none outside it; set anywhere, it wins either way`()
@@ -61,7 +65,9 @@ struct ConfigurationChangesTests {
         let forty = Configuration.defaults.applying(ConfigurationFile(maxTurns: 40), from: .file("/u/config.json"))
         #expect(forty.turnLimit(sandboxed: true) == 40 && forty.turnLimit(sandboxed: false) == 40)
         let none = Configuration.defaults.applying(
-            try ConfigurationFile.parse(Array(#"{"maxTurns": "none"}"#.utf8), path: "c.json"), from: .file("c.json"))
+            try ConfigurationFile.parse(Array(#"{"maxTurns": "none"}"#.utf8), path: "c.json"),
+            from: .file("c.json")
+        )
         #expect(none.turnLimit(sandboxed: true) == Configuration.noTurnLimit)
         var problems: [String] = []
         let hundred = Configuration.defaults.applying(environment: ["ASK_MAX_TURNS": "100"], problems: &problems)

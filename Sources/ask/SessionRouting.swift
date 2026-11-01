@@ -9,7 +9,9 @@ enum SessionRouting {
             return SessionDestination(
                 connectionID: "named:" + connection.id.uuidString.lowercased(),
                 authorizationID: connection.authorizationID.uuidString.lowercased(),
-                name: connection.name, model: model.model)
+                name: connection.name,
+                model: model.model
+            )
         }
         let name: String
         switch model.provider {
@@ -21,7 +23,10 @@ enum SessionRouting {
             case .openAICompatible(let value, _, _, _), .openAIResponses(let value, _, _, _): name = value
         }
         return SessionDestination(
-            connectionID: SessionDestination.providerPrefix + name, authorizationID: nil, name: name, model: model.model
+            connectionID: SessionDestination.providerPrefix + name,
+            authorizationID: nil,
+            name: name,
+            model: model.model
         )
     }
 

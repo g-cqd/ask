@@ -7,8 +7,10 @@ internal import Foundation
 func startMCPServers(_ settings: RunSettings, jobs: JobTable, connectsOnFirstNeed: Bool = false) -> MCPHub {
     let environment = LaunchEnvironment.values
     let hub = MCPHub(
-        environment: environment, connectsOnFirstNeed: connectsOnFirstNeed,
-        transport: MCPHub.standardTransport(inheriting: environment, jobs: jobs))
+        environment: environment,
+        connectsOnFirstNeed: connectsOnFirstNeed,
+        transport: MCPHub.standardTransport(inheriting: environment, jobs: jobs)
+    )
     hub.apply(settings.configuration.mcp.value.servers)
     return hub
 }

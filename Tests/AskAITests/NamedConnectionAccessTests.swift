@@ -12,7 +12,11 @@ struct NamedConnectionAccessTests {
 
     private func expired(_ account: String) -> CodexCredentials {
         CodexCredentials(
-            accessToken: "old-" + account, refreshToken: "refresh-" + account, expiresAt: 1, accountID: account)
+            accessToken: "old-" + account,
+            refreshToken: "refresh-" + account,
+            expiresAt: 1,
+            accountID: account
+        )
     }
 
     private func tokens(_ account: String) -> String {
@@ -31,8 +35,10 @@ struct NamedConnectionAccessTests {
             defer { held.release() }
             let transport = SequencedTransport([.json(200, tokens("account_b"))])
             let fresh = try await CodexAccess(
-                file: registry.credentials(for: b), client: CodexAuthClient(transport: transport),
-                lockWait: .zero, connection: b
+                file: registry.credentials(for: b),
+                client: CodexAuthClient(transport: transport),
+                lockWait: .zero,
+                connection: b
             )
             .credentials(now: 100)
             #expect(fresh.accountID == "account_b")
@@ -52,7 +58,8 @@ struct NamedConnectionAccessTests {
             let transport = SequencedTransport([.json(200, tokens("account_b"))])
             await #expect(throws: CodexAccessError.accountChanged) {
                 try await CodexAccess(
-                    file: registry.credentials(for: record), client: CodexAuthClient(transport: transport),
+                    file: registry.credentials(for: record),
+                    client: CodexAuthClient(transport: transport),
                     connection: record
                 )
                 .credentials(now: 100)

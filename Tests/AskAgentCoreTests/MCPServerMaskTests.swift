@@ -12,13 +12,18 @@ struct MCPServerMaskTests {
 
     private func write(_ path: String, _ text: String) throws {
         try FileManager.default.createDirectory(
-            atPath: (path as NSString).deletingLastPathComponent, withIntermediateDirectories: true)
+            atPath: (path as NSString).deletingLastPathComponent,
+            withIntermediateDirectories: true
+        )
         try Data(text.utf8).write(to: URL(filePath: path))
     }
 
     private func loaded(user: String, project: String) throws -> ConfigurationLoader.Result {
         let loader = ConfigurationLoader(
-            project: root.path + "/project", configDirectory: root.path + "/config", environment: [:])
+            project: root.path + "/project",
+            configDirectory: root.path + "/config",
+            environment: [:]
+        )
         try write(loader.userPath, user)
         try write(loader.projectPath, project)
         var trust = ProjectTrust()
@@ -71,7 +76,10 @@ struct MCPServerMaskTests {
 
     @Test func `trusting a file that masks says what it changes`() throws {
         let file = try ConfigurationFile.parse(
-            Array(#"{mcp: {xcode: {enabled: false, tools: ["build"]}}}"#.utf8), path: "p.json", isProject: true)
+            Array(#"{mcp: {xcode: {enabled: false, tools: ["build"]}}}"#.utf8),
+            path: "p.json",
+            isProject: true
+        )
         #expect(file.mcp?.consent == ["xcode: changes your server: off, tools build"])
     }
 }

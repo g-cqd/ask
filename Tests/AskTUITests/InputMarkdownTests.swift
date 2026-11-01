@@ -83,7 +83,8 @@ struct InputMarkdownTests {
             .filter { visible.contains($0.0) }
         #expect(
             windowed.map(\.0) == full.map(\.0) && windowed.map(\.1) == full.map(\.1),
-            "lines \(firstLine) to \(firstLine + 12)")
+            "lines \(firstLine) to \(firstLine + 12)"
+        )
     }
 
     @Test func `the screen draws the draft exactly as typed, with the marks coloured`() {
@@ -101,7 +102,8 @@ struct InputMarkdownTests {
 
     @Test func `with Markdown off the draft is plain`() {
         var rig = PointerRig(
-            options: ScreenOptions(markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false))
+            options: ScreenOptions(markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false)
+        )
         _ = rig.controller.handle(.paste("say **hi**"), pageRows: 10)
         rig.draw()
         let row = (0 ..< rig.buffer.rows).first { rig.text(row: $0) == "ask> say **hi**" }

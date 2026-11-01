@@ -71,7 +71,8 @@ struct KeepAwakeTests {
             system.log == [
                 "begin working #1", "begin working display #2", "end #1", "end #2", "begin working #3", "end #3"
             ],
-            "and an idle change of mode begins nothing")
+            "and an idle change of mode begins nothing"
+        )
     }
 
     @Test func `an unmatched end never drops below zero or ends what was never begun`() {

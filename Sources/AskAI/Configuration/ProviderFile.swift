@@ -38,7 +38,10 @@ public enum ProviderFile {
     /// - Throws: a ``Failure``; the file is untouched when it is thrown.
     @discardableResult
     public static func addEndpoint(
-        name: String, baseURL: String, responses: Bool = false, at path: String
+        name: String,
+        baseURL: String,
+        responses: Bool = false,
+        at path: String
     ) throws(Failure) -> String {
         let lowered = name.lowercased()
         guard PlainToken.word(lowered, length: 1 ... 64, lowercase: true) else { throw .invalidName }
@@ -70,7 +73,10 @@ public enum ProviderFile {
         let directory = URL(fileURLWithPath: path).deletingLastPathComponent()
         do {
             try FileManager.default.createDirectory(
-                at: directory, withIntermediateDirectories: true, attributes: [.posixPermissions: 0o700])
+                at: directory,
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700]
+            )
             try AtomicFile.replace(URL(fileURLWithPath: path), with: bytes)
         } catch let failure as AtomicFile.Failure { throw .io(failure.code) } catch { throw .io(EIO) }
         return lowered

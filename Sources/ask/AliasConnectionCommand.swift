@@ -5,8 +5,10 @@ internal import Foundation
 /// Gives a model on one connection a name of the user's own; the server's id is what is sent.
 struct AliasConnectionCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "alias", abstract: "Give a model on a connection a name of your own.",
-        discussion: "ask connections alias work fast gpt-6-luna, then ask --provider work --model fast.")
+        commandName: "alias",
+        abstract: "Give a model on a connection a name of your own.",
+        discussion: "ask connections alias work fast gpt-6-luna, then ask --provider work --model fast."
+    )
 
     @Argument(help: "The connection.") var name: String
     @Argument(help: "The alias: letters, digits, dots, underscores and hyphens.") var alias: String
@@ -17,7 +19,8 @@ struct AliasConnectionCommand: ParsableCommand {
     // Not `--thinking`: the root command has that option, and ArgumentParser gives it to the root, silently dropping it here.
     @Option(
         name: .customLong("thinking-level"),
-        help: "A thinking level for this alias: \(ThinkingLevel.choices). --thinking and ASK_THINKING still win.")
+        help: "A thinking level for this alias: \(ThinkingLevel.choices). --thinking and ASK_THINKING still win."
+    )
     var thinking: String?
 
     func validate() throws {
@@ -36,8 +39,13 @@ struct AliasConnectionCommand: ParsableCommand {
                 .models.map(\.id) ?? []) : []
         try NamedConnections.aliases(for: record)
             .set(
-                alias, to: model, contextWindow: context, maxOutputTokens: maxOutput,
-                thinking: thinking.flatMap(ThinkingLevel.init(rawValue:)), known: known)
+                alias,
+                to: model,
+                contextWindow: context,
+                maxOutputTokens: maxOutput,
+                thinking: thinking.flatMap(ThinkingLevel.init(rawValue:)),
+                known: known
+            )
         print("\(record.name)/\(alias.lowercased()) is \(model)" + (thinking.map { ", thinking \($0)" } ?? "") + ".")
     }
 }

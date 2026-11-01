@@ -10,9 +10,13 @@ import Testing
 struct MCPSearchTests {
     private static func tool(_ name: String, _ description: String, schema: String = #"{"type":"object"}"#) -> MCPTool {
         MCPTool(
-            name: name, title: nil, description: description,
-            inputSchema: try! JSONObject(validating: Array(schema.utf8)), annotations: MCPToolAnnotations(),
-            hasOutputSchema: false)
+            name: name,
+            title: nil,
+            description: description,
+            inputSchema: try! JSONObject(validating: Array(schema.utf8)),
+            annotations: MCPToolAnnotations(),
+            hasOutputSchema: false
+        )
     }
 
     private let catalog: [MCPSearch.Candidate] = [
@@ -77,7 +81,8 @@ struct MCPSearchTests {
                     tool: Self.tool("read_memory", "Reads bytes.", schema: #"{"type":"object","required":["address"]}"#)
                 )
             ],
-            schemaBytes: 1000)
+            schemaBytes: 1000
+        )
         #expect(shown.contains("rea / read_memory") && shown.contains("Reads bytes."))
         #expect(shown.contains(#"{"type":"object","required":["address"]}"#))
     }
@@ -96,7 +101,9 @@ struct MCPSearchTests {
 
     @Test func `a description is cut to a few hundred characters`() {
         let shown = MCPSearch.describe(
-            [.init(server: "s", tool: Self.tool("t", String(repeating: "w", count: 2000)))], schemaBytes: 100)
+            [.init(server: "s", tool: Self.tool("t", String(repeating: "w", count: 2000)))],
+            schemaBytes: 100
+        )
         #expect(shown.count < 900 && shown.contains("…"))
     }
 

@@ -6,7 +6,8 @@ internal import Testing
 
 /// What the HTTP transport makes of each reply (ADR-0096): JSON, a batch, events, nothing, and every way a reply can go wrong.
 @Suite(
-    "An HTTP transport turns each kind of reply into messages, and each failure into an answer", .timeLimit(.minutes(1))
+    "An HTTP transport turns each kind of reply into messages, and each failure into an answer",
+    .timeLimit(.minutes(1))
 )
 struct HTTPMCPReplyTests {
     @Test func `a JSON reply is one message`() async throws {
@@ -70,7 +71,8 @@ struct HTTPMCPReplyTests {
         try await HTTPMCP.send(HTTPMCP.ping, on: transport)
         #expect(
             await HTTPMCP.next(&incoming)?.contains(#""id":7"#) == true,
-            "the first thing delivered is the answer to the ping")
+            "the first thing delivered is the answer to the ping"
+        )
         await transport.close()
     }
 
@@ -83,7 +85,8 @@ struct HTTPMCPReplyTests {
         try await HTTPMCP.send(HTTPMCP.ping, on: transport)
         guard
             case .response(let id, .failure(.rpc(_, let message))) = MCPEnvelope.parse(
-                Array((await HTTPMCP.next(&incoming) ?? "").utf8))
+                Array((await HTTPMCP.next(&incoming) ?? "").utf8)
+            )
         else {
             Issue.record("not an error answer")
             return
@@ -118,7 +121,8 @@ struct HTTPMCPReplyTests {
         #expect(await HTTPMCP.next(&incoming)?.contains("notifications/message") == true)
         guard
             case .response(7, .failure(.rpc(_, let message))) = MCPEnvelope.parse(
-                Array((await HTTPMCP.next(&incoming) ?? "").utf8))
+                Array((await HTTPMCP.next(&incoming) ?? "").utf8)
+            )
         else {
             Issue.record("no error for the unanswered request")
             return

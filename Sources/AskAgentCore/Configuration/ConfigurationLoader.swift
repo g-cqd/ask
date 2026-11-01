@@ -45,8 +45,13 @@ public struct ConfigurationLoader: Sendable {
     /// - Returns: the new configuration and what it was made from.
     /// - Throws: ``ConfigurationError`` for any file that exists, applies, and is not valid.
     public func load(
-        model: String? = nil, provider: String? = nil, maxTurns: Int? = nil, compactAt: CompactionThreshold? = nil,
-        network: SandboxPolicy.Network? = nil, write: PathSetting? = nil, read: PathSetting? = nil,
+        model: String? = nil,
+        provider: String? = nil,
+        maxTurns: Int? = nil,
+        compactAt: CompactionThreshold? = nil,
+        network: SandboxPolicy.Network? = nil,
+        write: PathSetting? = nil,
+        read: PathSetting? = nil,
         thinking: ThinkingLevel? = nil
     ) throws(ConfigurationError) -> Result {
         var configuration = Configuration.defaults
@@ -74,13 +79,21 @@ public struct ConfigurationLoader: Sendable {
                     notices.append("\(projectPath) is ignored: run `ask trust` here to use it.")
                 case .changed:
                     notices.append(
-                        "\(projectPath) changed since you trusted it, so it is ignored: run `ask trust` to use it.")
+                        "\(projectPath) changed since you trusted it, so it is ignored: run `ask trust` to use it."
+                    )
             }
         }
         configuration = configuration.applying(environment: environment, problems: &notices)
         configuration = configuration.applying(
-            model: model, provider: provider, maxTurns: maxTurns, compactAt: compactAt, network: network,
-            write: write, read: read, thinking: thinking)
+            model: model,
+            provider: provider,
+            maxTurns: maxTurns,
+            compactAt: compactAt,
+            network: network,
+            write: write,
+            read: read,
+            thinking: thinking
+        )
         return Result(configuration: configuration, applied: applied, notices: notices)
     }
 }

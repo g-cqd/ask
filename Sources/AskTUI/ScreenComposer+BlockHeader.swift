@@ -4,7 +4,12 @@ internal import TerminalKitText
 extension ScreenComposer {
     /// Only row zero reserves the right-hand status. Selection sources describe content, never the status or its gap.
     static func blockHeader(
-        _ text: String, metadata: String, block: Int, width: Int, inset: Int, style: Style
+        _ text: String,
+        metadata: String,
+        block: Int,
+        width: Int,
+        inset: Int,
+        style: Style
     ) -> [Line] {
         let hardLines = TranscriptContent.hardLines(of: text)
         let text = hardLines[0]
@@ -23,16 +28,25 @@ extension ScreenComposer {
         let gap = String(repeating: " ", count: Swift.max(0, width - cells - UnicodeWidth.displayWidth(of: status)))
         var result = [
             Line(
-                text: margin + prefix + gap + status, style: style,
-                source: Source(block: block, line: 0, offset: 0, col: inset, text: prefix))
+                text: margin + prefix + gap + status,
+                style: style,
+                source: Source(block: block, line: 0, offset: 0, col: inset, text: prefix)
+            )
         ]
         if !suffix.isEmpty {
             result += TextWrap.rows(suffix, width: width)
                 .map { row in
                     Line(
-                        text: margin + row.text, style: style,
+                        text: margin + row.text,
+                        style: style,
                         source: Source(
-                            block: block, line: 0, offset: prefix.count + row.offset, col: inset, text: row.text))
+                            block: block,
+                            line: 0,
+                            offset: prefix.count + row.offset,
+                            col: inset,
+                            text: row.text
+                        )
+                    )
                 }
         }
         if hardLines.count > 1 {
@@ -40,7 +54,8 @@ extension ScreenComposer {
             result += TextWrap.rows(hardLines.dropFirst().joined(separator: "\n"), width: width)
                 .map { row in
                     Line(
-                        text: margin + row.text, style: style,
+                        text: margin + row.text,
+                        style: style,
                         source: Source(block: block, line: row.line + 1, offset: row.offset, col: inset, text: row.text)
                     )
                 }
@@ -49,8 +64,13 @@ extension ScreenComposer {
     }
 
     static func blockMetadata(
-        status: Transcript.ToolStatus, output: String, progress: BlockProgress?, localizedDurations: Bool = true,
-        lineCount: Int? = nil, toolName: String? = nil, replacements: Int? = nil
+        status: Transcript.ToolStatus,
+        output: String,
+        progress: BlockProgress?,
+        localizedDurations: Bool = true,
+        lineCount: Int? = nil,
+        toolName: String? = nil,
+        replacements: Int? = nil
     ) -> String {
         var parts: [String] = []
         if let duration = progress?.duration(localized: localizedDurations) { parts.append(duration) }

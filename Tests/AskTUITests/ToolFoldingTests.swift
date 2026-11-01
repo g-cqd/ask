@@ -45,7 +45,9 @@ struct ToolFoldingTests {
 
     @Test func `a tool that returned nothing has nothing to fold`() {
         var rig = PointerRig(
-            columns: 60, updates: [.toolStarted(name: "bash", summary: "true"), .toolFinished(.succeeded)])
+            columns: 60,
+            updates: [.toolStarted(name: "bash", summary: "true"), .toolFinished(.succeeded)]
+        )
         #expect(rig.contentText(row: 9) == "bash · true")
         rig.click(row: 9, col: 3)
         #expect(rig.contentText(row: 9) == "bash · true")
@@ -61,14 +63,16 @@ struct ToolFoldingTests {
         let rig = PointerRig(
             columns: 60,
             options: ScreenOptions(foldTools: false, prompt: "ask> ", tint: false, separator: false, padding: false),
-            updates: Self.ls)
+            updates: Self.ls
+        )
         #expect(rig.contentText(row: 5) == "bash · ls")
         #expect(rig.contentText(row: 9) == "gamma")
     }
 
     @Test func `control O flips every tool block, and a choice made by click gives way to it`() {
         var rig = PointerRig(
-            updates: Self.ls + [.toolStarted(name: "grep", summary: "x"), .toolFinished(.succeeded, output: "one")])
+            updates: Self.ls + [.toolStarted(name: "grep", summary: "x"), .toolFinished(.succeeded, output: "one")]
+        )
         rig.click(row: 8, col: 3)  // opens the first
         _ = rig.controller.handle(.key(Self.ctrlO), pageRows: 10)
         rig.draw()

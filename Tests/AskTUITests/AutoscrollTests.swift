@@ -109,7 +109,8 @@ struct AutoscrollTests {
         #expect(!rig.controller.isAutoscrolling)
         var off = PointerRig(
             options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false),
-            lines: Self.long)
+            lines: Self.long
+        )
         off.mouse(.left, .drag, row: 0, col: 0)
         let ticked = off.tick()
         #expect(!off.controller.isAutoscrolling && !ticked)

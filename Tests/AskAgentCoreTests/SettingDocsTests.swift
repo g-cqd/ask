@@ -39,7 +39,10 @@ struct SettingDocsTests {
             }
             let key = cells[1].trimmingCharacters(in: CharacterSet(charactersIn: "`"))
             rows[(section.isEmpty ? "" : section + ".") + key] = Row(
-                defaultValue: cells[2], text: cells[3...].joined(separator: "|"), sectionIntro: intro)
+                defaultValue: cells[2],
+                text: cells[3...].joined(separator: "|"),
+                sectionIntro: intro
+            )
         }
         return rows
     }()

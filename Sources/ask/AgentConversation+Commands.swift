@@ -16,53 +16,90 @@ extension AgentConversation {
                 name: "config",
                 summary: "Edit settings interactively, or /config show to read and show every setting and its source.",
                 // @dl:accept -- a test's command table reads like this one: names, sentences and categories are the data
-                takesChoices: true, category: .configuration, duringTurn: .atOnce),
+                takesChoices: true,
+                // @dl:accept -- a test's command table reads like this one: names, sentences and categories are the data
+                category: .configuration,
+                duringTurn: .atOnce
+            ),
             SlashCommand(
-                name: "compact", summary: "Summarise the conversation now, keeping the recent messages.",
-                duringTurn: .afterTurn),
+                name: "compact",
+                summary: "Summarise the conversation now, keeping the recent messages.",
+                duringTurn: .afterTurn
+            ),
             SlashCommand(
-                name: "new", summary: "Start a new session; the previous session stays saved.", duringTurn: .afterTurn),
+                name: "new",
+                summary: "Start a new session; the previous session stays saved.",
+                duringTurn: .afterTurn
+            ),
             SlashCommand(
                 name: "model",
                 summary:
                     "Choose a model from every account you are signed in to, or /model [CONNECTION] MODEL, or /model reset.",
-                takesChoices: true, category: .model, duringTurn: .atOnce),
+                takesChoices: true,
+                category: .model,
+                duringTurn: .atOnce
+            ),
             SlashCommand(
                 name: "thinking",
                 summary: "Choose how hard the model thinks: the efforts it takes, or /thinking LEVEL.",
-                takesChoices: true, category: .model, duringTurn: .atOnce),
+                takesChoices: true,
+                category: .model,
+                duringTurn: .atOnce
+            ),
             SlashCommand(
                 name: "login",
                 summary: "Sign in to a provider with an account or an API key, without leaving: /login PROVIDER.",
-                takesChoices: true, category: .model, duringTurn: .atOnce),
+                takesChoices: true,
+                category: .model,
+                duringTurn: .atOnce
+            ),
             SlashCommand(
-                name: "logout", summary: "Sign out of one account, or /logout all, without leaving.",
-                takesChoices: true, category: .model, duringTurn: .atOnce),
+                name: "logout",
+                summary: "Sign out of one account, or /logout all, without leaving.",
+                takesChoices: true,
+                category: .model,
+                duringTurn: .atOnce
+            ),
             // @dl:accept -- a resume entry belongs to both command tables; the conversation's sentence names its own arguments
             // @dl:accept -- a resume entry beside the screen's built-ins shares a table's shape; the sentences are the data
             SlashCommand(
-                name: "resume", summary: "Choose a session, or /resume NAME, PREFIX or PATH.", takesChoices: true,
-                duringTurn: .afterTurn),
+                name: "resume",
+                summary: "Choose a session, or /resume NAME, PREFIX or PATH.",
+                takesChoices: true,
+                duringTurn: .afterTurn
+            ),
             // @dl:accept -- the conversation's list reads alike entry to entry because every entry is a name and a sentence
             // @dl:accept -- a tree entry beside the screen's follow-up shares a command table's shape; the sentences are the data
             SlashCommand(
-                name: "rewind", summary: "Go back to before a prompt: choose it, or /rewind N. Also /tree.",
-                takesChoices: true, duringTurn: .afterTurn),
+                name: "rewind",
+                summary: "Go back to before a prompt: choose it, or /rewind N. Also /tree.",
+                takesChoices: true,
+                duringTurn: .afterTurn
+            ),
             SlashCommand(
                 name: "fork",
                 summary: "Continue in a new session: /fork, or /fork N from before prompt N. The original stays.",
-                duringTurn: .atOnce),
+                duringTurn: .atOnce
+            ),
             SlashCommand(
-                name: "mcp", summary: "Show the MCP servers: which are connected and how many tools each offers.",
-                category: .tools, duringTurn: .atOnce),
+                name: "mcp",
+                summary: "Show the MCP servers: which are connected and how many tools each offers.",
+                category: .tools,
+                duringTurn: .atOnce
+            ),
             SlashCommand(
-                name: "reload", summary: "Switch to a newly built ask, keeping this session. /reload now stops jobs.",
-                category: .tools, duringTurn: .afterTurn)
+                name: "reload",
+                summary: "Switch to a newly built ask, keeping this session. /reload now stops jobs.",
+                category: .tools,
+                duringTurn: .afterTurn
+            )
         ]
     }
 
     func command(
-        _ name: String, arguments: String, update: @escaping @Sendable (ConversationUpdate) -> Void
+        _ name: String,
+        arguments: String,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
     ) -> Task<Void, Never> {
         Task {
             switch name {

@@ -14,8 +14,12 @@ struct JobFalseFoundTests {
         defer { try? FileManager.default.removeItem(at: root) }
         let job = JobTable()
             .start(
-                command, in: ToolContext(workingDirectory: root.path), keepsInputOpen: false, keeping: keeping,
-                observe: { _ in })
+                command,
+                in: ToolContext(workingDirectory: root.path),
+                keepsInputOpen: false,
+                keeping: keeping,
+                observe: { _ in }
+            )
         await job.ended()
         return await job.wait(for: Array(text.utf8))
     }

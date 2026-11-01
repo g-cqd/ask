@@ -8,7 +8,12 @@ internal import Testing
 @Suite("File tool blocks are coloured by their path's language")
 struct FileHighlightTests {
     private static func transcript(
-        _ name: String, path: String?, input: String, output: String, failed: Bool = false, highlight: Bool = true,
+        _ name: String,
+        path: String?,
+        input: String,
+        output: String,
+        failed: Bool = false,
+        highlight: Bool = true,
         summary: String? = nil
     ) -> Transcript {
         var transcript = Transcript()
@@ -35,7 +40,11 @@ struct FileHighlightTests {
 
     @Test func `a read swift file has its keywords and comments coloured, and stays dim as output`() throws {
         let transcript = Self.transcript(
-            "read", path: "Sources/a.swift", input: Self.read, output: "func f() -> Int {\n\treturn 1 // done\n}")
+            "read",
+            path: "Sources/a.swift",
+            input: Self.read,
+            output: "func f() -> Int {\n\treturn 1 // done\n}"
+        )
         let keyword = try #require(Self.style(of: "func", in: transcript))
         #expect(keyword.fg == .indexed(5))
         #expect(keyword.dim, "output is dim, and its colours keep that")
@@ -46,7 +55,11 @@ struct FileHighlightTests {
 
     @Test func `what a write puts in a file is coloured in the default brightness`() throws {
         let transcript = Self.transcript(
-            "write", path: "b.json", input: "{\"key\": [\"s\", true]}", output: "Wrote 20 bytes to b.json.")
+            "write",
+            path: "b.json",
+            input: "{\"key\": [\"s\", true]}",
+            output: "Wrote 20 bytes to b.json."
+        )
         let string = try #require(Self.style(of: "\"s\"", in: transcript))
         #expect(string.fg == .indexed(2))
         #expect(!string.dim)
@@ -56,7 +69,11 @@ struct FileHighlightTests {
 
     @Test func `the read's own line saying which lines it shows is not coloured`() {
         let transcript = Self.transcript(
-            "read", path: "tool.py", input: Self.read, output: "x = 1\ny = 2\n[lines 2–3 of 3]")
+            "read",
+            path: "tool.py",
+            input: Self.read,
+            output: "x = 1\ny = 2\n[lines 2–3 of 3]"
+        )
         let trailer = Self.runs(transcript).first { $0.map(\.0).joined().contains("[lines") }
         #expect(trailer?.count == 1, "one run: the row as it is")
     }
@@ -73,13 +90,27 @@ struct FileHighlightTests {
         ]
         for (name, path, output, failed, highlight) in cases {
             let shown = Self.transcript(
-                name, path: path, input: Self.read, output: output, failed: failed, highlight: highlight)
+                name,
+                path: path,
+                input: Self.read,
+                output: output,
+                failed: failed,
+                highlight: highlight
+            )
             let plain = Self.transcript(
-                name, path: nil, input: Self.read, output: output, failed: failed, highlight: false, summary: path)
+                name,
+                path: nil,
+                input: Self.read,
+                output: output,
+                failed: failed,
+                highlight: false,
+                summary: path
+            )
             #expect(
                 ScreenComposer.lines(in: shown, at: 0, columns: 80)
                     == ScreenComposer.lines(in: plain, at: 0, columns: 80),
-                "\(name) \(path) failed \(failed) highlight \(highlight)")
+                "\(name) \(path) failed \(failed) highlight \(highlight)"
+            )
         }
     }
 

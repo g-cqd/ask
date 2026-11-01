@@ -17,8 +17,13 @@ public struct MCPServerInfo: Sendable, Equatable {
 
     /// What a server said.
     public init(
-        protocolVersion: String, name: String, title: String?, version: String, instructions: String?,
-        supportsTools: Bool, toolsMayChange: Bool
+        protocolVersion: String,
+        name: String,
+        title: String?,
+        version: String,
+        instructions: String?,
+        supportsTools: Bool,
+        toolsMayChange: Bool
     ) {
         self.protocolVersion = protocolVersion
         self.name = name

@@ -13,7 +13,11 @@ public struct ModelRequest: Sendable, Equatable {
 
     /// A request with these fields.
     public init(
-        model: String, maxTokens: Int, systemPrompt: [String], messages: [ModelMessage], tools: [ToolDefinition],
+        model: String,
+        maxTokens: Int,
+        systemPrompt: [String],
+        messages: [ModelMessage],
+        tools: [ToolDefinition],
         thinking: ThinkingControl? = nil
     ) {
         self.model = model

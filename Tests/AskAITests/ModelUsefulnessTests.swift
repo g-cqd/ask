@@ -29,7 +29,9 @@ struct ModelUsefulnessTests {
     @Test func `the mark survives the cache`() throws {
         let stored = try JSONDecoder()
             .decode(
-                [CatalogModel].self, from: JSONEncoder().encode(models))
+                [CatalogModel].self,
+                from: JSONEncoder().encode(models)
+            )
         #expect(stored == models)
         let old = try JSONDecoder().decode(CatalogModel.self, from: Data(#"{"id":"x"}"#.utf8))
         #expect(old.unsuitable == nil, "a cache written before the mark existed lists everything, as it did")

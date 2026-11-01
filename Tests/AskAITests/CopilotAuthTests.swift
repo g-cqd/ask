@@ -10,7 +10,8 @@ struct CopilotAuthTests {
             status: 200,
             chunks: [
                 #"{"device_code":"device-secret","user_code":"CODE","verification_uri":"https://github.com/login/device","interval":5,"expires_in":900}"#
-            ])
+            ]
+        )
         let start = try await CopilotDeviceSignIn(transport: transport).start()
         #expect(start.url.absoluteString == "https://github.com/login/device")
         #expect(!CopilotDeviceSignIn(transport: transport).pollsImmediately)
@@ -35,7 +36,8 @@ struct CopilotAuthTests {
             status: 200,
             chunks: [
                 #"{"token":"short-token","expires_at":1,"refresh_in":600,"endpoints":{"api":"https://api.individual.githubcopilot.com"}}"#
-            ])
+            ]
+        )
         let credential = try await CopilotAuthClient(transport: transport)
             .exchange(githubToken: "github-grant", machineID: "machine", deviceID: "device", now: 1_000)
         #expect(credential.expiresAt == 1_600)
@@ -50,15 +52,18 @@ struct CopilotAuthTests {
             status: 200,
             chunks: [
                 #"{"device_code":"secret","user_code":"CODE","verification_uri":"https://github.com/login/device","interval":5,"expires_in":900}"#
-            ])
+            ]
+        )
         let device = try await CopilotDeviceSignIn(transport: startTransport).start().session
         let pending = CopilotDeviceSignIn(
-            transport: ScriptedTransport(status: 200, chunks: [#"{"error":"authorization_pending"}"#]))
+            transport: ScriptedTransport(status: 200, chunks: [#"{"error":"authorization_pending"}"#])
+        )
         if case .pending = try await pending.poll(device) {} else { Issue.record("not pending") }
         let slow = CopilotDeviceSignIn(transport: ScriptedTransport(status: 200, chunks: [#"{"error":"slow_down"}"#]))
         if case .slowDown = try await slow.poll(device) {} else { Issue.record("not slow down") }
         let denied = CopilotDeviceSignIn(
-            transport: ScriptedTransport(status: 200, chunks: [#"{"error":"secret-echo"}"#]))
+            transport: ScriptedTransport(status: 200, chunks: [#"{"error":"secret-echo"}"#])
+        )
         do {
             _ = try await denied.poll(device)
             Issue.record("accepted denied grant")

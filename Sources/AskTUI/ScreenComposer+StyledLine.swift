@@ -32,14 +32,21 @@ extension ScreenComposer {
         line.links = merged(line.links, columns: \.columns) { $0.uri == $1.uri }
         if let first = line.segments.first {
             line.source = Source(
-                block: block, line: first.line, offset: first.firstOffset, col: first.col, text: first.text)
+                block: block,
+                line: first.line,
+                offset: first.firstOffset,
+                col: first.col,
+                text: first.text
+            )
         }
         return line
     }
 
     /// Runs of columns with the same look joined where one ends at the next one's start.
     private static func merged<Run>(
-        _ runs: [Run], columns: WritableKeyPath<Run, Range<Int>>, same: (Run, Run) -> Bool
+        _ runs: [Run],
+        columns: WritableKeyPath<Run, Range<Int>>,
+        same: (Run, Run) -> Bool
     ) -> [Run] {
         var result: [Run] = []
         for run in runs {

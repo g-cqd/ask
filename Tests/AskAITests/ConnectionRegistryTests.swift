@@ -5,7 +5,11 @@ internal import Testing
 
 struct ConnectionRegistryTests {
     private static let codex = CodexCredentials(
-        accessToken: "access", refreshToken: "refresh", expiresAt: 1000, accountID: "account-a")
+        accessToken: "access",
+        refreshToken: "refresh",
+        expiresAt: 1000,
+        accountID: "account-a"
+    )
     private func withRegistry(_ body: (ConnectionRegistry) throws -> Void) throws {
         let root = FileManager.default.temporaryDirectory.appending(path: "ask-connections-\(UUID().uuidString)")
         defer { try? FileManager.default.removeItem(at: root) }
@@ -95,7 +99,11 @@ struct ConnectionRegistryTests {
             try registry.saveCodex(Self.codex, for: record)
             let old = try #require(registry.list().records.first)
             let other = CodexCredentials(
-                accessToken: "other", refreshToken: "other-refresh", expiresAt: 1000, accountID: "account-b")
+                accessToken: "other",
+                refreshToken: "other-refresh",
+                expiresAt: 1000,
+                accountID: "account-b"
+            )
             #expect(throws: ConnectionError.replacementRequired("work")) { try registry.saveCodex(other, for: old) }
             #expect(try registry.credentials(for: old).loadCodex() == Self.codex)
             try registry.saveCodex(other, for: old, replaceAccount: true)

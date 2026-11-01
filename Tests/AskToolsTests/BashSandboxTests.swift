@@ -60,7 +60,8 @@ struct BashSandboxTests {
             (await run(
                 "mkdir -p '\(world.home)/Library/LaunchAgents' && echo x > '\(world.home)/Library/LaunchAgents/x.plist'"
             ))
-            .isError)
+            .isError
+        )
         #expect(world.text(".zshrc") == nil)
     }
 
@@ -68,21 +69,27 @@ struct BashSandboxTests {
         async throws
     {
         try FileManager.default.createDirectory(
-            atPath: world.workspace + "/.git/hooks", withIntermediateDirectories: true)
+            atPath: world.workspace + "/.git/hooks",
+            withIntermediateDirectories: true
+        )
         let repository = try SandboxWorld(existingRepository: true)
         let context = ToolContext(workingDirectory: repository.workspace, sandbox: repository.policy)
         let planted = await BashTool()
             .run(
-                repository.input(#"{"command":"echo x > .git/hooks/pre-commit","shell":"/bin/bash"}"#), in: context)
+                repository.input(#"{"command":"echo x > .git/hooks/pre-commit","shell":"/bin/bash"}"#),
+                in: context
+            )
         #expect(planted.isError && repository.text("work/.git/hooks/pre-commit") == nil)
         let objects = await BashTool()
             .run(
                 repository.input(#"{"command":"echo x > .git/objects-ok && echo done","shell":"/bin/bash"}"#),
-                in: context)
+                in: context
+            )
         #expect(objects == ToolOutput("done\n[exit 0]"))
         #expect(
             await run("git init -q fresh && echo made") == ToolOutput("made\n[exit 0]"),
-            "a fresh world has no repository")
+            "a fresh world has no repository"
+        )
     }
 
     @Test func `another tool's credentials cannot be read by a command (audit finding 2)`() async throws {
@@ -119,7 +126,8 @@ struct BashSandboxTests {
         #expect(world.text(".config/ask/config.json") == "{maxTurns: 5}")
         #expect(
             !FileManager.default.fileExists(atPath: c + "/hard")
-                && !FileManager.default.fileExists(atPath: c + "/moved"))
+                && !FileManager.default.fileExists(atPath: c + "/moved")
+        )
     }
 
     @Test func `ask trust cannot widen the trust store from inside a command, even with a terminal`() async {
@@ -141,7 +149,8 @@ struct BashSandboxTests {
         #expect(inside.isError && world.text(".config/ask/config.json") == "{maxTurns: 5}")
         #expect(
             await run("d=$(mktemp -d) && echo x > $d/f && echo scratch", policy: scoped)
-                == ToolOutput("scratch\n[exit 0]"))
+                == ToolOutput("scratch\n[exit 0]")
+        )
     }
 
     @Test(arguments: [(SandboxPolicy.Network.any, true, true), (.localhost, true, false), (.none, false, false)])
@@ -180,7 +189,8 @@ struct BashSandboxTests {
         let context = ToolContext(workingDirectory: world.workspace, sandbox: world.policy)
         async let output = tool.run(
             world.input(#"{"command":"sleep 300 & echo \"child $!\"; wait","timeout_seconds":5,"shell":"/bin/bash"}"#),
-            in: context)
+            in: context
+        )
         let child = try await started.child()
         try await clock.waitForSleepers(count: 1)
         clock.advance(by: .seconds(5))

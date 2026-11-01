@@ -4,7 +4,8 @@ enum Deadline {
 
     /// Runs `work`, giving up after `limit`: the result of whichever of the two finishes first, the other cancelled.
     static func run<T: Sendable>(
-        _ limit: Duration, _ work: @escaping @Sendable () async throws -> T
+        _ limit: Duration,
+        _ work: @escaping @Sendable () async throws -> T
     ) async -> Result<T, any Error> {
         await withTaskGroup(of: Result<T, any Error>.self) { group in
             group.addTask {

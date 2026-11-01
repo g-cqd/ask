@@ -86,7 +86,9 @@ let package = Package(
         .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "5c0354242ef3783c784bd44ad7237f76b5c585f9"),
         // The Markdown parser the transcript draws assistant messages with (roadmap 0065); the revision TerminalKitMarkdown pins.
         .package(
-            url: "https://github.com/g-cqd/AemiMarkdown.git", revision: "0ba2729d35cb5f15050347194dba7ed8a689ef58"),
+            url: "https://github.com/g-cqd/AemiMarkdown.git",
+            revision: "0ba2729d35cb5f15050347194dba7ed8a689ef58"
+        ),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "6d8e8624ff08f7cab3c7d4feb71e3e5650f9c4b1"),
@@ -183,7 +185,8 @@ let package = Package(
             linkerSettings: [
                 .unsafeFlags(
                     ["-Xlinker", "-order_file", "-Xlinker", Context.packageDirectory + "/Scripts/ask-startup.order"],
-                    .when(configuration: .release))
+                    .when(configuration: .release)
+                )
             ]
         ),
         .testTarget(

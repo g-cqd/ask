@@ -22,8 +22,15 @@ struct CredentialUnknownRecordTests {
             #expect(try String(contentsOf: file.url, encoding: .utf8).contains(unknown))
             try file.saveClaude(
                 ClaudeCredentials(
-                    accessToken: "ca", refreshToken: "cr", expiresAt: 1, refreshExpiresAt: nil,
-                    accountEmail: nil, organizationName: nil, scopes: "scope"))
+                    accessToken: "ca",
+                    refreshToken: "cr",
+                    expiresAt: 1,
+                    refreshExpiresAt: nil,
+                    accountEmail: nil,
+                    organizationName: nil,
+                    scopes: "scope"
+                )
+            )
             #expect(try String(contentsOf: file.url, encoding: .utf8).contains(unknown))
             try file.saveKey(StoredKey(key: "k", obtainedAt: 2), for: "another")
             #expect(try String(contentsOf: file.url, encoding: .utf8).contains(unknown))

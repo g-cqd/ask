@@ -28,7 +28,8 @@ struct QuestionToolTests {
             askPerson: { questions in
                 asked.withLock { $0 = questions }
                 return answering
-            })
+            }
+        )
         let output = await QuestionTool().run(input(json), in: context)
         return (output, asked.withLock { $0 })
     }
@@ -36,19 +37,24 @@ struct QuestionToolTests {
     @Test func `the questions reach the person whole, and each answer comes back as a line`() async {
         let (output, asked) = await run(
             Self.two,
-            answering: [PersonAnswer(chosen: [0], note: "keep the API"), PersonAnswer(chosen: [0, 1], note: "")])
+            answering: [PersonAnswer(chosen: [0], note: "keep the API"), PersonAnswer(chosen: [0, 1], note: "")]
+        )
         #expect(
-            asked.count == 2 && asked[0].header == "Scope" && asked[0].choices[1].description == "parser and printer")
+            asked.count == 2 && asked[0].header == "Scope" && asked[0].choices[1].description == "parser and printer"
+        )
         #expect(asked[1].multiple && asked[1].note == .none && asked[0].note == .optional)
         #expect(!output.isError)
         #expect(
             output.content == #"Scope: chose "Only the parser"; note: "keep the API""# + "\n"
-                + #"Tests: chose "Unit", "Probes""#)
+                + #"Tests: chose "Unit", "Probes""#
+        )
     }
 
     @Test func `an answer with neither choice nor note says so`() async {
         let (output, _) = await run(
-            Self.two, answering: [PersonAnswer(chosen: [], note: ""), PersonAnswer(chosen: [1], note: "")])
+            Self.two,
+            answering: [PersonAnswer(chosen: [], note: ""), PersonAnswer(chosen: [1], note: "")]
+        )
         #expect(output.content.hasPrefix("Scope: no answer\n"))
     }
 

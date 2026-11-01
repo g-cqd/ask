@@ -28,8 +28,14 @@ struct PromptLayout: Sendable {
     }
 
     mutating func frame(
-        _ editor: PromptEditor, prompt: String, columns: Int, screenRows: Int, maximumRows: Int,
-        selection: Range<Int>? = nil, scrollTop: Int? = nil, markdown: Bool = false
+        _ editor: PromptEditor,
+        prompt: String,
+        columns: Int,
+        screenRows: Int,
+        maximumRows: Int,
+        selection: Range<Int>? = nil,
+        scrollTop: Int? = nil,
+        markdown: Bool = false
     ) -> Frame {
         let prefix = Self.prefix(prompt, columns: columns)
         let layout: InputLayout
@@ -41,7 +47,12 @@ struct PromptLayout: Sendable {
         }
         let cap = min(max(1, maximumRows), max(1, screenRows / 3), max(1, screenRows - 1))
         let viewport = Window(
-            layout: layout, cursorOffset: editor.cursor, cap: cap, firstRow: firstRow, scrollTop: scrollTop)
+            layout: layout,
+            cursorOffset: editor.cursor,
+            cap: cap,
+            firstRow: firstRow,
+            scrollTop: scrollTop
+        )
         firstRow = viewport.visibleRows.lowerBound
         let lines = viewport.visibleRows.map { row in (row == 0 ? prefix : "") + layout.rows[row] }
         let indicator =
@@ -53,8 +64,14 @@ struct PromptLayout: Sendable {
             ? []
             : viewport.visibleRows.map { Self.highlight(row: $0, of: layout, prefix: prefix, selection: selection) }
         var frame = Frame(
-            lines: lines, cursor: viewport.cursor, indicator: indicator, top: firstRow, layout: layout,
-            cursorVisible: viewport.cursorVisible, highlights: highlights)
+            lines: lines,
+            cursor: viewport.cursor,
+            indicator: indicator,
+            top: firstRow,
+            layout: layout,
+            cursorVisible: viewport.cursorVisible,
+            highlights: highlights
+        )
         if markdown {
             // Only the rows shown are parsed in a long draft, so the window is part of what the spans depend on.
             let rows = viewport.visibleRows
@@ -78,7 +95,10 @@ struct PromptLayout: Sendable {
 
     /// The spans as runs of cells on each drawn row: a span that crosses a row break is cut at it.
     private static func accents(
-        _ spans: [InputMarkdown.Span], rows: Range<Int>, layout: InputLayout, prefix: String
+        _ spans: [InputMarkdown.Span],
+        rows: Range<Int>,
+        layout: InputLayout,
+        prefix: String
     ) -> [[ScreenComposer.Accent]] {
         var result = [[ScreenComposer.Accent]](repeating: [], count: rows.count)
         for span in spans {
@@ -109,7 +129,11 @@ struct PromptLayout: Sendable {
         init(layout: InputLayout, cursorOffset: Int, cap: Int, firstRow: Int, scrollTop: Int?) {
             guard let scrollTop else {
                 let kit = InputViewport(
-                    layout: layout, cursorOffset: cursorOffset, maximumRows: cap, firstRow: firstRow)
+                    layout: layout,
+                    cursorOffset: cursorOffset,
+                    maximumRows: cap,
+                    firstRow: firstRow
+                )
                 (visibleRows, cursor, cursorVisible) = (kit.visibleRows, kit.cursor, true)
                 (rowsAbove, rowsBelow) = (kit.rowsAbove, kit.rowsBelow)
                 return

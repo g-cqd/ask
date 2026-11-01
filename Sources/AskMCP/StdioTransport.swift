@@ -45,8 +45,11 @@ public final class StdioTransport: MCPTransport {
     ///   - maximumMessageBytes: the longest message a server may send; a longer one ends the conversation.
     ///   - observer: told when the process starts and ends.
     public init(
-        _ launch: StdioLaunch, clock: any Clock<Duration> = ContinuousClock(), grace: Duration = .seconds(2),
-        maximumMessageBytes: Int = 64 << 20, observer: (any StdioProcessObserver)? = nil
+        _ launch: StdioLaunch,
+        clock: any Clock<Duration> = ContinuousClock(),
+        grace: Duration = .seconds(2),
+        maximumMessageBytes: Int = 64 << 20,
+        observer: (any StdioProcessObserver)? = nil
     ) {
         self.maximumMessageBytes = maximumMessageBytes
         self.clock = clock

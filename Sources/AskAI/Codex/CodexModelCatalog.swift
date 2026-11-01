@@ -7,7 +7,9 @@ public struct CodexModelCatalog: Sendable {
 
     /// Discovery using only ask's own credentials and a replaceable catalog file.
     public init(
-        credentials: CredentialFile, cache: ModelCatalogFile, transport: any HTTPTransport,
+        credentials: CredentialFile,
+        cache: ModelCatalogFile,
+        transport: any HTTPTransport,
         connection: ConnectionRecord? = nil
     ) {
         self.credentials = credentials
@@ -44,7 +46,9 @@ public struct CodexModelCatalog: Sendable {
         let current: CodexCredentials
         do {
             current = try await CodexAccess(
-                file: credentials, client: CodexAuthClient(transport: transport), connection: connection
+                file: credentials,
+                client: CodexAuthClient(transport: transport),
+                connection: connection
             )
             .credentials(now: now)
         } catch CodexAccessError.signedOut {
@@ -60,7 +64,10 @@ public struct CodexModelCatalog: Sendable {
 
     private func scope(for credentials: CodexCredentials) -> ModelCatalogScope {
         ModelCatalogScope(
-            provider: ProviderSettings.codex, accountID: credentials.accountID, endpoint: CodexCatalogClient.endpoint,
-            connectionID: connection?.id)
+            provider: ProviderSettings.codex,
+            accountID: credentials.accountID,
+            endpoint: CodexCatalogClient.endpoint,
+            connectionID: connection?.id
+        )
     }
 }

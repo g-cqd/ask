@@ -25,7 +25,8 @@ struct SignalShutdown: Sendable {
     ///   - onExit: asked to end the process with the given code, after the terminal is restored.
     ///     Injected so the sequence can be tested; production passes `exit`.
     init(
-        session: TerminalSession, stopRendering: @escaping @Sendable () -> Void = {},
+        session: TerminalSession,
+        stopRendering: @escaping @Sendable () -> Void = {},
         onExit: @escaping @Sendable (Int32) -> Void
     ) {
         self.session = session

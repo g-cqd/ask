@@ -14,7 +14,8 @@ struct SkillSelectionTests {
         #expect(
             SkillSelection(tokens: [" Claude ", "CODEX", "claude"], knownSources: SkillSource.fixtureIDs).sources == [
                 "claude", "codex"
-            ])
+            ]
+        )
     }
 
     @Test func `user and project narrow the scopes`() {
@@ -22,7 +23,8 @@ struct SkillSelectionTests {
         #expect(
             SkillSelection(tokens: ["user", "project"], knownSources: SkillSource.fixtureIDs).scopes == [
                 .user, .project
-            ])
+            ]
+        )
     }
 
     @Test func `bundled alone is only the bundled, and with a harness or a scope it is added to what that gives`() {
@@ -30,11 +32,13 @@ struct SkillSelectionTests {
         #expect(
             SkillSelection(tokens: ["agy", "bundled"], knownSources: SkillSource.fixtureIDs).scopes == [
                 .user, .project, .bundled
-            ])
+            ]
+        )
         #expect(
             SkillSelection(tokens: ["user", "bundled"], knownSources: SkillSource.fixtureIDs).scopes == [
                 .user, .bundled
-            ])
+            ]
+        )
     }
 
     @Test func `a word that is neither is remembered and changes nothing`() {

@@ -22,7 +22,9 @@ struct JobActionWaitTests {
         let job = await start()
         let reply = await JobActionTool(jobs: jobs)
             .run(
-                input(##"{"job":"#\##(job.displayID)","action":"wait","wait_for_output":"READY"}"##), in: context)
+                input(##"{"job":"#\##(job.displayID)","action":"wait","wait_for_output":"READY"}"##),
+                in: context
+            )
         let running = job.status
         await jobs.stopAll()
         #expect(!reply.isError && reply.content.contains("READY"))
@@ -60,7 +62,9 @@ struct JobActionWaitTests {
         let tool = JobActionTool(jobs: jobs, clock: clock)
         try #require(String(decoding: tool.definition.inputSchema.bytes, as: UTF8.self).contains("wait_for_output"))
         let reply = await tool.run(
-            input(#"{"job":"job-1","text":"hello\n","wait_for_output":"GOT-hello"}"#), in: context)
+            input(#"{"job":"job-1","text":"hello\n","wait_for_output":"GOT-hello"}"#),
+            in: context
+        )
         let status = job.status
         await jobs.stopAll()
         #expect(!reply.isError && reply.content.contains("GOT-hello") && status == .running)

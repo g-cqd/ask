@@ -19,14 +19,18 @@ struct SandboxWorld {
     ///   - existingRepository: make the workspace a git repository before the policy is made.
     /// - Throws: when the directories or files cannot be made.
     init(
-        extraDenyRead: [String] = [], allowRead: [String] = [], outsideScratch: Bool = false,
+        extraDenyRead: [String] = [],
+        allowRead: [String] = [],
+        outsideScratch: Bool = false,
         existingRepository: Bool = false
     ) throws {
         let base = outsideScratch ? URL(filePath: "/Users/Shared") : FileManager.default.temporaryDirectory
         let made = base.appending(path: "ask-sandbox-\(UUID().uuidString)")
         for directory in [".config/ask", ".local/state/ask/sessions", ".aws", ".ssh", "work", "elsewhere"] {
             try FileManager.default.createDirectory(
-                atPath: made.path + "/" + directory, withIntermediateDirectories: true)
+                atPath: made.path + "/" + directory,
+                withIntermediateDirectories: true
+            )
         }
         let real = String(cString: realpath(made.path, nil))  // /var is a symlink to /private/var
         home = real
@@ -42,11 +46,18 @@ struct SandboxWorld {
         }
         if existingRepository {
             try FileManager.default.createDirectory(
-                atPath: real + "/work/.git/hooks", withIntermediateDirectories: true)
+                atPath: real + "/work/.git/hooks",
+                withIntermediateDirectories: true
+            )
         }
         policy = SandboxPolicy.standard(
-            home: real, configDirectory: config, stateDirectory: state, allowRead: allowRead.map { real + "/" + $0 },
-            denyRead: extraDenyRead.map { real + "/" + $0 }, workspace: real + "/work")
+            home: real,
+            configDirectory: config,
+            stateDirectory: state,
+            allowRead: allowRead.map { real + "/" + $0 },
+            denyRead: extraDenyRead.map { real + "/" + $0 },
+            workspace: real + "/work"
+        )
     }
 
     var context: ToolContext { ToolContext(workingDirectory: workspace, sandbox: policy) }

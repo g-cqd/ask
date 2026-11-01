@@ -32,7 +32,9 @@ public struct CodexAuthClient: Sendable {
             [
                 ("grant_type", "authorization_code"), ("client_id", CodexOAuth.clientID), ("code", code),
                 ("code_verifier", verifier), ("redirect_uri", redirectURI)
-            ], now: now)
+            ],
+            now: now
+        )
     }
 
     /// The replacement for `credentials`, whose refresh token is spent by the attempt.
@@ -46,14 +48,19 @@ public struct CodexAuthClient: Sendable {
             [
                 ("grant_type", "refresh_token"), ("refresh_token", credentials.refreshToken),
                 ("client_id", CodexOAuth.clientID)
-            ], now: now)
+            ],
+            now: now
+        )
     }
 
     private func post(_ fields: [(String, String)], now: Double) async throws(CodexAuthError) -> CodexCredentials {
         let body = FormEncoding.query(fields)
         let request = HTTPRequest.account(
-            "POST", URL(string: CodexOAuth.tokenEndpoint)!, contentType: "application/x-www-form-urlencoded",
-            body: Array(body.utf8))
+            "POST",
+            URL(string: CodexOAuth.tokenEndpoint)!,
+            contentType: "application/x-www-form-urlencoded",
+            body: Array(body.utf8)
+        )
         let reply: (status: Int, body: [UInt8])
         do { reply = try await transport.collecting(request) } catch { throw .transport(String(describing: error)) }
         guard (200 ..< 300).contains(reply.status) else {
@@ -71,8 +78,11 @@ public struct CodexAuthClient: Sendable {
         guard let account = CodexOAuth.accountID(inAccessToken: token.accessToken) else { throw .noAccountID }
         let margin = Swift.min(300, token.expiresIn / 10)
         return CodexCredentials(
-            accessToken: token.accessToken, refreshToken: token.refreshToken, expiresAt: now + token.expiresIn - margin,
-            accountID: account)
+            accessToken: token.accessToken,
+            refreshToken: token.refreshToken,
+            expiresAt: now + token.expiresIn - margin,
+            accountID: account
+        )
     }
 
     private struct TokenBody: Decodable {

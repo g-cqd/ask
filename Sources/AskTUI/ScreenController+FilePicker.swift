@@ -28,7 +28,9 @@ extension ScreenController {
     /// for a path typed in full (nothing is left to insert), for no match, and for a word the user closed it on.
     /// - Returns: asking for the listing, when it is needed and not already asked for.
     mutating func refreshFilePicker(
-        _ trigger: CompletionTrigger, screenRows: Int, at now: ContinuousClock.Instant
+        _ trigger: CompletionTrigger,
+        screenRows: Int,
+        at now: ContinuousClock.Instant
     ) -> [Effect] {
         guard state.pickerDismissedAt != trigger.range.lowerBound else {
             state.picker = nil
@@ -44,7 +46,13 @@ extension ScreenController {
         guard let files = state.files else {
             install(
                 CompletionPicker(
-                    kind: .files, trigger: trigger, matches: [], capacity: capacity, caption: "looking for files…"))
+                    kind: .files,
+                    trigger: trigger,
+                    matches: [],
+                    capacity: capacity,
+                    caption: "looking for files…"
+                )
+            )
             return effects
         }
         // A range typed after the path, `@file:12-30`, is kept on whatever path is chosen.
@@ -64,11 +72,15 @@ extension ScreenController {
         .compactMap { $0 }.joined(separator: " · ")
         install(
             CompletionPicker(
-                kind: .files, trigger: trigger,
+                kind: .files,
+                trigger: trigger,
                 matches: ranked.indices.map {
                     PickerRow(label: files.paths[$0], insertion: Self.reference(to: files.paths[$0]) + range)
                 },
-                capacity: capacity, caption: caption))
+                capacity: capacity,
+                caption: caption
+            )
+        )
         return effects
     }
 

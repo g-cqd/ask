@@ -33,7 +33,8 @@ public struct VibeSignIn: KeySignIn {
 
     /// A sign-in over `transport`. `pkce` is fresh for every attempt unless a test fixes it.
     public init(
-        transport: any HTTPTransport, pkce: PKCE = .generate(),
+        transport: any HTTPTransport,
+        pkce: PKCE = .generate(),
         now: @escaping @Sendable () -> Double = { Date().timeIntervalSince1970 }
     ) {
         http = SignInHTTP(transport: transport)
@@ -55,8 +56,11 @@ public struct VibeSignIn: KeySignIn {
         }
         let window = min(Self.longest, .seconds(expiry - now()))
         return SignInStart(
-            session: VibeSession(processID: id, pollURL: poll, verifier: pkce.verifier), url: link, window: window,
-            interval: .seconds(3))
+            session: VibeSession(processID: id, pollURL: poll, verifier: pkce.verifier),
+            url: link,
+            window: window,
+            interval: .seconds(3)
+        )
     }
 
     public func poll(_ session: VibeSession) async throws(SignInError) -> SignInPoll<String> {
@@ -64,15 +68,20 @@ public struct VibeSignIn: KeySignIn {
         if reply.status == 410 { throw .expired }
         let polled = try reply.succeeded().decode(Polled.self)
         return try .reading(
-            status: polled.status, secret: polled.exchange_token, complete: "completed", secretField: "exchange_token",
-            ending: ["denied": .denied, "expired": .expired])
+            status: polled.status,
+            secret: polled.exchange_token,
+            complete: "completed",
+            secretField: "exchange_token",
+            ending: ["denied": .denied, "expired": .expired]
+        )
     }
 
     public func finish(_ session: VibeSession, grant token: String) async throws(SignInError) -> StoredKey {
         let body = JSONStreamWriter.object(of: [("exchange_token", token), ("code_verifier", session.verifier)])
         let exchanged =
             try await http.post(
-                Self.api.appending(path: "vibe/sign-in/\(session.processID)/exchange"), json: body
+                Self.api.appending(path: "vibe/sign-in/\(session.processID)/exchange"),
+                json: body
             )
             .succeeded().decode(Exchanged.self)
         guard SignInSecret.isValid(exchanged.api_key), let key = exchanged.api_key else {

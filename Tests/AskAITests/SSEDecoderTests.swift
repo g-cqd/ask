@@ -50,7 +50,8 @@ struct SSEDecoderTests {
         #expect(
             try decode(["data:  two spaces\n\n", "data:none\n\n"]) == [
                 event("message", " two spaces"), event("message", "none")
-            ])
+            ]
+        )
     }
 
     @Test func `comments, unknown fields and fields without a value are ignored`() throws {

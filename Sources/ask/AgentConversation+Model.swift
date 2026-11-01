@@ -39,13 +39,18 @@ extension AgentConversation {
                 update(
                     .notice(
                         "Current model: \(resolved.label) (provider \(resolved.providerName), "
-                            + "from \(settings.configuration.model.source))", isError: false))
+                            + "from \(settings.configuration.model.source))",
+                        isError: false
+                    )
+                )
             case .reset: await select(nil, announcing: "Model selection reset to configuration", update: update)
             case .choose(let provider, let model):
                 let (named, id) = provider.map { ($0, model) } ?? serving(model)
                 let chosen = await select(
-                    ModelSelection(provider: named, model: id), announcing: "Model selected for this run",
-                    update: update)
+                    ModelSelection(provider: named, model: id),
+                    announcing: "Model selected for this run",
+                    update: update
+                )
                 // An account named for a model is the one it is used with next time (roadmap 0092).
                 if chosen, provider != nil { ModelAccounts.remember(named, for: id) }
         }
@@ -58,7 +63,9 @@ extension AgentConversation {
         let (model, level) = current.withLock { ($0.settings.model, $0.settings.configuration.thinking.value) }
         let providers = (try? ProviderSettings.load(from: source.providersPath)) ?? .none
         let reference = ReferencedModel(
-            word, providers: ModelQualifier.providerNames(providers, environment: environment))
+            word,
+            providers: ModelQualifier.providerNames(providers, environment: environment)
+        )
         if let said = reference.provider { return (said, reference.model) }
         let found = ModelQualifier.infer(model: word, thinking: level, providers: providers, environment: environment)
         let provider = found ?? model.providerName
@@ -73,7 +80,9 @@ extension AgentConversation {
     /// - Returns: whether `selection` is now in force.
     @discardableResult
     private func select(
-        _ selection: ModelSelection?, announcing: String, update: @Sendable (ConversationUpdate) -> Void
+        _ selection: ModelSelection?,
+        announcing: String,
+        update: @Sendable (ConversationUpdate) -> Void
     ) async -> Bool {
         var candidate = source
         candidate.flags.selected = selection
@@ -100,7 +109,9 @@ extension AgentConversation {
     }
 
     private func refused(
-        _ selection: ModelSelection?, _ error: any Error, _ update: @Sendable (ConversationUpdate) -> Void
+        _ selection: ModelSelection?,
+        _ error: any Error,
+        _ update: @Sendable (ConversationUpdate) -> Void
     ) {
         let what = selection.map { " (\($0.provider) \($0.model))" } ?? ""
         update(.notice("Model not changed\(what): \(error)", isError: true))

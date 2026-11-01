@@ -16,7 +16,8 @@ struct CompletionPickerComposerTests {
         config | Show the settings.
         compact | Compact the conversation.
         reload | Reload the binary.
-        """)
+        """
+    )
 
     private func rows(_ buffer: ScreenBuffer) -> [String] {
         (0 ..< buffer.rows)
@@ -32,7 +33,9 @@ struct CompletionPickerComposerTests {
     }
 
     private func screen(
-        typing text: String, commands: [SlashCommand] = commands, rows: Int = 20
+        typing text: String,
+        commands: [SlashCommand] = commands,
+        rows: Int = 20
     ) -> (ScreenController, Int) {
         var controller = ScreenController(label: "m", commands: commands, options: .legacy)
         for scalar in text.unicodeScalars {
@@ -130,7 +133,8 @@ struct CompletionPickerComposerTests {
     @Test func `the picker sits above the input, and the status line and the runner strip below it`() throws {
         var (controller, height) = screen(typing: "/co")
         controller.handle(
-            .runners([RunnerInfo(name: "job-1", detail: "npm run dev"), RunnerInfo(name: "job-2", detail: "tail -f")]))
+            .runners([RunnerInfo(name: "job-1", detail: "npm run dev"), RunnerInfo(name: "job-2", detail: "tail -f")])
+        )
         controller.state.runnersOpen = true
         controller.handle(.notice("older", isError: false))
         var buffer = ScreenBuffer(columns: 60, rows: height)
@@ -187,6 +191,7 @@ struct CompletionPickerComposerTests {
         #expect(composer.transcriptRows == withPicker + 6, "the title, the heading and four matches")
         #expect(
             rows(buffer)[composer.transcriptRows - 1] == "line 30",
-            "the newest line stays at the bottom of the transcript")
+            "the newest line stays at the bottom of the transcript"
+        )
     }
 }

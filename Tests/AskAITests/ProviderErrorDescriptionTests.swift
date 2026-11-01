@@ -10,7 +10,10 @@ struct ProviderErrorDescriptionTests {
         let error = OpenAICompatibleError.status(
             400,
             ProviderFailure(
-                kind: .contextOverflow, message: "request (10392 tokens) exceeds the available context size"))
+                kind: .contextOverflow,
+                message: "request (10392 tokens) exceeds the available context size"
+            )
+        )
         #expect(
             "\(error)"
                 == "the provider refused the request (HTTP 400): request (10392 tokens) exceeds the available context size"

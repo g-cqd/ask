@@ -48,7 +48,9 @@ struct CommandCategoryPickerTests {
         let structure = try #require(controller.state.picker).matches
         #expect(
             structure.filter { $0.isHeading }.map { $0.detail }
-                == ["session", "model", "tools", "configuration"], "stable category order")
+                == ["session", "model", "tools", "configuration"],
+            "stable category order"
+        )
         #expect(structure[1].label == "/help" && structure[2].label == "/quit")
     }
 
@@ -91,7 +93,8 @@ struct CommandCategoryPickerTests {
         #expect(picker.matches.filter { !$0.isHeading }.map { $0.label } == ["/model"])
         #expect(
             picker.matches.filter { $0.isHeading }.map { $0.detail } == ["model"],
-            "only the matching group's heading shows")
+            "only the matching group's heading shows"
+        )
         _ = controller.handle(.key(KeyEvent(keyCode: Key.tab.rawValue)), pageRows: 30)
         #expect(controller.state.editor.text == "/model ")
     }
@@ -117,7 +120,9 @@ struct CommandCategoryPickerTests {
 
     @Test func `small screens keep working and headings take no extra rows when hidden`() throws {
         let controller = controller(
-            "/", commands: [SlashCommand(name: "only", summary: "One.", category: .session)])
+            "/",
+            commands: [SlashCommand(name: "only", summary: "One.", category: .session)]
+        )
         var buffer = ScreenBuffer(columns: 50, rows: 12)
         var composer = ScreenComposer()
         _ = composer.compose(controller.state, into: &buffer)
@@ -131,6 +136,7 @@ struct CommandCategoryPickerTests {
                         if !cell.isContinuation { text.append(cell.character) }
                     }
                     return text.hasPrefix("/only")
-                })
+                }
+        )
     }
 }

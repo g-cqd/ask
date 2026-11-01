@@ -12,15 +12,21 @@ struct MCPWorld {
 
     /// A host for `servers`, whose transports are `fakes` by name.
     func host(
-        _ servers: [MCPServerSetting], _ fakes: [String: FakeMCPServer], environment: [String: String] = [:],
+        _ servers: [MCPServerSetting],
+        _ fakes: [String: FakeMCPServer],
+        environment: [String: String] = [:],
         maximumDirectTools: Int = 16
     ) -> MCPHost {
         MCPHost(
-            servers: servers, live: live, environment: environment, maximumDirectTools: maximumDirectTools,
+            servers: servers,
+            live: live,
+            environment: environment,
+            maximumDirectTools: maximumDirectTools,
             transport: { server, _, _ in
                 guard let fake = fakes[server.name] else { throw MCPError.refusedEndpoint("no such fake") }
                 return fake
-            })
+            }
+        )
     }
 
     /// A command server called `name`.
@@ -35,6 +41,9 @@ struct MCPWorld {
     func call(_ name: String, _ json: String = "{}", in context: ToolContext? = nil) async throws -> ToolOutput {
         try await ToolRegistry([], live: live)
             .run(
-                name: name, input: try JSONObject(validating: Array(json.utf8)), in: context ?? self.context)
+                name: name,
+                input: try JSONObject(validating: Array(json.utf8)),
+                in: context ?? self.context
+            )
     }
 }

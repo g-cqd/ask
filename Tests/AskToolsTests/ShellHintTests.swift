@@ -8,7 +8,9 @@ import Testing
 struct ShellHintTests {
     @Test func `the advertised default shell and syntax follow the injected launch environment`() {
         let tool = BashTool(
-            jobs: JobTable(environment: ["SHELL": "/bin/sh"]), commandEnvironment: CommandEnvironment(shell: "sh"))
+            jobs: JobTable(environment: ["SHELL": "/bin/sh"]),
+            commandEnvironment: CommandEnvironment(shell: "sh")
+        )
         #expect(tool.definition.description.contains("/bin/sh"))
         #expect(tool.definition.description.contains("sh syntax"))
         // The description must say where the command goes: the on-device model read `shell` as the command and
@@ -19,7 +21,8 @@ struct ShellHintTests {
     @Test func `withheld shell variables do not leak into the model's tool description`() {
         let tool = BashTool(
             jobs: JobTable(environment: ["SHELL": "/bin/sh"]),
-            commandEnvironment: CommandEnvironment(withheld: ["SHELL"]))
+            commandEnvironment: CommandEnvironment(withheld: ["SHELL"])
+        )
         #expect(tool.definition.description.contains("/bin/zsh"))
         #expect(!tool.definition.description.contains("/bin/sh"))
     }

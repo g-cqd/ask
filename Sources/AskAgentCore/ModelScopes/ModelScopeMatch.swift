@@ -20,7 +20,8 @@ public struct ModelScopeMatch: Sendable, Equatable {
         if named { return .refused(refusal(of: name)) }
         return .replaced(
             by: scope.providers[0],
-            "modelScopes rule \(number) (\(rule)) does not allow \(name) here: using \(scope.providers[0]).")
+            "modelScopes rule \(number) (\(rule)) does not allow \(name) here: using \(scope.providers[0])."
+        )
     }
 
     /// The rule's matchers as the file wrote them: `path ~/work, identity *@acme.com`.

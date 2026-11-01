@@ -10,7 +10,12 @@ extension ScreenComposer {
     /// A header that is one row whatever its length: the text takes the row up to the gap before `metadata`, and text wider than that is cut
     /// with `…`, counted in display cells. A selection takes the text that is shown, not the ellipsis.
     static func oneRowHeader(
-        _ text: String, metadata: String, block: Int, width: Int, inset: Int, style: Style
+        _ text: String,
+        metadata: String,
+        block: Int,
+        width: Int,
+        inset: Int,
+        style: Style
     ) -> [Line] {
         let flat = text.replacing("\n", with: " ")
         let status = ColumnSlicer.split(metadata, columns: 0 ..< width).selected
@@ -20,14 +25,38 @@ extension ScreenComposer {
         let gap = String(repeating: " ", count: Swift.max(0, width - cells - statusCells))
         return [
             Line(
-                text: String(repeating: " ", count: inset) + shown + mark + gap + status, style: style,
-                source: Source(block: block, line: 0, offset: 0, col: inset, text: shown))
+                text: String(repeating: " ", count: inset) + shown + mark + gap + status,
+                style: style,
+                source: Source(block: block, line: 0, offset: 0, col: inset, text: shown)
+            )
         ]
+    }
+
+    /// What a tool block's header shows on its right: its status, duration, size and replacements.
+    private static func toolMetadata(
+        name: String,
+        status: Transcript.ToolStatus,
+        output: String,
+        style: BlockStyle,
+        context: ToolContext
+    ) -> String {
+        blockMetadata(
+            status: status,
+            output: output,
+            progress: context.progress,
+            localizedDurations: style.localizedDurations,
+            toolName: name,
+            replacements: context.replacements
+        )
     }
 
     /// A tool block's rows: folded, its one-row header; open, a command block, or a tool's header, its input and its output.
     static func toolContentLines(
-        _ item: Transcript.Item, folded: Bool, block: Int, columns: Int, style: BlockStyle,
+        _ item: Transcript.Item,
+        folded: Bool,
+        block: Int,
+        columns: Int,
+        style: BlockStyle,
         context: ToolContext
     ) -> [Line] {
         guard case .tool(let name, let summary, let status, let output, let input) = item else { return [] }
@@ -35,48 +64,90 @@ extension ScreenComposer {
         let shownOutput = context.output ?? output
         let inset = style.inset
         let width = Swift.max(1, columns - 2 * inset)
-        let metadata = blockMetadata(
-            status: status, output: output, progress: context.progress, localizedDurations: style.localizedDurations,
-            toolName: name, replacements: context.replacements)
+        let metadata = toolMetadata(name: name, status: status, output: output, style: style, context: context)
         if folded {
             let header =
                 context.command
                 ? Transcript.Item.commandHeader(name: name, parameters: summary, command: input, folded: true)
                 : Transcript.Item.toolHeader(name: name, summary: summary, status: status, output: output, folded: true)
             return oneRowHeader(
-                header, metadata: metadata, block: block, width: width, inset: inset, style: toolStatusStyle(status))
+                header,
+                metadata: metadata,
+                block: block,
+                width: width,
+                inset: inset,
+                style: toolStatusStyle(status)
+            )
         }
         if context.command {
             return commandLines(
-                item, block: block, width: width, inset: inset, style: style,
-                context: (context.progress, context.toolInput, shownOutput))
+                item,
+                block: block,
+                width: width,
+                inset: inset,
+                style: style,
+                context: (context.progress, context.toolInput, shownOutput)
+            )
         }
         if !input.isEmpty {
             return toolInputLines(
-                item: item, input: context.toolInput?.text ?? ShownToolInput(input, isFolded: { _ in true }).text,
-                block: block, columns: columns, style: style, context: context)
+                item: item,
+                input: context.toolInput?.text ?? ShownToolInput(input, isFolded: { _ in true }).text,
+                block: block,
+                columns: columns,
+                style: style,
+                context: context
+            )
         }
         let header = Transcript.Item.toolHeader(
-            name: name, summary: summary, status: status, output: output, folded: false)
+            name: name,
+            summary: summary,
+            status: status,
+            output: output,
+            folded: false
+        )
         return openBlock(
-            header, metadata: metadata, item: item.showing(shownOutput), block: block, width: width, inset: inset)
+            header,
+            metadata: metadata,
+            item: item.showing(shownOutput),
+            block: block,
+            width: width,
+            inset: inset
+        )
     }
 
     /// An open command block: its header row starts the command, the command's other rows follow it, then the output.
     static func commandLines(
-        _ item: Transcript.Item, block: Int, width: Int, inset: Int, style: BlockStyle,
+        _ item: Transcript.Item,
+        block: Int,
+        width: Int,
+        inset: Int,
+        style: BlockStyle,
         context: (progress: BlockProgress?, toolInput: ShownToolInput?, output: String)
     ) -> [Line] {
         guard case .tool(let name, let parameters, let status, let output, let input) = item else { return [] }
         let header = Transcript.Item.commandHeader(
-            name: name, parameters: parameters, command: context.toolInput?.text ?? input, folded: false)
+            name: name,
+            parameters: parameters,
+            command: context.toolInput?.text ?? input,
+            folded: false
+        )
         let metadata = blockMetadata(
-            status: status, output: output, progress: context.progress, localizedDurations: style.localizedDurations,
-            toolName: name)
+            status: status,
+            output: output,
+            progress: context.progress,
+            localizedDurations: style.localizedDurations,
+            toolName: name
+        )
         let lead = Transcript.Item.commandHeader(name: name, parameters: parameters, command: "", folded: false).count
         let commandLines = TranscriptContent.hardLineCount(of: header)
         return openBlock(
-            header, metadata: metadata, item: item.showing(context.output), block: block, width: width, inset: inset
+            header,
+            metadata: metadata,
+            item: item.showing(context.output),
+            block: block,
+            width: width,
+            inset: inset
         )
         .map { brightened($0, block: block, lead: lead, commandLines: commandLines) }
     }
@@ -103,15 +174,31 @@ extension ScreenComposer {
 
     /// An open tool block: its header, then a blank row and its output, dimmed, counted from the line after the header's last.
     private static func openBlock(
-        _ header: String, metadata: String, item: Transcript.Item, block: Int, width: Int, inset: Int
+        _ header: String,
+        metadata: String,
+        item: Transcript.Item,
+        block: Int,
+        width: Int,
+        inset: Int
     ) -> [Line] {
         guard case .tool(_, _, let status, let shownOutput, _) = item else { return [] }
         let lines = blockHeader(
-            header, metadata: metadata, block: block, width: width, inset: inset, style: toolStatusStyle(status))
+            header,
+            metadata: metadata,
+            block: block,
+            width: width,
+            inset: inset,
+            style: toolStatusStyle(status)
+        )
         guard !shownOutput.isEmpty else { return lines }
         return lines + [Line(text: "", style: .default)]
             + body(
-                of: shownOutput, block: block, width: width, inset: inset, style: Style(dim: true),
-                firstLine: TranscriptContent.hardLineCount(of: header))
+                of: shownOutput,
+                block: block,
+                width: width,
+                inset: inset,
+                style: Style(dim: true),
+                firstLine: TranscriptContent.hardLineCount(of: header)
+            )
     }
 }

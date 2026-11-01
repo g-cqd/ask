@@ -27,11 +27,13 @@ extension ScreenController {
         var regions = RegionMap<Int>()
         regions.add(
             Self.transcriptTarget,
-            at: CellRect(row: 0, col: 0, rows: frame.transcriptRows, cols: frame.transcriptColumns))
+            at: CellRect(row: 0, col: 0, rows: frame.transcriptRows, cols: frame.transcriptColumns)
+        )
         if frame.prompt != nil, frame.promptRows > 0 {
             regions.add(
                 Self.promptTarget,
-                at: CellRect(row: frame.promptRow, col: 0, rows: frame.promptRows, cols: frame.columns))
+                at: CellRect(row: frame.promptRow, col: 0, rows: frame.promptRows, cols: frame.columns)
+            )
         }
         if frame.runnerColumns != nil || frame.belowColumns != nil || frame.markColumns != nil {
             regions.add(Self.statusTarget, at: CellRect(row: frame.statusRow, col: 0, rows: 1, cols: frame.columns))
@@ -44,8 +46,12 @@ extension ScreenController {
             regions.add(
                 Self.sidebarTarget,
                 at: CellRect(
-                    row: 0, col: frame.transcriptColumns + 1, rows: frame.sidebarIDs.count,
-                    cols: Swift.max(0, frame.columns - frame.transcriptColumns - 1)))
+                    row: 0,
+                    col: frame.transcriptColumns + 1,
+                    rows: frame.sidebarIDs.count,
+                    cols: Swift.max(0, frame.columns - frame.transcriptColumns - 1)
+                )
+            )
         }
         band(Self.approvalTarget, from: frame.approvalAnswers.lowerBound, rows: frame.approvalAnswers.count)
         band(Self.approvalDetailTarget, from: frame.approvalDetail.lowerBound, rows: frame.approvalDetail.count)
@@ -79,7 +85,11 @@ extension ScreenController {
             case .dragMoved(let cell):
                 let update = selector.drag(row: cell.row, col: cell.col, rows: frame.rows, scrollableRows: scrollable)
                 autoscroll = DragAutoscroll(
-                    request: update.scroll, row: cell.row, col: cell.col, extendedAt: state.scrollback)
+                    request: update.scroll,
+                    row: cell.row,
+                    col: cell.col,
+                    extendedAt: state.scrollback
+                )
                 switch update.scroll {
                     case .up: scroll(by: 1)
                     case .down: scroll(by: -1)
@@ -154,7 +164,12 @@ extension ScreenController {
         if toggleFold(atRow: cell.row) { return [] }
         let content = count >= 2 ? TranscriptContent(state.transcript) : TranscriptContent()
         let update = selector.click(
-            row: cell.row, col: cell.col, count: count, rows: frame.rows, content: content)
+            row: cell.row,
+            col: cell.col,
+            count: count,
+            rows: frame.rows,
+            content: content
+        )
         return copyIfCommitted(update)
     }
 
@@ -172,7 +187,10 @@ extension ScreenController {
         else { return false }
         let before =
             ScreenComposer.lines(
-                in: state.transcript, at: block, columns: frame.transcriptColumns, style: state.blocks
+                in: state.transcript,
+                at: block,
+                columns: frame.transcriptColumns,
+                style: state.blocks
             )
             .count
         if frame.middleFolds.indices.contains(row), frame.middleFolds[row] {
@@ -186,7 +204,10 @@ extension ScreenController {
         }
         let after =
             ScreenComposer.lines(
-                in: state.transcript, at: block, columns: frame.transcriptColumns, style: state.blocks
+                in: state.transcript,
+                at: block,
+                columns: frame.transcriptColumns,
+                style: state.blocks
             )
             .count
         // Scrolled back, the lines below the header grew or shrank, so the view moves by as much and the header stays on its row.
@@ -195,48 +216,5 @@ extension ScreenController {
         // Positions inside a body that just closed no longer exist.
         selector.clear()
         return true
-    }
-
-    /// Ctrl+O: what a keyboard has for the click, and for the mouse being off. It flips every tool block at once.
-    func isToggleToolOutput(_ key: KeyEvent) -> Bool { Self.isControl(key, "o") }
-
-    /// Ctrl+T: the same for thinking blocks.
-    func isToggleThinking(_ key: KeyEvent) -> Bool { Self.isControl(key, "t") }
-
-    /// Ctrl and a letter, as a legacy terminal sends it (the control byte) or a keyboard-protocol terminal does (letter plus modifier).
-    static func isControl(_ key: KeyEvent, _ letter: Character) -> Bool {
-        guard let code = letter.asciiValue.map(UInt32.init) else { return false }
-        return key.keyCode == code & 0x1F || (key.modifiers.contains(.ctrl) && key.keyCode == code)
-    }
-
-    mutating func toggleAllThinking() -> [Effect] {
-        state.transcript.setThinkingFoldedByDefault(!state.transcript.thinkingFoldedByDefault)
-        clearSelection()
-        return []
-    }
-
-    mutating func toggleAllToolOutput() -> [Effect] {
-        state.transcript.setToolsFoldedByDefault(!state.transcript.toolsFoldedByDefault)
-        clearSelection()
-        return []
-    }
-
-    /// Drops the selection and any drag in progress, such as when the user types or the conversation is cleared.
-    mutating func clearSelection() {
-        dropSelections()
-        pointer.reset()
-    }
-
-    /// Drops both selections but leaves the pointer's memory of its last click alone: a click that changes the selection is part of a
-    /// double or triple click, and forgetting it would make the next click a first one again.
-    mutating func dropSelections() {
-        state.clipboardNotice = ""
-        selector.clear()
-        autoscroll.request = nil
-        state.selection = nil
-        state.inputSelection = nil
-        state.promptScroll = nil
-        inputDrag = InputDrag()
-        inputAnchor = nil
     }
 }

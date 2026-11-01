@@ -9,8 +9,14 @@ struct CredentialFileTests {
     private let directory: URL
     private let file: CredentialFile
     private let credentials = ClaudeCredentials(
-        accessToken: "sk-ant-oat-A", refreshToken: "sk-ant-ort-R", expiresAt: 1_000, refreshExpiresAt: nil,
-        accountEmail: "a@b.c", organizationName: nil, scopes: "user:inference")
+        accessToken: "sk-ant-oat-A",
+        refreshToken: "sk-ant-ort-R",
+        expiresAt: 1_000,
+        refreshExpiresAt: nil,
+        accountEmail: "a@b.c",
+        organizationName: nil,
+        scopes: "user:inference"
+    )
 
     init() {
         // Several missing levels, as a fresh XDG_CONFIG_HOME would be.
@@ -69,10 +75,12 @@ struct CredentialFileTests {
     @Test func `the standard location follows XDG_CONFIG_HOME, then the home directory`() {
         #expect(
             CredentialFile.standard(environment: ["XDG_CONFIG_HOME": "/x"], home: "/h").url.path
-                == "/x/ask/credentials.json")
+                == "/x/ask/credentials.json"
+        )
         #expect(CredentialFile.standard(environment: [:], home: "/h").url.path == "/h/.config/ask/credentials.json")
         #expect(
             CredentialFile.standard(environment: ["XDG_CONFIG_HOME": "relative"], home: "/h").url.path
-                == "/h/.config/ask/credentials.json")
+                == "/h/.config/ask/credentials.json"
+        )
     }
 }

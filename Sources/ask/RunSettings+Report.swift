@@ -10,7 +10,8 @@ extension RunSettings {
         let skills = SkillsSection(
             enabled: c.skills.value.enabled ?? true,
             maxAdvertised: c.skills.value.maxAdvertised ?? SkillsSection.defaultMaxAdvertised,
-            sources: c.skills.value.sources)
+            sources: c.skills.value.sources
+        )
         func pad(_ text: String, _ width: Int) -> String {
             text + String(repeating: " ", count: max(1, width - text.count))
         }
@@ -34,10 +35,19 @@ extension RunSettings {
     var effectiveUI: UISection {
         let options = screenOptions
         var ui = UISection(
-            mouse: options.mouse, copyOnSelect: options.copyOnSelect, foldTools: options.foldTools,
-            foldThinking: options.foldThinking, scrollLines: options.scrollLines, promptRows: options.promptRows,
-            foldCode: options.foldCode, codeFoldLines: options.codeFoldLines, sidebarOpen: options.sidebar,
-            prompt: options.prompt, tint: options.tint, separator: options.separator, padding: options.padding,
+            mouse: options.mouse,
+            copyOnSelect: options.copyOnSelect,
+            foldTools: options.foldTools,
+            foldThinking: options.foldThinking,
+            scrollLines: options.scrollLines,
+            promptRows: options.promptRows,
+            foldCode: options.foldCode,
+            codeFoldLines: options.codeFoldLines,
+            sidebarOpen: options.sidebar,
+            prompt: options.prompt,
+            tint: options.tint,
+            separator: options.separator,
+            padding: options.padding,
             markdown: options.markdown,
             localizedDurations: options.localizedDurations,
             spinner: SpinnerPreference(rawValue: options.spinner.rawValue),
@@ -48,8 +58,10 @@ extension RunSettings {
             interruptSendsQueued: QueuedAfterInterruptPreference(rawValue: options.interruptSendsQueued.rawValue),
             onlyUsefulModels: configuration.ui.value.onlyUsefulModels ?? true,
             appearance: AppearancePreference(rawValue: options.appearance.rawValue),
-            timeout: TimeoutPreference(rawValue: options.timeoutDisplay.rawValue), timeoutLabel: options.timeoutLabel,
-            sessionColor: configuration.ui.value.sessionColor ?? .off)
+            timeout: TimeoutPreference(rawValue: options.timeoutDisplay.rawValue),
+            timeoutLabel: options.timeoutLabel,
+            sessionColor: configuration.ui.value.sessionColor ?? .off
+        )
         ui.outputFoldLines = options.outputFoldLines
         ui.outputFoldBytes = options.outputFoldBytes
         return ui

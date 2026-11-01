@@ -82,7 +82,9 @@ struct TerminalTeardownTests {
         let disabledAt = try #require(Self.firstIndex(of: disable, in: output, after: enabledAt))
         #expect(enabledAt < disabledAt)
         #expect(
-            conversation.prompts == ["one\ntwo"], "the paste is one two-line prompt, submitted by the Enter after it")
+            conversation.prompts == ["one\ntwo"],
+            "the paste is one two-line prompt, submitted by the Enter after it"
+        )
     }
 
     private static func firstIndex(of needle: [UInt8], in haystack: [UInt8], after start: Int = 0) -> Int? {
@@ -122,8 +124,12 @@ struct TerminalTeardownTests {
         let (resizes, done) = AsyncStream<Void>.makeStream()
         done.finish()
         try await runInteractiveScreen(
-            on: connection, conversation: IdleConversation(), label: "m",
-            notices: ["Instructions loaded from /p/AGENTS.md."], resizes: resizes)
+            on: connection,
+            conversation: IdleConversation(),
+            label: "m",
+            notices: ["Instructions loaded from /p/AGENTS.md."],
+            resizes: resizes
+        )
         let written = String(decoding: connection.writtenOutput, as: UTF8.self)
         // The path is a link now (roadmap 0075): the text around the OSC 8 sequences is the notice.
         var text = written

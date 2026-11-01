@@ -23,7 +23,8 @@ struct TypedSettingsTests {
         (#"{"compactAt": "75%"}"#, .share(75))
     ])
     func `compactAt is a share up to 1, tokens above it, or 0 for only when full`(
-        text: String, expected: CompactionThreshold
+        text: String,
+        expected: CompactionThreshold
     ) throws {
         #expect(try parse(text).compactAt == expected)
     }

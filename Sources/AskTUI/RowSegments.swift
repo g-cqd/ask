@@ -10,13 +10,22 @@ struct RowSegments {
     /// Adds the segment for a run `width` columns wide at `column`, showing the source bytes `range`. A run that shows no grapheme of
     /// its line (a soft break drawn as a space) is chrome.
     mutating func add(
-        _ range: Range<Int>, of text: String, at column: Int, width: Int, source: inout MarkdownSourceLines
+        _ range: Range<Int>,
+        of text: String,
+        at column: Int,
+        width: Int,
+        source: inout MarkdownSourceLines
     ) {
         let start = source.position(of: range.lowerBound)
         let count = source.count(on: start.line, from: range.lowerBound, to: range.upperBound)
         guard count > 0 else { return }
         let segment = RowSegment(
-            line: start.line, firstOffset: start.offset, col: column, text: text, sourceCount: count)
+            line: start.line,
+            firstOffset: start.offset,
+            col: column,
+            text: text,
+            sourceCount: count
+        )
         let ascii = SegmentEnd.isPrintableASCII(text)
         let linear = ascii ? text.utf8.count == count : segment.isLinear
         if let end, let previous = segments.last, end.isLinear, linear, previous.line == segment.line,
@@ -30,8 +39,10 @@ struct RowSegments {
                 end.isASCII && ascii
                 ? SegmentEnd(column: column + width, isLinear: true, isASCII: true)
                 : SegmentEnd(
-                    column: joined.col + UnicodeWidth.displayWidth(of: joined.text), isLinear: joined.isLinear,
-                    isASCII: false)
+                    column: joined.col + UnicodeWidth.displayWidth(of: joined.text),
+                    isLinear: joined.isLinear,
+                    isASCII: false
+                )
         } else {
             segments.append(segment)
             end = SegmentEnd(column: column + UnicodeWidth.displayWidth(of: text), isLinear: linear, isASCII: ascii)

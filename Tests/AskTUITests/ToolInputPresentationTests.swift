@@ -105,11 +105,13 @@ struct ToolInputPresentationTests {
 
     @Test func `clicking an embedded fold opens only the heredoc and input copying excludes labels`() throws {
         var rig = PointerRig(
-            columns: 80, rows: 80,
+            columns: 80,
+            rows: 80,
             updates: [
                 .toolStarted(name: "shell", summary: "cat", id: "call", fullInput: heredoc(45)),
                 .toolFinished(.succeeded, output: "RESULT", id: "call")
-            ])
+            ]
+        )
         rig.controller.state.transcript.setToolsFoldedByDefault(false)
         rig.draw()
         let placeholder = try #require((0 ..< 80).first { rig.text(row: $0).contains("embedded heredoc") })
@@ -155,8 +157,14 @@ struct ToolInputPresentationTests {
         let started = ContinuousClock.now
         transcript.updateJob(
             JobUpdate(
-                id: "job-1", label: "abcd", output: "streamed", status: .running,
-                startedAt: started, lines: 1))
+                id: "job-1",
+                label: "abcd",
+                output: "streamed",
+                status: .running,
+                startedAt: started,
+                lines: 1
+            )
+        )
         transcript.setToolsFoldedByDefault(false)
         #expect(transcript.contentText(at: 0).contains("SERVER INPUT\nstreamed"))
         #expect(transcript.contentText(at: 1).contains("OTHER INPUT"))

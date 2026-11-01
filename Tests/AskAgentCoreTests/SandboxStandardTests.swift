@@ -14,15 +14,21 @@ struct SandboxStandardTests {
             ".config/ask", ".local/state/ask", ".aws", ".gnupg", ".ssh", "Library/Keychains", "work", "clients"
         ] {
             try FileManager.default.createDirectory(
-                at: made.appending(path: directory), withIntermediateDirectories: true)
+                at: made.appending(path: directory),
+                withIntermediateDirectories: true
+            )
         }
         home = String(cString: realpath(made.path, nil))
     }
 
     private func standard(allowRead: [String] = [], denyRead: [String] = []) -> SandboxPolicy {
         SandboxPolicy.standard(
-            home: home, configDirectory: home + "/.config/ask", stateDirectory: home + "/.local/state/ask",
-            allowRead: allowRead, denyRead: denyRead)
+            home: home,
+            configDirectory: home + "/.config/ask",
+            stateDirectory: home + "/.local/state/ask",
+            allowRead: allowRead,
+            denyRead: denyRead
+        )
     }
 
     private func allowed(_ policy: SandboxPolicy, _ capability: SandboxCapability, _ relative: String) -> Bool {

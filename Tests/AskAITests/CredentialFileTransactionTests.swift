@@ -14,13 +14,21 @@ struct CredentialFileTransactionTests {
     private func fresh(lockWait: Duration = .seconds(5)) -> CredentialFile {
         CredentialFile(
             url: FileManager.default.temporaryDirectory.appending(
-                path: "ask-txn-\(UUID().uuidString)/ask/credentials.json"),
-            lockWait: lockWait)
+                path: "ask-txn-\(UUID().uuidString)/ask/credentials.json"
+            ),
+            lockWait: lockWait
+        )
     }
 
     private let claude = ClaudeCredentials(
-        accessToken: "a", refreshToken: "r", expiresAt: 1, refreshExpiresAt: nil, accountEmail: nil,
-        organizationName: nil, scopes: "s")
+        accessToken: "a",
+        refreshToken: "r",
+        expiresAt: 1,
+        refreshExpiresAt: nil,
+        accountEmail: nil,
+        organizationName: nil,
+        scopes: "s"
+    )
     private let codex = CodexCredentials(accessToken: "ca", refreshToken: "cr", expiresAt: 1, accountID: "acct")
 
     @Test(arguments: [false, true])
@@ -109,8 +117,14 @@ struct CredentialFileTransactionTests {
         #expect(try file.loadCodex() == newer)
         #expect(try file.loadKey(for: "spettro") == StoredKey(key: "k", obtainedAt: 1), "other providers are kept")
         let claudeNewer = ClaudeCredentials(
-            accessToken: "b", refreshToken: "s", expiresAt: 9, refreshExpiresAt: nil, accountEmail: nil,
-            organizationName: nil, scopes: "s")
+            accessToken: "b",
+            refreshToken: "s",
+            expiresAt: 9,
+            refreshExpiresAt: nil,
+            accountEmail: nil,
+            organizationName: nil,
+            scopes: "s"
+        )
         try file.saveClaude(claude)
         #expect(try file.saveClaude(claudeNewer, ifStill: claude))
         #expect(try file.loadClaude() == claudeNewer)
@@ -129,7 +143,9 @@ struct CredentialFileTransactionTests {
         let none = fresh()
         #expect(try !none.saveClaude(claude, ifStill: claude))
         #expect(
-            !FileManager.default.fileExists(atPath: none.url.path), "no credentials file is made for a refused save")
+            !FileManager.default.fileExists(atPath: none.url.path),
+            "no credentials file is made for a refused save"
+        )
         let directory = none.url.deletingLastPathComponent().path
         #expect(!FileManager.default.fileExists(atPath: directory), "nor a directory or lock file to hold it")
     }

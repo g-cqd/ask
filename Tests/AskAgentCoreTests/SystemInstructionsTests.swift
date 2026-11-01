@@ -29,6 +29,7 @@ struct SystemInstructionsTests {
     @Test func `a different directory changes the text`() {
         #expect(
             SystemInstructions.text(workingDirectory: "/a")
-                != SystemInstructions.text(workingDirectory: "/b"))
+                != SystemInstructions.text(workingDirectory: "/b")
+        )
     }
 }

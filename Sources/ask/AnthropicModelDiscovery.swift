@@ -4,7 +4,8 @@ internal import Foundation
 /// Binds native discovery to the same endpoint and credential owner as Messages. This factory itself performs no reads.
 enum AnthropicModelDiscovery {
     static func catalog(
-        environment: [String: String], connection: ConnectionRecord? = nil
+        environment: [String: String],
+        connection: ConnectionRecord? = nil
     ) -> AnthropicModelCatalog {
         let file = NamedConnections.file(for: connection, environment: environment)
         let transport = URLSessionTransport()
@@ -14,8 +15,10 @@ enum AnthropicModelDiscovery {
         return AnthropicModelCatalog(
             endpoint: endpoint,
             cache: ModelCatalogFile(url: file.url.deletingLastPathComponent().appending(path: "models-anthropic.json")),
-            transport: transport, connectionID: connection?.id,
+            transport: transport,
+            connectionID: connection?.id,
             authorize: { now in try await owner.auth(environment: environment, now: now) },
-            cachedAuthorization: { now in try owner.cached(environment: environment, now: now) })
+            cachedAuthorization: { now in try owner.cached(environment: environment, now: now) }
+        )
     }
 }

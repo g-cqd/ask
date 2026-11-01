@@ -76,8 +76,10 @@ public struct ModelCatalogFile: Sendable {
                 .encodeToBytes(Stored(version: 1, scope: scope, fetchedAt: now, models: models))
             guard bytes.count <= Self.byteLimit else { throw ModelCatalogError.cache(path: url.path) }
             try FileManager.default.createDirectory(
-                at: url.deletingLastPathComponent(), withIntermediateDirectories: true,
-                attributes: [.posixPermissions: 0o700])
+                at: url.deletingLastPathComponent(),
+                withIntermediateDirectories: true,
+                attributes: [.posixPermissions: 0o700]
+            )
             try AtomicFile.replace(url, with: bytes)
         } catch { throw ModelCatalogError.cache(path: url.path) }
     }

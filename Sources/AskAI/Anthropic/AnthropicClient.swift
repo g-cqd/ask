@@ -65,10 +65,17 @@ public struct AnthropicClient: Sendable {
             return problem.failedStream
         }
         let http = HTTPRequest(
-            url: endpoint, method: "POST", headers: Self.headers(for: auth),
-            body: AnthropicRequestEncoder.encode(request))
+            url: endpoint,
+            method: "POST",
+            headers: Self.headers(for: auth),
+            body: AnthropicRequestEncoder.encode(request)
+        )
         return ProviderStream.events(
-            http, over: transport, decoder: AnthropicStreamDecoder.self, succeeds: { $0 == 200 })
+            http,
+            over: transport,
+            decoder: AnthropicStreamDecoder.self,
+            succeeds: { $0 == 200 }
+        )
     }
 
     static func headers(for auth: Auth) -> [(name: String, value: String)] {

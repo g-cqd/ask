@@ -25,17 +25,31 @@ extension ConfigEditor {
             case .boolean, .onOff:
                 let wire = descriptor.kind == .boolean ? Wire.boolean : Wire.string
                 return Setting(
-                    path: descriptor.path, title: title, value: Self.onOff(current) ?? "invalid",
-                    choices: ["unset", "on", "off"], editable: true, wire: wire)
+                    path: descriptor.path,
+                    title: title,
+                    value: Self.onOff(current) ?? "invalid",
+                    choices: ["unset", "on", "off"],
+                    editable: true,
+                    wire: wire
+                )
             case .choice(let choices):
                 let text = if case .string(let value) = current { value } else { "unset" }
                 return Setting(
-                    path: descriptor.path, title: title, value: text,
-                    choices: ["unset"] + choices, editable: true)
+                    path: descriptor.path,
+                    title: title,
+                    value: text,
+                    choices: ["unset"] + choices,
+                    editable: true
+                )
             case .readOnly:
                 return Setting(
-                    path: descriptor.path, title: title, value: Self.display(current), choices: [], editable: false,
-                    wire: .string)
+                    path: descriptor.path,
+                    title: title,
+                    value: Self.display(current),
+                    choices: [],
+                    editable: false,
+                    wire: .string
+                )
         }
     }
 

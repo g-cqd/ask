@@ -17,10 +17,12 @@ struct ToolFactsTests {
         let older = Data(#"{"kind":"tool_result","callID":"t1","content":"ok","isError":false}"#.utf8)
         #expect(
             try JSONDecoder().decode(WirePayload.self, from: older).value
-                == .toolResult(callID: "t1", content: "ok", isError: false))
+                == .toolResult(callID: "t1", content: "ok", isError: false)
+        )
         let plain = try JSONEncoder()
             .encode(
-                WirePayload(value: .toolResult(callID: "t1", content: "ok", isError: false)))
+                WirePayload(value: .toolResult(callID: "t1", content: "ok", isError: false))
+            )
         #expect(!String(decoding: plain, as: UTF8.self).contains("replacements"), "no key when there is no fact")
     }
 
@@ -28,8 +30,13 @@ struct ToolFactsTests {
     private func recorded() throws -> [SessionEntry] {
         let input = try JSONObject(validating: Array(#"{"path":"a"}"#.utf8))
         let asked = AssembledResponse(
-            id: "m", model: "x", blocks: [.toolCall(id: "t1", name: "edit", input: input)], stopReason: .toolUse,
-            usage: TokenUsage(output: 1), unrecognized: [])
+            id: "m",
+            model: "x",
+            blocks: [.toolCall(id: "t1", name: "edit", input: input)],
+            stopReason: .toolUse,
+            usage: TokenUsage(output: 1),
+            unrecognized: []
+        )
         let payloads: [SessionPayload] = [
             .user("Go"), .response(asked),
             .toolResult(callID: "t1", content: "Replaced 3.", isError: false, facts: facts)
@@ -37,7 +44,10 @@ struct ToolFactsTests {
         return payloads.enumerated()
             .map { index, payload in
                 SessionEntry(
-                    id: EntryID("e\(index)"), parentID: index == 0 ? nil : EntryID("e\(index - 1)"), payload: payload)
+                    id: EntryID("e\(index)"),
+                    parentID: index == 0 ? nil : EntryID("e\(index - 1)"),
+                    payload: payload
+                )
             }
     }
 
@@ -46,12 +56,14 @@ struct ToolFactsTests {
         expected.facts = facts
         #expect(
             SessionReplay.steps(try recorded())
-                .contains(.event(.toolFinished(id: "t1", name: "edit", output: expected))))
+                .contains(.event(.toolFinished(id: "t1", name: "edit", output: expected)))
+        )
     }
 
     @Test func `facts stay out of what the model is sent`() throws {
         #expect(
             RequestContext(try recorded()).messages.last
-                == ModelMessage(role: .user, blocks: [.toolResult(id: "t1", content: "Replaced 3.", isError: false)]))
+                == ModelMessage(role: .user, blocks: [.toolResult(id: "t1", content: "Replaced 3.", isError: false)])
+        )
     }
 }

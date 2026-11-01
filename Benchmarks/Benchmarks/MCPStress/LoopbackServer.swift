@@ -11,7 +11,8 @@ final class LoopbackServer: MCPTransport {
     private let suffix: [UInt8]
     private static let handshake = Array(
         #"{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{}},"serverInfo":{"name":"loop","version":"1"}}}"#
-            .utf8)
+            .utf8
+    )
 
     init(size: Int) {
         (incoming, sink) = AsyncStream.makeStream(of: [UInt8].self)

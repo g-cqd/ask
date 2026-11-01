@@ -28,8 +28,14 @@ struct ConnectionBindingTests {
         let registry = ConnectionRegistry(directory: root)
         let record = try registry.register(name: "work", provider: .anthropic)
         let credentials = ClaudeCredentials(
-            accessToken: "a", refreshToken: "r", expiresAt: 1000, refreshExpiresAt: nil,
-            accountEmail: "a@example.test", organizationName: nil, scopes: "s")
+            accessToken: "a",
+            refreshToken: "r",
+            expiresAt: 1000,
+            refreshExpiresAt: nil,
+            accountEmail: "a@example.test",
+            organizationName: nil,
+            scopes: "s"
+        )
         try registry.saveClaude(credentials, for: record)
         let file = registry.credentials(for: record)
         #expect(try file.loadClaude(connection: record) == credentials)

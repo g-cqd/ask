@@ -19,8 +19,10 @@ public struct ModelAccountMemory: Sendable {
         guard all[Self.key(model, kind)] != account else { return }
         all[Self.key(model, kind)] = account
         try FileManager.default.createDirectory(
-            at: url.deletingLastPathComponent(), withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700])
+            at: url.deletingLastPathComponent(),
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
         var encoder = AemiJSON.JSONEncoder()
         encoder.options.keyOrder = .sorted
         try AtomicFile.replace(url, with: try encoder.encodeToBytes(all))

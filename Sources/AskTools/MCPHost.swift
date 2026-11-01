@@ -53,8 +53,11 @@ public final class MCPHost: Sendable {
     ///   - transport: how a server's transport is made.
     ///   - forwarding: also told everything ``notices`` is, for a caller that outlives this host.
     public init(
-        servers: [MCPServerSetting], live: LiveTools, environment: [String: String],
-        maximumDirectTools: Int = MCPHost.defaultMaximumDirectTools, transport: @escaping TransportFactory,
+        servers: [MCPServerSetting],
+        live: LiveTools,
+        environment: [String: String],
+        maximumDirectTools: Int = MCPHost.defaultMaximumDirectTools,
+        transport: @escaping TransportFactory,
         forwarding: (@Sendable (String) -> Void)? = nil
     ) {
         self.forward = forwarding
@@ -65,7 +68,8 @@ public final class MCPHost: Sendable {
         self.maximumDirectTools = maximumDirectTools
         self.makeTransport = transport
         state = Mutex(
-            State(statuses: servers.map { MCPServerStatus(name: $0.name, state: $0.enabled ? .connecting : .off) }))
+            State(statuses: servers.map { MCPServerStatus(name: $0.name, state: $0.enabled ? .connecting : .off) })
+        )
         (notices, noticeSink) = AsyncStream.makeStream(of: String.self, bufferingPolicy: .bufferingNewest(64))
     }
 

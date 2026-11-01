@@ -10,7 +10,9 @@ enum HTTPMCP {
 
     /// A transport to `url` through `http`, naming itself `ask-test/1`.
     static func transport(
-        _ http: ScriptedHTTP, url: URL = HTTPMCP.url, headers: [(name: String, value: String)] = []
+        _ http: ScriptedHTTP,
+        url: URL = HTTPMCP.url,
+        headers: [(name: String, value: String)] = []
     ) throws -> HTTPMCPTransport {
         try HTTPMCPTransport(url: url, headers: headers, userAgent: "ask-test/1", http: http)
     }

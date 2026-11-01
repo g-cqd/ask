@@ -13,17 +13,23 @@ extension AgentLoop {
     /// A threshold asked as a share is taken of that window (roadmap 0104).
     static func budget(for settings: AgentSettings, window: Int?) -> ContextBudget {
         let configured = ContextBudget(
-            maximumTokens: settings.maximumTokens, compactAtTokens: settings.compactAtTokens,
-            keepRecentBytes: settings.keepRecentBytes, toolOutputBytes: settings.toolOutputBytes)
+            maximumTokens: settings.maximumTokens,
+            compactAtTokens: settings.compactAtTokens,
+            keepRecentBytes: settings.keepRecentBytes,
+            toolOutputBytes: settings.toolOutputBytes
+        )
         guard let window else { return configured }
         let fitted = ContextBudget(
-            contextWindow: window, maxOutputTokens: settings.maximumTokens,
-            requestedCompactAt: settings.compactAtShare.map { window * $0 / 100 } ?? settings.compactAtTokens)
+            contextWindow: window,
+            maxOutputTokens: settings.maximumTokens,
+            requestedCompactAt: settings.compactAtShare.map { window * $0 / 100 } ?? settings.compactAtTokens
+        )
         return ContextBudget(
             maximumTokens: Swift.min(configured.maximumTokens, fitted.maximumTokens),
             compactAtTokens: fitted.compactAtTokens,
             keepRecentBytes: Swift.min(configured.keepRecentBytes, fitted.keepRecentBytes),
-            toolOutputBytes: [configured.toolOutputBytes, fitted.toolOutputBytes].compactMap(\.self).min())
+            toolOutputBytes: [configured.toolOutputBytes, fitted.toolOutputBytes].compactMap(\.self).min()
+        )
     }
 
     /// The tokens a response's context held: its prompt, read from cache or not, plus its reply.

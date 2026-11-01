@@ -17,7 +17,9 @@ struct MCPToolNameTests {
         #expect(name.hasPrefix("mcp__s__a_b_c_") && MCPToolName.isAcceptable(name))
         #expect(MCPToolName.make(server: "s", tool: "a.b c") == name, "the same every time")
         #expect(
-            MCPToolName.make(server: "s", tool: "a b.c") != name, "two tools that sanitise alike are still two names")
+            MCPToolName.make(server: "s", tool: "a b.c") != name,
+            "two tools that sanitise alike are still two names"
+        )
     }
 
     @Test func `a name past sixty-four characters is cut and hashed, and stays within the limit`() {

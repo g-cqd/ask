@@ -36,8 +36,12 @@ for size in Payloads.sizes {
         let elapsed = try await loopback(calls: calls, size: size, concurrency: concurrency)
         report(
             Measurement(
-                name: "loopback \(size) B, \(concurrency) in flight", calls: calls, elapsed: elapsed,
-                floor: codec + server))
+                name: "loopback \(size) B, \(concurrency) in flight",
+                calls: calls,
+                elapsed: elapsed,
+                floor: codec + server
+            )
+        )
     }
 }
 
@@ -65,7 +69,12 @@ let httpServers = [
 ]
 for (index, (name, runtime, mode, sse)) in httpServers.enumerated() {
     let server = try HTTPServer(
-        name: name, runtime: runtime, script: servers + "/http_server.mjs", port: 18_700 + index, mode: mode)
+        name: name,
+        runtime: runtime,
+        script: servers + "/http_server.mjs",
+        port: 18_700 + index,
+        mode: mode
+    )
     defer { server.stop() }
     for size in [2, 4096] {
         let calls = count(3_000)

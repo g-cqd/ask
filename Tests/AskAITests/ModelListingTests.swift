@@ -64,7 +64,8 @@ struct ModelListingTests {
             listing.models.map(\.id) == [
                 "01-ai/yi-large", "adept/fuyu-8b", "ai21labs/jamba-1.5-large-instruct",
                 "aisingapore/sea-lion-7b-instruct"
-            ])
+            ]
+        )
         #expect(listing.models.allSatisfy { $0.contextWindow == nil && $0.maxOutputTokens == nil })
         #expect(listing.models.allSatisfy { $0.reasoningLevels.isEmpty && $0.defaultReasoningLevel == nil })
     }
@@ -72,7 +73,8 @@ struct ModelListingTests {
     @Test func `Spettro's documented context_window is read`() throws {
         // Written from ask's research notes, not from an answer with a key: it pins the reading, it does not prove Spettro's shape.
         let listing = try listing(
-            #"{"data":[{"id":"spettro-fast","context_window":131072,"vision":true,"reasoning":true}]}"#)
+            #"{"data":[{"id":"spettro-fast","context_window":131072,"vision":true,"reasoning":true}]}"#
+        )
         #expect(listing.models.first?.contextWindow == 131_072)
     }
 
@@ -126,7 +128,8 @@ struct ModelListingTests {
         let none = #"{"data":[{"id":"m","top_provider":{"max_completion_tokens":4096}}]}"#
         #expect(
             try listing(none).models.first?.maxOutputTokens == 4096,
-            "with no window to compare, the stated limit stands")
+            "with no window to compare, the stated limit stands"
+        )
         let zero = #"{"data":[{"id":"m","top_provider":{"max_completion_tokens":0}}]}"#
         #expect(try listing(zero).models.first?.maxOutputTokens == nil)
     }

@@ -40,7 +40,9 @@ struct MCPHostTests {
 
     @Test func `a list of tools offers those, and says which it asked for that the server lacks`() async throws {
         let host = world.host(
-            [world.setting("srv", tools: ["b", "nope"])], ["srv": FakeMCPServer(tools: ["a", "b", "c"])])
+            [world.setting("srv", tools: ["b", "nope"])],
+            ["srv": FakeMCPServer(tools: ["a", "b", "c"])]
+        )
         host.start()
         await host.waitUntilSettled()
         #expect(world.offered == ["mcp__srv__b"])
@@ -61,7 +63,10 @@ struct MCPHostTests {
     @Test func `a list lets a big server in, even past the limit`() async throws {
         let names = (1 ... 5).map { "t\($0)" }
         let host = world.host(
-            [world.setting("big", tools: ["t1", "t2"])], ["big": FakeMCPServer(tools: names)], maximumDirectTools: 1)
+            [world.setting("big", tools: ["t1", "t2"])],
+            ["big": FakeMCPServer(tools: names)],
+            maximumDirectTools: 1
+        )
         host.start()
         await host.waitUntilSettled()
         #expect(world.offered == ["mcp__big__t1", "mcp__big__t2"])
@@ -72,7 +77,9 @@ struct MCPHostTests {
         let bad = FakeMCPServer()
         bad.refuseInitialize()
         let host = world.host(
-            [world.setting("bad"), world.setting("good")], ["bad": bad, "good": FakeMCPServer(tools: ["a"])])
+            [world.setting("bad"), world.setting("good")],
+            ["bad": bad, "good": FakeMCPServer(tools: ["a"])]
+        )
         host.start()
         await host.waitUntilSettled()
         #expect(world.offered == ["mcp__good__a"])
@@ -150,7 +157,9 @@ struct MCPHostTests {
         await host.stop()
         #expect(one.isClosed && two.isClosed && world.offered.isEmpty)
         #expect(
-            !host.status.contains { if case .failed = $0.state { true } else { false } }, "stopping is not a failure")
+            !host.status.contains { if case .failed = $0.state { true } else { false } },
+            "stopping is not a failure"
+        )
     }
 
     @Test func `stopping while a server is still starting closes it instead of waiting for it`() async throws {

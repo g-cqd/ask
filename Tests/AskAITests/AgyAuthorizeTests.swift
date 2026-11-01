@@ -31,9 +31,11 @@ struct AgyAuthorizeTests {
         #expect(first.state != second.state && first.pkce.verifier != second.pkce.verifier)
         #expect(
             first.state.count == 22
-                && first.state.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") })
+                && first.state.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }
+        )
         #expect(
-            first.url.contains("state=\(first.state)") && first.url.contains("code_challenge=\(first.pkce.challenge)"))
+            first.url.contains("state=\(first.state)") && first.url.contains("code_challenge=\(first.pkce.challenge)")
+        )
         #expect(!first.url.contains(first.pkce.verifier))
     }
 
@@ -100,6 +102,7 @@ struct AgyAuthorizeTests {
         #expect(parse(valid) == "4/0AeaYSHDqabcdefg")
         #expect(
             parse(valid + "&padding=" + String(repeating: "x", count: 5_000)) == nil,
-            "a good code does not excuse an oversized paste")
+            "a good code does not excuse an oversized paste"
+        )
     }
 }

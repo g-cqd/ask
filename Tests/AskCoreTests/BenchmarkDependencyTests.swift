@@ -14,10 +14,14 @@ struct BenchmarkDependencyTests {
                 return try #require(
                     capture(
                         ##"\.package\(url: "https://github\.com/g-cqd/TerminalKit\.git", revision: "([a-f0-9]{40})"\)"##,
-                        in: text))
+                        in: text
+                    )
+                )
             }
         #expect(
-            pins[0] == pins[1], "A dependency update must update both manifests; otherwise benchmarks cannot resolve.")
+            pins[0] == pins[1],
+            "A dependency update must update both manifests; otherwise benchmarks cannot resolve."
+        )
     }
 }
 

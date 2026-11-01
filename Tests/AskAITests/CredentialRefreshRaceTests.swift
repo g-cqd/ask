@@ -9,11 +9,21 @@ internal import Testing
 struct CredentialRefreshRaceTests {
     private let file = CredentialFile(
         url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-race-\(UUID().uuidString)/ask/credentials.json"))
+            path: "ask-race-\(UUID().uuidString)/ask/credentials.json"
+        )
+    )
     private let expired = CodexCredentials(
-        accessToken: "old", refreshToken: "rt-1", expiresAt: 100, accountID: "acct_a")
+        accessToken: "old",
+        refreshToken: "rt-1",
+        expiresAt: 100,
+        accountID: "acct_a"
+    )
     private let newLogin = CodexCredentials(
-        accessToken: "login", refreshToken: "rt-9", expiresAt: 90_000, accountID: "acct_b")
+        accessToken: "login",
+        refreshToken: "rt-9",
+        expiresAt: 90_000,
+        accountID: "acct_b"
+    )
     private static let tokens = CodexAccessTests.tokens
 
     /// Starts a refresh, holds its request open, runs `meanwhile`, then lets the response arrive.
@@ -63,8 +73,14 @@ struct CredentialRefreshRaceTests {
 
     @Test func `the same rule holds for Claude`() async throws {
         let stored = ClaudeCredentials(
-            accessToken: "old", refreshToken: "rt", expiresAt: 100, refreshExpiresAt: nil, accountEmail: nil,
-            organizationName: nil, scopes: "user:inference")
+            accessToken: "old",
+            refreshToken: "rt",
+            expiresAt: 100,
+            refreshExpiresAt: nil,
+            accountEmail: nil,
+            organizationName: nil,
+            scopes: "user:inference"
+        )
         try file.saveClaude(stored)
         let reply =
             #"{"token_type":"bearer","access_token":"new","refresh_token":"rt2","expires_in":3600,"scope":"user:inference"}"#

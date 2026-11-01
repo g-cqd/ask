@@ -15,13 +15,18 @@ struct PickerClickTests {
     private static let listing = ProjectFiles(paths: (1 ... 12).map { "src/file\($0).swift" })
 
     private func rig(
-        _ typed: String, files: Bool = false,
+        _ typed: String,
+        files: Bool = false,
         options: ScreenOptions = ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false),
         transcript: Int = 2,
         rows: Int = PickerClickTests.rows
     ) -> PointerRig {
         var rig = PointerRig(
-            columns: 60, rows: rows, options: options, lines: (1 ... transcript).map { "line \($0)" })
+            columns: 60,
+            rows: rows,
+            options: options,
+            lines: (1 ... transcript).map { "line \($0)" }
+        )
         if files { rig.controller.handle(.files(Self.listing)) }
         type(typed, into: &rig)
         return rig
@@ -146,7 +151,9 @@ struct PickerClickTests {
 
     @Test func `with the mouse off nothing is clicked`() throws {
         var rig = rig(
-            "/", options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false))
+            "/",
+            options: ScreenOptions(mouse: false, prompt: "ask> ", tint: false, separator: false, padding: false)
+        )
         let target = try #require(row(of: "/jobs", in: rig))
         rig.click(row: target, col: 3)
         #expect(rig.controller.state.editor.text == "/")
@@ -158,7 +165,9 @@ struct PickerClickTests {
         rig.controller.handle(.askApproval(id: 7, question: "bash wants network any. Allow it?"))
         rig.draw()
         #expect(
-            rig.controller.frame.pickerWindow.isEmpty, "nothing of the list is drawn, so nothing of it is clickable")
+            rig.controller.frame.pickerWindow.isEmpty,
+            "nothing of the list is drawn, so nothing of it is clickable"
+        )
         rig.click(row: target, col: 3)
         #expect(rig.controller.state.editor.text == "/")
     }

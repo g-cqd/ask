@@ -16,11 +16,13 @@ struct PromptQueueTests {
         input.append(first)
         let session = SessionRecorder(
             try SessionFile.open(at: FilePath(path), durability: .none) {
-                bytes, descriptor throws(SessionFileError) in
+                bytes,
+                descriptor throws(SessionFileError) in
                 // A reentrant producer proves no queue lock spans the write, without scheduling a racing task.
                 input.append(arrived)
                 try SessionFileIO.writeAll(bytes, to: descriptor)
-            })
+            }
+        )
         #expect(try input.recordNext(finished: false, in: session) == first)
         #expect(input.remaining == [arrived])
         #expect(session.tree.entries.map(\.payload) == [.user("First")])

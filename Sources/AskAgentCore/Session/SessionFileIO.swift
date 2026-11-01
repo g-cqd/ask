@@ -6,12 +6,18 @@ internal import System
 /// Policy (when to rewrite, what to keep) stays in `SessionFile`; this type only talks to the kernel.
 enum SessionFileIO {
     static func writeExclusively(
-        _ bytes: [UInt8], to path: FilePath, durability: SessionFile.Durability
+        _ bytes: [UInt8],
+        to path: FilePath,
+        durability: SessionFile.Durability
     ) throws(SessionFileError) -> FileDescriptor {
         let descriptor: FileDescriptor
         do {
             descriptor = try FileDescriptor.open(
-                path, .writeOnly, options: [.create, .exclusiveCreate, .append], permissions: [.ownerReadWrite])
+                path,
+                .writeOnly,
+                options: [.create, .exclusiveCreate, .append],
+                permissions: [.ownerReadWrite]
+            )
         } catch let error as Errno where error == .fileExists {
             throw .alreadyExists
         } catch let error as Errno {

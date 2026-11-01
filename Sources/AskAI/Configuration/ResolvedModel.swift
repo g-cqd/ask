@@ -41,8 +41,12 @@ public struct ResolvedModel: Sendable, Equatable {
 
     /// A resolved provider and model, with what is known of the model's limits.
     public init(
-        provider: Provider, model: String, contextWindow: Int? = nil, maxOutputTokens: Int? = nil,
-        acceptsImages: Bool? = nil, imageLimits: ImageLimits? = nil
+        provider: Provider,
+        model: String,
+        contextWindow: Int? = nil,
+        maxOutputTokens: Int? = nil,
+        acceptsImages: Bool? = nil,
+        imageLimits: ImageLimits? = nil
     ) {
         self.imageLimits = imageLimits
         switch provider {

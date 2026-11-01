@@ -46,10 +46,12 @@ struct UTF8CutTests {
         }
         #expect(
             UTF8Cut.droppingPartialStart(binary[...]).count == binary.count - 3,
-            "at most three stray continuation bytes go")
+            "at most three stray continuation bytes go"
+        )
         #expect(UTF8Cut.droppingPartialEnd(binary[...]).count == binary.count - 2, "a truncated lead at the end goes")
         #expect(
             UTF8Cut.droppingPartialEnd(ArraySlice<UInt8>()).isEmpty
-                && UTF8Cut.droppingPartialStart(ArraySlice<UInt8>()).isEmpty)
+                && UTF8Cut.droppingPartialStart(ArraySlice<UInt8>()).isEmpty
+        )
     }
 }

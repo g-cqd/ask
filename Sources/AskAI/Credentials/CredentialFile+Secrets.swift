@@ -7,14 +7,20 @@ extension CredentialFile {
     /// The file at `url`, its secrets where the process's choice of store puts them (``CredentialStorage``): the Keychain, or the file.
     public static func preferred(url: URL) -> CredentialFile {
         preferred(
-            url: url, choice: CredentialStorage.chosen, stablySigned: CredentialStorage.runningBuildIsStablySigned,
-            keychain: try? KeychainSecretStore())
+            url: url,
+            choice: CredentialStorage.chosen,
+            stablySigned: CredentialStorage.runningBuildIsStablySigned,
+            keychain: try? KeychainSecretStore()
+        )
     }
 
     /// The file at `url` with `keychain` as its store when `choice` says so. `auto` in an unsigned build still uses the Keychain for
     /// a file that already keeps its secrets there, so such a build never pulls them back into the file.
     static func preferred(
-        url: URL, choice: CredentialStorage, stablySigned: Bool, keychain: (any SecretStore)?
+        url: URL,
+        choice: CredentialStorage,
+        stablySigned: Bool,
+        keychain: (any SecretStore)?
     ) -> CredentialFile {
         var uses = choice.usesKeychain(stablySigned: stablySigned)
         if !uses, choice == .auto, let marked = try? CredentialFile(url: url).readFile()?.markedRecords {

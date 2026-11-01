@@ -12,7 +12,10 @@ struct EditDiffTests {
     private static let diff = "  let a = 1\n- let b = 2\n+ let b = 20"
 
     private static func transcript(
-        _ input: String, name: String = "edit", path: String = "a.swift", highlight: Bool = true
+        _ input: String,
+        name: String = "edit",
+        path: String = "a.swift",
+        highlight: Bool = true
     ) -> Transcript {
         var transcript = Transcript()
         transcript.setHighlight(highlight)
@@ -23,7 +26,10 @@ struct EditDiffTests {
     }
 
     private static func row(
-        _ text: String, in transcript: Transcript, style: BlockStyle = BlockStyle(), columns: Int = 60
+        _ text: String,
+        in transcript: Transcript,
+        style: BlockStyle = BlockStyle(),
+        columns: Int = 60
     ) -> ScreenComposer.Line? {
         ScreenComposer.lines(in: transcript, at: 0, columns: columns, style: style).first { $0.text.contains(text) }
     }
@@ -43,7 +49,8 @@ struct EditDiffTests {
         #expect(kept.style.bg == theme.success)
         #expect(
             Self.runs(of: removed).allSatisfy { $0.1.bg == theme.diffRemoved },
-            "the colours of its code keep the row's tint")
+            "the colours of its code keep the row's tint"
+        )
         #expect(Self.runs(of: added).allSatisfy { $0.1.bg == theme.diffAdded })
     }
 
@@ -61,7 +68,9 @@ struct EditDiffTests {
     @Test func `the code is lexed after its marker, so what only counts at the start of a line still does`() throws {
         // A TOML table header is one only at the start of its line.
         let transcript = Self.transcript(
-            "- [package]\n+ [workspace]\n  [dependencies]\n  name = \"a\"", path: "Cargo.toml")
+            "- [package]\n+ [workspace]\n  [dependencies]\n  name = \"a\"",
+            path: "Cargo.toml"
+        )
         for header in ["[package]", "[workspace]", "[dependencies]"] {
             let row = try #require(Self.row(header, in: transcript))
             #expect(Self.runs(of: row).contains { $0.0.contains(header) && $0.1.fg != .default }, "\(header)")

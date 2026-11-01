@@ -11,7 +11,9 @@ struct SteeringControllerTests {
     {
         _ = controller.handle(.paste(text), pageRows: 10)
         return controller.handle(
-            .key(KeyEvent(keyCode: 0x0D, modifiers: followUp ? .alt : [])), pageRows: 10)
+            .key(KeyEvent(keyCode: 0x0D, modifiers: followUp ? .alt : [])),
+            pageRows: 10
+        )
     }
 
     @Test func `busy Enter steers and Alt-Enter follows up without showing an unrecorded user message`() {
@@ -19,17 +21,20 @@ struct SteeringControllerTests {
         _ = submit("Start", to: &controller)
         #expect(submit("Now", to: &controller) == [.queuePrompt(id: 0, text: "Now", followUp: false)])
         #expect(
-            submit("Later", to: &controller, followUp: true) == [.queuePrompt(id: 1, text: "Later", followUp: true)])
+            submit("Later", to: &controller, followUp: true) == [.queuePrompt(id: 1, text: "Later", followUp: true)]
+        )
         #expect(
             controller.state.transcript.items.filter {
                 if case .user = $0 { return true }
                 return false
-            } == [.user("Start")])
+            } == [.user("Start")]
+        )
         controller.handle(.promptAccepted(id: 0, text: "Now"))
         #expect(
             controller.state.transcript.items == [
                 .user("Start"), .user("Now"), .queued("Later")
-            ])
+            ]
+        )
     }
 
     @Test func `a submission after the final boundary starts once when runEnded arrives`() {
@@ -59,14 +64,21 @@ struct SteeringControllerTests {
         #expect(
             controller.handle(.runEnded) == [
                 .startRun("First"), .queuePrompt(id: 0, text: "Later", followUp: true)
-            ])
+            ]
+        )
     }
 
     @Test func `abort returns unsent messages and the unfinished draft without restarting`() {
         var controller = ScreenController(
             label: "m",
             options: ScreenOptions(
-                prompt: "ask> ", tint: false, separator: false, padding: false, interruptSendsQueued: .none))
+                prompt: "ask> ",
+                tint: false,
+                separator: false,
+                padding: false,
+                interruptSendsQueued: .none
+            )
+        )
         _ = submit("Start", to: &controller)
         _ = submit("One", to: &controller)
         _ = submit("Two", to: &controller, followUp: true)
@@ -92,7 +104,13 @@ struct SteeringControllerTests {
         var controller = ScreenController(
             label: "m",
             options: ScreenOptions(
-                prompt: "ask> ", tint: false, separator: false, padding: false, interruptSendsQueued: .none))
+                prompt: "ask> ",
+                tint: false,
+                separator: false,
+                padding: false,
+                interruptSendsQueued: .none
+            )
+        )
         _ = submit("Start", to: &controller)
         _ = submit("Recorded", to: &controller)
         _ = controller.handle(.key(KeyEvent(keyCode: 0x03)), pageRows: 10)
@@ -118,7 +136,10 @@ struct SteeringControllerTests {
 
     @Test func `typing during a command is returned to the editor rather than lost or steered`() {
         var controller = ScreenController(
-            label: "m", commands: [SlashCommand(name: "config", summary: "Settings")], options: .legacy)
+            label: "m",
+            commands: [SlashCommand(name: "config", summary: "Settings")],
+            options: .legacy
+        )
         _ = submit("/config", to: &controller)
         #expect(submit("Keep me", to: &controller).isEmpty)
         #expect(controller.state.editor.text == "Keep me")

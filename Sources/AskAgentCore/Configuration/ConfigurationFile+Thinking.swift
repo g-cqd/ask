@@ -4,7 +4,10 @@ extension ConfigurationFile {
     /// A key whose value is one of `Choice`'s names (`thinking`, `keepAwake`); any other string is refused, naming the key, or `named`
     /// for a key inside a section (`ui.timeout`).
     static func decodeChoice<Choice: RawRepresentable>(
-        _ container: KeyedDecodingContainer<Key>, key: Key, as _: Choice.Type, named: String? = nil
+        _ container: KeyedDecodingContainer<Key>,
+        key: Key,
+        as _: Choice.Type,
+        named: String? = nil
     ) throws -> Choice where Choice.RawValue == String {
         let name = try container.decode(String.self, forKey: key)
         guard let choice = Choice(rawValue: name) else { throw BadValue(key: named ?? key.stringValue, value: name) }

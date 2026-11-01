@@ -27,7 +27,12 @@ struct NoticingProviderTests {
     private struct Refused: Error {}
 
     private static let request = ModelRequest(
-        model: "x", maxTokens: 10, systemPrompt: [], messages: [], tools: [])
+        model: "x",
+        maxTokens: 10,
+        systemPrompt: [],
+        messages: [],
+        tools: []
+    )
 
     private static let turn: [ModelEvent] = [
         .messageStarted(id: "m", model: "x", usage: TokenUsage(input: 1)), .blockStarted(index: 0, .text),
@@ -55,7 +60,8 @@ struct NoticingProviderTests {
             notice: {
                 asked.withLock { $0 += 1 }
                 return nil
-            })
+            }
+        )
         _ = try await events(provider)
         #expect(asked.withLock { $0 } == 1)
         _ = try await events(provider)
@@ -88,12 +94,14 @@ struct NoticingProviderTests {
         let directory = FileManager.default.temporaryDirectory.appending(path: "ask-noticing-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         let file = SessionRecorder(
-            try SessionFile.create(at: FilePath(directory.appending(path: "s.jsonl").path), durability: .none))
+            try SessionFile.create(at: FilePath(directory.appending(path: "s.jsonl").path), durability: .none)
+        )
         let loop = AgentLoop(
             provider: NoticingProvider(base: Fixed(events: Self.turn), notice: { "say this" }),
             tools: try ToolRegistry([]),
             settings: AgentSettings(model: "x", maximumTokens: 100, systemPrompt: [], maximumTurns: 2),
-            context: ToolContext(workingDirectory: directory.path))
+            context: ToolContext(workingDirectory: directory.path)
+        )
         var shown: [String] = []
         try await loop.run("go", in: file) { event in
             if case .model(.notice(let text)) = event { shown.append(text) }

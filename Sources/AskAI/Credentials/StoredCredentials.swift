@@ -33,7 +33,8 @@ struct StoredCredentials: Codable {
         }
         guard !unavailable else {
             throw DecodingError.dataCorrupted(
-                .init(codingPath: [], debugDescription: "An unknown record has no source span"))
+                .init(codingPath: [], debugDescription: "An unknown record has no source span")
+            )
         }
     }
 

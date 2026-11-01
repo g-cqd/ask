@@ -11,7 +11,8 @@ struct ResponsesReasoningReplayTests {
     {
         ReasoningProvenance.mark(
             scheme: "responses",
-            payload: ResponsesStreamDecoder.reasoningPayload(id: id, summaries: summary, sealed: content))
+            payload: ResponsesStreamDecoder.reasoningPayload(id: id, summaries: summary, sealed: content)
+        )
     }
 
     private static func item(_ id: String, _ summary: [String] = ["thought"], _ content: String = "SEALED") -> String {
@@ -42,7 +43,9 @@ struct ResponsesReasoningReplayTests {
         let messages = [
             prompt,
             ModelMessage(
-                role: .assistant, blocks: [.thinking(text: "t", signature: Self.sealed("rs_1")), try call("c1")]),
+                role: .assistant,
+                blocks: [.thinking(text: "t", signature: Self.sealed("rs_1")), try call("c1")]
+            ),
             result("c1")
         ]
         #expect(
@@ -50,7 +53,8 @@ struct ResponsesReasoningReplayTests {
                 == #"{"role":"user","content":[{"type":"input_text","text":"go"}]},"#
                 + Self.item("rs_1") + #","#
                 + #"{"type":"function_call","call_id":"c1","name":"read","arguments":"{\"path\":\"x\"}"},"#
-                + #"{"type":"function_call_output","call_id":"c1","output":"data"}"#)
+                + #"{"type":"function_call_output","call_id":"c1","output":"data"}"#
+        )
     }
 
     @Test func `two reasoning items and a text run keep the order the model produced them`() throws {
@@ -61,7 +65,8 @@ struct ResponsesReasoningReplayTests {
                 blocks: [
                     .text("first"), .thinking(text: "", signature: Self.sealed("rs_1", [], "A")),
                     .thinking(text: "", signature: Self.sealed("rs_2", ["s"], "B")), try call("c1")
-                ]),
+                ]
+            ),
             result("c1")
         ]
         #expect(
@@ -70,14 +75,17 @@ struct ResponsesReasoningReplayTests {
                 + #"{"role":"assistant","content":"first"},"# + Self.item("rs_1", [], "A") + #","#
                 + Self.item("rs_2", ["s"], "B") + #","#
                 + #"{"type":"function_call","call_id":"c1","name":"read","arguments":"{\"path\":\"x\"}"},"#
-                + #"{"type":"function_call_output","call_id":"c1","output":"data"}"#)
+                + #"{"type":"function_call_output","call_id":"c1","output":"data"}"#
+        )
     }
 
     @Test func `a server whose dialect does not replay is sent no reasoning`() throws {
         let messages = [
             prompt,
             ModelMessage(
-                role: .assistant, blocks: [.thinking(text: "t", signature: Self.sealed("rs_1")), try call("c1")]),
+                role: .assistant,
+                blocks: [.thinking(text: "t", signature: Self.sealed("rs_1")), try call("c1")]
+            ),
             result("c1")
         ]
         let body = encode(messages, dialect: ResponsesDialect(sendsOutputLimit: false))
@@ -89,11 +97,13 @@ struct ResponsesReasoningReplayTests {
             ModelMessage(role: .user, blocks: [.text("old")]),
             ModelMessage(
                 role: .assistant,
-                blocks: [.thinking(text: "t", signature: Self.sealed("rs_old", ["x"], "OLD")), .text("done")]),
+                blocks: [.thinking(text: "t", signature: Self.sealed("rs_old", ["x"], "OLD")), .text("done")]
+            ),
             ModelMessage(role: .user, blocks: [.text("new")]),
             ModelMessage(
                 role: .assistant,
-                blocks: [.thinking(text: "t", signature: Self.sealed("rs_new", ["y"], "NEW")), try call("c1")]),
+                blocks: [.thinking(text: "t", signature: Self.sealed("rs_new", ["y"], "NEW")), try call("c1")]
+            ),
             result("c1")
         ]
         let body = encode(messages)
@@ -105,10 +115,12 @@ struct ResponsesReasoningReplayTests {
             prompt,
             ModelMessage(
                 role: .assistant,
-                blocks: [.thinking(text: "t", signature: Self.sealed("rs_old", ["x"], "OLD")), try call("c1")]),
+                blocks: [.thinking(text: "t", signature: Self.sealed("rs_old", ["x"], "OLD")), try call("c1")]
+            ),
             ModelMessage(
                 role: .user,
-                blocks: [.toolResult(id: "c1", content: "data", isError: false), .text("also, new request")])
+                blocks: [.toolResult(id: "c1", content: "data", isError: false), .text("also, new request")]
+            )
         ]
         #expect(!encode(messages).contains("OLD"))
     }
@@ -146,6 +158,7 @@ struct ResponsesReasoningReplayTests {
         #expect(
             sent.hasPrefix(
                 #"{"role":"user","content":[{"type":"input_text","text":"go"}]},{"type":"function_call","call_id":"c1""#
-            ))
+            )
+        )
     }
 }

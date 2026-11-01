@@ -46,8 +46,11 @@ extension MCPConnection {
                 let handler = state.withLock { $0.progress[token] }
                 handler?(
                     MCPProgress(
-                        progress: root["progress"].double ?? 0, total: root["total"].double,
-                        message: root["message"].string))
+                        progress: root["progress"].double ?? 0,
+                        total: root["total"].double,
+                        message: root["message"].string
+                    )
+                )
             default: break
         }
     }

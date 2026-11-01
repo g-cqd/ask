@@ -8,11 +8,19 @@ internal import Testing
 struct CredentialFileAccountsTests {
     private let file = CredentialFile(
         url: FileManager.default.temporaryDirectory.appending(
-            path: "ask-accounts-\(UUID().uuidString)/ask/credentials.json"))
+            path: "ask-accounts-\(UUID().uuidString)/ask/credentials.json"
+        )
+    )
     private let codex = CodexCredentials(accessToken: "at", refreshToken: "rt", expiresAt: 1, accountID: "acct")
     private let claude = ClaudeCredentials(
-        accessToken: "sk-ant-oat-A", refreshToken: "sk-ant-ort-R", expiresAt: 1_000, refreshExpiresAt: nil,
-        accountEmail: nil, organizationName: nil, scopes: "user:inference")
+        accessToken: "sk-ant-oat-A",
+        refreshToken: "sk-ant-ort-R",
+        expiresAt: 1_000,
+        refreshExpiresAt: nil,
+        accountEmail: nil,
+        organizationName: nil,
+        scopes: "user:inference"
+    )
 
     @Test func `nothing is signed in with an empty file and environment`() throws {
         #expect(try file.signedInAccounts(environment: [:]).isEmpty)
@@ -87,7 +95,9 @@ struct CredentialFileAccountsTests {
 
     @Test func `a damaged file is an error and never mistaken for being signed out`() throws {
         try FileManager.default.createDirectory(
-            at: file.url.deletingLastPathComponent(), withIntermediateDirectories: true)
+            at: file.url.deletingLastPathComponent(),
+            withIntermediateDirectories: true
+        )
         try Data("{nope".utf8).write(to: file.url)
         try FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.url.path)
         #expect(throws: CredentialFileError.self) { try file.signedInAccounts(environment: [:]) }

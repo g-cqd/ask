@@ -16,7 +16,8 @@ struct InterruptConfigurationTests {
         #expect(section.escapeInterruptRequiresConfirmation == false && section.abortTurnRequiresConfirmation == false)
         #expect(section.interruptSendsQueued == .next)
         #expect(
-            section.description == "stopKeys ctrl-c, stopTwice none, queuedOnStop next")
+            section.description == "stopKeys ctrl-c, stopTwice none, queuedOnStop next"
+        )
     }
 
     @Test func `a later layer replaces only what it sets`() {

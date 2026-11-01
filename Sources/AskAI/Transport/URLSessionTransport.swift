@@ -77,8 +77,11 @@ public struct URLSessionTransport: HTTPTransport {
         }
 
         func urlSession(
-            _ session: URLSession, task: URLSessionTask, willPerformHTTPRedirection response: HTTPURLResponse,
-            newRequest request: URLRequest, completionHandler: @escaping @Sendable (URLRequest?) -> Void
+            _ session: URLSession,
+            task: URLSessionTask,
+            willPerformHTTPRedirection response: HTTPURLResponse,
+            newRequest request: URLRequest,
+            completionHandler: @escaping @Sendable (URLRequest?) -> Void
         ) {
             completionHandler(allowsRedirects ? request : nil)
         }
@@ -92,7 +95,9 @@ public struct URLSessionTransport: HTTPTransport {
         /// documented. It passes the same tests; no race was observed, so this is a choice for a stated
         /// guarantee, not a fix.
         func urlSession(
-            _ session: URLSession, dataTask: URLSessionDataTask, didReceive response: URLResponse,
+            _ session: URLSession,
+            dataTask: URLSessionDataTask,
+            didReceive response: URLResponse,
             completionHandler: @escaping @Sendable (URLSession.ResponseDisposition) -> Void
         ) {
             let http = response as? HTTPURLResponse
@@ -114,7 +119,8 @@ public struct URLSessionTransport: HTTPTransport {
             let reason = error.map { Self.reason($0, idle: session.configuration.timeoutIntervalForRequest) }
             if let pending = head.withLock({ $0.take() }) {
                 pending.resume(
-                    throwing: cancelled ? CancellationError() : HTTPTransportError.failed(reason ?? "no response"))
+                    throwing: cancelled ? CancellationError() : HTTPTransportError.failed(reason ?? "no response")
+                )
             }
             // Only the system's own description reaches a person: an NSError described whole is its user-info dump.
             if cancelled {

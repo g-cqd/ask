@@ -19,7 +19,9 @@ struct AgyProvider: ModelProvider {
 /// Access to the stored Antigravity sign-in, which looks in the installed `agy` for a secret Google accepts when the stored one is not.
 func makeAgyAccess(transport: URLSessionTransport) -> AgyAccess {
     AgyAccess(
-        file: NamedConnections.file(for: nil), client: AgyAuthClient(transport: transport),
+        file: NamedConnections.file(for: nil),
+        client: AgyAuthClient(transport: transport),
         cloud: AgyCloudClient(transport: transport),
-        findSecret: { try await installedClientSecret(transport: transport) })
+        findSecret: { try await installedClientSecret(transport: transport) }
+    )
 }

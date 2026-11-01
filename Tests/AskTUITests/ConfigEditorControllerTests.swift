@@ -8,16 +8,26 @@ import Testing
 struct ConfigEditorControllerTests {
     private let rows = [
         ConfigSettingRow(
-            path: ["ui", "tint"], title: "ui.tint", value: "off", choices: ["unset", "on", "off"], editable: true),
+            path: ["ui", "tint"],
+            title: "ui.tint",
+            value: "off",
+            choices: ["unset", "on", "off"],
+            editable: true
+        ),
         ConfigSettingRow(
-            path: ["ui", "spinner"], title: "ui.spinner", value: "line", choices: ["unset", "line", "dot"],
-            editable: true),
+            path: ["ui", "spinner"],
+            title: "ui.spinner",
+            value: "line",
+            choices: ["unset", "line", "dot"],
+            editable: true
+        ),
         ConfigSettingRow(path: ["model"], title: "model", value: "unset", choices: [], editable: false)
     ]
     private func open() -> ScreenController {
         var controller = ScreenController(label: "m")
         controller.handle(
-            .configEditor(ConfigEditorSnapshot(scope: "user", file: "/tmp/config.json", rows: rows, warnings: [])))
+            .configEditor(ConfigEditorSnapshot(scope: "user", file: "/tmp/config.json", rows: rows, warnings: []))
+        )
         return controller
     }
     private func key(_ controller: inout ScreenController, _ code: UInt32, modifiers: KeyModifiers = [])
@@ -36,7 +46,9 @@ struct ConfigEditorControllerTests {
         #expect(controller.state.editor.text.isEmpty)
         #expect(controller.state.picker?.selected == 0)
         #expect(
-            controller.state.picker?.matches[0].detail == "on", "off then on and back wraps within the real choices")
+            controller.state.picker?.matches[0].detail == "on",
+            "off then on and back wraps within the real choices"
+        )
         _ = key(&controller, Key.down.rawValue)
         _ = key(&controller, Key.left.rawValue)
         #expect(controller.state.picker?.matches[1].detail == "unset", "left from line wraps to unset")
@@ -46,7 +58,8 @@ struct ConfigEditorControllerTests {
         var controller = open()
         _ = key(&controller, Key.right.rawValue)
         #expect(
-            key(&controller, Key.enter.rawValue) == [.commitConfig(scope: "user", path: ["ui", "tint"], value: "on")])
+            key(&controller, Key.enter.rawValue) == [.commitConfig(scope: "user", path: ["ui", "tint"], value: "on")]
+        )
         #expect(controller.state.picker != nil)
     }
 
@@ -65,7 +78,8 @@ struct ConfigEditorControllerTests {
         #expect(key(&controller, 0x1B).isEmpty)
         #expect(controller.state.picker == nil)
         controller.handle(
-            .configEditor(ConfigEditorSnapshot(scope: "user", file: "/tmp/config.json", rows: rows, warnings: [])))
+            .configEditor(ConfigEditorSnapshot(scope: "user", file: "/tmp/config.json", rows: rows, warnings: []))
+        )
         _ = key(&controller, Key.down.rawValue)
         let changed = [
             rows[0], rows[1],
@@ -74,7 +88,13 @@ struct ConfigEditorControllerTests {
         controller.handle(
             .configEditor(
                 ConfigEditorSnapshot(
-                    scope: "project", file: "/tmp/project.json", rows: changed, warnings: ["untrusted"])))
+                    scope: "project",
+                    file: "/tmp/project.json",
+                    rows: changed,
+                    warnings: ["untrusted"]
+                )
+            )
+        )
         #expect(controller.state.picker?.selected == 1)
         #expect(controller.state.picker?.kind == .config(scope: "project", file: "/tmp/project.json"))
         #expect(controller.state.picker?.matches[2].detail == "claude")

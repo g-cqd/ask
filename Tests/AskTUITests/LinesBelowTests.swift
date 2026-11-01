@@ -14,11 +14,21 @@ struct LinesBelowTests {
     private func rig(
         columns: Int = 40,
         options: ScreenOptions = ScreenOptions(
-            markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false),
-        lines: Int = 40, scrolled: Bool = true
+            markdown: false,
+            prompt: "ask> ",
+            tint: false,
+            separator: false,
+            padding: false
+        ),
+        lines: Int = 40,
+        scrolled: Bool = true
     ) -> PointerRig {
         var rig = PointerRig(
-            columns: columns, rows: 12, options: options, lines: (1 ... lines).map { "line \($0)" })
+            columns: columns,
+            rows: 12,
+            options: options,
+            lines: (1 ... lines).map { "line \($0)" }
+        )
         if scrolled { rig.mouse(.scrollUp, .press, row: 3, col: 3) }
         return rig
     }
@@ -158,7 +168,14 @@ struct LinesBelowTests {
     @Test func `with the mouse off the count is still shown and is not clicked`() {
         var rig = rig(
             options: ScreenOptions(
-                mouse: false, markdown: false, prompt: "ask> ", tint: false, separator: false, padding: false))
+                mouse: false,
+                markdown: false,
+                prompt: "ask> ",
+                tint: false,
+                separator: false,
+                padding: false
+            )
+        )
         rig.controller.state.scrollback = 5
         rig.draw()
         #expect(rig.text(row: Self.statusRow) == "✓ · m · 5 lines below")

@@ -67,7 +67,8 @@ public enum BuildSignature {
             case .unsigned: return .unsignedRunning
             case .unreadable:
                 return .refused(
-                    "the running build's file has changed since it started, so its signature cannot be compared")
+                    "the running build's file has changed since it started, so its signature cannot be compared"
+                )
         }
         var compiled: SecRequirement?
         guard SecRequirementCreateWithString(requirement as CFString, [], &compiled) == errSecSuccess, let compiled
@@ -84,7 +85,8 @@ public enum BuildSignature {
             return .refused(
                 status == errSecCSUnsigned
                     ? "the new build is not signed"
-                    : "the new build is not signed as the running build is (status \(status))")
+                    : "the new build is not signed as the running build is (status \(status))"
+            )
         }
         return .sameSigner
     }

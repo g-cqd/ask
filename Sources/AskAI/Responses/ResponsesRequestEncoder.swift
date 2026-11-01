@@ -19,7 +19,8 @@ public enum ResponsesRequestEncoder {
     /// - Returns: the JSON body.
     public static func encode(_ request: ModelRequest, dialect: ResponsesDialect = .standard) -> [UInt8] {
         JSONStreamWriter.streamingRequest(
-            model: request.model, maxTokens: request.maxTokens,
+            model: request.model,
+            maxTokens: request.maxTokens,
             limitField: dialect.sendsOutputLimit ? "max_output_tokens" : nil
         ) { writer in
             writer.field("store", false)

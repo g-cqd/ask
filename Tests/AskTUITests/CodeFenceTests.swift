@@ -15,7 +15,8 @@ struct CodeFenceTests {
                 == [
                     CodeFence(openingLine: 1, lastLine: 3, language: "swift", isClosed: true),
                     CodeFence(openingLine: 5, lastLine: 7, language: "", isClosed: true)
-                ])
+                ]
+        )
         // A tilde line does not close a backtick block, a shorter fence does not close a longer one, and a fence with text after it
         // is content.
         #expect(scan("````\n~~~\n```\n```` x\n````").map(\.lastLine) == [4])

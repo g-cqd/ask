@@ -29,7 +29,8 @@ struct SessionRepairNoticeTests {
         #expect(
             torn.repairNotice
                 == "The session file had a problem, repaired as it was opened: the last line (line 3) was cut off "
-                + "mid-write and was dropped. The original is kept as a .damaged copy once anything is added.")
+                + "mid-write and was dropped. The original is kept as a .damaged copy once anything is added."
+        )
     }
 
     @Test func `several problems list the first three and count the rest`() throws {
@@ -37,7 +38,9 @@ struct SessionRepairNoticeTests {
         let notice = try #require(messy.repairNotice)
         #expect(
             notice.hasPrefix(
-                "The session file had 4 problems, repaired as it was opened: line 2 was not a valid record"))
+                "The session file had 4 problems, repaired as it was opened: line 2 was not a valid record"
+            )
+        )
         #expect(notice.contains(", and 1 more."))
     }
 

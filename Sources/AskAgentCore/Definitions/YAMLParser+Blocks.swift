@@ -43,7 +43,8 @@ extension YAMLParser {
             guard line.isItem, line.indent == indent else { break }
             cursor += 1
             items.append(
-                listItem(&cursor, dashIndent: indent, text: String(line.text.dropFirst()).trimmingWhitespace()))
+                listItem(&cursor, dashIndent: indent, text: String(line.text.dropFirst()).trimmingWhitespace())
+            )
         }
         return .list(items)
     }

@@ -36,13 +36,18 @@ extension AgentConversation {
             .map { ChoiceRow(label: $0.target, detail: $0.method, arguments: $0.target) }
         for record in (try? NamedConnections.registry(environment: environment).list().records) ?? [] {
             rows.append(
-                ChoiceRow(label: record.name, detail: "\(record.provider.rawValue) connection", arguments: record.name))
+                ChoiceRow(label: record.name, detail: "\(record.provider.rawValue) connection", arguments: record.name)
+            )
         }
         for account in accounts where !account.removable {
             // Not ask's to forget: said, so the person knows why it is not in the list.
             rows.append(
                 ChoiceRow(
-                    label: "· \(account.target)", detail: "\(account.method): unset it in your shell", arguments: ""))
+                    label: "· \(account.target)",
+                    detail: "\(account.method): unset it in your shell",
+                    arguments: ""
+                )
+            )
         }
         if !rows.isEmpty {
             rows.append(ChoiceRow(label: "all", detail: "every account ask has stored", arguments: "all"))

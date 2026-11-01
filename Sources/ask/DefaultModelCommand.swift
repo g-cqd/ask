@@ -5,7 +5,9 @@ internal import AskAI
 /// Chooses the model a connection uses when none is asked for, or clears the choice.
 struct DefaultModelCommand: ParsableCommand {
     static let configuration = CommandConfiguration(
-        commandName: "default", abstract: "Choose the model a connection uses when none is asked for.")
+        commandName: "default",
+        abstract: "Choose the model a connection uses when none is asked for."
+    )
 
     @Argument(help: "The connection.") var name: String
     @Argument(help: "An alias or a server model id.") var model: String?

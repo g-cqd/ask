@@ -23,7 +23,9 @@ struct SessionLookupTests {
         var file = try SessionFile.create(at: FilePath(path), durability: .none)
         for prompt in prompts { try file.append(.user(prompt)) }
         try FileManager.default.setAttributes(
-            [.modificationDate: Date(timeIntervalSince1970: seconds)], ofItemAtPath: path)
+            [.modificationDate: Date(timeIntervalSince1970: seconds)],
+            ofItemAtPath: path
+        )
         return path
     }
 
@@ -40,7 +42,8 @@ struct SessionLookupTests {
         #expect(
             directory.sessions().map(\.name) == [
                 "20261001T000000Z-aa.jsonl", "20261003T000000Z-cc.jsonl", "20261002T000000Z-bb.jsonl"
-            ])
+            ]
+        )
     }
 
     @Test func `a project with no session directory has no sessions`() {
@@ -63,13 +66,18 @@ struct SessionLookupTests {
         #expect(throws: SessionLookupError.notFound("2025")) { try directory.resolve("2025") }
         #expect(
             throws: SessionLookupError.ambiguous(
-                "20261001", candidates: ["20261001T120000Z-bb.jsonl", "20261001T000000Z-aa.jsonl"])
+                "20261001",
+                candidates: ["20261001T120000Z-bb.jsonl", "20261001T000000Z-aa.jsonl"]
+            )
         ) { try directory.resolve("20261001") }
     }
 
     @Test func `a summary gives the first prompt and counts the user's prompts, not ask's own`() throws {
         let path = try session(
-            "s.jsonl", modified: 1, prompts: ["Fix the build.", AgentLoop.continuationPrompt, "Now the tests."])
+            "s.jsonl",
+            modified: 1,
+            prompts: ["Fix the build.", AgentLoop.continuationPrompt, "Now the tests."]
+        )
         let summary = try #require(SessionSummary(readingFrom: path))
         #expect(summary.firstPrompt == "Fix the build.")
         #expect(summary.prompts == 2)

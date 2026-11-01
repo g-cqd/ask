@@ -42,17 +42,22 @@ struct TerminalTextFilterTests {
         let written = Mutex<[String]>([])
         let renderer = PrintRenderer(
             out: { text in written.withLock { $0.append("out:" + text) } },
-            err: { text in written.withLock { $0.append("err:" + text) } })
+            err: { text in written.withLock { $0.append("err:" + text) } }
+        )
         renderer.render(.model(.textDelta(index: 0, "ok \u{1B}]52;c;")))
         renderer.render(.model(.textDelta(index: 0, "aGk=\u{07}done")))
         renderer.render(
             .toolStarted(
-                id: "1", name: "bash", input: try! JSONObject(validating: Array(#"{"command":"echo \u001b[2J"}"#.utf8)))
+                id: "1",
+                name: "bash",
+                input: try! JSONObject(validating: Array(#"{"command":"echo \u001b[2J"}"#.utf8))
+            )
         )
         let all = written.withLock { $0 }.joined()
         #expect(
             !all.unicodeScalars.contains { $0.value == 0x1B || $0.value == 0x07 || $0.value == 0x9B },
-            "\(all.debugDescription)")
+            "\(all.debugDescription)"
+        )
         let answer = written.withLock { $0 }.filter { $0.hasPrefix("out:") }.map { String($0.dropFirst(4)) }.joined()
         #expect(answer.hasPrefix("ok done"), "\(answer.debugDescription)")
     }

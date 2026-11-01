@@ -8,7 +8,8 @@ internal import Testing
 /// the browser: it reads the state out of the address ask shows and calls back with it, as the provider's redirect does.
 @Suite(
     "Codex's browser sign-in waits for the redirect, or a pasted address, and exchanges the code it gets",
-    .timeLimit(.minutes(1)))
+    .timeLimit(.minutes(1))
+)
 struct CodexBrowserSignInTests {
     private static let access: String = {
         let claims = #"{"https://api.openai.com/auth":{"chatgpt_account_id":"acct_5"}}"#
@@ -24,11 +25,13 @@ struct CodexBrowserSignInTests {
 
     private func flow(_ transport: SequencedTransport, listener: LoopbackListener?) -> CodexBrowserSignIn {
         CodexBrowserSignIn(
-            transport: transport, now: { 50 },
+            transport: transport,
+            now: { 50 },
             bind: { _ throws(LoopbackError) in
                 guard let listener else { throw .bindFailed(errno: 48) }
                 return listener
-            })
+            }
+        )
     }
 
     private func verifier(_ body: String) -> String {
@@ -45,7 +48,9 @@ struct CodexBrowserSignInTests {
                     prompts.add(prompt)
                     let (state, port) = (self.query(prompt, "state"), listener.port)
                     Task { _ = await RawClient.get("/auth/callback?code=thecode12345&state=\(state)", port: port) }
-                }, paste: { nil })
+                },
+                paste: { nil }
+            )
         #expect(credentials.accountID == "acct_5")
         #expect(credentials.refreshToken == "rt-b")
         let prompt = try #require(prompts.all.first)
@@ -69,7 +74,9 @@ struct CodexBrowserSignInTests {
                         prompts.add(prompt)
                         let (state, port) = (self.query(prompt, "state"), listener.port)
                         Task { _ = await RawClient.get("/auth/callback?code=thecode12345&state=\(state)", port: port) }
-                    }, paste: { nil })
+                    },
+                    paste: { nil }
+                )
         }
         let states = Set(prompts.all.map { query($0, "state") })
         #expect(states.count == 3)
@@ -85,7 +92,8 @@ struct CodexBrowserSignInTests {
                 paste: { [prompts] in
                     let state = prompts.all.first.map { self.query($0, "state") } ?? ""
                     return "http://localhost:1455/auth/callback?code=pastedcode123&state=\(state)"
-                })
+                }
+            )
         #expect(credentials.accountID == "acct_5")
         #expect(prompts.all.first?.instructions?.contains("paste") == true)
         #expect(transport.sent.first?.bodyText.contains("code=pastedcode123") == true)
@@ -96,7 +104,9 @@ struct CodexBrowserSignInTests {
         await #expect(throws: SignInError.invalidResponse("pasted address")) {
             _ = try await flow(transport, listener: nil)
                 .run(
-                    show: { _ in }, paste: { "http://localhost:1455/auth/callback?code=pastedcode123&state=not-mine" })
+                    show: { _ in },
+                    paste: { "http://localhost:1455/auth/callback?code=pastedcode123&state=not-mine" }
+                )
         }
         #expect(transport.sent.isEmpty)
     }
@@ -119,7 +129,9 @@ struct CodexBrowserSignInTests {
                         Task {
                             _ = await RawClient.get("/auth/callback?error=access_denied&state=\(state)", port: port)
                         }
-                    }, paste: { nil })
+                    },
+                    paste: { nil }
+                )
         }
         #expect(transport.sent.isEmpty)
     }
@@ -133,7 +145,9 @@ struct CodexBrowserSignInTests {
                     show: { prompt in
                         let (state, port) = (self.query(prompt, "state"), listener.port)
                         Task { _ = await RawClient.get("/auth/callback?code=thecode12345&state=\(state)", port: port) }
-                    }, paste: { nil })
+                    },
+                    paste: { nil }
+                )
         }
     }
 

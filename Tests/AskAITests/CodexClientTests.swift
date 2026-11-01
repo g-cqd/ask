@@ -9,10 +9,18 @@ internal import Testing
 @Suite("The Codex client addresses the ChatGPT backend the way its CLI does")
 struct CodexClientTests {
     private static let credentials = CodexCredentials(
-        accessToken: "at-1", refreshToken: "rt-1", expiresAt: 9, accountID: "acct_42")
+        accessToken: "at-1",
+        refreshToken: "rt-1",
+        expiresAt: 9,
+        accountID: "acct_42"
+    )
     private static let request = ModelRequest(
-        model: "gpt-x", maxTokens: 777, systemPrompt: ["Be brief."],
-        messages: [ModelMessage(role: .user, blocks: [.text("hi")])], tools: [])
+        model: "gpt-x",
+        maxTokens: 777,
+        systemPrompt: ["Be brief."],
+        messages: [ModelMessage(role: .user, blocks: [.text("hi")])],
+        tools: []
+    )
 
     private func send(_ credentials: CodexCredentials = credentials, session: String = "sess-1") async throws
         -> HTTPRequest
@@ -20,7 +28,9 @@ struct CodexClientTests {
         let fixture = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
             .appending(path: "Fixtures/Responses/llamacpp-text.sse")
         let transport = ScriptedTransport(
-            status: 200, chunks: [String(decoding: try Data(contentsOf: fixture), as: UTF8.self)])
+            status: 200,
+            chunks: [String(decoding: try Data(contentsOf: fixture), as: UTF8.self)]
+        )
         let client = ResponsesClient.codex(transport: transport, credentials: credentials, session: session)
         for try await _ in client.stream(Self.request) {}
         return try #require(transport.sent)
@@ -34,7 +44,8 @@ struct CodexClientTests {
 
     @Test func `the headers name the account, the client and the session, and carry the token`() async throws {
         let headers = Dictionary(
-            uniqueKeysWithValues: try await send().headers.map { ($0.name.lowercased(), $0.value) })
+            uniqueKeysWithValues: try await send().headers.map { ($0.name.lowercased(), $0.value) }
+        )
         #expect(headers["authorization"] == "Bearer at-1")
         #expect(headers["chatgpt-account-id"] == "acct_42")
         #expect(headers["originator"] == "ask")

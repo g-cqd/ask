@@ -13,8 +13,12 @@ struct JobOutputTailTests {
         let table = JobTable()
         let seen = Printed(printed)
         _ = table.start(
-            command, in: ToolContext(workingDirectory: root.path, outputDirectory: root.path), keepsInputOpen: true,
-            keeping: 1_000, observe: { seen.received($0) })
+            command,
+            in: ToolContext(workingDirectory: root.path, outputDirectory: root.path),
+            keepsInputOpen: true,
+            keeping: 1_000,
+            observe: { seen.received($0) }
+        )
         await seen.seen()
         return (table, root)
     }
@@ -28,7 +32,9 @@ struct JobOutputTailTests {
 
     @Test func `a long output is cut to the end on a line boundary and says so`() async throws {
         let (table, root) = try await run(
-            "for i in 1 2 3 4 5 6 7 8 9 10; do echo line-$i; done; echo END; read hold", printed: "END")
+            "for i in 1 2 3 4 5 6 7 8 9 10; do echo line-$i; done; echo END; read hold",
+            printed: "END"
+        )
         defer { try? FileManager.default.removeItem(at: root) }
         let tail = try #require(table.outputTail(of: "job-1", maximumBytes: 20))
         #expect(tail.hasPrefix("… earlier output not shown\n"))

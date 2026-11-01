@@ -32,7 +32,8 @@ public enum SkillContents {
             "Skill: \(skill.name) (\(skill.source), \(skill.scope.rawValue))", "Directory: \(skill.directory)"
         ]
         header.append(
-            "Paths in these instructions are relative to that directory. Loading a skill grants no permission.")
+            "Paths in these instructions are relative to that directory. Loading a skill grants no permission."
+        )
         if let note { header.append(note) }
         let body = file.format == .none ? file.body : file.body.trimmingCharacters(in: .newlines)
         return header.joined(separator: "\n") + "\n\n" + body

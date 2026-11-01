@@ -17,9 +17,14 @@ struct ConnectionSharedAccountTests {
 
     private func claude(_ email: String) -> ClaudeCredentials {
         ClaudeCredentials(
-            accessToken: "a", refreshToken: "r", expiresAt: 9, refreshExpiresAt: nil, accountEmail: email,
+            accessToken: "a",
+            refreshToken: "r",
+            expiresAt: 9,
+            refreshExpiresAt: nil,
+            accountEmail: email,
             organizationName: nil,
-            scopes: "user:inference")
+            scopes: "user:inference"
+        )
     }
 
     private func signIn(_ name: String, codex account: String) throws -> ConnectionRecord {
@@ -109,9 +114,11 @@ struct ConnectionSharedAccountTests {
         #expect(AccountSharing(connections: [], defaultSignIn: false).summary == nil)
         #expect(AccountSharing(connections: [], defaultSignIn: true).summary == "same account as the default sign-in")
         #expect(
-            AccountSharing(connections: ["work"], defaultSignIn: false).summary == "same account as connection 'work'")
+            AccountSharing(connections: ["work"], defaultSignIn: false).summary == "same account as connection 'work'"
+        )
         #expect(
             AccountSharing(connections: ["a", "b"], defaultSignIn: true).summary
-                == "same account as the default sign-in, connection 'a' and connection 'b'")
+                == "same account as the default sign-in, connection 'a' and connection 'b'"
+        )
     }
 }

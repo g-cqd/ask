@@ -28,29 +28,40 @@ struct AnthropicCatalogClient: Sendable {
         var cursors = Set<String>()
         for _ in 0 ..< Self.maximumPages {
             let request = HTTPRequest(
-                url: try pageURL(after: cursor), method: "GET", headers: AnthropicClient.headers(for: auth), body: [])
+                url: try pageURL(after: cursor),
+                method: "GET",
+                headers: AnthropicClient.headers(for: auth),
+                body: []
+            )
             let reply = try await transport.collecting(request, limit: 2 << 20)
             guard reply.status == 200 else { throw ModelCatalogError.refused(status: reply.status) }
             let page = try AnthropicModelListing(decoding: reply.body)
             collected.append(page)
             if collected.limited {
                 return try collected.finish(
-                    complete: false, reason: "The model-list limit was reached; later entries are not shown or cached.")
+                    complete: false,
+                    reason: "The model-list limit was reached; later entries are not shown or cached."
+                )
             }
             guard page.hasMore == true else {
                 return try collected.finish(
                     complete: page.hasMore == false,
                     reason: page.hasMore == nil
-                        ? "Pagination metadata is unusable; this partial list is not cached." : nil)
+                        ? "Pagination metadata is unusable; this partial list is not cached." : nil
+                )
             }
             guard let next = page.lastID, cursors.insert(next).inserted else {
                 return try collected.finish(
-                    complete: false, reason: "The model-list cursor did not advance; this partial list is not cached.")
+                    complete: false,
+                    reason: "The model-list cursor did not advance; this partial list is not cached."
+                )
             }
             cursor = next
         }
         return try collected.finish(
-            complete: false, reason: "The model-list page limit was reached; this partial list is not cached.")
+            complete: false,
+            reason: "The model-list page limit was reached; this partial list is not cached."
+        )
     }
 
     private func pageURL(after cursor: String?) throws(ModelCatalogError) -> URL {

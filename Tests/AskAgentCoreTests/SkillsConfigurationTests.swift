@@ -22,7 +22,10 @@ struct SkillsConfigurationTests {
         #expect(throws: ConfigurationError.self) { try parse("{skills:{nope:1}}") }
         #expect(
             throws: ConfigurationError.outOfRange(
-                path: "c.json", key: "skills.maxListed", reason: "must be 0 or more")
+                path: "c.json",
+                key: "skills.maxListed",
+                reason: "must be 0 or more"
+            )
         ) { try parse("{skills:{maxListed:-1}}") }
         #expect(throws: ConfigurationError.self) { try parse("{skills:{sources:'claude'}}") }
     }

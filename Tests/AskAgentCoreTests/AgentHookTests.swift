@@ -18,7 +18,8 @@ struct AgentHookTests {
     private func newFile() throws -> SessionRecorder {
         try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
         return SessionRecorder(
-            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none))
+            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none)
+        )
     }
 
     /// Records what it ran, and echoes its text in capitals.
@@ -47,9 +48,12 @@ struct AgentHookTests {
         let file = try newFile()
         let provider = ScriptedProvider([.call(id: "t1", name: "echo", input: #"{"text":"abc"}"#), .reply("Done.")])
         let loop = AgentLoop(
-            provider: provider, tools: try ToolRegistry([tool]),
+            provider: provider,
+            tools: try ToolRegistry([tool]),
             settings: AgentSettings(model: "m", maximumTokens: 64, systemPrompt: [], maximumTurns: 4),
-            context: ToolContext(workingDirectory: directory.path), hooks: hooks)
+            context: ToolContext(workingDirectory: directory.path),
+            hooks: hooks
+        )
         try await loop.run("Go", in: file) { _ in }
         return file.tree.entries.map(\.payload)
     }
@@ -79,7 +83,9 @@ struct AgentHookTests {
     @Test func `a result can be transformed before the model sees it`() async throws {
         let tool = Recorder()
         let payloads = try await run(
-            [Hook(transform: { _, output in ToolOutput(output.content + " [checked]") })], tool: tool)
+            [Hook(transform: { _, output in ToolOutput(output.content + " [checked]") })],
+            tool: tool
+        )
         #expect(result(payloads)?.content == "ABC [checked]")
     }
 
@@ -104,7 +110,9 @@ struct AgentHookTests {
     @Test func `result transforms compose in order`() async throws {
         let tool = Recorder()
         let payloads = try await run(
-            [Hook(transform: { $1.appending(" 1") }), Hook(transform: { $1.appending(" 2") })], tool: tool)
+            [Hook(transform: { $1.appending(" 1") }), Hook(transform: { $1.appending(" 2") })],
+            tool: tool
+        )
         #expect(result(payloads)?.content == "ABC 1 2")
     }
 }

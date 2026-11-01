@@ -29,8 +29,12 @@ struct ProviderListingTests {
         #expect(
             found
                 == ProviderSettings.Listing(
-                    name: "local", baseURL: URL(string: "http://127.0.0.1:8181/v1")!, apiKey: nil,
-                    headers: ["x-team": "a"]))
+                    name: "local",
+                    baseURL: URL(string: "http://127.0.0.1:8181/v1")!,
+                    apiKey: nil,
+                    headers: ["x-team": "a"]
+                )
+        )
     }
 
     @Test func `the default provider is listed when none is named`() throws {
@@ -49,7 +53,10 @@ struct ProviderListingTests {
             try ProviderSettings.none.listing(provider: "groq", environment: [:])
         }
         let stored = try ProviderSettings.none.listing(
-            provider: "mistral", environment: [:], storedKeys: { ["mistral": "vibe-key"] })
+            provider: "mistral",
+            environment: [:],
+            storedKeys: { ["mistral": "vibe-key"] }
+        )
         #expect(stored?.apiKey == "vibe-key")
     }
 
@@ -81,7 +88,11 @@ struct ProviderListingTests {
 
     @Test func `a model's listed limits reach the run when the user stated none`() throws {
         let resolved = try ProviderSettings.none.resolve(
-            provider: "groq", model: "org/big", environment: ["GROQ_API_KEY": "k"], catalog: Self.listed)
+            provider: "groq",
+            model: "org/big",
+            environment: ["GROQ_API_KEY": "k"],
+            catalog: Self.listed
+        )
         #expect(resolved.contextWindow == 200_000)
         #expect(resolved.maxOutputTokens == 8000)
     }
@@ -102,17 +113,29 @@ struct ProviderListingTests {
     @Test func `a model the list does not name, or names without limits, keeps no invented ones`() throws {
         let env = ["GROQ_API_KEY": "k"]
         let absent = try ProviderSettings.none.resolve(
-            provider: "groq", model: "other", environment: env, catalog: Self.listed)
+            provider: "groq",
+            model: "other",
+            environment: env,
+            catalog: Self.listed
+        )
         #expect(absent.contextWindow == nil && absent.maxOutputTokens == nil)
         let bare = try ProviderSettings.none.resolve(
-            provider: "groq", model: "no-limits", environment: env, catalog: Self.listed)
+            provider: "groq",
+            model: "no-limits",
+            environment: env,
+            catalog: Self.listed
+        )
         #expect(bare.contextWindow == nil && bare.maxOutputTokens == nil)
     }
 
     @Test func `a list never chooses the model for a provider`() {
         #expect(throws: ProviderSettingsError.noModel(provider: "groq")) {
             try ProviderSettings.none.resolve(
-                provider: "groq", model: nil, environment: ["GROQ_API_KEY": "k"], catalog: Self.listed)
+                provider: "groq",
+                model: nil,
+                environment: ["GROQ_API_KEY": "k"],
+                catalog: Self.listed
+            )
         }
     }
 }

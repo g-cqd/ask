@@ -17,7 +17,11 @@ public struct CopilotAccess: Sendable {
         let current = try load()
         if current.expiresAt > now + 30 { return current }
         let fresh = try await client.exchange(
-            githubToken: current.githubToken, machineID: current.machineID, deviceID: current.deviceID, now: now)
+            githubToken: current.githubToken,
+            machineID: current.machineID,
+            deviceID: current.deviceID,
+            now: now
+        )
         guard try file.saveCopilot(fresh, ifStill: current) else {
             guard let latest = try file.loadCopilot(), latest.expiresAt > now + 30 else {
                 throw SignInError.invalidResponse("Copilot account changed during refresh")

@@ -90,7 +90,8 @@ struct SkillInvocationTests {
         let text = try #require(sent("/skill:debugging why", scratch))
         #expect(
             SessionReplay.steps([SessionEntry(id: EntryID("a"), parentID: nil, payload: .user(text))]).first
-                == .prompt("/skill:debugging why"))
+                == .prompt("/skill:debugging why")
+        )
         #expect(text.contains("# debugging"))
     }
 

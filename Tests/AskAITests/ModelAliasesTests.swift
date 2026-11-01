@@ -34,7 +34,8 @@ struct ModelAliasesTests {
         let value7 = try value.choice(requested: "gpt-6-sol", catalog: [])
         #expect(value7 == ModelChoice(model: "gpt-6-sol"))
         #expect(
-            try value.choice(requested: "Some-Other.Model_1", catalog: []) == ModelChoice(model: "Some-Other.Model_1"))
+            try value.choice(requested: "Some-Other.Model_1", catalog: []) == ModelChoice(model: "Some-Other.Model_1")
+        )
     }
 
     @Test func `the default is used when nothing is asked for, whether it is an alias or a server id`() throws {
@@ -87,7 +88,8 @@ struct ModelAliasesTests {
         let chained = try JSONDecoder()
             .decode(
                 ModelAliases.self,
-                from: Data(#"{"version":1,"aliases":{"a":{"model":"b"},"b":{"model":"gpt-x"}}}"#.utf8))
+                from: Data(#"{"version":1,"aliases":{"a":{"model":"b"},"b":{"model":"gpt-x"}}}"#.utf8)
+            )
         #expect(throws: ModelAliasError.chained("a")) { try chained.choice(requested: "a", catalog: []) }
     }
 
@@ -140,7 +142,8 @@ struct ModelAliasesTests {
         let text = String(decoding: try JSONEncoder().encode(value), as: UTF8.self)
         #expect(
             text.contains(#""version":1"#) && text.contains(#""default":"fast""#)
-                && text.contains(#""model":"gpt-6-luna""#))
+                && text.contains(#""model":"gpt-6-luna""#)
+        )
         #expect(try JSONDecoder().decode(ModelAliases.self, from: Data(text.utf8)) == value)
     }
 }

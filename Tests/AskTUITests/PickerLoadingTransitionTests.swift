@@ -41,7 +41,9 @@ struct PickerLoadingTransitionTests {
 
     @Test func `model Enter can render loading refreshes results and then choose`() throws {
         var screen = ScreenController(
-            label: "m", commands: [SlashCommand(name: "model", summary: "Choose", takesChoices: true)])
+            label: "m",
+            commands: [SlashCommand(name: "model", summary: "Choose", takesChoices: true)]
+        )
         _ = screen.handle(.paste("/model"), pageRows: 30)
         #expect(
             screen.handle(.key(KeyEvent(keyCode: Key.enter.rawValue)), pageRows: 30) == [.listChoices(command: "model")]
@@ -57,6 +59,7 @@ struct PickerLoadingTransitionTests {
         #expect(
             screen.handle(.key(KeyEvent(keyCode: Key.enter.rawValue)), pageRows: 30) == [
                 .runCommand(name: "model", arguments: "provider model")
-            ])
+            ]
+        )
     }
 }

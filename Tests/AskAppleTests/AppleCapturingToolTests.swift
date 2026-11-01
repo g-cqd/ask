@@ -9,8 +9,11 @@ struct AppleCapturingToolTests {
     private func tool(_ capture: AppleCapture, name: String = "read") throws -> AppleCapturingTool {
         let schema = try #require(
             AppleToolSchema.schema(
-                named: name, description: "d",
-                inputSchema: Array(#"{"type":"object","properties":{"path":{"type":"string"}}}"#.utf8)))
+                named: name,
+                description: "d",
+                inputSchema: Array(#"{"type":"object","properties":{"path":{"type":"string"}}}"#.utf8)
+            )
+        )
         return AppleCapturingTool(name: name, description: "d", parameters: schema, capture: capture)
     }
 

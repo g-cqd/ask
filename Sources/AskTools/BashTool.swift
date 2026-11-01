@@ -58,7 +58,9 @@ public struct BashTool: ArgumentTool {
     }
 
     init(
-        jobs: JobTable = JobTable(), clock: any Clock<Duration>, commandEnvironment: CommandEnvironment = .inherit,
+        jobs: JobTable = JobTable(),
+        clock: any Clock<Duration>,
+        commandEnvironment: CommandEnvironment = .inherit,
         observe: @escaping @Sendable (Event) -> Void
     ) {
         access = JobAccess(jobs: jobs, clock: clock)
@@ -68,54 +70,80 @@ public struct BashTool: ArgumentTool {
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         let readiness = try ShellReadiness.select(
-            output: arguments.waitForOutput, port: arguments.waitForPort,
-            file: arguments.waitForFile, in: context)
+            output: arguments.waitForOutput,
+            port: arguments.waitForPort,
+            file: arguments.waitForFile,
+            in: context
+        )
         if let shell = arguments.shell, !JobTable.isShell(shell) {
             throw ToolFailure(
-                "shell must name a shell's absolute path, such as /bin/bash; the command to run goes in command.")
+                "shell must name a shell's absolute path, such as /bin/bash; the command to run goes in command."
+            )
         }
         let yield = arguments.yieldSeconds.map { Swift.min(Swift.max(1, $0), Self.maximumTimeout) }
         let timeout = Swift.min(Swift.max(1, arguments.timeoutSeconds ?? Self.defaultTimeout), Self.maximumTimeout)
         let limit = readiness == nil ? (yield ?? timeout) : timeout
         let observe = observe
         let job = access.jobs.start(
-            arguments.command, in: context, keepsInputOpen: yield != nil || readiness != nil,
-            keeping: Self.keptBytes, shell: access.jobs.commandShell(arguments.shell, in: context)
+            arguments.command,
+            in: context,
+            keepsInputOpen: yield != nil || readiness != nil,
+            keeping: Self.keptBytes,
+            shell: access.jobs.commandShell(arguments.shell, in: context)
         ) {
             observe(.output($0))
         }
         do {
             let outcome = try await JobWaiting.wait(
-                for: job, readiness: readiness, seconds: limit,
-                clock: access.clock, in: context)
-            switch outcome {
-                case .found where job.status != .running: return Self.finished(job)
-                case .found:
-                    job.markBackgrounded()
-                    return ToolOutput(
-                        Self.body(job.takeOutput()) + "[\(job.id) \(readiness?.headline ?? "ready"); still running]",
-                        backgroundJob: job.id)
-                case .ended: return Self.finished(job)
-                case .timedOut where readiness == nil && yield != nil:
-                    job.markBackgrounded()
-                    return ToolOutput(
-                        Self.body(job.takeOutput())
-                            + "[still running as \(job.id) after \(limit) s\(JobWaiting.fileNote(job)); "
-                            + "display [#\(job.displayID)]; use job to inspect, send input, or stop]",
-                        backgroundJob: job.id)
-                case .timedOut, .cancelled:
-                    job.stop()
-                    await job.ended()
-                    return .error(
-                        Self.body(job.takeOutput())
-                            + (outcome == .cancelled
-                                ? "[aborted; the command and its children were stopped]"
-                                : "[timed out after \(limit) s; the command and its children were stopped]"))
-            }
+                for: job,
+                readiness: readiness,
+                seconds: limit,
+                clock: access.clock,
+                in: context
+            )
+            return await Self.output(of: outcome, job: job, readiness: readiness, yield: yield, limit: limit)
         } catch {
             job.stop()
             await job.ended()
             throw error
+        }
+    }
+
+    /// What the call returns once its wait is over: the output of a command that ended, a job still running in the background,
+    /// or an error for one that was stopped.
+    private static func output(
+        of outcome: JobWaiting.Outcome,
+        job: Job,
+        readiness: ShellReadiness?,
+        yield: Int?,
+        limit: Int
+    ) async -> ToolOutput {
+        switch outcome {
+            case .found where job.status != .running: return Self.finished(job)
+            case .found:
+                job.markBackgrounded()
+                return ToolOutput(
+                    Self.body(job.takeOutput()) + "[\(job.id) \(readiness?.headline ?? "ready"); still running]",
+                    backgroundJob: job.id
+                )
+            case .ended: return Self.finished(job)
+            case .timedOut where readiness == nil && yield != nil:
+                job.markBackgrounded()
+                return ToolOutput(
+                    Self.body(job.takeOutput())
+                        + "[still running as \(job.id) after \(limit) s\(JobWaiting.fileNote(job)); "
+                        + "display [#\(job.displayID)]; use job to inspect, send input, or stop]",
+                    backgroundJob: job.id
+                )
+            case .timedOut, .cancelled:
+                job.stop()
+                await job.ended()
+                return .error(
+                    Self.body(job.takeOutput())
+                        + (outcome == .cancelled
+                            ? "[aborted; the command and its children were stopped]"
+                            : "[timed out after \(limit) s; the command and its children were stopped]")
+                )
         }
     }
 

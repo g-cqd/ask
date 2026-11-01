@@ -78,7 +78,8 @@ public struct SessionTree: Sendable, Equatable {
     ///   unchanged on failure.
     @discardableResult
     public mutating func continuing(
-        from parent: EntryID, with payload: SessionPayload
+        from parent: EntryID,
+        with payload: SessionPayload
     ) throws(SessionTreeError) -> EntryID {
         guard positions[parent] != nil else { throw .unknownEntry(parent) }
         // One restore path for every failure `append` can raise, rather than validating twice.

@@ -49,11 +49,13 @@ struct EnvironmentSectionTests {
 
     @Test func `a project's file may withhold more and may not pass anything`() throws {
         #expect(
-            try parse("{environment:{withhold:['X','AWS_*']}}", project: true).environment?.withhold == ["AWS_*", "X"])
+            try parse("{environment:{withhold:['X','AWS_*']}}", project: true).environment?.withhold == ["AWS_*", "X"]
+        )
         #expect(throws: ConfigurationError.self) { try parse("{environment:{pass:['X']}}", project: true) }
         #expect(
             try parse("{environment:{pass:[],withhold:['X']}}", project: true).environment?.withhold == ["X"],
-            "an empty pass passes nothing")
+            "an empty pass passes nothing"
+        )
     }
 
     @Test func `layers add their names to each other's`() {
@@ -68,7 +70,8 @@ struct EnvironmentSectionTests {
     @Test func `environment is a known key`() {
         #expect(
             ConfigurationFile.keys.contains("environment")
-                && ConfigurationFile(environment: EnvironmentSection()).sets("environment"))
+                && ConfigurationFile(environment: EnvironmentSection()).sets("environment")
+        )
         #expect(!ConfigurationFile().sets("environment"))
     }
 }

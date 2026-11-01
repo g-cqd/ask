@@ -32,20 +32,29 @@ extension AgentConversation {
                 return .promptAccepted(id: prompt.id, text: SkillInvocation.shown(prompt.text))
             case .toolStarted(let id, let name, let input):
                 return .toolStarted(
-                    name: name == "bash" ? "shell" : name, summary: ToolSummary.header(for: input, tool: name), id: id,
+                    name: name == "bash" ? "shell" : name,
+                    summary: ToolSummary.header(for: input, tool: name),
+                    id: id,
                     fullInput: ToolSummary.fullInput(for: input),
                     command: ToolSummary.commandLimits(for: input)
                         .map {
                             ToolCommand(
-                                timeout: $0.timeout.map(Duration.seconds), yield: $0.yield.map(Duration.seconds),
-                                defaultTimeout: .seconds(BashTool.defaultTimeout))
+                                timeout: $0.timeout.map(Duration.seconds),
+                                yield: $0.yield.map(Duration.seconds),
+                                defaultTimeout: .seconds(BashTool.defaultTimeout)
+                            )
                         },
-                    path: ToolSummary.path(for: input))
+                    path: ToolSummary.path(for: input)
+                )
             case .toolFinished(let id, _, let output):
                 let last = output.content.split(separator: "\n").last.map(String.init) ?? ""
                 return .toolFinished(
-                    output.isError ? .failed(last) : .succeeded, output: output.content,
-                    id: id, backgroundJob: output.backgroundJob, replacements: output.facts.replacements)
+                    output.isError ? .failed(last) : .succeeded,
+                    output: output.content,
+                    id: id,
+                    backgroundJob: output.backgroundJob,
+                    replacements: output.facts.replacements
+                )
             case .repaired(let repairs):
                 return .notice("Repaired the context: \(RequestContext.describe(repairs)).", isError: false)
             case .continuedAtOutputLimit:

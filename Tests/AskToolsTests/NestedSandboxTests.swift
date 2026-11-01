@@ -36,7 +36,9 @@ struct NestedSandboxTests {
         let context = ToolContext(workingDirectory: world.workspace, sandbox: .unrestricted)
         let output = await BashTool()
             .run(
-                world.input(#"{"command":"echo 'sandbox_apply: Operation not permitted'; exit 1"}"#), in: context)
+                world.input(#"{"command":"echo 'sandbox_apply: Operation not permitted'; exit 1"}"#),
+                in: context
+            )
         #expect(output.isError && !output.content.contains("[A program"))
     }
 }

@@ -13,7 +13,10 @@ public struct StdioLaunch: Sendable, Equatable {
 
     /// A launch. Pass `ProcessInfo.processInfo.environment` as `inheriting` to run as ask does.
     public init(
-        executable: String, arguments: [String], environment: [String: String] = [:], workingDirectory: String? = nil,
+        executable: String,
+        arguments: [String],
+        environment: [String: String] = [:],
+        workingDirectory: String? = nil,
         inheriting: [String: String]
     ) {
         self.executable = executable

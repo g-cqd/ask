@@ -20,8 +20,10 @@ final class CallSandboxTests {
         let registry = try ToolRegistry([BashTool(), WriteTool()])
         let quoted = command.replacingOccurrences(of: "\"", with: "\\\"")
         return await registry.run(
-            name: "bash", input: world.input(#"{"command":"\#(quoted)","sandbox":\#(sandbox),"shell":"/bin/bash"}"#),
-            in: world.context)
+            name: "bash",
+            input: world.input(#"{"command":"\#(quoted)","sandbox":\#(sandbox),"shell":"/bin/bash"}"#),
+            in: world.context
+        )
     }
 
     @Test func `a call narrowed to a subdirectory cannot write beside it, though the run could`() async throws {
@@ -33,7 +35,8 @@ final class CallSandboxTests {
         #expect(!FileManager.default.fileExists(atPath: world.workspace + "/b.txt"))
         #expect(
             try await bash("echo out > b.txt && echo ok", sandbox: "{}") == ToolOutput("ok\n[exit 0]"),
-            "the run itself may")
+            "the run itself may"
+        )
     }
 
     @Test func `a call narrowed to reading the workspace cannot read the rest of the home`() async throws {
@@ -44,8 +47,10 @@ final class CallSandboxTests {
     @Test func `the write tool follows a call's narrowing too`() async throws {
         let registry = try ToolRegistry([WriteTool()])
         let output = await registry.run(
-            name: "write", input: world.input(#"{"path":"c.txt","content":"x","sandbox":{"write":["sub"]}}"#),
-            in: world.context)
+            name: "write",
+            input: world.input(#"{"path":"c.txt","content":"x","sandbox":{"write":["sub"]}}"#),
+            in: world.context
+        )
         #expect(output == .error("Not permitted: c.txt."))
     }
 }

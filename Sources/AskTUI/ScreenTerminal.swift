@@ -20,9 +20,14 @@ func modes(for options: ScreenOptions) -> TerminalModes {
 
 /// A render loop drawing the screen at the terminal's size. It idles until the first state is submitted.
 func makeRenderer(
-    on connection: any TerminalConnection, frames: FrameBox
+    on connection: any TerminalConnection,
+    frames: FrameBox
 ) throws -> RenderLoop<ScreenComposer> {
     let size = try connection.getSize()
     return RenderLoop(
-        connection: connection, columns: size.columns, rows: size.rows, composer: ScreenComposer(frames: frames))
+        connection: connection,
+        columns: size.columns,
+        rows: size.rows,
+        composer: ScreenComposer(frames: frames)
+    )
 }

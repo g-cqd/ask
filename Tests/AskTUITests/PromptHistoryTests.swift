@@ -20,7 +20,10 @@ struct PromptHistoryTests {
     private mutating func type(_ text: String, into controller: inout ScreenController) {
         for character in text {
             _ = controller.handle(
-                .key(KeyEvent(keyCode: character.unicodeScalars.first!.value)), pageRows: 10, columns: 60)
+                .key(KeyEvent(keyCode: character.unicodeScalars.first!.value)),
+                pageRows: 10,
+                columns: 60
+            )
         }
     }
 

@@ -10,8 +10,10 @@ extension MCPHost {
         let transport: any MCPTransport
         do {
             transport = try makeTransport(
-                server, try MCPExpansion.expand(server.env, from: environment),
-                try MCPExpansion.expand(server.headers, from: environment))
+                server,
+                try MCPExpansion.expand(server.env, from: environment),
+                try MCPExpansion.expand(server.headers, from: environment)
+            )
         } catch let missing as MCPExpansion.Missing {
             return fail(server, "the setting names ${\(missing.name)}, which is not set in ask's environment")
         } catch {
@@ -91,8 +93,11 @@ extension MCPHost {
     private static func adapters(_ tools: [MCPTool], server: String, connection: MCPConnection) -> [any Tool] {
         tools.map { tool in
             MCPToolAdapter(
-                server: server, tool: tool, name: MCPToolName.make(server: server, tool: tool.name),
-                connection: connection)
+                server: server,
+                tool: tool,
+                name: MCPToolName.make(server: server, tool: tool.name),
+                connection: connection
+            )
         }
     }
 

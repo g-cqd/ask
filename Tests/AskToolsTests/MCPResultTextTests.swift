@@ -8,7 +8,8 @@ import Testing
 struct MCPResultTextTests {
     private func text(_ content: [MCPContent], structured: String? = nil) -> String {
         MCPResultText.of(
-            MCPToolResult(content: content, structuredContent: structured.map { Array($0.utf8) }, isError: false))
+            MCPToolResult(content: content, structuredContent: structured.map { Array($0.utf8) }, isError: false)
+        )
     }
 
     @Test func `text blocks are joined with a blank line`() {
@@ -19,10 +20,12 @@ struct MCPResultTextTests {
         let note = text([.image(mimeType: "image/png", base64: String(repeating: "A", count: 400))])
         #expect(note == "[image image/png, 300 bytes: ask cannot show it]")
         #expect(
-            text([.audio(mimeType: "audio/wav", base64: "AAAA")]) == "[audio audio/wav, 3 bytes: ask cannot play it]")
+            text([.audio(mimeType: "audio/wav", base64: "AAAA")]) == "[audio audio/wav, 3 bytes: ask cannot play it]"
+        )
         #expect(
             text([.audio(mimeType: "audio/wav", base64: "AA==")]) == "[audio audio/wav, 1 bytes: ask cannot play it]",
-            "padding is not data")
+            "padding is not data"
+        )
     }
 
     @Test func `a link names its address and a resource gives its text`() {
@@ -30,7 +33,8 @@ struct MCPResultTextTests {
         #expect(text([.resource(uri: "file:///b", mimeType: "text/plain", text: "body")]) == "body")
         #expect(
             text([.resource(uri: "file:///c", mimeType: "image/png", text: nil)])
-                == "[resource file:///c (image/png): no text]")
+                == "[resource file:///c (image/png): no text]"
+        )
     }
 
     @Test func `a kind this client does not know is said, with its name`() {

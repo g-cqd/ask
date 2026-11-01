@@ -15,7 +15,10 @@ struct SkillPickerTests {
 
     private func controller() -> ScreenController {
         ScreenController(
-            label: "m", commands: [SlashCommand(name: "config", summary: "Show the settings.")], options: .legacy)
+            label: "m",
+            commands: [SlashCommand(name: "config", summary: "Show the settings.")],
+            options: .legacy
+        )
     }
 
     @discardableResult
@@ -51,11 +54,14 @@ struct SkillPickerTests {
             all == [
                 "/help", "/quit", "/continue", "/follow-up", "/jobs", "/config", "/sidebar", "/verbose",
                 "/skill:code-review", "/skill:debugging"
-            ], "session commands, then the tools, skills last")
+            ],
+            "session commands, then the tools, skills last"
+        )
         #expect(screen.state.picker?.matches.last?.detail.hasPrefix("skill · ") == true)
         #expect(
             screen.state.picker?.matches.filter { $0.isHeading }.map { $0.detail } == ["session", "tools"],
-            "the skills group under the tools heading, as the conversation categorises them")
+            "the skills group under the tools heading, as the conversation categorises them"
+        )
     }
 
     @Test func `typing skill and a colon narrows to skills, and a name typed in full closes the picker`() {
