@@ -2,8 +2,8 @@
 # The quality gate for this package. One entry point, so a check cannot be forgotten because
 # someone remembered a different command.
 #
-#   Scripts/quality.sh            format, lint, then build and test
-#   Scripts/quality.sh --check    verify only: fails if the tree is not already canonical
+#   Scripts/quality.sh            format, then every check of --check, in one run
+#   Scripts/quality.sh --check    verify only: fails if the tree is not already canonical (CI)
 #
 # The rules are NOT this script's opinion. `.swift-format` and `.swiftlint.yml` are Aemi's canonical
 # configuration, copied by `Aemi/scripts/sync-config.sh`, so every package in the ecosystem formats
@@ -30,14 +30,15 @@ need swiftlint "Install with: brew install swiftlint"
 [ -f .swift-format ] || fail ".swift-format missing — sync it with Aemi/scripts/sync-config.sh"
 [ -f .swiftlint.yml ] || fail ".swiftlint.yml missing — sync it with Aemi/scripts/sync-config.sh"
 
-if [ "$check_only" -eq 1 ]; then
-    printf '==> swift-format (check)\n'
-    "$SF" lint --recursive --configuration .swift-format --strict Sources Tests Benchmarks/Benchmarks \
-        || fail "formatting drift — run Scripts/quality.sh to fix"
-else
+# Formatting first, once, then the same check `--check` makes: what formatting cannot fix (a line too long to wrap, say) still fails
+# here, before anything slower runs.
+if [ "$check_only" -eq 0 ]; then
     printf '==> swift-format (format)\n'
     "$SF" format --in-place --recursive --configuration .swift-format Sources Tests Benchmarks/Benchmarks
 fi
+printf '==> swift-format (check)\n'
+"$SF" lint --recursive --configuration .swift-format --strict Sources Tests Benchmarks/Benchmarks \
+    || fail "formatting drift — run Scripts/quality.sh to fix"
 
 printf '==> swiftlint (metrics, --strict)\n'
 swiftlint lint --strict --config .swiftlint.yml Sources Tests Benchmarks/Benchmarks \
