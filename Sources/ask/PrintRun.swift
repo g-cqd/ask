@@ -104,7 +104,9 @@ func runPrompt(
     let sessionPath = session.path
     let renderer = PrintRenderer()
 
-    let sent = expandingSkill(prompt, settings: settings, workingDirectory: workingDirectory)
+    let sent = SessionTasks.attachReferences(
+        expandingSkill(prompt, settings: settings, workingDirectory: workingDirectory)
+    )
     // Awake for the run and for any job it leaves running until ask stops them below (roadmap 0090).
     let keepAwake = awake(settings)
     defer { keepAwake.turnEnded() }

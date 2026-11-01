@@ -1,9 +1,9 @@
-/// The skills the person's messages may name as a token (roadmap 0185): their messages are laid out again when the list changes.
+/// The words the person's messages may hold as a token (roadmaps 0185, 0186): their messages are laid out again when the set changes.
 extension Transcript {
-    /// `names` are command names, `skill:debugging`.
-    public mutating func setSkillNames(_ names: Set<String>) {
-        guard names != skillNames else { return }
-        skillNames = names
+    /// `names` with their sigil: `/skill:debugging`, `#t3`.
+    public mutating func setTokenNames(_ names: Set<String>) {
+        guard names != tokenNames else { return }
+        tokenNames = names
         for index in items.indices {
             if case .user = items[index] { revisions[index] = bump() }
         }

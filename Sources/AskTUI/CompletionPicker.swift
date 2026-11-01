@@ -7,6 +7,8 @@ struct CompletionPicker: Sendable, Equatable {
     enum Kind: Sendable, Equatable {
         case commands
         case files
+        /// The session's tasks and ideas, at a `#` (roadmap 0186).
+        case references
         /// What a command offers after its name; `title` is the command's name.
         case choices(title: String)
         /// The interactive configuration editor: a modal list whose rows are settings.
@@ -17,6 +19,7 @@ struct CompletionPicker: Sendable, Equatable {
             switch self {
                 case .commands: "commands"
                 case .files: "files"
+                case .references: "tasks and ideas"
                 case .choices(let name): name
                 case .config(let scope, _): "config · \(scope)"
             }

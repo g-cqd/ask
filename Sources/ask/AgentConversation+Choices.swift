@@ -30,6 +30,7 @@ extension AgentConversation {
                 ]
             case "tasks": return taskRows()
             case "ideas": return ideaRows()
+            case "#": return referenceRows()
             default: return []
         }
     }
@@ -38,6 +39,24 @@ extension AgentConversation {
     private func taskRows() -> [ChoiceRow] {
         guard let list = try? SessionTasks.board.current() else { return [] }
         return Self.listRows(list.tasks.map { ($0.name, list.line($0)) }, all: "every task, done ones too")
+    }
+
+    /// The tasks not done and the ideas still open, for `#` (roadmap 0186): `#t3` and `#i2`, each with its line.
+    private func referenceRows() -> [ChoiceRow] {
+        let tasks =
+            ((try? SessionTasks.board.current()) ?? nil)
+            .map { list in
+                list.tasks.filter { $0.state != .done }.map { (name: "#" + $0.name, line: list.line($0)) }
+            } ?? []
+        let ideas =
+            ((try? SessionTasks.ideas.current()) ?? nil)
+            .map { list in
+                list.ideas.filter(\.state.isOpen).map { (name: "#" + $0.name, line: list.line($0)) }
+            } ?? []
+        return (tasks + ideas)
+            .map {
+                ChoiceRow(label: $0.name, detail: String($0.line.drop { $0 != " " }.dropFirst()), arguments: $0.name)
+            }
     }
 
     /// A list's rows: `all`, then each entry by its name, its line after the name as the detail; none for an empty list.

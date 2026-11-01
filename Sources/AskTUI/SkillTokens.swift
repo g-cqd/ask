@@ -1,26 +1,27 @@
 internal import TerminalKitMarkdown
 internal import TerminalKitStyle
 
-/// A known `/skill:name` at the start of a word, drawn as a token in the draft and in the person's message (roadmap 0185): the skill is
-/// attached when the message is sent, so what looks like a link is exactly what will be. The same word rule as the sending side's
-/// `SkillInvocation`: after the start or white space, sentence punctuation not part of the name, an unknown name left plain.
+/// A known name at the start of a word, drawn as a token in the draft and in the person's message: `/skill:name` (roadmap 0185), `#t3`
+/// and `#i2` (0186). What is drawn so is attached when the message is sent, so what looks like a link is exactly what will be. The same
+/// word rule as the sending side: after the start or white space, sentence punctuation not part of it, an unknown one left plain.
 enum SkillTokens {
-    static let prefix = "/skill:"
-    /// A link's look (the Markdown theme's), since the token stands for something attached.
+    /// A link's look (the Markdown theme's), since a token stands for something attached.
     static let style = MarkdownTheme.standard.link
+    /// The characters a token starts with.
+    static let sigils: Set<Character> = ["/", "#"]
 
-    /// The character ranges of the tokens in `text` whose command name (`skill:name`) is in `known`.
+    /// The character ranges of the words in `text` that `known` holds, sigil and all (`/skill:debugging`, `#t3`).
     static func ranges(in text: String, known: Set<String>) -> [Range<Int>] {
-        guard !known.isEmpty, text.contains(prefix) else { return [] }
+        guard !known.isEmpty, text.contains(where: { sigils.contains($0) }) else { return [] }
         var ranges: [Range<Int>] = []
         var previous: Character = " "
         var offset = 0
         var index = text.startIndex
         while index < text.endIndex {
-            if previous.isWhitespace, text[index...].hasPrefix(prefix) {
+            if previous.isWhitespace, sigils.contains(text[index]) {
                 let word = text[index...].prefix { !$0.isWhitespace }
                 let name = String(word.reversed().drop { ",.;:!?)]}\"'".contains($0) }.reversed())
-                if known.contains(String(name.dropFirst())) { ranges.append(offset ..< offset + name.count) }
+                if known.contains(name) { ranges.append(offset ..< offset + name.count) }
                 index = text.index(index, offsetBy: word.count)
                 offset += word.count
                 previous = word.last ?? " "

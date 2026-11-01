@@ -4,14 +4,7 @@ extension ScreenController {
     /// The `/` word the cursor is in, shaped as a skill's name could be. Asked only after the first word's command picker, which takes a
     /// `/` that starts the draft.
     func inlineSkillTrigger() -> CompletionTrigger? {
-        let text = state.editor.text
-        guard Self.contains(UInt8(ascii: "/"), in: text),
-            let trigger = CompletionTrigger.at(cursor: state.editor.cursor, in: text, sigils: ["/"]),
-            trigger.query.allSatisfy({
-                $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == ":" || $0 == "_")
-            })
-        else { return nil }
-        return trigger
+        trigger("/") { $0.isLetter || $0.isNumber || $0 == "-" || $0 == ":" || $0 == "_" }
     }
 
     /// Opens, narrows or closes the skills' picker for `trigger`; closed for no match, a name typed in full, or a word closed on.

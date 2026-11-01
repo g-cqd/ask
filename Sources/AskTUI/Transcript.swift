@@ -64,9 +64,9 @@ public struct Transcript: Sendable, Equatable {
     /// Output longer than either folds its middle (0078: `ui.fold.outputLines`, `ui.fold.outputBytes`).
     public internal(set) var outputFoldLines = 200
     public internal(set) var outputFoldBytes = 32 * 1024
-    /// Whether messages are drawn as Markdown (0065: `ui.markdown`); the skills a message may name as a token (0185).
+    /// Whether messages are drawn as Markdown (0065: `ui.markdown`); the words a message may hold as a token (0185, 0186).
     public internal(set) var markdown = false
-    public internal(set) var skillNames: Set<String> = []
+    public internal(set) var tokenNames: Set<String> = []
     /// Whether fenced code in Markdown is coloured by its language (roadmap 0152: `ui.highlight`).
     public internal(set) var highlight = false
     /// Which spinner style is used for progress indicators in live blocks.

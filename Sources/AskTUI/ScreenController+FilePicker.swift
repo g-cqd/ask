@@ -15,6 +15,17 @@ extension ScreenController {
         return CompletionTrigger.at(cursor: state.editor.cursor, in: state.editor.text, sigils: ["@"])
     }
 
+    /// The word the cursor is in when it starts with `sigil` and the rest of it is made of what `allows` lets through: the `/` of an
+    /// inline skill (0185), the `#` of a task or an idea (0186).
+    func trigger(_ sigil: Character, allows: (Character) -> Bool) -> CompletionTrigger? {
+        let text = state.editor.text
+        guard let byte = sigil.asciiValue, Self.contains(byte, in: text),
+            let trigger = CompletionTrigger.at(cursor: state.editor.cursor, in: text, sigils: [sigil]),
+            trigger.query.allSatisfy({ $0.isASCII && allows($0) })
+        else { return nil }
+        return trigger
+    }
+
     /// Whether `text` holds `byte` anywhere: one libc scan, so a draft without it costs nothing more per key (the `@` and `/` pickers).
     static func contains(_ byte: UInt8, in text: String) -> Bool {
         var text = text

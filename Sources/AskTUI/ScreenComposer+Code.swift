@@ -16,7 +16,7 @@ extension ScreenComposer {
         style: BlockStyle = .plain
     ) -> [Line] {
         var rows = stillLines(in: transcript, at: index, shown: shown, columns: columns, style: style)
-        if case .user = transcript.items[index] { rows = withSkillTokens(rows, known: transcript.skillNames) }
+        if case .user = transcript.items[index] { rows = withSkillTokens(rows, known: transcript.tokenNames) }
         guard transcript.shimmer, let progress = transcript.progress[index], progress.ended == nil else { return rows }
         return shimmering(
             rows,

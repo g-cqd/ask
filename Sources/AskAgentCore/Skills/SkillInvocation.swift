@@ -132,9 +132,12 @@ public enum SkillInvocation {
         return names
     }
 
-    /// What a person is shown for a recorded prompt: everything before the skill, which is the line they typed.
+    /// What a person is shown for a recorded prompt: everything before the first attachment, which is the line they typed.
     public static func shown(_ prompt: String) -> String {
-        guard let marker = prompt.range(of: marker) else { return prompt }
-        return String(prompt[..<marker.lowerBound])
+        // The earliest attachment: a skill's, a task's or an idea's (0186).
+        let cuts = [marker, ListReferences.taskMarker, ListReferences.ideaMarker]
+            .compactMap { prompt.range(of: $0)?.lowerBound }
+        guard let cut = cuts.min() else { return prompt }
+        return String(prompt[..<cut])
     }
 }
