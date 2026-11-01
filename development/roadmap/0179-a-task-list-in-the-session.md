@@ -16,9 +16,12 @@ versioning), by a setting, global or per workspace.
 Owner (2026-11-01): per session or per workspace, never a Markdown file: JSON and/or protobuf, either one compressed or encrypted as
 0182 specifies.
 
+Owner (2026-11-01): the model sees the list through a tool it calls, not on every turn. `@` may point at a task later, and `#` too (0185,
+0186).
+
 ## Questions for the owner before a design
 
-- Does the model see the list on every turn (costs tokens), or only through a tool it calls?
+- ~~Does the model see the list on every turn (costs tokens), or only through a tool it calls?~~ Through a tool.
 - Dependencies: just "blocked by", or more?
 
 ## Still owed
