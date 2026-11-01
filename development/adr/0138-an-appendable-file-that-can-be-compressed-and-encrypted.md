@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-11-01
 ---
 
@@ -24,7 +24,23 @@ Measured on this machine (M3, release, 2026-11-01, `/tmp/probe.swift`):
 - PBKDF2-HMAC-SHA256 (CommonCrypto), 600,000 iterations: 79 ms.
 - 1,000 seals of 4 KiB: AES-GCM 1.3 ms, ChaChaPoly 7.1 ms (CryptoKit; AES has hardware support).
 
-## Decision (proposed)
+## The owner's choices (2026-11-01)
+
+- **Key derivation: Argon2id**, not PBKDF2, from aemi's `AemiArgon2` (aemi ADR 0024): NEON with SHA3, data-independent timing,
+  red-first, mutation-tested, attacked with a timing test. Parameters: 19 MiB, 2 passes, 4 lanes on 4 threads (RFC 9106's second
+  recommendation is 64 MiB; OWASP's minimum is 19 MiB), about 4 ms here. It runs only when a password is typed, never at start with
+  "remember"; its memory is wiped and released at once. Parameters read from `keys.json` are bounded before use (at most 256 MiB, 10
+  passes, 16 lanes), so a tampered file cannot exhaust memory.
+- **The cipher stays symmetric, with 256-bit keys: AES-256-GCM.** Asked for algorithms that quantum computing does not weaken: quantum
+  attacks halve a symmetric key's strength at most (Grover), so a 256-bit key keeps 128 bits, which Apple and NIST call quantum-secure;
+  what quantum computers break is public-key cryptography, and this design has none. If a key is ever sent to another device, that
+  exchange uses CryptoKit's hybrid post-quantum X-Wing (ML-KEM-768 with X25519). Nothing is known to be weakened by AI-assisted analysis.
+- **A recovery key**: shown once when encryption is turned on, 256 random bits written as words of base32; it wraps a second copy of
+  the user key in `keys.json`, so a forgotten password loses nothing if the recovery key was kept.
+- **Default: ask at first start** whether to encrypt sessions, and whether to remember the password.
+- **A workspace may turn encryption and compression off** as well as on: the workspace's setting wins either way.
+
+## Decision
 
 ### 1. A plain file stays plain JSONL
 
@@ -64,21 +80,20 @@ frames:  length u32 LE · kind u8 · body
 - **A user key:** 256 random bits, made the first time encryption is turned on.
 - **A data key per file**, also random, wrapped in the header by the user key (AES-GCM). Changing the password rewraps the user key only,
   never a session file.
-- **The password wraps the user key.** It is derived with PBKDF2-HMAC-SHA256, 600,000 iterations and a 16-byte salt. The wrapped copy
+- **The password wraps the user key.** It is derived with Argon2id and a 16-byte salt. The wrapped copy
   is kept under ask's state directory (`keys.json`: salt, iterations, KDF id, wrapped user key). The wrap's tag checks the password, so
   no hash of the password is stored anywhere.
 - **"Remember":** the user key itself goes into the login keychain, readable when unlocked, on this device only (as in 0110). Nothing is
   derived at start, and the keychain is read only when an encrypted file is first opened, never on the cold-start path.
-- **"Every start":** the password is asked the first time an encrypted file is opened or created. Its 79 ms are spent while a person is
-  waiting on the prompt anyway.
-- **The KDF id is in `keys.json`,** so Argon2id can replace PBKDF2 later without touching session files.
+- **"Every start":** the password is asked the first time an encrypted file is opened or created; the derivation's few milliseconds
+  are spent while a person waits on the prompt anyway.
+- **The KDF and its parameters are in `keys.json`,** so they can change later without touching session files.
 
 ### 5. Settings and commands
 
 - `sessions.compression`: `false` or `true`. `sessions.encryption`: `off`, `on` or `ask`, where `ask` puts a question at the start of
   each new session. `sessions.password`: `remember` or `everyStart`.
-- All three are typed settings (0118), allowed in the user's file. A workspace's file may only turn them **on**, never off: a
-  repository must not lower your protection, as with `modelScopes` (ADR-0137).
+- All three are typed settings (0118). A workspace's file overrides the user's either way (owner, 2026-11-01).
 - `/encrypt on|off` (with `enable`/`disable`, `true`/`false`, `1`/`0`) rewrites the current session file by the same atomic path as a
   damaged rewrite, leaving no plaintext copy behind. `ask key password` changes the password, and `ask key forget` removes the
   keychain's copy.
@@ -99,10 +114,9 @@ frames:  length u32 LE · kind u8 · body
 
 ## Options not taken
 
+- **PBKDF2:** proposed first, for being in CommonCrypto; the owner chose Argon2id.
 - **ChaChaPoly:** as safe, and fine without hardware AES (0135's Linux and Windows). It is 5.6 times slower here, though both cost
   microseconds per record. The cipher id lives in the version byte, so it can be added later.
-- **Argon2id:** stronger against GPU guessing, but neither CryptoKit nor CommonCrypto has it. It would be ask's own implementation of a
-  security primitive, so not now.
 - **Apple's Compression (LZFSE, zstd-like):** it has no flush point, so each record would be its own stream. Small records then barely
   compress.
 - **Encrypting the whole file at close:** a crash would leave the session in plaintext, or lose it.
@@ -112,8 +126,7 @@ frames:  length u32 LE · kind u8 · body
 ## Consequences
 
 - An encrypted session cannot be read with `cat` or `jq`. `ask session cat <id>` prints its JSONL after asking the password.
-- A forgotten password loses every encrypted session. ask says so when encryption is turned on, and there is no recovery key, unless
-  the owner wants one.
+- A forgotten password and a lost recovery key lose every encrypted session; ask says so when it shows the recovery key.
 - Compression with encryption reveals each record's compressed length. That only matters if someone can both inject text into a session
   and watch the file's size; it is noted here and not mitigated.
 - zlib is a new system library linked into AskAgentCore. It ships with macOS, but 0135's other platforms would need it.

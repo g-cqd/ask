@@ -12,9 +12,16 @@ start; or ask at each start whether this conversation is encrypted; and `/encryp
 
 ## Design
 
-ADR-0138 (proposed, 2026-11-01): plain JSONL when both settings are off; otherwise a framed container with zlib sync-flushed deflate and
-AES-GCM frames, a per-file data key wrapped by a user key, the user key wrapped by a PBKDF2 password and optionally kept in the keychain.
-The same container holds the task and idea store (0179, 0180). Waiting on the owner's choices before anything is built.
+ADR-0138 (accepted, 2026-11-01): plain JSONL when both settings are off; otherwise a framed container with zlib sync-flushed deflate and
+AES-256-GCM frames, a per-file data key wrapped by a user key, the user key wrapped by an Argon2id password (aemi's AemiArgon2) and a
+recovery key, and optionally kept in the keychain. Asked at first start; a workspace overrides either way. The same container holds the
+task and idea store (0179, 0180).
+
+## Phases
+
+1. The container: frames, compression, encryption under a given key, recovery of torn and damaged files (AskAgentCore).
+2. Keys: the user key, `keys.json` (Argon2id, the recovery key), the keychain when remembered.
+3. Session files on the container: the settings, the first-start question, `/encrypt`, locked sessions in lists and resume.
 
 ## Still owed
 
