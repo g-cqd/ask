@@ -6,6 +6,15 @@ public struct PendingInput: Sendable, Equatable {
     public let prompt: String
     /// Whether what is typed is hidden.
     public let secret: Bool
+    /// Where the question's text stands in the transcript, when it is to leave it once answered (a recovery code, idea i1).
+    var transient: Int?
+
+    public init(id: Int, prompt: String, secret: Bool, transient: Int? = nil) {
+        self.id = id
+        self.prompt = prompt
+        self.secret = secret
+        self.transient = transient
+    }
 
     /// The question and what is typed so far, for the status line: dots and a count for a secret, the end of the text otherwise.
     func line(typed: String) -> String {
@@ -15,6 +24,8 @@ public struct PendingInput: Sendable, Equatable {
         } else {
             shown = typed.count > 40 ? "…" + typed.suffix(39) : typed
         }
-        return "\(prompt) › \(shown) · Enter sends · Esc cancels"
+        // One row: a question of several lines is in the transcript; its last line, the question itself, is enough here.
+        let question = prompt.split(whereSeparator: \.isNewline).last.map(String.init) ?? prompt
+        return "\(question) › \(shown) · Enter sends · Esc cancels"
     }
 }

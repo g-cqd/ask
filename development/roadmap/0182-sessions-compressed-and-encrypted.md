@@ -56,9 +56,7 @@ task and idea store (0179, 0180).
 
 ## Still owed
 
-- Idea i1 (2026-11-01): the first-start question ("encrypt sessions?") and the password are asked inside the screen once ask has
-  drawn, as a question with choices (0117's tool picker) and hidden input, not on the terminal before the first frame. Print runs and
-  runs without a terminal keep today's path.
+- ~~Idea i1: the first-start question inside the screen~~ Done (2026-11-01), below.
 - ~~Plaintext left behind~~ Done, 2026-11-01: `/encrypt on` seals the session's pictures again and removes their clear copies unless
   another session of the project may name them (plain and compressed files are searched, encrypted ones name pictures by HMAC, a file
   that cannot be read keeps every copy); 2 tests, 4 guards mutated. A rewritten file's old blocks may survive on the drive until reused,
@@ -72,3 +70,20 @@ task and idea store (0179, 0180).
   to `/tree`, `/fork` and resume when the key is missing.
 - Compression on its own: zlib with a sync flush per record, not Apple's Compression framework (no flush point; ADR-0138).
 - Settings typed (0118), and the `/encrypt` command.
+
+## Done (2026-11-01): the questions inside the screen (idea i1)
+
+- A new interactive conversation decides before the screen only what needs nobody: the setting, or the key in the keychain. The rest,
+  the first-start questions, `"ask"`'s question and the password, is asked once the screen is drawn: choices in the question picker
+  (0117), the password as hidden input. A first prompt waits for the answer before its session is made; keys that cannot be opened mean
+  nothing is written in that run, and the screen says so. Print runs and resumed sessions still ask on the terminal.
+- The recovery code is shown in a question that leaves the transcript once answered (`ConversationUpdate.askInput(transient:)`), so it
+  is on screen only until kept. Closing the first-start question with Esc keeps the run plain and records nothing, so it is asked again.
+- `/encrypt on` opens or sets up the keys in the screen instead of asking for a restart.
+- `docs/sessions.md` has a section on encrypted sessions, which 0182 had not written.
+- Tests: `InputQuestionControllerTests` (a transient question leaves the transcript on Enter, Esc and Ctrl+C). `probe-session-encryption.py`
+  answers in the screen and has 15 checks, all passing: asked once the screen is drawn, the password never shown, the code gone once
+  kept, Esc keeps the run plain and records nothing. Three mutants through the probe, all killed. Not covered: a prompt sent in the
+  instant before the question shows (it waits for the answer; no probe reaches that window), and `/encrypt on` setting up keys in the
+  screen, which uses the same path as the first start but is not probed.
+

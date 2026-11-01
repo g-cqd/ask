@@ -27,3 +27,16 @@ and send, and the conversation continues from there as a new branch. Nothing is 
 A model can only read so much at once (its context window). When the conversation reaches 75% of the window, ask summarises the earlier part
 and keeps the recent messages word for word, then carries on. `/compact` does it now. The threshold is the `compactAt` setting
 ([Configuration](configuration.md)): a share up to 1 such as `0.6`, a number of tokens such as `100000`, or `0` to wait until the window is full.
+
+## Encrypted sessions
+
+Sessions can be encrypted, compressed, or both (`sessionEncryption`, `sessionCompression`, `sessionPassword` in
+[Configuration](configuration.md)). The first time you start ask, it asks once the screen is up: encrypt your sessions, and keep the key
+in your keychain? Choosing to encrypt sets a password (typed twice, never shown) and shows a recovery code once; it opens your sessions if
+you forget the password, and leaves the screen when you press Return. Closing the question with Esc keeps this run's session plain and
+asks again next time.
+
+An encrypted session opens only with your password, the recovery code, or the key kept in your keychain. `/encrypt on` encrypts the
+session you are in (opening or setting up the keys first, in the screen); `/encrypt off` writes it back in clear. `ask keys password`
+changes the password, and `ask keys forget` removes the key from your keychain. The session's task list and ideas are kept the same way
+as the session. `ask sessions` lists sessions it cannot open as locked.

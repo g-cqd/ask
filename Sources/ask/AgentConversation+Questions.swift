@@ -4,8 +4,12 @@ internal import Synchronization
 
 /// The model's questions (roadmap 0117): put to the person on the screen, in the approval section's place, and answered there.
 extension AgentConversation {
-    /// Asks `questions` and waits; nil when the person declines, the turn is stopped, or no one is there to ask.
-    func askPerson(_ questions: [PersonQuestion]) async -> [PersonAnswer]? {
+    /// Asks `questions` and waits; nil when the person declines, the turn is stopped, or no one is there to ask. `via` puts them
+    /// through those updates rather than the running turn's (the keys' questions at start, idea i1).
+    func askPerson(
+        _ questions: [PersonQuestion],
+        via channel: (@Sendable (ConversationUpdate) -> Void)? = nil
+    ) async -> [PersonAnswer]? {
         let id = approvals.withLock { state in
             state.nextID += 1
             return state.nextID
@@ -15,7 +19,7 @@ extension AgentConversation {
             await withCheckedContinuation { (answer: CheckedContinuation<[PersonAnswer]?, Never>) in
                 let ask = approvals.withLock { state in
                     state.questions[id] = answer
-                    return state.ask
+                    return channel ?? state.ask
                 }
                 if Task.isCancelled { return settleQuestions(id, with: nil) }
                 guard let ask else { return settleQuestions(id, with: nil) }

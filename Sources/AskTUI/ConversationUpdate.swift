@@ -75,7 +75,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case configEditor(ConfigEditorSnapshot)
     /// The running command wants a line from the person: shown as a question in the status line, answered with Enter, cancelled with Esc, and sent to
     /// ``Conversation/answer(input:with:)``. A secret is hidden as it is typed and never reaches the transcript.
-    case askInput(id: Int, prompt: String, secret: Bool)
+    /// `transient`: the prompt leaves the transcript once answered or cancelled, for what is to be seen once (a recovery code).
+    case askInput(id: Int, prompt: String, secret: Bool, transient: Bool = false)
     /// The conversation did not take a queued message (a skill that cannot be loaded): it goes back to the input.
     case promptRefused(id: Int)
     /// Whether queued message `id` was taken back before the run took it (roadmap 0174).
