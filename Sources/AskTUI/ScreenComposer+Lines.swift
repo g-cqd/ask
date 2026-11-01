@@ -35,9 +35,10 @@ extension ScreenComposer {
         let content = content.map(Self.linked)
         guard style.padded else { return content }
         let tint = interrupted && style.theme.tinted ? style.theme.interrupted : style.theme.tint(for: kind)
+        // A row with a tint of its own, an edit's removed or added line, keeps it.
         func tinted(_ line: Line) -> Line {
             var line = line
-            line.style.bg = tint
+            if line.style.bg == .default { line.style.bg = tint }
             return line
         }
         let padding = Line(text: "", style: Style(bg: tint))
@@ -116,20 +117,27 @@ extension ScreenComposer {
     }
 
     /// A foldable block's body: hard lines 1 and on, drawn with the block's inset. What the block holds, not its own header line.
-    /// With `code`, the text is a file's, its tokens coloured over `style` (roadmap 0152, phase 3).
+    /// With `code`, the text is a file's, its tokens coloured over `style`; with `diff`, an edit's, each row tinted by its line's
+    /// marker (roadmap 0152, phase 3).
     static func body(
-        of text: String, block: Int, width: Int, inset: Int, style: Style, firstLine: Int = 1, code: FileCode? = nil
+        of text: String, block: Int, width: Int, inset: Int, style: Style, firstLine: Int = 1, code: FileCode? = nil,
+        diff: DiffLook? = nil
     ) -> [Line] {
         guard !text.isEmpty else { return [] }
         let margin = String(repeating: " ", count: inset)
         var accents = code.map { CodeAccents(text, code: $0) }
+        let kinds = diff.map { _ in DiffLook.kinds(of: text) }
         return TextWrap.rows(text, width: width)
             .map { row in
-                Line(
-                    text: margin + row.text, style: style,
+                let kind = kinds.flatMap { $0.indices.contains(row.line) ? $0[row.line] : nil } ?? .kept
+                let rowStyle = diff?.style(kind, over: style) ?? style
+                let marker = row.offset == 0 ? diff?.marker(kind, inset: inset, over: rowStyle) : nil
+                return Line(
+                    text: margin + row.text, style: rowStyle,
                     source: Source(
                         block: block, line: row.line + firstLine, offset: row.offset, col: inset, text: row.text),
-                    accents: accents?.accents(for: row, inset: inset, over: style) ?? [])
+                    accents: (marker.map { [$0] } ?? [])
+                        + (accents?.accents(for: row, inset: inset, over: rowStyle) ?? []))
             }
     }
 }

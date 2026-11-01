@@ -118,5 +118,17 @@ change), `FileHighlightTests` (each guard fails its test when removed; an oracle
 character's style). Measured (release, M3): a 400-line, 23 KB Swift `read` at 120 columns lays out in 0.43 ms off, 1.26 ms on, once
 per change to the block.
 
-Left of phase 3: `edit` as a diff (today its input reads `old_text:` / `new_text:`), with the `+`/`-` colour behind the tokens.
+**Phase 3 done, 2026-11-01: `edit` as a diff.** Atelier's diff moved to aemi as `AemiDiff` (aemi ADR 0023, `6d8e862`), with
+`LineSource` and `TextLines` in `AemiText`. `ToolSummary.fullInput` gives an edit as `EditDiff.text`: its two texts cut as git cuts
+lines and diffed as git's default does (Myers, indent heuristic), `- ` before each removed line, `+ ` before each added one, two
+spaces before each kept one. The screen tints a removed row `diffRemoved` (red, 0.16 of the page) and an added one `diffAdded`
+(green, 0.2 on a light page, 0.11 on a dark one: green is the bright hue, and the contrast rule of `TerminalColoursTests` allows a
+dark page little more than a succeeded block's own 0.10, so there the marker carries most of the difference). `framed` keeps a row's
+own tint. Markers are red and green with tinting off too. With `ui.highlight` on, each line is lexed after its marker on its own
+side (`LexSides`): removed lines continue the old text, added lines the new one, kept lines both, so a comment one side opens does not
+run into the other. Tests: `EditDiffTests` (8), the diff text in `ToolPresentationTests`; each guard fails a test when removed, but
+the shortcut that scans a kept line once when both sides agree, which changes no colour. AemiDiff gives a change's deletions before
+its insertions (no counter-example in 20,000 random pairs), so the rows follow the script as it is. Measured (release, M3): a
+400-line, 26 KB edit diff at 120 columns lays out in 1.0 ms off, 1.6 ms on; the diff text itself takes 0.11 ms.
+
 Phases 4 and 5 remain.
