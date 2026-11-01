@@ -9,7 +9,7 @@ date: 2026-10-29
 Owner wish (2026-10-29 00:35): investigate ways to slim down the JSON object schemas that models must answer with, and the ones ask sends
 too, to cut the tokens used at each turn.
 
-## Still owed (investigation)
+## The plan, as first written (the outcome follows) (investigation)
 
 - Measure: how many tokens the tool definitions cost per request today (ask's own tools, MCP tools, skills), per provider's tokenizer
   or the provider's own count.

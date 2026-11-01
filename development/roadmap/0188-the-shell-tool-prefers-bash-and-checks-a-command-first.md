@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-11-01
 ---
@@ -13,7 +13,7 @@ system for safety.
 
 Today (0091, done) the default is the first present of zsh, bash, then `$SHELL`, and a setting names another.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - The default order becomes bash on `PATH`, `/bin/bash`, then zsh, then `$SHELL`; the setting still wins. macOS's `/bin/bash` is 3.2:
   say which bash ran in the tool's description, so the model does not write bash 4 features for bash 3.2.
@@ -28,3 +28,8 @@ Today (0091, done) the default is the first present of zsh, bash, then `$SHELL`,
 ADR-0139: bash on the PATH, `/bin/bash`, zsh, `$SHELL`; `/bin/bash` named as 3.2 in the tool's description; every command parsed by its
 shell before it runs (not run when it does not parse); shellcheck's findings with a failed bash or sh command's result. Still owed: the
 parser of ask's own (the item's last point).
+
+## Left
+
+The parser of ask's own is later work, outside this item: it checks commands against the sandbox's rules, which 0188 did not set out
+to do.

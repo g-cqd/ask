@@ -12,7 +12,7 @@ flags or by configuration. Both configuration settings take lists to always allo
 setting widens or narrows what the person can change from inside a running ask: everything, or only some kinds (both with confirmation
 and selector pickers).
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - Relate it to what exists: the sandbox approval (ADR-0021 ff.) and the destructive-MCP-tool approval (ADR-0111) already ask in their own
   ways; this is one system over them, not a third.

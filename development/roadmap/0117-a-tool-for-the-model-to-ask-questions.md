@@ -16,7 +16,7 @@ selection, plus a free-text note that counts as an answer on its own or in addit
 - Enter goes to the next question, or to a confirmation screen showing every answer, even when the input holds text.
 - Design and experience are still to be refined with the owner.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - The tool's schema (questions, choices, single or multiple, whether a note is allowed) and the result the model gets back.
 - How it behaves while a turn runs, in a job lane (0062), and on resume.

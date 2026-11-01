@@ -72,7 +72,7 @@ original as `<name>.damaged[-n]`. Create and fork never overwrite. A change is O
 flush at any session size, down from 1.86 ms at 100,000 entries. 19 tests; every compiling mutation of the
 repair, undo and default paths was caught.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - **Placement**: where session files live, and how a session is named. Decided with the agent loop,
   which is the first thing that creates one.

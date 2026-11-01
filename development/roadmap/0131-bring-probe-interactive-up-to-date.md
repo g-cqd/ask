@@ -14,7 +14,7 @@ The prompt, the "ready" word and the "working" word are no longer read from the 
 `!` mark (a turn shows a spinner there), `Screen.editor_lines()` is what sits between the last two rules, and `until_status("ready")`,
 `until_status("X · ready")` and `until_status("working")` keep their calls and mean those things.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 The probe takes minutes and many of its checks are older than 0074, 0064, 0080 and the folded-by-default tool blocks, so they fail for
 other reasons than the prompt: a tool call is shown folded now, `/config` and the reload messages were reworded, resumed sessions say

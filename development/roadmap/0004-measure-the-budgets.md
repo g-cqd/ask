@@ -56,10 +56,11 @@ any budget is over. The runner is pinned to `macos-15` rather than taken from th
 hardware-specific numbers, and a budget measured on one machine and enforced on another fires for the
 wrong reason. The exact command was run locally first — all four within budget, exit 0.
 
-## Still owed
+## Left at the time (2026-10-18), since closed
 
 - **The action-to-action budget is provisional.** It measures a trivial action in a program with no
-  agent. When the loop lands it must be re-derived, and the stale number must not survive.
+  agent. When the loop lands it must be re-derived, and the stale number must not survive. Done: roadmap 0007 re-derived it against a
+  real action.
 
 **Notes:** no number in this project is a guess. Until this entry lands, "ultra-performance" is an
 unmeasured claim and nothing may be justified by it. Percentiles, not averages; median and spread,

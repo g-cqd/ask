@@ -46,7 +46,7 @@ history, usage, both locks, current-session reselection and damaged-session reco
 `/reload` (the replacement and its self-check get the same hidden arguments). Real-PTY Q checks requests, labels,
 provenance, refusals, a file edit, a reload and a reset.
 
-## Still owed, and not claimed by this entry
+## The plan, as first written (the outcome follows), and not claimed by this entry
 
 - A model **list** to choose from. Codex's account catalog (0038) and named connections (0047) own discovery; today
   `/model` takes an id you already know.

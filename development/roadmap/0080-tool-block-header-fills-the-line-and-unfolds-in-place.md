@@ -11,7 +11,7 @@ status trails it. Today the command is not laid out to use the width, and unfold
 
 Not related to 0078 (semantic payloads, deprioritised): this changes only the header row and the fold, not the payload.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - The command takes the whole header row, up to the spacing before the trailing status component.
   - A command wider than that is cut with an ellipsis (`…`), counted in display cells, not characters.

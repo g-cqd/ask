@@ -31,7 +31,7 @@ and a probe on the real binary shows each key narrowing and nothing widening fro
 `--write`/`--network` widen. Shown at startup, in `ask config` and on the status line. Probe N: a Swift package
 builds and runs confined to its workspace and localhost; a trusted project narrows and cannot widen.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - ~~A read allow-list~~: delivered, opt-in (ADR-0047, diary 43). `sandbox.read` / `--read`; a deny-default base
   under which SwiftPM, git (with its includes), Python, curl, cc, make and rg run.

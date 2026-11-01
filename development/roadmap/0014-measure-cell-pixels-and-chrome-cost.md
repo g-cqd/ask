@@ -95,10 +95,8 @@ budget: a compact layout tuned at one cell size is not the same layout at anothe
 
 ## Still owed — item 3
 
-What the four budgets do with chrome enabled versus off cannot be measured yet, because `ask` has no
-renderer and no chrome to enable. That is `0013`'s work, and this entry stays `in-progress` until then.
-
-Reproduce with `OUT=/tmp/ask-cell bash Scripts/verify-chrome-cost.sh`.
+What the four budgets do with chrome enabled versus off. When this was written ask had no renderer; it has had TerminalKit's since
+0013, so this can be measured now (task t25). Reproduce with `OUT=/tmp/ask-cell bash Scripts/verify-chrome-cost.sh`.
 
 ## Cost, stated as what is known and what is not
 

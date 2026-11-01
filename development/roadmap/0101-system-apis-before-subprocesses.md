@@ -24,7 +24,7 @@ principles, "System APIs before subprocesses".
 | ask `--self-check` | `SelfCheck` | checks a new build can start before a reload: stays |
 | `git ls-files` | `ProjectLister` | git is the authority on what it ignores; reimplementing `.gitignore` rules is worse. Stays, with a reason in the code |
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - A reason comment next to each remaining subprocess use that lacks one.
 - A source test that flags a new `Subprocess.run` or `Process()` outside the files above, so the inventory cannot drift.

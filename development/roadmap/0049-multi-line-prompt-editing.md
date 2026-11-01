@@ -37,7 +37,7 @@ Measure the input/render path before and after in release.
 - The input PTY probe checks ASCII, wide text, tabs, resize, the two-row setting, exact API text and recorded session text. The earlier
   multiline and queue-recovery probes still pass. Release cold-layout, cached-frame, navigation and shipping-budget costs are recorded.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - A real terminal check of Shift-Enter: the probe sends it as the CSI-u sequence a keyboard-protocol terminal
   reports, not from a physical key. Ctrl-J has no such dependence.

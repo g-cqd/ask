@@ -10,6 +10,6 @@ date: 2026-10-24
 durable. Done in ADR-0089, diary 2026-10-24 (43): the barrier flush before the rename and after it, in `AtomicFile`, `ProjectTrust`
 (now through `AtomicFile`) and `ScopedFile`. Cost measured at about 0.35 ms per replace.
 
-## Still owed
+## Left
 
 Nothing known. The `fcheck` warnings on test fixtures are left alone.

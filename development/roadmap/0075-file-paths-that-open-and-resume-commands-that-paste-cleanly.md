@@ -40,7 +40,7 @@ leading unquoted `~` so bash, zsh, and fish can expand it cleanly upon paste.
   - The plain-assistant characterisation digest was re-pinned after proving that, without links and the new style field, it is the
     old one.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - Not seen in a real terminal: the escape sequences were checked in a PTY's bytes, not in the owner's terminal; a click opening an app
   was not run (it would open one on this Mac).

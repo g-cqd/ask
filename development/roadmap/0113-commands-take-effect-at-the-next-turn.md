@@ -10,7 +10,7 @@ Owner wish (2026-10-28 19:38): a model change should apply at the very next turn
 for every command that does not need an idle session (`/tree` does and cannot work this way). Even fork could act on the fly. The owner
 asks for an assessment, to be confirmed before any change.
 
-## Still owed (assessment first)
+## The plan, as first written (the outcome follows) (assessment first)
 
 - List every command with what it touches: settings read at the start of a turn (model, thinking, compaction), the session file, the
   transcript, running tools.

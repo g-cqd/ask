@@ -12,7 +12,7 @@ migration request following roadmap 0059's earlier investigation, not a request
 to introduce an NSRegularExpression wrapper. Reuse AemiRegex's engines; missing
 reusable regex primitives belong upstream, consistent with roadmap 0076.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - Inventory regex literals, Regex/RegexBuilder APIs, dynamic patterns, replacement
   operations and helpers across the repository. Do not edit vendored dependency
