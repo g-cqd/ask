@@ -1,0 +1,22 @@
+internal import AemiLexers
+
+/// The part of a file tool's block that is a file's text, and the language it is coloured in (roadmap 0152, phase 3): what a `read`
+/// returned, or what a `write` puts in the file.
+struct FileCode: Sendable, Equatable {
+    enum Part: Sendable, Equatable {
+        case input, output
+    }
+
+    var part: Part
+    var language: Language
+    /// Hard lines of that text drawn as they are: the read's own notes, of the lines it shows and of the lines it did not keep.
+    var plainLines: Set<Int> = []
+    /// The hard line lexing starts afresh at: the first of a folded output's tail, which does not continue the head.
+    var restart: Int?
+
+    /// Whether `line` is a note ask or the `read` tool adds to a file's text, not a line of the file.
+    static func isNote(_ line: Substring) -> Bool {
+        (line.hasPrefix("[lines ") && line.hasSuffix("]"))
+            || (line.hasPrefix("… ") && line.hasSuffix(" more lines not shown"))
+    }
+}

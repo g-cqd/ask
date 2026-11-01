@@ -29,12 +29,15 @@ extension ScreenComposer {
             block: block, width: width, inset: inset,
             style: look)
             + [Line(text: "", style: .default)]
-            + body(of: input, block: block, width: width, inset: inset, style: .default)
+            + body(
+                of: input, block: block, width: width, inset: inset, style: .default,
+                code: context.code?.part == .input ? context.code : nil)
             + (shownOutput.isEmpty
                 ? []
                 : [Line(text: "", style: .default)]
                     + body(
                         of: shownOutput, block: block, width: width, inset: inset, style: Style(dim: true),
-                        firstLine: 1 + TranscriptContent.hardLineCount(of: input)))
+                        firstLine: 1 + TranscriptContent.hardLineCount(of: input),
+                        code: context.code?.part == .output ? context.code : nil))
     }
 }

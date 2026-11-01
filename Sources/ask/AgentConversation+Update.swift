@@ -39,7 +39,8 @@ extension AgentConversation {
                             ToolCommand(
                                 timeout: $0.timeout.map(Duration.seconds), yield: $0.yield.map(Duration.seconds),
                                 defaultTimeout: .seconds(BashTool.defaultTimeout))
-                        })
+                        },
+                    path: ToolSummary.path(for: input))
             case .toolFinished(let id, _, let output):
                 let last = output.content.split(separator: "\n").last.map(String.init) ?? ""
                 return .toolFinished(

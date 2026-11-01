@@ -170,8 +170,9 @@ public struct ScreenController: Sendable {
             case .userPrompt(let text): replayPrompt(text)
             case .assistantText(let text): state.transcript.addAssistantText(text)
             case .thinkingText(let text): state.transcript.addThinkingText(text)
-            case .toolStarted(let name, let summary, let id, let input, let command):
-                state.transcript.startTool(name: name, summary: summary, id: id, fullInput: input, command: command)
+            case .toolStarted(let name, let summary, let id, let input, let command, let path):
+                state.transcript.startTool(
+                    name: name, summary: summary, id: id, fullInput: input, command: command, path: path)
             case .toolFinished(let status, let output, let id, let job, let replacements):
                 state.transcript.finishTool(
                     status, output: output, id: id, backgroundJob: job, replacements: replacements)
