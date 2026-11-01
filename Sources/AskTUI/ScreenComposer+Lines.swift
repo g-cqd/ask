@@ -194,7 +194,7 @@ extension ScreenComposer {
         guard !text.isEmpty else { return [] }
         let margin = String(repeating: " ", count: inset)
         var accents = code.map { CodeAccents(text, code: $0) }
-        let kinds = diff.map { _ in DiffLook.kinds(of: text) }
+        let kinds = diff.map { DiffLook.kinds(of: text, format: $0.format) }
         return TextWrap.rows(text, width: width)
             .map { row in
                 let kind = kinds.flatMap { $0.indices.contains(row.line) ? $0[row.line] : nil } ?? .kept

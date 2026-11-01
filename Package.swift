@@ -164,6 +164,8 @@ let package = Package(
                 .product(name: "TerminalKitMarkdown", package: "TerminalKit"),
                 .product(name: "AemiMarkdown", package: "AemiMarkdown"),
                 .product(name: "AemiRegex", package: "aemiregex"),
+                // Output recognised as JSON is checked by parsing it (roadmap 0152, phase 5).
+                .product(name: "AemiJSON", package: "AemiJSON"),
                 // Fenced code's colours (roadmap 0152): aemi's lexers, standard library only.
                 .product(name: "AemiLexers", package: "aemi")
             ],
@@ -241,7 +243,7 @@ let package = Package(
         .testTarget(
             name: "AskTUITests",
             dependencies: [
-                "AskTUI",
+                "AskTUI", .product(name: "AemiLexers", package: "aemi"),
                 .product(name: "TerminalKitIO", package: "TerminalKit"),
                 .product(name: "TerminalKitCore", package: "TerminalKit"),
                 .product(name: "TerminalKitCodecs", package: "TerminalKit"),

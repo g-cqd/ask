@@ -131,4 +131,14 @@ the shortcut that scans a kept line once when both sides agree, which changes no
 its insertions (no counter-example in 20,000 random pairs), so the rows follow the script as it is. Measured (release, M3): a
 400-line, 26 KB edit diff at 120 columns lays out in 1.0 ms off, 1.6 ms on; the diff text itself takes 0.11 ms.
 
-Phases 4 and 5 remain.
+**Phase 5, done, 2026-11-01: recognised output.** A finished tool's output with no file path (`shell`, MCP tools and others) is
+recognised by its content alone (`RecognisedOutput`, AemiJSON joins AskTUI's dependencies): JSON when, trimmed, it starts with `{` or
+`[` and parses; a unified diff when a `--- ` line is followed by `+++ ` and a hunk (`@@ -`) comes after. Nothing else is guessed at.
+JSON is lexed as JSON. A diff's rows are tinted as an edit's (`DiffLook.Format.unified`, one-column markers): a line before a file's
+first hunk is a header (bold), `@@` lines are cyan, and inside a hunk `-`, `+` and the rest are removed, added and kept, so a removed
+`-- comment` line is not read as a header; each `diff …` line starts a file. Its code is lexed by the language its files share, each
+file afresh, and not at all when they have several or none. Output still arriving is not recognised, and output over 1 MiB is not
+either. All of it follows `ui.highlight`. Tests: `RecognisedOutputTests` (7); each guard fails a test when removed. Not measured: the
+cost of recognition on a large output (it runs once per change to a finished block).
+
+Phase 4 remains: fences in the draft (0151's window) and a `bash` block's command.
