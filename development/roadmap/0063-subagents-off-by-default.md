@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["0061"]
+blocked-by: []
 date: 2026-10-24
 ---
 
@@ -63,3 +63,9 @@ cancel stops it; then once against a real model with the owner present, since ev
 
 The ADRs exist, the rules have tests that failed first, the probes pass with the default off and on, and the cost of having the feature off is
 zero requests, zero tool definitions and no measurable frame cost.
+
+## From 0061 (2026-11-01)
+
+0061's phase 5 is this item's: model-assisted resolution of the model and tool tokens a skill's or agent's file names that the
+deterministic reading cannot match, by a very cheap model on the active connection, bounded as 0061's design note says.
+

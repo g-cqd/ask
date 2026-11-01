@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-24
 ---
@@ -104,6 +104,14 @@ and subagents (0063).
 
 ## Still owed (2026-10-30, close-out pass)
 
-- Phase 5 (not started; see "Phases").
-- `/skill:NAME` in a queued message is not expanded.
-- The probes listed above, run against the release binary and recorded, and the advertisement's cost measured at the default of 32.
+- ~~Phase 5~~ Moved to 0063 (subagents), which it was always built with.
+- ~~`/skill:NAME` in a queued message~~ Expanded, as at a turn's start (and `#t3`, `#i2` attached, 0186).
+- ~~The probes against the release binary, and the advertisement's cost~~ Done (2026-11-01), below.
+
+## Closed (2026-11-01)
+
+- `probe-skills.py`: 28 of 28 checks pass against the release build; `probe-skill-picker.py`: 11 of 11. The picker probe found the
+  token of 0185 drawn with an underline TerminalKit writes as `4:1`, which the probes' emulator prints as text; the token now takes the
+  link's colour alone, and the encoding is task t186.
+- The advertisement on the owner's machine: 39 skills (5 shadowed), about 1,554 tokens a request were they all listed (characters ÷ 4,
+  an estimate); above 16 the prompt gives search instructions instead of the catalog, so that cost is not paid.
