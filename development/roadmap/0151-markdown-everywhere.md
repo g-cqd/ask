@@ -29,5 +29,12 @@ characters kept; 0085's research specified it (proposal 4); ADR-0129 drew replie
 ## Still owed
 
 - Queued prompts; the real-terminal look of all three (pyte only so far).
-- Drafts over about 20 KB were already past the 4 ms input budget before this; with Markdown a 20 KB draft is at the edge (3.65 and
-  4.09 ms in two runs). The fix for both is 0085 proposal 5: an incremental `InputLayout`, and a parse of the edited block only.
+- ~~Drafts over about 20 KB past the 4 ms input budget.~~ Done, 2026-11-01, without an incremental layout: what cost the time was
+  linear walks, now cheap. TerminalKit's `InputLayout` lays a run of printable ASCII out a row at a time (TerminalKit `40b7d8a`, an
+  equivalence test over 600 random drafts against the grapheme walk): 0.72 → 0.056 ms at 21 KB, 7.16 → 0.55 ms at 217 KB. The draft's
+  parse window finds its start by a byte scan while the text before it is ASCII, and its restart point reading the bytes in place
+  through the string's own span. A keystroke's whole frame (release, M3, 120 columns): 21 KB 1.09 → 0.17 ms with paragraphs (0.39 ms
+  as one long list), 217 KB 10.9 → 1.47 ms with paragraphs (3.55 ms as a list with no blank line, which the window cannot cut).
+- Found on the way: in a draft with CRLF line endings, the Markdown colours were shifted from the first `\r\n` on. Spans mapped a
+  byte to a character for any ASCII text, and `\r\n` is one character of two bytes; fixed, and pinned by a window-against-whole
+  test on a CRLF draft, beside one with accents and emoji.

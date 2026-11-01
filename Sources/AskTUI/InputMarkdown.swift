@@ -39,7 +39,8 @@ enum InputMarkdown {
         table.append(markerStyle)
         let marker = UInt8(table.count + 1)
         for index in codes.indices where codes[index] == 0 && !isSpace(bytes[index]) { codes[index] = marker }
-        return characterSpans(codes, table: table, in: text, ascii: !bytes.contains { $0 >= 0x80 })
+        // A byte is a character only in ASCII without a carriage return: `\r\n` is one character of two bytes.
+        return characterSpans(codes, table: table, in: text, ascii: !bytes.contains { $0 >= 0x80 || $0 == 0x0D })
     }
 
     /// How a marker is drawn: dim, so the text it marks reads first. (The theme's `marker` is the colour of a drawn list bullet.)
