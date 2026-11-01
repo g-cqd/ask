@@ -23,7 +23,11 @@ task and idea store (0179, 0180).
    2026-11-01: `Sources/AskAgentCore/Storage/`, 11 tests (each mode, reopening, a cut at every byte of the last frame, every changed
    byte of a frame before it and of the header, reordered, dropped and moved frames, nonces), and a mutation of each of the eight guards
    turns them red.
-2. Keys: the user key, `keys.json` (Argon2id, the recovery key), the keychain when remembered.
+2. ~~Keys: the user key, `keys.json` (Argon2id, the recovery key), the keychain when remembered.~~ Done, 2026-11-01:
+   `Sources/AskAgentCore/Storage/Keys/`. 11 tests (password and recovery code, a code however typed, a password change, `keys.json`
+   round-trip with no secret in it, each derivation bound alone, another version, the standard derivation, envelopes under their own
+   user key only and unchanged, purposes kept apart, the keychain's key recalled only when it hashes to `keys.json`'s identifier); each
+   of 12 guards, mutated, turns them red. A redundant identifier check the hash already makes was removed when its mutation survived.
 3. Session files on the container: the settings, the first-start question, `/encrypt`, locked sessions in lists and resume.
 
 ## Still owed
