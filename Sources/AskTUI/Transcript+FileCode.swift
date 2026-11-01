@@ -12,6 +12,8 @@ extension Transcript {
         switch name {
             case "write":
                 return Self.language(of: path, text: input).map { FileCode(part: .input, language: $0) }
+            case "edit":
+                return Self.language(of: path, text: "").map { FileCode(part: .input, language: $0, diff: true) }
             case "read":
                 guard let language = Self.language(of: path, text: output) else { return nil }
                 let shown = shownToolOutput(at: index)

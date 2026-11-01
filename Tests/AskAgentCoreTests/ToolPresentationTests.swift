@@ -45,9 +45,24 @@ struct ToolPresentationTests {
         #expect(ToolSummary.fullInput(for: try input(#"{"path":"a.txt","content":"é\nhello"}"#)) == "é\nhello")
     }
 
+    @Test func `an edit reads as the lines it removes and adds, between the lines it keeps (roadmap 0152)`() throws {
+        let edit = try input(
+            #"{"path":"a.swift","old_text":"let a = 1\nlet b = 2\nlet c = 3","new_text":"let a = 1\nlet b = 20\nlet c = 3\nlet d = 4"}"#
+        )
+        #expect(ToolSummary.fullInput(for: edit) == "  let a = 1\n- let b = 2\n+ let b = 20\n  let c = 3\n+ let d = 4")
+        // Within a change, what goes comes before what replaces it, however the diff orders its edits.
+        let swap = try input(#"{"path":"a","old_text":"a\nb\nkeep\nc","new_text":"x\ny\nkeep\nz"}"#)
+        #expect(ToolSummary.fullInput(for: swap) == "- a\n- b\n+ x\n+ y\n  keep\n- c\n+ z")
+        let removal = try input(#"{"path":"a","old_text":"gone\ntoo\n","new_text":""}"#)
+        #expect(ToolSummary.fullInput(for: removal) == "- gone\n- too")
+        // Lines the model wrote with a carriage return keep it out of the drawn line.
+        let crlf = try input(#"{"path":"a","old_text":"a\r\nb","new_text":"a\r\nc"}"#)
+        #expect(ToolSummary.fullInput(for: crlf) == "  a\n- b\n+ c")
+    }
+
     @Test func `replacement and job inputs keep their distinct meanings`() throws {
         let edit = try input(#"{"path":"a","old_text":"before","new_text":"after"}"#)
-        #expect(ToolSummary.fullInput(for: edit) == "old_text:\nbefore\nnew_text:\nafter")
+        #expect(ToolSummary.fullInput(for: edit) == "- before\n+ after")
         #expect(ToolSummary.header(for: edit) == "a · exact replacement")
         #expect(ToolSummary.header(for: try input(##"{"job":"#abcd","action":"stop"}"##)) == "#abcd · stop")
     }

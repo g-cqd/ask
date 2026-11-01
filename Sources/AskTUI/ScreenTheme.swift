@@ -19,6 +19,9 @@ public struct ScreenTheme: Sendable, Equatable {
     var system: Color
     /// What the person interrupted: orange, apart from a failure's red (roadmap 0142).
     var interrupted: Color
+    /// The rows an edit removes and adds (roadmap 0152): red and green, deeper than a block's own tint so they stand out on it.
+    var diffRemoved: Color
+    var diffAdded: Color
     /// Secondary text, which the screen used to draw faint (SGR 2). Faint is left to the terminal and is often too weak on light and dark
     /// pages alike, so on a known page it is a grey four fifths of the way from the page to its text, or the text colour itself when that
     /// grey would read below 4.5:1 (low-contrast themes such as Solarized). On a guessed page it is nil and faint stays: a grey mixed for the
@@ -46,6 +49,10 @@ public struct ScreenTheme: Sendable, Equatable {
         failure = mix(Self.red, 0.11)
         system = mix(Self.purple, 0.11)
         interrupted = mix(Self.orange, 0.11)
+        // As deep as the contrast rule above allows: green is the bright hue, and a dark page takes little more of it than a
+        // succeeded block's own tint, so there the marker carries most of the difference.
+        diffRemoved = mix(Self.red, 0.16)
+        diffAdded = mix(Self.green, light ? 0.2 : 0.11)
         secondary = known ? page.secondaryText : nil
     }
 
@@ -69,7 +76,7 @@ public struct ScreenTheme: Sendable, Equatable {
     func sessionTint(seed: String) -> Color { page.tint(toward: SessionHue.rgb(seed: seed), share: 0.16) }
 
     /// Every tint, for checks.
-    var tints: [Color] { [input, user, pending, success, failure, system, interrupted] }
+    var tints: [Color] { [input, user, pending, success, failure, system, interrupted, diffRemoved, diffAdded] }
 
     /// The background of a block of this kind: the user's messages and the tool calls are tinted (a tool by how it ended), nothing else is.
     func tint(for item: Transcript.Item) -> Color {

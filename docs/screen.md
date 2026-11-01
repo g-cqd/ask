@@ -56,6 +56,9 @@ conversation copies what is shown, as soon as you let go.
 - A shell block is headed by its limits, then the command: `shell · timeout 5 min · swift build`; a timeout equal to the default is not
   written (`ui.timeout`, `ui.timeoutLabel`). Folded, a long command is cut with `…`
   before the status; opened, the command is shown in full and brighter, with its output below.
+- An `edit` block, opened, shows the change as lines: `- ` before each line it removes, on a red tint, `+ ` before each line it adds, on
+  a green one, and the lines it keeps between them. With `ui.highlight` on, the code is coloured by the file's language. Copying the
+  block copies those lines.
 - Scroll with the wheel or **Page Up**. The view stays on what you were reading while new text arrives, and the status line counts the lines
   below (`12 lines below`). Click that count, press **Page Down**, or **End** with an empty input, to return to the end.
 

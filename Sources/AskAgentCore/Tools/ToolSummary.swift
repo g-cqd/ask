@@ -92,7 +92,7 @@ public enum ToolSummary {
     public static func fullInput(for input: JSONObject) -> String {
         guard let fields = fields(input) else { return indented(input) }
         if let command = fields.command { return command }
-        if let old = fields.oldText, let new = fields.newText { return "old_text:\n\(old)\nnew_text:\n\(new)" }
+        if let old = fields.oldText, let new = fields.newText { return EditDiff.text(old: old, new: new) }
         return fields.content ?? fields.newText ?? indented(input)
     }
 

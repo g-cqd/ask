@@ -14,18 +14,23 @@ struct CodeAccents {
     init(_ text: String, code: FileCode) {
         let wrapped = text.utf8.contains(0x09) ? text.replacing("\t", with: "    ") : text
         let lexer = LexicalLineLexer(language: code.language)
-        var state = LexState.initial
+        var sides = LexSides()
         var tokens: [LineToken] = []
         for (index, line) in wrapped.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
-            if index == code.restart { state = .initial }
+            if index == code.restart { sides = LexSides() }
             guard !code.plainLines.contains(index) else {
                 lines.append((line, true, []))
                 continue
             }
+            // An edit's diff line is lexed after its marker, on its own side.
+            let skip = code.diff ? DiffLook.markerWidth(of: line) : 0
             tokens.removeAll(keepingCapacity: true)
-            var bytes = line
-            state = bytes.withUTF8 { lexer.scan($0.span, from: state, into: &tokens) }
-            let styled = tokens.compactMap { token in CodeHighlighter.style(of: token.role).map { (token.range, $0) } }
+            sides.scan(
+                line.dropFirst(skip), kind: code.diff ? DiffLook.kind(of: line) : .kept, lexer: lexer, into: &tokens)
+            let styled = tokens.compactMap { token in
+                CodeHighlighter.style(of: token.role)
+                    .map { (token.range.lowerBound + skip ..< token.range.upperBound + skip, $0) }
+            }
             lines.append((line, line.utf8.allSatisfy { $0 < 0x80 }, styled))
         }
     }

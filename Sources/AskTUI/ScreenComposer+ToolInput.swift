@@ -31,7 +31,8 @@ extension ScreenComposer {
             + [Line(text: "", style: .default)]
             + body(
                 of: input, block: block, width: width, inset: inset, style: .default,
-                code: context.code?.part == .input ? context.code : nil)
+                code: context.code?.part == .input ? context.code : nil,
+                diff: name == "edit" ? DiffLook(theme: style.theme) : nil)
             + (shownOutput.isEmpty
                 ? []
                 : [Line(text: "", style: .default)]
