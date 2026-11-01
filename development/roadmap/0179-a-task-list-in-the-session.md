@@ -29,7 +29,7 @@ Owner (2026-11-01): the model sees the list through a tool it calls, not on ever
 
 ## Still owed
 
-- `@task` in the prompt (with 0185's tokens), and `#` (0186).
+- `#t3` in the prompt, through 0186's sigil (owner, 2026-11-01: not `@`).
 - A look at `/tasks` in a real terminal: today it answers as a notice, one line a task, and its picker offers `all` and each task.
 - Running the probe with an encrypted session: the unit tests cover every format, the probe runs with `ASK_SESSION_ENCRYPTION=off`.
 

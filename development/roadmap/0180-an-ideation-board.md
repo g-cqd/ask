@@ -14,7 +14,7 @@ which are new. Persisted like the task list (0179), which it may build on.
 
 - An idea before the first prompt: there is no session yet, so `/idea` says so. Keeping it until the session starts is open.
 - Indexed or semantic search over ideas (wish, 2026-11-01), later.
-- `@idea` in the prompt, with 0185's tokens.
+- `#i2` in the prompt, through 0186's sigil (owner, 2026-11-01: not `@`).
 - `/idea` keeps the text between its first and last non-space character: the screen trims a command's line before running it.
 
 ## Done (2026-11-01)
