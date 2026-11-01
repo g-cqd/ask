@@ -10,6 +10,12 @@ public struct ScreenTheme: Sendable, Equatable {
     public var tinted: Bool
     /// The page the tints were mixed from.
     private(set) var page: TerminalPage
+
+    /// A shimmering header's own text (roadmap 0187), drawn dim as well: three quarters of the way from the page to the text, so with dim
+    /// on top it is fainter than a dim header, and the bright stretch stands out.
+    var shimmerBase: Color { page.tint(toward: page.foreground, share: 0.75) }
+    /// The stretch's edges, the softer step between the faint header and the bold core.
+    var shimmerEdge: Color { page.secondaryText }
     var input: Color
     var pending: Color
     var success: Color

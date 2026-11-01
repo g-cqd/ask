@@ -17,7 +17,12 @@ extension ScreenComposer {
     ) -> [Line] {
         let rows = stillLines(in: transcript, at: index, shown: shown, columns: columns, style: style)
         guard transcript.shimmer, let progress = transcript.progress[index], progress.ended == nil else { return rows }
-        return shimmering(rows, block: index, frame: progress.frame)
+        return shimmering(
+            rows,
+            block: index,
+            elapsed: progress.started.duration(to: progress.sampled),
+            theme: style.theme
+        )
     }
 
     private static func stillLines(

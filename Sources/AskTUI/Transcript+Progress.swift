@@ -58,10 +58,10 @@ extension Transcript {
     var hasLiveProgress: Bool { progress.values.contains { $0.ended == nil } }
 
     /// Only live blocks change revision; completed blocks remain cached across animation ticks.
-    mutating func advanceProgress(at instant: ContinuousClock.Instant = .now) {
+    mutating func advanceProgress(at instant: ContinuousClock.Instant = .now, advancingFrames: Bool = true) {
         for index in progress.keys where progress[index]?.ended == nil {
             progress[index]?.sampled = instant
-            progress[index]?.frame += 1
+            if advancingFrames { progress[index]?.frame += 1 }
             revisions[index] = bump()
         }
     }
