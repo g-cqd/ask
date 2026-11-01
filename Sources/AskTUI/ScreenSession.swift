@@ -81,8 +81,8 @@ final class ScreenSession {
                         return false
                     }
                 }
-            case .progressTick:
-                controller.advanceProgress()
+            case .progressTick(let advancesFrames):
+                controller.advanceProgress(advancingFrames: advancesFrames)
             case .tick:
                 controller.frame = frames.load()
                 guard controller.tick() else {
@@ -113,7 +113,7 @@ final class ScreenSession {
         for effect in effects where await !perform(effect) {
             return false
         }
-        progress.update(wanted: controller.hasLiveProgress) { [sink] in sink.yield(.progressTick) }
+        syncProgress()
         runnerOutput.sync(lane: controller.state.lane?.id)
         syncAutoscroll()
         render()
@@ -235,5 +235,12 @@ extension ScreenSession {
     private func render(full: Bool = false) {
         if full { renderer.redraw() }
         renderer.submit(controller.state)
+    }
+
+    /// The progress timer as the screen now wants it: off with nothing live, faster while a running header shimmers.
+    private func syncProgress() {
+        progress.update(wanted: controller.hasLiveProgress, shimmering: controller.isShimmering) { [sink] in
+            sink.yield(.progressTick(advancesFrames: $0))
+        }
     }
 }
