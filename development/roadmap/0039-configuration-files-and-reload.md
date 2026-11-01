@@ -28,11 +28,11 @@ a restart.
   line and column. **Probe F** (a running screen): edit, break and fix the file between prompts.
 - **Live:** a JSON5 file, and a trusted project file, each chose the model for a real run.
 
-## Still owed
+## Left at the time, and where each went (2026-11-01)
 
-- **Slash commands** (`/config`, `/reload-config`) wait for interaction parity: reload is automatic until then.
-- **The sandbox must write-deny the config paths** to the agent (roadmap 0017); until then `ask trust`'s
-  terminal check is a speed bump.
+- ~~**Slash commands** (`/config`, `/reload-config`)~~ Done: `/config` (0041, 0103); files are watched and re-read (0127).
+- ~~**The sandbox must write-deny the config paths**~~ Done: the configuration directory is denied to commands
+  (`SandboxPolicy+Standard`, `denyRead`, which also denies writing).
 - **More keys** as features need them: thinking level, tool sets, hooks. Project files must not gain a key that
   can run code before the sandbox exists.
-- **Binary reload** (`/reload`, re-exec) is next in the plan.
+- ~~**Binary reload**~~ Done: `/reload` (0041). Keys keep being added as features need them.

@@ -8,7 +8,7 @@ date: 2026-10-28
 
 Owner request, from `ask-wishes.md`: remove empty thinking blocks from the session blocks.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - Find where an empty or whitespace-only thinking block still reaches the screen. `Transcript.swift` already
   drops thinking whose kept text is empty on one path (around line 130), so first reproduce it: a streamed

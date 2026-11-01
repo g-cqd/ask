@@ -9,7 +9,7 @@ date: 2026-10-28
 Owner wish (2026-10-28 20:33): extend the selector/picker into a confirmation tool for actions that benefit from the person's consent
 before ask continues.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - List the actions that should ask: destructive commands, leaving the sandbox, overwriting configuration, deleting sessions, MCP tools
   marked destructive (ADR-0111 asks today in its own way).

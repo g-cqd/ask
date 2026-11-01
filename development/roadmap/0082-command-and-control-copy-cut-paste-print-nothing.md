@@ -10,7 +10,7 @@ Owner request, from `ask-wishes.md`: on macOS, Command+C after selecting text wi
 manually prints a `c` in the input. Command and Control C/X/V must work like copy, cut and paste and must not
 insert any character.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - Reproduce first, with the raw bytes. Hypothesis, not checked: the terminal forwards Command+C as an
   extended-keyboard sequence (CSI-u with a super modifier) because ask enabled that protocol, and the decoder in

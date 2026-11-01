@@ -11,7 +11,7 @@ compaction, ...) and content should be markdown rendered."
 
 0105 made compaction a block with its summary. What it lacks:
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - A header that says what happened in the words of other blocks (`compaction · 182k → 9k tokens`, or as decided), with its status
   and its duration in the trailing component, as tool blocks have.

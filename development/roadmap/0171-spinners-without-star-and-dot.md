@@ -9,7 +9,7 @@ date: 2026-11-01
 Wish (2026-11-01): "removing the star effect and single dot from the spinners", and "a shimmer effect to block that are currently
 running (especially the text)".
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - Drop `SpinnerStyle.star` and `.dot` (`Sources/AskTUI/SpinnerStyle.swift`) from the styles and from `random`'s choices. A config
   that still names one gets the default spinner and a notice, as any unknown typed value does (0118).

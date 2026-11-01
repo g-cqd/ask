@@ -15,6 +15,6 @@ A racing job landed 2 of 6,000 writes in ask's configuration directory, and a sw
 Under a restricted policy the tools now open the object, authorize where the kernel says it is, and use only the descriptor (for
 writes, a verified directory descriptor and `openat`, `mkdirat`, `renameat`). 30,000 racing writes afterwards: none landed.
 
-## Still owed
+## Left
 
-Hard links (see ADR-0085, why Seatbelt covers it); nothing else known.
+Nothing: hard links are covered by Seatbelt (ADR-0085).

@@ -35,7 +35,7 @@ the need was identified. TerminalKit's roadmap 0002 carries the outstanding work
   `ESC [ ? 2004 l` were each a byte short, which would have left mouse reporting and bracketed paste
   enabled after a crash. That is the exact failure this entry exists to prevent.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 **Oracle tests added** — `TerminalStateModel`, an independent model written from the specification,
 driven with the real bytes. Eight tests. They found a bug in the oracle itself: mode 25 is inverted

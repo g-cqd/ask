@@ -10,7 +10,7 @@ Owner's report (2026-11-01): when a call's arguments wrap, its `)` goes on a lin
 already do. swift-format offers only `"lineBreakBeforeEachArgument": true` for it, which also puts each argument of a wrapped call
 on its own line. Done in arcleak, dolly, deadwood, fcheck, modeler and analyzerkit, which own their `.swift-format`.
 
-## Still owed, in this order (the drift check compares each consumer with aemi at the revision its workflow pins)
+## The plan, as first written (the outcome follows), in this order (the drift check compares each consumer with aemi at the revision its workflow pins)
 
 1. aemi: the setting in the canonical `.swift-format`, aemi reformatted (189 files), and `AemiKernels.swift`'s type body brought
    under the limit; pushed.

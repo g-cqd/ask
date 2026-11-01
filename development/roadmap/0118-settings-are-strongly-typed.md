@@ -9,7 +9,7 @@ date: 2026-10-28
 Owner wish (2026-10-28 20:33): enforce configuration settings with strong and simple types instead of free or non-standard text. Flags are
 booleans (on or off), which may mean rewording some settings; investigate the others to enforce types further.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - Inventory every key with its type today: booleans written as `"on"`/`"off"` (0102 made both forms work), enums as strings, numbers,
   and mixed ones such as `compactAt` (number or `"75%"`) and `maxTurns` (number or `"none"`, roadmap 0098).

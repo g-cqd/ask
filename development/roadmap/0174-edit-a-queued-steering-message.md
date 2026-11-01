@@ -9,7 +9,7 @@ date: 2026-11-01
 Wish (2026-11-01): Option+Up takes the last message queued for steering back into the input, unsent, to edit it; Enter queues it
 again.
 
-## Still owed
+## The plan, as first written (the outcome follows)
 
 - Option+Up with queued messages takes the newest one out of the queue into the input (with what is typed there kept, or refused
   while the input holds text: decide). With none queued, Option+Up keeps its current meaning.

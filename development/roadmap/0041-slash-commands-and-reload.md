@@ -34,11 +34,11 @@ process with a rebuilt one, keeping the session.
   wait matched my own prompt); the diary has it.
 - **Cost:** none measurable on cold start or idle memory, after one fix (diary 24).
 
-## Still owed
+## Still owed (task t48, low priority)
 
 - **A build step in `/reload`** (run `swift build` from configuration, showing it) so one command rebuilds and
   switches. For now the agent builds with `bash`, then the user types `/reload`.
 - **Automatic reload when idle**, only once the sandbox keeps the agent from writing the executable, or with
   a confirmation each time (ADR-0034, Security).
-- **`/new`, `/resume`, `/model`** and the rest of interaction parity; **steering and multi-line input**.
+- ~~**`/new`, `/resume`, `/model`**, steering and multi-line input~~ Done (0049, 0050, 0113).
 - **Carrying the draft and scroll position** across a reload, which an automatic reload would need.
