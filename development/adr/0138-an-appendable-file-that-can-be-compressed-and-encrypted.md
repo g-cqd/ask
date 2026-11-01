@@ -51,10 +51,9 @@ when compression or encryption is on, and a reader tells them apart by the first
 
 ```
 header:  magic "ASKF" · version u8 · flags u8 (compressed, encrypted) · payload u8 (json, protobuf)
-         [encrypted] key id (16 bytes) · wrapped data key (60 bytes: nonce, sealed key, tag)
-         header length u16 before the fields, so a later version can add some
-frames:  length u32 LE · kind u8 · body
-         kind 1 record · kind 2 segment start (a new deflate stream)
+         file id (16 random bytes) · envelope length u16 · envelope (phase 2: the wrapped data key) · CRC-32 of the header
+frames:  length u32 LE · kind u8 · CRC-32 of length and kind · body
+         kind 1 record
 ```
 
 - **Compressed only:** each body is the record's deflate bytes up to its sync flush, followed by a CRC-32 of the plain record.
@@ -62,13 +61,17 @@ frames:  length u32 LE · kind u8 · body
   frames cannot be moved between files or reordered. The nonce is random per frame, not a counter. A counter would repeat after a torn
   tail was rewritten under the same key; the cost of a random nonce is 12 bytes per record.
 - **Both:** compress, then encrypt.
-- **Overhead:** 33 bytes per encrypted record, 9 per compressed one.
+- **Overhead:** 37 bytes per encrypted record (frame header 9, nonce 12, tag 16), 13 per compressed one (frame header 9, CRC 4).
+- **Compression level:** zlib's default (6). Measured on 128 real session files: text records frame 2.2 times smaller (level 1: 2.0),
+  base64 records 1.4; about 57 µs per record on average, the largest included.
 
 ### 3. Appending and recovery
 
 - **Appending** writes one frame and flushes, as today.
-- **Reopening** does not try to continue the previous deflate stream. The first append after an open starts a new segment (kind 2), so
-  the writer never needs the old stream's state.
+- **Reopening** starts a new deflate stream, and needs no marker: each record ends on a sync flush's block boundary, and a new stream
+  only refers to its own bytes, so the reader's stream decodes it as it is (a planned segment frame was dropped when a mutation removing
+  it changed nothing, 2026-11-01).
+- **A frame header has its own CRC-32**, so a changed length is damage, never mistaken for a tear: a crash only cuts a file short.
 - **A last frame that is short, fails its CRC or fails authentication is a torn tail**, dropped as today.
 - **A bad frame before the last one makes the file damaged.** The rewrite writes a fresh file under a new data key, keeping the original
   as `<name>.damaged`.
