@@ -13,8 +13,9 @@ struct FileCode: Sendable, Equatable {
     var plainLines: Set<Int> = []
     /// The hard line lexing starts afresh at: the first of a folded output's tail, which does not continue the head.
     var restart: Int?
-    /// Whether the text is an edit's diff, each line led by its marker and lexed on its own side (roadmap 0152).
-    var diff = false
+    /// The diff the text is, each line led by its marker and lexed on its own side (roadmap 0152): an edit's, or a unified diff in a
+    /// tool's output; nil for a file's own text.
+    var diff: DiffLook.Format?
 
     /// Whether `line` is a note ask or the `read` tool adds to a file's text, not a line of the file.
     static func isNote(_ line: Substring) -> Bool {

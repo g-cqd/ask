@@ -18,7 +18,7 @@ struct LexSides {
         switch kind {
             case .removed: old = bytes.withUTF8 { lexer.scan($0.span, from: old, into: &tokens) }
             case .added: new = bytes.withUTF8 { lexer.scan($0.span, from: new, into: &tokens) }
-            case .kept:
+            case .kept, .header, .hunk:
                 let together = old == new
                 new = bytes.withUTF8 { lexer.scan($0.span, from: new, into: &tokens) }
                 guard !together else {

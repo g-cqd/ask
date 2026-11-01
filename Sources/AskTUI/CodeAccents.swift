@@ -16,21 +16,20 @@ struct CodeAccents {
         let lexer = LexicalLineLexer(language: code.language)
         var sides = LexSides()
         var tokens: [LineToken] = []
+        let kinds = code.diff.map { DiffLook.kinds(of: wrapped, format: $0) }
         for (index, line) in wrapped.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
             if index == code.restart { sides = LexSides() }
-            guard !code.plainLines.contains(index) else {
+            // A diff's headers are no code; each file's lines start afresh after its header.
+            let kind = kinds.map { $0.indices.contains(index) ? $0[index] : .kept } ?? .kept
+            if kind == .header { sides = LexSides() }
+            guard !code.plainLines.contains(index), kind != .header, kind != .hunk else {
                 lines.append((line, true, []))
                 continue
             }
-            // An edit's diff line is lexed after its marker, on its own side.
-            let skip = code.diff ? DiffLook.markerWidth(of: line) : 0
+            // A diff's line is lexed after its marker, on its own side.
+            let skip = code.diff.map { DiffLook.markerWidth(kind, format: $0) } ?? 0
             tokens.removeAll(keepingCapacity: true)
-            sides.scan(
-                line.dropFirst(skip),
-                kind: code.diff ? DiffLook.kind(of: line) : .kept,
-                lexer: lexer,
-                into: &tokens
-            )
+            sides.scan(line.dropFirst(skip), kind: kind, lexer: lexer, into: &tokens)
             let styled = tokens.compactMap { token in
                 CodeHighlighter.style(of: token.role)
                     .map { (token.range.lowerBound + skip ..< token.range.upperBound + skip, $0) }

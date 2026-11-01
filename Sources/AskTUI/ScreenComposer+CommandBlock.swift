@@ -86,7 +86,8 @@ extension ScreenComposer {
                 width: width,
                 inset: inset,
                 style: style,
-                context: (context.progress, context.toolInput, shownOutput)
+                context: (context.progress, context.toolInput, shownOutput),
+                look: outputLook(context.code, style: style)
             )
         }
         if !input.isEmpty {
@@ -112,7 +113,8 @@ extension ScreenComposer {
             item: item.showing(shownOutput),
             block: block,
             width: width,
-            inset: inset
+            inset: inset,
+            output: outputLook(context.code, style: style)
         )
     }
 
@@ -123,7 +125,8 @@ extension ScreenComposer {
         width: Int,
         inset: Int,
         style: BlockStyle,
-        context: (progress: BlockProgress?, toolInput: ShownToolInput?, output: String)
+        context: (progress: BlockProgress?, toolInput: ShownToolInput?, output: String),
+        look: (code: FileCode?, diff: DiffLook?) = (nil, nil)
     ) -> [Line] {
         guard case .tool(let name, let parameters, let status, let output, let input) = item else { return [] }
         let header = Transcript.Item.commandHeader(
@@ -147,7 +150,8 @@ extension ScreenComposer {
             item: item.showing(context.output),
             block: block,
             width: width,
-            inset: inset
+            inset: inset,
+            output: look
         )
         .map { brightened($0, block: block, lead: lead, commandLines: commandLines) }
     }
@@ -179,7 +183,8 @@ extension ScreenComposer {
         item: Transcript.Item,
         block: Int,
         width: Int,
-        inset: Int
+        inset: Int,
+        output: (code: FileCode?, diff: DiffLook?) = (nil, nil)
     ) -> [Line] {
         guard case .tool(_, _, let status, let shownOutput, _) = item else { return [] }
         let lines = blockHeader(
@@ -198,7 +203,15 @@ extension ScreenComposer {
                 width: width,
                 inset: inset,
                 style: Style(dim: true),
-                firstLine: TranscriptContent.hardLineCount(of: header)
+                firstLine: TranscriptContent.hardLineCount(of: header),
+                code: output.code,
+                diff: output.diff
             )
+    }
+
+    /// What colours a tool's output: its file's or recognised language, and a unified diff's row tints (roadmap 0152).
+    static func outputLook(_ code: FileCode?, style: BlockStyle) -> (code: FileCode?, diff: DiffLook?) {
+        guard let code, code.part == .output else { return (nil, nil) }
+        return (code, code.diff == .unified ? DiffLook(theme: style.theme, format: .unified) : nil)
     }
 }

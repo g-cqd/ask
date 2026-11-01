@@ -61,7 +61,8 @@ extension ScreenComposer {
                         inset: inset,
                         style: Style(dim: true),
                         firstLine: 1 + TranscriptContent.hardLineCount(of: input),
-                        code: context.code?.part == .output ? context.code : nil
+                        code: outputLook(context.code, style: style).code,
+                        diff: outputLook(context.code, style: style).diff
                     ))
     }
 }
