@@ -35,9 +35,10 @@ public struct IdeasTool: ArgumentTool {
     )
 
     private let board: IdeaBoard
-    private let tasks: TaskBoard?
+    private let tasks: TaskBoard
 
-    public init(board: IdeaBoard, tasks: TaskBoard? = nil) {
+    /// `tasks`: the list a mark's `task` is looked up in; required, so a tool built without it cannot claim a task is missing.
+    public init(board: IdeaBoard, tasks: TaskBoard) {
         self.board = board
         self.tasks = tasks
     }
@@ -48,7 +49,7 @@ public struct IdeasTool: ArgumentTool {
             board,
             missing: "No ideas are open for this session.",
             plan: request.changes.map { marks in
-                { list in try IdeaPlanner.plan(marks, on: list, tasks: try tasks?.current()) }
+                { list in try IdeaPlanner.plan(marks, on: list, tasks: try tasks.current()) }
             },
             read: request.read.map { query in { list in try query.answer(list) } }
         )
