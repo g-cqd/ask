@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-11-01
 ---
@@ -56,8 +56,11 @@ task and idea store (0179, 0180).
 
 ## Still owed
 
-- Plaintext left behind: after `/encrypt on`, pictures the session stored before stay in the shared store unencrypted (other sessions may
-  name them); a rewritten file's old blocks may survive on an SSD or APFS until reused. Say so in the docs, or rewrite the pictures.
+- ~~Plaintext left behind~~ Done, 2026-11-01: `/encrypt on` seals the session's pictures again and removes their clear copies unless
+  another session of the project may name them (plain and compressed files are searched, encrypted ones name pictures by HMAC, a file
+  that cannot be read keeps every copy); 2 tests, 4 guards mutated. A rewritten file's old blocks may survive on the drive until reused,
+  as with any deleted file: `docs/configuration.md` says so.
+- By hand: "remember" against the person's real login keychain (the probe uses a throwaway one).
 
 ## Still owed
 

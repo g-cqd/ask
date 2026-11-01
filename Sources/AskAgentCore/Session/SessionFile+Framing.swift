@@ -55,11 +55,14 @@ extension SessionFile {
         }
         if !format.encrypted { fileKey = nil }
         self.format = format
+        let clearPictures = format.encrypted && !previous.0.encrypted ? clearPictureNames : []
         do {
             try rewrite(keepingOriginal: needsRewrite)
         } catch {
             (self.format, self.keyring, fileKey) = previous
             throw error
         }
+        // The rewrite sealed them again; the clear copies go, unless another session may still name them.
+        if !clearPictures.isEmpty { removeClearPictures(named: clearPictures) }
     }
 }
