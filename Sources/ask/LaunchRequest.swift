@@ -101,10 +101,7 @@ struct LaunchRequest {
             checkSelf(settings)
             return
         }
-        // How this run's sessions are kept, asked on the terminal before the screen when there is anything to ask (ADR-0138).
-        do { SessionKeyAccess.decide(try await SessionProtectionSetup.decide(settings.configuration)) } catch {
-            fail("ask: \(error)", code: 77)
-        }
+        await SessionProtectionSetup.decideAtLaunch(settings.configuration, inScreen: prompt == nil && restored == nil)
         let reloaded = reloadedFrom.map {
             ReloadNotice(from: $0, startedMilliseconds: reloadStarted ?? 0, grantsPath: reloadGrants)
         }

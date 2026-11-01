@@ -12,7 +12,12 @@ final class InputBroker: Sendable {
     }
 
     /// Asks `prompt` through `update` and waits. Nil when the person cancelled, or the command was.
-    func ask(_ prompt: String, secret: Bool, update: @Sendable (ConversationUpdate) -> Void) async -> String? {
+    func ask(
+        _ prompt: String,
+        secret: Bool,
+        transient: Bool = false,
+        update: @Sendable (ConversationUpdate) -> Void
+    ) async -> String? {
         let id = state.withLock { state -> Int in
             defer { state.next += 1 }
             return state.next
@@ -24,7 +29,7 @@ final class InputBroker: Sendable {
                 if Task.isCancelled {
                     resolve(id, nil)
                 } else {
-                    update(.askInput(id: id, prompt: prompt, secret: secret))
+                    update(.askInput(id: id, prompt: prompt, secret: secret, transient: transient))
                 }
             }
         } onCancel: {

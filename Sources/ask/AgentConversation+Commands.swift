@@ -142,7 +142,7 @@ extension AgentConversation {
                 case "resume": await self.resumeSession(arguments: arguments, update: update)
                 case "rewind", "tree": self.tree(arguments: arguments, update: update)
                 case "fork": await self.forkSession(arguments: arguments, update: update)
-                case "encrypt": self.encrypt(arguments: arguments, update: update)
+                case "encrypt": await self.encrypt(arguments: arguments, update: update)
                 case "model": await self.model(arguments: arguments, update: update)
                 case "thinking": await self.thinking(arguments: arguments, update: update)
                 case "login": await self.login(arguments: arguments, update: update)

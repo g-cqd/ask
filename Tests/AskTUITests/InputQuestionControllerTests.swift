@@ -79,4 +79,23 @@ struct InputQuestionControllerTests {
         screen.handle(.runEnded)
         #expect(screen.state.pendingInput == nil && screen.state.inputAnswer.text.isEmpty)
     }
+
+    @Test
+    func
+        `a transient question's text leaves the transcript once answered or cancelled, as a line that says it was shown`()
+    {
+        for key: UInt32 in [0x0D, 0x1B, 0x03] {
+            var screen = ScreenController(label: "m", commands: [])
+            screen.handle(
+                .askInput(id: 4, prompt: "Your code: ABCD-EFGH\nPress Return.", secret: true, transient: true)
+            )
+            #expect(
+                screen.state.transcript.items.contains(.notice("Your code: ABCD-EFGH\nPress Return.", isError: false))
+            )
+            _ = screen.handle(.key(KeyEvent(keyCode: key)), pageRows: 10)
+            let shown = screen.state.transcript.items.map { "\($0)" }.joined()
+            #expect(!shown.contains("ABCD-EFGH"), "key \(key)")
+            #expect(shown.contains("Shown once, and no longer on screen."), "key \(key)")
+        }
+    }
 }

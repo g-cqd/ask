@@ -37,6 +37,7 @@ extension AgentConversation {
                 // the conversation.
                 group.addTask { await self.watchFiles(since: startup, update: update) }
                 group.addTask { await self.showSessionColour(update: update) }
+                group.addTask { await self.settleProtection(update: update) }
                 await group.waitForAll()
             }
         }

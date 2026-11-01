@@ -145,6 +145,8 @@ final class AgentConversation: Conversation {
                 }
                 try await self.connectMCP(update: update)
                 let loop = try self.agentLoop()
+                // A new session waits for how it is to be kept, when the screen is still asking (idea i1).
+                if self.session.withLock({ $0 == nil }) { try await SessionKeyAccess.settled() }
                 let recorder = try self.recorder()
                 try self.current.withLock { $0.settings }.record(in: recorder)
                 try await loop.run(prompt, in: recorder, input: input) { self.deliver($0, to: update) }

@@ -27,9 +27,9 @@ enum SessionKeyAccess {
 
     private static func keychain() -> (any SecretStore)? { try? KeychainSecretStore() }
 
-    /// The keyring: held already, remembered in the keychain, or opened with the password typed on the terminal (three tries), then
-    /// with the recovery code. Nil when there are no keys, or nothing could open them.
-    static func unlock(remember: Bool) async -> SessionKeyring? {
+    /// The keyring: held already, remembered in the keychain, or opened with the password `asker` gets (three tries), then with the
+    /// recovery code. Nil when there are no keys, nothing could open them, or there is no one to ask.
+    static func unlock(remember: Bool, asker: (any SetupInteraction)?) async -> SessionKeyring? {
         if let keyring { return keyring }
         let vault = vault
         guard vault.hasKeys else { return nil }
@@ -37,8 +37,7 @@ enum SessionKeyAccess {
             held.withLock { $0 = remembered }
             return remembered
         }
-        guard canAsk else { return nil }
-        let terminal = CommandLineInteraction()
+        guard let terminal = asker else { return nil }
         for attempt in 1 ... 3 {
             guard let password = await terminal.ask("Password for your encrypted ask sessions:", secret: true),
                 !password.isEmpty
@@ -58,9 +57,8 @@ enum SessionKeyAccess {
     }
 
     /// New keys: a password typed twice, and the recovery code shown once.
-    static func setUp(remember: Bool) async -> SessionKeyring? {
-        guard canAsk else { return nil }
-        let terminal = CommandLineInteraction()
+    static func setUp(remember: Bool, asker: (any SetupInteraction)?) async -> SessionKeyring? {
+        guard let terminal = asker else { return nil }
         terminal.say(
             "Choose a password for your ask sessions. Without it, or the recovery code ask shows next, they cannot be read."
         )
@@ -77,16 +75,16 @@ enum SessionKeyAccess {
             password = first
         }
         guard let password, let made = try? vault.create(password: password) else { return nil }
-        terminal.say(
+        await terminal.showOnce(
             """
 
             Your recovery code, shown this once. Keep it somewhere safe: it opens your sessions if you forget the password.
 
                 \(made.recoveryCode)
 
+            Press Return when it is kept.
             """
         )
-        _ = await terminal.ask("Press Return when it is kept.", secret: false)
         return keep(made.keyring, remember: remember)
     }
 

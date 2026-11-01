@@ -6,12 +6,13 @@ internal import TerminalKitInput
 /// The keys go to a buffer of their own, not the draft, so a secret is not in the editor, the transcript, the scrollback or a session
 /// file. The status line shows the question and what was typed, as dots for a secret; Enter sends it, Esc cancels it.
 extension ScreenController {
-    mutating func askInput(id: Int, prompt: String, secret: Bool) {
-        state.pendingInput = PendingInput(id: id, prompt: prompt, secret: secret)
+    mutating func askInput(id: Int, prompt: String, secret: Bool, transient: Bool = false) {
         noteQuestion(id: id)
         state.inputAnswer.clear()
         state.scrollback = 0
         state.transcript.addNotice(prompt, isError: false)
+        let index = transient ? state.transcript.items.count - 1 : nil
+        state.pendingInput = PendingInput(id: id, prompt: prompt, secret: secret, transient: index)
     }
 
     /// Enter sends what was typed, Esc cancels, Ctrl+C cancels and stops the command; every other key edits the answer.
@@ -20,6 +21,12 @@ extension ScreenController {
         let finish = { (state: inout ScreenState) in
             state.pendingInput = nil
             state.inputAnswer.clear()
+            if let index = pending.transient, state.transcript.items.indices.contains(index) {
+                state.transcript.replace(
+                    at: index,
+                    with: .notice("Shown once, and no longer on screen.", isError: false)
+                )
+            }
         }
         if key.keyCode == 0x03 || (key.modifiers.contains(.ctrl) && (key.keyCode == 0x63 || key.keyCode == 0x43)) {
             finish(&state)

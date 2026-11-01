@@ -34,7 +34,12 @@ enum SessionChoice {
             } catch .locked {
                 // Encrypted (ADR-0138): unlocked here, before the screen, on the terminal when the key is not remembered.
                 let remember = SessionKeyAccess.vault.choice()?.remember ?? true
-                guard let keyring = await SessionKeyAccess.unlock(remember: remember) else {
+                guard
+                    let keyring = await SessionKeyAccess.unlock(
+                        remember: remember,
+                        asker: SessionKeyAccess.canAsk ? TerminalSetupInteraction() : nil
+                    )
+                else {
                     fail("ask: \(path) is encrypted, and its keys could not be opened", code: 77)
                 }
                 recorder = SessionRecorder(try SessionFile.open(at: FilePath(path), keyring: keyring))

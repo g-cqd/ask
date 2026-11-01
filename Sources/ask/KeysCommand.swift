@@ -24,7 +24,8 @@ struct KeysCommand: AsyncParsableCommand {
                 do { try vault.forget(in: try KeychainSecretStore()) } catch { fail("ask: \(error)", code: 77) }
                 print("The keychain no longer holds the key; ask asks for the password at the next start.")
             case "password":
-                guard let keyring = await SessionKeyAccess.unlock(remember: false) else {
+                guard let keyring = await SessionKeyAccess.unlock(remember: false, asker: TerminalSetupInteraction())
+                else {
                     fail("ask: the keys could not be opened", code: 77)
                 }
                 let terminal = CommandLineInteraction()
