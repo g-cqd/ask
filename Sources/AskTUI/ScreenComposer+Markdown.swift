@@ -27,13 +27,17 @@ extension ScreenComposer {
         var result: [Line] = []
         for block in document.topLevelBlocks {
             if !result.isEmpty { result.append(Line(text: "", style: .default)) }
+            let fence =
+                block.node.kind == .codeBlock
+                ? longFence(of: block, in: document, fences: fences, source: &source) : nil
+            // A folded block is its header alone: it is not laid out, nor coloured, only to be dropped.
+            if let fence, fence.folded {
+                result.append(foldHeader(fence.fence, block: index, inset: inset))
+                continue
+            }
             var rows = renderer.lines(of: block, in: document, width: result.isEmpty ? firstBlockWidth ?? width : width)
-            if block.node.kind == .codeBlock, let fence = longFence(of: rows, in: fences, source: &source) {
+            if let fence {
                 let header = foldHeader(fence.fence, block: index, inset: inset)
-                guard !fence.folded else {
-                    result.append(header)
-                    continue
-                }
                 // Open, the header takes the place of the language's row, and a click on it folds the block again.
                 let label = renderer.theme.codeLabel
                 while let first = rows.first, first.source == nil, first.runs.contains(where: { $0.style == label }) {
@@ -46,14 +50,22 @@ extension ScreenComposer {
         return result.isEmpty ? [Line(text: "", style: .default)] : result
     }
 
-    /// The long fence a code block's rows show, if it is one: the fence that opens the line above its first line of code.
+    /// The long fence a code block is, if it is one, found from its source rather than its rows, so a folded block need not be laid out:
+    /// the block's first leaf is its info string, on the fence's line, or its first line of code, the line under it. A blank first line
+    /// is an empty leaf that still has its place, where its row names no source. A block holds no range of its own, only its leaves.
     private static func longFence(
-        of rows: [StyledLine], in fences: [(fence: CodeFence, ordinal: Int, folded: Bool)],
+        of block: MarkdownBlock, in document: MarkdownDocument,
+        fences: [(fence: CodeFence, ordinal: Int, folded: Bool)],
         source: inout MarkdownSourceLines
     ) -> (fence: CodeFence, ordinal: Int, folded: Bool)? {
-        guard !fences.isEmpty, let first = rows.lazy.compactMap(\.source).first else { return nil }
-        let opening = source.position(of: first.lowerBound).line - 1
-        return fences.first { $0.fence.openingLine == opening }
+        guard !fences.isEmpty else { return nil }
+        for event in document.events(of: block) {
+            guard case .leaf(let node) = event else { continue }
+            let line = source.position(of: node.range.lowerBound).line
+            let opening = node.kind == .infoString ? line : line - 1
+            return fences.first { $0.fence.openingLine == opening }
+        }
+        return nil
     }
 
     /// The dim line a long block folds to, and heads it with when open: `code · swift · 34 lines`. It names the opening fence's line, which is

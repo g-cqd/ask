@@ -24,8 +24,8 @@ enum PathLinks {
     ///   - home: what `~` means.
     /// - Returns: the links, left to right.
     static func links(in text: String, home: String = NSHomeDirectory()) -> [Link] {
-        let paths = pathLinks(in: text, home: home)
-        guard text.contains(":") || text.contains("@") else { return paths }
+        let paths = LinkCandidates.mayHoldPath(text) ? pathLinks(in: text, home: home) : []
+        guard LinkCandidates.mayHoldAddress(text), text.contains(":") || text.contains("@") else { return paths }
         let addresses = AddressLinks.links(in: text)
             .filter { found in
                 !paths.contains { $0.columns.overlaps(found.columns) }
