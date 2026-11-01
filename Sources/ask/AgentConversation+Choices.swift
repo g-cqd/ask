@@ -23,6 +23,11 @@ extension AgentConversation {
             case "thinking": return await thinkingRows()
             case "login": return LoginChoices.rows()
             case "logout": return logoutRows()
+            case "encrypt":
+                return [
+                    ChoiceRow(label: "on", detail: "encrypt this session's file", arguments: "on"),
+                    ChoiceRow(label: "off", detail: "keep it unencrypted", arguments: "off")
+                ]
             default: return []
         }
     }

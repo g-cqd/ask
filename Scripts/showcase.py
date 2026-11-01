@@ -182,7 +182,7 @@ def main(arguments):
         threading.Thread(target=server.serve_forever, daemon=True).start()
         env = {k: v for k, v in os.environ.items() if not k.startswith("ASK_")}
         env.update(ANTHROPIC_API_KEY="sk-ant-api-showcase", ANTHROPIC_BASE_URL=f"http://127.0.0.1:{server.server_address[1]}",
-                   XDG_CONFIG_HOME=config, XDG_STATE_HOME=os.path.join(root, "state"), HOME=home)
+                   XDG_CONFIG_HOME=config, XDG_STATE_HOME=os.path.join(root, "state"), HOME=home, ASK_SESSION_ENCRYPTION="off")
         print(f"ask showcase ({binary}): a scripted model, a scratch project; type a scene's number as the prompt.\n")
         for number, (title, _) in SCENES.items():
             print(f"  {number}. {title}")

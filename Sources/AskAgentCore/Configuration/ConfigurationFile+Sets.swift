@@ -2,6 +2,7 @@ extension ConfigurationFile {
     /// Whether the file sets the key `name`.
     public func sets(_ name: String) -> Bool {
         switch name {
+            // @dl:accept -- one row per key, each naming its own field: the table is the data
             case "model": model != nil
             case "provider": provider != nil
             case "thinking": thinking != nil
@@ -9,6 +10,8 @@ extension ConfigurationFile {
             case "compactAt": compactAt != nil
             case "keepAwake": keepAwake != nil
             case "keepDisplayAwake": keepDisplayAwake != nil
+            case "sessionEncryption", "sessionCompression", "sessionPassword": setsSessionKey(name)
+            // @dl:accept -- one row per key, each naming its own field: the table is the data
             case "credentials": credentials != nil
             case "approvals": approvals != nil
             case "modelScopes": modelScopes != nil

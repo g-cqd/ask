@@ -50,6 +50,7 @@ def spawn():
         # directories are made in the parent: work in the child before exec would be timed as ask's cold start.
         os.environ["XDG_CONFIG_HOME"] = ISOLATED_CONFIG
         os.environ["XDG_STATE_HOME"] = ISOLATED_STATE
+        os.environ["ASK_SESSION_ENCRYPTION"] = "off"
         for key in list(os.environ):
             if key.startswith(("ASK_", "ANTHROPIC_", "OPENAI_", "CODEX_")):
                 os.environ.pop(key)

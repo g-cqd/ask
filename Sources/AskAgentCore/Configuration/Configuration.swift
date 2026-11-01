@@ -52,6 +52,11 @@ public struct Configuration: Sendable, Equatable {
     public var keepAwake = Setting(value: KeepAwakeMode.working, source: .defaults)
     /// `keepDisplayAwake`: the display stays on too while ask keeps the Mac awake (roadmap 0154).
     public var keepDisplayAwake = Setting(value: false, source: .defaults)
+    /// `sessionEncryption`, `sessionCompression` and `sessionPassword` (roadmap 0182): how new sessions are kept. Unset, encryption and
+    /// the password follow the first-start answer (``SessionEncryptionPolicy``). A workspace's file overrides the user's either way.
+    public var sessionEncryption = Setting(value: SessionEncryptionMode?.none, source: .defaults)
+    public var sessionCompression = Setting(value: false, source: .defaults)
+    public var sessionPassword = Setting(value: SessionPasswordMode?.none, source: .defaults)
     public var credentials = Setting(value: CredentialStorage.auto, source: .defaults)  // where keys are kept, 0110
     public var approvals = Setting(value: ApprovalsSection(), source: .defaults)  // which calls ask first, 0134
     public var modelScopes = Setting(value: [ModelScope](), source: .defaults)  // which providers serve here, 0094
@@ -84,6 +89,7 @@ public struct Configuration: Sendable, Equatable {
         // @dl:accept -- one layer entry per key: the table is the data
         if let keepAwake = file.keepAwake { next.keepAwake = Setting(value: keepAwake, source: source) }
         if let display = file.keepDisplayAwake { next.keepDisplayAwake = Setting(value: display, source: source) }
+        next.layerSessions(file, from: source)
         if let credentials = file.credentials { next.credentials = Setting(value: credentials, source: source) }
         if let approvals = file.approvals { next.approvals = Setting(value: approvals, source: source) }
         if let scopes = file.modelScopes { next.modelScopes = Setting(value: scopes, source: source) }
@@ -138,6 +144,14 @@ public struct Configuration: Sendable, Equatable {
         if let thinking = parsed("ASK_THINKING", ThinkingLevel.init(rawValue:), must: "one of \(ThinkingLevel.choices)")
         {
             next.thinking = thinking
+        }
+        if let mode = parsed(
+            "ASK_SESSION_ENCRYPTION",
+            SessionEncryptionMode.init(rawValue:),
+            must: SessionEncryptionMode.choices
+        ) {
+            // A run that should not ask the first-start question, a script's, says so here (roadmap 0182).
+            next.sessionEncryption = Setting(value: mode.value, source: mode.source)
         }
         if text("ASK_MAX_TURNS") == "none" {
             next.maxTurns = Setting(value: Self.noTurnLimit, source: .environment("ASK_MAX_TURNS"))

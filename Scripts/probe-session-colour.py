@@ -36,7 +36,7 @@ def status_background(setting, seconds=6.0):
         fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", ROWS, COLUMNS, 0, 0))
         os.chdir(project)
         env = {k: v for k, v in os.environ.items() if not k.startswith(("ASK_", "ANTHROPIC_", "OPENAI_"))}
-        env.update(TERM="xterm-256color", XDG_CONFIG_HOME=config, XDG_STATE_HOME=state, HOME=home)
+        env.update(TERM="xterm-256color", XDG_CONFIG_HOME=config, XDG_STATE_HOME=state, HOME=home, ASK_SESSION_ENCRYPTION="off")
         env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
         os.execve(BINARY, [BINARY], env)
     screen, stream = pyte.Screen(COLUMNS, ROWS), pyte.ByteStream()

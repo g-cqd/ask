@@ -23,8 +23,10 @@ struct Sessions: ParsableCommand {
         }
         let format = Date.FormatStyle(date: .abbreviated, time: .shortened)
         for listing in listed.prefix(Swift.max(1, limit)) {
-            let summary = SessionSummary(readingFrom: listing.path)
-            let prompts = summary.map { $0.prompts == 1 ? "1 prompt" : "\($0.prompts) prompts" } ?? "unreadable"
+            let summary = SessionSummary(readingFrom: listing.path, keyring: SessionKeyAccess.keyring)
+            let prompts =
+                summary.map { $0.isLocked ? "locked" : $0.prompts == 1 ? "1 prompt" : "\($0.prompts) prompts" }
+                ?? "unreadable"
             let first = summary?.firstPrompt.map { Self.oneLine($0, limit: 60) } ?? ""
             print("\(listing.name)  \(listing.modified.formatted(format))  \(prompts)  \(first)")
         }

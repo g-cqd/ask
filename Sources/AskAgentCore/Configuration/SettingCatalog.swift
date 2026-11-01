@@ -82,6 +82,21 @@ enum SettingCatalog {
         row("keepAwake", words(KeepAwakeMode.self), #""working""#, "working", "When ask keeps the Mac from sleeping."),
         row("keepDisplayAwake", .boolean, "false", "false", "Whether the display stays on too."),
         row(
+            "sessionEncryption",
+            words(SessionEncryptionMode.self),
+            #""on""#,
+            "asked at first start",
+            "Whether new sessions are encrypted: on, off, or asked when each begins."
+        ),
+        row("sessionCompression", .boolean, "false", "false", "Whether session files are compressed."),
+        row(
+            "sessionPassword",
+            words(SessionPasswordMode.self),
+            #""remember""#,
+            "asked at first start",
+            "Whether the key the password opens is kept in the keychain, or the password asked at every start."
+        ),
+        row(
             "credentials",
             words(CredentialStorage.self),
             #""auto""#,

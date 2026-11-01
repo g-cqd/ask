@@ -24,6 +24,15 @@
   // Whether the display stays on too. Default: false.
   "keepDisplayAwake": false,
 
+  // Whether new sessions are encrypted: on, off, or asked when each begins. Default: asked at first start. One of: off, on, ask.
+  "sessionEncryption": "on",
+
+  // Whether session files are compressed. Default: false.
+  "sessionCompression": false,
+
+  // Whether the key the password opens is kept in the keychain, or the password asked at every start. Default: asked at first start. One of: remember, everyStart.
+  "sessionPassword": "remember",
+
   // Where keys and sign-in tokens are kept. Default: auto. One of: auto, keychain, file. Your own file only.
   "credentials": "auto",
 

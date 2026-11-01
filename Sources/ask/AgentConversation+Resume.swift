@@ -22,7 +22,9 @@ extension AgentConversation {
                 return
             }
             guard maySwitchSession("resume", update: update) else { return }
-            let replacement = SessionRecorder(try SessionFile.open(at: FilePath(path)))
+            let replacement = SessionRecorder(
+                try SessionFile.open(at: FilePath(path), keyring: SessionKeyAccess.keyring)
+            )
             guard !Task.isCancelled else {
                 report(AgentError.cancelled, to: update)
                 return
@@ -33,6 +35,13 @@ extension AgentConversation {
             update(.notice("Resumed session \((replacement.path as NSString).lastPathComponent)", isError: false))
         } catch SessionFileError.inUse {
             update(.notice("Cannot resume \(arguments): this session is open in another ask.", isError: true))
+        } catch SessionFileError.locked {
+            update(
+                .notice(
+                    "Cannot resume \(arguments) here: it is encrypted. Quit, then `ask --resume \(arguments)` asks for its password.",
+                    isError: true
+                )
+            )
         } catch {
             update(.notice("Cannot resume \(arguments): \(error)", isError: true))
         }
@@ -50,8 +59,10 @@ extension AgentConversation {
         let currentPath = session.withLock { $0?.path }
         return directory.sessions()
             .map { item in
+                let summary = SessionSummary(readingFrom: item.path, keyring: SessionKeyAccess.keyring)
                 let first =
-                    SessionSummary(readingFrom: item.path)?.firstPrompt.map { Sessions.oneLine($0, limit: 80) } ?? ""
+                    summary?.isLocked == true
+                    ? "locked" : summary?.firstPrompt.map { Sessions.oneLine($0, limit: 80) } ?? ""
                 return ChoiceRow(
                     label: item.name,
                     detail: first,

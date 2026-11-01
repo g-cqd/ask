@@ -81,7 +81,7 @@ struct LaunchRequest {
         let restored =
             selfCheck
             ? nil
-            : session.open(
+            : await session.open(
                 in: SessionDirectory(
                     project: FileManager.default.currentDirectoryPath,
                     environment: LaunchEnvironment.values
@@ -100,6 +100,10 @@ struct LaunchRequest {
         if selfCheck {
             checkSelf(settings)
             return
+        }
+        // How this run's sessions are kept, asked on the terminal before the screen when there is anything to ask (ADR-0138).
+        do { SessionKeyAccess.decide(try await SessionProtectionSetup.decide(settings.configuration)) } catch {
+            fail("ask: \(error)", code: 77)
         }
         let reloaded = reloadedFrom.map {
             ReloadNotice(from: $0, startedMilliseconds: reloadStarted ?? 0, grantsPath: reloadGrants)

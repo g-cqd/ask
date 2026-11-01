@@ -14,7 +14,7 @@ enum SessionChoice {
     ///   - directory: the project's sessions.
     ///   - note: told when `--continue` found nothing to continue, and when the session had to be repaired.
     /// - Returns: the open session, or nil.
-    func open(in directory: SessionDirectory, note: (String) -> Void) -> SessionRecorder? {
+    func open(in directory: SessionDirectory, note: (String) -> Void) async -> SessionRecorder? {
         let path: String
         switch self {
             case .new: return nil
@@ -28,7 +28,17 @@ enum SessionChoice {
                 do { path = try directory.resolve(query) } catch { fail("ask: \(error)", code: 66) }
         }
         do {
-            let recorder = SessionRecorder(try SessionFile.open(at: FilePath(path)))
+            let recorder: SessionRecorder
+            do {
+                recorder = SessionRecorder(try SessionFile.open(at: FilePath(path), keyring: SessionKeyAccess.keyring))
+            } catch .locked {
+                // Encrypted (ADR-0138): unlocked here, before the screen, on the terminal when the key is not remembered.
+                let remember = SessionKeyAccess.vault.choice()?.remember ?? true
+                guard let keyring = await SessionKeyAccess.unlock(remember: remember) else {
+                    fail("ask: \(path) is encrypted, and its keys could not be opened", code: 77)
+                }
+                recorder = SessionRecorder(try SessionFile.open(at: FilePath(path), keyring: keyring))
+            }
             if let notice = recorder.repairNotice { note(notice) }
             return recorder
         } catch .inUse {

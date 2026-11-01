@@ -39,7 +39,7 @@ def spawn(project, config, state, arguments):
         import fcntl, struct, termios
         fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", 40, 120, 0, 0))
         os.chdir(project)
-        os.environ.update(TERM="xterm-kitty", TERM_PROGRAM="kitty", XDG_CONFIG_HOME=config, XDG_STATE_HOME=state)
+        os.environ.update(TERM="xterm-kitty", TERM_PROGRAM="kitty", XDG_CONFIG_HOME=config, XDG_STATE_HOME=state, ASK_SESSION_ENCRYPTION="off")
         for key in list(os.environ):
             if key.startswith(("ASK_", "ANTHROPIC_", "OPENAI_", "CODEX_")):
                 os.environ.pop(key)

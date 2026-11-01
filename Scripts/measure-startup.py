@@ -136,7 +136,7 @@ def sample(binary, directory, environment, timeout=10, arguments=()):
 def isolated_environment(root):
     env = {k: v for k, v in os.environ.items()
            if not k.startswith(('ASK_', 'ANTHROPIC_', 'OPENAI_', 'CODEX_', 'XDG_'))}
-    env.update(XDG_CONFIG_HOME=str(root / 'config'), XDG_STATE_HOME=str(root / 'state'),
+    env.update(XDG_CONFIG_HOME=str(root / 'config'), XDG_STATE_HOME=str(root / 'state'), ASK_SESSION_ENCRYPTION='off',
                TERM='xterm-kitty', TERM_PROGRAM='kitty')
     return env
 
