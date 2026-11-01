@@ -44,6 +44,7 @@ public struct ToolAliasTable: Sendable, Equatable {
         "job_input": ["send_command_input"],
         "job_stop": ["kill_shell", "kill_bash", "stop_job"],
         "narrow_sandbox": [],
+        // @dl:accept -- a memberwise initialiser or a field table reads like any other of its kind; the fields are the data
         "grep": ["search", "grep_search", "ripgrep", "rg", "code_search", "search_files"],
         "find": ["glob", "find_by_name", "file_search", "list_files"],
         "ls": ["list", "list_dir", "list_directory"],

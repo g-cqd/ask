@@ -1,21 +1,24 @@
 internal import AskAgentCore
 
-/// What the `tasks` and `ideas` tools share (ADR-0140): no list before the session's is open, and a refused change told in words.
+/// What the `tasks` and `ideas` tools share (ADR-0141): no list before the session's is open; the changes planned and kept under the
+/// list's lock, then the read; every refusal said in words.
 enum ListToolRun {
-    static func run<Refusal: Error>(
-        attached: Bool,
+    static func run<List: ChangeList>(
+        _ board: ChangeBoard<List>,
         missing: String,
-        refusal: Refusal.Type,
-        words: (Refusal) -> String,
-        _ body: () throws -> ToolOutput
+        plan: ((List) throws -> (change: List.Change?, answer: String))?,
+        read: ((List) throws -> String)?
     ) throws(ToolFailure) -> ToolOutput {
-        guard attached else { throw ToolFailure(missing) }
+        guard board.isAttached else { throw ToolFailure(missing) }
         do {
-            return try body()
-        } catch let error as Refusal {
-            throw ToolFailure(words(error))
-        } catch let error as ToolFailure {
-            throw error
+            var parts: [String] = []
+            if let plan { parts.append(try board.update(plan)?.answer ?? "") }
+            if let read, let list = try board.current() { parts.append(try read(list)) }
+            return ToolOutput(parts.joined(separator: "\n\n"))
+        } catch let refusal as ListPlanError {
+            throw ToolFailure(refusal.words)
+        } catch is ListRecordError {
+            throw ToolFailure("This list was written by a newer ask: it can be read here, not changed.")
         } catch {
             throw ToolFailure("The list could not be read or changed: \(error)")
         }

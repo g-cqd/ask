@@ -1,38 +1,14 @@
 internal import AskAgentCore
 
-/// What an `ideas` call asks: an id as `i3` or `3`.
+/// An `ideas` call (ADR-0141), in the shape of a `tasks` call: `changes` (marks), a `read`, or both.
 public struct IdeaRequest: Decodable, Sendable {
-    let action: String
-    let id: IdeaID?
-    let all: Bool?
+    // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
+    let changes: [IdeaPlanner.Mark]?
+    let read: IdeaQuery?
 
-    struct IdeaID: Decodable, Sendable {
-        let value: Int?
-
-        init(from decoder: any Decoder) throws {
-            let container = try decoder.singleValueContainer()
-            if let number = try? container.decode(Int.self) {
-                value = number
-            } else {
-                let text = try container.decode(String.self)
-                value = Int(text.hasPrefix("i") ? String(text.dropFirst()) : text)
-            }
-        }
-    }
-
-    func ideaID() throws(ToolFailure) -> Int {
-        guard let id = id?.value else { throw ToolFailure("\(action) needs the idea's id, such as i3.") }
-        return id
-    }
-
-    /// The state a marking action sets.
-    func state() throws(ToolFailure) -> IdeaState {
-        switch action {
-            case "acknowledge", "reopen": return .acknowledged
-            case "fulfil", "fulfill": return .fulfilled
-            case "dismiss": return .dismissed
-            default:
-                throw ToolFailure("There is no action \(action): list, show, acknowledge, fulfil, dismiss, reopen.")
-        }
+    public init(from decoder: any Decoder) throws {
+        let call = try ListCall.decode(decoder, IdeaMarkInput.self, IdeaReadInput.self)
+        changes = call.changes?.map(\.mark)
+        read = call.read?.query
     }
 }

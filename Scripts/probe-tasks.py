@@ -6,7 +6,7 @@ Usage: Scripts/probe-tasks.py .build/release/ask
 A local fake Anthropic server has the model add two tasks, the second blocked by the first, start the first and list them; the probe reads
 the tool results from the next request. No network, no real credentials. Two runs:
 
-  session    the tool is offered, the list is never sent unasked, the results read "t1 [in progress] …" and "t2 [open, blocked by t1] …",
+  session    the tool is offered, the list is never sent unasked, one call (ADR-0141) adds both tasks, starts one and reads them,
              and `<session>.tasks` beside the session holds the changes, one record each;
   workspace  with `taskScope: "workspace"`, a second session lists the first one's tasks from `tasks.ask`.
 
@@ -26,12 +26,14 @@ spec = importlib.util.spec_from_file_location("agent_probe", os.path.join(HERE, 
 agent = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(agent)
 
+# One call (ADR-0141): two adds, the second waiting on the first through @1, the first started, then a read.
 MAKE = [
-    ("call", "c1", "tasks", {"action": "add", "title": "write the parser", "detail": "recursive descent"}),
-    ("call", "c2", "tasks", {"action": "add", "title": "ship it", "blocked_by": "t1"}),
-    ("call", "c3", "tasks", {"action": "start", "id": "t1"}),
-    ("call", "c4", "tasks", {"action": "list"}),
+    ("call", "c1", "tasks", {"changes": [
+        {"op": "add", "title": "write the parser", "detail": "recursive descent"},
+        {"op": "add", "title": "ship it", "blocked_by": "@1"},
+        {"op": "state", "ids": "@1", "state": "in_progress"}], "read": {}}),
 ]
+ANSWER = "added t1–t2 (2) · in progress t1\n\n"
 LISTING = "t1 [in progress] write the parser\nt2 [open, blocked by t1] ship it"
 
 
@@ -78,14 +80,15 @@ def main():
         bad = check("the tasks tool is offered", "tasks" in tools, bad)
         bad = check("nothing of the list is sent unasked", "write the parser" not in json.dumps(requests[0]["body"]), bad)
         seen = results(requests[1])
-        bad = check("the list reads as made: %r" % (seen[-1:]), seen[-1:] == [LISTING], bad)
+        bad = check("one call makes the batch and reads it: %r" % (seen[-1:]), seen[-1:] == [ANSWER + LISTING], bad)
         lists = files(state, ".tasks")
         sessions = files(state, ".jsonl")
         beside = len(lists) == 1 and len(sessions) == 1 and lists[0][:-6] == sessions[0][:-6]
         bad = check("one .tasks file beside the session", beside, bad)
         records = [json.loads(line) for line in open(lists[0])] if lists else []
-        bad = check("kept as its changes: %s" % [record.get("kind") for record in records],
-                    [record.get("kind") for record in records] == ["add", "add", "state"], bad)
+        kinds = [record.get("kind") for record in records]
+        inner = [change.get("kind") for change in records[0].get("changes", [])] if records else []
+        bad = check("kept as one record of its changes: %s %s" % (kinds, inner), kinds == ["batch"] and inner == ["add", "add", "state"], bad)
 
     with tempfile.TemporaryDirectory() as root:
         project, state, configuration = root + "/project", root + "/state", root + "/config"
@@ -93,8 +96,8 @@ def main():
         os.makedirs(configuration + "/ask")
         with open(configuration + "/ask/config.json", "w") as file:
             json.dump({"taskScope": "workspace"}, file)
-        run(project, state, configuration, [agent.turn(MAKE[:3], "tool_use")])
-        requests = run(project, state, configuration, [agent.turn([("call", "c9", "tasks", {"action": "list"})], "tool_use")])
+        run(project, state, configuration, [agent.turn(MAKE, "tool_use")])
+        requests = run(project, state, configuration, [agent.turn([("call", "c9", "tasks", {"read": {}})], "tool_use")])
         print("workspace")
         seen = results(requests[1]) if len(requests) > 1 else []
         bad = check("a second session lists the first one's tasks: %r" % seen, seen == [LISTING], bad)

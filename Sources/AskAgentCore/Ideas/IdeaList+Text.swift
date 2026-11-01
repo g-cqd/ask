@@ -2,11 +2,25 @@ public import Foundation
 
 /// The ideas as the model and the person read them: one line an idea, its text on that line with its line breaks as spaces.
 extension IdeaList {
-    /// `i3 [new] 2026-11-01 14:05 what if the sidebar folded?`.
+    /// `i3 [new] 2026-11-01 14:05 what if the sidebar folded? → t12`, the text on one line and cut at 120 characters.
     public func line(_ idea: Idea, in zone: TimeZone = .current) -> String {
         let words = idea.text.split(whereSeparator: \.isNewline).map { $0.trimmingCharacters(in: .whitespaces) }
-        return
-            "\(idea.name) [\(idea.state.rawValue)] \(Self.stamp(idea.made, in: zone)) \(words.joined(separator: " "))"
+        var text = words.joined(separator: " ")
+        if text.count > ListLimits.ideaLineLength { text = String(text.prefix(ListLimits.ideaLineLength - 1)) + "…" }
+        return "\(head(idea, in: zone)) \(text)\(became(idea))"
+    }
+
+    /// An idea's head, then its text whole, once.
+    public func whole(_ idea: Idea, in zone: TimeZone = .current) -> String {
+        head(idea, in: zone) + became(idea) + "\n" + idea.text
+    }
+
+    private func head(_ idea: Idea, in zone: TimeZone) -> String {
+        "\(idea.name) [\(idea.state.rawValue)] \(Self.stamp(idea.made, in: zone))"
+    }
+
+    private func became(_ idea: Idea) -> String {
+        idea.tasks.isEmpty ? "" : " → " + idea.tasks.map { "t\($0)" }.joined(separator: " ")
     }
 
     /// The open ideas, or every one with `all`; and how many were left out.
@@ -21,18 +35,5 @@ extension IdeaList {
         return lines.joined(separator: "\n")
     }
 
-    /// `2026-11-01 14:05`.
-    static func stamp(_ seconds: Int, in zone: TimeZone) -> String {
-        var calendar = Calendar(identifier: .gregorian)
-        calendar.timeZone = zone
-        let parts = calendar.dateComponents(
-            [.year, .month, .day, .hour, .minute],
-            from: Date(timeIntervalSince1970: Double(seconds))
-        )
-        let two = { (value: Int?) in
-            let text = String(value ?? 0)
-            return text.count < 2 ? "0" + text : text
-        }
-        return "\(parts.year ?? 0)-\(two(parts.month))-\(two(parts.day)) \(two(parts.hour)):\(two(parts.minute))"
-    }
+    static func stamp(_ seconds: Int, in zone: TimeZone) -> String { ListTime.stamp(seconds, in: zone) }
 }

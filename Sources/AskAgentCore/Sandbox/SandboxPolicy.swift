@@ -53,6 +53,7 @@ public struct SandboxPolicy: Sendable, Equatable {
         network: Network = .any,
         write: PathScope = .anywhere,
         read: PathScope = .anywhere,
+        // @dl:accept -- a memberwise initialiser or a field table reads like any other of its kind; the fields are the data
         denyRead: [SandboxRule] = [],
         denyWrite: [SandboxRule] = [],
         askable: [SandboxRule] = []

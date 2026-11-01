@@ -41,7 +41,7 @@ def main():
         turn = probe.agent.turn
         server = probe.agent.Server([
             turn([("text", "Started.")], "end_turn"),
-            turn([("call", "c1", "ideas", {"action": "list"})], "tool_use"),
+            turn([("call", "c1", "ideas", {"read": {}})], "tool_use"),
             turn([("text", "Read them.")], "end_turn"),
         ])
         environment = probe.agent.environment(root + "/state", server.url, config=config)

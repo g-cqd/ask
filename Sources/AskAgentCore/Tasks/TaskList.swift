@@ -27,6 +27,7 @@ public struct TaskList: ChangeList {
                 detail: detail,
                 state: .open,
                 blockedBy: blockedBy,
+                // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
                 related: related
             )
         )
@@ -57,20 +58,41 @@ public struct TaskList: ChangeList {
                     tasks[index].title = title
                 }
                 if let detail { tasks[index].detail = detail }
-            case .state(let id, let state): tasks[try place(id)].state = state
+            case .state(let id, let state, let time): try set(id, state, at: time)
+            case .tags(let id, let tags): tasks[try place(id)].tags = tags
+            case .batch(let changes): try make(batch: changes)
             case .place(let id, let next, let after): try move(id, to: try place(next), after: after)
             case .link(let id, let link, let target): try self.link(id, link, target)
             case .unlink(let id, let link, let target):
                 let index = try place(id)
                 if link == .blockedBy { tasks[index].blockedBy.removeAll { $0 == target } }
                 if link == .related { tasks[index].related.removeAll { $0 == target } }
-            case .remove(let id):
-                tasks.remove(at: try place(id))
-                for index in tasks.indices {
-                    tasks[index].blockedBy.removeAll { $0 == id }
-                    tasks[index].related.removeAll { $0 == id }
-                }
+            case .remove(let id): try remove(id)
         }
+    }
+
+    private mutating func make(batch changes: [TaskChange]) throws(TaskListError) {
+        for change in changes {
+            if case .batch = change { throw .nested }
+            try make(change)
+        }
+    }
+
+    /// The task gone, and every link to it.
+    private mutating func remove(_ id: Int) throws(TaskListError) {
+        tasks.remove(at: try place(id))
+        for index in tasks.indices {
+            tasks[index].blockedBy.removeAll { $0 == id }
+            tasks[index].related.removeAll { $0 == id }
+        }
+    }
+
+    /// A task made done keeps when it was, if the record says; left done, it loses it.
+    private mutating func set(_ id: Int, _ state: TaskState, at time: Int?) throws(TaskListError) {
+        let index = try place(id)
+        if state == .done, tasks[index].state != .done { tasks[index].closed = time }
+        if state != .done { tasks[index].closed = nil }
+        tasks[index].state = state
     }
 
     private mutating func link(_ id: Int, _ link: TaskLink, _ target: Int) throws(TaskListError) {

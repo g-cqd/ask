@@ -91,6 +91,7 @@ extension AgentConversation {
             case .unknownIdea(let id): "There is no idea i\(id)."
             case .emptyText: "An idea cannot be empty."
             case .taken(let id): "i\(id) was given already."
+            case .nested: "The ideas file holds a record it cannot read."
         }
     }
 

@@ -26,6 +26,8 @@ final class ChangeLog<List: ChangeList>: Sendable {
         var knownSize = 0
         /// Whether every record read cleanly, so a change can be appended rather than the file written again.
         var clean = true
+        /// A record kind a later ask wrote: the list is shown without it and never written (ADR-0141).
+        var newerKind: String?
     }
 
     /// The list at `path`, or an empty one kept in `format` when there is no file yet.
@@ -50,10 +52,20 @@ final class ChangeLog<List: ChangeList>: Sendable {
     /// Makes the change `make` returns for the current list, and keeps it; a refused change writes nothing.
     @discardableResult
     func change(_ make: (List) -> List.Change) throws -> List {
+        try update { list in (make(list), ()) }.list
+    }
+
+    /// Plans on the current list, read again under the lock: `make` returns the change to keep, or none when nothing is to change, and
+    /// what to answer. A thrown plan writes nothing; neither does a list a later ask wrote (``ListRecordError``).
+    func update<Answer: Sendable>(
+        _ make: (List) throws -> (change: List.Change?, answer: Answer)
+    ) throws -> (list: List, answer: Answer) {
         try withFileLock {
             try state.withLock { (state) throws in
                 try refresh(&state)
-                let change = make(state.list)
+                let (change, answer) = try make(state.list)
+                guard let change else { return (state.list, answer) }
+                if let kind = state.newerKind { throw ListRecordError(kind: kind) }
                 var next = state.list
                 try next.apply(change)
                 if state.clean, state.knownSize > 0, let record = try record(change, &state) {
@@ -64,7 +76,7 @@ final class ChangeLog<List: ChangeList>: Sendable {
                 state.changes.append(change)
                 state.list = next
                 state.knownSize = Self.size(of: path)
-                return next
+                return (next, answer)
             }
         }
     }

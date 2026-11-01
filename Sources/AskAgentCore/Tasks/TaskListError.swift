@@ -6,4 +6,6 @@ public enum TaskListError: Error, Equatable, Sendable {
     case emptyTitle
     /// The task would wait on itself, through any number of others.
     case cycle
+    /// A batch inside a batch: never written, refused when read.
+    case nested
 }
