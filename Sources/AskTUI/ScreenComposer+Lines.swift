@@ -44,7 +44,7 @@ extension ScreenComposer {
 
     /// `line` with the paths and addresses in its text linked, where no link of its own already is.
     static func linked(_ line: Line) -> Line {
-        guard line.text.contains("/") || line.text.contains("@") || line.text.contains(":") else { return line }
+        guard LinkCandidates.mayHoldLink(line.text) else { return line }
         let found = PathLinks.links(in: line.text)
             .filter { link in
                 !line.links.contains { $0.columns.overlaps(link.columns) }

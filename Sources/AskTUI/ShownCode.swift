@@ -18,7 +18,7 @@ struct ShownCode: Sendable, Equatable {
             text = source
             return
         }
-        let lines = source.split(separator: "\n", omittingEmptySubsequences: false)
+        let lines = LineSplit.lines(of: source)
         var shown: [Substring] = []
         shown.reserveCapacity(lines.count)
         var next = 0

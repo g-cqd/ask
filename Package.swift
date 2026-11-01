@@ -239,7 +239,9 @@ let package = Package(
                 .product(name: "TerminalKitRender", package: "TerminalKit"),
                 .product(name: "TerminalKitStyle", package: "TerminalKit"),
                 .product(name: "TerminalKitText", package: "TerminalKit"),
-                .product(name: "TerminalKitMarkdown", package: "TerminalKit")
+                .product(name: "TerminalKitMarkdown", package: "TerminalKit"),
+                // The render benchmark times the parse step on its own.
+                .product(name: "AemiMarkdown", package: "AemiMarkdown")
             ],
             path: "Tests/AskTUITests",
             swiftSettings: packageSettings

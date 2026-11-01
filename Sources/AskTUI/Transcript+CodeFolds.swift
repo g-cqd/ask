@@ -68,7 +68,7 @@ extension Transcript {
     /// it is folded. Nil when the item is not such a message.
     func markdownFences(at index: Int) -> [(fence: CodeFence, ordinal: Int, folded: Bool)]? {
         guard markdown, case .assistant(let text) = items[index], ShownCode.mayContainFence(text) else { return nil }
-        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
+        let lines = LineSplit.lines(of: text)
         return CodeFence.scan(lines).enumerated()
             .filter { $0.element.bodyLines > codeFoldLines }
             .map { ordinal, fence in

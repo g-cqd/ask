@@ -77,6 +77,20 @@ stateless and gets whole blocks, and each streamed delta lays the message out ag
 nothing to resume from. Lexing is 1 % of that re-render, so resuming would save nothing measurable; the per-token piece cost is the
 follow-up, in TerminalKit (merge adjacent pieces of one style) and in ask's accent conversion.
 
+**Render cost, 2026-10-31.** `MarkdownRenderBenchmark` (`ASK_RENDER_BENCH=1`, release, M3; 38,479-byte reply, 400-line Swift block, 120
+columns) times each step. Composing the message, before → after, in ms: highlighting off, folded 2.90 → 0.73, open 7.45 → 1.45;
+highlighting on, folded 3.65 → 0.73, open 9.52 → 2.78. Four changes, each pinned by a digest or an oracle taken from the code before it:
+- links: `LinkCandidates` skips, from the bytes, the rows that cannot hold a path or an address; the finders had walked every row
+  holding a `/` or `:` character by character, which was half the compose (`LinkFinderCharacterisationTests`, 20,000 random lines);
+- folds: a folded block is its header alone, no longer laid out and coloured only to be dropped; its fence is found from the block's
+  first leaf rather than its first row, which also folds a block whose first line is blank, which did not fold before
+  (`CodeFoldCharacterisationTests`);
+- lines: `LineSplit` finds the fences' lines from the bytes, as the character split did (`LineSplitTests`);
+- TerminalKit `686bdc9`: string widths and the wrap's glyphs take printable ASCII a byte at a time (its oracle tests). Measured with it
+  through a local edit; ask resolves it once the pin cascade carries it.
+What is left in the open, highlighted case is the renderer (`BlockWriter.emitCode`: the wrap, `pieces`' cut set) and ask's row
+conversion (`line(of:block:inset:source:)`).
+
 **Known gaps** (the lexers', drawn plain or partly coloured, never wrongly as another language): Swift and JavaScript regex literals;
 JavaScript template literals nested inside `${…}`; Python's `f`/`r` prefix is outside the string token; C++ `R"(…)"` takes `R` as a
 type; Ruby `%w[]` and `:symbol`; HTML `<script>` and `<style>` bodies; Lua level comments `--[==[ … ]==]`.
