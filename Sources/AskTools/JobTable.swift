@@ -35,18 +35,24 @@ public final class JobTable: Sendable {
         commandShell(requested, policy: context.commandEnvironment)
     }
 
-    /// The shell for a command: the model's listed choice, the configured one, the first zsh then bash on the PATH, then SHELL.
+    /// The shell for a command: the model's listed choice, the configured one, the first bash on the PATH, the system's bash, the first
+    /// zsh on the PATH, then SHELL (roadmaps 0091 and 0188).
     func commandShell(_ requested: String?, policy: CommandEnvironment) -> String {
         let visible = policy.filtered(environment)
         let login = visible["SHELL"]
         // A shell the model names must be a login shell of the system or the user's own, not any executable.
         if let requested, Self.isListedShell(requested, configured: login), Self.isShell(requested) { return requested }
         if let chosen = policy.shell.flatMap({ Self.chosenShell($0, path: visible["PATH"]) }) { return chosen }
-        // Nothing chosen: the first zsh on the PATH, else the first bash on it, else the person's login shell (roadmap 0091).
-        for name in ["zsh", "bash"] {
-            if let found = Self.onPath(name, path: visible["PATH"]) { return found }
-        }
+        // Nothing chosen: bash, as models write it (roadmap 0188), the PATH's first, else the system's; then zsh; then the login shell.
+        if let bash = Self.onPath("bash", path: visible["PATH"]) { return bash }
+        if Self.isShell("/bin/bash") { return "/bin/bash" }
+        if let zsh = Self.onPath("zsh", path: visible["PATH"]) { return zsh }
         return login.flatMap { Self.isShell($0) ? $0 : nil } ?? "/bin/bash"
+    }
+
+    /// The PATH commands see, after the configured environment's filtering.
+    func visiblePath(in context: ToolContext) -> String? {
+        context.commandEnvironment.filtered(environment)["PATH"]
     }
 
     /// The directories of a PATH value; when there is none, the system's own.

@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-11-01
 ---
@@ -22,3 +22,9 @@ Today (0091, done) the default is the first present of zsh, bash, then `$SHELL`,
   does not. Measure what each costs per command.
 - Later, separately: a parser of ask's own (the protections already read commands: `StandardProtections`), which could check a command
   against the sandbox's rules before it runs.
+
+## Done (2026-11-01)
+
+ADR-0139: bash on the PATH, `/bin/bash`, zsh, `$SHELL`; `/bin/bash` named as 3.2 in the tool's description; every command parsed by its
+shell before it runs (not run when it does not parse); shellcheck's findings with a failed bash or sh command's result. Still owed: the
+parser of ask's own (the item's last point).

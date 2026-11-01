@@ -23,14 +23,14 @@ struct ShellHintTests {
             jobs: JobTable(environment: ["SHELL": "/bin/sh"]),
             commandEnvironment: CommandEnvironment(withheld: ["SHELL"])
         )
-        #expect(tool.definition.description.contains("/bin/zsh"))
+        #expect(tool.definition.description.contains("/bin/bash"))
         #expect(!tool.definition.description.contains("/bin/sh"))
     }
 
     @Test(arguments: ["/", "/nonexistent", "relative-shell"])
-    func `a login shell that is not usable never matters: zsh is chosen first`(_ shell: String) {
+    func `a login shell that is not usable never matters: bash is chosen first`(_ shell: String) {
         let jobs = JobTable(environment: ["SHELL": shell])
-        #expect(jobs.commandShell(nil, in: ToolContext(workingDirectory: "/tmp")) == "/bin/zsh")
+        #expect(jobs.commandShell(nil, in: ToolContext(workingDirectory: "/tmp")) == "/bin/bash")
     }
 
     @Test func `an invalid explicit override is refused before any process is allocated`() async throws {

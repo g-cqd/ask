@@ -74,7 +74,7 @@ Let commands read `~/.aws` (hidden by default), in your own file:
 { sandbox: { readable: ["~/.aws"] } }
 ```
 
-Run commands with fish instead of zsh:
+Run commands with fish instead of bash:
 
 ```json5
 { environment: { shell: "fish" } }
@@ -275,7 +275,7 @@ repository has no remote, and `include` lines in a git config are not followed. 
 |---|---|---|
 | `withhold` | ask's and well-known credential variables | More variables to keep from commands, by name or with `*` (`"AWS_*"`). A project's file may add to it. |
 | `pass` | none | Variables ask withholds that commands should get anyway. Your own file only. |
-| `shell` | zsh, else bash, else your login shell | The shell commands run in: a name, or an absolute path from `/etc/shells`. Your own file only. |
+| `shell` | the first bash on your PATH, else `/bin/bash`, else zsh, else your login shell | The shell commands run in: a name, or an absolute path from `/etc/shells`. Your own file only. Each command is parsed by that shell before it runs, and not run when it does not parse; with bash or sh, shellcheck's findings (when it is installed) come with a failed command's result. |
 
 Commands get your environment except the credentials ask knows of: its own, `ANTHROPIC_*` and `ASK_*`, and well-known credential
 variables of other tools and services, such as `GITHUB_TOKEN`, `GH_TOKEN`, `AWS_SECRET_ACCESS_KEY`, `OPENAI_API_KEY` and `NPM_TOKEN`.

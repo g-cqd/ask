@@ -23,9 +23,13 @@ extension BashTool {
         }
     }
 
-    /// What differs from bash enough to break a command written for it: zsh stops the whole command at a glob that matches nothing.
+    /// What differs from the bash a model writes for enough to break a command: zsh stops the whole command at a glob that matches
+    /// nothing; macOS's own bash is 3.2, without associative arrays, `mapfile`, `${var,,}` or `|&`.
     private static func note(_ shell: String) -> String {
-        (shell as NSString).lastPathComponent == "zsh"
-            ? "; a glob that matches nothing aborts the command, so quote it" : ""
+        if (shell as NSString).lastPathComponent == "zsh" {
+            return "; a glob that matches nothing aborts the command, so quote it"
+        }
+        if shell == "/bin/bash" { return " 3.2: no associative arrays, mapfile, ${var,,} or |&" }
+        return ""
     }
 }
