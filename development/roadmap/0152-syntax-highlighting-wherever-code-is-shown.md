@@ -93,6 +93,15 @@ linearity; `MarkdownRowCharacterisationTests`, 400 random messages), and Termina
 allocates rows once: open, highlighted 2.78 → 2.34 ms. What is left in the open, highlighted case is the renderer (`BlockWriter.emitCode`: the wrap, `pieces`' cut set) and ask's row
 conversion (`line(of:block:inset:source:)`).
 
+**Streaming, 2026-10-31.** Each delta laid the whole message out again. `MarkdownRowCache` (held by the transcript, the last two
+messages) keeps each top-level block's rows; the message is still parsed whole, so a late link definition still reaches the links above
+it, and a block's rows are reused only under what they were drawn from: equal events, naming only bytes before the first byte where the
+text differs from the last one drawn, the same fold state and settings. `MarkdownRowCacheTests` checks every delta of 120 random
+messages in random chunks against a fresh layout (more than 1,000 frames), and each condition has a test that fails without it.
+`MarkdownStreamBenchmark` (the same reply in 256-byte deltas, highlighting on): a delta near the end costs 0.37 ms open (2.23 before)
+and 0.30 ms folded (0.60); the mean over all frames is 0.76 ms open (1.18), as the open block streaming in is still laid out whole on
+each delta. A cold layout costs 3 % more (open 2.33 → 2.40 ms) for collecting the blocks' events.
+
 **Known gaps** (the lexers', drawn plain or partly coloured, never wrongly as another language): Swift and JavaScript regex literals;
 JavaScript template literals nested inside `${…}`; Python's `f`/`r` prefix is outside the string token; C++ `R"(…)"` takes `R` as a
 type; Ruby `%w[]` and `:symbol`; HTML `<script>` and `<style>` bodies; Lua level comments `--[==[ … ]==]`.

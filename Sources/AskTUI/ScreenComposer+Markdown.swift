@@ -18,63 +18,44 @@ extension ScreenComposer {
     ) -> [Line] {
         let inset = style.inset
         let width = Swift.max(1, columns - 2 * inset)
-        let document = MarkdownParser.parse(Array(text.utf8), extensions: markdownExtensions)
-        let fences = transcript.markdownFences(at: index) ?? []
-        var renderer = MarkdownRenderer(
-            theme: .standard, links: markdownLinks(home: transcript.home),
-            highlighter: transcript.highlight ? CodeHighlighter.standard : nil, softBreaks: .lineBreak)
-        var source = MarkdownSourceLines(text)
+        var layout = MarkdownMessageLayout(
+            document: MarkdownParser.parse(Array(text.utf8), extensions: markdownExtensions),
+            fences: (transcript.markdownFences(at: index) ?? [])
+                .map {
+                    MarkdownMessageLayout.Fence(fence: $0.fence, ordinal: $0.ordinal, folded: $0.folded)
+                },
+            renderer: MarkdownRenderer(
+                theme: .standard, links: markdownLinks(home: transcript.home),
+                highlighter: transcript.highlight ? CodeHighlighter.standard : nil, softBreaks: .lineBreak),
+            source: MarkdownSourceLines(text), item: index, inset: inset)
+        // A block drawn before from the same events and bytes keeps its rows (roadmap 0152).
+        let cache = transcript.markdownRows
+        let settings = MarkdownRowCache.Settings(
+            item: index, columns: columns, inset: inset, firstBlockWidth: firstBlockWidth,
+            highlight: transcript.highlight, home: transcript.home)
+        let kept = cache.kept(for: settings, text: text)
+        var blocks: [MarkdownRowCache.Block] = []
         var result: [Line] = []
-        for block in document.topLevelBlocks {
-            if !result.isEmpty { result.append(Line(text: "", style: .default)) }
-            let fence =
-                block.node.kind == .codeBlock
-                ? longFence(of: block, in: document, fences: fences, source: &source) : nil
-            // A folded block is its header alone: it is not laid out, nor coloured, only to be dropped.
-            if let fence, fence.folded {
-                result.append(foldHeader(fence.fence, block: index, inset: inset))
-                continue
+        for (ordinal, block) in layout.document.topLevelBlocks.enumerated() {
+            if ordinal > 0 { result.append(Line(text: "", style: .default)) }
+            let events = Array(layout.document.events(of: block))
+            let fence = layout.fence(of: block, events: events)
+            let lines: [Line]
+            if ordinal < kept.blocks.count,
+                MarkdownRowCache.reuses(kept.blocks[ordinal], events: events, fence: fence, prefix: kept.prefix)
+            {
+                lines = kept.blocks[ordinal].lines
+            } else {
+                cache.countLayout()
+                lines = layout.lines(of: block, fence: fence, width: ordinal == 0 ? firstBlockWidth ?? width : width)
             }
-            var rows = renderer.lines(of: block, in: document, width: result.isEmpty ? firstBlockWidth ?? width : width)
-            if let fence {
-                let header = foldHeader(fence.fence, block: index, inset: inset)
-                // Open, the header takes the place of the language's row, and a click on it folds the block again.
-                let label = renderer.theme.codeLabel
-                while let first = rows.first, first.source == nil, first.runs.contains(where: { $0.style == label }) {
-                    rows.removeFirst()
-                }
-                result.append(header)
-            }
-            result += rows.map { line(of: $0, block: index, inset: inset, source: &source) }
+            blocks.append(
+                MarkdownRowCache.Block(
+                    events: events, reach: MarkdownRowCache.reach(of: events), fence: fence, lines: lines))
+            result += lines
         }
+        cache.keep(blocks, for: settings, text: text)
         return result.isEmpty ? [Line(text: "", style: .default)] : result
-    }
-
-    /// The long fence a code block is, if it is one, found from its source rather than its rows, so a folded block need not be laid out:
-    /// the block's first leaf is its info string, on the fence's line, or its first line of code, the line under it. A blank first line
-    /// is an empty leaf that still has its place, where its row names no source. A block holds no range of its own, only its leaves.
-    private static func longFence(
-        of block: MarkdownBlock, in document: MarkdownDocument,
-        fences: [(fence: CodeFence, ordinal: Int, folded: Bool)],
-        source: inout MarkdownSourceLines
-    ) -> (fence: CodeFence, ordinal: Int, folded: Bool)? {
-        guard !fences.isEmpty else { return nil }
-        for event in document.events(of: block) {
-            guard case .leaf(let node) = event else { continue }
-            let line = source.position(of: node.range.lowerBound).line
-            let opening = node.kind == .infoString ? line : line - 1
-            return fences.first { $0.fence.openingLine == opening }
-        }
-        return nil
-    }
-
-    /// The dim line a long block folds to, and heads it with when open: `code · swift · 34 lines`. It names the opening fence's line, which is
-    /// what a click toggles (``Transcript/codeFence(toggledByLine:at:)``).
-    private static func foldHeader(_ fence: CodeFence, block: Int, inset: Int) -> Line {
-        let text = ShownCode.placeholder(for: fence)
-        return Line(
-            text: String(repeating: " ", count: inset) + text, style: Style(dim: true),
-            source: Source(block: block, line: fence.openingLine, offset: 0, col: inset, text: ""))
     }
 
     /// Links to the web and mail as they are, and a link to an absolute or home path (with a `:line` or `:line:column` after it, as a compiler

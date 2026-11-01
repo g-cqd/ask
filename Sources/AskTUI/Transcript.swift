@@ -31,6 +31,8 @@ public struct Transcript: Sendable, Equatable {
     public internal(set) var items: [Item] = []
     /// Bumped whenever an item changes, so layouts can cache each item's wrapped lines.
     public internal(set) var revisions: [Int] = []
+    /// The rows of the Markdown messages' blocks, kept between layouts (roadmap 0152); shared by copies, equal to any other.
+    let markdownRows = MarkdownRowCache()
     private var nextRevision = 0
     var progress: [Int: BlockProgress] = [:]
     var toolBlocks: [String: Int] = [:]

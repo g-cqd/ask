@@ -6,8 +6,8 @@ internal import Testing
 @testable import AskTUI
 
 /// Opt-in timing of an assistant message's render path, step by step, in a release build (roadmap 0152):
-/// `ASK_RENDER_BENCH=1 swift test -c release -Xswiftc -enable-testing --filter MarkdownRenderBenchmark`. Each streamed delta
-/// lays the whole message out again, so a step's time is paid once a delta.
+/// `ASK_RENDER_BENCH=1 swift test -c release -Xswiftc -enable-testing --filter MarkdownRenderBenchmark`. This is the cost of a
+/// message laid out cold (a new width, a new look); a streamed delta keeps the blocks before it (``MarkdownStreamBenchmark``).
 @Suite(.serialized, .enabled(if: ProcessInfo.processInfo.environment["ASK_RENDER_BENCH"] != nil))
 struct MarkdownRenderBenchmark {
     static let columns = 120
@@ -31,9 +31,12 @@ struct MarkdownRenderBenchmark {
                 }
             }
             for folded in [true, false] {
-                let transcript = Self.transcript(text, highlight: highlight, folded: folded)
                 let name = "compose-\(highlight ? "on" : "off")-\(folded ? "folded" : "open")"
-                report += Self.step(name) { _ = ScreenComposer.lines(in: transcript, at: 0, columns: Self.columns) }
+                // A fresh transcript each run, so the message is laid out cold, not taken from its rows kept the run before.
+                report += Self.step(name) {
+                    let transcript = Self.transcript(text, highlight: highlight, folded: folded)
+                    _ = ScreenComposer.lines(in: transcript, at: 0, columns: Self.columns)
+                }
             }
         }
         print(report)
