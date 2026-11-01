@@ -88,7 +88,9 @@ highlighting on, folded 3.65 → 0.73, open 9.52 → 2.78. Four changes, each pi
 - lines: `LineSplit` finds the fences' lines from the bytes, as the character split did (`LineSplitTests`);
 - TerminalKit `686bdc9`: string widths and the wrap's glyphs take printable ASCII a byte at a time (its oracle tests). Measured with it
   through a local edit; ask resolves it once the pin cascade carries it.
-What is left in the open, highlighted case is the renderer (`BlockWriter.emitCode`: the wrap, `pieces`' cut set) and ask's row
+Then the row conversion stopped measuring a row's merged segment again for every run (`SegmentEnd` carries its end column and
+linearity; `MarkdownRowCharacterisationTests`, 400 random messages), and TerminalKit `92cd9e7` cuts code lines without a set and
+allocates rows once: open, highlighted 2.78 → 2.34 ms. What is left in the open, highlighted case is the renderer (`BlockWriter.emitCode`: the wrap, `pieces`' cut set) and ask's row
 conversion (`line(of:block:inset:source:)`).
 
 **Known gaps** (the lexers', drawn plain or partly coloured, never wrongly as another language): Swift and JavaScript regex literals;
