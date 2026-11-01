@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -66,3 +66,21 @@ Steps 1, 2, 4 and 5 are done through 0152's phase 1 and 2: `AemiLexers` in aemi 
 benchmark there, ask colouring fenced code with it at aemi `6e8279c`. **Step 3 is owed**: Atelier (HEAD `cccdb44`, pinning aemi
 `bfc4f5a` and TerminalKit `8e39982`) still has its own copies; it must take aemi at `6e8279c` or later, delete them, map `Token` onto
 its `HighlightToken`, and show its tests and benchmarks unchanged. The entry stays in progress until then.
+
+## Step 3 done (2026-10-31)
+
+Atelier consumes `AemiLexers` (Atelier `307bc4c` repins to aemi `00f8ea2`, TerminalKit `1d7076f`, AemiJSON `8ee749d`; `41e0ec0`
+deletes the copies). aemi first made `LexStates.record(_:at:)` public (`00f8ea2`), which Atelier's progressive highlighting calls, and
+took `UTF16Offsets`' tests with the type (`8d2feb8`).
+
+- **The same results.** Before its scanner tests were deleted, Atelier's own 47 lexer tests ran against aemi's scanners and passed,
+  but for the Swift, Java and C corpus checksums, which equal aemi's: there an exponent keeps its sign (`1.5e-3`, one number; aemi
+  `6e8279c`). The engine's tests, its line scans through `LineTokens`, its allocation bound (4 a scan) and its benchmarks stay in
+  Atelier. AtelierCore (1,568 tests), GitDiffViewer (1,161) and KittyCode (968) pass.
+- **The cost.** Release, a 2 MB corpus per language, Apple M3, through `LexicalHighlightEngine.highlight(utf8:)`: 6 to 17% slower,
+  median 10% (Swift 623 to 568 MB/s), because the engine now maps aemi's `Token`s to its `HighlightToken`s, one more array a scan
+  (ADR 0022 keeps the generic entry point internal: public, it ran 3 times slower). The line-at-a-time path is unchanged (0.009 ms for
+  the visible lines of a 1 MB side). Step 5's "cost nothing" holds for the scanners, not for that whole-text path; the remedy is an aemi
+  entry point that builds a client's token without the generic cost, a performance item for Atelier's work queue.
+- **The names.** `AtelierSyntaxModel` re-exports the five model types by name, so its clients see no scanner names (Atelier's grammar
+  has a `LexState` of its own); `AtelierLexers` re-exports the whole module, as wide as before.
