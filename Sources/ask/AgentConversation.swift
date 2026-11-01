@@ -123,6 +123,10 @@ final class AgentConversation: Conversation {
             )
     }
 
+    func withdraw(_ id: Int) -> Bool {
+        promptInput.withLock { $0 }?.withdraw(id: id) ?? false
+    }
+
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
         let input = PromptQueue()
         promptInput.withLock { $0 = input }

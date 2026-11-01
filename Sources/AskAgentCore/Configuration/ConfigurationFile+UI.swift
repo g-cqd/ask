@@ -22,7 +22,7 @@ extension ConfigurationFile {
                         section.localizedDurations =
                             try ConfigurationFile.word(container, key, name, ["words", "clock"]) == "words"
                     case "stopTwice": try decodeStopTwice(container.decode([String].self, forKey: key))
-                    case "mouse", "copyOnSelect", "tint", "separator", "padding", "markdown", "highlight",
+                    case "mouse", "copyOnSelect", "tint", "separator", "padding", "markdown", "highlight", "shimmer",
                         "leaveFinishedJob", "listAllModels":
                         decodeSwitch(
                             key.stringValue,
@@ -95,6 +95,7 @@ extension ConfigurationFile {
                 case "padding": section.padding = on
                 case "markdown": section.markdown = on
                 case "highlight": section.highlight = on
+                case "shimmer": section.shimmer = on
                 case "leaveFinishedJob": section.jobAutoReturnWhenFocused = on
                 default: section.onlyUsefulModels = !on  // listAllModels
             }

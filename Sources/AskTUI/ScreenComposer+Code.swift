@@ -7,13 +7,25 @@ extension ScreenComposer {
         lines(in: transcript, at: index, shown: transcript.shownCode(at: index), columns: columns, style: style)
     }
 
-    /// The same, for a caller that has already worked out what an assistant message shows.
+    /// The same, for a caller that has already worked out what an assistant message shows. A running block's header shimmers.
     static func lines(
         in transcript: Transcript,
         at index: Int,
         shown: ShownCode?,
         columns: Int,
         style: BlockStyle = .plain
+    ) -> [Line] {
+        let rows = stillLines(in: transcript, at: index, shown: shown, columns: columns, style: style)
+        guard transcript.shimmer, let progress = transcript.progress[index], progress.ended == nil else { return rows }
+        return shimmering(rows, block: index, frame: progress.frame)
+    }
+
+    private static func stillLines(
+        in transcript: Transcript,
+        at index: Int,
+        shown: ShownCode?,
+        columns: Int,
+        style: BlockStyle
     ) -> [Line] {
         let item = transcript.items[index]
         let spaced = index > 0 && isSpaced(item) && isSpaced(transcript.items[index - 1])

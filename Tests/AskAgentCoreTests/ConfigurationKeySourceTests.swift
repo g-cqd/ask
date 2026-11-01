@@ -22,6 +22,7 @@ struct ConfigurationKeySourceTests {
         padding: false,
         markdown: true,
         highlight: true,
+        shimmer: true,
         localizedDurations: true,
         spinner: .line,
         jobAutoReturnWhenFocused: true,

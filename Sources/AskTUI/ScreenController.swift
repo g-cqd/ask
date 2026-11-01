@@ -9,6 +9,8 @@ public struct ScreenController: Sendable {
     public enum Effect: Sendable, Equatable {
         case startRun(String)
         case queuePrompt(id: Int, text: String, followUp: Bool)
+        /// Take a queued message back, to edit it (roadmap 0174); ``ConversationUpdate/promptWithdrawn(id:withdrawn:)`` answers.
+        case withdrawPrompt(id: Int)
         case runCommand(name: String, arguments: String)
         /// Run a command beside the running turn, which goes on (roadmap 0113): it is not the screen's run.
         case runCommandBeside(name: String, arguments: String)
@@ -53,6 +55,8 @@ public struct ScreenController: Sendable {
     /// The commands whose lists were asked for and have not arrived, so a key does not ask twice.
     var asking: Set<String> = []
     var nextPromptID = 0
+    /// The queued message being taken back, until the agent answers (roadmap 0174).
+    var withdrawing: Int?
     /// The number of the quit window last opened, so a timer for an earlier one cannot close a later one.
     var quitGeneration = 0
     var acceptsInput = false
@@ -121,6 +125,7 @@ public struct ScreenController: Sendable {
         state.transcript.setOutputFoldLimits(lines: options.outputFoldLines, bytes: options.outputFoldBytes)
         state.transcript.setMarkdown(options.markdown)
         state.transcript.setHighlight(options.highlight)
+        state.transcript.shimmer = options.shimmer
         state.transcript.spinnerStyle = options.spinner
         state.transcript.localizedDurations = options.localizedDurations
         state.transcript.timeoutDisplay = options.timeoutDisplay
@@ -173,6 +178,7 @@ public struct ScreenController: Sendable {
     }
 
     mutating func edit(_ key: KeyEvent, columns: Int?, interrupt: Interrupt) -> [Effect] {
+        if key.keyCode == Key.up.rawValue, key.modifiers == .alt, let effects = takeBackQueued() { return effects }
         let indent = columns.map { PromptLayout.prefix(state.promptPrefix, columns: $0).count } ?? 0
         switch state.editor.apply(key, columns: columns, firstRowIndent: indent) {
             case .submitted(let line):

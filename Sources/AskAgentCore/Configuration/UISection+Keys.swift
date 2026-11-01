@@ -4,6 +4,7 @@ extension UISection {
     public func value(forKey key: String) -> String? {
         let flag = Self.flag
         switch key {
+            // @dl:accept -- one line per key, each reading its own setting: the table is the data
             case "mouse": return flag(mouse)
             case "copyOnSelect": return flag(copyOnSelect)
             case "fold.tools": return flag(foldTools)
@@ -22,6 +23,7 @@ extension UISection {
             case "padding": return flag(padding)
             case "markdown": return flag(markdown)
             case "highlight": return flag(highlight)
+            case "shimmer": return flag(shimmer)
             case "durations": return localizedDurations.map { $0 ? "words" : "clock" }
             case "spinner": return spinner?.rawValue
             case "showTimeout": return timeout?.rawValue

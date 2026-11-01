@@ -28,4 +28,11 @@ struct UsageTotalsTests {
     func `counts are shortened for a status line`(count: Int, text: String) {
         #expect(UsageTotals.short(count) == text)
     }
+
+    @Test func `a compaction says what it read, cached tokens included, into what (roadmap 0176)`() {
+        let usage = TokenUsage(input: 2_000, output: 3_100, cacheRead: 180_000, cacheCreation: 500)
+        #expect(UsageTotals.compactionTokens(usage) == "182k → 3.1k tokens")
+        #expect(UsageTotals.compactionTokens(TokenUsage(input: 900)) == nil, "no summary count, no header")
+        #expect(UsageTotals.compactionTokens(TokenUsage(output: 12)) == nil, "nothing read, no header")
+    }
 }

@@ -47,18 +47,24 @@ extension ScreenController {
 
     /// A click on the strip's row `index` as drawn: the same as selecting it and pressing Enter.
     mutating func clickStrip(row index: Int) -> [Effect] {
-        guard state.pendingApproval == nil, frame.stripIDs.indices.contains(index),
-            let runner = state.runners.first(where: { $0.id == frame.stripIDs[index] })
-        else { return [] }
+        guard state.pendingApproval == nil, frame.stripIDs.indices.contains(index) else { return [] }
+        return clickRunner(frame.stripIDs[index])
+    }
+
+    /// A click on the list's row for `id`: the main row goes back to the conversation, a runner's row shows its output.
+    private mutating func clickRunner(_ id: String) -> [Effect] {
+        if id == RunnerStrip.mainID {
+            leaveLane()
+            return []
+        }
+        guard let runner = state.runners.first(where: { $0.id == id }) else { return [] }
         return enterLane(runner)
     }
 
     /// A click on the sidebar's row `index`: the same as a click on the strip's row, Enter on that runner.
     mutating func clickSidebar(row index: Int) -> [Effect] {
-        guard state.pendingApproval == nil, frame.sidebarIDs.indices.contains(index),
-            let runner = state.runners.first(where: { $0.id == frame.sidebarIDs[index] })
-        else { return [] }
-        return enterLane(runner)
+        guard state.pendingApproval == nil, frame.sidebarIDs.indices.contains(index) else { return [] }
+        return clickRunner(frame.sidebarIDs[index])
     }
 
     /// Ctrl+\\, and the keyboard's way to the sidebar when the mouse is off.

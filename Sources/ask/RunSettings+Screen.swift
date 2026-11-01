@@ -10,6 +10,7 @@ extension RunSettings {
         let spinnerStyle = ui.spinner.flatMap { SpinnerStyle(rawValue: $0.rawValue) } ?? defaults.spinner
         let appearance = ui.appearance.flatMap { ScreenAppearance(rawValue: $0.rawValue) } ?? defaults.appearance
         var options = ScreenOptions(
+            // @dl:accept -- one argument per setting, each taking its configured value or its default: the list is the data
             mouse: ui.mouse ?? defaults.mouse,
             copyOnSelect: ui.copyOnSelect ?? defaults.copyOnSelect,
             foldTools: ui.foldTools ?? defaults.foldTools,
@@ -20,6 +21,7 @@ extension RunSettings {
             codeFoldLines: ui.codeFoldLines ?? defaults.codeFoldLines,
             markdown: ui.markdown ?? defaults.markdown,
             highlight: ui.highlight ?? defaults.highlight,
+            shimmer: ui.shimmer ?? defaults.shimmer,
             sidebar: ui.sidebarOpen ?? defaults.sidebar,
             verbose: verbose,
             prompt: ui.prompt ?? defaults.prompt,

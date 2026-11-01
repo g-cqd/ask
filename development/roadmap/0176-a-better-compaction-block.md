@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-11-01
 ---
@@ -18,3 +18,16 @@ compaction, ...) and content should be markdown rendered."
 - The summary drawn as Markdown (0151), folded by default like thinking.
 - Interrupted and failed compactions drawn as other interrupted and failed blocks are (0142, 0162).
 - Screenshots of the before and after for the owner, light and dark.
+
+## Done (2026-11-01)
+
+- The block is `compaction`; running, `compaction · earlier messages`; done, `compaction · 182k → 3.1k tokens`: what the summary
+  request read (input, cache reads and cache writes, so a cached context counts) into what the summary is
+  (`UsageTotals.compactionTokens`, from the `compacted` event's usage, which the screen used to drop). A provider that does not count
+  them, and a resumed session, keep `earlier messages`.
+- Opened with `ui.markdown` on, the summary is drawn as Markdown and dim (`ScreenComposer.summaryBlockLines`); its rows say they show
+  lines 1 and on of the block's text, under the header at line 0, so a selection copies the summary as written. Markdown off shows it
+  as written. Folded by default, as tool blocks are.
+- Interrupted and failed compactions were already drawn as other blocks are (0142, 0162); a test pins the interrupted one.
+- Tests: `CompactionBlockTests` (8), `UsageTotalsTests`; each new guard fails a test when removed.
+- Not done: the screenshots on light and dark pages; the text rows are what the tests check.

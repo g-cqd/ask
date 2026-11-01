@@ -46,4 +46,16 @@ struct SettingTypeErrorTests {
             }
         }
     }
+
+    @Test func `the retired spinners still load, and ui.shimmer takes true or false (roadmap 0171)`() throws {
+        for name in ["star", "dot"] {
+            let file = try ConfigurationFile.parse(Array(#"{"ui": {"spinner": "\#(name)"}}"#.utf8), path: "c.json")
+            #expect(file.ui?.spinner?.rawValue == name, "a file that names \(name) still loads")
+        }
+        #expect(!SpinnerPreference.allCases.contains(.star) && !SpinnerPreference.allCases.contains(.dot))
+        #expect(
+            try ConfigurationFile.parse(Array(#"{"ui": {"shimmer": false}}"#.utf8), path: "c.json").ui?.shimmer == false
+        )
+        #expect(refusal(#"{"ui": {"shimmer": "yes"}}"#).contains("use true or false"))
+    }
 }

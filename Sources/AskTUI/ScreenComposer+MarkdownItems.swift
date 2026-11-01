@@ -10,6 +10,7 @@ extension ScreenComposer {
     static func markdownItemLines(in transcript: Transcript, at index: Int, columns: Int, style: BlockStyle) -> [Line]?
     {
         guard transcript.markdown else { return nil }
+        if let rows = summaryBlockLines(in: transcript, at: index, columns: columns, style: style) { return rows }
         switch transcript.items[index] {
             case .user(let text):
                 let rows = styled(

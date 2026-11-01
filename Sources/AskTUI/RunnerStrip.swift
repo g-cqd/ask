@@ -6,6 +6,9 @@ struct RunnerStrip {
     var lines: [ScreenComposer.Line] = []
     var ids: [String] = []
 
+    /// The id of the row that goes back to the main conversation, first while a runner's lane is shown (roadmap 0175).
+    static let mainID = "\u{1}main"
+
     /// - Parameters:
     ///   - state: what the screen holds: the tree, the collapsed parents and the selection.
     ///   - available: the most rows it may take.
@@ -13,9 +16,19 @@ struct RunnerStrip {
     ///   - limit: the most rows it draws; the strip takes five, the sidebar every row it has.
     ///   - requiresOpen: whether the strip's own open state decides; the sidebar has its own.
     init(_ state: ScreenState, available: Int, columns: Int, capacity limit: Int = 5, requiresOpen: Bool = true) {
-        guard state.runnersOpen || !requiresOpen, !state.runners.isEmpty, available > 0 else { return }
+        // In a lane the list is the way back, so it shows whether or not it was open.
+        let inLane = state.lane != nil
+        guard state.runnersOpen || !requiresOpen || inLane, !state.runners.isEmpty || inLane, available > 0 else {
+            return
+        }
+        if inLane {
+            let fitted = ScreenComposer.ellipsized("main  back to the conversation", cells: columns)
+            lines.append(ScreenComposer.Line(text: fitted.shown + fitted.mark, style: Style(dim: true)))
+            ids.append(Self.mainID)
+        }
         let rows = state.runnerTree.visible(collapsed: state.collapsedRunners)
-        let capacity = Swift.min(limit, available)
+        let capacity = Swift.min(limit, available) - (inLane ? 1 : 0)
+        guard capacity > 0, !rows.isEmpty else { return }
         let shown = rows.count > capacity ? capacity - 1 : rows.count
         // The selected row stays in the window.
         let selected = rows.firstIndex { $0.row.runner.id == state.stripSelection }

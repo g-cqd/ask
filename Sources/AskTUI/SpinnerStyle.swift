@@ -7,13 +7,11 @@ public enum SpinnerStyle: String, Sendable, CaseIterable {
     case braillequarter
     case snake
     case line
-    case dot
-    case star
     case random
 
     /// Concrete non-random styles.
     public static let allConcrete: [SpinnerStyle] = [
-        .braille, .braillefull, .braillequarter, .snake, .line, .dot, .star
+        .braille, .braillefull, .braillequarter, .snake, .line
     ]
 
     /// The frames for this spinner style.
@@ -29,10 +27,6 @@ public enum SpinnerStyle: String, Sendable, CaseIterable {
                 return ["⠈", "⠐", "⠠", "⢀", "⡀", "⠄", "⠂", "⠁"]
             case .line:
                 return ["|", "/", "-", "\\"]
-            case .dot:
-                return ["·", "•", "·"]
-            case .star:
-                return ["✶", "✸", "✹", "✺", "✹", "✷"]
             case .random:
                 return Self.line.frames
         }
