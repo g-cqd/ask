@@ -44,7 +44,8 @@ struct RunnerProgressTests {
         controller.advanceProgress(at: start + .seconds(62))
         controller.setRunners([runner], at: start + .seconds(63))
         #expect(controller.state.runnerProgress[runner.id]?.started == start)
-        #expect(RunnerStrip(controller.state, available: 5, columns: 40).lines[0].text.hasSuffix("1:03 · /"))
+        // In the lane, the main row comes first (roadmap 0175).
+        #expect(RunnerStrip(controller.state, available: 5, columns: 40).lines[1].text.hasSuffix("1:03 · /"))
         controller.leaveLane()
         #expect(controller.state.runnerProgress[runner.id]?.started == start)
     }

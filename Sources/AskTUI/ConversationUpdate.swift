@@ -76,6 +76,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case askInput(id: Int, prompt: String, secret: Bool)
     /// The conversation did not take a queued message (a skill that cannot be loaded): it goes back to the input.
     case promptRefused(id: Int)
+    /// Whether queued message `id` was taken back before the run took it (roadmap 0174).
+    case promptWithdrawn(id: Int, withdrawn: Bool)
     /// A command run beside the screen's run ended (roadmap 0113).
     case besideEnded
     /// A runner's recent output, answering ``ScreenController/Effect/readRunnerOutput(id:)``.
@@ -93,7 +95,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case compacting(Bool)
     /// A compaction ended, with its summary or the reason it failed (roadmap 0105). It finishes the block `compacting(true)` started; with
     /// none running, as when a session is shown again, it is a block already done.
-    case compactionFinished(Transcript.ToolStatus, text: String)
+    /// `tokens`, when known, says what the compaction did in the block's header: `182k → 3.1k tokens` (roadmap 0176).
+    case compactionFinished(Transcript.ToolStatus, text: String, tokens: String? = nil)
     /// The run is over, however it ended.
     case runEnded
 }

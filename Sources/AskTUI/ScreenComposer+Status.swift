@@ -91,9 +91,6 @@ extension ScreenComposer {
                 StatusSegment(["press \(armed) again to abort", "\(armed.lowercased()) again to abort"], priority: 82)
             )
         }
-        if let lane = state.lane {
-            pieces.append(StatusSegment(["main › \(lane.name) · esc returns", "main › \(lane.name)"], priority: 65))
-        }
         if state.scrollback > 0 {
             let noun = state.scrollback == 1 ? "line" : "lines"
             pieces.append(StatusSegment("\(state.scrollback) \(noun) below", priority: 60, target: .below))

@@ -44,6 +44,15 @@ public struct UsageTotals: Sendable, Equatable {
     }
 
     /// 950, 1.2k, 13k, 1.42M, 12M. Two decimals in the millions, where one decimal let 100,000 tokens pass unseen (roadmap 0136).
+    /// What a compaction did, for its block's header (roadmap 0176): the tokens it read, cached ones included, into the tokens of its
+    /// summary, as `182k → 3.1k tokens`; nil when the provider did not count them.
+    public static func compactionTokens(_ usage: TokenUsage) -> String? {
+        guard let output = usage.output else { return nil }
+        let read = (usage.input ?? 0) + (usage.cacheRead ?? 0) + (usage.cacheCreation ?? 0)
+        guard read > 0 else { return nil }
+        return "\(short(read)) → \(short(output)) tokens"
+    }
+
     static func short(_ count: Int) -> String {
         switch count {
             case ..<1_000: return "\(count)"

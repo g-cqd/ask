@@ -9,7 +9,8 @@ extension ScreenController {
             case .compacting(let active):
                 state.compacting = active
                 if active { startCompactionBlock() }
-            case .compactionFinished(let status, let text): finishCompactionBlock(status, text: text)
+            case .compactionFinished(let status, let text, let tokens):
+                finishCompactionBlock(status, text: text, tokens: tokens)
             case .reconnecting(let waiting):
                 state.reconnecting = waiting
                 if waiting { state.waitingForNetwork = false }
@@ -26,13 +27,16 @@ extension ScreenController {
     }
 
     mutating func startCompactionBlock() {
-        state.transcript.startTool(name: "compact", summary: "earlier messages", id: Self.compactionBlock)
+        state.transcript.startTool(name: "compaction", summary: "earlier messages", id: Self.compactionBlock)
+        state.transcript.markSummary(id: Self.compactionBlock)
     }
 
     /// Ends the running compaction block with `text`, the summary or the reason; when none was started, adds one that is already done.
-    mutating func finishCompactionBlock(_ status: Transcript.ToolStatus, text: String) {
+    /// `tokens`, when given, takes the header's place: what was summarised into what (roadmap 0176).
+    mutating func finishCompactionBlock(_ status: Transcript.ToolStatus, text: String, tokens: String? = nil) {
         if !state.compacting { startCompactionBlock() }
         state.compacting = false
+        if let tokens { state.transcript.renameTool(summary: tokens, id: Self.compactionBlock) }
         state.transcript.finishTool(status, output: text, id: Self.compactionBlock)
     }
 }

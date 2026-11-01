@@ -44,7 +44,7 @@ struct RunnerApprovalTests {
         #expect(press(0x79, &rig).isEmpty)
         #expect(press(0x0D, &rig) == [.answerApproval(id: 4, .once)])
         #expect(
-            !status(rig).contains("Allow it?") && status(rig).contains("main › job-1")
+            !status(rig).contains("Allow it?") && rig.controller.state.lane != nil
         )
     }
 

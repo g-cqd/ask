@@ -36,6 +36,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     public var markdown: Bool?
     /// `ui.highlight`: whether fenced code is coloured by its language (`"on"`, default) or drawn in the code style (`"off"`).
     public var highlight: Bool?
+    /// `ui.shimmer`: whether a running block's header shimmers (`true`, default) or stays still (roadmap 0171).
+    public var shimmer: Bool?
     /// `ui.localizedDurations`: localized elapsed units (`"on"`, default) or a compact clock (`"off"`).
     public var localizedDurations: Bool?
     /// `ui.spinner`: the spinner style used for progress and status line indicators.
@@ -79,6 +81,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         padding: Bool? = nil,
         markdown: Bool? = nil,
         highlight: Bool? = nil,
+        shimmer: Bool? = nil,
         localizedDurations: Bool? = nil,
         spinner: SpinnerPreference? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
@@ -92,6 +95,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         appearance: AppearancePreference? = nil,
         timeout: TimeoutPreference? = nil,
         timeoutLabel: String? = nil,
+        // @dl:accept -- optional settings are schema data: each parameter names a key
         sessionColor: SessionColorPreference? = nil
     ) {
         self.sessionColor = sessionColor
@@ -113,6 +117,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
         self.padding = padding
         self.markdown = markdown
         self.highlight = highlight
+        self.shimmer = shimmer
         self.localizedDurations = localizedDurations
         self.spinner = spinner
         self.jobAutoReturnWhenFocused = jobAutoReturnWhenFocused
@@ -145,7 +150,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
     private static let lookKeys = [
         // @dl:accept -- a list of key names is data, like any other list of names
         "inputPrefix", "tint", "appearance", "separator", "padding", "markdown", "highlight", "durations",
-        "spinner", "showTimeout", "timeoutLabel"
+        "spinner", "shimmer", "showTimeout", "timeoutLabel"
     ]
     private static let behaviorKeys = [
         "leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels", "sessionColor"
@@ -172,6 +177,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             padding: section.padding ?? padding,
             markdown: section.markdown ?? markdown,
             highlight: section.highlight ?? highlight,
+            shimmer: section.shimmer ?? shimmer,
             localizedDurations: section.localizedDurations ?? localizedDurations,
             spinner: section.spinner ?? spinner,
             jobAutoReturnWhenFocused: section.jobAutoReturnWhenFocused ?? jobAutoReturnWhenFocused,

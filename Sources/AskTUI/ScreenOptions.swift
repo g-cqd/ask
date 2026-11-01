@@ -22,6 +22,8 @@ public struct ScreenOptions: Sendable, Equatable {
     /// Whether fenced code is coloured by the language its fence names (`ui.highlight`, roadmap 0152), in the terminal's palette. Off, it
     /// draws in the code style, as before highlighting.
     public var highlight: Bool
+    /// Whether a running block's header shimmers, a brighter stretch moving along it on the spinner's tick (`ui.shimmer`, roadmap 0171).
+    public var shimmer: Bool
     /// Whether the runner sidebar starts open (`ui.sidebar`). Ctrl+\ and `/sidebar` toggle it; it needs 70 columns.
     public var sidebar: Bool
     /// Whether details are shown: what ask did on its own account, such as the sandbox in force or a build that appeared (`--verbose`).
@@ -79,6 +81,7 @@ public struct ScreenOptions: Sendable, Equatable {
         codeFoldLines: Int = 20,
         markdown: Bool = true,
         highlight: Bool = true,
+        shimmer: Bool = true,
         sidebar: Bool = false,
         verbose: Bool = false,
         prompt: String = "",
@@ -104,6 +107,7 @@ public struct ScreenOptions: Sendable, Equatable {
         self.codeFoldLines = Swift.max(1, codeFoldLines)
         self.markdown = markdown
         self.highlight = highlight
+        self.shimmer = shimmer
         self.sidebar = sidebar
         self.verbose = verbose
         self.prompt = prompt

@@ -145,4 +145,46 @@ struct SteeringControllerTests {
         #expect(controller.state.editor.text == "Keep me")
         #expect(controller.handle(.runEnded).isEmpty)
     }
+
+    @Test
+    func `Option+Up takes the newest queued message back into the input once the agent lets it go (roadmap 0174)`() {
+        var controller = ScreenController(label: "m", options: .legacy)
+        _ = submit("Start", to: &controller)
+        _ = submit("Now", to: &controller)
+        _ = submit("Then", to: &controller)
+        let key = KeyEvent(keyCode: Key.up.rawValue, modifiers: .alt)
+        #expect(controller.handle(.key(key), pageRows: 10) == [.withdrawPrompt(id: 1)])
+        #expect(controller.handle(.key(key), pageRows: 10).isEmpty, "one withdrawal at a time")
+        controller.handle(.promptWithdrawn(id: 1, withdrawn: true))
+        #expect(controller.state.editor.text == "Then")
+        #expect(!controller.state.transcript.items.contains(.queued("Then")))
+        // Queued again, it goes last, with a new id; the one still queued keeps its place.
+        #expect(submit(" again", to: &controller) == [.queuePrompt(id: 2, text: "Then again", followUp: false)])
+        controller.handle(.promptAccepted(id: 0, text: "Now"))
+        #expect(controller.state.transcript.items.contains(.user("Now")))
+    }
+
+    @Test func `a message the agent already took stays sent, and the input is left as it was`() {
+        var controller = ScreenController(label: "m", options: .legacy)
+        _ = submit("Start", to: &controller)
+        _ = submit("Now", to: &controller)
+        let key = KeyEvent(keyCode: Key.up.rawValue, modifiers: .alt)
+        #expect(controller.handle(.key(key), pageRows: 10) == [.withdrawPrompt(id: 0)])
+        controller.handle(.promptWithdrawn(id: 0, withdrawn: false))
+        #expect(controller.state.editor.text.isEmpty)
+        #expect(controller.state.transcript.items.contains(.queued("Now")))
+        controller.handle(.promptAccepted(id: 0, text: "Now"))
+        #expect(controller.state.transcript.items.contains(.user("Now")))
+    }
+
+    @Test func `with text in the input, or nothing queued, Option+Up takes nothing back`() {
+        var controller = ScreenController(label: "m", options: .legacy)
+        let key = KeyEvent(keyCode: Key.up.rawValue, modifiers: .alt)
+        _ = submit("Start", to: &controller)
+        #expect(controller.handle(.key(key), pageRows: 10).isEmpty)
+        _ = submit("Now", to: &controller)
+        _ = controller.handle(.paste("draft"), pageRows: 10)
+        #expect(controller.handle(.key(key), pageRows: 10).isEmpty)
+        #expect(controller.state.editor.text == "draft")
+    }
 }

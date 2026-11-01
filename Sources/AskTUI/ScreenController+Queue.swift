@@ -91,11 +91,17 @@ extension ScreenController {
 
     /// A queued message the conversation did not take: no longer waiting, said so where it stood, and back in the input.
     mutating func refuseQueuedPrompt(id: Int) {
+        guard let prompt = pending.first(where: { $0.id == id }) else { return }
+        returnToInput(id: id, leaving: .notice("Not sent: \(prompt.text)", isError: true))
+    }
+
+    /// Takes queued message `id` out of the queue and back into the input, leaving `item` where its queued block was.
+    mutating func returnToInput(id: Int, leaving item: Transcript.Item) {
         guard let pendingIndex = pending.firstIndex(where: { $0.id == id }) else { return }
         let prompt = pending.remove(at: pendingIndex)
         let index = prompt.transcriptIndex
         if state.transcript.items.indices.contains(index), state.transcript.items[index] == .queued(prompt.text) {
-            state.transcript.replace(at: index, with: .notice("Not sent: \(prompt.text)", isError: true))
+            state.transcript.replace(at: index, with: item)
         }
         fill(draft: prompt.text)
     }

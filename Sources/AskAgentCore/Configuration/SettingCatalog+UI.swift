@@ -12,6 +12,7 @@ extension SettingCatalog {
         row("ui.padding", .boolean, "true", "true", "A row of padding around each block."),
         row("ui.markdown", .boolean, "true", "true", "Markdown drawn everywhere it can be."),
         row("ui.highlight", .boolean, "true", "true", "Fenced code coloured by the language its fence names."),
+        row("ui.shimmer", .boolean, "true", "true", "A running block's header shimmers."),
         row("ui.leaveFinishedJob", .boolean, "true", "true", "When a job you watch ends, go back to the conversation."),
         row(
             "ui.sessionColor",

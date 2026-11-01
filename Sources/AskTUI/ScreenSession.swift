@@ -53,45 +53,6 @@ final class ScreenSession {
         (events, sink) = AsyncStream<ScreenEvent>.makeStream()
     }
 
-    func run(resizes: AsyncStream<Void>, appearances: AsyncStream<Void>) async throws -> ScreenExit {
-        let input = input
-        let sink = sink
-        let forwarding = Task {
-            for await event in input.events { sink.yield(.input(event)) }
-            sink.yield(.inputEnded)
-        }
-        let resizing = Task {
-            for await _ in resizes { sink.yield(.resize) }
-        }
-        let watching = conversation.background { sink.yield(.update($0)) }
-        input.start()
-        let recolouring = SystemAppearance.askAgain(after: appearances) { sink.yield(.askColours) }
-        defer { recolouring.cancel() }
-        colours?.ask()
-        defer {
-            forwarding.cancel()
-            resizing.cancel()
-            watching?.cancel()
-            input.stop()
-        }
-        defer {
-            autoscroll.stop()
-            progress.stop()
-            runnerOutput.stop()
-            for task in jobOutput.values { task.cancel() }
-        }
-        render(full: true)
-        for await event in events {
-            if let taken = colours?.take(event) {
-                if case .page(let page) = taken { controller.state.adopt(page) }
-                render(full: true)
-                continue
-            }
-            guard await handle(event) else { return exit }
-        }
-        return exit
-    }
-
     /// Applies one event and renders. Returns false when the screen should close.
     private func handle(_ event: ScreenEvent) async -> Bool {
         var effects: [ScreenController.Effect] = []
@@ -167,6 +128,8 @@ final class ScreenSession {
                 run = conversation.start(prompt) { sink.yield(.update($0)) }
             case .queuePrompt(let id, let text, let followUp):
                 conversation.enqueue(text, id: id, followUp: followUp)
+            case .withdrawPrompt(let id):
+                sink.yield(.update(.promptWithdrawn(id: id, withdrawn: conversation.withdraw(id))))
             case .runCommand(let name, let arguments):
                 run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }
             case .runCommandBeside(let name, let arguments):
@@ -223,6 +186,45 @@ final class ScreenSession {
 
 /// The screen's timers and frames.
 extension ScreenSession {
+    func run(resizes: AsyncStream<Void>, appearances: AsyncStream<Void>) async throws -> ScreenExit {
+        let input = input
+        let sink = sink
+        let forwarding = Task {
+            for await event in input.events { sink.yield(.input(event)) }
+            sink.yield(.inputEnded)
+        }
+        let resizing = Task {
+            for await _ in resizes { sink.yield(.resize) }
+        }
+        let watching = conversation.background { sink.yield(.update($0)) }
+        input.start()
+        let recolouring = SystemAppearance.askAgain(after: appearances) { sink.yield(.askColours) }
+        defer { recolouring.cancel() }
+        colours?.ask()
+        defer {
+            forwarding.cancel()
+            resizing.cancel()
+            watching?.cancel()
+            input.stop()
+        }
+        defer {
+            autoscroll.stop()
+            progress.stop()
+            runnerOutput.stop()
+            for task in jobOutput.values { task.cancel() }
+        }
+        render(full: true)
+        for await event in events {
+            if let taken = colours?.take(event) {
+                if case .page(let page) = taken { controller.state.adopt(page) }
+                render(full: true)
+                continue
+            }
+            guard await handle(event) else { return exit }
+        }
+        return exit
+    }
+
     private func syncAutoscroll() {
         let sink = sink
         autoscroll.update(wanted: controller.isAutoscrolling) { sink.yield(.tick) }

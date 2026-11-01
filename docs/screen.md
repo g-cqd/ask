@@ -17,7 +17,8 @@ The status line starts with a spinner while ask works. It reads `Compacting...` 
   runs, tells the model to carry on where it stopped. A sentence that merely starts with one of those words is sent as written.
 
 While the model is working, **Enter** queues your message as steering: it is sent after the model's current step. `/follow-up TEXT` (or
-**Alt+Enter**, where the terminal reports it) queues a message for when the turn is over.
+**Alt+Enter**, where the terminal reports it) queues a message for when the turn is over. **Option+Up**, with an empty input, takes the newest
+queued message back into the input to edit, as long as the model has not taken it yet; Enter queues it again, last.
 
 ## Stopping and leaving
 
@@ -56,6 +57,8 @@ conversation copies what is shown, as soon as you let go.
 - A shell block is headed by its limits, then the command: `shell · timeout 5 min · swift build`; a timeout equal to the default is not
   written (`ui.timeout`, `ui.timeoutLabel`). Folded, a long command is cut with `…`
   before the status; opened, the command is shown in full and brighter, with its output below.
+- A compaction is a block of its own, headed by what it did: `compaction · 182k → 3.1k tokens`, the tokens it read into the tokens
+  of its summary, with its duration and status. Opened, it shows the summary, drawn as Markdown.
 - An `edit` block, opened, shows the change as lines: `- ` before each line it removes, on a red tint, `+ ` before each line it adds, on
   a green one, and the lines it keeps between them. With `ui.highlight` on, the code is coloured by the file's language. Copying the
   block copies those lines.
@@ -81,7 +84,7 @@ this tool.
 ## Background jobs
 
 The model can run commands in the background. The status line counts them (`· 2 jobs`). Click the count, or type `/jobs`, to list them
-below the input: Up and Down choose one, Enter shows its output in place of the conversation, and Esc goes back. On a wide screen,
+below the input: Up and Down choose one, Enter shows its output in place of the conversation, and Esc, or a click on the list's first row, `main`, goes back. On a wide screen,
 `/sidebar` or **Ctrl+\\** shows the same list beside the conversation. Jobs never outlive ask.
 
 ## Commands

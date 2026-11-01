@@ -38,6 +38,9 @@ public struct Transcript: Sendable, Equatable {
     var toolBlocks: [String: Int] = [:]
     /// The tool blocks whose input is a command, which heads the block (roadmap 0080).
     var commandBlocks: Set<Int> = []
+    var summaryBlocks: Set<Int> = []  // A compaction's and other summaries ask wrote: see Transcript+Summary.swift.
+    /// Whether a running block's header shimmers (`ui.shimmer`, roadmap 0171).
+    public var shimmer = true
     /// The blocks still going when the person stopped the turn (roadmap 0142), drawn on the interruption tint.
     var interrupted: Set<Int> = []
     var jobBlocks: [String: Int] = [:]
@@ -93,6 +96,7 @@ public struct Transcript: Sendable, Equatable {
         progress.removeAll(keepingCapacity: true)
         toolBlocks.removeAll(keepingCapacity: true)
         commandBlocks.removeAll(keepingCapacity: true)
+        summaryBlocks.removeAll(keepingCapacity: true)
         interrupted.removeAll(keepingCapacity: true)
         jobBlocks.removeAll(keepingCapacity: true)
         replacements.removeAll(keepingCapacity: true)

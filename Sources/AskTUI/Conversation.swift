@@ -12,6 +12,10 @@ public protocol Conversation: Sendable {
     /// Until then the screen owns a copy, which it starts after normal completion or restores on failure.
     func enqueue(_ text: String, id: Int, followUp: Bool)
 
+    /// Takes back queued message `id` before the run takes it (roadmap 0174).
+    /// - Returns: false when the run has taken it, or it is not queued.
+    func withdraw(_ id: Int) -> Bool
+
     /// The user's answer to the question ``ConversationUpdate/askApproval(id:question:)`` asked.
     func answer(approval id: Int, with choice: ApprovalChoice)
     /// The person's answers to the questions ``ConversationUpdate/askQuestions(id:questions:)`` asked, or nil when they declined.
@@ -74,6 +78,8 @@ public protocol Conversation: Sendable {
 }
 
 extension Conversation {
+    public func withdraw(_ id: Int) -> Bool { false }
+
     /// No in-flight input; the screen starts unacknowledged messages after the current run ends.
     public func enqueue(_ text: String, id: Int, followUp: Bool) {}
 

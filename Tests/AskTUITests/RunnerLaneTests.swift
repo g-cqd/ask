@@ -92,7 +92,9 @@ struct RunnerLaneTests {
         rig.controller.handle(.runnerOutput(id: "job-2", text: "listening on 8080\nGET /"))
         rig.draw()
         #expect(screen(rig).contains("listening on 8080") && screen(rig).contains("GET /"))
-        #expect(screen(rig).contains("main › job-2 · esc returns"))
+        // The way back is the job list's first row, not a hint in the status line (roadmap 0175).
+        #expect(rig.text(row: rig.controller.frame.stripFirstRow).hasPrefix("main"))
+        #expect(!screen(rig).contains("esc returns"))
         #expect(rig.controller.state.stripSelection == nil)
     }
 
@@ -221,5 +223,27 @@ struct RunnerLaneTests {
         for _ in 0 ..< 9 { press(Key.down.rawValue, &rig) }
         #expect(rig.controller.state.stripSelection == "job-9")
         #expect(rig.controller.frame.stripIDs.contains("job-9") && rig.controller.frame.stripIDs.count == 4)
+    }
+
+    @Test func `in a lane the job list starts with a main row, and a click on it goes back (roadmap 0175)`() {
+        var rig = rig()
+        press(Key.down.rawValue, &rig)
+        press(Key.enter.rawValue, &rig)
+        let first = rig.controller.frame.stripFirstRow
+        #expect(rig.text(row: first).hasPrefix("main"))
+        #expect(rig.text(row: first + 1).contains("job-1") && rig.text(row: first + 2).contains("job-2"))
+        #expect(rig.click(row: first, col: 1).isEmpty)
+        rig.draw()
+        #expect(rig.controller.state.lane == nil && screen(rig).contains("second"))
+        #expect(!screen(rig).contains("main  "), "no main row outside a lane")
+    }
+
+    @Test func `the main row shows in a lane even with the job list closed`() {
+        var rig = rig()
+        press(Key.down.rawValue, &rig)
+        press(Key.enter.rawValue, &rig)
+        rig.controller.state.runnersOpen = false
+        rig.draw()
+        #expect(rig.text(row: rig.controller.frame.stripFirstRow).hasPrefix("main"))
     }
 }

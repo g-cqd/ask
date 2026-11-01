@@ -52,6 +52,9 @@
     // Fenced code coloured by the language its fence names. Default: true.
     "highlight": true,
 
+    // A running block's header shimmers. Default: true.
+    "shimmer": true,
+
     // When a job you watch ends, go back to the conversation. Default: true.
     "leaveFinishedJob": true,
 
@@ -99,7 +102,7 @@
     // Elapsed times as 1 hr, 40 min or as 1:40:00. Default: words. One of: words, clock.
     "durations": "words",
 
-    // The spinner. Default: line. One of: braille, braillefull, braillequarter, snake, line, dot, star, random.
+    // The spinner. Default: line. One of: braille, braillefull, braillequarter, snake, line, random.
     "spinner": "line",
 
     // When a command's timeout is written in its header. Default: auto. One of: auto, always, never.

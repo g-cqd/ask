@@ -42,6 +42,7 @@ extension ScreenController {
             case .runEnded: return runEnded()
             case .besideEnded: besideEnded()
             case .promptRefused(let id): refuseQueuedPrompt(id: id)
+            case .promptWithdrawn(let id, let withdrawn): promptWithdrawn(id: id, withdrawn: withdrawn)
         }
         return []
     }
