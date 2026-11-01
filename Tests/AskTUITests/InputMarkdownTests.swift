@@ -87,6 +87,37 @@ struct InputMarkdownTests {
         )
     }
 
+    private static let accented = [
+        "# Café", "Un **gras** et `code` 🙂.", "", "- un", "- deux **é**", "", "```", "**pas gras** 漢字", "```", "",
+        "> cité _é_", "", "ligne 🇫🇷 simple", ""
+    ]
+    private static let crlf = [
+        "# Title\r", "Some **bold** and `code`.\r", "\r", "- one\r", "- two **x**", "", "```", "**not bold**", "```",
+        "",
+        "> quoted _it_\r", "", "plain line", ""
+    ]
+
+    /// The same with characters of several bytes, then with CRLF line endings, before the window: there a character offset is not a
+    /// byte offset. Each draft has one of the two only, so neither hides the other.
+    @Test(arguments: [13, 268, 811, 1_487], [accented, crlf])
+    func `a window of a long draft with accents or CRLF is coloured as the whole draft colours it`(
+        firstLine: Int,
+        pieces: [String]
+    ) {
+        let lines = (0 ..< 1_500).map { pieces[$0 % pieces.count] }
+        let text = lines.joined(separator: "\n")
+        // Character offsets of the joined text: a line ending in \r and the line feed after it are one character.
+        let starts = lines.reduce(into: [0]) { $0.append($0.last! + $1.count + ($1.hasSuffix("\r") ? 0 : 1)) }
+        let visible = starts[firstLine] ..< starts[Swift.min(firstLine + 12, lines.count)]
+        let full = InputMarkdown.spans(of: text).flatMap { span in span.characters.map { ($0, span.style) } }
+            .filter { visible.contains($0.0) }
+        let windowed = InputMarkdown.spans(of: text, visible: visible)
+            .flatMap { span in span.characters.map { ($0, span.style) } }
+            .filter { visible.contains($0.0) }
+        #expect(!full.isEmpty, "the window holds marks to compare")
+        #expect(windowed.map(\.0) == full.map(\.0) && windowed.map(\.1) == full.map(\.1), "lines \(firstLine)")
+    }
+
     @Test func `the screen draws the draft exactly as typed, with the marks coloured`() {
         var rig = PointerRig(options: ScreenOptions(prompt: "ask> ", tint: false, separator: false, padding: false))
         _ = rig.controller.handle(.paste("say **hi**"), pageRows: 10)
