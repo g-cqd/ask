@@ -65,7 +65,7 @@ struct IdeasToolTests {
 
     @Test
     func `before a session there are no ideas, and the tool says so`() async throws {
-        let output = await IdeasTool(board: IdeaBoard())
+        let output = await IdeasTool(board: IdeaBoard(), tasks: TaskBoard())
             .run(try JSONObject(validating: Array(#"{"read":{}}"#.utf8)), in: context)
         #expect(output.isError)
     }

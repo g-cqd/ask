@@ -98,7 +98,7 @@ struct TasksToolTests {
     @Test
     func `the definitions stay lean and are valid JSON`() throws {
         let tasks = TasksTool(board: TaskBoard()).definition
-        let ideas = IdeasTool(board: IdeaBoard()).definition
+        let ideas = IdeasTool(board: IdeaBoard(), tasks: TaskBoard()).definition
         _ = try JSONObject(validating: tasks.inputSchema.bytes)
         _ = try JSONObject(validating: ideas.inputSchema.bytes)
         let bytes = [tasks, ideas].map { $0.description.utf8.count + $0.inputSchema.bytes.count }
