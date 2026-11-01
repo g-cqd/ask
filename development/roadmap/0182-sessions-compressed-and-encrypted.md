@@ -56,6 +56,9 @@ task and idea store (0179, 0180).
 
 ## Still owed
 
+- Idea i1 (2026-11-01): the first-start question ("encrypt sessions?") and the password are asked inside the screen once ask has
+  drawn, as a question with choices (0117's tool picker) and hidden input, not on the terminal before the first frame. Print runs and
+  runs without a terminal keep today's path.
 - ~~Plaintext left behind~~ Done, 2026-11-01: `/encrypt on` seals the session's pictures again and removes their clear copies unless
   another session of the project may name them (plain and compressed files are searched, encrypted ones name pictures by HMAC, a file
   that cannot be read keeps every copy); 2 tests, 4 guards mutated. A rewritten file's old blocks may survive on the drive until reused,

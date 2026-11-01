@@ -50,6 +50,14 @@ public final class ChangeBoard<List: ChangeList>: Sendable {
         try attached.convert(to: format)
     }
 
+    /// Plans on the current list and keeps the change the plan returns, if any (ADR-0141); nil before a session is attached.
+    public func update<Answer: Sendable>(
+        _ make: (List) throws -> (change: List.Change?, answer: Answer)
+    ) throws -> (list: List, answer: Answer)? {
+        guard let attached = log.withLock({ $0 }) else { return nil }
+        return try attached.update(make)
+    }
+
     /// The list of the session at `original` copied for its fork at `fork`, when the list is the session's own.
     public static func copyForFork(from original: String, to fork: String, scope: TaskScope) {
         guard scope == .session else { return }

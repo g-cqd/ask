@@ -19,16 +19,27 @@ extension ChangeLog {
             if let last = records.last, !last.isEmpty { state.clean = false }
             records.removeLast()
         }
-        for record in records {
-            guard let change = try? AemiJSON.JSONDecoder().decode(List.Change.self, from: Array(record)),
-                (try? state.list.apply(change)) != nil
-            else {
-                state.clean = false
-                continue
-            }
-            state.changes.append(change)
-        }
+        for record in records { replay(record, into: &state) }
         return state
+    }
+
+    /// One record made, or dropped when it does not read or apply; one of a kind a later ask wrote makes the list read-only.
+    private static func replay(_ record: ArraySlice<UInt8>, into state: inout State) {
+        let change: List.Change
+        do {
+            change = try AemiJSON.JSONDecoder().decode(List.Change.self, from: Array(record))
+        } catch let newer as ListRecordError {
+            state.newerKind = newer.kind
+            return
+        } catch {
+            state.clean = false
+            return
+        }
+        guard (try? state.list.apply(change)) != nil else {
+            state.clean = false
+            return
+        }
+        state.changes.append(change)
     }
 
     /// A framed file's records, its format, key and whether it ended cleanly kept in `state`, with a writer to append to it when so.

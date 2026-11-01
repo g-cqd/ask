@@ -29,3 +29,15 @@ same hook points, `dlopen` of a dylib in process rather than JSON-RPC over stdio
 
 A measured hook that a subprocess cannot serve within budget, an ADR choosing the entry point and the consent, and one plugin loaded, called and refused
 when unsigned, with tests. Not before 0033's hook points exist.
+
+## Owner (2026-11-01, ideas i3 and i2): a dylib platform beside MCP
+
+- A developer extends ask with dylibs for high-performance features; the first surface is tools, LSP servers and hooks.
+- **Beside MCP, not instead of it:** a dylib is one more source of tools, as MCP servers and ask's own are. ADR-0123 keeps the
+  child-process host for hooks; this entry's in-process route is the fast one for all three surfaces. A design record says how the two
+  hook routes relate.
+- Owed, in the design record before code: the binary interface (a C entry point and a versioned table: Swift has no stable binary
+  interface for this), code signing and library validation under the hardened runtime, trust per project as for skills and MCP, what
+  the sandbox means for code that runs inside ask, and the cold-start budget (a library loaded on first use, not at launch).
+- The first consumer is 0190 (a Swift edition), whose swift-search tool would be such a dylib.
+

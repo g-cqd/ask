@@ -4,4 +4,6 @@ public enum IdeaListError: Error, Equatable, Sendable {
     case emptyText
     /// A new idea with an id given before.
     case taken(Int)
+    /// A batch inside a batch: never written, refused when read.
+    case nested
 }

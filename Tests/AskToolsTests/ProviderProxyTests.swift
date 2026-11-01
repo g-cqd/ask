@@ -49,11 +49,17 @@ struct ProviderProxyTests {
         var timeout = timeval(tv_sec: 2, tv_usec: 0)
         setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
         var received: [UInt8] = []
-        for message in messages {
+        for (index, message) in messages.enumerated() {
             _ = message.utf8CString.withUnsafeBufferPointer { write(client, $0.baseAddress, $0.count - 1) }
+            // TCP may split what comes back, or send it later than one read waits: read until the reply to this message is whole
+            // (a head ends with a blank line; an echo ends with what was sent), the peer closes, or the timeout passes.
+            let whole = index == 0 ? Array("\r\n\r\n".utf8) : Array(message.utf8)
             var buffer = [UInt8](repeating: 0, count: limit)
-            let count = read(client, &buffer, buffer.count)
-            if count > 0 { received += buffer.prefix(count) }
+            while !received.ends(with: whole), received.count < limit {
+                let count = read(client, &buffer, buffer.count)
+                guard count > 0 else { break }
+                received += buffer.prefix(count)
+            }
         }
         return String(decoding: received, as: UTF8.self)
     }
@@ -83,5 +89,11 @@ struct ProviderProxyTests {
         #expect(proxy.environment["https_proxy"] == proxy.environment["HTTPS_PROXY"])
         #expect(proxy.environment["ALL_PROXY"] == proxy.environment["HTTPS_PROXY"])
         #expect(proxy.environment["NO_PROXY"] == "")
+    }
+}
+
+extension Array where Element == UInt8 {
+    fileprivate func ends(with suffix: [UInt8]) -> Bool {
+        count >= suffix.count && Array(self[(count - suffix.count)...]) == suffix
     }
 }

@@ -17,12 +17,19 @@ public struct IdeaList: ChangeList {
 
     /// The change that keeps `text`, verbatim, as the next idea, had at `time`.
     public func adding(_ text: String, at time: Int) -> IdeaChange {
+        // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
         .add(Idea(id: nextID, text: text, made: time, edited: nil, state: .new))
     }
 
     /// Makes `change`, or refuses it and leaves the ideas as they were.
     // @dl:accept -- the tasks and the ideas are two lists of one store: their declarations, add guards and id lookups share a shape over different fields
     public mutating func apply(_ change: IdeaChange) throws(IdeaListError) {
+        var next = self
+        try next.make(change)
+        self = next
+    }
+
+    private mutating func make(_ change: IdeaChange) throws(IdeaListError) {
         switch change {
             case .add(let idea):
                 guard idea.id >= nextID else { throw .taken(idea.id) }
@@ -36,6 +43,14 @@ public struct IdeaList: ChangeList {
                 ideas[index].edited = time
             // @dl:accept -- the tasks and the ideas are two lists of one store: their declarations, add guards and id lookups share a shape over different fields
             case .state(let id, let state): ideas[try place(id)].state = state
+            case .link(let id, let task):
+                let index = try place(id)
+                if !ideas[index].tasks.contains(task) { ideas[index].tasks.append(task) }
+            case .batch(let changes):
+                for change in changes {
+                    if case .batch = change { throw .nested }
+                    try make(change)
+                }
         }
     }
 

@@ -42,6 +42,7 @@ public struct MCPServerSetting: Sendable, Equatable {
         headers: [String: String] = [:],
         tools: [String]? = nil,
         enabled: Bool = true,
+        // @dl:accept -- a memberwise initialiser or a field table reads like any other of its kind; the fields are the data
         mode: Mode? = nil,
         maxDirectTools: Int? = nil
     ) {
