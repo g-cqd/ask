@@ -25,7 +25,7 @@ final class Deflater {
 
     /// `record` compressed, through its sync flush.
     func compress(_ record: [UInt8]) throws(FramedFileError) -> [UInt8] {
-        guard let bytes = stream.run(record[...], step: { unsafe deflate($0, Z_SYNC_FLUSH) }) else {
+        guard case .bytes(let bytes) = stream.run(record[...], step: { unsafe deflate($0, Z_SYNC_FLUSH) }) else {
             throw .compression
         }
         return bytes

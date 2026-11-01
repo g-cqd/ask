@@ -23,12 +23,17 @@ struct FramedWriter: ~Copyable {
     /// A writer that continues a file read cleanly, after its last frame.
     init(resuming read: FramedRead, key: SymmetricKey?) throws(FramedFileError) {
         guard read.ending == .clean else { throw .notResumable }
-        guard !read.header.encrypted || key != nil else { throw .needsKey }
-        let deflater = read.header.compressed ? try Deflater() : nil
-        header = read.header
-        self.key = read.header.encrypted ? key : nil
+        try self.init(continuing: read.header, after: read.frameCount, key: key)
+    }
+
+    /// A writer that appends to the file `header` begins, after its `frameCount` frames, which were read cleanly.
+    init(continuing header: FramedHeader, after frameCount: Int, key: SymmetricKey?) throws(FramedFileError) {
+        guard !header.encrypted || key != nil else { throw .needsKey }
+        let deflater = header.compressed ? try Deflater() : nil
+        self.header = header
+        self.key = header.encrypted ? key : nil
         self.deflater = deflater
-        index = read.frameCount
+        index = frameCount
     }
 
     /// The bytes that append `record`: its frame.

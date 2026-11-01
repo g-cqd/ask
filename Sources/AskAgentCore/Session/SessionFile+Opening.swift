@@ -10,11 +10,16 @@ extension SessionFile {
     /// - Returns: the open session.
     /// - Throws: ``SessionFileError/alreadyExists``, or an I/O error, after removing any partial file.
     ///   ``SessionFileError/inUse`` in the instant race where another `ask` opens the new file first.
+    /// - Parameters:
+    ///   - format: how the file is kept; encrypted needs `keyring`.
+    ///   - keyring: the keys a new encrypted file's data key is sealed under.
     public static func create(
         at path: FilePath,
-        durability: Durability = .barrier
+        durability: Durability = .barrier,
+        format: SessionFormat = .plain,
+        keyring: SessionKeyring? = nil
     ) throws(SessionFileError) -> SessionFile {
-        try begin(SessionTree(), at: path, durability: durability, calls: .system)
+        try begin(SessionTree(), at: path, durability: durability, calls: .system, format: format, keyring: keyring)
     }
 
     /// Writes `tree` as a new file at `path`, which must not exist, and opens it for appending.
@@ -22,15 +27,23 @@ extension SessionFile {
         _ tree: SessionTree,
         at path: FilePath,
         durability: Durability,
-        calls: SessionFileCalls
+        calls: SessionFileCalls,
+        format: SessionFormat = .plain,
+        keyring: SessionKeyring? = nil
     ) throws(SessionFileError) -> SessionFile {
-        let descriptor = try SessionFileIO.writeExclusively(
+        var fileKey: FileKey?
+        if format.encrypted {
+            guard let keyring else { throw .locked }
+            do { fileKey = try keyring.newFileKey() } catch { throw .locked }
+        }
+        var encoded = try encode(
             try SessionFileIO.encoded { () throws(SessionLogError) in
                 try SessionLog.snapshot(tree, images: SessionImageStore(besideSessionAt: path.string))
             },
-            to: path,
-            durability: durability
+            format: format,
+            fileKey: fileKey
         )
+        let descriptor = try SessionFileIO.writeExclusively(encoded.bytes, to: path, durability: durability)
         let lock: SessionLock
         do {
             lock = try calls.adopt(try SessionFileIO.io(.lock) { try descriptor.duplicate() })
@@ -46,7 +59,8 @@ extension SessionFile {
             durability: durability,
             appender: descriptor,
             lock: lock,
-            calls: calls
+            calls: calls,
+            storage: SessionStorage(format: format, keyring: keyring, fileKey: fileKey, framer: encoded.framer.take())
         )
     }
 
@@ -55,6 +69,7 @@ extension SessionFile {
     ///   - path: the session file.
     ///   - durability: the flush applied to every later change.
     ///   - limits: the size ceilings, checked before the file is read.
+    ///   - keyring: the keys an encrypted session opens with; it is ``SessionFileError/locked`` without them.
     /// - Returns: the session, with ``issues`` describing any repair.
     /// - Throws: ``SessionFileError/inUse`` when another `ask` has it open, an I/O error, or
     ///   ``SessionLogError/archiveTooLarge(_:)`` and
@@ -62,9 +77,10 @@ extension SessionFile {
     public static func open(
         at path: FilePath,
         durability: Durability = .barrier,
-        limits: SessionLog.Limits = .standard
+        limits: SessionLog.Limits = .standard,
+        keyring: SessionKeyring? = nil
     ) throws(SessionFileError) -> SessionFile {
-        try open(at: path, durability: durability, limits: limits, calls: .system)
+        try open(at: path, durability: durability, limits: limits, calls: .system, keyring: keyring)
     }
 
     /// ``open(at:durability:limits:)`` with the record write replaced, so tests can fail it.
@@ -84,7 +100,8 @@ extension SessionFile {
         at path: FilePath,
         durability: Durability,
         limits: SessionLog.Limits = .standard,
-        calls: SessionFileCalls
+        calls: SessionFileCalls,
+        keyring: SessionKeyring? = nil
     ) throws(SessionFileError) -> SessionFile {
         // Locked before reading, so no other writer can append between what we read and what we write.
         let lock = try SessionLock.acquire(path)
@@ -92,8 +109,22 @@ extension SessionFile {
             .recover(
                 lock.descriptor,
                 limits: limits,
-                images: SessionImageStore(besideSessionAt: path.string)
+                images: SessionImageStore(besideSessionAt: path.string),
+                keyring: keyring
             )
+        var storage = SessionStorage(keyring: keyring)
+        if let framing = recovered.framing {
+            storage.format = SessionFormat(compressed: framing.header.compressed, encrypted: framing.header.encrypted)
+            storage.fileKey = framing.fileKey
+            // A file read with issues is rewritten at the first change, which makes a writer of its own.
+            if recovered.issues.isEmpty {
+                storage.framer = try? FramedWriter(
+                    continuing: framing.header,
+                    after: framing.frameCount,
+                    key: framing.fileKey?.key
+                )
+            }
+        }
         return SessionFile(
             path: path,
             tree: recovered.tree,
@@ -102,7 +133,8 @@ extension SessionFile {
             appender: nil,
             lock: lock,
             calls: calls,
-            formatVersion: recovered.formatVersion
+            formatVersion: recovered.formatVersion,
+            storage: storage
         )
     }
 
@@ -132,7 +164,15 @@ extension SessionFile {
             forked = try branch.fork()
         } catch { throw .tree(error) }
         if let sandbox = tree.sandbox { forked.recordSandbox(sandbox) }
-        // The real system calls, not the original's: a fork is a session of its own.
-        return try Self.begin(forked, at: destination, durability: durability, calls: .system)
+        // The real system calls, not the original's: a fork is a session of its own, kept as the original is, under a data key of its
+        // own when encrypted.
+        return try Self.begin(
+            forked,
+            at: destination,
+            durability: durability,
+            calls: .system,
+            format: format,
+            keyring: keyring
+        )
     }
 }

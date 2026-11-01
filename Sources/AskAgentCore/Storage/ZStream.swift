@@ -26,13 +26,22 @@ final class ZStream {
         unsafe stream.deallocate()
     }
 
-    /// Everything `step` (`deflate` or `inflate`, with a sync flush) makes of `input`; nil when zlib reports an error, or the input is not
-    /// used up.
-    func run(_ input: ArraySlice<UInt8>, step: (UnsafeMutablePointer<z_stream>) -> Int32) -> [UInt8]? {
+    /// What running `input` through a stream gave.
+    enum Output {
+        case bytes([UInt8])
+        /// More than the limit: the stream consumed it all, so the next input still decodes, and kept none of it.
+        case tooLong
+        /// zlib reported an error, or the input was not used up.
+        case invalid
+    }
+
+    /// Everything `step` (`deflate` or `inflate`, with a sync flush) makes of `input`, at most `limit` bytes of it kept.
+    func run(_ input: ArraySlice<UInt8>, limit: Int = .max, step: (UnsafeMutablePointer<z_stream>) -> Int32) -> Output {
         var input = Array(input)
         var output: [UInt8] = []
+        var tooLong = false
         var chunk = [UInt8](repeating: 0, count: 16_384)
-        return input.withUnsafeMutableBufferPointer { input -> [UInt8]? in
+        return input.withUnsafeMutableBufferPointer { input -> Output in
             unsafe stream.pointee.next_in = input.baseAddress
             unsafe stream.pointee.avail_in = uInt(input.count)
             defer { unsafe stream.pointee.next_in = nil }
@@ -43,10 +52,16 @@ final class ZStream {
                     return step(unsafe stream)
                 }
                 // Z_BUF_ERROR: nothing left to do with this input. Anything else, a stream's end included, is not what a frame holds.
-                guard status == Z_OK || status == Z_BUF_ERROR else { return nil }
-                output += chunk[..<(chunk.count - Int(unsafe stream.pointee.avail_out))]
+                guard status == Z_OK || status == Z_BUF_ERROR else { return .invalid }
+                let produced = chunk[..<(chunk.count - Int(unsafe stream.pointee.avail_out))]
+                if !tooLong, output.count + produced.count > limit {
+                    tooLong = true
+                    output = []
+                }
+                if !tooLong { output += produced }
             } while unsafe stream.pointee.avail_out == 0
-            return unsafe stream.pointee.avail_in == 0 ? output : nil
+            guard unsafe stream.pointee.avail_in == 0 else { return .invalid }
+            return tooLong ? .tooLong : .bytes(output)
         }
     }
 }

@@ -1,7 +1,7 @@
 internal import Foundation
 
 /// Bytes written in JSON as one base64 string, whatever the encoder does with `Data` by itself.
-struct Base64Bytes: Codable, Equatable {
+struct Base64Bytes: Codable, Equatable, Sendable {
     let data: Data
 
     init(_ data: Data) { self.data = data }

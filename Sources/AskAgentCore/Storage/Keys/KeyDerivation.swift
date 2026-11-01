@@ -3,7 +3,7 @@ internal import CryptoKit
 
 /// How a password becomes the key that wraps the user key: Argon2id (aemi's AemiArgon2, ADR-0138), its parameters stored in `keys.json`
 /// and bounded when read, so a changed file cannot make ask take gigabytes or minutes.
-struct KeyDerivation: Codable, Equatable {
+struct KeyDerivation: Codable, Equatable, Sendable {
     let memoryKiB: Int
     let passes: Int
     let lanes: Int

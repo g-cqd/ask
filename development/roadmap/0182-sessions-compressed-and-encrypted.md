@@ -29,6 +29,12 @@ task and idea store (0179, 0180).
    user key only and unchanged, purposes kept apart, the keychain's key recalled only when it hashes to `keys.json`'s identifier); each
    of 12 guards, mutated, turns them red. A redundant identifier check the hash already makes was removed when its mutation survived.
 3. Session files on the container: the settings, the first-start question, `/encrypt`, locked sessions in lists and resume.
+   - ~~3a, the core~~ Done, 2026-11-01: `SessionFile` creates, opens, appends to, repairs, forks and changes the format of framed files
+     (`format:`, `keyring:`), read a chunk at a time (`FrameScanner`), a record's decompressed size and the archive's capped; a torn or
+     damaged frame is an issue, so the first change rewrites the file and keeps the original. `change(to:)` keeps no copy of the file
+     as it was. 8 tests and 2 for the scanner; each of 9 guards, mutated, turns them red.
+   - 3b, the app: the settings, `keys.json` and the keychain at start, the first-start question, the recovery code shown once,
+     `/encrypt`, locked sessions in `/sessions`, `/tree` and resume, and a session's pictures encrypted with it.
 
 ## Still owed
 

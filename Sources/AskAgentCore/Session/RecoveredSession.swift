@@ -6,10 +6,18 @@ public struct RecoveredSession: Sendable, Equatable {
     public let issues: [SessionLogIssue]
     /// The header version read; missing-header recovery uses this build's writer version.
     public let formatVersion: Int
+    /// For a framed file: its header, the frames read cleanly, and its data key; nil for JSONL.
+    let framing: FramedOpening?
 
-    init(tree: SessionTree, issues: [SessionLogIssue], formatVersion: Int = SessionLog.formatVersion) {
+    init(
+        tree: SessionTree,
+        issues: [SessionLogIssue],
+        formatVersion: Int = SessionLog.formatVersion,
+        framing: FramedOpening? = nil
+    ) {
         self.tree = tree
         self.issues = issues
         self.formatVersion = formatVersion
+        self.framing = framing
     }
 }

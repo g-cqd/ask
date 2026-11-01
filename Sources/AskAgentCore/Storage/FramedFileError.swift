@@ -10,8 +10,12 @@ enum FramedFileError: Error, Equatable {
     case unsupportedVersion(UInt8)
     /// The file is encrypted and no key was given.
     case needsKey
+    /// The file's data key was sealed under another user key.
+    case otherKey
     /// The file did not end cleanly, so it is rewritten rather than appended to (as a session file is, ADR-0013).
     case notResumable
     /// Compression failed, which zlib reports only when it runs out of memory.
     case compression
+    /// What a record said could not be used: the error its reader raised.
+    case record(SessionLogError)
 }

@@ -38,9 +38,18 @@ public struct SessionFile: ~Copyable {
     public let durability: Durability
     /// The session format currently on disk, before any pending upgrade.
     public private(set) var formatVersion: Int
+    /// How the file is kept: JSONL, or framed, compressed or encrypted (ADR-0138).
+    public internal(set) var format: SessionFormat
+    /// The keys an encrypted file's data key is sealed under; nil when the person has none open.
+    var keyring: SessionKeyring?
+    /// An encrypted file's data key, and the envelope its header carries.
+    var fileKey: FileKey?
+    /// Appends frames to a framed file; nil for JSONL, and until a framed file read with issues is rewritten.
+    var framer: FramedWriter?
     private var appender: FileDescriptor?
     private var lock: SessionLock
-    private var needsRewrite: Bool
+    /// A repair or upgrade is pending: the next change rewrites the file, keeping the original.
+    private(set) var needsRewrite: Bool
     /// Internal for the opening extension, which passes it on to a fork.
     let calls: SessionFileCalls
     /// Where the pictures of tool results are kept, beside the session file.
@@ -58,7 +67,8 @@ public struct SessionFile: ~Copyable {
         appender: FileDescriptor?,
         lock: consuming SessionLock,
         calls: SessionFileCalls = .system,
-        formatVersion: Int = SessionLog.formatVersion
+        formatVersion: Int = SessionLog.formatVersion,
+        storage: consuming SessionStorage = SessionStorage()
     ) {
         self.lock = lock
         self.calls = calls
@@ -68,6 +78,10 @@ public struct SessionFile: ~Copyable {
         self.durability = durability
         self.appender = appender
         self.formatVersion = formatVersion
+        format = storage.format
+        keyring = storage.keyring
+        fileKey = storage.fileKey
+        framer = storage.framer.take()
         self.needsRewrite = !issues.isEmpty || formatVersion < SessionLog.formatVersion
     }
 
@@ -162,7 +176,7 @@ public struct SessionFile: ~Copyable {
         }
         let descriptor = try openAppender()
         do {
-            try calls.writeRecord(record, descriptor)
+            try calls.writeRecord(try framed(record), descriptor)
             try calls.flush(descriptor, durability)
         } catch {
             // Part of the record may be on disk. Never append after it; rewrite from memory next time.
@@ -180,12 +194,16 @@ public struct SessionFile: ~Copyable {
         return descriptor
     }
 
-    /// Writes ``tree`` beside the file, preserving a damaged original or an upgrade's versioned original, then swaps atomically.
-    private mutating func rewrite() throws(SessionFileError) {
+    /// Writes ``tree`` beside the file, preserving a damaged original or an upgrade's versioned original, then swaps atomically. A change of
+    /// ``format`` keeps no original: it would be the session as it was, unencrypted when encryption is being turned on.
+    mutating func rewrite(keepingOriginal: Bool = true) throws(SessionFileError) {
         let temporary = FilePath(path.string + ".tmp")
-        let snapshot = try SessionFileIO.encoded { () throws(SessionLogError) in
-            try SessionLog.snapshot(tree, images: images)
-        }
+        var encoded = try Self.encode(
+            try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(tree, images: images) },
+            format: format,
+            fileKey: fileKey
+        )
+        let snapshot = encoded.bytes
         let descriptor = try SessionFileIO.io(.open) {
             try FileDescriptor.open(
                 temporary,
@@ -205,39 +223,14 @@ public struct SessionFile: ~Copyable {
         let replacementLock = try calls.adopt(descriptor)
         let suffix =
             issues.isEmpty && formatVersion < SessionLog.formatVersion ? ".version-\(formatVersion)" : ".damaged"
-        try preserveOriginal(suffix: suffix)
+        if keepingOriginal { try preserveOriginal(suffix: suffix) }
         guard calls.rename(temporary.string, path.string) == 0 else { throw .io(.rename, errno: errno) }
+        framer = encoded.framer.take()
         lock = replacementLock
         formatVersion = SessionLog.formatVersion
         try SessionFileIO.flushDirectory(of: path, durability)
         if let appender { _ = try? appender.close() }
         appender = nil
         needsRewrite = false
-    }
-
-    /// Hard-links the current file to the first free versioned or damaged backup. Nothing to keep if it is gone, and nothing more to
-    /// do if an earlier attempt already linked this very file: a rewrite that failed to rename is tried again, and the same bytes
-    /// must not be kept once for each try.
-    private func preserveOriginal(suffix base: String) throws(SessionFileError) {
-        for attempt in 1 ... 1_000 {
-            let suffix = attempt == 1 ? base : base + "-\(attempt)"
-            if link(path.string, path.string + suffix) == 0 { return }
-            switch errno {
-                case EEXIST:
-                    if Self.isSameFile(path.string, path.string + suffix) { return }
-                    continue
-                case ENOENT: return
-                default: throw .io(.link, errno: errno)
-            }
-        }
-        throw .io(.link, errno: EEXIST)
-    }
-
-    /// Whether two names are one file: the same device and inode.
-    private static func isSameFile(_ first: String, _ second: String) -> Bool {
-        var one = stat()
-        var other = stat()
-        guard stat(first, &one) == 0, stat(second, &other) == 0 else { return false }
-        return one.st_dev == other.st_dev && one.st_ino == other.st_ino
     }
 }
