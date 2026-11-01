@@ -77,10 +77,11 @@ took `UTF16Offsets`' tests with the type (`8d2feb8`).
   but for the Swift, Java and C corpus checksums, which equal aemi's: there an exponent keeps its sign (`1.5e-3`, one number; aemi
   `6e8279c`). The engine's tests, its line scans through `LineTokens`, its allocation bound (4 a scan) and its benchmarks stay in
   Atelier. AtelierCore (1,568 tests), GitDiffViewer (1,161) and KittyCode (968) pass.
-- **The cost.** Release, a 2 MB corpus per language, Apple M3, through `LexicalHighlightEngine.highlight(utf8:)`: 6 to 17% slower,
-  median 10% (Swift 623 to 568 MB/s), because the engine now maps aemi's `Token`s to its `HighlightToken`s, one more array a scan
-  (ADR 0022 keeps the generic entry point internal: public, it ran 3 times slower). The line-at-a-time path is unchanged (0.009 ms for
-  the visible lines of a 1 MB side). Step 5's "cost nothing" holds for the scanners, not for that whole-text path; the remedy is an aemi
-  entry point that builds a client's token without the generic cost, a performance item for Atelier's work queue.
+- **The cost, then none to map.** Release, a 2 MB corpus per language, Apple M3, through `LexicalHighlightEngine.highlight(utf8:)`:
+  mapping aemi's `Token`s to Atelier's `HighlightToken`s cost 6 to 17 %, median 10 % (Swift 623 to 568 MB/s). The owner: no
+  conversion. aemi `ebe456e` moves `HighlightToken` and `HighlightLayer` into `AemiLexers` and the scanners build them in place
+  (aemi ADR 0022, amended; the public `Token` is gone); Atelier `743639f` returns the scan unmapped. Now 5 % faster than mapped
+  (median, 3 to 15 %), same tokens and checksums, and 4 % behind Atelier's own former lexers: the wider token (layer, modifiers,
+  priority) costs aemi's scan 3 %. The line path (0.009 ms for the visible lines of a 1 MB side) and the allocation bound are unchanged.
 - **The names.** `AtelierSyntaxModel` re-exports the five model types by name, so its clients see no scanner names (Atelier's grammar
   has a `LexState` of its own); `AtelierLexers` re-exports the whole module, as wide as before.
