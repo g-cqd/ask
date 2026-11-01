@@ -60,6 +60,7 @@ extension AgentConversation {
         let copy = try original.fork(upTo: leaf, to: FilePath(directory.newSessionPath()))
         let scope = current.withLock { $0.settings.configuration.taskScope.value }
         TaskBoard.copyForFork(from: original.path, to: copy.path, scope: scope)
+        IdeaBoard.copyForFork(from: original.path, to: copy.path, scope: scope)
         return copy
     }
 

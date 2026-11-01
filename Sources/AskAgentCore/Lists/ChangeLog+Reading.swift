@@ -1,7 +1,7 @@
 internal import AemiJSON
 internal import Foundation
 
-extension TaskLog {
+extension ChangeLog {
     /// The file at `path` replayed; `format` is kept for a file not made yet, an existing file's own header deciding otherwise.
     static func read(_ path: String, format: SessionFormat, keyring: SessionKeyring?) throws -> State {
         var state = State(format: format)
@@ -20,7 +20,7 @@ extension TaskLog {
             records.removeLast()
         }
         for record in records {
-            guard let change = try? AemiJSON.JSONDecoder().decode(TaskChange.self, from: Array(record)),
+            guard let change = try? AemiJSON.JSONDecoder().decode(List.Change.self, from: Array(record)),
                 (try? state.list.apply(change)) != nil
             else {
                 state.clean = false

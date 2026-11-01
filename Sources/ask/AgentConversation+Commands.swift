@@ -94,6 +94,18 @@ extension AgentConversation {
                 duringTurn: .atOnce
             ),
             SlashCommand(
+                name: "idea",
+                summary:
+                    "Keep an idea as typed, at once, even during a turn: /idea TEXT. The model does not see it until asked.",
+                duringTurn: .atOnce
+            ),
+            SlashCommand(
+                name: "ideas",
+                summary: "Show your ideas, and choose one to edit: /ideas all with the fulfilled and dismissed ones.",
+                takesChoices: true,
+                duringTurn: .atOnce
+            ),
+            SlashCommand(
                 name: "mcp",
                 summary: "Show the MCP servers: which are connected and how many tools each offers.",
                 category: .tools,
@@ -135,6 +147,8 @@ extension AgentConversation {
                 case "thinking": await self.thinking(arguments: arguments, update: update)
                 case "login": await self.login(arguments: arguments, update: update)
                 case "logout": await self.logout(arguments: arguments, update: update)
+                case "idea": self.saveIdea(arguments, update: update)
+                case "ideas": self.ideas(arguments: arguments, update: update)
                 case "tasks": update(.notice(SessionTasks.answer(to: arguments), isError: false))
                 case "mcp": update(.notice(MCPHub.report(self.mcp.status).joined(separator: "\n"), isError: false))
                 case "reload": await self.reload(arguments: arguments, update: update)

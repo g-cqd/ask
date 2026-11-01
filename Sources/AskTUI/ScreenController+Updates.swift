@@ -26,6 +26,11 @@ extension ScreenController {
             case .choices(let command, let rows): return receive(command: command, choices: rows)
             case .configEditor(let snapshot): return receive(config: snapshot)
             case .askInput(let id, let prompt, let secret): askInput(id: id, prompt: prompt, secret: secret)
+            case .editDraft(let text):
+                fill(draft: text)
+                // Closed as if the person had closed it on this word, so typing in the draft does not open it again.
+                state.picker = nil
+                state.pickerDismissedAt = choiceTrigger()?.trigger.range.lowerBound
             case .fillDraft(let text):
                 fill(draft: text)
                 // A draft that is a command with a list opens it, without waiting for a key.

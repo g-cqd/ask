@@ -1,6 +1,10 @@
 /// A session's tasks (ADR-0140): in the order the person or the model put them, each change checked before it is made, so the list is
 /// always sound: every link names a task that is there, and nothing waits on itself.
-public struct TaskList: Sendable, Equatable {
+// @dl:accept -- the tasks and the ideas are two lists of one store: their declarations, add guards and id lookups share a shape over different fields
+public struct TaskList: ChangeList {
+    public static let suffix = "tasks"
+    public static let workspaceName = "tasks.ask"
+
     public private(set) var tasks: [SessionTask] = []
     /// The id the next task takes: one more than the largest ever made, so a removed task's id is never given again.
     public private(set) var nextID = 1
@@ -35,11 +39,12 @@ public struct TaskList: Sendable, Equatable {
         self = next
     }
 
+    // @dl:accept -- the tasks and the ideas are two lists of one store: their declarations, add guards and id lookups share a shape over different fields
     private mutating func make(_ change: TaskChange) throws(TaskListError) {
         switch change {
             case .add(let task):
                 guard task.id >= nextID else { throw .taken(task.id) }
-                guard !Self.isBlank(task.title) else { throw .emptyTitle }
+                guard !task.title.isBlank else { throw .emptyTitle }
                 for target in task.blockedBy + task.related where self.task(target) == nil {
                     throw .unknownTask(target)
                 }
@@ -48,7 +53,7 @@ public struct TaskList: Sendable, Equatable {
             case .edit(let id, let title, let detail):
                 let index = try place(id)
                 if let title {
-                    guard !Self.isBlank(title) else { throw .emptyTitle }
+                    guard !title.isBlank else { throw .emptyTitle }
                     tasks[index].title = title
                 }
                 if let detail { tasks[index].detail = detail }
@@ -96,6 +101,7 @@ public struct TaskList: Sendable, Equatable {
         let from = try place(id)
         let moved = tasks.remove(at: from)
         let anchor = target > from ? target - 1 : target
+        // @dl:accept -- the tasks and the ideas are two lists of one store: their declarations, add guards and id lookups share a shape over different fields
         tasks.insert(moved, at: after ? anchor + 1 : anchor)
     }
 
@@ -103,6 +109,4 @@ public struct TaskList: Sendable, Equatable {
         guard let index = tasks.firstIndex(where: { $0.id == id }) else { throw .unknownTask(id) }
         return index
     }
-
-    private static func isBlank(_ text: String) -> Bool { text.allSatisfy(\.isWhitespace) }
 }
