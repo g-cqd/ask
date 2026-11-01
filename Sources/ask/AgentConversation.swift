@@ -108,7 +108,8 @@ final class AgentConversation: Conversation {
     }
 
     func enqueue(_ text: String, id: Int, followUp: Bool) {
-        // A skill asked for during a turn is expanded as at a turn's start; one that cannot be loaded goes back to the input.
+        // A skill asked for during a turn is expanded as at a turn's start, and #t3 and #i2 attached (0186); a skill that cannot be
+        // loaded sends the message back to the input.
         let update = approvals.withLock { $0.ask }
         guard let sent = expandingSkill(text, update: update ?? { _ in }) else {
             update?(.promptRefused(id: id))
@@ -118,7 +119,7 @@ final class AgentConversation: Conversation {
             .append(
                 QueuedPrompt(
                     id: id,
-                    text: sent,
+                    text: SessionTasks.attachReferences(sent),
                     delivery: followUp ? .followUp : .steering
                 )
             )

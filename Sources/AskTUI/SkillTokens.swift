@@ -5,8 +5,9 @@ internal import TerminalKitStyle
 /// and `#i2` (0186). What is drawn so is attached when the message is sent, so what looks like a link is exactly what will be. The same
 /// word rule as the sending side: after the start or white space, sentence punctuation not part of it, an unknown one left plain.
 enum SkillTokens {
-    /// A link's look (the Markdown theme's), since a token stands for something attached.
-    static let style = MarkdownTheme.standard.link
+    /// A link's colour (the Markdown theme's), since a token stands for something attached; not its underline, which TerminalKit writes
+    /// as `4:1`, a form some terminals (and the probes' emulator) print as text.
+    static let style = Style(fg: MarkdownTheme.standard.link.fg)
     /// The characters a token starts with.
     static let sigils: Set<Character> = ["/", "#"]
 
