@@ -38,7 +38,13 @@ extension SessionFile {
         }
         var encoded = try encode(
             try SessionFileIO.encoded { () throws(SessionLogError) in
-                try SessionLog.snapshot(tree, images: SessionImageStore(besideSessionAt: path.string))
+                try SessionLog.snapshot(
+                    tree,
+                    images: SessionImageStore(
+                        besideSessionAt: path.string,
+                        key: format.encrypted ? keyring?.imageKey : nil
+                    )
+                )
             },
             format: format,
             fileKey: fileKey

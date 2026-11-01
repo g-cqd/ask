@@ -87,7 +87,9 @@ frames:  length u32 LE · kind u8 · CRC-32 of length and kind · body
   is kept under ask's state directory (`keys.json`: salt, iterations, KDF id, wrapped user key). The wrap's tag checks the password, so
   no hash of the password is stored anywhere.
 - **"Remember":** the user key itself goes into the login keychain, readable when unlocked, on this device only (as in 0110). Nothing is
-  derived at start, and the keychain is read only when an encrypted file is first opened, never on the cold-start path.
+  derived at start. Built (2026-11-01), the keychain is read before the screen opens when sessions are to be encrypted, not when the
+  first file is: the screen cannot ask for a password, so everything that may need one happens on the terminal first. A run with
+  encryption off reads only the first-start answer's small file.
 - **"Every start":** the password is asked the first time an encrypted file is opened or created; the derivation's few milliseconds
   are spent while a person waits on the prompt anyway.
 - **The KDF and its parameters are in `keys.json`,** so they can change later without touching session files.

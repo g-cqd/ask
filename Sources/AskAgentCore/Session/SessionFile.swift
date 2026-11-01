@@ -53,7 +53,9 @@ public struct SessionFile: ~Copyable {
     /// Internal for the opening extension, which passes it on to a fork.
     let calls: SessionFileCalls
     /// Where the pictures of tool results are kept, beside the session file.
-    private var images: SessionImageStore { SessionImageStore(besideSessionAt: path.string) }
+    private var images: SessionImageStore {
+        SessionImageStore(besideSessionAt: path.string, key: format.encrypted ? keyring?.imageKey : nil)
+    }
 
     /// Writes one record to the append descriptor. Only tests replace it (through ``SessionFileCalls``), to make that write fail.
     typealias RecordWriter = ([UInt8], FileDescriptor) throws(SessionFileError) -> Void

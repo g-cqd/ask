@@ -39,10 +39,12 @@ def spawn(project, config, state, arguments):
         import fcntl, struct, termios
         fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", 40, 120, 0, 0))
         os.chdir(project)
-        os.environ.update(TERM="xterm-kitty", TERM_PROGRAM="kitty", XDG_CONFIG_HOME=config, XDG_STATE_HOME=state, ASK_SESSION_ENCRYPTION="off")
+        os.environ.update(TERM="xterm-kitty", TERM_PROGRAM="kitty", XDG_CONFIG_HOME=config, XDG_STATE_HOME=state)
         for key in list(os.environ):
             if key.startswith(("ASK_", "ANTHROPIC_", "OPENAI_", "CODEX_")):
                 os.environ.pop(key)
+        # After the clean-up above, which removes every ASK_ variable: no first-start question (roadmap 0182).
+        os.environ["ASK_SESSION_ENCRYPTION"] = "off"
         os.execv(BINARY, [BINARY, *arguments])
         os._exit(127)
     return pid, fd
