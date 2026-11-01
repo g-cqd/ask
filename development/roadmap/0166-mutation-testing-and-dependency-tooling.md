@@ -99,3 +99,11 @@ dead code. Regression test in `CommandWordsQuotingTests`. The mutation run to co
 
 - The mutation workflow on CI: neither the push job nor the weekly full run, nor the time the full run takes.
 - aemi's Swift 6.3.3 build (CI only), and the merged Dependabot bumps on CI.
+
+## Owner (2026-11-01): once a day, and one toolchain
+
+- Mutation testing runs once a day (03:17 UTC), on the Sources files changed in the last day; Mondays, and a run by hand, take every
+  file and upload a fresh baseline. No longer on every push.
+- One toolchain everywhere: `.swift-version` (6.4.2) names it, CI installs it from that file, and `Scripts/quality.sh` refuses another
+  compiler and takes swift-format from the same toolchain.
+

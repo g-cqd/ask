@@ -17,9 +17,6 @@ concurrency:
 # Actions are pinned to full commit SHAs, with the version in a comment, rather than floating on a
 # tag. A tag is a name someone can move; a SHA is the code that actually ran. This matches Aemi's
 # own workflows, and the drift between the two used to be a bug rather than a policy — see below.
-env:
-  SWIFT_VERSION: "6.4.1"
-
 jobs:
   gate:
     # macos-26 matches the package's declared floor (.macOS(.v26)). Testing on the oldest supported
@@ -28,6 +25,8 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: The toolchain .swift-version names
+        run: echo "SWIFT_VERSION=$(cat .swift-version)" >> "$GITHUB_ENV"
       # setup-swift v2 cannot install Swift 6.4: its version table stops at 6.2.1, so it fails with
       # "Version 6.4 is not available". v3 installs through swiftly, which resolves any published
       # toolchain, and 6.4 is published.
@@ -78,6 +77,8 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: The toolchain .swift-version names
+        run: echo "SWIFT_VERSION=$(cat .swift-version)" >> "$GITHUB_ENV"
       # setup-swift v2 cannot install Swift 6.4: its version table stops at 6.2.1, so it fails with
       # "Version 6.4 is not available". v3 installs through swiftly, which resolves any published
       # toolchain, and 6.4 is published.
