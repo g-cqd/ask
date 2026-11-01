@@ -116,7 +116,7 @@ public struct ScreenComposer: Sendable {
             selection: state.inputSelection,
             scrollTop: state.promptScroll,
             markdown: state.transcript.markdown,
-            skills: state.transcript.skillNames
+            skills: state.transcript.tokenNames
         )
         cursorIsVisible = editor.cursorVisible
         return editor

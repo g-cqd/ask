@@ -139,10 +139,11 @@ final class AgentConversation: Conversation {
             do {
                 await self.refreshSettings(update: update)
                 self.noticeUntrustedSkills(update: update)
-                guard let prompt = self.expandingSkill(prompt, update: update) else {
+                guard let expanded = self.expandingSkill(prompt, update: update) else {
                     update(.runEnded)
                     return
                 }
+                let prompt = SessionTasks.attachReferences(expanded)
                 try await self.connectMCP(update: update)
                 let loop = try self.agentLoop()
                 // A new session waits for how it is to be kept, when the screen is still asking (idea i1).

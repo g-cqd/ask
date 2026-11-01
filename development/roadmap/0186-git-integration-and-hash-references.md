@@ -32,3 +32,14 @@ forge read-only, unauthenticated for public repositories, never through `gh`; `#
 tool for the model. Proposed order: `#t3` and `#i2` first (local), then the status segment, then the forge. Two questions for the
 owner in the note.
 
+## Done (2026-11-01): `#t3` and `#i2`
+
+- Sending: `ListReferences.attach` puts each named task (its line and description) and idea (its text) after the message, once, in the
+  order named, after any skill; only the typed line is read, a `#` inside a word or an id that is not there is left as text.
+  `SkillInvocation.shown` cuts at the first skill, task or idea, so every view shows the typed line. The screen's turns and print runs
+  both attach.
+- The picker: a `#` that starts a word lists the open tasks and ideas (the conversation's `#` choices, asked for once and again after a
+  turn, as command lists are); choosing one replaces the word. A known one is drawn as a token, as a skill is (0185's look).
+- Tests: `ListReferencesTests`, `ReferencePickerTests`; 7 mutants, six killed, the seventh a redundant guard, removed.
+- Still owed: `#123` (the forge), and the status segment, in the research note's order.
+

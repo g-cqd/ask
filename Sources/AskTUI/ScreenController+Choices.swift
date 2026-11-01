@@ -89,6 +89,11 @@ extension ScreenController {
     mutating func receive(command: String, choices rows: [ChoiceRow]) -> [Effect] {
         asking.remove(command)
         state.choices[command] = ChoiceList(rows: rows, at: .now)
+        if command == Self.referenceList {
+            refreshTokens()
+            guard pickerScreenRows >= Self.pickerMinimumRows, let trigger = referenceTrigger() else { return [] }
+            return refreshReferencePicker(trigger, screenRows: pickerScreenRows)
+        }
         guard pickerScreenRows >= Self.pickerMinimumRows, let found = choiceTrigger(), found.command.name == command
         else { return [] }
         return refreshChoicePicker(found.command, found.trigger, screenRows: pickerScreenRows, at: .now)

@@ -98,6 +98,7 @@ below the input: Up and Down choose one, Enter shows its output in place of the 
 | `/resume` | Switch to another saved conversation. |
 | `/rewind`, `/fork` | Go back to an earlier prompt, or continue in a copy. See [Sessions](sessions.md). |
 | `/tasks` | Show the session's task list, which the model keeps with its `tasks` tool: `/tasks all` with the done ones, `/tasks t3` for one task. |
+| `#t3`, `#i2` | In a message, point at a task or an idea: the model gets its text with the message. Type `#` at the start of a word to pick one. |
 | `/idea`, `/ideas` | `/idea TEXT` keeps an idea as typed, with the time. `/ideas` lists them; choose one to edit it in the input, and Enter keeps the edit and opens the list again. The model reads them with its `ideas` tool when you ask, or when it finishes a piece of work, and marks them acknowledged, fulfilled or dismissed; it never writes or edits one. |
 | `/compact` | Summarise the conversation now to free room in the context window. |
 | `/config` | Edit settings, or `/config show` to re-read the files and show them. |

@@ -8,7 +8,7 @@ import Testing
 /// unknown name, or a `/` inside a word, stays plain.
 @Suite("A known skill named in a message is drawn as a token")
 struct SkillTokenTests {
-    private let known: Set<String> = ["skill:debugging"]
+    private let known: Set<String> = ["/skill:debugging"]
 
     @Test func `the scanner finds known names at word starts, without trailing punctuation, and nothing else`() {
         let text = "use /skill:debugging, not a/skill:debugging nor /skill:nothing (/skill:debugging)"
@@ -43,7 +43,7 @@ struct SkillTokenTests {
         for markdown in [true, false] {
             var transcript = Transcript()
             transcript.setMarkdown(markdown)
-            transcript.setSkillNames(known)
+            transcript.setTokenNames(known)
             transcript.addUser("fix with /skill:debugging now")
             let row = ScreenComposer.lines(in: transcript, at: 0, columns: 60).first { $0.text.contains("/skill:") }
             let accent = row?.accents.first { $0.style.bold && $0.style.fg == SkillTokens.style.fg }

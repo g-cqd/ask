@@ -26,6 +26,13 @@ enum SessionTasks {
         return unavailable
     }
 
+    /// `text` with the tasks and ideas it names (`#t3`, `#i2`) attached (roadmap 0186).
+    static func attachReferences(_ text: String) -> String {
+        let tasks = (try? board.current()) ?? nil
+        let notes = (try? ideas.current()) ?? nil
+        return ListReferences.attach(text, tasks: tasks, ideas: notes)
+    }
+
     /// Why a list is not there.
     static var unavailable: String {
         problem.withLock { $0 } ?? "Nothing is kept yet: the session starts with the first prompt."
