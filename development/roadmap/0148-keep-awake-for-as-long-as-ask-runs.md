@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-29
 ---
@@ -53,4 +53,4 @@ machine's `pmset -g assertions`):
 
 Not verified: a restart was not tried on this machine.
 
-Owner's call: document the terminal's setting and stop here, or build the helper app.
+Owner (2026-11-01): document the terminal's setting and stop here; no helper app. `docs/configuration.md` says it beside `keepAwake`.
