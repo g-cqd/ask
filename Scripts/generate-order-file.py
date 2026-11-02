@@ -84,7 +84,10 @@ def run(binary, directory):
                 os.environ.pop(key)
         os.environ.update(
             TERM="xterm-kitty", TERM_PROGRAM="kitty", XDG_CONFIG_HOME=config, XDG_STATE_HOME=state,
-            ASAN_OPTIONS=f"coverage=1:coverage_dir={directory}:detect_leaks=0")
+            ASAN_OPTIONS=f"coverage=1:coverage_dir={directory}:detect_leaks=0",
+            # After the clean-up above, which removes every ASK_ variable: no first-start question (roadmap 0182), which would take the
+            # keys and the run would never reach the prompt's code.
+            ASK_SESSION_ENCRYPTION="off")
         os.execv(binary, [binary])
         os._exit(127)
     try:
