@@ -87,6 +87,10 @@ The model can run commands in the background. The status line counts them (`· 2
 below the input: Up and Down choose one, Enter shows its output in place of the conversation, and Esc, or a click on the list's first row, `main`, goes back. On a wide screen,
 `/sidebar` or **Ctrl+\\** shows the same list beside the conversation. Jobs never outlive ask.
 
+While a command the model ran is still running, **Ctrl+B** (or **Ctrl+Enter**, where the terminal reports it) sends it to the
+background: the model gets what it printed so far and carries on, or your queued message is sent next, and the job tells the model
+when it ends. With no command running, Ctrl+B moves the cursor as usual.
+
 ## Commands
 
 | Command | What it does |

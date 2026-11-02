@@ -8,6 +8,9 @@ internal import Synchronization
 /// stops them all when it exits by any path it can see; a SIGKILL of ask is the one it cannot, and the ``JobWatchdog`` covers it
 /// (ADR-0079).
 public final class JobTable: Sendable {
+    /// The commands the model is waiting on, which the person may send to the background (roadmap 0173).
+    let foreground = ForegroundCommands()
+
     private let jobs = Mutex<[String: Job]>([:])
     private let counter = Atomic<Int>(0)
     private let displayIDs = Mutex(JobDisplayIDs())

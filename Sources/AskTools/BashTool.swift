@@ -103,13 +103,12 @@ public struct BashTool: ArgumentTool {
             observe(.output($0))
         }
         do {
-            let outcome = try await JobWaiting.wait(
-                for: job,
-                readiness: readiness,
-                seconds: limit,
-                clock: access.clock,
-                in: context
-            )
+            let clock = access.clock
+            // The person may send the command to the background while the model waits on it (roadmap 0173).
+            let outcome =
+                try await access.jobs.foreground.race {
+                    try await JobWaiting.wait(for: job, readiness: readiness, seconds: limit, clock: clock, in: context)
+                } ?? .backgrounded
             var result = await Self.output(of: outcome, job: job, readiness: readiness, yield: yield, limit: limit)
             // Told when the command failed, where they may say why; a command that succeeded needs no lint.
             if result.isError, !checked.findings.isEmpty {
@@ -119,7 +118,8 @@ public struct BashTool: ArgumentTool {
         } catch {
             job.stop()
             await job.ended()
-            throw error
+            // The wait throws only ToolFailure; the race around it widens the type, not what it throws.
+            throw error as? ToolFailure ?? ToolFailure("The command's wait failed: \(error)")
         }
     }
 
@@ -134,20 +134,20 @@ public struct BashTool: ArgumentTool {
     ) async -> ToolOutput {
         switch outcome {
             case .found where job.status != .running: return Self.finished(job)
-            case .found:
-                job.markBackgrounded()
-                return ToolOutput(
-                    Self.body(job.takeOutput()) + "[\(job.id) \(readiness?.headline ?? "ready"); still running]",
-                    backgroundJob: job.id
-                )
+            case .found: return Self.running(job, "[\(job.id) \(readiness?.headline ?? "ready"); still running]")
             case .ended: return Self.finished(job)
+            case .backgrounded where job.status != .running: return Self.finished(job)
+            case .backgrounded:
+                return Self.running(
+                    job,
+                    "[sent to the background by the person as \(job.id)\(JobWaiting.fileNote(job)); display [#\(job.displayID)]; "
+                        + "it goes on; use job to inspect, send input, or stop]"
+                )
             case .timedOut where readiness == nil && yield != nil:
-                job.markBackgrounded()
-                return ToolOutput(
-                    Self.body(job.takeOutput())
-                        + "[still running as \(job.id) after \(limit) s\(JobWaiting.fileNote(job)); "
-                        + "display [#\(job.displayID)]; use job to inspect, send input, or stop]",
-                    backgroundJob: job.id
+                return Self.running(
+                    job,
+                    "[still running as \(job.id) after \(limit) s\(JobWaiting.fileNote(job)); "
+                        + "display [#\(job.displayID)]; use job to inspect, send input, or stop]"
                 )
             case .timedOut, .cancelled:
                 job.stop()
@@ -159,6 +159,12 @@ public struct BashTool: ArgumentTool {
                             : "[timed out after \(limit) s; the command and its children were stopped]")
                 )
         }
+    }
+
+    /// A command left running as a job: its output so far, then `note`.
+    private static func running(_ job: Job, _ note: String) -> ToolOutput {
+        job.markBackgrounded()
+        return ToolOutput(body(job.takeOutput()) + note, backgroundJob: job.id)
     }
 
     /// The result of a command that ended: its output, where the whole of it is if that was too long, and

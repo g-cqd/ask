@@ -55,6 +55,8 @@ public protocol Conversation: Sendable {
     /// Watches a yielded process without consuming its model-facing unread output.
     func watchJob(_ id: String, update: @escaping @Sendable (JobUpdate) -> Void) -> Task<Void, Never>
 
+    /// Sends the command the current run waits on to the background (roadmap 0173); false when it waits on none.
+    func sendCommandToBackground() -> Bool
     /// Starts anything that reports on its own while the screen is open, such as a new build appearing, until the
     /// returned task is cancelled. Nil when there is nothing to watch.
     func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>?
@@ -125,6 +127,9 @@ extension Conversation {
     public func watchJob(_ id: String, update: @escaping @Sendable (JobUpdate) -> Void) -> Task<Void, Never> {
         Task {}
     }
+
+    /// No command to send.
+    public func sendCommandToBackground() -> Bool { false }
 
     /// Nothing to watch.
     public func background(update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never>? { nil }

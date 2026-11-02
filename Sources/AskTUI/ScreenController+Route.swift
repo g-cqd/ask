@@ -41,6 +41,7 @@ extension ScreenController {
                     return []
                 }
                 if let effects = questionedKey(key) { return effects }
+                if let effects = backgroundKey(key) { return effects }
                 // A configuration editor is modal: it takes every key, including keys another list would edit with.
                 if case .config = state.picker?.kind {
                     return pickerKey(key, screenRows: pageRows + 3) ?? []

@@ -163,6 +163,7 @@ final class ScreenSession {
                 await conversation.commitConfig(scope: scope, path: path, value: value) { sink.yield(.update($0)) }
             case .answerInput(let id, let text):
                 conversation.answer(input: id, with: text)
+            case .sendCommandToBackground: Self.sendCommandToBackground(conversation, sink)
             case .cancelRun:
                 run?.cancel()
             case .pasteFromClipboard:
