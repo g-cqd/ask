@@ -50,9 +50,14 @@ struct BuildSignatureTests {
         #expect(BuildSignature.check(build, against: .unsigned) == .unsignedRunning)
     }
 
-    /// The test runner is one of Apple's platform binaries, which carry no team identifier, as an ad-hoc build does not either.
-    @Test func `a running process without a team identifier holds builds to nothing`() {
-        #expect(BuildSignature.readRunning() == .unsigned)
+    /// An ad hoc build has no team identifier, so it holds builds to nothing. Read from a copy the test signs: the test runner is Xcode's
+    /// platform binary locally, with no team, but swift.org's toolchain signs it with its own team (as on CI).
+    @Test func `a build without a team identifier holds builds to nothing`() throws {
+        #expect(BuildSignature.read(try signedCopy(identifier: "anything")) == .unsigned)
+    }
+
+    @Test func `the running process's signature is read, whoever signed the runner`() {
+        #expect(BuildSignature.readRunning() != .unreadable)
     }
 
     /// The running build's signature is read from its file, which a new build replaces: read after that, a signed ask would find the

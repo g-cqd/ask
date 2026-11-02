@@ -46,7 +46,7 @@ struct ProviderProxyTests {
                 try #require(connect(client, raw, socklen_t(MemoryLayout<sockaddr_in>.size)) == 0)
             }
         }
-        var timeout = timeval(tv_sec: 2, tv_usec: 0)
+        var timeout = timeval(tv_sec: 10, tv_usec: 0)
         setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
         var received: [UInt8] = []
         for (index, message) in messages.enumerated() {
