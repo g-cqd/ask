@@ -24,6 +24,7 @@ extension ScreenController {
 
     mutating func handle(mouse event: MouseEvent, at now: ContinuousClock.Instant) -> [Effect] {
         guard options.mouse else { return [] }
+        if hoverMotion(event) { return [] }
         var regions = RegionMap<Int>()
         regions.add(
             Self.transcriptTarget,

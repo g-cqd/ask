@@ -24,6 +24,7 @@ extension UISection {
             case "markdown": return flag(markdown)
             case "highlight": return flag(highlight)
             case "shimmer": return flag(shimmer)
+            case "hover": return flag(hover)
             case "durations": return localizedDurations.map { $0 ? "words" : "clock" }
             case "spinner": return spinner?.rawValue
             case "showTimeout": return timeout?.rawValue

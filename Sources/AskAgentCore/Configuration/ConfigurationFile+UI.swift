@@ -23,7 +23,7 @@ extension ConfigurationFile {
                             try ConfigurationFile.word(container, key, name, ["words", "clock"]) == "words"
                     case "stopTwice": try decodeStopTwice(container.decode([String].self, forKey: key))
                     case "mouse", "copyOnSelect", "tint", "separator", "padding", "markdown", "highlight", "shimmer",
-                        "leaveFinishedJob", "listAllModels":
+                        "hover", "leaveFinishedJob", "listAllModels":
                         decodeSwitch(
                             key.stringValue,
                             try ConfigurationFile.decodeSwitch(container, key: key, name: name)
@@ -96,6 +96,7 @@ extension ConfigurationFile {
                 case "markdown": section.markdown = on
                 case "highlight": section.highlight = on
                 case "shimmer": section.shimmer = on
+                case "hover": section.hover = on
                 case "leaveFinishedJob": section.jobAutoReturnWhenFocused = on
                 default: section.onlyUsefulModels = !on  // listAllModels
             }

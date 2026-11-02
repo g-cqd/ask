@@ -67,6 +67,9 @@
     // A running block's header shimmers. Default: true.
     "shimmer": true,
 
+    // What a click acts on brightens under the pointer. Default: true.
+    "hover": true,
+
     // When a job you watch ends, go back to the conversation. Default: true.
     "leaveFinishedJob": true,
 

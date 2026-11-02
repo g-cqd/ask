@@ -137,11 +137,14 @@ public struct ScreenComposer: Sendable {
         // Character rules enclose the input without extra blank rows.
         let ruleRows = state.separator && rows >= 6 ? 2 : 0
         let upperRuleRows = ruleRows / 2
-        let strip = RunnerStrip(
+        var strip = RunnerStrip(
             state,
             available: Swift.max(0, rows - promptRows - statusRows - ruleRows - 2),
             columns: columns
         )
+        if case .job(let id) = state.hover, let row = strip.ids.firstIndex(of: id) {
+            strip.lines[row] = Self.brightened(strip.lines[row])
+        }
         let panel = strip.lines.isEmpty ? [] : [Line(text: "", style: .default)] + strip.lines
         let status = Self.status(for: state, input: editor.indicator, columns: columns)
         let pickerRows = rows - promptRows - statusRows - ruleRows - panel.count - 1

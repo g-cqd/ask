@@ -22,6 +22,7 @@ extension RunSettings {
             markdown: ui.markdown ?? defaults.markdown,
             highlight: ui.highlight ?? defaults.highlight,
             shimmer: ui.shimmer ?? defaults.shimmer,
+            hover: ui.hover ?? defaults.hover,
             sidebar: ui.sidebarOpen ?? defaults.sidebar,
             verbose: verbose,
             prompt: ui.prompt ?? defaults.prompt,

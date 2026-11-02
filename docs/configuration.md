@@ -180,6 +180,7 @@ Switches take `true` or `false` (the older `"on"` and `"off"` still work).
 | `durations` | `"words"` | Elapsed times as `1 hr, 40 min` (`"words"`) or `1:40:00` (`"clock"`), and a command's limits as `timeout 2 min` or `timeout 2:00`. |
 | `spinner` | `"line"` | The spinner: `line`, `snake`, `braille`, `braillefull`, `braillequarter` or `random`. A file that still says `dot` or `star` loads, and draws `line`. |
 | `shimmer` | `true` | A running block's header shimmers: a brighter stretch moves along it with the spinner. `false` keeps it still. |
+| `hover` | `true` | What a click acts on brightens under the pointer: a block's header, a job's row. The terminal then reports the pointer's moves; `false` asks it not to. Needs `mouse`. |
 | `showTimeout` | `"auto"` | When a command's timeout is written in its header: `"auto"` only when the model chose one other than the 2-minute default, so the usual header is `shell · swift build`; `"always"` whenever the model set one; `"never"`. The time a command is left to run before it moves to the background (`yield`) is written unless this is `"never"`. |
 | `timeoutLabel` | `"timeout"` | The word in front of a command's timeout, 1 to 8 characters: `"⏱"` writes `shell · ⏱ 5 min · swift build`. |
 | `stopKeys` | `"both"` | Which keys stop a running turn: `"esc"`, `"ctrl-c"` or `"both"`. |
