@@ -121,8 +121,11 @@ the tests and send the failures back, check a list, or ask for a review pass. Th
 
 - 2026-11-02: ADR-0143 records the points. `run.stop` is built: `AgentHook.runStop` and `name`, `AgentLoop.continuesByHook`,
   `AgentSettings.maximumHookContinues` (default 3), the events `hookContinued` and `hookContinuesStopped`, said in the screen and in
-  `ask -p`. Tests: AgentHookRunStopTests (8), 12 mutants killed. Next: the `hooks` configuration section (`maxContinues`,
-  `claudeCode`), then the other points.
+  `ask -p`. Tests: AgentHookRunStopTests (8), 12 mutants killed.
+- 2026-11-02: the `hooks` section, the person's own file only: `hooks.maxContinues` (0 to 100, default 3) reaches
+  `AgentSettings.maximumHookContinues`, and `ask config` shows it. In the catalogue, docs/configuration.md and the generated example.
+  Tests: HooksConfigurationTests (6), 7 mutants killed. `hooks.claudeCode` comes with the Claude Code runner, so that it is never a
+  setting that does nothing. Next: the `approval` and `prompt.submit` points, then a reference `run.stop` hook.
 
 ## Done when
 

@@ -62,6 +62,7 @@ public struct Configuration: Sendable, Equatable {
     public var credentials = Setting(value: CredentialStorage.auto, source: .defaults)  // where keys are kept, 0110
     public var approvals = Setting(value: ApprovalsSection(), source: .defaults)  // which calls ask first, 0134
     public var modelScopes = Setting(value: [ModelScope](), source: .defaults)  // which providers serve here, 0094
+    public var hooks = Setting(value: HooksSection(), source: .defaults)  // how long hooks keep a run going, 0192
     /// Where each `ui` and `skills` key came from, by its dotted name; read through `source(ofKey:)`.
     var keySources: [String: Source] = [:]
 
@@ -101,20 +102,12 @@ public struct Configuration: Sendable, Equatable {
     /// `self` with every key `file` sets replaced, attributed to `source`.
     public func applying(_ file: ConfigurationFile, from source: Source) -> Configuration {
         var next = recordingKeySources(of: file, from: source).applyingScalars(file, from: source)
-        // @dl:accept -- heterogeneous per-key layering retains each section's type and origin; the table is the data
-        if let section = file.sandbox {
-            next.sandbox = Setting(value: next.sandbox.value.layered(with: section), source: source)
-        }
-        if let section = file.ui {
-            next.ui = Setting(value: next.ui.value.layered(with: section), source: source)
-        }
-        if let section = file.skills {
-            next.skills = Setting(value: next.skills.value.layered(with: section), source: source)
-        }
-        if let section = file.mcp { next.mcp = Setting(value: next.mcp.value.layered(with: section), source: source) }
-        if let section = file.environment {
-            next.environment = Setting(value: next.environment.value.layered(with: section), source: source)
-        }
+        next.sandbox = next.sandbox.layered(file.sandbox, from: source)
+        next.ui = next.ui.layered(file.ui, from: source)
+        next.skills = next.skills.layered(file.skills, from: source)
+        next.hooks = next.hooks.layered(file.hooks, from: source)
+        next.mcp = next.mcp.layered(file.mcp, from: source)
+        next.environment = next.environment.layered(file.environment, from: source)
         return next
     }
 

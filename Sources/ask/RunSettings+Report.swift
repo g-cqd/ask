@@ -2,7 +2,7 @@ internal import AskAgentCore
 internal import AskTUI
 
 extension RunSettings {
-    /// Every `ui` and `skills` key with the value in force and where it came from, then the MCP servers: what `ask config` and `/config`
+    /// Every `ui`, `skills` and `hooks` key with the value in force and where it came from, then the MCP servers: what `ask config` and `/config`
     /// show after the top-level settings (roadmap 0103). A key no layer set shows the default the program uses.
     var sectionRows: [String] {
         let c = configuration
@@ -24,11 +24,13 @@ extension RunSettings {
                     return head + name + value(key) + "  [\(c.source(ofKey: section + "." + key))]"
                 }
         }
+        // One key, set by one file: its source is the section's.
+        let hooks = pad("hooks", 10) + pad("maxContinues", 14) + "\(c.hooks.value.continues)  [\(c.hooks.source)]"
         let mcp =
             pad("mcp", 10) + c.mcp.value.description
             + (c.mcp.value.servers.isEmpty ? "" : "  [\(c.mcp.source)]")
         return rows("ui", UISection.keys) { ui.value(forKey: $0) ?? "" }
-            + rows("skills", SkillsSection.keys) { skills.value(forKey: $0) ?? "every harness" } + [mcp]
+            + rows("skills", SkillsSection.keys) { skills.value(forKey: $0) ?? "every harness" } + [hooks, mcp]
     }
 
     /// The `ui` section as the screen uses it: each key a file set, and the screen's own default for the rest.

@@ -37,7 +37,8 @@ struct RunSettings: Equatable {
     var limits: RunLimits {
         RunLimits(
             maximumTurns: configuration.turnLimit(sandboxed: !sandbox.isUnrestricted),
-            compactAt: configuration.compactAt.value
+            compactAt: configuration.compactAt.value,
+            hookContinues: configuration.hooks.value.continues
         )
     }
 

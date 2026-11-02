@@ -1,6 +1,6 @@
 /// The `sandbox` section of a configuration file: what the user adds to or lifts from ask's default protections
 /// (ADR-0035), and the strict modes (roadmap 0042). Paths are absolute, or start with `~/` for the home directory.
-public struct SandboxSection: Sendable, Equatable, CustomStringConvertible {
+public struct SandboxSection: Sendable, Equatable, CustomStringConvertible, LayeredSection {
     /// The keys a file may set under `sandbox`.
     public static let keys = ["readable", "writable", "hide", "write", "read", "network"]
 

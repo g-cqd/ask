@@ -170,6 +170,11 @@
     "remember": "none"
   },
 
+  "hooks": {
+    // How many times hooks may continue a run that would have ended; each counts against maxTurns. Default: 3. Your own file only.
+    "maxContinues": 3
+  },
+
   "skills": {
     // Whether skills are offered; a project's file may only turn them off. Default: true.
     "enabled": true,

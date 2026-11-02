@@ -1,5 +1,5 @@
 /// The `skills` section of a configuration file (roadmap 0061). Every key is optional, and a layer that sets one replaces it.
-public struct SkillsSection: Sendable, Equatable, CustomStringConvertible {
+public struct SkillsSection: Sendable, Equatable, CustomStringConvertible, LayeredSection {
     /// `skills.enabled`: whether skills are advertised and the `skill` tool offered at all. Off costs the model nothing: no block, no tool.
     public var enabled: Bool?
     /// `skills.maxListed`: how many skills the system prompt lists. The rest can still be loaded by name; the prompt says how many are not listed.

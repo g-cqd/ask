@@ -250,6 +250,16 @@ still asks about anything beyond it either way. Your own file only.
 | `ask` | none | Tools that always ask, read-only ones included: `["read"]`. Wins over `allow`. |
 | `remember` | `"none"` | What an "always" answer could write back to this file: `"anything"`, `"narrowing"` or `"none"`. No answer writes the file yet. |
 
+### `hooks`
+
+Hooks are code that sees what a run does (roadmap 0192). When a run would end, a hook can send the model a message and keep it going,
+to have it fix the tests it broke, for example. The message is recorded as yours, labelled `[hook name]`, and the transcript says when a
+hook continued a run or a limit stopped it. Your own file only.
+
+| Key | Default | What it does |
+|---|---|---|
+| `maxContinues` | `3` | How many times hooks may continue one run that would have ended, from 0 to 100; 0 never lets them. Each also counts against `maxTurns`. |
+
 ### `modelScopes`
 
 A list of rules that limit which providers serve a repository: work repositories only through the work account, say. Each rule names

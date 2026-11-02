@@ -6,4 +6,6 @@ struct RunLimits {
     var maximumTurns: Int
     /// When compaction starts: a share of the window or a number of tokens (roadmap 0104).
     var compactAt: CompactionThreshold
+    /// How many times hooks may continue a run (roadmap 0192).
+    var hookContinues = HooksSection.defaultMaxContinues
 }

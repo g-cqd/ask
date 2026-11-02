@@ -2,7 +2,7 @@ internal import Foundation
 
 /// The `mcp` section of a configuration file: the servers whose tools the model may use (ADR-0099). Naming a server runs a program, so a
 /// project's file counts only once the person has trusted it, and trusting it says what would start (``consent``).
-public struct MCPSection: Sendable, Equatable, CustomStringConvertible {
+public struct MCPSection: Sendable, Equatable, CustomStringConvertible, LayeredSection {
     /// The servers, sorted by name.
     public var servers: [MCPServerSetting]
     /// Changes to servers a lower file defines, sorted by name (roadmap 0127); applied by ``layered(with:)``.
