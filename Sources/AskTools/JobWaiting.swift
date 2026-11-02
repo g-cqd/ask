@@ -5,6 +5,8 @@ enum JobWaiting {
         case ended
         case timedOut
         case cancelled
+        /// The person sent the command to the background (roadmap 0173).
+        case backgrounded
     }
 
     /// Waits up to `seconds` for `job` to print `needle`, or with no needle to end.

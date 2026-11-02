@@ -42,6 +42,8 @@ public struct ScreenController: Sendable {
         case commitConfig(scope: String, path: [String], value: String)
         /// The person answered what a command asked for, or cancelled it (nil).
         case answerInput(id: Int, text: String?)
+        /// Send the command the model waits on to the background (roadmap 0173).
+        case sendCommandToBackground
         case quit
     }
 
