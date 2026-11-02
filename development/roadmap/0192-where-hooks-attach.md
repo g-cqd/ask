@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["the owner's answers below"]
+blocked-by: []
 date: 2026-11-02
 ---
 
@@ -33,13 +33,16 @@ can change nothing.
 |---|---|---|---|
 | `session.start` | a session opens, is resumed or is switched to; after the first frame | observe; `context` | the app, when the session is chosen |
 | `prompt.submit` | a message from the person enters the conversation, steering and follow-ups included, after skills, `#t3` and `@server:uri` are attached | allow; `block(reason)`; `rewrite(text)`; `context` | `drive`'s first `record(.user)`, and `acceptInput` |
-| `request.before` | before each request | observe | `drive`, before `respond` |
+| `request.before` | before each request | observe; `rewrite(request)` | `drive`, before `respond` |
 | `response.after` | each response, recorded | observe | `drive`, after `record(.response)` |
 | `tool.call` | before each call | allow; `block(reason)`; `rewrite(input)` | exists |
+| `approval` | the gate would ask the person about a call | `approve`; `refuse(reason)`; `ask` (the person decides) | `ToolCallGate`, before `ask` |
 | `tool.result` | after each call | `rewrite(output)`; `context` | exists, plus `context` |
 | `run.stop` | the run would end: a reply without calls, no continuation of ask's own, no follow-up queued | `stop`; `continue(message)` | `drive`, after `acceptInput` finds nothing |
 | `compaction.before` | a compaction starts | observe; `instructions` for the summary | `compact`, before `summarise` |
 | `compaction.after` | it ended | observe | `compact` |
+| `settings.change` | the model, the thinking level or the configuration changes | observe | the app, where it applies a change |
+| `subagent.stop` | a subagent's run would end, once ask has subagents | as `run.stop`, for that subagent | the subagent's loop |
 | `waiting` | ask waits for the person: an approval, a question, a run ended | observe | the app, where it raises these |
 | `session.end` | ask quits or leaves the session | observe, with a short deadline | the app's shutdown, and `ask -p`'s exit |
 
@@ -49,9 +52,13 @@ How each answer works:
   The transcript shows it as a dim line with the hook's name.
 - **`block` at `prompt.submit`** sends the message back to the input with the reason, as a skill that cannot load does today.
 - **`rewrite`** at `prompt.submit` and `tool.call` is recorded as the rewritten form, and the transcript says that a hook changed it.
-- **`request.before` cannot change the request.** Changing it would break the provider's prompt cache, and the session would no longer
-  record what was sent. A hook that wants something in the conversation uses `context` at another point.
-- **`waiting`** is for notifications, such as a sound or a desktop banner. A hook cannot answer an approval here; see question 1.
+- **`rewrite(request)` at `request.before`** changes what this one request sends, for example a trimmed context. The session keeps the
+  conversation as it was, and records that the hook rewrote request N and by how much, so a resume does not replay the rewrite. The
+  transcript says so once per run, because it costs the provider's prompt cache.
+- **`approval`** answers in the person's place: `approve` runs the call, `refuse` returns the reason to the model, and `ask` leaves it to
+  the person. The first answer other than `ask` wins. It never widens the sandbox: a call the sandbox refuses stays refused. The
+  transcript names the hook that answered.
+- **`waiting`** is for notifications, such as a sound or a desktop banner.
 
 ## Hooks that drive the conversation: `run.stop`
 
@@ -61,7 +68,7 @@ the tests and send the failures back, check a list, or ask for a review pass. Th
 - The person's follow-up comes first. `run.stop` is asked only when nothing is queued.
 - The hook receives `continued`: how many times hooks have continued this run. A hook can stop itself, as Claude Code's
   `stop_hook_active` allows.
-- At most `hooks.maxContinues` continues a run (proposed: 3). Each counts against `maximumTurns`. At either limit the hook is not asked,
+- At most `hooks.maxContinues` continues a run (a setting, default 3). Each counts against `maximumTurns`. At either limit the hook is not asked,
   and the transcript says the limit stopped it.
 - Esc stops the run as at any other point. `ask -p` honours `continue` too, within the same limits.
 - When several hooks answer `continue`, their messages join, in order, into one entry, which counts as one continue.
@@ -76,8 +83,8 @@ the tests and send the failures back, check a list, or ask for a review pass. Th
   - A dylib hook cannot be killed. It is stopped from being called again, and the transcript says so.
 - **Cost when unused.** Each point is a check of an empty list. A hook whose `match` (0140's manifest) does not cover an event is not
   called, and its extension is not loaded or started for it.
-- **The sandbox.** In a narrowed session, hooks still run, since they can only block, rewrite or observe; tools from extensions are
-  refused (0140).
+- **The sandbox.** In a narrowed session, hooks still run: none can widen the sandbox, an `approval` answer included. Tools from
+  extensions are refused there (0140).
 - **Messages.** Each point is one JSON message whose name is the point, sent as `hooks/<point>` over 0033's protocol and as `call`'s
   `name` in a dylib. The answer is `{"decision": …}` with the fields above. 0033's `hooks/tool_call` and `hooks/tool_result` become
   `hooks/tool.call` and `hooks/tool.result`, since that protocol is still a draft.
@@ -91,18 +98,26 @@ the tests and send the failures back, check a list, or ask for a review pass. Th
 - `session.start`, `waiting` and `session.end` belong to the app: `AgentConversation`, the approval gate and the shutdown. Loop hooks
   and session hooks are two lists given to two owners.
 
-## Questions for the owner
+## Claude Code's hooks (optional)
 
-1. Should a hook be able to answer an approval: allow a call that would ask, or answer for the person? Or only block and rewrite, as
-   proposed?
-2. Is 3 the right number of hook continues per run, and should they count against `maximumTurns`?
-3. Accept Claude Code's hook configuration as well? Claude Code runs a command with the event's JSON on stdin, and exit code 2 means
-   block. Its points map onto these: `SessionStart`, `UserPromptSubmit`, `PreToolUse`, `PostToolUse`, `Stop`, `PreCompact`,
-   `Notification`, `SessionEnd`. Existing hooks would then work unchanged, at a process's cost per call.
-4. Anything missing? Candidates: a hook on each streamed event (only a dylib could afford it), and `subagent.stop` once ask has
-   subagents.
+- A setting, `hooks.claudeCode`, off by default, decides whether ask reads Claude Code's hook configuration at all.
+- On, ask reads the `hooks` section of `~/.claude/settings.json`, and a project's `.claude/settings.json` and
+  `.claude/settings.local.json` only once the project is trusted. It runs each command as Claude Code does: the event's JSON on stdin,
+  exit code 2 blocks with stderr as the reason, and a JSON answer on stdout where Claude Code accepts one.
+- Its events map onto these points: `SessionStart` → `session.start`, `UserPromptSubmit` → `prompt.submit`, `PreToolUse` →
+  `tool.call` (and `approval`, through its permission decision), `PostToolUse` → `tool.result`, `Stop` → `run.stop`, `SubagentStop` →
+  `subagent.stop`, `PreCompact` → `compaction.before`, `Notification` → `waiting`, `SessionEnd` → `session.end`. Tool names in its
+  matchers are mapped to ask's (`Bash` → `bash`, and so on); a matcher naming a tool ask lacks matches nothing.
+- Each command is a process call, with the deadlines and failure rules above.
+
+## The owner's answers (2026-11-02)
+
+1. Hooks may answer approvals both ways: approve and refuse.
+2. Hook continues: a setting, `hooks.maxContinues`, default 3, counted against `maximumTurns`.
+3. Read Claude Code's hook configuration as is, behind a setting that can turn it off.
+4. Add `subagent.stop`, `settings.change`, and rewriting at `request.before`. Not a hook on every streamed event.
 
 ## Done when
 
-The owner has answered, an ADR records the points, `AgentHook` carries them with tests for each answer and guard (the continue limits
+An ADR records the points, `AgentHook` carries them with tests for each answer and guard (the continue limits
 first), and one reference hook uses `run.stop` to send failing tests back.
