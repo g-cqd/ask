@@ -28,8 +28,9 @@ extension MCPHost {
         }
         guard registered else { return await connection.close() }
         do {
-            _ = try await connection.start()
+            let info = try await connection.start()
             try await offer(server, connection)
+            if info.supportsResources { shelve(server.name, connection) }
         } catch {
             await connection.close()
             let more = transport.diagnostic.map { " (\($0))" } ?? ""
@@ -72,6 +73,15 @@ extension MCPHost {
         countListing(server.name)
     }
 
+    /// Puts `server` on the resource shelf, or takes it off for nil, and offers `server_resource` while any server is on it.
+    private func shelve(_ server: String, _ connection: MCPConnection?) {
+        resources.set(server, connection)
+        live.replace(
+            group: Self.resourceGroup,
+            with: resources.names.isEmpty ? [] : [MCPResourceTool(shelf: resources)]
+        )
+    }
+
     /// Offers the two search tools while any server is searched, and withdraws them when none is.
     private func publishSearch() {
         let tools: [any Tool] =
@@ -106,6 +116,7 @@ extension MCPHost {
         live.replace(group: server.name, with: [])
         catalog.remove(server: server.name)
         publishSearch()
+        shelve(server.name, nil)
         guard !stopping else { return }
         setStatus(server.name, .failed("the server went away"), notes: [])
         say("The MCP server \(server.name) went away; its tools are gone.")

@@ -1,3 +1,4 @@
+// @dl:accept -- a server's tools share their imports, holder and sandbox refusal; each says its own definition and work (server_resource)
 internal import AemiJSON
 public import AskAI
 public import AskAgentCore
@@ -16,6 +17,7 @@ struct MCPCallTool: Tool {
     ) {
         ToolProperty.string("server")
         ToolProperty.string("tool")
+        // @dl:accept -- like server_resource, it holds what it reaches servers through and refuses a narrowed session first
         ToolProperty.schema("arguments", #"{"type":"object"}"#).optional
     }
 

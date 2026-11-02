@@ -54,7 +54,7 @@ extension MCPConnection {
         _ = try await request("ping", params: nil, timeout: requestTimeout)
     }
 
-    private static func cursorParams(_ cursor: String) -> [UInt8] {
+    static func cursorParams(_ cursor: String) -> [UInt8] {
         var writer = JSONStreamWriter(options: .rfc8259)
         MCPWire.object(&writer) { MCPWire.put(&$0, "cursor", string: cursor) }
         return writer.finish()

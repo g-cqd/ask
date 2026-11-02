@@ -38,8 +38,10 @@ public final class MCPHost: Sendable {
     let noticeSink: AsyncStream<String>.Continuation
     let forward: (@Sendable (String) -> Void)?
     let catalog: MCPCatalog
+    let resources = MCPResourceShelf()
     /// The group of the two search tools. A server's name cannot hold a `/`, so it cannot be this one.
     static let searchGroup = "mcp/search"
+    static let resourceGroup = "mcp/resources"
 
     /// What the host says as things happen: a server connected, skipped, failed or went away.
     public let notices: AsyncStream<String>

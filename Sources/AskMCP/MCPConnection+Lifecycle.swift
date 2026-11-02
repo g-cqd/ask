@@ -42,7 +42,8 @@ extension MCPConnection {
             version: root["serverInfo"]["version"].string ?? "",
             instructions: root["instructions"].string,
             supportsTools: tools.isObject,
-            toolsMayChange: tools["listChanged"].bool ?? false
+            toolsMayChange: tools["listChanged"].bool ?? false,
+            supportsResources: root["capabilities"]["resources"].isObject
         )
     }
 
