@@ -118,6 +118,13 @@ enum SettingCatalog {
             "none",
             user: true,
             "Which providers serve a repository, by its path, remote or git identity; the first rule that matches decides."
+        ),
+        row(
+            "presets",
+            .structured,
+            #"["swift"]"#,
+            "none",
+            "Sets of MCP servers ask knows: swift connects apple-docs and swift-search."
         )
     ]
 

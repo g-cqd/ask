@@ -29,6 +29,7 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var approvals: ApprovalsSection?  // roadmap 0134; the person's own file only
     public var modelScopes: [ModelScope]?  // roadmap 0094; the person's own file only
     public var hooks: HooksSection?  // roadmap 0192; the person's own file only
+    public var presets: [String]?  // roadmap 0190: sets of MCP servers ask knows, added to `mcp`
 
     /// The keys ask knows, in the order `ask config` shows them.
     // @dl:accept -- the list of keys is data; the sandbox policy's list of names is other data
@@ -36,7 +37,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         // @dl:accept -- the list of keys is data, like the sandbox policy's lists of paths
         "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "keepDisplayAwake", "credentials",
         "approvals", "modelScopes", "sessionEncryption", "sessionCompression", "sessionPassword", "taskScope",
-        "hooks", "sandbox", "ui", "skills", "mcp", "environment"
+        "hooks", "sandbox", "ui", "skills", "presets", "mcp", "environment"
     ]
 
     /// A file with these values.
@@ -44,6 +45,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         model: String? = nil,
         provider: String? = nil,
         maxTurns: Int? = nil,
+        // @dl:accept -- an initializer that takes every key, like each section's own
         compactAt: CompactionThreshold? = nil,
         // @dl:accept -- an initializer that takes every key; adding a section adds a parameter
         sandbox: SandboxSection? = nil,
@@ -109,6 +111,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         try validateSandbox(file.sandbox, path: path, isProject: isProject)
         try validateSkills(file.skills, path: path, isProject: isProject)
         try validateHooks(file.hooks, path: path, isProject: isProject)
+        file.mcp = try MCPPresets.adding(file.presets, to: file.mcp, path: path)
         try validateMCP(file.mcp, path: path, isProject: isProject)
         try validateEnvironment(file.environment, path: path, isProject: isProject)
         if isProject, file.approvals != nil {
@@ -211,6 +214,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                             container,
                             key: key,
                             as: CredentialStorage.self
+                                // @dl:accept -- each key decodes its own choice through the shared helper; the rows are the data
                         )
                     // @dl:accept -- the key tables are the data, and the walk over them is already shared
                     case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
@@ -218,6 +222,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "skills": file.skills = try container.decode(SkillsDecoded.self, forKey: key).section
                     // @dl:accept -- the key tables are the data, and the walk over them is already shared
                     case "mcp": file.mcp = try container.decode(MCPDecoded.self, forKey: key).section
+                    case "presets": file.presets = try container.decode([String].self, forKey: key)
                     case "approvals": file.approvals = try container.decode(ApprovalsDecoded.self, forKey: key).section
                     case "hooks": file.hooks = try container.decode(HooksDecoded.self, forKey: key).section
                     case "modelScopes":
