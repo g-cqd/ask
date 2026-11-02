@@ -138,7 +138,7 @@ public struct AgentLoop: Sendable {
         input: PromptQueue?,
         events: (AgentEvent) -> Void
     ) async throws(AgentError) {
-        try record(.user(prompt), in: session)
+        try await recordFirst(prompt, in: session, events: events)
         var watch = WindowWatch()
         var turn = 0
         while turn < settings.maximumTurns {
@@ -175,7 +175,7 @@ public struct AgentLoop: Sendable {
                 continuing = true
             }
             guard !Task.isCancelled else { throw .cancelled }
-            if try acceptInput(
+            if try await acceptInput(
                 input,
                 finished: !continuing,
                 atLimit: turn + 1 == settings.maximumTurns,

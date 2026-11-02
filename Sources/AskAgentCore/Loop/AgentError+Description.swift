@@ -7,6 +7,7 @@ extension AgentError: CustomStringConvertible {
             case .assembly(let error): "the response broke the protocol: \(error)"
             case .session(let error): "the session could not be recorded: \(error)"
             case .cancelled: "the run was cancelled"
+            case .promptBlocked(let reason): reason
             case .turnLimit(let turns): "stopped after \(turns) requests; raise --max-turns to let it go further"
             case .contextOverflow(let reason):
                 "the conversation does not fit the model's context window, even after compacting (\(reason)); "
