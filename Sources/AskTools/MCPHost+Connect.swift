@@ -30,7 +30,7 @@ extension MCPHost {
         do {
             let info = try await connection.start()
             try await offer(server, connection)
-            if info.supportsResources { shelve(server.name, connection) }
+            if info.supportsResources { shelve(server.name, connection, subscribable: info.resourcesSubscribable) }
         } catch {
             await connection.close()
             let more = transport.diagnostic.map { " (\($0))" } ?? ""
@@ -45,6 +45,11 @@ extension MCPHost {
         for await event in connection.events {
             switch event {
                 case .toolsChanged: try? await offer(server, connection)
+                case .resourcesChanged: resourceListChanged?(server.name)
+                case .resourceUpdated(let uri):
+                    // Only what a message attached is told: the person may want to send it again (the owner's choice, 2026-11-02).
+                    guard resources.follows(server.name, uri) else { continue }
+                    say("@\(server.name):\(uri) changed since it was attached; name it again to send what it says now.")
                 case .closed: gone(server)
                 case .log, .malformed: continue
             }
@@ -74,8 +79,8 @@ extension MCPHost {
     }
 
     /// Puts `server` on the resource shelf, or takes it off for nil, and offers `server_resource` while any server is on it.
-    private func shelve(_ server: String, _ connection: MCPConnection?) {
-        resources.set(server, connection)
+    private func shelve(_ server: String, _ connection: MCPConnection?, subscribable: Bool = false) {
+        resources.set(server, connection, subscribable: subscribable)
         live.replace(
             group: Self.resourceGroup,
             with: resources.names.isEmpty ? [] : [MCPResourceTool(shelf: resources)]

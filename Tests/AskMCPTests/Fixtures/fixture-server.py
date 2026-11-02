@@ -7,7 +7,8 @@ request, through its first argument:
   split      writes each answer in two pieces, with a pause between them
   stubborn   ignores end of input and SIGTERM, so it has to be killed
   crash      exits with status 3 when a tool is called, without answering
-  resources  also has resources: note://a, whose text is "the note's text"
+  resources  also has resources: note://a, whose text is "the note's text"; it offers subscriptions, and says a resource changed as
+             soon as it is subscribed to
 
 Tools: echo {message, slow} (with slow, a call that asks for progress is told "half way", then waits slow seconds); env (the names of its environment variables); pwd; big {kilobytes}; log {text} (writes to stderr).
 """
@@ -74,11 +75,14 @@ while True:
     if ident is None:
         continue
     if method == "initialize":
-        capabilities = {"tools": {}, "resources": {}} if mode == "resources" else {"tools": {}}
+        capabilities = {"tools": {}, "resources": {"subscribe": True, "listChanged": True}} if mode == "resources" else {"tools": {}}
         send({"jsonrpc": "2.0", "id": ident, "result": {"protocolVersion": params.get("protocolVersion"), "capabilities": capabilities,
                                                          "serverInfo": {"name": "fixture", "version": "1"}}})
     elif method == "resources/list":
         send({"jsonrpc": "2.0", "id": ident, "result": {"resources": [{"uri": "note://a", "name": "a", "mimeType": "text/plain"}]}})
+    elif method == "resources/subscribe":
+        send({"jsonrpc": "2.0", "id": ident, "result": {}})
+        send({"jsonrpc": "2.0", "method": "notifications/resources/updated", "params": {"uri": params.get("uri")}})
     elif method == "resources/templates/list":
         send({"jsonrpc": "2.0", "id": ident, "result": {"resourceTemplates": []}})
     elif method == "resources/read":

@@ -43,7 +43,8 @@ extension MCPConnection {
             instructions: root["instructions"].string,
             supportsTools: tools.isObject,
             toolsMayChange: tools["listChanged"].bool ?? false,
-            supportsResources: root["capabilities"]["resources"].isObject
+            supportsResources: root["capabilities"]["resources"].isObject,
+            resourcesSubscribable: root["capabilities"]["resources"]["subscribe"].bool ?? false
         )
     }
 

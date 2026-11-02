@@ -73,6 +73,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case skills([SlashCommand])
     /// A command's list, answering ``ScreenController/Effect/listChoices(command:)``.
     case choices(command: String, rows: [ChoiceRow])
+    /// A command's list changed where it comes from (an MCP server's resources, as `@server`): asked for again when next shown.
+    case choicesStale(command: String)
     /// Replaces the interactive configuration editor's rows.
     case configEditor(ConfigEditorSnapshot)
     /// The running command wants a line from the person: shown as a question in the status line, answered with Enter, cancelled with Esc, and sent to

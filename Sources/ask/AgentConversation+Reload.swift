@@ -17,6 +17,10 @@ extension AgentConversation {
                 group.addTask {
                     for await line in mcp.notices { update(.notice(line, isError: false)) }
                 }
+                // A server whose resources changed: its @server: list is asked for again (roadmap 0067).
+                group.addTask {
+                    for await server in mcp.resourceListChanges { update(.choicesStale(command: "@" + server)) }
+                }
                 group.addTask {
                     for await list in jobs.changes() {
                         update(

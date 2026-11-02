@@ -16,6 +16,8 @@ public struct MCPServerInfo: Sendable, Equatable {
     public let toolsMayChange: Bool
     /// Whether the server says it has resources (roadmap 0067).
     public let supportsResources: Bool
+    /// Whether it offers `resources/subscribe`, telling ask when a resource changes.
+    public let resourcesSubscribable: Bool
 
     /// What a server said.
     public init(
@@ -26,9 +28,11 @@ public struct MCPServerInfo: Sendable, Equatable {
         instructions: String?,
         supportsTools: Bool,
         toolsMayChange: Bool,
-        supportsResources: Bool = false
+        supportsResources: Bool = false,
+        resourcesSubscribable: Bool = false
     ) {
         self.supportsResources = supportsResources
+        self.resourcesSubscribable = resourcesSubscribable
         self.protocolVersion = protocolVersion
         self.name = name
         self.title = title

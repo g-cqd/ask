@@ -65,6 +65,17 @@ struct ResourcePickerTests {
         #expect(screen.state.picker == nil, "not offered again while it is finished")
     }
 
+    /// A server that says its resources changed has its list asked for again the next time the picker opens (roadmap 0067).
+    @Test func `a stale list is asked for again, and shown as it was meanwhile`() {
+        var screen = screen()
+        _ = type("see @docs:d", into: &screen)
+        _ = screen.handle(.choices(command: "@docs", rows: Self.rows))
+        _ = screen.handle(.choicesStale(command: "@docs"))
+        let effects = type("o", into: &screen)
+        #expect(effects.contains(.listChoices(command: "@docs")))
+        #expect(screen.state.picker?.matches.count == 2, "the old rows meanwhile")
+    }
+
     @Test func `while the server is asked, a URI being typed says so`() {
         var screen = screen()
         _ = type("@docs:docs:", into: &screen)

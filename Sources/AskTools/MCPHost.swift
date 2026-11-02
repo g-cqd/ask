@@ -37,6 +37,8 @@ public final class MCPHost: Sendable {
     let state: Mutex<State>
     let noticeSink: AsyncStream<String>.Continuation
     let forward: (@Sendable (String) -> Void)?
+    /// Told the name of a server whose resource list changed.
+    let resourceListChanged: (@Sendable (String) -> Void)?
     let catalog: MCPCatalog
     let resources = MCPResourceShelf()
     /// The group of the two search tools. A server's name cannot hold a `/`, so it cannot be this one.
@@ -54,15 +56,18 @@ public final class MCPHost: Sendable {
     ///   - maximumDirectTools: the most tools a server with no `tools` list may have.
     ///   - transport: how a server's transport is made.
     ///   - forwarding: also told everything ``notices`` is, for a caller that outlives this host.
+    ///   - resourceListChanged: told the name of a server that says its resource list changed.
     public init(
         servers: [MCPServerSetting],
         live: LiveTools,
         environment: [String: String],
         maximumDirectTools: Int = MCPHost.defaultMaximumDirectTools,
         transport: @escaping TransportFactory,
-        forwarding: (@Sendable (String) -> Void)? = nil
+        forwarding: (@Sendable (String) -> Void)? = nil,
+        resourceListChanged: (@Sendable (String) -> Void)? = nil
     ) {
         self.forward = forwarding
+        self.resourceListChanged = resourceListChanged
         self.servers = servers
         self.live = live
         catalog = MCPCatalog(live: live)

@@ -25,6 +25,10 @@ extension ScreenController {
             case .files(let list): return receive(files: list)
             case .skills(let list): receive(skills: list)
             case .choices(let command, let rows): return receive(command: command, choices: rows)
+            case .choicesStale(let command):
+                state.choices[command]?.stale = true
+                asking.remove(command)
+                return []
             case .configEditor(let snapshot): return receive(config: snapshot)
             case .askInput(let id, let prompt, let secret, let transient):
                 askInput(id: id, prompt: prompt, secret: secret, transient: transient)

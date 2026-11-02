@@ -25,12 +25,15 @@ final class FakeMCPServer: MCPTransport {
         var progressAsked = 0
         var resources: Resources?
         var reads: [String] = []
+        var subscriptions: [String] = []
     }
     /// What a server with resources answers: its listing's and templates' items, and a read's contents for a URI.
     struct Resources: Sendable {
         var list: String
         var templates: String
         var read: @Sendable (String) -> String
+        /// Whether it offers `resources/subscribe`.
+        var subscribable = false
     }
     private let state: Mutex<State>
 
@@ -51,6 +54,8 @@ final class FakeMCPServer: MCPTransport {
     var calls: [(name: String, arguments: String)] { state.withLock { $0.calls } }
     var isClosed: Bool { state.withLock { $0.closed } }
     var listings: Int { state.withLock { $0.listings } }
+    /// The URIs `resources/subscribe` was asked for, in order.
+    var subscriptions: [String] { state.withLock { $0.subscriptions } }
     /// How many calls carried a progress token.
     var progressAsked: Int { state.withLock { $0.progressAsked } }
 
@@ -83,6 +88,12 @@ final class FakeMCPServer: MCPTransport {
 
     /// The server tells the client its tools changed.
     func announceChange() { push(#"{"jsonrpc":"2.0","method":"notifications/tools/list_changed"}"#) }
+    /// Says its resource list changed.
+    func announceResourceListChange() { push(#"{"jsonrpc":"2.0","method":"notifications/resources/list_changed"}"#) }
+    /// Says the resource at `uri` changed.
+    func announceUpdate(_ uri: String) {
+        push(#"{"jsonrpc":"2.0","method":"notifications/resources/updated","params":{"uri":"\#(uri)"}}"#)
+    }
 
     /// The server goes away.
     func end() { continuation.finish() }
@@ -106,7 +117,12 @@ final class FakeMCPServer: MCPTransport {
                 if state.withLock({ $0.refusesInitialize }) {
                     push(#"{"jsonrpc":"2.0","id":\#(id),"error":{"code":-32000,"message":"no thanks"}}"#)
                 } else {
-                    let more = state.withLock { $0.resources } == nil ? "" : #","resources":{}"#
+                    let resources = state.withLock { $0.resources }
+                    let more =
+                        resources == nil
+                        ? ""
+                        : resources?.subscribable == true
+                            ? #","resources":{"subscribe":true,"listChanged":true}"# : #","resources":{}"#
                     push(
                         #"{"jsonrpc":"2.0","id":\#(id),"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{"listChanged":true}\#(more)},"serverInfo":{"name":"fake","version":"1"}}}"#
                     )
@@ -143,6 +159,9 @@ final class FakeMCPServer: MCPTransport {
                     }
                 }
                 push(#"{"jsonrpc":"2.0","id":\#(id),"result":\#(reply)}"#)
+            case "resources/subscribe":
+                state.withLock { $0.subscriptions.append(capture(#""uri":"([^"]+)""#, in: text) ?? "") }
+                push(#"{"jsonrpc":"2.0","id":\#(id),"result":{}}"#)
             case "resources/list", "resources/templates/list", "resources/read":
                 push(#"{"jsonrpc":"2.0","id":\#(id),"result":\#(resourceReply(method, text))}"#)
             default: push(#"{"jsonrpc":"2.0","id":\#(id),"result":{}}"#)

@@ -36,6 +36,10 @@ extension MCPConnection {
         }
         switch method {
             case "notifications/tools/list_changed": eventSink.yield(.toolsChanged)
+            case "notifications/resources/list_changed": eventSink.yield(.resourcesChanged)
+            case "notifications/resources/updated":
+                guard let uri = root?["uri"].string, !uri.isEmpty else { return }
+                eventSink.yield(.resourceUpdated(uri: uri))
             case "notifications/message":
                 guard let root else { return }
                 let data = root["data"]

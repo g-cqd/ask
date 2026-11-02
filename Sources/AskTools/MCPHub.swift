@@ -21,6 +21,9 @@ public final class MCPHub: Sendable {
     /// What the hosts say, in one stream across changes: a server connected, failed or went away.
     public let notices: AsyncStream<String>
     private let noticeSink: AsyncStream<String>.Continuation
+    /// The names of servers whose resource list changed, for the `@server:` picker to ask again (roadmap 0067).
+    public let resourceListChanges: AsyncStream<String>
+    private let listChangeSink: AsyncStream<String>.Continuation
     private let environment: [String: String]
     private let transport: MCPHost.TransportFactory
     let state = Mutex(State())
@@ -39,6 +42,10 @@ public final class MCPHub: Sendable {
         self.environment = environment
         self.transport = transport
         (notices, noticeSink) = AsyncStream.makeStream(of: String.self, bufferingPolicy: .bufferingNewest(64))
+        (resourceListChanges, listChangeSink) = AsyncStream.makeStream(
+            of: String.self,
+            bufferingPolicy: .bufferingNewest(16)
+        )
         state.withLock { $0.started = !connectsOnFirstNeed }
     }
 
@@ -68,6 +75,7 @@ public final class MCPHub: Sendable {
         let old = state.host
         let before = state.chain
         let sink = noticeSink
+        let changes = listChangeSink
         let next =
             state.servers.isEmpty
             ? nil
@@ -76,7 +84,8 @@ public final class MCPHub: Sendable {
                 live: live,
                 environment: environment,
                 transport: transport,
-                forwarding: { sink.yield($0) }
+                forwarding: { sink.yield($0) },
+                resourceListChanged: { changes.yield($0) }
             )
         state.host = next
         state.chain = Task {
@@ -105,5 +114,6 @@ public final class MCPHub: Sendable {
         await chain?.value
         await host?.stop()
         noticeSink.finish()
+        listChangeSink.finish()
     }
 }
