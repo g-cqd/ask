@@ -50,21 +50,22 @@ public enum ToolSummary {
         return questions.count > 1 ? "\(first) (+\(questions.count - 1) more)" : first
     }
 
-    /// Compact target and parameters; duration/status are drawn independently by the screen. `tool` names the tool when a projection
-    /// depends on it (the skill tool's `name` and `query` mean something only there).
+    /// Compact parameters, then the target: modifiers before the subject (the owner's choice, 2026-11-02, roadmap 0080), so a long
+    /// path or command cut at the edge never hides them. Duration and status are drawn by the screen. `tool` names the tool when a
+    /// projection depends on it (the skill tool's `name` and `query` mean something only there).
     public static func header(for input: JSONObject, tool: String? = nil, locale: Locale = .current) -> String {
         if tool == "skill", let header = skillHeader(for: input) { return header }
         guard let fields = fields(input) else { return line(for: input) }
-        var parts = [line(for: input)]
+        var parts: [String] = []
         if fields.command != nil {
             if let timeout = fields.timeoutSeconds { parts.append("timeout \(timeout)s") }
             if let yield = fields.yieldSeconds { parts.append("yield \(yield)s") }
         } else if fields.path != nil {
             if let part = pathPart(fields, locale: locale) { parts.append(part) }
         } else if let job = fields.job {
-            parts = [compact(job), fields.action ?? "input"]
+            return [fields.action ?? "input", compact(job)].joined(separator: " · ")
         }
-        return parts.joined(separator: " · ")
+        return (parts + [line(for: input)]).joined(separator: " · ")
     }
 
     /// What a file call does beside its path: an exact replacement, the size it writes, or the lines it reads.
@@ -74,9 +75,10 @@ public enum ToolSummary {
         if let limit = fields.limit, limit > 0 {
             let first = Swift.max(1, fields.offset ?? 1)
             let end = first.addingReportingOverflow(limit - 1)
-            return end.overflow ? "[\(first):]" : "[\(first):\(end.partialValue)]"
+            if end.overflow { return "from line \(first)" }
+            return end.partialValue == first ? "line \(first)" : "lines \(first)–\(end.partialValue)"
         }
-        return fields.offset.map { "[\($0):]" }
+        return fields.offset.map { "from line \($0)" }
     }
 
     /// For a tool whose input is a command, the limits the call set on it, in seconds (roadmap 0080); nil for any other tool.

@@ -18,7 +18,10 @@ struct ToolPresentationTests {
             #"{"command":"\#(String(repeating: "x", count: 200))\nsecond line","timeout_seconds":60,"yield_seconds":5}"#
         )
         #expect(ToolSummary.fullInput(for: json) == command)
-        #expect(ToolSummary.header(for: json).contains(" · timeout 60s · yield 5s"))
+        #expect(
+            ToolSummary.header(for: json).hasPrefix("timeout 60s · yield 5s · "),
+            "the limits before the command (roadmap 0080)"
+        )
         #expect(!ToolSummary.header(for: json).contains("second line"))
     }
 
@@ -27,24 +30,26 @@ struct ToolPresentationTests {
         #expect(ToolSummary.path(for: try input(#"{"command":"ls"}"#)) == nil)
     }
 
-    @Test func `read and write headers show concise window and size parameters`() throws {
+    /// Modifiers before the subject, as the shell's limits are (the owner's choice, 2026-11-02, roadmap 0080): a long path cut at the
+    /// edge never hides them.
+    @Test func `read and write headers show their lines and size before the path`() throws {
         #expect(
             ToolSummary.header(for: try input(#"{"path":"src/a.swift","offset":10,"limit":36}"#))
-                == "src/a.swift · [10:45]"
+                == "lines 10–45 · src/a.swift"
         )
         #expect(
             ToolSummary.header(for: try input(#"{"path":"src/b.swift","offset":15}"#))
-                == "src/b.swift · [15:]"
+                == "from line 15 · src/b.swift"
         )
-        #expect(ToolSummary.header(for: try input(#"{"path":"a.txt","content":"é"}"#)) == "a.txt · 2 B")
+        #expect(ToolSummary.header(for: try input(#"{"path":"a.txt","content":"é"}"#)) == "2 B · a.txt")
         let kb = String(repeating: "a", count: 1024)
         #expect(
             ToolSummary.header(for: try input(#"{"path":"b.txt","content":"\#(kb)"}"#), locale: Self.english)
-                == "b.txt · 1 KiB (1,024 B)"
+                == "1 KiB (1,024 B) · b.txt"
         )
         #expect(
             ToolSummary.header(for: try input(#"{"path":"b.txt","content":"\#(kb)"}"#), locale: Self.german)
-                == "b.txt · 1 KiB (1.024 B)"
+                == "1 KiB (1.024 B) · b.txt"
         )
         #expect(ToolSummary.fullInput(for: try input(#"{"path":"a.txt","content":"é\nhello"}"#)) == "é\nhello")
     }
@@ -67,8 +72,10 @@ struct ToolPresentationTests {
     @Test func `replacement and job inputs keep their distinct meanings`() throws {
         let edit = try input(#"{"path":"a","old_text":"before","new_text":"after"}"#)
         #expect(ToolSummary.fullInput(for: edit) == "- before\n+ after")
-        #expect(ToolSummary.header(for: edit) == "a · exact replacement")
-        #expect(ToolSummary.header(for: try input(##"{"job":"#abcd","action":"stop"}"##)) == "#abcd · stop")
+        #expect(ToolSummary.header(for: edit) == "exact replacement · a")
+        #expect(ToolSummary.header(for: try input(##"{"job":"#abcd","action":"stop"}"##)) == "stop · #abcd")
+        #expect(ToolSummary.header(for: try input(#"{"job":"job-3"}"#)) == "input · job-3")
+        #expect(ToolSummary.header(for: try input(#"{"path":"a","limit":1}"#)) == "line 1 · a", "one line is one line")
     }
 
     /// IEC units past KiB, one decimal at most, with the exact count beside them (roadmap 0078).
