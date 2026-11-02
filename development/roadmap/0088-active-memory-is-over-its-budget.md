@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-28
 ---
@@ -264,3 +264,9 @@ less in 2026-10-29, which the owner declined then) and malloc.
 Tried and reverted (2026-11-02, active RSS of the `read` turn, 7 runs each, the three builds alternated): an ephemeral session without
 credential storage, cache and cookies 23,520 KiB, without credential storage and cache 23,664, as it is 23,792; without the system's
 proxies no change. Too little against the 3.5 MiB left, and dropping cookies changes what a provider sees.
+
+## Owner decision (2026-11-02): the active budget is 25 MiB
+
+Rather than a hand-written HTTP client, the owner raised the active budget from 20 to 25 MiB (`Budget.activeMemoryMebibytes`). Measured
+24,016 KiB, so it holds with 1.5 MiB to spare, enough that a regression still shows. This item is done; the signed build's extra
+1.3 MiB at idle stays open with 0054's variance (t26).

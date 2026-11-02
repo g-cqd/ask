@@ -30,8 +30,9 @@ public enum Budget {
     public static let idleMemoryMebibytes: Int = 15
 
     /// Resident memory right after a tool call has been answered and shown (the model asked, `read` ran, the result is on
-    /// screen), in mebibytes. The owner chose 20 on 2026-10-28 (ADR-0122); it is checked on a loaded machine.
-    public static let activeMemoryMebibytes: Int = 20
+    /// screen), in mebibytes. The owner chose 20 on 2026-10-28 (ADR-0122), and raised it to 25 on 2026-11-02 (roadmap 0088): 24,016 KiB
+    /// measured, most of what is left being the frameworks URLSession loads at its first request. It is checked on a loaded machine.
+    public static let activeMemoryMebibytes: Int = 25
 
     /// One byte written to the terminal to its echo reaching the output stream, in milliseconds.
     ///
