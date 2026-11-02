@@ -132,6 +132,7 @@ func settings(
         imageLimits: resolved.imageLimits
     )
     settings.compactAtShare = limits.compactAt.percent
+    settings.maximumHookContinues = limits.hookContinues
     return settings
 }
 

@@ -15,6 +15,7 @@ extension ConfigurationFile {
             case "credentials": credentials != nil
             case "approvals": approvals != nil
             case "modelScopes": modelScopes != nil
+            case "hooks": hooks != nil
             case "sandbox": sandbox != nil
             case "ui": ui != nil
             case "skills": skills != nil

@@ -6,7 +6,9 @@ extension SettingCatalog {
     }
 
     /// The sections, which take an object.
-    static let sections: Set<String> = ["sandbox", "ui", "ui.fold", "skills", "approvals", "environment", "mcp"]
+    static let sections: Set<String> = [
+        "sandbox", "ui", "ui.fold", "skills", "approvals", "hooks", "environment", "mcp"
+    ]
 
     /// The structured settings' values, which their kind alone does not say.
     // @dl:disable near-clone -- a table of keys and their words: string literals that match other files' literals by shape only

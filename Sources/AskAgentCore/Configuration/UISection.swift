@@ -1,6 +1,6 @@
 /// The `ui` section of a configuration file: how the screen treats the pointer and tool output (ADR-0046). Every key is optional, and a
 /// layer that sets one replaces it and leaves the others.
-public struct UISection: Sendable, Equatable, CustomStringConvertible {
+public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSection {
     /// `ui.mouse`: whether the terminal reports the mouse to ask. Off leaves the terminal's own selection and wheel alone.
     public var mouse: Bool?
     /// `ui.copyOnSelect`: whether a finished selection is copied at once.
@@ -177,6 +177,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible {
             sidebarOpen: section.sidebarOpen ?? sidebarOpen,
             prompt: section.prompt ?? prompt,
             tint: section.tint ?? tint,
+            // @dl:accept -- each section layers its keys the same way; the key lists are the data
             separator: section.separator ?? separator,
             padding: section.padding ?? padding,
             markdown: section.markdown ?? markdown,

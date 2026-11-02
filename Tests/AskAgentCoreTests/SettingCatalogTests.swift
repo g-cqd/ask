@@ -22,7 +22,7 @@ struct SettingCatalogTests {
     @Test func `the catalog holds exactly the keys the parser reads`() {
         let sections: [String: [String]] = [
             "ui": UISection.keys, "sandbox": SandboxSection.keys, "approvals": ApprovalsSection.keys,
-            "skills": SkillsSection.keys, "environment": EnvironmentSection.keys
+            "skills": SkillsSection.keys, "hooks": HooksSection.keys, "environment": EnvironmentSection.keys
         ]
         for (section, keys) in sections {
             #expect(catalogKeys(under: section) == Set(keys), "\(section)")
