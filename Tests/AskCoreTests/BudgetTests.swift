@@ -131,8 +131,8 @@ struct BudgetTests {
     }
 
     @Test func `active memory and the delays are the numbers the owner chose`() {
-        // ADR-0122, 2026-10-28.
-        #expect(Budget.activeMemoryMebibytes == 20)
+        // ADR-0122, 2026-10-28; active memory raised to 25 by the owner on 2026-11-02 (roadmap 0088).
+        #expect(Budget.activeMemoryMebibytes == 25)
         #expect(Budget.inputDelayMilliseconds == 4)
         #expect(
             !Budget.isWithinBudget(
@@ -140,7 +140,7 @@ struct BudgetTests {
                 idleMemoryMebibytes: 5,
                 inputDelay: 0.1,
                 action: 1,
-                activeMemoryMebibytes: 20.5
+                activeMemoryMebibytes: 25.5
             )
         )
         #expect(
@@ -149,7 +149,7 @@ struct BudgetTests {
                 idleMemoryMebibytes: 5,
                 inputDelay: 0.1,
                 action: 1,
-                activeMemoryMebibytes: 20
+                activeMemoryMebibytes: 25
             )
         )
     }
