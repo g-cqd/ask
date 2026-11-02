@@ -231,3 +231,11 @@ Measured, today's code without and with it: idle 15.6 → 14.1 MiB (10 alternati
 the input delay was bimodal for both builds under that load (0.4–0.6 ms or about 10 ms). The file goes stale as the code changes;
 `generate-order-file.py --check` says how many of its names the release build still has (98 % today); regenerate after a large change.
 Still open here: the signed build's extra 1.3 MiB, and active memory.
+
+## The order file regenerated (2026-11-02)
+
+Idle memory was over again: 15,760 KiB against 15,360 (`measure-budgets.py`, 15 runs, load 5–10). The order file had gone stale and
+could not be regenerated: the first-start question about session encryption (0182) took the keys of the script's run, which never
+reached the prompt ("ask did not quit"). The script now sets `ASK_SESSION_ENCRYPTION=off` after its clean-up, as the budget script does.
+Regenerated: 1,642 functions (159 new, 44 gone). Idle 15,280 KiB, under the budget by 80 KiB (15 runs, load about 19); cold start
+37.2 ms, input 0.56 ms, action 5.2 ms. Active memory is unchanged at 25,712 KiB against 20,480: still the open part of this item.
