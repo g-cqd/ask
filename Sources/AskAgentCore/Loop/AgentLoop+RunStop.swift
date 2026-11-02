@@ -25,7 +25,12 @@ extension AgentLoop {
             events(.hookContinuesStopped(.turns(settings.maximumTurns)))
             return false
         }
-        let stop = RunStop(response: response, continued: hookContinues)
+        let stop = RunStop(
+            response: response,
+            continued: hookContinues,
+            changed: Self.changesThings(session.tree.entries.dropFirst(stopMark))
+        )
+        stopMark = session.tree.entries.count
         var messages: [String] = []
         for hook in hooks {
             guard case .continue(let message) = await hook.runStop(stop),
@@ -39,5 +44,13 @@ extension AgentLoop {
         hookContinues += 1
         events(.hookContinued(text))
         return true
+    }
+
+    /// Whether `entries` hold a response that made a call that changes things.
+    static func changesThings(_ entries: some Sequence<SessionEntry>) -> Bool {
+        entries.contains { entry in
+            guard case .response(let response) = entry.payload else { return false }
+            return toolCalls(in: response).contains { ApprovalPolicy.changesThings($0.name, $0.input) }
+        }
     }
 }

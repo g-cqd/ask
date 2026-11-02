@@ -42,6 +42,12 @@ public struct BashTool: ArgumentTool {
 
     public static let defaultTimeout = 120
     public static let maximumTimeout = 600
+    /// How a command stopped for its deadline ends its output.
+    static let timedOutMark = "[timed out after"
+    /// How a command stopped by the person ends its output.
+    static let abortedMark = "[aborted; the command and its children were stopped]"
+    /// How a command that could not start is told.
+    static let startFailure = "bash could not start: "
     static let keptBytes = 512 << 10
 
     public let definition: ToolDefinition
@@ -155,8 +161,8 @@ public struct BashTool: ArgumentTool {
                 return .error(
                     Self.body(job.takeOutput())
                         + (outcome == .cancelled
-                            ? "[aborted; the command and its children were stopped]"
-                            : "[timed out after \(limit) s; the command and its children were stopped]")
+                            ? Self.abortedMark
+                            : "\(Self.timedOutMark) \(limit) s; the command and its children were stopped]")
                 )
         }
     }
@@ -177,7 +183,7 @@ public struct BashTool: ArgumentTool {
         let body = body(output) + (cut ? JobWaiting.fileLine(job) : "") + sandboxNote(for: job, output: output)
         switch job.status {
             case .exited(0): return ToolOutput(body + "[exit 0]")
-            case .failedToStart(let reason): return .error("bash could not start: \(reason)")
+            case .failedToStart(let reason): return .error(Self.startFailure + reason)
             case let status: return .error(body + "[\(status)]")
         }
     }

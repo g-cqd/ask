@@ -172,7 +172,13 @@
 
   "hooks": {
     // How many times hooks may continue a run that would have ended; each counts against maxTurns. Default: 3. Your own file only.
-    "maxContinues": 3
+    "maxContinues": 3,
+
+    // A command run when a run that changed things would end; a failure is sent back to the model. Default: none.
+    "check": "swift test",
+
+    // How many seconds the check may take, from 1 to 600. Default: 600.
+    "checkTimeout": 600
   },
 
   "skills": {
