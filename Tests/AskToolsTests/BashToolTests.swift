@@ -43,7 +43,7 @@ struct BashToolTests {
     }
 
     @Test func `standard input is closed, so a reader ends instead of hanging`() async {
-        let output = await BashTool().run(command("cat; echo done"), in: context)
+        let output = await BashTool().run(command("cat; echo \"done\""), in: context)
         #expect(output == ToolOutput("done\n[exit 0]"))
     }
 

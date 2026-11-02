@@ -54,6 +54,8 @@ public struct BashTool: ArgumentTool {
 
     private let access: JobAccess
     private let observe: @Sendable (Event) -> Void
+    /// The commands refused once for shellcheck's findings.
+    let refused = RefusedCommands()
 
     /// A bash tool with its own job table, timing out on the continuous clock.
     public init() { self.init(jobs: JobTable()) }
@@ -92,9 +94,7 @@ public struct BashTool: ArgumentTool {
             shell: shell,
             path: access.jobs.visiblePath(in: context)
         )
-        if let syntaxError = checked.syntaxError {
-            throw ToolFailure("The command does not parse in \(shell), so it was not run:\n\(syntaxError)")
-        }
+        try refuse(arguments.command, shell: shell, checked)
         let yield = arguments.yieldSeconds.map { Swift.min(Swift.max(1, $0), Self.maximumTimeout) }
         let timeout = Swift.min(Swift.max(1, arguments.timeoutSeconds ?? Self.defaultTimeout), Self.maximumTimeout)
         let limit = readiness == nil ? (yield ?? timeout) : timeout
@@ -117,9 +117,7 @@ public struct BashTool: ArgumentTool {
                 } ?? .backgrounded
             var result = await Self.output(of: outcome, job: job, readiness: readiness, yield: yield, limit: limit)
             // Told when the command failed, where they may say why; a command that succeeded needs no lint.
-            if result.isError, !checked.findings.isEmpty {
-                result.content += "\n[shellcheck] " + checked.findings.joined(separator: "\n[shellcheck] ")
-            }
+            Self.annotate(&result, checked)
             return result
         } catch {
             job.stop()
