@@ -39,6 +39,17 @@ public enum BuildSignature {
         return read
     }
 
+    /// The signature of the build at `path`, read as ``readRunning()`` reads the running one's.
+    static func read(_ path: String) -> Running {
+        var staticCode: SecStaticCode?
+        guard SecStaticCodeCreateWithPath(URL(filePath: path) as CFURL, [], &staticCode) == errSecSuccess,
+            let staticCode
+        else {
+            return .unreadable
+        }
+        return requirement(of: staticCode)
+    }
+
     private static func requirement(of staticCode: SecStaticCode) -> Running {
         var information: CFDictionary?
         guard

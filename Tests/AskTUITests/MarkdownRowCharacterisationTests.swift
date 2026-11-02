@@ -23,9 +23,9 @@ struct MarkdownRowCharacterisationTests {
             }
     }
 
-    static func digest() -> UInt64 {
+    static func digest(_ messages: [String] = messages()) -> UInt64 {
         var hash: UInt64 = 0xCBF2_9CE4_8422_2325
-        for message in messages() {
+        for message in messages {
             for columns in [7, 23, 80] {
                 for highlight in [false, true] {
                     var transcript = Transcript()
