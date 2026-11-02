@@ -34,7 +34,7 @@ struct ProviderProxyTests {
     }
 
     /// A connection to the proxy; what it reads after sending `text`, up to `limit` bytes or a pause.
-    private func exchange(_ port: Int, _ messages: [String], limit: Int = 4096) throws -> String {
+    private func exchange(_ port: Int, _ messages: [String], limit: Int = 4096, pause: Double = 0) throws -> String {
         let client = socket(AF_INET, SOCK_STREAM, 0)
         defer { close(client) }
         var address = sockaddr_in()
@@ -49,6 +49,7 @@ struct ProviderProxyTests {
         var timeout = timeval(tv_sec: 10, tv_usec: 0)
         setsockopt(client, SOL_SOCKET, SO_RCVTIMEO, &timeout, socklen_t(MemoryLayout<timeval>.size))
         var received: [UInt8] = []
+        if pause > 0 { usleep(useconds_t(pause * 1_000_000)) }
         for (index, message) in messages.enumerated() {
             _ = message.utf8CString.withUnsafeBufferPointer { write(client, $0.baseAddress, $0.count - 1) }
             // TCP may split what comes back, or send it later than one read waits: read until the reply to this message is whole
@@ -73,12 +74,55 @@ struct ProviderProxyTests {
         #expect(reply.hasSuffix("ping"), "\(reply)")
     }
 
+    @Test func `a client slow to send its request is waited for`() throws {
+        let upstream = try echoServer()
+        let proxy = try ProviderProxy(allowing: [.init(host: "127.0.0.1", port: upstream)])
+        defer { proxy.stop() }
+        let reply = try exchange(proxy.port, ["CONNECT 127.0.0.1:\(upstream) HTTP/1.1\r\n\r\n", "ping"], pause: 0.3)
+        #expect(reply.hasPrefix("HTTP/1.1 200 "), "\(reply)")
+    }
+
     @Test func `a target it does not allow is refused with 403`() throws {
         let upstream = try echoServer()
         let proxy = try ProviderProxy(allowing: [.init(host: "api.anthropic.com", port: 443)])
         defer { proxy.stop() }
         let reply = try exchange(proxy.port, ["CONNECT 127.0.0.1:\(upstream) HTTP/1.1\r\n\r\n"])
         #expect(reply.hasPrefix("HTTP/1.1 403 "), "\(reply)")
+    }
+
+    /// A proxy stopped before its accept thread first ran must not accept on its old descriptor once another socket has its number: it
+    /// took connections meant for a server made after it (the tunnel test's flake, under load).
+    @Test func `a stopped proxy takes no connection meant for a socket made after it`() throws {
+        for _ in 0 ..< 40 {
+            let proxy = try ProviderProxy(allowing: [])
+            proxy.stop()
+            let upstream = try echoServer()
+            #expect(try exchange(upstream, ["ping"]) == "ping")
+        }
+    }
+
+    @Test func `once stopped, its port takes no connection`() throws {
+        let proxy = try ProviderProxy(allowing: [])
+        let port = proxy.port
+        proxy.stop()
+        var refused = false
+        // The accept thread closes the port once it wakes: give it a moment.
+        for _ in 0 ..< 100 where !refused {
+            let client = socket(AF_INET, SOCK_STREAM, 0)
+            var address = sockaddr_in()
+            address.sin_family = sa_family_t(AF_INET)
+            address.sin_port = in_port_t(UInt16(port).bigEndian)
+            address.sin_addr.s_addr = inet_addr("127.0.0.1")
+            let connected = withUnsafePointer(to: &address) { pointer in
+                pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                    connect(client, $0, socklen_t(MemoryLayout<sockaddr_in>.size))
+                }
+            }
+            close(client)
+            refused = connected != 0
+            if !refused { usleep(10_000) }
+        }
+        #expect(refused)
     }
 
     @Test func `it listens on localhost, on a port of its own`() throws {

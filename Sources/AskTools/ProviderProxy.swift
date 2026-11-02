@@ -16,7 +16,9 @@ public final class ProviderProxy: Sendable {
 
     /// The port it listens on, on 127.0.0.1.
     public let port: Int
-    private let listener: Int32
+    /// Written once by ``stop()`` to wake the accept thread, which alone closes the listener: closed from here instead, its number
+    /// could be another socket's by the time the thread next accepted, and the thread would take that socket's connections.
+    private let wake: Int32
     private let stopped = Atomic<Bool>(false)
     /// Where tunnels may go; ``allow(_:)`` replaces it when the run's providers change, for tunnels opened from then on.
     private let allowList: AllowList
@@ -51,22 +53,42 @@ public final class ProviderProxy: Sendable {
             close(listener)
             throw .socket(failed, code)
         }
-        _ = fcntl(listener, F_SETFD, FD_CLOEXEC)
-        self.listener = listener
+        var pipe: [Int32] = [-1, -1]
+        guard Darwin.pipe(&pipe) == 0 else {
+            let code = errno
+            close(listener)
+            throw .socket("pipe", code)
+        }
+        for descriptor in [listener] + pipe { _ = fcntl(descriptor, F_SETFD, FD_CLOEXEC) }
+        // A connection gone between poll and accept must not block the thread, which then could not be woken.
+        _ = fcntl(listener, F_SETFL, fcntl(listener, F_GETFL) | O_NONBLOCK)
+        wake = pipe[1]
         port = Int(UInt16(bigEndian: address.sin_port))
         let allowList = AllowList(allowed)
         self.allowList = allowList
-        // The loop ends when ``stop()`` closes the listener: accept then fails with something other than an interruption.
-        Thread.detachNewThread {
-            while true {
-                let client = accept(listener, nil, nil)
-                if client < 0 {
-                    if errno == EINTR { continue }
-                    return
-                }
-                _ = fcntl(client, F_SETFD, FD_CLOEXEC)
-                Thread.detachNewThread { ProxyTunnel.serve(client, allowing: allowList.current) }
+        Thread.detachNewThread { Self.accepting(on: listener, until: pipe, allowing: allowList) }
+    }
+
+    /// Serves each connection to `listener` until a byte arrives on `wake`, then closes both, and `wake`'s other end.
+    private static func accepting(on listener: Int32, until wake: [Int32], allowing allowList: AllowList) {
+        defer { for descriptor in [listener] + wake { close(descriptor) } }
+        var fds = [
+            pollfd(fd: listener, events: Int16(POLLIN), revents: 0),
+            pollfd(fd: wake[0], events: Int16(POLLIN), revents: 0)
+        ]
+        while true {
+            guard poll(&fds, 2, -1) >= 0 else {
+                if errno == EINTR { continue }
+                return
             }
+            if fds[1].revents != 0 { return }
+            guard fds[0].revents & Int16(POLLIN) != 0 else { continue }
+            let client = accept(listener, nil, nil)
+            guard client >= 0 else { continue }
+            _ = fcntl(client, F_SETFD, FD_CLOEXEC)
+            // It inherits the listener's non-blocking mode; a tunnel reads and writes blocking, with timeouts.
+            _ = fcntl(client, F_SETFL, fcntl(client, F_GETFL) & ~O_NONBLOCK)
+            Thread.detachNewThread { ProxyTunnel.serve(client, allowing: allowList.current) }
         }
     }
 
@@ -85,11 +107,11 @@ public final class ProviderProxy: Sendable {
     /// Replaces where tunnels may go; tunnels already open stay open.
     public func allow(_ targets: Set<ProxyRequest.Target>) { allowList.replace(with: targets) }
 
-    /// Stops accepting; tunnels already open run to their end.
+    /// Stops accepting; tunnels already open run to their end. The accept thread closes the listener once it wakes.
     public func stop() {
         guard !stopped.exchange(true, ordering: .relaxed) else { return }
-        shutdown(listener, SHUT_RDWR)
-        close(listener)
+        var byte: UInt8 = 1
+        _ = write(wake, &byte, 1)
     }
 
     deinit { stop() }
