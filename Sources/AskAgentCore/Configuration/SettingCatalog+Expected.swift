@@ -16,6 +16,7 @@ extension SettingCatalog {
         "maxTurns": "a whole number of at least 1, or null for no limit",
         "compactAt": CompactionThreshold.expected,
         "modelScopes": "a list of rules, each with a path, remote or identity and the providers it allows",
+        "presets": #"a list of preset names: "swift""#,
         "sandbox.write": #""workspace", "anywhere" or a list of paths"#,
         "sandbox.read": #""workspace", "anywhere" or a list of paths"#,
         "sandbox.hide": "a list of paths", "sandbox.readable": "a list of paths", "sandbox.writable": "a list of paths",

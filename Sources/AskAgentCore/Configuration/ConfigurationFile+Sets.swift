@@ -20,6 +20,7 @@ extension ConfigurationFile {
             case "ui": ui != nil
             case "skills": skills != nil
             case "mcp": mcp != nil
+            case "presets": presets != nil
             case "environment": environment != nil
             default: false
         }
