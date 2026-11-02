@@ -32,7 +32,7 @@ public struct ToolContext: Sendable, Equatable {
     /// Who is asked before a server's tool marked destructive runs; nil, the default, runs it unasked, as `ask -p` does (ADR-0111).
     public private(set) var destructiveApprover: DestructiveApprover?
     /// What is asked before a call that changes things runs (roadmap 0134); nil runs every call the sandbox allows, as `ask -p` does.
-    public let callGate: ToolCallGate?
+    public private(set) var callGate: ToolCallGate?
     /// What the model's provider accepts of images in one request, when it says; `read` fits pictures to it.
     public let imageLimits: ImageLimits?
     /// Who answers the model's questions (roadmap 0117); nil where no one can, and then the `question` tool is not offered.
@@ -93,6 +93,13 @@ public struct ToolContext: Sendable, Equatable {
     public func during(call id: String) -> ToolContext {
         var copy = self
         copy.callID = id
+        return copy
+    }
+
+    /// This context with `first` answering its gate's approvals before the person; unchanged without a gate.
+    func answering(first: @escaping @Sendable (ToolCallApproval) async -> ApprovalDecision) -> ToolContext {
+        var copy = self
+        copy.callGate?.first = first
         return copy
     }
 

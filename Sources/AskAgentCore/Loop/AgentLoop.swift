@@ -101,7 +101,13 @@ public struct AgentLoop: Sendable {
             }
         }
         events(.toolStarted(id: call.id, name: call.name, input: call.input))
-        var output = await tools.run(name: call.name, input: call.input, in: context.during(call: call.id))
+        let answers = HookAnswers()
+        var output = await tools.run(
+            name: call.name,
+            input: call.input,
+            in: approving(context.during(call: call.id), answers)
+        )
+        answers.take().forEach(events)
         for hook in hooks { output = await hook.toolResult(call, output) }
         return output
     }

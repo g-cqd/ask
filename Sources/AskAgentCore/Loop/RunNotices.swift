@@ -12,10 +12,12 @@ public enum RunNotices {
         }
     }
 
-    /// What a hook's continue says, or a limit that kept hooks from continuing (roadmap 0192); nil when `event` is neither.
+    /// What a hook's continue or approval says, or a limit that kept hooks from continuing (roadmap 0192); nil for any other event.
     public static func hook(for event: AgentEvent) -> String? {
         switch event {
             case .hookContinued(let message): "A hook continued the run: \(message)"
+            case .hookAnswered(let hook, let tool, let approved):
+                "The hook \(hook) \(approved ? "allowed" : "refused") this \(tool) call."
             case .hookContinuesStopped(.continues(let count)):
                 "Hooks continued this run \(count) times, the most hooks.maxContinues allows; it ends here."
             case .hookContinuesStopped(.turns(let turns)):
