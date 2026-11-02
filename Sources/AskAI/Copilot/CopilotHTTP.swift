@@ -19,8 +19,12 @@ struct CopilotHTTP: Sendable {
         }
     }
 
-    func form<T: Decodable>(_ path: String, values: [(String, String)], as type: T.Type) async throws(SignInError) -> T
-    {
+    func form<T: Decodable>(
+        _ path: String,
+        values: [(String, String)],
+        as type: T.Type,
+        version: CopilotClientVersion
+    ) async throws(SignInError) -> T {
         let body = FormEncoding.query(values)
         return try await json(
             HTTPRequest(
@@ -28,7 +32,7 @@ struct CopilotHTTP: Sendable {
                 method: "POST",
                 headers: [
                     ("accept", "application/json"), ("content-type", "application/x-www-form-urlencoded"),
-                    ("user-agent", CopilotProtocol.userAgent)
+                    ("user-agent", version.userAgent)
                 ],
                 body: Array(body.utf8),
                 allowsRedirects: false

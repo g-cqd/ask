@@ -62,7 +62,7 @@ struct CopilotClientTests {
         for name in ["x-interaction-id", "x-interaction-type", "x-agent-task-id", "openai-intent"] {
             #expect(sent.headers.contains { $0.name == name })
         }
-        #expect(sent.headers.contains { $0.name == "x-github-api-version" && $0.value == "2025-05-01" })
+        #expect(sent.headers.contains { $0.name == "x-github-api-version" && $0.value == "2026-01-09" })
         let ids = sent.headers.filter { $0.name == "x-request-id" || $0.name == "x-agent-task-id" }.map { $0.value }
         #expect(ids.count == 2 && ids[0] == ids[1])
         #expect(!sent.headers.contains { $0.value.contains("GITHUB-SECRET") || $0.name == "x-api-key" })

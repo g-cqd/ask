@@ -7,18 +7,27 @@ public struct CopilotDeviceSignIn: BrowserSignIn {
     // @dl:accept -- device flows carry an HTTP client and injected wall clock; the requests and grants differ
     private let http: CopilotHTTP
     private let now: @Sendable () -> Double
+    /// Where the versions it names come from; nil names ``CopilotClientVersion/known``.
+    private let versions: CopilotVersions?
 
-    public init(transport: any HTTPTransport, now: @escaping @Sendable () -> Double = { Date().timeIntervalSince1970 })
-    {
+    public init(
+        transport: any HTTPTransport,
+        versions: CopilotVersions? = nil,
+        now: @escaping @Sendable () -> Double = { Date().timeIntervalSince1970 }
+    ) {
         http = CopilotHTTP(transport: transport)
+        self.versions = versions
         self.now = now
     }
+
+    private func version() async -> CopilotClientVersion { await versions?.current(now: now()) ?? .known }
 
     public func start() async throws(SignInError) -> SignInStart<Device> {
         let begun = try await http.form(
             "login/device/code",
             values: [("client_id", CopilotProtocol.clientID), ("scope", "user:email")],
-            as: Begun.self
+            as: Begun.self,
+            version: await version()
         )
         guard SignInSecret.isValid(begun.device_code), SignInSecret.isValid(begun.user_code),
             (1 ... 3600).contains(begun.expires_in), (1 ... begun.expires_in).contains(begun.interval),
@@ -40,7 +49,8 @@ public struct CopilotDeviceSignIn: BrowserSignIn {
                 ("client_id", CopilotProtocol.clientID), ("device_code", session.code),
                 ("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
             ],
-            as: GrantBody.self
+            as: GrantBody.self,
+            version: await version()
         )
         if let token = result.access_token, SignInSecret.isValid(token) { return .complete(token) }
         switch result.error {
@@ -56,7 +66,8 @@ public struct CopilotDeviceSignIn: BrowserSignIn {
                 githubToken: grant,
                 machineID: UUID().uuidString,
                 deviceID: UUID().uuidString,
-                now: now()
+                now: now(),
+                version: await version()
             )
     }
 

@@ -32,7 +32,7 @@ struct CopilotStorageTests {
         #expect(fresh.accessToken == "renewed" && fresh.expiresAt == 1600)
         #expect(fresh.machineID == "machine" && fresh.githubToken == "grant")
         #expect(try await access.credentials(now: 1001) == fresh)
-        #expect(transport.requests.count == 1)
+        #expect(transport.requests.filter { $0.url.host == "api.github.com" }.count == 1)
         #expect(try file.signedInAccounts(environment: [:]).contains { $0.provider == CopilotProtocol.name })
         #expect(try file.signOut(target: CopilotProtocol.name))
         #expect(try file.loadCopilot() == nil)
