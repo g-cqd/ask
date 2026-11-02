@@ -63,7 +63,10 @@ struct AccountLogin: Sendable {
             case CopilotProtocol.name:
                 let credentials = try await SignInRunner(clock: ContinuousClock())
                     .run(
-                        CopilotDeviceSignIn(transport: transport),
+                        CopilotDeviceSignIn(
+                            transport: transport,
+                            versions: CopilotVersions(beside: store, transport: transport)
+                        ),
                         show: self.show
                     )
                 try store.saveCopilot(credentials)

@@ -39,7 +39,13 @@ struct CopilotAuthTests {
             ]
         )
         let credential = try await CopilotAuthClient(transport: transport)
-            .exchange(githubToken: "github-grant", machineID: "machine", deviceID: "device", now: 1_000)
+            .exchange(
+                githubToken: "github-grant",
+                machineID: "machine",
+                deviceID: "device",
+                now: 1_000,
+                version: .known
+            )
         #expect(credential.expiresAt == 1_600)
         #expect(credential.machineID == "machine" && credential.deviceID == "device")
         let sent = try #require(transport.sent)

@@ -6,8 +6,10 @@ public struct CopilotCatalog: Sendable {
     public let access: CopilotAccess
     let transport: any HTTPTransport
     let url: URL
+    let versions: CopilotVersions
     public init(file: CredentialFile, transport: any HTTPTransport) {
-        access = CopilotAccess(file: file, transport: transport)
+        versions = CopilotVersions(beside: file, transport: transport)
+        access = CopilotAccess(file: file, transport: transport, versions: versions)
         self.transport = transport
         url = file.url.deletingLastPathComponent().appending(path: "models-copilot-vscode.json")
     }
@@ -33,7 +35,11 @@ public struct CopilotCatalog: Sendable {
         let request = HTTPRequest(
             url: try CopilotProtocol.endpoint(credential.apiURL).appending(path: "models"),
             method: "GET",
-            headers: CopilotProtocol.headers(credential, session: UUID().uuidString),
+            headers: CopilotProtocol.headers(
+                credential,
+                session: UUID().uuidString,
+                version: await versions.current(now: now)
+            ),
             body: [],
             allowsRedirects: false
         )

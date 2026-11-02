@@ -9,7 +9,8 @@ public struct CopilotAuthClient: Sendable {
         githubToken: String,
         machineID: String,
         deviceID: String,
-        now: Double
+        now: Double,
+        version: CopilotClientVersion
     ) async throws(SignInError) -> CopilotCredentials {
         guard SignInSecret.isValid(githubToken), now.isFinite else { throw .invalidResponse("GitHub grant") }
         let envelope = try await http.json(
@@ -18,7 +19,7 @@ public struct CopilotAuthClient: Sendable {
                 method: "GET",
                 headers: [
                     ("authorization", "token \(githubToken)"), ("accept", "application/json"),
-                    ("user-agent", CopilotProtocol.userAgent), ("x-github-api-version", "2025-04-01")
+                    ("user-agent", version.userAgent), ("x-github-api-version", "2025-04-01")
                 ],
                 body: [],
                 allowsRedirects: false

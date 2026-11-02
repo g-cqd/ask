@@ -4,9 +4,11 @@ internal import Foundation
 public struct CopilotAccess: Sendable {
     public let file: CredentialFile
     let client: CopilotAuthClient
-    public init(file: CredentialFile, transport: any HTTPTransport) {
+    let versions: CopilotVersions
+    public init(file: CredentialFile, transport: any HTTPTransport, versions: CopilotVersions? = nil) {
         self.file = file
         client = CopilotAuthClient(transport: transport)
+        self.versions = versions ?? CopilotVersions(beside: file, transport: transport)
     }
 
     public func credentials(now: Double) async throws -> CopilotCredentials {
@@ -20,7 +22,8 @@ public struct CopilotAccess: Sendable {
             githubToken: current.githubToken,
             machineID: current.machineID,
             deviceID: current.deviceID,
-            now: now
+            now: now,
+            version: await versions.current(now: now)
         )
         guard try file.saveCopilot(fresh, ifStill: current) else {
             guard let latest = try file.loadCopilot(), latest.expiresAt > now + 30 else {

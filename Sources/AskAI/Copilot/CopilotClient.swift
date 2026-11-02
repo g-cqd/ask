@@ -34,7 +34,8 @@ public struct CopilotClient: Sendable {
                 credential,
                 session: session,
                 interaction: interaction.id(startingNew: userInitiated),
-                userInitiated: userInitiated
+                userInitiated: userInitiated,
+                version: await catalog.versions.current(now: now)
             )
             // VS Code sends this whenever a message holds an image and the model takes images.
             if request.messages.contains(where: \.holdsImages) { headers.append(("copilot-vision-request", "true")) }
