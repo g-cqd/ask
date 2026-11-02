@@ -7,6 +7,8 @@ struct BlockProgress: Sendable, Equatable {
     var ended: ContinuousClock.Instant?
     var frame = 0
     var spinner: SpinnerStyle = .line
+    /// What the running tool last said of how far it has got, shown before its time; nil when it said nothing.
+    var note: String?
 
     init(at instant: ContinuousClock.Instant, spinner: SpinnerStyle = .line) {
         started = instant

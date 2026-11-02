@@ -34,6 +34,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     )
     /// A background process updates its original tool block independently of focused output.
     case jobOutput(JobUpdate)
+    /// How far the running tool started as `id` has got, as one short line shown on its header until it ends (roadmap 0067).
+    case toolProgress(id: String, text: String)
     case notice(String, isError: Bool)
     /// Something ask did on its own account that is not needed to read the conversation: shown with `--verbose` or after `/verbose`, kept for
     /// `/verbose` otherwise (ADR-0119).

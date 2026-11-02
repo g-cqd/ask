@@ -73,6 +73,7 @@ extension ScreenComposer {
         replacements: Int? = nil
     ) -> String {
         var parts: [String] = []
+        if case .running = status, let note = progress?.note { parts.append(note) }
         if let duration = progress?.duration(localized: localizedDurations) { parts.append(duration) }
         // Write and edit answer in one sentence: counting it reads as the file's size (roadmap 0078).
         let isWriteAck = toolName == "write" || toolName == "edit"

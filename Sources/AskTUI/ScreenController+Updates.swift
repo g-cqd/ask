@@ -14,6 +14,7 @@ extension ScreenController {
             case .thinkingText(let text): state.transcript.addThinkingText(text)
             case .toolStarted, .toolFinished: return applyTool(update)
             case .jobOutput(let job): state.transcript.updateJob(job)
+            case .toolProgress(let id, let text): state.transcript.noteProgress(text, id: id)
             case .notice(let text, let isError):
                 state.transcript.addNotice(HomePath.abbreviate(text, home: options.home), isError: isError)
             case .detail(let text): receive(detail: HomePath.abbreviate(text, home: options.home))

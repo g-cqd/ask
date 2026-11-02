@@ -38,7 +38,7 @@ struct MCPToolAdapter: Tool {
             arguments: input,
             on: connection,
             server: server,
-            allowance: ImageReader.Allowance(context.imageLimits)
+            context: context
         )
     }
 

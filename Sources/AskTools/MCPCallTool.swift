@@ -55,7 +55,7 @@ struct MCPCallTool: Tool {
             arguments: arguments,
             on: found.connection,
             server: server,
-            allowance: ImageReader.Allowance(context.imageLimits)
+            context: context
         )
     }
 }

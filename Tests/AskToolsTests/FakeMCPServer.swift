@@ -21,6 +21,8 @@ final class FakeMCPServer: MCPTransport {
         var listings = 0
         var initializeWaiters: [CheckedContinuation<Void, Never>] = []
         var initializes = 0
+        var progress: [String] = []
+        var progressAsked = 0
     }
     private let state: Mutex<State>
 
@@ -41,6 +43,8 @@ final class FakeMCPServer: MCPTransport {
     var calls: [(name: String, arguments: String)] { state.withLock { $0.calls } }
     var isClosed: Bool { state.withLock { $0.closed } }
     var listings: Int { state.withLock { $0.listings } }
+    /// How many calls carried a progress token.
+    var progressAsked: Int { state.withLock { $0.progressAsked } }
 
     func setTools(_ names: [String]) { state.withLock { $0.tools = names } }
     /// The server never answers `initialize`: it is still starting.
@@ -50,6 +54,8 @@ final class FakeMCPServer: MCPTransport {
     var diagnostic: String? { state.withLock { $0.diagnosis } }
     func refuseInitialize() { state.withLock { $0.refusesInitialize = true } }
     func reply(to call: @escaping @Sendable (String, String) -> String) { state.withLock { $0.callReply = call } }
+    /// Progress sent before each call's reply when the call asks for it: each a notification's fields after its token.
+    func reportProgress(_ fields: [String]) { state.withLock { $0.progress = fields } }
 
     /// Returns once the client has sent `initialize`.
     func waitForInitialize() async {
@@ -111,9 +117,17 @@ final class FakeMCPServer: MCPTransport {
             case "tools/call":
                 let name = capture(#""name":"([^"]+)""#, in: text) ?? ""
                 let arguments = capture(#""arguments":(\{[^}]*\})"#, in: text) ?? "{}"
-                let reply = state.withLock { state -> String in
+                let (reply, progress) = state.withLock { state -> (String, [String]) in
                     state.calls.append((name, arguments))
-                    return state.callReply(name, arguments)
+                    return (state.callReply(name, arguments), state.progress)
+                }
+                if let token = capture(#""progressToken":"([^"]+)""#, in: text) {
+                    state.withLock { $0.progressAsked += 1 }
+                    for fields in progress {
+                        push(
+                            #"{"jsonrpc":"2.0","method":"notifications/progress","params":{"progressToken":"\#(token)",\#(fields)}}"#
+                        )
+                    }
                 }
                 push(#"{"jsonrpc":"2.0","id":\#(id),"result":\#(reply)}"#)
             default: push(#"{"jsonrpc":"2.0","id":\#(id),"result":{}}"#)

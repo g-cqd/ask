@@ -43,3 +43,5 @@ An MCP server offers the model more tools: a program ask starts, or a service at
 - A server with many tools (more than 16) is offered through a search, to keep the model's prompt short. `tools: [...]` keeps only the ones
   you name, and `mode` and `maxDirectTools` change how they are offered ([Configuration](configuration.md#mcp)).
 - A tool the server marks as destructive is asked about before its first use in a session.
+- While a server's tool runs, what the server says of how far it has got shows on the block's header, such as `50% · indexing`, and
+  goes when the call ends. `ask -p` asks servers for none.

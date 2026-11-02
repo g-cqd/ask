@@ -18,7 +18,11 @@ extension AgentConversation {
                 narrowing: narrowing,
                 destructiveApprover: { [weak self] in await self?.approveDestructive($0) ?? false },
                 callGate: callGate(for: current.settings),
-                askPerson: { [weak self] in await self?.askPerson($0) }
+                askPerson: { [weak self] in await self?.askPerson($0) },
+                // A running call's progress goes to the screen of the run it belongs to (roadmap 0067).
+                progress: { [weak self] call, line in
+                    self?.approvals.withLock { $0.ask }?(.toolProgress(id: call, text: line))
+                }
             )
             let created = try makeLoop(current.settings, hooks).handing(over: handover)
             current.loop = created
@@ -97,7 +101,8 @@ func runInteractive(
                     live: mcp.live,
                     destructiveApprover: hooks.destructiveApprover,
                     callGate: hooks.callGate,
-                    askPerson: hooks.askPerson
+                    askPerson: hooks.askPerson,
+                    progress: hooks.progress
                 )
             }
         )
