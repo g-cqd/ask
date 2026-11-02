@@ -239,3 +239,24 @@ could not be regenerated: the first-start question about session encryption (018
 reached the prompt ("ask did not quit"). The script now sets `ASK_SESSION_ENCRYPTION=off` after its clean-up, as the budget script does.
 Regenerated: 1,642 functions (159 new, 44 gone). Idle 15,280 KiB, under the budget by 80 KiB (15 runs, load about 19); cold start
 37.2 ms, input 0.56 ms, action 5.2 ms. Active memory is unchanged at 25,712 KiB against 20,480: still the open part of this item.
+
+## The order file covers a first turn (2026-11-02)
+
+What a turn adds to the resident size (`vmmap -wide`, idle prompt against the `read` turn's ✓, one run): ask's own `__TEXT` 2,240 →
+5,184 KiB of 8,864, the largest single part; `URLSession`'s first request maps AuthKit, NetworkExtension, libnwswifttls, AppSSOCore,
+ProtectedCloudStorage, OctagonTrust and others, about 3.5 MiB; malloc +2 MiB. The physical footprint goes 4.9 → 7.6 MiB: most of the
+RSS growth is clean code pages.
+
+`generate-order-file.py` now traces two runs: the signed-out startup the idle budget measures, then a turn as the action budget runs it
+(a fake server's `read` call), and writes startup's functions first, then those the turn adds: 3,370 in all. Tracing the turn alone
+(signed in) moved idle to 15,504 KiB, as signed-out startup no longer came first. `measure-budgets.py`, 15 runs, load about 17:
+
+| | startup only | startup, then the turn |
+|---|--:|--:|
+| idle | 15,280 KiB | 15,216 KiB |
+| active | 25,712 KiB | 24,016 KiB |
+| action-to-action | 5.2 ms | 3.1 ms |
+| cold start | 37.2 ms | 27.9 ms |
+
+Active memory is still 3.5 MiB over. What is left is mostly the frameworks `URLSession` loads (the hand-written client measured 3.4 MiB
+less in 2026-10-29, which the owner declined then) and malloc.
