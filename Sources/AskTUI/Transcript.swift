@@ -52,9 +52,9 @@ public struct Transcript: Sendable, Equatable {
     /// Which tool blocks the user opened or closed, over the default for the kind (TerminalKit roadmap 0018).
     var folds = FoldStore<Int>()
     /// Whether a tool block with output starts folded, unless the user chose (ADR-0046: `ui.tools`).
-    public private(set) var toolsFoldedByDefault = true
+    public internal(set) var toolsFoldedByDefault = true
     /// Whether a thinking block starts folded, unless the user chose.
-    public private(set) var thinkingFoldedByDefault = true
+    public internal(set) var thinkingFoldedByDefault = true
     /// Which long code blocks the user opened or closed, over ``codeFoldedByDefault``.
     var codeFolds = FoldStore<CodeBlockID>()
     /// Whether a long code block starts folded, unless the user chose (`ui.code`).
@@ -88,8 +88,8 @@ public struct Transcript: Sendable, Equatable {
     /// An empty transcript whose revisions cannot equal another transcript's, so a layout cache never mistakes one for the other.
     init(revisionBase: Int) { nextRevision = revisionBase }
 
-    /// Removes the conversation while keeping revisions monotonic. A renderer that skipped the empty frame
-    /// must not mistake the next item's revision for the old item's.
+    /// Removes the conversation, keeping revisions monotonic: a renderer that skipped the empty frame must not take the next item's
+    /// revision for the old item's.
     public mutating func removeAll() {
         items.removeAll(keepingCapacity: true)
         revisions.removeAll(keepingCapacity: true)
@@ -189,9 +189,10 @@ public struct Transcript: Sendable, Equatable {
         }
     }
 
-    /// Whether blocks of the item's kind start folded: tools and thinking are set apart.
+    /// Whether blocks of the item's kind start folded: tools and thinking apart, and a summary ask wrote always (owner, 2026-11-02).
     private func foldsByDefault(_ index: Int) -> Bool {
         if case .thinking = items[index] { return thinkingFoldedByDefault }
+        if summaryBlocks.contains(index) { return true }
         return toolsFoldedByDefault
     }
 
@@ -207,26 +208,6 @@ public struct Transcript: Sendable, Equatable {
         let folded = folds.toggle(index, default: foldsByDefault(index))
         revisions[index] = bump()
         return folded
-    }
-
-    /// Sets what tool blocks do until the user chooses, and forgets the choices made for tool blocks so it reaches every one.
-    public mutating func setToolsFoldedByDefault(_ folded: Bool) {
-        toolsFoldedByDefault = folded
-        forgetChoices { if case .thinking = $0 { false } else { true } }
-    }
-
-    /// Sets what thinking blocks do until the user chooses, and forgets the choices made for them.
-    public mutating func setThinkingFoldedByDefault(_ folded: Bool) {
-        thinkingFoldedByDefault = folded
-        forgetChoices { if case .thinking = $0 { true } else { false } }
-    }
-
-    /// Forgets the choices for the items `matches` accepts, and has them laid out again.
-    private mutating func forgetChoices(where matches: (Item) -> Bool) {
-        for index in items.indices where matches(items[index]) {
-            folds.clearChoice(for: index)
-            revisions[index] = bump()
-        }
     }
 
     public mutating func addNotice(_ text: String, isError: Bool) { append(.notice(text, isError: isError)) }

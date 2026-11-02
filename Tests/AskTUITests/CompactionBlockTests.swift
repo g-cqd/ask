@@ -136,4 +136,21 @@ struct CompactionBlockTests {
             return
         }
     }
+
+    /// Like a thinking block, whatever tools do (the owner's choice, 2026-11-02): the summary is long and read rarely.
+    @Test func `it starts folded even when tool blocks start open, and still opens`() {
+        var controller = controller([.userPrompt("go")])
+        controller.state.transcript.setToolsFoldedByDefault(false)
+        controller.handle(.compacting(true))
+        controller.handle(
+            .compactionFinished(.succeeded, text: "The user asked for X.\nWe did Y.", tokens: "182k → 3.1k tokens")
+        )
+        let index = controller.state.transcript.items.count - 1
+        #expect(controller.state.transcript.isFolded(index))
+        #expect(!rows(controller, at: index).contains { $0.contains("We did Y.") })
+        controller.state.transcript.toggleFold(index)
+        #expect(!controller.state.transcript.isFolded(index))
+        controller.state.transcript.setToolsFoldedByDefault(true)
+        #expect(!controller.state.transcript.isFolded(index), "a new tools default leaves the choice made on it")
+    }
 }

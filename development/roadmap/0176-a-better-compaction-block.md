@@ -31,3 +31,10 @@ compaction, ...) and content should be markdown rendered."
 - Interrupted and failed compactions were already drawn as other blocks are (0142, 0162); a test pins the interrupted one.
 - Tests: `CompactionBlockTests` (8), `UsageTotalsTests`; each new guard fails a test when removed.
 - Not done: the screenshots on light and dark pages; the text rows are what the tests check.
+
+## Folded like thinking (2026-11-02)
+
+The owner's choice: the compaction block starts folded whatever `ui.fold.tools` says, as a thinking block does; its header already says
+what was summarised into what and how long it took, and a click or the fold key opens the summary. A summary block's default is its
+own (`Transcript.foldsByDefault`), so a new tools or thinking default leaves the choice made on it. Test: `CompactionBlockTests`.
+

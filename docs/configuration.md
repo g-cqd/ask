@@ -162,7 +162,7 @@ Switches take `true` or `false` (the older `"on"` and `"off"` still work).
 | `mouse` | `true` | ask handles clicks, selection and the wheel. `false` leaves them to the terminal. |
 | `copyOnSelect` | `true` | A finished selection is copied at once. |
 | `fold` | see below | Which blocks start folded, as an object: `"fold": {"tools": false}`. |
-| `fold.tools` | `true` | Tool calls start folded to one line (`false` shows their output). |
+| `fold.tools` | `true` | Tool calls start folded to one line (`false` shows their output). A compaction's summary starts folded either way, like thinking; a click or the fold key opens it. |
 | `fold.thinking` | `true` | The model's reasoning starts folded to one line. |
 | `fold.code` | `true` | Long code blocks start folded. |
 | `fold.codeLines` | `20` | How many lines make a code block long (never more than half the screen). |
