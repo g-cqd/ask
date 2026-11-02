@@ -47,7 +47,7 @@ struct CodeFoldCharacterisationTests {
     }
 
     @Test func `the rows of long blocks, folded and open, keep their digest`() {
-        #expect(Self.digest() == 8_308_794_633_629_041_439)
+        #expect(Self.digest() == 4_656_716_200_169_893_031)
     }
 
     @Test func `the long blocks of these messages do fold`() {

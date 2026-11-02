@@ -74,16 +74,16 @@ struct MarkdownTranscriptTests {
             Issue.record("\(rows(rig))")
             return
         }
-        #expect(Array(rows(rig)[open ... open + 4]) == ["code · swift · 4 lines", "  a", "  b", "  c", "  d"])
+        #expect(Array(rows(rig)[open ... open + 5]) == ["code · swift · 4 lines", "│ a", "│ b", "│ c", "│ d", "╰─"])
         rig.click(row: open + 2, col: 2, after: .seconds(2))
-        #expect(row(rig, "  b") != nil)
+        #expect(row(rig, "│ b") != nil)
         rig.click(row: open, col: 2, after: .seconds(2))
-        #expect(row(rig, "  b") == nil && row(rig, "code · swift · 4 lines") != nil)
+        #expect(row(rig, "│ b") == nil && row(rig, "code · swift · 4 lines") != nil)
     }
 
-    @Test func `a short block is drawn whole, under its language`() {
+    @Test func `a short block is drawn whole, inside its rule, under its language`() {
         let lines = Self.lines("```swift\nlet a = 1\n```")
-        #expect(lines.map(\.text) == ["  swift", "  let a = 1"])
+        #expect(lines.map(\.text) == ["╭─ swift", "│ let a = 1", "╰─"])
         #expect(lines[0].source == nil)
     }
 

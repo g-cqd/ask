@@ -37,6 +37,6 @@ struct CodeHighlightCharacterisationTests {
     }
 
     @Test func `the rows of fenced code with highlighting off keep their digest`() {
-        #expect(Self.digest() == 17_206_375_744_271_815_120)
+        #expect(Self.digest() == 13_643_733_573_494_559_468)
     }
 }
