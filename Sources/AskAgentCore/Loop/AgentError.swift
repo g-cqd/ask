@@ -13,4 +13,6 @@ public enum AgentError: Error, Sendable, Equatable {
     case turnLimit(Int)
     /// The request was longer than the model's context window even after compacting; the provider's words.
     case contextOverflow(String)
+    /// A hook kept the run's first message out (roadmap 0192); nothing was recorded or sent.
+    case promptBlocked(String)
 }

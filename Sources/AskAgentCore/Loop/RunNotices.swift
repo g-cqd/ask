@@ -16,6 +16,9 @@ public enum RunNotices {
     public static func hook(for event: AgentEvent) -> String? {
         switch event {
             case .hookContinued(let message): "A hook continued the run: \(message)"
+            case .hookChangedPrompt(let hooks):
+                "The \(hooks.count == 1 ? "hook" : "hooks") \(joined(hooks)) changed this message before it was sent."
+            case .promptBlocked(_, let reason): reason
             case .hookAnswered(let hook, let tool, let approved):
                 "The hook \(hook) \(approved ? "allowed" : "refused") this \(tool) call."
             case .hookContinuesStopped(.continues(let count)):
@@ -24,6 +27,12 @@ public enum RunNotices {
                 "The run reached its limit of \(turns) turns, so hooks were not asked to continue it."
             default: nil
         }
+    }
+
+    /// `A`, `A and B`, `A, B and C`.
+    static func joined(_ names: [String]) -> String {
+        guard let last = names.last, names.count > 1 else { return names.first ?? "" }
+        return names.dropLast().joined(separator: ", ") + " and " + last
     }
 
     /// What a retry says: why, how long ask waits, and which attempt comes next.

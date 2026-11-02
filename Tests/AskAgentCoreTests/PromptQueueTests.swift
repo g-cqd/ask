@@ -8,7 +8,7 @@ import Testing
 
 @Suite("Persisting queued input does not lock out producers")
 struct PromptQueueTests {
-    @Test func `input arriving during persistence remains queued behind the recorded message`() throws {
+    @Test func `input arriving during persistence remains queued behind the recorded message`() async throws {
         let path = FileManager.default.temporaryDirectory.appending(path: "ask-queue-\(UUID().uuidString).jsonl").path
         _ = try SessionFile.create(at: FilePath(path), durability: .none)
         let input = PromptQueue()
@@ -24,12 +24,12 @@ struct PromptQueueTests {
                 try SessionFileIO.writeAll(bytes, to: descriptor)
             }
         )
-        #expect(try input.recordNext(finished: false, in: session) == first)
+        #expect(try await input.recordNext(finished: false, in: session) == first)
         #expect(input.remaining == [arrived])
         #expect(session.tree.entries.map(\.payload) == [.user("First")])
     }
 
-    @Test func `a message not yet taken can be withdrawn, and one being recorded cannot (roadmap 0174)`() throws {
+    @Test func `a message not yet taken can be withdrawn, and one being recorded cannot (roadmap 0174)`() async throws {
         let path = FileManager.default.temporaryDirectory.appending(path: "ask-queue-\(UUID().uuidString).jsonl").path
         _ = try SessionFile.create(at: FilePath(path), durability: .none)
         let input = PromptQueue()
@@ -47,7 +47,7 @@ struct PromptQueueTests {
                 try SessionFileIO.writeAll(bytes, to: descriptor)
             }
         )
-        #expect(try input.recordNext(finished: false, in: session)?.id == 1)
+        #expect(try await input.recordNext(finished: false, in: session)?.id == 1)
         #expect(duringWrite.withLock { $0 } == false)
         #expect(
             input.remaining.isEmpty,
@@ -55,7 +55,7 @@ struct PromptQueueTests {
         )
     }
 
-    @Test func `the recorded message leaves the queue by its id, not its place`() throws {
+    @Test func `the recorded message leaves the queue by its id, not its place`() async throws {
         let path = FileManager.default.temporaryDirectory.appending(path: "ask-queue-\(UUID().uuidString).jsonl").path
         _ = try SessionFile.create(at: FilePath(path), durability: .none)
         let input = PromptQueue()
@@ -63,7 +63,7 @@ struct PromptQueueTests {
         input.append(later)
         input.append(QueuedPrompt(id: 2, text: "Now"))
         let session = SessionRecorder(try SessionFile.open(at: FilePath(path), durability: .none))
-        #expect(try input.recordNext(finished: false, in: session)?.id == 2, "steering goes before a follow-up")
+        #expect(try await input.recordNext(finished: false, in: session)?.id == 2, "steering goes before a follow-up")
         #expect(input.remaining == [later])
     }
 }

@@ -155,6 +155,11 @@ final class AgentConversation: Conversation {
                 let recorder = try self.recorder()
                 try self.current.withLock { $0.settings }.record(in: recorder)
                 try await loop.run(prompt, in: recorder, input: input) { self.deliver($0, to: update) }
+            } catch AgentError.promptBlocked(let reason) {
+                // A hook kept the message out (roadmap 0192): nothing was recorded; it goes back to the input with the reason.
+                update(.notice(reason, isError: true))
+                update(.fillDraft(prompt))
+                update(.returnQueuedPrompts)
             } catch {
                 self.report(error, to: update)
                 update(.returnQueuedPrompts)

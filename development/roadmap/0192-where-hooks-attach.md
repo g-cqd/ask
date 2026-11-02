@@ -130,8 +130,14 @@ the tests and send the failures back, check a list, or ask for a review pass. Th
   before the person on the call's `ToolCallGate` (`first`), and the first answer other than `ask` wins. A refusal reaches the model as
   "The hook NAME refused this call: REASON"; the run says "The hook NAME allowed (or refused) this TOOL call." in the screen and in
   `ask -p`. Only calls the policy would ask about reach a hook; without a gate (`ask -p`) none does, and the sandbox's own questions are
-  not approvals, so no answer widens it. Tests: AgentHookApprovalTests (6), 12 mutants killed. Next: `prompt.submit`, then a reference
-  `run.stop` hook.
+  not approvals, so no answer widens it. Tests: AgentHookApprovalTests (6), 12 mutants killed.
+- 2026-11-02: the `prompt.submit` point, for the run's first message and each queued one. `AgentHook.promptSubmit` answers `allow`,
+  `block(reason)`, `rewrite(text)` or `context(text)`: rewrites chain in order, context joins after the message as `[hook NAME] TEXT`,
+  and the first block keeps it out; a blank rewrite or context changes nothing. What is recorded is what was sent, so a resume replays
+  it, and "The hook NAME changed this message before it was sent." is said. A blocked first message is neither recorded nor sent
+  (`AgentError.promptBlocked`): the screen puts it back in the input with the reason. A blocked queued message leaves the queue
+  unrecorded and goes back to the input the same way (`promptRefused`). Tests: AgentHookPromptTests (7), 19 mutants killed. Next: a
+  reference `run.stop` hook.
 
 ## Done when
 

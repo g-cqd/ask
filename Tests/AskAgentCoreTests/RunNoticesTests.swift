@@ -48,6 +48,20 @@ struct RunNoticesTests {
             RunNotices.hook(for: .hookAnswered(hook: "Policy", tool: "bash", approved: false))
                 == "The hook Policy refused this bash call."
         )
+        #expect(
+            RunNotices.hook(for: .hookChangedPrompt(hooks: ["Git"]))
+                == "The hook Git changed this message before it was sent."
+        )
+        #expect(
+            RunNotices.hook(for: .hookChangedPrompt(hooks: ["Git", "Spell"]))
+                == "The hooks Git and Spell changed this message before it was sent."
+        )
+        #expect(RunNotices.joined(["A", "B", "C"]) == "A, B and C" && RunNotices.joined([]) == "")
+        let later = QueuedPrompt(id: 1, text: "Later")
+        #expect(
+            RunNotices.hook(for: .promptBlocked(later, reason: "The hook G blocked this message: no"))
+                == "The hook G blocked this message: no"
+        )
         #expect(RunNotices.hook(for: .finished(nil)) == nil)
     }
 

@@ -35,9 +35,14 @@ public final class PromptQueue: Sendable {
     /// - Parameters:
     ///   - finished: whether the agent has finished its pending work.
     ///   - session: receives the user entry before the message leaves the queue.
-    /// - Returns: the recorded message, or nil when none is eligible.
+    ///   - admit: what the hooks make of the message (roadmap 0192): the text to record, or nil to keep it out.
+    /// - Returns: the recorded message, as recorded, or nil when none is eligible or `admit` kept it out (it leaves the queue then).
     /// - Throws: the persistence error; the message stays queued.
-    func recordNext(finished: Bool, in session: SessionRecorder) throws(SessionFileError) -> QueuedPrompt? {
+    func recordNext(
+        finished: Bool,
+        in session: SessionRecorder,
+        admit: (QueuedPrompt) async -> String? = { $0.text }
+    ) async throws(SessionFileError) -> QueuedPrompt? {
         let next: QueuedPrompt? = state.withLock { state in
             let index =
                 state.pending.firstIndex(where: { $0.delivery == .steering })
@@ -50,8 +55,13 @@ public final class PromptQueue: Sendable {
         // Do not hold the queue lock during a barrier flush or a damaged-session rewrite. The message is marked as being recorded,
         // so a withdrawal meanwhile refuses it; others may come and go, so it leaves the queue by its id.
         defer { state.withLock { $0.recording = nil } }
-        try session.append(.user(prompt.text))
+        // What the hooks make of it (roadmap 0192): nil keeps it out, and it leaves the queue unrecorded.
+        guard let text = await admit(prompt) else {
+            state.withLock { state in state.pending.removeAll { $0.id == prompt.id } }
+            return nil
+        }
+        try session.append(.user(text))
         state.withLock { state in state.pending.removeAll { $0.id == prompt.id } }
-        return prompt
+        return QueuedPrompt(id: prompt.id, text: text, delivery: prompt.delivery)
     }
 }
