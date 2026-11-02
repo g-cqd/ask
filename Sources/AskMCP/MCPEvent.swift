@@ -2,6 +2,10 @@
 public enum MCPEvent: Sendable, Equatable {
     /// The server's tools changed; list them again.
     case toolsChanged
+    /// The server's resource list changed (`notifications/resources/list_changed`).
+    case resourcesChanged
+    /// A resource ask subscribed to changed (`notifications/resources/updated`).
+    case resourceUpdated(uri: String)
     /// The server logged something, as its `notifications/message`: the level it gave, and the text (a string as it was, anything else
     /// as its JSON).
     case log(level: String?, text: String)

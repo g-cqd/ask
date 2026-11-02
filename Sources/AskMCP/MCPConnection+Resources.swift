@@ -22,6 +22,13 @@ extension MCPConnection {
         return parts
     }
 
+    /// Asks to be told when the resource at `uri` changes (``MCPEvent/resourceUpdated(uri:)``); only for a server that offers it.
+    public func subscribe(to uri: String) async throws(MCPError) {
+        var writer = JSONStreamWriter(options: .rfc8259)
+        MCPWire.object(&writer) { MCPWire.put(&$0, "uri", string: uri) }
+        _ = try await request("resources/subscribe", params: writer.finish(), timeout: requestTimeout)
+    }
+
     /// A listing of `method`, its items under `key`, read by `parse`, page after page.
     private func paged<Item>(_ method: String, key: String, _ parse: (JSON) -> Item?) async throws(MCPError) -> [Item] {
         var items: [Item] = []

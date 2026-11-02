@@ -40,6 +40,17 @@ extension MCPHub {
         return ResourceReferences.attach(text, read)
     }
 
+    /// Subscribes to a resource a message attached, once, where its server can, so a change is told (the owner's choice, 2026-11-02). A
+    /// refused subscription changes nothing for the message.
+    private func follow(_ reference: ResourceReference) async {
+        guard let host = state.withLock({ $0.host }),
+            let connection = host.resources.follow(reference.server, reference.uri)
+        else {
+            return
+        }
+        try? await connection.subscribe(to: reference.uri)
+    }
+
     /// What a message carries of a resource: its text parts, and the others named.
     private func body(of reference: ResourceReference) async -> String {
         guard let connection = state.withLock({ $0.host?.resources.connection(reference.server) }) else {
@@ -47,6 +58,7 @@ extension MCPHub {
         }
         do {
             let parts = try await connection.readResource(reference.uri)
+            await follow(reference)
             guard !parts.isEmpty else { return "[the server returned nothing for it]" }
             return
                 parts.map { part in

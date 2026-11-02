@@ -23,7 +23,7 @@ struct MCPHubResourceTests {
         return hub
     }
 
-    private func docs() -> FakeMCPServer {
+    private func docs(subscribable: Bool = false) -> FakeMCPServer {
         let fake = FakeMCPServer(tools: ["search"])
         fake.serveResources(
             .init(
@@ -34,7 +34,8 @@ struct MCPHubResourceTests {
                     uri == "docs://bin"
                         ? #"[{"uri":"docs://bin","mimeType":"image/png","blob":"AAEC"}]"#
                         : #"[{"uri":"\#(uri)","text":"text of \#(uri)"}]"#
-                }
+                },
+                subscribable: subscribable
             )
         )
         return fake
@@ -95,5 +96,43 @@ struct MCPHubResourceTests {
         #expect(MCPHub.typedPart(of: "docs://page/{+key}") == "docs://page/")
         #expect(MCPHub.typedPart(of: "apple-docs://doc/{+key}{?lang}") == "apple-docs://doc/")
         #expect(MCPHub.typedPart(of: "docs://all") == "docs://all", "no variable: the whole URI")
+    }
+
+    /// The owner's choice (2026-11-02): each resource a message attaches is followed, where the server can, and the person is told when
+    /// one changes; a server's changed list makes the picker ask again.
+    @Test func `an attached resource is subscribed to once, where the server can`() async throws {
+        let subscribing = docs(subscribable: true)
+        let plain = docs()
+        let hub = await hub(["docs": subscribing, "other": plain])
+        _ = await hub.attachResources("see @docs:docs://a and @other:docs://a")
+        _ = await hub.attachResources("again @docs:docs://a, and @docs:docs://b")
+        #expect(subscribing.subscriptions == ["docs://a", "docs://b"])
+        #expect(plain.subscriptions.isEmpty, "a server without subscribe is not asked")
+    }
+
+    @Test func `a change to a subscribed resource is told to the person, and one never attached is not`() async throws {
+        let fake = docs(subscribable: true)
+        let hub = await hub(["docs": fake])
+        _ = await hub.attachResources("see @docs:docs://a")
+        fake.announceUpdate("docs://never")
+        fake.announceUpdate("docs://a")
+        var told: String?
+        for await line in hub.notices where line.contains("changed") {
+            told = line
+            break
+        }
+        #expect(told?.contains("@docs:docs://a") == true && told?.contains("never") == false)
+    }
+
+    @Test func `a server's changed resource list is passed on, by its name`() async throws {
+        let fake = docs()
+        let hub = await hub(["docs": fake])
+        fake.announceResourceListChange()
+        var changed: String?
+        for await server in hub.resourceListChanges {
+            changed = server
+            break
+        }
+        #expect(changed == "docs")
     }
 }

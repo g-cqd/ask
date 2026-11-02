@@ -50,7 +50,7 @@ The owner's choice (2026-11-02): both a picker for the person and a tool for the
   narrowed session. Not `mcp_…`: such names are refused by Anthropic's subscription endpoint (0144).
 - Tests: `MCPResourceTests` (client, 4), `MCPResourceToolTests` (7); 22 mutants, all killed.
 - Not verified: the name against the subscription endpoint. (The tool against apple-docs: verified 2026-11-02, below.)
-- Not done: `resources/subscribe` and the listing's change notice (a server's list is read when the tool asks).
+- `resources/subscribe` and the list's change notice: done 2026-11-02, below.
 
 ## Resources, for the person (done 2026-11-02)
 
@@ -69,7 +69,7 @@ The owner's choice of syntax: `@server:uri`, Claude Code's. It shares `@` with f
   with resources, or whose list is still coming while nothing follows the colon, keeps the file picker. A URI being typed meanwhile
   says `asking server…`.
 - Tests: `ResourceReferencesTests` (6), `MCPHubResourceTests` (3), `ResourcePickerTests` (5); 20 mutants, all killed.
-- Not done: `resources/subscribe`.
+- `resources/subscribe` and the list's change notice: done 2026-11-02, below.
 - Not verified: against apple-docs live, in a terminal; the conversation's `resourceRows` guard (a name that is no configured server
   starts nothing) has no test.
 
@@ -94,4 +94,21 @@ The owner's choice of syntax: `@server:uri`, Claude Code's. It shares `@` with f
 - Tests: `MCPHubResourceTests` (1 new), `ResourcePickerTests` (1 new). `Scripts/probe-mcp-apple-docs.py` against the live apple-docs
   through the release binary: its templates listed, the template chosen and finished (`swiftui/view`), the page read and attached after
   the typed line with the screen showing the line alone, and the model's `server_resource` call reading the same page (5 checks).
+
+## Followed resources and changed lists (done 2026-11-02)
+
+The owner's choice: both. apple-docs offers the list's change notice and no subscriptions; the fixture server, in its `resources` mode,
+offers both.
+
+- `AskMCP`: `MCPServerInfo.resourcesSubscribable` (`capabilities.resources.subscribe`); `MCPConnection.subscribe(to:)`; the events
+  `resourcesChanged` (`notifications/resources/list_changed`) and `resourceUpdated(uri:)` (`notifications/resources/updated`).
+- Each resource a message attaches is subscribed to once, after it is read, where its server can (`MCPResourceShelf.follow`); a refused
+  subscription changes nothing for the message. When a followed resource changes, the person is told, not the model:
+  "@server:uri changed since it was attached; name it again to send what it says now." A change to one never attached says nothing.
+- A changed list reaches the screen as `ConversationUpdate.choicesStale(command: "@server")` (`MCPHub.resourceListChanges`): the picker
+  asks for it again the next time it opens, showing the old rows meanwhile.
+- Tests: `MCPHubResourceTests` (3 new), `ResourcePickerTests` (1 new). `Scripts/probe-mcp-subscribe.py` through the release binary and the
+  fixture: the change told, naming the reference, and no request for it (2 checks; the build before fails the first).
+- 0067's resource part is done. Left of 0067: approval of what a server does beyond its tools, prompts, OAuth for remote servers,
+  sampling.
 
