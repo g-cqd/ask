@@ -14,6 +14,8 @@ public struct MCPServerInfo: Sendable, Equatable {
     public let supportsTools: Bool
     /// Whether it says its tools may change while connected, and will say so (``MCPEvent/toolsChanged``).
     public let toolsMayChange: Bool
+    /// Whether the server says it has resources (roadmap 0067).
+    public let supportsResources: Bool
 
     /// What a server said.
     public init(
@@ -23,8 +25,10 @@ public struct MCPServerInfo: Sendable, Equatable {
         version: String,
         instructions: String?,
         supportsTools: Bool,
-        toolsMayChange: Bool
+        toolsMayChange: Bool,
+        supportsResources: Bool = false
     ) {
+        self.supportsResources = supportsResources
         self.protocolVersion = protocolVersion
         self.name = name
         self.title = title

@@ -45,3 +45,6 @@ An MCP server offers the model more tools: a program ask starts, or a service at
 - A tool the server marks as destructive is asked about before its first use in a session.
 - While a server's tool runs, what the server says of how far it has got shows on the block's header, such as `50% · indexing`, and
   goes when the call ends. `ask -p` asks servers for none.
+- A server that has **resources** (documents it serves by URI, such as apple-docs' pages) offers the model one more tool,
+  `server_resource`, while it is connected: the server alone lists its resources and URI templates, and a URI reads one. It is refused
+  in a narrowed session, as the server's tools are.

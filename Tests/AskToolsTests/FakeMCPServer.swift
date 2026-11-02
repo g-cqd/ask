@@ -23,6 +23,14 @@ final class FakeMCPServer: MCPTransport {
         var initializes = 0
         var progress: [String] = []
         var progressAsked = 0
+        var resources: Resources?
+        var reads: [String] = []
+    }
+    /// What a server with resources answers: its listing's and templates' items, and a read's contents for a URI.
+    struct Resources: Sendable {
+        var list: String
+        var templates: String
+        var read: @Sendable (String) -> String
     }
     private let state: Mutex<State>
 
@@ -56,6 +64,10 @@ final class FakeMCPServer: MCPTransport {
     func reply(to call: @escaping @Sendable (String, String) -> String) { state.withLock { $0.callReply = call } }
     /// Progress sent before each call's reply when the call asks for it: each a notification's fields after its token.
     func reportProgress(_ fields: [String]) { state.withLock { $0.progress = fields } }
+
+    /// The server says it has resources, and answers their listings and reads with these JSON arrays.
+    func serveResources(_ resources: Resources) { state.withLock { $0.resources = resources } }
+    var readURIs: [String] { state.withLock { $0.reads } }
 
     /// Returns once the client has sent `initialize`.
     func waitForInitialize() async {
@@ -94,8 +106,9 @@ final class FakeMCPServer: MCPTransport {
                 if state.withLock({ $0.refusesInitialize }) {
                     push(#"{"jsonrpc":"2.0","id":\#(id),"error":{"code":-32000,"message":"no thanks"}}"#)
                 } else {
+                    let more = state.withLock { $0.resources } == nil ? "" : #","resources":{}"#
                     push(
-                        #"{"jsonrpc":"2.0","id":\#(id),"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{"listChanged":true}},"serverInfo":{"name":"fake","version":"1"}}}"#
+                        #"{"jsonrpc":"2.0","id":\#(id),"result":{"protocolVersion":"2025-06-18","capabilities":{"tools":{"listChanged":true}\#(more)},"serverInfo":{"name":"fake","version":"1"}}}"#
                     )
                 }
             case "tools/list":
@@ -130,7 +143,21 @@ final class FakeMCPServer: MCPTransport {
                     }
                 }
                 push(#"{"jsonrpc":"2.0","id":\#(id),"result":\#(reply)}"#)
+            case "resources/list", "resources/templates/list", "resources/read":
+                push(#"{"jsonrpc":"2.0","id":\#(id),"result":\#(resourceReply(method, text))}"#)
             default: push(#"{"jsonrpc":"2.0","id":\#(id),"result":{}}"#)
+        }
+    }
+
+    private func resourceReply(_ method: String, _ text: String) -> String {
+        guard let resources = state.withLock({ $0.resources }) else { return "{}" }
+        switch method {
+            case "resources/list": return #"{"resources":\#(resources.list)}"#
+            case "resources/templates/list": return #"{"resourceTemplates":\#(resources.templates)}"#
+            default:
+                let uri = capture(#""uri":"([^"]+)""#, in: text) ?? ""
+                state.withLock { $0.reads.append(uri) }
+                return #"{"contents":\#(resources.read(uri))}"#
         }
     }
 

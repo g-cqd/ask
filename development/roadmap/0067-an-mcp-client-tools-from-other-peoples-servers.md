@@ -35,3 +35,19 @@ MCP is the route for other people's tools in ask.
 - Tests: `ToolProgressTests`, `MCPProgressTests`, `ToolProgressNoteTests`; 14 mutants, all killed (one guard found redundant and
   removed). `Scripts/probe-mcp-progress.py` passes through the release binary and the fixture server (whose `echo` takes `slow`).
 - Not done: a report's rate is not limited beyond dropping repeats; resources and prompts (phase 5).
+
+## Resources, for the model (done 2026-11-02)
+
+The owner's choice (2026-11-02): both a picker for the person and a tool for the model. This part is the model's; the picker follows.
+
+- apple-docs, the server the owner uses daily, says it has resources: framework trees listed (`apple-docs://framework/<slug>`, JSON), and
+  templates for pages (`apple-docs://doc/{+key}`, Markdown), SF Symbols and fonts.
+- `AskMCP`: `MCPServerInfo.supportsResources` from the server's capabilities; `listResources()`, `listResourceTemplates()` (each following
+  pages) and `readResource(_:)`, whose parts are text or base64 bytes. What has the wrong shape is skipped, as with tools.
+- `server_resource` (`MCPResourceTool`, about 60 tokens of definition) is offered while a connected server has resources
+  (`MCPResourceShelf`) and withdrawn when the last goes. The server alone lists (the first 100 resources, how many more, every template);
+  with a `uri` it reads: text whole, a picture shown as a tool's would be (`MCPResultImages`), other bytes named, not sent. Refused in a
+  narrowed session. Not `mcp_…`: such names are refused by Anthropic's subscription endpoint (0144).
+- Tests: `MCPResourceTests` (client, 4), `MCPResourceToolTests` (7); 22 mutants, all killed.
+- Not verified: the tool against apple-docs through a model (the fake servers only); the name against the subscription endpoint.
+- Not done: the person's picker; `resources/subscribe` and the listing's change notice (a server's list is read when the tool asks).
