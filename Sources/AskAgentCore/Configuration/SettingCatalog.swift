@@ -210,7 +210,7 @@ enum SettingCatalog {
             "environment.shell",
             .text,
             #""zsh""#,
-            "the first bash on your PATH, else /bin/bash, else zsh, else your login shell",
+            "the first bash on your PATH, else /bin/bash, else ksh, sh or dash, else your login shell",
             user: true,
             "The shell commands run in."
         )

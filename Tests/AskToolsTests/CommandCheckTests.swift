@@ -61,16 +61,18 @@ struct CommandCheckTests {
     }
 
     @Test(.enabled(if: shellcheck != nil))
-    func `the findings come back with a failed command's result, and not with a successful one's`() async throws {
+    func `the findings come back with a failed command's result, sent again, and not with a successful one's`()
+        async throws
+    {
         let path = (Self.shellcheck! as NSString).deletingLastPathComponent + ":/usr/bin:/bin"
         let tool = BashTool(jobs: JobTable(environment: ["PATH": path]))
         let context = ToolContext(workingDirectory: "/tmp")
-        let failed = await tool.run(
-            try JSONObject(validating: Array(#"{"command":"cd /nonexistent-ask-dir; false"}"#.utf8)),
-            in: context
-        )
+        let command = try JSONObject(validating: Array(#"{"command":"cd /nonexistent-ask-dir; false"}"#.utf8))
+        _ = await tool.run(command, in: context)
+        let failed = await tool.run(command, in: context)
         #expect(failed.isError && failed.content.contains("[shellcheck]") && failed.content.contains("SC2164"))
-        let fine = await tool.run(try JSONObject(validating: Array(#"{"command":"cd /tmp; true"}"#.utf8)), in: context)
+        #expect(failed.content.contains("[exit 1]"), "sent again, it ran")
+        let fine = await tool.run(try JSONObject(validating: Array(#"{"command":"true"}"#.utf8)), in: context)
         #expect(!fine.isError && !fine.content.contains("[shellcheck]"))
     }
 }

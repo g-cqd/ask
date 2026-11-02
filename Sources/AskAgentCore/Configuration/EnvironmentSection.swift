@@ -13,7 +13,8 @@ public struct EnvironmentSection: Sendable, Equatable, CustomStringConvertible, 
     public var withhold: [String]
 
     /// The shell commands run in: `zsh`, `bash`, `fish`, `sh`, or an absolute path. Nil leaves ask to choose: the first bash on the PATH,
-    /// `/bin/bash`, zsh, then `$SHELL` (roadmaps 0091 and 0188, ADR-0139). Only the user's file may set it.
+    /// `/bin/bash`, then ksh, sh or dash (the PATH, then /bin and /usr/bin), then `$SHELL` (roadmaps 0091 and 0188, ADR-0139). Only the
+    /// user's file may set it.
     public var shell: String?
 
     /// A section of these names, each list sorted and without repeats.

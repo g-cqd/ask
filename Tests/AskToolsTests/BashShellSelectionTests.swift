@@ -4,7 +4,7 @@ import Testing
 
 @testable import AskTools
 
-@Suite("Commands run in the configured shell, else bash, zsh or the login shell (roadmaps 0091 and 0188)")
+@Suite("Commands run in the configured shell, else bash, a POSIX shell or the login shell (roadmaps 0091 and 0188)")
 struct BashShellSelectionTests {
     private let context = ToolContext(workingDirectory: "/tmp")
 
@@ -27,11 +27,29 @@ struct BashShellSelectionTests {
         #expect(await shell(login: "/bin/zsh") == ToolOutput("/bin/bash\n[exit 0]"))
     }
 
-    @Test func `the order is bash on the PATH, then /bin/bash, then zsh, then the login shell`() {
-        let table = JobTable(environment: ["SHELL": "/bin/sh"])
-        let chosen = table.commandShell(nil, policy: .inherit)
-        #expect(chosen == "/bin/bash")
-        #expect(JobTable(environment: [:]).commandShell(nil, policy: .inherit) == chosen)
+    /// The default for a machine with only the shells in `present`, the PATH `path`, and the login shell `login`.
+    private func fallback(_ present: Set<String>, path: String = "/p1:/p2", login: String? = "/bin/zsh") -> String {
+        JobTable.defaultShell(path: path, login: login) { present.contains($0) }
+    }
+
+    @Test func `the order is bash on the PATH, /bin/bash, then ksh, sh and dash, then the login shell`() {
+        let all: Set = ["/p2/bash", "/bin/bash", "/p1/ksh", "/bin/ksh", "/p1/sh", "/bin/sh", "/bin/dash", "/bin/zsh"]
+        #expect(fallback(all) == "/p2/bash")
+        #expect(fallback(all.subtracting(["/p2/bash"])) == "/bin/bash")
+        let noBash = all.subtracting(["/p2/bash", "/bin/bash"])
+        #expect(fallback(noBash) == "/p1/ksh", "a POSIX shell on the PATH, the closest to bash first")
+        #expect(fallback(noBash.subtracting(["/p1/ksh"])) == "/p1/sh", "the PATH before the system's folders")
+        #expect(fallback(["/bin/ksh", "/bin/sh", "/bin/dash", "/bin/zsh"]) == "/bin/ksh")
+        #expect(fallback(["/bin/sh", "/bin/dash", "/bin/zsh"]) == "/bin/sh")
+        #expect(fallback(["/usr/bin/dash", "/bin/zsh"]) == "/usr/bin/dash")
+        #expect(fallback(["/bin/zsh"]) == "/bin/zsh", "then the login shell; zsh is no longer a default of its own")
+        #expect(fallback(["/bin/zsh", "/opt/x/fish"], login: "/opt/x/fish") == "/opt/x/fish")
+        #expect(fallback([], login: nil) == "/bin/sh", "nothing found: the system's POSIX shell")
+    }
+
+    @Test func `on this machine, nothing chosen is bash`() {
+        let chosen = JobTable(environment: ["SHELL": "/bin/sh"]).commandShell(nil, policy: .inherit)
+        #expect(chosen.hasSuffix("/bash"))
     }
 
     @Test func `a configured shell name beats the default`() async {

@@ -38,19 +38,32 @@ public final class JobTable: Sendable {
         commandShell(requested, policy: context.commandEnvironment)
     }
 
-    /// The shell for a command: the model's listed choice, the configured one, the first bash on the PATH, the system's bash, the first
-    /// zsh on the PATH, then SHELL (roadmaps 0091 and 0188).
+    /// The shell for a command: the model's listed choice, the configured one, else ``defaultShell(path:login:isShell:)`` (roadmaps 0091
+    /// and 0188).
     func commandShell(_ requested: String?, policy: CommandEnvironment) -> String {
         let visible = policy.filtered(environment)
         let login = visible["SHELL"]
         // A shell the model names must be a login shell of the system or the user's own, not any executable.
         if let requested, Self.isListedShell(requested, configured: login), Self.isShell(requested) { return requested }
         if let chosen = policy.shell.flatMap({ Self.chosenShell($0, path: visible["PATH"]) }) { return chosen }
-        // Nothing chosen: bash, as models write it (roadmap 0188), the PATH's first, else the system's; then zsh; then the login shell.
-        if let bash = Self.onPath("bash", path: visible["PATH"]) { return bash }
-        if Self.isShell("/bin/bash") { return "/bin/bash" }
-        if let zsh = Self.onPath("zsh", path: visible["PATH"]) { return zsh }
-        return login.flatMap { Self.isShell($0) ? $0 : nil } ?? "/bin/bash"
+        return Self.defaultShell(path: visible["PATH"], login: login)
+    }
+
+    /// The POSIX shells after bash, the closest to bash first (the owner's order, 2026-11-02).
+    static let posixShells = ["ksh", "sh", "dash"]
+    /// Where a POSIX shell is looked for after the PATH.
+    static let systemFolders = ["/bin", "/usr/bin"]
+
+    /// The shell when nothing is chosen (the owner's order, 2026-11-02): bash, as models write it, on the PATH, then `/bin/bash`; then a
+    /// POSIX shell, ksh, sh then dash, on the PATH, then in the system's folders; then the login shell; `/bin/sh` when nothing is found.
+    static func defaultShell(path: String?, login: String?, isShell: (String) -> Bool = isShell) -> String {
+        if let bash = onPath("bash", path: path, isShell: isShell) { return bash }
+        if isShell("/bin/bash") { return "/bin/bash" }
+        for name in posixShells { if let found = onPath(name, path: path, isShell: isShell) { return found } }
+        for name in posixShells {
+            if let found = systemFolders.map({ "\($0)/\(name)" }).first(where: isShell) { return found }
+        }
+        return login.flatMap { isShell($0) ? $0 : nil } ?? "/bin/sh"
     }
 
     /// The PATH commands see, after the configured environment's filtering.
@@ -65,7 +78,7 @@ public final class JobTable: Sendable {
     }
 
     /// The first executable called `name` in `path`'s directories, as the shell would find it.
-    static func onPath(_ name: String, path: String?) -> String? {
+    static func onPath(_ name: String, path: String?, isShell: (String) -> Bool = isShell) -> String? {
         directories(path).map { "\($0)/\(name)" }.first(where: isShell)
     }
 
