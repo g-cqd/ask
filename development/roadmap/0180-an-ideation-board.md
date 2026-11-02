@@ -28,3 +28,11 @@ which are new. Persisted like the task list (0179), which it may build on.
 - Tests: `IdeaListTests`, `IdeaBoardTests` (encrypted, verbatim), `IdeasToolTests`, `EditDraftTests`; 14 mutants, all killed.
   `Scripts/probe-ideas.py` passes 7 checks through the release build in a pty: saved, listed, edited in the input with the list closed,
   the list again with the new words, nothing sent unasked, and the model reading the edit through its tool.
+
+## An idea before the first prompt (2026-11-02)
+
+The owner's choice: `/idea` typed before any session is kept, and saved when the session starts. `ChangeBoard.hold(_:)` keeps the change
+(with the time it was typed) while no list is attached, and `applyHeld()` makes the held changes in order once one is; the turn calls it
+right after making its session, and says which ideas it saved ("Saved the idea typed before the session started: i1."). A list that
+failed to open still says why, rather than holding. Tests: `IdeaBoardTests` (2 new); `Scripts/probe-ideas-early.py` through the release
+binary (3 checks; the build before fails the first).

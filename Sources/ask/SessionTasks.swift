@@ -33,6 +33,9 @@ enum SessionTasks {
         return ListReferences.attach(text, tasks: tasks, ideas: notes)
     }
 
+    /// Whether the lists are not there only because no session has started yet (no first prompt), not because they failed to open.
+    static var waitsForSession: Bool { !ideas.isAttached && problem.withLock { $0 } == nil }
+
     /// Why a list is not there.
     static var unavailable: String {
         problem.withLock { $0 } ?? "Nothing is kept yet: the session starts with the first prompt."

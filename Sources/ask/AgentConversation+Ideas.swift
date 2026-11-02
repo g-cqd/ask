@@ -10,10 +10,39 @@ extension AgentConversation {
             update(.notice("Usage: /idea TEXT keeps an idea as typed; /ideas lists them.", isError: true))
             return
         }
+        // Before the first prompt there is no session to keep it with yet: held, and saved when the session starts (owner, 2026-11-02).
+        if SessionTasks.waitsForSession {
+            let made = Self.now
+            SessionTasks.ideas.hold { $0.adding(text, at: made) }
+            update(
+                .notice(
+                    "Kept: it is saved to your ideas when the session starts, with your first prompt.",
+                    isError: false
+                )
+            )
+            return
+        }
         changeIdeas(update: update) {
             $0.adding(text, at: Self.now)
         } then: { list in
             "Saved idea \(list.ideas.last?.name ?? "")."
+        }
+    }
+
+    /// Saves the ideas typed before the session started, now that it has, and says so.
+    func saveHeldIdeas(update: @Sendable (ConversationUpdate) -> Void) {
+        do {
+            let made = try SessionTasks.ideas.applyHeld()
+            guard let list = made.last else { return }
+            let names = list.ideas.suffix(made.count).map(\.name).joined(separator: ", ")
+            update(
+                .notice(
+                    "Saved the idea\(made.count == 1 ? "" : "s") typed before the session started: \(names).",
+                    isError: false
+                )
+            )
+        } catch {
+            update(.notice("The ideas typed before the session started could not be saved: \(error)", isError: true))
         }
     }
 
