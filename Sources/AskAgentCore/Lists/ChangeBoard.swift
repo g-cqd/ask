@@ -5,6 +5,8 @@ internal import Synchronization
 /// changed through its file, so a list a workspace's sessions share stays one list.
 public final class ChangeBoard<List: ChangeList>: Sendable {
     private let log = Mutex<ChangeLog<List>?>(nil)
+    /// Changes asked for before a list was attached, made in order once one is (an idea typed before the first prompt).
+    private let held = Mutex<[@Sendable (List) -> List.Change]>([])
 
     public init() {}
 
@@ -42,6 +44,31 @@ public final class ChangeBoard<List: ChangeList>: Sendable {
     public func change(_ make: (List) -> List.Change) throws -> List? {
         guard let attached = log.withLock({ $0 }) else { return nil }
         return try attached.change(make)
+    }
+
+    /// Keeps `make` until a list is attached, for ``applyHeld()`` to make; how many are held now.
+    @discardableResult
+    public func hold(_ make: @escaping @Sendable (List) -> List.Change) -> Int {
+        held.withLock { held in
+            held.append(make)
+            return held.count
+        }
+    }
+
+    /// How many changes wait for a list.
+    public var heldCount: Int { held.withLock { $0.count } }
+
+    /// Makes the held changes in order, once a list is attached: the list after each, empty when none was held or none is attached.
+    /// One that fails stays held with those after it.
+    public func applyHeld() throws -> [List] {
+        guard isAttached else { return [] }
+        var made: [List] = []
+        while let next = held.withLock({ $0.first }) {
+            guard let list = try change(next) else { break }
+            held.withLock { _ = $0.removeFirst() }
+            made.append(list)
+        }
+        return made
     }
 
     /// The list kept in `format` from now on, written again in it, as its session is by `/encrypt`.

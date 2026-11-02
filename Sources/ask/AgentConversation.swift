@@ -154,6 +154,7 @@ final class AgentConversation: Conversation {
                 // A new session waits for how it is to be kept, when the screen is still asking (idea i1).
                 if self.session.withLock({ $0 == nil }) { try await SessionKeyAccess.settled() }
                 let recorder = try self.recorder()
+                self.saveHeldIdeas(update: update)
                 try self.current.withLock { $0.settings }.record(in: recorder)
                 try await loop.run(prompt, in: recorder, input: input) { self.deliver($0, to: update) }
             } catch AgentError.promptBlocked(let reason) {
