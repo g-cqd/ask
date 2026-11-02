@@ -46,6 +46,25 @@ struct ResourcePickerTests {
         #expect(screen.state.picker == nil)
     }
 
+    /// A template is shown whole; choosing it writes its fixed part, for the person to finish, and nothing after it.
+    @Test func `a template's choice puts the URI up to its first variable in place, to be finished`() {
+        var screen = screen()
+        _ = type("see @docs:docs://p", into: &screen)
+        let template = ChoiceRow(
+            label: "@docs:docs://page/{+key}",
+            detail: "page · template",
+            arguments: "@docs:docs://page/",
+            completes: true
+        )
+        _ = screen.handle(.choices(command: "@docs", rows: Self.rows + [template]))
+        #expect(screen.state.picker?.matches.map(\.label) == ["@docs:docs://page/{+key}"])
+        _ = screen.handle(.key(KeyEvent(keyCode: Key.enter.rawValue)), pageRows: 30)
+        #expect(screen.state.editor.text == "see @docs:docs://page/")
+        _ = type("swiftui", into: &screen)
+        #expect(screen.state.editor.text == "see @docs:docs://page/swiftui", "typed on where the choice ended")
+        #expect(screen.state.picker == nil, "not offered again while it is finished")
+    }
+
     @Test func `while the server is asked, a URI being typed says so`() {
         var screen = screen()
         _ = type("@docs:docs:", into: &screen)

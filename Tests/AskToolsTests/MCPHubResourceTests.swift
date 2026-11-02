@@ -28,7 +28,8 @@ struct MCPHubResourceTests {
         fake.serveResources(
             .init(
                 list: #"[{"uri":"docs://a","name":"A"},{"uri":"docs://b","name":"b","title":"The B"}]"#,
-                templates: "[]",
+                templates:
+                    #"[{"uriTemplate":"docs://page/{+key}","name":"page"},{"uriTemplate":"docs://all","name":"all"}]"#,
                 read: { uri in
                     uri == "docs://bin"
                         ? #"[{"uri":"docs://bin","mimeType":"image/png","blob":"AAEC"}]"#
@@ -81,5 +82,18 @@ struct MCPHubResourceTests {
         #expect(sent.contains("--- resource docs:docs://gone ---\n[the server returned nothing for it]"))
         hub.apply([])
         await hub.waitUntilSettled()
+    }
+
+    @Test func `a server's templates are listed for the picker too, with the part to type before the first brace`()
+        async throws
+    {
+        let hub = await hub(["docs": docs(), "plain": FakeMCPServer(tools: ["a"])])
+        let templates = try #require(await hub.listedTemplates(of: "docs"))
+        #expect(templates.map(\.template) == ["docs://page/{+key}", "docs://all"])
+        #expect(templates.map(\.name) == ["page", "all"])
+        #expect(await hub.listedTemplates(of: "plain") == nil)
+        #expect(MCPHub.typedPart(of: "docs://page/{+key}") == "docs://page/")
+        #expect(MCPHub.typedPart(of: "apple-docs://doc/{+key}{?lang}") == "apple-docs://doc/")
+        #expect(MCPHub.typedPart(of: "docs://all") == "docs://all", "no variable: the whole URI")
     }
 }

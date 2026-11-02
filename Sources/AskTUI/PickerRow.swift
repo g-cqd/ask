@@ -18,6 +18,8 @@ struct PickerRow: Sendable, Equatable {
     let path: [String]
     /// The values left/right may cycle through; empty for a read-only row.
     let choices: [String]
+    /// Whether the insertion is for the person to finish (a resource template's fixed part): no space after it, the cursor at its end.
+    var leavesOpen = false
 
     /// A command: `/name`, its summary beside it.
     init(_ command: SlashCommand) {
@@ -29,10 +31,11 @@ struct PickerRow: Sendable, Equatable {
         choices = []
     }
 
-    init(label: String, detail: String = "", insertion: String) {
+    init(label: String, detail: String = "", insertion: String, leavesOpen: Bool = false) {
         self.label = label
         self.detail = detail
         self.insertion = insertion
+        self.leavesOpen = leavesOpen
         run = nil
         path = []
         choices = []

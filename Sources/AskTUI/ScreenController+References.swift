@@ -36,7 +36,9 @@ extension ScreenController {
             CompletionPicker(
                 kind: kind,
                 trigger: trigger,
-                matches: rows.map { PickerRow(label: $0.label, detail: $0.detail, insertion: $0.label) },
+                matches: rows.map {
+                    PickerRow(label: $0.label, detail: $0.detail, insertion: $0.arguments, leavesOpen: $0.completes)
+                },
                 capacity: CompletionPicker.capacity(screenRows: screenRows),
                 caption: caption
             )

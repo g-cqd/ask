@@ -185,8 +185,10 @@ extension ScreenController {
         if case .choices(let title) = picker.kind, let arguments = row.run {
             return run(row, command: title, arguments: arguments)
         }
-        state.editor.replace(picker.trigger.range, with: row.insertion)
+        state.editor.replace(picker.trigger.range, with: row.insertion, closing: !row.leavesOpen)
         state.picker = nil
+        // A word left to be finished is not offered again while it is: Enter then sends, rather than choosing the same row.
+        if row.leavesOpen { state.pickerDismissedAt = picker.trigger.range.lowerBound }
         if case .choices(let title) = picker.kind {
             // A row that reveals others (a model several accounts serve) opens them; any other row that asked to be finished leaves the list
             // closed, or it would offer itself again at once.
