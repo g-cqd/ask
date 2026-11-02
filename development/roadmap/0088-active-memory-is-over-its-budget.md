@@ -260,3 +260,7 @@ RSS growth is clean code pages.
 
 Active memory is still 3.5 MiB over. What is left is mostly the frameworks `URLSession` loads (the hand-written client measured 3.4 MiB
 less in 2026-10-29, which the owner declined then) and malloc.
+
+Tried and reverted (2026-11-02, active RSS of the `read` turn, 7 runs each, the three builds alternated): an ephemeral session without
+credential storage, cache and cookies 23,520 KiB, without credential storage and cache 23,664, as it is 23,792; without the system's
+proxies no change. Too little against the 3.5 MiB left, and dropping cookies changes what a provider sees.
