@@ -9,6 +9,8 @@ struct CompletionPicker: Sendable, Equatable {
         case files
         /// The session's tasks and ideas, at a `#` (roadmap 0186).
         case references
+        /// A server's resources, after `@server:` (roadmap 0067).
+        case resources(server: String)
         /// What a command offers after its name; `title` is the command's name.
         case choices(title: String)
         /// The interactive configuration editor: a modal list whose rows are settings.
@@ -20,6 +22,7 @@ struct CompletionPicker: Sendable, Equatable {
                 case .commands: "commands"
                 case .files: "files"
                 case .references: "tasks and ideas"
+                case .resources(let server): "resources · \(server)"
                 case .choices(let name): name
                 case .config(let scope, _): "config · \(scope)"
             }

@@ -29,6 +29,9 @@ extension ScreenController {
         if let trigger = referenceTrigger() { return refreshReferencePicker(trigger, screenRows: screenRows) }
         // After a command's own list: in a command's arguments a `/` is the argument's (a path for /resume), not a skill.
         if let trigger = inlineSkillTrigger() { return refreshInlineSkillPicker(trigger, screenRows: screenRows) }
+        if let found = resourceTrigger() {
+            return refreshResourcePicker(found.server, found.trigger, screenRows: screenRows, at: now)
+        }
         if let trigger = fileTrigger() { return refreshFilePicker(trigger, screenRows: screenRows, at: now) }
         return closePicker()
     }

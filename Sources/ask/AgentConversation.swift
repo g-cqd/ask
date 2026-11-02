@@ -146,8 +146,9 @@ final class AgentConversation: Conversation {
                     update(.runEnded)
                     return
                 }
-                let prompt = SessionTasks.attachReferences(expanded)
                 try await self.connectMCP(update: update)
+                // Each @server:uri read from its server once it is connected (roadmap 0067), then #t3 and #i2 (0186).
+                let prompt = SessionTasks.attachReferences(await self.mcp.attachResources(expanded))
                 let loop = try self.agentLoop()
                 // A new session waits for how it is to be kept, when the screen is still asking (idea i1).
                 if self.session.withLock({ $0 == nil }) { try await SessionKeyAccess.settled() }

@@ -31,6 +31,7 @@ extension AgentConversation {
             case "tasks": return taskRows()
             case "ideas": return ideaRows()
             case "#": return referenceRows()
+            case let server where server.hasPrefix("@"): return await resourceRows(String(server.dropFirst()))
             default: return []
         }
     }

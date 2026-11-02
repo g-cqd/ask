@@ -94,6 +94,10 @@ extension ScreenController {
             guard pickerScreenRows >= Self.pickerMinimumRows, let trigger = referenceTrigger() else { return [] }
             return refreshReferencePicker(trigger, screenRows: pickerScreenRows)
         }
+        if command.hasPrefix("@") {
+            guard pickerScreenRows >= Self.pickerMinimumRows else { return [] }
+            return refreshPicker(screenRows: pickerScreenRows, at: .now)
+        }
         guard pickerScreenRows >= Self.pickerMinimumRows, let found = choiceTrigger(), found.command.name == command
         else { return [] }
         return refreshChoicePicker(found.command, found.trigger, screenRows: pickerScreenRows, at: .now)
