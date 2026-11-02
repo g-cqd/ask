@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["0033 hook points", "a hook whose cost a subprocess cannot meet"]
+blocked-by: ["0192 hook points", "0033 process host"]
 date: 2026-10-29
 ---
 
@@ -42,9 +42,13 @@ when unsigned, with tests. Not before 0033's hook points exist.
 - The first consumer is 0190 (a Swift edition), whose swift-search tool would be such a dylib.
 
 
-## Design (2026-11-02, proposed; becomes ADR-0142 once the owner decides)
+## Design (2026-11-02, revised with the owner's answers; becomes ADR-0142 once accepted)
 
-Nothing is built. The questions at the end are the owner's.
+Nothing is built. The owner's answers (2026-11-02):
+
+1. Do not require re-signing a third party's dylib.
+2. Tools and hooks, but first design where hooks attach: roadmap 0192.
+3. The manifest: refine it.
 
 ### Context
 
@@ -60,8 +64,7 @@ Nothing is built. The questions at the end are the owner's.
   - many calls a turn, such as a hook on every streamed event;
   - no second process to start, keep and watch.
 - **The binary.** `Scripts/sign.sh` signs ask with the hardened runtime and no exceptions. So dyld loads only libraries signed by Apple or
-  ask's team, and nothing else can run as ask and read its Keychain items without a prompt. An ad hoc build (no identity) has no library
-  validation.
+  ask's team, and ignores `DYLD_INSERT_LIBRARIES` and its kin. An ad hoc build (no identity) has no library validation.
 - **Swift has no stable binary interface** between a plugin's compiler and ask's for Swift types. `dlclose` is not dependable for Swift
   images.
 - **Trust today** is per file as it is now (`trusted.json`, a hash): a project's skills, configuration and MCP servers load only once
@@ -69,33 +72,52 @@ Nothing is built. The questions at the end are the owner's.
 
 ### Proposal
 
-1. **One C entry point, one versioned table.** A dylib exports `ask_extension_v1`, a `@_cdecl` or C function. It takes the host's table
-   (the version, the table's size, a log function and a free function) and returns the extension's: version, size, name, and
-   `call(kind, name, bytes, length, reply)`. Bytes in and out are the JSON of the routes that exist: MCP's `tools/call` for a tool, and
-   0033's `hooks/tool_call` and `hooks/tool_result` for a hook. So the same extension can ship as a dylib or as a process, and ask
-   adapts a dylib with the code it has. A newer table only adds fields at the end; ask reads `size` and refuses a version it does not
-   know, by name, in the transcript.
-2. **A manifest beside the dylib, so nothing loads at launch.** `name.askext/` holds `extension.json` (tools with their schemas, hooks
-   with their points and whether each fails open or closed, the table version) and the dylib. Tools are offered from the manifest. The
-   dylib is `dlopen`ed at the first call of one of its tools or hooks, so cold start pays nothing and an unused extension costs no
-   memory. Once loaded it stays loaded, and `/reload` re-execs ask, as now.
-3. **Library validation stays.** ask keeps the hardened runtime without `com.apple.security.cs.disable-library-validation`. A signed
-   ask therefore loads only dylibs signed by its own team: the owner's own extensions, or a third party's re-signed by the person who
-   built ask. An ad hoc ask loads any dylib, and then trust is the only gate. Turning validation off for third-party dylibs would undo
-   the Keychain protection for every user, so this proposal refuses it.
-4. **Trust per dylib, by its code-directory hash.**
-   - A user extension (`~/.config/ask/extensions/`) is asked about once, when first used.
+1. **One C entry point, one versioned table.**
+   - The dylib exports `ask_extension_v1(const ask_host *host) -> const ask_extension *`, written in C or as a Swift `@_cdecl`.
+   - The host's table holds the version, the table's size, `log`, and `done(token, bytes, length, failed)`.
+   - The extension's table holds the version, the size, `describe() -> bytes`, `call(token, kind, name, bytes, length)` and
+     `cancel(token)`.
+   - Calls finish through a callback. `call` returns at once, and the extension calls `done` from any thread when it has the answer.
+     ask turns that into a continuation, so a slow tool never holds a thread of Swift's cooperative pool. `cancel` comes from Esc.
+   - Bytes are valid only during a call. ask copies what `done` hands it before `done` returns, so nobody frees the other's memory.
+   - The bytes are the JSON that already exists: MCP's `tools/call` for a tool, and 0192's hook messages for a hook. The same extension
+     can ship as a dylib or as a process, and ask adapts both with the code it has.
+   - A newer table only adds fields at the end. ask reads `size`, and refuses a version it does not know, by name, in the transcript.
+2. **A folder with a manifest: `name.askext/`.**
+   - It holds `extension.json` and the dylib. User extensions sit in `~/.config/ask/extensions/`, a project's in `.ask/extensions/`.
+   - The manifest holds `abi` (1), `name`, `version`, `library` (the dylib's file name), and:
+     - `tools`, each with `name`, `description`, `inputSchema` and `readOnly`;
+     - `hooks`, each with `point` (0192), `deadlineMs`, `onFailure` (`open` or `closed`), and an optional `match`. For example
+       `{"tools": ["bash"]}` means it is called only for those tools.
+   - **Nothing loads at launch.** Tools are offered from the manifest, and `match` decides whether a hook needs the dylib at all. The
+     dylib is loaded at the first call that needs it, after the first frame if a hook wants `session.start`.
+   - **The manifest is checked against the code.** At load ask calls `describe()`. If its tools and hooks differ from the manifest, the
+     extension is marked broken: its tools say so, and its hooks fail as each one declared.
+   - A tool whose name clashes with one of ask's or an MCP server's is not offered. ask names the clash.
+   - A setting turns an extension off by name: `extensions.<name>.enabled`.
+   - Later: an `AskExtensionKit` package with the `@_cdecl` glue and a build plugin that writes the manifest from the declared tools,
+     so the two cannot drift.
+3. **No re-signing, so trust is the gate.**
+   - A signed ask carries `com.apple.security.cs.disable-library-validation`, and keeps the rest of the hardened runtime. `DYLD_*`
+     variables stay ignored, so no other process can push code into ask. Only a path ask chooses to `dlopen` can be loaded.
+   - ask chooses only trusted copies. At load it copies the dylib into `~/Library/Caches/ask/extensions/<sha256>.dylib`, in a 0700
+     folder, hashes the copy, and loads the copy only if that hash is trusted. A file swapped after it was trusted is therefore never
+     loaded.
+   - Apple silicon needs at least an ad hoc signature, which the linker adds by default.
+4. **Trust per extension, by the hash of its manifest and dylib together.**
+   - A user extension is asked about once, at its first use.
    - A project's extension waits until the project is trusted, and is then asked about on its own.
-   - A changed dylib (a new hash) is asked about again.
-   - The prompt says plainly that the code runs inside ask with ask's rights.
+   - Any change to either file is asked about again.
+   - The prompt says plainly that the code runs inside ask with ask's rights: its files, its network, and the Keychain items ask
+     holds, such as provider keys.
 5. **No sandbox inside the process.** Seatbelt applies to a whole process. So a dylib runs with ask's full rights, and with its
    network, files and Keychain. Therefore:
    - its tools are refused in a narrowed session, as MCP tools are (`MCPToolAdapter.narrowedRefusal`);
    - its hooks still run there, since a hook can only block or rewrite;
    - a dylib that crashes takes ask down with it. This is why **the process route stays the default**, and the dylib route is for
      extensions whose authors measured the need.
-6. **Hooks have two routes and one meaning.** 0033's hook points are defined once (`AgentHook`). A process extension and a dylib
-   reach them through two adapters, with the same JSON and the same fail-open or fail-closed rule. A dylib whose call does not return
+6. **Hooks have two routes and one meaning.** 0192 defines the hook points once, in `AgentHook`. A process extension and a dylib reach
+   them through two adapters, with the same JSON and the same fail-open or fail-closed rule. A dylib whose call does not return
    within the hook's limit cannot be killed. It is then stopped from being called again, and the transcript says so.
 7. **LSP servers stay processes.** A language server is a process by its protocol, and sourcekit-lsp ships as one. A dylib extension can
    offer language tools (definition, references) over its own index; it is not a way to load an LSP server.
@@ -105,14 +127,12 @@ Nothing is built. The questions at the end are the owner's.
 ### Consequences
 
 - An extension author writes one JSON interface and chooses the route; ask carries one more adapter, not a second protocol.
-- Third-party compiled extensions need re-signing by whoever builds ask. That is a real cost, and the price of keeping library
-  validation.
-- Nothing here is built. The order: 0033's hook host first (the process route and `AgentHook`'s points), then this adapter. The first
-  dylib comes once a measured case shows the process route over budget: 0190's index is the candidate.
+- Turning library validation off is a real loss. A trusted extension can read ask's provider keys, and nothing but the person's trust
+  stops a malicious one. The trust prompt has to say that, every time.
+- The order: 0192's hook points, then 0033's process host, then this adapter. The first dylib is 0190's index.
 
-### Questions for the owner
+### Not verified
 
-1. Keep library validation (third-party dylibs must be re-signed), or allow unvalidated dylibs in a build made for that?
-2. Are tools from dylibs wanted at all while MCP serves tools at 20 to 36 µs a call, or is the dylib route for hooks and 0190's index
-   only?
-3. The `name.askext/` folder with a manifest, or a manifest read from the dylib itself, which needs loading it to list its tools?
+- Whether Gatekeeper refuses a quarantined, unnotarized dylib that a process without library validation loads with `dlopen`. If it
+  does, the trust prompt would offer to remove the quarantine, saying so; ask never removes it silently.
+- The load's cost against the action budget.
