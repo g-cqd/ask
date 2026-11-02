@@ -45,3 +45,10 @@ Not related to 0078 (semantic payloads, deprioritised): this changes only the he
 ## Open questions
 
 - Prefixes for other tools: proposed in the 2026-10-28 reply, awaiting the owner. Nothing is implemented for them.
+
+## Modifiers first in every header (2026-11-02)
+
+The owner's choice: what modifies a call comes before its subject in every tool's header, as the shell's limits do, so a long path or
+command cut at the edge never hides it (`ToolSummary.header`): `read · lines 10–45 · src/a.swift` (`line 1` for one, `from line 15`
+for an offset alone, in words rather than `[10:45]`), `write · 2 B · a.txt`, `edit · exact replacement · a.swift`, `job · stop · #abcd`;
+a command's summary is `timeout 60s · yield 5s · <command>`. Tests: `ToolPresentationTests`.
