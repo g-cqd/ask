@@ -41,3 +41,17 @@ when unsigned, with tests. Not before 0033's hook points exist.
   the sandbox means for code that runs inside ask, and the cold-start budget (a library loaded on first use, not at launch).
 - The first consumer is 0190 (a Swift edition), whose swift-search tool would be such a dylib.
 
+
+## Design record (2026-11-02, ADR-0142, proposed)
+
+- **Measured cost to beat:** a stdio JSON-RPC call is 20 to 36 µs (0114), under 1% of the input budget. Latency alone does not justify a
+  dylib. Large state on every call, shared memory (0190's index) and per-event hooks might.
+- **Proposed:**
+  - a C entry point `ask_extension_v1` with a versioned table, carrying the same JSON as MCP's `tools/call` and 0033's hooks;
+  - a manifest beside the dylib, so it loads on first use, never at launch;
+  - library validation kept, so only dylibs signed by ask's team load in a signed ask;
+  - trust per dylib by its code-directory hash;
+  - its tools refused in a narrowed session;
+  - LSP servers stay processes;
+  - the process route stays the default.
+- Waiting on the owner: three questions at the end of ADR-0142. Building waits on 0033's hook host.
