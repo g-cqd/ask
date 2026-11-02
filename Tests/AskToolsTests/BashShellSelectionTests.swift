@@ -1,5 +1,6 @@
 import AskAI
 import AskAgentCore
+import Foundation
 import Testing
 
 @testable import AskTools
@@ -84,5 +85,18 @@ struct BashShellSelectionTests {
     @Test func `the tool's description names the shell it will use`() {
         let tool = BashTool(jobs: JobTable(), commandEnvironment: CommandEnvironment(shell: "sh"))
         #expect(tool.definition.description.contains("/bin/sh"))
+    }
+
+    @Test func `a shell is an absolute path to an executable file, not a directory, a bare name or a plain file`()
+        throws
+    {
+        #expect(JobTable.isShell("/bin/sh"))
+        #expect(!JobTable.isShell("/bin"), "a directory")
+        #expect(!JobTable.isShell("sh"), "a bare name")
+        #expect(!JobTable.isShell("/nonexistent/sh"))
+        let plain = NSTemporaryDirectory() + "ask-not-a-shell-\(UUID().uuidString)"
+        try "echo".write(toFile: plain, atomically: true, encoding: .utf8)
+        defer { try? FileManager.default.removeItem(atPath: plain) }
+        #expect(!JobTable.isShell(plain), "a file that cannot be run")
     }
 }

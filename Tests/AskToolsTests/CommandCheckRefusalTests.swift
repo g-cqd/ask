@@ -1,6 +1,7 @@
 import AskAI
 import AskAgentCore
 import Foundation
+import Synchronization
 import Testing
 
 @testable import AskTools
@@ -115,5 +116,31 @@ struct CommandCheckRefusalTests {
 
     @Test func `an unchecked command is not refused for that`() throws {
         try BashTool().refuse("echo hi", shell: "/bin/bash", CommandCheck.Result(unchecked: true))
+    }
+
+    @Test func `a refusal is for one shell: the same command in another is refused on its own`() {
+        let refused = RefusedCommands()
+        #expect(refused.refuses("cd x", shell: "/bin/bash"))
+        #expect(refused.refuses("cd x", shell: "/bin/sh"), "another shell's refusal does not let it through")
+        #expect(!refused.refuses("cd x", shell: "/bin/bash"))
+    }
+
+    @Test func `the deadline's thread ends when the check does, not at the deadline`() async throws {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/true")
+        try process.run()
+        let clock = ContinuousClock()
+        let start = clock.now
+        let stopped: Bool = await withCheckedContinuation { over in
+            let box = Mutex<CheckWatchdog?>(nil)
+            let watchdog = CheckWatchdog(process, deadline: .seconds(30)) {
+                over.resume(returning: box.withLock { $0 }?.stopped ?? false)
+            }
+            box.withLock { $0 = watchdog }
+            process.waitUntilExit()
+            watchdog.cancel()
+        }
+        #expect(clock.now - start < .seconds(10), "woken by the cancel, not at the 30 s deadline")
+        #expect(!stopped)
     }
 }

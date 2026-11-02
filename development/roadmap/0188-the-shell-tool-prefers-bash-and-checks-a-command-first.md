@@ -50,7 +50,14 @@ Found on the way: the check's deadline was a task on the cooperative pool, whose
 never fired and the command waited on its check. It is now a thread of its own (`CheckWatchdog`) sleeping in `poll` on a pipe, which the check closes when it
 ends, so a quick check leaves nothing waiting.
 
-Mutation testing of this change is owed (t190).
+Mutation testing (2026-11-02): litmus (`g-cqd/litmus` at `707a038`, scoped to the five files) made 30 mutants: 23 killed, 2 timed out,
+5 survived (83%, 28 min). The survivors, all closed by new tests: the shell's own words in a syntax error, shellcheck's `-:` prefix,
+and three of `JobTable.isShell`'s conditions (a directory, a bare name, a file that cannot be run). litmus has no operator for values,
+so 14 more were made by hand: the refusal's removal and its key's shell, the findings that never refuse, the watchdog's milliseconds
+and its cancel, the default shell's order, folders and last resort; all killed, after a test for the key's shell and one that the
+watchdog's thread ends with the check (its `ended` callback). One is equivalent: `woken == 0` as `woken >= 0`, as `cancel()` is
+called only once the program has ended. The run's findings about litmus went to its author (`~/Public/litmus-ask-run-report.md`), and
+are fixed in litmus `e0b0f9d`.
 
 ## Left
 
