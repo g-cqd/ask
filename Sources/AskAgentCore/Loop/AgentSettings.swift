@@ -25,6 +25,9 @@ public struct AgentSettings: Sendable, Equatable {
     /// What the model's provider accepts of images in one request, when it says.
     public var imageLimits: ImageLimits?
 
+    /// The most times hooks may continue one run that would have ended (roadmap 0192); each counts against `maximumTurns` too.
+    public var maximumHookContinues = 3
+
     /// The default threshold: Anthropic's own default trigger for server-side compaction.
     public static let defaultCompactAtTokens = 150_000
 

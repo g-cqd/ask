@@ -15,13 +15,19 @@
 /// }
 /// ```
 public protocol AgentHook: Sendable {
+    /// How the session and the transcript name the hook; its type's name by default.
+    var name: String { get }
     /// Decides whether `call` runs, and with what input.
     func toolCall(_ call: ToolInvocation) async -> ToolCallDecision
     /// The result the model will see for `call`.
     func toolResult(_ call: ToolInvocation, _ output: ToolOutput) async -> ToolOutput
+    /// Whether a run that would end goes on (roadmap 0192): asked after the person's follow-ups, within the continue and turn limits.
+    func runStop(_ stop: RunStop) async -> RunStopDecision
 }
 
 extension AgentHook {
     public func toolCall(_ call: ToolInvocation) async -> ToolCallDecision { .allow }
+    public var name: String { String(describing: type(of: self)) }
     public func toolResult(_ call: ToolInvocation, _ output: ToolOutput) async -> ToolOutput { output }
+    public func runStop(_ stop: RunStop) async -> RunStopDecision { .stop }
 }

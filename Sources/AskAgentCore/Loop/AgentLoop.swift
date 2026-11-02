@@ -20,6 +20,8 @@ public struct AgentLoop: Sendable {
     let networkWait: Duration
     var hooks: [any AgentHook]
     var learnedWindow = LearnedWindow()
+    /// How many times hooks continued this run (roadmap 0192).
+    var hookContinues = 0
     /// Answers in a row that lost their connection part way (roadmap 0141).
     let drops = DropCount()
     /// Repairs already reported, so an old session's damage is said once and not before every request.
@@ -178,6 +180,15 @@ public struct AgentLoop: Sendable {
                 continue
             }
             if !continuing {
+                if try await continuesByHook(
+                    response,
+                    atLimit: turn + 1 == settings.maximumTurns,
+                    in: session,
+                    events: events
+                ) {
+                    turn += 1
+                    continue
+                }
                 events(.finished(response.stopReason))
                 return
             }

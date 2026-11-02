@@ -12,6 +12,18 @@ public enum RunNotices {
         }
     }
 
+    /// What a hook's continue says, or a limit that kept hooks from continuing (roadmap 0192); nil when `event` is neither.
+    public static func hook(for event: AgentEvent) -> String? {
+        switch event {
+            case .hookContinued(let message): "A hook continued the run: \(message)"
+            case .hookContinuesStopped(.continues(let count)):
+                "Hooks continued this run \(count) times, the most hooks.maxContinues allows; it ends here."
+            case .hookContinuesStopped(.turns(let turns)):
+                "The run reached its limit of \(turns) turns, so hooks were not asked to continue it."
+            default: nil
+        }
+    }
+
     /// What a retry says: why, how long ask waits, and which attempt comes next.
     public static func retry(attempt: Int, of total: Int, delay: Duration, reason: String) -> String {
         let milliseconds = delay.components.seconds * 1_000 + delay.components.attoseconds / 1_000_000_000_000_000

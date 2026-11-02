@@ -27,6 +27,22 @@ struct RunNoticesTests {
         #expect(RunNotices.compaction(for: .model(.notice("hi"))) == nil)
     }
 
+    @Test func `a hook's continue and the limits that stop hooks are said, and nothing else is`() {
+        #expect(
+            RunNotices.hook(for: .hookContinued("[hook Tests] Fix the failures."))
+                == "A hook continued the run: [hook Tests] Fix the failures."
+        )
+        #expect(
+            RunNotices.hook(for: .hookContinuesStopped(.continues(3)))
+                == "Hooks continued this run 3 times, the most hooks.maxContinues allows; it ends here."
+        )
+        #expect(
+            RunNotices.hook(for: .hookContinuesStopped(.turns(40)))
+                == "The run reached its limit of 40 turns, so hooks were not asked to continue it."
+        )
+        #expect(RunNotices.hook(for: .finished(nil)) == nil)
+    }
+
     @Test func `a retry says why, how long, and which attempt`() {
         #expect(
             RunNotices.retry(attempt: 2, of: 4, delay: .seconds(3), reason: "rate limited")

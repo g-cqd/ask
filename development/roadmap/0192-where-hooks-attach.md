@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-11-02
 ---
@@ -116,6 +116,13 @@ the tests and send the failures back, check a list, or ask for a review pass. Th
 2. Hook continues: a setting, `hooks.maxContinues`, default 3, counted against `maximumTurns`.
 3. Read Claude Code's hook configuration as is, behind a setting that can turn it off.
 4. Add `subagent.stop`, `settings.change`, and rewriting at `request.before`. Not a hook on every streamed event.
+
+## Progress
+
+- 2026-11-02: ADR-0143 records the points. `run.stop` is built: `AgentHook.runStop` and `name`, `AgentLoop.continuesByHook`,
+  `AgentSettings.maximumHookContinues` (default 3), the events `hookContinued` and `hookContinuesStopped`, said in the screen and in
+  `ask -p`. Tests: AgentHookRunStopTests (8), 12 mutants killed. Next: the `hooks` configuration section (`maxContinues`,
+  `claudeCode`), then the other points.
 
 ## Done when
 
