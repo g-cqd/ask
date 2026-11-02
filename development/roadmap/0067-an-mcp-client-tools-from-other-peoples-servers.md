@@ -50,4 +50,26 @@ The owner's choice (2026-11-02): both a picker for the person and a tool for the
   narrowed session. Not `mcp_…`: such names are refused by Anthropic's subscription endpoint (0144).
 - Tests: `MCPResourceTests` (client, 4), `MCPResourceToolTests` (7); 22 mutants, all killed.
 - Not verified: the tool against apple-docs through a model (the fake servers only); the name against the subscription endpoint.
-- Not done: the person's picker; `resources/subscribe` and the listing's change notice (a server's list is read when the tool asks).
+- Not done: `resources/subscribe` and the listing's change notice (a server's list is read when the tool asks).
+
+## Resources, for the person (done 2026-11-02)
+
+The owner's choice of syntax: `@server:uri`, Claude Code's. It shares `@` with files and is told apart by the name before the colon.
+
+- `ResourceReferences` (`AskAgentCore`): in the typed line only, each word that starts with `@`, names a connected server that has
+  resources and has a URI after the colon is a reference; a sentence's `.,;!?` after it is not part of it. Each is read once, in order,
+  when the message is sent, after the turn's servers connect, and attached after the line, as `#t3` is (0186):
+  `--- resource server:uri --- … --- end of resource ---`. More than 64 KB is cut, and the model is told to read the rest itself. The
+  person is shown only the typed line.
+- `MCPHub.attachResources`: text parts joined; bytes named, not sent; an empty read or a failure says so in the text's place.
+  `ask -p` attaches too.
+- The picker: after `@name:`, where the name looks like a server's (ASCII letters, digits, `-_.`) and what follows is not a line range,
+  the screen asks the conversation for `@name`'s rows once (again once stale, as command lists are). That starts servers waiting for
+  their first need (0143). A server's rows rank by what follows the colon; a choice puts `@server:uri` in place. A name that is no server
+  with resources, or whose list is still coming while nothing follows the colon, keeps the file picker. A URI being typed meanwhile
+  says `asking server…`.
+- Tests: `ResourceReferencesTests` (6), `MCPHubResourceTests` (3), `ResourcePickerTests` (5); 20 mutants, all killed.
+- Not done: steering and follow-up messages typed during a turn attach none (their path is synchronous); templates are not in the
+  picker (a templated URI is typed whole); `resources/subscribe`.
+- Not verified: against apple-docs live, in a terminal; the conversation's `resourceRows` guard (a name that is no configured server
+  starts nothing) has no test.

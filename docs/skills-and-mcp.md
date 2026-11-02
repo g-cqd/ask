@@ -48,3 +48,6 @@ An MCP server offers the model more tools: a program ask starts, or a service at
 - A server that has **resources** (documents it serves by URI, such as apple-docs' pages) offers the model one more tool,
   `server_resource`, while it is connected: the server alone lists its resources and URI templates, and a URI reads one. It is refused
   in a narrowed session, as the server's tools are.
+- You can attach a resource yourself: type `@server:` and the list shows that server's resources (typing narrows it), then send. Each
+  `@server:uri` in your message is read when it is sent and given to the model after your text, up to 64 KB each. Files keep `@path`
+  and `@file:12-30`.

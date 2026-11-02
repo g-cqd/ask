@@ -111,7 +111,8 @@ func runPrompt(
     let keepAwake = awake(settings)
     defer { keepAwake.turnEnded() }
     let run = Task<Void, any Error> {
-        try await loop.run(sent, in: session) { renderer.render($0) }
+        // Each @server:uri read from its server, which has connected above (roadmap 0067).
+        try await loop.run(await mcp.attachResources(sent), in: session) { renderer.render($0) }
     }
     let interrupted = Mutex<Int32?>(nil)
     let signals = SignalHandler(

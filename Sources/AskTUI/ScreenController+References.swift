@@ -13,21 +13,34 @@ extension ScreenController {
             effects = [.listChoices(command: Self.referenceList)]
         }
         let rows = PickerRanking.rank(held?.rows ?? [], query: "#" + trigger.query)
+        installWords(rows, kind: .references, trigger: trigger, word: "#" + trigger.query, screenRows: screenRows)
+        return effects
+    }
+
+    /// Shows `rows`, each put in place as its label, or closes the list: none match, the word was closed on, or it is the one row already.
+    mutating func installWords(
+        _ rows: [ChoiceRow],
+        kind: CompletionPicker.Kind,
+        trigger: CompletionTrigger,
+        word: String,
+        screenRows: Int,
+        caption: String = ""
+    ) {
         guard state.pickerDismissedAt != trigger.range.lowerBound, !rows.isEmpty,
-            !(rows.count == 1 && rows[0].label == "#" + trigger.query)
+            !(rows.count == 1 && rows[0].label == word)
         else {
             state.picker = nil
-            return effects
+            return
         }
         install(
             CompletionPicker(
-                kind: .references,
+                kind: kind,
                 trigger: trigger,
                 matches: rows.map { PickerRow(label: $0.label, detail: $0.detail, insertion: $0.label) },
-                capacity: CompletionPicker.capacity(screenRows: screenRows)
+                capacity: CompletionPicker.capacity(screenRows: screenRows),
+                caption: caption
             )
         )
-        return effects
     }
 
     /// The tokens the screen draws: the skills' and the references' names, with their sigils.
