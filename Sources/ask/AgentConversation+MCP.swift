@@ -11,10 +11,21 @@ extension AgentConversation {
     func resourceRows(_ server: String) async -> [ChoiceRow] {
         guard mcp.status.contains(where: { $0.name == server && $0.state != .off }) else { return [] }
         await mcp.connect(waitingAtMost: Self.mcpWait)
-        return (await mcp.listedResources(of: server) ?? [])
+        let resources = (await mcp.listedResources(of: server) ?? [])
             .map {
                 ChoiceRow(label: "@\(server):\($0.uri)", detail: $0.name, arguments: "@\(server):\($0.uri)")
             }
+        // A template is shown whole and puts its fixed part in the input, for the person to finish (`@apple-docs:apple-docs://doc/`).
+        let templates = (await mcp.listedTemplates(of: server) ?? [])
+            .map {
+                ChoiceRow(
+                    label: "@\(server):\($0.template)",
+                    detail: $0.name + " · template",
+                    arguments: "@\(server):" + MCPHub.typedPart(of: $0.template),
+                    completes: true
+                )
+            }
+        return resources + templates
     }
 
     /// Before a turn: connects the MCP servers on their first need and waits for any still connecting, so the request offers their tools

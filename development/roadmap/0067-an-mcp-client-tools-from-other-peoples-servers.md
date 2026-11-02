@@ -49,7 +49,7 @@ The owner's choice (2026-11-02): both a picker for the person and a tool for the
   with a `uri` it reads: text whole, a picture shown as a tool's would be (`MCPResultImages`), other bytes named, not sent. Refused in a
   narrowed session. Not `mcp_…`: such names are refused by Anthropic's subscription endpoint (0144).
 - Tests: `MCPResourceTests` (client, 4), `MCPResourceToolTests` (7); 22 mutants, all killed.
-- Not verified: the tool against apple-docs through a model (the fake servers only); the name against the subscription endpoint.
+- Not verified: the name against the subscription endpoint. (The tool against apple-docs: verified 2026-11-02, below.)
 - Not done: `resources/subscribe` and the listing's change notice (a server's list is read when the tool asks).
 
 ## Resources, for the person (done 2026-11-02)
@@ -69,7 +69,7 @@ The owner's choice of syntax: `@server:uri`, Claude Code's. It shares `@` with f
   with resources, or whose list is still coming while nothing follows the colon, keeps the file picker. A URI being typed meanwhile
   says `asking server…`.
 - Tests: `ResourceReferencesTests` (6), `MCPHubResourceTests` (3), `ResourcePickerTests` (5); 20 mutants, all killed.
-- Not done: templates are not in the picker (a templated URI is typed whole); `resources/subscribe`.
+- Not done: `resources/subscribe`.
 - Not verified: against apple-docs live, in a terminal; the conversation's `resourceRows` guard (a name that is no configured server
   starts nothing) has no test.
 
@@ -83,3 +83,15 @@ The owner's choice of syntax: `@server:uri`, Claude Code's. It shares `@` with f
   release binary: a steering message typed during a slow call names `@fx:note://a`; the next request carries the note after the typed
   line, and the screen shows the line alone (3 checks; the build before fails the second).
 - Not verified: against apple-docs live.
+
+## Templates in the picker, and apple-docs live (done 2026-11-02)
+
+- `MCPHub.listedTemplates(of:)`; the `@server:` picker lists a server's templates after its resources, shown whole
+  (`@apple-docs:apple-docs://doc/{+key}`, `page · template`). Choosing one writes its fixed part, the URI up to its first `{`
+  (`MCPHub.typedPart`), with no space after it and the cursor at its end, and the picker is not offered again on that word, so Enter then
+  sends (`PickerRow.leavesOpen`, `PromptEditor.replace(closing:)`). The word picker now inserts a row's `arguments`, which for every
+  other row is its label.
+- Tests: `MCPHubResourceTests` (1 new), `ResourcePickerTests` (1 new). `Scripts/probe-mcp-apple-docs.py` against the live apple-docs
+  through the release binary: its templates listed, the template chosen and finished (`swiftui/view`), the page read and attached after
+  the typed line with the screen showing the line alone, and the model's `server_resource` call reading the same page (5 checks).
+
