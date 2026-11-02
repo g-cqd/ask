@@ -21,6 +21,8 @@ public protocol AgentHook: Sendable {
     func toolCall(_ call: ToolInvocation) async -> ToolCallDecision
     /// The result the model will see for `call`.
     func toolResult(_ call: ToolInvocation, _ output: ToolOutput) async -> ToolOutput
+    /// The answer to a call that would ask the person (roadmap 0192): `ask` leaves it to the next hook, then to the person.
+    func approval(_ request: ToolCallApproval) async -> ApprovalDecision
     /// Whether a run that would end goes on (roadmap 0192): asked after the person's follow-ups, within the continue and turn limits.
     func runStop(_ stop: RunStop) async -> RunStopDecision
 }
@@ -30,4 +32,5 @@ extension AgentHook {
     public var name: String { String(describing: type(of: self)) }
     public func toolResult(_ call: ToolInvocation, _ output: ToolOutput) async -> ToolOutput { output }
     public func runStop(_ stop: RunStop) async -> RunStopDecision { .stop }
+    public func approval(_ request: ToolCallApproval) async -> ApprovalDecision { .ask }
 }

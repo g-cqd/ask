@@ -30,6 +30,8 @@ public enum AgentEvent: Sendable, Equatable {
     case compactionFailed(String)
     /// A queued user message has been persisted and will enter the next request.
     case promptAccepted(QueuedPrompt)
+    /// A hook answered a call's approval in the person's place (roadmap 0192).
+    case hookAnswered(hook: String, tool: String, approved: Bool)
     /// A hook continued a run that would have ended (roadmap 0192); `message` is the user entry it recorded.
     case hookContinued(String)
     /// A run ended without asking its hooks whether to go on, because of `limit`.

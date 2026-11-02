@@ -47,7 +47,12 @@ public struct ToolRegistry: Sendable {
                 case .run: break
                 case .runWithoutServerQuestion: context = context.withoutServerQuestion()
                 case .ask(let approval):
-                    guard await gate.ask(approval) else { return .error("The user did not allow this call.") }
+                    switch await gate.first?(approval) ?? .ask {
+                        case .approve: break
+                        case .refuse(let reason): return .error(reason)
+                        case .ask:
+                            guard await gate.ask(approval) else { return .error("The user did not allow this call.") }
+                    }
             }
         }
         var output: ToolOutput

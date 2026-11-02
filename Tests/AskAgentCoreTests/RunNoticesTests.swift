@@ -40,6 +40,14 @@ struct RunNoticesTests {
             RunNotices.hook(for: .hookContinuesStopped(.turns(40)))
                 == "The run reached its limit of 40 turns, so hooks were not asked to continue it."
         )
+        #expect(
+            RunNotices.hook(for: .hookAnswered(hook: "Policy", tool: "bash", approved: true))
+                == "The hook Policy allowed this bash call."
+        )
+        #expect(
+            RunNotices.hook(for: .hookAnswered(hook: "Policy", tool: "bash", approved: false))
+                == "The hook Policy refused this bash call."
+        )
         #expect(RunNotices.hook(for: .finished(nil)) == nil)
     }
 

@@ -125,7 +125,13 @@ the tests and send the failures back, check a list, or ask for a review pass. Th
 - 2026-11-02: the `hooks` section, the person's own file only: `hooks.maxContinues` (0 to 100, default 3) reaches
   `AgentSettings.maximumHookContinues`, and `ask config` shows it. In the catalogue, docs/configuration.md and the generated example.
   Tests: HooksConfigurationTests (6), 7 mutants killed. `hooks.claudeCode` comes with the Claude Code runner, so that it is never a
-  setting that does nothing. Next: the `approval` and `prompt.submit` points, then a reference `run.stop` hook.
+  setting that does nothing.
+- 2026-11-02: the `approval` point. `AgentHook.approval` answers `approve`, `refuse(reason)` or `ask`; the loop puts the hooks
+  before the person on the call's `ToolCallGate` (`first`), and the first answer other than `ask` wins. A refusal reaches the model as
+  "The hook NAME refused this call: REASON"; the run says "The hook NAME allowed (or refused) this TOOL call." in the screen and in
+  `ask -p`. Only calls the policy would ask about reach a hook; without a gate (`ask -p`) none does, and the sandbox's own questions are
+  not approvals, so no answer widens it. Tests: AgentHookApprovalTests (6), 12 mutants killed. Next: `prompt.submit`, then a reference
+  `run.stop` hook.
 
 ## Done when
 
