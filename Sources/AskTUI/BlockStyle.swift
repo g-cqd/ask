@@ -6,6 +6,8 @@ public struct BlockStyle: Sendable, Equatable {
     public var theme: ScreenTheme
     /// Whether elapsed status uses locale-aware units instead of a compact clock.
     public var localizedDurations: Bool
+    /// What `~` means in a block's path links: the home ask was started with (``ScreenOptions/home``), or nil for the account's own.
+    public var home: String?
 
     public init(padded: Bool = true, theme: ScreenTheme = ScreenTheme(), localizedDurations: Bool = true) {
         self.padded = padded

@@ -1,3 +1,4 @@
+internal import Foundation
 internal import TerminalKitStyle
 internal import TerminalKitText
 
@@ -56,7 +57,7 @@ extension ScreenComposer {
     ) -> [Line] {
         // Paths, web and email addresses become links in every block (roadmap 0075), beside a Markdown row's own links. Once per layout
         // of the block, not per frame; the row cache then redraws only what changed.
-        let content = content.map(Self.linked)
+        let content = content.map { linked($0, home: style.home) }
         guard style.padded else { return content }
         let tint = interrupted && style.theme.tinted ? style.theme.interrupted : style.theme.tint(for: kind)
         // A row with a tint of its own, an edit's removed or added line, keeps it.
@@ -69,10 +70,10 @@ extension ScreenComposer {
         return (spacerAbove ? [Line(text: "", style: .default)] : []) + [padding] + content.map(tinted) + [padding]
     }
 
-    /// `line` with the paths and addresses in its text linked, where no link of its own already is.
-    static func linked(_ line: Line) -> Line {
+    /// `line` with the paths and addresses in its text linked, where no link of its own already is; `~` is `home`, or the account's home.
+    static func linked(_ line: Line, home: String?) -> Line {
         guard LinkCandidates.mayHoldLink(line.text) else { return line }
-        let found = PathLinks.links(in: line.text)
+        let found = PathLinks.links(in: line.text, home: home ?? NSHomeDirectory())
             .filter { link in
                 !line.links.contains { $0.columns.overlaps(link.columns) }
             }
