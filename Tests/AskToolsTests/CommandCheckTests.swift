@@ -22,6 +22,12 @@ struct CommandCheckTests {
         #expect(fine.syntaxError == nil)
     }
 
+    @Test func `the model is told what the shell said, not a word of ask's own`() async {
+        let broken = await CommandCheck.check(#"echo "unterminated"#, shell: "/bin/bash", path: "/usr/bin:/bin")
+        #expect(broken.syntaxError?.contains("unexpected EOF") == true)
+        #expect(broken.syntaxError?.contains("could not parse it") == false)
+    }
+
     @Test
     func `parsing runs nothing: not the command, and in an environment of the PATH alone`() async throws {
         let marker = NSTemporaryDirectory() + "ask-check-\(UUID().uuidString)"
@@ -56,6 +62,10 @@ struct CommandCheckTests {
         let path = (Self.shellcheck! as NSString).deletingLastPathComponent + ":/usr/bin:/bin"
         let checked = await CommandCheck.check("cd /nonexistent-dir; ls", shell: "/bin/bash", path: path)
         #expect(checked.findings.contains { $0.contains("SC2164") })
+        #expect(
+            checked.findings.allSatisfy { $0.hasPrefix("1:") },
+            "the line and column, without shellcheck's name for its input"
+        )
         let zsh = await CommandCheck.check("cd /nonexistent-dir; ls", shell: "/bin/zsh", path: path)
         #expect(zsh.findings.isEmpty, "shellcheck does not know zsh")
     }
