@@ -69,7 +69,17 @@ The owner's choice of syntax: `@server:uri`, Claude Code's. It shares `@` with f
   with resources, or whose list is still coming while nothing follows the colon, keeps the file picker. A URI being typed meanwhile
   says `asking server…`.
 - Tests: `ResourceReferencesTests` (6), `MCPHubResourceTests` (3), `ResourcePickerTests` (5); 20 mutants, all killed.
-- Not done: steering and follow-up messages typed during a turn attach none (their path is synchronous); templates are not in the
-  picker (a templated URI is typed whole); `resources/subscribe`.
+- Not done: templates are not in the picker (a templated URI is typed whole); `resources/subscribe`.
 - Not verified: against apple-docs live, in a terminal; the conversation's `resourceRows` guard (a name that is no configured server
   starts nothing) has no test.
+
+## Resources in a message typed during a turn (done 2026-11-02)
+
+- `PromptQueue(prepare:)`: a queued message is prepared when the loop takes it, before the hooks see it (0192); while it is prepared it
+  is being recorded, so it cannot be withdrawn. The conversation's queue reads `@server:uri` and then attaches `#t3` and `#i2`, in the
+  order a turn's start does; `enqueue` only expands a skill. A message sent back to the input (a failed run) no longer carries `#t3`'s
+  text, as it is attached only when taken.
+- Tests: `PromptQueueTests` (2 new). The fixture server has a `resources` mode (`note://a`). `Scripts/probe-mcp-steering.py` through the
+  release binary: a steering message typed during a slow call names `@fx:note://a`; the next request carries the note after the typed
+  line, and the screen shows the line alone (3 checks; the build before fails the second).
+- Not verified: against apple-docs live.

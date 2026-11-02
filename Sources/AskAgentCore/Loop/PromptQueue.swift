@@ -10,8 +10,12 @@ public final class PromptQueue: Sendable {
     }
 
     private let state = Mutex(State())
+    /// What a message becomes when the loop takes it, before the hooks see it: `@server:uri` read and attached (roadmap 0067), which
+    /// needs the network and so cannot be done as it is typed.
+    private let prepare: @Sendable (String) async -> String
 
-    public init() {}
+    /// A queue whose messages are prepared by `prepare` when the loop takes them; by default they go as they are.
+    public init(prepare: @escaping @Sendable (String) async -> String = { $0 }) { self.prepare = prepare }
 
     /// Adds a message, in arrival order within its delivery class.
     public func append(_ prompt: QueuedPrompt) { state.withLock { $0.pending.append(prompt) } }
@@ -35,7 +39,7 @@ public final class PromptQueue: Sendable {
     /// - Parameters:
     ///   - finished: whether the agent has finished its pending work.
     ///   - session: receives the user entry before the message leaves the queue.
-    ///   - admit: what the hooks make of the message (roadmap 0192): the text to record, or nil to keep it out.
+    ///   - admit: what the hooks make of the message once prepared (roadmap 0192): the text to record, or nil to keep it out.
     /// - Returns: the recorded message, as recorded, or nil when none is eligible or `admit` kept it out (it leaves the queue then).
     /// - Throws: the persistence error; the message stays queued.
     func recordNext(
@@ -55,8 +59,9 @@ public final class PromptQueue: Sendable {
         // Do not hold the queue lock during a barrier flush or a damaged-session rewrite. The message is marked as being recorded,
         // so a withdrawal meanwhile refuses it; others may come and go, so it leaves the queue by its id.
         defer { state.withLock { $0.recording = nil } }
-        // What the hooks make of it (roadmap 0192): nil keeps it out, and it leaves the queue unrecorded.
-        guard let text = await admit(prompt) else {
+        // Prepared, then what the hooks make of it (roadmap 0192): nil keeps it out, and it leaves the queue unrecorded.
+        let ready = QueuedPrompt(id: prompt.id, text: await prepare(prompt.text), delivery: prompt.delivery)
+        guard let text = await admit(ready) else {
             state.withLock { state in state.pending.removeAll { $0.id == prompt.id } }
             return nil
         }

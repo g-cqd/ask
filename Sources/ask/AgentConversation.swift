@@ -108,8 +108,8 @@ final class AgentConversation: Conversation {
     }
 
     func enqueue(_ text: String, id: Int, followUp: Bool) {
-        // A skill asked for during a turn is expanded as at a turn's start, and #t3 and #i2 attached (0186); a skill that cannot be
-        // loaded sends the message back to the input.
+        // A skill asked for during a turn is expanded as at a turn's start; a skill that cannot be loaded sends the message back to the
+        // input. The queue attaches @server:uri, #t3 and #i2 when the loop takes it (0067, 0186).
         let update = approvals.withLock { $0.ask }
         guard let sent = expandingSkill(text, update: update ?? { _ in }) else {
             update?(.promptRefused(id: id))
@@ -119,7 +119,7 @@ final class AgentConversation: Conversation {
             .append(
                 QueuedPrompt(
                     id: id,
-                    text: SessionTasks.attachReferences(sent),
+                    text: sent,
                     delivery: followUp ? .followUp : .steering
                 )
             )
@@ -132,7 +132,8 @@ final class AgentConversation: Conversation {
     }
 
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
-        let input = PromptQueue()
+        // A message typed during the turn has its @server:uri read when the loop takes it, then #t3 and #i2, as at the turn's start.
+        let input = PromptQueue { [mcp] text in SessionTasks.attachReferences(await mcp.attachResources(text)) }
         promptInput.withLock { $0 = input }
         // Approval questions during this run go to this run's screen updates.
         approvals.withLock { $0.ask = update }
