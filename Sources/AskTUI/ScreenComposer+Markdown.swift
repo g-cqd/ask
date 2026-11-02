@@ -29,7 +29,7 @@ extension ScreenComposer {
                     MarkdownMessageLayout.Fence(fence: $0.fence, ordinal: $0.ordinal, folded: $0.folded)
                 },
             renderer: MarkdownRenderer(
-                theme: .standard,
+                theme: markdownTheme,
                 links: markdownLinks(home: transcript.home),
                 highlighter: transcript.highlight ? CodeHighlighter.standard : nil,
                 softBreaks: .lineBreak

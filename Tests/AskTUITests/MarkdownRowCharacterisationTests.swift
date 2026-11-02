@@ -46,6 +46,6 @@ struct MarkdownRowCharacterisationTests {
     }
 
     @Test func `the rows of random Markdown keep their digest`() {
-        #expect(Self.digest() == 3_513_818_236_941_015_349)
+        #expect(Self.digest() == 12_949_741_792_554_716_897)
     }
 }

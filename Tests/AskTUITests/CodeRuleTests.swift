@@ -1,0 +1,21 @@
+import Testing
+
+@testable import AskTUI
+
+/// Roadmap 0177, the owner's choice C: a code block in a reply is drawn inside a rule (the language on its corner, a rule down the
+/// gutter, a closing corner); copying it copies the code.
+@Suite("A reply's code block is drawn inside a rule")
+struct CodeRuleTests {
+    @Test func `the block opens on its language, keeps its lines after the rule, and closes`() {
+        var transcript = Transcript()
+        transcript.setMarkdown(true)
+        transcript.addAssistantText("Here:\n\n```swift\nlet a = 1\nprint(a)\n```\n\nDone.")
+        let rows = ScreenComposer.lines(in: transcript, at: 0, columns: 60).map(\.text)
+        let open = rows.firstIndex { $0.contains("╭─ swift") }
+        #expect(open != nil, "\(rows)")
+        if let open {
+            #expect(rows[open + 1].contains("│ let a = 1") && rows[open + 2].contains("│ print(a)"))
+            #expect(rows[open + 3].contains("╰─"))
+        }
+    }
+}

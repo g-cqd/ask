@@ -22,7 +22,7 @@ struct CodeHighlightTests {
 
     @Test func `a keyword, a number, a string and a comment each take their colour`() {
         let lines = Self.lines("```swift\nlet a = 0x1F + \"s\" // c\n```")
-        let row = "  let a = 0x1F + \"s\" // c"
+        let row = "│ let a = 0x1F + \"s\" // c"
         #expect(Self.colour(lines, row: row, 2 ..< 5) == .indexed(5))
         #expect(Self.colour(lines, row: row, 10 ..< 14) == .indexed(3))
         #expect(Self.colour(lines, row: row, 17 ..< 20) == .indexed(2))
@@ -32,14 +32,14 @@ struct CodeHighlightTests {
     @Test func `a block comment that runs on colours the next line too`() {
         let lines = Self.lines("```rust\n/* open\nstill */ let x = 1;\n```")
         #expect(
-            lines.first { $0.text == "  still */ let x = 1;" }?.accents.first { $0.columns == 2 ..< 10 }?.style.dim
+            lines.first { $0.text == "│ still */ let x = 1;" }?.accents.first { $0.columns == 2 ..< 10 }?.style.dim
                 == true
         )
-        #expect(Self.colour(lines, row: "  still */ let x = 1;", 11 ..< 14) == .indexed(5))
+        #expect(Self.colour(lines, row: "│ still */ let x = 1;", 11 ..< 14) == .indexed(5))
     }
 
     @Test func `a language named by an alias is found, and one the lexers do not know is plain`() {
-        #expect(Self.colour(Self.lines("```sh\necho hi\n```"), row: "  echo hi", 2 ..< 6) == .indexed(5))
+        #expect(Self.colour(Self.lines("```sh\necho hi\n```"), row: "│ echo hi", 2 ..< 6) == .indexed(5))
         for message in ["```brainfuck\nlet ++\n```", "```\nlet a = 1\n```", "```text\nlet a = 1\n```"] {
             #expect(
                 Self.lines(message).map(\.accents) == Self.lines(message, highlight: false).map(\.accents),
