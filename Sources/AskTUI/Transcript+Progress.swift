@@ -11,6 +11,17 @@ extension Transcript {
     }
 
     /// Cancellation can end a run without delivering a result for its last tool.
+    /// Shows `text` on the header of the tool started as `id` while it runs; a report for an ended call, or for none, changes nothing.
+    mutating func noteProgress(_ text: String, id: String) {
+        // A clock that has not ended is a call still running.
+        guard let index = toolBlocks[id], var clock = progress[index], clock.ended == nil, clock.note != text else {
+            return
+        }
+        clock.note = text
+        progress[index] = clock
+        revisions[index] = bump()
+    }
+
     mutating func finishRunProgress() {
         finishThinking()
         while latestForegroundTool != nil {

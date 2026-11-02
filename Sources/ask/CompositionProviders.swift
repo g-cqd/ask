@@ -66,7 +66,8 @@ func makeLoop(
     live: LiveTools? = nil,
     destructiveApprover: DestructiveApprover? = nil,
     callGate: ToolCallGate? = nil,
-    askPerson: PersonQuestion.Asker? = nil
+    askPerson: PersonQuestion.Asker? = nil,
+    progress: ToolProgressReporter? = nil
 ) throws -> AgentLoop {
     let workingDirectory = run.workspace
     let resolved = run.model
@@ -103,7 +104,8 @@ func makeLoop(
             destructiveApprover: destructiveApprover,
             imageLimits: run.model.imageLimits,
             callGate: callGate,
-            askPerson: askPerson
+            askPerson: askPerson,
+            progress: progress
         ),
         // Offline, a failed request waits for the network instead of spending its retries (roadmap 0141).
         network: SystemNetworkPath()

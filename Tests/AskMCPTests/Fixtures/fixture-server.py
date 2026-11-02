@@ -8,7 +8,7 @@ request, through its first argument:
   stubborn   ignores end of input and SIGTERM, so it has to be killed
   crash      exits with status 3 when a tool is called, without answering
 
-Tools: echo {message}; env (the names of its environment variables); pwd; big {kilobytes}; log {text} (writes to stderr).
+Tools: echo {message, slow} (with slow, a call that asks for progress is told "half way", then waits slow seconds); env (the names of its environment variables); pwd; big {kilobytes}; log {text} (writes to stderr).
 """
 import json, os, signal, sys, time
 
@@ -85,6 +85,11 @@ while True:
         if mode == "crash":
             sys.exit(3)
         if name == "echo":
+            token = (params.get("_meta") or {}).get("progressToken")
+            if args.get("slow") and token is not None:
+                send({"jsonrpc": "2.0", "method": "notifications/progress",
+                      "params": {"progressToken": token, "progress": 1, "total": 2, "message": "half way"}})
+            time.sleep(float(args.get("slow", 0)))
             send({"jsonrpc": "2.0", "id": ident, "result": text("Echo: " + str(args.get("message")))})
         elif name == "env":
             send({"jsonrpc": "2.0", "id": ident, "result": text(",".join(sorted(os.environ)))})
