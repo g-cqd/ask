@@ -11,6 +11,7 @@ extension StoredCredentials {
             copilot.map { _ in "copilot" }
         ]
         .compactMap { $0 } + (keys ?? [:]).keys.sorted().map { "keys." + $0 }
+            + (mcp ?? [:]).keys.sorted().map { "mcp." + $0 }
     }
 
     /// The secret fields of record `name`, as stored now (real values or markers); nil when there is no such record.
@@ -26,6 +27,10 @@ extension StoredCredentials {
                 }
             case "copilot": return copilot.map { ["githubToken": $0.githubToken, "accessToken": $0.accessToken] }
             default:
+                if name.hasPrefix("mcp.") {
+                    return mcp?[String(name.dropFirst(4))]
+                        .map { ["accessToken": $0.accessToken, "refreshToken": $0.refreshToken] }
+                }
                 guard name.hasPrefix("keys.") else { return nil }
                 return keys?[String(name.dropFirst(5))].map { ["key": $0.key] }
         }
@@ -48,6 +53,10 @@ extension StoredCredentials {
             case "copilot":
                 set(&copilot!.githubToken, "githubToken")
                 set(&copilot!.accessToken, "accessToken")
+            case let mcpName where mcpName.hasPrefix("mcp."):
+                let server = String(name.dropFirst(4))
+                if let token = fields["accessToken"] { mcp?[server]?.accessToken = token }
+                if let token = fields["refreshToken"] { mcp?[server]?.refreshToken = token }
             default:
                 let provider = String(name.dropFirst(5))
                 guard name.hasPrefix("keys."), let key = fields["key"] else { return }

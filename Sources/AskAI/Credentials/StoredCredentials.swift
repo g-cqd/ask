@@ -12,10 +12,12 @@ struct StoredCredentials: Codable {
     var agy: AgyCredentials?
     var copilot: CopilotCredentials?
     var connection: ConnectionRecord?
+    /// MCP servers' sign-ins, by server (roadmap 0067).
+    var mcp: [String: MCPServerCredentials]?
     private var unknown: [String: [UInt8]] = [:]
 
     private enum CodingKeys: String, CodingKey {
-        case claude, keys, codex, agy, copilot, connection
+        case claude, keys, codex, agy, copilot, connection, mcp
     }
 
     init() {}
@@ -48,6 +50,7 @@ struct StoredCredentials: Codable {
         values["agy"] = try agy.map { try encoder.encodeToBytes($0) }
         values["copilot"] = try copilot.map { try encoder.encodeToBytes($0) }
         values["connection"] = try connection.map { try encoder.encodeToBytes($0) }
+        values["mcp"] = try mcp.map { try encoder.encodeToBytes($0) }
         var writer = JSONStreamWriter(options: .rfc8259)
         writer.beginObject()
         for name in values.keys.sorted() {

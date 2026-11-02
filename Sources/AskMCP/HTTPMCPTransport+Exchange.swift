@@ -5,7 +5,7 @@ internal import Synchronization
 
 extension HTTPMCPTransport {
     /// The headers every request carries, in order.
-    func requestHeaders() -> [(name: String, value: String)] {
+    func requestHeaders() async -> [(name: String, value: String)] {
         var all: [(name: String, value: String)] = [
             ("Content-Type", "application/json"), ("Accept", "application/json, text/event-stream"),
             ("User-Agent", userAgent)
@@ -13,20 +13,48 @@ extension HTTPMCPTransport {
         let (session, version) = state.withLock { ($0.sessionID, $0.protocolVersion) }
         if let session { all.append(("Mcp-Session-Id", session)) }
         if let version { all.append(("MCP-Protocol-Version", version)) }
+        if let token = await authorization?.header() { all.append(("Authorization", token)) }
         return all + headers
     }
 
     /// One message, one POST, and whatever comes back.
     func exchange(_ message: [UInt8], requestID: Int?) async {
-        let request = HTTPRequest(url: url, method: "POST", headers: requestHeaders(), body: message)
         do {
-            let reply = try await http.send(request)
+            var reply = try await http.send(
+                HTTPRequest(url: url, method: "POST", headers: await requestHeaders(), body: message)
+            )
+            // Refused for want of a sign-in: renewed once and sent again, else kept for the host to ask the person (roadmap 0067).
+            if let challenge = Self.refusal(reply) {
+                if let authorization, await authorization.refused(challenge) {
+                    reply = try await http.send(
+                        HTTPRequest(url: url, method: "POST", headers: await requestHeaders(), body: message)
+                    )
+                }
+                if let again = Self.refusal(reply) {
+                    state.withLock { $0.challenge = again }
+                    fail(requestID, Self.signInNeeded)
+                    return
+                }
+            }
             noteSession(reply)
             try await handle(reply, requestID: requestID)
         } catch is CancellationError {
             return
         } catch {
             fail(requestID, "the request failed: \(error)")
+        }
+    }
+
+    /// What a request is answered with when the server needs a sign-in.
+    static let signInNeeded = "the server needs you to sign in"
+
+    /// The challenge of a reply that refuses for want of a sign-in: a `401`, or a `403` asking for more scope.
+    static func refusal(_ reply: HTTPStreamingResponse) -> MCPAuthChallenge? {
+        let challenge = reply.headers["www-authenticate"].flatMap(MCPAuthChallenge.init(header:))
+        switch reply.status {
+            case 401: return challenge ?? MCPAuthChallenge()
+            case 403 where challenge?.error == "insufficient_scope": return challenge
+            default: return nil
         }
     }
 
@@ -103,7 +131,7 @@ extension HTTPMCPTransport {
 
     /// Tells the server the session is over. A server may refuse (`405`), or not answer; neither matters.
     func endSession(_ session: String) async {
-        var all = requestHeaders().filter { $0.name != "Content-Type" }
+        var all = await requestHeaders().filter { $0.name != "Content-Type" }
         all.removeAll { $0.name == "Accept" }
         let delete = Task { [http, url] in
             _ = try? await http.send(HTTPRequest(url: url, method: "DELETE", headers: all, body: []))
