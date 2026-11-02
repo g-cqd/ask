@@ -23,16 +23,26 @@ struct MarkdownRowCharacterisationTests {
             }
     }
 
+    /// The home `~` stands for, the same on every machine (CI's is `/Users/runner`).
+    static let home = "/Users/ask"
+
+    static var style: BlockStyle {
+        var style = BlockStyle()
+        style.home = home
+        return style
+    }
+
     static func digest(_ messages: [String] = messages()) -> UInt64 {
         var hash: UInt64 = 0xCBF2_9CE4_8422_2325
         for message in messages {
             for columns in [7, 23, 80] {
                 for highlight in [false, true] {
                     var transcript = Transcript()
+                    transcript.home = Self.home
                     transcript.setMarkdown(true)
                     transcript.setHighlight(highlight)
                     transcript.addAssistantText(message)
-                    let rendering = ScreenComposer.lines(in: transcript, at: 0, columns: columns, style: BlockStyle())
+                    let rendering = ScreenComposer.lines(in: transcript, at: 0, columns: columns, style: style)
                         .map { "\($0.text)|\($0.accents)|\($0.links)|\($0.segments)|\(String(describing: $0.source))" }
                         .joined(separator: "\n")
                     for byte in rendering.utf8 {
@@ -46,6 +56,6 @@ struct MarkdownRowCharacterisationTests {
     }
 
     @Test func `the rows of random Markdown keep their digest`() {
-        #expect(Self.digest() == 12_949_741_792_554_716_897)
+        #expect(Self.digest() == 338_621_733_458_140_671)
     }
 }

@@ -136,6 +136,7 @@ public struct ScreenState: Sendable, Equatable {
             known: options.appearance != .auto
         )
         blocks = BlockStyle(padded: options.padding, theme: theme, localizedDurations: options.localizedDurations)
+        blocks.home = options.home
     }
 
     /// Mixes the tints again from the terminal's own colours (roadmap 0108).
