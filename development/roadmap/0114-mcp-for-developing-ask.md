@@ -90,7 +90,8 @@ once are each sent once and answered.
 
 ## Still owed
 
-- Budgets for MCP: connection must not delay the first frame (cold start 50 ms); a call's overhead over the server's own time.
+- ~~Budgets for MCP~~ Measured (2026-11-02), below: configured servers cost the first frame nothing; a call's overhead is the stress
+  test's (4 µs a call on loopback, 15 µs on stdio, over the floor).
 - Close the gaps 0067 still lists that daily use hits first (progress in the transcript, resources if apple-docs serves any).
 - Decide how the development of ask itself uses these servers, so API choices are checked against current Apple documentation.
 
@@ -118,3 +119,20 @@ ask, two questions from roadmap entries (0101, 0127):
   Worth trying: a smaller `limit` in the tool's description or through a per-server default, and the compact `match` excerpts.
 - **The answers need checking.** Both runs drew conclusions the pages did not support (0101's "replacement", 0127's preference for a
   descriptor watch, which misses an atomic save). The documents are useful, the model's summary of them less so: cite paths and read them.
+
+## The first frame with servers configured (2026-11-02)
+
+`Scripts/measure-mcp-start.py` (release build, 15 interleaved runs a side, measured from outside over a PTY as `measure-budgets.py` does),
+no servers against three (the fixture, one that cannot start, one that waits five seconds before reading):
+
+| | cold start, median | p95 | idle RSS, median | servers running at the first frame |
+|---|---:|---:|---:|---:|
+| none | 23.46 ms | 27.77 ms | 16,096 KiB | 0 |
+| three servers | 23.78 ms | 27.20 ms | 16,224 KiB | 0 |
+
+The difference is within the spread: servers connect with the first message (roadmap 0143), so a slow or broken one cannot hold the
+first frame. Configuring them costs reading their settings, about 128 KiB.
+
+Found on the way, not by this work: `measure-budgets.py` (7 runs, under its busy workers) puts idle memory at 15.6 MiB against 15 and active
+memory at 25.3 MiB against 20. Active memory was already over (roadmap 0182: 25.1–25.4 MiB) and idle at its edge (15.30 MiB); it is
+roadmap 0088's (task t26).
