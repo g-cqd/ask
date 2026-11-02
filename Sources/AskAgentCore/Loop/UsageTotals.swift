@@ -43,7 +43,6 @@ public struct UsageTotals: Sendable, Equatable {
         count >= 1_000_000 ? "\(count / 1_000_000).\(count % 1_000_000 / 100_000)M" : short(count)
     }
 
-    /// 950, 1.2k, 13k, 1.42M, 12M. Two decimals in the millions, where one decimal let 100,000 tokens pass unseen (roadmap 0136).
     /// What a compaction did, for its block's header (roadmap 0176): the tokens it read, cached ones included, into the tokens of its
     /// summary, as `182k → 3.1k tokens`; nil when the provider did not count them.
     public static func compactionTokens(_ usage: TokenUsage) -> String? {
@@ -53,15 +52,23 @@ public struct UsageTotals: Sendable, Equatable {
         return "\(short(read)) → \(short(output)) tokens"
     }
 
+    /// 950, 1.2k, 13k, 1.42M, 12M, 2.03B. Two decimals in the millions, where one decimal let 100,000 tokens pass unseen (roadmap 0136),
+    /// and in the billions, where a session's tokens sent can run (idea i4).
     static func short(_ count: Int) -> String {
         switch count {
             case ..<1_000: return "\(count)"
             case ..<10_000: return "\(count / 1_000).\(count % 1_000 / 100)k"
             case ..<1_000_000: return "\(count / 1_000)k"
-            case ..<10_000_000:
-                let hundredths = count % 1_000_000 / 10_000
-                return "\(count / 1_000_000).\(hundredths < 10 ? "0" : "")\(hundredths)M"
-            default: return "\(count / 1_000_000)M"
+            case ..<10_000_000: return twoDecimals(count, unit: 1_000_000, "M")
+            case ..<1_000_000_000: return "\(count / 1_000_000)M"
+            case ..<10_000_000_000: return twoDecimals(count, unit: 1_000_000_000, "B")
+            default: return "\(count / 1_000_000_000)B"
         }
+    }
+
+    /// `count` in `unit`s with two decimals, cut rather than rounded: 1.19M for 1,199,999.
+    private static func twoDecimals(_ count: Int, unit: Int, _ suffix: String) -> String {
+        let hundredths = count % unit / (unit / 100)
+        return "\(count / unit).\(hundredths < 10 ? "0" : "")\(hundredths)\(suffix)"
     }
 }
