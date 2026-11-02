@@ -21,6 +21,8 @@ public final class HTTPMCPTransport: MCPTransport {
         var listener: Task<Void, Never>?
         var finishedEarly: Set<Int> = []
         var nextTask = 0
+        /// What the server asked for when it refused for want of a sign-in.
+        var challenge: MCPAuthChallenge?
     }
 
     /// The code of the errors this transport makes up. JSON-RPC leaves -32000…-32099 to implementations.
@@ -32,6 +34,8 @@ public final class HTTPMCPTransport: MCPTransport {
     let sink: AsyncStream<[UInt8]>.Continuation
     let url: URL
     let headers: [(name: String, value: String)]
+    /// The sign-in each request carries, when the server needs one (roadmap 0067).
+    let authorization: (any MCPAuthorization)?
     let userAgent: String
     let http: any HTTPTransport
     let clock: any Clock<Duration>
@@ -46,6 +50,7 @@ public final class HTTPMCPTransport: MCPTransport {
     ///   - http: how requests are made.
     ///   - clock: what the grace is measured on.
     ///   - grace: how long closing may wait for the server to end its session.
+    ///   - authorization: the sign-in each request carries, if the server needs one.
     /// - Throws: ``MCPError/refusedEndpoint(_:)`` if a credential would cross the network unencrypted (ADR-0024).
     public init(
         url: URL,
@@ -53,9 +58,10 @@ public final class HTTPMCPTransport: MCPTransport {
         userAgent: String,
         http: any HTTPTransport,
         clock: any Clock<Duration> = ContinuousClock(),
-        grace: Duration = .seconds(2)
+        grace: Duration = .seconds(2),
+        authorization: (any MCPAuthorization)? = nil
     ) throws(MCPError) {
-        if let refusal = EndpointPolicy.refusal(for: url, carriesCredential: !headers.isEmpty) {
+        if let refusal = EndpointPolicy.refusal(for: url, carriesCredential: !headers.isEmpty || authorization != nil) {
             throw .refusedEndpoint(refusal)
         }
         (incoming, sink) = AsyncStream.makeStream(of: [UInt8].self)
@@ -65,7 +71,10 @@ public final class HTTPMCPTransport: MCPTransport {
         self.http = http
         self.clock = clock
         self.grace = grace
+        self.authorization = authorization
     }
+
+    public var authorizationChallenge: MCPAuthChallenge? { state.withLock { $0.challenge } }
 
     public func negotiated(protocolVersion: String) {
         state.withLock { state in
@@ -82,7 +91,7 @@ public final class HTTPMCPTransport: MCPTransport {
     private func listen() async {
         // A conversation that closed while this task was starting sends nothing.
         guard !state.withLock({ $0.closed }) else { return }
-        var headers = requestHeaders().filter { $0.name != "Content-Type" }
+        var headers = await requestHeaders().filter { $0.name != "Content-Type" }
         headers.removeAll { $0.name == "Accept" }
         headers.append(("Accept", "text/event-stream"))
         do {

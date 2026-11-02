@@ -20,6 +20,9 @@ public protocol MCPTransport: Sendable {
     /// last thing a server wrote to its standard error. Nil when it has nothing to add.
     var diagnostic: String? { get }
 
+    /// What the server asked for when it refused to go on without a sign-in (roadmap 0067); nil when it never did.
+    var authorizationChallenge: MCPAuthChallenge? { get }
+
     /// Ends the conversation: tells the server, waits a moment for it to leave, then makes it. Safe to call again.
     func close() async
 }
@@ -30,4 +33,7 @@ extension MCPTransport {
 
     /// Most transports have nothing to add.
     public var diagnostic: String? { nil }
+
+    /// A pipe is never refused for want of a sign-in.
+    public var authorizationChallenge: MCPAuthChallenge? { nil }
 }

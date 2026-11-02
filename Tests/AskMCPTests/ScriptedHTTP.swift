@@ -7,6 +7,7 @@ internal import Synchronization
 final class ScriptedHTTP: HTTPTransport {
     /// What a request looked like to the server.
     struct Seen: Sendable {
+        var url = ""
         let method: String
         let headers: [String: String]
         let body: String
@@ -52,7 +53,12 @@ final class ScriptedHTTP: HTTPTransport {
     func send(_ request: HTTPRequest) async throws -> HTTPStreamingResponse {
         var headers: [String: String] = [:]
         for (name, value) in request.headers { headers[name.lowercased()] = value }
-        let seen = Seen(method: request.method, headers: headers, body: String(decoding: request.body, as: UTF8.self))
+        let seen = Seen(
+            url: request.url.absoluteString,
+            method: request.method,
+            headers: headers,
+            body: String(decoding: request.body, as: UTF8.self)
+        )
         let ready = state.withLock { state -> [CheckedContinuation<Void, Never>] in
             state.seen.append(seen)
             var ready: [CheckedContinuation<Void, Never>] = []
