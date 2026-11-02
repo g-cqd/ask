@@ -45,6 +45,30 @@ struct HooksConfigurationTests {
         #expect(throws: ConfigurationError.self) { try parse("{hooks:{maxContinues:1}}", project: true) }
     }
 
+    @Test func `the check and its deadline are read, from a trusted project's file too`() throws {
+        let file = try parse("{hooks:{check:'swift test',checkTimeout:300}}", project: true)
+        #expect(file.hooks == HooksSection(check: "swift test", checkTimeout: 300))
+        #expect(HooksSection().checkSeconds == 600 && HooksSection(checkTimeout: 30).checkSeconds == 30)
+        #expect(try parse("{hooks:{checkTimeout:600}}").hooks?.checkTimeout == 600)
+    }
+
+    @Test func `a blank check, or a deadline outside 1 to 600 seconds, is refused`() {
+        #expect(throws: ConfigurationError.outOfRange(path: "c.json", key: "hooks.check", reason: "must be a command"))
+        {
+            try parse("{hooks:{check:'  '}}")
+        }
+        for seconds in [0, 601] {
+            #expect(
+                throws: ConfigurationError.outOfRange(
+                    path: "c.json",
+                    key: "hooks.checkTimeout",
+                    reason: "must be from 1 to 600 seconds"
+                )
+            ) { try parse("{hooks:{checkTimeout:\(seconds)}}") }
+        }
+        #expect(throws: ConfigurationError.self) { try parse("{hooks:{check:true}}") }
+    }
+
     @Test func `a layer that sets it wins, one that does not leaves it`() {
         var file = ConfigurationFile()
         file.hooks = HooksSection(maxContinues: 7)
@@ -53,6 +77,14 @@ struct HooksConfigurationTests {
         file.hooks = HooksSection()
         let next = user.applying(file, from: .file("other"))
         #expect(next.hooks.value.continues == 7)
+        file.hooks = HooksSection(check: "make test")
+        let checked = next.applying(file, from: .file("project"))
+        #expect(checked.hooks.value == HooksSection(maxContinues: 7, check: "make test"))
+        file.hooks = HooksSection(checkTimeout: 5)
+        #expect(
+            checked.applying(file, from: .file("later")).hooks.value
+                == HooksSection(maxContinues: 7, check: "make test", checkTimeout: 5)
+        )
     }
 
     @Test func `the file says it sets hooks, and a change is reported`() throws {

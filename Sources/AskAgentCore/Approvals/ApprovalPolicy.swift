@@ -53,7 +53,7 @@ public struct ApprovalPolicy: Sendable, Equatable {
     }
 
     /// The built-in tools that change things: commands, files, and what is typed into a job.
-    private static func changesThings(_ tool: String, _ input: JSONObject) -> Bool {
+    static func changesThings(_ tool: String, _ input: JSONObject) -> Bool {
         switch tool {
             case "bash", "write", "edit": true
             case "job": fields(of: input).action == "input"

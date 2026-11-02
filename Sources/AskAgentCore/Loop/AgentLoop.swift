@@ -22,6 +22,8 @@ public struct AgentLoop: Sendable {
     var learnedWindow = LearnedWindow()
     /// How many times hooks continued this run (roadmap 0192).
     var hookContinues = 0
+    /// How many session entries there were at the run's start or its last stop, so a stop can tell what came after (roadmap 0192).
+    var stopMark = 0
     /// Answers in a row that lost their connection part way (roadmap 0141).
     let drops = DropCount()
     /// Repairs already reported, so an old session's damage is said once and not before every request.
@@ -128,6 +130,7 @@ public struct AgentLoop: Sendable {
         events: (AgentEvent) -> Void
     ) async throws(AgentError) {
         var loop = self
+        loop.stopMark = session.tree.entries.count
         try await loop.drive(prompt, in: session, input: input, events: events)
     }
 

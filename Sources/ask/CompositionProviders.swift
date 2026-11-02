@@ -54,6 +54,19 @@ func agyProvider(transport: URLSessionTransport) -> any ModelProvider {
     )
 }
 
+/// The check hook for `section`'s `check` (roadmap 0192), or none: its command runs through `tools`' `bash`, in `context`'s sandbox,
+/// without asking, since the person configured it.
+func checkHooks(_ section: HooksSection, tools: ToolRegistry, context: ToolContext) -> [any AgentHook] {
+    guard let command = section.check, let input = BashTool.checkInput(command: command, seconds: section.checkSeconds)
+    else { return [] }
+    let unasked = context.withoutCallGate()
+    return [
+        CheckHook(command: command) {
+            BashTool.checkOutcome(of: await tools.run(name: "bash", input: input, in: unasked.during(call: "check")))
+        }
+    ]
+}
+
 /// The agent loop with the tools, rooted at `workingDirectory`, following `instructions` after ask's own. Jobs
 /// live in `jobs`, which the caller stops when ask exits.
 func makeLoop(
@@ -82,31 +95,34 @@ func makeLoop(
         sandbox: sandbox,
         thinking: run.thinking
     )
+    let tools = try ToolRegistry(
+        FileTools.all + [
+            BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
+            NarrowSandboxTool(jobs: jobs), TasksTool(board: SessionTasks.board),
+            IdeasTool(board: SessionTasks.ideas, tasks: SessionTasks.board)
+        ] + (skills.tool.map { [$0] } ?? []) + (askPerson == nil ? [] : [QuestionTool()]),
+        live: live
+    )
+    let context = ToolContext(
+        workingDirectory: workingDirectory,
+        outputDirectory: SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values).path
+            + "/output",
+        sandbox: sandbox,
+        approve: approve,
+        narrowing: narrowing,
+        commandEnvironment: run.commandEnvironment,
+        destructiveApprover: destructiveApprover,
+        imageLimits: run.model.imageLimits,
+        callGate: callGate,
+        askPerson: askPerson,
+        progress: progress
+    )
     return AgentLoop(
         provider: deferringThinking(makeProvider(resolved, transport: transport), run: run, limit: agent.maximumTokens),
-        tools: try ToolRegistry(
-            FileTools.all + [
-                BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
-                NarrowSandboxTool(jobs: jobs), TasksTool(board: SessionTasks.board),
-                IdeasTool(board: SessionTasks.ideas, tasks: SessionTasks.board)
-            ] + (skills.tool.map { [$0] } ?? []) + (askPerson == nil ? [] : [QuestionTool()]),
-            live: live
-        ),
+        tools: tools,
         settings: agent,
-        context: ToolContext(
-            workingDirectory: workingDirectory,
-            outputDirectory: SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values).path
-                + "/output",
-            sandbox: sandbox,
-            approve: approve,
-            narrowing: narrowing,
-            commandEnvironment: run.commandEnvironment,
-            destructiveApprover: destructiveApprover,
-            imageLimits: run.model.imageLimits,
-            callGate: callGate,
-            askPerson: askPerson,
-            progress: progress
-        ),
+        context: context,
+        hooks: checkHooks(run.configuration.hooks.value, tools: tools, context: context),
         // Offline, a failed request waits for the network instead of spending its retries (roadmap 0141).
         network: SystemNetworkPath()
     )

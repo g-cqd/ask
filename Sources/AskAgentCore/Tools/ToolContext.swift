@@ -96,6 +96,14 @@ public struct ToolContext: Sendable, Equatable {
         return copy
     }
 
+    /// This context with nothing asked before a call: for what the person configured to run, such as the check hook's command (0192).
+    /// The sandbox still holds.
+    public func withoutCallGate() -> ToolContext {
+        var copy = self
+        copy.callGate = nil
+        return copy
+    }
+
     /// This context with `first` answering its gate's approvals before the person; unchanged without a gate.
     func answering(first: @escaping @Sendable (ToolCallApproval) async -> ApprovalDecision) -> ToolContext {
         var copy = self

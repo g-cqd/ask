@@ -129,6 +129,71 @@ struct AgentHookRunStopTests {
         #expect(outcome.users == ["Go"])
     }
 
+    /// Keeps whether each stop it was asked about followed a change.
+    private final class Changes: AgentHook {
+        private let seen = Mutex<[Bool]>([])
+        var changed: [Bool] { seen.withLock { $0 } }
+        func runStop(_ stop: RunStop) async -> RunStopDecision {
+            seen.withLock { $0.append(stop.changed) }
+            return seen.withLock { $0.count } == 1 ? .continue("Again.") : .stop
+        }
+    }
+
+    @Test(arguments: [
+        ("bash", #"{"command":"make"}"#, true), ("write", #"{"path":"a","content":"x"}"#, true),
+        ("read", #"{"path":"a"}"#, false)
+    ])
+    func `a stop says whether the run changed things since the last stop`(call: (String, String, Bool)) async throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = SessionRecorder(
+            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none)
+        )
+        let provider = ScriptedProvider([
+            .call(id: "t1", name: call.0, input: call.1), .reply("Done."), .reply("Still done.")
+        ])
+        let hook = Changes()
+        let loop = AgentLoop(
+            provider: provider,
+            tools: try ToolRegistry([CountingTool(call.0)]),
+            settings: AgentSettings(model: "m", maximumTokens: 64, systemPrompt: [], maximumTurns: 10),
+            context: ToolContext(workingDirectory: directory.path),
+            hooks: [hook]
+        )
+        try await loop.run("Go", in: file) { _ in }
+        // The second stop follows a continue that changed nothing.
+        #expect(hook.changed == [call.2, false])
+    }
+
+    @Test func `what an earlier run changed does not count for the next one`() async throws {
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let file = SessionRecorder(
+            try SessionFile.create(at: .init(directory.appending(path: "s.jsonl").path), durability: .none)
+        )
+        let provider = ScriptedProvider([
+            .call(id: "t1", name: "bash", input: #"{"command":"make"}"#), .reply("Built."),
+            .call(id: "t2", name: "read", input: #"{"path":"a"}"#),
+            .reply("Read.")
+        ])
+        final class Watch: AgentHook {
+            let seen = Mutex<[Bool]>([])
+            func runStop(_ stop: RunStop) async -> RunStopDecision {
+                seen.withLock { $0.append(stop.changed) }
+                return .stop
+            }
+        }
+        let watch = Watch()
+        let loop = AgentLoop(
+            provider: provider,
+            tools: try ToolRegistry([CountingTool("bash"), CountingTool("read")]),
+            settings: AgentSettings(model: "m", maximumTokens: 64, systemPrompt: [], maximumTurns: 10),
+            context: ToolContext(workingDirectory: directory.path),
+            hooks: [watch]
+        )
+        try await loop.run("Build", in: file) { _ in }
+        try await loop.run("Read", in: file) { _ in }
+        #expect(watch.seen.withLock { $0 } == [true, false])
+    }
+
     @Test func `without hooks, no limit is said`() async throws {
         let outcome = try await run([], turns: 1, continues: 0)
         #expect(outcome.requests == 1)

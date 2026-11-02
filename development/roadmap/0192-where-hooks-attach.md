@@ -136,8 +136,23 @@ the tests and send the failures back, check a list, or ask for a review pass. Th
   and the first block keeps it out; a blank rewrite or context changes nothing. What is recorded is what was sent, so a resume replays
   it, and "The hook NAME changed this message before it was sent." is said. A blocked first message is neither recorded nor sent
   (`AgentError.promptBlocked`): the screen puts it back in the input with the reason. A blocked queued message leaves the queue
-  unrecorded and goes back to the input the same way (`promptRefused`). Tests: AgentHookPromptTests (7), 19 mutants killed. Next: a
-  reference `run.stop` hook.
+  unrecorded and goes back to the input the same way (`promptRefused`). Tests: AgentHookPromptTests (7), 19 mutants killed.
+- 2026-11-02: the reference `run.stop` hook, with the owner's answers (2026-11-02): `hooks.check` names a command, from your own
+  file or a trusted project's; `hooks.checkTimeout` its deadline (1 to 600 s, default 600, the `bash` tool's most). `RunStop.changed`
+  says whether the run made a call that changes things (`ApprovalPolicy.changesThings`: a command, a write, an edit, input to a job)
+  since its last stop or its start, read from what the session recorded. `CheckHook` runs the check only then, through the registry's
+  `bash` in the session's sandbox without asking; a failure's last 8,000 characters go back as a continue, and a pass, a timeout or a
+  check that cannot start ends the run. `ask config` shows the three keys. Live: with the on-device model, a run told to write 1 into
+  `value.txt` was sent back by a check wanting 2, wrote 2, and ended. Tests: CheckHookTests (5), BashToolCheckTests (3), the changed
+  signal in AgentHookRunStopTests (4), HooksConfigurationTests (8); 18 mutants killed.
+
+## What is left
+
+- The other points: `session.start`, `request.before` (and its rewrite), `response.after`, `tool.result`'s `context`,
+  `compaction.before` and `after`, `settings.change`, `subagent.stop`, `waiting`, `session.end`.
+- Deadlines and failing open or closed: today a hook is in-process code that ask trusts to return.
+- `hooks.claudeCode`: reading Claude Code's hook configuration, with the runner for its commands.
+- The check runs without showing a block while it works; only its result is said.
 
 ## Done when
 
