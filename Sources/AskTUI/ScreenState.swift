@@ -93,6 +93,8 @@ public struct ScreenState: Sendable, Equatable {
         set { scroll.rowsFromEnd = Swift.max(0, newValue) }
     }
     /// What the user has selected with the pointer, anchored in the conversation so it survives scrolling and streaming.
+    /// What a click would act on under the pointer (roadmap 0172), brightened.
+    var hover: Hover?
     var selection: ContentSelection<Int>?
     /// What is selected in the draft, as character offsets, while a selection in the input exists.
     var inputSelection: Range<Int>?

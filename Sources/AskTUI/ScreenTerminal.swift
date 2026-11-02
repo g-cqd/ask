@@ -15,6 +15,7 @@ struct ScreenTerminal {
 func modes(for options: ScreenOptions) -> TerminalModes {
     var modes = TerminalModes.fullScreen
     modes.mouse = options.mouse
+    modes.mouseMotion = options.mouse && options.hover
     return modes
 }
 

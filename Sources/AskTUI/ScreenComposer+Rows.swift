@@ -37,9 +37,13 @@ extension ScreenComposer {
                     ..< Swift.max(earlier?.upperBound ?? span.endCol, span.endCol)
             }
         }
+        // The hovered block's header: its first row on screen (roadmap 0172).
+        let hovered: Int? =
+            if case .block(let block) = state.hover { foldBlocks.firstIndex(of: block) } else { nil }
         for row in 0 ..< transcriptRows {
             let index = row - (transcriptRows - visible.count)
-            let line = index >= 0 ? visible[visible.startIndex + index] : Line(text: "", style: .default)
+            var line = index >= 0 ? visible[visible.startIndex + index] : Line(text: "", style: .default)
+            if row == hovered { line = Self.brightened(line) }
             write(
                 line,
                 highlight: highlights[row],
