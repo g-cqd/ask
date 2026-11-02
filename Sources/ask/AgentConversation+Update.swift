@@ -19,6 +19,8 @@ extension AgentConversation {
             case .compacted(let summary, let usage):
                 return [.compactionFinished(.succeeded, text: summary, tokens: UsageTotals.compactionTokens(usage))]
             case .compactionFailed(let reason): return [.compactionFinished(.failed("failed"), text: reason)]
+            case .hookContinued, .hookContinuesStopped:
+                return RunNotices.hook(for: event).map { [.notice($0, isError: false)] } ?? []
             default: return update(for: event).map { [$0] } ?? []
         }
     }
