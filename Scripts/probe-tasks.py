@@ -1,14 +1,16 @@
 #!/usr/bin/env python3
 """Does the model keep a task list through the `tasks` tool, kept beside the session? (roadmap 0179, ADR-0140)
 
-Usage: Scripts/probe-tasks.py .build/release/ask
+Usage: ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-tasks.py .build/release/ask
 
 A local fake Anthropic server has the model add two tasks, the second blocked by the first, start the first and list them; the probe reads
-the tool results from the next request. No network, no real credentials. Two runs:
+the tool results from the next request. No network, no real credentials. Three runs:
 
   session    the tool is offered, the list is never sent unasked, one call (ADR-0141) adds both tasks, starts one and reads them,
              and `<session>.tasks` beside the session holds the changes, one record each;
-  workspace  with `taskScope: "workspace"`, a second session lists the first one's tasks from `tasks.ask`.
+  workspace  with `taskScope: "workspace"`, a second session lists the first one's tasks from `tasks.ask`;
+  encrypted  with `ASK_SESSION_ENCRYPTION` not off, setting up encrypted sessions in a PTY writes `<session>.tasks` framed (`ASKF`)
+             with no task titles in clear, and `--continue` reopens it and reads the tasks back through the tool.
 
 It exits 0 when all of that holds, 1 when something does not, 2 when the probe could not see the results.
 """
@@ -25,6 +27,9 @@ sys.argv = [sys.argv[0], BINARY]
 spec = importlib.util.spec_from_file_location("agent_probe", os.path.join(HERE, "probe-agent-run.py"))
 agent = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(agent)
+fold_spec = importlib.util.spec_from_file_location("fold_probe", os.path.join(HERE, "probe-folding.py"))
+fold = importlib.util.module_from_spec(fold_spec)
+fold_spec.loader.exec_module(fold)
 
 # One call (ADR-0141): two adds, the second waiting on the first through @1, the first started, then a read.
 MAKE = [
@@ -35,6 +40,7 @@ MAKE = [
 ]
 ANSWER = "added t1–t2 (2) · in progress t1\n\n"
 LISTING = "t1 [in progress] write the parser\nt2 [open, blocked by t1] ship it"
+PASSWORD = "a long enough password"
 
 
 def results(request):
@@ -63,6 +69,70 @@ def files(state, suffix):
 def check(title, ok, bad):
     print("  %-5s %s" % ("ok" if ok else "WRONG", title))
     return bad + (not ok)
+
+
+def choose(terminal, question, number):
+    terminal.until(lambda: question in terminal.text())
+    for key in (str(number).encode(), b"\r"):
+        terminal.send(key)
+        fold.time.sleep(0.15)
+    terminal.until(lambda: question not in terminal.text())
+
+
+def type_hidden(terminal, prompt, text):
+    terminal.until(lambda: prompt in terminal.text())
+    received = terminal.text().count("Received (hidden).")
+    terminal.send(text.encode() + b"\r")
+    terminal.until(lambda: terminal.text().count("Received (hidden).") > received)
+
+
+def probe_encrypted(bad):
+    print("encrypted")
+    with tempfile.TemporaryDirectory() as root:
+        project, state, configuration = root + "/project", root + "/state", root + "/config"
+        os.makedirs(project)
+        os.makedirs(configuration + "/ask")
+        with open(configuration + "/ask/config.json", "w") as file:
+            json.dump({"ui": {"inputPrefix": "ask> "}}, file)
+        server = agent.Server([
+            agent.turn(MAKE, "tool_use"),
+            agent.turn([("text", "PLANNED")], "end_turn"),
+            agent.turn([("call", "c2", "tasks", {"read": {}})], "tool_use"),
+            agent.turn([("text", "REOPENED")], "end_turn"),
+        ])
+        environment = agent.environment(state, server.url, config=configuration)
+        environment.pop("ASK_SESSION_ENCRYPTION", None)
+        environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")
+
+        first = fold.Terminal(project, environment)
+        choose(first, "Encrypt your ask sessions?", 1)
+        choose(first, "Keep the key in your keychain", 2)
+        type_hidden(first, "Password:", PASSWORD)
+        type_hidden(first, "Again:", PASSWORD)
+        first.until(lambda: "Press Return" in first.text())
+        first.send(b"\r")
+        first.until(lambda: "Press Return" not in first.text() and "ask>" in first.text())
+        first.send(b"plan it\r")
+        first.until(lambda: "PLANNED" in first.text())
+        first.close()
+
+        lists = files(state, ".tasks")
+        raw = open(lists[0], "rb").read() if lists else b""
+        bad = check("the encrypted .tasks file is framed with ASKF", raw.startswith(b"ASKF"), bad)
+        bad = check("no task title or detail is in the .tasks file in clear",
+                    b"write the parser" not in raw and b"recursive descent" not in raw, bad)
+
+        second = fold.Terminal(project, environment, resume=True)
+        second.until(lambda: b"Password for your encrypted ask sessions:" in bytes(second.raw))
+        second.send(PASSWORD.encode() + b"\r")
+        second.until(lambda: "PLANNED" in second.text() and "ask>" in second.text())
+        second.send(b"check tasks\r")
+        second.until(lambda: "REOPENED" in second.text())
+        second.close()
+
+        seen = results(server.requests[3]) if len(server.requests) > 3 else []
+        bad = check("reopened encrypted session reads the tasks back: %r" % (seen[-1:],), seen[-1:] == [LISTING], bad)
+    return bad
 
 
 def main():
@@ -102,6 +172,8 @@ def main():
         seen = results(requests[1]) if len(requests) > 1 else []
         bad = check("a second session lists the first one's tasks: %r" % seen, seen == [LISTING], bad)
         bad = check("kept in tasks.ask, no .tasks file", len(files(state, "tasks.ask")) == 1 and not files(state, ".tasks"), bad)
+
+    bad = probe_encrypted(bad)
     return 1 if bad else 0
 
 

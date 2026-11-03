@@ -29,9 +29,13 @@ Owner (2026-11-01): the model sees the list through a tool it calls, not on ever
 
 ## Still owed
 
-- `#t3` in the prompt, through 0186's sigil (owner, 2026-11-01: not `@`).
 - A look at `/tasks` in a real terminal: today it answers as a notice, one line a task, and its picker offers `all` and each task.
-- Running the probe with an encrypted session: the unit tests cover every format, the probe runs with `ASK_SESSION_ENCRYPTION=off`.
+
+## Encrypted task list probe (2026-11-02)
+
+- `Scripts/probe-tasks.py` now runs a third leg (`encrypted`) with `ASK_SESSION_ENCRYPTION` unset: sets up encrypted sessions in a PTY,
+  has the model write tasks, checks that `<session>.tasks` is framed (`ASKF`) with no task title or detail in clear, then reopens the
+  session with `--continue` and the password and checks that the model reads the tasks back through its tool.
 
 ## Done (2026-11-01)
 
