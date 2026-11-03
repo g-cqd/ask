@@ -34,19 +34,19 @@ Think harder by default (the model must support the level; see [Providers and ac
 Keep tool output and thinking open instead of folded:
 
 ```json5
-{ ui: { tools: "open", thinking: "open" } }
+{ ui: { fold: { tools: false, thinking: false } } }
 ```
 
 A plainer screen, with no tinted blocks, padding or separator:
 
 ```json5
-{ ui: { tint: "off", padding: "off", separator: "off" } }
+{ ui: { tint: false, padding: false, separator: false } }
 ```
 
 Let the terminal handle the mouse (its own selection and scrolling):
 
 ```json5
-{ ui: { mouse: "off" } }
+{ ui: { mouse: false } }
 ```
 
 Make one Esc enough to stop a running turn, or keep Esc out of it entirely:

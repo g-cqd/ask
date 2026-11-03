@@ -44,7 +44,8 @@ away from ask's own files and your secret stores. Each tool call shows as a bloc
 
 A few things to try:
 
-- Type `/` to see the commands, and `@` to point at a file.
+- Type `/` to see the commands, `@` to point at a file or an MCP resource (`@server:`), and `#` to reference a task or a note (`#t1`, `#n1`).
+- Save a quick note anytime with `/notes TEXT` without interrupting a turn.
 - Press Enter while the model is working to steer it; your message is sent after its current step.
 - Press Esc twice, or Ctrl+C, to stop a turn.
 - Leave with `/quit`, or Ctrl+C twice.

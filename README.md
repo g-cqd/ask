@@ -19,7 +19,7 @@ ask login claude   # or codex, agy; skip it to use Apple's on-device model
 ask                # in your project
 ```
 
-Type `/` for commands, `@` for files. Esc twice stops a turn; `/quit` leaves.
+- Type `/` for commands, `@` for files or MCP resources (`@server:`), and `#` for tasks or notes (`#t1`, `#n1`). Esc twice stops a turn; `/quit` leaves.
 
 ## Learn more
 
