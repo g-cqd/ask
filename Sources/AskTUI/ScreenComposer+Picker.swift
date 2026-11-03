@@ -8,7 +8,8 @@ extension ScreenComposer {
         if let pending = state.pendingApproval { return approvalLines(pending, columns: columns, rows: rows) }
         if let pending = state.pendingQuestions { return questionLines(pending, columns: columns, rows: rows) }
         guard let picker = state.picker else { return [] }
-        return pickerLines(picker, columns: columns, rows: rows)
+        let hovered: Int? = if case .picker(let index) = state.hover { index } else { nil }
+        return pickerLines(picker, columns: columns, rows: rows, hovered: hovered)
     }
 
     /// The picker's rows, a title and then the matches in view, drawn in text only: the choice is bold and in colour, and nothing is
@@ -17,8 +18,9 @@ extension ScreenComposer {
     ///   - picker: what to list.
     ///   - columns: the width every row is cut to.
     ///   - rows: the most rows it may take.
+    ///   - hovered: the match index under the pointer, if any.
     /// - Returns: the title row and the matches in view, or nothing when there is no room.
-    static func pickerLines(_ picker: CompletionPicker, columns: Int, rows: Int) -> [Line] {
+    static func pickerLines(_ picker: CompletionPicker, columns: Int, rows: Int, hovered: Int? = nil) -> [Line] {
         guard columns > 0, rows >= 1 else { return [] }
         // Nothing to choose yet, because the files are still being listed: the title alone says so.
         if picker.matches.isEmpty {
@@ -42,13 +44,14 @@ extension ScreenComposer {
                 repeating: " ",
                 count: Swift.max(0, labelWidth - UnicodeWidth.displayWidth(of: label)) + 2
             )
-            let chosen = start + offset == picker.selected
-            lines.append(
-                Line(
-                    text: clipped(row.detail.isEmpty ? label : label + padding + row.detail, to: columns),
-                    style: chosen ? Style(fg: .indexed(6), bold: true) : .default
-                )
+            let index = start + offset
+            let chosen = index == picker.selected
+            var line = Line(
+                text: clipped(row.detail.isEmpty ? label : label + padding + row.detail, to: columns),
+                style: chosen ? Style(fg: .indexed(6), bold: true) : .default
             )
+            if index == hovered { line = brightened(line) }
+            lines.append(line)
         }
         return lines
     }

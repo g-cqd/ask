@@ -65,4 +65,11 @@ struct ShownCode: Sendable, Equatable {
             (["code"] + (fence.language.isEmpty ? [] : [fence.language]) + ["\(count) \(count == 1 ? "line" : "lines")"])
             .joined(separator: " · ")
     }
+
+    /// `╭─ swift · 34 lines`, or `╭─ 34 lines` without a language (roadmap 0177).
+    static func cornerPlaceholder(for fence: CodeFence, open: String = "╭─ ") -> String {
+        let count = fence.bodyLines
+        let parts = (fence.language.isEmpty ? [] : [fence.language]) + ["\(count) \(count == 1 ? "line" : "lines")"]
+        return open + parts.joined(separator: " · ")
+    }
 }

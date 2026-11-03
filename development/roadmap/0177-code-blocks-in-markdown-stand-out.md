@@ -18,4 +18,6 @@ an interactive title, or better indentation.
   folded long block keeps its fold title (`code · swift · 4 lines`), which stands in for the corner when it is opened.
 - Tests: TerminalKit's `MarkdownCodeRuleTests` (3 mutants, all killed); ask's `CodeRuleTests`, and the tests and three row digests that
   pinned the old look, updated on purpose.
-- Not done: the fold title drawn as the corner (`╭─ swift · 4 lines`), and a look in a real terminal.
+- Fold title drawn as the corner (`╭─ swift · 4 lines`, 2026-11-02): `ShownCode.cornerPlaceholder` used by `MarkdownMessageLayout.foldHeader`,
+  verified in `CodeRuleTests` and `MarkdownTranscriptTests`.
+- Not done: a look in a real terminal.

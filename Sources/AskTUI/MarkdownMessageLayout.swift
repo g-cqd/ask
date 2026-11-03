@@ -51,10 +51,10 @@ struct MarkdownMessageLayout {
         return result
     }
 
-    /// The dim line a long block folds to, and heads it with when open: `code · swift · 34 lines`. It names the opening fence's line, which is
-    /// what a click toggles (``Transcript/codeFence(toggledByLine:at:)``).
+    /// The dim line a long block folds to, and heads it with when open: `╭─ swift · 34 lines` (roadmap 0177). It names the opening fence's line,
+    /// which is what a click toggles (``Transcript/codeFence(toggledByLine:at:)``).
     private static func foldHeader(_ fence: CodeFence, block: Int, inset: Int) -> ScreenComposer.Line {
-        let text = ShownCode.placeholder(for: fence)
+        let text = ShownCode.cornerPlaceholder(for: fence, open: ScreenComposer.markdownTheme.codeOpen ?? "╭─ ")
         return ScreenComposer.Line(
             text: String(repeating: " ", count: inset) + text,
             style: Style(dim: true),

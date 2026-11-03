@@ -29,4 +29,5 @@ a core; only a change of what is hovered redraws, and the frame's row diff write
   pointer recognizer, so it selects and drags nothing.
 - Tests: TerminalKit's `TerminalSessionMotionTests`; ask's `HoverTests`; mutants all killed, and two redundant guards removed (the
   explicit 1003 off, which the ladder does; no button held, which a motion report always is).
-- Not done: picker rows and the sidebar's rows; a look in a real terminal.
+- Picker rows and the sidebar's rows (2026-11-02): `Hover.picker(Int)` and `Sidebar` brightening for `.job(id)`, verified in `HoverTests`.
+- Not done: a look in a real terminal.
