@@ -8,7 +8,7 @@ public struct SlashCommand: Sendable, Equatable {
         public var heading: String { rawValue }
     }
 
-    /// The word after the slash: lowercase letters, digits and hyphens.
+    /// The word after the slash: lowercase letters, digits, hyphens and colons.
     public let name: String
     /// One line for `/help`.
     public let summary: String
@@ -34,9 +34,32 @@ public struct SlashCommand: Sendable, Equatable {
     /// list's (roadmap 0179).
     public static let renamed = ["tree": "rewind"]
 
-    /// The command in `commands` called `name`, or the one an old name now is.
+    /// Subcommands belonging to a command in `commands` (e.g. `notes:edit` for `notes`).
+    // @dl:accept -- a literal map of subcommand names shares the syntax of any dictionary literal
+    public static let subcommands = [
+        "notes:all": "notes",
+        "notes:show": "notes",
+        "notes:edit": "notes",
+        "notes:add": "notes",
+        "notes:delete": "notes",
+        "notes:search": "notes"
+    ]
+
+    /// The command in `commands` called `name`, or the one an old name or `:subcommand` belongs to.
     public static func named(_ name: String, in commands: [SlashCommand]) -> SlashCommand? {
-        commands.first { $0.name == name } ?? renamed[name].flatMap { new in commands.first { $0.name == new } }
+        if let exact = commands.first(where: { $0.name == name }) { return exact }
+        if let target = renamed[name] { return commands.first { $0.name == target } }
+        if let parent = subcommands[name], let base = commands.first(where: { $0.name == parent }) {
+            let takesChoices = name == "notes:show" || name == "notes:edit" || name == "notes:delete"
+            return SlashCommand(
+                name: name,
+                summary: base.summary,
+                takesChoices: takesChoices,
+                category: base.category,
+                duringTurn: base.duringTurn
+            )
+        }
+        return nil
     }
 
     /// A command called `name`.

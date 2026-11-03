@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Probe `/idea`, `/ideas` and the `ideas` tool through the real binary, a PTY and a local fake provider (roadmap 0180).
+"""Probe `/notes`, its `:subcommands` and the `notes` tool through the real binary, a PTY and a local fake provider (roadmap 0180).
 
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-ideas.py .build/release/ask
 
-An idea is saved and said so; `/ideas` lists it, and choosing it puts it in the input to edit with the list closed; Enter keeps the
-edit and opens the list again with the new words; the model is sent no idea unasked, and reads the edited one through its tool.
-Hermetic: no window, credentials or clipboard.
+A note is saved and said so; `/notes` lists it and choosing it shows it in the transcript; `/notes:edit` puts it in the input to edit
+with the list closed; Enter keeps the edit and opens the list again with the new words; the model is sent no note unasked, and reads
+the edited one through its tool. Hermetic: no window, credentials or clipboard.
 """
 import importlib.util
 import json
@@ -41,7 +41,7 @@ def main():
         turn = probe.agent.turn
         server = probe.agent.Server([
             turn([("text", "Started.")], "end_turn"),
-            turn([("call", "c1", "ideas", {"read": {}})], "tool_use"),
+            turn([("call", "c1", "notes", {"read": {}})], "tool_use"),
             turn([("text", "Read them.")], "end_turn"),
         ])
         environment = probe.agent.environment(root + "/state", server.url, config=config)
@@ -54,26 +54,29 @@ def main():
             terminal.until(lambda: "ask>" in terminal.text())
             terminal.send(b"begin\r")
             terminal.until(lambda: "Started." in terminal.text() and "ask>" in terminal.text())
-            terminal.send(b"/idea fold the sidebar\r")
-            terminal.until(lambda: "Saved idea i1." in terminal.text())
-            check("an idea is saved, and said so", "Saved idea i1." in terminal.text())
-            terminal.draw(lambda: terminal.send(b"/ideas "))
+            terminal.send(b"/notes fold the sidebar\r")
+            terminal.until(lambda: "Saved note n1." in terminal.text())
+            check("a note is saved, and said so", "Saved note n1." in terminal.text())
+            terminal.draw(lambda: terminal.send(b"/notes "))
             terminal.until(lambda: "fold the sidebar" in terminal.text() and "[new]" in terminal.text())
-            check("/ideas lists it, new", "i1" in terminal.text())
-            terminal.draw(lambda: terminal.send(b"i1"))
+            check("/notes lists it, new", "n1" in terminal.text())
+            terminal.draw(lambda: terminal.send(b"n1"))
             terminal.draw(lambda: terminal.send(b"\r"))
-            terminal.until(lambda: "ask> /ideas i1 fold the sidebar" in terminal.text())
-            check("choosing it puts it in the input to edit", "ask> /ideas i1 fold the sidebar" in terminal.text())
-            check("with the list closed", "ideas 1 of" not in terminal.text() and "[new]" not in terminal.text().split("ask> /ideas i1")[-1])
+            terminal.until(lambda: "n1 [new]" in terminal.text() and "fold the sidebar" in terminal.text().split("Saved note n1.")[-1])
+            check("choosing it prints the note in the transcript", "n1 [new]" in terminal.text().split("Saved note n1.")[-1])
+            terminal.draw(lambda: terminal.send(b"/notes:edit n1\r"))
+            terminal.until(lambda: "ask> /notes:edit n1 fold the sidebar" in terminal.text())
+            check("/notes:edit puts it in the input to edit", "ask> /notes:edit n1 fold the sidebar" in terminal.text())
+            check("with the list closed", "notes 1 of" not in terminal.text() and "[new]" not in terminal.text().split("ask> /notes:edit n1")[-1])
             terminal.draw(lambda: terminal.send(b" when narrow"))
             terminal.send(b"\r")
-            terminal.until(lambda: "Edited i1." in terminal.text())
+            terminal.until(lambda: "Edited n1." in terminal.text())
             # The list is drawn after the notice, maybe over more than one write: wait for its whole row and the input under it, not
             # for the edited line the transcript already shows.
             def reopened():
-                after = terminal.text().split("Edited i1.")[-1]
+                after = terminal.text().split("Edited n1.")[-1]
                 row = after.split("[new]")[-1].split("\n")[0].strip() if "[new]" in after else ""
-                return row.endswith("fold the sidebar when narrow") and "ask> /ideas" in after
+                return row.endswith("fold the sidebar when narrow") and "ask> /notes" in after
 
             terminal.until(reopened)
             check("Enter keeps the edit and opens the list again, with the new words", reopened())
@@ -83,10 +86,10 @@ def main():
             time.sleep(0.2)
             terminal.send(b"what did I note?\r")
             terminal.until(lambda: "Read them." in terminal.text())
-            check("no idea was sent unasked", "fold the sidebar" not in json.dumps(server.requests[0]["body"])
+            check("no note was sent unasked", "fold the sidebar" not in json.dumps(server.requests[0]["body"])
                   and "fold the sidebar" not in json.dumps(server.requests[1]["body"]))
             seen = json.dumps(results(server.requests[2])) if len(server.requests) > 2 else ""
-            check("the model reads the edited idea through its tool", "1 new" in seen and "fold the sidebar when narrow" in seen)
+            check("the model reads the edited note through its tool", "1 new" in seen and "fold the sidebar when narrow" in seen)
         except AssertionError:
             if terminal:
                 print(terminal.text(), file=sys.stderr)

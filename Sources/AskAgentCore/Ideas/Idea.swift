@@ -1,6 +1,6 @@
-/// One idea (roadmap 0180), kept exactly as the person typed it.
+/// One note (roadmap 0180), kept exactly as the person typed it.
 public struct Idea: Sendable, Equatable {
-    /// `i1`, `i2`, … in the order had; never reused.
+    /// `n1`, `n2`, … in the order had; never reused.
     public let id: Int
     public var text: String
     /// When it was had, in seconds since 1970.
@@ -20,7 +20,7 @@ public struct Idea: Sendable, Equatable {
         self.tasks = tasks
     }
 
-    public var name: String { "i\(id)" }
+    public var name: String { "n\(id)" }
 }
 
 /// Absent `tasks`, in records from before ADR-0141, read as none.

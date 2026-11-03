@@ -1,15 +1,15 @@
 public import AskAI
 public import AskAgentCore
 
-/// `ideas` (roadmap 0180, ADR-0141): the person's ideas, saved with `/idea` while working. The model reads them when asked, or once a
+/// `notes` (roadmap 0180, ADR-0141): the person's notes, saved with `/notes` while working. The model reads them when asked, or once a
 /// piece of work is done, and marks them; writing and editing them is the person's alone. The shape of a `tasks` call.
 public struct IdeasTool: ArgumentTool {
     public typealias Arguments = IdeaRequest
 
     public let definition = ToolDefinition(
-        name: "ideas",
+        name: "notes",
         description: """
-            The person's ideas: read them when asked and when you finish work. Shaped as tasks; ids i3 i5-i9. A change sets \
+            The person's notes: read them when asked and when you finish work. Shaped as tasks; ids n3 n5-n9. A change sets \
             their state, and task the task one became.
             """,
         fields: [
@@ -44,10 +44,10 @@ public struct IdeasTool: ArgumentTool {
     }
 
     public func run(_ request: IdeaRequest, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
-        // The task list is read under the ideas' lock, never the other way round, so the two locks cannot wait on each other.
+        // The task list is read under the notes' lock, never the other way round, so the two locks cannot wait on each other.
         try ListToolRun.run(
             board,
-            missing: "No ideas are open for this session.",
+            missing: "No notes are open for this session.",
             plan: request.changes.map { marks in
                 { list in try IdeaPlanner.plan(marks, on: list, tasks: try tasks.current()) }
             },

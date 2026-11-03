@@ -10,6 +10,7 @@ struct SlashInputTests {
         ("/reload now", "reload", "now"),
         ("  /compact  focus on the tests  ", "compact", "focus on the tests"),
         ("/reload-config", "reload-config", ""),
+        ("/notes:edit n1 next", "notes:edit", "n1 next"),
         ("/h2", "h2", "")
     ])
     func `command-shaped words are commands, with their arguments`(line: String, name: String, arguments: String) {
@@ -18,6 +19,7 @@ struct SlashInputTests {
 
     @Test(arguments: [
         "fix the build", "/Users/me/file.swift explain this", "/etc/hosts", "/", "/ config", "/Config", "/-x",
+        "/notes:",
         "/9lives",
         "/café", "explain /config please"
     ])

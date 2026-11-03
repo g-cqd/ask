@@ -2,7 +2,8 @@ internal import Foundation
 
 /// What a submitted line is: a prompt for the model, or a command.
 ///
-/// A line is a command when its first word is a slash and a command-shaped name: `/config`, `/reload now`.
+/// A line is a command when its first word is a slash and a command-shaped name: `/config`, `/reload now`, `/notes:edit n1`.
+/// `/skill:debugging` is a skill invocation in a prompt, not a slash command.
 /// `/Users/me/file.swift explain this` is a prompt, because its first word is a path, and so is anything that
 /// does not start with a slash. A prompt that must begin with a command-shaped word starts with two slashes:
 /// `//config` is sent as `/config`.
@@ -23,8 +24,10 @@ public enum SlashInput: Sendable, Equatable {
         }
         let word = trimmed.prefix { !$0.isWhitespace }
         let name = word.dropFirst()
-        guard let first = name.first, first.isLowercase, first.isASCII,
-            name.allSatisfy({ ($0.isLowercase || $0.isNumber || $0 == "-") && $0.isASCII })
+        guard !name.hasPrefix("skill:"),
+            let first = name.first, first.isLowercase, first.isASCII,
+            let last = name.last, last != ":",
+            name.allSatisfy({ ($0.isLowercase || $0.isNumber || $0 == "-" || $0 == ":") && $0.isASCII })
         else {
             self = .prompt(line)
             return

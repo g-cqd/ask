@@ -1,7 +1,7 @@
 // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
 internal import AskAgentCore
 
-/// An ideas `read`.
+/// A notes `read`.
 // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
 struct IdeaReadInput: Decodable {
     let query: IdeaQuery
@@ -16,7 +16,7 @@ struct IdeaReadInput: Decodable {
         }
         query = IdeaQuery(
             view: view,
-            ids: try container.refs("ids", prefix: "i", in: "read") ?? [],
+            ids: try container.refs("ids", prefix: "n", in: "read") ?? [],
             text: try container.field("text"),
             limit: try container.field("limit") ?? ListLimits.defaultReadLimit
         )

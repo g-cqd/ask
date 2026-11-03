@@ -29,7 +29,8 @@ extension AgentConversation {
                     ChoiceRow(label: "off", detail: "keep it unencrypted", arguments: "off")
                 ]
             case "tasks": return taskRows()
-            case "ideas": return ideaRows()
+            case "notes": return ideaRows(includeAll: true)
+            case "notes:show", "notes:edit", "notes:delete": return ideaRows(includeAll: false)
             case "#": return referenceRows()
             case let server where server.hasPrefix("@"): return await resourceRows(String(server.dropFirst()))
             default: return []

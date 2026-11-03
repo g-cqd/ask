@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Probe `/idea` typed before the first prompt (the owner's choice, 2026-11-02, roadmap 0180) through the real binary, a PTY and a
+"""Probe `/notes` typed before the first prompt (the owner's choice, 2026-11-02, roadmap 0180) through the real binary, a PTY and a
 local fake provider.
 
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-ideas-early.py .build/release/ask
 
-Before any session, `/idea` says the idea is kept for the session; the first prompt starts the session and saves it, saying so; `/ideas`
-lists it. Hermetic: no window, credentials or clipboard.
+Before any session, `/notes TEXT` says the note is kept for the session; the first prompt starts the session and saves it, saying so;
+`/notes:all` lists it. Hermetic: no window, credentials or clipboard.
 """
 import importlib.util
 import json
@@ -40,17 +40,17 @@ def main():
         try:
             terminal = probe.Terminal(project, environment, rows=30)
             terminal.until(lambda: "ask>" in terminal.text())
-            terminal.send(b"/idea an early bird\r")
+            terminal.send(b"/notes an early bird\r")
             terminal.until(lambda: "Kept:" in terminal.text())
-            check("before the first prompt, the idea is kept for the session, and said so",
-                  "saved to your ideas when the session starts" in terminal.text())
+            check("before the first prompt, the note is kept for the session, and said so",
+                  "saved to your notes when the session starts" in terminal.text())
             terminal.send(b"begin\r")
             terminal.until(lambda: "Started." in terminal.text())
-            terminal.until(lambda: "before the session started: i1." in terminal.text())
-            check("the first prompt saves it, and says which it is", "before the session started: i1." in terminal.text())
-            terminal.draw(lambda: terminal.send(b"/ideas\r"))
+            terminal.until(lambda: "before the session started: n1." in terminal.text())
+            check("the first prompt saves it, and says which it is", "before the session started: n1." in terminal.text())
+            terminal.draw(lambda: terminal.send(b"/notes:all\r"))
             terminal.until(lambda: "an early bird" in terminal.text().split("Started.")[-1])
-            check("/ideas lists it", "an early bird" in terminal.text().split("Started.")[-1])
+            check("/notes:all lists it", "an early bird" in terminal.text().split("Started.")[-1])
         finally:
             if terminal is not None:
                 terminal.close()
