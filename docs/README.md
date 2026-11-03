@@ -6,10 +6,11 @@ ask is a terminal coding agent for macOS. What it gives you:
   on-device model. `/model` switches between them mid-conversation.
 - **A sandbox by default.** Commands and file tools can't touch ask's own files or your secret stores; you can narrow writes and the network
   further.
-- **Nothing lost.** Every conversation is saved as it happens; go back to an earlier prompt with `/rewind`, or branch with `/fork`.
-- **Your skills and MCP servers.** Skills written for other harnesses work as they are; MCP servers add tools.
+- **Nothing lost.** Every conversation is saved as it happens (optionally encrypted and compressed); go back to an earlier prompt with `/rewind`, or branch with `/fork`.
+- **Tasks and notes.** The model keeps a task list (`tasks`, `/tasks`), and `/notes` saves your own notes as you work without interrupting a turn.
+- **Your skills, MCP servers and hooks.** Skills written for other harnesses work as they are; MCP servers add tools and resources; hooks can check a run before it finishes.
 - **No setup needed.** `ask config` shows every setting, its default, and where it came from.
-- **Fast and light, by number.** A 50 ms cold start, 15 MiB idle, 4 ms from a key press to the screen: `ask --budgets` prints these budgets,
+- **Fast and light, by number.** A 50 ms cold start, 15 MiB idle, 25 MiB active, 4 ms from a key press to the screen, 8 ms from a tool call to its result: `ask --budgets` prints these budgets,
   and the release build is measured against them.
 
 ## The guide

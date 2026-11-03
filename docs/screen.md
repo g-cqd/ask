@@ -30,8 +30,7 @@ queued message back into the input to edit, as long as the model has not taken i
 | `/quit` | Quits, stopping a running turn first. |
 
 When you stop a turn, nothing is added to the conversation: what was still going (a command, the reasoning, a compaction) turns orange
-and ends with `⊘`, apart from a failure's red `✗`, and whatever it had already returned is kept. The messages you queued are sent by default; `ui.queuedOnStop` changes that. `ui.interruptKeys` and the two
-confirmation settings choose which keys stop a turn and how many presses it takes (see [Configuration](configuration.md#ui)).
+and ends with `⊘`, apart from a failure's red `✗`, and whatever it had already returned is kept. The messages you queued are sent by default; `ui.queuedOnStop` changes that. `ui.stopKeys` and `ui.stopTwice` choose which keys stop a turn and how many presses it takes (see [Configuration](configuration.md#ui)).
 
 ## Editing
 
@@ -54,10 +53,10 @@ conversation copies what is shown, as soon as you let go.
   page in your browser, an address in Mail. A file that would run (an app, a script, a program) is shown in the Finder instead.
 - Tool calls, the model's thinking and long code blocks start **folded** to one line. Click a block to open it in place; **Ctrl+O** opens or
   folds the tool output, **Ctrl+T** the thinking and **Ctrl+G** the code blocks.
-- A shell block is headed by its limits, then the command: `shell · timeout 5 min · swift build`; a timeout equal to the default is not
-  written (`ui.timeout`, `ui.timeoutLabel`). Folded, a long command is cut with `…`
+- Tool blocks are headed by their modifiers first, then their target: `read · lines 10–45 · path`, `write · 2 B · path`, `write · exact replacement · path`, `job · stop · #abcd`, and for commands `shell · timeout 5 min · swift build`; a timeout equal to the default is not
+  written (`ui.showTimeout`, `ui.timeoutLabel`). Folded, a long command is cut with `…`
   before the status; opened, the command is shown in full and brighter, with its output below.
-- A compaction is a block of its own, headed by what it did: `compaction · 182k → 3.1k tokens`, the tokens it read into the tokens
+- A compaction is a block of its own, folded by default, headed by what it did: `compaction · 182k → 3.1k tokens`, the tokens it read into the tokens
   of its summary, with its duration and status. Opened, it shows the summary, drawn as Markdown.
 - An `edit` block, opened, shows the change as lines: `- ` before each line it removes, on a red tint, `+ ` before each line it adds, on
   a green one, and the lines it keeps between them. With `ui.highlight` on, the code is coloured by the file's language. Copying the
@@ -100,12 +99,13 @@ when it ends. With no command running, Ctrl+B moves the cursor as usual.
 | `/login`, `/logout` | Sign in to or out of an account without leaving. |
 | `/new` | Start a new conversation; the old one stays saved. |
 | `/resume` | Switch to another saved conversation. |
-| `/rewind`, `/fork` | Go back to an earlier prompt, or continue in a copy. See [Sessions](sessions.md). |
+| `/rewind`, `/fork` | Go back to an earlier prompt (also `/tree`), or continue in a copy. See [Sessions](sessions.md). |
+| `/encrypt` | Encrypt this session's file (`/encrypt on`), or write it back in clear (`/encrypt off`). See [Sessions](sessions.md#encrypted-sessions). |
 | `/tasks` | Show the session's task list, which the model keeps with its `tasks` tool: `/tasks all` with the done ones, `/tasks t3` for one task. |
 | `#t3`, `#n2` | In a message, point at a task or a note: the model gets its text with the message. Type `#` at the start of a word to pick one. |
 | `/notes` | `/notes TEXT` (or `/notes:add TEXT`) keeps a note as typed, with the time. `/notes` opens the picker to choose one and show it in the transcript; `/notes:all` (or `/notes all`) lists every note; `/notes:show n3` shows one; `/notes:edit n3` edits one in the input; `/notes:delete n3` removes one; `/notes:search TEXT` searches through all of them. The model reads them with its `notes` tool when you ask, or when it finishes a piece of work, and marks them acknowledged, fulfilled or dismissed; it never writes or edits one. |
 | `/compact` | Summarise the conversation now to free room in the context window. |
-| `/config` | Edit settings, or `/config show` to re-read the files and show them. |
+| `/config` | Open the settings editor (`/config user` or `/config project`), or `/config show` to re-read the files and show them. |
 | `/mcp` | Show the MCP servers and their tools. |
 | `/reload` | Switch to a newer build of ask that appeared beside the running one, keeping the session; `/reload now` stops running jobs first. The new build must start (`--self-check`) and, when the running build is signed with a team's identity, be signed the same way: `Scripts/build-release.sh` builds and signs. |
 | `/skill:NAME` | Ask for a skill by name. |
@@ -121,6 +121,6 @@ While the model works, commands still work:
 - `/login` and `/logout` at once; signing out of the account the turn uses waits for the turn to end.
 - `/notes` and `/tasks` at once, without reaching the model.
 - `/fork` at once: the copy holds what the turn has written so far, and you stay with the turn; `/resume` switches to the copy.
-- `/compact`, `/new`, `/resume`, `/rewind` and `/reload` wait for the turn to end, shown as waiting, then run in the order you typed
+- `/compact`, `/new`, `/resume`, `/rewind`, `/encrypt` and `/reload` wait for the turn to end, shown as waiting, then run in the order you typed
   them. If you stop the turn, they follow `ui.queuedOnStop` like queued messages: with `none` they come back to the input.
 - `/skill:NAME` is a message, so it joins the turn like any other.

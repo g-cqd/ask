@@ -197,9 +197,9 @@ requested change from the extra one.
 Targets: `AskCore` (budgets, documentation layout, source standards), `AskAI` (`Model` and `Transport` are provider-neutral;
 providers are Claude (a subscription or a key), Codex (the ChatGPT subscription, over the Responses protocol), Antigravity
 (Cloud Code) and any OpenAI-compatible or Responses server by configuration or preset), `AskAgentCore` (the loop, tools contract,
-sessions, compaction, hooks), `AskTools` (`read`, `write`, `edit`, `bash`, jobs, sandbox narrowing), `AskMCP` (an MCP client),
-`AskTUI` (the interactive screen) and the `ask` binary, which is the composition root and has **no tests** (roadmap 0028).
-Skills (0061) and MCP (0067) are in progress. Not built: the codemode host (0012), the extension host (0033), subagents (0063), a
+sessions, encryption, tasks and notes, compaction, hooks), `AskTools` (`read`, `write`, `edit`, `bash`, `tasks`, `notes`, `question`, `skill`, `server_resource`, jobs, sandbox narrowing), `AskMCP` (an MCP client for stdio and streamable HTTP, tools, resources, templates, and subscriptions),
+`AskTUI` (the interactive screen) and the `ask` binary, which is the composition root and is covered by PTY and end-to-end probes (`Scripts/probe-*.py`).
+Skills (0061) are built; MCP (0067) and hooks (0192) are in progress. Not built: the codemode host (0012), the extension host (0033), subagents (0063), a
 version and a release (0070); CI has never run (billing).
 
 `development/roadmap/` says what is owed and in what order. What is *not known* is registered, with what would settle it, in

@@ -48,6 +48,7 @@ An MCP server offers the model more tools: a program ask starts, or a service at
 - A server that has **resources** (documents it serves by URI, such as apple-docs' pages) offers the model one more tool,
   `server_resource`, while it is connected: the server alone lists its resources and URI templates, and a URI reads one. It is refused
   in a narrowed session, as the server's tools are.
-- You can attach a resource yourself: type `@server:` and the list shows that server's resources (typing narrows it), then send. Each
-  `@server:uri` in your message is read when it is sent and given to the model after your text, up to 64 KB each. Files keep `@path`
+- You can attach a resource yourself: type `@server:` and the list shows that server's resources and URI templates (typing narrows it; choosing a template inserts its fixed prefix so you can fill in the rest), then send. Each
+  `@server:uri` in your message (including messages queued during a turn) is read when the turn takes it and given to the model after your text, up to 64 KB each. When the server supports resource subscriptions, ask subscribes to the resources you attach and shows a notice in the screen when one changes or when the server's resource list changes. Files keep `@path`
   and `@file:12-30`.
+- Built-in MCP server presets can be enabled with `"presets": ["swift"]` in your configuration, which connects `apple-docs` and `swift-search` (see [Configuration](configuration.md)).
