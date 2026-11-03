@@ -57,6 +57,7 @@ extension AgentConversation {
                 name: "logout",
                 summary: "Sign out of one account, or /logout all, without leaving.",
                 takesChoices: true,
+                // @dl:accept -- the conversation's list reads alike entry to entry because every entry is a name and a sentence
                 category: .model,
                 duringTurn: .atOnce
             ),
@@ -80,6 +81,7 @@ extension AgentConversation {
                 name: "encrypt",
                 summary: "Encrypt this session's file, or /encrypt off (ADR-0138).",
                 takesChoices: true,
+                // @dl:accept -- the conversation's list reads alike entry to entry because every entry is a name and a sentence
                 duringTurn: .afterTurn
             ),
             SlashCommand(
@@ -94,14 +96,9 @@ extension AgentConversation {
                 duringTurn: .atOnce
             ),
             SlashCommand(
-                name: "idea",
+                name: "notes",
                 summary:
-                    "Keep an idea as typed, at once, even during a turn: /idea TEXT. The model does not see it until asked.",
-                duringTurn: .atOnce
-            ),
-            SlashCommand(
-                name: "ideas",
-                summary: "Show your ideas, and choose one to edit: /ideas all with the fulfilled and dismissed ones.",
+                    "Keep or view notes: /notes TEXT adds one, /notes picks one to show, /notes:all, :show, :edit, :delete, :search.",
                 takesChoices: true,
                 duringTurn: .atOnce
             ),
@@ -147,8 +144,8 @@ extension AgentConversation {
                 case "thinking": await self.thinking(arguments: arguments, update: update)
                 case "login": await self.login(arguments: arguments, update: update)
                 case "logout": await self.logout(arguments: arguments, update: update)
-                case "idea": self.saveIdea(arguments, update: update)
-                case "ideas": self.ideas(arguments: arguments, update: update)
+                case "notes", "notes:all", "notes:show", "notes:edit", "notes:add", "notes:delete", "notes:search":
+                    self.notes(command: name, arguments: arguments, update: update)
                 case "tasks": update(.notice(SessionTasks.answer(to: arguments), isError: false))
                 case "mcp": update(.notice(MCPHub.report(self.mcp.status).joined(separator: "\n"), isError: false))
                 case "reload": await self.reload(arguments: arguments, update: update)

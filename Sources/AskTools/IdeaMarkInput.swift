@@ -1,6 +1,6 @@
 internal import AskAgentCore
 
-/// One entry of an ideas call's `changes`.
+/// One entry of a notes call's `changes`.
 struct IdeaMarkInput: Decodable {
     let mark: IdeaPlanner.Mark
 
@@ -8,7 +8,7 @@ struct IdeaMarkInput: Decodable {
         let place = ToolInputError.entry
         let container = try decoder.container(keyedBy: RecordKey.self)
         try container.only(["ids", "state", "task"], in: place, for: "a change")
-        guard let ids = try container.refs("ids", prefix: "i", in: place), !ids.isEmpty else {
+        guard let ids = try container.refs("ids", prefix: "n", in: place), !ids.isEmpty else {
             throw ToolInputError("\(place): mark needs ids.")
         }
         let state: IdeaState
@@ -18,7 +18,7 @@ struct IdeaMarkInput: Decodable {
             case "dismissed": state = .dismissed
             default:
                 throw ToolInputError(
-                    "\(place): state is acknowledged, fulfilled or dismissed; ideas are the person's to write."
+                    "\(place): state is acknowledged, fulfilled or dismissed; notes are the person's to write."
                 )
         }
         let task = try container.refs("task", prefix: "t", in: place)

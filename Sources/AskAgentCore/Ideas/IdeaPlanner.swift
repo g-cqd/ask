@@ -1,4 +1,4 @@
-/// The model's changes to the ideas (ADR-0141): it marks them, and says which task one became; it never writes or edits one. Planned on a
+/// The model's changes to the notes (ADR-0141): it marks them, and says which task one became; it never writes or edits one. Planned on a
 /// copy, all or nothing, what is already so changing nothing.
 public struct IdeaPlanner {
     /// `ideas` (ids, ranges) marked `state`, and linked to `task` when given, which must be in the task list.
@@ -78,10 +78,10 @@ public struct IdeaPlanner {
     private var answer: String {
         let parts =
             IdeaState.allCases.compactMap { state in
-                marked[state].map { ListRef.counted(state.rawValue, $0, prefix: "i") }
+                marked[state].map { ListRef.counted(state.rawValue, $0, prefix: "n") }
             }
-            + (linked.isEmpty ? [] : [ListRef.counted("linked", linked, prefix: "i")])
-            + (already.isEmpty ? [] : [ListRef.counted("already so:", already, prefix: "i")])
+            + (linked.isEmpty ? [] : [ListRef.counted("linked", linked, prefix: "n")])
+            + (already.isEmpty ? [] : [ListRef.counted("already so:", already, prefix: "n")])
         return parts.isEmpty ? "Nothing to change." : parts.joined(separator: " · ")
     }
 
@@ -92,7 +92,7 @@ public struct IdeaPlanner {
             throw Refusal(reason: "a call names at most \(ListLimits.idsPerCall) ids.")
         }
         if let missing = ids.first(where: { list.idea($0) == nil }) {
-            throw Refusal(reason: "there is no idea i\(missing).")
+            throw Refusal(reason: "there is no note n\(missing).")
         }
         var seen: Set<Int> = []
         return ids.filter { seen.insert($0).inserted }

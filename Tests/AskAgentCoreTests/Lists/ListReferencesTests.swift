@@ -3,8 +3,8 @@ import Testing
 
 @testable import AskAgentCore
 
-/// Roadmap 0186: `#t3` and `#i2` in a message attach the task's or the idea's text after it, each once, in order, as a skill's is.
-@Suite("A task or an idea named with # is attached to the message")
+/// Roadmap 0186: `#t3` and `#n2` in a message attach the task's or the note's text after it, each once, in order, as a skill's is.
+@Suite("A task or a note named with # is attached to the message")
 struct ListReferencesTests {
     private func lists() throws -> (TaskList, IdeaList) {
         var tasks = TaskList()
@@ -15,17 +15,17 @@ struct ListReferencesTests {
         return (tasks, ideas)
     }
 
-    @Test func `named tasks and ideas follow the message, each once, in order, and the views show the typed line`()
+    @Test func `named tasks and notes follow the message, each once, in order, and the views show the typed line`()
         throws
     {
         let (tasks, ideas) = try lists()
-        let typed = "do #t2 after #t1, see #i1, and #t2 again."
+        let typed = "do #t2 after #t1, see #n1, and #t2 again."
         let sent = ListReferences.attach(typed, tasks: tasks, ideas: ideas)
         #expect(sent.hasPrefix(typed + "\n\n--- task t2 ---\nt2 [open] ship it\n--- end of task ---"))
         #expect(
             sent.contains("\n\n--- task t1 ---\nt1 [open] write the parser\n\nrecursive descent\n--- end of task ---")
         )
-        #expect(sent.hasSuffix("--- idea i1 ---\nfold the sidebar\nwhen narrow\n--- end of idea ---"))
+        #expect(sent.hasSuffix("--- note n1 ---\nfold the sidebar\nwhen narrow\n--- end of note ---"))
         #expect(sent.components(separatedBy: "--- task t2 ---").count == 2)
         #expect(SkillInvocation.shown(sent) == typed)
     }

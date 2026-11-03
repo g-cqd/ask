@@ -36,3 +36,20 @@ The owner's choice: `/idea` typed before any session is kept, and saved when the
 right after making its session, and says which ideas it saved ("Saved the idea typed before the session started: i1."). A list that
 failed to open still says why, rather than holding. Tests: `IdeaBoardTests` (2 new); `Scripts/probe-ideas-early.py` through the release
 binary (3 checks; the build before fails the first).
+
+## Renamed to `/notes`, `:subcommands`, `notes` tool and `n1` IDs (2026-11-02)
+
+The owner's design:
+- `/idea` and `/ideas` are replaced by `/notes`, with `:subcommands`:
+  - `/notes`: opens the picker to select a note (or `all`) and shows it in the transcript.
+  - `/notes TEXT` or `/notes:add TEXT`: keeps `TEXT` as a new note.
+  - `/notes:all` (or `/notes all`): lists every note in the transcript, fulfilled and dismissed included.
+  - `/notes:show n8`: shows note `n8` in the transcript.
+  - `/notes:edit n8` (and `/notes:edit n8 TEXT`): puts `/notes:edit n8 TEXT` in the input to edit with the picker closed, and Enter saves
+    the edit and reopens `/notes `.
+  - `/notes:delete n8`: removes note `n8` (`IdeaChange.remove(id:)`).
+  - `/notes:search TEXT`: searches through all notes (`IdeaList.searching(_:in:)`).
+- The model's tool is `notes` and item IDs are `n1`, `n2`, … (`#n1` in prompt references; `#i1` still accepted for existing references).
+- `SlashInput` and `SlashCommand` accept `:subcommands` on commands.
+- Verified: unit tests (`IdeaListTests`, `IdeasToolTests`, `ListReferencesTests`, `EditDraftTests`, `SlashInputTests`) and PTY probes
+  (`Scripts/probe-ideas.py`, 8 checks; `Scripts/probe-ideas-early.py`, 3 checks).

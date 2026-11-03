@@ -38,5 +38,5 @@ asks again next time.
 
 An encrypted session opens only with your password, the recovery code, or the key kept in your keychain. `/encrypt on` encrypts the
 session you are in (opening or setting up the keys first, in the screen); `/encrypt off` writes it back in clear. `ask keys password`
-changes the password, and `ask keys forget` removes the key from your keychain. The session's task list and ideas are kept the same way
+changes the password, and `ask keys forget` removes the key from your keychain. The session's task list and notes are kept the same way
 as the session. `ask sessions` lists sessions it cannot open as locked.
