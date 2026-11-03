@@ -18,4 +18,13 @@ struct CodeRuleTests {
             #expect(rows[open + 3].contains("╰─"))
         }
     }
+
+    @Test func `a long code block's fold title is drawn as the rule's corner`() {
+        var transcript = Transcript()
+        transcript.setMarkdown(true)
+        transcript.setCodeFoldLines(2)
+        transcript.addAssistantText("```swift\nlet a = 1\nlet b = 2\nlet c = 3\n```")
+        let folded = ScreenComposer.lines(in: transcript, at: 0, columns: 60).map(\.text)
+        #expect(folded == ["╭─ swift · 3 lines"])
+    }
 }

@@ -18,6 +18,19 @@ extension ScreenController {
         {
             return .block(block)
         }
+        if row >= 0, row < frame.sidebarIDs.count, col > frame.transcriptColumns, col < frame.columns {
+            return .job(frame.sidebarIDs[row])
+        }
+        let pickerOffset = row - frame.pickerFirstRow
+        if pickerOffset >= 0, pickerOffset < frame.pickerWindow.count,
+            let picker = state.picker, state.pendingApproval == nil, state.pendingQuestions == nil,
+            state.pendingInput == nil
+        {
+            let index = frame.pickerWindow.lowerBound + pickerOffset
+            if picker.matches.indices.contains(index), !picker.matches[index].isHeading {
+                return .picker(index)
+            }
+        }
         let strip = row - frame.stripFirstRow
         if strip >= 0, strip < frame.stripIDs.count { return .job(frame.stripIDs[strip]) }
         return nil

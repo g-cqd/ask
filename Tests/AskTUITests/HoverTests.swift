@@ -5,16 +5,16 @@ import Testing
 
 @testable import AskTUI
 
-/// Roadmap 0172: what a click acts on brightens under the pointer: a foldable block's header, a job's row. The terminal reports motion
-/// only with `ui.hover`; a report that does not change what is hovered draws nothing new.
+/// Roadmap 0172: what a click acts on brightens under the pointer: a foldable block's header, a job's row in the strip or sidebar, and
+/// a picker row. The terminal reports motion only with `ui.hover`; a report that does not change what is hovered draws nothing new.
 @Suite("What a click acts on brightens under the pointer")
 struct HoverTests {
-    private func rig(hover: Bool = true) -> PointerRig {
+    private func rig(hover: Bool = true, columns: Int = 60, rows: Int = 14) -> PointerRig {
         var options = ScreenOptions.legacy
         options.hover = hover
         var rig = PointerRig(
-            columns: 60,
-            rows: 14,
+            columns: columns,
+            rows: rows,
             options: options,
             updates: [
                 .toolStarted(name: "bash", summary: "make test", id: "t", command: ToolCommand()),
@@ -28,7 +28,7 @@ struct HoverTests {
     }
 
     private func row(containing text: String, in rig: PointerRig) -> Int? {
-        (0 ..< 14).first { rig.text(row: $0).contains(text) }
+        (0 ..< rig.buffer.rows).first { rig.text(row: $0).contains(text) }
     }
 
     private func dim(_ rig: PointerRig, row: Int) -> Bool {
@@ -51,6 +51,31 @@ struct HoverTests {
         rig.mouse(.release, .motion, row: 0, col: 40)
         rig.draw()
         #expect(rig.controller.state.hover == nil && dim(rig, row: header) && dim(rig, row: job))
+    }
+
+    @Test func `sidebar rows and picker rows brighten under the pointer`() throws {
+        var rig = rig(columns: 90, rows: 16)
+        rig.controller.state.runnersOpen = false
+        rig.controller.state.sidebarOpen = true
+        rig.controller.setScreenRows(16)
+        _ = rig.controller.handle(.key(KeyEvent(keyCode: UInt32(UnicodeScalar("/").value))), pageRows: 16)
+        rig.draw()
+        let sidebarCol = 90 - 5
+        #expect(rig.buffer[0, sidebarCol].style.dim)
+        rig.mouse(.release, .motion, row: 0, col: sidebarCol)
+        rig.draw()
+        #expect(rig.controller.state.hover == .job("job-1"))
+        #expect(!rig.buffer[0, sidebarCol].style.dim && rig.buffer[0, sidebarCol].style.bold)
+
+        let quitRow = try #require(row(containing: "/quit", in: rig))
+        #expect(!rig.buffer[quitRow, 1].style.bold)
+        rig.mouse(.release, .motion, row: quitRow, col: 2)
+        rig.draw()
+        if case .picker = rig.controller.state.hover {
+            #expect(rig.buffer[quitRow, 1].style.bold)
+        } else {
+            Issue.record("expected .picker hover, got \(String(describing: rig.controller.state.hover))")
+        }
     }
 
     @Test func `motion selects nothing and clicks still work`() throws {

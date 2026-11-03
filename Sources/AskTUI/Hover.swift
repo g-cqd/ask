@@ -3,6 +3,8 @@
 enum Hover: Sendable, Equatable {
     /// A foldable block of the transcript, by its item: its header brightens.
     case block(Int)
-    /// A row of the job list below the input, by its id.
+    /// A row of the job list below the input or in the sidebar, by its id.
     case job(String)
+    /// A match of the open picker, by its match index.
+    case picker(Int)
 }

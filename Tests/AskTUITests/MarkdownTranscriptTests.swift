@@ -63,22 +63,22 @@ struct MarkdownTranscriptTests {
     @Test func `a long block folds to a dim line, a click opens it under that line, and a click on the line folds it`()
     {
         var rig = PointerRig(options: Self.options, updates: [.assistantText(Self.reply)])
-        guard let header = row(rig, "code · swift · 4 lines") else {
+        guard let header = row(rig, "╭─ swift · 4 lines") else {
             Issue.record("\(rows(rig))")
             return
         }
         #expect(rig.buffer[header, 0].style.dim)
-        #expect(Array(rows(rig)[header - 2 ... header + 2]) == ["intro", "", "code · swift · 4 lines", "", "after"])
+        #expect(Array(rows(rig)[header - 2 ... header + 2]) == ["intro", "", "╭─ swift · 4 lines", "", "after"])
         rig.click(row: header, col: 2)
-        guard let open = row(rig, "code · swift · 4 lines") else {
+        guard let open = row(rig, "╭─ swift · 4 lines") else {
             Issue.record("\(rows(rig))")
             return
         }
-        #expect(Array(rows(rig)[open ... open + 5]) == ["code · swift · 4 lines", "│ a", "│ b", "│ c", "│ d", "╰─"])
+        #expect(Array(rows(rig)[open ... open + 5]) == ["╭─ swift · 4 lines", "│ a", "│ b", "│ c", "│ d", "╰─"])
         rig.click(row: open + 2, col: 2, after: .seconds(2))
         #expect(row(rig, "│ b") != nil)
         rig.click(row: open, col: 2, after: .seconds(2))
-        #expect(row(rig, "│ b") == nil && row(rig, "code · swift · 4 lines") != nil)
+        #expect(row(rig, "│ b") == nil && row(rig, "╭─ swift · 4 lines") != nil)
     }
 
     @Test func `a short block is drawn whole, inside its rule, under its language`() {
