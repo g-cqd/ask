@@ -141,6 +141,8 @@ extension AgentConversation {
         // What the person allowed for the session goes with it, in a file only they can read, taken once (roadmap 0159).
         let grantsPath = NSTemporaryDirectory() + "ask-reload-grants-" + UUID().uuidString + ".json"
         if (try? sessionGrants.write(to: grantsPath)) != nil { arguments += ["--reload-grants", grantsPath] }
+        // The thread whose lane is shown, shown again by the new build.
+        if let focused = focusedThread.withLock({ $0 }) { arguments += ["--focus-thread", focused] }
         let failure = Reexec.replaceProcess(with: target.path, arguments: arguments)
         fail(
             "ask: could not start the new build (errno \(failure)). Your session is saved: run `ask --continue`.",

@@ -138,6 +138,10 @@ struct Ask: AsyncParsableCommand {
     @Option(name: .customLong("reload-grants"), help: .hidden)
     var reloadGrants: String?
 
+    /// The thread whose lane a reload left shown (roadmap 0195).
+    @Option(name: .customLong("focus-thread"), help: .hidden)
+    var focusThread: String?
+
     @Option(name: .customLong("selected-provider"), help: .hidden)
     var selectedProvider: String?
 
@@ -205,6 +209,7 @@ struct Ask: AsyncParsableCommand {
     private var request: LaunchRequest {
         LaunchRequest(
             budgets: budgets,
+            // @dl:accept -- every launch option passed through as a value, one per line: the request's shape, not repeated logic
             prompt: prompt,
             model: model,
             provider: provider,
@@ -225,6 +230,7 @@ struct Ask: AsyncParsableCommand {
             reloadedFrom: reloadedFrom,
             reloadStarted: reloadStarted,
             reloadGrants: reloadGrants,
+            focusThread: focusThread,
             selectedProvider: selectedProvider,
             selectedModel: selectedModel,
             continueLatest: continueLatest,

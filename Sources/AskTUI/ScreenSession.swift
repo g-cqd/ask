@@ -18,6 +18,8 @@ final class ScreenSession {
     private var columns: Int
     private var run: Task<Void, Never>?
     private var runnerOutput = RunnerOutputWatch()
+    /// The lane the conversation was last told is shown.
+    private var shownLane: String?
     private var jobOutput: [String: Task<Void, Never>] = [:]
     /// Ticks while a drag is held at an edge, because a held button reports no motion.
     private var autoscroll = AutoscrollTimer()
@@ -114,10 +116,18 @@ final class ScreenSession {
             return false
         }
         syncProgress()
-        runnerOutput.sync(lane: controller.state.lane?.id)
+        syncLane()
         syncAutoscroll()
         render()
         return true
+    }
+
+    /// The shown lane's output is watched, and the conversation told which lane is shown, for `/reload` (roadmap 0195).
+    private func syncLane() {
+        runnerOutput.sync(lane: controller.state.lane?.id)
+        guard controller.state.lane?.id != shownLane else { return }
+        shownLane = controller.state.lane?.id
+        conversation.laneShown(shownLane)
     }
 
     /// Carries out one effect of the controller. Returns false when the screen should close.

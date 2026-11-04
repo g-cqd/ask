@@ -70,6 +70,19 @@ struct ThreadLaneTests {
         #expect(controller.state.lane?.id == "thread-1")
     }
 
+    @Test func `reload typed in a thread's lane keeps it, and a reload's focus opens it again`() {
+        var controller = controller()
+        _ = controller.enterLane(runner)
+        let effects = type("/reload", &controller)
+        #expect(effects == [.runCommand(name: "reload", arguments: "")])
+        #expect(controller.state.lane?.id == "thread-1")
+        controller.leaveLane()
+        _ = controller.handle(.focusThread(id: "thread-1"))
+        #expect(controller.state.lane?.id == "thread-1" && controller.state.lane?.isThread == true)
+        _ = controller.handle(.focusThread(id: "thread-9"))
+        #expect(controller.state.lane?.id == "thread-1", "a thread that is not listed is not shown")
+    }
+
     @Test func `a command typed in the lane goes back to main`() {
         var controller = controller()
         _ = controller.enterLane(runner)

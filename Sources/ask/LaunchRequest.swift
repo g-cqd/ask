@@ -29,6 +29,7 @@ struct LaunchRequest {
     var reloadedFrom: String?
     var reloadStarted: Int?
     var reloadGrants: String?
+    var focusThread: String?
     var selectedProvider: String?
     var selectedModel: String?
     var continueLatest = false
@@ -103,7 +104,12 @@ struct LaunchRequest {
         }
         await SessionProtectionSetup.decideAtLaunch(settings.configuration, inScreen: prompt == nil && restored == nil)
         let reloaded = reloadedFrom.map {
-            ReloadNotice(from: $0, startedMilliseconds: reloadStarted ?? 0, grantsPath: reloadGrants)
+            ReloadNotice(
+                from: $0,
+                startedMilliseconds: reloadStarted ?? 0,
+                grantsPath: reloadGrants,
+                focusThread: focusThread
+            )
         }
         if let prompt {
             await runPrompt(

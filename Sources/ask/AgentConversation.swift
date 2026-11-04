@@ -46,6 +46,8 @@ final class AgentConversation: Conversation {
     let handover = LoopHandover()
     /// The threads `/thread` started (roadmap 0194), and the jobs they are listed beside.
     let threads = ThreadTable()
+    /// The thread whose lane the screen shows, for `/reload` to show it again (roadmap 0195).
+    let focusedThread = Mutex<String?>(nil)
 
     /// The settings in force, the loop built from them, and the last reload error shown.
     struct Current {

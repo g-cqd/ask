@@ -10,6 +10,8 @@ struct ReloadNotice {
     var startedMilliseconds: Int
     /// Where the old process wrote what the person allowed for the session (roadmap 0159), read once at start.
     var grantsPath: String?
+    /// The thread whose lane was shown (roadmap 0195): the new process shows it again.
+    var focusThread: String?
 }
 
 /// What a start says about itself that is not needed to read the conversation: the session it resumed, and the reload that made it (ADR-0119).
