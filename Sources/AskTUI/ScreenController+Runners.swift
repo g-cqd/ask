@@ -11,6 +11,9 @@ extension ScreenController {
         }
         state.runnerProgress = progress
         state.runners = list
+        // Another session's threads (roadmap 0195): their conversations go with them.
+        let listed = Set(list.lazy.filter { $0.kind == .agent }.map(\.id))
+        state.threads = state.threads.filter { listed.contains($0.key) }
         if list.isEmpty { state.runnersOpen = false }
         if let id = state.stripSelection, !list.contains(where: { $0.id == id }) { state.stripSelection = nil }
     }

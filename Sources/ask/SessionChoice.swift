@@ -19,7 +19,11 @@ enum SessionChoice {
         switch self {
             case .new: return nil
             case .latest:
-                guard let latest = directory.sessions().first else {
+                // The conversation written last, not a thread's session (roadmap 0195), which is reached from its main's.
+                let isThread = { (path: String) in
+                    SessionSummary(readingFrom: path, keyring: SessionKeyAccess.keyring)?.isThread == true
+                }
+                guard let latest = directory.sessions().first(where: { !isThread($0.path) }) else {
                     note("No earlier session here; starting a new one.")
                     return nil
                 }

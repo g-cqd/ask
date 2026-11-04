@@ -126,13 +126,16 @@ public struct SessionFile: ~Copyable {
     /// - Throws: ``SessionFileError/tree(_:)`` for an unknown entry, with nothing written, or an I/O error.
     public mutating func moveLeaf(to id: EntryID?) throws(SessionFileError) {
         let checkpoint = tree.checkpoint
+        let line = try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(forLeaf: id) }
         do { try tree.moveLeaf(to: id) } catch { throw .tree(error) }
-        do throws(SessionFileError) {
-            try persist(try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(forLeaf: id) })
-        } catch {
-            tree.rewind(to: checkpoint)
-            throw error
-        }
+        try persist(line) { $0.rewind(to: checkpoint) }
+    }
+
+    /// Records a fact about a thread, and persists it. Undone, and thrown (an I/O error), if it cannot be persisted.
+    public mutating func recordThread(_ record: ThreadRecord) throws(SessionFileError) {
+        let line = try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(forThread: record) }
+        tree.recordThread(record)
+        try persist(line) { $0.forgetLastThread() }
     }
 
     /// Records the strict sandbox the session now runs under, and persists it. Undone if it cannot be persisted.
@@ -140,13 +143,15 @@ public struct SessionFile: ~Copyable {
     public mutating func recordSandbox(_ section: SandboxSection) throws(SessionFileError) {
         let checkpoint = tree.checkpoint
         let record = section.strict
+        let line = try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(forSandbox: record) }
         tree.recordSandbox(record)
-        do throws(SessionFileError) {
-            try persist(
-                try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.line(forSandbox: record) }
-            )
-        } catch {
-            tree.rewind(to: checkpoint)
+        try persist(line) { $0.rewind(to: checkpoint) }
+    }
+
+    /// Persists `line`, or undoes what it recorded in the tree with `undo` and throws: a record is in the tree only once it is on disk.
+    private mutating func persist(_ line: [UInt8], undoing undo: (inout SessionTree) -> Void) throws(SessionFileError) {
+        do throws(SessionFileError) { try persist(line) } catch {
+            undo(&tree)
             throw error
         }
     }

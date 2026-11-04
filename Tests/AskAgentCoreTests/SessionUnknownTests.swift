@@ -6,7 +6,7 @@ import Testing
 @Suite("A newer ask's records and entries are kept, not read, and not damage")
 struct SessionUnknownTests {
     private let header = #"{"type":"session","version":2}"#
-    private let threadRecord = #"{"id":"thread-1","parent":null,"prompt":"look","type":"thread"}"#
+    private let threadRecord = #"{"id":"x-1","note":"from a newer ask","type":"future_record"}"#
     private let futureEntry =
         #"{"id":"b","parent":"a","payload":{"kind":"fork_point","name":"thread-1"},"type":"entry"}"#
 

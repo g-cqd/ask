@@ -97,15 +97,8 @@ final class AgentConversation: Conversation {
     /// status line keeps adding to.
     func history() -> [ConversationUpdate] {
         guard let tree = session.withLock({ $0?.tree }) else { return [contextUpdate()] }
-        var updates: [ConversationUpdate] = []
-        for step in SessionReplay.steps(tree.activeBranch()) {
-            switch step {
-                case .prompt(let text): updates.append(.userPrompt(text))
-                case .event(let event):
-                    recordUsage(event)
-                    updates += Self.updates(for: event)
-            }
-        }
+        // With its threads' blocks where they started and merged (roadmap 0195).
+        let updates = replayed(tree.activeBranch(), after: nil, placing: Self.threadBlocks(tree.threads, under: nil))
         return updates + [.status(usage.withLock { $0.compact }), contextUpdate()]
     }
 

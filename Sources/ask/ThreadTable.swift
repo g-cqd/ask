@@ -144,6 +144,44 @@ final class ThreadTable: Sendable {
         }
     }
 
+    /// Whether thread `name` is still the one over `recorder`: a run stopped by a session switch must not touch the thread that took its
+    /// name in the session switched to.
+    func owns(_ name: String, _ recorder: SessionRecorder) -> Bool {
+        state.withLock { $0.threads[name].map { $0.recorder === recorder } ?? false }
+    }
+
+    /// Forgets every thread and what was merged into main, stopping the runs, for another session's threads (roadmap 0195).
+    func reset() {
+        let tasks = state.withLock { state in
+            defer {
+                state.threads = [:]
+                state.order = []
+                state.reports = []
+                state.next = 1
+            }
+            return state.threads.values.compactMap(\.task)
+        }
+        for task in tasks { task.cancel() }
+    }
+
+    /// A thread of the session resumed, ended as `state` (merged, or stopped and never restarted), its name kept.
+    func restore(
+        _ name: String,
+        prompt: String,
+        parent: String?,
+        recorder: SessionRecorder,
+        state ended: RunnerInfo.State
+    ) {
+        state.withLock { state in
+            var thread = Thread(name: name, prompt: prompt, recorder: recorder, started: .now, parent: parent)
+            thread.state = ended
+            thread.outcome = ended
+            state.threads[name] = thread
+            state.order.append(name)
+            if let number = Int(name.dropFirst("thread-".count)) { state.next = Swift.max(state.next, number + 1) }
+        }
+    }
+
     /// Whether ask is quitting: a thread stopped by it is left unmerged, and asks nothing.
     var isQuitting: Bool { state.withLock { $0.quitting } }
 

@@ -69,6 +69,11 @@ extension AgentConversation {
         usage.withLock { $0 = UsageTotals() }
         current.withLock { $0.loop = nil }
         // One update, drawn once, as `/rewind` sends it (roadmap 0160).
-        update(.batch([.clearConversation] + history() + (tasksNotice.map { [.notice($0, isError: true)] } ?? [])))
+        update(
+            .batch(
+                [.clearConversation] + history() + restoreThreads()
+                    + (tasksNotice.map { [.notice($0, isError: true)] } ?? [])
+            )
+        )
     }
 }

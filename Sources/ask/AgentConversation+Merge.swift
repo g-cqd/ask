@@ -70,6 +70,7 @@ extension AgentConversation {
             summary = (Self.lastAnswer(in: thread.recorder.tree) ?? "") + merged.joined()
         }
         threads.setState(name, .merged)
+        recordMerged(name, summary: summary, into: thread.parent.flatMap { threads.thread($0)?.recorder })
         threads.addReport(Self.report(name, summary), to: thread.parent)
         let block = ConversationUpdate.threadMerged(
             id: "merge-\(name)",

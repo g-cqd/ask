@@ -215,13 +215,33 @@ summary instructions, or rewrite the summary).
 - `SessionUnknownTests` (4), `SessionMigrationTests` (2); two tests that held the old rule now hold ADR-0144's. Every suite passes in
   debug; the release tests are CI's.
 
+## Done (2026-11-04): step 3, threads kept with the session
+
+- Records of `type: "thread"` (`ThreadRecord`, `SessionLogRecord.thread`, `SessionTree.threads`), outside the conversation: in
+  main's session, `started` (id, parent, prompt, its session file, `at`: the leaf of where it was forked from) and `merged`
+  (summary, `at`: the leaf of where it merged); in a thread's own session, `identity` (whose it is).
+- A resume (startup `--continue` or `--resume`, `/resume`) rebuilds the tree (`restoreThreads`): the table is emptied, stopping what
+  the previous session ran; each started thread's session is opened; merged ones come back read-only, the others `stopped`, never
+  restarted, continuing when something is typed in their lane. Each lane replays its own conversation from its fork point; main's
+  history and each lane place the fork and merge blocks after the entries they name, in the order they happened.
+- `/resume`, `ask sessions` and `--continue` leave threads' sessions out (`SessionSummary.isThread`). Before this, `--continue`
+  reopened the newest file, a thread's, as the conversation (found by the probe).
+- A run stopped by a session switch no longer touches the thread that took its name (`ThreadTable.owns`). The screen drops the
+  conversations of threads no longer listed.
+- `ThreadRecordTests` (2); `Scripts/probe-thread-resume.py` (8 checks, two processes): the blocks in place after `--continue`, merged
+  and stopped come back as such, the merged lane read-only, the stopped one continued from its own conversation and merged, and
+  `/resume` listing main's session only. `probe-thread.py` 9, `probe-thread-approval.py` 5, `probe-sidebar.py` 14.
+- Not done: a thread started before main has a session is not recorded (main has no file yet); `/new` and `/resume` with threads
+  running stop them without asking; where a child merged into a parent thread, the block goes after the parent's leaf then, which
+  may come before its later replies.
+
 ## The order to build it
 
 1. ~~Thread-owned approvals and questions.~~ Done, above.
 2. ~~The lifecycle and the waiting rule, merge by summary into the parent, and the system block.~~ Done, above; the stop with its
    confirmation is not probed.
-3. ~~ADR-0144 first: unknown records and entries kept, and the migration steps.~~ Done, above. Then the thread records, and resume
-   rebuilding the tree.
+3. ~~ADR-0144 first: unknown records and entries kept, and the migration steps. Then the thread records, and resume rebuilding the
+   tree.~~ Done, above.
 4. Jobs parented to their thread, and the two sidebar settings.
 5. The fork-point block (n23), the tree under the input (n21) and `/threads` (n22).
 6. Names: on-device or a chosen model, `/rename`, `threads.names`.

@@ -43,6 +43,8 @@ extension AgentConversation {
         do {
             let recorder = try threadSession(from: parent)
             let name = threads.add(prompt: text, recorder: recorder, parent: parent)
+            let source = parent.flatMap { threads.thread($0)?.recorder } ?? session.withLock { $0 }
+            recordStarted(name, parent: parent, prompt: text, recorder: recorder, source: source)
             // Its conversation starts with its task; what is typed in its lane later, the screen shows as it is sent.
             update(.thread(id: name, .userPrompt(text)))
             // Where it starts, in the conversation it was forked from (note n23).
@@ -139,6 +141,8 @@ extension AgentConversation {
                 update(.thread(id: name, .notice("\(name) stopped: \(error)", isError: true)))
                 outcome = .failed
             }
+            // A session switch stopped it, and its name may be another thread's now.
+            guard threads.owns(name, thread.recorder) else { return }
             update(.thread(id: name, .runEnded))
             threads.ended(name, as: outcome)
             update(.runners(threads.runners))

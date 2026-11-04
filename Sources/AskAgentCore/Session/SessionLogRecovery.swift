@@ -88,6 +88,7 @@ struct SessionLogRecovery {
             case .entry(let entry): restore(entry, line: line)
             case .leaf(let id): select(id, line: line)
             case .sandbox(let section): tree.recordSandbox(section)
+            case .thread(let record): tree.recordThread(record)
         }
     }
 
