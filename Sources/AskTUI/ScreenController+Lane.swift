@@ -27,12 +27,19 @@ extension ScreenController {
             guard let runner = state.runners.first(where: { $0.id == id && $0.kind == .agent }) else { return [] }
             return enterLane(runner)
         }
-        return onMain { $0.holdingView { $0.apply(update) } }
+        // A popped question is taken off around the update, which may bring what is shown a question of its own, then may pop again.
+        unpopThreadQuestion()
+        var effects = onMain { $0.holdingView { $0.apply(update) } }
+        if case .thread(let id, let inner) = update { effects += noteThreadAsks(id, inner) }
+        popThreadQuestion()
+        return effects
     }
 
     /// Shows `runner`'s output in place of the conversation and asks for it.
     mutating func enterLane(_ runner: RunnerInfo) -> [Effect] {
         leaveLane()
+        unpopThreadQuestion()
+        defer { popThreadQuestion() }
         if runner.kind == .agent { return enterThread(runner) }
         state.laneSerial += 1
         var view = Transcript(revisionBase: state.laneSerial << 40)
@@ -53,6 +60,8 @@ extension ScreenController {
     /// Puts the main conversation back, as it was, and says `notice` there if given. Nothing happens when no lane is focused.
     mutating func leaveLane(notice: String? = nil) {
         guard let lane = state.lane else { return }
+        unpopThreadQuestion()
+        defer { popThreadQuestion() }
         clearSelection()
         // A thread's conversation and questions are kept for the next time its lane is shown; main's come back.
         if lane.isThread {

@@ -17,6 +17,20 @@ extension SettingCatalog {
             #""1d""#,
             "1d",
             "How long a merged thread stays in the sidebar: \"30m\", \"2h\", \"1d\", or \"always\". /threads still lists it."
+        ),
+        row(
+            "threads.questions",
+            .choice(ThreadsSection.questionWords),
+            #""focus""#,
+            "focus",
+            "Where a thread's question appears while you are elsewhere: at once, after questionsAfter, or only in its lane."
+        ),
+        row(
+            "threads.questionsAfter",
+            .text,
+            #""30s""#,
+            "30s",
+            "How long \"after\" waits before showing a thread's question."
         )
     ]
 }

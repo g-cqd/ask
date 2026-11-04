@@ -11,7 +11,10 @@ struct ThreadQuestionsTests {
     private let runner = RunnerInfo(name: "thread-1", detail: "look into X", id: "thread-1", kind: .agent)
 
     private func controller() -> ScreenController {
-        var controller = ScreenController(label: "m", options: .legacy)
+        // These hold a thread's question to its own lane: `threads.questions` `lane` (ThreadQuestionsPopTests has the others).
+        var options = ScreenOptions.legacy
+        options.threadQuestions = .lane
+        var controller = ScreenController(label: "m", options: options)
         controller.setScreenRows(30)
         _ = controller.handle(.runners([runner]))
         return controller
