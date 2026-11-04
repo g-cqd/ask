@@ -1,6 +1,6 @@
 ---
 status: not-started
-blocked-by: ["0065"]
+blocked-by: ["0065", "0198"]
 date: 2026-10-25
 ---
 
@@ -10,6 +10,13 @@ A fenced block whose info string is `mermaid` is a diagram. Today it would be dr
 in box-drawing characters, at whatever width the terminal has, redrawn when the terminal is resized, and **toggleable by a click between the
 drawing and its source** (owner, 2026-10-25). Nothing below is built; every claim marked
 *unprobed* is an open question until phase 0 has run it.
+
+## Update (2026-11-04): the engine is its own work
+
+The owner wants Mermaid in the terminal, in SwiftUI and in a Quick Look extension, with no package dependency, no recursion and linear time. The drawing is therefore not ask's: the parser and layout are
+`AemiMermaid` (0196, 0197), the cell backend, TerminalKit's hook and ask's adapter are 0198, and the pixel and Quick Look work is 0200 and 0201. The probes of diary 2026-11-04-01 and the design in
+`development/research/mermaid-markdown-quicklook-2026-11.md` supersede this entry's phases 0 to 3 and its option table (A, native and as text, stays decided; **B and C are dropped**: the owner prefers no raster, 2026-11-04, and a terminal image is a bitmap). **This entry keeps the owner's requirements**, the toggle, the copy rule, the limits and
+the safety section, and is done when 0198 meets them.
 
 ## What is known (probed 2026-10-25)
 
@@ -78,3 +85,7 @@ B and C are later, and only if A's coverage turns out to matter.
 
 An editor for diagrams, exporting to image files, interactive panning, and Mermaid's theming and click callbacks (a `click` directive is ignored,
 never run).
+
+## Progress (2026-11-04)
+
+0198 draws the first cut of this in the transcript (flowchart and sequence diagram); this entry's remaining wishes (more kinds, the vector view) follow 0197, 0200.
