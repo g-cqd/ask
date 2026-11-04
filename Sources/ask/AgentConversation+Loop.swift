@@ -124,6 +124,7 @@ func runInteractive(
             options: settings.screenOptions,
             beforeSignalExit: { jobs.terminateAllNow() }
         )
+        await conversation.stopThreads()
         await jobs.stopAll()
         await mcp.stop()
         if exit == .quit { conversation.printResumeCommand() }

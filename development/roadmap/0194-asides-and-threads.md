@@ -31,8 +31,35 @@ thread inheriting the context, reachable from the sidebar or `/threads`. Task t1
   the instruction, and the session file holds no trace of it (5 checks).
 - Not verified: against a real provider (the probe's server is a fake one); the colour in a real terminal.
 
-## Still owed: `/thread`
+## The owner's choices for `/thread` (2026-11-03)
 
-A design first, then the owner's review: what a thread inherits (the context, the sandbox and its narrowing, the approvals granted
-for the session), where its session file lives and how `/resume` shows it, what the lane shows, what "reporting back" adds to the
-main conversation, and how it relates to subagents (0063) and to the jobs a thread starts.
+- It may do everything main may: the same tools, sandbox and session grants (two loops can then edit the same files at once).
+- When it ends, its answer joins main's conversation: sent with the person's next message.
+- Focusing its lane talks to it: the lane shows its conversation, and what is typed there steers it, or starts its next run.
+
+## Done (2026-11-03): `/thread`
+
+- `/thread TEXT` forks the session as it stands (a turn running in main: what it has written so far) into a session file of its own,
+  or starts a new one before any prompt, and runs main's loop on it in this process (`AgentConversation+Threads`, `ThreadTable`). Its
+  events reach the screen as `ConversationUpdate.thread(id:_:)`.
+- It is a runner of the `agent` kind, listed after the jobs, `running` then `done`, `failed` or `stopped`; it stays listed once ended.
+- The screen keeps each thread's conversation (`ScreenState.threads`, made with main's look by `Transcript.emptyLike`); only what a
+  conversation shows applies there, never main's run or status. Its lane (`LaneView.isThread`) shows it live, its running blocks
+  ticking; a message typed there goes to it (`Effect.sendToThread`) and keeps the lane, a command goes back to main.
+- When a run of it ends, its last reply is shown in main as a block named after it, and is attached to the person's next message under
+  `--- thread NAME ---` (`ListReferences.threadMarker`, cut from what the screen shows, as a skill's is).
+- ask quitting stops the threads, as it stops the jobs.
+- Tests: `ThreadLaneTests` (3). `Scripts/probe-thread.py` through the release binary in a PTY (6 checks): the thread's request carries
+  main's conversation and its task; its answer is shown in main; its lane shows its conversation alone; what is typed in the lane
+  continues it; main's next message takes both answers to the model; main's session holds none of the thread's words.
+
+## Still owed
+
+- The lane shows what the thread did, not the conversation it was forked from.
+- A thread's approval questions share the screen's: one that waits when main's turn ends is declined with that turn. With
+  `--allow all` none is asked.
+- A thread uses main's task list and notes; the jobs it starts are not listed under it; ended threads are never removed from the list.
+- Its session file is an ordinary one, which `/resume` lists without saying it is a thread.
+- Memory: a second loop and conversation, not measured against the active budget; and nothing caps how many threads run.
+- Not verified against a real provider, nor in a real terminal.
+- After it: chatting with another running session (idea i8, task t196).

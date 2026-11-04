@@ -57,7 +57,6 @@ extension AgentConversation {
                 name: "logout",
                 summary: "Sign out of one account, or /logout all, without leaving.",
                 takesChoices: true,
-                // @dl:accept -- the conversation's list reads alike entry to entry because every entry is a name and a sentence
                 category: .model,
                 duringTurn: .atOnce
             ),
@@ -94,11 +93,20 @@ extension AgentConversation {
                 summary: "Show the session's task list: /tasks all with the done ones, /tasks t3 for one task.",
                 takesChoices: true,
                 duringTurn: .atOnce
+                    // @dl:accept -- the conversation's list reads alike entry to entry because every entry is a name and a sentence
             ),
             SlashCommand(
                 name: "btw",
                 summary:
                     "Ask beside the conversation, even during a turn: /btw QUESTION. The answer does not join the conversation.",
+                category: .model,
+                duringTurn: .atOnce
+            ),
+            // @dl:accept -- the conversation's list reads alike entry to entry because every entry is a name and a sentence
+            SlashCommand(
+                name: "thread",
+                summary:
+                    "Start a thread beside the conversation, which it knows: /thread TEXT. Its answer comes back to main.",
                 category: .model,
                 duringTurn: .atOnce
             ),
@@ -155,6 +163,7 @@ extension AgentConversation {
                     self.notes(command: name, arguments: arguments, update: update)
                 case "tasks": update(.notice(SessionTasks.answer(to: arguments), isError: false))
                 case "btw": await self.aside(arguments, update: update)
+                case "thread": await self.startThread(arguments, update: update)
                 case "mcp": update(.notice(MCPHub.report(self.mcp.status).joined(separator: "\n"), isError: false))
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))

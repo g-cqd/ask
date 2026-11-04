@@ -50,6 +50,8 @@ public struct ScreenState: Sendable, Equatable {
     var lane: LaneView?
     /// How many lanes were opened, so each one's transcript has revisions of its own.
     var laneSerial = 0
+    /// Each thread's conversation (roadmap 0194), by its runner id, while its lane is not shown; the shown one is the lane's.
+    var threads: [String: Transcript] = [:]
     /// The strip row the keys act on, by runner id, while the strip has the keys; nil while the input does.
     var stripSelection: String?
     /// Whether the runner sidebar is open: the same tree as the strip, beside the transcript when the screen is wide enough.

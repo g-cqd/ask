@@ -135,8 +135,11 @@ public enum SkillInvocation {
     /// What a person is shown for a recorded prompt: everything before the first attachment, which is the line they typed.
     public static func shown(_ prompt: String) -> String {
         // The earliest attachment: a skill's, a task's or an idea's (0186), or a server's resource (0067).
-        let cuts = [marker, ListReferences.taskMarker, ListReferences.ideaMarker, ResourceReferences.marker]
-            .compactMap { prompt.range(of: $0)?.lowerBound }
+        let cuts = [
+            marker, ListReferences.taskMarker, ListReferences.ideaMarker, ResourceReferences.marker,
+            ListReferences.threadMarker
+        ]
+        .compactMap { prompt.range(of: $0)?.lowerBound }
         guard let cut = cuts.min() else { return prompt }
         return String(prompt[..<cut])
     }

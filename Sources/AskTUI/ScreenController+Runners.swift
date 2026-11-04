@@ -2,7 +2,7 @@
 extension ScreenController {
     mutating func setRunners(_ list: [RunnerInfo], at instant: ContinuousClock.Instant = .now) {
         var progress: [String: BlockProgress] = [:]
-        for runner in list where runner.kind == .job && runner.state.isActive {
+        for runner in list where runner.state.isActive {
             var clock =
                 state.runnerProgress[runner.id]
                 ?? BlockProgress(at: runner.startedAt ?? instant, spinner: options.spinner)

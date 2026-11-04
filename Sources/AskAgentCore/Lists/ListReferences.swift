@@ -4,6 +4,8 @@
 public enum ListReferences {
     public static let taskMarker = "\n\n--- task "
     public static let ideaMarker = "\n\n--- note "
+    /// What a thread's answer follows the person's next message under (roadmap 0194).
+    public static let threadMarker = "\n\n--- thread "
 
     public static func attach(_ text: String, tasks: TaskList?, ideas: IdeaList?) -> String {
         let typed = SkillInvocation.shown(text)

@@ -28,6 +28,7 @@ extension ScreenController {
     /// Shows `runner`'s output in place of the conversation and asks for it.
     mutating func enterLane(_ runner: RunnerInfo) -> [Effect] {
         leaveLane()
+        if runner.kind == .agent { return enterThread(runner) }
         state.laneSerial += 1
         var view = Transcript(revisionBase: state.laneSerial << 40)
         view.addNotice("\(runner.name) · reading its output…", isError: false)
@@ -48,6 +49,8 @@ extension ScreenController {
     mutating func leaveLane(notice: String? = nil) {
         guard let lane = state.lane else { return }
         clearSelection()
+        // A thread's conversation is kept for the next time its lane is shown.
+        if lane.isThread { state.threads[lane.id] = state.transcript }
         state.transcript = lane.stashed
         state.scrollback = lane.stashedScrollback
         state.lane = nil

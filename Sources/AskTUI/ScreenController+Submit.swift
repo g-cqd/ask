@@ -10,6 +10,11 @@ extension ScreenController {
     }
 
     mutating func submit(_ line: String, followUp: Bool) -> [Effect] {
+        // In a thread's lane a message is the thread's (roadmap 0194); a command still goes back to main.
+        if case .prompt(let text) = SlashInput(line), let effects = sendToThread(text) {
+            history.record(line)
+            return effects
+        }
         leaveLane()
         history.record(line)
         switch SlashInput(line) {

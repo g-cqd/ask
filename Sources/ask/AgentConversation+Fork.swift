@@ -55,7 +55,7 @@ extension AgentConversation {
     }
 
     /// A new session holding `original` up to `leaf`, with a copy of its task list when the list is its own (ADR-0140).
-    private func forked(_ original: SessionRecorder, upTo leaf: EntryID?) throws -> SessionRecorder {
+    func forked(_ original: SessionRecorder, upTo leaf: EntryID?) throws -> SessionRecorder {
         try directory.create()
         let copy = try original.fork(upTo: leaf, to: FilePath(directory.newSessionPath()))
         let scope = current.withLock { $0.settings.configuration.taskScope.value }

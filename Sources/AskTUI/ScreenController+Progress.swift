@@ -2,6 +2,7 @@ extension ScreenController {
     var hasLiveProgress: Bool {
         state.running || state.compacting || state.reconnecting || !state.runnerProgress.isEmpty
             || (state.lane?.stashed ?? state.transcript).hasLiveProgress
+            || (state.lane?.isThread == true && state.transcript.hasLiveProgress)
     }
 
     /// Whether a running header shimmers (roadmap 0187), which wants the progress timer's faster tick.
@@ -22,6 +23,10 @@ extension ScreenController {
                 controller.state.transcript.advanceProgress(at: instant, advancingFrames: advancingFrames)
                 return []
             }
+        }
+        // A thread's lane shows its own conversation, whose blocks run too.
+        if state.lane?.isThread == true {
+            state.transcript.advanceProgress(at: instant, advancingFrames: advancingFrames)
         }
     }
 }

@@ -49,6 +49,9 @@ public protocol Conversation: Sendable {
     /// A runner's recent output, for the lane that shows it: bounded, the newest part, and never more than the runner wrote.
     func runnerOutput(_ id: String) async -> String
 
+    /// What the person typed in thread `id`'s lane (roadmap 0194): steering while it runs, its next message once it has ended.
+    func sendToThread(_ id: String, text: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
+
     /// Watches the focused runner until cancelled. Updates replace its bounded output snapshot, not the main transcript.
     func watchRunnerOutput(_ id: String, update: @escaping @Sendable (String) -> Void) -> Task<Void, Never>
 
@@ -117,6 +120,9 @@ extension Conversation {
 
     /// No runners, so no output.
     public func runnerOutput(_ id: String) async -> String { "" }
+
+    /// No threads, so nothing to send to.
+    public func sendToThread(_ id: String, text: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {}
 
     /// A conversation without live runners supplies its one snapshot.
     public func watchRunnerOutput(_ id: String, update: @escaping @Sendable (String) -> Void) -> Task<Void, Never> {
