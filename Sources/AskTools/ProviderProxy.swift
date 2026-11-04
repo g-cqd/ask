@@ -66,7 +66,9 @@ public final class ProviderProxy: Sendable {
         port = Int(UInt16(bigEndian: address.sin_port))
         let allowList = AllowList(allowed)
         self.allowList = allowList
-        Thread.detachNewThread { Self.accepting(on: listener, until: pipe, allowing: allowList) }
+        // The thread gets the pipe's ends as they are now, not the variable `pipe(2)` filled in.
+        let ends = pipe
+        Thread.detachNewThread { Self.accepting(on: listener, until: ends, allowing: allowList) }
     }
 
     /// Serves each connection to `listener` until a byte arrives on `wake`, then closes both, and `wake`'s other end.
