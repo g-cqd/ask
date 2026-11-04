@@ -51,3 +51,9 @@ def open_lane(terminal, name):
         time.sleep(0.2)
     terminal.send(b"\r")
     terminal.until(lambda: "back to the conversation" in terminal.text())
+
+
+def open_thread(terminal, name):
+    """Shows thread `name`'s lane through `/threads NAME`, the way to a merged thread, which the list leaves out."""
+    terminal.send(b"/threads " + name.encode() + b"\r")
+    terminal.until(lambda: "back to the conversation" in terminal.text())

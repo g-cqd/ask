@@ -1,3 +1,5 @@
+import TerminalKitCodecs
+import TerminalKitInput
 import Testing
 
 @testable import AskTUI
@@ -41,5 +43,45 @@ struct RunnerListShapeTests {
             !ScreenComposer.runnerRows(for: open, available: 10, columns: 60).isEmpty,
             "60 columns cannot show the sidebar"
         )
+    }
+
+    /// Note n22: below the input, merged threads are left out; `/threads` reaches them.
+    @Test func `merged threads are left out of the list under the input`() {
+        let rows = ScreenComposer.runnerRows(
+            for: state([
+                RunnerInfo(name: "thread-1", detail: "done", kind: .agent, state: .merged),
+                RunnerInfo(name: "thread-2", detail: "look", kind: .agent),
+                RunnerInfo(name: "job-1", detail: "sleep")
+            ]),
+            available: 10,
+            columns: 100
+        )
+        #expect(rows.map(\.text) == ["◆ main", "└ ● thread-2 look", "Jobs", "● job-1 sleep"])
+    }
+
+    @Test func `with only merged threads left it is the flat list of jobs`() {
+        let rows = ScreenComposer.runnerRows(
+            for: state([
+                RunnerInfo(name: "thread-1", detail: "done", kind: .agent, state: .merged),
+                RunnerInfo(name: "job-1", detail: "sleep")
+            ]),
+            available: 10,
+            columns: 100
+        )
+        #expect(rows.map(\.text) == ["job-1  sleep · running"])
+    }
+
+    @Test func `the keys skip what the list leaves out`() {
+        var controller = ScreenController(label: "m", options: .legacy)
+        controller.setScreenRows(30)
+        _ = controller.handle(
+            .runners([
+                RunnerInfo(name: "thread-1", detail: "done", kind: .agent, state: .merged),
+                RunnerInfo(name: "thread-2", detail: "look", kind: .agent)
+            ])
+        )
+        controller.state.runnersOpen = true
+        _ = controller.handle(.key(KeyEvent(keyCode: Key.down.rawValue)), pageRows: 30)
+        #expect(controller.state.stripSelection == "thread-2")
     }
 }

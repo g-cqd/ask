@@ -77,10 +77,18 @@ def main():
                   < shown.index("thread-1 · merged · first task") < shown.index("thread-2 · started here · second task"))
             runners.show(terminal)
             terminal.until(lambda: runners.row(terminal, "thread-2") is not None)
+            # The list under the input leaves merged threads out; /threads lists them all.
             check("the first comes back merged, the second stopped, neither restarted",
-                  runners.state(terminal, "thread-1") == "merged" and runners.state(terminal, "thread-2") == "stopped"
+                  runners.row(terminal, "thread-1") is None and runners.state(terminal, "thread-2") == "stopped"
                   and len(server.requests) == 4)
-            runners.open_lane(terminal, "thread-1")
+            terminal.send(b"/threads ")
+            # The picker's rows, not the transcript's block headers: name, then state and task.
+            terminal.until(lambda: "thread-1  merged · first task" in terminal.text()
+                           and "thread-2  stopped · second task" in terminal.text())
+            check("/threads lists the merged one", "thread-1  merged · first task" in terminal.text()
+                  and "thread-2  stopped · second task" in terminal.text())
+            terminal.send(b"\x15\x1b")
+            runners.open_thread(terminal, "thread-1")
             check("the merged thread's lane shows its conversation", "FIRST ANSWER" in terminal.text() and "MAIN ONE" not in terminal.text())
             terminal.send(b"more?\r")
             terminal.until(lambda: "read-only" in terminal.text())
@@ -99,8 +107,8 @@ def main():
             # A thread's own session says whose it is: its identity record.
             thread_files = [os.path.basename(p)[:-6] for p in sessions if '"event":"identity"' in open(p).read()]
             main_file = [os.path.basename(p)[:-6] for p in sessions if '"event":"identity"' not in open(p).read()]
-            runners.show(terminal)
-            terminal.until(lambda: runners.state(terminal, "thread-2") == "merged")
+            # Merged, it leaves the list under the input, which with nothing else to show is not drawn.
+            terminal.until(lambda: runners.row(terminal, "thread-2") is None)
             terminal.send(b"/resume ")
             terminal.until(lambda: main_file[0] in terminal.text())
             picker = terminal.text()

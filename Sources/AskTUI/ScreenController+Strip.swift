@@ -10,7 +10,8 @@ extension ScreenController {
         else {
             return nil
         }
-        let rows = state.runnerTree.visible(collapsed: state.collapsedRunners)
+        // The keys move through what the list shown draws: the one under the input leaves merged threads out.
+        let rows = state.listedRows(hidingMerged: !Sidebar.isShown(state, columns: frame.columns))
         guard let id = state.stripSelection else {
             // Entering: at the end of the draft, where Down would go nowhere else.
             guard key.keyCode == Key.down.rawValue, state.editor.cursor == state.editor.text.count else { return nil }

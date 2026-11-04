@@ -61,6 +61,9 @@ public struct ScreenState: Sendable, Equatable {
     var laneSerial = 0
     /// Each thread's conversation (roadmap 0194), by its runner id, while its lane is not shown; the shown one is the lane's.
     var threads: [String: ThreadView] = [:]
+    /// When each thread was first seen merged, and those merged long enough to leave the sidebar (`threads.mergedShownFor`).
+    var mergedAt: [String: ContinuousClock.Instant] = [:]
+    var expiredMerged: Set<String> = []
     /// The strip row the keys act on, by runner id, while the strip has the keys; nil while the input does.
     var stripSelection: String?
     /// Whether the runner sidebar is open: the same tree as the strip, beside the transcript when the screen is wide enough.

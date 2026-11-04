@@ -35,6 +35,7 @@ public struct HooksSection: Sendable, Equatable, CustomStringConvertible, Layere
     // @dl:accept -- each section layers its keys the same way; the key lists are the data
     public func layered(with section: HooksSection) -> HooksSection {
         HooksSection(
+            // @dl:accept -- every section layers its keys this way; the key lists are the data
             maxContinues: section.maxContinues ?? maxContinues,
             check: section.check ?? check,
             checkTimeout: section.checkTimeout ?? checkTimeout

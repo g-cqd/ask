@@ -299,6 +299,16 @@ summary instructions, or rewrite the summary).
 - Test first: `ThreadLaneTests` (red: the command went back to main), then `Scripts/probe-thread-merge.py` (red: no refusal, nothing
   merged), then the code; 4 checks, twice.
 
+## Done (2026-11-04): merged threads leave the lists (note n22)
+
+- The list under the input leaves merged threads out (and what is under them); with only merged threads left it is the flat list of
+  jobs. The keys move through what the shown list draws (`ScreenState.listedRows`). `/threads` reaches merged threads.
+- `threads.mergedShownFor` (`"30m"`, `"2h"`, `"1d"` the default, or `"always"`): a merged thread leaves the sidebar once merged that
+  long, checked on each runners update and progress tick (`expireMerged`). A resumed session's merged threads count from the resume:
+  the records carry no time.
+- Test first: `RunnerListShapeTests` (+3), `MergedExpiryTests` (2), `ThreadsSectionTests` (2), each red before the code. The probes
+  open merged threads through `/threads` (`probe_runner_list.open_thread`); `probe-thread-resume.py` checks `/threads` lists both.
+
 ## The order to build it
 
 1. ~~Thread-owned approvals and questions.~~ Done, above.

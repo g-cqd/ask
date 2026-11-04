@@ -195,7 +195,10 @@
     "depth": 3,
 
     // How a thread is named: by Apple's on-device model from its task where it is available, or numbered. Default: onDevice. One of: onDevice, numbered.
-    "names": "onDevice"
+    "names": "onDevice",
+
+    // How long a merged thread stays in the sidebar: "30m", "2h", "1d", or "always". /threads still lists it. Default: 1d.
+    "mergedShownFor": "1d"
   },
 
   "skills": {
