@@ -26,6 +26,15 @@ public struct UsageTotals: Sendable, Equatable {
         cacheCreation += usage.cacheCreation ?? 0
     }
 
+    /// Adds what a request beside the conversation spent (a `/btw` aside, roadmap 0194) to the totals, leaving the context's size as
+    /// the conversation's last request left it: the aside is no part of it.
+    public mutating func addBeside(_ usage: TokenUsage) {
+        input += usage.input ?? 0
+        output += usage.output ?? 0
+        cacheRead += usage.cacheRead ?? 0
+        cacheCreation += usage.cacheCreation ?? 0
+    }
+
     /// Every prompt token sent, cached or not.
     public var prompt: Int { input + cacheRead + cacheCreation }
 

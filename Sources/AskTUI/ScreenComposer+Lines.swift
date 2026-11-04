@@ -16,6 +16,7 @@ extension ScreenComposer {
         toolInput: ShownToolInput? = nil,
         command: Bool = false,
         interrupted: Bool = false,
+        aside: Bool = false,
         toolOutput: String? = nil,
         replacements: Int? = nil,
         code: FileCode? = nil
@@ -36,7 +37,14 @@ extension ScreenComposer {
             style: style,
             context: context
         )
-        var result = framed(content, kind: item, style: style, spacerAbove: spacerAbove, interrupted: interrupted)
+        var result = framed(
+            content,
+            kind: item,
+            style: style,
+            spacerAbove: spacerAbove,
+            interrupted: interrupted,
+            aside: aside
+        )
         switch item {
             case .tool, .thinking:
                 for index in result.indices where !(style.padded && spacerAbove && index == 0) {
@@ -53,13 +61,17 @@ extension ScreenComposer {
         kind: Transcript.Item,
         style: BlockStyle,
         spacerAbove: Bool,
-        interrupted: Bool = false
+        interrupted: Bool = false,
+        aside: Bool = false
     ) -> [Line] {
         // Paths, web and email addresses become links in every block (roadmap 0075), beside a Markdown row's own links. Once per layout
         // of the block, not per frame; the row cache then redraws only what changed.
         let content = content.map { linked($0, home: style.home) }
         guard style.padded else { return content }
-        let tint = interrupted && style.theme.tinted ? style.theme.interrupted : style.theme.tint(for: kind)
+        let tint =
+            !style.theme.tinted
+            ? style.theme.tint(for: kind)
+            : interrupted ? style.theme.interrupted : aside ? style.theme.aside : style.theme.tint(for: kind)
         // A row with a tint of its own, an edit's removed or added line, keeps it.
         func tinted(_ line: Line) -> Line {
             var line = line

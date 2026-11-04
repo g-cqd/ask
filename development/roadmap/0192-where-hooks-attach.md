@@ -165,7 +165,8 @@ the tests and send the failures back, check a list, or ask for a review pass. Th
 
 - App-level wiring of `session.start`, `settings.change`, `waiting` and `session.end` once external hook hosts (0033 / 0140) register
   session hooks.
-- `hooks.claudeCode`: reading Claude Code's hook configuration, with the runner for its commands.
+- `hooks.claudeCode`: reading Claude Code's hook configuration, with the runner for its commands. The owner (2026-11-03): built
+  with the extension host (0033, 0140), which needs the same process runner.
 
 ## Done when
 

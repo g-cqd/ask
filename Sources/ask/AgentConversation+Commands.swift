@@ -96,6 +96,13 @@ extension AgentConversation {
                 duringTurn: .atOnce
             ),
             SlashCommand(
+                name: "btw",
+                summary:
+                    "Ask beside the conversation, even during a turn: /btw QUESTION. The answer does not join the conversation.",
+                category: .model,
+                duringTurn: .atOnce
+            ),
+            SlashCommand(
                 name: "notes",
                 summary:
                     "Keep or view notes: /notes TEXT adds one, /notes picks one to show, /notes:all, :show, :edit, :delete, :search.",
@@ -147,6 +154,7 @@ extension AgentConversation {
                 case "notes", "notes:all", "notes:show", "notes:edit", "notes:add", "notes:delete", "notes:search":
                     self.notes(command: name, arguments: arguments, update: update)
                 case "tasks": update(.notice(SessionTasks.answer(to: arguments), isError: false))
+                case "btw": await self.aside(arguments, update: update)
                 case "mcp": update(.notice(MCPHub.report(self.mcp.status).joined(separator: "\n"), isError: false))
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))

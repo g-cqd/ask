@@ -25,6 +25,8 @@ public struct ScreenTheme: Sendable, Equatable {
     var system: Color
     /// What the person interrupted: orange, apart from a failure's red (roadmap 0142).
     var interrupted: Color
+    /// A `/btw` aside (roadmap 0194): cyan, a colour no other block takes.
+    var aside: Color
     /// The rows an edit removes and adds (roadmap 0152): red and green, deeper than a block's own tint so they stand out on it.
     var diffRemoved: Color
     var diffAdded: Color
@@ -55,6 +57,7 @@ public struct ScreenTheme: Sendable, Equatable {
         failure = mix(Self.red, 0.11)
         system = mix(Self.purple, 0.11)
         interrupted = mix(Self.orange, 0.11)
+        aside = mix(Self.cyan, 0.11)
         // As deep as the contrast rule above allows: green is the bright hue, and a dark page takes little more of it than a
         // succeeded block's own tint, so there the marker carries most of the difference.
         diffRemoved = mix(Self.red, 0.16)
@@ -67,6 +70,7 @@ public struct ScreenTheme: Sendable, Equatable {
     private static let red = SIMD3<Double>(255, 69, 58)
     private static let purple = SIMD3<Double>(175, 82, 222)
     private static let orange = SIMD3<Double>(255, 149, 0)
+    private static let cyan = SIMD3<Double>(50, 173, 230)
 
     /// `style` as drawn: on a known page never faint, secondary text in ``secondary`` and coloured text at its full colour.
     func legible(_ style: Style) -> Style {
@@ -82,7 +86,7 @@ public struct ScreenTheme: Sendable, Equatable {
     func sessionTint(seed: String) -> Color { page.tint(toward: SessionHue.rgb(seed: seed), share: 0.16) }
 
     /// Every tint, for checks.
-    var tints: [Color] { [input, user, pending, success, failure, system, interrupted, diffRemoved, diffAdded] }
+    var tints: [Color] { [input, user, pending, success, failure, system, interrupted, aside, diffRemoved, diffAdded] }
 
     /// The background of a block of this kind: the user's messages and the tool calls are tinted (a tool by how it ended), nothing else is.
     func tint(for item: Transcript.Item) -> Color {

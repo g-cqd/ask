@@ -38,7 +38,9 @@ public struct Transcript: Sendable, Equatable {
     var toolBlocks: [String: Int] = [:]
     /// The tool blocks whose input is a command, which heads the block (roadmap 0080).
     var commandBlocks: Set<Int> = []
-    var summaryBlocks: Set<Int> = []  // A compaction's and other summaries ask wrote: see Transcript+Summary.swift.
+    var summaryBlocks: Set<Int> = []
+    /// `/btw` asides (roadmap 0194): a summary block of their own colour, open, and no part of the run.
+    var asideBlocks: Set<Int> = []  // A compaction's and other summaries ask wrote: see Transcript+Summary.swift.
     /// Whether a running block's header shimmers (`ui.shimmer`, roadmap 0171).
     public var shimmer = true
     /// The blocks still going when the person stopped the turn (roadmap 0142), drawn on the interruption tint.
@@ -97,6 +99,7 @@ public struct Transcript: Sendable, Equatable {
         toolBlocks.removeAll(keepingCapacity: true)
         commandBlocks.removeAll(keepingCapacity: true)
         summaryBlocks.removeAll(keepingCapacity: true)
+        asideBlocks.removeAll(keepingCapacity: true)
         interrupted.removeAll(keepingCapacity: true)
         jobBlocks.removeAll(keepingCapacity: true)
         replacements.removeAll(keepingCapacity: true)
@@ -192,6 +195,7 @@ public struct Transcript: Sendable, Equatable {
     /// Whether blocks of the item's kind start folded: tools and thinking apart, and a summary ask wrote always (owner, 2026-11-02).
     private func foldsByDefault(_ index: Int) -> Bool {
         if case .thinking = items[index] { return thinkingFoldedByDefault }
+        if asideBlocks.contains(index) { return false }
         if summaryBlocks.contains(index) { return true }
         return toolsFoldedByDefault
     }

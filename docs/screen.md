@@ -104,6 +104,7 @@ when it ends. With no command running, Ctrl+B moves the cursor as usual.
 | `/tasks` | Show the session's task list, which the model keeps with its `tasks` tool: `/tasks all` with the done ones, `/tasks t3` for one task. |
 | `#t3`, `#n2` | In a message, point at a task or a note: the model gets its text with the message. Type `#` at the start of a word to pick one. |
 | `/notes` | `/notes TEXT` (or `/notes:add TEXT`) keeps a note as typed, with the time. `/notes` opens the picker to choose one and show it in the transcript; `/notes:all` (or `/notes all`) lists every note; `/notes:show n3` shows one; `/notes:edit n3` edits one in the input; `/notes:delete n3` removes one; `/notes:search TEXT` searches through all of them. The model reads them with its `notes` tool when you ask, or when it finishes a piece of work, and marks them acknowledged, fulfilled or dismissed; it never writes or edits one. |
+| `/btw` | `/btw QUESTION` asks beside the conversation, even while a turn runs: the model answers from the conversation so far, without tools, in a cyan block, and the question and its answer do not join the conversation. |
 | `/compact` | Summarise the conversation now to free room in the context window. |
 | `/config` | Open the settings editor (`/config user` or `/config project`), or `/config show` to re-read the files and show them. |
 | `/mcp` | Show the MCP servers and their tools. |
@@ -119,7 +120,7 @@ While the model works, commands still work:
 - `/model`, `/thinking`, `/config` and `/mcp` at once: a new model, effort or setting applies from the very next request, even in the
   middle of a run of tool calls, and a retry waiting on a busy model goes to the new one at once.
 - `/login` and `/logout` at once; signing out of the account the turn uses waits for the turn to end.
-- `/notes` and `/tasks` at once, without reaching the model.
+- `/notes` and `/tasks` at once, without reaching the model; `/btw` at once, beside the turn.
 - `/fork` at once: the copy holds what the turn has written so far, and you stay with the turn; `/resume` switches to the copy.
 - `/compact`, `/new`, `/resume`, `/rewind`, `/encrypt` and `/reload` wait for the turn to end, shown as waiting, then run in the order you typed
   them. If you stop the turn, they follow `ui.queuedOnStop` like queued messages: with `none` they come back to the input.
