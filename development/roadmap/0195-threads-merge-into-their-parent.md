@@ -299,6 +299,16 @@ summary instructions, or rewrite the summary).
 - Test first: `ThreadLaneTests` (red: the command went back to main), then `Scripts/probe-thread-merge.py` (red: no refusal, nothing
   merged), then the code; 4 checks, twice.
 
+## Done (2026-11-04): a thread's question comes to the person (note n19)
+
+- `threads.questions`: `"focus"` (the default) shows a thread's approval or questions at once in whatever is shown, named for its
+  thread; `"after"` once it has waited `threads.questionsAfter` (`"30s"`); `"lane"` only in its lane, as before. What is shown asks
+  its own first. A popped question is a copy (`ScreenState.popped`): it is taken off around each update and lane change and shown
+  again after, and answering it clears the thread's, so it is never carried into the wrong view.
+- Test first: `ThreadQuestionsPopTests` (6) and `ThreadsSectionTests` were red before the code; `probe-thread-question-pop.py`
+  (5 checks) failed under `"lane"` (`PROBE_QUESTIONS=lane`) and passes with `"focus"` and `"after"`. `probe-thread-approval.py` is the
+  `"lane"` case now.
+
 ## Done (2026-11-04): merged threads leave the lists (note n22)
 
 - The list under the input leaves merged threads out (and what is under them); with only merged threads left it is the flat list of

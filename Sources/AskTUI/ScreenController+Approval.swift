@@ -61,6 +61,7 @@ extension ScreenController {
     /// Ends the question. Nothing is added to the conversation: the tool's block shows whether it ran (roadmap 0157).
     private mutating func settle(_ pending: PendingApproval, saying _: String) {
         state.pendingApproval = nil
+        questionSettled()
     }
 
     /// A click on the command: unfolds it, or folds it again.

@@ -22,4 +22,19 @@ struct ThreadsSectionTests {
             #expect(throws: ConfigurationError.self, "\(value)") { try threads(#"{"mergedShownFor": "\#(value)"}"#) }
         }
     }
+
+    @Test func `questions takes focus, after or lane, and after waits questionsAfter`() throws {
+        #expect(ThreadsSection().whereQuestions == .focus, "focus when nothing says")
+        #expect(try threads(#"{"questions": "lane"}"#)?.whereQuestions == .lane)
+        #expect(
+            try threads(#"{"questions": "after"}"#)?.whereQuestions == .after(.seconds(30)),
+            "after 30 s when nothing says"
+        )
+        #expect(
+            try threads(#"{"questions": "after", "questionsAfter": "2m"}"#)?.whereQuestions == .after(.seconds(120))
+        )
+        #expect(try threads(#"{"questionsAfter": "45s"}"#)?.questionsAfter == "45s")
+        #expect(throws: ConfigurationError.self) { try threads(#"{"questions": "soon"}"#) }
+        #expect(throws: ConfigurationError.self) { try threads(#"{"questionsAfter": "always"}"#) }
+    }
 }

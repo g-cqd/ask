@@ -36,6 +36,8 @@ public struct ScreenController: Sendable {
         case renameThread(id: String, title: String)
         /// `/merge` (or `/close`) in a thread's lane: merge it now, with the threads under it.
         case mergeThread(id: String)
+        /// `threads.questions` `after`: wake the screen when a thread's question has waited `after`.
+        case armThreadQuestionTimer(after: Duration)
         /// `/thread TEXT` typed in thread `from`'s lane: a thread forked from that one.
         case startThread(from: String, text: String)
         /// Follow a yielded process in its original tool block until it ends.

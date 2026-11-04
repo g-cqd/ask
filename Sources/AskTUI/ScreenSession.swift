@@ -106,6 +106,7 @@ final class ScreenSession {
                 controller.state.transcript.addNotice(reason, isError: true)
             case .quitWindowEnded(let generation):
                 controller.quitWindowEnded(generation: generation)
+            case .threadQuestionDelayEnded: controller.threadQuestionDelayEnded()
             case .sandboxNoteEnded(let generation): controller.sandboxNoteEnded(generation: generation)
             case .inputEnded:
                 effects = [.quit]
@@ -150,14 +151,7 @@ final class ScreenSession {
             case .indexFiles:
                 let conversation = conversation
                 Task { sink.yield(.update(.files(await conversation.projectFiles()))) }
-            case .armQuitTimer(let generation):
-                ScreenTimer.after(ScreenController.quitWindow, send: .quitWindowEnded(generation: generation), to: sink)
-            case .armSandboxNoteTimer(let generation):
-                ScreenTimer.after(
-                    ScreenController.sandboxNoteWindow,
-                    send: .sandboxNoteEnded(generation: generation),
-                    to: sink
-                )
+            case .armThreadQuestionTimer, .armQuitTimer, .armSandboxNoteTimer: Self.armTimer(effect, sink)
             case .readRunnerOutput(let id):
                 runnerOutput.watch(id, in: conversation, sink: sink)
             case .sendToThread, .startThread, .stopThread, .renameThread, .mergeThread:
@@ -194,5 +188,21 @@ final class ScreenSession {
                 return false
         }
         return true
+    }
+
+    /// Arms the timer an effect asks for, which sends its event back when it fires.
+    private static func armTimer(_ effect: ScreenController.Effect, _ sink: AsyncStream<ScreenEvent>.Continuation) {
+        switch effect {
+            case .armThreadQuestionTimer(let delay): ScreenTimer.after(delay, send: .threadQuestionDelayEnded, to: sink)
+            case .armQuitTimer(let generation):
+                ScreenTimer.after(ScreenController.quitWindow, send: .quitWindowEnded(generation: generation), to: sink)
+            case .armSandboxNoteTimer(let generation):
+                ScreenTimer.after(
+                    ScreenController.sandboxNoteWindow,
+                    send: .sandboxNoteEnded(generation: generation),
+                    to: sink
+                )
+            default: break
+        }
     }
 }

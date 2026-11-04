@@ -178,6 +178,7 @@ extension ScreenController {
     /// Ends the questions with `answers` (nil: declined).
     private mutating func finish(_ pending: PendingQuestions, with answers: [QuestionAnswer]?) -> [Effect] {
         state.pendingQuestions = nil
+        questionSettled()
         return [.answerQuestions(id: pending.id, answers)]
     }
 
