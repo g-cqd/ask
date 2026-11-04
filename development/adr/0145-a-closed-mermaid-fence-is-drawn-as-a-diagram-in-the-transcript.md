@@ -25,7 +25,7 @@ chose, drawn into the owner's terminal.
    down, wraps its labels to 24, 16, 10 columns, then is refused), or any other language, stays the code block with its folding and its highlighting. Nothing is dropped.
 4. **The row cache is untouched.** The rows are a function of the block's events and the width, which the cache already keys on.
 5. **Not in this decision:** a selection over a diagram copies nothing (the rows are chrome: the source map is per line and a diagram has no line-for-line source); toggling between
-   the diagram and its source; state, class, ER, pie and Gantt diagrams; a setting to turn diagrams off (they follow `ui.markdown`).
+   the diagram and its source; Gantt, mindmap, journey, timeline and git graph (state, class and entity diagrams are read as flowcharts and pie charts drawn as bars, AemiMermaid ADR 0005); a setting to turn diagrams off (they follow `ui.markdown`).
 
 ## Consequences
 
