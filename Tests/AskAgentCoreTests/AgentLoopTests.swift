@@ -43,7 +43,7 @@ struct AgentLoopTests {
         try await loop(provider).run("Hi", in: file) { events.append($0) }
         #expect(file.tree.entries.map(\.payload).count == 2)
         guard case .user("Hi") = file.tree.entries[0].payload,
-            case .response(let response) = file.tree.entries[1].payload
+            case .response(let response, _) = file.tree.entries[1].payload
         else {
             Issue.record("unexpected entries: \(file.tree.entries)")
             return

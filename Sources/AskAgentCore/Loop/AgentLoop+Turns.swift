@@ -70,37 +70,53 @@ extension AgentLoop {
         guard !Task.isCancelled else { throw .cancelled }
     }
 
-    /// Streams one response for the tree's context and assembles it.
+    /// Streams one response for the tree's context, as the `request.before` hooks leave the request, and assembles it; nil when a change
+    /// was offered while a retry waited. The rewrite, when hooks made one, goes with the response to be recorded.
     func respond(to tree: SessionTree, events: (AgentEvent) -> Void) async throws(AgentError)
-        -> AssembledResponse?
+        -> (response: AssembledResponse, rewrite: RequestRewrite?)?
     {
-        var req = request(for: tree.context(), events: events)
+        let original = request(for: tree.context(), events: events)
+        var sent = original
         var rewrittenBy: [String] = []
         for hook in hooks {
-            let current = req
+            let current = sent
             let decision = await HookDeadline.ask(
                 hook,
                 at: "request.before",
                 clock: clock,
                 orElse: .allow,
                 timedOut: events
-            ) {
-                await hook.requestBefore(current)
-            }
+            ) { await hook.requestBefore(current) }
             if case .rewrite(let next) = decision {
-                req = next
+                sent = next
                 rewrittenBy.append(hook.name)
             }
         }
-        if !rewrittenBy.isEmpty { events(.hookRewroteRequest(hooks: rewrittenBy)) }
-        return try await stream(req, events: events, handsOver: true)
+        guard let response = try await stream(sent, events: events, handsOver: true) else { return nil }
+        let rewrite =
+            rewrittenBy.isEmpty
+            ? nil
+            : RequestRewrite(
+                hooks: rewrittenBy,
+                bytesBefore: RequestRewrite.textBytes(of: original),
+                bytesAfter: RequestRewrite.textBytes(of: sent)
+            )
+        return (response, rewrite)
     }
 
-    /// Records `response`, says so, then shows it to the `response.after` hooks.
-    func recordResponse(_ response: AssembledResponse, in session: SessionRecorder, events: (AgentEvent) -> Void)
-        async throws(AgentError)
-    {
-        try record(.response(response), in: session)
+    /// Records `response` with the rewrite of the request it answered, says so, then shows it to the `response.after` hooks.
+    mutating func recordResponse(
+        _ response: AssembledResponse,
+        rewrite: RequestRewrite?,
+        in session: SessionRecorder,
+        events: (AgentEvent) -> Void
+    ) async throws(AgentError) {
+        try record(.response(response, rewrite: rewrite), in: session)
+        // Once a run: every rewritten request costs the provider's prompt cache, and saying it each time would only repeat it.
+        if let rewrite, !saidRewrite {
+            saidRewrite = true
+            events(.hookRewroteRequest(hooks: rewrite.hooks))
+        }
         events(.responded(response))
         await notifyResponseAfter(response, events: events)
     }

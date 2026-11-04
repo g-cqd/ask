@@ -53,7 +53,7 @@ extension AgentLoop {
     /// Whether `entries` hold a response that made a call that changes things.
     static func changesThings(_ entries: some Sequence<SessionEntry>) -> Bool {
         entries.contains { entry in
-            guard case .response(let response) = entry.payload else { return false }
+            guard case .response(let response, _) = entry.payload else { return false }
             return toolCalls(in: response).contains { ApprovalPolicy.changesThings($0.name, $0.input) }
         }
     }

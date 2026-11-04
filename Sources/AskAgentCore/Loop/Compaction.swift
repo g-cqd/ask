@@ -32,7 +32,7 @@ public enum Compaction {
                 default: false
             }
         }
-        guard case .response(let response) = newest?.payload else { return nil }
+        guard case .response(let response, _) = newest?.payload else { return nil }
         let usage = response.usage
         return (usage.input ?? 0) + (usage.cacheRead ?? 0) + (usage.cacheCreation ?? 0) + (usage.output ?? 0)
     }
@@ -127,7 +127,7 @@ public enum Compaction {
                 case .compaction(let summary, _): summaries.append(summary)
                 case .toolResult(let id, let content, _, _, _):
                     results[id] = clipped(content, toBytes: 400, note: "omitted")
-                case .response(let response):
+                case .response(let response, _):
                     for case .toolCall(let id, let name, let input) in response.blocks {
                         calls.append((id, "\(name) \(String(decoding: input.bytes, as: UTF8.self))"))
                     }
@@ -163,7 +163,7 @@ public enum Compaction {
             case .user(let text), .assistant(let text): return text.utf8.count
             case .toolResult(_, let content, _, let images, _): return content.utf8.count + images.count * imageBytes
             case .compaction(let summary, _): return summary.utf8.count
-            case .response(let response):
+            case .response(let response, _):
                 return response.blocks.reduce(0) { total, block in
                     switch block {
                         case .text(let text): total + text.utf8.count
