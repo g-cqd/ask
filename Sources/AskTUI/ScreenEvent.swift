@@ -15,6 +15,8 @@ enum ScreenEvent: Sendable {
     case pasteRefused(String)
     /// The two seconds after an arming Ctrl+C are over.
     case quitWindowEnded(generation: Int)
+    /// A thread's question has waited its `threads.questions` delay.
+    case threadQuestionDelayEnded
     /// The sandbox note has been up for its five seconds.
     case sandboxNoteEnded(generation: Int)
     case inputEnded

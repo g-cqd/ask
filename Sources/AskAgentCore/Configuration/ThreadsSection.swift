@@ -17,35 +17,59 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     public var names: Names?
     /// `threads.mergedShownFor`: how long a merged thread stays in the sidebar, as written (`"30m"`, `"2h"`, `"1d"`, `"always"`).
     public var mergedShownFor: String?
+    /// `threads.questions`: where a thread's question appears while the person is elsewhere, as written.
+    public var questions: String?
+    /// `threads.questionsAfter`: how long `after` waits, as written (`"30s"`, `"2m"`).
+    public var questionsAfter: String?
+
+    /// Where a thread's question appears while the person is elsewhere (note n19).
+    public enum Questions: Sendable, Equatable {
+        case focus
+        case after(Duration)
+        case lane
+    }
 
     public static let defaultMax = 4
     public static let defaultDepth = 3
     static let mostAtOnce = 16
     static let deepest = 8
 
-    public init(max: Int? = nil, depth: Int? = nil, names: Names? = nil, mergedShownFor: String? = nil) {
+    public init(max: Int? = nil, depth: Int? = nil, names: Names? = nil) {
         self.max = max
         self.depth = depth
         self.names = names
-        self.mergedShownFor = mergedShownFor
     }
 
     /// The keys, in the order they are shown.
-    public static let keys = ["max", "depth", "names", "mergedShownFor"]
+    public static let keys = ["max", "depth", "names", "mergedShownFor", "questions", "questionsAfter"]
 
     public var atOnce: Int { max ?? Self.defaultMax }
     public var nesting: Int { depth ?? Self.defaultDepth }
     public var naming: Names { names ?? .onDevice }
+    /// Where a thread's question appears.
+    public var whereQuestions: Questions {
+        switch questions {
+            case "lane": return .lane
+            case "after":
+                let wait = questionsAfter.flatMap { Self.duration($0) ?? nil } ?? .seconds(30)
+                return .after(wait)
+            default: return .focus
+        }
+    }
+
+    /// The words `threads.questions` takes.
+    static let questionWords = ["focus", "after", "lane"]
+
     /// How long a merged thread stays listed; nil for always.
     public var mergedListing: Duration? {
         guard let written = mergedShownFor else { return .seconds(86_400) }
         return Self.duration(written) ?? .seconds(86_400)
     }
 
-    /// `"30m"`, `"2h"` or `"1d"` as a duration, `"always"` as nil (`.some(nil)`); nil when it is neither.
+    /// `"30s"`, `"30m"`, `"2h"` or `"1d"` as a duration, `"always"` as nil (`.some(nil)`); nil when it is neither.
     static func duration(_ written: String) -> Duration?? {
         if written == "always" { return .some(nil) }
-        let units: [Character: Int64] = ["m": 60, "h": 3_600, "d": 86_400]
+        let units: [Character: Int64] = ["s": 1, "m": 60, "h": 3_600, "d": 86_400]
         guard let unit = written.last.flatMap({ units[$0] }), let count = Int64(written.dropLast()), count > 0 else {
             return nil
         }
@@ -56,12 +80,15 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     /// `self` with every key `section` sets replaced.
     // @dl:accept -- each section layers its keys the same way; the key lists are the data
     public func layered(with section: ThreadsSection) -> ThreadsSection {
-        ThreadsSection(
+        var merged = ThreadsSection(
             max: section.max ?? max,
             depth: section.depth ?? depth,
-            names: section.names ?? names,
-            mergedShownFor: section.mergedShownFor ?? mergedShownFor
+            names: section.names ?? names
         )
+        merged.mergedShownFor = section.mergedShownFor ?? mergedShownFor
+        merged.questions = section.questions ?? questions
+        merged.questionsAfter = section.questionsAfter ?? questionsAfter
+        return merged
     }
 
     /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.
@@ -71,6 +98,8 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
             case "depth": depth.map(String.init)
             case "names": names?.rawValue
             case "mergedShownFor": mergedShownFor
+            case "questions": questions
+            case "questionsAfter": questionsAfter
             default: nil
         }
     }

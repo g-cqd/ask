@@ -26,6 +26,7 @@ extension RunSettings {
             sidebar: ui.sidebarOpen ?? defaults.sidebar,
             sidebarJobsInTree: ui.sidebarJobsInTree ?? defaults.sidebarJobsInTree,
             mergedShownFor: configuration.threads.value.mergedListing,
+            threadQuestions: Self.screenMode(configuration.threads.value.whereQuestions),
             verbose: verbose,
             prompt: ui.prompt ?? defaults.prompt,
             tint: ui.tint ?? defaults.tint,
@@ -61,5 +62,14 @@ extension RunSettings {
             return index == 7 || (9 ... 15).contains(index)
         }
         return SystemAppearance.isLight
+    }
+
+    /// `threads.questions` as the screen takes it.
+    static func screenMode(_ mode: ThreadsSection.Questions) -> ThreadQuestionsMode {
+        switch mode {
+            case .focus: .focus
+            case .after(let delay): .after(delay)
+            case .lane: .lane
+        }
     }
 }

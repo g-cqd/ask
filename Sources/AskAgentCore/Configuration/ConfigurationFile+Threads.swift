@@ -15,6 +15,14 @@ extension ConfigurationFile {
                             rawValue: try ConfigurationFile.word(container, key, "threads.names", words)
                         )
                     case "mergedShownFor": section.mergedShownFor = try container.decode(String.self, forKey: key)
+                    case "questions":
+                        section.questions = try ConfigurationFile.word(
+                            container,
+                            key,
+                            "threads.questions",
+                            ThreadsSection.questionWords
+                        )
+                    case "questionsAfter": section.questionsAfter = try container.decode(String.self, forKey: key)
                     default: throw UnknownKey(key: "threads." + key.stringValue)
                 }
             }
@@ -24,6 +32,13 @@ extension ConfigurationFile {
     /// Counts within range. A project's file may set them too: they only ever limit what runs.
     static func validateThreads(_ section: ThreadsSection?, path: String) throws(ConfigurationError) {
         guard let section else { return }
+        if let written = section.questionsAfter, (ThreadsSection.duration(written) ?? nil) == nil {
+            throw .outOfRange(
+                path: path,
+                key: "threads.questionsAfter",
+                reason: "takes seconds, minutes or hours, such as \"30s\" or \"2m\""
+            )
+        }
         if let written = section.mergedShownFor, ThreadsSection.duration(written) == nil {
             throw .outOfRange(
                 path: path,
