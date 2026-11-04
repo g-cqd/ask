@@ -37,8 +37,8 @@ Each is built and checked in a PTY or pyte, never in the owner's terminal. One s
 
 ## Waiting for the owner
 
-- **The first signed run on the real credentials** (0110): signing is done, by hash (`<certificate-sha-1>`,
-  the valid certificate of team <team-id>). The owner's next run of a signed build moves the secrets into the login keychain;
+- **The first signed run on the real credentials** (0110): signing is done, by the SHA-1 of
+  the valid certificate of the personal team. The owner's next run of a signed build moves the secrets into the login keychain;
   check with `security find-generic-password -s ask`.
 - **0092:** when two accounts serve one model, ask each time or remember a default per model. Built as "ask once, remember per model,
   change with `/model`" unless the owner says otherwise. Done in `afa33d4`; `--model` keeps the default's account rather than

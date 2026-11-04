@@ -64,28 +64,26 @@ to use its key once), or the Keychain stays for signed builds only.
 
 ## Owner (2026-10-31): sign every build
 
-Every build of ask is signed with the personal Apple Development identity (team <team-id>). The Keychain is the default store,
+Every build of ask is signed with the personal Apple Development identity (the owner's personal team). The Keychain is the default store,
 and `/reload` checks the new build's signature (0153). The first signing needs the owner's one-time "Always Allow" for `codesign`.
 
 ## State (2026-10-31): signing, waiting for the owner's first run
 
-- The identity is "the owner's personal Apple Development identity", with certificate OU `<team-id>`, the personal team. The
-  certificate's organisation field reads "the organisation"; the owner may want to confirm this is the identity meant. The machine's
-  other two Apple Development identities are `another-account@example.com` (team TEAMID) and must not be used.
+- The identity is the owner's personal Apple Development identity. The machine holds other Apple Development identities, which must
+  not be used; the owner confirms which one is meant.
 - `Scripts/build-release.sh` builds and signs when `ASK_SIGNING_IDENTITY` is set. The first signing opens macOS's keychain prompt;
   an agent cannot answer it, so it was not run. The owner's one-time step:
-  `ASK_SIGNING_IDENTITY="the owner's personal Apple Development identity" Scripts/build-release.sh`, then "Always Allow".
+  `ASK_SIGNING_IDENTITY="<the identity's name or SHA-1>" Scripts/build-release.sh`, then "Always Allow".
 - Once the running ask is signed, `/reload` refuses unsigned builds (0153). From then on every build goes through
   `Scripts/build-release.sh`, with the variable set.
 
 ## Done (2026-10-31): the first signing, and what a signed build found
 
 The owner asked for the first signing to be done for them, with the identity their Swift apps are signed with. The only identity of
-the personal team <team-id> is "the owner's personal Apple Development identity". Three certificates carry that name: two
-expired (organisation the organisation, January and April 2026) and one valid until 2027-01-27 (organisation the organisation). So
-signing goes by the valid one's SHA-1, `<certificate-sha-1>`: `ASK_SIGNING_IDENTITY=<certificate-sha-1>
-Scripts/build-release.sh`. `codesign` used the key with no prompt. The result is `Identifier=ask`, `TeamIdentifier=<team-id>`,
-with a designated requirement on the certificate's name and Apple's anchor.
+the personal team has one identity name, carried by three certificates: two expired and one valid until 2027-01-27. So signing
+goes by the valid one's SHA-1: `ASK_SIGNING_IDENTITY=<sha-1> Scripts/build-release.sh`. `codesign` used the key with no prompt. The
+result is `Identifier=ask`, with the team identifier of the personal team and a designated requirement on the certificate's name and
+Apple's anchor.
 
 Running the probes on a signed build found three faults, each fixed test first:
 
