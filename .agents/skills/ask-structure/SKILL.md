@@ -77,7 +77,7 @@ associated type public; budget for that.
 
 ## Static analyzers
 
-`Scripts/analyzers.sh` (ADR-0022). Accept a finding with the tool's directive on the **line above the anchor**
+`.ci/swift-ci run quality` runs them, pinned by swift-ci (ADR-0022). Accept a finding with the tool's directive on the **line above the anchor**
 (`// @dl:accept -- reason`, `// @dw:accept -- reason`, `// @al:accept -- reason`). dolly's near-clone matching
 normalises identifiers and literals, so a test that restates a source shape with other names still matches;
 change the shape, not the names. deadwood cannot see a global found by name (the Benchmark plugin's

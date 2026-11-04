@@ -62,16 +62,22 @@ def staged(repo):
     return paths if ignored else paths + ["Package.resolved"]
 
 
-def gate(repo):
-    """The repository's own gate: its quality script when it has one, else a build and the tests; its analyzers either way."""
-    steps = []
+def gate_steps(repo):
+    """The repository's own gate: its quality script when it has one; else, when its CI is swift-ci, what CI checks first
+    (`.ci/swift-ci local`: quality, analyzers included, and the debug tests); else a build, the tests and its analyzers."""
     if (repo / "Scripts/quality.sh").exists():
-        steps.append(["Scripts/quality.sh", "--check"])
-    else:
-        steps += [["swift", "build"], ["swift", "test"]]
-        if (repo / "Scripts/analyzers.sh").exists():
-            steps.append(["Scripts/analyzers.sh"])
-    for step in steps:
+        return [["Scripts/quality.sh", "--check"]]
+    if (repo / ".ci/swift-ci").exists():
+        return [[".ci/swift-ci", "local"]]
+    steps = [["swift", "build"], ["swift", "test"]]
+    if (repo / "Scripts/analyzers.sh").exists():
+        steps.append(["Scripts/analyzers.sh"])
+    return steps
+
+
+def gate(repo):
+    """Runs the repository's gate (`gate_steps`); false at the first step that fails."""
+    for step in gate_steps(repo):
         print(f"    $ {' '.join(step)}", flush=True)
         if subprocess.run(step, cwd=repo).returncode != 0:
             return False

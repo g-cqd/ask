@@ -12,11 +12,11 @@ Swift 6.4 on macOS 26 (the package's declared floor). Clone, then:
 Scripts/quality.sh --check    # format, lint, release build and test — the gate
 ```
 
-**CI has never run** — GitHub refuses to start the jobs for a billing reason —
-so a pull request gets no machine feedback. `Scripts/quality.sh` is what CI
-would run; it is the only entry point, so there is no second command to
-forget. A pre-commit hook lints, and a green test run is not a green commit:
-run the script.
+CI (`.github/workflows/ci.yml`) is the family's pinned swift-ci, configured by
+`.ci/action.json`; `Scripts/quality.sh` formats, runs the same quality checks
+through `.ci/swift-ci run quality`, then the release tests, so there is no
+second command to forget. A pre-commit hook lints, and a green test run is not
+a green commit: run the script.
 
 Build and test in **release, always** ([ADR-0002](development/adr/0002-release-only-no-testable.md)):
 a debug build measures a program nobody ships. Release tests need

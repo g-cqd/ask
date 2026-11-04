@@ -1,0 +1,72 @@
+name: CI
+
+# swift-ci plans and runs the checks from .ci/action.json (https://github.com/g-cqd/swift-ci); .ci/README.md lists
+# what runs when. `.ci/swift-ci local` runs the same checks on a developer's machine.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  merge_group:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# The budget job's runs: a newer push cancels the previous one's (swift-ci's own jobs have their own group).
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name != 'schedule' && github.ref != 'refs/heads/main' }}
+
+jobs:
+  ci:
+    name: Checks
+    uses: g-cqd/swift-ci/.github/workflows/swift-ci.yml@966187798f2fd93de8af13b7a35fc07d24e90d55 # swift-ci 9661877
+    permissions:
+      contents: write # reusable publish permission; this package publishes no archives
+
+  budgets:
+    # After the checks: a tree that fails format, metrics, analyzers or tests is not worth a PTY measurement.
+    name: Performance · Budgets · macOS
+    needs: ci
+    # The four performance budgets, enforced by running the real binary on a real PTY. Same pinned
+    # runner as the gate: these are hardware-specific numbers, and a budget measured on one machine
+    # and enforced on another fires for the wrong reason, which is worse than no budget because it
+    # trains people to ignore red.
+    runs-on: macos-26
+    steps:
+      - name: Setup · Check Out Sources
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with: { persist-credentials: false }
+      - name: Setup · Read .swift-version
+        run: echo "SWIFT_VERSION=$(cat .swift-version)" >> "$GITHUB_ENV"
+      # setup-swift v2 cannot install Swift 6.4: its version table stops at 6.2.1, so it fails with
+      # "Version 6.4 is not available". v3 installs through swiftly, which resolves any published
+      # toolchain, and 6.4 is published.
+      - name: Setup · Install Swift
+        uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3.0.0-beta.1
+        with:
+          swift-version: ${{ env.SWIFT_VERSION }}
+      - name: Cache · Restore SwiftPM
+        id: spm-release
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .build
+          key: spm-release-${{ runner.os }}-${{ env.SWIFT_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
+          restore-keys: spm-release-${{ runner.os }}-${{ env.SWIFT_VERSION }}-
+      - name: Performance · Build Release
+        run: swift build -c release --force-resolved-versions
+      - name: Performance · Measure Budgets
+        # The limits come from the binary itself (`ask --budgets`), so there is one definition. They are the owner's Mac's
+        # (ADR-0122): a shared 3-core runner under full load measured 78 ms of cold start against about 27 ms there, so here
+        # they are reported in the job summary and not enforced. A run that does not complete still fails.
+        env:
+          ASK_BUDGETS_REPORT_ONLY: "1"
+        run: python3 Scripts/measure-budgets.py .build/release/ask 12
+      - name: Cache · Save SwiftPM
+        if: ${{ always() && github.ref == 'refs/heads/main' && steps.spm-release.outputs.cache-hit != 'true' }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: .build
+          key: spm-release-${{ runner.os }}-${{ env.SWIFT_VERSION }}-${{ hashFiles('Package.swift', 'Package.resolved') }}
