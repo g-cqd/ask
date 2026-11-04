@@ -38,7 +38,7 @@ extension AgentConversation {
                 return .promptAccepted(id: prompt.id, text: SkillInvocation.shown(prompt.text))
             case .toolStarted(let id, let name, let input):
                 return .toolStarted(
-                    name: name == "bash" ? "shell" : name,
+                    name: ToolSummary.shownName(name, input: input),
                     summary: ToolSummary.header(for: input, tool: name),
                     id: id,
                     fullInput: ToolSummary.fullInput(for: input),
