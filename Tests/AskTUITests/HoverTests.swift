@@ -60,12 +60,14 @@ struct HoverTests {
         rig.controller.setScreenRows(16)
         _ = rig.controller.handle(.key(KeyEvent(keyCode: UInt32(UnicodeScalar("/").value))), pageRows: 16)
         rig.draw()
-        let sidebarCol = 90 - 5
-        #expect(rig.buffer[0, sidebarCol].style.dim)
-        rig.mouse(.release, .motion, row: 0, col: sidebarCol)
+        // On the job's name: the panel is 22 wide, and its text starts after the divider and a space.
+        let sidebarCol = 90 - 22 + 2
+        // Row 0 is the Jobs heading; the job is row 1.
+        #expect(!rig.buffer[1, sidebarCol].style.bold)
+        rig.mouse(.release, .motion, row: 1, col: sidebarCol)
         rig.draw()
         #expect(rig.controller.state.hover == .job("job-1"))
-        #expect(!rig.buffer[0, sidebarCol].style.dim && rig.buffer[0, sidebarCol].style.bold)
+        #expect(!rig.buffer[1, sidebarCol].style.dim && rig.buffer[1, sidebarCol].style.bold)
 
         let quitRow = try #require(row(containing: "/quit", in: rig))
         #expect(!rig.buffer[quitRow, 1].style.bold)

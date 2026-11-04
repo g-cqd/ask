@@ -56,12 +56,12 @@ struct RunnerTreeTests {
         )
     }
 
-    @Test func `the status counts agents as runners and the strip and count come from the same deduplicated tree`() {
+    @Test func `the status counts threads and jobs and the strip and count come from the same deduplicated tree`() {
         var state = ScreenState(label: "m", options: .legacy)
         let agent = RunnerInfo(name: "review", detail: "reading", kind: .agent)
         state.runners = [agent, agent, node("job", parent: "review")]
         state.runnersOpen = true
-        #expect(ScreenComposer.status(for: state).line.text == "✓ · m · 2 runners")
+        #expect(ScreenComposer.status(for: state).line.text == "✓ · m · 1 thread · 1 job")
         #expect(
             ScreenComposer.runnerRows(for: state, available: 10, columns: 100).map(\.text)
                 == ["review  reading · running", "  job  work · running"]

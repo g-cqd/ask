@@ -80,17 +80,26 @@ extension ScreenComposer {
         }
         let edge = side?.column ?? buffer.columns
         let used = Swift.min(edge, UnicodeWidth.displayWidth(of: line.text))
-        if used < buffer.columns {
-            // The rest of the row carries the row's own background, so a tinted block is tinted to the edge.
+        if used < edge {
+            // The rest of the row carries the row's own background, so a tinted block is tinted to its edge: the screen's, or the
+            // sidebar's divider, never into the sidebar.
             buffer.fill(
                 row: row,
                 col: used,
-                width: buffer.columns - used,
+                width: edge - used,
                 height: 1,
                 cell: Cell(character: " ", style: Style(bg: line.style.bg), width: 1)
             )
         }
         if let side {
+            // The panel is the page's own: blanked first, whatever the transcript row under it was tinted.
+            buffer.fill(
+                row: row,
+                col: side.column,
+                width: buffer.columns - side.column,
+                height: 1,
+                cell: Cell(character: " ", style: .default, width: 1)
+            )
             buffer.write("│", row: row, col: side.column, style: Style(dim: true))
             buffer.write(side.text, row: row, col: side.column + 1, style: side.style)
         }

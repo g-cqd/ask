@@ -80,11 +80,30 @@ check several. The note is the row after the last choice.
 A click picks a choice, focuses the note, or opens a tab. The input below keeps what you had typed. `ask -p` never offers the model
 this tool.
 
-## Background jobs
+## Background jobs and threads
 
-The model can run commands in the background. The status line counts them (`· 2 jobs`). Click the count, or type `/jobs`, to list them
-below the input: Up and Down choose one, Enter shows its output in place of the conversation, and Esc, or a click on the list's first row, `main`, goes back. On a wide screen,
-`/sidebar` or **Ctrl+\\** shows the same list beside the conversation. Jobs never outlive ask.
+The model can run commands in the background, and `/thread` starts threads. The status line counts what is running (`· 1 thread · 2
+jobs`). Click the count, or type `/jobs`, to list them below the input: Up and Down choose one, Enter shows its output (a thread's
+conversation) in place of the conversation, and Esc, or a click on the list's first row, `main`, goes back. Jobs never outlive ask.
+
+On a wide screen, `/sidebar` or **Ctrl+\\** shows them beside the conversation, one row each, in two sections:
+
+```
+Threads · 1 running
+◆ main
+├ ⠋ thread-1 look into the parser   12s
+│ └ ✓ thread-3 the lexer too
+└ ✓ thread-2 check the pins
+
+Jobs · 1 running
+⠋ #26a7 swift build -c release      3m
+✓ #078c npm test
+```
+
+Threads are a tree under the main conversation: `/thread` typed in a thread's lane starts one from that thread, under it. Each
+row is a state mark (a spinner while running, `?` waiting for you, `✓` done, `✗`
+failed, `■` stopped), the name, what it is doing, and how long an active one has run. Ended rows are dim, the one shown is bold, and
+the one Up and Down chose is inverse; a click opens it, and `main` goes back.
 
 While a command the model ran is still running, **Ctrl+B** (or **Ctrl+Enter**, where the terminal reports it) sends it to the
 background: the model gets what it printed so far and carries on, or your queued message is sent next, and the job tells the model
@@ -105,7 +124,7 @@ when it ends. With no command running, Ctrl+B moves the cursor as usual.
 | `#t3`, `#n2` | In a message, point at a task or a note: the model gets its text with the message. Type `#` at the start of a word to pick one. |
 | `/notes` | `/notes TEXT` (or `/notes:add TEXT`) keeps a note as typed, with the time. `/notes` opens the picker to choose one and show it in the transcript; `/notes:all` (or `/notes all`) lists every note; `/notes:show n3` shows one; `/notes:edit n3` edits one in the input; `/notes:delete n3` removes one; `/notes:search TEXT` searches through all of them. The model reads them with its `notes` tool when you ask, or when it finishes a piece of work, and marks them acknowledged, fulfilled or dismissed; it never writes or edits one. |
 | `/btw` | `/btw QUESTION` asks beside the conversation, even while a turn runs: the model answers from the conversation so far, without tools, in a cyan block, and the question and its answer do not join the conversation. |
-| `/thread` | `/thread TEXT` starts a thread: a copy of the conversation as it stands, working on TEXT beside it with the same tools and sandbox. It is listed with the jobs (`/jobs`, then Down and Enter, or the sidebar); its lane shows its conversation, and what you type there goes to it. When it ends, its answer is shown, and goes to the model with your next message. Threads stop when ask quits. |
+| `/thread` | `/thread TEXT` starts a thread: a copy of the conversation as it stands (in a thread's lane, of that thread's, listed under it), working on TEXT beside it with the same tools and sandbox. It is listed with the jobs (`/jobs`, then Down and Enter, or the sidebar); its lane shows its conversation, and what you type there goes to it. When it ends, its answer is shown, and goes to the model with your next message. Threads stop when ask quits. |
 | `/compact` | Summarise the conversation now to free room in the context window. |
 | `/config` | Open the settings editor (`/config user` or `/config project`), or `/config show` to re-read the files and show them. |
 | `/mcp` | Show the MCP servers and their tools. |

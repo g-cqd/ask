@@ -62,6 +62,14 @@ struct ThreadLaneTests {
         #expect(!texts(controller.state.transcript).contains("and then?"), "main never saw it")
     }
 
+    @Test func `thread typed in a thread's lane starts one from that thread, and the lane stays`() {
+        var controller = controller()
+        _ = controller.enterLane(runner)
+        let effects = type("/thread go deeper", &controller)
+        #expect(effects == [.startThread(from: "thread-1", text: "go deeper")])
+        #expect(controller.state.lane?.id == "thread-1")
+    }
+
     @Test func `a command typed in the lane goes back to main`() {
         var controller = controller()
         _ = controller.enterLane(runner)

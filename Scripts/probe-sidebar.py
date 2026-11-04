@@ -3,7 +3,7 @@
 
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-sidebar.py .build/release/ask
 
-`ui.sidebar: "open"` opens it at start. A real background job (a loopback http.server the fake model starts and later stops) appears in it, a click on its row
+`ui.sidebar: "open"` opens it at start. A real background job, listed under a Jobs heading, (a loopback http.server the fake model starts and later stops) appears in it, a click on its row
 shows what it printed in place of the conversation, Esc returns, and Ctrl+\\ closes and opens the panel. No window, credentials or clipboard.
 """
 import importlib.util
@@ -40,8 +40,18 @@ def idle(terminal):
 
 
 def listed(terminal):
-    """Whether the sidebar's first row lists a job: its label, two spaces, and its command, cut to what the elapsed time leaves."""
-    return bool(re.search(r"│ \[#[0-9a-f]{4}\]  e", terminal.screen.display[0]))
+    """Whether the sidebar lists a job under its Jobs heading: a state mark, its label, and its command, cut to what the elapsed
+    time leaves."""
+    return ("│ Jobs · 1 running" in terminal.screen.display[0]
+            and bool(re.search(r"│ \S #[0-9a-f]{4} e", terminal.screen.display[1])))
+
+
+def unbled(terminal, divider):
+    """Whether every cell right of the divider has the page's background, while a tinted block reaches the divider from the left:
+    no block's colour crosses into the sidebar."""
+    tinted = any(terminal.screen.buffer[row][divider - 1].bg != "default" for row in range(0, 26))
+    return tinted and all(terminal.screen.buffer[row][column].bg == "default"
+                          for row in range(0, 26) for column in range(divider, terminal.screen.columns))
 
 
 def main():
@@ -70,7 +80,7 @@ def main():
             terminal = probe.Terminal(project, environment, rows=30)
             terminal.until(lambda: "ask>" in terminal.text())
             terminal.repaint()
-            check("open from the configuration, with no runners it says so", "no runners" in terminal.screen.display[0])
+            check("open from the configuration, with no runners it says so", "No threads or jobs" in terminal.screen.display[0])
             divider = divider_column(terminal)
             check("the divider is in every transcript row", divider is not None
                   and all(terminal.screen.display[row][divider] == "│" for row in range(0, 26)))
@@ -78,7 +88,8 @@ def main():
             terminal.send(b"Serve\r")
             terminal.until(lambda: b"Serving." in bytes(terminal.raw)[start:] and idle(terminal))
             terminal.repaint()
-            check("a running job is listed in the sidebar", listed(terminal))
+            check("a running job is listed in the sidebar, under its heading", listed(terminal))
+            check("no block's background reaches the sidebar", unbled(terminal, divider))
             row = status_row(terminal)
             check("the status line and the input keep the whole width", terminal.screen.display[row].rstrip().endswith("· 1 job")
                   and terminal.screen.display[row - 2].startswith("ask>") and "│" not in terminal.screen.display[row - 2]
@@ -88,10 +99,12 @@ def main():
             terminal.draw(lambda: terminal.send(b"\x1c"))
             check("and opens it again", divider_column(terminal) == divider and listed(terminal))
             column = divider + 4
-            terminal.draw(lambda: terminal.send(f"\x1b[<0;{column + 1};1M\x1b[<0;{column + 1};1m".encode()))
+            terminal.draw(lambda: terminal.send(f"\x1b[<0;{column + 1};2M\x1b[<0;{column + 1};2m".encode()))
             terminal.until(lambda: "Serving HTTP on" in terminal.text())
             check("a click on its row shows what the job printed in place of the conversation",
                   "Serving HTTP on" in terminal.text() and "Serving." not in terminal.text())
+            check("in a lane the sidebar leads with the way back to main",
+                  "│ Threads" in terminal.screen.display[0] and "│ ◆ main" in terminal.screen.display[1])
             terminal.draw(lambda: terminal.send(b"\x1b"))
             check("Esc returns to the conversation, the sidebar still open", "Serving." in terminal.text()
                   and listed(terminal))
@@ -99,7 +112,7 @@ def main():
             terminal.send(b"Stop it\r")
             terminal.until(lambda: b"Stopped." in bytes(terminal.raw)[start:] and idle(terminal))
             terminal.repaint()
-            check("when the job stops it leaves the sidebar", "no runners" in terminal.screen.display[0])
+            check("when the job stops it leaves the sidebar", "No threads or jobs" in terminal.screen.display[0])
             check("the job itself is gone", not probe.agent.accepts(port))
         except AssertionError:
             if terminal:

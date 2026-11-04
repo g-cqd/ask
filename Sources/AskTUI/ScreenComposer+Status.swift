@@ -99,9 +99,12 @@ extension ScreenComposer {
         if !input.isEmpty { pieces.append(StatusSegment(input, priority: 95)) }
         pieces += selectionPieces(for: state)
         if state.runnerTree.activeCount > 0 {
-            let count = state.runnerTree.activeCount
-            let noun = state.runnerTree.activeJobCount == count ? "job" : "runner"
-            pieces.append(StatusSegment("\(count) \(noun)\(count == 1 ? "" : "s")", priority: 50, target: .runners))
+            // Threads, then jobs, as the sidebar has them (roadmap 0194).
+            let jobs = state.runnerTree.activeJobCount
+            let threads = state.runnerTree.activeCount - jobs
+            let text = [(threads, "thread"), (jobs, "job")].filter { $0.0 > 0 }
+                .map { "\($0.0) \($0.1)\($0.0 == 1 ? "" : "s")" }.joined(separator: " · ")
+            pieces.append(StatusSegment(text, priority: 50, target: .runners))
         }
         return pieces
     }

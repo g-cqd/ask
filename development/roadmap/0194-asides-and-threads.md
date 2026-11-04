@@ -53,12 +53,33 @@ thread inheriting the context, reachable from the sidebar or `/threads`. Task t1
   main's conversation and its task; its answer is shown in main; its lane shows its conversation alone; what is typed in the lane
   continues it; main's next message takes both answers to the model; main's session holds none of the thread's words.
 
+## Done (2026-11-04): the sidebar, by the owner's request
+
+The owner: the sidebar "isn't well presented", "the background colouring of the session blocks is leaking into the sidebar", it should
+show "the tree of threads and another section for the jobs", "more compact".
+
+- A tinted block's row was filled to the screen's edge and the sidebar written over it, so the tint showed through every cell the
+  sidebar's text did not cover. A row is now tinted to the divider; the panel is blanked first (`ScreenComposer.write`). Pinned by
+  `SidebarSectionsTests` (fails on the old code) and `probe-sidebar.py`'s check on the real terminal's cells.
+- Two sections (`SidebarEntries`): Threads, a tree with box-drawing guides under a `◆ main` row (also the way back from a lane), and
+  Jobs. A runner belongs to its root's section, so a job a thread started stays under the thread. Empty sections are left out; with
+  nothing, "No threads or jobs".
+- One row per runner: a state mark instead of a trailing word, the name (a job's without its brackets), what it does, and an active
+  one's duration at the right edge; ended rows dim, the lane shown bold, the keyboard's choice inverse. The panel is 22 to 36 columns.
+- `RunnerTree` puts thread roots before job roots, so Up and Down move in the order drawn, in the strip as in the sidebar.
+- The status counts both: `1 thread · 2 jobs`.
+- `/thread` typed in a thread's lane forks that thread (`Effect.startThread(from:text:)`), listed under it; its notices go to that
+  lane. Its answer still goes to main, as every thread's does.
+- `probe-thread.py` 7 checks, `probe-sidebar.py` 12 checks, through the release binary in a PTY.
+
 ## Still owed
 
 - The lane shows what the thread did, not the conversation it was forked from.
 - A thread's approval questions share the screen's: one that waits when main's turn ends is declined with that turn. With
   `--allow all` none is asked.
-- A thread uses main's task list and notes; the jobs it starts are not listed under it; ended threads are never removed from the list.
+- A thread uses main's task list and notes; the jobs it starts are not yet given it as their parent (the sidebar would list them under
+  it); ended threads are never removed from the list.
+- A nested thread's answer goes to main, not to the thread it was forked from.
 - Its session file is an ordinary one, which `/resume` lists without saying it is a thread.
 - Memory: a second loop and conversation, not measured against the active budget; and nothing caps how many threads run.
 - Not verified against a real provider, nor in a real terminal.

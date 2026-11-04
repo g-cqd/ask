@@ -12,9 +12,27 @@ internal import System
 /// message, so the main model knows it.
 extension AgentConversation {
     func startThread(_ text: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async {
+        await beginThread(text, parent: nil, update: update)
+    }
+
+    func startThread(_ text: String, from parent: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
+        async
+    {
+        await beginThread(text, parent: parent, update: update)
+    }
+
+    /// From `parent`, a thread forked from that thread's conversation and listed under it, its notices in that thread's lane.
+    private func beginThread(
+        _ text: String,
+        parent: String?,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) async {
         let text = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let say: @Sendable (ConversationUpdate) -> Void = { shown in
+            update(parent.map { .thread(id: $0, shown) } ?? shown)
+        }
         guard !text.isEmpty else {
-            update(
+            say(
                 .notice(
                     "Usage: /thread TEXT starts a thread beside this conversation, which it knows up to now.",
                     isError: true
@@ -23,11 +41,11 @@ extension AgentConversation {
             return
         }
         do {
-            let recorder = try threadSession()
-            let name = threads.add(prompt: text, recorder: recorder)
+            let recorder = try threadSession(from: parent)
+            let name = threads.add(prompt: text, recorder: recorder, parent: parent)
             // Its conversation starts with its task; what is typed in its lane later, the screen shows as it is sent.
             update(.thread(id: name, .userPrompt(text)))
-            update(
+            say(
                 .notice(
                     "Started \(name), which knows this conversation up to now. Open it from the job list (/jobs) or the sidebar to "
                         + "follow it and talk to it; when it ends, its answer goes with your next message.",
@@ -36,7 +54,7 @@ extension AgentConversation {
             )
             try runThread(name, text, update: update)
         } catch {
-            update(.notice("Cannot start a thread: \(error)", isError: true))
+            say(.notice("Cannot start a thread: \(error)", isError: true))
         }
     }
 
@@ -51,8 +69,12 @@ extension AgentConversation {
 
     func stopThreads() async { await threads.stopAll() }
 
-    /// The thread's session: this one forked as it stands (what a running turn has written so far), or a new one before any prompt.
-    private func threadSession() throws -> SessionRecorder {
+    /// The thread's session: `parent`'s, or this one, forked as it stands (what a running turn has written so far); or a new one
+    /// before any prompt.
+    private func threadSession(from parent: String?) throws -> SessionRecorder {
+        if let parent, let thread = threads.thread(parent) {
+            return try forked(thread.recorder, upTo: thread.recorder.tree.leaf)
+        }
         if let original = session.withLock({ $0 }) { return try forked(original, upTo: original.tree.leaf) }
         try directory.create()
         let protection = SessionKeyAccess.protection
