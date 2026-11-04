@@ -33,6 +33,7 @@ extension ConfigEditor {
             case "ui": known = Set(UISection.keys)
             case "skills": known = Set(SkillsSection.keys)
             case "hooks": known = Set(HooksSection.keys)
+            case "threads": known = Set(ThreadsSection.keys)
             case "environment": known = Set(EnvironmentSection.keys)
             case "mcp": return Self.strippedServers(object, path: path, warnings: &warnings)
             default: return value

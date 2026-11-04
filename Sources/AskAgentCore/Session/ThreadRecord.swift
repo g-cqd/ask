@@ -9,6 +9,8 @@ public struct ThreadRecord: Sendable, Equatable {
         case merged
         /// In the thread's own session: whose thread it is (`file`, main's session) and its `id`.
         case identity
+        /// It was named `title`, by the on-device model or with `/rename`.
+        case renamed
     }
 
     public var event: Event
@@ -18,6 +20,7 @@ public struct ThreadRecord: Sendable, Equatable {
     public var file: String?
     public var at: EntryID?
     public var summary: String?
+    public var title: String?
 
     public init(_ event: Event, id: String) {
         self.event = event
@@ -41,6 +44,13 @@ public struct ThreadRecord: Sendable, Equatable {
         var record = ThreadRecord(.merged, id: id)
         record.summary = summary
         record.at = at
+        return record
+    }
+
+    /// `id` is now called `title`.
+    public static func renamed(_ id: String, to title: String) -> ThreadRecord {
+        var record = ThreadRecord(.renamed, id: id)
+        record.title = title
         return record
     }
 

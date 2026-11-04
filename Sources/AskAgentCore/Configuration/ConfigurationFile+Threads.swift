@@ -1,0 +1,38 @@
+extension ConfigurationFile {
+    /// The `threads` keys (roadmap 0195); unknown keys are refused.
+    struct ThreadsDecoded: Decodable {
+        var section = ThreadsSection()
+
+        init(from decoder: any Decoder) throws {
+            try ConfigurationFile.eachKey(of: decoder) { key, container in
+                // @dl:accept -- a key table decoded by the shared walk, as every section's is; the keys are the data
+                switch key.stringValue {
+                    case "max": section.max = try container.decode(Int.self, forKey: key)
+                    case "depth": section.depth = try container.decode(Int.self, forKey: key)
+                    case "names":
+                        let words = ThreadsSection.Names.allCases.map(\.rawValue)
+                        section.names = ThreadsSection.Names(
+                            rawValue: try ConfigurationFile.word(container, key, "threads.names", words)
+                        )
+                    default: throw UnknownKey(key: "threads." + key.stringValue)
+                }
+            }
+        }
+    }
+
+    /// Counts within range. A project's file may set them too: they only ever limit what runs.
+    static func validateThreads(_ section: ThreadsSection?, path: String) throws(ConfigurationError) {
+        guard let section else { return }
+        for (key, value, range) in [
+            ("max", section.max, 1 ... ThreadsSection.mostAtOnce),
+            ("depth", section.depth, 1 ... ThreadsSection.deepest)
+        ] {
+            guard let value, !range.contains(value) else { continue }
+            throw .outOfRange(
+                path: path,
+                key: "threads." + key,
+                reason: "must be from \(range.lowerBound) to \(range.upperBound)"
+            )
+        }
+    }
+}

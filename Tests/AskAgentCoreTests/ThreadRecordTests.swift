@@ -24,12 +24,16 @@ struct ThreadRecordTests {
         try recorder.append(.user("one"))
         try recorder.recordThread(started)
         try recorder.recordThread(merged)
+        try recorder.recordThread(.renamed("thread-1", to: "parser work"))
         let reread = try SessionLog.recover(Array(try Data(contentsOf: URL(fileURLWithPath: path))))
         #expect(reread.issues.isEmpty)
-        #expect(reread.tree.threads == [started, merged])
+        #expect(reread.tree.threads == [started, merged, .renamed("thread-1", to: "parser work")])
         #expect(reread.tree.entries.count == 1 && reread.tree.context().count == 1, "no entry, no context")
         let again = try SessionLog.recover(try SessionLog.snapshot(reread.tree))
-        #expect(again.tree.threads == [started, merged], "a rewrite keeps them")
+        #expect(
+            again.tree.threads.count == 3 && again.tree.threads.last?.title == "parser work",
+            "a rewrite keeps them"
+        )
     }
 
     @Test func `a thread's own session says so, and a session listing sees it`() throws {

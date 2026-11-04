@@ -23,6 +23,7 @@ extension Configuration {
         compare("approvals", previous.approvals, approvals)
         compare("modelScopes", previous.modelScopes, modelScopes)
         compare("hooks", previous.hooks, hooks)
+        compare("threads", previous.threads, threads)
         compare("sandbox", previous.sandbox, sandbox)
         compare("ui", previous.ui, ui)
         compare("skills", previous.skills, skills)

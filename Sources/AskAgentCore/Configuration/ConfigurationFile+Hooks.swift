@@ -1,6 +1,7 @@
 extension ConfigurationFile {
     /// The `hooks` keys (roadmap 0192); unknown keys are refused.
     struct HooksDecoded: Decodable {
+        // @dl:accept -- every section of the file is decoded and layered by the same idiom; its keys are the data
         var section = HooksSection()
 
         init(from decoder: any Decoder) throws {

@@ -40,6 +40,10 @@ extension AgentConversation {
             )
             return
         }
+        if let refusal = threadLimitReached(under: parent) {
+            say(.notice(refusal, isError: true))
+            return
+        }
         do {
             // Main's session first, so a thread started before any prompt is recorded there too (roadmap 0195).
             if parent == nil, session.withLock({ $0 == nil }) { _ = try recorder() }
@@ -52,9 +56,44 @@ extension AgentConversation {
             // Where it starts, in the conversation it was forked from (note n23).
             say(.threadStarted(id: "fork-\(name)", name: name, prompt: text))
             try runThread(name, text, update: update)
+            nameThread(name, task: text, update: update)
         } catch {
             say(.notice("Cannot start a thread: \(error)", isError: true))
         }
+    }
+
+    /// Why a thread may not start under `parent` (main when nil), or nil when it may: `threads.max` at work, or `threads.depth` deep.
+    private func threadLimitReached(under parent: String?) -> String? {
+        let limits = current.withLock { $0.settings.configuration.threads.value }
+        // The more particular reason first: inside a thread that deep, no count of threads would let one start.
+        if let parent, threads.depth(of: parent) >= limits.nesting {
+            return "Threads nest at most \(limits.nesting) deep (threads.depth); \(parent) is that deep already."
+        }
+        let working = threads.working
+        if working >= limits.atOnce {
+            return
+                "\(working) \(working == 1 ? "thread is" : "threads are") at work, as many as threads.max allows. Wait for "
+                + "one to finish, or stop one (Ctrl+C in its lane)."
+        }
+        return nil
+    }
+
+    /// Names thread `name` from its task with the on-device model, when `threads.names` asks for it and the model answers in time.
+    private func nameThread(_ name: String, task: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
+        guard current.withLock({ $0.settings.configuration.threads.value.naming }) == .onDevice else { return }
+        Task {
+            guard let title = await ThreadNamer.name(for: task), threads.thread(name)?.title == nil else { return }
+            renameThread(name, to: title, update: update)
+        }
+    }
+
+    /// Names thread `id` `title` where it is shown, and records it for a resume.
+    func renameThread(_ id: String, to title: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
+        let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard threads.thread(id) != nil, !title.isEmpty else { return }
+        threads.rename(id, to: title)
+        try? session.withLock { $0 }?.recordThread(.renamed(id, to: title))
+        update(.runners(threads.runners))
     }
 
     /// Ctrl+C in thread `id`'s lane (roadmap 0195): it stops with the threads under it, and asks once whether to merge them back in.

@@ -22,9 +22,11 @@ final class ThreadTable: Sendable {
         var asking = 0
         /// The summaries of the threads merged into it, for what it is sent next or for its own summary.
         var reports: [String] = []
+        /// What it is called where it is shown: the on-device model's name or the person's; its id, `thread-N`, when none.
+        var title: String?
     }
 
-    private struct State {
+    struct State {
         var next = 1
         var nextPrompt = -1
         var threads: [String: Thread] = [:]
@@ -37,7 +39,8 @@ final class ThreadTable: Sendable {
         var holding: Set<String> = []
     }
 
-    private let state = Mutex(State())
+    /// Internal, for the queries in ThreadTable+Tree.swift.
+    let state = Mutex(State())
 
     /// A new thread over `recorder`, named `thread-N`, running, under `parent` when it was forked from that thread.
     func add(prompt: String, recorder: SessionRecorder, parent: String? = nil) -> String {
@@ -133,7 +136,7 @@ final class ThreadTable: Sendable {
                     state.threads[name]
                         .map {
                             RunnerInfo(
-                                name: $0.name,
+                                name: $0.title ?? $0.name,
                                 detail: $0.prompt,
                                 id: $0.name,
                                 parentID: $0.parent,
@@ -190,20 +193,6 @@ final class ThreadTable: Sendable {
 
     /// Whether thread `name` is settled with others it was stopped with, not on its own.
     func isHeldTogether(_ name: String) -> Bool { state.withLock { $0.holding.contains(name) } }
-
-    /// `name` and every thread under it, `name` first, each before the threads under it.
-    func subtree(_ name: String) -> [String] {
-        state.withLock { state in
-            var names: [String] = []
-            var pending = [name]
-            while let next = pending.popLast() {
-                guard state.threads[next] != nil else { continue }
-                names.append(next)
-                pending += state.order.filter { state.threads[$0]?.parent == next }.reversed()
-            }
-            return names
-        }
-    }
 
     /// Stops `names` together and waits for their runs to end; while `holding`, none of them is settled on its own.
     func stop(_ names: [String], holding: Bool) async {

@@ -104,6 +104,17 @@ extension AgentConversation {
             ),
             // @dl:accept -- the conversation's list reads alike entry to entry because every entry is a name and a sentence
             SlashCommand(
+                name: "threads",
+                summary: "Pick a thread of this session, merged or not, and show its lane: /threads, or /threads NAME.",
+                takesChoices: true,
+                duringTurn: .atOnce
+            ),
+            SlashCommand(
+                name: "rename",
+                summary: "In a thread's lane, name the thread: /rename TITLE.",
+                duringTurn: .atOnce
+            ),
+            SlashCommand(
                 name: "thread",
                 summary:
                     "Start a thread beside the conversation, which it knows: /thread TEXT. Its answer comes back to main.",
@@ -164,6 +175,9 @@ extension AgentConversation {
                 case "tasks": update(.notice(SessionTasks.answer(to: arguments), isError: false))
                 case "btw": await self.aside(arguments, update: update)
                 case "thread": await self.startThread(arguments, update: update)
+                case "threads": self.showThreads(arguments, update: update)
+                case "rename":
+                    update(.notice("/rename TITLE names a thread: type it in the thread's lane.", isError: false))
                 case "mcp": update(.notice(MCPHub.report(self.mcp.status).joined(separator: "\n"), isError: false))
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))

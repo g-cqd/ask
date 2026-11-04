@@ -9,21 +9,29 @@ extension ScreenController {
         history.record(text)
     }
 
+    /// The commands that are a thread's lane's own (roadmap 0195), keeping the lane: `/thread` starts one from that thread, under it;
+    /// `/rename TITLE` names it; `/reload` comes back to it. Nil for anything else, or outside a thread's lane.
+    private func threadLaneCommand(_ line: String) -> [Effect]? {
+        guard let lane = state.lane, lane.isThread, case .command(let name, let arguments) = SlashInput(line) else {
+            return nil
+        }
+        switch name {
+            case "thread": return [.startThread(from: lane.id, text: arguments)]
+            case "rename": return [.renameThread(id: lane.id, title: arguments)]
+            case "reload": return [.runCommand(name: "reload", arguments: arguments)]
+            default: return nil
+        }
+    }
+
     mutating func submit(_ line: String, followUp: Bool) -> [Effect] {
         // In a thread's lane a message is the thread's (roadmap 0194); a command still goes back to main.
         if case .prompt(let text) = SlashInput(line), let effects = sendToThread(text) {
             history.record(line)
             return effects
         }
-        // `/reload` keeps the lane: the new build shows it again (roadmap 0195).
-        if case .command("reload", let arguments) = SlashInput(line), state.lane?.isThread == true {
+        if let effects = threadLaneCommand(line) {
             history.record(line)
-            return [.runCommand(name: "reload", arguments: arguments)]
-        }
-        // `/thread` in a thread's lane starts one from that thread, under it in the tree; the lane stays.
-        if case .command("thread", let arguments) = SlashInput(line), let lane = state.lane, lane.isThread {
-            history.record(line)
-            return [.startThread(from: lane.id, text: arguments)]
+            return effects
         }
         leaveLane()
         history.record(line)
