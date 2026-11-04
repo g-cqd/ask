@@ -18,7 +18,10 @@ Swift 6.4, macOS 26 and a clone. Anyone but the author starts at the wrong end.
    and runs the four budgets, and writes the binary, its checksum and the commit.
 3. **An install path** the README can state in three lines, and an upgrade path: what happens to `~/.config/ask` and to sessions written by an older build (the session
    format is versioned and an upgrade keeps a backup, `SessionFile.swift`; what an *older* build does with a *newer* file is to be probed, not assumed).
-4. **The signing question**, which only the owner can answer: a downloaded unsigned binary is quarantined by macOS; a signed and notarised one needs an Apple developer account.
+4. **The session format's baseline (ADR-0144).** Before the first release candidate, 1.0.0-rc.1, remove every `SessionMigration`
+   step (each is marked `removeBefore: "1.0.0-rc.1"`). The format they leave is 1.0's baseline. An older file then opens only through
+   a release before the candidate, which converts it. Unknown records and entries stay kept-not-read after 1.0.
+5. **The signing question**, which only the owner can answer: a downloaded unsigned binary is quarantined by macOS; a signed and notarised one needs an Apple developer account.
 
 ## Done when
 
