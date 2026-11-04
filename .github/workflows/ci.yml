@@ -22,7 +22,7 @@ concurrency:
 jobs:
   ci:
     name: Checks
-    uses: g-cqd/swift-ci/.github/workflows/swift-ci.yml@966187798f2fd93de8af13b7a35fc07d24e90d55 # swift-ci 9661877
+    uses: g-cqd/swift-ci/.github/workflows/swift-ci.yml@c930444a6f6f462ddce3fbad7df9f8e2acc3e04b # swift-ci c930444
     permissions:
       contents: write # reusable publish permission; this package publishes no archives
 
