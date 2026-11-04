@@ -14,8 +14,12 @@ public struct RunnerInfo: Sendable, Equatable {
         case running
         case waitingForApproval = "waiting for approval"
         case done, failed, stopped
+        /// A thread's (roadmap 0195): ended, waiting for a thread under it to merge first; writing its summary; merged into its parent.
+        case held = "waiting on its threads"
+        case merging
+        case merged
 
-        public var isActive: Bool { self == .running || self == .waitingForApproval }
+        public var isActive: Bool { self == .running || self == .waitingForApproval || self == .merging }
     }
 
     /// How the model and the user name it, such as `job-3`.

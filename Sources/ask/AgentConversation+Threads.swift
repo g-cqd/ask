@@ -45,13 +45,8 @@ extension AgentConversation {
             let name = threads.add(prompt: text, recorder: recorder, parent: parent)
             // Its conversation starts with its task; what is typed in its lane later, the screen shows as it is sent.
             update(.thread(id: name, .userPrompt(text)))
-            say(
-                .notice(
-                    "Started \(name), which knows this conversation up to now. Open it from the job list (/jobs) or the sidebar to "
-                        + "follow it and talk to it; when it ends, its answer goes with your next message.",
-                    isError: false
-                )
-            )
+            // Where it starts, in the conversation it was forked from (note n23).
+            say(.threadStarted(id: "fork-\(name)", name: name, prompt: text))
             try runThread(name, text, update: update)
         } catch {
             say(.notice("Cannot start a thread: \(error)", isError: true))
@@ -59,6 +54,18 @@ extension AgentConversation {
     }
 
     func sendToThread(_ id: String, text: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
+        // A merged thread is closed (roadmap 0195): its conversation stays readable, and `/thread` there branches from it.
+        switch threads.thread(id)?.state {
+            case .merged?:
+                let shown =
+                    "\(id) has merged; it is read-only now. /thread TEXT here starts a new thread from where it ended."
+                update(.thread(id: id, .notice(shown, isError: false)))
+                return
+            case .merging?:
+                update(.thread(id: id, .notice("\(id) is writing its summary to merge.", isError: false)))
+                return
+            default: break
+        }
         guard !threads.steer(id, with: text) else { return }
         do {
             try runThread(id, text, update: update)
@@ -97,10 +104,16 @@ extension AgentConversation {
     {
         guard let thread = threads.thread(name) else { return }
         let loop = try agentLoop()
-        let queue = PromptQueue { [mcp] text in SessionTasks.attachReferences(await mcp.attachResources(text)) }
         let threads = threads
+        // What threads under it merged goes with what it is sent next, as main's do.
+        let queue = PromptQueue { [mcp] text in
+            threads.attachReports(SessionTasks.attachReferences(await mcp.attachResources(text)), for: name)
+        }
         let task = Task {
-            let prompt = SessionTasks.attachReferences(await self.mcp.attachResources(text))
+            let prompt = threads.attachReports(
+                SessionTasks.attachReferences(await self.mcp.attachResources(text)),
+                for: name
+            )
             let outcome: RunnerInfo.State
             do {
                 let route = ApprovalRoute(
@@ -127,38 +140,11 @@ extension AgentConversation {
                 outcome = .failed
             }
             update(.thread(id: name, .runEnded))
-            let answer = Self.lastAnswer(in: thread.recorder.tree)
-            threads.ended(name, as: outcome, report: answer.map { Self.report(name, $0) })
+            threads.ended(name, as: outcome)
             update(.runners(threads.runners))
-            if let answer {
-                let id = "\(name)-\(UUID().uuidString)"
-                update(.asideStarted(id: id, question: thread.prompt, name: name))
-                update(
-                    .asideFinished(
-                        id: id,
-                        outcome == .done ? .succeeded : .failed("\(outcome.rawValue)"),
-                        answer: answer
-                    )
-                )
-                update(.notice("\(name)'s answer goes to the model with your next message.", isError: false))
-            }
+            await self.settle(name, update: update)
         }
         threads.run(name, task: task, queue: queue)
         update(.runners(threads.runners))
-    }
-
-    /// The text of the last reply in `tree`, nil when it has none.
-    private static func lastAnswer(in tree: SessionTree) -> String? {
-        for entry in tree.context().reversed() {
-            guard case .response(let response, _) = entry.payload else { continue }
-            let text = response.blocks.compactMap { if case .text(let text) = $0 { text } else { nil } }
-                .joined(separator: "\n")
-            if !text.allSatisfy(\.isWhitespace) { return text }
-        }
-        return nil
-    }
-
-    private static func report(_ name: String, _ answer: String) -> String {
-        "\(ListReferences.threadMarker)\(name) ---\n\(answer)\n--- end of thread ---"
     }
 }

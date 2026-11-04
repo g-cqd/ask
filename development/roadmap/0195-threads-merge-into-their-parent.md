@@ -184,11 +184,31 @@ summary instructions, or rewrite the summary).
 - Not done yet: the `threads.questions` setting (focus, after, never); today a thread's question shows only in its lane, and the
   sidebar's `?` and the counts say it waits.
 
+## Done (2026-11-04): step 2, merging into the parent
+
+- A thread whose run ended merges once every thread under it has merged; until then it is `held` ("waiting on its threads"). The
+  merge is one more request, `AgentLoop.aside(_:over:instruction:)` with `AgentLoop.mergeInstruction`, over the thread's own context
+  (so read from the provider's cache), carrying the summaries merged into it. A failed request sends its last reply instead.
+- The summary goes to its parent: main's next message, or the parent thread's next message and its own summary. Merges go from the
+  bottom up: the last child to merge settles its parent (`AgentConversation+Merge`, `ThreadTable`).
+- A thread that failed or was stopped asks in its lane whether to merge it back in; no keeps it unmerged. Nothing is asked or merged
+  while ask quits.
+- A merged thread is read-only: typing in its lane says so; `/thread` there still branches from it.
+- The parent shows where the thread started (`ConversationUpdate.threadStarted`: an open block in the aside's colour, note n23) and
+  where it merged (`threadMerged`: folded, opening onto the summary). New runner states `held`, `merging`, `merged`; the sidebar marks
+  them `◌`, a spinner and a dim `✓`.
+- `ThreadBlocksTests` (3); `probe-thread.py` rewritten for the lifecycle (9 checks: the fork block; a nested thread; the outer thread
+  held while the inner one sleeps; the inner one's summary request, then the outer one's carrying it; read-only after merging; main's
+  folded merge block; main's next message carrying the outer summary with the inner inside; main's session clean).
+  `probe-thread-approval.py` 5, `probe-sidebar.py` 14.
+- Not probed: the failed-or-stopped confirmation (no fake-provider failure in the probes yet), and stopping one thread from the screen,
+  which does not exist yet (only quitting stops threads).
+
 ## The order to build it
 
 1. ~~Thread-owned approvals and questions.~~ Done, above.
-2. The lifecycle and the waiting rule, merge by summary into the parent, and the system block. Tests come first, on a fake provider:
-   bottom-up order, a held parent, a stop with its confirmation.
+2. ~~The lifecycle and the waiting rule, merge by summary into the parent, and the system block.~~ Done, above; the stop with its
+   confirmation is not probed.
 3. ADR-0144 first: unknown records and entries kept, and the migration steps. Then the thread records, and resume rebuilding the
    tree.
 4. Jobs parented to their thread, and the two sidebar settings.

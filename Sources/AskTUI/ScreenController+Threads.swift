@@ -79,8 +79,7 @@ extension ScreenController {
             case .userPrompt(let text): state.transcript.addUser(text)
             // The thread's own questions too (roadmap 0195): its view is the screen's here, so they land in its section.
             case .assistantText, .thinkingText, .toolStarted, .toolFinished, .toolProgress, .jobOutput, .notice,
-                .askApproval,
-                .askQuestions:
+                .askApproval, .askQuestions, .threadStarted, .threadMerged:
                 return apply(update)
             // Its run's end takes away what it still asked.
             case .runEnded:
