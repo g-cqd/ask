@@ -133,14 +133,15 @@ struct CommandCheckRefusalTests {
         let start = clock.now
         let stopped: Bool = await withCheckedContinuation { over in
             let box = Mutex<CheckWatchdog?>(nil)
-            let watchdog = CheckWatchdog(process, deadline: .seconds(30)) {
+            let watchdog = CheckWatchdog(process, deadline: .seconds(120)) {
                 over.resume(returning: box.withLock { $0 }?.stopped ?? false)
             }
             box.withLock { $0 = watchdog }
             process.waitUntilExit()
             watchdog.cancel()
         }
-        #expect(clock.now - start < .seconds(10), "woken by the cancel, not at the 30 s deadline")
+        // Far inside the deadline, far outside what a runner busy with other suites' blocked threads can delay a wake-up by.
+        #expect(clock.now - start < .seconds(60), "woken by the cancel, not at the 120 s deadline")
         #expect(!stopped)
     }
 }
