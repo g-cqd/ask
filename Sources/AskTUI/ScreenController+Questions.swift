@@ -18,8 +18,9 @@ extension ScreenController {
         if key.keyCode == 0x03 || (key.modifiers.contains(.ctrl) && (key.keyCode == 0x63 || key.keyCode == 0x43)) {
             return finish(pending, with: nil) + abort()
         }
-        // In a lane the section is not shown: Esc returns to it, and the lane keeps its other keys.
-        if state.lane != nil {
+        // In a job's lane the section is not shown: Esc returns to it, and the lane keeps its other keys. A thread's lane shows the
+        // thread's own questions, which take the keys there.
+        if state.lane != nil, state.lane?.isThread != true {
             guard key.keyCode == 0x1B else { return nil }
             leaveLane()
             return []

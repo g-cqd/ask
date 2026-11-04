@@ -15,11 +15,14 @@ extension AgentConversation {
             return state.nextID
         }
         let shown = questions.map(Self.screenQuestion)
+        let route = channel == nil ? ApprovalRoute.current : nil
+        route?.waiting(true)
+        defer { route?.waiting(false) }
         return await withTaskCancellationHandler {
             await withCheckedContinuation { (answer: CheckedContinuation<[PersonAnswer]?, Never>) in
                 let ask = approvals.withLock { state in
                     state.questions[id] = answer
-                    return channel ?? state.ask
+                    return channel ?? route?.send ?? state.ask
                 }
                 if Task.isCancelled { return settleQuestions(id, with: nil) }
                 guard let ask else { return settleQuestions(id, with: nil) }

@@ -103,12 +103,21 @@ extension AgentConversation {
             let prompt = SessionTasks.attachReferences(await self.mcp.attachResources(text))
             let outcome: RunnerInfo.State
             do {
-                try await loop.run(prompt, in: thread.recorder, input: queue) { event in
-                    if let spent = event.usage {
-                        self.usage.withLock { $0.addBeside(spent) }
-                        update(.status(self.usage.withLock { $0.compact }))
+                let route = ApprovalRoute(
+                    send: { update(.thread(id: name, $0)) },
+                    waiting: { began in
+                        threads.asking(name, began: began)
+                        update(.runners(threads.runners))
                     }
-                    for shown in Self.updates(for: event) { update(.thread(id: name, shown)) }
+                )
+                try await ApprovalRoute.$current.withValue(route) {
+                    try await loop.run(prompt, in: thread.recorder, input: queue) { event in
+                        if let spent = event.usage {
+                            self.usage.withLock { $0.addBeside(spent) }
+                            update(.status(self.usage.withLock { $0.compact }))
+                        }
+                        for shown in Self.updates(for: event) { update(.thread(id: name, shown)) }
+                    }
                 }
                 outcome = .done
             } catch AgentError.cancelled {

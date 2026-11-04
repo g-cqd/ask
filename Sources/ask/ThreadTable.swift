@@ -15,6 +15,8 @@ final class ThreadTable: Sendable {
         var state: RunnerInfo.State = .running
         var queue: PromptQueue?
         var task: Task<Void, Never>?
+        /// How many of its questions wait on the person; while any does, it is listed as waiting (roadmap 0195).
+        var asking = 0
     }
 
     private struct State {
@@ -57,6 +59,16 @@ final class ThreadTable: Sendable {
             state.threads[name]?.queue = nil
             state.threads[name]?.task = nil
             if let report { state.reports.append(report) }
+        }
+    }
+
+    /// One more of thread `name`'s questions waits on the person (`began`), or one is settled. Listed as waiting while any does.
+    func asking(_ name: String, began: Bool) {
+        state.withLock { state in
+            guard var thread = state.threads[name] else { return }
+            thread.asking = Swift.max(0, thread.asking + (began ? 1 : -1))
+            if thread.state.isActive { thread.state = thread.asking > 0 ? .waitingForApproval : .running }
+            state.threads[name] = thread
         }
     }
 
