@@ -57,12 +57,15 @@ extension ScreenController {
             leaveLane()
             return []
         }
+        if id == Sidebar.toggleID { return toggleSidebar() }
         guard let runner = state.runners.first(where: { $0.id == id }) else { return [] }
         return enterLane(runner)
     }
 
     /// A click on the sidebar's row `index`: the same as a click on the strip's row, Enter on that runner.
     mutating func clickSidebar(row index: Int) -> [Effect] {
+        // Closed, the sidebar is only its corner toggle (note n24).
+        if frame.sidebarCorner != nil { return toggleSidebar(announcing: true) }
         guard state.pendingApproval == nil, frame.sidebarIDs.indices.contains(index) else { return [] }
         return clickRunner(frame.sidebarIDs[index])
     }

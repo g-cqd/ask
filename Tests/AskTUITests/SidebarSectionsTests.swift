@@ -45,19 +45,28 @@ struct SidebarSectionsTests {
     @Test func `threads come first, as a tree under main with a thread's jobs beneath it, then the jobs`() {
         let rig = rig()
         let rows = (0 ..< 11).map { panel(rig, row: $0) }
-        #expect(rows[0] == "Threads · 1 running")
+        #expect(
+            rows[0].hasSuffix(Sidebar.closeMark) && rows[0].allSatisfy { $0 == " " || String($0) == Sidebar.closeMark }
+        )
         #expect(rows[1] == "◆ main")
         #expect(rows[2].hasPrefix("├ ") && rows[2].contains("thread-1 look into X"))
         #expect(rows[3].hasPrefix("│ ├ ") && rows[3].contains("9f00 make"), "a job thread-1 started stays under it")
         #expect(rows[4] == "│ └ ✗ thread-3 deeper")
         #expect(rows[5] == "└ ✓ thread-2 check pins")
         #expect(rows[6].isEmpty)
-        #expect(rows[7] == "Jobs · 1 running")
+        #expect(rows[7] == "Jobs")
         #expect(rows[8].contains("#26a7 swift build") && !rows[8].contains("["), "a job is named without brackets")
         #expect(rows[9] == "✓ #078c npm test")
         #expect(
             rig.controller.frame.sidebarIDs.prefix(10)
-                == ["", RunnerStrip.mainID, "thread-1", "job-3", "thread-3", "thread-2", "", "", "job-1", "job-2"]
+                == [
+                    Sidebar.toggleID, RunnerStrip.mainID, "thread-1", "job-3", "thread-3", "thread-2", "", "", "job-1",
+                    "job-2"
+                ]
+        )
+        #expect(
+            panel(rig, row: rig.composer.transcriptRows - 1) == "1 thread, 2 jobs running",
+            "the counts, at the bottom"
         )
     }
 

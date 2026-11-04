@@ -53,10 +53,20 @@ struct SidebarTests {
         let rig = rig()
         let divider = 100 - 25 - 1
         #expect(dividerColumn(rig) == divider && rig.controller.frame.transcriptColumns == divider)
-        #expect(rig.text(row: 0).hasSuffix("│ Jobs · 2 running"))
-        #expect(rig.text(row: 1).contains("│ | job-1 npm run dev"), "the mark is the running job's spinner")
-        #expect(rig.text(row: 2).contains("│ | job-2 tail -f log"))
-        #expect(rig.controller.frame.sidebarIDs == ["", "job-1", "job-2"], "a heading is no runner")
+        #expect(rig.text(row: 0).hasSuffix(Sidebar.closeMark), "the first row is the toggle, in the corner")
+        #expect(rig.text(row: 1).contains("│ ◆ main"), "main is always listed")
+        #expect(rig.text(row: 3).hasSuffix("│ Jobs"))
+        #expect(rig.text(row: 4).contains("│ | job-1 npm run dev"), "the mark is the running job's spinner")
+        #expect(rig.text(row: 5).contains("│ | job-2 tail -f log"))
+        #expect(
+            rig.text(row: rig.composer.transcriptRows - 1).contains("│ 2 jobs running"),
+            "the counts are at the bottom"
+        )
+        #expect(
+            rig.controller.frame.sidebarIDs.prefix(6)
+                == [Sidebar.toggleID, RunnerStrip.mainID, "", "", "job-1", "job-2"],
+            "a gap or a heading is no runner"
+        )
         for row in 0 ..< rig.composer.transcriptRows {
             #expect(rig.buffer[row, divider].character == "│", "row \(row)")
         }
@@ -76,7 +86,8 @@ struct SidebarTests {
 
     @Test func `with no runners it says so, and it does not take a narrow screen`() {
         let empty = rig(runners: [])
-        #expect(empty.text(row: 0).hasSuffix("│ No threads or jobs"))
+        #expect(empty.text(row: 1).hasSuffix("│ ◆ main"))
+        #expect(empty.text(row: empty.composer.transcriptRows - 1).hasSuffix("│ Nothing running"))
         let narrow = rig(columns: 69)
         #expect(dividerColumn(narrow) == nil && narrow.controller.frame.transcriptColumns == 69)
         let exact = rig(columns: 70)
@@ -121,7 +132,9 @@ struct SidebarTests {
         rig.draw()
         #expect(
             !(0 ..< 20).map { rig.text(row: $0) }.joined().contains("job-3")
-                && rig.controller.frame.sidebarIDs == ["", "job-1"]
+                && rig.controller.frame.sidebarIDs.prefix(6) == [
+                    Sidebar.toggleID, RunnerStrip.mainID, "", "", "job-1", ""
+                ]
         )
     }
 
@@ -130,7 +143,7 @@ struct SidebarTests {
         press(Key.down.rawValue, &rig)
         press(Key.down.rawValue, &rig)
         let start = rig.controller.frame.transcriptColumns + 3
-        #expect(rig.buffer[2, start].style.inverse && !rig.buffer[1, start].style.inverse)
+        #expect(rig.buffer[5, start].style.inverse && !rig.buffer[4, start].style.inverse)
         #expect(press(Key.enter.rawValue, &rig) == [.readRunnerOutput(id: "job-2")])
         #expect(rig.controller.state.lane?.id == "job-2")
     }
@@ -138,12 +151,24 @@ struct SidebarTests {
     @Test func `a click on a sidebar row focuses it, and a click on the divider or a blank row does nothing`() {
         var rig = rig()
         let column = rig.controller.frame.transcriptColumns + 3
-        #expect(rig.click(row: 5, col: column).isEmpty)
+        #expect(rig.click(row: 9, col: column).isEmpty)
         #expect(
-            rig.click(row: 0, col: rig.controller.frame.transcriptColumns).isEmpty && rig.controller.state.lane == nil
+            rig.click(row: 1, col: rig.controller.frame.transcriptColumns).isEmpty && rig.controller.state.lane == nil
         )
-        #expect(rig.click(row: 0, col: column).isEmpty, "the heading")
-        #expect(rig.click(row: 2, col: column) == [.readRunnerOutput(id: "job-2")])
+        #expect(rig.click(row: 3, col: column).isEmpty, "the heading")
+        #expect(rig.click(row: 5, col: column) == [.readRunnerOutput(id: "job-2")])
+    }
+
+    @Test func `its first row closes it, and the corner it leaves opens it again`() {
+        var rig = rig()
+        _ = rig.click(row: 0, col: 98)
+        #expect(!rig.controller.state.sidebarOpen && dividerColumn(rig) == nil)
+        #expect(rig.text(row: 0).hasSuffix(" " + Sidebar.openMark), "closed, the corner keeps the toggle")
+        #expect(rig.controller.frame.transcriptColumns == 100)
+        _ = rig.click(row: 0, col: 99)
+        #expect(rig.controller.state.sidebarOpen && dividerColumn(rig) != nil)
+        let narrow = self.rig(columns: 69, sidebar: false)
+        #expect(!narrow.text(row: 0).contains(Sidebar.openMark), "no toggle where the panel could not open")
     }
 
     @Test func `a click in the transcript still selects it, and its columns stop at the divider`() {
