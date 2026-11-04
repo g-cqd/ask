@@ -17,6 +17,8 @@ import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import probe_runner_list as runners  # noqa: E402
 spec = importlib.util.spec_from_file_location("fold_probe", os.path.join(HERE, "probe-folding.py"))
 probe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(probe)
@@ -27,21 +29,6 @@ def check(label, condition):
     probe.check(label, condition)
     checks.append(label)
 
-
-def lane(terminal, row_text):
-    """Opens the job list and the runner whose row reads `row_text`."""
-    # /jobs toggles the list, which a lane left open.
-    if not any(line.startswith(row_text) for line in terminal.text().splitlines()):
-        terminal.send(b"/jobs\r")
-    terminal.until(lambda: any(line.startswith(row_text) for line in terminal.text().splitlines()))
-    # The list's rows start at the left edge; the transcript's lines are indented.
-    rows = [line for line in terminal.text().splitlines() if line.startswith("thread-") or line.startswith("[#")]
-    index = next(i for i, line in enumerate(rows) if row_text in line)
-    for _ in range(index + 1):
-        terminal.send(b"\x1b[B")
-        time.sleep(0.2)
-    terminal.send(b"\r")
-    terminal.until(lambda: "main  back to the conversation" in terminal.text())
 
 
 def main():
@@ -88,20 +75,19 @@ def main():
             check("main shows where the first thread started and where it merged, in place",
                   shown.index("MAIN ONE") < shown.index("thread-1 · started here · first task")
                   < shown.index("thread-1 · merged · first task") < shown.index("thread-2 · started here · second task"))
-            terminal.send(b"/jobs\r")
-            terminal.until(lambda: "thread-1  first task" in terminal.text())
-            listed = terminal.text()
+            runners.show(terminal)
+            terminal.until(lambda: runners.row(terminal, "thread-2") is not None)
             check("the first comes back merged, the second stopped, neither restarted",
-                  "thread-1  first task · merged" in listed and "thread-2  second task · stopped" in listed
+                  runners.state(terminal, "thread-1") == "merged" and runners.state(terminal, "thread-2") == "stopped"
                   and len(server.requests) == 4)
-            lane(terminal, "thread-1  first task")
+            runners.open_lane(terminal, "thread-1")
             check("the merged thread's lane shows its conversation", "FIRST ANSWER" in terminal.text() and "MAIN ONE" not in terminal.text())
             terminal.send(b"more?\r")
             terminal.until(lambda: "read-only" in terminal.text())
             check("and it is read-only", "has merged; it is read-only now" in terminal.text())
             terminal.send(b"\x1b")
             terminal.until(lambda: "back to the conversation" not in terminal.text())
-            lane(terminal, "thread-2  second task")
+            runners.open_lane(terminal, "thread-2")
             terminal.send(b"go on\r")
             terminal.until(lambda: len(server.requests) > 5)
             continued = json.dumps(server.requests[4]["body"])
@@ -113,7 +99,8 @@ def main():
             # A thread's own session says whose it is: its identity record.
             thread_files = [os.path.basename(p)[:-6] for p in sessions if '"event":"identity"' in open(p).read()]
             main_file = [os.path.basename(p)[:-6] for p in sessions if '"event":"identity"' not in open(p).read()]
-            terminal.until(lambda: "thread-2  second task · merged" in terminal.text())
+            runners.show(terminal)
+            terminal.until(lambda: runners.state(terminal, "thread-2") == "merged")
             terminal.send(b"/resume ")
             terminal.until(lambda: main_file[0] in terminal.text())
             picker = terminal.text()

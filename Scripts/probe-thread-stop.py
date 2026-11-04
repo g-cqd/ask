@@ -11,11 +11,14 @@ import glob
 import importlib.util
 import json
 import os
+import re
 import sys
 import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import probe_runner_list as runners  # noqa: E402
 spec = importlib.util.spec_from_file_location("fold_probe", os.path.join(HERE, "probe-folding.py"))
 probe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(probe)
@@ -30,18 +33,6 @@ def check(label, condition):
 def body(server, index):
     return json.dumps(server.requests[index]["body"]) if len(server.requests) > index else ""
 
-
-def open_lane(terminal, name):
-    if not any(line.startswith(name + "  ") for line in terminal.text().splitlines()):
-        terminal.send(b"/jobs\r")
-    terminal.until(lambda: any(line.startswith(name + "  ") for line in terminal.text().splitlines()))
-    rows = [line for line in terminal.text().splitlines() if line.startswith("thread-") or line.startswith("main  ")]
-    rows = [line for line in rows if not line.startswith("main  ")]
-    for _ in range(next(i for i, line in enumerate(rows) if line.startswith(name + "  ")) + 1):
-        terminal.send(b"\x1b[B")
-        time.sleep(0.2)
-    terminal.send(b"\r")
-    terminal.until(lambda: "main  back to the conversation" in terminal.text())
 
 
 def main():
@@ -71,11 +62,12 @@ def main():
             terminal.until(lambda: "started here · early task" in terminal.text() and len(server.requests) > 0)
             mains = [p for p in glob.glob(state + "/ask/sessions/*/*.jsonl") if '"event":"started"' in open(p).read()]
             check("a thread started before any prompt is recorded in main's session", len(mains) == 1)
-            terminal.send(b"/jobs\r")
-            terminal.until(lambda: any(line.startswith("  [#") for line in terminal.text().splitlines()))
+            runners.show(terminal)
+            job_under = re.compile(r"^[│ ] [├└] \S+ #[0-9a-f]{4} sleep 30")
+            terminal.until(lambda: any(job_under.match(line) for line in runners.lines(terminal)))
             check("the command the thread runs is listed under it",
-                  any(line.startswith("  [#") and "sleep 30" in line for line in terminal.text().splitlines()))
-            open_lane(terminal, "thread-1")
+                  any(job_under.match(line) for line in runners.lines(terminal)))
+            runners.open_lane(terminal, "thread-1")
             terminal.send(b"/thread nested task\r")
             terminal.until(lambda: len(server.requests) > 1)
             time.sleep(0.5)
@@ -111,8 +103,9 @@ def main():
             time.sleep(0.2)
             terminal.send(b"\r")
             began = time.monotonic()
-            while time.monotonic() - began < 40 and any(line.startswith("thread-3") for line in terminal.text().splitlines()):
+            while time.monotonic() - began < 40 and runners.row(terminal, "thread-3") is not None:
                 terminal.pump()
+            terminal.repaint()
             check("yes switches, the thread stopped and left unmerged in the old session",
                   "thread-3" not in terminal.text() and len(server.requests) == 5)
         except (AssertionError, StopIteration):

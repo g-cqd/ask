@@ -27,6 +27,16 @@ extension ScreenController {
             if announcing { state.transcript.addNotice("No background jobs are running.", isError: false) }
             return []
         }
+        // One list at a time: the sidebar already lists them.
+        if Sidebar.isShown(state, columns: frame.columns), !state.runnersOpen {
+            if announcing {
+                state.transcript.addNotice(
+                    "The sidebar lists them. Close it (Ctrl+\\ or /sidebar) to have the list below the input instead.",
+                    isError: false
+                )
+            }
+            return []
+        }
         state.runnersOpen.toggle()
         return []
     }

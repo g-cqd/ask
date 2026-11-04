@@ -16,6 +16,8 @@ import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import probe_runner_list as runners  # noqa: E402
 spec = importlib.util.spec_from_file_location("fold_probe", os.path.join(HERE, "probe-folding.py"))
 probe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(probe)
@@ -62,12 +64,7 @@ def main():
             terminal.until(lambda: "MAIN ONE" in terminal.text())
             terminal.send(b"/thread look into X\r")
             terminal.until(lambda: "merged · look into X" in terminal.text())
-            terminal.send(b"/jobs\r")
-            terminal.until(lambda: "thread-1  look into X" in terminal.text())
-            terminal.send(b"\x1b[B")
-            time.sleep(0.3)
-            terminal.send(b"\r")
-            terminal.until(lambda: "main  back to the conversation" in terminal.text())
+            runners.open_lane(terminal, "thread-1")
             check("the thread's lane is shown", "THREAD ANSWER" in terminal.text() and "MAIN ONE" not in terminal.text())
             time.sleep(1)
             install(bin_dir)
@@ -76,10 +73,10 @@ def main():
             deadline = time.monotonic() + 30
             while time.monotonic() < deadline and "Reloaded ask" not in terminal.text() and "Resumed session" not in terminal.text():
                 terminal.pump()
-            terminal.until(lambda: "main  back to the conversation" in terminal.text() and "THREAD ANSWER" in terminal.text())
+            terminal.until(lambda: "back to the conversation" in terminal.text() and "THREAD ANSWER" in terminal.text())
             check("after the reload the same thread's lane is shown again, drawn from its session",
                   "THREAD ANSWER" in terminal.text() and "MAIN ONE" not in terminal.text()
-                  and "thread-1  look into X · merged" in terminal.text())
+                  and runners.state(terminal, "thread-1") == "merged")
             terminal.send(b"\x1b")
             terminal.until(lambda: "MAIN ONE" in terminal.text() and "merged · look into X" in terminal.text())
             check("and main is there behind it", "thread-1 · merged · look into X" in terminal.text())

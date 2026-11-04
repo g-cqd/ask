@@ -58,7 +58,7 @@ struct RunnerApprovalTests {
         #expect((0 ..< 16).contains { rig.text(row: $0) == "✓ · m · 1 job" }, "the status line is the plain one")
     }
 
-    @Test func `a question from a runner shows as waiting in the strip and counts`() {
+    @Test func `a question from a thread shows as waiting in the list and counts`() {
         var rig = PointerRig(columns: 80, rows: 16)
         rig.controller.handle(
             .runners([RunnerInfo(name: "review", detail: "wants to run bash", kind: .agent, state: .waitingForApproval)]
@@ -67,6 +67,7 @@ struct RunnerApprovalTests {
         rig.controller.state.runnersOpen = true
         rig.draw()
         let text = (0 ..< 16).map { rig.text(row: $0) }.joined(separator: "\n")
-        #expect(text.contains("review  wants to run bash · waiting for approval") && text.contains("1 thread"))
+        // With a thread the list is the tree, the way the sidebar draws it.
+        #expect(text.contains("└ ? review wants to run bash") && text.contains("1 thread"))
     }
 }

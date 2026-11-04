@@ -15,6 +15,8 @@ import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import probe_runner_list as runners  # noqa: E402
 spec = importlib.util.spec_from_file_location("fold_probe", os.path.join(HERE, "probe-folding.py"))
 probe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(probe)
@@ -52,7 +54,7 @@ def main():
             check("with threads.max 1, a second thread while one works is refused",
                   "as many as threads.max allows" in terminal.text() and len(server.requests) == 1)
             terminal.send(b"/threads thread-1\r")
-            terminal.until(lambda: "main  back to the conversation" in terminal.text())
+            terminal.until(lambda: "back to the conversation" in terminal.text())
             check("/threads NAME opens the thread's lane", "first task" in terminal.text())
             status = next(line for line in terminal.screen.display if "anthropic/" in line)
             check("in its lane the status mark spins for the working thread (main is idle)", not status.startswith("\u2713"))
@@ -60,9 +62,8 @@ def main():
             terminal.until(lambda: "threads.depth" in terminal.text())
             check("with threads.depth 1, a thread inside a thread is refused", "nest at most 1 deep" in terminal.text())
             terminal.send(b"/rename parser work\r")
-            terminal.until(lambda: "parser work  first task" in terminal.text())
-            check("/rename in the lane names the thread in the list", "parser work  first task" in terminal.text()
-                  and terminal.screen.display[0].strip() != "")
+            terminal.until(lambda: runners.row(terminal, "parser work") is not None)
+            check("/rename in the lane names the thread in the list", "first task" in (runners.row(terminal, "parser work") or ""))
             terminal.send(b"\x1b")
             terminal.until(lambda: "back to the conversation" not in terminal.text())
             terminal.send(b"/threads\r")
@@ -73,9 +74,9 @@ def main():
             terminal.close()
             terminal = probe.Terminal(project, environment, rows=40, resume=True)
             terminal.until(lambda: "started here · first task" in terminal.text())
-            terminal.send(b"/jobs\r")
-            terminal.until(lambda: "first task" in terminal.text() and "stopped" in terminal.text())
-            check("the name comes back after a resume", "parser work  first task · stopped" in terminal.text())
+            runners.show(terminal)
+            terminal.until(lambda: runners.row(terminal, "parser work") is not None)
+            check("the name comes back after a resume", runners.state(terminal, "parser work") == "stopped")
         except AssertionError:
             if terminal:
                 print(terminal.text(), file=sys.stderr)

@@ -21,6 +21,17 @@ struct RunnerStrip {
         guard state.runnersOpen || !requiresOpen || inLane, !state.runners.isEmpty || inLane, available > 0 else {
             return
         }
+        // One list at a time (the owner, 2026-11-04): while the sidebar is shown, it is the list, and the way back from a lane.
+        if requiresOpen, Sidebar.isShown(state, columns: columns) { return }
+        // With a thread, the sidebar's tree: main, its threads, their jobs, then the other jobs. With only jobs, a flat list.
+        if state.runners.contains(where: { $0.kind == .agent }) {
+            let entries = SidebarEntries(state, columns: columns, gap: false).entries
+            for entry in Sidebar.window(entries, rows: Swift.min(limit, available), selected: state.stripSelection) {
+                lines.append(ScreenComposer.Line(text: entry.text, style: entry.style))
+                ids.append(entry.id)
+            }
+            return
+        }
         if inLane {
             let fitted = ScreenComposer.ellipsized("main  back to the conversation", cells: columns)
             lines.append(ScreenComposer.Line(text: fitted.shown + fitted.mark, style: Style(dim: true)))

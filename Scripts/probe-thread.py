@@ -17,6 +17,8 @@ import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import probe_runner_list as runners  # noqa: E402
 spec = importlib.util.spec_from_file_location("fold_probe", os.path.join(HERE, "probe-folding.py"))
 probe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(probe)
@@ -74,19 +76,14 @@ def main():
             check("the thread is marked where it started, and its request carries main's conversation and its task",
                   "thread-1 · started here · look into X" in terminal.text()
                   and "MAIN ONE" in body(server, 1) and "look into X" in body(server, 1))
-            terminal.send(b"/jobs\r")
-            terminal.until(lambda: "thread-1  look into X" in terminal.text())
-            terminal.send(b"\x1b[B")
-            time.sleep(0.3)
-            terminal.send(b"\r")
-            terminal.until(lambda: "main  back to the conversation" in terminal.text())
+            runners.open_lane(terminal, "thread-1")
             terminal.send(b"/thread go deeper\r")
             terminal.until(lambda: len(server.requests) > 2)
             check("/thread in its lane forks that thread, its request carrying the outer thread's work",
                   "look into X" in body(server, 2) and "sleep 4" in body(server, 2) and "go deeper" in body(server, 2))
-            wait(terminal, lambda: "waiting on its threads" in terminal.text(), 20)
+            wait(terminal, lambda: runners.state(terminal, "thread-1") == "held", 20)
             check("the outer thread, done first, is held: it waits for the inner one",
-                  "thread-1  look into X · waiting on its threads" in terminal.text() and len(server.requests) == 4)
+                  runners.state(terminal, "thread-1") == "held" and len(server.requests) == 4)
             wait(terminal, lambda: "merged · look into X" in terminal.text() or len(server.requests) > 6, 30)
             time.sleep(0.5)
             inner, outer = body(server, 5), body(server, 6)

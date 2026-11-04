@@ -15,6 +15,8 @@ import tempfile
 import time
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import probe_runner_list as runners  # noqa: E402
 spec = importlib.util.spec_from_file_location("fold_probe", os.path.join(HERE, "probe-folding.py"))
 probe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(probe)
@@ -55,17 +57,15 @@ def main():
             terminal.send(b"/thread make a file\r")
             terminal.until(lambda: "started here" in terminal.text())
             time.sleep(1)
-            terminal.send(b"/jobs\r")
-            terminal.until(lambda: "waiting for approval" in terminal.text())
+            runners.show(terminal)
+            terminal.until(lambda: runners.state(terminal, "thread-1") == "waiting")
             check("the thread is listed as waiting for approval, and main does not ask",
-                  "thread-1  make a file · waiting for approval" in terminal.text() and "Allow it?" not in terminal.text())
+                  runners.state(terminal, "thread-1") == "waiting" and "Allow it?" not in terminal.text())
             time.sleep(3)
             terminal.repaint()
             check("main idle, the question is not declined: it still waits and nothing ran",
-                  "waiting for approval" in terminal.text() and not os.path.exists(made))
-            terminal.send(b"\x1b[B")
-            time.sleep(0.3)
-            terminal.send(b"\r")
+                  runners.state(terminal, "thread-1") == "waiting" and not os.path.exists(made))
+            runners.open_lane(terminal, "thread-1")
             terminal.until(lambda: "Allow it?" in terminal.text())
             check("its lane shows the question", "Allow it?" in terminal.text() and "touch thread.txt" in terminal.text())
             terminal.send(b"\r")
