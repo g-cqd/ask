@@ -25,6 +25,29 @@ about. Nothing here is built yet.
 - **Jobs go in the tree by default,** under the thread that started them.
 - **Names from the on-device model by default,** and that can be turned off.
 
+## The owner's notes of the afternoon (2026-11-04, n19 to n23)
+
+- **Where a thread starts is shown in its parent (n23),** prominently: a block of its own kind in the parent's conversation, at the
+  fork point. It carries the thread's name, its state and its prompt, and a click opens the thread's lane. When the thread merges, its
+  merge block (folded, opening onto the summary) comes later in the parent. The two can name each other ("started here", "merged
+  from here").
+- **Naming may use any model the person chooses (n20):** the on-device model, or a provider and model from the configuration. See
+  `threads.names` below.
+- **Without room for the sidebar, the tree goes below the input (n21).** The strip under the input shows the same tree as the
+  sidebar: threads under main, with their jobs under them. Today it lists runners with indentation only.
+- **The strip leaves merged threads out (n22).** They are found through `/threads`, a picker with search over every thread of the
+  session, merged or not. Merged threads also expire from the sidebar after `threads.mergedShownFor`, and stay reachable through
+  `/threads`.
+- **Where a question pops up (n19)** is a setting, for threads as for subagents. It can appear at once in whatever the person is
+  looking at, after a delay if they have not gone to it, or never, so they go to the thread themselves. See `threads.questions` below.
+- **Subagents build on threads (n19; roadmap 0063).** The difference is in what they inherit and who starts them:
+  - The parent's model spawns them, not the person.
+  - They get an explicit request, not the whole conversation.
+  - They run as a defined agent (the person's or the workspace's), or without one.
+  - They always merge on their own.
+  - A parent waiting on a subagent that is waiting on the person stays live, holding its request, as the waiting rule above says.
+    Requests should be explicit enough that such questions are rare.
+
 ## The lifecycle
 
 | State | Meaning | Sidebar mark | Lane input |
@@ -115,7 +138,10 @@ either kind shows its spinner.
 | Setting | Values (default first) | Why |
 | --- | --- | --- |
 | `threads.merge` | `"auto"`, `"ask"` | whether a ready thread merges on its own |
-| `threads.names` | `"onDevice"`, `"numbered"` | the owner's "configurable" |
+| `threads.names` | `"onDevice"`, `"numbered"`, or a model (`"provider/model"`) | how a thread is named (n20) |
+| `threads.questions` | `"focus"`, `"after"`, `"never"` | where a thread's approval or question appears: at once in whatever is shown, after `threads.questionsAfter`, or only in its lane (n19) |
+| `threads.questionsAfter` | `"30s"` | the delay `"after"` waits before showing the question where the person is |
+| `threads.mergedShownFor` | `"1d"`, a duration or `"always"` | how long a merged thread stays in the sidebar; `/threads` finds it after that (n22) |
 | `threads.max` | `4`, 1 to 16 | running threads at once; 0194 owes a cap and a memory measure |
 | `threads.depth` | `3`, 1 to 8 | how deep `/thread` may nest |
 | `threads.model` | the session's model | a cheaper or faster model for threads |
@@ -142,7 +168,8 @@ summary instructions, or rewrite the summary).
    needs testing.
 7. **Tasks and notes.** A thread uses main's task list (0194 owes this). Its tasks could carry the thread's name, so the list says
    which branch did what.
-8. **`/threads`.** The owner's first idea (i5) named it: a picker of the tree, for screens too narrow for the sidebar.
+8. **`/threads`.** The owner's first idea (i5) named it. It is now the way to find merged threads (n22): a picker of the whole tree,
+   with search over names and prompts.
 
 ## The order to build it
 
@@ -152,7 +179,9 @@ summary instructions, or rewrite the summary).
 3. ADR-0144 first: unknown records and entries kept, and the migration steps. Then the thread records, and resume rebuilding the
    tree.
 4. Jobs parented to their thread, and the two sidebar settings.
-5. Names: on-device, `/rename`, `threads.names`.
-6. The caps: `threads.max` and `threads.depth`, with active memory measured against the 25 MiB budget.
+5. The fork-point block (n23), the tree under the input (n21) and `/threads` (n22).
+6. Names: on-device or a chosen model, `/rename`, `threads.names`.
+7. The caps: `threads.max` and `threads.depth`, with active memory measured against the 25 MiB budget.
+8. Then subagents (0063), on the same lifecycle.
 
 Each step is probed through the release binary in a PTY, as `probe-thread.py` does.

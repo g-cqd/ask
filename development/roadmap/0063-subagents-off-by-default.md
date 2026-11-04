@@ -69,3 +69,9 @@ zero requests, zero tool definitions and no measurable frame cost.
 0061's phase 5 is this item's: model-assisted resolution of the model and tool tokens a skill's or agent's file names that the
 deterministic reading cannot match, by a very cheap model on the active connection, bounded as 0061's design note says.
 
+## From 0195 (2026-11-04, the owner's note n19)
+
+Subagents are to be built on 0195's threads. Their lifecycle, merge-by-summary, waiting rule and thread-owned approvals are the same;
+the difference is in what they inherit and who starts them. The parent's model spawns them with an explicit request, rather than a
+fork of the whole conversation. They run as a defined agent, the person's or the workspace's, or without one. They always merge on
+their own. Where their questions appear is 0195's `threads.questions`.
