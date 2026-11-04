@@ -69,7 +69,7 @@ That needs saying in the question ("Allow for this session (main and its threads
 
 ## What is recorded
 
-Main's session file gains three entries:
+Main's session file gains three records, of `type: "thread"`:
 
 - `.threadStarted`: the id, name, parent, prompt, the thread's session file, and the entry it was forked at;
 - `.threadRenamed`;
@@ -81,14 +81,9 @@ The thread's own session file says it is a thread: its parent session and its id
 - Resuming main rebuilds the tree from these entries.
 - Merged threads come back read-only, with their conversation readable in their lanes.
 - An unmerged thread comes back idle, not running. Typing in its lane continues it; that is the only resume there is.
-- An older ask cannot read these entries. Today an unknown entry kind fails to decode (`WirePayload` throws `Malformed`), and a
-  newer format version is refused (`SessionLogRecovery`: `unsupportedVersion`). There are two ways to handle that:
-  - Raise `SessionLog.formatVersion` to 3. An older ask then refuses a session that has threads, as it did when destinations were
-    added.
-  - Teach the reader to skip unknown kinds, and record that in an ADR. It helps every later entry kind, but it means a file is no
-    longer proven whole by decoding.
-
-  I'd raise the version, the precedent, unless the owner prefers skipping.
+- **Compatibility (the owner, 2026-11-04; ADR-0144).** The format version stays 2. The thread facts are records of `type:
+  "thread"`, outside the conversation tree. An ask from ADR-0144 on keeps a record or entry it does not know, byte for byte, without
+  reading it or calling it damage. Older files are converted by migration steps, which are removed before 1.0.0-rc.1 (roadmap 0070).
 
 ## Names
 
@@ -126,7 +121,7 @@ either kind shows its spinner.
 | `threads.model` | the session's model | a cheaper or faster model for threads |
 | `threads.summaryInstructions` | none | added to the merge instruction, as `compaction.before` hooks add to compaction's |
 | `ui.sidebar.jobs` | `"tree"`, `"section"` | where jobs go (n15) |
-| `ui.sidebar.merged` | `"tree"`, `"section"`, `"hidden"` | where merged threads go: dim in the tree, in their own section, or not listed |
+| `ui.sidebar.merged` | `"tree"`, `"section"`, `"hidden"` | where merged threads go: dim in the tree (the owner agreed, 2026-11-04), in their own section, or not listed |
 
 There would also be two hook points for 0192: `thread.start` (refuse a thread, or rewrite its prompt) and `thread.merge` (add to the
 summary instructions, or rewrite the summary).
@@ -154,7 +149,8 @@ summary instructions, or rewrite the summary).
 1. Thread-owned approvals and questions. This removes today's wrong decline, and the waiting rule needs it.
 2. The lifecycle and the waiting rule, merge by summary into the parent, and the system block. Tests come first, on a fake provider:
    bottom-up order, a held parent, a stop with its confirmation.
-3. Recording, and resume rebuilding the tree, after the decision on the format version.
+3. ADR-0144 first: unknown records and entries kept, and the migration steps. Then the thread records, and resume rebuilding the
+   tree.
 4. Jobs parented to their thread, and the two sidebar settings.
 5. Names: on-device, `/rename`, `threads.names`.
 6. The caps: `threads.max` and `threads.depth`, with active memory measured against the 25 MiB budget.
