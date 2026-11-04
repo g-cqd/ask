@@ -13,6 +13,7 @@ extension ScreenController {
 
     /// A tick: the spinners step when `advancingFrames`; live blocks are redrawn either way, for the shimmer.
     mutating func advanceProgress(at instant: ContinuousClock.Instant = .now, advancingFrames: Bool = true) {
+        expireMerged(at: instant)
         for id in state.runnerProgress.keys {
             state.runnerProgress[id]?.sampled = instant
             if advancingFrames { state.runnerProgress[id]?.frame += 1 }

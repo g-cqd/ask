@@ -30,6 +30,8 @@ public struct ScreenOptions: Sendable, Equatable {
     public var sidebar: Bool
     /// Whether a thread's jobs are listed under it (`ui.sidebarJobs` tree), or with the other jobs (roadmap 0195).
     public var sidebarJobsInTree: Bool
+    /// How long a merged thread stays in the sidebar (`threads.mergedShownFor`, note n22); nil keeps it.
+    public var mergedShownFor: Duration?
     /// Whether details are shown: what ask did on its own account, such as the sandbox in force or a build that appeared (`--verbose`).
     /// `/verbose` toggles it, and shows what was held back meanwhile (ADR-0119).
     public var verbose: Bool
@@ -89,6 +91,7 @@ public struct ScreenOptions: Sendable, Equatable {
         hover: Bool = true,
         sidebar: Bool = false,
         sidebarJobsInTree: Bool = true,
+        mergedShownFor: Duration? = .seconds(86_400),
         verbose: Bool = false,
         prompt: String = "",
         tint: Bool = true,
@@ -117,6 +120,7 @@ public struct ScreenOptions: Sendable, Equatable {
         self.hover = hover
         self.sidebar = sidebar
         self.sidebarJobsInTree = sidebarJobsInTree
+        self.mergedShownFor = mergedShownFor
         self.verbose = verbose
         self.prompt = prompt
         self.tint = tint

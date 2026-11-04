@@ -11,6 +11,10 @@ extension ScreenController {
         }
         state.runnerProgress = progress
         state.runners = list
+        for runner in list where runner.kind == .agent && runner.state == .merged && state.mergedAt[runner.id] == nil {
+            state.mergedAt[runner.id] = instant
+        }
+        expireMerged(at: instant)
         // Another session's threads (roadmap 0195): their conversations go with them.
         let listed = Set(list.lazy.filter { $0.kind == .agent }.map(\.id))
         state.threads = state.threads.filter { listed.contains($0.key) }
@@ -22,6 +26,13 @@ extension ScreenController {
     }
 
     /// Opens or closes the list. With `announcing`, a command that finds nothing running says so instead of opening nothing.
+    /// Leaves out of the sidebar the threads merged longer than `threads.mergedShownFor` (note n22); `/threads` still lists them.
+    mutating func expireMerged(at instant: ContinuousClock.Instant) {
+        guard let shownFor = options.mergedShownFor else { return }
+        let expired = Set(state.mergedAt.filter { instant - $0.value >= shownFor }.keys)
+        if expired != state.expiredMerged { state.expiredMerged = expired }
+    }
+
     mutating func toggleRunners(announcing: Bool = false) -> [Effect] {
         guard !state.runners.isEmpty else {
             if announcing { state.transcript.addNotice("No background jobs are running.", isError: false) }

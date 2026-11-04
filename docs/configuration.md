@@ -274,6 +274,7 @@ named; a project's file may set them too, since they only ever limit what runs.
 |---|---|---|
 | `max` | `4` | How many threads may work at once, from 1 to 16; `/thread` past it is refused until one finishes or is stopped. |
 | `depth` | `3` | How deep threads may nest, from 1 to 8; `/thread` in a thread that deep is refused. |
+| `mergedShownFor` | `"1d"` | How long a merged thread stays in the sidebar: `"30m"`, `"2h"`, `"1d"`, or `"always"`. After it, `/threads` still lists it; the list below the input never shows merged threads. |
 | `names` | `"onDevice"` | How a thread is named: `"onDevice"`, by Apple's on-device model from its task, where it is available (`thread-N` elsewhere), or `"numbered"`. `/rename` in a thread's lane names it yourself. |
 
 ### `modelScopes`

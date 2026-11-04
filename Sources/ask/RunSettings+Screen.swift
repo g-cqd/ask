@@ -25,6 +25,7 @@ extension RunSettings {
             hover: ui.hover ?? defaults.hover,
             sidebar: ui.sidebarOpen ?? defaults.sidebar,
             sidebarJobsInTree: ui.sidebarJobsInTree ?? defaults.sidebarJobsInTree,
+            mergedShownFor: configuration.threads.value.mergedListing,
             verbose: verbose,
             prompt: ui.prompt ?? defaults.prompt,
             tint: ui.tint ?? defaults.tint,

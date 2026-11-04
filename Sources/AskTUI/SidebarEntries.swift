@@ -20,8 +20,9 @@ struct SidebarEntries {
     ///   - state: what the screen holds.
     ///   - columns: the width each row is cut to.
     ///   - gap: whether an empty row comes before the Jobs section; the list under the input has no rows to spare.
-    init(_ state: ScreenState, columns: Int, gap: Bool = true) {
-        let rows = state.runnerTree.visible(collapsed: state.collapsedRunners)
+    ///   - hidingMerged: whether merged threads are left out, as the list under the input leaves them (note n22).
+    init(_ state: ScreenState, columns: Int, gap: Bool = true, hidingMerged: Bool = false) {
+        let rows = state.listedRows(hidingMerged: hidingMerged)
         // A runner belongs to its root's section: a job a thread started stays in the thread's tree.
         var rootKind = RunnerInfo.Kind.job
         var threads: [RunnerTree.Visible] = []

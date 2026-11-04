@@ -10,6 +10,13 @@ extension SettingCatalog {
             #""onDevice""#,
             "onDevice",
             "How a thread is named: by Apple's on-device model from its task where it is available, or numbered."
+        ),
+        row(
+            "threads.mergedShownFor",
+            .text,
+            #""1d""#,
+            "1d",
+            "How long a merged thread stays in the sidebar: \"30m\", \"2h\", \"1d\", or \"always\". /threads still lists it."
         )
     ]
 }
