@@ -46,6 +46,7 @@ extension AgentConversation {
                 continue
             }
             let merged = records.contains { $0.event == .merged && $0.id == record.id }
+            let title = records.last { $0.event == .renamed && $0.id == record.id }?.title
             threads.restore(
                 record.id,
                 prompt: record.prompt ?? "",
@@ -53,6 +54,7 @@ extension AgentConversation {
                 recorder: recorder,
                 state: merged ? .merged : .stopped
             )
+            if let title { threads.rename(record.id, to: title) }
             let lane = replayed(
                 recorder.tree.activeBranch(),
                 after: record.at,
@@ -116,8 +118,36 @@ extension AgentConversation {
                         summary: record.summary ?? ""
                     )
                     return (record.at, merged)
-                case .identity: return nil
+                case .identity, .renamed: return nil
             }
         }
+    }
+}
+
+/// `/threads` (roadmap 0195, note n22): every thread of the session, merged or not, to show one's lane.
+extension AgentConversation {
+    /// The threads as picker rows, in the order they started: name, state and task.
+    func threadRows() -> [ChoiceRow] {
+        threads.runners.filter { $0.kind == .agent }
+            .map { ChoiceRow(label: $0.name, detail: "\($0.state.rawValue) · \($0.detail)", arguments: $0.id) }
+    }
+
+    /// With no argument the picker; with a thread's id or name, its lane.
+    func showThreads(_ arguments: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
+        let asked = arguments.trimmingCharacters(in: .whitespaces)
+        let rows = threadRows()
+        guard !asked.isEmpty else {
+            update(
+                rows.isEmpty
+                    ? .notice("No threads in this session yet: /thread TEXT starts one.", isError: false)
+                    : .batch([.choices(command: "threads", rows: rows), .fillDraft("/threads ")])
+            )
+            return
+        }
+        guard let row = rows.first(where: { $0.arguments == asked || $0.label == asked }) else {
+            update(.notice("No thread \(asked) in this session; /threads lists them.", isError: true))
+            return
+        }
+        update(.focusThread(id: row.arguments))
     }
 }

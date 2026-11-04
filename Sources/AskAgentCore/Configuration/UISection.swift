@@ -109,6 +109,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         // @dl:accept -- optional configuration and resolved screen options deliberately assign the same UI keys
         self.mouse = mouse
         self.copyOnSelect = copyOnSelect
+        // @dl:accept -- every UI key assigned from its parameter: the section's data, one line a key
         self.foldTools = foldTools
         self.foldThinking = foldThinking
         self.scrollLines = scrollLines

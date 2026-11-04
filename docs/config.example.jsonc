@@ -187,6 +187,17 @@
     "checkTimeout": 600
   },
 
+  "threads": {
+    // How many threads may work at once, from 1 to 16. Default: 4.
+    "max": 4,
+
+    // How deep threads may nest, from 1 to 8. Default: 3.
+    "depth": 3,
+
+    // How a thread is named: by Apple's on-device model from its task where it is available, or numbered. Default: onDevice. One of: onDevice, numbered.
+    "names": "onDevice"
+  },
+
   "skills": {
     // Whether skills are offered; a project's file may only turn them off. Default: true.
     "enabled": true,

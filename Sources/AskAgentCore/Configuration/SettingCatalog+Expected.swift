@@ -2,12 +2,13 @@
 extension SettingCatalog {
     /// The row for a dotted key (`ui.fold.tools`), if the catalog has one.
     static func setting(_ key: String) -> Setting? {
+        // @dl:accept -- a lookup and a list of section names: catalog data, not repeated logic
         all.first { $0.key == key }
     }
 
     /// The sections, which take an object.
     static let sections: Set<String> = [
-        "sandbox", "ui", "ui.fold", "skills", "approvals", "hooks", "environment", "mcp"
+        "sandbox", "ui", "ui.fold", "skills", "approvals", "hooks", "threads", "environment", "mcp"
     ]
 
     /// The structured settings' values, which their kind alone does not say.

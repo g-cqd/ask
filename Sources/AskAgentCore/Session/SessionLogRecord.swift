@@ -20,7 +20,7 @@ extension SessionLogRecord: Codable {
     /// the record is written through one container: one encoder, one keyed container.
     private enum SandboxKeys: String, CodingKey { case type, write, read, network }
     /// The thread record's own key set, as the sandbox record has one.
-    private enum ThreadKeys: String, CodingKey { case type, event, id, parent, prompt, file, at, summary }
+    private enum ThreadKeys: String, CodingKey { case type, event, id, parent, prompt, file, at, summary, title }
     private enum Kind: String, Codable, CaseIterable { case session, entry, leaf, sandbox, thread }
 
     /// The record types this build reads; a line of any other is a newer ask's, kept and not read (ADR-0144).
@@ -86,6 +86,7 @@ extension SessionLogRecord: Codable {
                 record.file = try fields.decodeIfPresent(String.self, forKey: .file)
                 record.at = try fields.decodeIfPresent(String.self, forKey: .at).map(EntryID.init)
                 record.summary = try fields.decodeIfPresent(String.self, forKey: .summary)
+                record.title = try fields.decodeIfPresent(String.self, forKey: .title)
                 self = .thread(record)
             case .sandbox:
                 let fields = try decoder.container(keyedBy: SandboxKeys.self)
@@ -121,6 +122,7 @@ extension SessionLogRecord: Codable {
             try fields.encodeIfPresent(record.file, forKey: .file)
             try fields.encodeIfPresent(record.at?.description, forKey: .at)
             try fields.encodeIfPresent(record.summary, forKey: .summary)
+            try fields.encodeIfPresent(record.title, forKey: .title)
             return
         }
         if case .sandbox(let section) = self {

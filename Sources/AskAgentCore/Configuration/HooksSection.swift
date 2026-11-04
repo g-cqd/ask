@@ -15,6 +15,7 @@ public struct HooksSection: Sendable, Equatable, CustomStringConvertible, Layere
     /// The check's deadline when nothing says, and the most: the `bash` tool's own limit (the owner's choice, 2026-11-02).
     public static let defaultCheckSeconds = 600
 
+    // @dl:accept -- every section of the file is decoded and layered by the same idiom; its keys are the data
     public init(maxContinues: Int? = nil, check: String? = nil, checkTimeout: Int? = nil) {
         self.maxContinues = maxContinues
         self.check = check
@@ -27,6 +28,7 @@ public struct HooksSection: Sendable, Equatable, CustomStringConvertible, Layere
     /// How many continues a run is allowed.
     public var continues: Int { maxContinues ?? Self.defaultMaxContinues }
     /// How long the check may take.
+    // @dl:accept -- every section of the file is decoded and layered by the same idiom; its keys are the data
     public var checkSeconds: Int { checkTimeout ?? Self.defaultCheckSeconds }
 
     /// `self` with every key `section` sets replaced.

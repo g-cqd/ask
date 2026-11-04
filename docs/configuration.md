@@ -265,6 +265,17 @@ the repository's.
 | `check` | none | A command, such as `"swift test"`, run when a run that wrote, edited or ran a command would end. It runs in the session's sandbox without asking you, shown as a `check` block while it runs, and when it fails its output's end goes back to the model to fix. A pass, or a run that only read, ends the run. |
 | `checkTimeout` | `600` | How many seconds the check may take, from 1 to 600; past it the check is stopped and the run simply ends. |
 
+### `threads`
+
+Threads are copies of the conversation that work beside it (`/thread`, roadmap 0195). These keys limit them and say how they are
+named; a project's file may set them too, since they only ever limit what runs.
+
+| Key | Default | What it does |
+|---|---|---|
+| `max` | `4` | How many threads may work at once, from 1 to 16; `/thread` past it is refused until one finishes or is stopped. |
+| `depth` | `3` | How deep threads may nest, from 1 to 8; `/thread` in a thread that deep is refused. |
+| `names` | `"onDevice"` | How a thread is named: `"onDevice"`, by Apple's on-device model from its task, where it is available (`thread-N` elsewhere), or `"numbered"`. `/rename` in a thread's lane names it yourself. |
+
 ### `modelScopes`
 
 A list of rules that limit which providers serve a repository: work repositories only through the work account, say. Each rule names

@@ -29,6 +29,7 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var approvals: ApprovalsSection?  // roadmap 0134; the person's own file only
     public var modelScopes: [ModelScope]?  // roadmap 0094; the person's own file only
     public var hooks: HooksSection?  // roadmap 0192; the person's own file only
+    public var threads: ThreadsSection?  // roadmap 0195
     public var presets: [String]?  // roadmap 0190: sets of MCP servers ask knows, added to `mcp`
 
     /// The keys ask knows, in the order `ask config` shows them.
@@ -37,7 +38,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         // @dl:accept -- the list of keys is data, like the sandbox policy's lists of paths
         "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "keepDisplayAwake", "credentials",
         "approvals", "modelScopes", "sessionEncryption", "sessionCompression", "sessionPassword", "taskScope",
-        "hooks", "sandbox", "ui", "skills", "presets", "mcp", "environment"
+        "hooks", "threads", "sandbox", "ui", "skills", "presets", "mcp", "environment"
     ]
 
     /// A file with these values.
@@ -111,6 +112,7 @@ public struct ConfigurationFile: Sendable, Equatable {
         try validateSandbox(file.sandbox, path: path, isProject: isProject)
         try validateSkills(file.skills, path: path, isProject: isProject)
         try validateHooks(file.hooks, path: path, isProject: isProject)
+        try validateThreads(file.threads, path: path)
         file.mcp = try MCPPresets.adding(file.presets, to: file.mcp, path: path)
         try validateMCP(file.mcp, path: path, isProject: isProject)
         try validateEnvironment(file.environment, path: path, isProject: isProject)
@@ -225,6 +227,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "presets": file.presets = try container.decode([String].self, forKey: key)
                     case "approvals": file.approvals = try container.decode(ApprovalsDecoded.self, forKey: key).section
                     case "hooks": file.hooks = try container.decode(HooksDecoded.self, forKey: key).section
+                    case "threads": file.threads = try container.decode(ThreadsDecoded.self, forKey: key).section
                     case "modelScopes":
                         file.modelScopes = try container.decode([ModelScopeDecoded].self, forKey: key).map(\.scope)
                     case "environment":

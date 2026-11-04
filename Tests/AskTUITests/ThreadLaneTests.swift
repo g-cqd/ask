@@ -83,6 +83,13 @@ struct ThreadLaneTests {
         #expect(controller.state.lane?.id == "thread-1", "a thread that is not listed is not shown")
     }
 
+    @Test func `rename typed in a thread's lane names that thread, and the lane stays`() {
+        var controller = controller()
+        _ = controller.enterLane(runner)
+        #expect(type("/rename parser work", &controller) == [.renameThread(id: "thread-1", title: "parser work")])
+        #expect(controller.state.lane?.id == "thread-1")
+    }
+
     @Test func `a command typed in the lane goes back to main`() {
         var controller = controller()
         _ = controller.enterLane(runner)

@@ -265,6 +265,21 @@ summary instructions, or rewrite the summary).
   run. In section mode the runner tree drops the jobs' parents, so the keys move in the order drawn.
 - `SidebarJobsTests` (3); `probe-thread-stop.py` checks the thread's command listed under it (8 checks).
 
+## Done (2026-11-04): limits, names, `/rename`, `/threads`
+
+- The `threads` section (`ThreadsSection`): `max` (default 4, 1 to 16) and `depth` (default 3, 1 to 8), checked when a thread would
+  start, depth first; `names`, `"onDevice"` (the default) or `"numbered"`. A project's file may set them: they only limit.
+- On-device names (`ThreadNamer`): two to four words from the task, from Apple's on-device model where it is available, given two
+  seconds; the id stays `thread-N`, and the name is what is listed.
+- `/rename TITLE` in a thread's lane names it. Names are recorded (`ThreadRecord.renamed`) and come back with a resume.
+- `/threads` lists the session's threads, merged or not, by name, state and task; choosing one, or `/threads NAME`, shows its lane.
+  Its rows go stale whenever the runners change.
+- Probes set `threads.names` to `"numbered"`, so the on-device model never makes them depend on its answer.
+- `ThreadRecordTests`, `ThreadLaneTests`; `Scripts/probe-thread-names.py` (6 checks, two processes), three times.
+- Not done: naming with a chosen provider model (n20), `threads.questions` (n19), `threads.mergedShownFor` and the strip's leaving out
+  merged threads (n22), `threads.merge: "ask"`, `threads.model`, `threads.summaryInstructions`, the hook points, distinct marks and
+  idle spinners (n15), and active memory with several threads measured.
+
 ## The order to build it
 
 1. ~~Thread-owned approvals and questions.~~ Done, above.

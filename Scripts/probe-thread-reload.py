@@ -41,7 +41,7 @@ def main():
         for path in (project, config + "/ask", bin_dir):
             os.makedirs(path)
         with open(config + "/ask/config.json", "w") as file:
-            json.dump({"ui": {"inputPrefix": "ask> "}}, file)
+            json.dump({"ui": {"inputPrefix": "ask> "}, "threads": {"names": "numbered"}}, file)
         probe.BINARY_SOURCE = probe.BINARY
         probe.BINARY = install(bin_dir)
         turn = probe.agent.turn

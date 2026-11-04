@@ -50,7 +50,7 @@ enum SettingCatalog {
         .choice(Choice.allCases.map(\.rawValue))
     }
 
-    static let all: [Setting] = top + ui + sandbox + approvals + hooks + skills + environment
+    static let all: [Setting] = top + ui + sandbox + approvals + hooks + threads + skills + environment
 
     // @dl:disable near-clone -- the rows below are the catalog's data: a key, a type, an example, a default and help each
     // @dl:disable structural-clone -- the same rows, matched by their shape

@@ -160,7 +160,7 @@ final class ScreenSession {
                 )
             case .readRunnerOutput(let id):
                 runnerOutput.watch(id, in: conversation, sink: sink)
-            case .sendToThread, .startThread, .stopThread: Self.performThread(effect, conversation, sink)
+            case .sendToThread, .startThread, .stopThread, .renameThread: Self.performThread(effect, conversation, sink)
             case .watchJob(let id):
                 jobOutput[id]?.cancel()
                 jobOutput[id] = conversation.watchJob(id) { sink.yield(.update(.jobOutput($0))) }
