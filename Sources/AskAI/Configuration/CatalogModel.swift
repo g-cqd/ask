@@ -35,6 +35,7 @@ public struct CatalogModel: Codable, Sendable, Equatable {
         // @dl:accept -- initializer parameters repeat the stored fields by design
         api: String? = nil,
         acceptsImages: Bool? = nil,
+        // @dl:accept -- optional memberwise defaults are independent model data, not a shared algorithm
         imageLimits: ImageLimits? = nil,
         // @dl:accept -- initializer parameters repeat the stored fields by design
         unsuitable: String? = nil
@@ -42,6 +43,7 @@ public struct CatalogModel: Codable, Sendable, Equatable {
         // @dl:accept -- optional capability fields are assigned one by one, as data
         self.acceptsImages = acceptsImages
         self.imageLimits = imageLimits
+        // @dl:accept -- independent data model field assignments intentionally resemble other initializers
         self.unsuitable = unsuitable
         // @dl:accept -- one assignment per field, as data; a settings initializer elsewhere has the same shape
         self.id = id

@@ -11,6 +11,8 @@ enum MCPStartupSummary {
                 case .waiting, .connecting: return nil
                 case .ready, .searchable: connected += 1
                 case .failed(let reason): failures.append("  \(status.name): \(reason)")
+                case .needsSignIn:
+                    failures.append("  \(status.name): it needs you to sign in (/mcp login \(status.name))")
             }
         }
         guard connected + failures.count > 0 else { return nil }

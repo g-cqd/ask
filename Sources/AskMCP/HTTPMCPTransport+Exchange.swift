@@ -13,7 +13,12 @@ extension HTTPMCPTransport {
         let (session, version) = state.withLock { ($0.sessionID, $0.protocolVersion) }
         if let session { all.append(("Mcp-Session-Id", session)) }
         if let version { all.append(("MCP-Protocol-Version", version)) }
-        if let token = await authorization?.header() { all.append(("Authorization", token)) }
+        // An explicitly configured header takes precedence over a stored sign-in; never send two bearer credentials.
+        if !headers.contains(where: { $0.name.lowercased() == "authorization" }),
+            let token = await authorization?.header()
+        {
+            all.append(("Authorization", token))
+        }
         return all + headers
     }
 
@@ -21,13 +26,25 @@ extension HTTPMCPTransport {
     func exchange(_ message: [UInt8], requestID: Int?) async {
         do {
             var reply = try await http.send(
-                HTTPRequest(url: url, method: "POST", headers: await requestHeaders(), body: message)
+                HTTPRequest(
+                    url: url,
+                    method: "POST",
+                    headers: await requestHeaders(),
+                    body: message,
+                    allowsRedirects: false
+                )
             )
             // Refused for want of a sign-in: renewed once and sent again, else kept for the host to ask the person (roadmap 0067).
             if let challenge = Self.refusal(reply) {
                 if let authorization, await authorization.refused(challenge) {
                     reply = try await http.send(
-                        HTTPRequest(url: url, method: "POST", headers: await requestHeaders(), body: message)
+                        HTTPRequest(
+                            url: url,
+                            method: "POST",
+                            headers: await requestHeaders(),
+                            body: message,
+                            allowsRedirects: false
+                        )
                     )
                 }
                 if let again = Self.refusal(reply) {
@@ -134,7 +151,9 @@ extension HTTPMCPTransport {
         var all = await requestHeaders().filter { $0.name != "Content-Type" }
         all.removeAll { $0.name == "Accept" }
         let delete = Task { [http, url] in
-            _ = try? await http.send(HTTPRequest(url: url, method: "DELETE", headers: all, body: []))
+            _ = try? await http.send(
+                HTTPRequest(url: url, method: "DELETE", headers: all, body: [], allowsRedirects: false)
+            )
         }
         let stopper = Task { [clock, grace] in
             guard (try? await clock.sleep(for: grace)) != nil else { return }

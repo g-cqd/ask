@@ -8,7 +8,8 @@ enum MCPReport {
             ]
         }
         return statuses.flatMap { status in
-            ["\(status.name): \(describe(status.state))"] + (status.notes + hints(status)).map { "    \($0)" }
+            ["\(status.name): \(describe(status.state, of: status.name))"]
+                + (status.notes + hints(status)).map { "    \($0)" }
         }
     }
 
@@ -18,7 +19,7 @@ enum MCPReport {
         return ["name the ones you want in mcp.\(status.name).tools to offer them directly"]
     }
 
-    private static func describe(_ state: MCPServerStatus.State) -> String {
+    private static func describe(_ state: MCPServerStatus.State, of name: String) -> String {
         switch state {
             case .off: "off (enabled is false in the configuration)"
             case .waiting: "connects with the first message"
@@ -26,6 +27,7 @@ enum MCPReport {
             case .ready(let offered, let total): "ready, \(offered) of \(total) tool\(total == 1 ? "" : "s") offered"
             case .searchable(let tools): "ready, \(tools) tools reachable through search_catalog and dispatch_call"
             case .failed(let reason): "not connected: \(reason)"
+            case .needsSignIn: "needs you to sign in: /mcp login \(name)"
         }
     }
 }

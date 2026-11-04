@@ -22,6 +22,19 @@ extension ConfigurationFile {
         }
     }
 
+    /// A server's `oauth` object: the client id to sign in with; unknown keys are refused.
+    struct OAuthDecoded: Decodable {
+        var clientID: String?
+        init(from decoder: any Decoder) throws {
+            try ConfigurationFile.eachKey(of: decoder) { key, container in
+                guard key.stringValue == "clientId" else {
+                    throw UnknownKey(key: "mcp.<server>.oauth." + key.stringValue)
+                }
+                clientID = try container.decode(String.self, forKey: key)
+            }
+        }
+    }
+
     /// One server's keys; unknown keys are refused.
     struct MCPServerDecoded: Decodable {
         var server = MCPServerSetting(name: "")  // @dl:accept -- a key table decoded through the shared walk
@@ -44,10 +57,12 @@ extension ConfigurationFile {
                     // @dl:accept -- a key table row, typed like the sandbox and skills rows it resembles
                     case "headers": server.headers = try container.decode([String: String].self, forKey: key)
                     // @dl:accept -- a key table decoded by the shared walk; the keys are the data
+                    // @dl:accept -- typed configuration decoding rows share a shape, not a schema
                     case "tools": server.tools = try container.decode([String].self, forKey: key)
                     case "enabled": server.enabled = try decodeSwitch(container, key: key, name: "mcp.<server>.enabled")
                     case "mode": server.mode = try container.decode(MCPServerSetting.Mode.self, forKey: key)
                     case "maxDirectTools": server.maxDirectTools = try container.decode(Int.self, forKey: key)
+                    case "oauth": server.oauthClientID = try container.decode(OAuthDecoded.self, forKey: key).clientID
                     default: throw UnknownKey(key: "mcp.<server>." + key.stringValue)
                 }
             }

@@ -95,7 +95,9 @@ public final class HTTPMCPTransport: MCPTransport {
         headers.removeAll { $0.name == "Accept" }
         headers.append(("Accept", "text/event-stream"))
         do {
-            let reply = try await http.send(HTTPRequest(url: url, method: "GET", headers: headers, body: []))
+            let reply = try await http.send(
+                HTTPRequest(url: url, method: "GET", headers: headers, body: [], allowsRedirects: false)
+            )
             guard 200 ..< 300 ~= reply.status, (reply.headers["content-type"] ?? "").contains("text/event-stream")
             else {
                 return

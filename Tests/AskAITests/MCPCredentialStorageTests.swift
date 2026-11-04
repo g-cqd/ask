@@ -44,4 +44,19 @@ struct MCPCredentialStorageTests {
         #expect(text.contains("client-1"), "the metadata stays in the file")
         #expect(try file.loadMCP(server: Self.record.server) == Self.record)
     }
+    @Test func `a renewal cannot restore a removed sign-in or overwrite a replacement`() throws {
+        let root = root()
+        defer { try? FileManager.default.removeItem(at: root) }
+        let file = CredentialFile(url: root.appending(path: "credentials.json"))
+        var renewed = Self.record
+        renewed.accessToken = "renewed"
+        try file.saveMCP(Self.record)
+        #expect(try file.renewMCP(renewed, replacing: Self.record))
+        #expect(try file.loadMCP(server: Self.record.server) == renewed)
+        #expect(try !file.renewMCP(Self.record, replacing: Self.record))
+        #expect(try file.loadMCP(server: Self.record.server) == renewed)
+        try file.removeMCP(server: Self.record.server)
+        #expect(try !file.renewMCP(renewed, replacing: Self.record))
+        #expect(try file.loadMCP(server: Self.record.server) == nil)
+    }
 }

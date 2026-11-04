@@ -190,12 +190,13 @@ extension ScreenController {
         state.waitingForNetwork = false
         state.transcript.finishRunProgress()
         state.pendingApproval = nil
-        state.pendingQuestions = nil
+        // A question that goes unanswered is declined, so whoever waits on it is not left waiting (a sign-in's, roadmap 0067).
+        let declined = state.pendingQuestions.map { finish($0, with: nil) } ?? []
         // A question a command beside the run asked is that command's to take away (roadmap 0113).
         if runOwnsQuestion {
             state.pendingInput = nil
             state.inputAnswer.clear()
         }
-        return endRun()
+        return declined + endRun()
     }
 }
