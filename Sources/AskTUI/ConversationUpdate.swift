@@ -105,9 +105,11 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// `tokens`, when known, says what the compaction did in the block's header: `182k → 3.1k tokens` (roadmap 0176).
     case compactionFinished(Transcript.ToolStatus, text: String, tokens: String? = nil)
     /// A `/btw` aside began (roadmap 0194): a block of its own colour, headed by the question, that the run's end does not touch.
-    case asideStarted(id: String, question: String)
+    case asideStarted(id: String, question: String, name: String = "btw")
     /// The aside's answer, or why there is none.
     case asideFinished(id: String, Transcript.ToolStatus, answer: String)
+    /// What happened in a thread (roadmap 0194): drawn in that thread's conversation, never main's.
+    indirect case thread(id: String, ConversationUpdate)
     /// The run is over, however it ended.
     case runEnded
 }

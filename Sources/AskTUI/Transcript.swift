@@ -38,9 +38,9 @@ public struct Transcript: Sendable, Equatable {
     var toolBlocks: [String: Int] = [:]
     /// The tool blocks whose input is a command, which heads the block (roadmap 0080).
     var commandBlocks: Set<Int> = []
-    var summaryBlocks: Set<Int> = []
+    var summaryBlocks: Set<Int> = []  // A compaction's and other summaries ask wrote: see Transcript+Summary.swift.
     /// `/btw` asides (roadmap 0194): a summary block of their own colour, open, and no part of the run.
-    var asideBlocks: Set<Int> = []  // A compaction's and other summaries ask wrote: see Transcript+Summary.swift.
+    var asideBlocks: Set<Int> = []
     /// Whether a running block's header shimmers (`ui.shimmer`, roadmap 0171).
     public var shimmer = true
     /// The blocks still going when the person stopped the turn (roadmap 0142), drawn on the interruption tint.

@@ -44,6 +44,8 @@ final class AgentConversation: Conversation {
     let reloadTarget = Mutex<BinaryIdentity?>(nil)
     /// Where a settings change made during a turn is offered to it, for its next request (roadmap 0113).
     let handover = LoopHandover()
+    /// The threads `/thread` started (roadmap 0194), and the jobs they are listed beside.
+    let threads = ThreadTable()
 
     /// The settings in force, the loop built from them, and the last reload error shown.
     struct Current {
@@ -133,7 +135,9 @@ final class AgentConversation: Conversation {
 
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
         // A message typed during the turn has its @server:uri read when the loop takes it, then #t3 and #i2, as at the turn's start.
-        let input = PromptQueue { [mcp] text in SessionTasks.attachReferences(await mcp.attachResources(text)) }
+        let input = PromptQueue { [mcp, threads] text in
+            threads.attachReports(SessionTasks.attachReferences(await mcp.attachResources(text)))
+        }
         promptInput.withLock { $0 = input }
         // Approval questions during this run go to this run's screen updates.
         approvals.withLock { $0.ask = update }
@@ -149,7 +153,10 @@ final class AgentConversation: Conversation {
                 }
                 try await self.connectMCP(update: update)
                 // Each @server:uri read from its server once it is connected (roadmap 0067), then #t3 and #i2 (0186).
-                let prompt = SessionTasks.attachReferences(await self.mcp.attachResources(expanded))
+                // A thread that ended since the last message: its answer goes with this one (roadmap 0194).
+                let prompt = self.threads.attachReports(
+                    SessionTasks.attachReferences(await self.mcp.attachResources(expanded))
+                )
                 let loop = try self.agentLoop()
                 // A new session waits for how it is to be kept, when the screen is still asking (idea i1).
                 if self.session.withLock({ $0 == nil }) { try await SessionKeyAccess.settled() }

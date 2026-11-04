@@ -12,6 +12,7 @@ extension AgentConversation {
         let startup = startup
         let jobs = jobs
         let mcp = mcp
+        let threads = threads
         return Task {
             await withTaskGroup(of: Void.self) { group in
                 group.addTask {
@@ -23,18 +24,18 @@ extension AgentConversation {
                 }
                 group.addTask {
                     for await list in jobs.changes() {
-                        update(
-                            .runners(
-                                list.map {
-                                    RunnerInfo(
-                                        name: "[#" + $0.displayID + "]",
-                                        detail: $0.command,
-                                        id: $0.id,
-                                        startedAt: $0.startedAt
-                                    )
-                                }
-                            )
+                        // Listed with the threads (roadmap 0194), which change on their own.
+                        threads.setJobs(
+                            list.map {
+                                RunnerInfo(
+                                    name: "[#" + $0.displayID + "]",
+                                    detail: $0.command,
+                                    id: $0.id,
+                                    startedAt: $0.startedAt
+                                )
+                            }
                         )
+                        update(.runners(threads.runners))
                     }
                 }
                 // One watcher for the configuration files and the executable; the screen owns this task while it shows
