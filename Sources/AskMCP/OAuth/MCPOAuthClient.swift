@@ -94,6 +94,26 @@ public struct MCPOAuthClient: Sendable {
         )
     }
 
+    /// New tokens for `old` from `tokenEndpoint`, without discovery: what a stored sign-in renews with.
+    public static func refresh(
+        _ old: MCPOAuthTokens,
+        tokenEndpoint: URL,
+        clientID: String,
+        resource: String,
+        http: any HTTPTransport,
+        now: Date = Date()
+    ) async throws(MCPOAuthError) -> MCPOAuthTokens {
+        let plan = MCPOAuthPlan(
+            issuer: tokenEndpoint,
+            authorizationEndpoint: tokenEndpoint,
+            tokenEndpoint: tokenEndpoint,
+            registrationEndpoint: nil,
+            scope: nil,
+            resource: resource
+        )
+        return try await MCPOAuthClient(plan: plan, http: http).refresh(old, clientID: clientID, now: now)
+    }
+
     private func tokens(_ form: [(String, String)], keeping refresh: String?, now: Date) async throws(MCPOAuthError)
         -> MCPOAuthTokens
     {
@@ -116,6 +136,9 @@ public struct MCPOAuthClient: Sendable {
     /// The JSON object a POST answers with; a refusal says the server's error code, never what was sent.
     private func post(_ url: URL, body: [UInt8], type: String, accepting: Set<Int>) async throws(MCPOAuthError) -> JSON
     {
+        guard EndpointPolicy.refusal(for: url, carriesCredential: true) == nil else {
+            throw MCPOAuthError("the authorization endpoint is not secure")
+        }
         let request = HTTPRequest(
             url: url,
             method: "POST",

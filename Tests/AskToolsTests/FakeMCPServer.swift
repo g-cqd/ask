@@ -26,6 +26,7 @@ final class FakeMCPServer: MCPTransport {
         var resources: Resources?
         var reads: [String] = []
         var subscriptions: [String] = []
+        var signIn: MCPAuthChallenge?
     }
     /// What a server with resources answers: its listing's and templates' items, and a read's contents for a URI.
     struct Resources: Sendable {
@@ -66,6 +67,9 @@ final class FakeMCPServer: MCPTransport {
     func diagnose(_ text: String) { state.withLock { $0.diagnosis = text } }
     var diagnostic: String? { state.withLock { $0.diagnosis } }
     func refuseInitialize() { state.withLock { $0.refusesInitialize = true } }
+    /// Refuses `initialize` as a server that needs a sign-in does, with `challenge`.
+    func requireSignIn(_ challenge: MCPAuthChallenge?) { state.withLock { $0.signIn = challenge } }
+    var authorizationChallenge: MCPAuthChallenge? { state.withLock { $0.signIn } }
     func reply(to call: @escaping @Sendable (String, String) -> String) { state.withLock { $0.callReply = call } }
     /// Progress sent before each call's reply when the call asks for it: each a notification's fields after its token.
     func reportProgress(_ fields: [String]) { state.withLock { $0.progress = fields } }
@@ -114,7 +118,7 @@ final class FakeMCPServer: MCPTransport {
                 }
                 for waiter in waiting { waiter.resume() }
                 if state.withLock({ $0.holdsInitialize }) { return }
-                if state.withLock({ $0.refusesInitialize }) {
+                if state.withLock({ $0.refusesInitialize || $0.signIn != nil }) {
                     push(#"{"jsonrpc":"2.0","id":\#(id),"error":{"code":-32000,"message":"no thanks"}}"#)
                 } else {
                     let resources = state.withLock { $0.resources }

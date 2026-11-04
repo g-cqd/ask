@@ -144,7 +144,8 @@ extension AgentConversation {
             ),
             SlashCommand(
                 name: "mcp",
-                summary: "Show the MCP servers: which are connected and how many tools each offers.",
+                summary:
+                    "Show the MCP servers: which are connected and how many tools each offers; /mcp login NAME signs in to one.",
                 category: .tools,
                 duringTurn: .atOnce
             ),
@@ -194,7 +195,7 @@ extension AgentConversation {
                     update(.notice("/\(name) merges a thread back: type it in the thread's lane.", isError: false))
                 case "rename":
                     update(.notice("/rename TITLE names a thread: type it in the thread's lane.", isError: false))
-                case "mcp": update(.notice(MCPHub.report(self.mcp.status).joined(separator: "\n"), isError: false))
+                case "mcp": self.mcpCommand(arguments, update: update)
                 case "reload": await self.reload(arguments: arguments, update: update)
                 default: update(.notice("There is no command /\(name).", isError: true))
             }

@@ -10,7 +10,7 @@ extension MCPHub {
         status.compactMap { status in
             switch status.state {
                 case .waiting, .connecting: status.name
-                case .off, .ready, .searchable, .failed: nil
+                case .off, .ready, .searchable, .failed, .needsSignIn: nil
             }
         }
     }

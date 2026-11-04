@@ -33,11 +33,33 @@ extension MCPHost {
             if info.supportsResources { shelve(server.name, connection, subscribable: info.resourcesSubscribable) }
         } catch {
             await connection.close()
+            // Refused for want of a sign-in: not a failure the person can only read about; they are asked (roadmap 0067).
+            if let challenge = transport.authorizationChallenge {
+                state.withLock { $0.challenges[server.name] = challenge }
+                setStatus(server.name, .needsSignIn, notes: [])
+                signInNeeded?(server.name)
+                return
+            }
             let more = transport.diagnostic.map { " (\($0))" } ?? ""
             return fail(server, MCPFailure.describe(error, server: server.name) + more)
         }
         let follower = Task { await self.follow(server, connection) }
         state.withLock { $0.followers.append(follower) }
+    }
+
+    /// What `name` asked for when it refused for want of a sign-in; nil when it did not.
+    func challenge(for name: String) -> MCPAuthChallenge? { state.withLock { $0.challenges[name] } }
+
+    /// Connects `name` again, as after a sign-in, leaving the others as they are.
+    func reconnect(_ name: String) async {
+        guard let server = servers.first(where: { $0.name == name && $0.enabled }) else { return }
+        state.withLock { state in
+            state.challenges[name] = nil
+            if let index = state.statuses.firstIndex(where: { $0.name == name }) {
+                state.statuses[index].state = .connecting
+            }
+        }
+        await connect(server)
     }
 
     /// Follows a connected server until it is gone: its tool list when it says it changed, and its end.

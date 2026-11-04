@@ -24,6 +24,8 @@ public final class MCPHost: Sendable {
         var stopping = false
         var listings: [String: Int] = [:]
         var waiters: [(server: String, times: Int, continuation: CheckedContinuation<Void, Never>)] = []
+        /// What each server that refused for want of a sign-in asked for (roadmap 0067).
+        var challenges: [String: MCPAuthChallenge] = [:]
     }
 
     /// The most tools a server may have to be offered whole without a `tools` list. A bigger one would put its schemas in every request.
@@ -39,6 +41,8 @@ public final class MCPHost: Sendable {
     let forward: (@Sendable (String) -> Void)?
     /// Told the name of a server whose resource list changed.
     let resourceListChanged: (@Sendable (String) -> Void)?
+    /// Told the name of a server that refused for want of a sign-in.
+    let signInNeeded: (@Sendable (String) -> Void)?
     let catalog: MCPCatalog
     let resources = MCPResourceShelf()
     /// The group of the two search tools. A server's name cannot hold a `/`, so it cannot be this one.
@@ -57,6 +61,7 @@ public final class MCPHost: Sendable {
     ///   - transport: how a server's transport is made.
     ///   - forwarding: also told everything ``notices`` is, for a caller that outlives this host.
     ///   - resourceListChanged: told the name of a server that says its resource list changed.
+    ///   - signInNeeded: told the name of a server that refused for want of a sign-in.
     public init(
         servers: [MCPServerSetting],
         live: LiveTools,
@@ -64,8 +69,10 @@ public final class MCPHost: Sendable {
         maximumDirectTools: Int = MCPHost.defaultMaximumDirectTools,
         transport: @escaping TransportFactory,
         forwarding: (@Sendable (String) -> Void)? = nil,
-        resourceListChanged: (@Sendable (String) -> Void)? = nil
+        resourceListChanged: (@Sendable (String) -> Void)? = nil,
+        signInNeeded: (@Sendable (String) -> Void)? = nil
     ) {
+        self.signInNeeded = signInNeeded
         self.forward = forwarding
         self.resourceListChanged = resourceListChanged
         self.servers = servers

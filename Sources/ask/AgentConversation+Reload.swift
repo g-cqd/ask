@@ -18,6 +18,8 @@ extension AgentConversation {
                 group.addTask {
                     for await line in mcp.notices { update(.notice(line, isError: false)) }
                 }
+                // A server that needs a sign-in: the person is asked (roadmap 0067).
+                group.addTask { await self.askToSignIn(update: update) }
                 // A server whose resources changed: its @server: list is asked for again (roadmap 0067).
                 group.addTask {
                     for await server in mcp.resourceListChanges { update(.choicesStale(command: "@" + server)) }

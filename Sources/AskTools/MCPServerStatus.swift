@@ -14,6 +14,8 @@ public struct MCPServerStatus: Sendable, Equatable {
         case searchable(tools: Int)
         /// Not connected, and why.
         case failed(String)
+        /// A remote server that refused for want of a sign-in (roadmap 0067): `/mcp login <name>`.
+        case needsSignIn
     }
 
     /// The name the configuration gave it.
@@ -26,6 +28,7 @@ public struct MCPServerStatus: Sendable, Equatable {
     public var problem: String? {
         switch state {
             case .failed(let reason): "MCP server \(name) did not start: \(reason)"
+            case .needsSignIn: "MCP server \(name) needs you to sign in: run ask and /mcp login \(name)"
             case .off, .waiting, .connecting, .ready, .searchable: nil
         }
     }

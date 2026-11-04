@@ -189,7 +189,8 @@ struct QuestionSectionTests {
     @Test func `a run that ends while they wait takes them away and leaves the draft`() {
         var controller = asking([Self.scope], draft: "draft")
         _ = press([tab] + type("half a note"), &controller)
-        controller.handle(.runEnded)
+        let effects = controller.handle(.runEnded)
         #expect(controller.state.pendingQuestions == nil && controller.state.editor.text == "draft")
+        #expect(effects.contains(.answerQuestions(id: 7, nil)), "declined, so whoever asked is not left waiting")
     }
 }

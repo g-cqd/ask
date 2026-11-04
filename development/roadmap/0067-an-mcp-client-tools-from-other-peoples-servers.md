@@ -112,3 +112,40 @@ offers both.
 - 0067's resource part is done. Left of 0067: approval of what a server does beyond its tools, prompts, OAuth for remote servers,
   sampling.
 
+
+## OAuth for remote servers (merged 2026-11-05; not verified against a real server)
+
+The owner deferred it on 2026-11-02 ("please record this oauth as a todo for later") and on 2026-11-05 asked for everything off main to be
+merged. It is merged with the full gates passing: the build, every test and the quality gate. It is not counted complete: still to do
+(task t192) are a discovery and security review, the Client ID Metadata Document (hosting it, and the owner's choice of registration
+strategy), and sign-ins against a real protected server in a real browser.
+
+The owner: "oauth should definitely be implemented". His choices: when a server refuses for want of a sign-in, ask asks on the screen
+("Open the browser to sign in now?"). The implementation currently identifies itself by dynamic registration, else a client id from the configuration
+(`mcp.<server>.oauth.clientId`). A Client ID Metadata Document (the 2025-11-25 specification's first choice) needs a URL the owner
+hosts; the owner asked how hosting it would work, and has not selected a registration strategy.
+
+- `AskMCP/OAuth`: `MCPAuthChallenge` (`WWW-Authenticate: Bearer`, RFC 6750 and RFC 9728); `MCPOAuthDiscovery`: the protected resource
+  metadata (the challenge's, else the well-known places for the path, then the root), the authorization server's (RFC 8414, then OpenID
+  Connect), refusing metadata for another resource, another issuer, no PKCE with S256, and an endpoint a token would reach in the clear;
+  a server without the metadata (2025-03-26) is its own authorization server. `MCPOAuthClient`: registration (RFC 7591, a public client),
+  the authorization address with PKCE, `state` and the resource indicator (RFC 8707), the code's exchange and the refresh.
+- `HTTPMCPTransport` carries an `MCPAuthorization`'s header; a `401` (or a `403` asking for more scope) is renewed once and sent again,
+  else answered with "the server needs you to sign in", its challenge kept (`authorizationChallenge`). A token is never sent in the clear
+  to another machine, and a plain-http server on the network carries none.
+- `MCPServerCredentials` in the credential file (`mcp`, by the server's canonical address): issuer, token endpoint, client id, redirect,
+  and the tokens, which are secrets (a keychain keeps them out of the file). `MCPStoredAuthorization` renews through the stored token
+  endpoint when a token is due within a minute or refused, one renewal at a time.
+- `MCPSignInFlow`: discovery, the client id (configured, kept from an earlier sign-in to the same issuer, or registered now for the port
+  the loopback listener took), the browser, the code back on 127.0.0.1 within five minutes, the tokens saved. The host gives such a server
+  the state `needsSignIn` (the startup summary and `/mcp` say `/mcp login NAME`), the hub passes its name on (`signInNeeds`), and
+  `reconnect` connects that server alone afterwards.
+- The screen asks once the turn has ended, as a turn's end clears its questions; a question a turn's end drops is now declined rather
+  than left waiting. `/mcp login NAME`. The browser opens through `NSWorkspace`; over SSH or with `ASK_NO_BROWSER`, the address is only shown (no
+  program named by the environment is started).
+- Tests: `MCPOAuthTests` (8), `HTTPMCPAuthorizationTests` (5), `MCPCredentialStorageTests` (2), `MCPHubSignInTests` (1),
+  `MCPStoredAuthorizationTests` (3), `QuestionSectionTests` (1 more). `Scripts/probe-mcp-oauth.py` through the release binary against
+  `Tests/AskMCPTests/Fixtures/oauth-server.py` (refuses without a token, its own authorization server checking PKCE and the resource):
+  asked, the address shown, signed in, the server ready with its tool (4 checks).
+- Not verified: against a real OAuth-protected MCP server; a token's renewal over a long session (unit tests only); the keychain on the
+  owner's machine (the probe's keychain is a throwaway one).

@@ -230,6 +230,13 @@ Each member names a server. Put servers in your own file; a project's file can n
 | `enabled` | `false` keeps the entry without connecting. |
 | `mode` | `"direct"` offers its tools directly, `"search"` through a search tool. By default, a server with more than 16 tools is searched. |
 | `maxDirectTools` | Changes that threshold of 16 for this server. |
+| `oauth` | `{"clientId": "…"}`: the client id to sign in with, for a server whose authorization server does not let ask register itself; register `http://127.0.0.1:33418/callback` as its redirect address there. |
+
+A server at an address that answers it needs a sign-in (OAuth, as the MCP specification says) is not counted as failed: when the turn
+that connected it ends, ask asks whether to sign in, and **Sign in** opens your browser to approve it there. `/mcp login NAME` does the
+same at any time. ask registers itself with the server's authorization server when it can, keeps the tokens with your other sign-ins
+(`credentials` says where), renews them before they run out, and connects the server. Over SSH, or with `ASK_NO_BROWSER` set, no browser
+opens: the address is only shown, to open where you are.
 
 In a project's file, an entry with no `command` and no `url` changes the server of that name in your file instead of replacing it, and may
 set only `enabled`, `tools`, `mode` and `maxDirectTools`. `{"mcp": {"xcode": {"enabled": false}}}` turns your `xcode` server off in that

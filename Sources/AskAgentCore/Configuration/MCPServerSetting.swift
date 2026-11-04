@@ -3,7 +3,7 @@ public struct MCPServerSetting: Sendable, Equatable {
     /// The keys a server under `mcp` may set.
     // @dl:accept -- a key table, as every section has
     public static let keys = [
-        "command", "args", "env", "cwd", "url", "headers", "tools", "enabled", "mode", "maxDirectTools"
+        "command", "args", "env", "cwd", "url", "headers", "tools", "enabled", "mode", "maxDirectTools", "oauth"
     ]
 
     /// The name the configuration gave it. It is part of every tool's name (`mcp__<name>__<tool>`), so its letters are limited.
@@ -31,6 +31,9 @@ public struct MCPServerSetting: Sendable, Equatable {
     public var maxDirectTools: Int?
     /// Whether ask connects to it at all.
     public var enabled: Bool
+    /// The client id to sign in to it with (`oauth.clientId`), for a server whose authorization server takes no registration; nil
+    /// registers ask, or uses what an earlier sign-in registered (roadmap 0067).
+    public var oauthClientID: String?
 
     /// A server with these settings.
     public init(
@@ -45,7 +48,8 @@ public struct MCPServerSetting: Sendable, Equatable {
         enabled: Bool = true,
         // @dl:accept -- a memberwise initialiser or a field table reads like any other of its kind; the fields are the data
         mode: Mode? = nil,
-        maxDirectTools: Int? = nil
+        maxDirectTools: Int? = nil,
+        oauthClientID: String? = nil
     ) {
         // @dl:accept -- synthesized-looking initializer assignments preserve this public configuration model's defaults
         self.name = name
@@ -59,6 +63,7 @@ public struct MCPServerSetting: Sendable, Equatable {
         self.enabled = enabled
         self.mode = mode
         self.maxDirectTools = maxDirectTools
+        self.oauthClientID = oauthClientID
     }
 
     /// Whether `name` can be part of a tool's name: letters, digits, `-` and `_`, from 1 to 32 characters, not starting with `-`, and no

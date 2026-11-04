@@ -15,6 +15,19 @@ extension CredentialFile {
         }
     }
 
+    /// Saves a renewal only while the sign-in it renewed is still current. A logout or another sign-in wins the race.
+    /// - Returns: whether the renewal replaced the expected record.
+    /// - Throws: as ``saveMCP(_:)``.
+    public func renewMCP(_ record: MCPServerCredentials, replacing expected: MCPServerCredentials)
+        throws(CredentialFileError) -> Bool
+    {
+        try transact(creating: false) {
+            guard $0.mcp?[expected.server] == expected, record.server == expected.server else { return (false, false) }
+            $0.mcp?[record.server] = record
+            return (true, true)
+        }
+    }
+
     /// Removes the sign-in to `server`, keeping every other record. Nothing stored is not an error.
     /// - Throws: as ``saveMCP(_:)``.
     public func removeMCP(server: String) throws(CredentialFileError) {

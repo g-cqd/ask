@@ -24,6 +24,9 @@ public final class MCPHub: Sendable {
     /// The names of servers whose resource list changed, for the `@server:` picker to ask again (roadmap 0067).
     public let resourceListChanges: AsyncStream<String>
     private let listChangeSink: AsyncStream<String>.Continuation
+    /// The names of servers that refused for want of a sign-in, for the person to be asked (roadmap 0067).
+    public let signInNeeds: AsyncStream<String>
+    private let signInSink: AsyncStream<String>.Continuation
     private let environment: [String: String]
     private let transport: MCPHost.TransportFactory
     let state = Mutex(State())
@@ -46,6 +49,7 @@ public final class MCPHub: Sendable {
             of: String.self,
             bufferingPolicy: .bufferingNewest(16)
         )
+        (signInNeeds, signInSink) = AsyncStream.makeStream(of: String.self, bufferingPolicy: .bufferingNewest(16))
         state.withLock { $0.started = !connectsOnFirstNeed }
     }
 
@@ -76,6 +80,7 @@ public final class MCPHub: Sendable {
         let before = state.chain
         let sink = noticeSink
         let changes = listChangeSink
+        let needs = signInSink
         let next =
             state.servers.isEmpty
             ? nil
@@ -85,7 +90,8 @@ public final class MCPHub: Sendable {
                 environment: environment,
                 transport: transport,
                 forwarding: { sink.yield($0) },
-                resourceListChanged: { changes.yield($0) }
+                resourceListChanged: { changes.yield($0) },
+                signInNeeded: { needs.yield($0) }
             )
         state.host = next
         state.chain = Task {
@@ -115,5 +121,6 @@ public final class MCPHub: Sendable {
         await host?.stop()
         noticeSink.finish()
         listChangeSink.finish()
+        signInSink.finish()
     }
 }

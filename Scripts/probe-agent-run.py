@@ -101,6 +101,8 @@ def environment(state, url, config=None):
     env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()
     # No first-start question about encrypting sessions (roadmap 0182): a probe that wants one sets its own.
     env["ASK_SESSION_ENCRYPTION"] = "off"
+    # Never the person's browser: an address to sign in at is only shown (roadmap 0067), for the probe to follow.
+    env["ASK_NO_BROWSER"] = "1"
     if not config:
         config = os.path.join(state, "config")
         os.makedirs(config, exist_ok=True)
