@@ -39,3 +39,9 @@ Any graphics tier: Kitty and the other raster protocols are dropped (the owner p
 ## Progress (2026-11-04)
 
 ask draws a closed `mermaid` fence as a diagram (`Sources/AskTUI/MermaidRows.swift`, called from `MarkdownMessageLayout`), with the theme's styles by role, through the existing row cache; an open fence streams as code and becomes the diagram when it closes, and what the engine cannot read or fit stays code. AskTUI depends on AemiMermaid and ask on the working tree of AemiMarkdown by path until landing. Nine tests; ask's whole suite passes but `BenchmarkDependencyTests`, which needs the revision pin back. Left: a selection that copies the diagram's source, the fold header for a long diagram's source, TerminalKit's `MarkdownFenceRenderer` hook (the promotion), the pins, ask's budgets measured with a diagram on screen, the ADR.
+
+## Landed (2026-11-04)
+
+- AemiMermaid is published (`github.com/g-cqd/AemiMermaid`, public) and pinned at `6c86aed`; AemiMarkdown's block index, fence reader
+  and editor are pushed and pinned at `57f2def`, which TerminalKit (`1da60e1`) pins too, as SwiftPM needs one revision per package. No
+  path dependency is left. `Scripts/probe-mermaid.py` (4 checks) draws a flowchart and a sequence diagram through the release binary.
