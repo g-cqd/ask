@@ -23,6 +23,22 @@ struct BenchmarkDependencyTests {
             "A dependency update must update both manifests; otherwise benchmarks cannot resolve."
         )
     }
+
+    @Test(arguments: ["aemi", "aemijson", "aemimarkdown", "aemiregex", "terminalkit"])
+    func `the benchmark lock resolves the family where the shipping lock does`(identity: String) throws {
+        let root = URL(fileURLWithPath: #filePath).deletingLastPathComponent().deletingLastPathComponent()
+            .deletingLastPathComponent()
+        let revisions = try ["Package.resolved", "Benchmarks/Package.resolved"]
+            .map { path in
+                let text = try String(contentsOf: root.appending(path: path), encoding: .utf8)
+                return capture(#""identity" : "\#(identity)",[^}]*"revision" : "([a-f0-9]{40})""#, in: text)
+            }
+        #expect(revisions[0] != nil)
+        #expect(
+            revisions[0] == revisions[1],
+            "Scripts/update-pins.py resolves every tracked lock; a stale Benchmarks/Package.resolved builds the old revisions."
+        )
+    }
 }
 
 /// The first capture group of `pattern` in `text`, matched in linear time.

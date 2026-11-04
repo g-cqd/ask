@@ -32,17 +32,20 @@ with tempfile.TemporaryDirectory() as directory:
     found = [str(p.relative_to(root)) for p in pins.manifests(root)]
     assert found == ["Benchmarks/Package.swift", "Package.swift"], found
 
-# What a pin commit stages: the manifests, and Package.resolved unless the repository ignores it (AemiRegex does).
+# What a pin commit stages: the manifests, and each Package.resolved beside one that the repository tracks (ask's Benchmarks
+# has its own; AemiRegex tracks none).
 import subprocess
 with tempfile.TemporaryDirectory() as directory:
     root = pathlib.Path(directory)
     subprocess.run(["git", "init", "-q", str(root)], check=True)
-    for path in ["Package.swift", "Benchmarks/Package.swift", "Package.resolved"]:
+    for path in ["Package.swift", "Benchmarks/Package.swift", "Package.resolved", "Benchmarks/Package.resolved"]:
         (root / path).parent.mkdir(parents=True, exist_ok=True)
         (root / path).write_text(OTHER)
-    assert pins.staged(root) == ["Benchmarks/Package.swift", "Package.swift", "Package.resolved"], pins.staged(root)
-    (root / ".gitignore").write_text("Package.resolved\n")
-    assert pins.staged(root) == ["Benchmarks/Package.swift", "Package.swift"], pins.staged(root)
+    subprocess.run(["git", "-C", str(root), "add", "Package.resolved", "Benchmarks/Package.resolved"], check=True)
+    expected = ["Benchmarks/Package.swift", "Package.swift", "Benchmarks/Package.resolved", "Package.resolved"]
+    assert pins.staged(root) == expected, pins.staged(root)
+    subprocess.run(["git", "-C", str(root), "rm", "-q", "--cached", "Package.resolved"], check=True)
+    assert pins.staged(root) == expected[:3], "an untracked lock is not staged"
 
 names = [name for name, _ in pins.FAMILY]
 assert names[0] == "aemi" and names[-1] == "ask", names
