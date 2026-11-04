@@ -13,6 +13,7 @@ extension ScreenComposer {
         columns: Int,
         into buffer: inout ScreenBuffer
     ) -> (sidebar: Sidebar, map: RowMap<Int>, totalLines: Int) {
+        followLane(state.lane?.id)
         let sidebar = Sidebar(state, columns: columns, rows: transcriptRows)
         let wrapColumns = sidebar.transcriptColumns(of: columns)
         let visible = transcriptWindow(

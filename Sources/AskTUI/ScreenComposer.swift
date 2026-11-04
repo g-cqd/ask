@@ -72,6 +72,9 @@ public struct ScreenComposer: Sendable {
 
     /// The last transcript items' heights, as far up as the shown rows reach, and the wrapped lines of those near them.
     var transcriptLines = WindowedLayout<Line>()
+    /// The main conversation's layout, kept aside while a lane shows a runner (note n29), and the lane shown at the last frame.
+    var mainLines: WindowedLayout<Line>?
+    var shownLane: String?
     /// The look those lines were laid out for.
     var blockStyle = BlockStyle.plain
     var foldBlocks: [Int?] = []

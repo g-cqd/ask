@@ -42,6 +42,7 @@ extension ScreenComposer {
         if style != blockStyle {
             blockStyle = style
             transcriptLines = WindowedLayout<Line>()
+            mainLines = nil
         }
         let layout = { (index: Int) in
             Self.lines(
@@ -60,5 +61,20 @@ extension ScreenComposer {
             layout: layout
         )
         return transcriptLines.lines(fromEnd: rowsFromEnd, rows: rows, layout: layout)
+    }
+
+    /// Keeps the main conversation's layout aside while a lane is shown, and puts it back when the lane is left (note n29). Without it the
+    /// layout held the lane's few items, and coming back laid out every item of a long session at once: 8.6 s for 15,000 items in a
+    /// debug build. Only what changed meanwhile is laid out again. Each lane starts a layout of its own.
+    mutating func followLane(_ lane: String?) {
+        guard lane != shownLane else { return }
+        if shownLane == nil { mainLines = transcriptLines }
+        if lane != nil {
+            transcriptLines = WindowedLayout<Line>()
+        } else {
+            transcriptLines = mainLines ?? WindowedLayout<Line>()
+            mainLines = nil
+        }
+        shownLane = lane
     }
 }
