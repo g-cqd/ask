@@ -4,7 +4,8 @@ extension Transcript {
     /// Yielded jobs outlive the turn, so they are not candidates for its implicit tool completion.
     var latestForegroundTool: Int? {
         items.indices.last {
-            guard !jobBlocks.values.contains($0) else { return false }
+            // A background job and an aside are no part of the run: its end and its stop leave them going.
+            guard !jobBlocks.values.contains($0), !asideBlocks.contains($0) else { return false }
             if case .tool(_, _, .running, _, _) = items[$0] { return true }
             return false
         }

@@ -6,6 +6,13 @@ extension Transcript {
         summaryBlocks.insert(index)
     }
 
+    /// Marks the tool block started as `id` as an aside (roadmap 0194): a summary block, open, in its own colour.
+    mutating func markAside(id: String) {
+        guard let index = toolBlocks[id] else { return }
+        summaryBlocks.insert(index)
+        asideBlocks.insert(index)
+    }
+
     /// Gives the tool block started as `id` a new header text, the part after its name.
     mutating func renameTool(summary: String, id: String) {
         guard let index = toolBlocks[id], case .tool(let name, _, let status, let output, let input) = items[index]

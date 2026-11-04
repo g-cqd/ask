@@ -36,8 +36,9 @@ extension ScreenComposer {
         let item = transcript.items[index]
         let spaced = index > 0 && isSpaced(item) && isSpaced(transcript.items[index - 1])
         let interrupted = transcript.interrupted.contains(index)
+        let aside = transcript.asideBlocks.contains(index)
         if let rows = markdownItemLines(in: transcript, at: index, columns: columns, style: style) {
-            return framed(rows, kind: item, style: style, spacerAbove: spaced, interrupted: interrupted)
+            return framed(rows, kind: item, style: style, spacerAbove: spaced, interrupted: interrupted, aside: aside)
         }
         if transcript.markdown, case .assistant(let text) = item {
             return framed(
@@ -60,6 +61,7 @@ extension ScreenComposer {
                 toolInput: transcript.shownToolInput(at: index),
                 command: transcript.commandBlocks.contains(index),
                 interrupted: interrupted,
+                aside: aside,
                 toolOutput: output?.text,
                 replacements: transcript.replacements[index],
                 code: transcript.fileCode(at: index)

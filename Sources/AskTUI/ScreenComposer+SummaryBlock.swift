@@ -24,11 +24,15 @@ extension ScreenComposer {
             inset: style.inset,
             style: toolStatusStyle(status)
         )
+        // A summary ask wrote is dim, as reasoning is; an aside is the model's answer to the person, at full brightness.
+        let dim = !transcript.asideBlocks.contains(index)
         let body = markdownLines(output, in: transcript, at: index, columns: columns, style: style)
             .map { row in
                 var row = row
-                row.style.dim = true
-                for accent in row.accents.indices { row.accents[accent].style.dim = true }
+                if dim {
+                    row.style.dim = true
+                    for accent in row.accents.indices { row.accents[accent].style.dim = true }
+                }
                 if var source = row.source {
                     source.line += 1
                     row.source = source

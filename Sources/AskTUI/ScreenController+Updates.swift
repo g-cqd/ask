@@ -48,6 +48,11 @@ extension ScreenController {
             case .askApproval(let id, let question, let kind, let detail):
                 ask(id: id, question: question, kind: kind, detail: detail)
             case .askQuestions(let id, let questions): askQuestions(id: id, questions: questions)
+            case .asideStarted(let id, let question):
+                state.transcript.startTool(name: "btw", summary: question, id: id)
+                state.transcript.markAside(id: id)
+            case .asideFinished(let id, let status, let answer):
+                state.transcript.finishTool(status, output: answer, id: id)
             case .compacting, .compactionFinished, .reconnecting, .connectingMCP, .waitingForNetwork:
                 applyBackgroundWork(update)
             case .runEnded: return runEnded()
