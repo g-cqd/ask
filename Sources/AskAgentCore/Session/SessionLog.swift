@@ -45,6 +45,8 @@ public enum SessionLog {
     static func snapshot(_ tree: SessionTree, images: SessionImageStore?) throws(SessionLogError) -> [UInt8] {
         var bytes = try encode(.header(version: formatVersion))
         for entry in tree.entries { bytes += try encode(.entry(entry), images: images) }
+        // Records of a type a newer ask wrote, in the order they came (ADR-0144).
+        for line in tree.unknownRecords { bytes += line + [0x0A] }
         if let sandbox = tree.sandbox { bytes += try encode(.sandbox(sandbox)) }
         bytes += try encode(.leaf(tree.leaf))
         return bytes
@@ -134,6 +136,8 @@ public enum SessionLog {
         _ record: SessionLogRecord,
         images: SessionImageStore? = nil
     ) throws(SessionLogError) -> [UInt8] {
+        // A newer ask's entry goes back as it came (ADR-0144).
+        if case .entry(let entry) = record, case .unrecognized(_, let line) = entry.payload { return line + [0x0A] }
         var encoder = AemiJSON.JSONEncoder()
         if let images { encoder.userInfo[SessionImageStore.userInfoKey] = images }
         // Sorted keys make equal records byte-identical; slashes stay unescaped, AemiJSON's default.

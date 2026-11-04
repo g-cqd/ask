@@ -17,7 +17,10 @@ extension SessionLogRecord: Codable {
     /// The sandbox record's own key set, so every other line matches no more keys than before. It repeats `type` so
     /// the record is written through one container: one encoder, one keyed container.
     private enum SandboxKeys: String, CodingKey { case type, write, read, network }
-    private enum Kind: String, Codable { case session, entry, leaf, sandbox }
+    private enum Kind: String, Codable, CaseIterable { case session, entry, leaf, sandbox }
+
+    /// The record types this build reads; a line of any other is a newer ask's, kept and not read (ADR-0144).
+    static let knownTypes = Set(Kind.allCases.map(\.rawValue))
 
     /// A write or read scope on the wire: `"workspace"`, `"anywhere"`, or an array of paths.
     private struct WireScope: Codable {

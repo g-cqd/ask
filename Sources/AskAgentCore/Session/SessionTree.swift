@@ -14,6 +14,8 @@ public struct SessionTree: Sendable, Equatable {
     /// The strict sandbox the session last ran under, or nil when none was recorded (roadmap 0042). Metadata, not
     /// conversation: it is no entry, so it never reaches a model and never breaks the parent chain.
     public private(set) var sandbox: SandboxSection?
+    /// Records of a type a newer ask wrote (ADR-0144), each line without its newline, kept to be written back and never read.
+    public private(set) var unknownRecords: [[UInt8]] = []
     private var positions: [EntryID: Int] = [:]
     private var nextOrdinal = 0
 
@@ -109,6 +111,9 @@ public struct SessionTree: Sendable, Equatable {
 
     /// Records the strict sandbox this session now runs under; the latest record wins.
     public mutating func recordSandbox(_ section: SandboxSection) { sandbox = section }
+
+    /// Keeps a record of a type a newer ask wrote, to write back (ADR-0144); `line` is without its newline.
+    mutating func keepUnknownRecord(_ line: [UInt8]) { unknownRecords.append(line) }
 
     /// Undoes every change since `checkpoint`. Only appends and checkouts exist, so this is exact.
     /// - Complexity: O(entries added since the checkpoint).
