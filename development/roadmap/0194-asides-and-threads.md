@@ -72,6 +72,15 @@ show "the tree of threads and another section for the jobs", "more compact".
   lane. Its answer still goes to main, as every thread's does.
 - `probe-thread.py` 7 checks, `probe-sidebar.py` 12 checks, through the release binary in a PTY.
 
+## Done (2026-11-04): a steadier sidebar (note n24, task t207)
+
+- Its first row holds only a toggle in the screen's top-right corner: `»` closes it; closed, `«` stays in that corner cell (on the
+  top row's own background) and a click opens it. The closed corner is a pointer target of its own, above the transcript's.
+- `◆ main` is always listed; the "Threads" heading is gone, main being the tree's root. The Jobs heading has no count.
+- The last row counts what is running and what waits ("1 thread, 2 jobs running · 1 waiting"; "3 running" when that does not fit;
+  "Nothing running").
+- `SidebarTests`, `SidebarSectionsTests`, `HoverTests`; `probe-sidebar.py` 14 checks through the release binary.
+
 ## Still owed
 
 - The lane shows what the thread did, not the conversation it was forked from.

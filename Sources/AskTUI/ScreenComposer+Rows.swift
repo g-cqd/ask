@@ -47,7 +47,7 @@ extension ScreenComposer {
             write(
                 line,
                 highlight: highlights[row],
-                side: sidebar.cells.isEmpty ? nil : sidebar.cells[row],
+                side: sidebar.cells.indices.contains(row) ? sidebar.cells[row] : nil,
                 row: row,
                 into: &buffer
             )
@@ -92,16 +92,20 @@ extension ScreenComposer {
             )
         }
         if let side {
-            // The panel is the page's own: blanked first, whatever the transcript row under it was tinted.
+            // The panel is the page's own: blanked first, whatever the transcript row under it was tinted. The closed panel's corner
+            // keeps the row's own background, so a tinted block is not notched.
+            let background = side.divider ? Style() : Style(bg: line.style.bg)
             buffer.fill(
                 row: row,
                 col: side.column,
                 width: buffer.columns - side.column,
                 height: 1,
-                cell: Cell(character: " ", style: .default, width: 1)
+                cell: Cell(character: " ", style: background, width: 1)
             )
-            buffer.write("│", row: row, col: side.column, style: Style(dim: true))
-            buffer.write(side.text, row: row, col: side.column + 1, style: side.style)
+            if side.divider { buffer.write("│", row: row, col: side.column, style: Style(dim: true)) }
+            var style = side.style
+            if !side.divider { style.bg = line.style.bg }
+            buffer.write(side.text, row: row, col: side.column + (side.divider ? 1 : 0), style: style)
         }
     }
 }

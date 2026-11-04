@@ -54,6 +54,10 @@ extension ScreenController {
                 )
             )
         }
+        if let corner = frame.sidebarCorner {
+            // The closed sidebar's toggle, over the transcript's corner: the sidebar's own target, which it opens.
+            regions.add(Self.sidebarTarget, at: CellRect(row: 0, col: corner, rows: 1, cols: 1), layer: 1)
+        }
         band(Self.approvalTarget, from: frame.approvalAnswers.lowerBound, rows: frame.approvalAnswers.count)
         band(Self.approvalDetailTarget, from: frame.approvalDetail.lowerBound, rows: frame.approvalDetail.count)
         band(Self.pickerTarget, from: frame.pickerFirstRow, rows: frame.pickerWindow.count)

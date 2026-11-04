@@ -86,20 +86,25 @@ The model can run commands in the background, and `/thread` starts threads. The 
 jobs`). Click the count, or type `/jobs`, to list them below the input: Up and Down choose one, Enter shows its output (a thread's
 conversation) in place of the conversation, and Esc, or a click on the list's first row, `main`, goes back. Jobs never outlive ask.
 
-On a wide screen, `/sidebar` or **Ctrl+\\** shows them beside the conversation, one row each, in two sections:
+On a wide screen, `/sidebar`, **Ctrl+\\**, or a click on `«` in the top-right corner shows them beside the conversation, one row
+each:
 
 ```
-Threads · 1 running
+                                   »
 ◆ main
 ├ ⠋ thread-1 look into the parser   12s
 │ └ ✓ thread-3 the lexer too
 └ ✓ thread-2 check the pins
 
-Jobs · 1 running
+Jobs
 ⠋ #26a7 swift build -c release      3m
 ✓ #078c npm test
+
+1 thread, 1 job running
 ```
 
+The first row holds only the toggle: `»` closes the sidebar, and the `«` it leaves in the corner opens it again. `◆ main` is always
+listed, so the panel does not move as threads and jobs come and go, and the last row says what is running and what waits for you.
 Threads are a tree under the main conversation: `/thread` typed in a thread's lane starts one from that thread, under it. Each
 row is a state mark (a spinner while running, `?` waiting for you, `✓` done, `✗`
 failed, `■` stopped), the name, what it is doing, and how long an active one has run. Ended rows are dim, the one shown is bold, and

@@ -17,6 +17,8 @@ struct FrameGeometry: Sendable {
     var transcriptColumns = 0
     /// The runner each row of the sidebar shows, from the top; its first column is `transcriptColumns + 1`.
     var sidebarIDs: [String] = []
+    /// The column of the closed sidebar's toggle, on the first row, which a click opens it with (note n24).
+    var sidebarCorner: Int?
     /// How many wrapped lines the whole transcript has, so a scroll can stop at the top.
     var totalLines = 0
     /// The scroll position this frame was drawn at. A timer step waits until the frame it sees matches the position it asked for.

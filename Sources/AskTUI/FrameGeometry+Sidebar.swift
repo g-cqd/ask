@@ -3,5 +3,6 @@ extension FrameGeometry {
     mutating func placeSidebar(_ sidebar: Sidebar, columns: Int) {
         transcriptColumns = sidebar.transcriptColumns(of: columns)
         sidebarIDs = sidebar.ids
+        sidebarCorner = sidebar.cornerColumn
     }
 }

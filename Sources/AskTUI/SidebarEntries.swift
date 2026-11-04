@@ -1,8 +1,9 @@
 internal import TerminalKitStyle
 internal import TerminalKitText
 
-/// The sidebar's rows before they are windowed (roadmap 0194): a Threads section, the main conversation then its threads as a tree
-/// (with the jobs a thread started under it), and a Jobs section. A section with nothing in it is left out; while a lane is shown, Threads always is, for its way back to main.
+/// The sidebar's rows before they are windowed (roadmap 0194): the main conversation, always first so the panel never jumps, with its
+/// threads as a tree under it (and the jobs a thread started under that thread), then a Jobs section when there are jobs; and the
+/// line of counts the panel ends with (note n24).
 struct SidebarEntries {
     struct Entry: Equatable {
         var text: String
@@ -12,6 +13,8 @@ struct SidebarEntries {
     }
 
     private(set) var entries: [Entry] = []
+    /// The panel's last row: what is running and what waits.
+    private(set) var counts = Entry(text: "", style: .default)
 
     init(_ state: ScreenState, columns: Int) {
         let rows = state.runnerTree.visible(collapsed: state.collapsedRunners)
@@ -23,35 +26,31 @@ struct SidebarEntries {
             if item.row.depth == 0 { rootKind = item.row.runner.kind }
             if rootKind == .agent { threads.append(item) } else { jobs.append(item) }
         }
-        if !threads.isEmpty || state.lane != nil {
-            entries.append(
-                Self.heading("Threads", threads.map(\.row.runner).filter { $0.kind == .agent }, columns: columns)
+        counts = Self.counts(state.runnerTree.runners, columns: columns)
+        let shown = state.lane?.id
+        entries.append(
+            Entry(
+                text: ScreenComposer.ellipsized("◆ main", cells: columns).shown,
+                style: Self.style(
+                    active: true,
+                    shown: shown == nil,
+                    chosen: state.stripSelection == RunnerStrip.mainID
+                ),
+                id: RunnerStrip.mainID
             )
-            let shown = state.lane?.id
-            entries.append(
-                Entry(
-                    text: ScreenComposer.ellipsized("◆ main", cells: columns).shown,
-                    style: Self.style(
-                        active: true,
-                        shown: shown == nil,
-                        chosen: state.stripSelection == RunnerStrip.mainID
-                    ),
-                    id: RunnerStrip.mainID
-                )
-            )
-            let lasts = Self.lastSiblings(threads.map(\.row.depth))
-            var open: [Bool] = []  // Whether each ancestor depth has siblings still to come: its line continues.
-            for (index, item) in threads.enumerated() {
-                let depth = item.row.depth
-                open = Array(open.prefix(depth))
-                let guide = open.map { $0 ? "│ " : "  " }.joined() + (lasts[index] ? "└ " : "├ ")
-                open.append(!lasts[index])
-                entries.append(row(item, prefix: guide, state: state, columns: columns))
-            }
+        )
+        let lasts = Self.lastSiblings(threads.map(\.row.depth))
+        var open: [Bool] = []  // Whether each ancestor depth has siblings still to come: its line continues.
+        for (index, item) in threads.enumerated() {
+            let depth = item.row.depth
+            open = Array(open.prefix(depth))
+            let guide = open.map { $0 ? "│ " : "  " }.joined() + (lasts[index] ? "└ " : "├ ")
+            open.append(!lasts[index])
+            entries.append(row(item, prefix: guide, state: state, columns: columns))
         }
         if !jobs.isEmpty {
-            if !entries.isEmpty { entries.append(Entry(text: "", style: .default)) }
-            entries.append(Self.heading("Jobs", jobs.map(\.row.runner), columns: columns))
+            entries.append(Entry(text: "", style: .default))
+            entries.append(Entry(text: "Jobs", style: Style(bold: true, dim: true)))
             for item in jobs {
                 let indent = String(repeating: "  ", count: Swift.min(item.row.depth, columns / 4))
                 entries.append(row(item, prefix: indent, state: state, columns: columns))
@@ -59,11 +58,24 @@ struct SidebarEntries {
         }
     }
 
-    /// A section's name, and how many of its runners are active.
-    private static func heading(_ name: String, _ runners: [RunnerInfo], columns: Int) -> Entry {
-        let active = runners.filter(\.state.isActive).count
-        let text = active > 0 ? "\(name) · \(active) running" : name
-        return Entry(text: ScreenComposer.ellipsized(text, cells: columns).shown, style: Style(bold: true, dim: true))
+    /// What is running, for the panel's last row: active threads, running jobs, and what waits on the person.
+    private static func counts(_ runners: [RunnerInfo], columns: Int) -> Entry {
+        func count(_ number: Int, _ noun: String) -> String? {
+            number > 0 ? "\(number) \(noun)\(number == 1 ? "" : "s")" : nil
+        }
+        let threads = runners.filter { $0.kind == .agent && $0.state == .running }.count
+        let jobs = runners.filter { $0.kind == .job && $0.state == .running }.count
+        let waiting = runners.filter { $0.state == .waitingForApproval }.count
+        let running = [count(threads, "thread"), count(jobs, "job")].compactMap { $0 }.joined(separator: ", ")
+        let waits = waiting > 0 ? "\(waiting) waiting" : nil
+        let full = [running.isEmpty ? nil : running + " running", waits].compactMap { $0 }.joined(separator: " · ")
+        // Narrower, the kinds are summed: the count still fits.
+        let short = [threads + jobs > 0 ? "\(threads + jobs) running" : nil, waits].compactMap { $0 }
+            .joined(separator: " · ")
+        let text =
+            full.isEmpty ? "Nothing running" : UnicodeWidth.displayWidth(of: full) <= columns ? full : short
+        let cut = ScreenComposer.ellipsized(text, cells: columns)
+        return Entry(text: cut.shown + cut.mark, style: Style(dim: true))
     }
 
     /// Whether each row, given in preorder by depth, is the last child of its parent.

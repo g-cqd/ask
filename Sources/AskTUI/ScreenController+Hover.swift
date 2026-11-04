@@ -13,6 +13,7 @@ extension ScreenController {
 
     /// What a click at `row`, `col` would act on, of what hover shows.
     private func hovered(row: Int, col: Int) -> Hover? {
+        if row == 0, let corner = frame.sidebarCorner, col == corner { return .job(Sidebar.toggleID) }
         if row >= 0, row < frame.transcriptRows, col < frame.transcriptColumns, frame.foldBlocks.indices.contains(row),
             let block = frame.foldBlocks[row]
         {
