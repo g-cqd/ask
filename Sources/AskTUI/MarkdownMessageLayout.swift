@@ -37,12 +37,16 @@ struct MarkdownMessageLayout {
     /// The rows of `block` at `width`. A folded block is its header alone: it is not laid out, nor coloured, only to be dropped.
     mutating func lines(of block: MarkdownBlock, fence: Fence?, width: Int) -> [ScreenComposer.Line] {
         if let fence, fence.folded { return [Self.foldHeader(fence.fence, block: item, inset: inset)] }
-        var rows = renderer.lines(of: block, in: document, width: width)
+        // A closed mermaid fence is the diagram; anything the engine cannot draw is the code block it always was (roadmap 0198).
+        let diagram = MermaidRows.rows(of: block, in: document, width: width, theme: renderer.theme)
+        var rows = diagram ?? renderer.lines(of: block, in: document, width: width)
         var result: [ScreenComposer.Line] = []
         if let fence {
             // Open, the header takes the place of the language's row, and a click on it folds the block again.
             let label = renderer.theme.codeLabel
-            while let first = rows.first, first.source == nil, first.runs.contains(where: { $0.style == label }) {
+            while diagram == nil, let first = rows.first, first.source == nil,
+                first.runs.contains(where: { $0.style == label })
+            {
                 rows.removeFirst()
             }
             result.append(Self.foldHeader(fence.fence, block: item, inset: inset))
