@@ -118,7 +118,7 @@ func runInteractive(
             conversation: conversation,
             label: settings.label,
             history: [.labelVariants(settings.labelVariants), .sandboxActive(!settings.sandbox.isUnrestricted)]
-                + conversation.history() + sessionPicker,
+                + conversation.history() + conversation.restoreThreads() + sessionPicker,
             notices: startupNotices + settings.description,
             details: details + settings.detailLines + ProjectInstructions.describe(files),
             options: settings.screenOptions,

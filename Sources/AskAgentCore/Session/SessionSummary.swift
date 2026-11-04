@@ -9,6 +9,8 @@ public struct SessionSummary: Sendable, Equatable {
 
     /// Whether the session is encrypted and could not be read: no keys were given, or not its keys.
     public let isLocked: Bool
+    /// Whether it is a thread's session (roadmap 0195), which `/resume` does not list: its conversation is reached from main's.
+    public let isThread: Bool
 
     /// The summary of `tree`'s active branch.
     public init(_ tree: SessionTree) {
@@ -22,12 +24,14 @@ public struct SessionSummary: Sendable, Equatable {
         firstPrompt = prompts.first
         self.prompts = prompts.count
         isLocked = false
+        isThread = tree.threads.contains { $0.event == .identity }
     }
 
     private init(locked: Void) {
         firstPrompt = nil
         prompts = 0
         isLocked = true
+        isThread = false
     }
 
     /// The summary of the session at `path`, read without opening it, so a session in use can still be listed; nil when the file cannot be

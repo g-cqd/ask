@@ -10,6 +10,8 @@ enum SessionLogRecord: Sendable, Equatable {
     case leaf(EntryID?)
     /// The strict sandbox the session runs under from here on: its write scopes and network level only.
     case sandbox(SandboxSection)
+    /// A fact about a thread (roadmap 0195).
+    case thread(ThreadRecord)
 }
 
 extension SessionLogRecord: Codable {
@@ -17,7 +19,9 @@ extension SessionLogRecord: Codable {
     /// The sandbox record's own key set, so every other line matches no more keys than before. It repeats `type` so
     /// the record is written through one container: one encoder, one keyed container.
     private enum SandboxKeys: String, CodingKey { case type, write, read, network }
-    private enum Kind: String, Codable, CaseIterable { case session, entry, leaf, sandbox }
+    /// The thread record's own key set, as the sandbox record has one.
+    private enum ThreadKeys: String, CodingKey { case type, event, id, parent, prompt, file, at, summary }
+    private enum Kind: String, Codable, CaseIterable { case session, entry, leaf, sandbox, thread }
 
     /// The record types this build reads; a line of any other is a newer ask's, kept and not read (ADR-0144).
     static let knownTypes = Set(Kind.allCases.map(\.rawValue))
@@ -66,6 +70,23 @@ extension SessionLogRecord: Codable {
                 )
             case .leaf:
                 self = .leaf(try container.decodeIfPresent(String.self, forKey: .id).map(EntryID.init))
+            case .thread:
+                let fields = try decoder.container(keyedBy: ThreadKeys.self)
+                let name = try fields.decode(String.self, forKey: .event)
+                guard let event = ThreadRecord.Event(rawValue: name) else {
+                    throw DecodingError.dataCorruptedError(
+                        forKey: .event,
+                        in: fields,
+                        debugDescription: "unknown thread event"
+                    )
+                }
+                var record = ThreadRecord(event, id: try fields.decode(String.self, forKey: .id))
+                record.parent = try fields.decodeIfPresent(String.self, forKey: .parent)
+                record.prompt = try fields.decodeIfPresent(String.self, forKey: .prompt)
+                record.file = try fields.decodeIfPresent(String.self, forKey: .file)
+                record.at = try fields.decodeIfPresent(String.self, forKey: .at).map(EntryID.init)
+                record.summary = try fields.decodeIfPresent(String.self, forKey: .summary)
+                self = .thread(record)
             case .sandbox:
                 let fields = try decoder.container(keyedBy: SandboxKeys.self)
                 let network = try fields.decodeIfPresent(String.self, forKey: .network)
@@ -90,6 +111,18 @@ extension SessionLogRecord: Codable {
     }
 
     func encode(to encoder: any Encoder) throws {
+        if case .thread(let record) = self {
+            var fields = encoder.container(keyedBy: ThreadKeys.self)
+            try fields.encode(Kind.thread, forKey: .type)
+            try fields.encode(record.event.rawValue, forKey: .event)
+            try fields.encode(record.id, forKey: .id)
+            try fields.encodeIfPresent(record.parent, forKey: .parent)
+            try fields.encodeIfPresent(record.prompt, forKey: .prompt)
+            try fields.encodeIfPresent(record.file, forKey: .file)
+            try fields.encodeIfPresent(record.at?.description, forKey: .at)
+            try fields.encodeIfPresent(record.summary, forKey: .summary)
+            return
+        }
         if case .sandbox(let section) = self {
             // @dl:accept -- explicit coding keeps the session format ours (ADR-0013); one container per record (AemiJSON #4)
             var fields = encoder.container(keyedBy: SandboxKeys.self)
@@ -112,7 +145,7 @@ extension SessionLogRecord: Codable {
                 try container.encode(entry.id.description, forKey: .id)
                 try container.encodeIfPresent(entry.parentID?.description, forKey: .parent)
                 try container.encode(WirePayload(value: entry.payload), forKey: .payload)
-            case .sandbox: break  // written above
+            case .sandbox, .thread: break  // written above
             case .leaf(let id):
                 try container.encode(Kind.leaf, forKey: .type)
                 // An explicit null, so "start a new root" is distinguishable from a missing key.

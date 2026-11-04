@@ -45,6 +45,7 @@ public enum SessionLog {
     static func snapshot(_ tree: SessionTree, images: SessionImageStore?) throws(SessionLogError) -> [UInt8] {
         var bytes = try encode(.header(version: formatVersion))
         for entry in tree.entries { bytes += try encode(.entry(entry), images: images) }
+        for record in tree.threads { bytes += try encode(.thread(record)) }
         // Records of a type a newer ask wrote, in the order they came (ADR-0144).
         for line in tree.unknownRecords { bytes += line + [0x0A] }
         if let sandbox = tree.sandbox { bytes += try encode(.sandbox(sandbox)) }
@@ -77,6 +78,12 @@ public enum SessionLog {
     /// - Throws: ``SessionLogError/encodingFailed``.
     public static func line(forSandbox sandbox: SandboxSection) throws(SessionLogError) -> [UInt8] {
         try encode(.sandbox(sandbox.strict))
+    }
+
+    /// One newline-terminated record of a fact about a thread (roadmap 0195).
+    /// - Throws: ``SessionLogError/encodingFailed``.
+    public static func line(forThread record: ThreadRecord) throws(SessionLogError) -> [UInt8] {
+        try encode(.thread(record))
     }
 
     /// Loads a log, repairing damage and reporting each repair. The default way to open a session.

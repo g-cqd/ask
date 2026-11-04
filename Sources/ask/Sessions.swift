@@ -22,8 +22,13 @@ struct Sessions: ParsableCommand {
             return
         }
         let format = Date.FormatStyle(date: .abbreviated, time: .shortened)
-        for listing in listed.prefix(Swift.max(1, limit)) {
+        var shown = 0
+        for listing in listed {
+            guard shown < Swift.max(1, limit) else { break }
             let summary = SessionSummary(readingFrom: listing.path, keyring: SessionKeyAccess.keyring)
+            // A thread's session is reached from its main's (roadmap 0195).
+            if summary?.isThread == true { continue }
+            shown += 1
             let prompts =
                 summary.map { $0.isLocked ? "locked" : $0.prompts == 1 ? "1 prompt" : "\($0.prompts) prompts" }
                 ?? "unreadable"

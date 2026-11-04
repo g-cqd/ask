@@ -109,9 +109,11 @@ def main():
                   "--- thread thread-1 ---" in sent and "OUTER SUMMARY" in sent and "--- thread thread-2 ---" not in sent)
             sessions = sorted(glob.glob(state + "/ask/sessions/*/*.jsonl"), key=os.path.getmtime)
             mains = [path for path in sessions if "MAIN TWO" in open(path).read()]
-            check("main's session holds none of the threads' own words",
-                  len(sessions) == 3 and len(mains) == 1 and "go deeper" not in open(mains[0]).read()
-                  and "INNER ANSWER" not in open(mains[0]).read())
+            # Its conversation: the entries. Its thread records name the threads' prompts, outside the conversation (0195).
+            entries = [line for line in open(mains[0]).read().splitlines() if '"type":"entry"' in line] if mains else []
+            check("main's conversation holds none of the threads' own words",
+                  len(sessions) == 3 and len(mains) == 1 and entries
+                  and not any("go deeper" in line or "INNER ANSWER" in line for line in entries))
         except AssertionError:
             if terminal:
                 print(terminal.text(), file=sys.stderr)

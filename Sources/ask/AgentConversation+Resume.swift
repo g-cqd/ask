@@ -58,8 +58,10 @@ extension AgentConversation {
     func sessionRows() -> [ChoiceRow] {
         let currentPath = session.withLock { $0?.path }
         return directory.sessions()
-            .map { item in
+            .compactMap { item in
                 let summary = SessionSummary(readingFrom: item.path, keyring: SessionKeyAccess.keyring)
+                // A thread's session is reached from main's (roadmap 0195).
+                if summary?.isThread == true { return nil }
                 let first =
                     summary?.isLocked == true
                     ? "locked" : summary?.firstPrompt.map { Sessions.oneLine($0, limit: 80) } ?? ""

@@ -83,6 +83,12 @@ public final class SessionRecorder: Sendable {
         }
     }
 
+    /// Records a fact about a thread (roadmap 0195).
+    /// - Throws: whatever the file throws; nothing is recorded then.
+    public func recordThread(_ record: ThreadRecord) throws(SessionFileError) {
+        try file.withLock { (file: inout SessionFile) throws(SessionFileError) in try file.recordThread(record) }
+    }
+
     /// The session as recorded so far.
     public var tree: SessionTree { file.withLock { $0.tree } }
 
