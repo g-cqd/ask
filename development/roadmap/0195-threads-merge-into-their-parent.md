@@ -291,6 +291,14 @@ summary instructions, or rewrite the summary).
 - pyte left the list's old rows on screen after a session switch until a full repaint (it does not scroll regions); not checked in a
   real terminal.
 
+## Done (2026-11-04): `/merge` (and `/close`)
+
+- Nothing else merges a thread stopped and not merged back, or one a resume brought back stopped. `/merge` in its lane merges it now,
+  with the unmerged threads under it, from the bottom up, as a yes to the stop's question does (`mergeTogether`, shared). Refused while
+  any of them works, waits on the person or merges, with how to stop it. `/close` is the same command: merged is closed, read-only.
+- Test first: `ThreadLaneTests` (red: the command went back to main), then `Scripts/probe-thread-merge.py` (red: no refusal, nothing
+  merged), then the code; 4 checks, twice.
+
 ## The order to build it
 
 1. ~~Thread-owned approvals and questions.~~ Done, above.

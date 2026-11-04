@@ -34,6 +34,8 @@ public struct ScreenController: Sendable {
         case stopThread(id: String)
         /// `/rename TITLE` in a thread's lane.
         case renameThread(id: String, title: String)
+        /// `/merge` (or `/close`) in a thread's lane: merge it now, with the threads under it.
+        case mergeThread(id: String)
         /// `/thread TEXT` typed in thread `from`'s lane: a thread forked from that one.
         case startThread(from: String, text: String)
         /// Follow a yielded process in its original tool block until it ends.

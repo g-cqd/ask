@@ -58,6 +58,9 @@ public protocol Conversation: Sendable {
     /// `/rename TITLE` in thread `id`'s lane (roadmap 0195).
     func renameThread(_ id: String, to title: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
 
+    /// `/merge` in thread `id`'s lane: merge it now, with the unmerged threads under it (roadmap 0195).
+    func mergeThread(_ id: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
+
     /// The screen now shows lane `id`, a runner's, or main when nil.
     func laneShown(_ id: String?)
 
@@ -140,6 +143,9 @@ extension Conversation {
     /// No threads, so none to name.
     public func renameThread(_ id: String, to title: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
     }
+
+    /// No threads, so none to merge.
+    public func mergeThread(_ id: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {}
 
     /// Nothing follows which lane is shown.
     public func laneShown(_ id: String?) {}

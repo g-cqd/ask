@@ -106,6 +106,14 @@ struct ThreadLaneTests {
         )
     }
 
+    @Test func `merge or close typed in a thread's lane merges that thread, and the lane stays`() {
+        var controller = controller()
+        _ = controller.enterLane(runner)
+        #expect(type("/merge", &controller) == [.mergeThread(id: "thread-1")])
+        #expect(controller.state.lane?.id == "thread-1")
+        #expect(type("/close", &controller) == [.mergeThread(id: "thread-1")], "/close is the same command")
+    }
+
     @Test func `a command typed in the lane goes back to main`() {
         var controller = controller()
         _ = controller.enterLane(runner)
