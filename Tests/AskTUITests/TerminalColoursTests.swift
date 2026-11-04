@@ -83,7 +83,8 @@ struct TerminalColoursTests {
         let connection = SignallingConnection()
         var colours = try #require(TerminalColours(following: ScreenOptions(), connection: connection))
         #expect(colours.take(.askColours) == .consumed)
-        #expect(connection.written.wait(timeout: .now() + 5) == .success)
+        // A bound far outside what a runner with its pool threads blocked by other suites delays the write by.
+        #expect(connection.written.wait(timeout: .now() + 60) == .success)
         #expect(connection.inner.writtenOutput == PageFollower.query)
         #expect(colours.take(.input(.unknown(Array("\u{1b}]10;rgb:00/00/00\u{07}".utf8)))) == .consumed)
         #expect(colours.take(.input(.unknown(Array("\u{1b}]11;rgb:ff/ff/ff\u{07}".utf8)))) == .page(.light))
