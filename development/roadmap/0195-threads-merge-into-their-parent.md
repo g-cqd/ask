@@ -204,13 +204,24 @@ summary instructions, or rewrite the summary).
 - Not probed: the failed-or-stopped confirmation (no fake-provider failure in the probes yet), and stopping one thread from the screen,
   which does not exist yet (only quitting stops threads).
 
+## Done (2026-11-04): step 3, first part, ADR-0144's groundwork
+
+- A line of a record type this build does not know is kept in the tree (`SessionTree.unknownRecords`) and written back by a rewrite;
+  an entry of a kind it does not know is `SessionPayload.unrecognized(kind:line:)`: in the tree, its children hanging from it,
+  skipped by the request context, the replay and compaction, and written back as its line. Neither is an issue. A line that is no
+  record, or a known kind that is broken, is still damage (`SessionLogProbe` tells them apart).
+- `SessionMigration` (`Sources/AskAgentCore/Session/Migrations/`): the steps an older file opens through, each marked
+  `removeBefore: "1.0.0-rc.1"`; the format 1 upgrade is the first, and decides which versions open.
+- `SessionUnknownTests` (4), `SessionMigrationTests` (2); two tests that held the old rule now hold ADR-0144's. Every suite passes in
+  debug; the release tests are CI's.
+
 ## The order to build it
 
 1. ~~Thread-owned approvals and questions.~~ Done, above.
 2. ~~The lifecycle and the waiting rule, merge by summary into the parent, and the system block.~~ Done, above; the stop with its
    confirmation is not probed.
-3. ADR-0144 first: unknown records and entries kept, and the migration steps. Then the thread records, and resume rebuilding the
-   tree.
+3. ~~ADR-0144 first: unknown records and entries kept, and the migration steps.~~ Done, above. Then the thread records, and resume
+   rebuilding the tree.
 4. Jobs parented to their thread, and the two sidebar settings.
 5. The fork-point block (n23), the tree under the input (n21) and `/threads` (n22).
 6. Names: on-device or a chosen model, `/rename`, `threads.names`.

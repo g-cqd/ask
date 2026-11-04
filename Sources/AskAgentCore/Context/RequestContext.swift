@@ -35,7 +35,8 @@ public struct RequestContext: Sendable, Equatable {
 
     private mutating func add(_ payload: SessionPayload) {
         switch payload {
-            case .destination: break
+            // What a newer ask wrote is not this build's to send (ADR-0144).
+            case .destination, .unrecognized: break
             case .user(let text): addUser(.text(text))
             case .compaction(let summary, _): addUser(.text(Self.summaryPrefix + summary))
             case .assistant(let text): addAssistant([.text(text)])

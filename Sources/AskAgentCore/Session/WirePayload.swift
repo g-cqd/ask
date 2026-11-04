@@ -11,10 +11,16 @@ struct WirePayload: Codable {
             destination, images, replacements, rewrite
     }
 
-    private enum Kind: String, Codable {
+    private enum Kind: String, Codable, CaseIterable {
         case user, assistant, compaction, response, destination
         case toolResult = "tool_result"
     }
+
+    /// The entry kinds this build reads; any other is a newer ask's, kept and not read (ADR-0144).
+    static let knownKinds = Set(Kind.allCases.map(\.rawValue))
+
+    /// An unrecognized entry has no fields of its own to write: ``SessionLog`` writes its line back as it was read.
+    struct Unwritable: Error {}
 
     init(value: SessionPayload) { self.value = value }
 
@@ -62,6 +68,7 @@ struct WirePayload: Codable {
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         switch value {
+            case .unrecognized: throw Unwritable()
             // @dl:accept -- routing is explicitly encoded as session data, like the log envelope, not as Swift's synthesized enum format
             case .destination(let destination):
                 try container.encode(Kind.destination, forKey: .kind)

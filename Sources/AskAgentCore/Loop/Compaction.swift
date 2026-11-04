@@ -131,7 +131,7 @@ public enum Compaction {
                     for case .toolCall(let id, let name, let input) in response.blocks {
                         calls.append((id, "\(name) \(String(decoding: input.bytes, as: UTF8.self))"))
                     }
-                case .assistant, .destination: continue
+                case .assistant, .destination, .unrecognized: continue
             }
         }
         var lines = ["[ask] The model wrote no summary, so this is a record of the conversation it replaced."]
@@ -147,7 +147,7 @@ public enum Compaction {
     private static func startsATurn(_ payload: SessionPayload) -> Bool {
         switch payload {
             case .user, .assistant, .response: true
-            case .toolResult, .compaction, .destination: false
+            case .toolResult, .compaction, .destination, .unrecognized: false
         }
     }
 
@@ -159,7 +159,7 @@ public enum Compaction {
     /// What an entry adds to the context, in UTF-8 bytes, with each image at ``imageBytes``.
     static func size(_ payload: SessionPayload) -> Int {
         switch payload {
-            case .destination: return 0
+            case .destination, .unrecognized: return 0
             case .user(let text), .assistant(let text): return text.utf8.count
             case .toolResult(_, let content, _, let images, _): return content.utf8.count + images.count * imageBytes
             case .compaction(let summary, _): return summary.utf8.count

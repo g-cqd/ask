@@ -19,7 +19,9 @@ struct SessionLogRecovery {
     }
 
     /// The session the lines so far describe, and the repairs they needed.
-    var result: RecoveredSession { RecoveredSession(tree: tree, issues: issues, formatVersion: version) }
+    var result: RecoveredSession {
+        RecoveredSession(tree: SessionMigration.migrated(tree, from: version), issues: issues, formatVersion: version)
+    }
 
     /// Skips line `number`, which is longer than ``SessionLog/Limits/maximumLineBytes``: a reader that streams the file drops it as it
     /// arrives instead of holding it.
@@ -35,11 +37,35 @@ struct SessionLogRecovery {
             // The one copy at the boundary: the decoder reads a contiguous `[UInt8]`.
             record = try decoder.decode(SessionLogRecord.self, from: Array(line))
         } catch {
+            // What a newer ask wrote is kept, not read, and is no damage (ADR-0144); anything else that does not decode is.
+            if let kept = newer(line) {
+                if let entry = kept { try apply(.entry(entry), line: number) }
+                if isFinal { issues.append(.unterminatedFinalLine(line: number)) }
+                return
+            }
             issues.append(isFinal ? .tornFinalLine(line: number) : .malformedLine(line: number))
             return
         }
         try apply(record, line: number)
         if isFinal { issues.append(.unterminatedFinalLine(line: number)) }
+    }
+
+    /// What a line that did not decode is when a newer ask wrote it: a record of a type this build does not have, kept in the tree
+    /// (`.some(nil)`), or an entry of a kind it does not have (`.some(entry)`). Nil when it is neither, and so damage.
+    private mutating func newer(_ line: ArraySlice<UInt8>) -> SessionEntry?? {
+        guard let probe = try? decoder.decode(SessionLogProbe.self, from: Array(line)) else { return nil }
+        if !SessionLogRecord.knownTypes.contains(probe.type) {
+            tree.keepUnknownRecord(Array(line))
+            return .some(nil)
+        }
+        guard probe.type == "entry", let id = probe.id, let kind = probe.payload?.kind,
+            !WirePayload.knownKinds.contains(kind)
+        else { return nil }
+        return SessionEntry(
+            id: EntryID(id),
+            parentID: probe.parent.map(EntryID.init),
+            payload: .unrecognized(kind: kind, line: Array(line))
+        )
     }
 
     private mutating func apply(_ record: SessionLogRecord, line: Int) throws(SessionLogError) {
@@ -48,7 +74,7 @@ struct SessionLogRecovery {
                 issues.append(.malformedLine(line: line))
                 return
             }
-            guard version == 1 || version == SessionLog.formatVersion else { throw .unsupportedVersion(version) }
+            guard SessionMigration.opens(version) else { throw .unsupportedVersion(version) }
             self.version = version
             headerSeen = true
             return

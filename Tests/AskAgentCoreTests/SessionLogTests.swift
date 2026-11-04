@@ -152,9 +152,12 @@ struct SessionLogTests {
         #expect(throws: SessionLogError.unsupportedVersion(99)) { try SessionLog.decode(join(parts)) }
     }
 
-    @Test func `an unknown record type is malformed`() throws {
+    /// ADR-0144 (the owner, 2026-11-04): a newer ask's record type is kept, not damage; a line that is no record at all still is.
+    @Test func `an unknown record type is kept, and a line that is no record is malformed`() throws {
         var parts = lines(try SessionLog.snapshot(SessionTree()))
         parts.insert(Array(#"{"type":"mystery"}"#.utf8), at: 1)
+        #expect(try SessionLog.decode(join(parts)).unknownRecords == [Array(#"{"type":"mystery"}"#.utf8)])
+        parts[1] = Array(#"{"kind":"mystery"}"#.utf8)
         #expect(throws: SessionLogError.malformedLine(line: 2)) { try SessionLog.decode(join(parts)) }
     }
 

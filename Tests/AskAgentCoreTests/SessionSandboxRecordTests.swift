@@ -52,7 +52,7 @@ struct SessionSandboxRecordTests {
         #expect(recovered.tree.sandbox == strict)
     }
 
-    @Test func `a reader that cannot parse a record skips that line only`() throws {
+    @Test func `a reader keeps a record of a type it does not know, and orphans nothing`() throws {
         var tree = SessionTree()
         try tree.append(.user("one"))
         try tree.append(.assistant("two"))
@@ -61,10 +61,8 @@ struct SessionSandboxRecordTests {
         bytes += Array(#"{"type":"from-the-future","x":1}"#.utf8) + [0x0A]
         bytes += try SessionLog.line(for: tree.entries[1])
         let recovered = try SessionLog.recover(bytes)
-        #expect(
-            recovered.issues == [.malformedLine(line: 4)],
-            "the header and an empty snapshot's leaf are lines 1 and 2"
-        )
+        #expect(recovered.issues.isEmpty, "a newer ask's record is no damage (ADR-0144)")
+        #expect(recovered.tree.unknownRecords.count == 1)
         #expect(recovered.tree.entries == tree.entries, "nothing orphaned")
     }
 

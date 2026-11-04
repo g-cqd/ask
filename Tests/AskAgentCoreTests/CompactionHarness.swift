@@ -41,6 +41,7 @@ struct CompactionHarness {
                 case .response: "response"
                 case .toolResult: "result"
                 case .compaction: "compaction"
+                case .unrecognized(let kind, _): kind
             }
         }
     }

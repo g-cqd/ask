@@ -48,7 +48,7 @@ public enum SessionReplay {
         calls: inout [(id: String, name: String, input: JSONObject)]
     ) -> [Step] {
         switch payload {
-            case .destination: return []
+            case .destination, .unrecognized: return []
             case .user(let text) where text == AgentLoop.continuationPrompt: return [.event(.continuedAtOutputLimit)]
             case .user(let text) where text == AgentLoop.reconnectionPrompt: return [.event(.continuedAfterDrop)]
             case .user(let text): return [.prompt(SkillInvocation.shown(text))]

@@ -21,4 +21,7 @@ public enum SessionPayload: Sendable, Equatable {
     )
     /// A summary followed in context by messages from an ancestor boundary onward.
     case compaction(summary: String, firstKept: EntryID)
+    /// An entry of a kind this build does not know, from a newer ask (ADR-0144): kept, not read. It adds nothing to a request or the
+    /// screen, its children still hang from it, and its record is written back as it was, `line` without the newline.
+    case unrecognized(kind: String, line: [UInt8])
 }
