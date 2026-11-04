@@ -90,6 +90,22 @@ struct ThreadLaneTests {
         #expect(controller.state.lane?.id == "thread-1")
     }
 
+    @Test func `in a thread's lane the status mark follows the thread, not main's turn`() {
+        var controller = controller()
+        _ = controller.enterLane(runner)
+        let working = ScreenComposer.status(for: controller.state).line.text
+        #expect(!working.hasPrefix("✓"), "the thread works: the mark spins")
+        _ = controller.handle(
+            .runners([RunnerInfo(name: "thread-1", detail: "x", id: "thread-1", kind: .agent, state: .merged)])
+        )
+        _ = controller.handle(.userPrompt("main works"))
+        controller.state.running = true
+        #expect(
+            ScreenComposer.status(for: controller.state).line.text.hasPrefix("✓"),
+            "main works, the thread does not"
+        )
+    }
+
     @Test func `a command typed in the lane goes back to main`() {
         var controller = controller()
         _ = controller.enterLane(runner)

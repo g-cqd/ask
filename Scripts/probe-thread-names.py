@@ -54,6 +54,8 @@ def main():
             terminal.send(b"/threads thread-1\r")
             terminal.until(lambda: "main  back to the conversation" in terminal.text())
             check("/threads NAME opens the thread's lane", "first task" in terminal.text())
+            status = next(line for line in terminal.screen.display if "anthropic/" in line)
+            check("in its lane the status mark spins for the working thread (main is idle)", not status.startswith("\u2713"))
             terminal.send(b"/thread deeper\r")
             terminal.until(lambda: "threads.depth" in terminal.text())
             check("with threads.depth 1, a thread inside a thread is refused", "nest at most 1 deep" in terminal.text())
