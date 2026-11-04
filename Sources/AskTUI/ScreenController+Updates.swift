@@ -53,6 +53,7 @@ extension ScreenController {
                 state.transcript.markAside(id: id)
             case .asideFinished(let id, let status, let answer):
                 state.transcript.finishTool(status, output: answer, id: id)
+            case .threadStarted, .threadMerged: state.transcript.addThreadBlock(update)
             case .compacting, .compactionFinished, .reconnecting, .connectingMCP, .waitingForNetwork:
                 applyBackgroundWork(update)
             case .thread(let id, let inner): return applyThread(id, inner)

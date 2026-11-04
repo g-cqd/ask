@@ -87,7 +87,7 @@ show "the tree of threads and another section for the jobs", "more compact".
 - ~~A thread's approval questions share the screen's.~~ Done in 0195, step 1: they are the thread's own.
 - A thread uses main's task list and notes; the jobs it starts are not yet given it as their parent (the sidebar would list them under
   it); ended threads are never removed from the list.
-- A nested thread's answer goes to main, not to the thread it was forked from.
+- ~~A nested thread's answer goes to main.~~ Done in 0195, step 2: it merges into its parent with a summary.
 - Its session file is an ordinary one, which `/resume` lists without saying it is a thread.
 - Memory: a second loop and conversation, not measured against the active budget; and nothing caps how many threads run.
 - Not verified against a real provider, nor in a real terminal.

@@ -2,21 +2,26 @@ internal import AskAgentCore
 internal import AskTUI
 internal import Synchronization
 
-/// The threads `/thread` started (roadmap 0194): each one's session, the queue its lane's messages go to while it runs, and its state;
-/// the answers of those that ended, waiting for the person's next message; and the jobs they are listed beside.
+/// The threads `/thread` started (roadmaps 0194, 0195): each one's session, the queue its lane's messages go to while it runs, its state
+/// and how its last run ended; the summaries merged into each conversation, waiting for what is sent to it next; and the jobs they are
+/// listed beside.
 final class ThreadTable: Sendable {
     struct Thread {
         let name: String
         let prompt: String
         let recorder: SessionRecorder
         let started: ContinuousClock.Instant
-        /// The thread it was forked from, which lists it under itself; nil for main's.
+        /// The thread it was forked from, which lists it under itself and receives its summary; nil for main's.
         var parent: String?
         var state: RunnerInfo.State = .running
+        /// How its last run ended; nil while one runs.
+        var outcome: RunnerInfo.State?
         var queue: PromptQueue?
         var task: Task<Void, Never>?
         /// How many of its questions wait on the person; while any does, it is listed as waiting (roadmap 0195).
         var asking = 0
+        /// The summaries of the threads merged into it, for what it is sent next or for its own summary.
+        var reports: [String] = []
     }
 
     private struct State {
@@ -24,8 +29,10 @@ final class ThreadTable: Sendable {
         var nextPrompt = -1
         var threads: [String: Thread] = [:]
         var order: [String] = []
+        /// The summaries merged into main.
         var reports: [String] = []
         var jobs: [RunnerInfo] = []
+        var quitting = false
     }
 
     private let state = Mutex(State())
@@ -49,17 +56,25 @@ final class ThreadTable: Sendable {
             state.threads[name]?.task = task
             state.threads[name]?.queue = queue
             state.threads[name]?.state = .running
+            state.threads[name]?.outcome = nil
         }
     }
 
-    /// Thread `name`'s run ended as `outcome`; `report`, its answer under its name, goes with the person's next message.
-    func ended(_ name: String, as outcome: RunnerInfo.State, report: String?) {
+    /// Thread `name`'s run ended as `outcome`.
+    func ended(_ name: String, as outcome: RunnerInfo.State) {
         state.withLock { state in
             state.threads[name]?.state = outcome
+            state.threads[name]?.outcome = outcome
             state.threads[name]?.queue = nil
             state.threads[name]?.task = nil
-            if let report { state.reports.append(report) }
         }
+    }
+
+    func setState(_ name: String, _ new: RunnerInfo.State) { state.withLock { $0.threads[name]?.state = new } }
+
+    /// Whether a thread under `name` has not merged yet: running, waiting, held or ended unmerged. It holds `name`'s merge.
+    func hasUnmerged(under name: String) -> Bool {
+        state.withLock { state in state.threads.values.contains { $0.parent == name && $0.state != .merged } }
     }
 
     /// One more of thread `name`'s questions waits on the person (`began`), or one is settled. Listed as waiting while any does.
@@ -67,7 +82,9 @@ final class ThreadTable: Sendable {
         state.withLock { state in
             guard var thread = state.threads[name] else { return }
             thread.asking = Swift.max(0, thread.asking + (began ? 1 : -1))
-            if thread.state.isActive { thread.state = thread.asking > 0 ? .waitingForApproval : .running }
+            if thread.state == .running || thread.state == .waitingForApproval {
+                thread.state = thread.asking > 0 ? .waitingForApproval : .running
+            }
             state.threads[name] = thread
         }
     }
@@ -82,14 +99,27 @@ final class ThreadTable: Sendable {
         }
     }
 
-    /// `text` with the answers of the threads that ended since the last message after it, each once.
-    func attachReports(_ text: String) -> String {
-        let reports = state.withLock { state in
+    /// Keeps `report`, a merged thread's summary, for `owner`: a thread, or main when nil.
+    func addReport(_ report: String, to owner: String?) {
+        state.withLock { state in
+            if let owner { state.threads[owner]?.reports.append(report) } else { state.reports.append(report) }
+        }
+    }
+
+    /// The summaries merged into `owner` (main when nil) since they were last taken, each once.
+    func takeReports(for owner: String? = nil) -> [String] {
+        state.withLock { state in
+            if let owner {
+                defer { state.threads[owner]?.reports = [] }
+                return state.threads[owner]?.reports ?? []
+            }
             defer { state.reports = [] }
             return state.reports
         }
-        return text + reports.joined()
     }
+
+    /// `text` with the summaries merged into `owner` (main when nil) after it, each once.
+    func attachReports(_ text: String, for owner: String? = nil) -> String { text + takeReports(for: owner).joined() }
 
     func setJobs(_ jobs: [RunnerInfo]) { state.withLock { $0.jobs = jobs } }
 
@@ -114,9 +144,15 @@ final class ThreadTable: Sendable {
         }
     }
 
+    /// Whether ask is quitting: a thread stopped by it is left unmerged, and asks nothing.
+    var isQuitting: Bool { state.withLock { $0.quitting } }
+
     /// Stops every running thread and waits for each to end, as ask does with jobs when it quits.
     func stopAll() async {
-        let tasks = state.withLock { $0.threads.values.compactMap(\.task) }
+        let tasks = state.withLock { state in
+            state.quitting = true
+            return state.threads.values.compactMap(\.task)
+        }
         for task in tasks { task.cancel() }
         for task in tasks { await task.value }
     }

@@ -113,7 +113,9 @@ struct SidebarEntries {
         switch state {
             case .running: spinner ?? "●"
             case .waitingForApproval: "?"
-            case .done: "✓"
+            case .merging: spinner ?? "●"
+            case .held: "◌"
+            case .done, .merged: "✓"
             case .failed: "✗"
             case .stopped: "■"
         }

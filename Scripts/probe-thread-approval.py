@@ -38,6 +38,7 @@ def main():
             turn([("text", "MAIN ONE")], "end_turn"),
             turn([("tool", "c1", "touch thread.txt")], "tool_use"),
             turn([("text", "THREAD DONE")], "end_turn"),
+            turn([("text", "THREAD SUMMARY")], "end_turn"),
             turn([("text", "MAIN TWO")], "end_turn"),
         ])
         environment = probe.agent.environment(state, server.url, config=config)
@@ -52,7 +53,7 @@ def main():
             terminal.send(b"hello\r")
             terminal.until(lambda: "MAIN ONE" in terminal.text())
             terminal.send(b"/thread make a file\r")
-            terminal.until(lambda: "Started thread-1" in terminal.text())
+            terminal.until(lambda: "started here" in terminal.text())
             time.sleep(1)
             terminal.send(b"/jobs\r")
             terminal.until(lambda: "waiting for approval" in terminal.text())
@@ -72,10 +73,11 @@ def main():
             check("answered there, the command runs and the thread finishes", os.path.exists(made))
             terminal.send(b"\x1b")
             terminal.until(lambda: "back to the conversation" not in terminal.text())
+            terminal.until(lambda: "merged · make a file" in terminal.text())
             terminal.send(b"next\r")
             terminal.until(lambda: "MAIN TWO" in terminal.text())
-            sent = json.dumps(server.requests[3]["body"]) if len(server.requests) > 3 else ""
-            check("main's next message carries the thread's answer", "--- thread thread-1 ---" in sent and "THREAD DONE" in sent)
+            sent = json.dumps(server.requests[4]["body"]) if len(server.requests) > 4 else ""
+            check("main's next message carries the thread's summary", "--- thread thread-1 ---" in sent and "THREAD SUMMARY" in sent)
         except AssertionError:
             if terminal:
                 print(terminal.text(), file=sys.stderr)
