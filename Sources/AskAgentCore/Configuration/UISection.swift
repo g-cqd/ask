@@ -23,6 +23,9 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     public var outputFoldBytes: Int?
     /// `ui.sidebar`: whether the runner sidebar starts open. `true` is `"open"`, `false` is `"closed"`.
     public var sidebarOpen: Bool?
+    /// `ui.sidebarJobs`: where the sidebar lists a thread's jobs (roadmap 0195). `true` is `"tree"`, under the thread; `false` is
+    /// `"section"`, with every job in the Jobs section.
+    public var sidebarJobsInTree: Bool?
     /// `ui.prompt`: what the input starts with, if anything. Empty is none, which is the default: the input is marked by its tint.
     public var prompt: String?
     /// `ui.tint`: whether the input and the tool and user blocks have a tinted background. `true` is `"on"`, `false` is `"off"`.
@@ -77,6 +80,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         outputFoldLines: Int? = nil,
         outputFoldBytes: Int? = nil,
         sidebarOpen: Bool? = nil,
+        sidebarJobsInTree: Bool? = nil,
         prompt: String? = nil,
         tint: Bool? = nil,
         separator: Bool? = nil,
@@ -114,6 +118,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         self.outputFoldLines = outputFoldLines
         self.outputFoldBytes = outputFoldBytes
         self.sidebarOpen = sidebarOpen
+        self.sidebarJobsInTree = sidebarJobsInTree
         self.prompt = prompt
         self.tint = tint
         self.separator = separator
@@ -144,7 +149,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     public static let keys =
         [
             "mouse", "copyOnSelect", "fold.tools", "fold.thinking", "fold.code", "fold.codeLines", "fold.outputLines",
-            "fold.outputBytes", "scrollLines", "inputRows", "sidebar"
+            "fold.outputBytes", "scrollLines", "inputRows", "sidebar", "sidebarJobs"
         ]
         // @dl:accept -- the list of keys is data; a test's list of call names is other data
         + lookKeys + behaviorKeys
@@ -175,6 +180,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
             outputFoldLines: section.outputFoldLines ?? outputFoldLines,
             outputFoldBytes: section.outputFoldBytes ?? outputFoldBytes,
             sidebarOpen: section.sidebarOpen ?? sidebarOpen,
+            sidebarJobsInTree: section.sidebarJobsInTree ?? sidebarJobsInTree,
             prompt: section.prompt ?? prompt,
             tint: section.tint ?? tint,
             // @dl:accept -- each section layers its keys the same way; the key lists are the data

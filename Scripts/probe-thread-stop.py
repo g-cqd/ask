@@ -71,6 +71,10 @@ def main():
             terminal.until(lambda: "started here · early task" in terminal.text() and len(server.requests) > 0)
             mains = [p for p in glob.glob(state + "/ask/sessions/*/*.jsonl") if '"event":"started"' in open(p).read()]
             check("a thread started before any prompt is recorded in main's session", len(mains) == 1)
+            terminal.send(b"/jobs\r")
+            terminal.until(lambda: any(line.startswith("  [#") for line in terminal.text().splitlines()))
+            check("the command the thread runs is listed under it",
+                  any(line.startswith("  [#") and "sleep 30" in line for line in terminal.text().splitlines()))
             open_lane(terminal, "thread-1")
             terminal.send(b"/thread nested task\r")
             terminal.until(lambda: len(server.requests) > 1)

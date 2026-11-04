@@ -256,6 +256,15 @@ summary instructions, or rewrite the summary).
 - Also: `ScreenSession.swift` and `Ask.swift` had passed the 250-line ceiling with the `/reload` change (86af8e14, the rule tests not
   run before landing it); split into `ScreenSession+Run.swift` and `Ask+Request.swift`.
 
+## Done (2026-11-04): a thread's jobs are listed under it
+
+- `JobOwner.current` (AskTools, task-local) is set by a thread's run; the job table keeps each job's owner and lists it
+  (`JobSummary.owner`), and the job's runner has the thread as its parent. The sidebar and the list under the input show it under
+  the thread.
+- `ui.sidebarJobs` (`"tree"`, the default, or `"section"`, every job in the Jobs section), and `/sidebar jobs` to switch it for the
+  run. In section mode the runner tree drops the jobs' parents, so the keys move in the order drawn.
+- `SidebarJobsTests` (3); `probe-thread-stop.py` checks the thread's command listed under it (8 checks).
+
 ## The order to build it
 
 1. ~~Thread-owned approvals and questions.~~ Done, above.

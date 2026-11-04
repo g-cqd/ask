@@ -16,6 +16,7 @@ extension UISection {
             case "scrollLines": return scrollLines.map(String.init)
             case "inputRows": return promptRows.map(String.init)
             case "sidebar": return sidebarOpen.map { $0 ? "open" : "closed" }
+            case "sidebarJobs": return sidebarJobsInTree.map { $0 ? "tree" : "section" }
             case "inputPrefix": return prompt.map { "\"\($0)\"" }
             case "tint": return flag(tint)
             case "appearance": return appearance?.rawValue

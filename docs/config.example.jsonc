@@ -111,6 +111,9 @@
     // Whether the runner sidebar starts open. Default: closed. One of: closed, open.
     "sidebar": "closed",
 
+    // Where the sidebar lists a thread's jobs: under the thread, or with every job in the Jobs section. /sidebar jobs switches. Default: tree. One of: tree, section.
+    "sidebarJobs": "tree",
+
     // Text the input line starts with. Default: none.
     "inputPrefix": "> ",
 

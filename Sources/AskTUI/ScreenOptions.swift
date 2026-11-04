@@ -28,6 +28,8 @@ public struct ScreenOptions: Sendable, Equatable {
     public var hover: Bool
     /// Whether the runner sidebar starts open (`ui.sidebar`). Ctrl+\ and `/sidebar` toggle it; it needs 70 columns.
     public var sidebar: Bool
+    /// Whether a thread's jobs are listed under it (`ui.sidebarJobs` tree), or with the other jobs (roadmap 0195).
+    public var sidebarJobsInTree: Bool
     /// Whether details are shown: what ask did on its own account, such as the sandbox in force or a build that appeared (`--verbose`).
     /// `/verbose` toggles it, and shows what was held back meanwhile (ADR-0119).
     public var verbose: Bool
@@ -86,6 +88,7 @@ public struct ScreenOptions: Sendable, Equatable {
         shimmer: Bool = true,
         hover: Bool = true,
         sidebar: Bool = false,
+        sidebarJobsInTree: Bool = true,
         verbose: Bool = false,
         prompt: String = "",
         tint: Bool = true,
@@ -113,6 +116,7 @@ public struct ScreenOptions: Sendable, Equatable {
         self.shimmer = shimmer
         self.hover = hover
         self.sidebar = sidebar
+        self.sidebarJobsInTree = sidebarJobsInTree
         self.verbose = verbose
         self.prompt = prompt
         self.tint = tint
