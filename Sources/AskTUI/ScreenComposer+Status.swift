@@ -27,15 +27,21 @@ extension ScreenComposer {
         return drawn
     }
 
+    /// Whether what is shown works: main's turn, or in a thread's lane that thread (note n35), whatever main does.
+    static func focusedWorks(_ state: ScreenState) -> Bool {
+        guard let lane = state.lane, lane.isThread else { return state.running }
+        return state.runners.first { $0.id == lane.id }?.state.isActive ?? false
+    }
+
     /// The columns of the idle mark, which a click names (roadmap 0133); nil while anything else leads the line.
     static func markColumns(for state: ScreenState) -> Range<Int>? {
-        guard !(state.running || state.compacting || state.reconnecting) else { return nil }
+        guard !(focusedWorks(state) || state.compacting || state.reconnecting) else { return nil }
         return 0 ..< UnicodeWidth.displayWidth(of: leadingMark(for: state).character)
     }
 
     /// Evaluates a stable per-operation spinner while running, or the sandbox-colored idle `!`.
     static func leadingMark(for state: ScreenState) -> StatusLeadingMark {
-        guard state.running || state.compacting || state.reconnecting else {
+        guard focusedWorks(state) || state.compacting || state.reconnecting else {
             return StatusLeadingMark.idle(sandboxed: state.sandboxed, named: state.sandboxNoteShown)
         }
         let configured = state.transcript.spinnerStyle
@@ -48,7 +54,7 @@ extension ScreenComposer {
         if state.waitingForNetwork { return StatusLeadingMark.offlineMark(frame: frame) }
         if state.reconnecting { return StatusLeadingMark.reconnectingMark(frame: frame) }
         if state.connectingMCP { return StatusLeadingMark.connectingMCPMark(frame: frame) }
-        return StatusLeadingMark.mark(running: state.running, sandboxed: state.sandboxed, frame: frame)
+        return StatusLeadingMark.mark(running: focusedWorks(state), sandboxed: state.sandboxed, frame: frame)
     }
 
     /// What waits on the person, first: a line a command asked for, and, while a lane is shown, an approval or the model's questions.
