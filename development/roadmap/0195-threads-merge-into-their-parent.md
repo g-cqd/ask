@@ -280,6 +280,17 @@ summary instructions, or rewrite the summary).
   merged threads (n22), `threads.merge: "ask"`, `threads.model`, `threads.summaryInstructions`, the hook points, distinct marks and
   idle spinners (n15), and active memory with several threads measured.
 
+## Done (2026-11-04): one list at a time, flat for jobs, a tree with threads (the owner's steer)
+
+- While the sidebar is shown (open, and the screen wide enough) the list under the input is not drawn, a lane included: the sidebar
+  is the list and the way back. `/jobs` then says the sidebar lists them. Neither is shown by default.
+- The list under the input is flat while there are only jobs; once a thread exists it is the sidebar's tree (`SidebarEntries`,
+  without the empty row before Jobs), windowed to its rows. In a lane its main row reads `◆ main  back to the conversation`.
+- `RunnerListShapeTests` (3); the strip tests now hold the tree; the probes read the list through `Scripts/probe_runner_list.py`
+  (rows under the status line, a runner's state from its mark). All thread probes and `probe-sidebar.py` pass.
+- pyte left the list's old rows on screen after a session switch until a full repaint (it does not scroll regions); not checked in a
+  real terminal.
+
 ## The order to build it
 
 1. ~~Thread-owned approvals and questions.~~ Done, above.

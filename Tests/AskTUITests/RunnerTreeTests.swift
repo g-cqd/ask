@@ -64,7 +64,8 @@ struct RunnerTreeTests {
         #expect(ScreenComposer.status(for: state).line.text == "✓ · m · 1 thread · 1 job")
         #expect(
             ScreenComposer.runnerRows(for: state, available: 10, columns: 100).map(\.text)
-                == ["review  reading · running", "  job  work · running"]
+                == ["◆ main", "└ ● review reading", "  └ ● job work"],
+            "with a thread the list is the tree, main first"
         )
     }
 

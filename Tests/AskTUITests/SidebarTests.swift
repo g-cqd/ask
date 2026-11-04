@@ -74,13 +74,15 @@ struct SidebarTests {
         #expect(wrapped.count >= 2 && wrapped.allSatisfy { $0.prefix(divider).count <= divider })
     }
 
-    @Test func `the status line, the input and the strip keep the whole width`() {
+    /// One list at a time (the owner, 2026-11-04): with the sidebar shown, the list under the input is not drawn, even opened.
+    @Test
+    func `the status line and the input keep the whole width, and the list under the input is not drawn beside it`() {
         var rig = rig()
         rig.controller.state.runnersOpen = true
         rig.controller.state.editor.paste(String(repeating: "x", count: 90))
         rig.draw()
         #expect(rig.text(row: rig.controller.frame.promptRow).count == 95)
-        #expect(rig.text(row: rig.controller.frame.stripFirstRow).count == 100)
+        #expect(rig.controller.frame.stripIDs.isEmpty, "the sidebar is the list")
         #expect(rig.buffer[rig.controller.frame.statusRow, 99].character == " " && rig.controller.frame.columns == 100)
     }
 
@@ -117,7 +119,7 @@ struct SidebarTests {
         )
     }
 
-    @Test func `the strip, the sidebar and the count are one tree: a change shows in all three`() {
+    @Test func `the sidebar and the count are one tree: a change shows in both`() {
         var rig = rig()
         rig.controller.state.runnersOpen = true
         rig.controller.handle(
@@ -125,7 +127,7 @@ struct SidebarTests {
         )
         rig.draw()
         let all = (0 ..< 20).map { rig.text(row: $0) }.joined(separator: "\n")
-        #expect(all.contains("job-3  make · waiting for approval"), "the strip")
+        #expect(!all.contains("job-3  make · waiting for approval"), "no list under the input beside the sidebar")
         #expect(all.contains("│ ? job-3 make"), "the sidebar, marked as waiting on the person")
         #expect(all.contains("3 jobs"))
         rig.controller.handle(.runners([Self.jobs[0]]))

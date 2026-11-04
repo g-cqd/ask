@@ -90,8 +90,11 @@ struct Sidebar {
         ids = (0 ..< rows).map { row in row < body ? entries[row].id : "" }
     }
 
+    /// Whether the panel is drawn: open, and the screen wide enough for it.
+    static func isShown(_ state: ScreenState, columns: Int) -> Bool { state.sidebarOpen && columns >= minimumColumns }
+
     /// At most `rows` entries: from the top, moved down far enough to keep the selected runner shown, the last row saying how many more.
-    private static func window(_ entries: [SidebarEntries.Entry], rows: Int, selected: String?) -> [SidebarEntries
+    static func window(_ entries: [SidebarEntries.Entry], rows: Int, selected: String?) -> [SidebarEntries
         .Entry]
     {
         guard entries.count > rows else { return entries }

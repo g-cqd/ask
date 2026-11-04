@@ -16,7 +16,11 @@ struct SidebarEntries {
     /// The panel's last row: what is running and what waits.
     private(set) var counts = Entry(text: "", style: .default)
 
-    init(_ state: ScreenState, columns: Int) {
+    /// - Parameters:
+    ///   - state: what the screen holds.
+    ///   - columns: the width each row is cut to.
+    ///   - gap: whether an empty row comes before the Jobs section; the list under the input has no rows to spare.
+    init(_ state: ScreenState, columns: Int, gap: Bool = true) {
         let rows = state.runnerTree.visible(collapsed: state.collapsedRunners)
         // A runner belongs to its root's section: a job a thread started stays in the thread's tree.
         var rootKind = RunnerInfo.Kind.job
@@ -30,7 +34,13 @@ struct SidebarEntries {
         let shown = state.lane?.id
         entries.append(
             Entry(
-                text: ScreenComposer.ellipsized("◆ main", cells: columns).shown,
+                // In a lane it says what it is: the way back.
+                text:
+                    ScreenComposer.ellipsized(
+                        state.lane == nil ? "◆ main" : "◆ main  back to the conversation",
+                        cells: columns
+                    )
+                    .shown,
                 style: Self.style(
                     active: true,
                     shown: shown == nil,
@@ -49,7 +59,7 @@ struct SidebarEntries {
             entries.append(row(item, prefix: guide, state: state, columns: columns))
         }
         if !jobs.isEmpty {
-            entries.append(Entry(text: "", style: .default))
+            if gap { entries.append(Entry(text: "", style: .default)) }
             entries.append(Entry(text: "Jobs", style: Style(bold: true, dim: true)))
             for item in jobs {
                 let indent = String(repeating: "  ", count: Swift.min(item.row.depth, columns / 4))
