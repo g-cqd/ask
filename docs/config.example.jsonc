@@ -198,7 +198,13 @@
     "names": "onDevice",
 
     // How long a merged thread stays in the sidebar: "30m", "2h", "1d", or "always". /threads still lists it. Default: 1d.
-    "mergedShownFor": "1d"
+    "mergedShownFor": "1d",
+
+    // Where a thread's question appears while you are elsewhere: at once, after questionsAfter, or only in its lane. Default: focus. One of: focus, after, lane.
+    "questions": "focus",
+
+    // How long "after" waits before showing a thread's question. Default: 30s.
+    "questionsAfter": "30s"
   },
 
   "skills": {

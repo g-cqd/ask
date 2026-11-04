@@ -3,7 +3,8 @@
 
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-approval.py .build/release/ask
 
-A thread's command asks for permission. The question is the thread's: main never shows it, the thread is listed as waiting for approval
+A thread's command asks for permission. With `threads.questions` "lane" (probe-thread-question-pop.py has the others), the question is
+the thread's: main never shows it, the thread is listed as waiting for approval
 and stays so after main's turn has ended, its lane shows the question, and an answer there lets the command run and the thread finish;
 main's next message then carries its answer. Hermetic: no window, credentials or clipboard.
 """
@@ -34,7 +35,7 @@ def main():
         os.makedirs(project)
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
-            json.dump({"ui": {"inputPrefix": "ask> "}, "threads": {"names": "numbered"}}, file)
+            json.dump({"ui": {"inputPrefix": "ask> "}, "threads": {"names": "numbered", "questions": "lane"}}, file)
         turn = probe.agent.turn
         server = probe.agent.Server([
             turn([("text", "MAIN ONE")], "end_turn"),

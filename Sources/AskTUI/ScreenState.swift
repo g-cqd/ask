@@ -64,6 +64,9 @@ public struct ScreenState: Sendable, Equatable {
     /// When each thread was first seen merged, and those merged long enough to leave the sidebar (`threads.mergedShownFor`).
     var mergedAt: [String: ContinuousClock.Instant] = [:]
     var expiredMerged: Set<String> = []
+    /// The thread whose question is shown where the person is (`threads.questions`), and when each thread last asked.
+    var popped: String?
+    var threadAskedAt: [String: ContinuousClock.Instant] = [:]
     /// The strip row the keys act on, by runner id, while the strip has the keys; nil while the input does.
     var stripSelection: String?
     /// Whether the runner sidebar is open: the same tree as the strip, beside the transcript when the screen is wide enough.
