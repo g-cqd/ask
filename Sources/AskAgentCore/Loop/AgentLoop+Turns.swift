@@ -40,12 +40,15 @@ extension AgentLoop {
         async throws(AgentError)
     {
         let limit = budget.toolOutputBytes.map { Swift.max(512, $0 / calls.count) }
+        var addedContexts: [String] = []
         for (index, call) in calls.enumerated() {
             guard !Task.isCancelled else {
                 try recordNotRun(calls[index...], in: session)
                 throw .cancelled
             }
-            var output = await runTool(call, events: events)
+            let (rawOutput, contexts) = await runTool(call, events: events)
+            addedContexts += contexts
+            var output = rawOutput
             if let limit { output.content = Compaction.clipped(output.content, toBytes: limit, note: Self.clipNote) }
             try record(
                 .toolResult(
@@ -59,6 +62,11 @@ extension AgentLoop {
             )
             events(.toolFinished(id: call.id, name: call.name, output: output))
         }
+        if !addedContexts.isEmpty {
+            let joined = addedContexts.joined(separator: "\n\n")
+            try record(.user(joined), in: session)
+            events(.hookAddedContext(joined))
+        }
         guard !Task.isCancelled else { throw .cancelled }
     }
 
@@ -66,7 +74,44 @@ extension AgentLoop {
     func respond(to tree: SessionTree, events: (AgentEvent) -> Void) async throws(AgentError)
         -> AssembledResponse?
     {
-        try await stream(request(for: tree.context(), events: events), events: events, handsOver: true)
+        var req = request(for: tree.context(), events: events)
+        var rewrittenBy: [String] = []
+        for hook in hooks {
+            let current = req
+            let decision = await HookDeadline.ask(
+                hook,
+                at: "request.before",
+                clock: clock,
+                orElse: .allow,
+                timedOut: events
+            ) {
+                await hook.requestBefore(current)
+            }
+            if case .rewrite(let next) = decision {
+                req = next
+                rewrittenBy.append(hook.name)
+            }
+        }
+        if !rewrittenBy.isEmpty { events(.hookRewroteRequest(hooks: rewrittenBy)) }
+        return try await stream(req, events: events, handsOver: true)
+    }
+
+    /// Records `response`, says so, then shows it to the `response.after` hooks.
+    func recordResponse(_ response: AssembledResponse, in session: SessionRecorder, events: (AgentEvent) -> Void)
+        async throws(AgentError)
+    {
+        try record(.response(response), in: session)
+        events(.responded(response))
+        await notifyResponseAfter(response, events: events)
+    }
+
+    /// Calls `responseAfter` hooks once `response` has been recorded.
+    private func notifyResponseAfter(_ response: AssembledResponse, events: (AgentEvent) -> Void) async {
+        for hook in hooks {
+            await HookDeadline.ask(hook, at: "response.after", clock: clock, orElse: (), timedOut: events) {
+                await hook.responseAfter(response)
+            }
+        }
     }
 
     func record(_ payload: SessionPayload, in session: SessionRecorder) throws(AgentError) {

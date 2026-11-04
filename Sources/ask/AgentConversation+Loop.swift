@@ -22,6 +22,10 @@ extension AgentConversation {
                 // A running call's progress goes to the screen of the run it belongs to (roadmap 0067).
                 progress: { [weak self] call, line in
                     self?.approvals.withLock { $0.ask }?(.toolProgress(id: call, text: line))
+                },
+                reportEvent: { [weak self] event in
+                    guard let self, let ask = self.approvals.withLock({ $0.ask }) else { return }
+                    self.deliver(event, to: ask)
                 }
             )
             let created = try makeLoop(current.settings, hooks).handing(over: handover)
@@ -102,7 +106,8 @@ func runInteractive(
                     destructiveApprover: hooks.destructiveApprover,
                     callGate: hooks.callGate,
                     askPerson: hooks.askPerson,
-                    progress: hooks.progress
+                    progress: hooks.progress,
+                    reportEvent: hooks.reportEvent
                 )
             }
         )

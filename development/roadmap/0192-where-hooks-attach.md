@@ -146,13 +146,21 @@ the tests and send the failures back, check a list, or ask for a review pass. Th
   `value.txt` was sent back by a check wanting 2, wrote 2, and ended. Tests: CheckHookTests (5), BashToolCheckTests (3), the changed
   signal in AgentHookRunStopTests (4), HooksConfigurationTests (8); 18 mutants killed.
 
+- 2026-11-02: the remaining loop points, deadlines and visible `check` block:
+  - `AgentHook` carries `sessionStart`, `requestBefore` (rewrites the request sent for that call, emitting `hookRewroteRequest`),
+    `responseAfter`, `toolResultDecision` (transforms output and appends `[hook NAME] context`, emitting `hookAddedContext`),
+    `compactionBefore` (appends instructions to the summarisation prompt) and `compactionAfter`, `subagentStop`, `settingsChange`,
+    `waiting` and `sessionEnd`.
+  - `HookDeadline` enforces each hook's `deadline` and `failureMode` (`.open` vs `.closed`), emitting `hookTimedOut(hook:point:)`.
+  - `checkHooks` emits `toolStarted` and `toolFinished` (`name: "check"`) through `LoopHooks.reportEvent` and `PrintRenderer`, so the
+    screen and `ask -p` show the check while it runs.
+  - Tests: `AgentHookPointsTests` (4).
+
 ## What is left
 
-- The other points: `session.start`, `request.before` (and its rewrite), `response.after`, `tool.result`'s `context`,
-  `compaction.before` and `after`, `settings.change`, `subagent.stop`, `waiting`, `session.end`.
-- Deadlines and failing open or closed: today a hook is in-process code that ask trusts to return.
+- App-level wiring of `session.start`, `settings.change`, `waiting` and `session.end` once external hook hosts (0033 / 0140) register
+  session hooks.
 - `hooks.claudeCode`: reading Claude Code's hook configuration, with the runner for its commands.
-- The check runs without showing a block while it works; only its result is said.
 
 ## Done when
 

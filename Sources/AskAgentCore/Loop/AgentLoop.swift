@@ -90,16 +90,31 @@ public struct AgentLoop: Sendable {
     }
 
     /// Runs one call through the hooks and the tool: each hook may rewrite or block it, then each may transform
-    /// the result. A blocked call never runs; its result is an error naming the reason.
-    func runTool(_ original: ToolInvocation, events: (AgentEvent) -> Void) async -> ToolOutput {
+    /// the result and add context. A blocked call never runs; its result is an error naming the reason.
+    func runTool(_ original: ToolInvocation, events: (AgentEvent) -> Void) async -> (
+        output: ToolOutput, contexts: [String]
+    ) {
         var call = original
         for hook in hooks {
-            switch await hook.toolCall(call) {
+            let current = call
+            // @dl:accept -- each hook point asks its hooks the same way through HookDeadline.ask; the point, answer type and fallback are the data
+            let fallback: ToolCallDecision = hook.failureMode == .closed ? .block(reason: "timed out") : .allow
+            // @dl:accept -- each hook point asks its hooks the same way through HookDeadline.ask; the point, answer type and fallback are the data
+            let decision = await HookDeadline.ask(
+                hook,
+                at: "tool.call",
+                clock: clock,
+                orElse: fallback,
+                timedOut: events
+            ) {
+                await hook.toolCall(current)
+            }
+            switch decision {
                 case .allow: continue
                 case .rewrite(let input): call = ToolInvocation(id: call.id, name: call.name, input: input)
                 case .block(let reason):
                     events(.toolStarted(id: call.id, name: call.name, input: call.input))
-                    return .error("This call was blocked before it ran: \(reason)")
+                    return (.error("This call was blocked before it ran: \(reason)"), [])
             }
         }
         events(.toolStarted(id: call.id, name: call.name, input: call.input))
@@ -110,8 +125,25 @@ public struct AgentLoop: Sendable {
             in: approving(context.during(call: call.id), answers)
         )
         answers.take().forEach(events)
-        for hook in hooks { output = await hook.toolResult(call, output) }
-        return output
+        var contexts: [String] = []
+        for hook in hooks {
+            let currentCall = call
+            let currentOutput = output
+            let decision = await HookDeadline.ask(
+                hook,
+                at: "tool.result",
+                clock: clock,
+                orElse: ToolResultDecision(output: currentOutput),
+                timedOut: events
+            ) {
+                await hook.toolResultDecision(currentCall, currentOutput)
+            }
+            output = decision.output
+            if let text = decision.context, !text.allSatisfy(\.isWhitespace) {
+                contexts.append("[hook \(hook.name)] \(text)")
+            }
+        }
+        return (output, contexts)
     }
 
     /// Runs `prompt` to completion in `session`, reporting each step to `events`.
@@ -163,8 +195,7 @@ public struct AgentLoop: Sendable {
                 continue
             }
             watch.responded()
-            try record(.response(response), in: session)
-            events(.responded(response))
+            try await recordResponse(response, in: session, events: events)
             let filled = Self.filledTheWindow(response, allowedOutput: allowedOutput)
             // What the reply held when the window filled is the window: size every later request to it.
             if filled { learnedWindow.learn(Self.contextTokens(of: response)) }

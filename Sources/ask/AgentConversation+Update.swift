@@ -21,7 +21,8 @@ extension AgentConversation {
             case .compactionFailed(let reason): return [.compactionFinished(.failed("failed"), text: reason)]
             case .promptBlocked(let prompt, let reason):
                 return [.promptRefused(id: prompt.id), .notice(reason, isError: true)]
-            case .hookContinued, .hookContinuesStopped, .hookAnswered, .hookChangedPrompt:
+            case .hookContinued, .hookContinuesStopped, .hookAnswered, .hookChangedPrompt,
+                .hookRewroteRequest, .hookAddedContext, .hookTimedOut:
                 return RunNotices.hook(for: event).map { [.notice($0, isError: false)] } ?? []
             default: return update(for: event).map { [$0] } ?? []
         }

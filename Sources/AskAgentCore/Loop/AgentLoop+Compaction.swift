@@ -46,11 +46,37 @@ extension AgentLoop {
         if !contextFull, !explicit, Compaction.cut(context, keepingRecentBytes: budget.keepRecentBytes) == nil {
             return
         }
+        // @dl:accept -- each hook point asks its hooks the same way through HookDeadline.ask; the point, answer type and fallback are the data
+        var extraInstructions: [String] = []
+        for hook in hooks {
+            let decision = await HookDeadline.ask(
+                hook,
+                at: "compaction.before",
+                clock: clock,
+                orElse: .allow,
+                timedOut: events
+            ) {
+                await hook.compactionBefore(entries: context)
+            }
+            if case .instructions(let text) = decision, !text.allSatisfy(\.isWhitespace) {
+                extraInstructions.append(text)
+            }
+        }
         events(.compacting)
         do {
-            let (summary, usage, firstKept) = try await summarise(context, contextFull: contextFull, events: events)
+            let (summary, usage, firstKept) = try await summarise(
+                context,
+                contextFull: contextFull,
+                extraInstructions: extraInstructions,
+                events: events
+            )
             try record(.compaction(summary: summary, firstKept: firstKept), in: session)
             events(.compacted(summary: summary, usage: usage))
+            for hook in hooks {
+                await HookDeadline.ask(hook, at: "compaction.after", clock: clock, orElse: (), timedOut: events) {
+                    await hook.compactionAfter(summary: summary, usage: usage)
+                }
+            }
         } catch {
             if contextFull || error == .cancelled { throw error }
             events(.compactionFailed(String(describing: error)))
@@ -71,10 +97,16 @@ extension AgentLoop {
     /// - Parameters:
     ///   - context: the context as the tree gives it.
     ///   - contextFull: the compaction cannot be skipped, so the kept tail shrinks if it would leave nothing.
+    ///   - extraInstructions: additional summarisation instructions from `compaction.before` hooks.
     ///   - events: where retries are reported.
     /// - Returns: the summary, the usage of the request that made it, and the first entry kept word for word.
     /// - Throws: ``AgentError`` when there is nothing to summarise or the requests fail.
-    private func summarise(_ context: [SessionEntry], contextFull: Bool, events: (AgentEvent) -> Void)
+    private func summarise(
+        _ context: [SessionEntry],
+        contextFull: Bool,
+        extraInstructions: [String] = [],
+        events: (AgentEvent) -> Void
+    )
         async throws(AgentError) -> (summary: String, usage: TokenUsage, firstKept: EntryID)
     {
         let tail = budget.keepRecentBytes
@@ -82,12 +114,13 @@ extension AgentLoop {
             let cut = Compaction.cut(context, keepingRecentBytes: tail)
                 ?? (contextFull ? Compaction.cut(context, keepingAtMost: tail) : nil)
         else { throw .provider("nothing before the recent messages to summarise") }
+        let instruction = ([Compaction.instruction] + extraInstructions).joined(separator: "\n\n")
         let response: AssembledResponse
         do {
-            response = try await summaryResponse(for: context, events: events)
+            response = try await summaryResponse(for: context, instruction: instruction, events: events)
         } catch .contextOverflow {
             let older = Compaction.clippingResults(context[..<cut], toBytes: Self.clippedResultBytes)
-            response = try await summaryResponse(for: older, events: events)
+            response = try await summaryResponse(for: older, instruction: instruction, events: events)
         }
         let text = Self.joined(response.blocks) { if case .text(let text) = $0 { text } else { nil } }
         // No summary from the model, as a reasoning model out of reply budget does: record the part instead.
@@ -96,14 +129,14 @@ extension AgentLoop {
     }
 
     /// The model's reply to `entries` followed by the summary instruction.
-    private func summaryResponse(for entries: [SessionEntry], events: (AgentEvent) -> Void)
+    private func summaryResponse(for entries: [SessionEntry], instruction: String, events: (AgentEvent) -> Void)
         async throws(AgentError) -> AssembledResponse
     {
         var request = request(for: entries) { _ in }
         if request.messages.last?.role == .user {
-            request.messages[request.messages.count - 1].blocks.append(.text(Compaction.instruction))
+            request.messages[request.messages.count - 1].blocks.append(.text(instruction))
         } else {
-            request.messages.append(ModelMessage(role: .user, blocks: [.text(Compaction.instruction)]))
+            request.messages.append(ModelMessage(role: .user, blocks: [.text(instruction)]))
         }
         return try await stream(request) { event in
             if case .retrying = event { events(event) }

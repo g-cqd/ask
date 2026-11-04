@@ -69,7 +69,8 @@ public final class PrintRenderer: Sendable {
             case .retrying(let attempt, let total, let delay, let reason):
                 endLine()
                 err("ask: \(RunNotices.retry(attempt: attempt, of: total, delay: delay, reason: reason))\n")
-            case .hookContinued, .hookContinuesStopped, .hookAnswered, .hookChangedPrompt, .promptBlocked:
+            case .hookContinued, .hookContinuesStopped, .hookAnswered, .hookChangedPrompt, .promptBlocked,
+                .hookRewroteRequest, .hookAddedContext, .hookTimedOut:
                 endLine()
                 err("ask: \(RunNotices.hook(for: event) ?? "")\n")
             case .finished:

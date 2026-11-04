@@ -86,6 +86,7 @@ func runPrompt(
     let transport = URLSessionTransport()
     await requireSignIn(for: model, transport: transport)
     let jobs = JobTable(environment: LaunchEnvironment.values)
+    let renderer = PrintRenderer()
     let loop: AgentLoop
     let mcp = startMCPServers(settings, jobs: jobs)
     do {
@@ -95,14 +96,14 @@ func runPrompt(
             instructions: files,
             jobs: jobs,
             transport: transport,
-            live: mcp.live
+            live: mcp.live,
+            reportEvent: { renderer.render($0) }
         )
     } catch {
         fail("ask: \(error)", code: 70)
     }
     let session = promptSession(resumed: resumed, in: directory, model: model, source: source, settings: settings)
     let sessionPath = session.path
-    let renderer = PrintRenderer()
 
     let sent = SessionTasks.attachReferences(
         expandingSkill(prompt, settings: settings, workingDirectory: workingDirectory)
