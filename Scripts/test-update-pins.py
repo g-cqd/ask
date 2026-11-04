@@ -49,6 +49,7 @@ with tempfile.TemporaryDirectory() as directory:
 
 names = [name for name, _ in pins.FAMILY]
 assert names[0] == "aemi" and names[-1] == "ask", names
+assert names.index("AemiProtobuf") > names.index("AemiJSON"), "AemiProtobuf pins AemiJSON, so it moves after it"
 
 with tempfile.TemporaryDirectory() as directory:
     repo = pathlib.Path(directory)
@@ -59,6 +60,8 @@ with tempfile.TemporaryDirectory() as directory:
     (repo / ".ci").mkdir()
     (repo / ".ci/swift-ci").write_text("")
     assert pins.gate_steps(repo) == [[".ci/swift-ci", "local"]], "swift-ci's local run replaces the build, tests and analyzers"
-    (repo / "Scripts/quality.sh").write_text("")
+    (repo / "Scripts/quality.sh").write_text('case "$1" in quality) ;; esac\n')
+    assert pins.gate_steps(repo) == [[".ci/swift-ci", "local"]], "a quality script without --check is not a gate to call so"
+    (repo / "Scripts/quality.sh").write_text('[ "${1:-}" = --check ] && check=1\n')
     assert pins.gate_steps(repo) == [["Scripts/quality.sh", "--check"]], "a quality script is the repository's own gate"
 print("update-pins self-test: ok")

@@ -24,6 +24,7 @@ FAMILY = [
     ("AemiRegex", "https://github.com/g-cqd/AemiRegex.git"),
     ("AemiMarkdown", "https://github.com/g-cqd/AemiMarkdown.git"),
     ("AemiJSON", "https://github.com/g-cqd/AemiJSON.git"),
+    ("AemiProtobuf", "https://github.com/g-cqd/AemiProtobuf.git"),
     ("TerminalKit", "https://github.com/g-cqd/TerminalKit.git"),
     ("ask", "https://github.com/g-cqd/ask.git"),
 ]
@@ -75,9 +76,11 @@ def resolve(repo):
 
 
 def gate_steps(repo):
-    """The repository's own gate: its quality script when it has one; else, when its CI is swift-ci, what CI checks first
-    (`.ci/swift-ci local`: quality, analyzers included, and the debug tests); else a build, the tests and its analyzers."""
-    if (repo / "Scripts/quality.sh").exists():
+    """The repository's own gate: its quality script when it has a `--check` gate; else, when its CI is swift-ci, what CI
+    checks first (`.ci/swift-ci local`: quality, analyzers included, and the debug tests); else a build, the tests and its
+    analyzers. (AemiProtobuf's quality.sh takes gate names, not `--check`.)"""
+    script = repo / "Scripts/quality.sh"
+    if script.exists() and "--check" in script.read_text():
         return [["Scripts/quality.sh", "--check"]]
     if (repo / ".ci/swift-ci").exists():
         return [[".ci/swift-ci", "local"]]
