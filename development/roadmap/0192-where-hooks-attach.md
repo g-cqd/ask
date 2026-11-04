@@ -156,6 +156,11 @@ the tests and send the failures back, check a list, or ask for a review pass. Th
     screen and `ask -p` show the check while it runs.
   - Tests: `AgentHookPointsTests` (4).
 
+- 2026-11-03: a rewritten request is recorded, as the design says: on the response that answered it, as `rewrite` (the hooks, and the
+  request's text bytes before and after; `RequestRewrite`), an optional key older builds ignore, so no format version is spent and
+  their sessions read the same both ways. The conversation keeps what it was, so a resume does not replay the rewrite. The run says
+  it once, not at every request. Tests: `HookRequestRewriteTests` (3).
+
 ## What is left
 
 - App-level wiring of `session.start`, `settings.change`, `waiting` and `session.end` once external hook hosts (0033 / 0140) register

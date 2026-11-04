@@ -55,7 +55,7 @@ public enum SessionReplay {
             case .assistant(let text): return [.event(.model(.textDelta(index: 0, text)))]
             case .compaction(let summary, _): return [.event(.compacted(summary: summary, usage: TokenUsage()))]
             case .toolResult: return []  // Its call is not in context: the request drops it too.
-            case .response(let response):
+            case .response(let response, _):
                 var steps: [Step] = []
                 for (index, block) in response.blocks.enumerated() {
                     switch block {

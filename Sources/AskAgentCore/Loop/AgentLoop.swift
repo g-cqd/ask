@@ -22,6 +22,8 @@ public struct AgentLoop: Sendable {
     var learnedWindow = LearnedWindow()
     /// How many times hooks continued this run (roadmap 0192).
     var hookContinues = 0
+    /// Whether this run said that hooks rewrote its requests (roadmap 0192): once a run.
+    var saidRewrite = false
     /// How many session entries there were at the run's start or its last stop, so a stop can tell what came after (roadmap 0192).
     var stopMark = 0
     /// Answers in a row that lost their connection part way (roadmap 0141).
@@ -182,11 +184,11 @@ public struct AgentLoop: Sendable {
                 try await compact(session, contextFull: watch.contextFull, events: events)
             }
             let allowedOutput = budget.maximumTokens
-            let response: AssembledResponse
+            let answered: (response: AssembledResponse, rewrite: RequestRewrite?)
             do {
                 // nil: a change was offered while a retry waited; the request goes again, to the new loop, without counting.
-                guard let answered = try await respond(to: session.tree, events: events) else { continue }
-                response = answered
+                guard let reply = try await respond(to: session.tree, events: events) else { continue }
+                answered = reply
             } catch .contextOverflow(let reason) {
                 // Refused for its length: compact and send the shorter conversation, once.
                 try watch.overflowed(reason)
@@ -195,7 +197,8 @@ public struct AgentLoop: Sendable {
                 continue
             }
             watch.responded()
-            try await recordResponse(response, in: session, events: events)
+            let response = answered.response
+            try await recordResponse(response, rewrite: answered.rewrite, in: session, events: events)
             let filled = Self.filledTheWindow(response, allowedOutput: allowedOutput)
             // What the reply held when the window filled is the window: size every later request to it.
             if filled { learnedWindow.learn(Self.contextTokens(of: response)) }

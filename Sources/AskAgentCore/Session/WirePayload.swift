@@ -8,7 +8,7 @@ struct WirePayload: Codable {
 
     private enum CodingKeys: String, CodingKey {
         case kind, text, summary, firstKept, blocks, id, model, stopReason, usage, callID, content, isError,
-            destination, images, replacements
+            destination, images, replacements, rewrite
     }
 
     private enum Kind: String, Codable {
@@ -39,7 +39,8 @@ struct WirePayload: Codable {
                             .map(StopReason.init(wire:)),
                         usage: try container.decode(WireUsage.self, forKey: .usage).tokens,
                         unrecognized: []
-                    )
+                    ),
+                    rewrite: try container.decodeIfPresent(RequestRewrite.self, forKey: .rewrite)
                 )
             case .toolResult:
                 let store = decoder.userInfo[SessionImageStore.userInfoKey] as? SessionImageStore
@@ -75,8 +76,10 @@ struct WirePayload: Codable {
                 try container.encode(Kind.compaction, forKey: .kind)
                 try container.encode(summary, forKey: .summary)
                 try container.encode(firstKept.description, forKey: .firstKept)
-            case .response(let response):
+            case .response(let response, let rewrite):
                 try container.encode(Kind.response, forKey: .kind)
+                // Only when hooks rewrote the request: a key older builds ignore, so their sessions stay readable both ways.
+                try container.encodeIfPresent(rewrite, forKey: .rewrite)
                 try container.encode(response.id, forKey: .id)
                 try container.encode(response.model, forKey: .model)
                 try container.encode(response.blocks.map(WireBlock.init), forKey: .blocks)
