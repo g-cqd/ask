@@ -55,6 +55,11 @@ extension AgentConversation {
         }
     }
 
+    /// Keeps which thread's lane is shown, for `/reload`; a job's lane, or main, is none.
+    func laneShown(_ id: String?) {
+        focusedThread.withLock { $0 = id.flatMap { threads.thread($0) == nil ? nil : $0 } }
+    }
+
     func sendToThread(_ id: String, text: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
         // A merged thread is closed (roadmap 0195): its conversation stays readable, and `/thread` there branches from it.
         switch threads.thread(id)?.state {

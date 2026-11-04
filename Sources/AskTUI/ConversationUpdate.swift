@@ -113,6 +113,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// A thread merged into this conversation: a folded block that opens onto its summary, which goes to the model with what is
     /// sent next.
     case threadMerged(id: String, name: String, prompt: String, summary: String)
+    /// Show thread `id`'s lane, as a reload found it (roadmap 0195).
+    case focusThread(id: String)
     /// What happened in a thread (roadmap 0194): drawn in that thread's conversation, never main's.
     indirect case thread(id: String, ConversationUpdate)
     /// The run is over, however it ended.

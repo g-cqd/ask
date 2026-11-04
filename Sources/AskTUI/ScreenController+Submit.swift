@@ -15,6 +15,11 @@ extension ScreenController {
             history.record(line)
             return effects
         }
+        // `/reload` keeps the lane: the new build shows it again (roadmap 0195).
+        if case .command("reload", let arguments) = SlashInput(line), state.lane?.isThread == true {
+            history.record(line)
+            return [.runCommand(name: "reload", arguments: arguments)]
+        }
         // `/thread` in a thread's lane starts one from that thread, under it in the tree; the lane stays.
         if case .command("thread", let arguments) = SlashInput(line), let lane = state.lane, lane.isThread {
             history.record(line)

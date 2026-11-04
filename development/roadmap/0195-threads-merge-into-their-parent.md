@@ -235,6 +235,13 @@ summary instructions, or rewrite the summary).
   running stop them without asking; where a child merged into a parent thread, the block goes after the parent's leaf then, which
   may come before its later replies.
 
+## Done (2026-11-04): `/reload` with a thread's lane shown (the owner's request)
+
+- `/reload` typed in a thread's lane keeps the lane. The screen tells the conversation which lane is shown (`Conversation.laneShown`);
+  `reExecute` passes it as `--focus-thread`, and the new process ends its opening updates with `.focusThread`, which opens that lane
+  again, drawn from the thread's session.
+- `ThreadLaneTests`; `Scripts/probe-thread-reload.py` (3 checks, a real `/reload` of an installed build), twice.
+
 ## The order to build it
 
 1. ~~Thread-owned approvals and questions.~~ Done, above.

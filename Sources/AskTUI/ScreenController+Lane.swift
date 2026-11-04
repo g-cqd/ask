@@ -22,6 +22,11 @@ extension ScreenController {
             receive(output: text, of: id)
             return []
         }
+        // A lane changes outside ``onMain(_:)``, which puts the lane back around what it applies.
+        if case .focusThread(let id) = update {
+            guard let runner = state.runners.first(where: { $0.id == id && $0.kind == .agent }) else { return [] }
+            return enterLane(runner)
+        }
         return onMain { $0.holdingView { $0.apply(update) } }
     }
 

@@ -118,7 +118,9 @@ func runInteractive(
             conversation: conversation,
             label: settings.label,
             history: [.labelVariants(settings.labelVariants), .sandboxActive(!settings.sandbox.isUnrestricted)]
-                + conversation.history() + conversation.restoreThreads() + sessionPicker,
+                + conversation.history() + conversation.restoreThreads()
+                // The thread a reload left shown is shown again (roadmap 0195).
+                + (reloaded?.focusThread.map { [.focusThread(id: $0)] } ?? []) + sessionPicker,
             notices: startupNotices + settings.description,
             details: details + settings.detailLines + ProjectInstructions.describe(files),
             options: settings.screenOptions,
