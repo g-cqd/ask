@@ -55,14 +55,23 @@ func agyProvider(transport: URLSessionTransport) -> any ModelProvider {
 }
 
 /// The check hook for `section`'s `check` (roadmap 0192), or none: its command runs through `tools`' `bash`, in `context`'s sandbox,
-/// without asking, since the person configured it.
-func checkHooks(_ section: HooksSection, tools: ToolRegistry, context: ToolContext) -> [any AgentHook] {
+/// without asking, since the person configured it, and shows a `check` block while it runs.
+func checkHooks(
+    _ section: HooksSection,
+    tools: ToolRegistry,
+    context: ToolContext,
+    reportEvent: (@Sendable (AgentEvent) -> Void)? = nil
+) -> [any AgentHook] {
     guard let command = section.check, let input = BashTool.checkInput(command: command, seconds: section.checkSeconds)
     else { return [] }
     let unasked = context.withoutCallGate()
     return [
         CheckHook(command: command) {
-            BashTool.checkOutcome(of: await tools.run(name: "bash", input: input, in: unasked.during(call: "check")))
+            let callID = "check-\(UUID().uuidString)"
+            reportEvent?(.toolStarted(id: callID, name: "check", input: input))
+            let output = await tools.run(name: "bash", input: input, in: unasked.during(call: callID))
+            reportEvent?(.toolFinished(id: callID, name: "check", output: output))
+            return BashTool.checkOutcome(of: output)
         }
     ]
 }
@@ -80,7 +89,8 @@ func makeLoop(
     destructiveApprover: DestructiveApprover? = nil,
     callGate: ToolCallGate? = nil,
     askPerson: PersonQuestion.Asker? = nil,
-    progress: ToolProgressReporter? = nil
+    progress: ToolProgressReporter? = nil,
+    reportEvent: (@Sendable (AgentEvent) -> Void)? = nil
 ) throws -> AgentLoop {
     let workingDirectory = run.workspace
     let resolved = run.model
@@ -122,7 +132,7 @@ func makeLoop(
         tools: tools,
         settings: agent,
         context: context,
-        hooks: checkHooks(run.configuration.hooks.value, tools: tools, context: context),
+        hooks: checkHooks(run.configuration.hooks.value, tools: tools, context: context, reportEvent: reportEvent),
         // Offline, a failed request waits for the network instead of spending its retries (roadmap 0141).
         network: SystemNetworkPath()
     )

@@ -32,6 +32,12 @@ public enum AgentEvent: Sendable, Equatable {
     case promptAccepted(QueuedPrompt)
     /// Hooks rewrote the person's message or added to it before it was recorded (roadmap 0192).
     case hookChangedPrompt(hooks: [String])
+    /// Hooks rewrote the request before it was sent (roadmap 0192).
+    case hookRewroteRequest(hooks: [String])
+    /// Hooks added context to the conversation (roadmap 0192).
+    case hookAddedContext(String)
+    /// A hook timed out at `point` (roadmap 0192).
+    case hookTimedOut(hook: String, point: String)
     /// A hook kept a queued message out; it left the queue unrecorded.
     case promptBlocked(QueuedPrompt, reason: String)
     /// A hook answered a call's approval in the person's place (roadmap 0192).

@@ -1,7 +1,8 @@
 internal import AskAgentCore
 
-/// What an interactive loop asks the person through (roadmaps 0019, 0134, 0117): the sandbox's approver, the session's narrowing, a
-/// server's destructive tools, the calls that change things, the model's own questions, and how far a running call has got.
+/// What an interactive loop asks the person through (roadmaps 0019, 0134, 0117, 0192): the sandbox's approver, the session's narrowing, a
+/// server's destructive tools, the calls that change things, the model's own questions, how far a running call has got, and events
+/// emitted by hooks such as `hooks.check`.
 struct LoopHooks: Sendable {
     var approve: SandboxApprover?
     var narrowing: SessionNarrowing
@@ -9,4 +10,5 @@ struct LoopHooks: Sendable {
     var callGate: ToolCallGate?
     var askPerson: PersonQuestion.Asker?
     var progress: ToolProgressReporter?
+    var reportEvent: (@Sendable (AgentEvent) -> Void)?
 }

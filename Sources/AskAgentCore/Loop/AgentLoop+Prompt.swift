@@ -4,9 +4,9 @@ extension AgentLoop {
     /// What the hooks made of a message.
     enum Submission: Equatable {
         /// Record and send `text`; `changedBy` names the hooks that rewrote it or added to it.
-        case send(String, changedBy: [String])
+        case send(String, changedBy: [String], timedOut: [String])
         /// Keep it out, for `reason`.
-        case blocked(String)
+        case blocked(String, timedOut: [String])
     }
 
     /// `text` through the hooks, in order.
@@ -14,10 +14,24 @@ extension AgentLoop {
         var sent = text
         var context: [String] = []
         var changedBy: [String] = []
+        var timedOut: [String] = []
         for hook in hooks {
-            switch await hook.promptSubmit(sent) {
+            let current = sent
+            let fallback: PromptSubmitDecision = hook.failureMode == .closed ? .block("timed out") : .allow
+            // @dl:accept -- each hook point asks its hooks the same way through HookDeadline.ask; the point, answer type and fallback are the data
+            let note: (AgentEvent) -> Void = { _ in timedOut.append(hook.name) }
+            // @dl:accept -- each hook point asks its hooks the same way through HookDeadline.ask; the point, answer type and fallback are the data
+            let decision = await HookDeadline.ask(
+                hook,
+                at: "prompt.submit",
+                clock: clock,
+                orElse: fallback,
+                timedOut: note
+            ) { await hook.promptSubmit(current) }
+            switch decision {
                 case .allow: continue
-                case .block(let reason): return .blocked("The hook \(hook.name) blocked this message: \(reason)")
+                case .block(let reason):
+                    return .blocked("The hook \(hook.name) blocked this message: \(reason)", timedOut: timedOut)
                 case .rewrite(let rewritten) where !rewritten.allSatisfy(\.isWhitespace):
                     sent = rewritten
                     changedBy.append(hook.name)
@@ -27,7 +41,7 @@ extension AgentLoop {
                 case .rewrite, .context: continue
             }
         }
-        return .send(([sent] + context).joined(separator: "\n\n"), changedBy: changedBy)
+        return .send(([sent] + context).joined(separator: "\n\n"), changedBy: changedBy, timedOut: timedOut)
     }
 
     /// Records the run's first message as the hooks leave it.
@@ -36,8 +50,11 @@ extension AgentLoop {
         async throws(AgentError)
     {
         switch await submitting(prompt) {
-            case .blocked(let reason): throw .promptBlocked(reason)
-            case .send(let text, let changedBy):
+            case .blocked(let reason, let timedOut):
+                for name in timedOut { events(.hookTimedOut(hook: name, point: "prompt.submit")) }
+                throw .promptBlocked(reason)
+            case .send(let text, let changedBy, let timedOut):
+                for name in timedOut { events(.hookTimedOut(hook: name, point: "prompt.submit")) }
                 try record(.user(text), in: session)
                 if !changedBy.isEmpty { events(.hookChangedPrompt(hooks: changedBy)) }
         }

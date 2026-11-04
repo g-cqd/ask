@@ -31,9 +31,13 @@ extension AgentLoop {
             changed: Self.changesThings(session.tree.entries.dropFirst(stopMark))
         )
         stopMark = session.tree.entries.count
+        // @dl:accept -- each hook point asks its hooks the same way through HookDeadline.ask; the point, answer type and fallback are the data
         var messages: [String] = []
         for hook in hooks {
-            guard case .continue(let message) = await hook.runStop(stop),
+            let decision = await HookDeadline.ask(hook, at: "run.stop", clock: clock, orElse: .stop, timedOut: events) {
+                await hook.runStop(stop)
+            }
+            guard case .continue(let message) = decision,
                 !message.allSatisfy(\.isWhitespace)
             else { continue }
             messages.append("[hook \(hook.name)] \(message)")

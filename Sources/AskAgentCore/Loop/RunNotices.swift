@@ -18,6 +18,11 @@ public enum RunNotices {
             case .hookContinued(let message): "A hook continued the run: \(message)"
             case .hookChangedPrompt(let hooks):
                 "The \(hooks.count == 1 ? "hook" : "hooks") \(joined(hooks)) changed this message before it was sent."
+            case .hookRewroteRequest(let hooks):
+                "The \(hooks.count == 1 ? "hook" : "hooks") \(joined(hooks)) rewrote this request before it was sent."
+            case .hookAddedContext(let text): text
+            case .hookTimedOut(let hook, let point):
+                "The hook \(hook) timed out at \(point)."
             case .promptBlocked(_, let reason): reason
             case .hookAnswered(let hook, let tool, let approved):
                 "The hook \(hook) \(approved ? "allowed" : "refused") this \(tool) call."

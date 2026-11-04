@@ -11,18 +11,22 @@ extension AgentLoop {
         if atLimit, input?.remaining.isEmpty == false { throw .turnLimit(settings.maximumTurns) }
         var blocked: (QueuedPrompt, String)?
         var changedBy: [String] = []
+        var timedOut: [String] = []
         do {
             let entered = try await input?
                 .recordNext(finished: finished, in: session) { prompt in
                     switch await submitting(prompt.text) {
-                        case .send(let text, let hooks):
+                        case .send(let text, let hooks, let expired):
                             changedBy = hooks
+                            timedOut = expired
                             return text
-                        case .blocked(let reason):
+                        case .blocked(let reason, let expired):
                             blocked = (prompt, reason)
+                            timedOut = expired
                             return nil
                     }
                 }
+            for name in timedOut { events(.hookTimedOut(hook: name, point: "prompt.submit")) }
             if let (prompt, reason) = blocked { events(.promptBlocked(prompt, reason: reason)) }
             guard let entered else { return false }
             if !changedBy.isEmpty { events(.hookChangedPrompt(hooks: changedBy)) }
