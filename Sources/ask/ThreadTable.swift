@@ -10,6 +10,8 @@ final class ThreadTable: Sendable {
         let prompt: String
         let recorder: SessionRecorder
         let started: ContinuousClock.Instant
+        /// The thread it was forked from, which lists it under itself; nil for main's.
+        var parent: String?
         var state: RunnerInfo.State = .running
         var queue: PromptQueue?
         var task: Task<Void, Never>?
@@ -26,12 +28,12 @@ final class ThreadTable: Sendable {
 
     private let state = Mutex(State())
 
-    /// A new thread over `recorder`, named `thread-N`, running.
-    func add(prompt: String, recorder: SessionRecorder) -> String {
+    /// A new thread over `recorder`, named `thread-N`, running, under `parent` when it was forked from that thread.
+    func add(prompt: String, recorder: SessionRecorder, parent: String? = nil) -> String {
         state.withLock { state in
             let name = "thread-\(state.next)"
             state.next += 1
-            state.threads[name] = Thread(name: name, prompt: prompt, recorder: recorder, started: .now)
+            state.threads[name] = Thread(name: name, prompt: prompt, recorder: recorder, started: .now, parent: parent)
             state.order.append(name)
             return name
         }
@@ -90,6 +92,7 @@ final class ThreadTable: Sendable {
                                 name: $0.name,
                                 detail: $0.prompt,
                                 id: $0.name,
+                                parentID: $0.parent,
                                 kind: .agent,
                                 state: $0.state,
                                 startedAt: $0.started

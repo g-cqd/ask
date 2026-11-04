@@ -67,6 +67,6 @@ struct RunnerApprovalTests {
         rig.controller.state.runnersOpen = true
         rig.draw()
         let text = (0 ..< 16).map { rig.text(row: $0) }.joined(separator: "\n")
-        #expect(text.contains("review  wants to run bash · waiting for approval") && text.contains("1 runner"))
+        #expect(text.contains("review  wants to run bash · waiting for approval") && text.contains("1 thread"))
     }
 }

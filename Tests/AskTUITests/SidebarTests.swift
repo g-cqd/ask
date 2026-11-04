@@ -53,10 +53,10 @@ struct SidebarTests {
         let rig = rig()
         let divider = 100 - 25 - 1
         #expect(dividerColumn(rig) == divider && rig.controller.frame.transcriptColumns == divider)
-        #expect(rig.text(row: 0).contains("│ job-1  npm run dev"))
-        #expect(rig.text(row: 1).contains("│ job-2  tail -f log"))
-        #expect(rig.buffer[0, 99].character == "|" && rig.buffer[1, 99].character == "|")
-        #expect(rig.controller.frame.sidebarIDs == ["job-1", "job-2"])
+        #expect(rig.text(row: 0).hasSuffix("│ Jobs · 2 running"))
+        #expect(rig.text(row: 1).contains("│ | job-1 npm run dev"), "the mark is the running job's spinner")
+        #expect(rig.text(row: 2).contains("│ | job-2 tail -f log"))
+        #expect(rig.controller.frame.sidebarIDs == ["", "job-1", "job-2"], "a heading is no runner")
         for row in 0 ..< rig.composer.transcriptRows {
             #expect(rig.buffer[row, divider].character == "│", "row \(row)")
         }
@@ -76,7 +76,7 @@ struct SidebarTests {
 
     @Test func `with no runners it says so, and it does not take a narrow screen`() {
         let empty = rig(runners: [])
-        #expect(empty.text(row: 0).hasSuffix("│ no runners"))
+        #expect(empty.text(row: 0).hasSuffix("│ No threads or jobs"))
         let narrow = rig(columns: 69)
         #expect(dividerColumn(narrow) == nil && narrow.controller.frame.transcriptColumns == 69)
         let exact = rig(columns: 70)
@@ -114,25 +114,23 @@ struct SidebarTests {
         )
         rig.draw()
         let all = (0 ..< 20).map { rig.text(row: $0) }.joined(separator: "\n")
-        #expect(
-            all.components(separatedBy: "job-3  make").count == 3,
-            "the sidebar and the strip"
-        )
+        #expect(all.contains("job-3  make · waiting for approval"), "the strip")
+        #expect(all.contains("│ ? job-3 make"), "the sidebar, marked as waiting on the person")
         #expect(all.contains("3 jobs"))
         rig.controller.handle(.runners([Self.jobs[0]]))
         rig.draw()
         #expect(
             !(0 ..< 20).map { rig.text(row: $0) }.joined().contains("job-3")
-                && rig.controller.frame.sidebarIDs == ["job-1"]
+                && rig.controller.frame.sidebarIDs == ["", "job-1"]
         )
     }
 
-    @Test func `Down enters it with the strip closed, the selected row is bold, and Enter focuses that runner`() {
+    @Test func `Down enters it with the strip closed, the selected row is inverse, and Enter focuses that runner`() {
         var rig = rig()
         press(Key.down.rawValue, &rig)
         press(Key.down.rawValue, &rig)
         let start = rig.controller.frame.transcriptColumns + 3
-        #expect(rig.buffer[1, start].style.bold && !rig.buffer[0, start].style.bold)
+        #expect(rig.buffer[2, start].style.inverse && !rig.buffer[1, start].style.inverse)
         #expect(press(Key.enter.rawValue, &rig) == [.readRunnerOutput(id: "job-2")])
         #expect(rig.controller.state.lane?.id == "job-2")
     }
@@ -144,7 +142,8 @@ struct SidebarTests {
         #expect(
             rig.click(row: 0, col: rig.controller.frame.transcriptColumns).isEmpty && rig.controller.state.lane == nil
         )
-        #expect(rig.click(row: 1, col: column) == [.readRunnerOutput(id: "job-2")])
+        #expect(rig.click(row: 0, col: column).isEmpty, "the heading")
+        #expect(rig.click(row: 2, col: column) == [.readRunnerOutput(id: "job-2")])
     }
 
     @Test func `a click in the transcript still selects it, and its columns stop at the divider`() {

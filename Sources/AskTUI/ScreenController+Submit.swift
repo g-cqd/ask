@@ -15,6 +15,11 @@ extension ScreenController {
             history.record(line)
             return effects
         }
+        // `/thread` in a thread's lane starts one from that thread, under it in the tree; the lane stays.
+        if case .command("thread", let arguments) = SlashInput(line), let lane = state.lane, lane.isThread {
+            history.record(line)
+            return [.startThread(from: lane.id, text: arguments)]
+        }
         leaveLane()
         history.record(line)
         switch SlashInput(line) {

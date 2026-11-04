@@ -36,6 +36,8 @@ public struct RunnerTree: Sendable, Equatable {
                 roots.append(index)
             }
         }
+        // Threads first, then jobs (roadmap 0194): the sidebar draws them as two sections, and keys move in the order drawn.
+        roots = roots.filter { runners[$0].kind == .agent } + roots.filter { runners[$0].kind != .agent }
         var visited = Set<String>()
         var rows: [Row] = []
         // After normal roots, seed every node as a fallback root. Already-visited seeds are skipped; cyclic components are still shown.

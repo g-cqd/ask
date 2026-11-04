@@ -52,6 +52,10 @@ public protocol Conversation: Sendable {
     /// What the person typed in thread `id`'s lane (roadmap 0194): steering while it runs, its next message once it has ended.
     func sendToThread(_ id: String, text: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
 
+    /// `/thread TEXT` typed in thread `parent`'s lane: a thread forked from that thread's conversation, listed under it.
+    func startThread(_ text: String, from parent: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
+        async
+
     /// Watches the focused runner until cancelled. Updates replace its bounded output snapshot, not the main transcript.
     func watchRunnerOutput(_ id: String, update: @escaping @Sendable (String) -> Void) -> Task<Void, Never>
 
@@ -123,6 +127,13 @@ extension Conversation {
 
     /// No threads, so nothing to send to.
     public func sendToThread(_ id: String, text: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {}
+
+    /// No threads, so none to start from.
+    public func startThread(
+        _ text: String,
+        from parent: String,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) async {}
 
     /// A conversation without live runners supplies its one snapshot.
     public func watchRunnerOutput(_ id: String, update: @escaping @Sendable (String) -> Void) -> Task<Void, Never> {

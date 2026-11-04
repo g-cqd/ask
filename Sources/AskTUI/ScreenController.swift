@@ -30,6 +30,8 @@ public struct ScreenController: Sendable {
         case readRunnerOutput(id: String)
         /// What the person typed in a thread's lane (roadmap 0194), for that thread.
         case sendToThread(id: String, text: String)
+        /// `/thread TEXT` typed in thread `from`'s lane: a thread forked from that one.
+        case startThread(from: String, text: String)
         /// Follow a yielded process in its original tool block until it ends.
         case watchJob(id: String)
         /// Tell the screen when the quit window closes: Ctrl+C was pressed on an empty, idle input and a second press within this long quits.

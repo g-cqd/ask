@@ -43,6 +43,7 @@ def main():
             turn([("text", "MAIN ONE")], "end_turn"),
             turn([("text", "THREAD ANSWER")], "end_turn"),
             turn([("text", "THREAD SECOND")], "end_turn"),
+            turn([("text", "NESTED ANSWER")], "end_turn"),
             turn([("text", "MAIN TWO")], "end_turn"),
         ])
         environment = probe.agent.environment(state, server.url, config=config)
@@ -75,17 +76,24 @@ def main():
             terminal.until(lambda: "THREAD SECOND" in terminal.text())
             check("what is typed in the lane continues the thread",
                   "THREAD ANSWER" in body(server, 2) and "and Y?" in body(server, 2) and "MAIN ONE" in body(server, 2))
+            terminal.send(b"/thread go deeper\r")
+            terminal.until(lambda: "thread-2" in terminal.text() and len(server.requests) > 3)
+            terminal.until(lambda: "thread-2  go deeper · done" in terminal.text())
+            check("/thread in a thread's lane forks that thread, listed under it",
+                  "and Y?" in body(server, 3) and "THREAD SECOND" in body(server, 3) and "go deeper" in body(server, 3)
+                  and "  thread-2  go deeper" in terminal.text())
             terminal.send(b"\x1b")
             terminal.until(lambda: "back to the conversation" not in terminal.text())
             terminal.send(b"next\r")
             terminal.until(lambda: "MAIN TWO" in terminal.text())
-            sent = body(server, 3)
+            sent = body(server, 4)
             check("main's next message takes the threads' answers to the model",
-                  "--- thread thread-1 ---" in sent and "THREAD ANSWER" in sent and "THREAD SECOND" in sent)
+                  "--- thread thread-1 ---" in sent and "THREAD ANSWER" in sent and "THREAD SECOND" in sent
+                  and "--- thread thread-2 ---" in sent and "NESTED ANSWER" in sent)
             sessions = sorted(glob.glob(state + "/ask/sessions/*/*.jsonl"), key=os.path.getmtime)
             mains = [path for path in sessions if "MAIN TWO" in open(path).read()]
             check("main's session holds none of the thread's own words",
-                  len(sessions) == 2 and len(mains) == 1 and "and Y?" not in open(mains[0]).read())
+                  len(sessions) == 3 and len(mains) == 1 and "and Y?" not in open(mains[0]).read())
         except AssertionError:
             if terminal:
                 print(terminal.text(), file=sys.stderr)
