@@ -85,10 +85,10 @@ let package = Package(
         // Already resolved through AemiJSON; the linear-time engine also recognizes UI heredoc openers.
         .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "b46ad2ab37b663ca42182f85fc2f5d63a263cfc1"),
         // The Markdown parser the transcript draws assistant messages with (roadmap 0065); the revision TerminalKitMarkdown pins.
-        .package(
-            url: "https://github.com/g-cqd/AemiMarkdown.git",
-            revision: "d481bb6659e4280623e090c6c417a16c5362b60f"
-        ),
+        // A path while the block index and the fence reader (roadmaps 0202, 0203) are developed beside ask; the revision again at landing.
+        .package(path: "../AemiMarkdown"),
+        // Mermaid diagrams in the transcript (roadmap 0198). A path while the engine is developed beside ask; a revision at landing, like the rest.
+        .package(path: "../AemiMermaid"),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "4879ca7522a6277e9425c69309a801de43b57771"),
@@ -164,6 +164,10 @@ let package = Package(
                 .product(name: "TerminalKitText", package: "TerminalKit"),
                 .product(name: "TerminalKitMarkdown", package: "TerminalKit"),
                 .product(name: "AemiMarkdown", package: "AemiMarkdown"),
+                .product(name: "AemiMermaidSyntax", package: "AemiMermaid"),
+                .product(name: "AemiMermaidScene", package: "AemiMermaid"),
+                .product(name: "AemiMermaidLayout", package: "AemiMermaid"),
+                .product(name: "AemiMermaidText", package: "AemiMermaid"),
                 .product(name: "AemiRegex", package: "aemiregex"),
                 // Output recognised as JSON is checked by parsing it (roadmap 0152, phase 5).
                 .product(name: "AemiJSON", package: "AemiJSON"),
