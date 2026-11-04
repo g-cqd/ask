@@ -55,11 +55,23 @@ def repinned(text, heads):
     return PIN.sub(replace, text), moved
 
 
+def tracked_locks(repo):
+    """The Package.resolved beside each manifest that the repository tracks (ask's Benchmarks has one; AemiRegex ignores its own)."""
+    locks = [path.parent / "Package.resolved" for path in manifests(repo)]
+    return [lock for lock in locks
+            if subprocess.run(["git", "-C", str(repo), "ls-files", "--error-unmatch", str(lock.relative_to(repo))],
+                              capture_output=True).returncode == 0]
+
+
 def staged(repo):
-    """What a pin commit stages: every manifest, and Package.resolved unless the repository ignores it, as AemiRegex does."""
-    paths = [str(path.relative_to(repo)) for path in manifests(repo)]
-    ignored = subprocess.run(["git", "-C", str(repo), "check-ignore", "-q", "Package.resolved"]).returncode == 0
-    return paths if ignored else paths + ["Package.resolved"]
+    """What a pin commit stages: every manifest, and every Package.resolved the repository tracks."""
+    return [str(path.relative_to(repo)) for path in manifests(repo) + tracked_locks(repo)]
+
+
+def resolve(repo):
+    """`swift package resolve` for the package and for every other package whose lock is tracked, so no lock keeps old pins."""
+    packages = [repo] + [lock.parent for lock in tracked_locks(repo) if lock.parent != repo]
+    return all(subprocess.run(["swift", "package", "resolve"], cwd=package).returncode == 0 for package in packages)
 
 
 def gate_steps(repo):
@@ -124,7 +136,7 @@ def apply(root):
             continue
         summary = ", ".join(sorted({f"{u.rsplit('/', 1)[1].removesuffix('.git')} {new[:7]}" for u, _, new in moved}))
         print(f"== {name}: {summary}", flush=True)
-        if subprocess.run(["swift", "package", "resolve"], cwd=repo).returncode != 0 or not gate(repo):
+        if not resolve(repo) or not gate(repo):
             print(f"[FAIL] {name}: the gate failed with the new pins; the tree is left as it is")
             return 1
         git(repo, "add", "-A", "--", *staged(repo))
