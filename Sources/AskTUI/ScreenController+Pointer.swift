@@ -127,7 +127,8 @@ extension ScreenController {
             case .click(let target, let cell, .left, _, let count) where target == Self.promptTarget:
                 if count >= 2 { return selectInput(at: cell, count: count) }
                 placeCursor(at: cell)
-            case .click(_, let cell, .left, _, let count):
+            // Only inside the transcript's columns: the sidebar's divider is no block's, whatever row it is on (note n27).
+            case .click(_, let cell, .left, _, let count) where cell.col < frame.transcriptColumns:
                 return clickTranscript(at: cell, count: count)
             case .click:
                 break

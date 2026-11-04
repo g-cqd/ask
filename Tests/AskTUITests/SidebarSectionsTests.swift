@@ -86,6 +86,22 @@ struct SidebarSectionsTests {
         #expect(rig.controller.state.lane == nil)
     }
 
+    @Test func `a click in the sidebar, the divider included, never folds the block beside it`() throws {
+        var rig = rig(updates: [
+            .toolStarted(name: "bash", summary: "ls", id: "t"), .toolFinished(.succeeded, output: "a\nb\nc", id: "t")
+        ])
+        let header = try #require(rig.controller.frame.foldBlocks.firstIndex { $0 != nil })
+        let divider = rig.controller.frame.transcriptColumns
+        for column in [divider, divider + 1, 99] {
+            let prior = rig.controller.state.transcript
+            _ = rig.click(row: header, col: column)
+            #expect(rig.controller.state.transcript == prior, "column \(column)")
+        }
+        let before = rig.controller.state.transcript
+        _ = rig.click(row: header, col: 2)
+        #expect(rig.controller.state.transcript != before, "a click on the header itself still folds it")
+    }
+
     @Test func `a tinted block's background stops at the divider`() {
         let rig = rig(updates: [.userPrompt("hello"), .toolStarted(name: "bash", summary: "ls", id: "t")])
         let divider = rig.controller.frame.transcriptColumns
