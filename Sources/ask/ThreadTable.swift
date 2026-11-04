@@ -33,6 +33,8 @@ final class ThreadTable: Sendable {
         var reports: [String] = []
         var jobs: [RunnerInfo] = []
         var quitting = false
+        /// Threads stopped together (a session switch, or a stop with its threads): they are settled as one, not each on its own.
+        var holding: Set<String> = []
     }
 
     private let state = Mutex(State())
@@ -157,6 +159,7 @@ final class ThreadTable: Sendable {
                 state.threads = [:]
                 state.order = []
                 state.reports = []
+                state.holding = []
                 state.next = 1
             }
             return state.threads.values.compactMap(\.task)
@@ -184,6 +187,42 @@ final class ThreadTable: Sendable {
 
     /// Whether ask is quitting: a thread stopped by it is left unmerged, and asks nothing.
     var isQuitting: Bool { state.withLock { $0.quitting } }
+
+    /// Whether thread `name` is settled with others it was stopped with, not on its own.
+    func isHeldTogether(_ name: String) -> Bool { state.withLock { $0.holding.contains(name) } }
+
+    /// `name` and every thread under it, `name` first, each before the threads under it.
+    func subtree(_ name: String) -> [String] {
+        state.withLock { state in
+            var names: [String] = []
+            var pending = [name]
+            while let next = pending.popLast() {
+                guard state.threads[next] != nil else { continue }
+                names.append(next)
+                pending += state.order.filter { state.threads[$0]?.parent == next }.reversed()
+            }
+            return names
+        }
+    }
+
+    /// Stops `names` together and waits for their runs to end; while `holding`, none of them is settled on its own.
+    func stop(_ names: [String], holding: Bool) async {
+        let tasks = state.withLock { state in
+            if holding { state.holding.formUnion(names) }
+            return names.compactMap { state.threads[$0]?.task }
+        }
+        for task in tasks { task.cancel() }
+        for task in tasks { await task.value }
+    }
+
+    /// Lets `names` be settled on their own again.
+    func release(_ names: [String]) { state.withLock { $0.holding.subtract(names) } }
+
+    /// Stops every thread at work for a session switch, leaving them unmerged: they are the old session's.
+    func stopForSwitch() async {
+        let names = state.withLock { Array($0.threads.keys) }
+        await stop(names, holding: true)
+    }
 
     /// Stops every running thread and waits for each to end, as ask does with jobs when it quits.
     func stopAll() async {

@@ -1,3 +1,5 @@
+import TerminalKitCodecs
+import TerminalKitInput
 import Testing
 
 @testable import AskTUI
@@ -62,5 +64,32 @@ struct ThreadBlocksTests {
         let text = (0 ..< 6).map { rig.text(row: $0) }.joined(separator: "\n")
         #expect(text.contains("├ ◌ thread-1 a") && text.contains("└ ✓ thread-2 b"))
         #expect(rig.text(row: rig.composer.transcriptRows - 1).hasSuffix("Nothing running"), "neither is running")
+    }
+
+    @Test func `a click on where a thread started opens its lane`() throws {
+        var rig = PointerRig(columns: 100, rows: 24, options: ScreenOptions(prompt: "ask> "))
+        rig.controller.handle(.runners([RunnerInfo(name: "thread-1", detail: "look", id: "thread-1", kind: .agent)]))
+        rig.controller.handle(.threadStarted(id: "fork-thread-1", name: "thread-1", prompt: "look"))
+        rig.draw()
+        let row = try #require((0 ..< rig.composer.transcriptRows).first { rig.text(row: $0).contains("started here") })
+        _ = rig.click(row: row, col: 3)
+        #expect(rig.controller.state.lane?.id == "thread-1" && rig.controller.state.lane?.isThread == true)
+    }
+
+    @Test func `Ctrl+C in a working thread's lane stops that thread, not main's turn`() {
+        var controller = ScreenController(label: "m", options: .legacy)
+        controller.setScreenRows(30)
+        let runner = RunnerInfo(name: "thread-1", detail: "look", id: "thread-1", kind: .agent)
+        _ = controller.handle(.runners([runner]))
+        _ = controller.enterLane(runner)
+        let effects = controller.handle(.key(KeyEvent(keyCode: 0x03)), pageRows: 30)
+        #expect(effects == [.stopThread(id: "thread-1")])
+        _ = controller.handle(
+            .runners([RunnerInfo(name: "thread-1", detail: "look", id: "thread-1", kind: .agent, state: .merged)])
+        )
+        #expect(
+            !controller.handle(.key(KeyEvent(keyCode: 0x03)), pageRows: 30).contains(.stopThread(id: "thread-1")),
+            "a thread that is not working is not stopped"
+        )
     }
 }

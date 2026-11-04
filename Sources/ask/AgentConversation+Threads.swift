@@ -41,6 +41,8 @@ extension AgentConversation {
             return
         }
         do {
+            // Main's session first, so a thread started before any prompt is recorded there too (roadmap 0195).
+            if parent == nil, session.withLock({ $0 == nil }) { _ = try recorder() }
             let recorder = try threadSession(from: parent)
             let name = threads.add(prompt: text, recorder: recorder, parent: parent)
             let source = parent.flatMap { threads.thread($0)?.recorder } ?? session.withLock { $0 }
@@ -53,6 +55,11 @@ extension AgentConversation {
         } catch {
             say(.notice("Cannot start a thread: \(error)", isError: true))
         }
+    }
+
+    /// Ctrl+C in thread `id`'s lane (roadmap 0195): it stops with the threads under it, and asks once whether to merge them back in.
+    func stopThread(_ id: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
+        Task { await stopThread(id, update: update) }
     }
 
     /// Keeps which thread's lane is shown, for `/reload`; a job's lane, or main, is none.

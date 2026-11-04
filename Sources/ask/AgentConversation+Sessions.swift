@@ -5,12 +5,12 @@ internal import Synchronization
 
 extension AgentConversation {
     /// Leaves the current session intact on disk. A new file is created only when a prompt needs it.
-    func newSession(arguments: String, update: @Sendable (ConversationUpdate) -> Void) async {
+    func newSession(arguments: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async {
         guard arguments.isEmpty else {
             update(.notice("Usage: /new (no arguments).", isError: true))
             return
         }
-        guard maySwitchSession("new", update: update) else { return }
+        guard await maySwitchSession("new", update: update) else { return }
         let hadSession = session.withLock { $0 != nil }
         activateSession(nil, update: update)
         await adoptRecords(of: nil, update: update)
@@ -42,7 +42,20 @@ extension AgentConversation {
     }
 
     /// Sessions do not own processes: refuse to carry a running job into another conversation silently.
-    func maySwitchSession(_ command: String, update: @Sendable (ConversationUpdate) -> Void) -> Bool {
+    func maySwitchSession(_ command: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async -> Bool {
+        // Threads at work are asked about first (roadmap 0195): switching stops them, kept unmerged in this session for when it comes
+        // back, and stopping them ends the commands they ran.
+        let working = threads.runners.filter { $0.kind == .agent && $0.state.isActive }.map(\.name)
+        if !working.isEmpty {
+            let which = working.joined(separator: ", ")
+            let switching = await confirm(
+                "/\(command): \(which) \(working.count == 1 ? "is" : "are") still working. Switching stops "
+                    + "\(working.count == 1 ? "it" : "them"), kept unmerged in this session to go on with when you come back. Switch?",
+                update: update
+            )
+            guard switching else { return false }
+            await threads.stopForSwitch()
+        }
         let running = jobs.running
         guard running.isEmpty else {
             update(

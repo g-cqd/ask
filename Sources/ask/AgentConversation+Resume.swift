@@ -6,7 +6,7 @@ internal import System
 
 extension AgentConversation {
     /// Opens the replacement before releasing the old writer, so lookup/open/lock failure changes nothing.
-    func resumeSession(arguments: String, update: @Sendable (ConversationUpdate) -> Void) async {
+    func resumeSession(arguments: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async {
         guard !arguments.isEmpty else {
             for item in sessionPickerOpening() { update(item) }
             return
@@ -21,7 +21,7 @@ extension AgentConversation {
                 update(.notice("Already using session \((active as NSString).lastPathComponent).", isError: false))
                 return
             }
-            guard maySwitchSession("resume", update: update) else { return }
+            guard await maySwitchSession("resume", update: update) else { return }
             let replacement = SessionRecorder(
                 try SessionFile.open(at: FilePath(path), keyring: SessionKeyAccess.keyring)
             )
