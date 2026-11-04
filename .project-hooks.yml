@@ -4,22 +4,24 @@
 #
 # pre-push would otherwise run a plain `swift test`, which is a DEBUG build. This project tests release only
 # (AGENTS.md, ADR-0002: a debug build measures a program nobody ships) and needs testability stated
-# explicitly (ADR-0006), so the automatic test stage is switched off and the real invocation runs as a task.
+# explicitly (ADR-0006), so the automatic test stage is switched off and the real invocation is a task.
 # Tasks run in the verification worktree at the pushed commit, not in the working tree, so uncommitted work
 # never decides whether a push passes.
 #
-# The scratch path is fixed so the release build is reused between pushes; the worktree's own .build is
-# thrown away with the worktree.
+# A push checks what fails most and costs least: CI's quality check (swift-format, SwiftLint, the pinned analyzers, the dependency
+# audit and the script guards), which caught about 80% of the gate's failures in the sessions to 2026-11-04 (the rest were tests,
+# none of them failing only in release). The release tests are opt-in here, as mutation testing is; CI runs them on every push.
+# Their scratch path is fixed so the release build is reused between pushes; the worktree's own .build is thrown away with it.
 pre-push:
   test-override:
     type: swift
     skip: true
   tasks:
-    - name: "Static analyzers"
-      run: "Scripts/analyzers.sh"
-      timeout: 300
-    - name: "Release tests"
-      run: 'swift test -c release --enable-testable-imports --scratch-path "$HOME/Library/Caches/project-hooks/builds/ask-release"'
+    - name: "CI quality"
+      run: ".ci/swift-ci run quality"
+      timeout: 600
+    - name: "Release tests (ASK_RELEASE=1)"
+      run: 'if [ "${ASK_RELEASE:-}" = 1 ]; then swift test -c release --enable-testable-imports --scratch-path "$HOME/Library/Caches/project-hooks/builds/ask-release"; else echo "skipped: set ASK_RELEASE=1; CI runs them"; fi'
       timeout: 1200
     # Mutation testing of the changed Sources files (roadmap 0166): minutes per file cold, so opt-in: ASK_MUTATE=1 git push.
     - name: "Mutation testing (ASK_MUTATE=1)"
