@@ -14,6 +14,7 @@ extension Transcript {
                     id: id
                 )
                 markAside(id: id)
+                if let index = toolBlocks[id] { forkBlocks[index] = name }
             case .threadMerged(let id, let name, let prompt, let summary):
                 startTool(name: name, summary: "merged · " + prompt, id: id)
                 finishTool(.succeeded, output: summary, id: id)

@@ -10,7 +10,8 @@ extension AgentConversation {
     /// Merges thread `name` if it is ready, holds it if a thread under it has not merged, or asks first if its run did not finish.
     /// Nothing while ask quits: what it stopped stays unmerged.
     func settle(_ name: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async {
-        guard !threads.isQuitting, let thread = threads.thread(name), let outcome = thread.outcome,
+        guard !threads.isQuitting, !threads.isHeldTogether(name), let thread = threads.thread(name),
+            let outcome = thread.outcome,
             thread.state != .merged, thread.state != .merging
         else { return }
         if threads.hasUnmerged(under: name) {
@@ -36,8 +37,37 @@ extension AgentConversation {
         await merge(thread, update: update)
     }
 
+    /// Stops thread `name` and every thread under it (roadmap 0195), then asks once, in its lane, whether to merge them back in. Yes
+    /// merges them from the bottom up; no leaves them stopped, unmerged, to go on with or merge later.
+    func stopThread(_ name: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async {
+        let group = threads.subtree(name)
+        guard let root = threads.thread(name) else { return }
+        await threads.stop(group, holding: true)
+        defer { threads.release(group) }
+        update(.runners(threads.runners))
+        let others = group.count - 1
+        let what =
+            others == 0
+            ? "\(name) was stopped" : "\(name) and its \(others) thread\(others == 1 ? "" : "s") were stopped"
+        let merging = await confirm(
+            "\(what). Merge \(others == 0 ? "it" : "them") back into \(root.parent ?? "main"), with a summary of what "
+                + "\(others == 0 ? "it" : "each") did?",
+            update: { update(.thread(id: name, $0)) }
+        )
+        guard merging else { return }
+        // Each before the thread it is under: the reverse of the subtree's order.
+        for member in group.reversed() {
+            guard let thread = threads.thread(member), thread.state != .merged else { continue }
+            await merge(thread, settlingParent: member == name, update: update)
+        }
+    }
+
     /// Writes thread's summary, gives it to its parent with a block there, closes it, and settles the parent.
-    private func merge(_ thread: ThreadTable.Thread, update: @escaping @Sendable (ConversationUpdate) -> Void) async {
+    private func merge(
+        _ thread: ThreadTable.Thread,
+        settlingParent: Bool = true,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) async {
         let name = thread.name
         threads.setState(name, .merging)
         update(.runners(threads.runners))
@@ -80,7 +110,7 @@ extension AgentConversation {
         )
         update(thread.parent.map { .thread(id: $0, block) } ?? block)
         update(.runners(threads.runners))
-        if let parent = thread.parent { await settle(parent, update: update) }
+        if settlingParent, let parent = thread.parent { await settle(parent, update: update) }
     }
 
     /// The text of the last reply in `tree`, nil when it has none.

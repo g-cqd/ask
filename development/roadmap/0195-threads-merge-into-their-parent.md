@@ -242,6 +242,20 @@ summary instructions, or rewrite the summary).
   again, drawn from the thread's session.
 - `ThreadLaneTests`; `Scripts/probe-thread-reload.py` (3 checks, a real `/reload` of an installed build), twice.
 
+## Done (2026-11-04): stopping, switching, and the fork block's click
+
+- Ctrl+C in a working thread's lane stops it and every thread under it (main's turn goes on), then asks once, in its lane, whether
+  to merge them back in: yes merges them from the bottom up, no leaves them stopped and unmerged (`stopThread`, `ThreadTable.subtree`,
+  threads held together are not settled one by one). A confirmation starts on No.
+- `/new`, `/resume` and `/fork` with threads at work ask first; yes stops them, left unmerged in the session they belong to. Threads
+  are asked about before the "jobs are running" refusal, since a thread's running command is listed as a job and stopping the thread
+  ends it.
+- A thread started before any prompt creates main's session first, so it is recorded.
+- A click on where a thread started opens its lane (note n23; `Transcript.forkBlocks`).
+- `ThreadBlocksTests` (+2); `Scripts/probe-thread-stop.py` (7 checks), twice.
+- Also: `ScreenSession.swift` and `Ask.swift` had passed the 250-line ceiling with the `/reload` change (86af8e14, the rule tests not
+  run before landing it); split into `ScreenSession+Run.swift` and `Ask+Request.swift`.
+
 ## The order to build it
 
 1. ~~Thread-owned approvals and questions.~~ Done, above.

@@ -11,7 +11,7 @@ extension AgentConversation {
     /// The new file holds the branch and the strict sandbox the session ran under, and the original is not touched: it stays saved, with
     /// every branch it had. The switch follows `/resume`'s rules (ADR-0041): only between turns, and not while jobs run, because a
     /// session does not own processes.
-    func forkSession(arguments: String, update: @Sendable (ConversationUpdate) -> Void) async {
+    func forkSession(arguments: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async {
         guard
             let original = recordedSession(
                 orSay: "Nothing to fork yet: no prompt has been sent in this session.",
@@ -35,7 +35,7 @@ extension AgentConversation {
             (leaf, returned) = (turn.before, turn.text)
         }
         if turnRunning { return forkBeside(original, upTo: leaf, update: update) }
-        guard maySwitchSession("fork", update: update) else { return }
+        guard await maySwitchSession("fork", update: update) else { return }
         do {
             let replacement = try forked(original, upTo: leaf)
             activateSession(replacement, update: update)

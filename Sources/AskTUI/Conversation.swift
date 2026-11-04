@@ -52,6 +52,9 @@ public protocol Conversation: Sendable {
     /// What the person typed in thread `id`'s lane (roadmap 0194): steering while it runs, its next message once it has ended.
     func sendToThread(_ id: String, text: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
 
+    /// Ctrl+C in thread `id`'s lane while it works: it stops, with the threads under it (roadmap 0195).
+    func stopThread(_ id: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
+
     /// The screen now shows lane `id`, a runner's, or main when nil.
     func laneShown(_ id: String?)
 
@@ -127,6 +130,9 @@ extension Conversation {
 
     /// No runners, so no output.
     public func runnerOutput(_ id: String) async -> String { "" }
+
+    /// No threads, so none to stop.
+    public func stopThread(_ id: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {}
 
     /// Nothing follows which lane is shown.
     public func laneShown(_ id: String?) {}

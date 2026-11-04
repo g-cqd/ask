@@ -41,6 +41,8 @@ public struct Transcript: Sendable, Equatable {
     var summaryBlocks: Set<Int> = []  // A compaction's and other summaries ask wrote: see Transcript+Summary.swift.
     /// `/btw` asides (roadmap 0194): a summary block of their own colour, open, and no part of the run.
     var asideBlocks: Set<Int> = []
+    /// Where threads started (roadmap 0195): each such block's thread, which a click on it opens.
+    var forkBlocks: [Int: String] = [:]
     /// Whether a running block's header shimmers (`ui.shimmer`, roadmap 0171).
     public var shimmer = true
     /// The blocks still going when the person stopped the turn (roadmap 0142), drawn on the interruption tint.
@@ -100,6 +102,7 @@ public struct Transcript: Sendable, Equatable {
         commandBlocks.removeAll(keepingCapacity: true)
         summaryBlocks.removeAll(keepingCapacity: true)
         asideBlocks.removeAll(keepingCapacity: true)
+        forkBlocks.removeAll(keepingCapacity: true)
         interrupted.removeAll(keepingCapacity: true)
         jobBlocks.removeAll(keepingCapacity: true)
         replacements.removeAll(keepingCapacity: true)

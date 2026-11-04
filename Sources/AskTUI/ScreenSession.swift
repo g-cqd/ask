@@ -6,29 +6,29 @@ internal import TerminalKitRender
 /// One open screen: the controller that owns its state, the render thread that draws it, and the loop that applies every event.
 final class ScreenSession {
     private let terminal: TerminalSession
-    private let renderer: RenderLoop<ScreenComposer>
+    let renderer: RenderLoop<ScreenComposer>
     private let connection: any TerminalConnection
-    private let input: InputSource
-    private let conversation: any Conversation
-    private var controller: ScreenController
+    let input: InputSource
+    let conversation: any Conversation
+    var controller: ScreenController
     private let frames: FrameBox
     private var clipboard: ScreenClipboard
     /// The screen's height, for paging; the render loop knows its own.
     private var rows: Int
     private var columns: Int
     private var run: Task<Void, Never>?
-    private var runnerOutput = RunnerOutputWatch()
+    var runnerOutput = RunnerOutputWatch()
     /// The lane the conversation was last told is shown.
     private var shownLane: String?
-    private var jobOutput: [String: Task<Void, Never>] = [:]
+    var jobOutput: [String: Task<Void, Never>] = [:]
     /// Ticks while a drag is held at an edge, because a held button reports no motion.
-    private var autoscroll = AutoscrollTimer()
-    private var progress = BlockProgressTimer()
-    private let events: AsyncStream<ScreenEvent>
-    private let sink: AsyncStream<ScreenEvent>.Continuation
-    private var exit = ScreenExit.quit
+    var autoscroll = AutoscrollTimer()
+    var progress = BlockProgressTimer()
+    let events: AsyncStream<ScreenEvent>
+    let sink: AsyncStream<ScreenEvent>.Continuation
+    var exit = ScreenExit.quit
     /// The terminal's colours, when the tints follow them (`ui.appearance` auto); nil when they are fixed or off.
-    private var colours: TerminalColours?
+    var colours: TerminalColours?
 
     init(
         _ screen: ScreenTerminal,
@@ -56,7 +56,7 @@ final class ScreenSession {
     }
 
     /// Applies one event and renders. Returns false when the screen should close.
-    private func handle(_ event: ScreenEvent) async -> Bool {
+    func handle(_ event: ScreenEvent) async -> Bool {
         var effects: [ScreenController.Effect] = []
         switch event {
             case .input(let inputEvent) where terminal.observe(inputEvent):
@@ -123,7 +123,7 @@ final class ScreenSession {
     }
 
     /// The shown lane's output is watched, and the conversation told which lane is shown, for `/reload` (roadmap 0195).
-    private func syncLane() {
+    func syncLane() {
         runnerOutput.sync(lane: controller.state.lane?.id)
         guard controller.state.lane?.id != shownLane else { return }
         shownLane = controller.state.lane?.id
@@ -160,7 +160,7 @@ final class ScreenSession {
                 )
             case .readRunnerOutput(let id):
                 runnerOutput.watch(id, in: conversation, sink: sink)
-            case .sendToThread, .startThread: Self.performThread(effect, conversation, sink)
+            case .sendToThread, .startThread, .stopThread: Self.performThread(effect, conversation, sink)
             case .watchJob(let id):
                 jobOutput[id]?.cancel()
                 jobOutput[id] = conversation.watchJob(id) { sink.yield(.update(.jobOutput($0))) }
@@ -193,66 +193,5 @@ final class ScreenSession {
                 return false
         }
         return true
-    }
-}
-
-/// The screen's timers and frames.
-extension ScreenSession {
-    func run(resizes: AsyncStream<Void>, appearances: AsyncStream<Void>) async throws -> ScreenExit {
-        let input = input
-        let sink = sink
-        let forwarding = Task {
-            for await event in input.events { sink.yield(.input(event)) }
-            sink.yield(.inputEnded)
-        }
-        let resizing = Task {
-            for await _ in resizes { sink.yield(.resize) }
-        }
-        let watching = conversation.background { sink.yield(.update($0)) }
-        input.start()
-        let recolouring = SystemAppearance.askAgain(after: appearances) { sink.yield(.askColours) }
-        defer { recolouring.cancel() }
-        colours?.ask()
-        defer {
-            forwarding.cancel()
-            resizing.cancel()
-            watching?.cancel()
-            input.stop()
-        }
-        defer {
-            autoscroll.stop()
-            progress.stop()
-            runnerOutput.stop()
-            for task in jobOutput.values { task.cancel() }
-        }
-        render(full: true)
-        for await event in events {
-            if let taken = colours?.take(event) {
-                if case .page(let page) = taken { controller.state.adopt(page) }
-                render(full: true)
-                continue
-            }
-            guard await handle(event) else { return exit }
-        }
-        return exit
-    }
-
-    private func syncAutoscroll() {
-        let sink = sink
-        autoscroll.update(wanted: controller.isAutoscrolling) { sink.yield(.tick) }
-    }
-
-    /// Hands the render thread the screen as it is now. It draws the newest state it finds, so a burst of events is
-    /// one frame, and this never waits for one.
-    private func render(full: Bool = false) {
-        if full { renderer.redraw() }
-        renderer.submit(controller.state)
-    }
-
-    /// The progress timer as the screen now wants it: off with nothing live, faster while a running header shimmers.
-    private func syncProgress() {
-        progress.update(wanted: controller.hasLiveProgress, shimmering: controller.isShimmering) { [sink] in
-            sink.yield(.progressTick(advancesFrames: $0))
-        }
     }
 }

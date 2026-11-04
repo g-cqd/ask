@@ -19,6 +19,13 @@ extension ScreenController {
             state.editor.clear()
             return []
         }
+        // In a thread's lane, Ctrl+C is the thread's: it stops while it works, and main's turn goes on (roadmap 0195).
+        if let lane = state.lane, lane.isThread,
+            state.runners.first(where: { $0.id == lane.id })?.state.isActive == true
+        {
+            state.transcript.addNotice("Stopping \(lane.name) and the threads under it…", isError: false)
+            return [.stopThread(id: lane.id)]
+        }
         if state.running, options.interruptKeys.allowsControlC {
             if options.abortTurnRequiresConfirmation {
                 if let armed = state.abortArmedAt, press.at - armed <= Self.quitWindow {

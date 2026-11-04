@@ -166,6 +166,8 @@ extension ScreenController {
             selector.clear()
             return []
         }
+        // A thread's fork-point block opens its lane (note n23).
+        if let effects = openThread(atRow: cell.row) { return effects }
         // Fold controls toggle at every click count; rapid re-clicks must not become word selection.
         if toggleFold(atRow: cell.row) { return [] }
         let content = count >= 2 ? TranscriptContent(state.transcript) : TranscriptContent()
@@ -186,6 +188,15 @@ extension ScreenController {
     }
 
     /// Toggles tools/thinking from any owned row, including padding; code folds still use their fence lines.
+    /// The lane of the thread whose fork-point block is on `row`, when it is listed; nil for any other row.
+    private mutating func openThread(atRow row: Int) -> [Effect]? {
+        guard frame.foldBlocks.indices.contains(row), let block = frame.foldBlocks[row],
+            let name = state.transcript.forkBlocks[block],
+            let runner = state.runners.first(where: { $0.id == name && $0.kind == .agent })
+        else { return nil }
+        return enterLane(runner)
+    }
+
     private mutating func toggleFold(atRow row: Int) -> Bool {
         let source = frame.rows.provenance(atRow: row)
         let owned = frame.foldBlocks.indices.contains(row) ? frame.foldBlocks[row] : nil
