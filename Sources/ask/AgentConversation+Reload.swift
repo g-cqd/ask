@@ -31,6 +31,8 @@ extension AgentConversation {
                                     name: "[#" + $0.displayID + "]",
                                     detail: $0.command,
                                     id: $0.id,
+                                    // Under the thread it was started for (roadmap 0195).
+                                    parentID: $0.owner,
                                     startedAt: $0.startedAt
                                 )
                             }

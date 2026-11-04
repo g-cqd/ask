@@ -171,6 +171,7 @@ Switches take `true` or `false` (the older `"on"` and `"off"` still work).
 | `scrollLines` | `3` | Lines per wheel step. |
 | `inputRows` | `6` | How many rows the input grows to before it scrolls (at most a third of the screen). |
 | `sidebar` | `"closed"` | Whether the runner sidebar starts `"open"` (wide screens only). |
+| `sidebarJobs` | `"tree"` | Where the sidebar lists the jobs a thread started: `"tree"` under the thread, or `"section"` with every job in the Jobs section. `/sidebar jobs` switches it for the run. |
 | `inputPrefix` | none | Text the input line starts with, such as `"> "`. By default the input is marked by its tint. |
 | `tint` | `true` | Tinted backgrounds for the input, your messages and tool calls. |
 | `appearance` | `"auto"` | Where the tints come from. `auto` mixes them, and the grey of secondary text, from your terminal's own colours and follows them when macOS switches between light and dark; `light` or `dark` fixes them and asks the terminal nothing. |

@@ -37,10 +37,19 @@ public struct ScreenState: Sendable, Equatable {
     public var context = ""
     /// The newest runner snapshot. Its cached preorder and counts feed every view.
     public private(set) var runnerTree = RunnerTree()
+    /// The runners as the conversation listed them, a job's owner its parent.
+    private var suppliedRunners: [RunnerInfo] = []
+    /// Whether a thread's jobs sit under it (`ui.sidebarJobs`, `/sidebar jobs`); with every job in the Jobs section otherwise.
+    var jobsInTree = true {
+        didSet { runnerTree = RunnerTree(suppliedRunners, jobsUnderOwners: jobsInTree) }
+    }
     /// Updating the runners rebuilds the tree once, not once per frame.
     public var runners: [RunnerInfo] {
-        get { runnerTree.runners }
-        set { runnerTree = RunnerTree(newValue) }
+        get { suppliedRunners }
+        set {
+            suppliedRunners = newValue
+            runnerTree = RunnerTree(newValue, jobsUnderOwners: jobsInTree)
+        }
     }
     /// Whether the runner strip is open below the input. It closes by itself when no runners remain.
     public var runnersOpen = false

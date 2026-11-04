@@ -50,6 +50,13 @@ extension SettingCatalog {
             "closed",
             "Whether the runner sidebar starts open."
         ),
+        row(
+            "ui.sidebarJobs",
+            .choice(["tree", "section"]),
+            #""tree""#,
+            "tree",
+            "Where the sidebar lists a thread's jobs: under the thread, or with every job in the Jobs section. /sidebar jobs switches."
+        ),
         row("ui.inputPrefix", .text, #""> ""#, "none", "Text the input line starts with."),
         row("ui.appearance", words(AppearancePreference.self), #""auto""#, "auto", "Where the tints come from."),
         row(

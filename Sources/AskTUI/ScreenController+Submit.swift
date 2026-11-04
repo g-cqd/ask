@@ -45,6 +45,12 @@ extension ScreenController {
                         return []
                     case "quit": return [.quit]
                     case "jobs": return toggleRunners(announcing: true)
+                    case "sidebar" where arguments == "jobs":
+                        // Where a thread's jobs are listed, for this run (roadmap 0195; `ui.sidebarJobs` sets where it starts).
+                        state.jobsInTree.toggle()
+                        let where_ = state.jobsInTree ? "under the thread that started them" : "in the Jobs section"
+                        state.transcript.addNotice("Jobs are listed \(where_).", isError: false)
+                        return []
                     case "sidebar": return toggleSidebar(announcing: true)
                     case "verbose": return toggleVerbose()
                     case "follow-up": return submitPrompt(arguments, followUp: true)

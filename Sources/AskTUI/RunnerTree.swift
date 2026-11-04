@@ -17,9 +17,18 @@ public struct RunnerTree: Sendable, Equatable {
     public let activeCount: Int
     public let activeJobCount: Int
 
-    public init(_ supplied: [RunnerInfo] = []) {
+    /// - Parameters:
+    ///   - supplied: the runners, as listed.
+    ///   - jobsUnderOwners: whether a job keeps its parent (the thread that started it, roadmap 0195), or is listed at the top.
+    public init(_ supplied: [RunnerInfo] = [], jobsUnderOwners: Bool = true) {
         var ids = Set<String>()
         let runners = supplied.filter { ids.insert($0.id).inserted }
+            .map { runner in
+                guard !jobsUnderOwners, runner.kind == .job else { return runner }
+                var listed = runner
+                listed.parentID = nil
+                return listed
+            }
         self.runners = runners
         activeCount = runners.filter { $0.state.isActive }.count
         activeJobCount = runners.filter { $0.kind == .job && $0.state.isActive }.count

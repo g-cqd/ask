@@ -137,13 +137,16 @@ extension AgentConversation {
                         update(.runners(threads.runners))
                     }
                 )
-                try await ApprovalRoute.$current.withValue(route) {
-                    try await loop.run(prompt, in: thread.recorder, input: queue) { event in
-                        if let spent = event.usage {
-                            self.usage.withLock { $0.addBeside(spent) }
-                            update(.status(self.usage.withLock { $0.compact }))
+                // What it asks goes to its lane, and the jobs its commands start are listed under it.
+                try await JobOwner.$current.withValue(name) {
+                    try await ApprovalRoute.$current.withValue(route) {
+                        try await loop.run(prompt, in: thread.recorder, input: queue) { event in
+                            if let spent = event.usage {
+                                self.usage.withLock { $0.addBeside(spent) }
+                                update(.status(self.usage.withLock { $0.compact }))
+                            }
+                            for shown in Self.updates(for: event) { update(.thread(id: name, shown)) }
                         }
-                        for shown in Self.updates(for: event) { update(.thread(id: name, shown)) }
                     }
                 }
                 outcome = .done

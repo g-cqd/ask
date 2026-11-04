@@ -12,6 +12,8 @@ public final class JobTable: Sendable {
     let foreground = ForegroundCommands()
 
     private let jobs = Mutex<[String: Job]>([:])
+    /// The thread each job was started for, when one was (``JobOwner``).
+    private let owners = Mutex<[String: String]>([:])
     private let counter = Atomic<Int>(0)
     private let displayIDs = Mutex(JobDisplayIDs())
     private let observers = Mutex<[Int: AsyncStream<[JobSummary]>.Continuation]>([:])
@@ -139,6 +141,7 @@ public final class JobTable: Sendable {
             observe: observe
         )
         jobs.withLock { $0[id] = job }
+        if let owner = JobOwner.current { owners.withLock { $0[id] = owner } }
         notifyObservers()
         // The table learns of an ending the way `job_stop` does, by waiting for it, so nothing polls.
         Task { [weak self] in
@@ -165,7 +168,15 @@ public final class JobTable: Sendable {
         jobs.withLock {
             $0.values.filter { $0.status == .running }
                 .sorted { Self.number($0.id) < Self.number($1.id) }
-                .map { JobSummary(id: $0.id, command: $0.command, startedAt: $0.startedAt, displayID: $0.displayID) }
+                .map { job in
+                    JobSummary(
+                        id: job.id,
+                        command: job.command,
+                        startedAt: job.startedAt,
+                        displayID: job.displayID,
+                        owner: owners.withLock { $0[job.id] }
+                    )
+                }
         }
     }
 

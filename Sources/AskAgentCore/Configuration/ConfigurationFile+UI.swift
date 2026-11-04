@@ -18,6 +18,9 @@ extension ConfigurationFile {
                     case "sidebar":
                         section.sidebarOpen =
                             try ConfigurationFile.word(container, key, name, ["open", "closed"]) == "open"
+                    case "sidebarJobs":
+                        section.sidebarJobsInTree =
+                            try ConfigurationFile.word(container, key, name, ["tree", "section"]) == "tree"
                     case "durations":
                         section.localizedDurations =
                             try ConfigurationFile.word(container, key, name, ["words", "clock"]) == "words"

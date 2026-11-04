@@ -16,6 +16,7 @@ struct ConfigurationKeySourceTests {
         outputFoldLines: 200,
         outputFoldBytes: 32768,
         sidebarOpen: false,
+        sidebarJobsInTree: true,
         prompt: "",
         tint: true,
         separator: true,
