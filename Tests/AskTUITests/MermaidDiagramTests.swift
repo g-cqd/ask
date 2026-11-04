@@ -67,7 +67,7 @@ struct MermaidDiagramTests {
 
     @Test func `source the engine cannot read is shown as code`() {
         #expect(
-            rows("```mermaid\npie title Pets\n  \"Dogs\" : 5\n```").joined(separator: "\n").contains("pie title Pets")
+            rows("```mermaid\ngantt\n  title A plan\n```").joined(separator: "\n").contains("gantt")
         )
         #expect(rows("```mermaid\nnot a diagram at all\n```").joined(separator: "\n").contains("not a diagram"))
     }
@@ -89,5 +89,20 @@ struct MermaidDiagramTests {
         for line in rows("```mermaid\n\(Self.diagram)\n```", columns: columns) {
             #expect(line.count <= columns, "\(line.debugDescription)")
         }
+    }
+
+    @Test func `state, class, entity and pie diagrams are drawn too`() {
+        let state = rows("```mermaid\nstateDiagram-v2\n  [*] --> Idle\n  Idle --> Busy : go\n```")
+            .joined(separator: "\n")
+        #expect(
+            state.contains("Idle") && state.contains("Busy") && state.contains("go") && !state.contains("stateDiagram")
+        )
+        let classes = rows("```mermaid\nclassDiagram\n  Animal <|-- Duck\n  Animal : +int age\n```")
+            .joined(separator: "\n")
+        #expect(classes.contains("Animal") && classes.contains("+int age") && classes.contains("┌"))
+        let entities = rows("```mermaid\nerDiagram\n  CUSTOMER ||--o{ ORDER : places\n```").joined(separator: "\n")
+        #expect(entities.contains("CUSTOMER") && entities.contains("places"))
+        let pie = rows("```mermaid\npie title Pets\n  \"Dogs\" : 3\n  \"Cats\" : 1\n```").joined(separator: "\n")
+        #expect(pie.contains("Dogs") && pie.contains("75.0%") && pie.contains("█"))
     }
 }

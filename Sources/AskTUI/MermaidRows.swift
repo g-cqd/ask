@@ -18,14 +18,9 @@ enum MermaidRows {
         guard let source = diagram(of: block, in: document) else { return nil }
         let parse = MermaidParse.parse(source, limits: .terminal)
         var scene = DiagramScene()
-        let outcome: MermaidLayoutOutcome
+        if case .refused = parse.result { return nil }
         let metrics = MermaidMetrics(columns: { Swift.max(0, UnicodeWidth.displayWidth(of: Character($0))) })
-        switch parse.result {
-            case .flowchart(let chart): outcome = FlowLayout.lay(chart, metrics: metrics, maxWidth: width, into: &scene)
-            case .sequence(let chart):
-                outcome = SequenceLayout.lay(chart, metrics: metrics, maxWidth: width, into: &scene)
-            case .refused: return nil
-        }
+        let outcome = MermaidLayout.lay(parse.result, metrics: metrics, maxWidth: width, into: &scene)
         guard case .drawn = outcome, let rows = TextRenderer(metrics: metrics).rows(scene) else { return nil }
         return rows.map { row in StyledLine(row.map { StyledRun($0.text, style: style(of: $0.role, theme: theme)) }) }
     }
