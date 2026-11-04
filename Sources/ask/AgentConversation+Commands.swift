@@ -57,6 +57,7 @@ extension AgentConversation {
                 name: "logout",
                 summary: "Sign out of one account, or /logout all, without leaving.",
                 takesChoices: true,
+                // @dl:accept -- the command list is a table: each entry a name, a sentence and when it runs
                 category: .model,
                 duringTurn: .atOnce
             ),
@@ -91,6 +92,7 @@ extension AgentConversation {
             SlashCommand(
                 name: "tasks",
                 summary: "Show the session's task list: /tasks all with the done ones, /tasks t3 for one task.",
+                // @dl:accept -- the command list is a table: each entry a name, a sentence and when it runs
                 takesChoices: true,
                 duringTurn: .atOnce
                     // @dl:accept -- the conversation's list reads alike entry to entry because every entry is a name and a sentence
@@ -107,6 +109,18 @@ extension AgentConversation {
                 name: "threads",
                 summary: "Pick a thread of this session, merged or not, and show its lane: /threads, or /threads NAME.",
                 takesChoices: true,
+                duringTurn: .atOnce
+            ),
+            SlashCommand(
+                name: "merge",
+                summary:
+                    // @dl:accept -- the command list is a table: each entry a name, a sentence and when it runs
+                    "In a thread's lane, merge the thread back now, with a summary, and the threads under it: /merge.",
+                duringTurn: .atOnce
+            ),
+            SlashCommand(
+                name: "close",
+                summary: "The same as /merge: a merged thread is closed, read-only.",
                 duringTurn: .atOnce
             ),
             SlashCommand(
@@ -176,6 +190,8 @@ extension AgentConversation {
                 case "btw": await self.aside(arguments, update: update)
                 case "thread": await self.startThread(arguments, update: update)
                 case "threads": self.showThreads(arguments, update: update)
+                case "merge", "close":
+                    update(.notice("/\(name) merges a thread back: type it in the thread's lane.", isError: false))
                 case "rename":
                     update(.notice("/rename TITLE names a thread: type it in the thread's lane.", isError: false))
                 case "mcp": update(.notice(MCPHub.report(self.mcp.status).joined(separator: "\n"), isError: false))

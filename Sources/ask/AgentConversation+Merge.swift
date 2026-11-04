@@ -55,10 +55,42 @@ extension AgentConversation {
             update: { update(.thread(id: name, $0)) }
         )
         guard merging else { return }
-        // Each before the thread it is under: the reverse of the subtree's order.
+        await mergeTogether(group, update: update)
+    }
+
+    /// `/merge` (or `/close`) in thread `name`'s lane: merges it now with the unmerged threads under it, from the bottom up. A thread
+    /// stopped and not merged back, or brought back by a resume, merges on nothing else. Refused while any of them works.
+    func mergeThread(_ name: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
+        Task { await mergeNow(name, update: update) }
+    }
+
+    private func mergeNow(_ name: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async {
+        let say: @Sendable (String, Bool) -> Void = { text, isError in
+            update(.thread(id: name, .notice(text, isError: isError)))
+        }
+        guard let root = threads.thread(name) else { return }
+        guard root.state != .merged else { return say("\(name) has merged already.", false) }
+        let group = threads.subtree(name)
+        let working = group.filter { threads.thread($0)?.state.isActive == true }
+        guard working.isEmpty else {
+            let which = working.joined(separator: ", ")
+            return say(
+                "\(which) \(working.count == 1 ? "is" : "are") still working. Stop \(working.count == 1 ? "it" : "them") "
+                    + "first (Ctrl+C in its lane), or let it finish: it merges by itself then.",
+                true
+            )
+        }
+        await threads.stop(group, holding: true)
+        defer { threads.release(group) }
+        await mergeTogether(group, update: update)
+    }
+
+    /// Merges `group` (a thread, then the threads under it, as ``ThreadTable/subtree(_:)`` gives them) from the bottom up: each before
+    /// the thread it is under, the first last, which alone settles its parent.
+    private func mergeTogether(_ group: [String], update: @escaping @Sendable (ConversationUpdate) -> Void) async {
         for member in group.reversed() {
             guard let thread = threads.thread(member), thread.state != .merged else { continue }
-            await merge(thread, settlingParent: member == name, update: update)
+            await merge(thread, settlingParent: member == group.first, update: update)
         }
     }
 
