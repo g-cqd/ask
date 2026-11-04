@@ -9,6 +9,9 @@ import Testing
 /// cannot start, one that hangs.
 @Suite("A new build is run with --self-check before anything switches to it", .timeLimit(.minutes(1)))
 struct SelfCheckTests {
+    /// What a check gets in these tests, which are about its outcome, not its time limit: a loaded CI runner took more than the
+    /// 10 s a real check gets to start a one-line script (2026-11-04). The limit itself is the hanging build's test, on a test clock.
+    private static let patience = Duration.seconds(45)
     private let directory: URL
 
     init() throws {
@@ -26,7 +29,7 @@ struct SelfCheckTests {
 
     @Test func `a build that checks itself and exits 0 passes, and says what it printed`() async throws {
         let path = try build(#"[ "$1" = "--self-check" ] && echo "ask self-check ok" || exit 9"#)
-        #expect(await SelfCheck.run(path) == .passed("ask self-check ok"))
+        #expect(await SelfCheck.run(path, timeout: Self.patience) == .passed("ask self-check ok"))
     }
 
     @Test func `the arguments a reload will pass are the arguments the check runs with`() async throws {
@@ -35,10 +38,14 @@ struct SelfCheckTests {
         )
         let outcome = await SelfCheck.run(
             path,
-            arguments: ["--selected-provider", "local", "--selected-model", "a/b:c"]
+            arguments: ["--selected-provider", "local", "--selected-model", "a/b:c"],
+            timeout: Self.patience
         )
         #expect(outcome == .passed("ask self-check ok"))
-        #expect(await SelfCheck.run(path) == .failed("it exited 9"), "without them the same build fails")
+        #expect(
+            await SelfCheck.run(path, timeout: Self.patience) == .failed("it exited 9"),
+            "without them the same build fails"
+        )
     }
 
     @Test func `the check runs with the environment it is given, not the one this process holds`() async throws {
@@ -46,8 +53,11 @@ struct SelfCheckTests {
         setenv("SELFCHECK_PROBE_KEY", "", 1)  // as ask's own copy is once its credentials are blanked (ADR-0113)
         defer { unsetenv("SELFCHECK_PROBE_KEY") }
         let given = ["SELFCHECK_PROBE_KEY": "launch-value", "HOME": "/given"]
-        #expect(await SelfCheck.run(path, environment: given) == .passed("key=[launch-value] home=[/given]"))
-        guard case .passed(let inherited) = await SelfCheck.run(path) else {
+        #expect(
+            await SelfCheck.run(path, environment: given, timeout: Self.patience)
+                == .passed("key=[launch-value] home=[/given]")
+        )
+        guard case .passed(let inherited) = await SelfCheck.run(path, timeout: Self.patience) else {
             Issue.record("the default run did not pass")
             return
         }
@@ -56,22 +66,26 @@ struct SelfCheckTests {
 
     @Test func `a build that exits non-zero fails, with its code and what it said on standard error`() async throws {
         let path = try build(#"echo "config.json:3:13: unexpected ']'" >&2; exit 78"#)
-        #expect(await SelfCheck.run(path) == .failed("it exited 78: config.json:3:13: unexpected ']'"))
+        #expect(
+            await SelfCheck.run(path, timeout: Self.patience)
+                == .failed("it exited 78: config.json:3:13: unexpected ']'")
+        )
     }
 
     @Test func `a build that dies by a signal fails, and says which`() async throws {
         let path = try build("kill -SEGV $$")
-        #expect(await SelfCheck.run(path) == .failed("it was killed by signal 11"))
+        #expect(await SelfCheck.run(path, timeout: Self.patience) == .failed("it was killed by signal 11"))
     }
 
     @Test func `a file that is not executable, or not there, fails to start rather than throwing`() async throws {
         let notExecutable = try build("exit 0", executable: false)
-        guard case .failed(let reason) = await SelfCheck.run(notExecutable) else {
+        guard case .failed(let reason) = await SelfCheck.run(notExecutable, timeout: Self.patience) else {
             Issue.record("a file without the execute bit passed")
             return
         }
         #expect(reason.hasPrefix("it could not start"))
-        guard case .failed = await SelfCheck.run(directory.appending(path: "absent").path) else {
+        guard case .failed = await SelfCheck.run(directory.appending(path: "absent").path, timeout: Self.patience)
+        else {
             Issue.record("a missing file passed")
             return
         }
