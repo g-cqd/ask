@@ -57,7 +57,16 @@ extension ScreenComposer {
         if let pending = state.pendingInput {
             pieces.append(StatusSegment(pending.line(typed: state.inputAnswer.text), priority: 100, droppable: false))
         }
-        guard state.lane != nil else { return pieces }
+        guard let lane = state.lane else { return pieces }
+        // In a thread's lane its own questions have the section; what main waits for is said, and Esc goes back to it.
+        if lane.isThread {
+            if lane.stashedApproval != nil || lane.stashedQuestions != nil {
+                pieces.append(
+                    StatusSegment("Main is waiting for an answer  Esc returns", priority: 100, droppable: false)
+                )
+            }
+            return pieces
+        }
         if let pending = state.pendingApproval {
             pieces.append(
                 StatusSegment("\(pending.question)  \(pending.shortcutHint)", priority: 100, droppable: false)

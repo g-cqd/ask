@@ -84,8 +84,7 @@ show "the tree of threads and another section for the jobs", "more compact".
 ## Still owed
 
 - The lane shows what the thread did, not the conversation it was forked from.
-- A thread's approval questions share the screen's: one that waits when main's turn ends is declined with that turn. With
-  `--allow all` none is asked.
+- ~~A thread's approval questions share the screen's.~~ Done in 0195, step 1: they are the thread's own.
 - A thread uses main's task list and notes; the jobs it starts are not yet given it as their parent (the sidebar would list them under
   it); ended threads are never removed from the list.
 - A nested thread's answer goes to main, not to the thread it was forked from.

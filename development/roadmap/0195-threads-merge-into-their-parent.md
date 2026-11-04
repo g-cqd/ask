@@ -171,9 +171,22 @@ summary instructions, or rewrite the summary).
 8. **`/threads`.** The owner's first idea (i5) named it. It is now the way to find merged threads (n22): a picker of the whole tree,
    with search over names and prompts.
 
+## Done (2026-11-04): step 1, approvals and questions belong to the thread
+
+- `ApprovalRoute`, task-local, is set by a thread's run: every approval and model question asked inside it goes to that thread
+  (`.thread(id:, .askApproval)`, `.askQuestions`) instead of main's current run, and its runner is listed as waiting for approval
+  while any of its questions waits (`ThreadTable.asking`).
+- The screen keeps each thread's questions with its conversation (`ThreadView`); its lane shows them and takes their keys; main's
+  run ending no longer clears them. In a thread's lane, main's own questions wait in the lane and the status says "Main is waiting
+  for an answer"; leaving puts them back. A thread's run ending takes away only what it still asked.
+- `ThreadQuestionsTests` (4); `Scripts/probe-thread-approval.py` (5 checks, approvals on, the release binary in a PTY): main never
+  shows the thread's question, the thread stays waiting after main's turn ended, its lane shows it, answering there runs the command.
+- Not done yet: the `threads.questions` setting (focus, after, never); today a thread's question shows only in its lane, and the
+  sidebar's `?` and the counts say it waits.
+
 ## The order to build it
 
-1. Thread-owned approvals and questions. This removes today's wrong decline, and the waiting rule needs it.
+1. ~~Thread-owned approvals and questions.~~ Done, above.
 2. The lifecycle and the waiting rule, merge by summary into the parent, and the system block. Tests come first, on a fake provider:
    bottom-up order, a held parent, a stop with its confirmation.
 3. ADR-0144 first: unknown records and entries kept, and the migration steps. Then the thread records, and resume rebuilding the

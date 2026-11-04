@@ -49,8 +49,16 @@ extension ScreenController {
     mutating func leaveLane(notice: String? = nil) {
         guard let lane = state.lane else { return }
         clearSelection()
-        // A thread's conversation is kept for the next time its lane is shown.
-        if lane.isThread { state.threads[lane.id] = state.transcript }
+        // A thread's conversation and questions are kept for the next time its lane is shown; main's come back.
+        if lane.isThread {
+            state.threads[lane.id] = ThreadView(
+                transcript: state.transcript,
+                approval: state.pendingApproval,
+                questions: state.pendingQuestions
+            )
+            state.pendingApproval = lane.stashedApproval
+            state.pendingQuestions = lane.stashedQuestions
+        }
         state.transcript = lane.stashed
         state.scrollback = lane.stashedScrollback
         state.lane = nil
@@ -68,6 +76,10 @@ extension ScreenController {
         guard var lane = state.lane else { return }
         swap(&lane.stashed, &state.transcript)
         swap(&lane.stashedScrollback, &state.scrollback)
+        if lane.isThread {
+            swap(&lane.stashedApproval, &state.pendingApproval)
+            swap(&lane.stashedQuestions, &state.pendingQuestions)
+        }
         state.lane = lane
     }
 }

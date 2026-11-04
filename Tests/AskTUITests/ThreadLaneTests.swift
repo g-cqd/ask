@@ -42,7 +42,7 @@ struct ThreadLaneTests {
         _ = controller.handle(.thread(id: "thread-1", .assistantText("found it")))
         _ = controller.handle(.thread(id: "thread-1", .runEnded))
         #expect(controller.state.transcript.items.count == main)
-        #expect(texts(controller.state.threads["thread-1"] ?? Transcript()) == ["look into X", "found it"])
+        #expect(texts(controller.state.threads["thread-1"]?.transcript ?? Transcript()) == ["look into X", "found it"])
         #expect(!controller.state.running, "a thread's end is not main's")
     }
 
@@ -58,7 +58,7 @@ struct ThreadLaneTests {
         #expect(controller.state.lane?.id == "thread-1", "a message keeps the lane")
         #expect(texts(controller.state.transcript) == ["first more", "and then?"])
         controller.leaveLane()
-        #expect(texts(controller.state.threads["thread-1"] ?? Transcript()) == ["first more", "and then?"])
+        #expect(texts(controller.state.threads["thread-1"]?.transcript ?? Transcript()) == ["first more", "and then?"])
         #expect(!texts(controller.state.transcript).contains("and then?"), "main never saw it")
     }
 

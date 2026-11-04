@@ -120,12 +120,16 @@ extension AgentConversation {
             state.nextID += 1
             return state.nextID
         }
+        // A thread's run asks in its own lane (roadmap 0195), and its runner says it waits until the answer.
+        let route = channel == nil ? ApprovalRoute.current : nil
+        route?.waiting(true)
+        defer { route?.waiting(false) }
         return await withTaskCancellationHandler {
             await withCheckedContinuation { (answer: CheckedContinuation<Bool, Never>) in
                 let ask = approvals.withLock { state in
                     state.waiting[id] = (remembering.request, remembering.destructiveKey, answer)
                     if let scope { state.callScopes[id] = scope }
-                    return channel ?? state.ask
+                    return channel ?? route?.send ?? state.ask
                 }
                 // Cancelled before the question was stored: the handler found nothing to answer, so answer here.
                 if Task.isCancelled { resolve(id, allowed: false) }
