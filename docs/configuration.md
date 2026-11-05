@@ -277,7 +277,8 @@ named; a project's file may set them too, since they only ever limit what runs.
 | `mergedShownFor` | `"1d"` | How long a merged thread stays in the sidebar: `"30m"`, `"2h"`, `"1d"`, or `"always"`. After it, `/threads` still lists it; the list below the input never shows merged threads. |
 | `questions` | `"focus"` | Where a thread's approval or question appears while you are elsewhere: `"focus"` at once where you are, named for the thread (answering it there answers the thread); `"after"`, the same once it has waited `questionsAfter`; or `"lane"`, only in its lane. Your own conversation's questions come first. |
 | `questionsAfter` | `"30s"` | How long `"after"` waits: seconds, minutes or hours, such as `"30s"` or `"2m"`. |
-| `names` | `"onDevice"` | How a thread is named: `"onDevice"`, by Apple's on-device model from its task, where it is available (`thread-N` elsewhere), or `"numbered"`. `/rename` in a thread's lane names it yourself. |
+| `names` | `"onDevice"` | How a thread is named: `"onDevice"`, by Apple's on-device model from its task, where it is available (`thread-N` elsewhere), `"model"`, by a provider's model (`namesModel`), or `"numbered"`. `/rename` in a thread's lane names it yourself. |
+| `namesModel` | the conversation's model | The model `names` `"model"` asks for a thread's name, written as `/model` takes it: `"provider/model"` or a model. Empty, the conversation's own model. A name that does not come in 15 seconds is not waited for. |
 
 ### `modelScopes`
 

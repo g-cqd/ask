@@ -7,6 +7,8 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
         case onDevice
         /// `thread-N`.
         case numbered
+        /// By a provider's model (`threads.namesModel`, else the conversation's own), from its task.
+        case model
     }
 
     /// `threads.max`: how many threads may work at once; `/thread` past it is refused.
@@ -21,6 +23,8 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     public var questions: String?
     /// `threads.questionsAfter`: how long `after` waits, as written (`"30s"`, `"2m"`).
     public var questionsAfter: String?
+    /// `threads.namesModel`: the model `names` `"model"` asks, as `/model` takes it (`"provider/model"` or a model); nil for the conversation's.
+    public var namesModel: String?
 
     /// Where a thread's question appears while the person is elsewhere (note n19).
     public enum Questions: Sendable, Equatable {
@@ -41,11 +45,16 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     }
 
     /// The keys, in the order they are shown.
-    public static let keys = ["max", "depth", "names", "mergedShownFor", "questions", "questionsAfter"]
+    public static let keys = ["max", "depth", "names", "mergedShownFor", "questions", "questionsAfter", "namesModel"]
 
     public var atOnce: Int { max ?? Self.defaultMax }
     public var nesting: Int { depth ?? Self.defaultDepth }
     public var naming: Names { names ?? .onDevice }
+    /// The model that names threads under `names` `"model"`; nil for the conversation's own.
+    public var namingModel: String? {
+        let written = (namesModel ?? "").drop { $0.isWhitespace }.reversed().drop { $0.isWhitespace }.reversed()
+        return written.isEmpty ? nil : String(written)
+    }
     /// Where a thread's question appears.
     public var whereQuestions: Questions {
         switch questions {
@@ -88,6 +97,7 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
         merged.mergedShownFor = section.mergedShownFor ?? mergedShownFor
         merged.questions = section.questions ?? questions
         merged.questionsAfter = section.questionsAfter ?? questionsAfter
+        merged.namesModel = section.namesModel ?? namesModel
         return merged
     }
 
@@ -100,6 +110,7 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
             case "mergedShownFor": mergedShownFor
             case "questions": questions
             case "questionsAfter": questionsAfter
+            case "namesModel": namesModel
             default: nil
         }
     }

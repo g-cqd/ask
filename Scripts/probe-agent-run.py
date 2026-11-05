@@ -43,8 +43,11 @@ def turn(blocks, stop, input_tokens=1):
 
 
 class Server:
-    def __init__(self, responses, catalog=None):
+    def __init__(self, responses, catalog=None, route=None):
         self.responses, self.requests = list(responses), []
+        # `route(body)` may answer a request by what it holds (a payload), outside the script; None leaves it to the script. For requests
+        # that race the scripted ones, such as a thread's name.
+        self.route = route
         outer = self
         # A model catalog answered at GET /v1/models when given (a list of Anthropic catalog entries); refused otherwise.
         self.catalog = catalog
@@ -67,7 +70,13 @@ class Server:
             def do_POST(self):
                 body = json.loads(self.rfile.read(int(self.headers["content-length"])))
                 outer.requests.append({"body": body, "headers": {k.lower(): v for k, v in self.headers.items()}})
-                payload = outer.responses.pop(0) if outer.responses else turn([("text", "out of script")], "end_turn")
+                routed = outer.route(body) if outer.route else None
+                if routed is not None:
+                    payload = routed
+                elif outer.responses:
+                    payload = outer.responses.pop(0)
+                else:
+                    payload = turn([("text", "out of script")], "end_turn")
                 self.send_response(200)
                 self.send_header("content-type", "text/event-stream")
                 self.end_headers()

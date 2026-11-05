@@ -37,4 +37,19 @@ struct ThreadsSectionTests {
         #expect(throws: ConfigurationError.self) { try threads(#"{"questions": "soon"}"#) }
         #expect(throws: ConfigurationError.self) { try threads(#"{"questionsAfter": "always"}"#) }
     }
+
+    @Test func `names may be a model, the one namesModel says or the conversation's own`() throws {
+        #expect(try threads(#"{"names": "model"}"#)?.naming == .model)
+        #expect(
+            try threads(#"{"names": "model"}"#)?.namingModel == nil,
+            "the conversation's own model when nothing says"
+        )
+        #expect(
+            try threads(#"{"names": "model", "namesModel": "anthropic/claude-haiku-4-5"}"#)?.namingModel
+                == "anthropic/claude-haiku-4-5"
+        )
+        #expect(try threads(#"{"namesModel": "  "}"#)?.namingModel == nil, "blank is the conversation's own")
+        let layered = ThreadsSection().layered(with: try #require(try threads(#"{"namesModel": "haiku"}"#)))
+        #expect(layered.namingModel == "haiku", "a later file's namesModel layers over an earlier one")
+    }
 }

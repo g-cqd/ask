@@ -58,7 +58,7 @@ extension AgentConversation {
 
     /// The provider and model for `/model WORD`: `provider/model` as written; else the provider whose list holds the model, for the effort in force
     /// (ADR-0118); else the provider in force now.
-    private func serving(_ word: String) -> (provider: String, model: String) {
+    func serving(_ word: String) -> (provider: String, model: String) {
         let environment = LaunchEnvironment.values
         let (model, level) = current.withLock { ($0.settings.model, $0.settings.configuration.thinking.value) }
         let providers = (try? ProviderSettings.load(from: source.providersPath)) ?? .none
