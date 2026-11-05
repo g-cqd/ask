@@ -208,7 +208,7 @@ class Screen:
 
     def tool_shown(self, command, mark, kind="shell"):
         """Whether a tool row shows `command` ending in `mark`: `shell · COMMAND …  N lines · ✓`, the mark at the row's right.
-        `kind` is the row's first word: `shell`, or `compact` for /compact's row."""
+        `kind` is the row's first word: `shell`, or `compaction` for /compact's row."""
         return any(f"{kind} · {command}" in line and line.rstrip().endswith(mark) for line in self.screen.text().split("\n"))
 
     def until_tool(self, command, mark="✓", seconds=15, kind="shell"):
@@ -496,14 +496,15 @@ def slash_checks():
     screen.until_status("ready")
     line("/compact")
     results.append(check("/compact with only a short exchange says nothing could be summarised",
-                         screen.until_tool("earlier messages", "✗", kind="compact") and len(server.requests) == 1, len(server.requests)))
+                         screen.until_tool("earlier messages", "✗", kind="compaction") and len(server.requests) == 1, len(server.requests)))
     screen.until_status("ready")
     # A prompt well past the 80 KB kept tail, pasted: bracketed paste, as a terminal sends it.
     screen.type("\x1b[200~Notes: " + "lorem ipsum " * 7500 + "\x1b[201~\r")
     results.append(check("a large prompt is answered", screen.until("Answer 2.", 30)))
     screen.until_status("ready")
     line("/compact")
-    results += [check("/compact summarises the older conversation", screen.until_tool("earlier messages", "✓", 30, kind="compact")),
+    # Done, the row's header says what was summarised into what (roadmap 0176), not "earlier messages".
+    results += [check("/compact summarises the older conversation", screen.until_tool("", "✓", 30, kind="compaction")),
                 check("through one summary request", len(server.requests) == 3, len(server.requests))]
     screen.until_status("ready")
     line("and now?")
@@ -1382,8 +1383,10 @@ def probe_protected_paths():
     open(home + "/.config/gh/hosts.yml", "w").write("oauth_token: gho_probe_secret\n")
     rc = home + "/.zshrc"
     calls = [
-        ("call", "p1", "bash", {"command": f"echo planted >> '{rc}'; echo rc=$?"}),
-        ("call", "p2", "bash", {"command": f"echo allowed >> '{rc}'; echo rc=$?", "sandbox": {"write": [rc]}}),
+        # The status said without $? after an echo, which ask's shellcheck gate refuses (SC2320).
+        ("call", "p1", "bash", {"command": f"if echo planted >> '{rc}'; then echo rc=0; else echo rc=1; fi"}),
+        ("call", "p2", "bash", {"command": f"if echo allowed >> '{rc}'; then echo rc=0; else echo rc=1; fi",
+                                "sandbox": {"write": [rc]}}),
         ("call", "p3", "bash", {"command": f"cat '{home}/.config/gh/hosts.yml'; echo rc=$?", "sandbox": {"read": [home + "/.config/gh"]}}),
     ]
     server = agent.Server([agent.turn([c], "tool_use") for c in calls] + [agent.turn([("text", "All done.")], "end_turn")])
