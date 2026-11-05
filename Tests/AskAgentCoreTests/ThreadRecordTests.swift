@@ -46,4 +46,33 @@ struct ThreadRecordTests {
         try recorder.recordThread(.identity("thread-1", of: "/tmp/main.jsonl"))
         #expect(SessionSummary(readingFrom: path)?.isThread == true)
     }
+
+    @Test func `a subagent's start says it is one, and as which definition, and comes back so`() throws {
+        let path = FileManager.default.temporaryDirectory
+            .appending(path: "ask-subagentrecord-\(UUID().uuidString).jsonl").path
+        defer { try? FileManager.default.removeItem(atPath: path) }
+        var named = ThreadRecord.started(
+            "thread-2",
+            parent: nil,
+            prompt: "review",
+            file: "/tmp/t2.jsonl",
+            at: EntryID("4")
+        )
+        named.subagent = "reviewer"
+        var anonymous = ThreadRecord.started(
+            "thread-3",
+            parent: nil,
+            prompt: "look",
+            file: "/tmp/t3.jsonl",
+            at: EntryID("4")
+        )
+        anonymous.subagent = ""
+        let recorder = SessionRecorder(try SessionFile.create(at: FilePath(path), durability: .none))
+        try recorder.append(.user("one"))
+        try recorder.recordThread(named)
+        try recorder.recordThread(anonymous)
+        try recorder.recordThread(started)
+        let reread = try SessionLog.recover(Array(try Data(contentsOf: URL(fileURLWithPath: path))))
+        #expect(reread.tree.threads.map(\.subagent) == ["reviewer", "", nil], "a thread is not a subagent")
+    }
 }
