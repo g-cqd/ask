@@ -47,6 +47,7 @@ extension SettingCatalog {
             "threads.mergedShownFor",
             .text,
             #""1d""#,
+            // @dl:accept -- catalog rows are data, one setting each
             "1d",
             "How long a merged thread stays in the sidebar: \"30m\", \"2h\", \"1d\", or \"always\". /threads still lists it."
         ),

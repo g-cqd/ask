@@ -14,10 +14,18 @@ extension ConfigurationFile {
                     case "scrollLines": section.scrollLines = try container.decode(Int.self, forKey: key)
                     case "inputRows": section.promptRows = try container.decode(Int.self, forKey: key)
                     case "inputPrefix": section.prompt = try container.decode(String.self, forKey: key)
+                    // @dl:accept -- key table rows
                     case "fold": try decodeFold(container.decode(FoldDecoded.self, forKey: key))
                     case "sidebar":
                         section.sidebarOpen =
                             try ConfigurationFile.word(container, key, name, ["open", "closed"]) == "open"
+                    case "sidebarLayout":
+                        section.sidebarLayout = try ConfigurationFile.word(
+                            container,
+                            key,
+                            name,
+                            UISection.sidebarLayouts
+                        )
                     case "sidebarJobs":
                         section.sidebarJobsInTree =
                             try ConfigurationFile.word(container, key, name, ["tree", "section"]) == "tree"

@@ -7,19 +7,21 @@ extension ScreenComposer {
     static func status(
         for state: ScreenState,
         input: String = "",
-        columns: Int = 200
+        columns: Int = 200,
+        trailingRunners: Bool = false
     ) -> (line: Line, runners: Range<Int>?, below: Range<Int>?) {
         let mark = leadingMark(for: state)
         var style = StatusLine.statusStyle
         // The session's colour, when it has one (roadmap 0164), behind the whole line.
         if let seed = state.sessionIdentity { style.bg = state.blocks.theme.sessionTint(seed: seed) }
-        var drawn = StatusLine(
+        var line = StatusLine(
             segments(for: state, input: input, mark: mark),
             columns: columns,
             markStyle: mark.style,
             markWidth: UnicodeWidth.displayWidth(of: mark.character)
         )
-        .line(style: style)
+        line.trailingRunners = trailingRunners
+        var drawn = line.line(style: style)
         // The mark keeps its colour on the session's background, not a hole in it.
         for index in drawn.line.accents.indices where drawn.line.accents[index].style.bg == .default {
             drawn.line.accents[index].style.bg = style.bg

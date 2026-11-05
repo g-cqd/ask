@@ -14,6 +14,8 @@ struct StatusLine {
     var markStyle: Style?
     /// How many cells the leading mark takes, which its style covers: one for a spinner, more for `⠋ Compacting...`.
     var markWidth: Int
+    /// Whether the runners' count sits at the trailing edge (the bottom band, note n39) rather than among the pieces.
+    var trailingRunners = false
 
     /// The default look of the status line text and enclosing input rules.
     static let statusStyle = Style(dim: true)
@@ -61,7 +63,10 @@ struct StatusLine {
         var column = 0
         var runners: Range<Int>?
         var below: Range<Int>?
-        for (index, segment) in segments.enumerated() {
+        // In the bottom band the count is last, at the trailing edge, under the sidebar.
+        let ordered = trailingRunners ? segments.filter { $0.target != .runners } : segments
+        let trailing = trailingRunners ? segments.first { $0.target == .runners } : nil
+        for (index, segment) in ordered.enumerated() {
             if index > 0 {
                 text += Self.separator
                 column += UnicodeWidth.displayWidth(of: Self.separator)
@@ -74,6 +79,12 @@ struct StatusLine {
             }
             text += segment.text
             column = span.upperBound
+        }
+        if let trailing {
+            let width = UnicodeWidth.displayWidth(of: trailing.text)
+            let start = Swift.max(column + UnicodeWidth.displayWidth(of: Self.separator), columns - width)
+            text += String(repeating: " ", count: start - column) + trailing.text
+            runners = start ..< start + width
         }
         // Only when even the pieces that may not go do not fit: clipped at a cell, the last resort. Before the accent, which must not
         // reach past what is left.

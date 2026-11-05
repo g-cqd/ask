@@ -67,7 +67,7 @@ def main():
         os.makedirs(project)
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
-            file.write("{ ui: { sidebar: 'open', inputPrefix: 'ask> ' } }")
+            file.write("{ ui: { sidebar: 'open', sidebarLayout: 'full', inputPrefix: 'ask> ' } }")
         turn = probe.agent.turn
         server = probe.agent.Server([
             turn([("call", "t1", "bash", {"command": command, "yield_seconds": 1})], "tool_use"),

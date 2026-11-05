@@ -114,6 +114,9 @@
     // Where the sidebar lists a thread's jobs: under the thread, or with every job in the Jobs section. /sidebar jobs switches. Default: tree. One of: tree, section.
     "sidebarJobs": "tree",
 
+    // Where the open sidebar goes: beside the transcript, in the bottom band with the input, or the band where the other would leave the transcript under 100 columns. Default: adaptive. One of: full, bottom, adaptive.
+    "sidebarLayout": "adaptive",
+
     // Text the input line starts with. Default: none.
     "inputPrefix": "> ",
 

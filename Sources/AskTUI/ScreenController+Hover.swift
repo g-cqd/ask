@@ -19,8 +19,9 @@ extension ScreenController {
         {
             return .block(block)
         }
-        if row >= 0, row < frame.sidebarIDs.count, col > frame.transcriptColumns, col < frame.columns {
-            return .job(frame.sidebarIDs[row])
+        let sidebarRow = row - frame.sidebarTop
+        if sidebarRow >= 0, sidebarRow < frame.sidebarIDs.count, col > frame.sidebarColumn, col < frame.columns {
+            return .job(frame.sidebarIDs[sidebarRow])
         }
         let pickerOffset = row - frame.pickerFirstRow
         if pickerOffset >= 0, pickerOffset < frame.pickerWindow.count,

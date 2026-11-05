@@ -47,10 +47,10 @@ extension ScreenController {
             regions.add(
                 Self.sidebarTarget,
                 at: CellRect(
-                    row: 0,
-                    col: frame.transcriptColumns + 1,
+                    row: frame.sidebarTop,
+                    col: frame.sidebarColumn + 1,
                     rows: frame.sidebarIDs.count,
-                    cols: Swift.max(0, frame.columns - frame.transcriptColumns - 1)
+                    cols: Swift.max(0, frame.columns - frame.sidebarColumn - 1)
                 )
             )
         }
@@ -121,7 +121,7 @@ extension ScreenController {
             where target == Self.approvalTarget || target == Self.approvalDetailTarget:
                 clickSection(detail: target == Self.approvalDetailTarget, at: cell)
             case .click(let target, let cell, .left, _, _) where target == Self.sidebarTarget:
-                return clickSidebar(row: cell.row)
+                return clickSidebar(row: cell.row - frame.sidebarTop)
             case .click(let target, let cell, .left, _, _) where target == Self.stripTarget:
                 return clickStrip(row: cell.row - frame.stripFirstRow)
             case .click(let target, let cell, .left, _, let count) where target == Self.promptTarget:

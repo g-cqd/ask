@@ -20,7 +20,14 @@ struct SidebarTests {
         var rig = PointerRig(
             columns: columns,
             rows: 20,
-            options: ScreenOptions(sidebar: sidebar, prompt: "ask> ", tint: false, separator: false, padding: false),
+            options: ScreenOptions(
+                sidebar: sidebar,
+                sidebarLayout: .full,
+                prompt: "ask> ",
+                tint: false,
+                separator: false,
+                padding: false
+            ),
             lines: [Self.long, "short"]
         )
         rig.controller.handle(.runners(runners))

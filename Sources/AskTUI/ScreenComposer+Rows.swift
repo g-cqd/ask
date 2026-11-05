@@ -11,10 +11,12 @@ extension ScreenComposer {
         _ state: ScreenState,
         rows: Int,
         columns: Int,
+        besideTranscript: Bool = true,
         into buffer: inout ScreenBuffer
     ) -> (sidebar: Sidebar, map: RowMap<Int>, totalLines: Int) {
         followLane(state.lane?.id)
-        let sidebar = Sidebar(state, columns: columns, rows: transcriptRows)
+        // In the bottom band the sidebar is drawn with the input, and the transcript keeps the whole width.
+        let sidebar = besideTranscript ? Sidebar(state, columns: columns, rows: transcriptRows) : Sidebar()
         let wrapColumns = sidebar.transcriptColumns(of: columns)
         let visible = transcriptWindow(
             state.transcript,

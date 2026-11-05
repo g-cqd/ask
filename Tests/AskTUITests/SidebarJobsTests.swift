@@ -18,7 +18,7 @@ struct SidebarJobsTests {
         var rig = PointerRig(
             columns: 100,
             rows: 24,
-            options: ScreenOptions(sidebar: true, sidebarJobsInTree: inTree, prompt: "ask> ")
+            options: ScreenOptions(sidebar: true, sidebarLayout: .full, sidebarJobsInTree: inTree, prompt: "ask> ")
         )
         rig.controller.handle(.runners(Self.runners))
         rig.draw()

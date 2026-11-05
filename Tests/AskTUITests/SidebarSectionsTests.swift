@@ -28,7 +28,7 @@ struct SidebarSectionsTests {
         var rig = PointerRig(
             columns: 100,
             rows: 24,
-            options: ScreenOptions(sidebar: true, prompt: "ask> "),
+            options: ScreenOptions(sidebar: true, sidebarLayout: .full, prompt: "ask> "),
             updates: updates
         )
         rig.controller.handle(.runners(Self.runners))
