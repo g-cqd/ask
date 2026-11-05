@@ -114,7 +114,9 @@ public final class Job: Sendable {
             state.file = file
         }
         let task = Task { await job.execute(JobProcess.configuration(launch), input: input, observe: observe) }
-        job.state.withLock { $0.task = task }
+        // Kept only while the job runs, under the lock `finish` takes: a command quick enough to end before this would otherwise
+        // leave its finished task held for good.
+        job.state.withLock { state in if state.status == .running { state.task = task } }
         return job
     }
 
@@ -200,6 +202,8 @@ public final class Job: Sendable {
         let (waiting, observers) = state.withLock { state in
             state.status = ending
             state.endedAt = .now
+            // The table keeps the job, for the job tool; its finished task, and the memory its child tasks took from it, go (t231).
+            state.task = nil
             let observers = Array(state.outputObservers.values)
             state.outputObservers.removeAll()
             state.input?.finish()

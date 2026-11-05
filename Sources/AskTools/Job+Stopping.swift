@@ -27,6 +27,9 @@ extension Job {
     /// Asks the job to stop; ``ended()`` says when it has.
     func stop() { state.withLock { $0.task }?.cancel() }
 
+    /// Whether the job still holds the task that runs it: only while it runs.
+    var holdsTask: Bool { state.withLock { $0.task != nil } }
+
     /// Signals the job's whole process group at once, for exit paths that cannot wait.
     func signalGroup(_ signal: Int32) {
         guard let pid = state.withLock({ $0.status == .running ? $0.pid : nil }) else { return }
