@@ -109,9 +109,8 @@ func makeLoop(
         sandbox: sandbox,
         thinking: run.thinking
     )
-    // The person's own agent definitions, which a call may name (roadmap 0063 phase 3).
-    let definitions =
-        startSubagent == nil ? [] : AgentDiscovery.definitions(in: [askConfigDirectory() + "/agents"])
+    // The person's own agent definitions, then the project's they trusted, which a call may name (roadmap 0063 phase 3).
+    let definitions = startSubagent == nil ? [] : agentDefinitions(workspace: workingDirectory)
     let offered: [any Tool] =
         FileTools.all + [
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
@@ -148,4 +147,13 @@ func makeLoop(
         // Offline, a failed request waits for the network instead of spending its retries (roadmap 0141).
         network: SystemNetworkPath()
     )
+}
+
+/// The agent definitions a call may name: the person's own, then those of the project at `workspace` that they trusted, each name once.
+func agentDefinitions(workspace: String) -> [AgentDefinition] {
+    let own = AgentDiscovery.definitions(in: [askConfigDirectory() + "/agents"])
+    let names = Set(own.map(\.name))
+    let project = AgentDiscovery.projectDefinitions(in: ProjectAgentTrust.root(of: workspace), trust: SkillBook.trust())
+        .trusted
+    return own + project.filter { !names.contains($0.name) }
 }

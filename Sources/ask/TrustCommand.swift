@@ -17,7 +17,13 @@ struct TrustCommand: ParsableCommand {
     )
     var skills = false
 
-    @Argument(help: "With --skills: only these skills, by name. Default: every project skill.")
+    @Flag(
+        name: .customLong("agents"),
+        help: "Trust this project's agent definitions (.agents/agents), as they are now."
+    )
+    var agents = false
+
+    @Argument(help: "With --skills or --agents: only these, by name. Default: every one the project has.")
     var names: [String] = []
 
     func run() {
@@ -28,8 +34,24 @@ struct TrustCommand: ParsableCommand {
             fail("ask: trust is for a person at a terminal; it will not run from a script or a tool.", code: 77)
         }
         let loader = ConfigurationSource.here.loader
-        if skills { return trustSkills(store: loader.trustPath) }
-        guard names.isEmpty else { fail("ask: names are for --skills.", code: 64) }
+        if skills {
+            return TrustedFile.trust(
+                ProjectSkillTrust.files(named: names),
+                kind: "skill",
+                store: loader.trustPath,
+                footer:
+                    "This trusts each SKILL.md as it is now. Other files beside it are not covered; a change to the file untrusts it."
+            )
+        }
+        if agents {
+            return TrustedFile.trust(
+                ProjectAgentTrust.files(named: names),
+                kind: "agent",
+                store: loader.trustPath,
+                footer: "This trusts each file as it is now; a change to one untrusts it."
+            )
+        }
+        guard names.isEmpty else { fail("ask: names are for --skills or --agents.", code: 64) }
         guard let data = FileManager.default.contents(atPath: loader.projectPath) else {
             fail("ask: there is no \(loader.projectPath).", code: 66)
         }
@@ -53,25 +75,5 @@ struct TrustCommand: ParsableCommand {
             print("Trusting it lets this project start or connect to MCP servers, outside ask's sandbox:")
             for line in servers { print("  \(line)") }
         }
-    }
-
-    /// `ask trust --skills`: shows what is being trusted, so the person sees the words, then trusts it.
-    private func trustSkills(store path: String) {
-        let found = ProjectSkillTrust.skills(named: names)
-        for name in found.missing {
-            FileHandle.standardError.write(Data("ask: no project skill called \(name).\n".utf8))
-        }
-        guard !found.skills.isEmpty else { fail("ask: there are no project skills to trust.", code: 66) }
-        do { try ProjectSkillTrust.apply(found.skills, granting: true, store: path) } catch {
-            fail("ask: \(error)", code: 73)
-        }
-        for skill in found.skills {
-            print("Trusted \(skill.name) (\(skill.source)): \(skill.file) (sha256 \(skill.digest.prefix(12))…)")
-            print("    \(skill.description.prefix(100))")
-        }
-        print(
-            "This trusts each SKILL.md as it is now. Other files beside it are not covered; a change to the file untrusts it."
-        )
-        if !found.missing.isEmpty { Foundation.exit(66) }
     }
 }
