@@ -19,6 +19,20 @@ extension ScreenComposer {
                 )
                 // The older look set the user's message off with a blank row above it; the padded one has a row of padding for that.
                 return (style.padded ? [] : [Line(text: "", style: .default)]) + rows
+            case .queued(let text):
+                // As the person's sent messages are (note n43), dim, under the queued mark.
+                let progress = transcript.progress[index]
+                let lead = (progress?.ended == nil ? (progress?.indicator ?? "|") : "↩") + StatusLine.separator
+                let leadWidth = UnicodeWidth.displayWidth(of: lead)
+                var rows = styled(
+                    markdownLines(text, in: transcript, at: index, columns: columns, style: style, lead: leadWidth),
+                    under: Style(dim: true)
+                )
+                if let first = rows.indices.first {
+                    let margin = String(repeating: " ", count: style.inset)
+                    rows[first].text = margin + lead + rows[first].text.dropFirst(style.inset + leadWidth)
+                }
+                return rows
             case .thinking(let text):
                 let kept = Transcript.kept(text)
                 guard !transcript.isFolded(index), Transcript.saysSomething(kept) else { return nil }
