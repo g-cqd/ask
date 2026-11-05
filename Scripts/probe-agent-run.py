@@ -137,7 +137,9 @@ def probe_round_trip():
         first, second = server.requests[0]["body"], server.requests[1]["body"]
         results.append(check("system is the canonical line", first["system"] == [{"type": "text", "text": CANONICAL}], first["system"]))
         results.append(check("prompt leads the first user message", "You are ask" in first["messages"][0]["content"][0]["text"]))
-        results.append(check("tools offered", [t["name"] for t in first["tools"] if t["name"] != "skill"] == ["read", "write", "bash", "job", "narrow_sandbox"]))
+        offered = [t["name"] for t in first["tools"] if t["name"] != "skill"]
+        results.append(check("tools offered", offered == ["read", "write", "bash", "job", "narrow_sandbox", "tasks", "notes"],
+                             offered))
         last = second["messages"][-1]["content"][0]
         results.append(check("tool result sent back", last["type"] == "tool_result" and "probe-ok" in last["content"], last))
         results.append(check("user-agent is ask", server.requests[0]["headers"].get("user-agent") == "ask"))
