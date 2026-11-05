@@ -78,25 +78,25 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "8388e77bf090c73e53d4fdca8196a2b3174b6ffe"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "6a95a5e7653d725d500fce17833f263e01db2aac"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
-        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "af59db6d0426bb14ae35f6eaf99cd26a41ef82e7"),
+        .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "a5586c264780fc0c9d062a8c7308eb9008e78f08"),
         // Already resolved through AemiJSON; the linear-time engine also recognizes UI heredoc openers.
-        .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "b46ad2ab37b663ca42182f85fc2f5d63a263cfc1"),
+        .package(url: "https://github.com/g-cqd/AemiRegex.git", revision: "05fbb3f6564169bafb47f8ca99d3831eb6e1ce16"),
         // The Markdown parser the transcript draws assistant messages with (roadmap 0065); the revision TerminalKitMarkdown pins.
         .package(
             url: "https://github.com/g-cqd/AemiMarkdown.git",
-            revision: "4f886b8b5f182e3ecfab101aa6a293d32f076f6a"
+            revision: "e35a5017076712b765acb31b859f33c2922c2de1"
         ),
         // Mermaid diagrams in the transcript (roadmap 0198), pinned by revision like the rest of the family.
         .package(
             url: "https://github.com/g-cqd/AemiMermaid.git",
-            revision: "af86e14ffb125cad3f09ddf36696d7b1132b5a54"
+            revision: "488edea83ef3990cdf712cdd54b1e514d4621655"
         ),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
-        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "4879ca7522a6277e9425c69309a801de43b57771"),
+        .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "2b2dbe6d0bc3dcb5ec48093c02a2e279d03a37a8"),
         // Child processes for the bash tool (ADR-0011): the official package, added with the first tool that
         // runs one.
         .package(url: "https://github.com/swiftlang/swift-subprocess.git", .upToNextMinor(from: "1.0.2")),
