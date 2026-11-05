@@ -66,8 +66,11 @@ public struct LoginRequest: Sendable, Equatable {
     private func check() throws(Invalid) {
         let known = Self.accounts + ["custom", "openai"] + ProviderPreset.all.map(\.name)
         guard known.contains(target) else { throw Invalid(description: "no sign-in called \"\(target)\"") }
-        if connection != nil, !["claude", "codex"].contains(target) || method == .apiKey {
+        if connection != nil, method == .apiKey {
             throw Invalid(description: "a named connection is a claude or codex account, not a key")
+        }
+        if connection != nil, !["claude", "codex"].contains(target) {
+            throw Invalid(description: "named sign-ins are for claude and codex accounts: \(target) has one sign-in")
         }
         if method == .device, !["codex", CopilotProtocol.name].contains(target) {
             throw Invalid(description: "device sign-in is for codex or copilot-vscode")

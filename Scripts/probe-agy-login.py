@@ -54,7 +54,7 @@ except subprocess.TimeoutExpired as waiting:  # agy waits 60 s for a sign-in; th
 reference = params(url_of(reference_text))
 
 code, out, err = ask(['login', 'agy'])
-assert code == 66 and 'no code entered' in err, (code, out, err)
+assert code == 66 and 'nothing was entered' in err, (code, out, err)
 mine = params(url_of(out))
 assert [k for k, _ in mine] == [k for k, _ in reference], (mine, reference)
 for (k, v), (_, w) in zip(mine, reference):
@@ -90,7 +90,7 @@ assert code == 77 and 'HTTP 400' in err and 'invalid_grant' in err and 'ask logi
 passed('a well-formed fake code gets Google\'s own refusal, worded as what to do, and stores nothing')
 
 code, out, err = ask(['login', 'agy', '--name', 'x'])
-assert code == 64 and 'Named sign-ins' in err, (code, out, err)
+assert code == 64 and 'named sign-ins are for claude and codex' in err, (code, out, err)
 passed('a named sign-in is refused for agy, as the connection kinds do not include it yet')
 
 (config / 'ask').mkdir(parents=True, mode=0o700, exist_ok=True)

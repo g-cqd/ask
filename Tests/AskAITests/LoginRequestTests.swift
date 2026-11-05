@@ -57,4 +57,13 @@ struct LoginRequestTests {
     @Test func `replacing an account is a flag`() throws {
         #expect(try request("codex --name work --replace-account").replaceAccount)
     }
+
+    @Test func `a named sign-in for an account kind with one sign-in says so, and for a key that it is not one`() {
+        #expect {
+            try request("agy --name x")
+        } throws: { "\($0)".contains("named sign-ins are for claude and codex accounts: agy has one sign-in") }
+        #expect {
+            try request("claude api-key --name x")
+        } throws: { "\($0)".contains("not a key") }
+    }
 }
