@@ -32,6 +32,8 @@ public func runInteractiveScreen(
     options: ScreenOptions = ScreenOptions(),
     beforeSignalExit: @escaping @Sendable () -> Void = {}
 ) async throws -> ScreenExit {
+    // Scheduled as the app in front, so the threads that draw and read keys run ahead of a loaded machine (note n18).
+    ProcessRole.becomeInteractive()
     // Frames and the session's own escape sequences share one terminal, so their writes take turns.
     let connection = SerializedConnection(POSIXTerminalConnection())
     let terminal = TerminalSession(connection: connection, modes: modes(for: options), keyboardProtocol: .probe)

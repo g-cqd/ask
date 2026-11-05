@@ -105,7 +105,9 @@ def burn():
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("binary")
-    parser.add_argument("--load", action="store_true")
+    parser.add_argument("--load", type=float, nargs="?", const=1.0, default=0.0,
+                        help="busy loops per core (1 by default when given); 4 is a machine under heavy contention")
+    parser.add_argument("--io", action="store_true", help="also keep the disk busy, writing and syncing a file in a loop")
     parser.add_argument("--busy", choices=["echo", "yes"], help="the turn's command: a shell loop of echo, or yes through head")
     parser.add_argument("--steps", type=int, default=300)
     parser.add_argument("--bursts", type=int, default=0, help="also send this many bursts of 40 wheel steps 5 ms apart, as a trackpad")
@@ -150,7 +152,12 @@ def main():
                 time.sleep(0.05)
             time.sleep(1)  # the command started
         if options.load:
-            burners = [subprocess.Popen([sys.executable, "-c", "while True: pass"]) for _ in range(os.cpu_count() or 8)]
+            count = max(1, round((os.cpu_count() or 8) * options.load))
+            burners = [subprocess.Popen([sys.executable, "-c", "while True: pass"]) for _ in range(count)]
+        if options.io:
+            writer = f"import os\nwhile True:\n f = open({os.path.join(root, 'io')!r}, 'wb')\n f.write(os.urandom(8 << 20))\n f.flush(); os.fsync(f.fileno()); f.close()"
+            burners += [subprocess.Popen([sys.executable, "-c", writer]) for _ in range(2)]
+        if options.load or options.io:
             time.sleep(1)
         latencies, lost = [], 0
         for step in range(options.steps):
@@ -172,14 +179,12 @@ def main():
                 session.send(f"\x1b[<{button};40;10M".encode())
                 time.sleep(0.005)
             last = time.monotonic()
-            # Settled when no byte has come for 100 ms: how long the screen goes on after the hand stops.
-            while True:
-                time.sleep(0.01)
-                with session.lock:
-                    newest = session.reads[-1][0] if session.reads else last
-                if time.monotonic() - max(newest, last) > 0.1:
-                    break
-            settles.append((max(newest, last) - last) * 1000)
+            # How long the screen goes on after the hand stops: the last byte within a fixed window. Stopping at the first quiet
+            # moment missed a frame that came after one (a backlog under contention draws, pauses and draws again).
+            time.sleep(1.5)
+            with session.lock:
+                within = [at for at, _ in session.reads if last <= at <= last + 1.5]
+            settles.append(((within[-1] if within else last) - last) * 1000)
         if settles:
             settles.sort()
             print(f"bursts: {len(settles)}, after the last step the screen settled in: median {statistics.median(settles):.1f} ms, "
@@ -187,7 +192,7 @@ def main():
         latencies.sort()
         p95 = latencies[int(len(latencies) * 0.95) - 1] if latencies else float("nan")
         p99 = latencies[int(len(latencies) * 0.99) - 1] if latencies else float("nan")
-        label = ("load " if options.load else "") + (f"busy:{options.busy} " if options.busy else "") or "idle "
+        label = (f"load x{options.load:g} " if options.load else "") + ("io " if options.io else "") + (f"busy:{options.busy} " if options.busy else "") or "idle "
         with session.lock:
             still = f"BUSY {MARK} DONE".encode() not in session.text
         label += "(the turn still busy at the end) " if options.busy and still else "(the turn had ended) " if options.busy else ""
