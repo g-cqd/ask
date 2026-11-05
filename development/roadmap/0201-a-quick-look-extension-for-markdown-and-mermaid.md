@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: ["0199", "0200"]
 date: 2026-11-04
 ---
@@ -42,3 +42,7 @@ the file mapped and not copied, layout of the first screen only and the rest aft
 ## Not in scope
 
 Distribution (notarised build, a Homebrew cask) until the owner decides it; math typesetting; editing; the iOS Quick Look extension (the kit is written so it could follow).
+
+## Progress (2026-11-05)
+
+The app and both extensions build and run (XcodeGen project, ad-hoc signed): the preview answers with the HTML page and was seen in Quick Look on this machine (macOS 27.0.1); the thumbnail extension is used for Mermaid files and pie charts, but the system's own thumbnail wins for `.md` here. Settings are read from a shared preferences domain through a read-only sandbox exception. Not done: the macOS 26 runtime, cold-start and resident-memory budgets, signing and notarisation (the owner's decision), the host probe.

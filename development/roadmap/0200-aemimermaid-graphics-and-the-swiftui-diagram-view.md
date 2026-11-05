@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: ["0197"]
 date: 2026-11-04
 ---
@@ -34,3 +34,7 @@ Scene culled by bounds (a spatial grid over the display list) so a redraw costs 
 ## Not in scope
 
 Editing, animation, a web view, any raster output (the PDF the context gives is the export).
+
+## Progress (2026-11-05)
+
+The vector backend is SVG (`AemiMermaidSVG`, ADR 0006), drawn in the cell grid with the system font; a CoreGraphics drawing exists for thumbnails (flowchart shapes, paths, pie). Open: proportional-font metrics, curved edges, compartments in class boxes, a native SwiftUI diagram view.

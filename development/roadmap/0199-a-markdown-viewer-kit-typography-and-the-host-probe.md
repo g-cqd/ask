@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: ["0202", "0203", "0207"]
 date: 2026-11-04
 ---
@@ -52,3 +52,7 @@ one drawing view that invalidates only the dirty rectangle of a changed block (a
 ## Not in scope
 
 The editing pane and file watching (0204), math typesetting (shown as styled source), remote images, printing and export beyond what the CoreGraphics backend gives for free.
+
+## Progress (2026-11-05)
+
+The viewer kit exists in `AemiMarkdown/Apps/MarkdownLook` (`MarkdownLookKit`): HTML for a document, one spacing scale, one indent, one stroke width, system font, light and dark, syntax colour from AemiLexers, tables sized by content in a scrolling box, footnotes that link, eleven settings. Typography is judged by renders of the owner's own documents, not yet by the host probe or the owner's sign-off on the samples. The SwiftUI and CoreGraphics views of the plan are not built: the HTML page is the first backend.
