@@ -9,6 +9,8 @@ public struct AgentsSection: Sendable, Equatable, CustomStringConvertible, Layer
     public var maxTurns: Int?
     /// `agents.otherHarnesses`: whether Claude's, Codex's and Copilot's agent definitions are read too (the owner: behind a setting).
     public var otherHarnesses: Bool?
+    /// `agents.resolveWithModel`: whether a cheap model classifies the model words a definition uses that no listed id matches.
+    public var resolveWithModel: Bool?
 
     public static let defaultTurns = 30
     static let mostTurns = 200
@@ -16,12 +18,13 @@ public struct AgentsSection: Sendable, Equatable, CustomStringConvertible, Layer
     public init() {}
 
     /// The keys, in the order they are shown.
-    public static let keys = ["enabled", "allowWrites", "maxTurns", "otherHarnesses"]
+    public static let keys = ["enabled", "allowWrites", "maxTurns", "otherHarnesses", "resolveWithModel"]
 
     public var isEnabled: Bool { enabled ?? false }
     public var writes: Bool { allowWrites ?? false }
     public var turns: Int { maxTurns ?? Self.defaultTurns }
     public var readsOtherHarnesses: Bool { otherHarnesses ?? false }
+    public var resolvesWithModel: Bool { resolveWithModel ?? true }
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: AgentsSection) -> AgentsSection {
@@ -31,6 +34,7 @@ public struct AgentsSection: Sendable, Equatable, CustomStringConvertible, Layer
         merged.allowWrites = section.allowWrites ?? allowWrites
         merged.maxTurns = section.maxTurns ?? maxTurns
         merged.otherHarnesses = section.otherHarnesses ?? otherHarnesses
+        merged.resolveWithModel = section.resolveWithModel ?? resolveWithModel
         return merged
     }
 
@@ -41,6 +45,7 @@ public struct AgentsSection: Sendable, Equatable, CustomStringConvertible, Layer
             case "allowWrites": allowWrites.map(String.init)
             case "maxTurns": maxTurns.map(String.init)
             case "otherHarnesses": otherHarnesses.map(String.init)
+            case "resolveWithModel": resolveWithModel.map(String.init)
             default: nil
         }
     }

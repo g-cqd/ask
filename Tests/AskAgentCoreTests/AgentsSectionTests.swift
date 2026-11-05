@@ -33,4 +33,11 @@ struct AgentsSectionTests {
         #expect(try agents(#"{"otherHarnesses": true}"#)?.readsOtherHarnesses == true)
         #expect(throws: ConfigurationError.self) { try agents(#"{"otherHarnesses": true}"#, project: true) }
     }
+
+    @Test func `a cheap model resolves model words unless turned off; a project may turn it off, not on`() throws {
+        #expect(AgentsSection().resolvesWithModel)
+        #expect(try agents(#"{"resolveWithModel": false}"#)?.resolvesWithModel == false)
+        #expect(try agents(#"{"resolveWithModel": false}"#, project: true)?.resolvesWithModel == false)
+        #expect(throws: ConfigurationError.self) { try agents(#"{"resolveWithModel": true}"#, project: true) }
+    }
 }

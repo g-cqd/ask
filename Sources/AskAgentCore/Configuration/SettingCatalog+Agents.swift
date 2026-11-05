@@ -25,6 +25,13 @@ extension SettingCatalog {
             "false",
             user: true,
             "Whether other coding tools' agent definitions are read too, from their folders. Only your own config file can turn it on."
+        ),
+        row(
+            "agents.resolveWithModel",
+            .boolean,
+            "false",
+            "true",
+            "Whether a cheap model on your connection classifies a definition's model words that no listed model matches."
         )
     ]
 }

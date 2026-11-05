@@ -20,35 +20,14 @@ enum ThreadNamer {
         model: String,
         within limit: Duration
     ) async -> String? {
-        await withTaskGroup(of: String?.self) { group in
-            group.addTask { await ask(task, provider, model) }
-            group.addTask {
-                try? await Task.sleep(for: limit)
-                return nil
-            }
-            let first = await group.next() ?? nil
-            group.cancelAll()
-            return first
-        }
-    }
-
-    private static func ask(_ task: String, _ provider: any ModelProvider, _ model: String) async -> String? {
-        let request = ModelRequest(
+        let reply = await OneShotReply.text(
+            String(task.prefix(600)),
+            system: ["Reply with a name of two to four lowercase words for the task you are given, and nothing else."],
+            by: provider,
             model: model,
-            maxTokens: 64,
-            systemPrompt: [
-                "Reply with a name of two to four lowercase words for the task you are given, and nothing else."
-            ],
-            messages: [ModelMessage(role: .user, blocks: [.text(String(task.prefix(600)))])],
-            tools: []
+            within: limit
         )
-        var text = ""
-        do {
-            for try await event in provider.stream(request) {
-                if case .textDelta(_, let delta) = event { text += delta }
-            }
-        } catch { return nil }
-        return cleaned(text)
+        return reply.flatMap(cleaned)
     }
 
     /// The first line, without quotes or a final full stop, at most 40 characters; nil when nothing is left.

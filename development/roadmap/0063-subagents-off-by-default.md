@@ -139,3 +139,15 @@ their own. Where their questions appear is 0195's `threads.questions`.
   (2 checks) red before the wiring.
 - Next: phase 4, the model-assisted resolution, for model and tool words `ModelMatch` and `ToolReference` cannot match.
 
+## Phase 4 done (2026-11-05): the model-assisted resolution, for model words
+
+- `agents.resolveWithModel` (on; a project's file may turn it off, not on): a definition's model words `ModelMatch` cannot place are
+  put to the connection's cheapest listed model (`haiku`, `mini`, `flash`, `lite`, `nano` in its id; none, no request), with the word
+  and the listed ids only. Its reply counts only when it is exactly a listed id, so it chooses among what is listed and adds nothing;
+  each connection's answer for a word, a "none" too, is kept in `agent-model-words.json`; no reply is asked again. Lazy: only when a
+  subagent with that definition starts. Thread naming and this share one short request (`OneShotReply`).
+- Test first: `ModelResolutionTests` (4) and `AgentsSectionTests` red before the code; `probe-subagent-model-words.py` (3 checks) red
+  before the wiring.
+- Not done: tool words. Mapping a tool word to a tool would add to what a definition keeps, which ADR-0146 says the resolution must
+  not do; an unknown tool word still grants nothing. Phase 5 (a resumed parent's children's lanes) is next.
+
