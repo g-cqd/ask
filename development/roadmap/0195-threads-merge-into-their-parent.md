@@ -299,6 +299,14 @@ summary instructions, or rewrite the summary).
 - Test first: `ThreadLaneTests` (red: the command went back to main), then `Scripts/probe-thread-merge.py` (red: no refusal, nothing
   merged), then the code; 4 checks, twice.
 
+## Measured (2026-11-05): memory with several threads at work
+
+`Scripts/measure-thread-memory.py` (release build, M-series Mac, fake provider, each thread running a quiet `sleep`): ask at rest
+after one reply, 25.3 MiB resident; the first thread adds 6.5 to 6.6 MiB, once (what threads share: the fork, the thread loop, the
+job machinery); each further one 0.15 to 0.16 MiB; 34 MiB with 16, the most `threads.max` allows. Two runs agreed. These threads hold
+a few messages: a thread keeps its conversation in memory as main does, so a long one costs what its conversation does, not 0.16 MiB.
+The default of 4 stays; nothing here argues for a lower cap.
+
 ## Done (2026-11-05): the thread hook points
 
 - `thread.start` (block, or rewrite the task, before the thread exists), `thread.merge` (instructions for the summary, after
