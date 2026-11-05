@@ -88,6 +88,16 @@ enum ModelChoices {
     }
 
     /// The providers that can be listed: what is signed in, what providers.json names, Apple's model, and the named connections.
+    /// The model ids `provider` lists now, from its cache or within ``patience``; none when it is not signed in or does not answer.
+    static func listed(provider: String, environment: [String: String]) async -> [String] {
+        guard
+            let listing = listings(environment: environment, now: Date().timeIntervalSince1970)
+                .first(where: { $0.provider == provider })
+        else { return [] }
+        let result = await Deadline.run(patience) { try await listing.load() }
+        return (try? result.get())?.map(\.id) ?? []
+    }
+
     private static func listings(environment: [String: String], now: Double) -> [Listing] {
         let file = CredentialFile.standard(environment: environment)
         let accounts = (try? file.signedInAccounts(environment: environment)) ?? []

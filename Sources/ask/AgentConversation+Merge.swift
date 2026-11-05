@@ -110,7 +110,9 @@ extension AgentConversation {
         let question = merged.isEmpty ? "" : "What the threads merged into this one reported:" + merged.joined()
         var summary: String
         do {
-            let loop = try await threadLoop()
+            // A subagent writes its summary on its own loop: its definition's model, as it worked.
+            let loop =
+                try await threads.isSubagent(name) ? subagentLoop(for: threads.subagentDefinition(name)) : threadLoop()
             // threads.summaryInstructions, then what the thread.merge hook point adds.
             let point = ThreadMerge(name: name, parent: thread.parent)
             let added =

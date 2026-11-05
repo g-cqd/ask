@@ -119,3 +119,12 @@ their own. Where their questions appear is 0195's `threads.questions`.
   (4 checks) red before `--agents`.
 - Next: `model` used as a preference; other harnesses' definitions behind `agents.otherHarnesses`; the model-assisted resolution.
 
+## Phase 3c done (2026-11-05): a definition's model
+
+- `ModelMatch` reads a definition's model words against what the active connection lists (`ModelChoices.listed`): the id, a display
+  name written any way, a whole family word, in the file's order; nothing matching keeps the parent's model. Never a guess: a word
+  inside another (`son`) names nothing. The subagent writes its summary on its own loop, with that model.
+- Test first: `ModelMatchTests` red before the matcher; `probe-subagent-definitions.py`'s model checks red with the match switched
+  off, and its summary check red before the merge used the subagent's loop.
+- Next: other harnesses' definitions behind `agents.otherHarnesses`; then the model-assisted resolution, for words this cannot match.
+

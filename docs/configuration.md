@@ -300,7 +300,9 @@ Agent definitions are Markdown files in `~/.config/ask/agents` (`NAME.md`), and 
 there: run `ask trust --agents` at a terminal (it shows each file and what it is for; a later change to a file untrusts it, and
 `ask untrust --agents` forgets them). Each has a head with `description`, and optionally `name`, `tools` and `model`, then the
 instructions; your own win a name the project also uses. The `agent` tool lists them, and a call may name one: the subagent is told its instructions before
-its task, and keeps only the tools it names (none named, it keeps all of a subagent's). `model` is read but not yet used.
+its task, and keeps only the tools it names (none named, it keeps all of a subagent's). `model` is a preference, matched against what the
+connection lists: an id, a display name written any way (`Claude Opus 5.5`), or a family word (`haiku`, the first such model listed),
+in the file's order; when none matches, the subagent uses the model it would have had.
 
 ### `modelScopes`
 
