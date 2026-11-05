@@ -13,25 +13,51 @@ extension AgentConversation {
         try current.withLock { current throws -> AgentLoop in
             if let existing = current.loop { return existing }
             mcp.apply(current.settings.configuration.mcp.value.servers)
-            let hooks = LoopHooks(
-                approve: { [weak self] in await self?.approve($0) ?? false },
-                narrowing: narrowing,
-                destructiveApprover: { [weak self] in await self?.approveDestructive($0) ?? false },
-                callGate: callGate(for: current.settings),
-                askPerson: { [weak self] in await self?.askPerson($0) },
-                // A running call's progress goes to the screen of the run it belongs to (roadmap 0067).
-                progress: { [weak self] call, line in
-                    self?.approvals.withLock { $0.ask }?(.toolProgress(id: call, text: line))
-                },
-                reportEvent: { [weak self] event in
-                    guard let self, let ask = self.approvals.withLock({ $0.ask }) else { return }
-                    self.deliver(event, to: ask)
-                }
-            )
-            let created = try makeLoop(current.settings, hooks).handing(over: handover)
+            let created = try makeLoop(current.settings, loopHooks(current.settings)).handing(over: handover)
             current.loop = created
             return created
         }
+    }
+
+    /// The loop threads run on (roadmap 0195): main's, or one for `threads.model`, built once and dropped when the settings change.
+    func threadLoop() async throws -> AgentLoop {
+        let (word, cached) = current.withLock { ($0.settings.configuration.threads.value.threadModel, $0.threadLoop) }
+        guard let word else { return try agentLoop() }
+        if let cached { return cached }
+        let settings = try await settings(forModel: word)
+        mcp.apply(settings.configuration.mcp.value.servers)
+        let created = try makeLoop(settings, loopHooks(settings))
+        return current.withLock { current in
+            if current.threadLoop == nil { current.threadLoop = created }
+            return current.threadLoop ?? created
+        }
+    }
+
+    /// The settings in force with `word` as the model, read as `/model` reads its word; throws when it does not resolve.
+    func settings(forModel word: String) async throws -> RunSettings {
+        let (provider, model) = serving(word)
+        var candidate = source
+        candidate.flags.selected = ModelSelection(provider: provider, model: model)
+        return try await candidate.load(allowNetwork: false)
+    }
+
+    /// What a loop built for `settings` calls back into the conversation for.
+    private func loopHooks(_ settings: RunSettings) -> LoopHooks {
+        LoopHooks(
+            approve: { [weak self] in await self?.approve($0) ?? false },
+            narrowing: narrowing,
+            destructiveApprover: { [weak self] in await self?.approveDestructive($0) ?? false },
+            callGate: callGate(for: settings),
+            askPerson: { [weak self] in await self?.askPerson($0) },
+            // A running call's progress goes to the screen of the run it belongs to (roadmap 0067).
+            progress: { [weak self] call, line in
+                self?.approvals.withLock { $0.ask }?(.toolProgress(id: call, text: line))
+            },
+            reportEvent: { [weak self] event in
+                guard let self, let ask = self.approvals.withLock({ $0.ask }) else { return }
+                self.deliver(event, to: ask)
+            }
+        )
     }
 
     /// The session, created on the first prompt so that opening and closing ask leaves no empty sessions.

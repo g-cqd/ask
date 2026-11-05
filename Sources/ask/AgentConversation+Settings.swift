@@ -23,7 +23,10 @@ extension AgentConversation {
             current.shownError = nil
             let updates = fresh.updates(replacing: current.settings)
             let changed = fresh.differs(from: current.settings)
-            if changed { current.loop = nil }
+            if changed {
+                current.loop = nil
+                current.threadLoop = nil
+            }
             current.settings = fresh
             return (updates, changed && current.turnRunning)
         }

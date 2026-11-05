@@ -53,6 +53,8 @@ final class AgentConversation: Conversation {
     struct Current {
         var settings: RunSettings
         var loop: AgentLoop?
+        /// Threads' loop when `threads.model` names another model (roadmap 0195); dropped with `loop`.
+        var threadLoop: AgentLoop?
         var shownError: String?
         /// A turn is running (roadmap 0127): a change made during it is offered to it (roadmap 0113).
         var turnRunning = false
