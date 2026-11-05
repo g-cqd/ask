@@ -5,6 +5,7 @@ extension Transcript {
             ?? items[index]
             .contentText(
                 folded: isFolded(index),
+                running: progress[index].map { $0.ended == nil } ?? false,
                 toolInput: shownToolInput(at: index)?.text,
                 command: commandBlocks.contains(index),
                 output: shownToolOutput(at: index)?.text
@@ -14,15 +15,19 @@ extension Transcript {
 
 extension Transcript.Item {
     /// The text a selection can take from this item.
-    func contentText(folded: Bool, toolInput: String? = nil, command: Bool = false, output shown: String? = nil)
-        -> String
-    {
+    func contentText(
+        folded: Bool,
+        running: Bool = false,
+        toolInput: String? = nil,
+        command: Bool = false,
+        output shown: String? = nil
+    ) -> String {
         switch self {
             case .user(let text), .assistant(let text), .notice(let text, _), .queued(let text): return text
             case .jobEnded(let label, _, _): return label
             case .thinking(let text):
                 let body = Transcript.kept(text)
-                let header = Self.thinkingHeader(body: body, folded: folded)
+                let header = Self.thinkingHeader(running: running)
                 return folded || !Transcript.saysSomething(body) ? header : body
             case .tool(let name, let summary, _, let whole, let input) where command:
                 let output = shown ?? whole
@@ -70,7 +75,8 @@ extension Transcript.Item {
     }
 
     /// The one line a thinking block starts with, folded or open: `Thinking...`, which a click folds and opens.
-    static func thinkingHeader(body _: String, folded _: Bool) -> String { "Thinking..." }
+    /// A thinking block's header: what it is doing while it streams, what it did once it has ended (note n37).
+    static func thinkingHeader(running: Bool) -> String { running ? "Thinking..." : "Thought." }
 }
 
 extension Transcript.Item {

@@ -54,7 +54,7 @@ struct MarkdownEverywhereTests {
             transcript.addThinkingText("Plan **first**")
             transcript.finishRunProgress()
         }
-        #expect(rows.count == 1 && rows[0].text.hasPrefix("Thinking..."))
+        #expect(rows.count == 1 && rows[0].text.hasPrefix("Thought."))
     }
 
     @Test func `the person's message draws its marks as styles, and stays bold`() {

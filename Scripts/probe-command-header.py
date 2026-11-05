@@ -75,7 +75,7 @@ def main():
             screen = terminal.screen.display
             if os.environ.get("PROBE_SHOW"):
                 print(terminal.text())
-            check("blank thinking leaves no block", "Thinking..." not in terminal.text())
+            check("blank thinking leaves no block", "Thinking..." not in terminal.text() and "Thought." not in terminal.text())
             long_row = next(line for line in screen if "shell · timeout 5 min · : START" in line)
             check("the long command is one row, cut with … before the status", long_row.rstrip().endswith("✓")
                   and "…" in long_row and "ZZEND" not in terminal.text())

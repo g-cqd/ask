@@ -175,11 +175,12 @@ extension ScreenComposer {
         progress: BlockProgress?
     ) -> [Line] {
         let kept = Transcript.kept(text)
-        let header = Transcript.Item.thinkingHeader(body: kept, folded: folded)
+        let running = progress?.ended == nil && progress != nil
+        let header = Transcript.Item.thinkingHeader(running: running)
         return blockHeader(
             folded || !Transcript.saysSomething(kept) ? header : kept,
             metadata: blockMetadata(
-                status: progress?.ended == nil && progress != nil ? .running : .succeeded,
+                status: running ? .running : .succeeded,
                 output: kept,
                 progress: progress,
                 localizedDurations: style.localizedDurations
