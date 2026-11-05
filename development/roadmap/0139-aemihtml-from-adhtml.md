@@ -1,6 +1,6 @@
 ---
-status: reopened
-blocked-by: ["a consumer that parses HTML"]
+status: in-progress
+blocked-by: []
 date: 2026-10-29
 ---
 
