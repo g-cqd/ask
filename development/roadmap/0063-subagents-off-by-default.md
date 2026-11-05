@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-24
 ---
@@ -75,3 +75,18 @@ Subagents are to be built on 0195's threads. Their lifecycle, merge-by-summary, 
 the difference is in what they inherit and who starts them. The parent's model spawns them with an explicit request, rather than a
 fork of the whole conversation. They run as a defined agent, the person's or the workspace's, or without one. They always merge on
 their own. Where their questions appear is 0195's `threads.questions`.
+
+## Phase 1 done (2026-11-05), ADR-0146
+
+- `agents.enabled` (off; the person's own file only, a project's may turn it off), `agents.allowWrites` (off), `agents.maxTurns` (30).
+- The `agent` tool, offered only when on: `task`, `context` and `done`, all required; the subagent is a thread with a session of its
+  own and only those three, under the conversation whose tool asked; its loop has no `agent` tool (depth 1), writes nowhere unless
+  `allowWrites`, takes `threads.model`'s model when set, and stops at `maxTurns`. It merges on its own, without asking; its summary is
+  the call's result, labelled as a subagent's report. Stopping the call stops it. Its block says it has only its task.
+- Test first: `AgentsSectionTests`, `AgentToolTests` (4), `SubagentBlockTests` red before the code; `probe-subagent.py` (6 checks)
+  red before the wiring. The probe's project lives outside the temporary directories, which the sandbox's base profile always
+  lets commands write (so a read-only subagent may still write there, as any sandboxed command may).
+- Left for later phases: definitions (ask's own, then other harnesses' behind `agents.otherHarnesses`), the model-assisted
+  resolution, `agents.model` and `agents.allowOtherProviders`, resuming children's lanes, and the probe with real processes for a
+  stop that must leave nothing running.
+

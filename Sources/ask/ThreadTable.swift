@@ -37,6 +37,9 @@ final class ThreadTable: Sendable {
         var quitting = false
         /// Threads stopped together (a session switch, or a stop with its threads): they are settled as one, not each on its own.
         var holding: Set<String> = []
+        /// Subagents (roadmap 0063), and the `agent` calls waiting for their reports.
+        var subagents: Set<String> = []
+        var waiters: [String: CheckedContinuation<String, Never>] = [:]
     }
 
     /// Internal, for the queries in ThreadTable+Tree.swift.
@@ -166,11 +169,13 @@ final class ThreadTable: Sendable {
                 state.order = []
                 state.reports = []
                 state.holding = []
+                state.subagents = []
                 state.next = 1
             }
             return state.threads.values.compactMap(\.task)
         }
         for task in tasks { task.cancel() }
+        releaseWaiters()
     }
 
     /// A thread of the session resumed, ended as `state` (merged, or stopped and never restarted), its name kept.

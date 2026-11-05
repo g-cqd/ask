@@ -42,8 +42,12 @@ extension AgentConversation {
     }
 
     /// What a loop built for `settings` calls back into the conversation for.
-    private func loopHooks(_ settings: RunSettings) -> LoopHooks {
-        LoopHooks(
+    /// `subagents`: whether its model may start subagents; a subagent's loop may not (roadmap 0063: depth 1).
+    func loopHooks(_ settings: RunSettings, subagents: Bool = true) -> LoopHooks {
+        let subagentStarter: SubagentTask.Starter = { [weak self] task in
+            await self?.startSubagent(task) ?? .refused("ask is closing.")
+        }
+        return LoopHooks(
             approve: { [weak self] in await self?.approve($0) ?? false },
             narrowing: narrowing,
             destructiveApprover: { [weak self] in await self?.approveDestructive($0) ?? false },
@@ -53,6 +57,7 @@ extension AgentConversation {
             progress: { [weak self] call, line in
                 self?.approvals.withLock { $0.ask }?(.toolProgress(id: call, text: line))
             },
+            startSubagent: subagents ? subagentStarter : nil,
             reportEvent: { [weak self] event in
                 guard let self, let ask = self.approvals.withLock({ $0.ask }) else { return }
                 self.deliver(event, to: ask)
@@ -125,6 +130,7 @@ func runInteractive(
                     settings,
                     instructions: files,
                     jobs: jobs,
+                    // @dl:accept -- the hooks passed through, one argument per field
                     transport: URLSessionTransport(),
                     approve: hooks.approve,
                     narrowing: hooks.narrowing,
@@ -133,6 +139,7 @@ func runInteractive(
                     callGate: hooks.callGate,
                     askPerson: hooks.askPerson,
                     progress: hooks.progress,
+                    startSubagent: hooks.startSubagent,
                     reportEvent: hooks.reportEvent
                 )
             }

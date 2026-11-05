@@ -10,5 +10,7 @@ struct LoopHooks: Sendable {
     var callGate: ToolCallGate?
     var askPerson: PersonQuestion.Asker?
     var progress: ToolProgressReporter?
+    /// Who starts the model's subagents (roadmap 0063); nil for a subagent's own loop.
+    var startSubagent: SubagentTask.Starter?
     var reportEvent: (@Sendable (AgentEvent) -> Void)?
 }

@@ -65,6 +65,7 @@ public struct ToolContext: Sendable, Equatable {
         approve: SandboxApprover? = nil,
         narrowing: SessionNarrowing? = nil,
         commandEnvironment: CommandEnvironment = .inherit,
+        // @dl:accept -- an initializer's parameters, one per field the context carries
         destructiveApprover: DestructiveApprover? = nil,
         imageLimits: ImageLimits? = nil,
         callGate: ToolCallGate? = nil,
