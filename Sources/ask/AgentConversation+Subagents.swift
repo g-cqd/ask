@@ -33,7 +33,14 @@ extension AgentConversation {
             name = threads.add(prompt: task.task, recorder: recorder, parent: parent)
             threads.markSubagent(name, definition: task.definition)
             let source = parent.flatMap { threads.thread($0)?.recorder } ?? session.withLock { $0 }
-            recordStarted(name, parent: parent, prompt: task.task, recorder: recorder, source: source)
+            recordStarted(
+                name,
+                parent: parent,
+                prompt: task.task,
+                recorder: recorder,
+                source: source,
+                subagent: task.definition?.name ?? ""
+            )
         } catch {
             return .refused("\(error)")
         }

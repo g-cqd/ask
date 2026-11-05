@@ -20,8 +20,17 @@ extension SessionLogRecord: Codable {
     /// the record is written through one container: one encoder, one keyed container.
     private enum SandboxKeys: String, CodingKey { case type, write, read, network }
     /// The thread record's own key set, as the sandbox record has one.
-    private enum ThreadKeys: String, CodingKey { case type, event, id, parent, prompt, file, at, summary, title }
+    private enum ThreadKeys: String, CodingKey {
+        case type, event, id, parent, prompt, file, at, summary, title, subagent
+    }
     private enum Kind: String, Codable, CaseIterable { case session, entry, leaf, sandbox, thread }
+    /// A thread record's optional text fields, each under its key: read and written the same way.
+    private static var threadTexts: [(ThreadKeys, WritableKeyPath<ThreadRecord, String?>)] {
+        [
+            (.parent, \.parent), (.prompt, \.prompt), (.file, \.file), (.summary, \.summary), (.title, \.title),
+            (.subagent, \.subagent)
+        ]
+    }
 
     /// The record types this build reads; a line of any other is a newer ask's, kept and not read (ADR-0144).
     static let knownTypes = Set(Kind.allCases.map(\.rawValue))
@@ -81,12 +90,10 @@ extension SessionLogRecord: Codable {
                     )
                 }
                 var record = ThreadRecord(event, id: try fields.decode(String.self, forKey: .id))
-                record.parent = try fields.decodeIfPresent(String.self, forKey: .parent)
-                record.prompt = try fields.decodeIfPresent(String.self, forKey: .prompt)
-                record.file = try fields.decodeIfPresent(String.self, forKey: .file)
+                for (key, path) in Self.threadTexts {
+                    record[keyPath: path] = try fields.decodeIfPresent(String.self, forKey: key)
+                }
                 record.at = try fields.decodeIfPresent(String.self, forKey: .at).map(EntryID.init)
-                record.summary = try fields.decodeIfPresent(String.self, forKey: .summary)
-                record.title = try fields.decodeIfPresent(String.self, forKey: .title)
                 self = .thread(record)
             case .sandbox:
                 let fields = try decoder.container(keyedBy: SandboxKeys.self)
@@ -117,12 +124,8 @@ extension SessionLogRecord: Codable {
             try fields.encode(Kind.thread, forKey: .type)
             try fields.encode(record.event.rawValue, forKey: .event)
             try fields.encode(record.id, forKey: .id)
-            try fields.encodeIfPresent(record.parent, forKey: .parent)
-            try fields.encodeIfPresent(record.prompt, forKey: .prompt)
-            try fields.encodeIfPresent(record.file, forKey: .file)
+            for (key, path) in Self.threadTexts { try fields.encodeIfPresent(record[keyPath: path], forKey: key) }
             try fields.encodeIfPresent(record.at?.description, forKey: .at)
-            try fields.encodeIfPresent(record.summary, forKey: .summary)
-            try fields.encodeIfPresent(record.title, forKey: .title)
             return
         }
         if case .sandbox(let section) = self {

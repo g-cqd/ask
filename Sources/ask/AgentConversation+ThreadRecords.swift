@@ -14,12 +14,20 @@ extension AgentConversation {
         parent: String?,
         prompt: String,
         recorder: SessionRecorder,
-        source: SessionRecorder?
+        source: SessionRecorder?,
+        subagent: String? = nil
     ) {
         guard let main = session.withLock({ $0 }) else { return }
-        try? main.recordThread(
-            .started(name, parent: parent, prompt: prompt, file: recorder.path, at: source?.tree.leaf)
+        var started = ThreadRecord.started(
+            name,
+            parent: parent,
+            prompt: prompt,
+            file: recorder.path,
+            at: source?.tree.leaf
         )
+        // A subagent says so, and as which definition, so a resume brings it back as one (roadmap 0063 phase 5).
+        started.subagent = subagent
+        try? main.recordThread(started)
         try? recorder.recordThread(.identity(name, of: main.path))
     }
 
@@ -55,6 +63,13 @@ extension AgentConversation {
                 state: merged ? .merged : .stopped
             )
             if let title { threads.rename(record.id, to: title) }
+            // A subagent comes back as one: read-only, without an agent tool, as its definition if that still exists.
+            if let definition = record.subagent {
+                let workspace = current.withLock { $0.settings.workspace }
+                let found =
+                    definition.isEmpty ? nil : agentDefinitions(workspace: workspace).first { $0.name == definition }
+                threads.markSubagent(record.id, definition: found)
+            }
             let lane = replayed(
                 recorder.tree.activeBranch(),
                 after: record.at,
@@ -109,7 +124,15 @@ extension AgentConversation {
             guard let prompt = prompts[record.id] else { return nil }
             switch record.event {
                 case .started:
-                    return (record.at, .threadStarted(id: "fork-\(record.id)", name: record.id, prompt: prompt))
+                    return (
+                        record.at,
+                        .threadStarted(
+                            id: "fork-\(record.id)",
+                            name: record.id,
+                            prompt: prompt,
+                            subagent: record.subagent != nil
+                        )
+                    )
                 case .merged:
                     let merged = ConversationUpdate.threadMerged(
                         id: "merge-\(record.id)",

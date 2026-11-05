@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-24
 ---
@@ -150,4 +150,13 @@ their own. Where their questions appear is 0195's `threads.questions`.
   before the wiring.
 - Not done: tool words. Mapping a tool word to a tool would add to what a definition keeps, which ADR-0146 says the resolution must
   not do; an unknown tool word still grants nothing. Phase 5 (a resumed parent's children's lanes) is next.
+
+## Phase 5 done (2026-11-05): a resumed parent's subagents
+
+- A subagent's start record says it is one and as which definition (`ThreadRecord.subagent`, empty for none; nil for a thread). On a
+  resume it comes back stopped, its block still saying it is a subagent, its lane holding what it did; told to go on, it is still one:
+  read-only, without an agent tool, as its definition when that still exists (a removed one leaves the plain subagent).
+- Test first: `ThreadRecordTests` red before the field was kept; `probe-subagent-resume.py` (5 checks) red before the wiring (its block
+  said "forked").
+- With phases 1 to 5 done, the roadmap is done. Not in scope: tool words for the model-assisted resolution (phase 4 says why).
 

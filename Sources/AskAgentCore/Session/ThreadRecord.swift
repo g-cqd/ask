@@ -21,6 +21,8 @@ public struct ThreadRecord: Sendable, Equatable {
     public var at: EntryID?
     public var summary: String?
     public var title: String?
+    /// On a start: that it is a subagent (roadmap 0063), and the definition it runs as; empty for none. Nil for a thread.
+    public var subagent: String?
 
     public init(_ event: Event, id: String) {
         self.event = event
