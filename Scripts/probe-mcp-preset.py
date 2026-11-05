@@ -9,6 +9,7 @@ swift-search could not start.
 """
 import importlib.util
 import os
+import shutil
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -20,6 +21,10 @@ spec.loader.exec_module(ms)
 sys.argv = saved
 pp = ms.pp
 WITHOUT = "--without-swift-search" in sys.argv
+# Where swift-search is not installed the preset cannot start it: probe what that looks like rather than fail for it.
+if not WITHOUT and shutil.which("swift-search") is None:
+    print("swift-search is not on the PATH: probing the preset without it", flush=True)
+    WITHOUT = True
 
 
 def main():
