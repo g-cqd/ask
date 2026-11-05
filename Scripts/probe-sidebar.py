@@ -87,7 +87,7 @@ def main():
             terminal.repaint()
             check("open from the configuration, the toggle in the corner, main listed, nothing running at the bottom",
                   terminal.screen.display[0].rstrip().endswith("»") and "│ ◆ main" in terminal.screen.display[1]
-                  and counts(terminal).endswith("│ Nothing running"))
+                  and counts(terminal).rstrip().endswith("│"))
             divider = divider_column(terminal)
             check("the divider is in every transcript row", divider is not None
                   and all(terminal.screen.display[row][divider] == "│" for row in range(0, 26)))
@@ -127,7 +127,7 @@ def main():
             terminal.send(b"Stop it\r")
             terminal.until(lambda: b"Stopped." in bytes(terminal.raw)[start:] and idle(terminal))
             terminal.repaint()
-            check("when the job stops it leaves the sidebar", counts(terminal).endswith("│ Nothing running"))
+            check("when the job stops it leaves the sidebar", counts(terminal).rstrip().endswith("│"))
             check("the job itself is gone", not probe.agent.accepts(port))
         except AssertionError:
             if terminal:

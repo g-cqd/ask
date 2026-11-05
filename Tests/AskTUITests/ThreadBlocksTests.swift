@@ -63,7 +63,8 @@ struct ThreadBlocksTests {
         rig.draw()
         let text = (0 ..< 6).map { rig.text(row: $0) }.joined(separator: "\n")
         #expect(text.contains("├ ◌ thread-1 a") && text.contains("└ ✓ thread-2 b"))
-        #expect(rig.text(row: rig.composer.transcriptRows - 1).hasSuffix("Nothing running"), "neither is running")
+        let last = rig.text(row: rig.composer.transcriptRows - 1)
+        #expect(!last.contains("running") && !last.contains("Nothing"), "neither is running: no count row")
     }
 
     @Test func `a click on where a thread started opens its lane`() throws {

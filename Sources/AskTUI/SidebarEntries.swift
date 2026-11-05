@@ -69,7 +69,7 @@ struct SidebarEntries {
         }
     }
 
-    /// What is running, for the panel's last row: active threads, running jobs, and what waits on the person.
+    /// What is running, for the panel's last row: active threads, running jobs, and what waits on the person; blank when nothing is.
     private static func counts(_ runners: [RunnerInfo], columns: Int) -> Entry {
         func count(_ number: Int, _ noun: String) -> String? {
             number > 0 ? "\(number) \(noun)\(number == 1 ? "" : "s")" : nil
@@ -83,8 +83,8 @@ struct SidebarEntries {
         // Narrower, the kinds are summed: the count still fits.
         let short = [threads + jobs > 0 ? "\(threads + jobs) running" : nil, waits].compactMap { $0 }
             .joined(separator: " · ")
-        let text =
-            full.isEmpty ? "Nothing running" : UnicodeWidth.displayWidth(of: full) <= columns ? full : short
+        // Nothing running says nothing (note n38): the row stays, blank, so the tree does not move when something starts.
+        let text = full.isEmpty ? "" : UnicodeWidth.displayWidth(of: full) <= columns ? full : short
         let cut = ScreenComposer.ellipsized(text, cells: columns)
         return Entry(text: cut.shown + cut.mark, style: Style(dim: true))
     }

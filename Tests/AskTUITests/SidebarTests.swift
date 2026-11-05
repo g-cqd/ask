@@ -86,10 +86,11 @@ struct SidebarTests {
         #expect(rig.buffer[rig.controller.frame.statusRow, 99].character == " " && rig.controller.frame.columns == 100)
     }
 
-    @Test func `with no runners it says so, and it does not take a narrow screen`() {
+    @Test func `with no runners its last row is blank (note n38), and it does not take a narrow screen`() {
         let empty = rig(runners: [])
         #expect(empty.text(row: 1).hasSuffix("│ ◆ main"))
-        #expect(empty.text(row: empty.composer.transcriptRows - 1).hasSuffix("│ Nothing running"))
+        let last = empty.text(row: empty.composer.transcriptRows - 1)
+        #expect(last.drop { $0 != "│" }.dropFirst().allSatisfy { $0 == " " } && !last.contains("Nothing running"))
         let narrow = rig(columns: 69)
         #expect(dividerColumn(narrow) == nil && narrow.controller.frame.transcriptColumns == 69)
         let exact = rig(columns: 70)
