@@ -90,3 +90,11 @@ their own. Where their questions appear is 0195's `threads.questions`.
   resolution, `agents.model` and `agents.allowOtherProviders`, resuming children's lanes, and the probe with real processes for a
   stop that must leave nothing running.
 
+## Phase 2 done (2026-11-05)
+
+- Stopping: Ctrl+C on the turn whose `agent` call waits stops the subagent with it, and nothing of its is left running:
+  `probe-subagent-stop.py` (3 checks) watches its real `sleep` end within seconds, and fails with the call's cancellation handler
+  removed. Stopped, it merges on its own.
+- Limits: `agents.maxTurns` (phase 1); subagents count with the threads against `threads.max` and `threads.depth`
+  (`threadLimitReached`, phase 1).
+
