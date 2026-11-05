@@ -78,7 +78,7 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "13cf84ba5eb5ccd96717f00b811a929a88a55158"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "0a5ccb3d94d63b61e47f6e908758e3180ce4dff7"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
         .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "af59db6d0426bb14ae35f6eaf99cd26a41ef82e7"),
@@ -87,12 +87,12 @@ let package = Package(
         // The Markdown parser the transcript draws assistant messages with (roadmap 0065); the revision TerminalKitMarkdown pins.
         .package(
             url: "https://github.com/g-cqd/AemiMarkdown.git",
-            revision: "9000ebeccef2a1ad1edc15c6c143a0662f8df7de"
+            revision: "4f886b8b5f182e3ecfab101aa6a293d32f076f6a"
         ),
         // Mermaid diagrams in the transcript (roadmap 0198), pinned by revision like the rest of the family.
         .package(
             url: "https://github.com/g-cqd/AemiMermaid.git",
-            revision: "6c86aedf0ead7ddf71c843ad56eb56cc940e71dd"
+            revision: "af86e14ffb125cad3f09ddf36696d7b1132b5a54"
         ),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
