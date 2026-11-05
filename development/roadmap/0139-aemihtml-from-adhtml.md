@@ -39,8 +39,11 @@ No implementation: the condition is not met. AemiMarkdown does not need HTML par
 
 "Look at adhtml somewhere in g-cqd repos, and maybe we can promote that to aemihtml, and rebuild it on our high performance tooling." The condition above (a consumer) is waived by that request; the extractor is still the consumer to build towards.
 
-- **ADHTML's source could not be recovered**: `g-cqd/ADHTML` does not resolve on GitHub and no checkout exists on this machine (only archived design records in a Copilot cache). AemiHTML is therefore a new build to this roadmap's description, not a port.
-- **Built (`g-cqd/AemiHTML`, local, not pushed):** a WHATWG tokenizer on Aemi's kernels (SIMD byte-set scans, a `TapeSlot` token tape, no object per token), checked against html5lib's tokenizer tests (about 7,000 cases, tokens and error codes, including the processing-instruction
-  states added to the standard in 2026), and benchmarked against html5ever (126.7 against 80.7 MB/s with errors off; level with it, 77.9 against 80.7, with errors collected) and Python's `html.parser` on 15 real pages.
-- **Next, in `AemiHTML/docs/roadmap.md`:** tree construction (tests now live in web-platform-tests), the HTML-to-text and Markdown extractors, streaming, encoding sniffing.
+- **ADHTML's source was found** (an earlier line here said it could not be: wrong). It is on the owner's other machine, a git checkout of 195 commits whose last one archives the repository. Read there, it was a pragmatic subset: a tape tokenizer without the RCDATA, RAWTEXT and script states, a tree builder
+  without insertion modes, adoption agency or tables, a recursive `indirect enum` DOM cut at depth 128, and recursive extractors that flattened nested lists, lost tables and code languages, did not escape text, and kept hidden text. AemiHTML therefore **rebuilds** it, keeping its API contract (title,
+  description, container, sections at `h2`, Markdown or plain text, link resolver, chrome stripping), and `AemiHTML/docs/adr/0001-…` says what was kept and what changed.
+- **Built (`g-cqd/AemiHTML`, local, not pushed):** the WHATWG tokenizer and tree builder on Aemi's kernels and flat arrays (no object per token or node; counted by allocation tests), the arena document, iterative walks, and the extractors. Checked against html5lib's tokenizer tests (about 7,000 cases),
+  its tree-construction tests (1,792 cases, eight known differences each with its reason), hostile and fuzz documents, and html5ever: identical token streams on 15 real pages (about 1.4 million tokens). Tokenizing is about 1.8 to 2 times html5ever's speed, parsing to a DOM about 1.6 times Lexbor's (ratios; the machine was loaded).
+  Extraction of the 15 pages takes 0.2 s. Extracted Markdown is read back with AemiMarkdown in tests.
+- **Left, in `AemiHTML/docs/roadmap.md`:** chunked input, encoding sniffing, web-platform-tests' tree files, the tree builder's own parse errors, a quiet-machine benchmark, and the `fetch` tool in ask that would use `HTMLExtractor`.
 - Research notes that bear on it: `g-cqd/research`, topics 01, 11, 12.
