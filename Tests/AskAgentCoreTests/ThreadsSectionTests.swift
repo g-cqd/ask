@@ -66,4 +66,12 @@ struct ThreadsSectionTests {
         let layered = ThreadsSection().layered(with: section)
         #expect(layered.summaryAddition == "List every file you touched.")
     }
+
+    @Test func `model is the threads' own, as /model reads it, and blank is the conversation's`() throws {
+        #expect(ThreadsSection().threadModel == nil)
+        #expect(try threads(#"{"model": "anthropic/claude-haiku-4-5"}"#)?.threadModel == "anthropic/claude-haiku-4-5")
+        #expect(try threads(#"{"model": " "}"#)?.threadModel == nil)
+        let layered = ThreadsSection().layered(with: try #require(try threads(#"{"model": "haiku"}"#)))
+        #expect(layered.threadModel == "haiku")
+    }
 }

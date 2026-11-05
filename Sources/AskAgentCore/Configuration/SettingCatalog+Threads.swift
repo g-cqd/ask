@@ -21,6 +21,14 @@ extension SettingCatalog {
             "The model names \"model\" asks, as /model takes it (\"provider/model\" or a model); empty for the conversation's own."
         ),
         row(
+            "threads.model",
+            // @dl:accept -- catalog rows are data, one setting each
+            .text,
+            #""provider/model""#,
+            "the conversation's model",
+            "The model threads work and write their summaries with, as /model takes it; empty for the conversation's own."
+        ),
+        row(
             "threads.summaryInstructions",
             .text,
             #""List every file you changed.""#,

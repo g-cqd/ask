@@ -44,6 +44,13 @@ extension AgentConversation {
             say(.notice(refusal, isError: true))
             return
         }
+        // threads.model is resolved before the thread exists: one that does not resolve refuses it here, in what is shown.
+        do { _ = try await threadLoop() } catch {
+            let word =
+                current.withLock { $0.settings.configuration.threads.value.threadModel } ?? "the conversation's model"
+            say(.notice("Cannot start a thread: threads.model \"\(word)\" does not resolve: \(error)", isError: true))
+            return
+        }
         do {
             // Main's session first, so a thread started before any prompt is recorded there too (roadmap 0195).
             if parent == nil, session.withLock({ $0 == nil }) { _ = try recorder() }
@@ -55,7 +62,7 @@ extension AgentConversation {
             update(.thread(id: name, .userPrompt(text)))
             // Where it starts, in the conversation it was forked from (note n23).
             say(.threadStarted(id: "fork-\(name)", name: name, prompt: text))
-            try runThread(name, text, update: update)
+            runThread(name, text, update: update)
             nameThread(name, task: text, update: update)
         } catch {
             say(.notice("Cannot start a thread: \(error)", isError: true))
@@ -101,10 +108,7 @@ extension AgentConversation {
     private func namingModel() async -> ResolvedModel? {
         let settings = current.withLock { $0.settings }
         guard let word = settings.configuration.threads.value.namingModel else { return settings.model }
-        let (provider, model) = serving(word)
-        var candidate = source
-        candidate.flags.selected = ModelSelection(provider: provider, model: model)
-        return try? await candidate.load(allowNetwork: false).model
+        return try? await self.settings(forModel: word).model
     }
 
     /// Names thread `id` `title` where it is shown, and records it for a resume.
@@ -140,11 +144,7 @@ extension AgentConversation {
             default: break
         }
         guard !threads.steer(id, with: text) else { return }
-        do {
-            try runThread(id, text, update: update)
-        } catch {
-            update(.thread(id: id, .notice("Cannot send to \(id): \(error)", isError: true)))
-        }
+        runThread(id, text, update: update)
     }
 
     func stopThreads() async { await threads.stopAll() }
@@ -172,11 +172,8 @@ extension AgentConversation {
     }
 
     /// Runs `text` in thread `name`, its events drawn in its conversation, then reports its answer to main.
-    private func runThread(_ name: String, _ text: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
-        throws
-    {
+    private func runThread(_ name: String, _ text: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
         guard let thread = threads.thread(name) else { return }
-        let loop = try agentLoop()
         let threads = threads
         // What threads under it merged goes with what it is sent next, as main's do.
         let queue = PromptQueue { [mcp] text in
@@ -189,6 +186,8 @@ extension AgentConversation {
             )
             let outcome: RunnerInfo.State
             do {
+                // Its own model's loop when threads.model names one; a model that does not resolve fails it here.
+                let loop = try await self.threadLoop()
                 let route = ApprovalRoute(
                     send: { update(.thread(id: name, $0)) },
                     waiting: { began in

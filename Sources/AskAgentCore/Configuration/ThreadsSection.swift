@@ -27,6 +27,8 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     public var namesModel: String?
     /// `threads.summaryInstructions`: what a thread's merge asks for beside the standard summary instruction.
     public var summaryInstructions: String?
+    /// `threads.model`: the model threads work with, as `/model` reads its word; nil for the conversation's.
+    public var model: String?
 
     /// Where a thread's question appears while the person is elsewhere (note n19).
     public enum Questions: Sendable, Equatable {
@@ -48,7 +50,8 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
 
     /// The keys, in the order they are shown.
     public static let keys = [
-        "max", "depth", "names", "mergedShownFor", "questions", "questionsAfter", "namesModel", "summaryInstructions"
+        "max", "depth", "names", "mergedShownFor", "questions", "questionsAfter", "namesModel", "summaryInstructions",
+        "model"
     ]
 
     public var atOnce: Int { max ?? Self.defaultMax }
@@ -56,6 +59,8 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     public var naming: Names { names ?? .onDevice }
     /// What the merge asks beyond its standard instruction; nil when nothing is written.
     public var summaryAddition: String? { Self.written(summaryInstructions) }
+    /// The model threads work with and write their summaries with; nil for the conversation's own.
+    public var threadModel: String? { Self.written(model) }
 
     /// The model that names threads under `names` `"model"`; nil for the conversation's own.
     public var namingModel: String? { Self.written(namesModel) }
@@ -109,6 +114,7 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
         merged.questionsAfter = section.questionsAfter ?? questionsAfter
         merged.namesModel = section.namesModel ?? namesModel
         merged.summaryInstructions = section.summaryInstructions ?? summaryInstructions
+        merged.model = section.model ?? model
         return merged
     }
 
@@ -123,6 +129,7 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
             case "questionsAfter": questionsAfter
             case "namesModel": namesModel
             case "summaryInstructions": summaryInstructions
+            case "model": model
             default: nil
         }
     }

@@ -16,6 +16,7 @@ extension ConfigurationFile {
                         )
                     case "mergedShownFor": section.mergedShownFor = try container.decode(String.self, forKey: key)
                     case "namesModel": section.namesModel = try container.decode(String.self, forKey: key)
+                    case "model": section.model = try container.decode(String.self, forKey: key)
                     case "summaryInstructions":
                         section.summaryInstructions = try container.decode(String.self, forKey: key)
                     case "questions":

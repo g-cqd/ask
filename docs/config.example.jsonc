@@ -200,6 +200,9 @@
     // The model names "model" asks, as /model takes it ("provider/model" or a model); empty for the conversation's own. Default: the conversation's model.
     "namesModel": "",
 
+    // The model threads work and write their summaries with, as /model takes it; empty for the conversation's own. Default: the conversation's model.
+    "model": "provider/model",
+
     // What a thread's summary should also hold, added after the standard merge instruction. Default: none.
     "summaryInstructions": "List every file you changed.",
 

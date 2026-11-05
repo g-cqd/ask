@@ -299,6 +299,15 @@ summary instructions, or rewrite the summary).
 - Test first: `ThreadLaneTests` (red: the command went back to main), then `Scripts/probe-thread-merge.py` (red: no refusal, nothing
   merged), then the code; 4 checks, twice.
 
+## Done (2026-11-05): threads.model and threads.summaryInstructions
+
+- `threads.model` (as `/model` reads its word): threads run, and write their summaries, on a loop built for that model, kept until
+  the settings change; empty, main's loop. One that does not resolve refuses `/thread` in what is shown, naming the setting.
+- `threads.summaryInstructions`: added after the merge instruction (`AgentLoop.mergeInstruction(adding:)`).
+- Test first: `ThreadsSectionTests` (both keys) red before the configuration; `probe-thread-merge.py`'s new check and
+  `probe-thread-model.py`'s model checks red before the wiring (the refusal check was first written against a premise that was
+  wrong, an unknown provider prefix, which `/model` reads as a model name; it uses a preset with no key now).
+
 ## Done (2026-11-04): marks for working and quiet runners (note n15)
 
 - A running thread or job spins while it works; once it has done nothing for three seconds it shows its kind instead, `◇` a thread

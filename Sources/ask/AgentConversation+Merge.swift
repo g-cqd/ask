@@ -107,7 +107,7 @@ extension AgentConversation {
         let question = merged.isEmpty ? "" : "What the threads merged into this one reported:" + merged.joined()
         var summary: String
         do {
-            let loop = try agentLoop()
+            let loop = try await threadLoop()
             let addition = current.withLock { $0.settings.configuration.threads.value.summaryAddition }
             let written = try await loop.aside(
                 question,
