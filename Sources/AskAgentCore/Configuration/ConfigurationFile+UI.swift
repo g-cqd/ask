@@ -163,4 +163,13 @@ extension ConfigurationFile {
         guard words.contains(word) else { throw BadValue(key: name, value: word) }
         return word
     }
+
+    /// One of `Choice`'s cases by its word, for the key `name`.
+    static func choice<Choice: RawRepresentable & CaseIterable>(
+        _ container: KeyedDecodingContainer<Key>,
+        _ key: Key,
+        _ name: String
+    ) throws -> Choice? where Choice.RawValue == String {
+        Choice(rawValue: try word(container, key, name, Choice.allCases.map(\.rawValue)))
+    }
 }

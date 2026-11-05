@@ -299,6 +299,14 @@ summary instructions, or rewrite the summary).
 - Test first: `ThreadLaneTests` (red: the command went back to main), then `Scripts/probe-thread-merge.py` (red: no refusal, nothing
   merged), then the code; 4 checks, twice.
 
+## Done (2026-11-05): threads.merge "ask"
+
+- A thread that finished asks whether to merge, as a failed or stopped one does; the question comes where the person is
+  (`threads.questions`). No leaves it unmerged and idle, `○` (a finished thread that has not merged; a finished job keeps `✓`):
+  typing in its lane goes on with it, `/merge` there merges it.
+- Test first: `ThreadsSectionTests` and `RunnerMarksTests` red before the code; `probe-thread-merge-ask.py` (4 checks) red (it
+  merged without asking) before `settle` asked. Choice keys decode through one `ConfigurationFile.choice`.
+
 ## Done (2026-11-05): threads.model and threads.summaryInstructions
 
 - `threads.model` (as `/model` reads its word): threads run, and write their summaries, on a loop built for that model, kept until

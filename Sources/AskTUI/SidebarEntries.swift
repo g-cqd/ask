@@ -107,6 +107,7 @@ struct SidebarEntries {
             prefix
             + Self.mark(
                 runner.state,
+                kind: runner.kind,
                 spinner: progress?.indicator,
                 quietKind: Self.quiet(runner, progress, state) ? runner.kind : nil
             )
@@ -137,7 +138,12 @@ struct SidebarEntries {
 
     /// The state at a glance: a running runner's spinner while it works and its kind once quiet (`◇` a thread, `$` a job), `?` waiting
     /// on the person, then `✓`, `✗` or `■`.
-    private static func mark(_ state: RunnerInfo.State, spinner: String?, quietKind: RunnerInfo.Kind?) -> String {
+    private static func mark(
+        _ state: RunnerInfo.State,
+        kind: RunnerInfo.Kind,
+        spinner: String?,
+        quietKind: RunnerInfo.Kind?
+    ) -> String {
         switch state {
             case .running:
                 switch quietKind {
@@ -148,6 +154,8 @@ struct SidebarEntries {
             case .waitingForApproval: "?"
             case .merging: spinner ?? "●"
             case .held: "◌"
+            // A thread that finished and is not merged is idle (`threads.merge` ask declined): it can go on, or merge.
+            case .done where kind == .agent: "○"
             case .done, .merged: "✓"
             case .failed: "✗"
             case .stopped: "■"
