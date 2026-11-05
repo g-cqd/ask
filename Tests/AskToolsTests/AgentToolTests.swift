@@ -71,4 +71,36 @@ struct AgentToolTests {
         let (absent, _) = try await run(Self.whole, answer: nil)
         #expect(absent.isError)
     }
+
+    private static let reviewer = AgentDefinition.read(
+        file: "/u/agents/reviewer.md",
+        text: "---\ndescription: Reviews a diff.\ntools: Read\n---\nYou review code carefully."
+    )
+
+    @Test func `definitions are named in its description, and only then may a call name one`() throws {
+        let reviewer = try #require(Self.reviewer)
+        let tool = AgentTool(definitions: [reviewer])
+        let schema = String(decoding: tool.definition.inputSchema.bytes, as: UTF8.self)
+        #expect(tool.definition.description.contains("reviewer: Reviews a diff.") && schema.contains(#""agent""#))
+        #expect(!String(decoding: AgentTool().definition.inputSchema.bytes, as: UTF8.self).contains(#""agent""#))
+    }
+
+    @Test func `a named definition goes with the task, its instructions first`() async throws {
+        let reviewer = try #require(Self.reviewer)
+        let asked = Mutex<SubagentTask?>(nil)
+        let context = ToolContext(
+            workingDirectory: "/tmp",
+            startSubagent: { @Sendable task in
+                asked.withLock { $0 = task }
+                return .report(name: "thread-1", summary: "ok")
+            }
+        )
+        let json = #"{"task": "t", "context": "c", "done": "d", "agent": "reviewer"}"#
+        _ = await AgentTool(definitions: [reviewer]).run(try input(json), in: context)
+        let task = try #require(asked.withLock { $0 })
+        #expect(task.definition?.name == "reviewer" && task.prompt.hasPrefix("You review code carefully."))
+        let unknown = await AgentTool(definitions: [reviewer])
+            .run(try input(#"{"task": "t", "context": "c", "done": "d", "agent": "x"}"#), in: context)
+        #expect(unknown.isError && unknown.content.contains("reviewer"))
+    }
 }

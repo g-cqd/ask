@@ -91,6 +91,7 @@ func makeLoop(
     askPerson: PersonQuestion.Asker? = nil,
     progress: ToolProgressReporter? = nil,
     startSubagent: SubagentTask.Starter? = nil,
+    keepTools: Set<String>? = nil,
     reportEvent: (@Sendable (AgentEvent) -> Void)? = nil
 ) throws -> AgentLoop {
     // The agent tool only where agents.enabled is on and something can start one (roadmap 0063): off, no request carries it.
@@ -108,14 +109,20 @@ func makeLoop(
         sandbox: sandbox,
         thinking: run.thinking
     )
-    let tools = try ToolRegistry(
+    // The person's own agent definitions, which a call may name (roadmap 0063 phase 3).
+    let definitions =
+        startSubagent == nil ? [] : AgentDiscovery.definitions(in: [askConfigDirectory() + "/agents"])
+    let offered: [any Tool] =
         FileTools.all + [
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
             NarrowSandboxTool(jobs: jobs), TasksTool(board: SessionTasks.board),
             IdeasTool(board: SessionTasks.ideas, tasks: SessionTasks.board)
         ] + (skills.tool.map { [$0] } ?? []) + (askPerson == nil ? [] : [QuestionTool()])
-            + (startSubagent == nil ? [] : [AgentTool()]),
-        live: live
+        + (startSubagent == nil ? [] : [AgentTool(definitions: definitions)])
+    // A definition's subagent keeps only the tools it names, and no server's unless named.
+    let tools = try ToolRegistry(
+        keepTools.map { keep in offered.filter { keep.contains($0.definition.name) } } ?? offered,
+        live: keepTools == nil ? live : nil
     )
     let context = ToolContext(
         workingDirectory: workingDirectory,

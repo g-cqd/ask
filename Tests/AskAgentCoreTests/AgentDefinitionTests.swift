@@ -1,0 +1,48 @@
+import Foundation
+import Testing
+
+@testable import AskAgentCore
+
+/// ask's own agent definitions (roadmap 0063 phase 3, ADR-0146): Markdown with a head, read by the permissive reader skills use. The
+/// body is what the subagent is told before its task; `tools` only narrows; `model` is a preference.
+@Suite("An agent definition is read from Markdown with a head")
+struct AgentDefinitionTests {
+    @Test func `its name, description, instructions, tools and models`() throws {
+        let text =
+            "---\nname: reviewer\ndescription: Reviews a diff.\ntools: Read, Grep\nmodel: haiku\n---\nYou review code carefully.\n"
+        let definition = try #require(AgentDefinition.read(file: "/a/agents/x.md", text: text))
+        #expect(definition.name == "reviewer" && definition.description == "Reviews a diff.")
+        #expect(definition.instructions == "You review code carefully.")
+        #expect(definition.tools.map(\.token) == ["Read", "Grep"] && definition.tools.first?.ask == "read")
+        #expect(definition.models.tokens == ["haiku"])
+    }
+
+    @Test func `the file's name stands in for a name, the body's first paragraph for a description`() throws {
+        let definition = try #require(
+            AgentDefinition.read(file: "/a/agents/linter.md", text: "Checks the style of a change.\n\nMore.")
+        )
+        #expect(definition.name == "linter" && definition.description == "Checks the style of a change.")
+        #expect(definition.tools.isEmpty, "no tools named: it narrows nothing")
+    }
+
+    @Test func `a file that says nothing is no definition`() {
+        #expect(AgentDefinition.read(file: "/a/agents/empty.md", text: "---\nname: e\n---\n") == nil)
+    }
+
+    @Test func `discovery reads bare Markdown files, the first root's name wins, and a README is not one`() throws {
+        let base = FileManager.default.temporaryDirectory.appending(path: "agents-\(UUID().uuidString)").path
+        let first = base + "/one"
+        let second = base + "/two"
+        for directory in [first, second] {
+            try FileManager.default.createDirectory(atPath: directory, withIntermediateDirectories: true)
+        }
+        defer { try? FileManager.default.removeItem(atPath: base) }
+        try "---\ndescription: First.\n---\nA.".write(toFile: first + "/alpha.md", atomically: true, encoding: .utf8)
+        try "---\ndescription: Second.\n---\nB.".write(toFile: second + "/alpha.md", atomically: true, encoding: .utf8)
+        try "---\ndescription: Beta.\n---\nC.".write(toFile: second + "/beta.md", atomically: true, encoding: .utf8)
+        try "Read me.".write(toFile: first + "/README.md", atomically: true, encoding: .utf8)
+        try "not markdown".write(toFile: first + "/notes.txt", atomically: true, encoding: .utf8)
+        let found = AgentDiscovery.definitions(in: [first, second, base + "/missing"])
+        #expect(found.map(\.name) == ["alpha", "beta"] && found.first?.description == "First.")
+    }
+}

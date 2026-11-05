@@ -10,24 +10,29 @@ public struct SubagentTask: Sendable, Equatable {
     public let context: String
     /// What completion is, and what to return.
     public let done: String
+    /// The agent definition it runs as, when the call named one (roadmap 0063 phase 3).
+    public let definition: AgentDefinition?
 
-    public init(task: String, context: String, done: String) {
+    public init(task: String, context: String, done: String, definition: AgentDefinition? = nil) {
         self.task = task
         self.context = context
         self.done = done
+        self.definition = definition
     }
 
     /// Its first message: the three, as its parent wrote them.
     public var prompt: String {
-        """
-        You are a subagent: another agent started you for one piece of work. You see nothing of its conversation; this is all \
-        you have. When you have finished, end with your report, which is all it will see of your work.
+        // A definition's instructions come first: who it is, then what it is asked.
+        (definition.map { $0.instructions + "\n\n" } ?? "")
+            + """
+            You are a subagent: another agent started you for one piece of work. You see nothing of its conversation; this is all \
+            you have. When you have finished, end with your report, which is all it will see of your work.
 
-        Task: \(task)
+            Task: \(task)
 
-        What you need to know: \(context)
+            What you need to know: \(context)
 
-        Done when: \(done)
-        """
+            Done when: \(done)
+            """
     }
 }
