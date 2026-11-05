@@ -195,7 +195,9 @@ def main():
         press(terminal, b"\x18")
 
         type_text(terminal, "please /co")
-        check("a command is offered only as the first word", title_row(terminal) is None)
+        # Later in a message a slash offers skills, which may be named anywhere, but never a command.
+        check("a command is offered only as the first word", title_row(terminal) is None
+              or all(name.startswith("/skill:") for name in listed(terminal)[0]))
         press(terminal, b"\x18")
 
         type_text(terminal, "/config")

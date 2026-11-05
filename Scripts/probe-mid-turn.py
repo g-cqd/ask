@@ -149,16 +149,16 @@ def probe_compact():
     screen, server, _, running = started(PLAIN, more=[agent.turn([("text", "A SUMMARY OF IT ALL")], "end_turn")])
     screen.type("/compact\r")
     waiting = screen.until("/compact", 3) and not screen.idle() and len(server.requests) == 1
-    early = "compact · " in screen.screen.text()
+    early = "compaction · " in screen.screen.text()
     screen.until("Answered after.", 20)
-    ran = screen.until("compact · ", 10)
+    ran = screen.until("compaction · ", 10)
     text = screen.screen.text()
     screen.until_status("ready")
     # This short session has nothing before its recent messages, so the compaction says so rather than asking for a summary: what is
     # probed is when it runs.
     results = [check("the turn was running", running),
                check("waiting while the turn runs, nothing sent for it", waiting and not early, screen.screen.text()[-600:]),
-               check("run once the turn ended", ran and text.index("Answered after.") < text.index("compact · "), text[-600:]),
+               check("run once the turn ended", ran and text.index("Answered after.") < text.index("compaction · "), text[-600:]),
                check("clean exit", finish(screen, server) == 0)]
     return all(results)
 

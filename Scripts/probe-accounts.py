@@ -31,6 +31,8 @@ class Session(interactive.Screen):
         env = {"PATH": os.environ["PATH"], "HOME": self.state, "XDG_CONFIG_HOME": config_home, "XDG_STATE_HOME": self.state,
                "TERM": "xterm-256color"}
         env["ASK_KEYCHAIN_PATH"] = probe_keychain.throwaway_keychain()  # never the person's keychain
+        # Its first start would ask whether to encrypt sessions, and catch the keys meant for /model.
+        env["ASK_SESSION_ENCRYPTION"] = "off"
         import pty, fcntl, struct, termios
         self.pid, self.fd = pty.fork()
         if self.pid == 0:
