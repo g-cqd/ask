@@ -284,6 +284,18 @@ named; a project's file may set them too, since they only ever limit what runs.
 | `names` | `"onDevice"` | How a thread is named: `"onDevice"`, by Apple's on-device model from its task, where it is available (`thread-N` elsewhere), `"model"`, by a provider's model (`namesModel`), or `"numbered"`. `/rename` in a thread's lane names it yourself. |
 | `namesModel` | the conversation's model | The model `names` `"model"` asks for a thread's name, written as `/model` takes it: `"provider/model"` or a model. Empty, the conversation's own model. A name that does not come in 15 seconds is not waited for. |
 
+### `agents`
+
+Subagents (roadmap 0063, ADR-0146): the model may start a thread of its own with the `agent` tool, giving it a task, what it needs
+to know and what counts as done; it sees nothing else of the conversation, and its summary is the call's result. Off unless your
+own file turns it on: a project's may turn it off, never on, and may not let subagents write.
+
+| Key | Default | What it does |
+|---|---|---|
+| `enabled` | `false` | Whether the model has the `agent` tool. Off, no request carries it and nothing on screen names one. Your own file only. |
+| `allowWrites` | `false` | Whether subagents may change files; read-only otherwise, whatever the parent may do. Your own file only. |
+| `maxTurns` | `30` | The most turns one subagent may take, from 1 to 200. |
+
 ### `modelScopes`
 
 A list of rules that limit which providers serve a repository: work repositories only through the work account, say. Each rule names

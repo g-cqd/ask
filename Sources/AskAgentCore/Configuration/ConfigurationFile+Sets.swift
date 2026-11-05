@@ -17,6 +17,7 @@ extension ConfigurationFile {
             case "modelScopes": modelScopes != nil
             case "hooks": hooks != nil
             case "threads": threads != nil
+            case "agents": agents != nil
             case "sandbox": sandbox != nil
             case "ui": ui != nil
             case "skills": skills != nil
