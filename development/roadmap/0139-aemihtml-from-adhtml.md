@@ -1,5 +1,5 @@
 ---
-status: done
+status: reopened
 blocked-by: ["a consumer that parses HTML"]
 date: 2026-10-29
 ---
@@ -34,3 +34,13 @@ baseline before claiming anything.
 ## Closed by the owner (2026-10-29)
 
 No implementation: the condition is not met. AemiMarkdown does not need HTML parsing. Reopen only for a concrete HTML-consuming feature.
+
+## Reopened by the owner (2026-11-05)
+
+"Look at adhtml somewhere in g-cqd repos, and maybe we can promote that to aemihtml, and rebuild it on our high performance tooling." The condition above (a consumer) is waived by that request; the extractor is still the consumer to build towards.
+
+- **ADHTML's source could not be recovered**: `g-cqd/ADHTML` does not resolve on GitHub and no checkout exists on this machine (only archived design records in a Copilot cache). AemiHTML is therefore a new build to this roadmap's description, not a port.
+- **Built (`g-cqd/AemiHTML`, local, not pushed):** a WHATWG tokenizer on Aemi's kernels (SIMD byte-set scans, a `TapeSlot` token tape, no object per token), checked against html5lib's tokenizer tests (about 7,000 cases, tokens and error codes, including the processing-instruction
+  states added to the standard in 2026), and benchmarked against html5ever (126.7 against 80.7 MB/s with errors off; level with it, 77.9 against 80.7, with errors collected) and Python's `html.parser` on 15 real pages.
+- **Next, in `AemiHTML/docs/roadmap.md`:** tree construction (tests now live in web-platform-tests), the HTML-to-text and Markdown extractors, streaming, encoding sniffing.
+- Research notes that bear on it: `g-cqd/research`, topics 01, 11, 12.
