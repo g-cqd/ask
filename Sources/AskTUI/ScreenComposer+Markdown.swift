@@ -12,16 +12,19 @@ extension ScreenComposer {
 
     /// The rows of the assistant message `text`, item `index` of `transcript`, drawn as Markdown at `columns`. `firstBlockWidth`, when
     /// given, is the width the first top-level block wraps at instead, so its first row leaves room beside it (a thinking block's status).
+    /// `lead` indents every row by that many more columns, for a mark the caller writes before the first.
     static func markdownLines(
         _ text: String,
         in transcript: Transcript,
         at index: Int,
         columns: Int,
         style: BlockStyle,
-        firstBlockWidth: Int? = nil
+        firstBlockWidth: Int? = nil,
+        lead: Int = 0
     ) -> [Line] {
-        let inset = style.inset
-        let width = Swift.max(1, columns - 2 * inset)
+        // `lead` more columns on the left, for a mark before the first row that the others hang under (a queued message's).
+        let inset = style.inset + lead
+        let width = Swift.max(1, columns - 2 * style.inset - lead)
         var layout = MarkdownMessageLayout(
             document: MarkdownParser.parse(Array(text.utf8), extensions: markdownExtensions),
             fences: (transcript.markdownFences(at: index) ?? [])
