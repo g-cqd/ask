@@ -33,6 +33,12 @@ jobs:
         uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3.0.0-beta.1
         with:
           swift-version: ${{ env.SWIFT_VERSION }}
+      # The mutation tool builds through xcrun, which runs Xcode's own Swift (6.3.3 on macos-26, which cannot read a 6.4 manifest)
+      # unless TOOLCHAINS names another: the one just installed.
+      - name: Setup · Select the Installed Swift for xcrun
+        run: |
+          plist=$(ls -d "$HOME"/Library/Developer/Toolchains/swift-"$SWIFT_VERSION"*.xctoolchain/Info.plist | head -1)
+          echo "TOOLCHAINS=$(plutil -extract CFBundleIdentifier raw "$plist")" >> "$GITHUB_ENV"
       - name: Cache · Mutation Tool & Verdicts
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:

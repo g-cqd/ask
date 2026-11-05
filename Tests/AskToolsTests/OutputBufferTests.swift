@@ -98,9 +98,8 @@ struct OutputBufferTests {
         #expect(binary.text.contains("omitted"))
     }
 
-    @Test func `a buffer asked to keep nothing keeps nothing and counts everything, instead of stopping the process`()
-        async
-    {
+    @Test(.enabled(if: !SanitizerRuntime.isLoaded, "an exit test's child cannot start under a sanitizer"))
+    func `a buffer asked to keep nothing keeps nothing and counts everything, instead of stopping the process`() async {
         await #expect(processExitsWith: .success) {
             var empty = OutputBuffer(keeping: 0)
             #expect(empty.isEmpty)
