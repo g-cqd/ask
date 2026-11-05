@@ -163,6 +163,14 @@ public final class JobTable: Sendable {
         jobs.withLock { $0.values.filter { $0.status == .running }.map(\.id).sorted() }
     }
 
+    /// When each running job last wrote output, by id; a job that has written nothing is not listed (note n15).
+    public var activity: [String: ContinuousClock.Instant] {
+        jobs.withLock { jobs in
+            jobs.values.filter { $0.status == .running }
+                .reduce(into: [:]) { seen, job in seen[job.id] = job.lastOutputAt }
+        }
+    }
+
     /// The jobs still running, in the order they started.
     public var summaries: [JobSummary] {
         jobs.withLock {

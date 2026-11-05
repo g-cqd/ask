@@ -299,6 +299,15 @@ summary instructions, or rewrite the summary).
 - Test first: `ThreadLaneTests` (red: the command went back to main), then `Scripts/probe-thread-merge.py` (red: no refusal, nothing
   merged), then the code; 4 checks, twice.
 
+## Done (2026-11-04): marks for working and quiet runners (note n15)
+
+- A running thread or job spins while it works; once it has done nothing for three seconds it shows its kind instead, `◇` a thread
+  and `$` a job (the person chose this, and three seconds, over a spinner per kind or two-cell marks). Ended and waiting marks are
+  unchanged. A thread's activity is its events, which the screen already receives; a job's is its output: `Job` notes when it last
+  wrote, `JobTable.activity` lists the running ones, and the conversation sends what changed once a second (`.runnerActivity`).
+- Test first: `RunnerMarksTests` (4) and `JobActivityTests` were red before the code; `probe-runner-marks.py` (3 checks) failed on
+  the writing job (marked `$`) before the sampler and passes now.
+
 ## Done (2026-11-04): threads named by a chosen model (note n20)
 
 - `threads.names` `"model"` asks a provider's model for the name: `threads.namesModel` read as `/model` reads its word

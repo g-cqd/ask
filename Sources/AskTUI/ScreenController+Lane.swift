@@ -30,7 +30,11 @@ extension ScreenController {
         // A popped question is taken off around the update, which may bring what is shown a question of its own, then may pop again.
         unpopThreadQuestion()
         var effects = onMain { $0.holdingView { $0.apply(update) } }
-        if case .thread(let id, let inner) = update { effects += noteThreadAsks(id, inner) }
+        if case .thread(let id, let inner) = update {
+            // A thread's events are its activity: the sidebar spins for it while they come (note n15).
+            state.runnerActivity[id] = .now
+            effects += noteThreadAsks(id, inner)
+        }
         popThreadQuestion()
         return effects
     }

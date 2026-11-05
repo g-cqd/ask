@@ -21,6 +21,8 @@ extension ScreenController {
             case .requestExit(let exit): state.exitRequest = exit
             case .label, .labelVariants, .sandboxActive, .sessionIdentity, .status, .context: applyStatusLine(update)
             case .runners(let list): setRunners(list)
+            case .runnerActivity(let seen):
+                state.runnerActivity.merge(seen) { Swift.max($0, $1) }
             case .runnerOutput: break
             case .files(let list): return receive(files: list)
             case .skills(let list): receive(skills: list)

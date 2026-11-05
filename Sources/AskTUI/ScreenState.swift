@@ -64,6 +64,8 @@ public struct ScreenState: Sendable, Equatable {
     /// When each thread was first seen merged, and those merged long enough to leave the sidebar (`threads.mergedShownFor`).
     var mergedAt: [String: ContinuousClock.Instant] = [:]
     var expiredMerged: Set<String> = []
+    /// When each runner last did something (note n15): a thread's last event, a job's last output as its owner reports it.
+    var runnerActivity: [String: ContinuousClock.Instant] = [:]
     /// The thread whose question is shown where the person is (`threads.questions`), and when each thread last asked.
     var popped: String?
     var threadAskedAt: [String: ContinuousClock.Instant] = [:]
