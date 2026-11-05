@@ -185,7 +185,9 @@ extension AgentConversation {
             do {
                 // Its own model's loop when threads.model names one, a subagent's when it is one (roadmap 0063); a model that does
                 // not resolve fails it here.
-                let loop = try await threads.isSubagent(name) ? self.subagentLoop() : self.threadLoop()
+                let loop =
+                    try await threads.isSubagent(name)
+                    ? self.subagentLoop(for: threads.subagentDefinition(name)) : self.threadLoop()
                 let route = ApprovalRoute(
                     send: { update(.thread(id: name, $0)) },
                     waiting: { began in

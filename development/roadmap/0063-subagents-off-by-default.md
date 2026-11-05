@@ -98,3 +98,15 @@ their own. Where their questions appear is 0195's `threads.questions`.
 - Limits: `agents.maxTurns` (phase 1); subagents count with the threads against `threads.max` and `threads.depth`
   (`threadLimitReached`, phase 1).
 
+## Phase 3a done (2026-11-05): the person's own definitions
+
+- `AgentDefinition` and `AgentDiscovery` read `~/.config/ask/agents/*.md` with the skills' permissive reader (`DefinitionFile`,
+  `ToolReference`, `ModelPreference`): name (else the file's), description (else the body's first paragraph), instructions (the body),
+  tools, models; the first root's name wins.
+- The `agent` tool names them in its description and takes an optional `agent`; an unknown one is refused, listing the known. A named
+  subagent is told the instructions before its task and keeps only the tools the definition names (`keepTools`, its own loop).
+- Test first: `AgentDefinitionTests` (4) and the two new `AgentToolTests` red before the code; `probe-subagent-definitions.py`
+  (3 checks) red before the wiring.
+- Next: a project's `.agents/agents`, trusted per file as its skills are (`ask trust`); `model` used as a preference on the active
+  connection; other harnesses' definitions behind `agents.otherHarnesses`; then the model-assisted resolution.
+

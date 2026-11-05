@@ -130,8 +130,8 @@ func runInteractive(
                     settings,
                     instructions: files,
                     jobs: jobs,
-                    // @dl:accept -- the hooks passed through, one argument per field
                     transport: URLSessionTransport(),
+                    // @dl:accept -- the hooks passed through, one argument per field
                     approve: hooks.approve,
                     narrowing: hooks.narrowing,
                     live: mcp.live,
@@ -140,6 +140,7 @@ func runInteractive(
                     askPerson: hooks.askPerson,
                     progress: hooks.progress,
                     startSubagent: hooks.startSubagent,
+                    keepTools: hooks.keepTools,
                     reportEvent: hooks.reportEvent
                 )
             }

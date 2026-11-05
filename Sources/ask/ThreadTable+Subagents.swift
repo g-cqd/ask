@@ -1,9 +1,19 @@
+internal import AskAgentCore
 internal import Synchronization
 
 /// Which threads are subagents (roadmap 0063, ADR-0146), and the `agent` calls waiting for their reports.
 extension ThreadTable {
-    /// Marks thread `name` a subagent: it merges on its own, and its summary goes to the call that started it.
-    func markSubagent(_ name: String) { state.withLock { _ = $0.subagents.insert(name) } }
+    /// Marks thread `name` a subagent, running as `definition` when there is one: it merges on its own, and its summary goes to the
+    /// call that started it.
+    func markSubagent(_ name: String, definition: AgentDefinition? = nil) {
+        state.withLock { state in
+            state.subagents.insert(name)
+            state.subagentDefinitions[name] = definition
+        }
+    }
+
+    /// The definition subagent `name` runs as, if any.
+    func subagentDefinition(_ name: String) -> AgentDefinition? { state.withLock { $0.subagentDefinitions[name] } }
 
     func isSubagent(_ name: String) -> Bool { state.withLock { $0.subagents.contains(name) } }
 

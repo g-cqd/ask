@@ -19,7 +19,9 @@ extension AgentConversation {
         guard let update = approvals.withLock({ $0.ask }) else {
             return .refused("Nothing can show a subagent in this run.")
         }
-        do { _ = try await subagentLoop() } catch { return .refused("Its loop could not be built: \(error)") }
+        do { _ = try await subagentLoop(for: task.definition) } catch {
+            return .refused("Its loop could not be built: \(error)")
+        }
         let say: @Sendable (ConversationUpdate) -> Void = { shown in
             update(parent.map { .thread(id: $0, shown) } ?? shown)
         }
@@ -28,7 +30,7 @@ extension AgentConversation {
             if parent == nil, session.withLock({ $0 == nil }) { _ = try recorder() }
             let recorder = try newSession()
             name = threads.add(prompt: task.task, recorder: recorder, parent: parent)
-            threads.markSubagent(name)
+            threads.markSubagent(name, definition: task.definition)
             let source = parent.flatMap { threads.thread($0)?.recorder } ?? session.withLock { $0 }
             recordStarted(name, parent: parent, prompt: task.task, recorder: recorder, source: source)
         } catch {
@@ -49,10 +51,12 @@ extension AgentConversation {
         return .report(name: name, summary: summary)
     }
 
-    /// The loop subagents run on: `threads.model`'s or main's settings, writing nowhere unless `agents.allowWrites`, at most
-    /// `agents.maxTurns` turns, and no `agent` tool of its own. Built once, dropped when the settings change.
-    func subagentLoop() async throws -> AgentLoop {
-        if let cached = current.withLock({ $0.subagentLoop }) { return cached }
+    /// The loop subagents run on, as `definition` when there is one: `threads.model`'s or main's settings, writing nowhere unless
+    /// `agents.allowWrites`, at most `agents.maxTurns` turns, no `agent` tool of its own, and only the definition's tools when it
+    /// names some. Built once for each definition, dropped when the settings change.
+    func subagentLoop(for definition: AgentDefinition?) async throws -> AgentLoop {
+        let key = definition?.name ?? ""
+        if let cached = current.withLock({ $0.subagentLoops[key] }) { return cached }
         var settings = current.withLock { $0.settings }
         if let word = settings.configuration.threads.value.threadModel {
             settings = try await self.settings(forModel: word)
@@ -62,10 +66,13 @@ extension AgentConversation {
         settings.configuration.maxTurns.value = agents.turns
         settings.configuration.maxTurns.source = .flag("agents.maxTurns")
         mcp.apply(settings.configuration.mcp.value.servers)
-        let created = try makeLoop(settings, loopHooks(settings, subagents: false))
+        var hooks = loopHooks(settings, subagents: false)
+        // A definition that names tools keeps only those; a name ask does not know grants nothing.
+        if let definition, !definition.tools.isEmpty { hooks.keepTools = Set(definition.tools.compactMap(\.ask)) }
+        let created = try makeLoop(settings, hooks)
         return current.withLock { current in
-            if current.subagentLoop == nil { current.subagentLoop = created }
-            return current.subagentLoop ?? created
+            if current.subagentLoops[key] == nil { current.subagentLoops[key] = created }
+            return current.subagentLoops[key] ?? created
         }
     }
 

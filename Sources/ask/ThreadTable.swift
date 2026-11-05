@@ -39,6 +39,7 @@ final class ThreadTable: Sendable {
         var holding: Set<String> = []
         /// Subagents (roadmap 0063), and the `agent` calls waiting for their reports.
         var subagents: Set<String> = []
+        var subagentDefinitions: [String: AgentDefinition] = [:]
         var waiters: [String: CheckedContinuation<String, Never>] = [:]
     }
 
@@ -170,6 +171,7 @@ final class ThreadTable: Sendable {
                 state.reports = []
                 state.holding = []
                 state.subagents = []
+                state.subagentDefinitions = [:]
                 state.next = 1
             }
             return state.threads.values.compactMap(\.task)

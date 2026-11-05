@@ -12,5 +12,7 @@ struct LoopHooks: Sendable {
     var progress: ToolProgressReporter?
     /// Who starts the model's subagents (roadmap 0063); nil for a subagent's own loop.
     var startSubagent: SubagentTask.Starter?
+    /// The tools a definition's subagent keeps (roadmap 0063 phase 3); nil keeps them all.
+    var keepTools: Set<String>?
     var reportEvent: (@Sendable (AgentEvent) -> Void)?
 }
