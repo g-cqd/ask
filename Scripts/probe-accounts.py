@@ -8,7 +8,8 @@ C: Esc cancels a question; /logout lists the accounts and signs one out without 
 D: /login with the wrong words says so and stays.
 E: /logout all asks first, No checked: Enter closes it and keeps every account; y then Enter signs out of everything (roadmap 0116).
 
-Usage: Scripts/probe-accounts.py .build/release/ask [CONFIG_DIR_TO_COPY]
+Usage: Scripts/probe-accounts.py .build/release/ask [CONFIG_DIR_TO_COPY] [SECTIONS…]; B to E by default, A only by name (it needs a
+fake Codex server, task t229). No section uses the person's tokens.
 """
 import importlib.util, json, os, shutil, sys, tempfile, time
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -36,6 +37,8 @@ class Session(interactive.Screen):
         import pty, fcntl, struct, termios
         self.pid, self.fd = pty.fork()
         if self.pid == 0:
+            # The size before ask starts: set from the parent after the fork, a quick start read none (failedToGetSize).
+            fcntl.ioctl(0, termios.TIOCSWINSZ, struct.pack("HHHH", interactive.ROWS, interactive.COLUMNS, 0, 0))
             os.chdir(project)
             os.execve(ASK, [ASK], env)
         fcntl.ioctl(self.fd, termios.TIOCSWINSZ, struct.pack("HHHH", interactive.ROWS, interactive.COLUMNS, 0, 0))
@@ -50,6 +53,12 @@ def config(copy=True):
         for name in os.listdir(os.path.join(home, "ask")):
             if name.endswith(".lock"):
                 os.unlink(os.path.join(home, "ask", name))
+        # Never the person's tokens: a copy refreshed here spent a refresh token their own ask still held (Codex said
+        # refresh_token_reused and ended the sign-in). Only Codex is signed in, with a token that is not due.
+        with open(os.path.join(home, "ask", "credentials.json"), "w") as file:
+            json.dump({"codex": {"accessToken": "probe-access", "refreshToken": "probe-refresh", "expiresAt": time.time() + 30 * 86400,
+                                 "accountID": "probe-account"}}, file)
+        os.chmod(os.path.join(home, "ask", "credentials.json"), 0o600)
         # The scenarios are Codex's: say so, rather than count on the person's config choosing it (with several accounts
         # signed in and none named, ask takes the first that can answer).
         providers = os.path.join(home, "ask", "providers.json")
@@ -201,7 +210,9 @@ def probe_wrong_words():
 
 
 if __name__ == "__main__":
-    only = sys.argv[3:] or ['A', 'B', 'C', 'D', 'E']
+    # A only when named: ask reads Codex's catalog from chatgpt.com at start, and with the probe's own token (never the person's) it is
+    # refused; it waits for a Codex address a probe can point at a fake server (task t229).
+    only = sys.argv[3:] or ['B', 'C', 'D', 'E']
     sections = {'A': probe_models, 'B': probe_login, 'C': probe_cancel_and_logout, 'D': probe_wrong_words,
                 'E': probe_logout_all_confirms}
     ok = [sections[name]() for name in only]
