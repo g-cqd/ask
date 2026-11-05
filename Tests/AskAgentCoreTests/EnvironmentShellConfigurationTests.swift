@@ -29,10 +29,10 @@ struct EnvironmentShellConfigurationTests {
 
     @Test(arguments: ["powershell", "rm -rf", "relative/sh", ""])
     func `anything else is refused`(_ shell: String) {
-        #expect(throws: (any Error).self) { try parse(shell) }
+        #expect(throws: ConfigurationError.self) { try parse(shell) }
     }
 
     @Test func `a project's file cannot choose the shell`() {
-        #expect(throws: (any Error).self) { try parse("bash", project: true) }
+        #expect(throws: ConfigurationError.self) { try parse("bash", project: true) }
     }
 }

@@ -22,7 +22,8 @@ extension ScreenController {
         let options = pending.options
         switch key.keyCode {
             case 0x1B:
-                let deny = options.last!
+                // The last option is always the refusal; an approval with none has nothing to answer.
+                guard let deny = options.last else { return [] }
                 settle(pending, saying: deny.said)
                 return [.answerApproval(id: pending.id, deny.choice)]
             case 0x0D:

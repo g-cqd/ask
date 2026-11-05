@@ -5,6 +5,13 @@ internal import AskAI
 /// wrong shape is skipped, and nothing here throws.
 enum MCPToolParsing {
     /// One element of a tool listing, or nil when it is not a tool.
+    /// The schema of a tool that states none: any object.
+    private static let anyObject: JSONObject = {
+        do { return try JSONObject(validating: Array(#"{"type":"object"}"#.utf8)) } catch {
+            preconditionFailure("ask's own schema does not parse: \(error)")
+        }
+    }()
+
     static func tool(_ element: JSON) -> MCPTool? {
         guard element.isObject, let name = element["name"].string, !name.isEmpty else { return nil }
         let schema =
@@ -16,7 +23,7 @@ enum MCPToolParsing {
             name: name,
             title: element["title"].string,
             description: element["description"].string ?? "",
-            inputSchema: schema ?? (try! JSONObject(validating: Array(#"{"type":"object"}"#.utf8))),
+            inputSchema: schema ?? anyObject,
             annotations: MCPToolAnnotations(
                 readOnly: hints["readOnlyHint"].bool,
                 destructive: hints["destructiveHint"].bool,

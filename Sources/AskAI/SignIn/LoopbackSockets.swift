@@ -69,9 +69,7 @@ enum LoopbackSockets {
     static func write(_ bytes: [UInt8], to client: Int32) {
         var sent = 0
         while sent < bytes.count {
-            let count = bytes.withUnsafeBytes {
-                unsafe Darwin.write(client, $0.baseAddress! + sent, $0.count - sent)
-            }
+            let count = DescriptorBytes.write(client, bytes, from: sent)
             if count <= 0 { return }
             sent += count
         }

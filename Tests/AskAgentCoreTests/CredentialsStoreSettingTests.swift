@@ -13,13 +13,13 @@ struct CredentialsStoreSettingTests {
         #expect(file.credentials == .file)
         let configured = Configuration.defaults.applying(file, from: .file("/u/config.json"))
         #expect(configured.changes(from: .defaults) == ["credentials: auto → file (/u/config.json)"])
-        #expect(throws: (any Error).self) {
+        #expect(throws: ConfigurationError.self) {
             try ConfigurationFile.parse(Array(#"{"credentials": "vault"}"#.utf8), path: "c.json")
         }
     }
 
     @Test func `a project's file cannot choose where the person's keys are kept`() {
-        #expect(throws: (any Error).self) {
+        #expect(throws: ConfigurationError.self) {
             try ConfigurationFile.parse(Array(#"{"credentials": "file"}"#.utf8), path: "p.json", isProject: true)
         }
     }

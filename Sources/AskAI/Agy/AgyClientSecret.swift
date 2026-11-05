@@ -111,7 +111,7 @@ public enum AgyClientSecret {
         ]
         return HTTPRequest.account(
             "POST",
-            URL(string: AgyOAuth.tokenURL)!,
+            URL.constant(AgyOAuth.tokenURL),
             contentType: "application/x-www-form-urlencoded",
             body: Array(FormEncoding.query(fields).utf8)
         )

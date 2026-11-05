@@ -7,7 +7,7 @@ internal import Foundation
 struct VSCodeBuild: Sendable {
     let transport: any HTTPTransport
 
-    static let update = URL(string: "https://update.code.visualstudio.com/api/update/darwin-arm64/stable/latest")!
+    static let update = URL.constant("https://update.code.visualstudio.com/api/update/darwin-arm64/stable/latest")
     static let downloads = "vscode.download.prss.microsoft.com"
     static let app = "Visual Studio Code.app/Contents/Resources/app/"
     static let product = app + "product.json"

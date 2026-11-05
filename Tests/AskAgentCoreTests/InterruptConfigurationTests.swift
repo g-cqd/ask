@@ -31,7 +31,7 @@ struct InterruptConfigurationTests {
         #"{"escapeInterruptRequiresConfirmation": "maybe"}"#, #"{"interruptKeys": "enter"}"#
     ])
     func `a wrong value is refused`(json: String) {
-        #expect(throws: (any Error).self) { try ui(json) }
+        #expect(throws: ConfigurationError.self) { try ui(json) }
     }
 
     @Test func `the keys are listed for the editor`() {

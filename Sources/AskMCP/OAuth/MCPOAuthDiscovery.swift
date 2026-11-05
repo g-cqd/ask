@@ -55,7 +55,9 @@ public enum MCPOAuthDiscovery {
             break
         }
         // A server without that metadata (MCP 2025-03-26) is its own authorization server.
-        let asked = issuer ?? URL(string: origin(server))!
+        guard let asked = issuer ?? URL(string: origin(server)) else {
+            throw MCPOAuthError("the server's address has no origin to ask")
+        }
         let plan = try await authorizationServer(asked, http: http)
         return MCPOAuthPlan(
             issuer: asked,

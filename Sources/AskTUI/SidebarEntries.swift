@@ -94,7 +94,7 @@ struct SidebarEntries {
         depths.indices.map { index in
             let depth = depths[index]
             let next = depths[(index + 1)...].first { $0 <= depth }
-            return next == nil || next! < depth
+            return next.map { $0 < depth } ?? true
         }
     }
 

@@ -107,8 +107,8 @@ final class ChangeLog<List: ChangeList>: Sendable {
     private func record(_ change: List.Change, _ state: inout State) throws -> [UInt8]? {
         let json = try AemiJSON.JSONEncoder().encodeToBytes(change)
         guard state.format.isFramed else { return json + [0x0A] }
-        guard state.framer != nil else { return nil }
-        do { return try state.framer!.append(json) } catch { throw SessionLogReader.sessionError(error) }
+        // In place: the framer cannot be copied. No framer is nil: the whole file is written instead.
+        do { return try state.framer?.append(json) } catch { throw SessionLogReader.sessionError(error) }
     }
 
     private func append(_ bytes: [UInt8]) throws {

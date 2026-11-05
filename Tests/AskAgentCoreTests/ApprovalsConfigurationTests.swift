@@ -16,7 +16,7 @@ struct ApprovalsConfigurationTests {
         let configured = Configuration.defaults.applying(file, from: .file("/u/config.json"))
         #expect(configured.approvals.value.defaultMode == .allow)
         #expect(configured.changes(from: .defaults).first?.hasPrefix("approvals: ") == true)
-        #expect(throws: (any Error).self) {
+        #expect(throws: ConfigurationError.self) {
             try ConfigurationFile.parse(Array(json.utf8), path: "p.json", isProject: true)
         }
     }

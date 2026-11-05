@@ -214,7 +214,7 @@ let package = Package(
             name: "AskAgentCoreTests",
             dependencies: [
                 "AskAgentCore", "AskAI", .product(name: "AemiIO", package: "aemi"),
-                .product(name: "AemiJSON", package: "AemiJSON")
+                .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiTesting", package: "aemi")
             ],
             path: "Tests/AskAgentCoreTests",
             swiftSettings: packageSettings

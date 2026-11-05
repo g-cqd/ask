@@ -4,7 +4,7 @@ public import Foundation
 /// Reads the account's Codex model list, not a static catalog shared by unrelated accounts.
 public struct CodexCatalogClient: Sendable {
     /// The probed, versioned catalog endpoint. It is also part of the cache's authority key.
-    public static let endpoint = URL(string: "https://chatgpt.com/backend-api/codex/models?client_version=0.163.0")!
+    public static let endpoint = URL.constant("https://chatgpt.com/backend-api/codex/models?client_version=0.163.0")
     private let transport: any HTTPTransport
 
     /// A client sending through `transport`.

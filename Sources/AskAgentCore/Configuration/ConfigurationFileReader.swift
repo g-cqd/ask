@@ -1,3 +1,4 @@
+internal import AskAI
 internal import Darwin
 
 /// Reads a small configuration file with the system calls themselves, so a failure carries its real errno.
@@ -27,9 +28,7 @@ enum ConfigurationFileReader {
         var bytes = [UInt8](repeating: 0, count: Int(info.st_size))
         var filled = 0
         while filled < bytes.count {
-            let count = bytes.withUnsafeMutableBytes {
-                Darwin.read(descriptor, $0.baseAddress! + filled, $0.count - filled)
-            }
+            let count = DescriptorBytes.read(descriptor, into: &bytes, at: filled)
             if count < 0 { throw .unreadable(path: path, errno: errno) }
             if count == 0 { break }  // The file shrank while being read; parse what was there.
             filled += count

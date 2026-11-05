@@ -1,4 +1,5 @@
 import AemiIO
+import AemiTesting
 import AskAI
 import Foundation
 import Synchronization
@@ -67,18 +68,18 @@ struct AgentLoopHandoverTests {
         #expect(request.messages.count == 3, "the whole turn so far: the prompt, the call, and its result")
     }
 
-    @Test func `a change made while a retry waits ends the wait and sends to the new model`() async throws {
+    // A test clock never advances on its own: the 60-second wait can only end because the change ended it.
+    @Test(.timeLimit(.minutes(1)))
+    func `a change made while a retry waits ends the wait and sends to the new model`() async throws {
         let before = Provider([.transient(retryAfter: .seconds(60))])
         let after = Provider([.reply("served")])
         let handover = LoopHandover()
-        let running = try loop(before, model: "old", handover: handover, clock: ContinuousClock())
+        let running = try loop(before, model: "old", handover: handover, clock: TestClock())
         let next = try loop(after, model: "new")
-        let started = ContinuousClock.now
         try await running.run("go", in: try session()) { event in
             if case .retrying = event { handover.offer(next) }
         }
-        #expect(ContinuousClock.now - started < .seconds(10), "the 60-second wait was not sat out")
-        #expect(before.requests.count == 1 && after.requests.count == 1)
+        #expect(before.requests.count == 1 && after.requests.count == 1, "the wait was cut short, not sat out")
     }
 
     @Test func `a window learned from one model is kept for that model and forgotten for another`() throws {

@@ -15,7 +15,7 @@ public struct CopilotAuthClient: Sendable {
         guard SignInSecret.isValid(githubToken), now.isFinite else { throw .invalidResponse("GitHub grant") }
         let envelope = try await http.json(
             HTTPRequest(
-                url: URL(string: "https://api.github.com/copilot_internal/v2/token")!,
+                url: URL.constant("https://api.github.com/copilot_internal/v2/token"),
                 method: "GET",
                 headers: [
                     ("authorization", "token \(githubToken)"), ("accept", "application/json"),

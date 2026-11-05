@@ -16,7 +16,11 @@ enum AddressLinks {
     static func links(in text: String) -> [PathLinks.Link] {
         let characters = Array(text)
         var columns = [0]
-        for character in characters { columns.append(columns.last! + UnicodeWidth.displayWidth(of: String(character))) }
+        var column = 0
+        for character in characters {
+            column += UnicodeWidth.displayWidth(of: String(character))
+            columns.append(column)
+        }
         var found: [(Range<Int>, String)] = []
         var index = 0
         while index < characters.count {

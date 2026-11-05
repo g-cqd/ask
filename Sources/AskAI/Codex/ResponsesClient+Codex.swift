@@ -20,7 +20,7 @@ extension ResponsesClient {
     ) -> ResponsesClient {
         ResponsesClient(
             transport: transport,
-            baseURL: URL(string: "https://chatgpt.com/backend-api/codex")!,
+            baseURL: URL.constant("https://chatgpt.com/backend-api/codex"),
             apiKey: credentials.accessToken,
             headers: [
                 "chatgpt-account-id": credentials.accountID, "originator": CodexOAuth.originator,

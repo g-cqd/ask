@@ -65,7 +65,7 @@ public struct AgyCloudClient: Sendable {
         -> (status: Int, body: [UInt8])
     {
         let bytes = try Array(AemiJSON.JSONEncoder().encode(body))
-        var request = HTTPRequest.account("POST", URL(string: baseURL.absoluteString + path)!, body: bytes)
+        var request = HTTPRequest.account("POST", URL.constant(baseURL.absoluteString + path), body: bytes)
         request.headers = request.headers.filter { $0.name != "user-agent" }
         request.headers += [("authorization", "Bearer " + accessToken), ("user-agent", AgyCloud.userAgent)]
         return try await transport.collecting(request, limit: limit)

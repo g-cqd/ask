@@ -46,10 +46,10 @@ struct ConfigurationChangesTests {
         var problems: [String] = []
         let env = Configuration.defaults.applying(environment: ["ASK_MAX_TURNS": "none"], problems: &problems)
         #expect(env.maxTurns.value == Configuration.noTurnLimit && problems.isEmpty)
-        #expect(throws: (any Error).self) {
+        #expect(throws: ConfigurationError.self) {
             try ConfigurationFile.parse(Array(#"{"maxTurns": "lots"}"#.utf8), path: "c.json")
         }
-        #expect(throws: (any Error).self) {
+        #expect(throws: ConfigurationError.self) {
             try ConfigurationFile.parse(Array(#"{"maxTurns": 0}"#.utf8), path: "c.json")
         }
         #expect(

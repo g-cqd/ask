@@ -35,7 +35,7 @@ public struct CopilotDeviceSignIn: BrowserSignIn {
         else { throw .invalidResponse("GitHub device response") }
         return SignInStart(
             session: Device(code: begun.device_code),
-            url: URL(string: begun.verification_uri)!,
+            url: URL.constant(begun.verification_uri),  // checked above to be GitHub's own
             window: .seconds(begun.expires_in),
             interval: .seconds(begun.interval),
             instructions: "Enter this code there: \(begun.user_code)"

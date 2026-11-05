@@ -7,9 +7,9 @@ public import Foundation
 /// ask's own (ADR-0080).
 public struct AgyClient: Sendable {
     /// Where streaming requests go; the query is part of the address, which is why this is not a path under a base.
-    private static let address = URL(
-        string: AgyCloud.baseURL.absoluteString + "/v1internal:streamGenerateContent?alt=sse"
-    )!
+    private static let address = URL.constant(
+        AgyCloud.baseURL.absoluteString + "/v1internal:streamGenerateContent?alt=sse"
+    )
     private let transport: any HTTPTransport
     private let newID: @Sendable () -> String
 
