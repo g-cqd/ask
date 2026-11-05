@@ -137,4 +137,18 @@ struct TerminalColoursTests {
         let expected = ScreenTheme(page: .light).legible(Style(dim: true)).fg
         #expect(output.map { rig.buffer[$0.0, $0.1].style.fg } == expected)
     }
+
+    @Test(arguments: [false, true])
+    func `the sidebar draws no faint cell once the page is known, closed or open`(open: Bool) {
+        var options = ScreenOptions(sidebar: open, sidebarLayout: .full)
+        options.appearance = .light
+        let rig = PointerRig(
+            columns: 100,
+            rows: 20,
+            options: options,
+            updates: [.runners([RunnerInfo(name: "job-1", detail: "x")])]
+        )
+        let faint = (0 ..< 20).flatMap { row in (0 ..< 100).filter { rig.buffer[row, $0].style.dim }.map { (row, $0) } }
+        #expect(faint.isEmpty, "faint cells at \(faint.prefix(4))")
+    }
 }

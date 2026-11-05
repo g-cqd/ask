@@ -147,14 +147,22 @@ def passed(name):
 
 
 run()
-assert counts() == (0, 1) and 'thinking' not in body() and 'output_config' not in body() and not cache.exists()
-passed('unset: no metadata request or new wire fields')
+# Unset, on a model that always thinks (this catalog's modern), the default is sent as adaptive thinking so its summary can be asked
+# for (roadmap 0167): one metadata request says so, and its answer is cached.
+assert counts() == (1, 1) and body().get('thinking') == {'type': 'adaptive', 'display': 'summarized'} \
+    and 'output_config' not in body() and cache.exists(), (counts(), str(body())[:400], cache.exists())
+passed('unset, on a model that always thinks: one metadata request, adaptive thinking with its summary')
+# What follows starts cold, as it did before the default looked the model up: no cache, no lookup counted, the one request kept.
+cache.unlink()
+with lock:
+    state['get'].clear()
 before = counts()
 result = ask('config', variables={'ASK_THINKING': 'high'})
 assert counts() == before and 'will be looked up before the first request' in result.stdout and not cache.exists()
 passed('cold cache: loading settings makes no network request and says the level is pending')
 run('--thinking', 'high')
-assert counts() == (1, 2) and body()['thinking'] == {'type': 'adaptive'} and body()['output_config'] == {'effort': 'high'}
+assert counts() == (1, 2) and body()['thinking'] == {'type': 'adaptive', 'display': 'summarized'} and body()['output_config'] == {'effort': 'high'}, \
+    (counts(), body().get('thinking'), body().get('output_config'))
 assert body()['max_tokens'] == 16384, 'a deferred lookup cannot have sized this request from the model limits'
 assert stat.S_IMODE(cache.stat().st_mode) == 0o600 and KEY not in cache.read_text()
 passed('native high, cold: looked up at the first request, exact effort, owner-only token-free cache')
@@ -166,8 +174,10 @@ run(variables={'ASK_THINKING': 'low'})
 assert body()['output_config']['effort'] == 'low' and counts()[0] == 1
 passed('environment overrides the file without another catalog request')
 run('--thinking', 'default', variables={'ASK_THINKING': 'low'})
-assert 'thinking' not in body() and 'output_config' not in body() and counts()[0] == 1
-passed('explicit default resets file and environment without new controls')
+# The default on a model that always thinks is adaptive thinking with its summary (roadmap 0167), and no effort.
+assert body().get('thinking') == {'type': 'adaptive', 'display': 'summarized'} and 'output_config' not in body() \
+    and counts()[0] == 1, (body().get('thinking'), counts())
+passed('explicit default resets file and environment: no effort, the default\'s adaptive thinking')
 result = run(variables={'ASK_THINKING': 'invalid'})
 assert body()['output_config']['effort'] == 'high' and '$ASK_THINKING' in result.stderr and 'ignored' in result.stderr
 passed('invalid environment is reported, not silently used')
@@ -177,7 +187,7 @@ run('--thinking', 'off', model='disabled-mode')
 assert body()['thinking'] == {'type': 'disabled'}
 passed('off follows each model metadata: between_tools versus disabled')
 run('--thinking', 'minimal', model='old')
-assert body()['thinking'] == {'type': 'enabled', 'budget_tokens': 1024} and 'output_config' not in body()
+assert body()['thinking'] == {'type': 'enabled', 'budget_tokens': 1024, 'display': 'summarized'} and 'output_config' not in body()
 passed('legacy minimal: concrete 1024-token budget, no invented effort')
 before = counts()
 run('--thinking', 'minimal', expect=78)

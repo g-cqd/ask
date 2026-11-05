@@ -105,10 +105,17 @@ extension ScreenComposer {
                 height: 1,
                 cell: Cell(character: " ", style: background, width: 1)
             )
-            if side.divider { buffer.write("│", row: row, col: side.column, style: Style(dim: true)) }
+            // In the page's grey once the terminal said its colours, as the transcript's faint rows are: faint is unreadable on some.
+            let divider = Style(dim: true)
+            if side.divider { buffer.write("│", row: row, col: side.column, style: theme?.legible(divider) ?? divider) }
             var style = side.style
             if !side.divider { style.bg = line.style.bg }
-            buffer.write(side.text, row: row, col: side.column + (side.divider ? 1 : 0), style: style)
+            buffer.write(
+                side.text,
+                row: row,
+                col: side.column + (side.divider ? 1 : 0),
+                style: theme?.legible(style) ?? style
+            )
         }
     }
 }
