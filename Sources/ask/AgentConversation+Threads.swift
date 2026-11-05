@@ -45,25 +45,34 @@ extension AgentConversation {
             return
         }
         // threads.model is resolved before the thread exists: one that does not resolve refuses it here, in what is shown.
-        do { _ = try await threadLoop() } catch {
+        let loop: AgentLoop
+        do { loop = try await threadLoop() } catch {
             let word =
                 current.withLock { $0.settings.configuration.threads.value.threadModel } ?? "the conversation's model"
             say(.notice("Cannot start a thread: threads.model \"\(word)\" does not resolve: \(error)", isError: true))
             return
         }
+        // The thread.start hook point: a hook may refuse it or rewrite its task.
+        let prompt: String
+        switch await loop.startingThread(ThreadStart(name: threads.nextName, parent: parent, prompt: text)) {
+            case .refused(let reason):
+                say(.notice(reason, isError: true))
+                return
+            case .start(let task): prompt = task
+        }
         do {
             // Main's session first, so a thread started before any prompt is recorded there too (roadmap 0195).
             if parent == nil, session.withLock({ $0 == nil }) { _ = try recorder() }
             let recorder = try threadSession(from: parent)
-            let name = threads.add(prompt: text, recorder: recorder, parent: parent)
+            let name = threads.add(prompt: prompt, recorder: recorder, parent: parent)
             let source = parent.flatMap { threads.thread($0)?.recorder } ?? session.withLock { $0 }
-            recordStarted(name, parent: parent, prompt: text, recorder: recorder, source: source)
+            recordStarted(name, parent: parent, prompt: prompt, recorder: recorder, source: source)
             // Its conversation starts with its task; what is typed in its lane later, the screen shows as it is sent.
-            update(.thread(id: name, .userPrompt(text)))
+            update(.thread(id: name, .userPrompt(prompt)))
             // Where it starts, in the conversation it was forked from (note n23).
-            say(.threadStarted(id: "fork-\(name)", name: name, prompt: text))
-            runThread(name, text, update: update)
-            nameThread(name, task: text, update: update)
+            say(.threadStarted(id: "fork-\(name)", name: name, prompt: prompt))
+            runThread(name, prompt, update: update)
+            nameThread(name, task: prompt, update: update)
         } catch {
             say(.notice("Cannot start a thread: \(error)", isError: true))
         }

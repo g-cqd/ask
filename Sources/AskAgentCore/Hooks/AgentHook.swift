@@ -53,6 +53,12 @@ public protocol AgentHook: Sendable {
     func waiting(_ reason: HookWaitingReason) async
     /// Called when ask quits or leaves the session (roadmap 0192).
     func sessionEnd(sessionPath: String) async
+    /// Whether a thread starts, and on what task (roadmap 0195, `thread.start`).
+    func threadStart(_ start: ThreadStart) async -> ThreadStartDecision
+    /// Called before a thread's summary is written; may add to its instructions (roadmap 0195, `thread.merge`).
+    func threadMerge(_ merge: ThreadMerge) async -> ThreadMergeDecision
+    /// The summary a thread's parent receives (roadmap 0195, `thread.merged`).
+    func threadMerged(_ merge: ThreadMerge, summary: String) async -> String
 }
 
 extension AgentHook {
@@ -76,4 +82,7 @@ extension AgentHook {
     public func settingsChange(_ descriptions: [String]) async {}
     public func waiting(_ reason: HookWaitingReason) async {}
     public func sessionEnd(sessionPath: String) async {}
+    public func threadStart(_ start: ThreadStart) async -> ThreadStartDecision { .allow }
+    public func threadMerge(_ merge: ThreadMerge) async -> ThreadMergeDecision { .allow }
+    public func threadMerged(_ merge: ThreadMerge, summary: String) async -> String { summary }
 }

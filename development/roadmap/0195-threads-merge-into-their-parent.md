@@ -299,6 +299,14 @@ summary instructions, or rewrite the summary).
 - Test first: `ThreadLaneTests` (red: the command went back to main), then `Scripts/probe-thread-merge.py` (red: no refusal, nothing
   merged), then the code; 4 checks, twice.
 
+## Done (2026-11-05): the thread hook points
+
+- `thread.start` (block, or rewrite the task, before the thread exists), `thread.merge` (instructions for the summary, after
+  `threads.summaryInstructions`) and `thread.merged` (rewrite the summary its parent receives), on `AgentHook`, asked in order within
+  each hook's deadline like every other point (`AgentLoop.startingThread`, `mergeInstructions`, `mergedSummary`).
+- Test first: `AgentHookThreadTests` (4) red against stubs that changed nothing. ask has no configurable hooks yet, so no probe
+  reaches these points through the binary; the thread probes show the path without hooks unchanged.
+
 ## Done (2026-11-05): threads.merge "ask"
 
 - A thread that finished asks whether to merge, as a failed or stopped one does; the question comes where the person is

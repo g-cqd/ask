@@ -110,7 +110,12 @@ extension AgentConversation {
         var summary: String
         do {
             let loop = try await threadLoop()
-            let addition = current.withLock { $0.settings.configuration.threads.value.summaryAddition }
+            // threads.summaryInstructions, then what the thread.merge hook point adds.
+            let point = ThreadMerge(name: name, parent: thread.parent)
+            let added =
+                [current.withLock { $0.settings.configuration.threads.value.summaryAddition }].compactMap { $0 }
+                + (await loop.mergeInstructions(point))
+            let addition = added.isEmpty ? nil : added.joined(separator: "\n\n")
             let written = try await loop.aside(
                 question,
                 over: thread.recorder.tree,
@@ -118,7 +123,7 @@ extension AgentConversation {
             )
             usage.withLock { $0.addBeside(written.usage) }
             update(.status(usage.withLock { $0.compact }))
-            summary = written.answer
+            summary = await loop.mergedSummary(point, written.answer)
         } catch {
             update(
                 .thread(

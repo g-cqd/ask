@@ -55,6 +55,9 @@ final class ThreadTable: Sendable {
 
     func thread(_ name: String) -> Thread? { state.withLock { $0.threads[name] } }
 
+    /// The name the next thread is given, for the `thread.start` hook point.
+    var nextName: String { state.withLock { "thread-\($0.next)" } }
+
     /// Thread `name` runs `task`, its lane's messages going to `queue`.
     func run(_ name: String, task: Task<Void, Never>, queue: PromptQueue) {
         state.withLock { state in
