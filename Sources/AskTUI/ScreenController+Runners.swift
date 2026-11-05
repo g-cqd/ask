@@ -10,6 +10,7 @@ extension ScreenController {
             progress[runner.id] = clock
         }
         state.runnerProgress = progress
+        state.runnerActivity = state.runnerActivity.filter { progress[$0.key] != nil }
         state.runners = list
         for runner in list where runner.kind == .agent && runner.state == .merged && state.mergedAt[runner.id] == nil {
             state.mergedAt[runner.id] = instant

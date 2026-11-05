@@ -106,8 +106,8 @@ Jobs
 The first row holds only the toggle: `»` closes the sidebar, and the `«` it leaves in the corner opens it again. `◆ main` is always
 listed, so the panel does not move as threads and jobs come and go, and the last row says what is running and what waits for you.
 Threads are a tree under the main conversation: `/thread` typed in a thread's lane starts one from that thread, under it. Each
-row is a state mark (a spinner while running, `?` waiting for you, `✓` done, `✗`
-failed, `■` stopped), the name, what it is doing, and how long an active one has run. Ended rows are dim, the one shown is bold, and
+row is a state mark (a spinner while it works; once it has done nothing for three seconds, its kind: `◇` a thread, `$` a job;
+`?` waiting for you, `◌` waiting on its threads, `✓` done, `✗` failed, `■` stopped), the name, what it is doing, and how long an active one has run. Ended rows are dim, the one shown is bold, and
 the one Up and Down chose is inverse; a click opens it, and `main` goes back.
 
 While a command the model ran is still running, **Ctrl+B** (or **Ctrl+Enter**, where the terminal reports it) sends it to the

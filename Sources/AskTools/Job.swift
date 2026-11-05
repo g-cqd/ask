@@ -39,6 +39,7 @@ public final class Job: Sendable {
     struct State {
         var status = JobStatus.running
         var endedAt: ContinuousClock.Instant?
+        var lastOutputAt: ContinuousClock.Instant?
         var backgrounded = false
         var unread: OutputBuffer
         /// The last ``recentBytes`` of all output, seen or not: where a text a waiter looks for may have begun.
@@ -166,6 +167,7 @@ public final class Job: Sendable {
     private func received(_ bytes: [UInt8]) {
         let met: [CheckedContinuation<WaitResult, Never>] = state.withLock { state in
             state.unread.append(bytes)
+            state.lastOutputAt = .now
             state.recent = Array((state.recent + bytes).suffix(Self.recentBytes))
             state.totalBytes += bytes.count
             for byte in bytes where byte == 0x0A { state.totalLines += 1 }
@@ -221,6 +223,8 @@ public final class Job: Sendable {
     }
 
     public var status: JobStatus { state.withLock { $0.status } }
+    /// When it last wrote output; nil before it has.
+    public var lastOutputAt: ContinuousClock.Instant? { state.withLock { $0.lastOutputAt } }
 
     /// Every byte and line the command printed, for deciding whether its file is worth keeping.
     var printed: (bytes: Int, lines: Int) { state.withLock { ($0.totalBytes, $0.totalLines) } }

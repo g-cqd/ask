@@ -3,7 +3,7 @@ sidebar's tree once a thread exists, and how a probe opens a runner's lane from 
 import re
 import time
 
-# A row's mark, as the tree draws it; a spinner or ● is a runner at work.
+# A row's mark, as the tree draws it; a spinner or ● is a runner at work, and ◇ (a thread) or $ (a job) one at work but quiet.
 MARKS = {"✓": "merged", "■": "stopped", "?": "waiting", "◌": "held", "✗": "failed"}
 
 
@@ -23,6 +23,12 @@ def row(terminal, name):
     """The row of the runner shown as `name`, or None."""
     pattern = re.compile(r"^(?:[│ ] |[├└] )*(?:\+\d+ )?\S+ " + re.escape(name) + r"(?: |$)")
     return next((line for line in runner_rows(terminal) if pattern.match(line)), None)
+
+
+def mark_of(terminal, text):
+    """The mark of the first runner row that shows `text`, or None."""
+    shown = next((line for line in runner_rows(terminal) if text in line), None)
+    return re.match(r"^(?:[│ ] |[├└] )*(?:\+\d+ )?(\S+) ", shown).group(1) if shown else None
 
 
 def state(terminal, name):

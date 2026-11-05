@@ -67,6 +67,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case askQuestions(id: Int, questions: [ScreenQuestion])
     /// Everything running beside the conversation, replacing the last list. The status line counts them and `/jobs` lists them.
     case runners([RunnerInfo])
+    /// When runners last did something, by id: a job's last output (roadmap 0195, note n15). Merged into what is known.
+    case runnerActivity([String: ContinuousClock.Instant])
     /// The project's files for the `@` picker, answering ``ScreenController/Effect/indexFiles``.
     case files(ProjectFiles)
     /// The skills for the `/` picker, as commands named `skill:name`, answering ``ScreenController/Effect/listSkills``.

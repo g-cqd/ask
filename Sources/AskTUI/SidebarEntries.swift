@@ -104,7 +104,13 @@ struct SidebarEntries {
         let progress = state.runnerProgress[runner.id]
         let name = runner.kind == .job ? String(runner.name.filter { $0 != "[" && $0 != "]" }) : runner.name
         var text =
-            prefix + Self.mark(runner.state, spinner: progress?.indicator) + " " + name + " "
+            prefix
+            + Self.mark(
+                runner.state,
+                spinner: progress?.indicator,
+                quietKind: Self.quiet(runner, progress, state) ? runner.kind : nil
+            )
+            + " " + name + " "
             + runner.detail.replacing("\n", with: " ")
         if item.hidden > 0 { text = prefix + "+\(item.hidden) " + String(text.dropFirst(prefix.count)) }
         let duration = runner.state.isActive ? progress?.duration(localized: state.blocks.localizedDurations) : nil
@@ -119,10 +125,26 @@ struct SidebarEntries {
         )
     }
 
-    /// The state at a glance: a running runner's spinner, `?` waiting on the person, then `✓`, `✗` or `■`.
-    private static func mark(_ state: RunnerInfo.State, spinner: String?) -> String {
+    /// How long a running runner may do nothing before its row shows its kind rather than a spinner.
+    static let quietAfter: Duration = .seconds(3)
+
+    /// Whether `runner` has done nothing for ``quietAfter``: no event, no output, since it last did or since it started.
+    private static func quiet(_ runner: RunnerInfo, _ progress: BlockProgress?, _ state: ScreenState) -> Bool {
+        guard runner.state == .running, let progress else { return false }
+        let last = state.runnerActivity[runner.id].map { Swift.max($0, progress.started) } ?? progress.started
+        return progress.sampled - last >= quietAfter
+    }
+
+    /// The state at a glance: a running runner's spinner while it works and its kind once quiet (`◇` a thread, `$` a job), `?` waiting
+    /// on the person, then `✓`, `✗` or `■`.
+    private static func mark(_ state: RunnerInfo.State, spinner: String?, quietKind: RunnerInfo.Kind?) -> String {
         switch state {
-            case .running: spinner ?? "●"
+            case .running:
+                switch quietKind {
+                    case .agent: "◇"
+                    case .job: "$"
+                    case nil: spinner ?? "●"
+                }
             case .waitingForApproval: "?"
             case .merging: spinner ?? "●"
             case .held: "◌"

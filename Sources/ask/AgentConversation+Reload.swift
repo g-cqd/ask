@@ -40,6 +40,18 @@ extension AgentConversation {
                         update(.runners(threads.runners))
                     }
                 }
+                // When each job last wrote, so the list spins for one that writes and marks a quiet one $ (note n15): sampled once a
+                // second, and sent only when it changed.
+                group.addTask {
+                    var told: [String: ContinuousClock.Instant] = [:]
+                    while !Task.isCancelled {
+                        let seen = jobs.activity
+                        let changed = seen.filter { told[$0.key] != $0.value }
+                        if !changed.isEmpty { update(.runnerActivity(changed)) }
+                        told = seen
+                        try? await Task.sleep(for: .seconds(1))
+                    }
+                }
                 // One watcher for the configuration files and the executable; the screen owns this task while it shows
                 // the conversation.
                 group.addTask { await self.watchFiles(since: startup, update: update) }
