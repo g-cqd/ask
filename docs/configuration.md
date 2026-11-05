@@ -296,8 +296,10 @@ own file turns it on: a project's may turn it off, never on, and may not let sub
 | `allowWrites` | `false` | Whether subagents may change files; read-only otherwise, whatever the parent may do. Your own file only. |
 | `maxTurns` | `30` | The most turns one subagent may take, from 1 to 200. |
 
-Agent definitions are Markdown files in `~/.config/ask/agents` (`NAME.md`): a head with `description`, and optionally `name`, `tools`
-and `model`, then the instructions. The `agent` tool lists them, and a call may name one: the subagent is told its instructions before
+Agent definitions are Markdown files in `~/.config/ask/agents` (`NAME.md`), and in a project's `.agents/agents` once you trust them
+there: run `ask trust --agents` at a terminal (it shows each file and what it is for; a later change to a file untrusts it, and
+`ask untrust --agents` forgets them). Each has a head with `description`, and optionally `name`, `tools` and `model`, then the
+instructions; your own win a name the project also uses. The `agent` tool lists them, and a call may name one: the subagent is told its instructions before
 its task, and keeps only the tools it names (none named, it keeps all of a subagent's). `model` is read but not yet used.
 
 ### `modelScopes`

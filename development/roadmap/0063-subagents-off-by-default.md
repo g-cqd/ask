@@ -110,3 +110,12 @@ their own. Where their questions appear is 0195's `threads.questions`.
 - Next: a project's `.agents/agents`, trusted per file as its skills are (`ask trust`); `model` used as a preference on the active
   connection; other harnesses' definitions behind `agents.otherHarnesses`; then the model-assisted resolution.
 
+## Phase 3b done (2026-11-05): a project's definitions, trusted per file
+
+- `.agents/agents/*.md` count once trusted, each file as its bytes are now, in the store the configuration and skills use:
+  `ask trust --agents [NAMES]` at a terminal (it shows each one's file and description), `ask untrust --agents`. A changed file is
+  untrusted again. The person's own definitions win a name the project also uses.
+- Test first: `AgentDefinitionTests` (the trust split) red before `projectDefinitions`; `probe-subagent-project-definitions.py`
+  (4 checks) red before `--agents`.
+- Next: `model` used as a preference; other harnesses' definitions behind `agents.otherHarnesses`; the model-assisted resolution.
+

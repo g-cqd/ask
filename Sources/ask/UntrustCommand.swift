@@ -14,21 +14,24 @@ struct UntrustCommand: ParsableCommand {
     @Flag(name: .customLong("skills"), help: "Stop trusting this project's skills instead of its configuration.")
     var skills = false
 
-    @Argument(help: "With --skills: only these skills, by name. Default: every project skill.")
+    @Flag(
+        name: .customLong("agents"),
+        help: "Stop trusting this project's agent definitions instead of its configuration."
+    )
+    var agents = false
+
+    @Argument(help: "With --skills or --agents: only these, by name. Default: every one the project has.")
     var names: [String] = []
 
     func run() {
         let loader = ConfigurationSource.here.loader
         if skills {
-            let found = ProjectSkillTrust.skills(named: names)
-            do { try ProjectSkillTrust.apply(found.skills, granting: false, store: loader.trustPath) } catch {
-                fail("ask: \(error)", code: 73)
-            }
-            for skill in found.skills { print("No longer trusting \(skill.name): \(skill.file)") }
-            for name in found.missing { print("No project skill called \(name).") }
-            return
+            return TrustedFile.untrust(ProjectSkillTrust.files(named: names), kind: "skill", store: loader.trustPath)
         }
-        guard names.isEmpty else { fail("ask: names are for --skills.", code: 64) }
+        if agents {
+            return TrustedFile.untrust(ProjectAgentTrust.files(named: names), kind: "agent", store: loader.trustPath)
+        }
+        guard names.isEmpty else { fail("ask: names are for --skills or --agents.", code: 64) }
         do {
             var trust = try ProjectTrust.load(loader.trustPath)
             guard trust.untrust(loader.projectPath) else {

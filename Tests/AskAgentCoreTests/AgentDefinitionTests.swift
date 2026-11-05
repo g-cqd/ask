@@ -45,4 +45,25 @@ struct AgentDefinitionTests {
         let found = AgentDiscovery.definitions(in: [first, second, base + "/missing"])
         #expect(found.map(\.name) == ["alpha", "beta"] && found.first?.description == "First.")
     }
+
+    @Test func `a project's definitions count only as trusted, each file as its bytes are now`() throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: "project-agents-\(UUID().uuidString)").path
+        try FileManager.default.createDirectory(atPath: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let fixer = root + "/fixer.md"
+        let other = root + "/other.md"
+        try "---\ndescription: Fixes.\n---\nFix it.".write(toFile: fixer, atomically: true, encoding: .utf8)
+        try "---\ndescription: Other.\n---\nDo it.".write(toFile: other, atomically: true, encoding: .utf8)
+        var trust = ProjectTrust()
+        let seen = AgentDiscovery.projectDefinitions(in: root, trust: trust)
+        #expect(seen.trusted.isEmpty && seen.untrusted.map(\.name) == ["fixer", "other"], "nothing trusted yet")
+        let fixerDefinition = try #require(seen.untrusted.first)
+        trust.trust(fixerDefinition.realFile, digest: fixerDefinition.digest)
+        #expect(AgentDiscovery.projectDefinitions(in: root, trust: trust).trusted.map(\.name) == ["fixer"])
+        try "---\ndescription: Fixes, changed.\n---\nFix it.".write(toFile: fixer, atomically: true, encoding: .utf8)
+        #expect(
+            AgentDiscovery.projectDefinitions(in: root, trust: trust).trusted.isEmpty,
+            "a changed file is untrusted again"
+        )
+    }
 }

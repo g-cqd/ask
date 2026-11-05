@@ -9,6 +9,10 @@ public struct AgentDefinition: Sendable, Equatable {
     public let tools: [ToolReference]
     public let models: ModelPreference
     public let file: String
+    /// The file's path with links resolved, which trust is kept under; `file` when it was read from text.
+    public var realFile: String = ""
+    /// The SHA-256 of the file's bytes, which a project's definition is trusted as (roadmap 0063 phase 3).
+    public var digest: String = ""
     public let diagnostics: [String]
 
     /// The definition in `text`, the file at `file`; nil when it gives neither a description nor a body to take one from.

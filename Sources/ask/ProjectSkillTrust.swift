@@ -6,8 +6,8 @@ internal import Foundation
 /// skill that changes is untrusted until the user looks again. It covers the `SKILL.md` text, which is what the model reads and what is advertised; it
 /// does not cover the other files beside it, which the model may read or run only under its sandbox.
 enum ProjectSkillTrust {
-    /// The project's skills, all harnesses, trusted or not.
-    static func skills(named names: [String]) -> (skills: [Skill], missing: [String]) {
+    /// The project's skills, all harnesses, trusted or not, as the files trust is given or taken from.
+    static func files(named names: [String]) -> (found: [TrustedFile], missing: [String]) {
         let trust = SkillBook.trust()
         let catalog = SkillDiscovery.discover(
             workingDirectory: FileManager.default.currentDirectoryPath,
@@ -16,25 +16,17 @@ enum ProjectSkillTrust {
             selection: SkillSelection(tokens: ["project"], knownSources: []),
             trust: trust
         )
-        let all = catalog.skills.filter { $0.scope == .project } + catalog.untrusted.map(\.skill)
-        guard !names.isEmpty else { return (all, []) }
-        let wanted = Set(names.map { $0.lowercased() })
-        let found = all.filter { wanted.contains($0.name.lowercased()) }
-        let present = Set(found.map { $0.name.lowercased() })
-        return (found, names.filter { !present.contains($0.lowercased()) })
-    }
-
-    /// Changes the store for `skills`.
-    /// - Parameters:
-    ///   - skills: the skills to trust or forget.
-    ///   - granting: true to trust the skills as they are now, false to forget them.
-    ///   - path: the trust store.
-    /// - Throws: ``ConfigurationError`` when the store cannot be read or written.
-    static func apply(_ skills: [Skill], granting: Bool, store path: String) throws(ConfigurationError) {
-        var trust = try ProjectTrust.load(path)
-        for skill in skills {
-            if granting { trust.trust(skill.realFile, digest: skill.digest) } else { trust.untrust(skill.realFile) }
-        }
-        try trust.save(to: path)
+        let all = (catalog.skills.filter { $0.scope == .project } + catalog.untrusted.map(\.skill))
+            .map {
+                TrustedFile(
+                    name: $0.name,
+                    origin: $0.source,
+                    file: $0.file,
+                    realFile: $0.realFile,
+                    digest: $0.digest,
+                    description: $0.description
+                )
+            }
+        return TrustedFile.narrowed(all, to: names, name: \.name)
     }
 }
