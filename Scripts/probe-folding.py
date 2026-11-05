@@ -98,9 +98,20 @@ class Terminal:
         self.repaint()
 
     def draw(self, action):
+        """`action`, then the frames it causes: a frame must end, and then none for 150 ms (or a second at most). Waiting for one
+        frame only took a frame already on its way (the previous key's, a timer's) for the action's own, and a check now and then saw
+        the screen before it."""
         frames = bytes(self.raw).count(b"\x1b[?2026l")
         action()
         self.until(lambda: bytes(self.raw).count(b"\x1b[?2026l") > frames)
+        # At most a second: a spinner draws every 100 ms or so while a turn runs, so quiet may never come.
+        quiet_since = settle_start = time.monotonic()
+        seen = bytes(self.raw).count(b"\x1b[?2026l")
+        while time.monotonic() - quiet_since < 0.15 and time.monotonic() - settle_start < 1.0:
+            self.pump()
+            now = bytes(self.raw).count(b"\x1b[?2026l")
+            if now != seen:
+                seen, quiet_since = now, time.monotonic()
         self.repaint()
 
     def text(self):
