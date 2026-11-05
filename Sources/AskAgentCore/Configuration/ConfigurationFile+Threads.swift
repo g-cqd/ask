@@ -8,15 +8,13 @@ extension ConfigurationFile {
                 // @dl:accept -- a key table decoded by the shared walk, as every section's is; the keys are the data
                 switch key.stringValue {
                     case "max": section.max = try container.decode(Int.self, forKey: key)
+                    // @dl:accept -- key table rows
                     case "depth": section.depth = try container.decode(Int.self, forKey: key)
-                    case "names":
-                        let words = ThreadsSection.Names.allCases.map(\.rawValue)
-                        section.names = ThreadsSection.Names(
-                            rawValue: try ConfigurationFile.word(container, key, "threads.names", words)
-                        )
+                    case "names": section.names = try ConfigurationFile.choice(container, key, "threads.names")
                     case "mergedShownFor": section.mergedShownFor = try container.decode(String.self, forKey: key)
                     case "namesModel": section.namesModel = try container.decode(String.self, forKey: key)
                     case "model": section.model = try container.decode(String.self, forKey: key)
+                    case "merge": section.merge = try ConfigurationFile.choice(container, key, "threads.merge")
                     case "summaryInstructions":
                         section.summaryInstructions = try container.decode(String.self, forKey: key)
                     case "questions":

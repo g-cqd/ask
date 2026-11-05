@@ -5,7 +5,7 @@ internal import Synchronization
 
 /// A thread merges into its parent (roadmap 0195, the owner's answers of 2026-11-04): once its run has ended and every thread under it
 /// has merged, one more request, like a compaction, writes the summary its parent receives in place of what it did. A thread that
-/// failed or was stopped asks first. Merges go from the bottom up: a parent held by its threads is settled again when the last merges.
+/// failed or was stopped asks first, and so does one that finished under `threads.merge` "ask". Merges go from the bottom up: a parent held by its threads is settled again when the last merges.
 extension AgentConversation {
     /// Merges thread `name` if it is ready, holds it if a thread under it has not merged, or asks first if its run did not finish.
     /// Nothing while ask quits: what it stopped stays unmerged.
@@ -19,10 +19,12 @@ extension AgentConversation {
             update(.runners(threads.runners))
             return
         }
-        if outcome != .done {
+        // A thread that failed or was stopped asks first; one that finished asks too under threads.merge "ask".
+        let asks = current.withLock { $0.settings.configuration.threads.value.merging } == .ask
+        if outcome != .done || asks {
             threads.setState(name, .waitingForApproval)
             update(.runners(threads.runners))
-            let what = outcome == .failed ? "failed" : "was stopped"
+            let what = outcome == .done ? "finished" : outcome == .failed ? "failed" : "was stopped"
             let into = thread.parent ?? "main"
             let merging = await confirm(
                 "\(name) \(what). Merge it back into \(into), with a summary of what it did?",

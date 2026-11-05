@@ -70,4 +70,14 @@ struct RunnerMarksTests {
         controller.advanceProgress(at: start + .seconds(10))
         #expect(mark(controller, "thread-1") == "■" && mark(controller, "job-1") == "?")
     }
+
+    @Test func `a thread that finished and is not merged is idle, ○; a finished job is ✓`() {
+        var controller = controller()
+        var finished = thread
+        finished.state = .done
+        var ended = job
+        ended.state = .done
+        controller.setRunners([finished, ended], at: .now)
+        #expect(mark(controller, "thread-1") == "○" && mark(controller, "job-1") == "✓")
+    }
 }

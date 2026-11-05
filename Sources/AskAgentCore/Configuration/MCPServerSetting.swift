@@ -1,6 +1,7 @@
 /// One MCP server the user named (ADR-0099): a program to run, or a URL to speak to, and what to use of it.
 public struct MCPServerSetting: Sendable, Equatable {
     /// The keys a server under `mcp` may set.
+    // @dl:accept -- a key table, as every section has
     public static let keys = [
         "command", "args", "env", "cwd", "url", "headers", "tools", "enabled", "mode", "maxDirectTools"
     ]
