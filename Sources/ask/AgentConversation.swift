@@ -55,6 +55,8 @@ final class AgentConversation: Conversation {
         var loop: AgentLoop?
         /// Threads' loop when `threads.model` names another model (roadmap 0195); dropped with `loop`.
         var threadLoop: AgentLoop?
+        /// Subagents' loop (roadmap 0063); dropped with `loop`.
+        var subagentLoop: AgentLoop?
         var shownError: String?
         /// A turn is running (roadmap 0127): a change made during it is offered to it (roadmap 0113).
         var turnRunning = false

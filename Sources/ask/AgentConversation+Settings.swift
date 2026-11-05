@@ -26,6 +26,7 @@ extension AgentConversation {
             if changed {
                 current.loop = nil
                 current.threadLoop = nil
+                current.subagentLoop = nil
             }
             current.settings = fresh
             return (updates, changed && current.turnRunning)

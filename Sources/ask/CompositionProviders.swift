@@ -90,8 +90,11 @@ func makeLoop(
     callGate: ToolCallGate? = nil,
     askPerson: PersonQuestion.Asker? = nil,
     progress: ToolProgressReporter? = nil,
+    startSubagent: SubagentTask.Starter? = nil,
     reportEvent: (@Sendable (AgentEvent) -> Void)? = nil
 ) throws -> AgentLoop {
+    // The agent tool only where agents.enabled is on and something can start one (roadmap 0063): off, no request carries it.
+    let startSubagent = run.configuration.agents.value.isEnabled ? startSubagent : nil
     let workingDirectory = run.workspace
     let resolved = run.model
     let limits = run.limits
@@ -110,7 +113,8 @@ func makeLoop(
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
             NarrowSandboxTool(jobs: jobs), TasksTool(board: SessionTasks.board),
             IdeasTool(board: SessionTasks.ideas, tasks: SessionTasks.board)
-        ] + (skills.tool.map { [$0] } ?? []) + (askPerson == nil ? [] : [QuestionTool()]),
+        ] + (skills.tool.map { [$0] } ?? []) + (askPerson == nil ? [] : [QuestionTool()])
+            + (startSubagent == nil ? [] : [AgentTool()]),
         live: live
     )
     let context = ToolContext(
@@ -125,7 +129,8 @@ func makeLoop(
         imageLimits: run.model.imageLimits,
         callGate: callGate,
         askPerson: askPerson,
-        progress: progress
+        progress: progress,
+        startSubagent: startSubagent
     )
     return AgentLoop(
         provider: deferringThinking(makeProvider(resolved, transport: transport), run: run, limit: agent.maximumTokens),

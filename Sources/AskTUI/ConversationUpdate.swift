@@ -111,7 +111,7 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// The aside's answer, or why there is none.
     case asideFinished(id: String, Transcript.ToolStatus, answer: String)
     /// Where a thread started (roadmap 0195, note n23): a block of its own at the fork point of the conversation it was forked from.
-    case threadStarted(id: String, name: String, prompt: String)
+    case threadStarted(id: String, name: String, prompt: String, subagent: Bool = false)
     /// A thread merged into this conversation: a folded block that opens onto its summary, which goes to the model with what is
     /// sent next.
     case threadMerged(id: String, name: String, prompt: String, summary: String)

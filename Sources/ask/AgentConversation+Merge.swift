@@ -21,7 +21,8 @@ extension AgentConversation {
         }
         // A thread that failed or was stopped asks first; one that finished asks too under threads.merge "ask".
         let asks = current.withLock { $0.settings.configuration.threads.value.merging } == .ask
-        if outcome != .done || asks {
+        // A subagent always merges on its own (ADR-0146): its report is what the call that started it waits for.
+        if !threads.isSubagent(name), outcome != .done || asks {
             threads.setState(name, .waitingForApproval)
             update(.runners(threads.runners))
             let what = outcome == .done ? "finished" : outcome == .failed ? "failed" : "was stopped"
@@ -141,7 +142,8 @@ extension AgentConversation {
         }
         threads.setState(name, .merged)
         recordMerged(name, summary: summary, into: thread.parent.flatMap { threads.thread($0)?.recorder })
-        threads.addReport(Self.report(name, summary), to: thread.parent)
+        // A subagent's summary is its call's result; a thread's goes with what its parent is sent next.
+        if !threads.report(name, summary) { threads.addReport(Self.report(name, summary), to: thread.parent) }
         let block = ConversationUpdate.threadMerged(
             id: "merge-\(name)",
             name: name,

@@ -83,6 +83,7 @@ extension AgentConversation {
         current.withLock {
             $0.loop = nil
             $0.threadLoop = nil
+            $0.subagentLoop = nil
         }
         // One update, drawn once, as `/rewind` sends it (roadmap 0160).
         update(

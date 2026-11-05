@@ -79,7 +79,7 @@ extension AgentConversation {
     }
 
     /// Why a thread may not start under `parent` (main when nil), or nil when it may: `threads.max` at work, or `threads.depth` deep.
-    private func threadLimitReached(under parent: String?) -> String? {
+    func threadLimitReached(under parent: String?) -> String? {
         let limits = current.withLock { $0.settings.configuration.threads.value }
         // The more particular reason first: inside a thread that deep, no count of threads would let one start.
         if let parent, threads.depth(of: parent) >= limits.nesting {
@@ -165,23 +165,11 @@ extension AgentConversation {
             return try forked(thread.recorder, upTo: thread.recorder.tree.leaf)
         }
         if let original = session.withLock({ $0 }) { return try forked(original, upTo: original.tree.leaf) }
-        try directory.create()
-        let protection = SessionKeyAccess.protection
-        let recorder = SessionRecorder(
-            try SessionFile.create(
-                at: FilePath(directory.newSessionPath()),
-                format: protection.format,
-                keyring: protection.keyring
-            )
-        )
-        let settings = current.withLock { $0.settings }
-        try recorder.select(SessionRouting.destination(settings.model), explicitlySelected: false)
-        try settings.record(in: recorder)
-        return recorder
+        return try newSession()
     }
 
     /// Runs `text` in thread `name`, its events drawn in its conversation, then reports its answer to main.
-    private func runThread(_ name: String, _ text: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
+    func runThread(_ name: String, _ text: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
         guard let thread = threads.thread(name) else { return }
         let threads = threads
         // What threads under it merged goes with what it is sent next, as main's do.
@@ -195,8 +183,9 @@ extension AgentConversation {
             )
             let outcome: RunnerInfo.State
             do {
-                // Its own model's loop when threads.model names one; a model that does not resolve fails it here.
-                let loop = try await self.threadLoop()
+                // Its own model's loop when threads.model names one, a subagent's when it is one (roadmap 0063); a model that does
+                // not resolve fails it here.
+                let loop = try await threads.isSubagent(name) ? self.subagentLoop() : self.threadLoop()
                 let route = ApprovalRoute(
                     send: { update(.thread(id: name, $0)) },
                     waiting: { began in
