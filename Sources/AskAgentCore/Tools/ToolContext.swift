@@ -37,6 +37,8 @@ public struct ToolContext: Sendable, Equatable {
     public let imageLimits: ImageLimits?
     /// Who answers the model's questions (roadmap 0117); nil where no one can, and then the `question` tool is not offered.
     public let askPerson: PersonQuestion.Asker?
+    /// Who starts the model's subagents (roadmap 0063); nil where none may start, and then the `agent` tool is not offered.
+    public let startSubagent: SubagentTask.Starter?
     /// Who is told how far a running call has got (roadmap 0067); nil where no one shows it, as in `ask -p`.
     public let progress: ToolProgressReporter?
     /// The call this context runs, set by the loop for each call; nil outside one.
@@ -55,6 +57,7 @@ public struct ToolContext: Sendable, Equatable {
     ///   - callGate: what is asked before a call that changes things; nil, the default, asks nothing.
     ///   - askPerson: who answers the model's questions; nil, the default, where no one can.
     ///   - progress: who is told how far a running call has got; nil, the default, where no one shows it.
+    ///   - startSubagent: who starts the model's subagents; nil, the default, where none may start.
     public init(
         workingDirectory: String,
         outputDirectory: String? = nil,
@@ -66,8 +69,10 @@ public struct ToolContext: Sendable, Equatable {
         imageLimits: ImageLimits? = nil,
         callGate: ToolCallGate? = nil,
         askPerson: PersonQuestion.Asker? = nil,
-        progress: ToolProgressReporter? = nil
+        progress: ToolProgressReporter? = nil,
+        startSubagent: SubagentTask.Starter? = nil
     ) {
+        self.startSubagent = startSubagent
         self.progress = progress
         self.callGate = callGate
         self.askPerson = askPerson
