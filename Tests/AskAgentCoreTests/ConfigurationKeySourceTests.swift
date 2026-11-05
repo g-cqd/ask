@@ -4,40 +4,44 @@ internal import Testing
 /// `ask config` shows every `ui` and `skills` key under the name a file uses, with the layer that set it (roadmap 0103).
 @Suite("Every ui and skills key has a value and a source")
 struct ConfigurationKeySourceTests {
-    private static let full = UISection(
-        mouse: true,
-        copyOnSelect: false,
-        foldTools: true,
-        foldThinking: false,
-        scrollLines: 3,
-        promptRows: 6,
-        foldCode: true,
-        codeFoldLines: 20,
-        outputFoldLines: 200,
-        outputFoldBytes: 32768,
-        sidebarOpen: false,
-        sidebarJobsInTree: true,
-        prompt: "",
-        tint: true,
-        separator: true,
-        padding: false,
-        markdown: true,
-        highlight: true,
-        shimmer: true,
-        hover: true,
-        localizedDurations: true,
-        spinner: .line,
-        jobAutoReturnWhenFocused: true,
-        abortTurnRequiresConfirmation: false,
-        interruptKeys: .ctrlC,
-        escapeInterruptRequiresConfirmation: true,
-        interruptSendsQueued: .next,
-        onlyUsefulModels: true,
-        appearance: .auto,
-        timeout: .never,
-        timeoutLabel: "t",
-        sessionColor: .always
-    )
+    private static let full: UISection = {
+        var section = UISection(
+            mouse: true,
+            copyOnSelect: false,
+            foldTools: true,
+            foldThinking: false,
+            scrollLines: 3,
+            promptRows: 6,
+            foldCode: true,
+            codeFoldLines: 20,
+            outputFoldLines: 200,
+            outputFoldBytes: 32768,
+            sidebarOpen: false,
+            sidebarJobsInTree: true,
+            prompt: "",
+            tint: true,
+            separator: true,
+            padding: false,
+            markdown: true,
+            highlight: true,
+            shimmer: true,
+            hover: true,
+            localizedDurations: true,
+            spinner: .line,
+            jobAutoReturnWhenFocused: true,
+            abortTurnRequiresConfirmation: false,
+            interruptKeys: .ctrlC,
+            escapeInterruptRequiresConfirmation: true,
+            interruptSendsQueued: .next,
+            onlyUsefulModels: true,
+            appearance: .auto,
+            timeout: .never,
+            timeoutLabel: "t",
+            sessionColor: .always
+        )
+        section.sidebarLayout = "bottom"
+        return section
+    }()
 
     @Test func `a section that sets every key has a value for each of them`() {
         let missing = UISection.keys.filter { Self.full.value(forKey: $0) == nil }

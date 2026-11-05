@@ -26,6 +26,12 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     /// `ui.sidebarJobs`: where the sidebar lists a thread's jobs (roadmap 0195). `true` is `"tree"`, under the thread; `false` is
     /// `"section"`, with every job in the Jobs section.
     public var sidebarJobsInTree: Bool?
+    /// `ui.sidebarLayout`: where the open sidebar goes, as written (`"full"`, `"bottom"`, `"adaptive"`; notes n39, n40).
+    public var sidebarLayout: String?
+    /// The words `ui.sidebarLayout` takes.
+    static let sidebarLayouts = ["full", "bottom", "adaptive"]
+    /// Where the open sidebar goes; `"adaptive"` when nothing says.
+    public var sidebarPlacement: String { sidebarLayout ?? "adaptive" }
     /// `ui.prompt`: what the input starts with, if anything. Empty is none, which is the default: the input is marked by its tint.
     public var prompt: String?
     /// `ui.tint`: whether the input and the tool and user blocks have a tinted background. `true` is `"on"`, `false` is `"off"`.
@@ -150,7 +156,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     public static let keys =
         [
             "mouse", "copyOnSelect", "fold.tools", "fold.thinking", "fold.code", "fold.codeLines", "fold.outputLines",
-            "fold.outputBytes", "scrollLines", "inputRows", "sidebar", "sidebarJobs"
+            "fold.outputBytes", "scrollLines", "inputRows", "sidebar", "sidebarJobs",
+            "sidebarLayout"
         ]
         // @dl:accept -- the list of keys is data; a test's list of call names is other data
         + lookKeys + behaviorKeys
@@ -168,7 +175,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: UISection) -> UISection {
-        UISection(
+        var merged = UISection(
             // @dl:accept -- each configuration field independently takes its later non-nil value
             mouse: section.mouse ?? mouse,
             copyOnSelect: section.copyOnSelect ?? copyOnSelect,
@@ -205,6 +212,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
             timeoutLabel: section.timeoutLabel ?? timeoutLabel,
             sessionColor: section.sessionColor ?? sessionColor
         )
+        merged.sidebarLayout = section.sidebarLayout ?? sidebarLayout
+        return merged
     }
 
     /// The keys this section sets, as a file writes them: `inputRows 4, fold.tools false`.

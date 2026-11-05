@@ -9,6 +9,8 @@ extension ScreenComposer {
     ///   - status: the status line, or nil on a screen with no room for one.
     ///   - picker: the command picker's rows, if open.
     ///   - editor: the prompt's rows and cursor.
+    ///   - band: the sidebar's cells beside the input's rows, from its first, when it is in the bottom band; the input's rows are
+    ///     padded to as many.
     ///   - rule: the row that separates the conversation from the input, or nil for none.
     ///   - inputStyle: the style the input's rows are drawn in: its tint, when it has one.
     ///   - row: the first row under the transcript.
@@ -19,6 +21,7 @@ extension ScreenComposer {
         status: Line?,
         picker: [Line],
         editor: PromptLayout.Frame,
+        band: [Sidebar.Cell?] = [],
         rule: Line? = nil,
         inputStyle: Style = .default,
         from row: Int,
@@ -33,9 +36,10 @@ extension ScreenComposer {
             write(line, row: next, into: &buffer)
             next += 1
         }
-        for (offset, text) in editor.lines.enumerated() {
+        for offset in 0 ..< Swift.max(editor.lines.count, band.count) {
+            let text = offset < editor.lines.count ? editor.lines[offset] : ""
             // A mark keeps the input's tint behind it.
-            let accents = (editor.accents.isEmpty ? [] : editor.accents[offset])
+            let accents = (editor.accents.indices.contains(offset) ? editor.accents[offset] : [])
                 .map { accent in
                     var accent = accent
                     accent.style.bg = inputStyle.bg
@@ -43,12 +47,13 @@ extension ScreenComposer {
                 }
             write(
                 Line(text: text, style: inputStyle, accents: accents),
-                highlight: editor.highlights.isEmpty ? nil : editor.highlights[offset],
+                highlight: editor.highlights.indices.contains(offset) ? editor.highlights[offset] : nil,
+                side: band.indices.contains(offset) ? band[offset] : nil,
                 row: next + offset,
                 into: &buffer
             )
         }
-        var below = next + editor.lines.count
+        var below = next + Swift.max(editor.lines.count, band.count)
         if let rule {
             write(rule, row: below, into: &buffer)
             below += 1

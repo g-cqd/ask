@@ -110,6 +110,13 @@ row is a state mark (a spinner while it works; once it has done nothing for thre
 `?` waiting for you, `◌` waiting on its threads, `✓` done, `✗` failed, `■` stopped), the name, what it is doing, and how long an active one has run. Ended rows are dim, the one shown is bold, and
 the one Up and Down chose is inverse; a click opens it, and `main` goes back.
 
+Where the sidebar goes is `ui.sidebarLayout`. `"full"` puts it beside the transcript, its whole height, as above. `"bottom"` puts it
+in a band with the input: six rows, more when it lists more (at most a third of the screen), the input on the left and the sidebar
+on the right behind the same divider, so the transcript keeps the whole width; the status line's counts then sit at its trailing
+edge, under the sidebar, instead of the sidebar's last row. `"adaptive"`, the default, takes the band where the full sidebar would
+leave the transcript under 100 columns (a 120-column terminal), and the full sidebar on wider ones. Screens under 18 rows keep it
+beside the transcript.
+
 While a command the model ran is still running, **Ctrl+B** (or **Ctrl+Enter**, where the terminal reports it) sends it to the
 background: the model gets what it printed so far and carries on, or your queued message is sent next, and the job tells the model
 when it ends. With no command running, Ctrl+B moves the cursor as usual.

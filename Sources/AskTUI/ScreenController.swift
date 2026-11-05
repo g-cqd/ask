@@ -147,6 +147,7 @@ public struct ScreenController: Sendable {
         state.transcript.home = options.home
         state.promptRows = options.promptRows
         state.sidebarOpen = options.sidebar
+        state.sidebarLayout = options.sidebarLayout
         state.jobsInTree = options.sidebarJobsInTree
         state.verbose = options.verbose
     }

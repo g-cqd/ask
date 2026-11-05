@@ -15,8 +15,12 @@ struct FrameGeometry: Sendable {
     var columns = 0
     /// The width the transcript is wrapped and drawn in: less than `columns` when the sidebar takes the right of it.
     var transcriptColumns = 0
-    /// The runner each row of the sidebar shows, from the top; its first column is `transcriptColumns + 1`.
+    /// The runner each row of the sidebar shows, from `sidebarTop`; its first column is `sidebarColumn + 1`.
     var sidebarIDs: [String] = []
+    /// The sidebar's first row: 0 beside the transcript, the input's first in the bottom band (note n39).
+    var sidebarTop = 0
+    /// The sidebar's divider column.
+    var sidebarColumn = 0
     /// The column of the closed sidebar's toggle, on the first row, which a click opens it with (note n24).
     var sidebarCorner: Int?
     /// How many wrapped lines the whole transcript has, so a scroll can stop at the top.

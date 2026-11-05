@@ -134,56 +134,54 @@ public struct ScreenComposer: Sendable {
             frames?.store(FrameGeometry(columns: columns))
             return (0, 0)
         }
-        let editor = inputFrame(for: state, columns: columns, rows: rows)
-        let promptRows = editor.lines.count
+        // The sidebar in the bottom band (note n39): beside the input, which is that much narrower and as tall as the band.
+        let band = Sidebar.band(state, columns: columns, screenRows: rows)
+        let editor = inputFrame(for: state, columns: band.map { columns - $0.width - 1 } ?? columns, rows: rows)
+        let promptRows = Swift.max(editor.lines.count, band?.cells.count ?? 0)
         let statusRows = rows > 1 ? 1 : 0
         // Character rules enclose the input without extra blank rows.
         let ruleRows = state.separator && rows >= 6 ? 2 : 0
-        let upperRuleRows = ruleRows / 2
-        var strip = RunnerStrip(
-            state,
+        let strip = Self.strip(
+            for: state,
             available: Swift.max(0, rows - promptRows - statusRows - ruleRows - 2),
             columns: columns
         )
-        if case .job(let id) = state.hover, let row = strip.ids.firstIndex(of: id) {
-            strip.lines[row] = Self.brightened(strip.lines[row])
-        }
         let panel = strip.lines.isEmpty ? [] : [Line(text: "", style: .default)] + strip.lines
-        let status = Self.status(for: state, input: editor.indicator, columns: columns)
+        let status = Self.status(for: state, input: editor.indicator, columns: columns, trailingRunners: band != nil)
         let pickerRows = rows - promptRows - statusRows - ruleRows - panel.count - 1
         let pickerLines = Self.pickerLines(for: state, columns: columns, rows: pickerRows)
         let transcriptRows = rows - promptRows - statusRows - ruleRows - panel.count - pickerLines.count
         self.transcriptRows = transcriptRows
+        let layout = BottomRows(columns, rows, transcriptRows, ruleRows, pickerLines.count, pickerRows, promptRows)
 
-        let (sidebar, map, totalLines) = writeTranscript(state, rows: rows, columns: columns, into: &buffer)
-        var geometry = FrameGeometry(
-            rows: map,
-            foldBlocks: foldBlocks,
-            middleFolds: middleFolds,
-            transcriptRows: transcriptRows,
+        let (sidebar, map, totalLines) = writeTranscript(
+            state,
+            rows: rows,
             columns: columns,
-            totalLines: totalLines,
-            scrollback: state.scrollback,
-            statusRow: transcriptRows + ruleRows + pickerLines.count + promptRows,
-            runnerColumns: status.runners,
-            belowColumns: status.below,
-            markColumns: Self.markColumns(for: state),
-            promptRow: transcriptRows + upperRuleRows + pickerLines.count,
-            promptRows: promptRows,
-            promptTop: editor.top,
-            prompt: editor.layout
+            besideTranscript: band == nil,
+            into: &buffer
         )
-        .withPicker(state: state, firstRow: transcriptRows + upperRuleRows + 1, rows: pickerRows)
-        geometry.links = rowLinks
-        geometry.placeStrip(strip, firstRow: rows - strip.lines.count)
-        geometry.placeSidebar(sidebar, columns: columns)
-        frames?.store(geometry)
+        frames?
+            .store(
+                geometry(
+                    state,
+                    map: map,
+                    totalLines: totalLines,
+                    layout: layout,
+                    status: status,
+                    editor: editor,
+                    strip: strip,
+                    sidebar: band ?? sidebar,
+                    inBand: band != nil
+                )
+            )
 
         return writeBottom(
             panel: panel,
             status: statusRows > 0 ? status.line : nil,
             picker: pickerLines,
             editor: editor,
+            band: band?.cells ?? [],
             rule: ruleRows > 0
                 ? Line(text: String(repeating: "─", count: columns), style: StatusLine.statusStyle) : nil,
             inputStyle: Style(bg: ruleRows > 0 ? .default : state.theme.inputBackground),

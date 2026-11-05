@@ -57,6 +57,13 @@ extension SettingCatalog {
             "tree",
             "Where the sidebar lists a thread's jobs: under the thread, or with every job in the Jobs section. /sidebar jobs switches."
         ),
+        row(
+            "ui.sidebarLayout",
+            .choice(UISection.sidebarLayouts),
+            #""adaptive""#,
+            "adaptive",
+            "Where the open sidebar goes: beside the transcript, in the bottom band with the input, or the band where the other would leave the transcript under 100 columns."
+        ),
         row("ui.inputPrefix", .text, #""> ""#, "none", "Text the input line starts with."),
         row("ui.appearance", words(AppearancePreference.self), #""auto""#, "auto", "Where the tints come from."),
         row(

@@ -24,6 +24,7 @@ extension RunSettings {
             shimmer: ui.shimmer ?? defaults.shimmer,
             hover: ui.hover ?? defaults.hover,
             sidebar: ui.sidebarOpen ?? defaults.sidebar,
+            sidebarLayout: SidebarLayout(rawValue: ui.sidebarPlacement) ?? .adaptive,
             sidebarJobsInTree: ui.sidebarJobsInTree ?? defaults.sidebarJobsInTree,
             mergedShownFor: configuration.threads.value.mergedListing,
             threadQuestions: Self.screenMode(configuration.threads.value.whereQuestions),

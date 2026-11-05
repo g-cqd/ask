@@ -53,7 +53,11 @@ struct ThreadBlocksTests {
     }
 
     @Test func `the sidebar marks a held, a merging and a merged thread`() {
-        var rig = PointerRig(columns: 100, rows: 20, options: ScreenOptions(sidebar: true, prompt: "ask> "))
+        var rig = PointerRig(
+            columns: 100,
+            rows: 20,
+            options: ScreenOptions(sidebar: true, sidebarLayout: .full, prompt: "ask> ")
+        )
         rig.controller.handle(
             .runners([
                 RunnerInfo(name: "thread-1", detail: "a", id: "thread-1", kind: .agent, state: .held),

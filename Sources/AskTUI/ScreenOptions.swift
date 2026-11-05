@@ -32,6 +32,8 @@ public struct ScreenOptions: Sendable, Equatable {
     public var sidebarJobsInTree: Bool
     /// How long a merged thread stays in the sidebar (`threads.mergedShownFor`, note n22); nil keeps it.
     public var mergedShownFor: Duration?
+    /// Where the open sidebar goes (`ui.sidebarLayout`).
+    public var sidebarLayout: SidebarLayout
     /// Where a thread's question appears while the person is elsewhere (`threads.questions`).
     public var threadQuestions: ThreadQuestionsMode
     /// Whether details are shown: what ask did on its own account, such as the sandbox in force or a build that appeared (`--verbose`).
@@ -92,6 +94,7 @@ public struct ScreenOptions: Sendable, Equatable {
         shimmer: Bool = true,
         hover: Bool = true,
         sidebar: Bool = false,
+        sidebarLayout: SidebarLayout = .adaptive,
         sidebarJobsInTree: Bool = true,
         mergedShownFor: Duration? = .seconds(86_400),
         threadQuestions: ThreadQuestionsMode = .focus,
@@ -122,6 +125,7 @@ public struct ScreenOptions: Sendable, Equatable {
         self.shimmer = shimmer
         self.hover = hover
         self.sidebar = sidebar
+        self.sidebarLayout = sidebarLayout
         self.sidebarJobsInTree = sidebarJobsInTree
         self.mergedShownFor = mergedShownFor
         self.threadQuestions = threadQuestions

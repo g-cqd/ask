@@ -36,11 +36,15 @@ struct Sidebar {
     /// The width left for the transcript.
     func transcriptColumns(of columns: Int) -> Int { width == 0 ? columns : columns - width - 1 }
 
+    /// No panel: the transcript has the whole width (the band draws the sidebar under it instead).
+    init() {}
+
     /// - Parameters:
     ///   - state: what the screen holds.
     ///   - columns: the screen width.
     ///   - rows: the transcript's height, which the panel shares.
-    init(_ state: ScreenState, columns: Int, rows: Int) {
+    ///   - counts: whether its last row says what is running; in the bottom band the status line says it (note n39).
+    init(_ state: ScreenState, columns: Int, rows: Int, counts: Bool = true) {
         guard columns >= Self.minimumColumns, rows >= 3 else { return }
         guard state.sidebarOpen else {
             // A space before the mark, so it never reads as part of the transcript's top row.
@@ -58,7 +62,7 @@ struct Sidebar {
                 + Array(repeating: nil, count: rows - 1)
             return
         }
-        width = Swift.min(36, Swift.max(22, columns / 4))
+        width = Self.width(for: columns)
         // One column of air after the divider.
         let inner = width - 1
         let made = SidebarEntries(state, columns: inner)
@@ -68,13 +72,14 @@ struct Sidebar {
             id: Self.toggleID
         )
         let entries =
-            [toggle] + Self.window(made.entries, rows: rows - 2, selected: state.stripSelection) + [made.counts]
+            [toggle] + Self.window(made.entries, rows: rows - (counts ? 2 : 1), selected: state.stripSelection)
+            + (counts ? [made.counts] : [])
         let column = columns - width - 1
-        let body = entries.count - 1
+        let body = counts ? entries.count - 1 : entries.count
         cells = (0 ..< rows)
             .map { row in
                 // The counts keep the last row, whatever the list above them holds.
-                let index = row == rows - 1 ? body : row < body ? row : nil
+                let index = counts && row == rows - 1 ? body : row < body ? row : nil
                 guard let index else { return Cell(text: "", style: .default, column: column) }
                 var entry = entries[index]
                 if case .job(let id) = state.hover, id == entry.id, !id.isEmpty {
