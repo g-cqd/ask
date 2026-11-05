@@ -41,6 +41,9 @@ can change nothing.
 | `run.stop` | the run would end: a reply without calls, no continuation of ask's own, no follow-up queued | `stop`; `continue(message)` | `drive`, after `acceptInput` finds nothing |
 | `compaction.before` | a compaction starts | observe; `instructions` for the summary | `compact`, before `summarise` |
 | `compaction.after` | it ended | observe | `compact` |
+| `thread.start` | `/thread` would start one (roadmap 0195) | `block`, `rewrite` its task | `startingThread`, before the thread exists |
+| `thread.merge` | a thread's summary is about to be written | `instructions` for it, after `threads.summaryInstructions` | `mergeInstructions` |
+| `thread.merged` | the summary is written | rewrite what its parent receives | `mergedSummary` |
 | `settings.change` | the model, the thinking level or the configuration changes | observe | the app, where it applies a change |
 | `subagent.stop` | a subagent's run would end, once ask has subagents | as `run.stop`, for that subagent | the subagent's loop |
 | `waiting` | ask waits for the person: an approval, a question, a run ended | observe | the app, where it raises these |
