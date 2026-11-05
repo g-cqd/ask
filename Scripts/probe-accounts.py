@@ -75,6 +75,16 @@ def keys(session, text, settle=0.3):
     session.until("\x00", settle)
 
 
+def quit_keys(session, count):
+    """Ctrl-C `count` times, as a person quitting does; once ask has gone, the next write fails, and that is the quit, not an error
+    (the third press raced ask's exit and failed the probe now and then)."""
+    for _ in range(count):
+        try:
+            keys(session, "\x03", 0.7)
+        except OSError:
+            return
+
+
 def idle(session):
     """Waits until the screen has been quiet and the status line says ready, so the next keys meet an idle prompt."""
     session.until("\x00", 0.6)
@@ -156,8 +166,7 @@ def probe_cancel_and_logout():
     stored = json.load(open(os.path.join(home, "ask", "credentials.json"))) if os.path.exists(os.path.join(home, "ask", "credentials.json")) else {}
     results.append(interactive.check("the key is gone", "anthropic" not in (stored.get("keys") or {})))
     idle(session)
-    keys(session, "\x03", 0.7)
-    keys(session, "\x03", 0.7)
+    quit_keys(session, 2)
     results.append(interactive.check("still there, quits cleanly", session.finish() == 0))
     return all(results)
 
@@ -192,8 +201,7 @@ def probe_logout_all_confirms():
     session.type("\r")
     results.append(interactive.check("y then Enter signs out", session.until("Signed out of everything.")))
     results.append(interactive.check("the key is gone", "anthropic" not in stored(), stored()))
-    for _ in range(3):
-        keys(session, "\x03", 0.7)
+    quit_keys(session, 3)
     results.append(interactive.check("still there, quits cleanly", session.finish() == 0))
     return all(results)
 
