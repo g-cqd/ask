@@ -19,11 +19,13 @@ extension Configuration {
         compare("sessionCompression", previous.sessionCompression, sessionCompression)
         compare("sessionPassword", previous.sessionPassword, sessionPassword)
         compare("taskScope", previous.taskScope, taskScope)
+        // @dl:accept -- every configuration section is decoded, layered and compared by the same idiom; the keys are the data
         compare("credentials", previous.credentials, credentials)
         compare("approvals", previous.approvals, approvals)
         compare("modelScopes", previous.modelScopes, modelScopes)
         compare("hooks", previous.hooks, hooks)
         compare("threads", previous.threads, threads)
+        compare("agents", previous.agents, agents)
         compare("sandbox", previous.sandbox, sandbox)
         compare("ui", previous.ui, ui)
         compare("skills", previous.skills, skills)

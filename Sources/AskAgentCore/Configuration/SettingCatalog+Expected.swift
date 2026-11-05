@@ -7,8 +7,9 @@ extension SettingCatalog {
     }
 
     /// The sections, which take an object.
+    // @dl:accept -- every configuration section is decoded, layered and compared by the same idiom; the keys are the data
     static let sections: Set<String> = [
-        "sandbox", "ui", "ui.fold", "skills", "approvals", "hooks", "threads", "environment", "mcp"
+        "sandbox", "ui", "ui.fold", "skills", "approvals", "hooks", "threads", "agents", "environment", "mcp"
     ]
 
     /// The structured settings' values, which their kind alone does not say.

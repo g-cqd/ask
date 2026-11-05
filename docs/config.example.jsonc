@@ -222,6 +222,17 @@
     "questionsAfter": "30s"
   },
 
+  "agents": {
+    // Whether the model may start subagents with the agent tool. Only your own config file can turn it on. Default: false. Your own file only.
+    "enabled": true,
+
+    // Whether subagents may change files; read-only otherwise. Default: false. Your own file only.
+    "allowWrites": true,
+
+    // The most turns one subagent may take, from 1 to 200. Default: 30.
+    "maxTurns": 30
+  },
+
   "skills": {
     // Whether skills are offered; a project's file may only turn them off. Default: true.
     "enabled": true,
