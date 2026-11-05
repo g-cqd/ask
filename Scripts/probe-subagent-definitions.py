@@ -4,7 +4,8 @@
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-subagent-definitions.py .build/release/ask
 
 A definition in the person's own `agents` directory is named in the `agent` tool's description; a call naming it starts a subagent
-whose first request holds the definition's instructions before its task, and whose tools are only those the definition keeps. Hermetic.
+whose first request holds the definition's instructions before its task, whose tools are only those the definition keeps, and whose
+model is the one the definition names, matched against what the connection lists. Hermetic.
 """
 import importlib.util
 import json
@@ -38,9 +39,13 @@ def main():
     with open(config + "/ask/config.json", "w") as file:
         json.dump({"ui": {"inputPrefix": "ask> "}, "threads": {"names": "numbered"}, "agents": {"enabled": True}}, file)
     with open(config + "/ask/agents/reviewer.md", "w") as file:
-        file.write("---\ndescription: Reviews a change, reading only.\ntools: Read\n---\nREVIEWER-INSTRUCTIONS: be thorough.\n")
+        # Its model is a display name the connection's list has as an id.
+        file.write("---\ndescription: Reviews a change, reading only.\ntools: Read\nmodel: Claude Probe Child\n---\n"
+                   "REVIEWER-INSTRUCTIONS: be thorough.\n")
     turn = probe.agent.turn
-    server = probe.agent.Server([
+    catalog = [{"id": model, "max_input_tokens": 200000, "max_tokens": 64000}
+               for model in ("claude-sonnet-5-5", "claude-probe-child")]
+    server = probe.agent.Server(catalog=catalog, responses=[
         turn([("call", "a1", "agent", TASK)], "tool_use"),
         turn([("text", "CHILD DONE")], "end_turn"),
         turn([("text", "CHILD SUMMARY")], "end_turn"),
@@ -62,6 +67,10 @@ def main():
         check("the subagent is told the definition's instructions before its task",
               "REVIEWER-INSTRUCTIONS" in child and child.index("REVIEWER-INSTRUCTIONS") < child.index("Look at the change"))
         check(f"and keeps only the tools the definition names: {tools(server.requests[1])}", tools(server.requests[1]) == ["read"])
+        models = [request["body"].get("model") for request in server.requests]
+        check(f"its model is the one its definition names, as the connection lists it: {models}",
+              models[1] == "claude-probe-child" and models[0] != "claude-probe-child")
+        check("and it writes its summary with that model too", models[2] == "claude-probe-child")
     except AssertionError:
         if terminal:
             print(terminal.text(), file=sys.stderr)

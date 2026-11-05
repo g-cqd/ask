@@ -1,3 +1,4 @@
+internal import AskAI
 internal import AskAgentCore
 internal import AskMCP
 internal import AskTUI
@@ -60,6 +61,14 @@ extension AgentConversation {
         var settings = current.withLock { $0.settings }
         if let word = settings.configuration.threads.value.threadModel {
             settings = try await self.settings(forModel: word)
+        }
+        // A definition's model is a preference, matched against what this connection lists; none matching keeps the parent's.
+        if let definition, !definition.models.tokens.isEmpty {
+            let provider = settings.model.connection?.name ?? settings.model.providerName
+            let listed = await ModelChoices.listed(provider: provider, environment: LaunchEnvironment.values)
+            if let id = ModelMatch.first(of: definition.models.tokens, in: listed) {
+                settings = try await self.settings(forModel: provider + "/" + id)
+            }
         }
         let agents = settings.configuration.agents.value
         if !agents.writes { settings.sandbox.write = .roots([]) }
