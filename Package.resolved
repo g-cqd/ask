@@ -1,5 +1,5 @@
 {
-  "originHash" : "8080eeb07e081106844c2e384668925a04a2362d003c2adef60db7cae04ca816",
+  "originHash" : "94d3cd831d2eb24dbc2d7344f530ab8b4eb6d553b0e8a0b301d0abca8c762c77",
   "pins" : [
     {
       "identity" : "aemi",
@@ -109,7 +109,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/TerminalKit.git",
       "state" : {
-        "revision" : "0a5ccb3d94d63b61e47f6e908758e3180ce4dff7"
+        "revision" : "8388e77bf090c73e53d4fdca8196a2b3174b6ffe"
       }
     }
   ],
