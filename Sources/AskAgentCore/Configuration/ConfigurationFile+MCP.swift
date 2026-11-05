@@ -36,6 +36,7 @@ extension ConfigurationFile {
                     // @dl:accept -- the key tables are the data, and the walk over them is already shared
                     case "command": server.command = try container.decode(String.self, forKey: key)
                     case "args": server.args = try container.decode([String].self, forKey: key)
+                    // @dl:accept -- a key table row
                     case "env": server.env = try container.decode([String: String].self, forKey: key)
                     // @dl:accept -- a key table row
                     case "cwd": server.cwd = try container.decode(String.self, forKey: key)

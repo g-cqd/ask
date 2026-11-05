@@ -6,10 +6,18 @@ extension SettingCatalog {
         row("threads.depth", .integer, "3", "3", "How deep threads may nest, from 1 to 8."),
         row(
             "threads.names",
+            // @dl:accept -- catalog rows are data, one setting each
             .choice(ThreadsSection.Names.allCases.map(\.rawValue)),
             #""onDevice""#,
             "onDevice",
-            "How a thread is named: by Apple's on-device model from its task where it is available, or numbered."
+            "How a thread is named: by Apple's on-device model from its task where it is available, by a model, or numbered."
+        ),
+        row(
+            "threads.namesModel",
+            .text,
+            #""""#,
+            "the conversation's model",
+            "The model names \"model\" asks, as /model takes it (\"provider/model\" or a model); empty for the conversation's own."
         ),
         row(
             "threads.mergedShownFor",

@@ -15,6 +15,7 @@ extension ConfigurationFile {
                             rawValue: try ConfigurationFile.word(container, key, "threads.names", words)
                         )
                     case "mergedShownFor": section.mergedShownFor = try container.decode(String.self, forKey: key)
+                    case "namesModel": section.namesModel = try container.decode(String.self, forKey: key)
                     case "questions":
                         section.questions = try ConfigurationFile.word(
                             container,

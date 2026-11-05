@@ -299,6 +299,15 @@ summary instructions, or rewrite the summary).
 - Test first: `ThreadLaneTests` (red: the command went back to main), then `Scripts/probe-thread-merge.py` (red: no refusal, nothing
   merged), then the code; 4 checks, twice.
 
+## Done (2026-11-04): threads named by a chosen model (note n20)
+
+- `threads.names` `"model"` asks a provider's model for the name: `threads.namesModel` read as `/model` reads its word
+  (`"provider/model"` or a model), or the conversation's own when it is empty. It is given 15 s (the on-device model 2 s); the thread
+  works meanwhile, and a `/rename` first wins.
+- Test first: `ThreadsSectionTests` (namesModel, its layering) was red before the code; `probe-thread-model-names.py` (3 checks) failed
+  on the binary before the namer change (the thread stayed `thread-1`) and passes now. The fake provider answers the naming request by
+  its content (`Server(route:)`), since it races the thread's own turns.
+
 ## Done (2026-11-04): a thread's question comes to the person (note n19)
 
 - `threads.questions`: `"focus"` (the default) shows a thread's approval or questions at once in whatever is shown, named for its

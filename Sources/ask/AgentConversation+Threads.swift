@@ -78,13 +78,33 @@ extension AgentConversation {
         return nil
     }
 
-    /// Names thread `name` from its task with the on-device model, when `threads.names` asks for it and the model answers in time.
+    /// Names thread `name` from its task by the model `threads.names` asks for, when it answers in time; a name given by `/rename` first
+    /// stays.
     private func nameThread(_ name: String, task: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
-        guard current.withLock({ $0.settings.configuration.threads.value.naming }) == .onDevice else { return }
+        let naming = current.withLock { $0.settings.configuration.threads.value.naming }
+        guard naming != .numbered else { return }
         Task {
-            guard let title = await ThreadNamer.name(for: task), threads.thread(name)?.title == nil else { return }
+            let title: String?
+            if naming == .model, let model = await namingModel() {
+                let provider = makeProvider(model, transport: URLSessionTransport())
+                title = await ThreadNamer.name(for: task, by: provider, model: model.model, within: .seconds(15))
+            } else {
+                title = await ThreadNamer.name(for: task)
+            }
+            guard let title, threads.thread(name)?.title == nil else { return }
             renameThread(name, to: title, update: update)
         }
+    }
+
+    /// The model `threads.names` "model" asks (note n20): `threads.namesModel` read as `/model` reads its word, else the conversation's
+    /// own; nil when the one named does not resolve.
+    private func namingModel() async -> ResolvedModel? {
+        let settings = current.withLock { $0.settings }
+        guard let word = settings.configuration.threads.value.namingModel else { return settings.model }
+        let (provider, model) = serving(word)
+        var candidate = source
+        candidate.flags.selected = ModelSelection(provider: provider, model: model)
+        return try? await candidate.load(allowNetwork: false).model
     }
 
     /// Names thread `id` `title` where it is shown, and records it for a resume.
