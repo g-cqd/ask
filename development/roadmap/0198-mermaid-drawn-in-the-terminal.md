@@ -45,3 +45,7 @@ ask draws a closed `mermaid` fence as a diagram (`Sources/AskTUI/MermaidRows.swi
 - AemiMermaid is published (`github.com/g-cqd/AemiMermaid`, public) and pinned at `6c86aed`; AemiMarkdown's block index, fence reader
   and editor are pushed and pinned at `57f2def`, which TerminalKit (`1da60e1`) pins too, as SwiftPM needs one revision per package. No
   path dependency is left. `Scripts/probe-mermaid.py` (4 checks) draws a flowchart and a sequence diagram through the release binary.
+
+## Progress (2026-11-05)
+
+The terminal draws flowcharts, sequence, state, class, entity diagrams and pie charts inside the transcript and ask's branch pins published revisions of AemiMermaid and AemiMarkdown. Since then: ports for every edge, labels against their own line, clusters kept apart (AemiMermaid, local commits beyond the pinned revision), and TerminalKit draws a task's checkbox in the bullet's place and can put a rule above footnotes (not yet used by ask's screen composer).

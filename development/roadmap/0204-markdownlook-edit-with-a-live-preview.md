@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: ["0199", "0203"]
 date: 2026-11-04
 ---
@@ -31,3 +31,7 @@ Typing in the source pane updates the preview within the budget at the four size
 ## Not in scope
 
 Undo beyond the text view's own, collaborative editing, a sync with other editors' buffers, an outline or table of contents, export beyond the PDF the vector drawing already gives.
+
+## Progress (2026-11-05)
+
+The lab is in the app (option-command-L): a text view reports each change as a byte range, `MarkdownEditor` re-reads the blocks around it, the page is made from what the editor holds, and a readout shows blocks removed and inserted, the parse time and whether the whole document was parsed. 300 random edits each matched a fresh parse. Not done: edits from outside (a file changing under the editor), undo of whole-document operations as one change, a measured latency through the view (one reading only).
