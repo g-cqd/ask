@@ -25,7 +25,8 @@ import probe_keychain
 ASK = os.path.abspath(
     sys.argv[1] if len(sys.argv) > 1 else os.path.join(os.path.dirname(__file__), "..", ".build", "debug", "ask")
 )
-COLS, ROWS = 100, 30
+# Tall enough for /help, which lists every command and grows with them; the scroll checks print it more than once.
+COLS, ROWS = 100, 60
 results = []
 
 
@@ -93,7 +94,9 @@ class Terminal:
         """The rows above the prompt, without the left margin, blank rows dropped."""
         rules = self.rules()
         rows = self.lines()[: rules[-2] if len(rules) >= 2 else ROWS]
-        return [row.strip() for row in rows if row.strip()]
+        # The closed sidebar's toggle sits in the top row's corner: it is not the transcript's.
+        rows = [row.rstrip().removesuffix("\u00ab").strip() for row in rows]
+        return [row for row in rows if row]
 
     def inverse(self, row):
         return [col for col in range(COLS) if self.screen.buffer[row][col].reverse]
@@ -179,7 +182,9 @@ FOLLOW = QUIT + 1
 LEAVE = MARGIN + len("/quit  ")
 check("the screen shows /help where the probe expects it", QUIT > 0, str(t.lines()))
 found_listing = t.transcript()
-check("the user prompt has no leading marker", "/help" in t.transcript()[:1], str(t.transcript()[:2]))
+# The notice of a conversation with no account comes first; the person's message is the row after, as typed.
+check("the user prompt has no leading marker", t.transcript()[1:2] == ["/help"] and t.transcript()[0].startswith(NOTICE),
+      str(t.transcript()[:2]))
 check("the status has no painted inverse surface", t.inverse(ROWS - 1) == [], t.status())
 raw = bytes(t.raw)
 check("the terminal is asked for mouse reports", b"\x1b[?1000h" in raw and b"\x1b[?1006h" in raw)

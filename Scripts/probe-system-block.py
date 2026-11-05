@@ -31,7 +31,8 @@ def main():
         server = agent.Server([])
         environment = agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty", LANG="en_US.UTF-8")
-        terminal = folding.Terminal(project, environment, columns=100, rows=30)
+        # Tall enough for /help, which lists every command, to keep its first rows and the echoed command on screen.
+        terminal = folding.Terminal(project, environment, columns=100, rows=60)
         try:
             terminal.until(lambda: "✓ ·" in terminal.text())
             terminal.send(b"/help\r")
