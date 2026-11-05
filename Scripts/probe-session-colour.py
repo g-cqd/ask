@@ -67,9 +67,17 @@ if any(os.path.basename(name.strip()) == "ask" for name in running):
 else:
     others, _ = status_background("others")
     check("others, alone: plain", others == {"default"}, others)
+# Another process named ask: a program of our own that waits. A copy of /bin/sleep was killed on start (a system binary run from
+# elsewhere breaks its launch constraint), and the check passed only because the owner's Mac runs other ask processes.
 stand_in = os.path.join(tempfile.mkdtemp(), "ask")
-shutil.copy("/bin/sleep", stand_in)
-other = subprocess.Popen([stand_in, "60"])
+subprocess.run(["cc", "-x", "c", "-", "-o", stand_in], input=b"#include <unistd.h>\nint main(void) { sleep(60); return 0; }\n",
+               check=True)
+other = subprocess.Popen([stand_in])
+time.sleep(0.2)
+check("the stand-in is running, named ask", other.poll() is None
+      and any(os.path.basename(name.strip()) == "ask" and str(other.pid) == pid.strip()
+              for pid, name in (line.split(None, 1) for line in subprocess.run(["ps", "-axo", "pid=,comm="],
+                                capture_output=True, text=True).stdout.split("\n") if line.strip())))
 try:
     together, _ = status_background("others")
     check("others, with another ask running: coloured", together != {"default"}, together)
