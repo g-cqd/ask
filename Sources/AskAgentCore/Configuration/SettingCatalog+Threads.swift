@@ -14,10 +14,18 @@ extension SettingCatalog {
         ),
         row(
             "threads.namesModel",
+            // @dl:accept -- catalog rows are data, one setting each
             .text,
             #""""#,
             "the conversation's model",
             "The model names \"model\" asks, as /model takes it (\"provider/model\" or a model); empty for the conversation's own."
+        ),
+        row(
+            "threads.summaryInstructions",
+            .text,
+            #""List every file you changed.""#,
+            "none",
+            "What a thread's summary should also hold, added after the standard merge instruction."
         ),
         row(
             "threads.mergedShownFor",

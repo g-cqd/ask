@@ -17,6 +17,12 @@ extension AgentLoop {
         Reply with the summary only.
         """
 
+    /// The merge instruction with the person's `threads.summaryInstructions` after it, when there are any.
+    public static func mergeInstruction(adding addition: String?) -> String {
+        guard let addition else { return mergeInstruction }
+        return mergeInstruction + "\n\nThe person also asks of every summary: " + addition
+    }
+
     /// The answer to `question` over `tree`'s context (none before a session starts), and what the request spent.
     ///
     /// The request carries the tools' definitions, as every request of the conversation does: a provider refuses a history of tool

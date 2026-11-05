@@ -108,10 +108,11 @@ extension AgentConversation {
         var summary: String
         do {
             let loop = try agentLoop()
+            let addition = current.withLock { $0.settings.configuration.threads.value.summaryAddition }
             let written = try await loop.aside(
                 question,
                 over: thread.recorder.tree,
-                instruction: AgentLoop.mergeInstruction
+                instruction: AgentLoop.mergeInstruction(adding: addition)
             )
             usage.withLock { $0.addBeside(written.usage) }
             update(.status(usage.withLock { $0.compact }))
