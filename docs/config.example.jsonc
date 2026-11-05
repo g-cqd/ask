@@ -200,6 +200,9 @@
     // The model names "model" asks, as /model takes it ("provider/model" or a model); empty for the conversation's own. Default: the conversation's model.
     "namesModel": "",
 
+    // What a thread's summary should also hold, added after the standard merge instruction. Default: none.
+    "summaryInstructions": "List every file you changed.",
+
     // How long a merged thread stays in the sidebar: "30m", "2h", "1d", or "always". /threads still lists it. Default: 1d.
     "mergedShownFor": "1d",
 

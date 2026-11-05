@@ -52,4 +52,18 @@ struct ThreadsSectionTests {
         let layered = ThreadsSection().layered(with: try #require(try threads(#"{"namesModel": "haiku"}"#)))
         #expect(layered.namingModel == "haiku", "a later file's namesModel layers over an earlier one")
     }
+
+    @Test func `summaryInstructions follow the merge instruction, and blank adds nothing`() throws {
+        let section = try #require(try threads(#"{"summaryInstructions": "List every file you touched."}"#))
+        #expect(section.summaryAddition == "List every file you touched.")
+        #expect(ThreadsSection().summaryAddition == nil)
+        #expect(try threads(#"{"summaryInstructions": "  "}"#)?.summaryAddition == nil)
+        let instruction = AgentLoop.mergeInstruction(adding: section.summaryAddition)
+        #expect(
+            instruction.hasPrefix(AgentLoop.mergeInstruction) && instruction.hasSuffix("List every file you touched.")
+        )
+        #expect(AgentLoop.mergeInstruction(adding: nil) == AgentLoop.mergeInstruction)
+        let layered = ThreadsSection().layered(with: section)
+        #expect(layered.summaryAddition == "List every file you touched.")
+    }
 }

@@ -25,6 +25,8 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     public var questionsAfter: String?
     /// `threads.namesModel`: the model `names` `"model"` asks, as `/model` takes it (`"provider/model"` or a model); nil for the conversation's.
     public var namesModel: String?
+    /// `threads.summaryInstructions`: what a thread's merge asks for beside the standard summary instruction.
+    public var summaryInstructions: String?
 
     /// Where a thread's question appears while the person is elsewhere (note n19).
     public enum Questions: Sendable, Equatable {
@@ -45,15 +47,23 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     }
 
     /// The keys, in the order they are shown.
-    public static let keys = ["max", "depth", "names", "mergedShownFor", "questions", "questionsAfter", "namesModel"]
+    public static let keys = [
+        "max", "depth", "names", "mergedShownFor", "questions", "questionsAfter", "namesModel", "summaryInstructions"
+    ]
 
     public var atOnce: Int { max ?? Self.defaultMax }
     public var nesting: Int { depth ?? Self.defaultDepth }
     public var naming: Names { names ?? .onDevice }
+    /// What the merge asks beyond its standard instruction; nil when nothing is written.
+    public var summaryAddition: String? { Self.written(summaryInstructions) }
+
     /// The model that names threads under `names` `"model"`; nil for the conversation's own.
-    public var namingModel: String? {
-        let written = (namesModel ?? "").drop { $0.isWhitespace }.reversed().drop { $0.isWhitespace }.reversed()
-        return written.isEmpty ? nil : String(written)
+    public var namingModel: String? { Self.written(namesModel) }
+
+    /// `text` without the white space around it; nil when nothing is left.
+    private static func written(_ text: String?) -> String? {
+        let kept = (text ?? "").drop { $0.isWhitespace }.reversed().drop { $0.isWhitespace }.reversed()
+        return kept.isEmpty ? nil : String(kept)
     }
     /// Where a thread's question appears.
     public var whereQuestions: Questions {
@@ -98,6 +108,7 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
         merged.questions = section.questions ?? questions
         merged.questionsAfter = section.questionsAfter ?? questionsAfter
         merged.namesModel = section.namesModel ?? namesModel
+        merged.summaryInstructions = section.summaryInstructions ?? summaryInstructions
         return merged
     }
 
@@ -111,6 +122,7 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
             case "questions": questions
             case "questionsAfter": questionsAfter
             case "namesModel": namesModel
+            case "summaryInstructions": summaryInstructions
             default: nil
         }
     }

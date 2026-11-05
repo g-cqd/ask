@@ -34,7 +34,8 @@ def main():
         os.makedirs(project)
         os.makedirs(config + "/ask")
         with open(config + "/ask/config.json", "w") as file:
-            json.dump({"ui": {"inputPrefix": "ask> "}, "threads": {"names": "numbered"}}, file)
+            threads = {"names": "numbered", "summaryInstructions": "PROBE-EXTRA: name every file."}
+            json.dump({"ui": {"inputPrefix": "ask> "}, "threads": threads}, file)
         turn = probe.agent.turn
         server = probe.agent.Server([
             turn([("tool", "c1", "sleep 30")], "tool_use"),        # 0 thread-1, at work
@@ -63,7 +64,10 @@ def main():
             terminal.send(b"/merge\r")
             terminal.until(lambda: len(server.requests) > 1)
             time.sleep(0.5)
-            check("/merge merges it, with a summary request", "merging back" in json.dumps(server.requests[1]["body"]))
+            asked = json.dumps(server.requests[1]["body"])
+            check("/merge merges it, with a summary request", "merging back" in asked)
+            check("which carries threads.summaryInstructions after the standard instruction",
+                  asked.find("PROBE-EXTRA: name every file.") > asked.find("merging back") > -1)
             terminal.send(b"\x1b")
             terminal.until(lambda: "merged · one task" in terminal.text())
             check("and main shows the merge", "thread-1 · merged · one task" in terminal.text())
