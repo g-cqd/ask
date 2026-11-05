@@ -66,7 +66,9 @@ extension AgentConversation {
         if let definition, !definition.models.tokens.isEmpty {
             let provider = settings.model.connection?.name ?? settings.model.providerName
             let listed = await ModelChoices.listed(provider: provider, environment: LaunchEnvironment.values)
-            if let id = ModelMatch.first(of: definition.models.tokens, in: listed) {
+            let resolve = settings.configuration.agents.value.resolvesWithModel
+            if let id = await modelFor(definition.models.tokens, provider: provider, listed: listed, resolving: resolve)
+            {
                 settings = try await self.settings(forModel: provider + "/" + id)
             }
         }
@@ -100,5 +102,32 @@ extension AgentConversation {
         try recorder.select(SessionRouting.destination(settings.model), explicitlySelected: false)
         try settings.record(in: recorder)
         return recorder
+    }
+
+    /// The listed id `words` name: matched by ``ModelMatch``, else, with `resolving`, classified by the connection's cheap model, a
+    /// word at a time and each answer kept (roadmap 0063 phase 4); nil when nothing names one, and the parent's model is kept.
+    private func modelFor(_ words: [String], provider: String, listed: [String], resolving: Bool) async -> String? {
+        if let id = ModelMatch.first(of: words, in: listed) { return id }
+        guard resolving, let cheap = ModelResolution.cheapModel(in: listed) else { return nil }
+        var cache = ModelResolution.Cache(path: askConfigDirectory() + "/agent-model-words.json")
+        for word in words {
+            if let kept = cache.answer(provider: provider, word: word) {
+                if let id = kept { return id }
+                continue
+            }
+            guard let model = try? await settings(forModel: provider + "/" + cheap).model else { return nil }
+            let reply = await OneShotReply.text(
+                ModelResolution.question(word: word, listed: listed),
+                by: makeProvider(model, transport: URLSessionTransport()),
+                model: cheap,
+                within: .seconds(15)
+            )
+            // No reply is not an answer: it is asked again next time.
+            guard let reply else { continue }
+            let id = ModelResolution.answer(reply, listed: listed)
+            try? cache.keep(id, provider: provider, word: word)
+            if let id { return id }
+        }
+        return nil
     }
 }

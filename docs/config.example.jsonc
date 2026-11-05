@@ -233,7 +233,10 @@
     "maxTurns": 30,
 
     // Whether other coding tools' agent definitions are read too, from their folders. Only your own config file can turn it on. Default: false. Your own file only.
-    "otherHarnesses": true
+    "otherHarnesses": true,
+
+    // Whether a cheap model on your connection classifies a definition's model words that no listed model matches. Default: true.
+    "resolveWithModel": false
   },
 
   "skills": {

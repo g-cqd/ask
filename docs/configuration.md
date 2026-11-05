@@ -295,6 +295,7 @@ own file turns it on: a project's may turn it off, never on, and may not let sub
 | `enabled` | `false` | Whether the model has the `agent` tool. Off, no request carries it and nothing on screen names one. Your own file only. |
 | `allowWrites` | `false` | Whether subagents may change files; read-only otherwise, whatever the parent may do. Your own file only. |
 | `maxTurns` | `30` | The most turns one subagent may take, from 1 to 200. |
+| `resolveWithModel` | `true` | Whether a definition's model words that no listed model matches (`fable`, say) are classified by the connection's cheapest listed model (`haiku`, `mini`, `flash`, `lite`, `nano` in its id): it is given the word and the listed ids only, its answer counts only when it is one of them, and each answer is kept in `agent-model-words.json` beside your config so a word is asked once. A project's file may turn it off, not on. |
 | `otherHarnesses` | `false` | Whether other tools' agent definitions are read too: `~/.claude/agents/*.md`, `~/.codex/agents/*.toml` and `~/.copilot/agents/*.agent.md`, and a project's `.claude/agents`, `.codex/agents` and `.github/agents` once trusted. Their `tools` only narrow, their `model` is a preference. Your own file only. |
 
 Agent definitions are Markdown files in `~/.config/ask/agents` (`NAME.md`), and in a project's `.agents/agents` once you trust them
