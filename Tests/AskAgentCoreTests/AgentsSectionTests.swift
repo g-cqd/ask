@@ -27,4 +27,10 @@ struct AgentsSectionTests {
         let person = try #require(try agents(#"{"enabled": true}"#))
         #expect(!person.layered(with: off).isEnabled)
     }
+
+    @Test func `other harnesses' definitions only when the person's own file says so`() throws {
+        #expect(!AgentsSection().readsOtherHarnesses)
+        #expect(try agents(#"{"otherHarnesses": true}"#)?.readsOtherHarnesses == true)
+        #expect(throws: ConfigurationError.self) { try agents(#"{"otherHarnesses": true}"#, project: true) }
+    }
 }

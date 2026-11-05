@@ -66,4 +66,34 @@ struct AgentDefinitionTests {
             "a changed file is untrusted again"
         )
     }
+
+    @Test func `a Codex definition is TOML, its instructions under developer_instructions`() throws {
+        let text = #"""
+            name = "code-reviewer"
+            description = "Reviews a change."
+            model = "gpt-6-astra"
+            developer_instructions = '''
+            You review one change and report findings.
+            '''
+            """#
+        let definition = try #require(AgentDefinition.read(file: "/h/.codex/agents/code-reviewer.toml", text: text))
+        #expect(definition.name == "code-reviewer" && definition.description == "Reviews a change.")
+        #expect(
+            definition.instructions == "You review one change and report findings."
+                && definition.models.tokens == ["gpt-6-astra"]
+        )
+    }
+
+    @Test func `a Copilot file's name drops .agent, and discovery reads TOML too`() throws {
+        let copilot = try #require(
+            AgentDefinition.read(file: "/h/.copilot/agents/committer.agent.md", text: "Commits.\n")
+        )
+        #expect(copilot.name == "committer")
+        let root = FileManager.default.temporaryDirectory.appending(path: "toml-agents-\(UUID().uuidString)").path
+        try FileManager.default.createDirectory(atPath: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        try "description = \"T.\"\ndeveloper_instructions = \"Do.\"\n"
+            .write(toFile: root + "/t.toml", atomically: true, encoding: .utf8)
+        #expect(AgentDiscovery.definitions(in: [root]).map(\.name) == ["t"])
+    }
 }

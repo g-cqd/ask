@@ -230,7 +230,10 @@
     "allowWrites": true,
 
     // The most turns one subagent may take, from 1 to 200. Default: 30.
-    "maxTurns": 30
+    "maxTurns": 30,
+
+    // Whether other coding tools' agent definitions are read too, from their folders. Only your own config file can turn it on. Default: false. Your own file only.
+    "otherHarnesses": true
   },
 
   "skills": {

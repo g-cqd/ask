@@ -17,6 +17,14 @@ extension SettingCatalog {
             user: true,
             "Whether subagents may change files; read-only otherwise."
         ),
-        row("agents.maxTurns", .integer, "30", "30", "The most turns one subagent may take, from 1 to 200.")
+        row("agents.maxTurns", .integer, "30", "30", "The most turns one subagent may take, from 1 to 200."),
+        row(
+            "agents.otherHarnesses",
+            .boolean,
+            "true",
+            "false",
+            user: true,
+            "Whether other coding tools' agent definitions are read too, from their folders. Only your own config file can turn it on."
+        )
     ]
 }

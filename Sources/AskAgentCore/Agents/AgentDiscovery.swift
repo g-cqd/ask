@@ -24,7 +24,10 @@ public enum AgentDiscovery {
     private static func read(_ root: String) -> [AgentDefinition] {
         guard let entries = try? FileManager.default.contentsOfDirectory(atPath: root) else { return [] }
         return entries.sorted()
-            .filter { $0.lowercased().hasSuffix(".md") && $0.lowercased() != "readme.md" }
+            .filter {
+                ($0.lowercased().hasSuffix(".md") || $0.lowercased().hasSuffix(".toml"))
+                    && $0.lowercased() != "readme.md"
+            }
             .compactMap { entry -> AgentDefinition? in
                 let file = root + "/" + entry
                 guard let data = FileManager.default.contents(atPath: file), data.count <= SkillDiscovery.maximumBytes,
