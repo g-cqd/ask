@@ -88,7 +88,8 @@ def main():
             terminal.draw(lambda: terminal.send(b"\x1b[B"))
             terminal.draw(lambda: terminal.send(b"\r"))
             terminal.until(lambda: "JOB READY" in terminal.text())
-            check("job row focuses its original output", "main › " + label in terminal.text())
+            # In a lane the list's main row says the way back (the status line no longer names the lane).
+            check("job row focuses its original output", "main  back to the conversation" in terminal.text())
             terminal.draw(lambda: terminal.send(b"\x1b"))
             terminal.draw(lambda: terminal.send(b"Stop\r"))
             terminal.until(lambda: b"JOB STOPPED" in terminal.raw and "1 job" not in terminal.text())

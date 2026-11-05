@@ -17,10 +17,10 @@ with tempfile.TemporaryDirectory() as root:
     t = pf.Terminal(project, env)
     try:
         t.until(lambda: "ask>" in t.text()); t.send(b"hello there\r"); t.until(lambda: "ANSWER 1" in t.text())
-        t.send(b"/compact\r"); t.until(lambda: "compact · earlier messages" in t.text()); t.repaint()
-        pf.check("a failed compaction is a block with a cross", any("compact · earlier messages" in l and l.rstrip().endswith("✗") for l in t.screen.display))
+        t.send(b"/compact\r"); t.until(lambda: "compaction · earlier messages" in t.text()); t.repaint()
+        pf.check("a failed compaction is a block with a cross", any("compaction · earlier messages" in l and l.rstrip().endswith("✗") for l in t.screen.display))
         pf.check("and no notice says it", "Could not compact" not in t.text())
-        row = t.row("compact · earlier"); t.send(f"\x1b[<0;4;{row+1}M\x1b[<0;4;{row+1}m".encode()); t.until(lambda: "Could not" in t.text() or "nothing" in t.text().lower() or "No " in t.text()); t.repaint()
+        row = t.row("compaction · earlier"); t.send(f"\x1b[<0;4;{row+1}M\x1b[<0;4;{row+1}m".encode()); t.until(lambda: "Could not" in t.text() or "nothing" in t.text().lower() or "No " in t.text()); t.repaint()
         pf.check("a click opens the block onto the reason", "nothing before the recent messages" in t.text())
     finally:
         t.close(); server.httpd.shutdown()

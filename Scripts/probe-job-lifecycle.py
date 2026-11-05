@@ -71,10 +71,11 @@ def main():
             row = next(i for i, text in enumerate(terminal.screen.display) if "shell · [" in text)
             click(terminal, row)
             probe.check("original tool unfolds with the job's initial output", shown(terminal, "STREAM_ONE"))
-            terminal.draw(lambda: terminal.send(b"/tasks\r"))
+            terminal.draw(lambda: terminal.send(b"/jobs\r"))
             job_row = next(i for i, text in enumerate(terminal.screen.display) if text.startswith("[" + label + "]  "))
             click(terminal, job_row)
-            terminal.until(lambda: "STREAM_ONE" in terminal.text() and "main › [" + label + "]" in terminal.text())
+            # In a lane the list's main row says the way back (the status line no longer names the lane).
+            terminal.until(lambda: "STREAM_ONE" in terminal.text() and "main  back to the conversation" in terminal.text())
             (project / "second").touch()
             terminal.until(lambda: shown(terminal, "STREAM_TWO"))
             probe.check("focused output keeps streaming", shown(terminal, "STREAM_ONE") and shown(terminal, "STREAM_TWO"))

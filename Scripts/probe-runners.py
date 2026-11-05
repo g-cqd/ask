@@ -4,7 +4,7 @@
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-runners.py .build/release/ask
 
 A real background job (a loopback http.server the fake model starts, waits on and later stops) is counted, listed by a click on the
-count and by /tasks, and leaves the count when the model stops it. No window, real credentials or host clipboard writes.
+count and by /jobs, and leaves the count when the model stops it. No window, real credentials or host clipboard writes.
 """
 import importlib.util
 import json
@@ -86,11 +86,12 @@ def main():
             check("the strip states what the job is doing", "· running" in terminal.screen.display[-1])
             click_count(terminal, "1 job")
             check("another click closes it", not strip(terminal))
-            terminal.draw(lambda: terminal.send(b"/tasks\r"))
-            check("/tasks opens it as well", len(strip(terminal)) == 1)
-            terminal.draw(lambda: terminal.send(b"/tasks\r"))
+            # /jobs, not /tasks: that is the session's task list now (ADR-0140).
+            terminal.draw(lambda: terminal.send(b"/jobs\r"))
+            check("/jobs opens it as well", len(strip(terminal)) == 1)
+            terminal.draw(lambda: terminal.send(b"/jobs\r"))
             check("and closes it", not strip(terminal))
-            terminal.draw(lambda: terminal.send(b"/tasks\r"))
+            terminal.draw(lambda: terminal.send(b"/jobs\r"))
             terminal.draw(lambda: terminal.send(b"draft"))
             row = status_row(terminal) - 1
             # Click the start of the draft in the input above the status, which moved up for the strip.
@@ -100,17 +101,18 @@ def main():
             terminal.draw(lambda: terminal.send(b"\x1b"))
             check("Esc closes the strip and keeps the draft", not strip(terminal)
                   and terminal.screen.display[status_row(terminal) - 1].startswith("ask> Xdraft"))
-            terminal.draw(lambda: terminal.send(b"\x18/tasks\r"))
+            terminal.draw(lambda: terminal.send(b"\x18/jobs\r"))
             terminal.draw(lambda: terminal.send(b"\x1b[B"))
             terminal.draw(lambda: terminal.send(b"\r"))
             terminal.until(lambda: "Serving HTTP on" in terminal.text())
             check("Down then Enter shows the job's real output in place of the conversation",
                   "Serving HTTP on" in terminal.text() and "Serving." not in terminal.text())
-            check("the status line says which lane is shown", f"main › {label} · esc returns" in terminal.text())
+            # The list's main row says the way back, where the status line once named the lane.
+            check("the list says a lane is shown, and the way back", "main  back to the conversation" in terminal.text())
             terminal.draw(lambda: terminal.send(b"\x1b"))
             check("Esc returns to the conversation, with the strip still open",
                   "Serving." in terminal.text() and "Serving HTTP on" not in terminal.text() and len(strip(terminal)) == 1)
-            terminal.draw(lambda: terminal.send(b"\x18/tasks\r"))
+            terminal.draw(lambda: terminal.send(b"\x18/jobs\r"))
             start = len(terminal.raw)
             terminal.send(b"Stop it\r")
             terminal.until(lambda: b"Stopped." in bytes(terminal.raw)[start:] and idle(terminal) and "1 job" not in terminal.text())

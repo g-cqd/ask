@@ -35,6 +35,9 @@ struct Login: AsyncParsableCommand {
         do { request = try LoginRequest(words: all) } catch { throw ValidationError("\(error)") }
         do {
             print(try await AccountLogin(interaction: CommandLineInteraction()).run(request))
+        } catch let failure as AccountLogin.Failure where failure.cancelled {
+            // Nothing entered is no input (EX_NOINPUT), not a refusal.
+            fail("ask: sign-in cancelled: \(failure)", code: 66)
         } catch { fail("ask: sign-in failed: \(error)", code: 77) }
     }
 }

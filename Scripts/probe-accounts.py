@@ -48,6 +48,12 @@ def config(copy=True):
         for name in os.listdir(os.path.join(home, "ask")):
             if name.endswith(".lock"):
                 os.unlink(os.path.join(home, "ask", name))
+        # The scenarios are Codex's: say so, rather than count on the person's config choosing it (with several accounts
+        # signed in and none named, ask takes the first that can answer).
+        providers = os.path.join(home, "ask", "providers.json")
+        if not os.path.exists(providers):
+            with open(providers, "w") as file:
+                json.dump({"default": "codex"}, file)
     else:
         os.makedirs(os.path.join(home, "ask"), mode=0o700)
     return home
