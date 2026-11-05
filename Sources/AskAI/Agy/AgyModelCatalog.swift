@@ -6,9 +6,9 @@ public import Foundation
 /// the provider's refusal says one. Reading never refreshes a token or repairs a file.
 public struct AgyModelCatalog: Sendable {
     /// The endpoint the list comes from, which is also part of the cache's scope.
-    public static let endpoint = URL(
-        string: "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels"
-    )!
+    public static let endpoint = URL.constant(
+        "https://daily-cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels"
+    )
     private let credentials: CredentialFile
     private let cache: ModelCatalogFile
     private let cloud: AgyCloudClient

@@ -57,7 +57,7 @@ public struct CodexAuthClient: Sendable {
         let body = FormEncoding.query(fields)
         let request = HTTPRequest.account(
             "POST",
-            URL(string: CodexOAuth.tokenEndpoint)!,
+            URL.constant(CodexOAuth.tokenEndpoint),
             contentType: "application/x-www-form-urlencoded",
             body: Array(body.utf8)
         )

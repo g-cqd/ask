@@ -114,7 +114,7 @@ struct HTTPMCPSessionTests {
         let http = ScriptedHTTP()
         let transport = try HTTPMCP.transport(http)
         await transport.close()
-        await #expect(throws: (any Error).self) { try await HTTPMCP.send(HTTPMCP.ping, on: transport) }
+        await #expect(throws: CancellationError.self) { try await HTTPMCP.send(HTTPMCP.ping, on: transport) }
         #expect(http.requests.isEmpty)
     }
 

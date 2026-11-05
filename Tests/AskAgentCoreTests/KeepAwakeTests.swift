@@ -101,7 +101,7 @@ struct KeepAwakeTests {
         #expect(file.keepAwake == .off)
         let configured = Configuration.defaults.applying(file, from: .file("/u/config.json"))
         #expect(configured.changes(from: .defaults) == ["keepAwake: working → off (/u/config.json)"])
-        #expect(throws: (any Error).self) {
+        #expect(throws: ConfigurationError.self) {
             try ConfigurationFile.parse(Array(#"{"keepAwake": "caffeinate -dims"}"#.utf8), path: "c.json")
         }
     }

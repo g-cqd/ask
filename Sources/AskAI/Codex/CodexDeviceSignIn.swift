@@ -17,8 +17,8 @@ public struct CodexDeviceSignIn: BrowserSignIn {
         let verifier: String
     }
 
-    private static let base = URL(string: "https://auth.openai.com")!
-    private static let verification = URL(string: "https://auth.openai.com/codex/device")!
+    private static let base = URL.constant("https://auth.openai.com")
+    private static let verification = URL.constant("https://auth.openai.com/codex/device")
     private static let redirectURI = "https://auth.openai.com/deviceauth/callback"
 
     public let pollsImmediately = false

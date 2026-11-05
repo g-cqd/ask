@@ -48,7 +48,9 @@ public struct MCPOAuthClient: Sendable {
     }
 
     /// The address the person opens to approve ask.
-    public func authorizationURL(clientID: String, redirectURI: String, pkce: PKCE, state: String) -> URL {
+    public func authorizationURL(clientID: String, redirectURI: String, pkce: PKCE, state: String)
+        throws(MCPOAuthError) -> URL
+    {
         var query: [(String, String)] = [
             ("response_type", "code"), ("client_id", clientID), ("redirect_uri", redirectURI),
             ("code_challenge", pkce.challenge),
@@ -57,9 +59,9 @@ public struct MCPOAuthClient: Sendable {
         if let scope = plan.scope { query.append(("scope", scope)) }
         let separator = plan.authorizationEndpoint.query == nil ? "?" : "&"
         // %20, not the form encoding's "+": a space in a query is valid that way to every parser.
-        return URL(
-            string: plan.authorizationEndpoint.absoluteString + separator + FormEncoding.query(query, spaceAs: "%20")
-        )!
+        let text = plan.authorizationEndpoint.absoluteString + separator + FormEncoding.query(query, spaceAs: "%20")
+        guard let address = URL(string: text) else { throw MCPOAuthError("the authorization address does not parse") }
+        return address
     }
 
     /// Exchanges the code the browser brought back for tokens.

@@ -143,7 +143,7 @@ struct MCPOAuthTests {
                 && registration.body.contains(#""client_name":"ask""#)
         )
         let pkce = PKCE(verifier: "v-123")
-        let address = client.authorizationURL(clientID: id, redirectURI: redirect, pkce: pkce, state: "s-1")
+        let address = try client.authorizationURL(clientID: id, redirectURI: redirect, pkce: pkce, state: "s-1")
             .absoluteString
         for part in [
             "response_type=code", "client_id=registered-1", "code_challenge=\(pkce.challenge)",

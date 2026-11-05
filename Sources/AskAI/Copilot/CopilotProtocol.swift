@@ -11,9 +11,10 @@ public enum CopilotProtocol {
             parts.scheme == "https", let host = parts.host?.lowercased(),
             host == "githubcopilot.com" || host.hasSuffix(".githubcopilot.com"),
             parts.user == nil, parts.password == nil, parts.port == nil,
-            parts.path.isEmpty || parts.path == "/", parts.query == nil, parts.fragment == nil
+            parts.path.isEmpty || parts.path == "/", parts.query == nil, parts.fragment == nil,
+            let origin = URL(string: "https://\(host)")
         else { throw .invalidResponse("Copilot API origin") }
-        return URL(string: "https://\(host)")!
+        return origin
     }
 
     /// The headers of a chat request, as VS Code's built-in Copilot Chat 0.72.0 sends them over HTTP (`chatMLFetcher.ts`, `networkRequest`

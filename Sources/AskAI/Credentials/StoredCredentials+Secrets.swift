@@ -40,19 +40,28 @@ extension StoredCredentials {
     mutating func setSecrets(_ fields: [String: String], of name: String) {
         func set(_ value: inout String, _ field: String) { if let new = fields[field] { value = new } }
         switch name {
+            // A record that is not there has no secrets to set.
             case "claude":
-                set(&claude!.accessToken, "accessToken")
-                set(&claude!.refreshToken, "refreshToken")
+                guard var record = claude else { return }
+                set(&record.accessToken, "accessToken")
+                set(&record.refreshToken, "refreshToken")
+                claude = record
             case "codex":
-                set(&codex!.accessToken, "accessToken")
-                set(&codex!.refreshToken, "refreshToken")
+                guard var record = codex else { return }
+                set(&record.accessToken, "accessToken")
+                set(&record.refreshToken, "refreshToken")
+                codex = record
             case "agy":
-                set(&agy!.accessToken, "accessToken")
-                set(&agy!.refreshToken, "refreshToken")
-                if agy?.clientSecret != nil, let secret = fields["clientSecret"] { agy?.clientSecret = secret }
+                guard var record = agy else { return }
+                set(&record.accessToken, "accessToken")
+                set(&record.refreshToken, "refreshToken")
+                if record.clientSecret != nil, let secret = fields["clientSecret"] { record.clientSecret = secret }
+                agy = record
             case "copilot":
-                set(&copilot!.githubToken, "githubToken")
-                set(&copilot!.accessToken, "accessToken")
+                guard var record = copilot else { return }
+                set(&record.githubToken, "githubToken")
+                set(&record.accessToken, "accessToken")
+                copilot = record
             case let mcpName where mcpName.hasPrefix("mcp."):
                 let server = String(name.dropFirst(4))
                 if let token = fields["accessToken"] { mcp?[server]?.accessToken = token }

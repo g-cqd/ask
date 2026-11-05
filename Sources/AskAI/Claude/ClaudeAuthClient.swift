@@ -34,7 +34,7 @@ public struct ClaudeAuthClient: Sendable {
     }
 
     private func post(_ body: [UInt8], now: Double) async throws(ClaudeAuthError) -> ClaudeCredentials {
-        let request = HTTPRequest.account("POST", URL(string: ClaudeOAuth.tokenEndpoint)!, body: body)
+        let request = HTTPRequest.account("POST", URL.constant(ClaudeOAuth.tokenEndpoint), body: body)
         let reply: (status: Int, body: [UInt8])
         do { reply = try await transport.collecting(request) } catch { throw .transport(String(describing: error)) }
         return try ClaudeToken.credentials(status: reply.status, body: reply.body, now: now)

@@ -30,9 +30,9 @@ extension SessionFile {
 
     /// The bytes that append `record`, a newline-terminated line: as it is, or its frame.
     mutating func framed(_ record: [UInt8]) throws(SessionFileError) -> [UInt8] {
-        guard framer != nil else { return record }
+        // In place: the framer cannot be copied. Without one the record is written as it is.
         do throws(FramedFileError) {
-            return try framer!.append(Array(record.last == 0x0A ? record.dropLast() : record[...]))
+            return try framer?.append(Array(record.last == 0x0A ? record.dropLast() : record[...])) ?? record
         } catch {
             throw SessionLogReader.sessionError(error)
         }

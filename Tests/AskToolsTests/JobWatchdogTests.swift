@@ -118,7 +118,10 @@ struct JobWatchdogTests {
         let begun = ContinuousClock.now
         watchdog.simulateDeath()
         #expect(try await ProcessExit.observed(process))
-        #expect(ContinuousClock.now - begun < .seconds(1.5), "with no group to stop there is no grace to wait out")
+        // The grace is the watchdog shell's own `sleep`, in another process: only elapsed time can show it was not waited out, with
+        // no group to stop.
+        let elapsed = ContinuousClock.now - begun
+        #expect(elapsed < .seconds(1.5))  // lint:allow
         await watchdog.waitForProtection { $0 == .unavailable }  // set once the shell has been reaped
         #expect(!isAlive(process), "and the shell has been reaped, not left as a zombie")
     }

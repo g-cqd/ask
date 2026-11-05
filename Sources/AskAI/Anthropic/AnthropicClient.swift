@@ -13,7 +13,7 @@ public struct AnthropicClient: Sendable {
         case apiKey(String)
     }
 
-    public static let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
+    public static let endpoint = URL.constant("https://api.anthropic.com/v1/messages")
     /// The betas an OAuth access token needs. Headers do not affect the subscription gate (pi-integrations'
     /// bisection), so ask identifies itself honestly rather than as another client.
     public static let oauthBetas = "claude-code-20250219,oauth-2025-04-20"

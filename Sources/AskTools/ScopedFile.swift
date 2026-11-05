@@ -28,9 +28,7 @@ enum ScopedFile {
         var bytes = [UInt8](repeating: 0, count: size)
         var filled = 0
         while filled < size {
-            let count = bytes.withUnsafeMutableBytes {
-                unsafe Darwin.read(descriptor, $0.baseAddress! + filled, size - filled)
-            }
+            let count = DescriptorBytes.read(descriptor, into: &bytes, at: filled)
             if count < 0, errno == EINTR { continue }
             guard count > 0 else { break }  // The file shrank while being read: what was there is what there is.
             filled += count
@@ -96,7 +94,7 @@ enum ScopedFile {
     /// Up to `count` bytes from the start of what `descriptor` is open on.
     static func prefix(of descriptor: Int32, count: Int) -> [UInt8] {
         var bytes = [UInt8](repeating: 0, count: count)
-        let filled = bytes.withUnsafeMutableBytes { unsafe Darwin.read(descriptor, $0.baseAddress!, count) }
+        let filled = DescriptorBytes.read(descriptor, into: &bytes, at: 0)
         return filled > 0 ? Array(bytes.prefix(filled)) : []
     }
 
@@ -194,9 +192,7 @@ enum ScopedFile {
         defer { close(file) }
         var written = 0
         while written < bytes.count {
-            let count = bytes.withUnsafeBytes {
-                unsafe Darwin.write(file, $0.baseAddress! + written, bytes.count - written)
-            }
+            let count = DescriptorBytes.write(file, bytes, from: written)
             if count < 0, errno == EINTR { continue }
             guard count > 0 else {
                 unlinkat(directory, temporary, 0)

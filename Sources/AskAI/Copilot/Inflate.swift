@@ -11,11 +11,12 @@ enum Inflate {
         // One spare byte: a stream that inflates to more than `size` fills it, and is refused.
         var output = [UInt8](repeating: 0, count: size + 1)
         let written = output.withUnsafeMutableBufferPointer { out in
-            data.withUnsafeBufferPointer { input in
-                compression_decode_buffer(
-                    out.baseAddress!,
+            data.withUnsafeBufferPointer { input -> Int in
+                guard let target = out.baseAddress, let source = input.baseAddress else { return 0 }
+                return compression_decode_buffer(
+                    target,
                     out.count,
-                    input.baseAddress!,
+                    source,
                     data.count,
                     nil,
                     COMPRESSION_ZLIB

@@ -82,7 +82,7 @@ struct CopilotClientTests {
         #expect(try await catalog.models(now: now, refresh: true).isEmpty)
         #expect(try catalog.cached(now: now)?.isEmpty == true)
         let request = ModelRequest(model: "m", maxTokens: 10, systemPrompt: [], messages: [], tools: [])
-        await #expect(throws: (any Error).self) {
+        await #expect(throws: SignInError.self) {
             for try await _ in CopilotClient(file: file, transport: revoked).stream(request) {}
         }
         #expect(revoked.requests.allSatisfy { $0.url.path == "/models" })

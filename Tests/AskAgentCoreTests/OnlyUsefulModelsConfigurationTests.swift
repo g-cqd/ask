@@ -22,6 +22,6 @@ struct OnlyUsefulModelsConfigurationTests {
     }
 
     @Test func `a value that is not on or off is refused`() {
-        #expect(throws: (any Error).self) { try ui(#"{"onlyUsefulModels": "maybe"}"#) }
+        #expect(throws: ConfigurationError.self) { try ui(#"{"onlyUsefulModels": "maybe"}"#) }
     }
 }

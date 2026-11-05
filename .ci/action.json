@@ -23,18 +23,19 @@
       "Sources/**",
       "Tests/**",
       "Benchmarks/Benchmarks/**"
-    ]
+    ],
+    "discipline": {}
   },
   "commands": [
     {
       "id": "dependency-audit",
-      "title": "Quality · Declared Dependencies",
+      "title": "Quality \u00b7 Declared Dependencies",
       "run": "Scripts/dependency-audit.sh",
       "os": "macOS"
     },
     {
       "id": "script-guards",
-      "title": "Quality · Scripts, Records & Layering",
+      "title": "Quality \u00b7 Scripts, Records & Layering",
       "run": "python3 Scripts/test-measurements.py && python3 Scripts/check-records.py && python3 -B Scripts/test-workflow.py && python3 -B Scripts/test-sign.py && python3 -B Scripts/test-layers.py && python3 -B Scripts/test-update-pins.py && python3 -B Scripts/test-land.py && python3 -B Scripts/check-layers.py",
       "os": "macOS"
     }

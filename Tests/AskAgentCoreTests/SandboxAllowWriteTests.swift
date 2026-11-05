@@ -10,7 +10,7 @@ struct SandboxAllowWriteTests {
         let json = #"{"sandbox": {"allowWrite": ["~/.zshrc", ".git/config"]}}"#
         let file = try ConfigurationFile.parse(Array(json.utf8), path: "c.json")
         #expect(file.sandbox?.allowWrite == ["~/.zshrc", ".git/config"])
-        #expect(throws: (any Error).self) {
+        #expect(throws: ConfigurationError.self) {
             try ConfigurationFile.parse(Array(json.utf8), path: "p.json", isProject: true)
         }
     }

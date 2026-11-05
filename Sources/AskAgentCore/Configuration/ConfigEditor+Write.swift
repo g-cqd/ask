@@ -1,4 +1,5 @@
 internal import AemiJSON
+internal import AskAI
 internal import Darwin
 internal import Foundation
 
@@ -137,9 +138,7 @@ extension ConfigEditor {
     private static func write(_ bytes: [UInt8], to descriptor: Int32, path: String) throws(ConfigEditor.Error) {
         var written = 0
         while written < bytes.count {
-            let count = bytes.withUnsafeBytes { buffer in
-                Darwin.write(descriptor, buffer.baseAddress! + written, bytes.count - written)
-            }
+            let count = DescriptorBytes.write(descriptor, bytes, from: written)
             if count < 0, errno == EINTR { continue }
             guard count > 0 else {
                 throw ConfigEditor.Error.cannotWrite(path: path, reason: String(cString: strerror(errno)))

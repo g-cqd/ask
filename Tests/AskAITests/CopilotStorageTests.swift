@@ -49,7 +49,7 @@ struct CopilotStorageTests {
             try file.signOut(target: CopilotProtocol.name)
             return CopilotTestTransport.reply(Self.envelope)
         }
-        await #expect(throws: (any Error).self) {
+        await #expect(throws: SignInError.self) {
             _ = try await CopilotAccess(file: file, transport: transport).credentials(now: 1000)
         }
         #expect(try file.loadCopilot() == nil)

@@ -28,7 +28,7 @@ struct CopilotHTTP: Sendable {
         let body = FormEncoding.query(values)
         return try await json(
             HTTPRequest(
-                url: URL(string: "https://github.com/\(path)")!,
+                url: URL.constant("https://github.com/\(path)"),
                 method: "POST",
                 headers: [
                     ("accept", "application/json"), ("content-type", "application/x-www-form-urlencoded"),

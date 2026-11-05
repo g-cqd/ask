@@ -39,7 +39,7 @@ struct UISectionLookTests {
         "abortTurnRequiresConfirmation"
     ])
     func `a value that is not one of the key's is refused by name`(key: String) {
-        #expect(throws: (any Error).self) { try ui(#"{"\#(key)": "maybe"}"#) }
+        #expect(throws: ConfigurationError.self) { try ui(#"{"\#(key)": "maybe"}"#) }
     }
     @Test func `duration localization is parsed layered and shown`() throws {
         let base = try ui(#"{"durations":"words","tint":false}"#)
@@ -72,7 +72,7 @@ struct UISectionLookTests {
     }
 
     @Test func `an unknown spinner style is rejected`() {
-        #expect(throws: (any Error).self) { try ui(#"{"spinner": "bouncing_ball"}"#) }
+        #expect(throws: ConfigurationError.self) { try ui(#"{"spinner": "bouncing_ball"}"#) }
     }
 
     @Test func `appearance is read, layered, shown, and refused when unknown`() throws {
@@ -82,6 +82,6 @@ struct UISectionLookTests {
         #expect(base.layered(with: try ui(#"{"appearance": "auto"}"#)).appearance == .auto)
         let dark = try ui(#"{"appearance": "dark"}"#)
         #expect(UISection.keys.contains("appearance") && !dark.isEmpty)
-        #expect(throws: (any Error).self) { try ui(#"{"appearance": "sepia"}"#) }
+        #expect(throws: ConfigurationError.self) { try ui(#"{"appearance": "sepia"}"#) }
     }
 }

@@ -19,7 +19,12 @@ struct SessionImageStore: Sendable, Equatable {
     let key: SymmetricKey?
 
     /// Key for the encoder's and the decoder's `userInfo`.
-    static let userInfoKey = CodingUserInfoKey(rawValue: "ask.session.imageStore")!
+    static let userInfoKey: CodingUserInfoKey = {
+        guard let key = CodingUserInfoKey(rawValue: "ask.session.imageStore") else {
+            preconditionFailure("an empty key")
+        }
+        return key
+    }()
 
     /// The store beside the session file at `sessionPath`.
     init(besideSessionAt sessionPath: String, key: SymmetricKey? = nil) {

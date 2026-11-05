@@ -23,8 +23,8 @@ public struct VibeSignIn: KeySignIn {
     }
     private struct Exchanged: Decodable { let api_key: String? }
 
-    private static let console = URL(string: "https://console.mistral.ai")!
-    private static let api = URL(string: "https://console.mistral.ai/api")!
+    private static let console = URL.constant("https://console.mistral.ai")
+    private static let api = URL.constant("https://console.mistral.ai/api")
     private static let longest = Duration.seconds(600)
 
     private let http: SignInHTTP
