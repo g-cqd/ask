@@ -128,3 +128,14 @@ their own. Where their questions appear is 0195's `threads.questions`.
   off, and its summary check red before the merge used the subagent's loop.
 - Next: other harnesses' definitions behind `agents.otherHarnesses`; then the model-assisted resolution, for words this cannot match.
 
+## Phase 3d done (2026-11-05): other harnesses' definitions, behind a setting
+
+- `agents.otherHarnesses` (off; the person's own file only): Claude's `.claude/agents/*.md`, Codex's `.codex/agents/*.toml` (the
+  instructions in `developer_instructions`) and Copilot's `.copilot/agents/*.agent.md` under `$HOME`, and a project's `.claude/agents`,
+  `.codex/agents` and `.github/agents` once trusted (`ask trust --agents` covers them all). ask's own come first; the first name wins.
+- Read against the owner's own: 14 Claude, 14 Codex and 14 Copilot definitions, every one with its instructions; the tools ask lacks
+  (web search, LSP, todo lists, server globs) are kept as notes and grant nothing.
+- Test first: `AgentDefinitionTests` (TOML, `.agent.md`) and `AgentsSectionTests` red before the code; `probe-subagent-harnesses.py`
+  (2 checks) red before the wiring.
+- Next: phase 4, the model-assisted resolution, for model and tool words `ModelMatch` and `ToolReference` cannot match.
+

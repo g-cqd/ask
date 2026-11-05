@@ -17,13 +17,16 @@ public struct AgentDefinition: Sendable, Equatable {
 
     /// The definition in `text`, the file at `file`; nil when it gives neither a description nor a body to take one from.
     public static func read(file: String, text: String) -> AgentDefinition? {
-        let head = DefinitionFile(parsing: text)
-        let instructions = head.body.trimmingWhitespace()
+        let isTOML = file.lowercased().hasSuffix(".toml")
+        let head = DefinitionFile(parsing: text, isTOML: isTOML)
+        // Codex keeps the instructions in a field; Markdown files keep them in the body.
+        let written = head.text("developer_instructions", "instructions", "prompt") ?? head.body
+        let instructions = written.trimmingWhitespace()
         guard let description = head.text("description") ?? SkillDiscovery.derivedDescription(instructions) else {
             return nil
         }
         let fileName = String(file.split(separator: "/").last ?? "")
-        let name = head.text("name") ?? String(fileName.hasSuffix(".md") ? fileName.dropLast(3) : fileName[...])
+        let name = head.text("name") ?? Self.name(ofFile: fileName)
         let tools = ToolReference.parse(head.value("tools"))
         let unknown = tools.filter { $0.ask == nil }.map(\.token)
         var diagnostics = head.diagnostics
@@ -39,5 +42,13 @@ public struct AgentDefinition: Sendable, Equatable {
             file: file,
             diagnostics: diagnostics
         )
+    }
+
+    /// A file's name without what marks it a definition: `.agent.md` (Copilot), `.md`, `.toml` (Codex).
+    static func name(ofFile fileName: String) -> String {
+        for suffix in [".agent.md", ".md", ".toml"] where fileName.lowercased().hasSuffix(suffix) {
+            return String(fileName.dropLast(suffix.count))
+        }
+        return fileName
     }
 }

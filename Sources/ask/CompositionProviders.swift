@@ -110,7 +110,13 @@ func makeLoop(
         thinking: run.thinking
     )
     // The person's own agent definitions, then the project's they trusted, which a call may name (roadmap 0063 phase 3).
-    let definitions = startSubagent == nil ? [] : agentDefinitions(workspace: workingDirectory)
+    let definitions =
+        startSubagent == nil
+        ? []
+        : agentDefinitions(
+            workspace: workingDirectory,
+            otherHarnesses: run.configuration.agents.value.readsOtherHarnesses
+        )
     let offered: [any Tool] =
         FileTools.all + [
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
@@ -149,11 +155,21 @@ func makeLoop(
     )
 }
 
-/// The agent definitions a call may name: the person's own, then those of the project at `workspace` that they trusted, each name once.
-func agentDefinitions(workspace: String) -> [AgentDefinition] {
-    let own = AgentDiscovery.definitions(in: [askConfigDirectory() + "/agents"])
-    let names = Set(own.map(\.name))
-    let project = AgentDiscovery.projectDefinitions(in: ProjectAgentTrust.root(of: workspace), trust: SkillBook.trust())
-        .trusted
-    return own + project.filter { !names.contains($0.name) }
+/// The agent definitions a call may name: the person's own, then (with `agents.otherHarnesses`) Claude's, Codex's and Copilot's, then
+/// those of the project at `workspace` that they trusted; each name once, the first found winning.
+func agentDefinitions(workspace: String, otherHarnesses: Bool = false) -> [AgentDefinition] {
+    let environment = LaunchEnvironment.values
+    let home = environment["HOME"].flatMap { $0.hasPrefix("/") ? $0 : nil } ?? NSHomeDirectory()
+    let own =
+        [askConfigDirectory() + "/agents"]
+        + (otherHarnesses ? ProjectAgentTrust.harnessFolders.map { home + "/" + $0.user } : [])
+    var found = AgentDiscovery.definitions(in: own)
+    var names = Set(found.map(\.name))
+    for root in ProjectAgentTrust.roots(of: workspace, otherHarnesses: otherHarnesses) {
+        for definition in AgentDiscovery.projectDefinitions(in: root, trust: SkillBook.trust()).trusted
+        where names.insert(definition.name).inserted {
+            found.append(definition)
+        }
+    }
+    return found
 }

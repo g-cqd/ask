@@ -7,6 +7,8 @@ public struct AgentsSection: Sendable, Equatable, CustomStringConvertible, Layer
     public var allowWrites: Bool?
     /// `agents.maxTurns`: the most turns one subagent may take.
     public var maxTurns: Int?
+    /// `agents.otherHarnesses`: whether Claude's, Codex's and Copilot's agent definitions are read too (the owner: behind a setting).
+    public var otherHarnesses: Bool?
 
     public static let defaultTurns = 30
     static let mostTurns = 200
@@ -14,11 +16,12 @@ public struct AgentsSection: Sendable, Equatable, CustomStringConvertible, Layer
     public init() {}
 
     /// The keys, in the order they are shown.
-    public static let keys = ["enabled", "allowWrites", "maxTurns"]
+    public static let keys = ["enabled", "allowWrites", "maxTurns", "otherHarnesses"]
 
     public var isEnabled: Bool { enabled ?? false }
     public var writes: Bool { allowWrites ?? false }
     public var turns: Int { maxTurns ?? Self.defaultTurns }
+    public var readsOtherHarnesses: Bool { otherHarnesses ?? false }
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: AgentsSection) -> AgentsSection {
@@ -27,6 +30,7 @@ public struct AgentsSection: Sendable, Equatable, CustomStringConvertible, Layer
         merged.enabled = section.enabled ?? enabled
         merged.allowWrites = section.allowWrites ?? allowWrites
         merged.maxTurns = section.maxTurns ?? maxTurns
+        merged.otherHarnesses = section.otherHarnesses ?? otherHarnesses
         return merged
     }
 
@@ -36,6 +40,7 @@ public struct AgentsSection: Sendable, Equatable, CustomStringConvertible, Layer
             case "enabled": enabled.map(String.init)
             case "allowWrites": allowWrites.map(String.init)
             case "maxTurns": maxTurns.map(String.init)
+            case "otherHarnesses": otherHarnesses.map(String.init)
             default: nil
         }
     }

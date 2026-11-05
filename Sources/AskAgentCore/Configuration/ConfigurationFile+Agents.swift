@@ -7,11 +7,14 @@ extension ConfigurationFile {
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
                 switch key.stringValue {
+                    // @dl:accept -- key table rows, as every section decodes them
                     case "enabled": section.enabled = try container.decode(Bool.self, forKey: key)
                     // @dl:accept -- every configuration section is decoded, layered and compared by the same idiom; the keys are the data
                     case "allowWrites": section.allowWrites = try container.decode(Bool.self, forKey: key)
                     // @dl:accept -- every configuration section is decoded, layered and compared by the same idiom; the keys are the data
                     case "maxTurns": section.maxTurns = try container.decode(Int.self, forKey: key)
+                    // @dl:accept -- key table rows, as every section decodes them
+                    case "otherHarnesses": section.otherHarnesses = try container.decode(Bool.self, forKey: key)
                     default: throw UnknownKey(key: "agents." + key.stringValue)
                 }
             }
@@ -33,6 +36,13 @@ extension ConfigurationFile {
                 path: path,
                 key: "agents.allowWrites",
                 reason: "lets subagents change files: only your own config file can allow that"
+            )
+        }
+        if isProject, section.otherHarnesses == true {
+            throw .outOfRange(
+                path: path,
+                key: "agents.otherHarnesses",
+                reason: "reads other tools' agent definitions: only your own config file can turn that on"
             )
         }
         if let turns = section.maxTurns, !(1 ... AgentsSection.mostTurns).contains(turns) {
