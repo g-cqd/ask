@@ -15,10 +15,15 @@ enum ProcessRole {
     private static let roleWhich: Int32 = 6
     private static let focal: Int32 = 1
 
-    /// Takes the role of the app in focus. Nothing happens where there are no roles, or when the system refuses.
-    static func becomeInteractive() {
+    /// Takes the role of the app in focus. Nothing happens where there are no roles, or when the system refuses, as it does for a
+    /// process outside a person's login session (a CI runner's).
+    /// - Returns: whether the process has the role now.
+    @discardableResult
+    static func becomeInteractive() -> Bool {
         #if os(macOS)
-            _ = setpriority(roleWhich, 0, focal)
+            return setpriority(roleWhich, 0, focal) == 0 && isInteractive
+        #else
+            return false
         #endif
     }
 
