@@ -20,7 +20,7 @@ struct ContentStyleTests {
                 .toolFinished(.succeeded, output: "result")
             ]
         )
-        #expect(rig.contentText(row: 8) == "Thinking...")
+        #expect(rig.contentText(row: 8) == "Thought.", "a tool followed it: it has ended")
         #expect(rig.contentText(row: 9) == "read · file")
     }
 

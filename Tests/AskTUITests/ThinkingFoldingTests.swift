@@ -28,6 +28,13 @@ struct ThinkingFoldingTests {
         #expect(rig.contentText(row: 9) == "Thinking...")
     }
 
+    @Test func `finished reasoning reads Thought., on screen and when copied`() {
+        let rig = PointerRig(columns: 60, updates: Self.reasoning + [.assistantText("answer")])
+        let rows = (0 ..< 12).map { rig.contentText(row: $0) }
+        #expect(rows.contains("Thought.") && !rows.contains("Thinking..."))
+        #expect(rig.controller.state.transcript.contentText(at: 0) == "Thought.")
+    }
+
     @Test func `reasoning after an answer is a new block`() {
         var rig = PointerRig(columns: 60, updates: Self.reasoning + [.assistantText("answer")])
         rig.controller.handle(.thinkingText("more"))

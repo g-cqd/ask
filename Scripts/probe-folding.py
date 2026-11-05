@@ -159,13 +159,14 @@ def main():
             terminal.until(lambda: b"PROBE ANSWER" in bytes(terminal.raw)[beginning:]
                            )
             terminal.repaint()
-            check("thinking and tool output start folded", "Thinking..." in terminal.text()
+            # Ended once the answer follows it: a finished block reads Thought. (note n37).
+            check("thinking and tool output start folded", "Thought." in terminal.text()
                   and "read · note.txt" in terminal.text() and "2 lines · ✓" in terminal.text()
                   and "FIRST THOUGHT" not in terminal.text() and "ALPHA OUTPUT" not in terminal.text())
             check("the status retains the terminal background", all(
                 not terminal.screen.buffer[29][col].reverse and terminal.screen.buffer[29][col].bg == "default"
                 for col in range(100)))
-            terminal.draw(lambda: terminal.click("Thinking..."))
+            terminal.draw(lambda: terminal.click("Thought."))
             check("the expanded reasoning is visible", "SECOND THOUGHT" in terminal.text())
             check("a click opens thinking only", "FIRST THOUGHT" in terminal.text() and "ALPHA OUTPUT" not in terminal.text())
             # The shortcut flips the kind's default, discarding per-block overrides: first all open, then all folded.
@@ -185,7 +186,7 @@ def main():
             terminal = Terminal(project, environment, resume=True)
             terminal.until(lambda: "PROBE ANSWER" in terminal.text())
             terminal.repaint()
-            check("resume replays thinking and tool output folded", "Thinking..." in terminal.text()
+            check("resume replays thinking and tool output folded", "Thought." in terminal.text()
                   and "read · note.txt" in terminal.text() and "2 lines · ✓" in terminal.text())
             terminal.draw(lambda: terminal.send(b"\x14"))
             check("resumed reasoning can be opened", "FIRST THOUGHT" in terminal.text())
