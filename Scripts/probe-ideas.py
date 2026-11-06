@@ -3,7 +3,7 @@
 
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-ideas.py .build/release/ask
 
-A note is saved and said so; `/notes` lists it and choosing it shows it in the transcript; `/notes:edit` puts it in the input to edit
+A note is saved (its line is the note: nothing more is said); `/notes` lists it and choosing it shows it in the transcript; `/notes:edit` puts it in the input to edit
 with the list closed; Enter keeps the edit and opens the list again with the new words; the model is sent no note unasked, and reads
 the edited one through its tool. Hermetic: no window, credentials or clipboard.
 """
@@ -73,11 +73,11 @@ def main():
             check("with the list closed", "notes 1 of" not in terminal.text() and "[new]" not in terminal.text().split("ask> /notes:edit n1")[-1])
             terminal.draw(lambda: terminal.send(b" when narrow"))
             terminal.send(b"\r")
-            terminal.until(lambda: "Edited n1." in terminal.text())
+            terminal.until(lambda: "Edited n1:" in terminal.text())
             # The list is drawn after the notice, maybe over more than one write: wait for its whole row and the input under it, not
             # for the edited line the transcript already shows.
             def reopened():
-                after = terminal.text().split("Edited n1.")[-1]
+                after = terminal.text().split("Edited n1:")[-1]
                 row = after.split("[new]")[-1].split("\n")[0].strip() if "[new]" in after else ""
                 return row.endswith("fold the sidebar when narrow") and "ask> /notes" in after
 

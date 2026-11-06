@@ -81,4 +81,17 @@ public struct SlashCommand: Sendable, Equatable {
         self.takesChoices = takesChoices
         self.category = category
     }
+
+    /// Whether running it with `arguments` shows the line typed (note n28, n48). A command that ``summarises`` never does; a notes
+    /// command does only when it adds a note, as the line is the note; to show, list, search, edit or delete one, its answer is all.
+    public func echoes(arguments: String) -> Bool {
+        guard !summarises else { return false }
+        guard name == "notes" || name.hasPrefix("notes:") else { return true }
+        guard name == "notes" || name == "notes:add" else { return false }
+        let words = arguments.split(whereSeparator: \.isWhitespace)
+        // `/notes n1`, as the list sends a chosen note, shows it; any other text is a note to add.
+        guard words.count == 1 else { return !words.isEmpty }
+        let number = words[0].first == "n" ? words[0].dropFirst() : words[0][...]
+        return number.isEmpty || !number.allSatisfy(\.isASCII) || !number.allSatisfy(\.isNumber)
+    }
 }
