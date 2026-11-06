@@ -67,6 +67,6 @@ extension AgentConversation {
         }
         sourceState.withLock { $0 = candidate }
         await refreshSettings(update: update)
-        update(.notice("Thinking set to \(level) for this run.", isError: false))
+        update(.choiceSummary(choiceSummary("For this run")))
     }
 }

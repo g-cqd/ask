@@ -81,7 +81,7 @@ def probe_model():
     print("B: /model while a tool runs is accepted at once and applies to the turn's next request")
     screen, server, _, running = started(json.dumps({"model": "first-model", "provider": "anthropic"}))
     screen.type("/model picked-model\r")
-    accepted = screen.until("Model selected for this run: picked-model", 3)
+    accepted = screen.until("For this run: picked-model", 3)
     still = not screen.idle()
     interactive.dismiss_thinking_offer(screen)
     body = second_request(server, screen)
@@ -96,7 +96,7 @@ def probe_thinking():
     print("C: /thinking while a tool runs applies to the turn's next request")
     screen, server, _, running = started(json.dumps({"model": "claude-sonnet-4-5", "provider": "anthropic"}))
     screen.type("/thinking high\r")
-    accepted = screen.until("Thinking", 3) and not screen.idle()
+    accepted = screen.until(", thinking high", 3) and not screen.idle()
     body = second_request(server, screen)
     first = server.requests[0]["body"].get("thinking") if server.requests else None
     results = [check("the turn was running", running),

@@ -43,6 +43,8 @@ public struct Transcript: Sendable, Equatable {
     var asideBlocks: Set<Int> = []
     /// Where threads started (roadmap 0195): each such block's thread, which a click on it opens.
     var forkBlocks: [Int: String] = [:]
+    /// The block that holds the latest choice's summary, which the next one replaces while it is still the last (note n28).
+    var choiceSummaryAt: Int?
     /// Whether a running block's header shimmers (`ui.shimmer`, roadmap 0171).
     public var shimmer = true
     /// The blocks still going when the person stopped the turn (roadmap 0142), drawn on the interruption tint.

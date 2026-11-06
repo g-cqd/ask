@@ -69,8 +69,8 @@ def main():
         picker.check('and lists each account', 'gpt-6 · codex ' in shown + ' ' and 'gpt-6 · codex-2' in shown)
         picker.type_text(terminal, '2')
         picker.press(terminal, b'\r')
-        terminal.until(lambda: 'Model selected' in terminal.text() or 'Model not changed' in terminal.text())
-        picker.check('choosing an account selects the model with it', 'Model selected for this run: gpt-6' in terminal.text())
+        terminal.until(lambda: 'For this run:' in terminal.text() or 'Model not changed' in terminal.text())
+        picker.check('choosing an account selects the model with it', 'For this run: gpt-6' in terminal.text())
         terminal.until(lambda: os.path.exists(memory))
         with open(memory) as file:
             picker.check('the account is remembered for the model', json.load(file) == {'codex/gpt-6': 'codex-2'})

@@ -4,12 +4,12 @@ extension ScreenController {
     /// it needs the turn's end; else refused while a turn runs.
     mutating func runCommand(_ command: SlashCommand, arguments: String, line: String) -> [Effect] {
         guard state.running else {
-            state.transcript.addUser(line)
+            if !command.summarises { state.transcript.addUser(line) }
             return begin(.runCommand(name: command.name, arguments: arguments))
         }
         switch command.duringTurn {
             case .atOnce:
-                state.transcript.addUser(line)
+                if !command.summarises { state.transcript.addUser(line) }
                 turnCommands.besideRunning += 1
                 return [.runCommandBeside(name: command.name, arguments: arguments)]
             case .afterTurn:

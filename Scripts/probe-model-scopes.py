@@ -92,7 +92,7 @@ def picker_session(binary, inside):
         picker.type_text(terminal, "/model anthropic claude-sonnet-4-5")
         picker.press(terminal, b"\x1b")
         picker.press(terminal, b"\r")
-        terminal.until(lambda: "Model not changed" in terminal.text() or "Model selected" in terminal.text())
+        terminal.until(lambda: "Model not changed" in terminal.text() or "For this run:" in terminal.text())
         return status, shown, terminal.text()
 
 
@@ -107,7 +107,7 @@ def tui(binary):
     status, shown, screen = picker_session(binary, inside=False)
     check("control: outside the rule the default stays", "codex/" not in status, status)
     check("control: outside the rule anthropic is listed", "anthropic" in shown, shown)
-    check("control: and /model may choose it", "Model selected" in screen, screen[-600:])
+    check("control: and /model may choose it", "For this run:" in screen, screen[-600:])
 
 
 def main():
