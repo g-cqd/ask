@@ -23,8 +23,11 @@ enum PathLinks {
     ///   - text: one row.
     ///   - home: what `~` means.
     /// - Returns: the links, left to right.
-    static func links(in text: String, home: String = NSHomeDirectory()) -> [Link] {
-        let paths = LinkCandidates.mayHoldPath(text) ? pathLinks(in: text, home: home) : []
+    /// The scheme of a link to one of ask's commands: a click fills an empty input with it, and the terminal is not given it.
+    static let commandScheme = "ask-command:/"
+
+    static func links(in text: String, home: String = NSHomeDirectory(), commands: Set<String> = []) -> [Link] {
+        let paths = LinkCandidates.mayHoldPath(text) ? pathLinks(in: text, home: home, commands: commands) : []
         guard LinkCandidates.mayHoldAddress(text), text.contains(":") || text.contains("@") else { return paths }
         let addresses = AddressLinks.links(in: text)
             .filter { found in
@@ -33,8 +36,8 @@ enum PathLinks {
         return (paths + addresses).sorted { $0.columns.lowerBound < $1.columns.lowerBound }
     }
 
-    /// The `/…` and `~/…` paths in one row.
-    private static func pathLinks(in text: String, home: String) -> [Link] {
+    /// The `/…` and `~/…` paths in one row, and the `/name`s that are `commands`.
+    private static func pathLinks(in text: String, home: String, commands: Set<String>) -> [Link] {
         guard text.contains("/") else { return [] }
         let characters = Array(text)
         var result: [Link] = []
@@ -62,7 +65,13 @@ enum PathLinks {
                 [".", ":", "!", "?"].contains(path[kept - 1]) || path[kept - 1].isNumber && hasLocation(path, kept)
             { kept -= 1 }
             path = Array(path[0 ..< kept])
-            if path.count > 1, let uri = uri(String(path), home: home) {
+            let target: String? =
+                switch word(path, commands) {
+                    case .command(let name): commandScheme + name
+                    case .prose: nil
+                    case .path: uri(String(path), home: home)
+                }
+            if path.count > 1, let uri = target {
                 let shown = path.reduce(0) { $0 + UnicodeWidth.displayWidth(of: String($1)) }
                 result.append(Link(columns: startColumn ..< startColumn + shown, uri: uri))
             }
@@ -71,6 +80,28 @@ enum PathLinks {
         }
         return result
     }
+
+    /// What a path word is: one of `commands` (`/name`), a single `/word` in prose (note n11: not a command, nor a path because it
+    /// starts with a slash, unless it is one of `rootEntries`), or a path.
+    private enum Word {
+        case command(String)
+        case prose
+        case path
+    }
+
+    private static func word(_ path: [Character], _ commands: Set<String>) -> Word {
+        guard path.first == "/", !path.dropFirst().contains("/") else { return .path }
+        let name = String(path.dropFirst())
+        if commands.contains(name) { return .command(name) }
+        return rootEntries.contains(name) ? .path : .prose
+    }
+
+    /// The folders at the root of macOS and Linux, a single `/word` that is a path: named rather than looked for on the disk, so a row
+    /// draws the same on every machine.
+    private static let rootEntries = Set(
+        "Applications Library System Users Volumes Network bin boot cores dev etc home lib mnt nix opt private proc root run sbin srv sys tmp usr var"
+            .split(separator: " ").map(String.init)
+    )
 
     private static func isStart(_ characters: [Character], at index: Int) -> Bool {
         if characters[index] == "/" {

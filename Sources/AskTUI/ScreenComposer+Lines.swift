@@ -70,7 +70,7 @@ extension ScreenComposer {
     ) -> [Line] {
         // Paths, web and email addresses become links in every block (roadmap 0075), beside a Markdown row's own links. Once per layout
         // of the block, not per frame; the row cache then redraws only what changed.
-        let content = content.map { linked($0, home: style.home) }
+        let content = content.map { linked($0, home: style.home, commands: style.commands) }
         guard style.padded else { return content }
         let tint =
             !style.theme.tinted
@@ -87,9 +87,9 @@ extension ScreenComposer {
     }
 
     /// `line` with the paths and addresses in its text linked, where no link of its own already is; `~` is `home`, or the account's home.
-    static func linked(_ line: Line, home: String?) -> Line {
+    static func linked(_ line: Line, home: String?, commands: Set<String> = []) -> Line {
         guard LinkCandidates.mayHoldLink(line.text) else { return line }
-        let found = PathLinks.links(in: line.text, home: home ?? NSHomeDirectory())
+        let found = PathLinks.links(in: line.text, home: home ?? NSHomeDirectory(), commands: commands)
             .filter { link in
                 !line.links.contains { $0.columns.overlaps(link.columns) }
             }

@@ -132,6 +132,7 @@ public struct ScreenController: Sendable {
         state = ScreenState(label: label, options: options)
         self.commands = Self.builtIn + commands
         self.options = options
+        state.blocks.commands = Self.linkedNames(self.commands, skills: [])
         state.transcript.setToolsFoldedByDefault(options.foldTools)
         state.transcript.setThinkingFoldedByDefault(options.foldThinking)
         state.transcript.setCodeFoldedByDefault(options.foldCode)
