@@ -1,3 +1,5 @@
+internal import AemiFrontMatter
+
 /// A definition file read for what it holds, never rejected for how it is written: a skill's `SKILL.md`, or an agent definition in any harness's format.
 ///
 /// Reading cannot fail. It returns the fields it understood, the comments that look like `key: value`, the body, and a list of things it noticed;
@@ -28,62 +30,27 @@ public struct DefinitionFile: Sendable, Equatable {
 
     /// Reads `text`. `isTOML` says the whole file is TOML, as Codex's and Vibe's agent files are (they have no fences).
     public init(parsing text: String, isTOML: Bool = false) {
-        var lines = Self.lines(of: text)
+        let bytes = Array(text.utf8)
         if isTOML {
             format = .toml
-            let head = TOMLHead(lines: lines)
-            (entries, hints, diagnostics) = (head.entries, head.hints, head.diagnostics)
+            (entries, hints, diagnostics) = DefinitionReader.toml(bytes)
             return
         }
-        guard let open = lines.firstIndex(where: { !$0.allSatisfy(\.isWhitespace) }),
-            let fence = Self.fence(lines[open])
-        else {
-            body = lines.joined(separator: "\n")
+        guard let head = FrontMatter(in: bytes, options: DefinitionReader.headOptions) else {
+            body = Self.normalized(bytes.starts(with: [0xEF, 0xBB, 0xBF]) ? bytes[3...] : bytes[...])
             return
         }
-        lines.removeSubrange(..<open)
-        let close = lines.dropFirst().firstIndex { Self.isClose($0, for: fence) }
-        let end = close ?? Self.unterminatedEnd(lines)
-        isUnterminated = close == nil
-        if close == nil {
-            diagnostics.append("the opening \(fence) has no closing line; the head was read up to the first blank line")
-        }
-        let headLines = Array(lines[1 ..< Swift.max(1, end)])
-        body = lines.dropFirst(close.map { $0 + 1 } ?? end).joined(separator: "\n")
-        if fence == "+++" {
-            format = .toml
-            let head = TOMLHead(lines: headLines)
-            (entries, hints, diagnostics) = (head.entries, head.hints, diagnostics + head.diagnostics)
-        } else {
-            format = .yaml
-            let head = YAMLHead(lines: headLines)
-            (entries, hints, diagnostics) = (head.entries, head.hints, diagnostics + head.diagnostics)
-        }
+        format = head.format == .toml ? .toml : .yaml
+        isUnterminated = !head.isClosed
+        body = Self.normalized(bytes[head.bodyStart...])
+        (entries, hints, diagnostics) = DefinitionReader.read(head, in: bytes)
     }
 
-    /// Lines with the byte-order mark gone and every kind of line ending read as one.
-    static func lines(of text: String) -> [String] {
-        var text = Substring(text)
-        if text.first == "\u{FEFF}" { text = text.dropFirst() }
+    /// Text with every kind of line ending read as one.
+    private static func normalized(_ bytes: ArraySlice<UInt8>) -> String {
+        let text = String(decoding: bytes, as: UTF8.self)
         // Almost no file has a carriage return, and replacing in a text that has none still walks all of it.
-        if text.utf8.contains(0x0D) { text = Substring(text.replacing("\r\n", with: "\n").replacing("\r", with: "\n")) }
-        // Split on the byte, not the character: finding grapheme boundaries across a whole file was most of the time reading one took.
-        return text.utf8.split(separator: 0x0A, omittingEmptySubsequences: false)
-            .map { String(decoding: $0, as: UTF8.self) }
-    }
-
-    private static func fence(_ line: String) -> String? {
-        let trimmed = line.trimmingTrailingWhitespace()
-        return trimmed == "---" || trimmed == "+++" ? trimmed : nil
-    }
-
-    private static func isClose(_ line: String, for fence: String) -> Bool {
-        let trimmed = line.trimmingTrailingWhitespace()
-        return trimmed == fence || (fence == "---" && trimmed == "...")
-    }
-
-    /// Where a head with no closing fence is taken to end: its first blank line.
-    private static func unterminatedEnd(_ lines: [String]) -> Int {
-        lines.dropFirst().firstIndex { $0.allSatisfy(\.isWhitespace) } ?? lines.count
+        guard bytes.contains(0x0D) else { return text }
+        return text.replacing("\r\n", with: "\n").replacing("\r", with: "\n")
     }
 }

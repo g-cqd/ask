@@ -94,6 +94,9 @@ let package = Package(
             url: "https://github.com/g-cqd/AemiMermaid.git",
             revision: "1a272f8835a9026cde79e8214ad490070a847774"
         ),
+        // YAML and TOML, and the front matter of definition files (roadmap 0109; AemiHMMML's ADR-0009): the parsers ask's definition
+        // reader had of its own moved there, strict by default and recovering when asked.
+        .package(url: "https://github.com/g-cqd/AemiHMMML.git", revision: "d2d699ae524259ea46485b81c4a5ed36fe7c41fa"),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "e30aad82377cbea62171cc722a88041e97021db2"),
@@ -116,7 +119,11 @@ let package = Package(
             dependencies: [
                 "AskAI", .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiIO", package: "aemi"),
                 .product(name: "AemiText", package: "aemi"), .product(name: "AemiDiff", package: "aemi"),
-                .product(name: "AemiArgon2", package: "aemi")
+                .product(name: "AemiArgon2", package: "aemi"),
+                .product(name: "AemiFrontMatter", package: "AemiHMMML"),
+                .product(name: "AemiHMMMLCore", package: "AemiHMMML"),
+                .product(name: "AemiTOML", package: "AemiHMMML"),
+                .product(name: "AemiYAML", package: "AemiHMMML")
             ],
             path: "Sources/AskAgentCore",
             swiftSettings: packageSettings

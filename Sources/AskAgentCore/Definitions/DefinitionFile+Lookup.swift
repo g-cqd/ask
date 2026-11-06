@@ -36,7 +36,7 @@ extension DefinitionFile {
         guard !key.isEmpty, key.count <= 40, !value.isEmpty,
             key.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "_" || $0 == "-" })
         else { return nil }
-        let parsed = value.first == "[" ? FlowParser.parse(value) : DefinitionValue.text(value)
+        let parsed = value.first == "[" ? DefinitionReader.flow(value) : DefinitionValue.text(value)
         return DefinitionEntry(key: key, value: parsed)
     }
 }
