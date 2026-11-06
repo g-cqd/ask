@@ -32,6 +32,8 @@ extension ScreenSession {
         let recolouring = SystemAppearance.askAgain(after: appearances) { sink.yield(.askColours) }
         defer { recolouring.cancel() }
         colours?.ask()
+        images?.ask()
+        defer { images?.clear() }
         defer {
             forwarding.cancel()
             resizing.cancel()
@@ -46,12 +48,14 @@ extension ScreenSession {
         }
         render(full: true)
         for await event in events {
+            if takeImageAnswer(event) { continue }
             if let taken = colours?.take(event) {
                 if case .page(let page) = taken { controller.state.adopt(page) }
                 render(full: true)
                 continue
             }
             guard await handle(event) else { return exit }
+            if case .update = event, images?.supported == true { placeImages() }
         }
         return exit
     }

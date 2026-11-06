@@ -54,6 +54,8 @@ public struct Transcript: Sendable, Equatable {
     var replacements: [Int: Int] = [:]
     /// The pictures each tool block's tool returned, by item (roadmap 0208).
     var toolImages: [Int: [ToolImage]] = [:]
+    /// Where each block's pictures are placed as pixels, once the terminal draws them; a nil one has its line only.
+    var imagePlacements: [Int: [ImagePlacement?]] = [:]
     /// The file each file tool's call names (roadmap 0152), whose language colours the file's text in its block.
     var toolPaths: [Int: String] = [:]
     var completedJobs: Set<String> = []
