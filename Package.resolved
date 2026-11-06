@@ -1,5 +1,5 @@
 {
-  "originHash" : "a3c8353583e0fb524fdf97019eb11940566a81f06236734f11817b7b0175d2b2",
+  "originHash" : "0aad1b6aceb71c6dd2db69be454f40ad5b7123b7483af8d03b4cea1003bb5b75",
   "pins" : [
     {
       "identity" : "aemi",
@@ -14,7 +14,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiHMMML.git",
       "state" : {
-        "revision" : "d2d699ae524259ea46485b81c4a5ed36fe7c41fa"
+        "revision" : "326db8babb157297d1686b4808dc3b9d86a1d385"
       }
     },
     {
