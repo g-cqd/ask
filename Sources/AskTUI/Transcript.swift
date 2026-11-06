@@ -175,16 +175,6 @@ public struct Transcript: Sendable, Equatable {
     /// Whether reasoning says anything: a block of white space, or nothing at all, does not (roadmap 0081).
     static func saysSomething(_ text: String) -> Bool { text.contains { !$0.isWhitespace } }
 
-    /// The output without its trailing line feeds, and at most ``outputLineLimit`` lines, with the cut said.
-    static func kept(_ output: String) -> String {
-        var text = Substring(output)
-        while let last = text.last, last == "\n" || last == "\r\n" || last == "\r" { text = text.dropLast() }
-        let lines = text.split(separator: "\n", omittingEmptySubsequences: false)
-        guard lines.count > outputLineLimit else { return String(text) }
-        let cut = lines.count - outputLineLimit
-        return lines.prefix(outputLineLimit).joined(separator: "\n") + "\n… \(cut) more lines not shown"
-    }
-
     // MARK: - Folding
 
     /// Whether the item at `index` can fold: a tool that returned something, or reasoning that says something.
