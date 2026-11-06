@@ -51,8 +51,10 @@ struct LinkFinderCharacterisationTests {
         return hash
     }
 
+    // Moved once on purpose (note n11): a single `/word` outside the root's folders is no longer a path, which drops 1,189 links
+    // here and lets through 10 addresses those links had overlapped.
     @Test func `the links found in tricky and random lines keep their digest`() {
-        #expect(Self.digest() == 2_935_008_911_567_666_217)
+        #expect(Self.digest() == 1_069_255_267_992_296_572)
         let linked = Self.lines().filter { !PathLinks.links(in: $0, home: "/home/me").isEmpty }.count
         #expect(linked > 2_000, "the random lines must hold links for the digest to pin anything: \(linked)")
     }

@@ -81,7 +81,8 @@ struct FileToolCharacterisationTests {
         return hash
     }
 
+    // Moved on purpose (note n11): a single `/word` outside the root's folders is no longer linked as a path.
     @Test func `the rows of file tool blocks with highlighting off keep their digest`() {
-        #expect(Self.digest() == 17_882_301_364_876_186_557)
+        #expect(Self.digest() == 4_547_764_615_977_946_759)
     }
 }

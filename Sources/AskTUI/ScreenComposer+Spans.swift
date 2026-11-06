@@ -18,7 +18,12 @@ extension ScreenComposer {
             guard !part.isEmpty else { continue }
             var style = line.accents.first { $0.columns.contains(low) }?.style ?? line.style
             if line.style.bg != .default, style.bg == .default { style.bg = line.style.bg }
-            if let link = line.links.first(where: { $0.columns.contains(low) }) {
+            if let link = line.links.first(where: { $0.columns.contains(low) }),
+                link.uri.hasPrefix(PathLinks.commandScheme)
+            {
+                // ask's own: the terminal would try to open it, so it is underlined instead of sent as a hyperlink.
+                style.underline = .single
+            } else if let link = line.links.first(where: { $0.columns.contains(low) }) {
                 style.link = link.uri
                 style.linkID = "ask-\(row)-\(link.columns.lowerBound)"
             }

@@ -205,9 +205,15 @@ extension ScreenController {
 }
 
 extension ScreenController {
+    /// The names a `/name` in the transcript is drawn as a command for: the commands, their old names and subcommands, the skills.
+    static func linkedNames(_ commands: [SlashCommand], skills: [SlashCommand]) -> Set<String> {
+        Set((commands + skills).map(\.name)).union(SlashCommand.renamed.keys).union(SlashCommand.subcommands.keys)
+    }
+
     /// Takes the skills the conversation listed, and refreshes the command picker the user may be waiting on.
     mutating func receive(skills: [SlashCommand]) {
         state.skills = skills
+        state.blocks.commands = Self.linkedNames(commands, skills: skills)
         refreshTokens()
         guard pickerScreenRows >= Self.pickerMinimumRows, let trigger = commandTrigger() else { return }
         refreshCommandPicker(trigger, screenRows: pickerScreenRows)

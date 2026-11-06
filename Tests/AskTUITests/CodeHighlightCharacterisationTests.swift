@@ -36,7 +36,8 @@ struct CodeHighlightCharacterisationTests {
         return hash
     }
 
+    // Moved on purpose (note n11): a single `/word` outside the root's folders is no longer linked as a path.
     @Test func `the rows of fenced code with highlighting off keep their digest`() {
-        #expect(Self.digest() == 13_643_733_573_494_559_468)
+        #expect(Self.digest() == 3_594_576_448_199_527_816)
     }
 }

@@ -161,7 +161,12 @@ extension ScreenController {
     /// A click on the transcript: a link opens, a selection is let go, a fold control folds, and anything else starts a selection.
     private mutating func clickTranscript(at cell: CellPosition, count: Int) -> [Effect] {
         // A link wins over the fold and the selection; a double click still takes the word.
-        if count == 1, let uri = link(at: cell) { return [.openLink(uri)] }
+        if count == 1, let uri = link(at: cell) {
+            // A command fills an empty input, ready to run or to finish (note n11); a written one is left as it is.
+            guard uri.hasPrefix(PathLinks.commandScheme) else { return [.openLink(uri)] }
+            if state.editor.text.isEmpty { state.editor.paste("/\(uri.dropFirst(PathLinks.commandScheme.count)) ") }
+            return []
+        }
         if count == 1, isSelected(cell) {
             selector.clear()
             return []

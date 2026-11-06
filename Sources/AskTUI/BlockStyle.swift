@@ -8,6 +8,8 @@ public struct BlockStyle: Sendable, Equatable {
     public var localizedDurations: Bool
     /// What `~` means in a block's path links: the home ask was started with (``ScreenOptions/home``), or nil for the account's own.
     public var home: String?
+    /// The names a `/name` in a block is a command link for (note n11): ask's commands and the skills; any other single `/word` is text.
+    public var commands: Set<String> = []
 
     public init(padded: Bool = true, theme: ScreenTheme = ScreenTheme(), localizedDurations: Bool = true) {
         self.padded = padded

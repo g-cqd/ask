@@ -55,7 +55,8 @@ struct MarkdownRowCharacterisationTests {
         return hash
     }
 
+    // Moved on purpose (note n11): a single `/word` outside the root's folders is no longer linked as a path.
     @Test func `the rows of random Markdown keep their digest`() {
-        #expect(Self.digest() == 338_621_733_458_140_671)
+        #expect(Self.digest() == 15_554_548_159_868_817_949)
     }
 }
