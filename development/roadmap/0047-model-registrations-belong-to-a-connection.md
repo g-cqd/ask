@@ -37,7 +37,8 @@ account and by `Scripts/probe-connections.py`.
 
 ## Still owed
 
-- Aliases for the default `codex` and `anthropic` connections, and a picker in the screen (the `/model` work on another branch).
+- Aliases for the default `codex` and `anthropic` connections. ~~A picker in the screen~~ Done since: `/model` lists the connection's
+  models and a choice is in force at once (`probe-accounts.py`, section A).
 - Whether a model that disappears from the account's catalog should be reported on use.
 
 ## Done (2026-10-23, ADR-0064)

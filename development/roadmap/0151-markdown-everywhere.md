@@ -28,7 +28,8 @@ characters kept; 0085's research specified it (proposal 4); ADR-0129 drew replie
 
 ## Still owed
 
-- Queued prompts; the real-terminal look of all three (pyte only so far).
+- ~~Queued prompts~~ Done (2026-11-05, note n43): drawn as Markdown, as sent ones are. Still owed: the real-terminal look of all
+  three (pyte only so far), which is the owner's.
 - ~~Drafts over about 20 KB past the 4 ms input budget.~~ Done, 2026-11-01, without an incremental layout: what cost the time was
   linear walks, now cheap. TerminalKit's `InputLayout` lays a run of printable ASCII out a row at a time (TerminalKit `40b7d8a`, an
   equivalence test over 600 random drafts against the grapheme walk): 0.72 → 0.056 ms at 21 KB, 7.16 → 0.55 ms at 217 KB. The draft's

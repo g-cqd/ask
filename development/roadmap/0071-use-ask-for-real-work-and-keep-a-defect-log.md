@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-10-25
 ---
@@ -24,6 +24,14 @@ shows it; "ask is good enough to work with" is such a claim, and the only probe 
 Two sessions so far (diary 25: Antigravity `gemini-3-flash` writing a probe; diary 31: Antigravity `claude-sonnet-5-5-medium` reviewing a security change, which found two real regressions that were then verified and fixed).
 Codex and Claude were rate-limited when tried. Three defects with reproductions or questions are logged; none of the five required sessions is a person working for an hour.
 Per-session numbers so far: 785k and 3.0M input tokens (88% and 93% cached), both stopped by the turn limit.
+
+## Progress (audit, 2026-11-06)
+
+Since 2026-11-01 the owner works in ask for real, in sessions that stay open for days (one ran 30 hours with 2.69 billion input
+tokens). The defect log is the owner's notes (n1 to n46), each filed as a task with what it found: the stuck scroll under contention
+(n18, fixed 2026-11-05 in 8abd7e58), the slow lane exit and the memory of long sessions (n29: caed76fd, TerminalKit e345a88,
+54b19ed4), and the pain points still open (t201 to t217). Left against "Done when": the ranking, which is the order the owner gives
+the open notes.
 
 ## Done when
 
