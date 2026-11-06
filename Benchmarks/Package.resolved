@@ -1,12 +1,12 @@
 {
-  "originHash" : "b430d19f0e30f20a63686670c099275a7b225201398109dbd8da7f0fbfeaf6e9",
+  "originHash" : "f70e313cab2a1af89acee62a82213832553b1885eabd84218a5ea01c80d14437",
   "pins" : [
     {
       "identity" : "aemi",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/Aemi-Studio/aemi.git",
       "state" : {
-        "revision" : "409c647a91736065ac53c1877abe2cf4840f7617"
+        "revision" : "0bae2edb1a89bd3d931fb3122c2184cc5c368834"
       }
     },
     {
@@ -14,7 +14,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiHMMML.git",
       "state" : {
-        "revision" : "06db76a56e4bc007f7ea172a01bdae6451587668"
+        "revision" : "4d3e071072019540c43cbee10073f54664fd6ebe"
       }
     },
     {
@@ -22,7 +22,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiJSON.git",
       "state" : {
-        "revision" : "8b7bfe373d2b36dbfe8e7ec068478b1aea65b12a"
+        "revision" : "5aa84e0eca14c344f4fc0b313dbb907dc1446b9e"
       }
     },
     {
@@ -30,7 +30,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiMarkdown.git",
       "state" : {
-        "revision" : "796b095dcd73acdab88919f6eeb0c2a2d5021128"
+        "revision" : "c2de53d8240bbe415e1b49e6404173b5a0d5f755"
       }
     },
     {
@@ -38,7 +38,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiMermaid.git",
       "state" : {
-        "revision" : "833d578ecb03aeebad05d782b8c0cd6ebb456fdb"
+        "revision" : "aa8314521eb5f16633ee45e79515192f4e23c7af"
       }
     },
     {
@@ -46,7 +46,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/AemiRegex.git",
       "state" : {
-        "revision" : "2d4cf1203dac2c992db9d3ab4da3756968d73d9e"
+        "revision" : "3efa8699dbce4cafe5efc6dcf76223890cf06c1e"
       }
     },
     {
@@ -162,7 +162,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/TerminalKit.git",
       "state" : {
-        "revision" : "c6c83a8bb10289ec75ca6b147f031f81acb44998"
+        "revision" : "309bb4f8c4b040a93f030c3edbd4797df6a09b61"
       }
     },
     {
