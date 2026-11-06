@@ -145,4 +145,42 @@ struct CommandBlockTests {
         enter(&screen)
         #expect(texts(screen).count == 1, "open, the jobs moving is the answer: \(texts(screen))")
     }
+
+    /// Notes leave one block each (note n48): an added note, the line typed, which is the note; any other, only its answer.
+    private func notes() -> ScreenController {
+        var screen = ScreenController(
+            label: "m",
+            commands: [SlashCommand(name: "notes", summary: "Notes.", takesChoices: true, duringTurn: .atOnce)],
+            options: ScreenOptions(prompt: "ask> ")
+        )
+        screen.setScreenRows(30)
+        _ = screen.handle(.choices(command: "notes", rows: [ChoiceRow(label: "n1", arguments: "n1")]))
+        return screen
+    }
+
+    @Test(arguments: [
+        "/notes:show n1", "/notes:all", "/notes:search sidebar", "/notes:delete n1", "/notes:edit n1 new words"
+    ])
+    func `a notes command other than adding leaves no line of its own`(line: String) {
+        var screen = notes()
+        type(line, into: &screen)
+        enter(&screen)
+        #expect(texts(screen).isEmpty, "\(line): \(texts(screen))")
+    }
+
+    @Test func `a note chosen from the list leaves no line of its own`() {
+        var screen = notes()
+        type("/notes", into: &screen)
+        enter(&screen)
+        type("n1", into: &screen)
+        #expect(enter(&screen) == [.runCommand(name: "notes", arguments: "n1")])
+        #expect(texts(screen).isEmpty, "\(texts(screen))")
+    }
+
+    @Test func `adding a note keeps the line typed, which is the note`() {
+        var screen = notes()
+        type("/notes fold the sidebar", into: &screen)
+        enter(&screen)
+        #expect(texts(screen) == ["/notes fold the sidebar"])
+    }
 }

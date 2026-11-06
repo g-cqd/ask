@@ -22,11 +22,13 @@ extension AgentConversation {
             case .edit(let edit):
                 editNote(edit, update: update)
             case .delete(let id):
+                // The answer names what went, as the command's own line no longer shows (note n48).
+                let gone = (try? SessionTasks.ideas.current())??.idea(id)?.text
                 changeIdeas(update: update) { _ in
                     .remove(id: id)
                 } then: { list in
                     update(.choices(command: "notes", rows: Self.ideaRows(list)))
-                    return "Deleted n\(id)."
+                    return "Deleted n\(id)" + (gone.map { ": \($0)" } ?? "") + "."
                 }
             case .search(let query):
                 update(.notice(Self.ideasText { $0.searching(query) }, isError: false))
@@ -94,7 +96,7 @@ extension AgentConversation {
         } then: { list in
             update(.choices(command: "notes", rows: Self.ideaRows(list)))
             update(.fillDraft("/notes "))
-            return "Edited n\(edit.id)."
+            return "Edited n\(edit.id): \(text)."
         }
     }
 
