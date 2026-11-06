@@ -11,4 +11,5 @@ struct ToolContext {
     var code: FileCode?
     /// The pictures the tool returned, shown under its header (roadmap 0208).
     var images: [ToolImage] = []
+    var placements: [ImagePlacement?] = []
 }

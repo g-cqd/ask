@@ -4,14 +4,19 @@
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-images.py .build/release/ask
 
 The model reads a PNG with the read tool. Its block shows the picture's row under the header (`PNG · 3×2 · … B`), and so does the
-session resumed with --continue. Hermetic: a picture made here, no window, credentials or clipboard.
+session resumed with --continue. As Ghostty, whose answer to kitty's graphics query the probe gives as kitty would, the picture is
+sent and placed virtually, and its placeholder cells are drawn; as Terminal.app, nothing is asked or sent. Hermetic: a picture made
+here, no window, credentials or clipboard.
 """
 import importlib.util
 import json
 import os
+import fcntl
+import re
 import shutil
 import struct
 import sys
+import termios
 import tempfile
 import zlib
 
@@ -36,6 +41,32 @@ def png(width, height):
             + chunk(b"IDAT", zlib.compress(rows)) + chunk(b"IEND", b""))
 
 
+def with_pixels(terminal, columns=100, rows=40):
+    """The PTY's size with pixels too (10x20 cells), as a terminal that draws images reports it."""
+    fcntl.ioctl(terminal.fd, termios.TIOCSWINSZ, struct.pack("HHHH", rows, columns, columns * 10, rows * 20))
+
+
+def answer_graphics_query(terminal):
+    """Answers kitty's graphics query once it was sent, as kitty does: OK for the id asked about."""
+    terminal.until(lambda: b"\x1b_G" in bytes(terminal.raw) and b"a=q" in bytes(terminal.raw))
+    asked = re.search(rb"\x1b_G[^\x1b]*i=(\d+)[^\x1b]*a=q|\x1b_G[^\x1b]*a=q[^\x1b]*i=(\d+)", bytes(terminal.raw))
+    query_id = (asked.group(1) or asked.group(2)).decode()
+    terminal.send(f"\x1b_Gi={query_id};OK\x1b\\".encode())
+
+
+def as_terminal_app(project, environment, state):
+    """The same session as Terminal.app: no query, nothing sent, the picture's line only."""
+    environment = dict(environment, TERM_PROGRAM="Apple_Terminal", TERM="xterm-256color")
+    terminal = probe.Terminal(project, environment, rows=40, resume=True)
+    try:
+        terminal.until(lambda: "SEEN IT" in terminal.text())
+        probe.time.sleep(0.5)
+        terminal.pump()
+        check("as Terminal.app, nothing is asked or sent", b"\x1b_G" not in bytes(terminal.raw))
+    finally:
+        terminal.close()
+
+
 def main():
     root = tempfile.mkdtemp()
     config, state = root + "/config", root + "/state"
@@ -56,14 +87,27 @@ def main():
     try:
         terminal = probe.Terminal(project, environment, rows=40)
         terminal.until(lambda: "ask>" in terminal.text())
+        with_pixels(terminal)  # once ask runs: the child sets the size as it starts, and would undo this
+        answer_graphics_query(terminal)
+        check("as Ghostty, ask asks whether kitty graphics are drawn", True)
         terminal.send(b"look at the shot\r")
         terminal.until(lambda: "SEEN IT" in terminal.text())
         check(f"the read tool's picture shows as a row in its block: {row}", row in terminal.text())
+        deadline = probe.time.monotonic() + 3
+        while b"U=1" not in bytes(terminal.raw) and probe.time.monotonic() < deadline:
+            terminal.pump()
+        raw = bytes(terminal.raw)
+        check("the answer was not typed into the input", "Gi=" not in terminal.text())
+        check("the picture is sent as PNG and placed virtually", b"a=t" in raw and b"f=100" in raw and b"U=1" in raw)
+        check("its placeholder cells are drawn", "\U0010EEEE".encode() in raw)
         terminal.send(b"/quit\r")
         terminal.close()
         terminal = probe.Terminal(project, environment, rows=40, resume=True)
         terminal.until(lambda: "SEEN IT" in terminal.text())
         check("and again in the session resumed", row in terminal.text())
+        terminal.close()
+        terminal = None
+        as_terminal_app(project, environment, state)
     except AssertionError:
         if terminal:
             print(terminal.text(), file=sys.stderr)

@@ -9,6 +9,8 @@ struct ScreenTerminal {
     let renderer: RenderLoop<ScreenComposer>
     let frames: FrameBox
     let clipboard: ScreenClipboard
+    /// Whether the environment says the terminal may draw kitty graphics (roadmap 0208), so it is asked.
+    var mayDrawImages = false
 }
 
 /// The modes the screen asks the terminal for: the full-screen set, with the mouse reported unless `options` turn it off.

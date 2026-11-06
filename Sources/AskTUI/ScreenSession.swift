@@ -29,6 +29,8 @@ final class ScreenSession {
     var exit = ScreenExit.quit
     /// The terminal's colours, when the tints follow them (`ui.appearance` auto); nil when they are fixed or off.
     var colours: TerminalColours?
+    /// The pictures drawn as pixels (roadmap 0208); nil where the terminal is not one that may draw them.
+    var images: ScreenImages?
 
     init(
         _ screen: ScreenTerminal,
@@ -51,9 +53,13 @@ final class ScreenSession {
         controller.state.nativeSelectionHint = options.mouse ? screen.clipboard.nativeSelectionHint : ""
         controller.setScreenRows(rows)
         colours = TerminalColours(following: options, connection: screen.connection)
+        images = ScreenImages(connection: screen.connection, mayDraw: screen.mayDrawImages)
         for update in opening { controller.handle(update) }
         (events, sink) = AsyncStream<ScreenEvent>.makeStream()
     }
+
+    /// The terminal's size now, in cells and pixels; nil when it cannot be read.
+    func terminalSize() -> TerminalSize? { try? connection.getSize() }
 
     /// Applies one event and renders. Returns false when the screen should close.
     func handle(_ event: ScreenEvent) async -> Bool {

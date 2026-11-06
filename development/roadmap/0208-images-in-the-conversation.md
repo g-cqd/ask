@@ -71,5 +71,29 @@ Video, animation, images inside Markdown messages by URL (fetching is its own qu
   a PNG, GIF, JPEG or WebP (`ImagePixelSize`), nothing decoded. Every terminal shows this row; it is where pixels will go.
 - Test first: `ToolImageTests` (sizes from four headers, the row folded and open) and `SessionReplayTests` (images replayed) red on
   stubs; `probe-images.py` (2 checks: live and resumed) red on main's build.
-- Next, phase 2: the pixels, through kitty's Unicode placeholders (TerminalKit first).
+- Phase 2 followed the same day, below.
+
+## Phase 2 done (2026-11-06): the pixels, in kitty, Ghostty and WezTerm
+
+- TerminalKit 1a2355f: `KittyPlaceholder` (a cell for a row and column, the colour for an image id; kitty's 297 marks generated from
+  its own `rowcolumn-diacritics.txt`) and virtual placements (`U=1`). TerminalKit c6c83a8: an APC reply is read whole, as an OSC one
+  is; before it, kitty's answer would have been typed into the input as `Gi=…;OK`.
+- ask asks once (`TerminalGraphics`, a one-pixel `a=q` query) where the environment says kitty, Ghostty or WezTerm, never through
+  tmux or ssh, and nothing else: Terminal.app may print an APC string as text. On `OK`, each PNG a tool returned is sent once, quietly,
+  under an id of ask's own (`ScreenImages`, off the screen's thread), placed virtually at a size in cells (`ImagePlacement.fit`: its
+  own pixels at most, the transcript's width, a third of the screen's rows, its shape kept), and drawn by rows of placeholder cells in
+  its colour under its line. The pictures ask sent are deleted, by id, when the screen closes.
+- Test first: `TerminalGraphicsTests`, `ImagePlacementTests`, `ScreenImagesTests` (a placement is laid out again: it was not, and the
+  block kept its rows), TerminalKit's `KittyPlaceholderTests`, `KittyPlaceholderWidthTests` and `SequenceRouterAPCTests`, each red
+  first. `probe-images.py`, 7 checks: asked as Ghostty, the answer kept out of the input, the PNG sent and placed virtually, its cells
+  drawn, live and resumed; as Terminal.app nothing asked or sent. The sweep: 88 of 88 probes.
+
+## Left
+
+- The look in a real kitty, Ghostty and WezTerm: the probe's terminal reads the bytes, it draws no pixels. The owner's.
+- JPEG, GIF and WebP keep their line only: kitty takes PNG or raw pixels, so they need converting first.
+- A resized screen keeps the sizes placed before it; the folded state hides nothing yet (the picture shows, as chosen, but a click
+  does not fold it away).
+- Lifetime: every picture of a resumed session is sent at once; the roadmap's "sent while laid out" is not built, nor measured
+  against the memory budget (0088).
 
