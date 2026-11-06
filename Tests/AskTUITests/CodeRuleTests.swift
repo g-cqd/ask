@@ -27,4 +27,19 @@ struct CodeRuleTests {
         let folded = ScreenComposer.lines(in: transcript, at: 0, columns: 60).map(\.text)
         #expect(folded == ["╭─ swift · 3 lines"])
     }
+
+    @Test(arguments: ["", "swift"])
+    func `an open long block has one corner: its header, then the code in the gutter`(language: String) {
+        var transcript = Transcript()
+        transcript.setMarkdown(true)
+        transcript.setCodeFoldLines(2)
+        transcript.addAssistantText("```\(language)\nMAIN-23897 one\ntwo\nthree\n```")
+        transcript.toggleCodeFold(0, at: 0)
+        let rows = ScreenComposer.lines(in: transcript, at: 0, columns: 60).map(\.text)
+        #expect(rows.filter { $0.contains("╭") }.count == 1, "\(rows)")
+        #expect(
+            rows.first?.contains("3 lines") == true && rows.dropFirst().first?.contains("│ MAIN-23897") == true,
+            "\(rows)"
+        )
+    }
 }

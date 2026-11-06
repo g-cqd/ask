@@ -46,8 +46,10 @@ struct CodeFoldCharacterisationTests {
         return hash
     }
 
+    // Moved once on purpose (note n51): an open block's header now replaces the opening corner when it has no language, or when its
+    // language wraps under the corner at a narrow width; both had drawn a second corner under the header.
     @Test func `the rows of long blocks, folded and open, keep their digest`() {
-        #expect(Self.digest() == 5_813_088_651_392_062_619)
+        #expect(Self.digest() == 7_976_698_679_798_270_853)
     }
 
     @Test func `the long blocks of these messages do fold`() {
