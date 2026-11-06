@@ -43,12 +43,12 @@ extension AgentConversation {
                         isError: false
                     )
                 )
-            case .reset: await select(nil, announcing: "Model selection reset to configuration", update: update)
+            case .reset: await select(nil, announcing: "From the configuration", update: update)
             case .choose(let provider, let model):
                 let (named, id) = provider.map { ($0, model) } ?? serving(model)
                 let chosen = await select(
                     ModelSelection(provider: named, model: id),
-                    announcing: "Model selected for this run",
+                    announcing: "For this run",
                     update: update
                 )
                 // An account named for a model is the one it is used with next time (roadmap 0092).
@@ -86,12 +86,11 @@ extension AgentConversation {
     ) async -> Bool {
         var candidate = source
         candidate.flags.selected = selection
-        var resolved: RunSettings
         var notes: [String] = []
-        do { resolved = try await candidate.load(allowNetwork: false) } catch let failure as ThinkingError {
+        do { _ = try await candidate.load(allowNetwork: false) } catch let failure as ThinkingError {
             let was = candidate.flags.thinking.map(String.init(describing:)) ?? "the configured level"
             candidate.flags.thinking = .providerDefault
-            do { resolved = try await candidate.load(allowNetwork: false) } catch {
+            do { _ = try await candidate.load(allowNetwork: false) } catch {
                 refused(selection, error, update)
                 return false
             }
@@ -102,8 +101,8 @@ extension AgentConversation {
         }
         sourceState.withLock { $0 = candidate }
         await refreshSettings(update: update)
-        update(.notice("\(announcing): \(selection?.model ?? resolved.model.label).", isError: false))
-        for note in notes { update(.notice(note, isError: false)) }
+        // One summary for the choice, which a thinking level chosen next replaces (note n28).
+        update(.choiceSummary(([choiceSummary(announcing)] + notes).joined(separator: "\n")))
         if selection != nil, await modelTakesThinking() { update(.fillDraft("/thinking ")) }
         return true
     }
@@ -115,5 +114,14 @@ extension AgentConversation {
     ) {
         let what = selection.map { " (\($0.provider) \($0.model))" } ?? ""
         update(.notice("Model not changed\(what): \(error)", isError: true))
+    }
+
+    /// What is in force now, after `lead`: `For this run: claude-opus-5-5 on anthropic, thinking high.` (note n28).
+    func choiceSummary(_ lead: String) -> String {
+        let settings = current.withLock { $0.settings }
+        // The model, then where it runs: the named connection, else the provider (`gpt-6 on codex-2`, not `codex-2/gpt-6 on codex`).
+        let model = settings.model
+        return "\(lead): \(model.model) on \(model.connection?.name ?? model.providerName), "
+            + "thinking \(settings.configuration.thinking.value)."
     }
 }

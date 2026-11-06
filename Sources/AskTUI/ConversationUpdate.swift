@@ -37,6 +37,9 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// How far the running tool started as `id` has got, as one short line shown on its header until it ends (roadmap 0067).
     case toolProgress(id: String, text: String)
     case notice(String, isError: Bool)
+    /// What a choice put in force, such as a model and its thinking (note n28): one block, which the next summary replaces when
+    /// nothing came between them.
+    case choiceSummary(String)
     /// Something ask did on its own account that is not needed to read the conversation: shown with `--verbose` or after `/verbose`, kept for
     /// `/verbose` otherwise (ADR-0119).
     case detail(String)

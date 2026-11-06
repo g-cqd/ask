@@ -64,7 +64,7 @@ def say(terminal, text):
 def command(terminal, text, model):
     """A slash command: it starts no turn, and the label in the status line follows the next request, so the notice is what says it took."""
     terminal.send(text.encode() + b"\r")
-    terminal.until(lambda: "Model selected for this run: %s." % model in terminal.text())
+    terminal.until(lambda: "For this run: %s on" % model in terminal.text())
     terminal.repaint()
 
 

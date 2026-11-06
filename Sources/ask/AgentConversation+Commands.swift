@@ -37,14 +37,16 @@ extension AgentConversation {
                     "Choose a model from every account you are signed in to, or /model [CONNECTION] MODEL, or /model reset.",
                 takesChoices: true,
                 category: .model,
-                duringTurn: .atOnce
+                duringTurn: .atOnce,
+                summarises: true
             ),
             SlashCommand(
                 name: "thinking",
                 summary: "Choose how hard the model thinks: the efforts it takes, or /thinking LEVEL.",
                 takesChoices: true,
                 category: .model,
-                duringTurn: .atOnce
+                duringTurn: .atOnce,
+                summarises: true
             ),
             SlashCommand(
                 name: "login",
@@ -178,6 +180,7 @@ extension AgentConversation {
                     self.keepAwake.turnEnded()
                 case "new": await self.newSession(arguments: arguments, update: update)
                 case "resume": await self.resumeSession(arguments: arguments, update: update)
+                // @dl:accept -- a dispatch table: each case hands one command name to its handler; the names are the data
                 case "rewind", "tree": self.tree(arguments: arguments, update: update)
                 case "fork": await self.forkSession(arguments: arguments, update: update)
                 case "encrypt": await self.encrypt(arguments: arguments, update: update)

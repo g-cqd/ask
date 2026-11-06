@@ -19,6 +19,9 @@ public struct SlashCommand: Sendable, Equatable {
     public let takesChoices: Bool
     /// What the command does when typed while a turn runs (roadmap 0113).
     public let duringTurn: DuringTurn
+    /// Whether what the command puts in force is said by one summary the conversation sends (``ConversationUpdate/choiceSummary(_:)``),
+    /// so neither its line nor the list's choice is shown (note n28): `/model`, `/thinking`.
+    public let summarises: Bool
 
     /// What a command does when typed while a turn runs (roadmap 0113).
     public enum DuringTurn: Sendable, Equatable {
@@ -68,8 +71,10 @@ public struct SlashCommand: Sendable, Equatable {
         summary: String,
         takesChoices: Bool = false,
         category: Category = .session,
-        duringTurn: DuringTurn = .refused
+        duringTurn: DuringTurn = .refused,
+        summarises: Bool = false
     ) {
+        self.summarises = summarises
         self.duringTurn = duringTurn
         self.name = name
         self.summary = summary

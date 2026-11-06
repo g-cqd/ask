@@ -17,6 +17,8 @@ extension ScreenController {
             case .toolProgress(let id, let text): state.transcript.noteProgress(text, id: id)
             case .notice(let text, let isError):
                 state.transcript.addNotice(HomePath.abbreviate(text, home: options.home), isError: isError)
+            case .choiceSummary(let text):
+                state.transcript.addChoiceSummary(HomePath.abbreviate(text, home: options.home))
             case .detail(let text): receive(detail: HomePath.abbreviate(text, home: options.home))
             case .requestExit(let exit): state.exitRequest = exit
             case .label, .labelVariants, .sandboxActive, .sessionIdentity, .status, .context: applyStatusLine(update)

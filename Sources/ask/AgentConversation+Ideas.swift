@@ -55,10 +55,11 @@ extension AgentConversation {
             )
             return
         }
+        // The line typed already shows the note, and `/notes` lists it: no notice says it was saved (note n28).
         changeIdeas(update: update) {
             $0.adding(text, at: Self.now)
-        } then: { list in
-            "Saved note \(list.ideas.last?.name ?? "")."
+        } then: { _ in
+            nil
         }
     }
 
@@ -115,14 +116,14 @@ extension AgentConversation {
     private func changeIdeas(
         update: @Sendable (ConversationUpdate) -> Void,
         _ make: (IdeaList) -> IdeaChange,
-        then done: (IdeaList) -> String
+        then done: (IdeaList) -> String?
     ) {
         do {
             guard let list = try SessionTasks.ideas.change(make) else {
                 update(.notice(SessionTasks.unavailable, isError: true))
                 return
             }
-            update(.notice(done(list), isError: false))
+            if let said = done(list) { update(.notice(said, isError: false)) }
         } catch let error as IdeaListError {
             update(.notice(Self.words(error), isError: true))
         } catch {
