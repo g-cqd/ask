@@ -42,10 +42,11 @@ struct MarkdownMessageLayout {
         var rows = diagram ?? renderer.lines(of: block, in: document, width: width)
         var result: [ScreenComposer.Line] = []
         if let fence {
-            // Open, the header takes the place of the language's row, and a click on it folds the block again.
-            let label = renderer.theme.codeLabel
+            // Open, the header takes the place of the opening corner's row, and a click on it folds the block again. Without a
+            // language that row is the corner alone, in the rule's style (note n51: it was kept, a second corner under the header).
+            let (label, rule) = (renderer.theme.codeLabel, renderer.theme.codeRule)
             while diagram == nil, let first = rows.first, first.source == nil,
-                first.runs.contains(where: { $0.style == label })
+                first.runs.contains(where: { $0.style == label }) || first.runs.allSatisfy({ $0.style == rule })
             {
                 rows.removeFirst()
             }
