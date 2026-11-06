@@ -147,6 +147,9 @@ PLAIN = json.dumps({"model": "first-model", "provider": "anthropic"})
 def probe_compact():
     print("F: /compact while a turn runs waits for its end, then runs")
     screen, server, _, running = started(PLAIN, more=[agent.turn([("text", "A SUMMARY OF IT ALL")], "end_turn")])
+    # From where the check below starts: the turn's first request answered and its slow tool running. "working" alone came before
+    # the provider had the request, and on a quiet machine no request was counted yet.
+    screen.until("sleep 4", 10)
     screen.type("/compact\r")
     waiting = screen.until("/compact", 3) and not screen.idle() and len(server.requests) == 1
     early = "compaction · " in screen.screen.text()
