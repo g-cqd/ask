@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-11-04
 ---
@@ -384,3 +384,13 @@ The default of 4 stays; nothing here argues for a lower cap.
 8. Then subagents (0063), on the same lifecycle.
 
 Each step is probed through the release binary in a PTY, as `probe-thread.py` does.
+
+## Left (audit, 2026-11-06)
+
+The order above is built through step 8 (subagents, 0063, done). Left, all from the 2026-11-04 notes above:
+
+- A thread started before main has a session is not recorded (main has no file yet).
+- `/new` and `/resume` with threads running stop them without asking.
+- Where a child merged into a parent thread, the merge block goes after the parent's leaf then, which may come before its later replies.
+- The stop with its confirmation is not probed.
+

@@ -83,12 +83,15 @@ show "the tree of threads and another section for the jobs", "more compact".
 
 ## Still owed
 
-- The lane shows what the thread did, not the conversation it was forked from.
+- ~~The lane shows what the thread did, not the conversation it was forked from.~~ Done: a lane replays the thread's branch from the
+  entry after its fork point, live and on resume (`restoreThreads`, 0195 step 3).
 - ~~A thread's approval questions share the screen's.~~ Done in 0195, step 1: they are the thread's own.
-- A thread uses main's task list and notes; the jobs it starts are not yet given it as their parent (the sidebar would list them under
-  it); ended threads are never removed from the list.
+- A thread uses main's task list and notes. ~~The jobs it starts are not yet given it as their parent~~ Done in 0195 ("a thread's
+  jobs are listed under it"); ~~ended threads are never removed from the list~~ done in 0195 ("merged threads leave the lists").
 - ~~A nested thread's answer goes to main.~~ Done in 0195, step 2: it merges into its parent with a summary.
-- Its session file is an ordinary one, which `/resume` lists without saying it is a thread.
-- Memory: a second loop and conversation, not measured against the active budget; and nothing caps how many threads run.
+- ~~Its session file is an ordinary one, which `/resume` lists without saying it is a thread.~~ Done in 0195 step 3: its own session
+  says whose thread it is, and `/resume` lists main's sessions only.
+- ~~Memory: not measured; nothing caps how many threads run.~~ Measured (0195, 2026-11-05): 6.5 MiB for the first thread, 0.16 MiB for
+  each one more; `threads.max` and `threads.depth` cap them.
 - Not verified against a real provider, nor in a real terminal.
 - After it: chatting with another running session (idea i8, task t196).

@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: ["0065", "0198"]
 date: 2026-10-25
 ---
