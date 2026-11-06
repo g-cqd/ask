@@ -46,8 +46,8 @@ extension ScreenController {
                     return []
                 }
                 // The conversation's commands decide below how their line is shown (roadmap 0113); the screen's own show it now,
-                // except `/sidebar`, whose answer is the sidebar itself (note n28).
-                if SlashCommand.named(name, in: Self.builtIn) != nil, !(name == "sidebar" && arguments.isEmpty) {
+                // except those whose answer the screen shows by itself, or says in a notice (note n28).
+                if SlashCommand.named(name, in: Self.builtIn) != nil, !Self.answeredOnScreen.contains(command.name) {
                     state.transcript.addUser(line)
                 }
                 switch command.name {
@@ -60,6 +60,8 @@ extension ScreenController {
                     case "sidebar" where arguments == "jobs":
                         // Where a thread's jobs are listed, for this run (roadmap 0195; `ui.sidebarJobs` sets where it starts).
                         state.jobsInTree.toggle()
+                        // Said only when the sidebar is closed: open, the jobs moving is the answer.
+                        guard !Sidebar.isShown(state, columns: frame.columns) else { return [] }
                         let where_ = state.jobsInTree ? "under the thread that started them" : "in the Jobs section"
                         state.transcript.addNotice("Jobs are listed \(where_).", isError: false)
                         return []
@@ -70,8 +72,8 @@ extension ScreenController {
                     default:
                         // A list known to be empty has nothing to open: the bare command runs and says why.
                         let knownEmpty = state.choices[command.name].map { $0.rows.isEmpty && !$0.stale } ?? false
+                        // A list opening leaves no line: the line chosen from it, and its answer, are what stay (note n28).
                         if command.takesChoices, arguments.isEmpty, !knownEmpty {
-                            if !command.summarises { state.transcript.addUser(line) }
                             state.editor.paste("/\(command.name) ")
                             pickerScreenRows = Swift.max(pickerScreenRows, Self.pickerMinimumRows)
                             return refreshPicker(screenRows: pickerScreenRows, at: .now)
@@ -80,4 +82,8 @@ extension ScreenController {
                 }
         }
     }
+
+    /// The screen's commands whose own line is not shown: the sidebar, the job list and the details show their answer, or say it in a
+    /// notice (note n28).
+    static let answeredOnScreen: Set<String> = ["sidebar", "jobs", "verbose"]
 }

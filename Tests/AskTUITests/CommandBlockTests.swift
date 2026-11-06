@@ -92,4 +92,57 @@ struct CommandBlockTests {
         #expect(screen.state.sidebarOpen)
         #expect(texts(screen).isEmpty, "\(texts(screen))")
     }
+
+    /// The owner's choices for the other commands (2026-11-06): a list opening leaves no line; `/jobs` opening its list leaves
+    /// nothing; `/verbose` leaves its notice only; `/sidebar jobs` speaks only when the sidebar is closed, where nothing moves.
+    private func plain(columns: Int = 160) -> ScreenController {
+        var screen = ScreenController(
+            label: "m",
+            commands: ScreenController.builtIn + [SlashCommand(name: "notes", summary: "Notes.", takesChoices: true)],
+            options: ScreenOptions(prompt: "ask> ")
+        )
+        screen.setScreenRows(30)
+        screen.frame.columns = columns
+        _ = screen.handle(.choices(command: "notes", rows: [ChoiceRow(label: "n1", arguments: "n1")]))
+        return screen
+    }
+
+    @Test func `a list opening leaves no line, and closing it unchosen leaves nothing`() {
+        var screen = plain()
+        type("/notes", into: &screen)
+        enter(&screen)
+        #expect(screen.state.picker != nil, "the list is open")
+        #expect(texts(screen).isEmpty, "\(texts(screen))")
+    }
+
+    @Test func `jobs opening their list leave nothing; with none, the notice says so`() {
+        var screen = plain(columns: 80)
+        type("/jobs", into: &screen)
+        enter(&screen)
+        #expect(texts(screen) == ["No background jobs are running."], "\(texts(screen))")
+        _ = screen.handle(.runners([RunnerInfo(name: "job-1", detail: "make", id: "job-1")]))
+        type("/jobs", into: &screen)
+        enter(&screen)
+        #expect(screen.state.runnersOpen)
+        #expect(texts(screen) == ["No background jobs are running."], "nothing more: \(texts(screen))")
+    }
+
+    @Test func `verbose leaves its notice only`() {
+        var screen = plain()
+        type("/verbose", into: &screen)
+        enter(&screen)
+        #expect(texts(screen) == ["Details are shown."], "\(texts(screen))")
+    }
+
+    @Test func `sidebar jobs speaks only when the sidebar is closed`() {
+        var screen = plain()
+        screen.state.sidebarOpen = false
+        type("/sidebar jobs", into: &screen)
+        enter(&screen)
+        #expect(texts(screen) == ["Jobs are listed in the Jobs section."], "closed: \(texts(screen))")
+        screen.state.sidebarOpen = true
+        type("/sidebar jobs", into: &screen)
+        enter(&screen)
+        #expect(texts(screen).count == 1, "open, the jobs moving is the answer: \(texts(screen))")
+    }
 }

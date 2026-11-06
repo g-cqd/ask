@@ -56,8 +56,10 @@ struct SidebarJobsTests {
         #expect(rig.controller.state.runnerTree.rows.allSatisfy { $0.depth == 0 })
     }
 
+    /// Said with the sidebar closed, where nothing on screen moves (note n28); open, the jobs moving is the answer.
     @Test func `sidebar jobs switches it for the run, and says so`() {
         var rig = rig()
+        rig.controller.state.sidebarOpen = false
         for scalar in "/sidebar jobs".unicodeScalars {
             _ = rig.controller.handle(.key(.init(keyCode: scalar.value)), pageRows: 20)
         }
