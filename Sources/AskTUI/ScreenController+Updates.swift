@@ -81,13 +81,14 @@ extension ScreenController {
                 command: command,
                 path: path
             )
-        } else if case .toolFinished(let status, let output, let id, let job, let replacements) = update {
+        } else if case .toolFinished(let status, let output, let id, let job, let replacements, let images) = update {
             state.transcript.finishTool(
                 status,
                 output: output,
                 id: id,
                 backgroundJob: job,
-                replacements: replacements
+                replacements: replacements,
+                images: images
             )
             if let job { return [.watchJob(id: job)] }
         }

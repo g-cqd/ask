@@ -9,4 +9,6 @@ struct ToolContext {
     var replacements: Int?
     /// The part of the block that is a file's text, and its language, when it is coloured (roadmap 0152).
     var code: FileCode?
+    /// The pictures the tool returned, shown under its header (roadmap 0208).
+    var images: [ToolImage] = []
 }

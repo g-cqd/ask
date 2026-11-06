@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-11-06
 ---
@@ -62,3 +62,14 @@ the look in a real terminal. Idle memory does not change; active memory with thr
 ## Not in scope
 
 Video, animation, images inside Markdown messages by URL (fetching is its own question), and pixel chrome (0015).
+
+## Phase 1 done (2026-11-06): the pictures reach the screen, a row each
+
+- A finished tool's update carries its pictures (`ToolImage`, the bytes shared with the session's record, not copied), live and on
+  resume: `SessionReplay` now keeps a tool result's images, which it used to drop.
+- Each shows as a row under the tool's header, folded or not: `PNG · 1280×800 · 245 KB`. The pixel size is read from the header of
+  a PNG, GIF, JPEG or WebP (`ImagePixelSize`), nothing decoded. Every terminal shows this row; it is where pixels will go.
+- Test first: `ToolImageTests` (sizes from four headers, the row folded and open) and `SessionReplayTests` (images replayed) red on
+  stubs; `probe-images.py` (2 checks: live and resumed) red on main's build.
+- Next, phase 2: the pixels, through kitty's Unicode placeholders (TerminalKit first).
+
