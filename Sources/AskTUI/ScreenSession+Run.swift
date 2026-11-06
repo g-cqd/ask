@@ -55,7 +55,8 @@ extension ScreenSession {
                 continue
             }
             guard await handle(event) else { return exit }
-            if case .update = event, images?.supported == true { placeImages() }
+            // After every event: an update may bring a picture, and a resize or the sidebar opening may leave one too wide.
+            if images?.supported == true { placeImages() }
         }
         return exit
     }

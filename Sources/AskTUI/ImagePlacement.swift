@@ -26,6 +26,13 @@ struct ImagePlacement: Sendable, Equatable {
 
     private static func ceilDivide(_ value: Int, _ divisor: Int) -> Int { (value + divisor - 1) / divisor }
 
+    /// The command that places `id`, already sent, again over `columns` by `rows` cells: its placement replaced, the picture kept.
+    static func placement(id: UInt32, columns: Int, rows: Int) -> [UInt8] {
+        var placement = GraphicsCommand.Placement(id: 1, columns: UInt32(max(1, columns)), rows: UInt32(max(1, rows)))
+        placement.isVirtual = true
+        return GraphicsEncoder.encode(GraphicsCommand(action: .placement, id: id, placement: placement, isQuiet: true))
+    }
+
     /// The commands that send `png` under `id` and place it virtually over `columns` by `rows` cells, both quiet (`q=2`), so no
     /// answer lands in the input.
     static func commands(id: UInt32, png: [UInt8], columns: Int, rows: Int) -> [UInt8] {
@@ -37,9 +44,6 @@ struct ImagePlacement: Sendable, Equatable {
             payload: png,
             isQuiet: true
         )
-        var placement = GraphicsCommand.Placement(id: 1, columns: UInt32(max(1, columns)), rows: UInt32(max(1, rows)))
-        placement.isVirtual = true
-        return GraphicsEncoder.encode(transmit)
-            + GraphicsEncoder.encode(GraphicsCommand(action: .placement, id: id, placement: placement, isQuiet: true))
+        return GraphicsEncoder.encode(transmit) + placement(id: id, columns: columns, rows: rows)
     }
 }

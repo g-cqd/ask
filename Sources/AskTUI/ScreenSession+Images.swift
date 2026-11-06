@@ -15,7 +15,15 @@ extension ScreenSession {
     /// for them is the transcript's less a padded block's inset, which only ever makes them narrower.
     func placeImages() {
         guard var held = images, let size = terminalSize() else { return }
-        let placed = held.place(in: &controller.state.transcript, size: size, inset: 1)
+        // The transcript's width: the sidebar beside it takes its share (a picture sized to the terminal ran under it); in the band
+        // it takes none.
+        let columns = Sidebar.transcriptColumns(controller.state, columns: size.columns, screenRows: size.rows)
+        let placed = held.place(
+            in: &controller.state.transcript,
+            size: size,
+            inset: 1,
+            transcriptColumns: columns
+        )
         images = held
         if placed { render() }
     }

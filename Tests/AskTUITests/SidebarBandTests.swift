@@ -75,6 +75,13 @@ struct SidebarBandTests {
         // Moved, not repeated: the band has no counts row.
         #expect(!band.contains { rig.text(row: $0).contains("running") })
     }
+
+    @Test(arguments: [SidebarLayout.bottom, .full, .adaptive], [80, 120, 160])
+    func `the width pictures are sized to is the one the transcript is drawn at`(layout: SidebarLayout, columns: Int) {
+        let drawn = rig(columns: columns, layout: layout)
+        let sized = Sidebar.transcriptColumns(drawn.controller.state, columns: columns, screenRows: 40)
+        #expect(sized == drawn.controller.frame.transcriptColumns, "\(layout), \(columns) columns")
+    }
 }
 
 extension String {

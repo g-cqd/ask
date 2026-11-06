@@ -3,8 +3,8 @@ import Testing
 @testable import AskTUI
 
 /// Whether pictures are drawn as pixels (roadmap 0208): only in a terminal that says so, asked once with kitty's graphics query, and
-/// asked only where the environment says the terminal may be kitty, Ghostty or WezTerm (the owner's choice, 2026-11-06), never through
-/// tmux or ssh. A terminal that does not know the protocol may print the query as text, so it is not asked at all.
+/// asked only where the environment says the terminal may be kitty or Ghostty (the owner chose WezTerm too, but it does not draw kitty's
+/// placeholders), never through tmux or ssh. A terminal that does not know the protocol may print the query as text, so it is not asked at all.
 @Suite("The terminal is asked whether it draws kitty graphics, and its answer read")
 struct TerminalGraphicsTests {
     @Test func `the query asks for one pixel, by ask's own id, and keeps nothing`() {
@@ -24,10 +24,12 @@ struct TerminalGraphicsTests {
         #expect(TerminalGraphics.answer(to: Array("\u{1B}]11;rgb:0000/0000/0000\u{1B}\\".utf8)) == nil)
     }
 
-    @Test func `asked only in kitty, Ghostty or WezTerm, and not through tmux or ssh`() {
+    @Test func `asked only in kitty or Ghostty, and not through tmux or ssh`() {
         #expect(TerminalGraphics.mayDraw(environment: ["TERM": "xterm-kitty"]))
         #expect(TerminalGraphics.mayDraw(environment: ["TERM": "xterm-ghostty", "TERM_PROGRAM": "ghostty"]))
-        #expect(TerminalGraphics.mayDraw(environment: ["TERM_PROGRAM": "WezTerm", "TERM": "xterm-256color"]))
+        // WezTerm takes kitty graphics but not its Unicode placeholders: seen 2026-11-06, it drew the cells as glyphs and the picture
+        // at the cursor, over the input. It is not asked.
+        #expect(!TerminalGraphics.mayDraw(environment: ["TERM_PROGRAM": "WezTerm", "TERM": "xterm-256color"]))
         #expect(!TerminalGraphics.mayDraw(environment: ["TERM_PROGRAM": "Apple_Terminal", "TERM": "xterm-256color"]))
         #expect(!TerminalGraphics.mayDraw(environment: ["TERM": "xterm-kitty", "TMUX": "/tmp/tmux-501/default,1,0"]))
         #expect(!TerminalGraphics.mayDraw(environment: ["TERM": "xterm-kitty", "SSH_TTY": "/dev/ttys004"]))
