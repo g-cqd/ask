@@ -37,12 +37,14 @@ extension AgentConversation {
             case .promptAccepted(let prompt):
                 return .promptAccepted(id: prompt.id, text: SkillInvocation.shown(prompt.text))
             case .toolStarted(let id, let name, let input):
+                // Decoded once for the whole block: a resumed session draws every call it holds (note n47).
+                let started = ToolSummary.started(input, tool: name)
                 return .toolStarted(
                     name: ToolSummary.shownName(name, input: input),
-                    summary: ToolSummary.header(for: input, tool: name),
+                    summary: started.header,
                     id: id,
-                    fullInput: ToolSummary.fullInput(for: input),
-                    command: ToolSummary.commandLimits(for: input)
+                    fullInput: started.fullInput,
+                    command: started.limits
                         .map {
                             ToolCommand(
                                 timeout: $0.timeout.map(Duration.seconds),
@@ -50,12 +52,12 @@ extension AgentConversation {
                                 defaultTimeout: .seconds(BashTool.defaultTimeout)
                             )
                         },
-                    path: ToolSummary.path(for: input)
+                    path: started.path
                 )
             case .toolFinished(let id, _, let output):
-                let last = output.content.split(separator: "\n").last.map(String.init) ?? ""
+                // The last line only for a failure, read from the output's end: splitting every output for it cost seconds (n47).
                 return .toolFinished(
-                    output.isError ? .failed(last) : .succeeded,
+                    output.isError ? .failed(TextLines.last(of: output.content) ?? "") : .succeeded,
                     output: output.content,
                     id: id,
                     backgroundJob: output.backgroundJob,

@@ -6,7 +6,7 @@ public import Foundation
 public enum ToolSummary {
     static let maximumCharacters = 160
 
-    private struct Fields: Decodable {
+    struct Fields: Decodable {
         let command: String?
         let path: String?
         let content: String?
@@ -34,14 +34,15 @@ public enum ToolSummary {
         }
     }
 
-    private static func fields(_ input: JSONObject) -> Fields? {
+    static func fields(_ input: JSONObject) -> Fields? {
         try? AemiJSON.JSONDecoder().decode(Fields.self, from: input.bytes)
     }
 
     /// The legacy one-line command/path, retained for logs and approval questions.
-    public static func line(for input: JSONObject) -> String {
-        let fields = fields(input)
-        return compact(fields?.command ?? fields?.path ?? asked(fields) ?? String(decoding: input.bytes, as: UTF8.self))
+    public static func line(for input: JSONObject) -> String { line(fields(input), input) }
+
+    static func line(_ fields: Fields?, _ input: JSONObject) -> String {
+        compact(fields?.command ?? fields?.path ?? asked(fields) ?? String(decoding: input.bytes, as: UTF8.self))
     }
 
     /// `What should change? (+1 more)`: the first of the model's questions, and how many follow.
@@ -54,8 +55,12 @@ public enum ToolSummary {
     /// path or command cut at the edge never hides them. Duration and status are drawn by the screen. `tool` names the tool when a
     /// projection depends on it (the skill tool's `name` and `query` mean something only there).
     public static func header(for input: JSONObject, tool: String? = nil, locale: Locale = .current) -> String {
+        header(fields(input), input, tool: tool, locale: locale)
+    }
+
+    static func header(_ fields: Fields?, _ input: JSONObject, tool: String?, locale: Locale) -> String {
         if tool == "skill", let header = skillHeader(for: input) { return header }
-        guard let fields = fields(input) else { return line(for: input) }
+        guard let fields else { return line(nil, input) }
         var parts: [String] = []
         if fields.command != nil {
             if let timeout = fields.timeoutSeconds { parts.append("timeout \(timeout)s") }
@@ -65,7 +70,7 @@ public enum ToolSummary {
         } else if let job = fields.job {
             return [fields.action ?? "input", compact(job)].joined(separator: " · ")
         }
-        return (parts + [line(for: input)]).joined(separator: " · ")
+        return (parts + [line(fields, input)]).joined(separator: " · ")
     }
 
     /// What a file call does beside its path: an exact replacement, the size it writes, or the lines it reads.
@@ -91,8 +96,10 @@ public enum ToolSummary {
     public static func path(for input: JSONObject) -> String? { fields(input)?.path }
 
     /// Complete text, never the truncated header: a command or a file's content as itself, anything else as indented JSON.
-    public static func fullInput(for input: JSONObject) -> String {
-        guard let fields = fields(input) else { return indented(input) }
+    public static func fullInput(for input: JSONObject) -> String { fullInput(fields(input), input) }
+
+    static func fullInput(_ fields: Fields?, _ input: JSONObject) -> String {
+        guard let fields else { return indented(input) }
         if let command = fields.command { return command }
         if let old = fields.oldText, let new = fields.newText { return EditDiff.text(old: old, new: new) }
         return fields.content ?? fields.newText ?? indented(input)
@@ -153,7 +160,7 @@ public enum ToolSummary {
     }
 
     static func compact(_ text: String) -> String {
-        let first = text.split(separator: "\n").first.map(String.init) ?? text
+        let first = TextLines.first(of: text) ?? text
         return first.count > maximumCharacters ? String(first.prefix(maximumCharacters)) + "…" : first
     }
 }
