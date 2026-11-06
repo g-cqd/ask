@@ -73,7 +73,7 @@ Video, animation, images inside Markdown messages by URL (fetching is its own qu
   stubs; `probe-images.py` (2 checks: live and resumed) red on main's build.
 - Phase 2 followed the same day, below.
 
-## Phase 2 done (2026-11-06): the pixels, in kitty, Ghostty and WezTerm
+## Phase 2 done (2026-11-06): the pixels, in kitty, Ghostty and WezTerm (WezTerm since dropped, below)
 
 - TerminalKit 1a2355f: `KittyPlaceholder` (a cell for a row and column, the colour for an image id; kitty's 297 marks generated from
   its own `rowcolumn-diacritics.txt`) and virtual placements (`U=1`). TerminalKit c6c83a8: an APC reply is read whole, as an OSC one
@@ -88,12 +88,26 @@ Video, animation, images inside Markdown messages by URL (fetching is its own qu
   first. `probe-images.py`, 7 checks: asked as Ghostty, the answer kept out of the input, the PNG sent and placed virtually, its cells
   drawn, live and resumed; as Terminal.app nothing asked or sent. The sweep: 88 of 88 probes.
 
+## Checked in real terminals (2026-11-06)
+
+Run in kitty 0.49.2, Ghostty 1.4.0 and WezTerm, screenshots read for their pixels:
+
+- kitty and Ghostty draw the pictures in their block, at the size placed. Page Up and Page Down move them with the text and leave
+  nothing behind; `/new` takes them all away.
+- WezTerm takes kitty's graphics but not its Unicode placeholders: it drew the placeholder cells as glyph boxes and the picture at
+  the cursor, over the input. It is no longer asked; it keeps the caption line, as any other terminal.
+- Fixed from what the wider tests and those runs found:
+  - a cleared conversation (`/new`) kept its pictures, placements and choice summary by index, so the next block at that place
+    showed the old picture;
+  - a picture was sized to the terminal, and ran under a sidebar beside the transcript. It is now sized to the transcript's width
+    (`Sidebar.transcriptColumns`: all of it when the sidebar is in the band);
+  - a resize or the sidebar opening left a picture too wide. It is placed again, smaller, under the same id, after any event.
+
 ## Left
 
-- The look in a real kitty, Ghostty and WezTerm: the probe's terminal reads the bytes, it draws no pixels. The owner's.
+- The look confirmed by the owner, in their own kitty or Ghostty.
 - JPEG, GIF and WebP keep their line only: kitty takes PNG or raw pixels, so they need converting first.
-- A resized screen keeps the sizes placed before it; the folded state hides nothing yet (the picture shows, as chosen, but a click
-  does not fold it away).
+- A picture placed again only shrinks: one made narrow by a small screen stays narrow when the screen grows.
+- The folded state hides nothing yet (the picture shows, as chosen, but a click does not fold it away).
 - Lifetime: every picture of a resumed session is sent at once; the roadmap's "sent while laid out" is not built, nor measured
   against the memory budget (0088).
-

@@ -3,7 +3,8 @@ internal import TerminalKitCodecs
 /// Whether the terminal draws kitty graphics, so pictures show as pixels (roadmap 0208).
 ///
 /// Asked once, with kitty's query (one pixel, `a=q`, which the terminal answers without keeping anything), and only where the
-/// environment says the terminal may be kitty, Ghostty or WezTerm (the owner's choice, 2026-11-06), never through tmux or ssh: a
+/// environment says the terminal may be kitty or Ghostty (the owner chose WezTerm too, which turned out not to draw the placeholders),
+/// never through tmux or ssh: a
 /// terminal that does not know the protocol may print the query as text (TerminalKit's `TerminalProbe` saw Terminal.app do it). The
 /// answer arrives as input, an APC string that TerminalKit reads whole.
 enum TerminalGraphics {
@@ -40,14 +41,16 @@ enum TerminalGraphics {
         return body.hasPrefix("OK") ? .supported : .unsupported
     }
 
-    /// Whether the terminal may draw them, from what it says it is: kitty (`TERM=xterm-kitty`), Ghostty (`TERM=xterm-ghostty` or
-    /// `TERM_PROGRAM=ghostty`) or WezTerm (`TERM_PROGRAM=WezTerm`); not through tmux or over ssh, where graphics need passthrough.
+    /// Whether the terminal may draw them, from what it says it is: kitty (`TERM=xterm-kitty`) or Ghostty (`TERM=xterm-ghostty` or
+    /// `TERM_PROGRAM=ghostty`); not through tmux or over ssh, where graphics need passthrough.
     static func mayDraw(environment: [String: String]) -> Bool {
         if environment["TMUX"] != nil || environment["SSH_TTY"] != nil || environment["SSH_CONNECTION"] != nil {
             return false
         }
         let term = environment["TERM"] ?? ""
         let program = environment["TERM_PROGRAM"] ?? ""
-        return term == "xterm-kitty" || term == "xterm-ghostty" || program == "ghostty" || program == "WezTerm"
+        // Not WezTerm: it takes kitty graphics but not the Unicode placeholders ask draws with (seen 2026-11-06: the cells shown as
+        // glyphs, the picture drawn at the cursor over the input).
+        return term == "xterm-kitty" || term == "xterm-ghostty" || program == "ghostty"
     }
 }

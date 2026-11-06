@@ -29,4 +29,13 @@ extension Sidebar {
             counts: false
         )
     }
+
+    /// The columns the transcript wraps to on a screen `columns` by `screenRows`: less the panel and its divider when the sidebar is
+    /// beside it, all of them when it is closed or in the band.
+    static func transcriptColumns(_ state: ScreenState, columns: Int, screenRows: Int) -> Int {
+        guard isShown(state, columns: columns), band(state, columns: columns, screenRows: screenRows) == nil else {
+            return columns
+        }
+        return columns - width(for: columns) - 1
+    }
 }

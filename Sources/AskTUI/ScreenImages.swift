@@ -33,44 +33,66 @@ struct ScreenImages {
         return true
     }
 
-    /// Sends and places every PNG of `transcript` not placed yet, sized to the terminal's cells; true when it placed one.
-    mutating func place(in transcript: inout Transcript, size: TerminalSize, inset: Int) -> Bool {
+    /// Sends and places every PNG of `transcript` not placed yet, sized to the terminal's cells and to `transcriptColumns` (the
+    /// terminal's width when nil; less when the sidebar is open), and places again, smaller, one that no longer fits; true when it
+    /// placed one.
+    mutating func place(in transcript: inout Transcript, size: TerminalSize, inset: Int, transcriptColumns: Int? = nil)
+        -> Bool
+    {
         guard supported == true, size.columns > 0, size.rows > 0, size.pixelWidth > 0, size.pixelHeight > 0 else {
             return false
         }
         let cell = (width: size.pixelWidth / size.columns, height: size.pixelHeight / size.rows)
+        let limits = (columns: (transcriptColumns ?? size.columns) - 2 * inset - 4, rows: max(1, size.rows / 3))
         var any = false
-        for (index, images) in transcript.toolImages where transcript.imagePlacements[index] == nil {
-            transcript.imagePlacements[index] = images.map { image in
-                guard image.mediaType == "image/png", let pixels = image.pixelSize, nextID < 0xFF_FFFF else {
-                    return nil
-                }
-                let fit = ImagePlacement.fit(
-                    pixels: pixels,
-                    cell: cell,
-                    maxColumns: size.columns - 2 * inset - 4,
-                    maxRows: max(1, size.rows / 3)
-                )
-                let placement = ImagePlacement(id: nextID, columns: fit.columns, rows: fit.rows)
-                nextID += 1
-                placed.append(placement.id)
-                let (connection, bytes) = (
-                    connection,
-                    ImagePlacement.commands(
-                        id: placement.id,
-                        png: image.data,
-                        columns: fit.columns,
-                        rows: fit.rows
-                    )
-                )
-                Task.detached(priority: .utility) { try? connection.write(bytes) }
-                return placement
+        for (index, images) in transcript.toolImages {
+            let held = transcript.imagePlacements[index]
+            guard held == nil || held?.contains(where: { ($0?.columns ?? 0) > max(1, limits.columns) }) == true else {
+                continue
             }
+            transcript.imagePlacements[index] = images.enumerated()
+                .map { position, image in
+                    placement(
+                        image,
+                        held: held.flatMap { $0.indices.contains(position) ? $0[position] : nil },
+                        cell,
+                        limits
+                    )
+                }
             // A new revision, so the block is laid out again with its placeholder rows: the layout keeps a block's rows until then.
             transcript.revisions[index] = transcript.bump()
             any = true
         }
         return any
+    }
+
+    /// `image` placed within `limits`: sent and placed when `held` is nil, placed again under its id when it no longer fits; nil for
+    /// one this does not draw (not a PNG, no size in its header, or ids used up).
+    private mutating func placement(
+        _ image: ToolImage,
+        held: ImagePlacement?,
+        _ cell: (width: Int, height: Int),
+        _ limits: (columns: Int, rows: Int)
+    ) -> ImagePlacement? {
+        guard image.mediaType == "image/png", let pixels = image.pixelSize else { return nil }
+        let fit = ImagePlacement.fit(pixels: pixels, cell: cell, maxColumns: limits.columns, maxRows: limits.rows)
+        if let held {
+            guard held.columns > max(1, limits.columns) else { return held }
+            send(ImagePlacement.placement(id: held.id, columns: fit.columns, rows: fit.rows))
+            return ImagePlacement(id: held.id, columns: fit.columns, rows: fit.rows)
+        }
+        guard nextID < 0xFF_FFFF else { return nil }
+        let placement = ImagePlacement(id: nextID, columns: fit.columns, rows: fit.rows)
+        nextID += 1
+        placed.append(placement.id)
+        send(ImagePlacement.commands(id: placement.id, png: image.data, columns: fit.columns, rows: fit.rows))
+        return placement
+    }
+
+    /// Writes `bytes` off the screen's thread: a picture is a megabyte of text to the terminal, which must not hold a key or a frame.
+    private func send(_ bytes: [UInt8]) {
+        let connection = connection
+        Task.detached(priority: .utility) { try? connection.write(bytes) }
     }
 
     /// Deletes every picture it sent, and only those, when the screen closes.
