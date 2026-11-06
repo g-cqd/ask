@@ -37,7 +37,14 @@ The owner, 2026-11-06: "we still don't display images in the terminal" (task t23
 5. **Lifetime.** Images are deleted from the terminal when their block leaves the laid-out window, and sent again when it comes
    back; the memory budget (0088) holds decoded images to what is shown.
 
-## Questions for the owner
+## The owner's answers (2026-11-06)
+
+- Pixels in kitty, Ghostty and WezTerm, by the kitty graphics protocol. Not iTerm2's protocol, sixel, or tmux and ssh, for now;
+  they get the block's line.
+- A picture shows at once, its height capped (about a third of the screen), and folds on a click.
+- Pasting an image into a prompt: yes, as its own entry after this one.
+
+## The questions as they were asked
 
 - Which terminals get pixels: kitty, Ghostty, WezTerm (measured); iTerm2 (its own protocol); sixel terminals; tmux and ssh, where
   the graphics need passthrough.
