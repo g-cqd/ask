@@ -129,4 +129,21 @@ struct SessionReplayTests {
         #expect(AgentEvent.responded(response([], output: 4)).usage == TokenUsage(output: 4))
         #expect(AgentEvent.continuedAtOutputLimit.usage == nil)
     }
+
+    /// A resumed session shows the pictures its tools returned (roadmap 0208): the replayed result keeps them, as the live one had.
+    @Test func `the images of a tool result come back with its output`() throws {
+        let picture = ImagePart(mediaType: "image/png", data: [0x89, 0x50, 0x4E, 0x47])
+        let input = try JSONObject(validating: Array(#"{"path":"a.png"}"#.utf8))
+        let steps = SessionReplay.steps(
+            entries([
+                .response(response([.toolCall(id: "t1", name: "read", input: input)])),
+                .toolResult(callID: "t1", content: "Read a.png", isError: false, images: [picture])
+            ])
+        )
+        let images = steps.compactMap { step -> [ImagePart]? in
+            if case .event(.toolFinished(_, _, let output)) = step { return output.images }
+            return nil
+        }
+        #expect(images == [[picture]])
+    }
 }

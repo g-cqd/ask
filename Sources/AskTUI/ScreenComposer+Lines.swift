@@ -19,7 +19,8 @@ extension ScreenComposer {
         aside: Bool = false,
         toolOutput: String? = nil,
         replacements: Int? = nil,
-        code: FileCode? = nil
+        code: FileCode? = nil,
+        images: [ToolImage] = []
     ) -> [Line] {
         let context = ToolContext(
             progress: progress,
@@ -27,7 +28,8 @@ extension ScreenComposer {
             command: command,
             output: toolOutput,
             replacements: replacements,
-            code: code
+            code: code,
+            images: images
         )
         let content = contentLines(
             for: item,
@@ -133,7 +135,7 @@ extension ScreenComposer {
             case .assistant(let text):
                 return rows(text, style: .default)
             case .tool:
-                return toolContentLines(
+                let content = toolContentLines(
                     item,
                     folded: folded,
                     block: block,
@@ -141,6 +143,8 @@ extension ScreenComposer {
                     style: style,
                     context: context
                 )
+                // Its pictures show whether the output is folded or not (the owner, 2026-11-06: shown at once).
+                return withImageRows(content, images: context.images, block: block, inset: style.inset)
             case .thinking(let text):
                 return thinkingLines(text, folded: folded, block: block, width: width, style: style, progress: progress)
             case .jobEnded(let label, let status, let lines):

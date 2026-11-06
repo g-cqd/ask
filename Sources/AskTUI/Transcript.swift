@@ -52,6 +52,8 @@ public struct Transcript: Sendable, Equatable {
     var jobBlocks: [String: Int] = [:]
     /// How many occurrences each edit block's tool reported replacing (roadmap 0078), drawn where a read counts its lines.
     var replacements: [Int: Int] = [:]
+    /// The pictures each tool block's tool returned, by item (roadmap 0208).
+    var toolImages: [Int: [ToolImage]] = [:]
     /// The file each file tool's call names (roadmap 0152), whose language colours the file's text in its block.
     var toolPaths: [Int: String] = [:]
     var completedJobs: Set<String> = []
@@ -157,7 +159,8 @@ public struct Transcript: Sendable, Equatable {
         at now: ContinuousClock.Instant = .now,
         id: String? = nil,
         backgroundJob: String? = nil,
-        replacements: Int? = nil
+        replacements: Int? = nil,
+        images: [ToolImage] = []
     ) {
         guard
             let index = id.flatMap({ toolBlocks[$0] }) ?? (id == nil ? latestForegroundTool : nil),
@@ -168,6 +171,7 @@ public struct Transcript: Sendable, Equatable {
         let status = interrupted.contains(index) && status != .succeeded ? .interrupted : status
         items[index] = .tool(name: name, summary: summary, status: status, output: Self.kept(output), fullInput: input)
         self.replacements[index] = replacements
+        toolImages[index] = images.isEmpty ? nil : images
         revisions[index] = bump()
         if let backgroundJob { jobBlocks[backgroundJob] = index }
     }

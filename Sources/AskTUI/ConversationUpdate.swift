@@ -30,7 +30,8 @@ public enum ConversationUpdate: Sendable, Equatable {
         output: String = "",
         id: String? = nil,
         backgroundJob: String? = nil,
-        replacements: Int? = nil
+        replacements: Int? = nil,
+        images: [ToolImage] = []
     )
     /// A background process updates its original tool block independently of focused output.
     case jobOutput(JobUpdate)

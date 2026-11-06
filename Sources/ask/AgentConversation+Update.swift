@@ -61,7 +61,9 @@ extension AgentConversation {
                     output: output.content,
                     id: id,
                     backgroundJob: output.backgroundJob,
-                    replacements: output.facts.replacements
+                    replacements: output.facts.replacements,
+                    // The bytes are shared with the session's record, not copied (roadmap 0208).
+                    images: output.images.map { ToolImage(mediaType: $0.mediaType, data: $0.data) }
                 )
             case .repaired(let repairs):
                 return .notice("Repaired the context: \(RequestContext.describe(repairs)).", isError: false)
