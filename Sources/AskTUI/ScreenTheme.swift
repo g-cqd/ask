@@ -10,10 +10,12 @@ public struct ScreenTheme: Sendable, Equatable {
     public var tinted: Bool
     /// The page the tints were mixed from.
     private(set) var page: TerminalPage
+    /// How faint secondary text is (`ui.dim`).
+    private(set) var dim: ScreenDim
 
     /// A shimmering header's own text (roadmap 0187), drawn dim as well: three quarters of the way from the page to the text, so with dim
     /// on top it is fainter than a dim header, and the bright stretch stands out.
-    var shimmerBase: Color { page.tint(toward: page.foreground, share: 0.75) }
+    var shimmerBase: Color { page.tint(toward: page.foreground, share: dim.share - 0.05) }
     /// The stretch's edges, the softer step between the faint header and the bold core.
     var shimmerEdge: Color { page.secondaryText }
     var input: Color
@@ -42,9 +44,10 @@ public struct ScreenTheme: Sendable, Equatable {
     }
 
     /// The tints mixed from `page`. `known` says the page is the terminal's own or one the person chose, not a guess.
-    init(tinted: Bool = true, page: TerminalPage, known: Bool = true) {
+    init(tinted: Bool = true, page: TerminalPage, known: Bool = true, dim: ScreenDim = .normal) {
         self.tinted = tinted
         self.page = page
+        self.dim = dim
         let light = page.isLight
         func mix(_ toward: SIMD3<Double>, _ share: Double) -> Color { page.tint(toward: toward, share: share) }
         // Shares tuned so text on every tint keeps at least 80% of the terminal's own contrast (WCAG 2 ratio) on Apple Terminal's Basic,
@@ -62,7 +65,7 @@ public struct ScreenTheme: Sendable, Equatable {
         // succeeded block's own tint, so there the marker carries most of the difference.
         diffRemoved = mix(Self.red, 0.16)
         diffAdded = mix(Self.green, light ? 0.2 : 0.11)
-        secondary = known ? page.secondaryText : nil
+        secondary = known ? dim.secondary(on: page) : nil
     }
 
     private static let blue = SIMD3<Double>(10, 132, 255)

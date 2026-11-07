@@ -62,6 +62,8 @@ public struct ScreenState: Sendable, Equatable {
     /// Each thread's conversation (roadmap 0194), by its runner id, while its lane is not shown; the shown one is the lane's.
     var threads: [String: ThreadView] = [:]
     /// When each thread was first seen merged, and those merged long enough to leave the sidebar (`threads.mergedShownFor`).
+    /// The pointer's shape the screen wants (note n13): a hand over what a click acts on.
+    var pointer = PointerShape.default
     var mergedAt: [String: ContinuousClock.Instant] = [:]
     var expiredMerged: Set<String> = []
     /// When each runner last did something (note n15): a thread's last event, a job's last output as its owner reports it.
@@ -154,7 +156,8 @@ public struct ScreenState: Sendable, Equatable {
             page: options.appearance == .auto
                 ? (options.lightBackground ? .light : .dark)
                 : options.appearance == .light ? .light : .dark,
-            known: options.appearance != .auto
+            known: options.appearance != .auto,
+            dim: options.dim
         )
         blocks = BlockStyle(padded: options.padding, theme: theme, localizedDurations: options.localizedDurations)
         blocks.home = options.home
@@ -162,7 +165,7 @@ public struct ScreenState: Sendable, Equatable {
 
     /// Mixes the tints again from the terminal's own colours (roadmap 0108).
     mutating func adopt(_ page: TerminalPage) {
-        theme = ScreenTheme(tinted: theme.tinted, page: page)
+        theme = ScreenTheme(tinted: theme.tinted, page: page, dim: theme.dim)
         blocks.theme = theme
     }
 }

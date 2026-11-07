@@ -187,7 +187,7 @@ extension ScreenController {
     }
 
     /// The link drawn at `cell` of the transcript, if any.
-    private func link(at cell: CellPosition) -> String? {
+    func link(at cell: CellPosition) -> String? {
         guard frame.links.indices.contains(cell.row) else { return nil }
         return frame.links[cell.row].first { $0.columns.contains(cell.col) }?.uri
     }

@@ -13,6 +13,13 @@ extension SettingCatalog {
         row("ui.markdown", .boolean, "true", "true", "Markdown drawn everywhere it can be."),
         row("ui.highlight", .boolean, "true", "true", "Fenced code coloured by the language its fence names."),
         row("ui.shimmer", .boolean, "true", "true", "A running block's header shimmers."),
+        row(
+            "ui.dim",
+            words(DimPreference.self),
+            #""normal""#,
+            "normal",
+            "How faint secondary text is: ask's own grey, or nearer the page (faint, fainter), never below 3:1 contrast."
+        ),
         row("ui.hover", .boolean, "true", "true", "What a click acts on brightens under the pointer."),
         row("ui.leaveFinishedJob", .boolean, "true", "true", "When a job you watch ends, go back to the conversation."),
         row(

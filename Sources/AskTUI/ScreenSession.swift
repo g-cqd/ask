@@ -7,7 +7,7 @@ internal import TerminalKitRender
 final class ScreenSession {
     private let terminal: TerminalSession
     let renderer: RenderLoop<ScreenComposer>
-    private let connection: any TerminalConnection
+    let connection: any TerminalConnection
     let input: InputSource
     let conversation: any Conversation
     var controller: ScreenController
@@ -31,6 +31,8 @@ final class ScreenSession {
     var colours: TerminalColours?
     /// The pictures drawn as pixels (roadmap 0208); nil where the terminal is not one that may draw them.
     var images: ScreenImages?
+    /// The pointer's shape last sent to the terminal (OSC 22, note n13).
+    var pointer = PointerShape.default
 
     init(
         _ screen: ScreenTerminal,
