@@ -203,9 +203,6 @@
     // The model names "model" asks, as /model takes it ("provider/model" or a model); empty for the conversation's own. Default: the conversation's model.
     "namesModel": "",
 
-    // Whether a thread that finished merges back on its own, or asks first. Default: auto. One of: auto, ask.
-    "merge": "auto",
-
     // The model threads work and write their summaries with, as /model takes it; empty for the conversation's own. Default: the conversation's model.
     "model": "provider/model",
 

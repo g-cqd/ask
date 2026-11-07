@@ -3,8 +3,8 @@
 
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-merge.py .build/release/ask
 
-A thread that is stopped and not merged back (No to the question) never merges on its own: `/merge` in its lane merges it, with a
-summary request, and main shows the merge. While it works, `/merge` is refused. Hermetic: no window, credentials or clipboard.
+A thread that is stopped is kept unmerged, with nothing asked (note n52), and never merges on its own: `/merge` in its lane merges it,
+with a summary request, and main shows the merge. While it works, `/merge` is refused. Hermetic: no window, credentials or clipboard.
 """
 import importlib.util
 import json
@@ -56,10 +56,12 @@ def main():
             terminal.until(lambda: "still working" in terminal.text())
             check("/merge while it works is refused", "Ctrl+C" in terminal.text() and len(server.requests) == 1)
             terminal.send(b"\x03")
-            terminal.until(lambda: "Merge it back" in terminal.text())
-            terminal.send(b"\x1b")  # No: kept stopped and unmerged
-            terminal.until(lambda: "Merge it back" not in terminal.text() and runners.state(terminal, "thread-1") == "stopped")
-            check("No keeps it stopped, unmerged", runners.state(terminal, "thread-1") == "stopped"
+            terminal.until(lambda: "/merge here merges it back in" in terminal.text()
+                           and runners.state(terminal, "thread-1") == "stopped")
+            time.sleep(1)
+            terminal.pump()
+            check("stopping keeps it stopped and unmerged, asking nothing, and says how to merge it",
+                  runners.state(terminal, "thread-1") == "stopped" and "Merge it back" not in terminal.text()
                   and len(server.requests) == 1)
             terminal.send(b"/merge\r")
             terminal.until(lambda: len(server.requests) > 1)

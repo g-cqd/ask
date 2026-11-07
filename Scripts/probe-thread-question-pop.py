@@ -5,7 +5,7 @@ local fake provider, with approvals on.
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-question-pop.py .build/release/ask
 
 `focus`: while the person is in main, a thread's question shows there at once, named for its thread; answering it there runs the
-command, the thread finishes and merges, and its lane asks nothing more. `after` with `questionsAfter` "3s": not at once, then once it
+command, the thread finishes, merges by `/merge`, and its lane asks nothing more. `after` with `questionsAfter` "3s": not at once, then once it
 has waited. PROBE_QUESTIONS overrides the mode both runs set (`lane` shows the probe failing as it did before the setting).
 Hermetic: no window, credentials or clipboard.
 """
@@ -75,7 +75,9 @@ def run(mode, after=None):
             if after:
                 return
             terminal.send(b"\r")
-            terminal.until(lambda: os.path.exists(made) and "merged · make a file" in terminal.text())
+            terminal.until(lambda: os.path.exists(made))
+            runners.merge(terminal, "thread-1")
+            terminal.until(lambda: "merged · make a file" in terminal.text())
             check(f"{mode}: answered in main, the command runs and the thread finishes and merges", os.path.exists(made))
             runners.open_thread(terminal, "thread-1")
             terminal.until(lambda: "THREAD DONE" in terminal.text())

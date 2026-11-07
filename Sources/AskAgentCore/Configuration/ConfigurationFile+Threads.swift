@@ -14,7 +14,9 @@ extension ConfigurationFile {
                     case "mergedShownFor": section.mergedShownFor = try container.decode(String.self, forKey: key)
                     case "namesModel": section.namesModel = try container.decode(String.self, forKey: key)
                     case "model": section.model = try container.decode(String.self, forKey: key)
-                    case "merge": section.merge = try ConfigurationFile.choice(container, key, "threads.merge")
+                    // Retired (note n52): a thread merges only by /merge. Still read, so a file that sets it opens.
+                    // @dl:accept -- key table rows
+                    case "merge": _ = try container.decode(String.self, forKey: key)
                     case "summaryInstructions":
                         section.summaryInstructions = try container.decode(String.self, forKey: key)
                     case "questions":

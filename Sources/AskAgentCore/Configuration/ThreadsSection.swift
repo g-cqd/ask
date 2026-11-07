@@ -27,14 +27,6 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     public var namesModel: String?
     /// `threads.summaryInstructions`: what a thread's merge asks for beside the standard summary instruction.
     public var summaryInstructions: String?
-    /// Whether a thread that finished merges on its own (`threads.merge`).
-    public enum Merge: String, Sendable, Equatable, CaseIterable {
-        case auto
-        case ask
-    }
-
-    /// `threads.merge`: whether a finished thread merges on its own or asks first.
-    public var merge: Merge?
     /// `threads.model`: the model threads work with, as `/model` reads its word; nil for the conversation's.
     public var model: String?
 
@@ -59,14 +51,13 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     /// The keys, in the order they are shown.
     public static let keys = [
         "max", "depth", "names", "mergedShownFor", "questions", "questionsAfter", "namesModel", "summaryInstructions",
-        "model", "merge"
+        "model"
     ]
 
     public var atOnce: Int { max ?? Self.defaultMax }
     public var nesting: Int { depth ?? Self.defaultDepth }
     public var naming: Names { names ?? .onDevice }
     /// What the merge asks beyond its standard instruction; nil when nothing is written.
-    public var merging: Merge { merge ?? .auto }
     public var summaryAddition: String? { Self.written(summaryInstructions) }
     /// The model threads work with and write their summaries with; nil for the conversation's own.
     public var threadModel: String? { Self.written(model) }
@@ -124,7 +115,6 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
         merged.namesModel = section.namesModel ?? namesModel
         merged.summaryInstructions = section.summaryInstructions ?? summaryInstructions
         merged.model = section.model ?? model
-        merged.merge = section.merge ?? merge
         return merged
     }
 
@@ -140,7 +130,6 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
             case "namesModel": namesModel
             case "summaryInstructions": summaryInstructions
             case "model": model
-            case "merge": merge?.rawValue
             default: nil
         }
     }

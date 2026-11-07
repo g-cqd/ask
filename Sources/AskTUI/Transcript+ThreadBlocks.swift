@@ -14,8 +14,10 @@ extension Transcript {
                 finishTool(
                     .succeeded,
                     output: given
-                        + " Open it from the sidebar or the job list (/jobs) to follow it and talk to it; when it ends, "
-                        + (subagent ? "its report is the model's answer here." : "its summary merges back here."),
+                        + " Open it from the sidebar or the job list (/jobs) to follow it and talk to it; "
+                        + (subagent
+                            ? "when it ends, its report is the model's answer here."
+                            : "/merge there brings its summary back here."),
                     id: id
                 )
                 markAside(id: id)

@@ -154,7 +154,7 @@ struct SidebarEntries {
             case .waitingForApproval: "?"
             case .merging: spinner ?? "●"
             case .held: "◌"
-            // A thread that finished and is not merged is idle (`threads.merge` ask declined): it can go on, or merge.
+            // A thread that finished is idle until /merge (note n52): it can go on, or merge.
             case .done where kind == .agent: "○"
             case .done, .merged: "✓"
             case .failed: "✗"

@@ -3,7 +3,7 @@
 
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-reload.py .build/release/ask
 
-ask runs from a directory a build is installed into. A thread runs and merges; its lane is opened; a new build is installed and
+ask runs from a directory a build is installed into. A thread runs and is merged by `/merge`; its lane is opened; a new build is installed and
 `/reload` typed in the lane. The new process resumes the session and shows the same thread's lane again, its conversation drawn from
 the thread's session. Hermetic: no window, credentials or clipboard.
 """
@@ -63,6 +63,7 @@ def main():
             terminal.send(b"hello\r")
             terminal.until(lambda: "MAIN ONE" in terminal.text())
             terminal.send(b"/thread look into X\r")
+            runners.merge(terminal, "thread-1")
             terminal.until(lambda: "merged · look into X" in terminal.text())
             # Merged, it is left out of the list under the input; /threads reaches it.
             terminal.until(lambda: runners.row(terminal, "thread-1") is None)

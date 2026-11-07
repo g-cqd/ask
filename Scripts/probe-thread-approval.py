@@ -6,7 +6,7 @@ ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-approval.py .build/release/ask
 A thread's command asks for permission. With `threads.questions` "lane" (probe-thread-question-pop.py has the others), the question is
 the thread's: main never shows it, the thread is listed as waiting for approval
 and stays so after main's turn has ended, its lane shows the question, and an answer there lets the command run and the thread finish;
-main's next message then carries its answer. Hermetic: no window, credentials or clipboard.
+merged there by `/merge` (note n52), main's next message then carries its summary. Hermetic: no window, credentials or clipboard.
 """
 import importlib.util
 import json
@@ -72,6 +72,9 @@ def main():
             terminal.send(b"\r")
             terminal.until(lambda: "THREAD DONE" in terminal.text())
             check("answered there, the command runs and the thread finishes", os.path.exists(made))
+            terminal.until(lambda: runners.state(terminal, "thread-1") == "idle")
+            terminal.send(b"/merge\r")
+            terminal.until(lambda: len(server.requests) > 3)
             terminal.send(b"\x1b")
             terminal.until(lambda: "back to the conversation" not in terminal.text())
             terminal.until(lambda: "merged · make a file" in terminal.text())

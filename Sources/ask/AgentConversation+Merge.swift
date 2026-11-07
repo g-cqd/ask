@@ -3,62 +3,51 @@ internal import AskAgentCore
 internal import AskTUI
 internal import Synchronization
 
-/// A thread merges into its parent (roadmap 0195, the owner's answers of 2026-11-04): once its run has ended and every thread under it
-/// has merged, one more request, like a compaction, writes the summary its parent receives in place of what it did. A thread that
-/// failed or was stopped asks first, and so does one that finished under `threads.merge` "ask". Merges go from the bottom up: a parent held by its threads is settled again when the last merges.
+/// A thread merges into its parent (roadmap 0195) only when the person runs `/merge` in its lane (note n52, the owner's choice of
+/// 2026-11-07): it never merges on its own, and ask never asks. One request, like a compaction, writes the summary its parent receives in
+/// place of what it did. A subagent alone merges by itself once its run ends (ADR-0146): its report is what the call that started it
+/// waits for. Merges go from the bottom up: a subagent held by subagents under it is settled again when the last merges.
 extension AgentConversation {
-    /// Merges thread `name` if it is ready, holds it if a thread under it has not merged, or asks first if its run did not finish.
-    /// Nothing while ask quits: what it stopped stays unmerged.
+    /// Once thread `name`'s run has ended: a subagent merges if it is ready, or is held while one under it has not merged; a thread
+    /// is left as its run ended, to go on with or to `/merge`. Nothing while ask quits: what it stopped stays unmerged.
     func settle(_ name: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async {
         guard !threads.isQuitting, !threads.isHeldTogether(name), let thread = threads.thread(name),
             let outcome = thread.outcome,
             thread.state != .merged, thread.state != .merging
         else { return }
+        guard threads.isSubagent(name) else {
+            threads.setState(name, outcome)
+            update(.runners(threads.runners))
+            return
+        }
         if threads.hasUnmerged(under: name) {
             threads.setState(name, .held)
             update(.runners(threads.runners))
             return
         }
-        // A thread that failed or was stopped asks first; one that finished asks too under threads.merge "ask".
-        let asks = current.withLock { $0.settings.configuration.threads.value.merging } == .ask
-        // A subagent always merges on its own (ADR-0146): its report is what the call that started it waits for.
-        if !threads.isSubagent(name), outcome != .done || asks {
-            threads.setState(name, .waitingForApproval)
-            update(.runners(threads.runners))
-            let what = outcome == .done ? "finished" : outcome == .failed ? "failed" : "was stopped"
-            let into = thread.parent ?? "main"
-            let merging = await confirm(
-                "\(name) \(what). Merge it back into \(into), with a summary of what it did?",
-                update: { update(.thread(id: name, $0)) }
-            )
-            guard merging else {
-                threads.setState(name, outcome)
-                update(.runners(threads.runners))
-                return
-            }
-        }
         await merge(thread, update: update)
     }
 
-    /// Stops thread `name` and every thread under it (roadmap 0195), then asks once, in its lane, whether to merge them back in. Yes
-    /// merges them from the bottom up; no leaves them stopped, unmerged, to go on with or merge later.
+    /// Stops thread `name` and every thread under it (roadmap 0195), and leaves them unmerged, to go on with or to `/merge` (note n52:
+    /// ask does not ask); a subagent's are merged.
     func stopThread(_ name: String, update: @escaping @Sendable (ConversationUpdate) -> Void) async {
         let group = threads.subtree(name)
-        guard let root = threads.thread(name) else { return }
+        guard threads.thread(name) != nil else { return }
         await threads.stop(group, holding: true)
         defer { threads.release(group) }
         update(.runners(threads.runners))
+        // A subagent merges, as it would on its own: the call that started it waits for its report.
+        if threads.isSubagent(name) { return await mergeTogether(group, update: update) }
         let others = group.count - 1
         let what =
             others == 0
             ? "\(name) was stopped" : "\(name) and its \(others) thread\(others == 1 ? "" : "s") were stopped"
-        let merging = await confirm(
-            "\(what). Merge \(others == 0 ? "it" : "them") back into \(root.parent ?? "main"), with a summary of what "
-                + "\(others == 0 ? "it" : "each") did?",
-            update: { update(.thread(id: name, $0)) }
+        update(
+            .thread(
+                id: name,
+                .notice("\(what). /merge here merges \(others == 0 ? "it" : "them") back in.", isError: false)
+            )
         )
-        guard merging else { return }
-        await mergeTogether(group, update: update)
     }
 
     /// `/merge` (or `/close`) in thread `name`'s lane: merges it now with the unmerged threads under it, from the bottom up. A thread
@@ -79,7 +68,7 @@ extension AgentConversation {
             let which = working.joined(separator: ", ")
             return say(
                 "\(which) \(working.count == 1 ? "is" : "are") still working. Stop \(working.count == 1 ? "it" : "them") "
-                    + "first (Ctrl+C in its lane), or let it finish: it merges by itself then.",
+                    + "first (Ctrl+C in its lane), or let it finish, then /merge.",
                 true
             )
         }
