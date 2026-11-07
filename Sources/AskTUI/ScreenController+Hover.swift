@@ -1,4 +1,5 @@
 internal import TerminalKitCodecs
+internal import TerminalKitInput
 
 /// Roadmap 0172: a motion report with no button held moves the hover, and nothing else; the recognizer never sees it, so it selects
 /// and drags nothing.
@@ -8,6 +9,9 @@ extension ScreenController {
         // Motion with a button held arrives as a drag, so motion is always the pointer moving with no button down.
         guard event.kind == .motion else { return false }
         state.hover = options.hover ? hovered(row: event.row - 1, col: event.col - 1) : nil
+        // A hand over what a click acts on: what hover lights, and a link (note n13).
+        let cell = CellPosition(row: event.row - 1, col: event.col - 1)
+        state.pointer = options.hover && (state.hover != nil || link(at: cell) != nil) ? .pointer : .default
         return true
     }
 

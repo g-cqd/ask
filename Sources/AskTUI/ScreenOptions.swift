@@ -24,6 +24,8 @@ public struct ScreenOptions: Sendable, Equatable {
     public var highlight: Bool
     /// Whether a running block's header shimmers, a brighter stretch moving along it on the spinner's tick (`ui.shimmer`, roadmap 0171).
     public var shimmer: Bool
+    /// How faint secondary text is (`ui.dim`, note n13).
+    public var dim = ScreenDim.normal
     /// Whether what a click acts on brightens under the pointer (`ui.hover`, roadmap 0172): the terminal then reports motion.
     public var hover: Bool
     /// Whether the runner sidebar starts open (`ui.sidebar`). Ctrl+\ and `/sidebar` toggle it; it needs 70 columns.

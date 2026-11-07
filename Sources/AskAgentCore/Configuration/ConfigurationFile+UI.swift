@@ -53,6 +53,7 @@ extension ConfigurationFile {
                     section.appearance = try ConfigurationFile.decodeChoice(
                         container,
                         key: key,
+                        // @dl:accept -- one decode per choice key, each naming its own enumeration; the rows are data
                         as: AppearancePreference.self,
                         named: name
                     )
@@ -89,6 +90,13 @@ extension ConfigurationFile {
                         container,
                         key: key,
                         as: SessionColorPreference.self,
+                        named: name
+                    )
+                case "dim":
+                    section.dim = try ConfigurationFile.decodeChoice(
+                        container,
+                        key: key,
+                        as: DimPreference.self,
                         named: name
                     )
                 case "timeoutLabel":

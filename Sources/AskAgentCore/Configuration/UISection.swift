@@ -73,6 +73,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     public var timeoutLabel: String?
     /// `ui.sessionColor`: a colour of the session's own on the status line (roadmap 0164); off by default.
     public var sessionColor: SessionColorPreference?
+    /// `ui.dim`: how faint secondary text is (note n13); nil for `normal`.
+    public var dim: DimPreference?
 
     public init(
         mouse: Bool? = nil,
@@ -167,7 +169,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     private static let lookKeys = [
         // @dl:accept -- a list of key names is data, like any other list of names
         "inputPrefix", "tint", "appearance", "separator", "padding", "markdown", "highlight", "durations",
-        "spinner", "shimmer", "hover", "showTimeout", "timeoutLabel"
+        "spinner", "shimmer", "hover", "showTimeout", "timeoutLabel", "dim"
     ]
     private static let behaviorKeys = [
         "leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels", "sessionColor"
@@ -213,6 +215,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
             sessionColor: section.sessionColor ?? sessionColor
         )
         merged.sidebarLayout = section.sidebarLayout ?? sidebarLayout
+        merged.dim = section.dim ?? dim
         return merged
     }
 

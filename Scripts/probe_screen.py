@@ -2,13 +2,32 @@
 
 ask moves the transcript with SU and SD (`CSI n S`, `CSI n T`) inside a scroll region (DECSTBM). pyte implements the region and the
 one-line index and reverse index, but not SU or SD, so a probe reading after a scroll saw stale rows and had to force a full repaint with
-a resize. With this screen the rows are what a terminal would show without that. Import it after pyte is on the path:
+a resize. With this screen the rows are what a terminal would show without that. It also reads kitty's colon underline (`ESC[4:1m`), which
+pyte took for text. Import it after pyte is on the path:
 
     sys.path.insert(0, os.environ.get("ASK_PYTE", "/tmp/ask-pty/lib"))
     import probe_screen
     screen, stream = probe_screen.make(columns, rows)
 """
+import re
+
 import pyte
+
+# An SGR sequence, and an unfinished one at the end of a read.
+_SGR = re.compile(rb"\x1b\[([0-9;:]*)m")
+_TAIL = re.compile(rb"\x1b(\[[0-9;:]*)?$")
+
+
+def _plain_sgr(match):
+    """The SGR with kitty's colon forms as pyte reads them: `4:0` is 24, `4:N` is 4, and other sub-parameters (an underline's colour)
+    are left out. pyte takes the colon for text, so `ESC[4:1m` drew "1m" on the screen."""
+    params = []
+    for param in match.group(1).split(b";"):
+        if b":" not in param:
+            params.append(param)
+        elif param.startswith(b"4:"):
+            params.append(b"24" if param == b"4:0" else b"4")
+    return b"\x1b[" + b";".join(params) + b"m"
 
 
 class ScrollingScreen(pyte.Screen):
@@ -36,6 +55,17 @@ class ScrollingScreen(pyte.Screen):
 
 class ScrollingStream(pyte.ByteStream):
     csi = dict(pyte.ByteStream.csi, S="scroll_up", T="scroll_down")
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._carry = b""
+
+    def feed(self, data):
+        data = self._carry + bytes(data)
+        tail = _TAIL.search(data)
+        self._carry = data[tail.start():] if tail else b""
+        data = data[:tail.start()] if tail else data
+        super().feed(_SGR.sub(_plain_sgr, data))
 
 
 def make(columns, rows):

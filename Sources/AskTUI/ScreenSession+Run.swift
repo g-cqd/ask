@@ -34,6 +34,8 @@ extension ScreenSession {
         colours?.ask()
         images?.ask()
         defer { images?.clear() }
+        // The terminal's own pointer again, whatever ask last set.
+        defer { if pointer != .default { try? connection.write(PointerShape.default.sequence) } }
         defer {
             forwarding.cancel()
             resizing.cancel()
@@ -55,10 +57,18 @@ extension ScreenSession {
                 continue
             }
             guard await handle(event) else { return exit }
+            syncPointer()
             // After every event: an update may bring a picture, and a resize or the sidebar opening may leave one too wide.
             if images?.supported == true { placeImages() }
         }
         return exit
+    }
+
+    /// Sends the pointer's shape when what is under it changed what it should be.
+    func syncPointer() {
+        guard controller.state.pointer != pointer else { return }
+        pointer = controller.state.pointer
+        try? connection.write(pointer.sequence)
     }
 
     func syncAutoscroll() {

@@ -40,6 +40,7 @@ struct ConfigurationKeySourceTests {
             sessionColor: .always
         )
         section.sidebarLayout = "bottom"
+        section.dim = .faint
         return section
     }()
 
