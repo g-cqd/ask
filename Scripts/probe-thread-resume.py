@@ -3,10 +3,10 @@
 
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-resume.py .build/release/ask
 
-A first run merges one thread and quits while a second is still working. `ask --continue` then rebuilds the tree from the session's
+A first run merges one thread by `/merge` and quits while a second is still working. `ask --continue` then rebuilds the tree from the session's
 records: main shows where the first started and where it merged, in place; it comes back merged and read-only, the second comes back
-stopped, never restarted; `/resume` does not list the threads' own sessions; and typing in the second one's lane continues it until it
-merges. Hermetic: no window, credentials or clipboard.
+stopped, never restarted; `/resume` does not list the threads' own sessions; and typing in the second one's lane continues it, until `/merge`
+merges it. Hermetic: no window, credentials or clipboard.
 """
 import glob
 import importlib.util
@@ -42,10 +42,10 @@ def main():
         server = probe.agent.Server([
             turn([("text", "MAIN ONE")], "end_turn"),            # 0
             turn([("text", "FIRST ANSWER")], "end_turn"),        # 1 thread-1
-            turn([("text", "FIRST SUMMARY")], "end_turn"),       # 2 thread-1 merges
+            turn([("text", "FIRST SUMMARY")], "end_turn"),       # 2 thread-1 merges, by /merge
             turn([("tool", "c1", "sleep 30")], "tool_use"),      # 3 thread-2, still working at the quit
             turn([("text", "SECOND ANSWER")], "end_turn"),       # 4 thread-2, continued after the resume
-            turn([("text", "SECOND SUMMARY")], "end_turn"),      # 5 thread-2 merges
+            turn([("text", "SECOND SUMMARY")], "end_turn"),      # 5 thread-2 merges, by /merge
         ])
         environment = probe.agent.environment(state, server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")
@@ -58,6 +58,7 @@ def main():
             terminal.send(b"hello\r")
             terminal.until(lambda: "MAIN ONE" in terminal.text())
             terminal.send(b"/thread first task\r")
+            runners.merge(terminal, "thread-1")
             terminal.until(lambda: "merged · first task" in terminal.text())
             terminal.send(b"/thread second task\r")
             terminal.until(lambda: len(server.requests) > 3)
@@ -97,13 +98,16 @@ def main():
             terminal.until(lambda: "back to the conversation" not in terminal.text())
             runners.open_lane(terminal, "thread-2")
             terminal.send(b"go on\r")
-            terminal.until(lambda: len(server.requests) > 5)
+            terminal.until(lambda: len(server.requests) > 4)
             continued = json.dumps(server.requests[4]["body"])
             check("typing in the stopped one's lane continues it, from its own conversation",
                   "go on" in continued and "sleep 30" in continued and "FIRST ANSWER" not in continued)
+            terminal.until(lambda: "SECOND ANSWER" in terminal.text() and runners.state(terminal, "thread-2") == "idle")
+            terminal.send(b"/merge\r")
+            terminal.until(lambda: len(server.requests) > 5)
             terminal.send(b"\x1b")
             terminal.until(lambda: "merged · second task" in terminal.text())
-            check("and it merges into main like any thread", "thread-2 · merged · second task" in terminal.text())
+            check("and /merge merges it into main like any thread", "thread-2 · merged · second task" in terminal.text())
             # A thread's own session says whose it is: its identity record.
             thread_files = [os.path.basename(p)[:-6] for p in sessions if '"event":"identity"' in open(p).read()]
             main_file = [os.path.basename(p)[:-6] for p in sessions if '"event":"identity"' not in open(p).read()]

@@ -4,7 +4,7 @@ import re
 import time
 
 # A row's mark, as the tree draws it; a spinner or ● is a runner at work, and ◇ (a thread) or $ (a job) one at work but quiet.
-MARKS = {"✓": "merged", "■": "stopped", "?": "waiting", "◌": "held", "✗": "failed"}
+MARKS = {"✓": "merged", "■": "stopped", "?": "waiting", "◌": "held", "✗": "failed", "○": "idle"}
 
 
 def lines(terminal):
@@ -32,7 +32,8 @@ def mark_of(terminal, text):
 
 
 def state(terminal, name):
-    """What the runner's mark says: merged, stopped, waiting, held, failed, or running; None when it is not listed."""
+    """What the runner's mark says: merged, stopped, waiting, held, failed, idle (ended, not merged), or running; None when it is not
+    listed."""
     shown = row(terminal, name)
     if shown is None:
         return None
@@ -63,3 +64,17 @@ def open_thread(terminal, name):
     """Shows thread `name`'s lane through `/threads NAME`, the way to a merged thread, which the list leaves out."""
     terminal.send(b"/threads " + name.encode() + b"\r")
     terminal.until(lambda: "back to the conversation" in terminal.text())
+
+
+def merge(terminal, name):
+    """Merges thread `name` once its run has ended, the only way a thread merges (note n52): its lane, `/merge`, then back to main."""
+    # Listed once its fork block is drawn: /jobs before that finds nothing to show.
+    terminal.until(lambda: name + " · started here" in terminal.text())
+    time.sleep(0.5)
+    show(terminal)
+    terminal.until(lambda: state(terminal, name) in ("idle", "stopped", "failed"))
+    open_lane(terminal, name)
+    terminal.send(b"/merge\r")
+    terminal.until(lambda: state(terminal, name) in ("merged", None))
+    terminal.send(b"\x1b")
+    terminal.until(lambda: "back to the conversation" not in terminal.text())

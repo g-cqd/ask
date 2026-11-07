@@ -75,10 +75,9 @@ struct ThreadsSectionTests {
         #expect(layered.threadModel == "haiku")
     }
 
-    @Test func `merge is auto unless it says ask, and takes nothing else`() throws {
-        #expect(ThreadsSection().merging == .auto)
-        #expect(try threads(#"{"merge": "ask"}"#)?.merging == .ask)
-        #expect(try threads(#"{"merge": "auto"}"#)?.merging == .auto)
-        #expect(throws: ConfigurationError.self) { try threads(#"{"merge": "never"}"#) }
+    @Test func `merge is retired: a file that sets it still opens, and it is not shown`() throws {
+        #expect(try threads(#"{"merge": "ask"}"#) != nil)
+        #expect(try threads(#"{"merge": "auto"}"#) != nil)
+        #expect(!ThreadsSection.keys.contains("merge"))
     }
 }

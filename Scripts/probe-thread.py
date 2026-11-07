@@ -4,8 +4,8 @@
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread.py .build/release/ask
 
 After one prompt, `/thread` forks the conversation and runs it beside main, marked where it started. In its lane, `/thread` starts a
-thread under it. The outer thread finishes first and is held: it waits for the inner one. The inner one merges into it with a summary;
-then the outer one merges into main, its summary carrying the inner one's. Main's next message takes that summary to the model, a merged
+thread under it. Both end and stay unmerged, idle (note n52: a thread merges only by `/merge`). `/merge` in the outer one's lane merges
+the inner one into it with a summary, then the outer one into main, its summary carrying the inner one's. Main's next message takes that summary to the model, a merged
 thread is read-only, and main's session holds none of the threads' words. Hermetic: no window, credentials or clipboard.
 """
 import glob
@@ -55,7 +55,7 @@ def main():
             turn([("text", "MAIN ONE")], "end_turn"),                      # 0 main
             turn([("tool", "c1", "sleep 4")], "tool_use"),                 # 1 thread-1 starts, and sleeps
             turn([("tool", "c2", "sleep 9")], "tool_use"),                 # 2 thread-2 starts under it, and sleeps longer
-            turn([("text", "OUTER ANSWER")], "end_turn"),                  # 3 thread-1 ends first: held
+            turn([("text", "OUTER ANSWER")], "end_turn"),                  # 3 thread-1 ends first, and stays
             turn([("text", "INNER ANSWER")], "end_turn"),                  # 4 thread-2 ends
             turn([("text", "INNER SUMMARY")], "end_turn"),                 # 5 thread-2's summary, into thread-1
             turn([("text", "OUTER SUMMARY")], "end_turn"),                 # 6 thread-1's summary, into main
@@ -81,9 +81,13 @@ def main():
             terminal.until(lambda: len(server.requests) > 2)
             check("/thread in its lane forks that thread, its request carrying the outer thread's work",
                   "look into X" in body(server, 2) and "sleep 4" in body(server, 2) and "go deeper" in body(server, 2))
-            wait(terminal, lambda: runners.state(terminal, "thread-1") == "held", 20)
-            check("the outer thread, done first, is held: it waits for the inner one",
-                  runners.state(terminal, "thread-1") == "held" and len(server.requests) == 4)
+            wait(terminal, lambda: len(server.requests) == 5 and runners.state(terminal, "thread-2") == "idle", 30)
+            time.sleep(1.5)
+            terminal.pump()
+            check("both threads end and stay unmerged, asking nothing",
+                  runners.state(terminal, "thread-1") == "idle" and runners.state(terminal, "thread-2") == "idle"
+                  and len(server.requests) == 5 and "Merge it back" not in terminal.text())
+            terminal.send(b"/merge\r")
             wait(terminal, lambda: "merged · look into X" in terminal.text() or len(server.requests) > 6, 30)
             time.sleep(0.5)
             inner, outer = body(server, 5), body(server, 6)

@@ -25,6 +25,21 @@ about. Nothing here is built yet.
 - **Jobs go in the tree by default,** under the thread that started them.
 - **Names from the on-device model by default,** and that can be turned off.
 
+## Changed by the owner (2026-11-07, note n52): a thread merges only by `/merge`
+
+"Threads should never merge to main, no point in asking, it's up to the user to do it." Chosen for every parent, not only main:
+
+- A thread never merges on its own and ask never asks: one that ends, fails or is stopped stays unmerged (`○` or `■`) until the
+  person runs `/merge` in its lane. Stopping says so in the lane. The merge itself, and the threads under it merging first, are as
+  below.
+- `threads.merge` is retired: still read, so a file that sets it opens, but it does nothing and the catalog no longer lists it.
+  `probe-thread-merge-ask.py` became `probe-thread-merge-manual.py` (8 checks: with the key at "auto" and at "ask", a finished
+  thread asks nothing, stays ○, and `/merge` merges it; the build before fails it). The thread probes that waited for a merge now
+  run `/merge` (`probe_runner_list.merge`).
+- A subagent still merges on its own (ADR-0146): the call that started it waits for its report.
+- What follows about merging on its own, holding a parent until its threads merge, and asking first describes the design before
+  this change.
+
 ## The owner's notes of the afternoon (2026-11-04, n19 to n23)
 
 - **Where a thread starts is shown in its parent (n23),** prominently: a block of its own kind in the parent's conversation, at the

@@ -4,7 +4,7 @@
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-model.py .build/release/ask
 
 With `threads.model` "anthropic/claude-probe-thread", main keeps its model while a thread's requests, and the request for its
-summary, go to that one. A model that does not resolve (a provider with no key) refuses `/thread`, saying why, and main goes on.
+summary once `/merge` merges it, go to that one. A model that does not resolve (a provider with no key) refuses `/thread`, saying why, and main goes on.
 Hermetic.
 """
 import importlib.util
@@ -15,6 +15,7 @@ import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import probe_runner_list as runners  # noqa: E402
 spec = importlib.util.spec_from_file_location("fold_probe", os.path.join(HERE, "probe-folding.py"))
 probe = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(probe)
@@ -62,6 +63,7 @@ def chosen(terminal, server):
     terminal.send(b"hello\r")
     terminal.until(lambda: "MAIN ONE" in terminal.text())
     terminal.send(b"/thread look around\r")
+    runners.merge(terminal, "thread-1")
     terminal.until(lambda: "merged · look around" in terminal.text())
     models = [request["body"].get("model") for request in server.requests]
     check("main keeps its own model", models[0] != "claude-probe-thread")

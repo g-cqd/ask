@@ -21,14 +21,6 @@ extension SettingCatalog {
             "The model names \"model\" asks, as /model takes it (\"provider/model\" or a model); empty for the conversation's own."
         ),
         row(
-            "threads.merge",
-            // @dl:accept -- catalog rows are data, one setting each
-            .choice(ThreadsSection.Merge.allCases.map(\.rawValue)),
-            #""auto""#,
-            "auto",
-            "Whether a thread that finished merges back on its own, or asks first."
-        ),
-        row(
             "threads.model",
             // @dl:accept -- catalog rows are data, one setting each
             .text,
@@ -38,6 +30,7 @@ extension SettingCatalog {
         ),
         row(
             "threads.summaryInstructions",
+            // @dl:accept -- catalog rows are data, one setting each
             .text,
             #""List every file you changed.""#,
             "none",
