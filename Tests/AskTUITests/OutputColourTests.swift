@@ -72,6 +72,37 @@ struct OutputColourTests {
         #expect(screen.contains("error: port taken") && !screen.contains("[1;31m"))
     }
 
+    @Test func `an underline's kind and a strikethrough are drawn`() throws {
+        let line = try row(
+            rows("\(Self.esc)[4:3mwavy\(Self.esc)[24;9m struck\(Self.esc)[0m"),
+            containing: "wavy struck"
+        )
+        #expect(line.accents.contains { $0.style.underline == .curly && !$0.style.strikethrough })
+        #expect(line.accents.contains { $0.style.strikethrough && $0.style.underline == .none })
+    }
+
+    @Test func `a link alone adds no accent: its row's link is how it shows`() throws {
+        let line = try row(
+            rows("\(Self.esc)]8;;https://example.com\(Self.esc)\\site\(Self.esc)]8;;\(Self.esc)\\"),
+            containing: "site"
+        )
+        #expect(line.links.contains { $0.uri == "https://example.com" })
+        #expect(line.accents.isEmpty)
+    }
+
+    @Test func `a file tool's output keeps its own colours, and a write keeps its input's language`() throws {
+        var read = Transcript()
+        read.startTool(name: "read", summary: "notes.txt", id: "r", path: "notes.txt")
+        read.finishTool(.succeeded, output: "\(Self.esc)[31mred\(Self.esc)[0m", id: "r")
+        #expect(try #require(read.fileCode(at: 0)).spans != nil)
+        var write = Transcript()
+        write.setHighlight(true)
+        write.startTool(name: "write", summary: "a.swift", id: "w", fullInput: "let a = 1", path: "a.swift")
+        write.finishTool(.succeeded, output: "\(Self.esc)[32mwritten\(Self.esc)[0m", id: "w")
+        let code = try #require(write.fileCode(at: 0))
+        #expect(code.part == .input && code.spans == nil)
+    }
+
     @Test func `output with no escape draws as before`() {
         #expect(rows("plain output").allSatisfy { $0.accents.allSatisfy { $0.style.fg != .indexed(1) } })
     }

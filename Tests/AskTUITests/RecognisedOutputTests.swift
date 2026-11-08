@@ -45,6 +45,23 @@ struct RecognisedOutputTests {
         line.map { ScreenComposer.spans(of: $0, highlight: nil) } ?? []
     }
 
+    @Test func `a long diff's tail is lexed afresh only while its middle is folded away`() throws {
+        let long = """
+            diff --git a/Sources/a.swift b/Sources/a.swift
+            --- a/Sources/a.swift
+            +++ b/Sources/a.swift
+            @@ -1,1 +1,41 @@
+             let a = 1
+            """ + String(repeating: "\n+let c = 3", count: 40)
+        var transcript = Self.transcript(long)
+        transcript.setOutputFoldLimits(lines: 10, bytes: 1 << 20)
+        transcript.setCodeFoldedByDefault(true)
+        let folded = try #require(transcript.fileCode(at: 0))
+        #expect(folded.restart != nil && folded.restart == transcript.shownToolOutput(at: 0)?.markerLine)
+        transcript.setCodeFoldedByDefault(false)
+        #expect(try #require(transcript.fileCode(at: 0)).restart == nil, "open, the text is whole and lexed as one")
+    }
+
     @Test func `JSON output is coloured as JSON, and stays dim as output`() throws {
         for name in ["shell", "mcp_call"] {
             let transcript = Self.transcript(#"{"name": "ask", "count": 3}"#, name: name)
