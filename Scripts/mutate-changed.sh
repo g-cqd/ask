@@ -101,9 +101,10 @@ printf '%s\n' "$targets" | while read -r target count; do
     printf '== %s: %s mutants\n' "$target" "$count"
     extra=""
     [ "${1:-}" = --all ] && extra="--write-baseline $work/baseline-$target.json"
-    # A cold build of a test target on a hosted runner took over 300 s (the scheduled runs of 2026-11-06 and 07 stopped there).
+    # A cold build of a test target on a hosted runner took over 300 s (the scheduled runs of 2026-11-06 and 07 stopped there). A
+    # mutant's run gets 120 s: AskAgentCoreTests alone takes about 30 s, the tool's default, so every mutant timed out locally.
     # shellcheck disable=SC2086 # the gate and extra options are word lists
-    "$tool" run . --plan "$work/plan-$target.json" --target "${target}Tests" --build-timeout 1200 \
+    "$tool" run . --plan "$work/plan-$target.json" --target "${target}Tests" --build-timeout 1200 --timeout 120 \
         --markdown-output "$work/report-$target.md" --baseline "$BASELINE" --max-new-survivors 0 $extra \
         || echo "$target" >> "$work/failed"
     [ -f "$work/report-$target.md" ] && cat "$work/report-$target.md"

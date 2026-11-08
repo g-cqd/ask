@@ -25,9 +25,19 @@ enum SourceStandards {
     /// is the *definition* of the rules, so it is not itself subject to them.
     private static let excludedPrefix = "SourceStandards"
 
-    /// Every `.swift` file under `Sources`, in path order.
+    /// Every `.swift` file under `Sources`, in path order, but those the mutation tool has rewritten.
     static var sources: [URL] {
-        swiftFiles(in: repositoryRoot.appending(path: "Sources")).filter { !isGuard($0) }
+        swiftFiles(in: repositoryRoot.appending(path: "Sources")).filter { !isGuard($0) && !isMutationRewrite($0) }
+    }
+
+    /// The marker swift-mutation-testing writes into each file it rewrites with its mutants (schemata), in place, for a run.
+    static let mutationMarker = "__SwiftMutationTesting_"
+
+    /// Whether the mutation tool has rewritten this file for a run: its switch over the mutants makes a file longer and declares a
+    /// type of the tool's, so the standards would fail the unmutated suite and the tool would stop, every verdict suspect. The file as
+    /// committed is checked by every other run.
+    static func isMutationRewrite(_ url: URL) -> Bool {
+        (try? String(contentsOf: url, encoding: .utf8))?.contains(mutationMarker) ?? false
     }
 
     /// Every `.swift` file under `Tests`, in path order.
