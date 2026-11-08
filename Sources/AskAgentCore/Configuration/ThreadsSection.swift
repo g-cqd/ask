@@ -105,6 +105,7 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
     // @dl:accept -- each section layers its keys the same way; the key lists are the data
     public func layered(with section: ThreadsSection) -> ThreadsSection {
         var merged = ThreadsSection(
+            // @dl:accept -- every section layers its keys this way; the key lists are the data
             max: section.max ?? max,
             depth: section.depth ?? depth,
             names: section.names ?? names

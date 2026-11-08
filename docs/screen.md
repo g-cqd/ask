@@ -1,7 +1,9 @@
 # The screen and its keys
 
-The conversation fills the screen, the input sits at the bottom, and a status line below it shows the model, what is running, and the
-background jobs.
+The conversation fills the screen, the input sits at the bottom in a box with rounded corners, and a status line below it shows the
+model, what is running, and the background jobs. The box takes the session's colour, lighter, once the session has one (`ui.inputBorder`
+`"dim"` makes it grey; `ui.separator` `false` draws the input on its tint instead). The lists of commands and files, the model's
+questions and approvals open just above the box.
 
 The status line starts with a spinner while ask works. It reads `Compacting...` in purple while the conversation is being summarised, and
 `Reconnecting...` in yellow while ask waits to try again after the connection dropped; neither adds anything to the conversation.

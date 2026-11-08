@@ -45,6 +45,8 @@ extension RunSettings {
                 ?? defaults.interruptSendsQueued
         )
         options.dim = ui.dim.flatMap { ScreenDim(rawValue: $0.rawValue) } ?? defaults.dim
+        options.inputBorder =
+            ui.inputBorder.flatMap { ScreenInputBorder(rawValue: $0.rawValue) } ?? defaults.inputBorder
         options.appearance = appearance
         options.timeoutDisplay = ui.timeout.flatMap { TimeoutDisplay(rawValue: $0.rawValue) } ?? defaults.timeoutDisplay
         options.timeoutLabel = ui.timeoutLabel ?? defaults.timeoutLabel

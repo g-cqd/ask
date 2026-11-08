@@ -176,7 +176,8 @@ Switches take `true` or `false` (the older `"on"` and `"off"` still work).
 | `inputPrefix` | none | Text the input line starts with, such as `"> "`. By default the input is marked by its tint. |
 | `tint` | `true` | Tinted backgrounds for the input, your messages and tool calls. |
 | `appearance` | `"auto"` | Where the tints come from. `auto` mixes them, and the grey of secondary text, from your terminal's own colours and follows them when macOS switches between light and dark; `light` or `dark` fixes them and asks the terminal nothing. |
-| `separator` | `true` | A rule between the conversation and the input. |
+| `separator` | `true` | A box around the input: rounded corners, a border down each side, and the command and file lists above it. `false` draws the input on its tint instead. |
+| `inputBorder` | `"tint"` | The box's colour: `"tint"`, the session's own colour, lighter (the grey of `"dim"` until the session has a colour); `"dim"`, the grey of secondary text. |
 | `padding` | `true` | A row of padding around each block. |
 | `markdown` | `true` | Markdown everywhere it can be: the model's replies and reasoning and your own messages are drawn as Markdown (headings, emphasis, lists, quotes, tables, links), and your draft is coloured as you type, every character kept as typed. A selection still copies what was written. `false` shows all of it as written. |
 | `highlight` | `true` | Fenced code coloured by the language its fence names (` ```swift `, ` ```sh `, ` ```c++ `…), the text of a file `read` shows or `write` puts, by the file's extension (or its `#!` line), and a tool's output that is JSON or a unified diff (a diff's rows tinted as an edit's), in your terminal's own palette, so the colours follow its theme. A language ask does not know is drawn plain. `false` draws code in one colour. |

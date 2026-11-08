@@ -125,6 +125,13 @@ public struct ScreenComposer: Sendable {
         return editor
     }
 
+    /// The box around the input (note n36) when `ui.separator` asks for one and there is room: a border row above and below the input,
+    /// taking no blank rows, and two columns each side.
+    static func inputBox(for state: ScreenState, width: Int, rows: Int) -> InputBox? {
+        guard state.separator, rows >= 6, width >= 8 else { return nil }
+        return InputBox(width: width, style: state.theme.inputBorder(state.inputBorder, seed: state.sessionIdentity))
+    }
+
     /// Writes `state` into `buffer`.
     /// - Returns: where the cursor belongs: in the prompt, at the editor's cursor.
     public mutating func compose(_ state: ScreenState, into buffer: inout ScreenBuffer) -> (row: Int, column: Int) {
@@ -136,11 +143,12 @@ public struct ScreenComposer: Sendable {
         }
         // The sidebar in the bottom band (note n39): beside the input, which is that much narrower and as tall as the band.
         let band = Sidebar.band(state, columns: columns, screenRows: rows)
-        let editor = inputFrame(for: state, columns: band.map { columns - $0.width - 1 } ?? columns, rows: rows)
+        let beside = band.map { columns - $0.width - 1 } ?? columns
+        let box = Self.inputBox(for: state, width: beside, rows: rows)
+        let editor = inputFrame(for: state, columns: box.map { $0.width - 4 } ?? beside, rows: rows)
         let promptRows = Swift.max(editor.lines.count, band?.cells.count ?? 0)
         let statusRows = rows > 1 ? 1 : 0
-        // Character rules enclose the input without extra blank rows.
-        let ruleRows = state.separator && rows >= 6 ? 2 : 0
+        let ruleRows = box == nil ? 0 : 2
         let strip = Self.strip(
             for: state,
             available: Swift.max(0, rows - promptRows - statusRows - ruleRows - 2),
@@ -152,7 +160,8 @@ public struct ScreenComposer: Sendable {
         let pickerLines = Self.pickerLines(for: state, columns: columns, rows: pickerRows)
         let transcriptRows = rows - promptRows - statusRows - ruleRows - panel.count - pickerLines.count
         self.transcriptRows = transcriptRows
-        let layout = BottomRows(columns, rows, transcriptRows, ruleRows, pickerLines.count, pickerRows, promptRows)
+        var layout = BottomRows(columns, rows, transcriptRows, ruleRows, pickerLines.count, pickerRows, promptRows)
+        layout.inset = box == nil ? 0 : 2
 
         let (sidebar, map, totalLines) = writeTranscript(
             state,
@@ -182,8 +191,7 @@ public struct ScreenComposer: Sendable {
             picker: pickerLines,
             editor: editor,
             band: band?.cells ?? [],
-            rule: ruleRows > 0
-                ? Line(text: String(repeating: "─", count: columns), style: StatusLine.statusStyle) : nil,
+            box: box,
             inputStyle: Style(bg: ruleRows > 0 ? .default : state.theme.inputBackground),
             from: transcriptRows,
             into: &buffer

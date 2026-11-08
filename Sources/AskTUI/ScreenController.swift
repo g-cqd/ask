@@ -196,6 +196,8 @@ public struct ScreenController: Sendable {
 
     mutating func edit(_ key: KeyEvent, columns: Int?, interrupt: Interrupt) -> [Effect] {
         if key.keyCode == Key.up.rawValue, key.modifiers == .alt, let effects = takeBackQueued() { return effects }
+        // The rows as drawn: inside the box, or beside the sidebar's band, the draft is narrower than the screen (note n36).
+        let columns = frame.prompt?.columns ?? columns
         let indent = columns.map { PromptLayout.prefix(state.promptPrefix, columns: $0).count } ?? 0
         switch state.editor.apply(key, columns: columns, firstRowIndent: indent) {
             case .submitted(let line):

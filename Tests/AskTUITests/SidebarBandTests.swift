@@ -36,12 +36,13 @@ struct SidebarBandTests {
         let frame = rig.controller.frame
         #expect(frame.transcriptColumns == 120, "no column given up beside the transcript")
         #expect(divider(rig, row: 0) == nil)
-        let band = (0 ..< 40).filter { divider(rig, row: $0) == 89 }
+        // The input's box ends at 88, its right border beside the divider (note n36).
+        let band = (0 ..< 40).filter { rig.buffer[$0, 89].character == "│" && rig.buffer[$0, 88].character == "│" }
         #expect(
             band.count == 6 && band.first == frame.promptRow,
             "six rows, from the input's first, behind a divider at 89"
         )
-        #expect(frame.transcriptRows == 40 - 6 - 1 - 2, "the band, the status line and the two rules")
+        #expect(frame.transcriptRows == 40 - 6 - 1 - 2, "the band, the status line and the box's two rows")
         #expect(band.contains { rig.text(row: $0).contains("◆ main") })
     }
 

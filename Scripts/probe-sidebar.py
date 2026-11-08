@@ -99,9 +99,12 @@ def main():
                   listed(terminal) and counts(terminal).endswith("│ 1 job running"))
             check("no block's background reaches the sidebar", unbled(terminal, divider))
             row = status_row(terminal)
-            check("the status line and the input keep the whole width", terminal.screen.display[row].rstrip().endswith("· 1 job")
-                  and terminal.screen.display[row - 2].startswith("ask>") and "│" not in terminal.screen.display[row - 2]
-                  and set(terminal.screen.display[row - 1]) == {"─"} and set(terminal.screen.display[row - 3]) == {"─"})
+            # The input's box (note n36) spans the screen: its edges reach the last column, and no divider cuts its row.
+            display, width = terminal.screen.display, terminal.screen.columns
+            check("the status line and the input keep the whole width", display[row].rstrip().endswith("· 1 job")
+                  and probe.probe_screen.unboxed(display[row - 2]).startswith("ask>") and display[row - 2].count("│") == 2
+                  and display[row - 2][width - 1] == "│" and display[row - 1].startswith("╰") and display[row - 1][width - 1] == "╯"
+                  and display[row - 3].startswith("╭") and display[row - 3][width - 1] == "╮")
             terminal.draw(lambda: terminal.send(b"\x1c"))
             check("Ctrl+\\ closes it and the width comes back, the corner keeping its toggle",
                   divider_column(terminal) is None and not listed(terminal)

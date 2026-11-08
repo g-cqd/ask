@@ -5,9 +5,9 @@ internal import Testing
 
 @testable import AskTUI
 
-/// The input's look (roadmap 0074): no prefix unless one is asked for, a tinted background to the edge of the row, and a rule between the
-/// conversation and the input; each can be turned off.
-@Suite("The input is marked by its tint and a rule above it, not by a prefix")
+/// The input's look (roadmap 0074): no prefix unless one is asked for, a tinted background to the edge of the row, and a box around it
+/// (note n36; `InputBoxTests`); each can be turned off.
+@Suite("The input is marked by its tint or its box, not by a prefix")
 struct InputLookTests {
     private func rig(_ options: ScreenOptions = ScreenOptions(), draft: String = "hi") -> PointerRig {
         var rig = PointerRig(columns: 30, rows: 12, options: options, lines: ["one", "two"])
@@ -18,22 +18,22 @@ struct InputLookTests {
 
     @Test func `by default there is no prefix, and the draft starts at the first column`() {
         let rig = rig()
-        #expect(rig.text(row: rig.composer.transcriptRows + 1) == "hi")
-        #expect(rig.cursor.column == 2)
+        #expect(rig.text(row: rig.composer.transcriptRows + 1).hasPrefix("│ hi  "))
+        #expect(rig.cursor.column == 4, "inside the box's border")
     }
 
     @Test func `a prefix is whatever ui.prompt says`() {
         let rig = rig(ScreenOptions(prompt: "> "))
-        #expect(rig.text(row: rig.composer.transcriptRows + 1) == "> hi")
-        #expect(rig.cursor.column == 4)
+        #expect(rig.text(row: rig.composer.transcriptRows + 1).hasPrefix("│ > hi  "))
+        #expect(rig.cursor.column == 6)
     }
 
-    @Test func `a rule separates the conversation from the input, and takes a row`() {
+    @Test func `the box separates the conversation from the input, and takes a row above and below it`() {
         let rig = rig()
         let rule = rig.composer.transcriptRows
-        #expect(rig.text(row: rule) == String(repeating: "─", count: 30))
-        #expect(rig.composer.transcriptRows == 12 - 1 - 1 - 2, "the input, the status and two rules")
-        #expect(rig.text(row: rule + 2) == String(repeating: "─", count: 30))
+        #expect(rig.text(row: rule) == "╭" + String(repeating: "─", count: 28) + "╮")
+        #expect(rig.composer.transcriptRows == 12 - 1 - 1 - 2, "the input, the status and the box's two rows")
+        #expect(rig.text(row: rule + 2) == "╰" + String(repeating: "─", count: 28) + "╯")
         #expect(rig.controller.frame.promptRow == rule + 1 && rig.controller.frame.statusRow == rule + 3)
     }
 

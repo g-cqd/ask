@@ -20,6 +20,13 @@ extension SettingCatalog {
             "normal",
             "How faint secondary text is: ask's own grey, or nearer the page (faint, fainter), never below 3:1 contrast."
         ),
+        row(
+            "ui.inputBorder",
+            words(InputBorderPreference.self),
+            #""tint""#,
+            "tint",
+            "The box around the input: the session's colour, lighter, or the grey of secondary text (dim)."
+        ),
         row("ui.hover", .boolean, "true", "true", "What a click acts on brightens under the pointer."),
         row("ui.leaveFinishedJob", .boolean, "true", "true", "When a job you watch ends, go back to the conversation."),
         row(

@@ -67,8 +67,9 @@ def main():
                     terminal.pump()
                 drawn = b"\x1b[?2026l" in bytes(terminal.raw)[start:]
                 if os.environ.get("PROBE_SHOW"):
-                    print("resize", columns, rows, "drawn", drawn, "bytes", len(terminal.raw) - start, "rules", [len(l.rstrip()) for l in terminal.screen.display if l and set(l.rstrip()) == {"─"}])
-                rules = [line for line in terminal.screen.display if line and set(line.rstrip()) == {"─"}]
+                    print("resize", columns, rows, "drawn", drawn, "bytes", len(terminal.raw) - start)
+                # The input's box (note n36): its top and bottom edges, which span the screen's width.
+                rules = [line for line in terminal.screen.display if folding.probe_screen.is_box_edge(line)]
                 check(f"after reload, a resize to {columns}x{rows} is repainted at the new size",
                       drawn and len(rules) >= 2 and all(len(line.rstrip()) == columns for line in rules)
                       and "ask>" in terminal.text() and "· ↑" in terminal.screen.display[rows - 1])

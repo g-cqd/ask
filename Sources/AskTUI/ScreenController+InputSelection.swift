@@ -14,7 +14,7 @@ extension ScreenController {
     private func inputOffsets(at cell: CellPosition) -> (before: Int, after: Int)? {
         guard let layout = frame.prompt, frame.promptRows > 0 else { return nil }
         let drawn = Swift.min(Swift.max(cell.row - frame.promptRow, 0), frame.promptRows - 1)
-        let before = layout.offset(atRow: frame.promptTop + drawn, column: cell.col)
+        let before = layout.offset(atRow: frame.promptTop + drawn, column: cell.col - frame.promptColumn)
         let characters = state.editor.text
         guard before < characters.count else { return (before, before) }
         let isBreak = characters[characters.index(characters.startIndex, offsetBy: before)].isNewline
@@ -149,6 +149,7 @@ extension ScreenController {
         selector.clear()
         state.selection = nil
         state.clipboardNotice = ""
+        let columns = frame.prompt?.columns ?? columns
         let indent = columns.map { PromptLayout.prefix(state.promptPrefix, columns: $0).count } ?? 0
         _ = state.editor.apply(key, columns: columns, firstRowIndent: indent)
         let head = state.editor.cursor

@@ -9,6 +9,6 @@ extension ScreenController {
         guard state.pendingApproval == nil, let layout = frame.prompt else { return }
         let row = frame.promptTop + cell.row - frame.promptRow
         dropSelections()
-        state.editor.place(cursor: layout.offset(atRow: row, column: cell.col))
+        state.editor.place(cursor: layout.offset(atRow: row, column: cell.col - frame.promptColumn))
     }
 }

@@ -54,7 +54,7 @@ def main():
             band = [index for index, line in enumerate(display) if len(line) > 89 and line[89] == "│"]
             check("the transcript keeps the whole width: no divider beside it", "│" not in display[0])
             check("the input and the sidebar share six rows behind the divider",
-                  len(band) == 6 and display[band[0]].startswith("ask>") and any("◆ main" in display[i] for i in band))
+                  len(band) == 6 and display[band[0]].startswith("│ ask>") and any("◆ main" in display[i] for i in band))
             terminal.send(b"/thread wait a while\r")
             terminal.until(lambda: "1 thread" in status(terminal))
             check("the status line's counts sit at its trailing edge", status(terminal).endswith(("1 thread · 1 job", "1 thread")))

@@ -71,3 +71,16 @@ class ScrollingStream(pyte.ByteStream):
 def make(columns, rows):
     screen = ScrollingScreen(columns, rows)
     return screen, ScrollingStream(screen)
+
+
+def unboxed(line):
+    """A screen row as text, an input row without the box's borders (note n36): `│ ask> hi   │` reads `ask> hi`."""
+    text = line.rstrip()
+    if text.startswith("│ ") and text.endswith("│"):
+        text = text[2:-1].rstrip()
+    return text
+
+
+def is_box_edge(line):
+    """Whether a row is the input box's top or bottom edge: `╭───╮` or `╰───╯`, perhaps with the sidebar beside it."""
+    return line.startswith("╭─") or line.startswith("╰─")
