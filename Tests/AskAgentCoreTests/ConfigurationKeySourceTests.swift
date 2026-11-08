@@ -41,7 +41,7 @@ struct ConfigurationKeySourceTests {
         )
         section.sidebarLayout = "bottom"
         section.dim = .faint
-        section.inputBorder = .dim
+        section.sessionTint = .status
         return section
     }()
 

@@ -75,8 +75,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     public var sessionColor: SessionColorPreference?
     /// `ui.dim`: how faint secondary text is (note n13); nil for `normal`.
     public var dim: DimPreference?
-    /// `ui.inputBorder`: the colour of the box around the input (note n36); nil for `tint`.
-    public var inputBorder: InputBorderPreference?
+    /// `ui.sessionTint`: where the session's colour shows, the status line and the input's box; nil for `both`.
+    public var sessionTint: SessionTintPreference?
 
     public init(
         mouse: Bool? = nil,
@@ -171,7 +171,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     private static let lookKeys = [
         // @dl:accept -- a list of key names is data, like any other list of names
         "inputPrefix", "tint", "appearance", "separator", "padding", "markdown", "highlight", "durations",
-        "spinner", "shimmer", "hover", "showTimeout", "timeoutLabel", "dim", "inputBorder"
+        "spinner", "shimmer", "hover", "showTimeout", "timeoutLabel", "dim", "sessionTint"
     ]
     private static let behaviorKeys = [
         "leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels", "sessionColor"
@@ -219,7 +219,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         )
         merged.sidebarLayout = section.sidebarLayout ?? sidebarLayout
         merged.dim = section.dim ?? dim
-        merged.inputBorder = section.inputBorder ?? inputBorder
+        merged.sessionTint = section.sessionTint ?? sessionTint
         return merged
     }
 

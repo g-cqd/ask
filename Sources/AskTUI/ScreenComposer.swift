@@ -129,7 +129,10 @@ public struct ScreenComposer: Sendable {
     /// taking no blank rows, and two columns each side.
     static func inputBox(for state: ScreenState, width: Int, rows: Int) -> InputBox? {
         guard state.separator, rows >= 6, width >= 8 else { return nil }
-        return InputBox(width: width, style: state.theme.inputBorder(state.inputBorder, seed: state.sessionIdentity))
+        return InputBox(
+            width: width,
+            style: state.theme.inputBorder(seed: state.sessionTint.input ? state.sessionIdentity : nil)
+        )
     }
 
     /// Writes `state` into `buffer`.
