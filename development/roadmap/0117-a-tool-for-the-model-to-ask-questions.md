@@ -26,7 +26,7 @@ selection, plus a free-text note that counts as an answer on its own or in addit
 
 Built on the approval section (0116, 0157): the same checkboxes, spacing, keys and place above the input.
 
-- **Q1. Name and schema.** A tool `question` (not Claude Code's `AskUserQuestion`), with `questions`: 1 to 4, each
+- **Q1. Name and schema.** A tool `question` (not Claude Code's `AskUserQuestion`), with `questions`: 1 to 16 (4 until note n14), each
   `{question, header, choices, multiple, note}`: `header` a tab label of at most 12 characters; `choices` 0 to 8 of `{label, description?}`
   (none: the note is the whole answer); `multiple` false by default; `note` one of `"optional"` (default), `"required"`, `"none"`.
 - **Q2. The note is the input.** While a question is open, what you type in the input is that question's note, kept per question; Enter
@@ -50,7 +50,7 @@ First slice once answered: Q1 to Q3 for one question; then the series with tabs 
 
 ## Built (2026-10-30)
 
-Q1 to Q7, keys and drawing: the `question` tool (`QuestionTool`, `PersonQuestion`, `PersonAnswer`) validates the questions (1 to 4,
+Q1 to Q7, keys and drawing: the `question` tool (`QuestionTool`, `PersonQuestion`, `PersonAnswer`) validates the questions (1 to 16,
 headers of 1 to 12 characters, up to 8 choices, a label each, the note's three words) and refuses a malformed one with what is wrong;
 answers come back one line per question (`Scope: chose "Everything"; note: "keep it"`), and a refusal says the user declined. The
 screen (`ScreenQuestion`, `PendingQuestions`, `ScreenController+Questions`, `ScreenComposer+Questions`) draws it in the approval
@@ -109,4 +109,17 @@ close that.
   - `QuestionClickTests` gained the note click.
   - The new tests did not compile against the old types, which is where they were red.
 - Docs: `screen.md`. Probe section Q1 now types its note after Tab and goes on with Enter. Showcase scene 9 is relabelled.
+- Not seen in a real terminal.
+
+### Note n14: up to sixteen
+
+- The tool takes 1 to 16 questions.
+- When the headers don't fit the tab row, the shown one keeps its header, the others show their initial (the review a ✓), one column
+  apart. If that is still too wide, the row shows as many as fit around the shown one, with `‹` and `›` at the cut ends. A tab left off
+  the row has no click target.
+- `QuestionTabsTests` (five widths); `QuestionToolTests` takes sixteen and refuses seventeen.
+- `Scripts/probe-question-series.py`: sixteen questions on a 60-column screen, through the review to the model's sixteen answers. Its
+  first run found the row clipped silently on the right, which the unit tests had not covered; the `›` came from that. Its second
+  found Shift+Tab doing nothing outside the kitty keyboard protocol: TerminalKit did not read back-tab (`ESC [ Z`); fixed there
+  (TerminalKit a16935d) and pinned.
 - Not seen in a real terminal.

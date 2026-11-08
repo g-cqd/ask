@@ -45,32 +45,71 @@ extension ScreenComposer {
         return (kept + body, kept.count ..< kept.count + choiceCount, tabs)
     }
 
-    /// The columns of each tab on the tab row, in order, the review last.
-    static func questionTabColumns(_ pending: PendingQuestions) -> [Range<Int>] {
-        var column = 2  // the margin
-        var spans: [Range<Int>] = []
-        for name in tabNames(pending) {
-            let width = UnicodeWidth.displayWidth(of: name) + 2
-            spans.append(column ..< column + width)
-            column += width + 2
-        }
-        return spans
+    /// The columns of each tab on the tab row, in order, the review last; empty for a tab the row slid past or clipped.
+    static func questionTabColumns(_ pending: PendingQuestions, columns: Int) -> [Range<Int>] {
+        tabRow(pending, columns: columns).spans
     }
 
     private static func tabNames(_ pending: PendingQuestions) -> [String] {
         pending.questions.map(\.header) + ["✓ Review"]
     }
 
+    /// The tab row (note n14): every header where they fit; else the shown one in full and the others by their initial, the review a ✓,
+    /// one column apart; and where even that is too wide, as many as fit around the shown tab, with `‹` and `›` where some are left out.
+    private static func tabRow(_ pending: PendingQuestions, columns: Int) -> (text: String, spans: [Range<Int>]) {
+        let names = tabNames(pending)
+        let shown = pending.reviewing ? names.count - 1 : pending.current
+        let full = laidOut(names, shown: shown, gap: 2, window: names.indices)
+        guard UnicodeWidth.displayWidth(of: full.text) > columns else { return full }
+        let short = names.enumerated()
+            .map { index, name in
+                index == shown ? name : index == names.count - 1 ? "✓" : name.first.map(String.init) ?? "·"
+            }
+        let fits = { (window: Range<Int>) in
+            UnicodeWidth.displayWidth(of: laidOut(short, shown: shown, gap: 1, window: window).text) <= columns
+        }
+        var window = shown ..< shown + 1
+        var grew = true
+        while grew {
+            grew = false
+            // One more on the right, then one on the left, so the shown tab stays near the middle.
+            if window.upperBound < names.count, fits(window.lowerBound ..< window.upperBound + 1) {
+                window = window.lowerBound ..< window.upperBound + 1
+                grew = true
+            }
+            if window.lowerBound > 0, fits(window.lowerBound - 1 ..< window.upperBound) {
+                window = window.lowerBound - 1 ..< window.upperBound
+                grew = true
+            }
+        }
+        let row = laidOut(short, shown: shown, gap: 1, window: window)
+        return (row.text, row.spans.map { $0.upperBound <= columns ? $0 : 0 ..< 0 })
+    }
+
+    /// The tabs in `window`, after the margin, the shown one in brackets and the others padded to the same width; `‹` and `›` where some
+    /// are left out before or after. A tab outside the window has no columns.
+    private static func laidOut(_ names: [String], shown: Int, gap: Int, window: Range<Int>) -> (
+        text: String, spans: [Range<Int>]
+    ) {
+        var text = window.lowerBound > 0 ? "  ‹ " : "  "
+        var spans = Array(repeating: 0 ..< 0, count: names.count)
+        for index in window {
+            if index > window.lowerBound { text += String(repeating: " ", count: gap) }
+            let column = UnicodeWidth.displayWidth(of: text)
+            text += index == shown ? "[\(names[index])]" : " \(names[index]) "
+            spans[index] = column ..< UnicodeWidth.displayWidth(of: text)
+        }
+        return (text + (window.upperBound < names.count ? " ›" : ""), spans)
+    }
+
     /// `[Scope]   Tests    ✓ Review`: the question shown, or the review, in brackets, in the accent colour while the tabs have the focus.
     /// No numbers: beside the question count they read as one (owner, 2026-10-31).
     private static func tabLine(_ pending: PendingQuestions, columns: Int) -> Line {
-        let names = tabNames(pending)
-        let shown = pending.reviewing ? names.count - 1 : pending.current
-        let text = names.enumerated().map { $0.offset == shown ? "[\($0.element)]" : " \($0.element) " }
-            .joined(separator: "  ")
-        var line = Line(text: clipped("  " + text, to: columns), style: .default)
-        if pending.focus == .tabs, !pending.reviewing, questionTabColumns(pending).indices.contains(shown) {
-            let span = questionTabColumns(pending)[shown]
+        let row = tabRow(pending, columns: columns)
+        let shown = pending.reviewing ? row.spans.count - 1 : pending.current
+        var line = Line(text: clipped(row.text, to: columns), style: .default)
+        if pending.focus == .tabs, !pending.reviewing, row.spans.indices.contains(shown) {
+            let span = row.spans[shown]
             let end = Swift.min(span.upperBound, UnicodeWidth.displayWidth(of: line.text))
             if span.lowerBound < end {
                 line.accents = [Accent(columns: span.lowerBound ..< end, style: Style(fg: .indexed(5), bold: true))]

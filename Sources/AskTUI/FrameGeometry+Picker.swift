@@ -20,7 +20,7 @@ extension FrameGeometry {
                 detail: layout.tabs.map { $0 ..< $0 + 1 } ?? 0 ..< 0,
                 top: top
             )
-            geometry.questionTabs = ScreenComposer.questionTabColumns(pending)
+            geometry.questionTabs = ScreenComposer.questionTabColumns(pending, columns: columns)
             return geometry
         }
         guard let picker = state.picker else { return self }

@@ -8,7 +8,7 @@ public struct QuestionTool: Tool {
     public let definition = ToolDefinition(
         name: "question",
         description: """
-            Ask the user up to 4 questions when only they can decide, each with up to 8 choices (one picked, or several with \
+            Ask the user up to 16 questions when only they can decide, each with up to 8 choices (one picked, or several with \
             "multiple": true) and room for a note of their own ("note": "optional", "required" or "none"). The header is a tab \
             label of at most 12 characters. Ask about real decisions, not to confirm what you were asked to do.
             """
@@ -17,7 +17,7 @@ public struct QuestionTool: Tool {
     }
 
     static let schema = #"""
-        {"type":"array","minItems":1,"maxItems":4,"items":{"type":"object","required":["question","header"],"properties":{\#
+        {"type":"array","minItems":1,"maxItems":16,"items":{"type":"object","required":["question","header"],"properties":{\#
         "question":{"type":"string"},"header":{"type":"string","maxLength":12},\#
         "choices":{"type":"array","maxItems":8,"items":{"type":"object","required":["label"],"properties":{\#
         "label":{"type":"string"},"description":{"type":"string"}}}},\#
@@ -60,8 +60,8 @@ public struct QuestionTool: Tool {
     static func questions(in input: JSONObject) throws(Malformed) -> [PersonQuestion] {
         guard let document = try? AemiJSON.parse(input.bytes),
             case .object(let root) = JSONValue(document.root), case .array(let items)? = root["questions"],
-            (1 ... 4).contains(items.count)
-        else { throw Malformed(reason: "Give \"questions\": a list of 1 to 4 questions.") }
+            (1 ... 16).contains(items.count)
+        else { throw Malformed(reason: "Give \"questions\": a list of 1 to 16 questions.") }
         return try items.enumerated().map { index, item throws(Malformed) in try question(item, number: index + 1) }
     }
 
