@@ -59,8 +59,8 @@ the rest suggest letting the detector skip array literals of one initialiser.
 ### 2.4 Verification that lives outside the repository
 
 - **The PTY probes are not in CI.** `ci.yml` and `mutation.yml` run none of the 92 probes, and the script that runs them all lives in a
-  temporary directory on one machine. This week the probes found three defects that the unit tests missed: an underline lost
-  in the colon form of SGR 4, a tab row clipped silently, and back-tab doing nothing outside the kitty keyboard protocol.
+  temporary directory on one machine. This week the probes found two defects in ask that the unit tests missed: a tab row
+  clipped silently, and back-tab doing nothing outside the kitty keyboard protocol.
 - **The mutation gate had no green scheduled run from 3 to 8 November.** Each run failed for a different reason: the tools version,
   then the build timeout, then the source standards failing on the tool's rewritten files, then two real survivors. All are fixed
   now (24754a72, 427a7d05). Nobody saw it fail for five days.
@@ -108,3 +108,10 @@ ADR.
    with status `done` once it moves, and the tracking lives with the code.
 3. **Is the diary still wanted daily?** Or should commit messages and the roadmap's progress sections replace it? The white paper
    (§4) would change accordingly.
+
+### The owner's answers, 2026-11-08
+
+1. **A shared leaf target.** AskTUI may depend on one leaf target that holds the shared value types. 0209's ADR records this.
+2. **Move them.** The tracking of other repositories' entries moves to the repositories that hold their code. ask keeps a
+   pointer entry for each, marked done (0212, step 3).
+3. **Resume the diary.** It is kept per working day, as the white paper says. 2026-11-08-01 picks up from 4 November.

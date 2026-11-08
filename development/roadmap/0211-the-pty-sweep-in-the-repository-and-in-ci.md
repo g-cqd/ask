@@ -10,7 +10,7 @@ From the rationalisation pass (research/rationalisation-2026-11.md §2.4; note n
 
 ## Today
 
-There are 92 PTY probes (`Scripts/probe-*.py`). They found three defects this week that the unit tests missed. But nothing runs them
+There are 92 PTY probes (`Scripts/probe-*.py`). They found two defects in ask this week that the unit tests missed. But nothing runs them
 except a script in a temporary directory on one machine. No workflow runs them, and a probe that rots is found only when someone
 runs it.
 
