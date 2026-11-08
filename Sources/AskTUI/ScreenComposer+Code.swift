@@ -42,7 +42,7 @@ extension ScreenComposer {
         }
         if transcript.markdown, case .assistant(let text) = item {
             return framed(
-                markdownLines(text, in: transcript, at: index, columns: columns, style: style),
+                markdownLines(text, in: transcript, at: index, columns: columns, style: style, paths: true),
                 kind: item,
                 style: style,
                 spacerAbove: spaced

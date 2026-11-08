@@ -51,6 +51,9 @@ conversation copies what is shown, as soon as you let go.
 
 ## Reading the conversation
 
+- In the model's replies and reasoning a path inside the project is shown relative to it (`Sources/a.swift:12`), and one near it from the
+  folder they share (`../other/notes.md`; `ui.paths`, `ui.pathAncestors`). A relative path is a link when it names a file or folder in
+  the project. Copying takes the path as the model wrote it. Your own messages keep their paths as you wrote them.
 - File paths, web addresses and email addresses anywhere in the conversation are links: a click opens a file or folder in its app, a
   page in your browser, an address in Mail. A file that would run (an app, a script, a program) is shown in the Finder instead.
 - Tool calls, the model's thinking and long code blocks start **folded** to one line. Click a block to open it in place; **Ctrl+O** opens or

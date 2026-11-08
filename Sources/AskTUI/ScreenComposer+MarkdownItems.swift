@@ -55,7 +55,8 @@ extension ScreenComposer {
                         at: index,
                         columns: columns,
                         style: style,
-                        firstBlockWidth: beside >= minimumBesideStatus ? beside : nil
+                        firstBlockWidth: beside >= minimumBesideStatus ? beside : nil,
+                        paths: true
                     ),
                     under: look
                 )

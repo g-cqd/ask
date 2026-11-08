@@ -32,7 +32,8 @@ def main():
             terminal.until(lambda: b"BANNER ANSWER" in terminal.raw)
             terminal.send(b"/quit\r")
             try:
-                terminal.until(lambda: b"To resume:" in terminal.raw)
+                # The whole line: the command can arrive in more than one read.
+                terminal.until(lambda: b"To resume:" in terminal.raw and b"\n" in bytes(terminal.raw).split(b"To resume:", 1)[1])
             except OSError as error:
                 raise AssertionError("clean exit did not print a resume command") from error
             raw = bytes(terminal.raw).decode("utf-8", errors="replace")

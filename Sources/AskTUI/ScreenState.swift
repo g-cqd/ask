@@ -1,3 +1,4 @@
+internal import Foundation
 internal import TerminalKitCodecs
 internal import TerminalKitRender
 internal import TerminalKitStyle
@@ -164,6 +165,15 @@ public struct ScreenState: Sendable, Equatable {
         )
         blocks = BlockStyle(padded: options.padding, theme: theme, localizedDurations: options.localizedDurations)
         blocks.home = options.home
+        blocks.paths = options.workspace.map { workspace in
+            PathDisplay(
+                workspace: PathDisplay.normalized(workspace),
+                home: options.home ?? NSHomeDirectory(),
+                ancestors: options.pathAncestors,
+                shortens: options.shortPaths,
+                exists: PathExistence.shared.exists
+            )
+        }
     }
 
     /// Mixes the tints again from the terminal's own colours (roadmap 0108).

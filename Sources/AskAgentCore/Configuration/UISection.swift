@@ -77,6 +77,12 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     public var dim: DimPreference?
     /// `ui.sessionTint`: where the session's colour shows, the status line and the input's box; nil for `both`.
     public var sessionTint: SessionTintPreference?
+    /// `ui.paths` and `ui.pathAncestors` (roadmap 0215): how paths in replies are shown, and how many folders above the project a common
+    /// one may be, ``noAncestorLimit`` for no limit; nil for the defaults, `short` and 2.
+    public var paths: PathsPreference?
+    public var pathAncestors: Int?
+    /// `ui.pathAncestors` `null`: no limit.
+    public static let noAncestorLimit = -1
 
     public init(
         mouse: Bool? = nil,
@@ -174,7 +180,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         "spinner", "shimmer", "hover", "showTimeout", "timeoutLabel", "dim", "sessionTint"
     ]
     private static let behaviorKeys = [
-        "leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels", "sessionColor"
+        "paths", "pathAncestors", "leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels",
+        "sessionColor"
     ]
 
     /// `self` with every key `section` sets replaced.
@@ -220,6 +227,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         merged.sidebarLayout = section.sidebarLayout ?? sidebarLayout
         merged.dim = section.dim ?? dim
         merged.sessionTint = section.sessionTint ?? sessionTint
+        merged.paths = section.paths ?? paths
+        merged.pathAncestors = section.pathAncestors ?? pathAncestors
         return merged
     }
 

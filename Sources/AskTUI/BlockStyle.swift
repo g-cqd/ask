@@ -10,6 +10,8 @@ public struct BlockStyle: Sendable, Equatable {
     public var home: String?
     /// The names a `/name` in a block is a command link for (note n11): ask's commands and the skills; any other single `/word` is text.
     public var commands: Set<String> = []
+    /// How paths in replies and reasoning are shown and linked (roadmap 0215), or nil to leave them as written.
+    var paths: PathDisplay?
 
     public init(padded: Bool = true, theme: ScreenTheme = ScreenTheme(), localizedDurations: Bool = true) {
         self.padded = padded

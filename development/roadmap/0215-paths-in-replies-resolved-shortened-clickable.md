@@ -67,3 +67,12 @@ Openers and the confirmation of what a click runs (t215, note n32), which needs 
 - Step 1 is done: TerminalKit 37d0143 adds `MarkdownLinks.paths` and `MarkdownPath` (`MarkdownPathTests`, 4, red first), and ask
   pins it in its four manifests and locks. Nothing in ask uses it yet.
 - Next: `PathDisplay` and the settings (steps 2 and 5), then the probe.
+- Steps 2 and 5 are done (2026-11-08):
+  - `PathDisplay` and its scanner (`PathDisplayTests`, 7, red on a stub), with `PathExistence` caching the stat.
+  - The settings `ui.paths` and `ui.pathAncestors` (`null` for no limit; `PathSettingsTests`).
+  - Replies and reasoning use the hook. The person's messages and summaries do not (`ReplyPathsTests`, 5).
+  - `probe-reply-paths.py`: 4 checks, which the build before fails.
+- Found by the probe: the Markdown parser splits a text at `_` runs that are not emphasis, so a path with an underscore reached the
+  hook in pieces. TerminalKit ccac505 runs the hook over each stretch of adjacent prose, and has a test with underscores.
+- Links keep `PathLinks.uri`'s standardised form (`/private/var/…` is written `/var/…`), the same file.
+- Left: notices are linked but not shortened (step 4); a relative path copies as written, not in full (step 6).

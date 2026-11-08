@@ -58,6 +58,12 @@ public struct ScreenOptions: Sendable, Equatable {
     public var appearance = ScreenAppearance.auto
     /// The home folder, which ask's own messages write as `~` (roadmap 0128); nil leaves paths as they are.
     public var home: String?
+    /// The project, which paths in replies are shown relative to (roadmap 0215); nil leaves them as written.
+    public var workspace: String?
+    /// Whether paths in replies are shown short (`ui.paths`), and how many folders above the project a common one may be
+    /// (`ui.pathAncestors`; nil for no limit).
+    public var shortPaths = true
+    public var pathAncestors: Int? = 2
     /// Locale-aware elapsed units (`ui.localizedDurations`); off uses a compact clock.
     public var localizedDurations: Bool
     /// Which spinner style is used for progress and status indicators (`ui.spinner`).

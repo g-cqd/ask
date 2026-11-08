@@ -27,6 +27,20 @@ extension SettingCatalog {
             "both",
             "Where the session's colour shows: the status line and the input's box, one of them, or none."
         ),
+        row(
+            "ui.paths",
+            words(PathsPreference.self),
+            #""short""#,
+            "short",
+            "Paths in replies and reasoning shown relative to the project, or as written; linked either way."
+        ),
+        row(
+            "ui.pathAncestors",
+            .structured,
+            "2",
+            "2",
+            "How many folders above the project a path may share one with to be shown from there, or null for no limit."
+        ),
         row("ui.hover", .boolean, "true", "true", "What a click acts on brightens under the pointer."),
         row("ui.leaveFinishedJob", .boolean, "true", "true", "When a job you watch ends, go back to the conversation."),
         row(

@@ -76,6 +76,12 @@
     // Where the session's colour shows: the status line and the input's box, one of them, or none. Default: both. One of: both, status, input, none.
     "sessionTint": "both",
 
+    // Paths in replies and reasoning shown relative to the project, or as written; linked either way. Default: short. One of: short, asWritten.
+    "paths": "short",
+
+    // How many folders above the project a path may share one with to be shown from there, or null for no limit. Default: 2.
+    "pathAncestors": 2,
+
     // What a click acts on brightens under the pointer. Default: true.
     "hover": true,
 

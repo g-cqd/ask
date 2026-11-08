@@ -53,6 +53,11 @@ extension RunSettings {
         options.outputFoldLines = ui.outputFoldLines ?? defaults.outputFoldLines
         options.outputFoldBytes = ui.outputFoldBytes ?? defaults.outputFoldBytes
         options.home = LaunchEnvironment.values["HOME"]
+        // Paths in replies (roadmap 0215): shown from the project, within the folders above it the person allows.
+        options.workspace = workspace
+        options.shortPaths = (ui.paths ?? .short) == .short
+        options.pathAncestors =
+            ui.pathAncestors.map { $0 == UISection.noAncestorLimit ? nil : $0 } ?? defaults.pathAncestors
         return options
     }
 

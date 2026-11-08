@@ -117,7 +117,7 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/g-cqd/TerminalKit.git",
       "state" : {
-        "revision" : "37d014328e5d194628eff4d2bc51b4da9f4b6cbe"
+        "revision" : "ccac5054862b18b1568f8c765ddde880be266a95"
       }
     }
   ],
