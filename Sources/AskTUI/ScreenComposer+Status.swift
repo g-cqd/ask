@@ -12,8 +12,10 @@ extension ScreenComposer {
     ) -> (line: Line, runners: Range<Int>?, below: Range<Int>?) {
         let mark = leadingMark(for: state)
         var style = StatusLine.statusStyle
-        // The session's colour, when it has one (roadmap 0164), behind the whole line.
-        if let seed = state.sessionIdentity { style.bg = state.blocks.theme.sessionTint(seed: seed) }
+        // The session's colour, when it has one (roadmap 0164) and `ui.sessionTint` puts it here, behind the whole line.
+        if let seed = state.sessionIdentity, state.sessionTint.status {
+            style.bg = state.blocks.theme.sessionTint(seed: seed)
+        }
         var line = StatusLine(
             segments(for: state, input: input, mark: mark),
             columns: columns,

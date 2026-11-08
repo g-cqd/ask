@@ -7,8 +7,8 @@ internal import Testing
 @testable import AskTUI
 
 /// The input in a box (note n36, the owner's choices of 2026-11-08): rounded corners and a border down each side instead of rules from
-/// edge to edge, in the session's colour, lighter (`ui.inputBorder` `tint`, the default), or the grey of secondary text (`dim`); the
-/// command and file lists open above it.
+/// edge to edge, in the session's colour, lighter, where `ui.sessionTint` puts it, or else the grey of secondary text; the command and file
+/// lists open above it.
 @Suite("The input sits in a box with rounded corners, and the lists open above it")
 struct InputBoxTests {
     private func rig(_ options: ScreenOptions = ScreenOptions(), draft: String = "hi", identity: String? = nil)
@@ -55,22 +55,31 @@ struct InputBoxTests {
         #expect(rig.controller.state.editor.cursor == 2)
     }
 
-    @Test
-    func
-        `the border is the session's colour, lighter, by default, and the grey of secondary text without one or when asked`()
-    {
+    private func tinted(_ place: ScreenSessionTint) -> (status: Bool, box: Bool) {
+        var options = ScreenOptions()
+        options.sessionTint = place
+        let rig = rig(options, identity: "session-a")
+        let top = rig.composer.transcriptRows
+        let box: Bool = if case .rgb = rig.buffer[top, 0].style.fg { true } else { false }
+        return (rig.buffer[rig.controller.frame.statusRow, 0].style.bg != .default, box)
+    }
+
+    @Test func `the session's colour goes where ui.sessionTint says: both by default, one of them, or none`() {
+        #expect(tinted(.both) == (true, true))
+        #expect(tinted(.status) == (true, false))
+        #expect(tinted(.input) == (false, true))
+        #expect(tinted(.none) == (false, false))
+    }
+
+    @Test func `the box is the session's colour on both sides, the draft is not, and without a colour it is grey`() {
         let tinted = rig(identity: "session-a")
         let top = tinted.composer.transcriptRows
-        guard case .rgb = tinted.buffer[top, 0].style.fg else {
-            Issue.record("the border is in the session's colour: \(tinted.buffer[top, 0].style)")
-            return
-        }
         #expect(tinted.buffer[top + 1, 0].style.fg == tinted.buffer[top, 0].style.fg, "the sides too")
         #expect(tinted.buffer[top + 1, 2].style.fg == .default, "the draft keeps the text colour")
+        var none = ScreenOptions()
+        none.sessionTint = ScreenSessionTint.none
         let plain = rig()
-        var dim = ScreenOptions()
-        dim.inputBorder = .dim
-        #expect(plain.buffer[top, 0].style == rig(dim, identity: "session-a").buffer[top, 0].style)
+        #expect(plain.buffer[top, 0].style == rig(none, identity: "session-a").buffer[top, 0].style)
         #expect(plain.buffer[top, 0].style.dim || plain.buffer[top, 0].style.fg != .default)
     }
 

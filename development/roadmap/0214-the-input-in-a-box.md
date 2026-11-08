@@ -36,3 +36,11 @@ vertical border on each side, dimmed or in the session's tint, lighter. The owne
 ## Not verified
 
 The look in a real kitty or Ghostty, light and dark pages.
+
+## Changed (2026-11-08): `ui.sessionTint` replaces `ui.inputBorder`
+
+The owner asked for one setting saying where the session's colour goes: the status line, the input, both or none. `ui.sessionTint`
+(`"both"`, the default, `"status"`, `"input"`, `"none"`) replaces `ui.inputBorder`, which had landed hours before and said only
+whether the box took it. Where the colour does not go, the box is the grey of secondary text and the status line its usual one.
+`ui.sessionColor` still says when a session has a colour at all. `InputBoxTests` checks all four places, and fails with either gate
+removed.

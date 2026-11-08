@@ -73,8 +73,8 @@
     // How faint secondary text is: ask's own grey, or nearer the page (faint, fainter), never below 3:1 contrast. Default: normal. One of: normal, faint, fainter.
     "dim": "normal",
 
-    // The box around the input: the session's colour, lighter, or the grey of secondary text (dim). Default: tint. One of: tint, dim.
-    "inputBorder": "tint",
+    // Where the session's colour shows: the status line and the input's box, one of them, or none. Default: both. One of: both, status, input, none.
+    "sessionTint": "both",
 
     // What a click acts on brightens under the pointer. Default: true.
     "hover": true,

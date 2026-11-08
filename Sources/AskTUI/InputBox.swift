@@ -2,7 +2,7 @@ internal import TerminalKitStyle
 internal import TerminalKitText
 
 /// The box around the input (note n36, the owner's choices of 2026-11-08): rounded corners, a border down each side with a column of space
-/// inside it, in the colour `ui.inputBorder` gives.
+/// inside it, in the session's colour where `ui.sessionTint` puts it there, else the grey of secondary text.
 struct InputBox {
     /// Its columns, borders included: the input's width and four more.
     var width: Int

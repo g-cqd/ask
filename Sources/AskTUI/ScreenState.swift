@@ -142,8 +142,8 @@ public struct ScreenState: Sendable, Equatable {
     public var promptPrefix = ""
     public var theme = ScreenTheme()
     public var separator = true
-    /// The colour of the box around the input, when ``separator`` draws one (`ui.inputBorder`, note n36).
-    public var inputBorder = ScreenInputBorder.tint
+    /// Where the session's colour shows (`ui.sessionTint`): the status line, the input's box, both or neither.
+    public var sessionTint = ScreenSessionTint.both
     /// Whether blocks are padded, and the tints they take.
     public var blocks = BlockStyle()
 
@@ -153,7 +153,7 @@ public struct ScreenState: Sendable, Equatable {
         statusSpinner = options.spinner.resolved()
         promptPrefix = options.prompt
         separator = options.separator
-        inputBorder = options.inputBorder
+        sessionTint = options.sessionTint
         theme = ScreenTheme(
             tinted: options.tint,
             page: options.appearance == .auto
