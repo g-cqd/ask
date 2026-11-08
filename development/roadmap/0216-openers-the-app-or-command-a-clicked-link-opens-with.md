@@ -67,3 +67,12 @@ Opening links on anything but a click; openers for tool output's links beyond wh
   system's. It fills placeholders in one pass, so a value is never read again, and refuses a value that would start an argument with
   `-` (`OpenerChoiceTests`, 5, red on a stub). AskAgentCore now depends on AemiRegex.
 - Nothing calls it yet: a click still opens as before. Next is step 3, apps, through the conversation, which knows the configuration.
+- Step 3 is done:
+  - A click asks the conversation what opens the link (`Conversation.opening(for:)`), and the conversation answers from the person's
+    openers. An app opens the link through `NSWorkspace` with that app, found by bundle identifier or name (`LinkOpenerAppTests`).
+    A missing app is said.
+  - `ClickedLink(uri:)` reads a clicked URI (`ClickedLinkTests`). A command rule says it is not run yet, until step 4.
+  - Found by `probe-openers.py`: no link notice ever reached the status line, so "Not opened" and "Shown in the Finder" were silent.
+    They are shown now (`ClipboardNoticeTests`, red first).
+  - The probe clicks a missing file under a command rule, so nothing is launched by either build; the build before fails it.
+- Not yet: a link's line does not reach `{line}`. Path links leave their `:line` out of the URI, so `{line}` is 1 for now.

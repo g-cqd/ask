@@ -14,6 +14,41 @@ enum LinkOpener {
         case reveal(URL)
         /// Nothing: a scheme that is not followed, or a file that is not there.
         case refuse
+        /// Opens it in the app at this location, the person's opener (roadmap 0216).
+        case openWith(URL, app: URL)
+        /// The person's opener names an app that is not on this Mac.
+        case missingApp(String)
+    }
+
+    /// What clicking `uri` does when the person's openers name `app` for it (roadmap 0216): what would be opened or shown is opened in
+    /// that app, found by bundle identifier or by name in the usual folders; nothing else is.
+    static func action(for uri: String, app: String, folders: [URL] = applicationFolders) -> Action {
+        let target: URL
+        switch action(for: uri) {
+            case .open(let url), .reveal(let url): target = url
+            default: return .refuse
+        }
+        guard let found = application(named: app, folders: folders) else { return .missingApp(app) }
+        return .openWith(target, app: found)
+    }
+
+    /// Where apps are looked for by name.
+    static let applicationFolders = [
+        "/Applications", "/Applications/Utilities", "/System/Applications", "/System/Applications/Utilities",
+        NSHomeDirectory() + "/Applications"
+    ]
+    .map { URL(fileURLWithPath: $0, isDirectory: true) }
+
+    /// The app `name` names: a bundle identifier the system knows, or `name.app` in one of `folders`.
+    private static func application(named name: String, folders: [URL]) -> URL? {
+        if let found = NSWorkspace.shared.urlForApplication(withBundleIdentifier: name) {
+            return URL(fileURLWithPath: found.path(percentEncoded: false))
+        }
+        let bundle = name.hasSuffix(".app") ? name : name + ".app"
+        guard !bundle.contains("/") else { return nil }
+        return folders.map { $0.appending(path: bundle) }
+            .first { FileManager.default.fileExists(atPath: $0.path(percentEncoded: false)) }
+            .map { URL(fileURLWithPath: $0.path(percentEncoded: false)) }
     }
 
     /// What clicking `uri` does.
@@ -26,10 +61,26 @@ enum LinkOpener {
         }
     }
 
-    /// Carries out the click on `uri`.
+    /// Carries out the click on `uri` as the person's openers say (roadmap 0216).
     /// - Returns: what to tell the person when nothing was opened, or nil.
-    static func perform(_ uri: String) -> String? {
-        switch action(for: uri) {
+    static func perform(_ uri: String, opening: LinkOpening) -> String? {
+        switch opening {
+            case .system: perform(uri)
+            case .app(let name): perform(uri, app: name)
+            case .refused(let reason): reason
+            case .command: "Not run: commands as openers are not run yet (roadmap 0216, step 4)."
+        }
+    }
+
+    /// Carries out the click on `uri`, in `app` when the person's openers name one.
+    /// - Returns: what to tell the person when nothing was opened, or nil.
+    static func perform(_ uri: String, app: String? = nil) -> String? {
+        switch app.map({ action(for: uri, app: $0) }) ?? action(for: uri) {
+            case .openWith(let url, let app):
+                NSWorkspace.shared.open([url], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
+                return nil
+            case .missingApp(let name):
+                return "Not opened: your openers name \(name), which is not on this Mac."
             case .open(let url):
                 return NSWorkspace.shared.open(url) ? nil : "Nothing opened \(url.absoluteString)."
             case .reveal(let url):

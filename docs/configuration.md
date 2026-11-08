@@ -330,7 +330,8 @@ none, a click opens a page in your browser, a file or folder in its app, and sho
 
 A `command` is a list of arguments, run without a shell: `["code", "--goto", "{path}:{line}"]`. `{path}`, `{line}`, `{column}` and
 `{url}` are filled inside the argument they are written in, and never read again; a missing line or column is `1`. A link whose value
-would start an argument with `-` is not run.
+would start an argument with `-` is not run. Not yet: a command rule is matched, and the status line says it is not run yet (roadmap 0216); app rules and the
+kinds' apps work.
 
 ### `modelScopes`
 

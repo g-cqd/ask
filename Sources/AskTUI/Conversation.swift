@@ -49,6 +49,9 @@ public protocol Conversation: Sendable {
     /// A runner's recent output, for the lane that shows it: bounded, the newest part, and never more than the runner wrote.
     func runnerOutput(_ id: String) async -> String
 
+    /// What a click on `uri` opens with, from the person's openers (roadmap 0216).
+    func opening(for uri: String) -> LinkOpening
+
     /// What the person typed in thread `id`'s lane (roadmap 0194): steering while it runs, its next message once it has ended.
     func sendToThread(_ id: String, text: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
 
@@ -136,6 +139,9 @@ extension Conversation {
 
     /// No runners, so no output.
     public func runnerOutput(_ id: String) async -> String { "" }
+
+    /// No openers: the system's choice.
+    public func opening(for uri: String) -> LinkOpening { .system }
 
     /// No threads, so none to stop.
     public func stopThread(_ id: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {}
