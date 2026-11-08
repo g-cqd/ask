@@ -174,10 +174,15 @@ class Screen:
         return self.until_status("ready", seconds)
 
     def editor_lines(self):
-        """The input's rows: those between the last two rules."""
+        """The input's rows: those inside its box (note n36), between the box's top and bottom edges, without its borders."""
         lines = self.screen.text().split("\n")
-        rules = [i for i, line in enumerate(lines) if line and set(line) == {"─"}]
-        return lines[rules[-2] + 1:rules[-1]] if len(rules) >= 2 else []
+        rules = [i for i, line in enumerate(lines) if line.startswith(("╭─", "╰─"))]
+
+        def unboxed(line):
+            text = line.rstrip()
+            return text[2:-1].rstrip() if text.startswith("│ ") and text.endswith("│") else text
+
+        return [unboxed(line) for line in lines[rules[-2] + 1:rules[-1]]] if len(rules) >= 2 else []
 
     def until_editor(self, text, seconds=15):
         """Read until the input holds exactly `text` (rows joined by line feeds)."""
@@ -1033,7 +1038,8 @@ def probe_resume_sessions():
     ambiguous = os.path.commonprefix([os.path.basename(a), os.path.basename(b)])
     screen.type("/resume " + ambiguous)
     screen.until("\x00", 0.5)
-    listed = "\n".join(screen.editor_lines())
+    # The list opens above the input's box (note n36): read it from the screen.
+    listed = screen.screen.text()
     results.append(check("an ambiguous prefix leaves both sessions to choose from",
                          os.path.basename(a) in listed and os.path.basename(b) in listed, listed))
     screen.type("\x1b\x15")

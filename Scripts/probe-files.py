@@ -57,7 +57,8 @@ def listed(terminal):
         return [], None
     out = []
     for line in shown[top + 1:]:
-        if line.startswith("ask>"):
+        # The list ends at the input's box (note n36), or at the input an older build drew right under it.
+        if line.startswith(("ask>", "╭─")):
             break
         out.append(line)
     return out, top

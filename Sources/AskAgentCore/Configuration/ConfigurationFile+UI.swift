@@ -47,58 +47,18 @@ extension ConfigurationFile {
         /// The keys whose value is one word of an enumeration, and the timeout's label.
         private mutating func decodeChoice(_ key: Key, from container: KeyedDecodingContainer<Key>) throws {
             let name = "ui." + key.stringValue
+            func word<Choice: RawRepresentable>(_ type: Choice.Type) throws -> Choice? where Choice.RawValue == String {
+                try ConfigurationFile.decodeChoice(container, key: key, as: type, named: name)
+            }
             switch key.stringValue {
-                // @dl:accept -- one decode per choice key, each naming its own enumeration; the rows are data
-                case "appearance":
-                    section.appearance = try ConfigurationFile.decodeChoice(
-                        container,
-                        key: key,
-                        // @dl:accept -- one decode per choice key, each naming its own enumeration; the rows are data
-                        as: AppearancePreference.self,
-                        named: name
-                    )
-                case "spinner":
-                    section.spinner = try ConfigurationFile.decodeChoice(
-                        container,
-                        key: key,
-                        as: SpinnerPreference.self,
-                        named: name
-                    )
-                case "stopKeys":
-                    section.interruptKeys = try ConfigurationFile.decodeChoice(
-                        container,
-                        key: key,
-                        as: InterruptKeysPreference.self,
-                        named: name
-                    )
-                case "queuedOnStop":
-                    section.interruptSendsQueued = try ConfigurationFile.decodeChoice(
-                        container,
-                        key: key,
-                        as: QueuedAfterInterruptPreference.self,
-                        named: name
-                    )
-                case "showTimeout":
-                    section.timeout = try ConfigurationFile.decodeChoice(
-                        container,
-                        key: key,
-                        as: TimeoutPreference.self,
-                        named: name
-                    )
-                case "sessionColor":
-                    section.sessionColor = try ConfigurationFile.decodeChoice(
-                        container,
-                        key: key,
-                        as: SessionColorPreference.self,
-                        named: name
-                    )
-                case "dim":
-                    section.dim = try ConfigurationFile.decodeChoice(
-                        container,
-                        key: key,
-                        as: DimPreference.self,
-                        named: name
-                    )
+                case "appearance": section.appearance = try word(AppearancePreference.self)
+                case "spinner": section.spinner = try word(SpinnerPreference.self)
+                case "stopKeys": section.interruptKeys = try word(InterruptKeysPreference.self)
+                case "queuedOnStop": section.interruptSendsQueued = try word(QueuedAfterInterruptPreference.self)
+                case "showTimeout": section.timeout = try word(TimeoutPreference.self)
+                case "sessionColor": section.sessionColor = try word(SessionColorPreference.self)
+                case "dim": section.dim = try word(DimPreference.self)
+                case "inputBorder": section.inputBorder = try word(InputBorderPreference.self)
                 case "timeoutLabel":
                     section.timeoutLabel = try ConfigurationFile.decodeLabel(container, key: key, named: name)
                 default: throw UnknownKey(key: name)

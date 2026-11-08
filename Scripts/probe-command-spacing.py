@@ -23,7 +23,8 @@ def report_rows(screen, command):
     screen.until("\x00", 0.8)
     rows = screen.screen.text().splitlines()
     start = max(i for i, row in enumerate(rows) if row.strip() == command)
-    end = next(i for i in range(start + 1, len(rows)) if rows[i].startswith("─"))
+    # The report ends at the input's box (note n36), or at the rule an older build drew.
+    end = next(i for i in range(start + 1, len(rows)) if rows[i].startswith(("─", "╭─")))
     body = rows[start + 1:end]
     while body and not body[0].strip():
         body.pop(0)

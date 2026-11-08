@@ -88,6 +88,13 @@ public struct ScreenTheme: Sendable, Equatable {
     /// block tints are, so it reads as the session's colour while its text keeps the terminal's contrast.
     func sessionTint(seed: String) -> Color { page.tint(toward: SessionHue.rgb(seed: seed), share: 0.16) }
 
+    /// The box around the input (`ui.inputBorder`, note n36): the session's hue, lighter, mixed most of the way from the page so it reads
+    /// as the session's colour without the weight of text; the grey of secondary text when asked, or while the session has no colour yet.
+    func inputBorder(_ look: ScreenInputBorder, seed: String?) -> Style {
+        guard look == .tint, let seed else { return Style(dim: true) }
+        return Style(fg: page.tint(toward: SessionHue.rgb(seed: seed), share: 0.6))
+    }
+
     /// Every tint, for checks.
     var tints: [Color] { [input, user, pending, success, failure, system, interrupted, aside, diffRemoved, diffAdded] }
 

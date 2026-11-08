@@ -14,6 +14,8 @@ extension ScreenComposer {
         var pickerRows: Int
         /// The input's rows, or the bottom band's when the sidebar is there (note n39).
         var prompt: Int
+        /// The column the input's text starts at: 2 inside the box (note n36), 0 without one.
+        var inset = 0
 
         /// In the order they are drawn, top down; the upper rule is half the rules.
         // swiftlint:disable:next function_parameter_count
@@ -69,7 +71,9 @@ extension ScreenComposer {
             promptTop: editor.top,
             prompt: editor.layout
         )
-        .withPicker(state: state, firstRow: layout.transcript + layout.upperRule + 1, rows: layout.pickerRows)
+        // The picker opens above the box (note n36): its title on the first row under the transcript, its first match below it.
+        .withPicker(state: state, firstRow: layout.transcript + 1, rows: layout.pickerRows)
+        geometry.promptColumn = layout.inset
         geometry.links = rowLinks
         geometry.placeStrip(strip, firstRow: layout.screen - strip.lines.count)
         geometry.placeSidebar(sidebar, columns: layout.columns, top: inBand ? promptRow : 0, inBand: inBand)

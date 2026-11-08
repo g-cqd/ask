@@ -34,7 +34,8 @@ def short_answer(text):
 
 
 def rows(terminal):
-    return [line.rstrip() for line in terminal.screen.display]
+    # The input's row reads as its text, without the box's borders (note n36).
+    return [probe.probe_screen.unboxed(line) for line in terminal.screen.display]
 
 
 def title_row(terminal):
@@ -150,8 +151,11 @@ def main():
         check("commands group under dim category headings",
               rows(terminal)[top + 1] == "session" and not terminal.screen.buffer[top + 1][0].bold)
         check("the title names the keys", "Enter" in rows(terminal)[top] and "Esc" in rows(terminal)[top])
-        check("the list sits between the transcript and the prompt, in text only",
-              rows(terminal)[top - 1].startswith("─") or rows(terminal)[top - 1].startswith("ANSWER LINE"))
+        # The list opens above the input's box (note n36): the transcript above it, the box's edge between it and the prompt.
+        shown = rows(terminal)
+        prompt_at = max(i for i, line in enumerate(shown) if line.startswith("ask>"))
+        check("the list sits between the transcript and the prompt's box, in text only",
+              ("ANSWER LINE" in shown[top - 1] or not shown[top - 1].strip()) and probe.probe_screen.is_box_edge(shown[prompt_at - 1]))
 
         type_text(terminal, "co")
         names, top = listed(terminal)

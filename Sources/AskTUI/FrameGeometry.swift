@@ -50,6 +50,8 @@ struct FrameGeometry: Sendable {
     var stripIDs: [String] = []
     /// The input as drawn: its first screen row, how many rows, the draft's display row at the top, and the map from cell to text.
     var promptRow = 0
+    /// The column the input's text starts at: inside the box's border when there is one (note n36).
+    var promptColumn = 0
     var promptRows = 0
     var promptTop = 0
     var prompt: InputLayout?

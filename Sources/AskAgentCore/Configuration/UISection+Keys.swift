@@ -55,6 +55,7 @@ extension UISection {
             case "listAllModels": return Self.flag(onlyUsefulModels.map { !$0 })
             case "sessionColor": return sessionColor?.rawValue
             case "dim": return dim?.rawValue
+            case "inputBorder": return inputBorder?.rawValue
             default: return nil
         }
     }

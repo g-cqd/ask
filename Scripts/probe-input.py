@@ -23,14 +23,21 @@ def check(label, condition):
     checks.append(label)
 
 
+# The input sits in a box (note n36): its text starts two columns in, and each scenario is four columns wider than its editor, so the
+# draft wraps where it did between rules.
+INSET = 2
+
+
 def rules(terminal):
-    return [row for row, line in enumerate(terminal.screen.display) if line.startswith("\u2500" * 5)]
+    """The rows of the box's top and bottom edges."""
+    return [row for row, line in enumerate(terminal.screen.display) if probe.probe_screen.is_box_edge(line)]
 
 
 def prompt(terminal):
-    """The prompt's rows: those between the last two rules. The prompt has no marker; the status is the row below them."""
+    """The prompt's rows: those inside the box, without its borders. The prompt has no marker; the status is the row below the box."""
     found = rules(terminal)
-    return [terminal.screen.display[row].rstrip() for row in range(found[-2] + 1, found[-1])] if len(found) >= 2 else []
+    return ([probe.probe_screen.unboxed(terminal.screen.display[row]) for row in range(found[-2] + 1, found[-1])]
+            if len(found) >= 2 else [])
 
 
 def status(terminal):
@@ -102,7 +109,7 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
                 steps, copied = shifted
                 terminal.draw(lambda: terminal.send(b"\x01" + b"\x1b[1;2C" * steps))
                 row = height - 3
-                cells = list(range(0, steps))
+                cells = list(range(INSET, INSET + steps))
                 inverse = lambda: [col for col in range(width) if terminal.screen.buffer[row][col].reverse]
                 terminal.until(lambda: inverse() == cells)
                 check(label + ": shift and right highlight the cells passed", inverse() == cells)
@@ -133,7 +140,7 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
                 terminal.draw(lambda: terminal.send(b"\x1b[A"))
                 # The prompt has no marker: the wanted cell is the column the caret had, 2 in every draft here (after "YZ", "ef" or "ghi" on a
                 # tab stop, which Up lands on at its first cell).
-                wanted_column = 2
+                wanted_column = 2 + INSET
                 check(label + ": Up moves to the previous display row at the wanted cell",
                       terminal.screen.cursor.y == height - 4 and terminal.screen.cursor.x == wanted_column)
             terminal.draw(lambda: terminal.send(b"X"))
@@ -167,23 +174,23 @@ def scenario(label, draft, expected, width, height, changed=None, clear_first=Fa
 
 def main():
     draft = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
-    scenario("ASCII", draft, draft[:42] + "X" + draft[42:], 20, 12, clear_first=True)
-    scenario("wide", "日本語abcdef", "日X本語abcdef", 10, 9)
+    scenario("ASCII", draft, draft[:42] + "X" + draft[42:], 24, 12, clear_first=True)
+    scenario("wide", "日本語abcdef", "日X本語abcdef", 14, 9)
     # The tab at display column 7 ends at stop 8; nine letters put the final caret at column 7 on the next row.
-    scenario("tabs", "日\tabcdefghi", "日X\tabcdefghi", 10, 9)
-    scenario("resized", draft, draft[:52] + "X" + draft[52:], 20, 12, changed=(10, 9))
-    # In a 12-row screen a one-row draft is on row 9 (rules on 8 and 10, the status on 11); a two-row one on rows 8 and 9.
-    scenario("click", "hello world", "helloX world", 40, 12, click=(5, 9))
+    scenario("tabs", "日\tabcdefghi", "日X\tabcdefghi", 14, 9)
+    scenario("resized", draft, draft[:52] + "X" + draft[52:], 24, 12, changed=(14, 9))
+    # In a 12-row screen a one-row draft is on row 9 (the box's edges on 8 and 10, the status on 11); a two-row one on rows 8 and 9.
+    scenario("click", "hello world", "helloX world", 44, 12, click=(5 + INSET, 9))
     # Forty letters fill two rows of twenty, so the caret after them opens a third and the window shows rows two and three.
     wrapped = "0123456789abcdefghijklmnopqrstuvwxyzABCD"
-    scenario("click on a wrapped row", wrapped, wrapped[:24] + "X" + wrapped[24:], 20, 12, click=(4, 8))
-    scenario("select", "hello world", "hX world", 40, 12, select=((1, 9), (4, 9), "ello"))
-    scenario("double click", "hello world", "X world", 40, 12, taps=((2, 9), 2, "hello"))
-    scenario("triple click", "ab cd\nef gh", "ab cd\nX", 40, 12, taps=((2, 9), 3, "ef gh"))
-    scenario("shift and arrows", "hello world", "X world", 40, 12, shifted=(5, "hello"))
+    scenario("click on a wrapped row", wrapped, wrapped[:24] + "X" + wrapped[24:], 24, 12, click=(4 + INSET, 8))
+    scenario("select", "hello world", "hX world", 44, 12, select=((1 + INSET, 9), (4 + INSET, 9), "ello"))
+    scenario("double click", "hello world", "X world", 44, 12, taps=((2 + INSET, 9), 2, "hello"))
+    scenario("triple click", "ab cd\nef gh", "ab cd\nX", 44, 12, taps=((2 + INSET, 9), 3, "ef gh"))
+    scenario("shift and arrows", "hello world", "X world", 44, 12, shifted=(5, "hello"))
     ten = "\n".join(f"line {n}" for n in range(1, 11))
-    scenario("wheel", ten, ten + "YX", 40, 12, wheeled=3)
-    scenario("cut", "hello world", "hX world", 40, 12, cut=((1, 9), (4, 9), "ello"))
+    scenario("wheel", ten, ten + "YX", 44, 12, wheeled=3)
+    scenario("cut", "hello world", "hX world", 44, 12, cut=((1 + INSET, 9), (4 + INSET, 9), "ello"))
     print(f"{len(checks)} checks passed")
 
 

@@ -69,7 +69,8 @@ def run(mode, after=None):
                 time.sleep(1)
                 terminal.repaint()
                 check(f"{mode}: not at once", not asks_in_main(terminal) and not os.path.exists(made))
-            terminal.until(lambda: asks_in_main(terminal))
+            # The whole section, not its first row: a frame read part way through shows the rows it has not reached yet as they were.
+            terminal.until(lambda: asks_in_main(terminal) and "touch thread.txt" in terminal.text())
             check(f"{mode}: main shows the thread's question, named for it",
                   asks_in_main(terminal) and "touch thread.txt" in terminal.text())
             if after:

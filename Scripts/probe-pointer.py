@@ -79,12 +79,17 @@ class Terminal:
         return [self.screen.display[row].rstrip() for row in range(self.screen.lines)]
 
     def rules(self):
-        return [row for row, line in enumerate(self.lines()) if line.startswith("\u2500" * 10)]
+        """The input box's top and bottom edges (note n36)."""
+        return [row for row, line in enumerate(self.lines()) if line.startswith(("\u256d\u2500", "\u2570\u2500"))]
 
     def prompt(self):
-        """The prompt's text: the rows between the last two rules (the prompt has no marker of its own)."""
+        """The prompt's text: the rows inside the box, without its borders (the prompt has no marker of its own)."""
         rules = self.rules()
-        return "\n".join(self.lines()[rules[-2] + 1 : rules[-1]]) if len(rules) >= 2 else None
+
+        def unboxed(line):
+            return line[2:-1].rstrip() if line.startswith("\u2502 ") and line.endswith("\u2502") else line
+
+        return "\n".join(unboxed(line) for line in self.lines()[rules[-2] + 1 : rules[-1]]) if len(rules) >= 2 else None
 
     def status(self):
         """The status is the last row with text, below the prompt's lower rule."""
