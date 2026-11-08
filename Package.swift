@@ -118,6 +118,8 @@ let package = Package(
             name: "AskAgentCore",
             dependencies: [
                 "AskAI", .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiIO", package: "aemi"),
+                // Openers' patterns (roadmap 0216).
+                .product(name: "AemiRegex", package: "aemiregex"),
                 .product(name: "AemiText", package: "aemi"), .product(name: "AemiDiff", package: "aemi"),
                 .product(name: "AemiArgon2", package: "aemi"),
                 .product(name: "AemiFrontMatter", package: "AemiHMMML"),

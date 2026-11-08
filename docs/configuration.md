@@ -316,6 +316,22 @@ its task, and keeps only the tools it names (none named, it keeps all of a subag
 connection lists: an id, a display name written any way (`Claude Opus 5.5`), or a family word (`haiku`, the first such model listed),
 in the file's order; when none matches, the subagent uses the model it would have had.
 
+### `openers`
+
+What a link you click opens with (roadmap 0216, ADR-0148). Your own file only: a project's file that sets `openers` is refused. With
+none, a click opens a page in your browser, a file or folder in its app, and shows a file that would run in the Finder instead.
+
+| Key | Default | What it does |
+|---|---|---|
+| `file` | the system's choice | The app a clicked file opens in: a name (`"Xcode"`) or a bundle identifier. |
+| `folder` | the system's choice | The app a clicked folder opens in. |
+| `web` | the system's choice | The app a clicked web link opens in. |
+| `rules` | none | Rules matching a clicked link to an `app` or a `command`, the first that matches winning, before the three above. A rule's `match` takes `kind` (`"file"`, `"folder"`, `"web"`), `extensions` (`["md"]`, without case), `host` (`"github.com"`, also matching its subdomains) and `pattern` (an AemiRegex over a file's path or a web link's address); each one given must hold. |
+
+A `command` is a list of arguments, run without a shell: `["code", "--goto", "{path}:{line}"]`. `{path}`, `{line}`, `{column}` and
+`{url}` are filled inside the argument they are written in, and never read again; a missing line or column is `1`. A link whose value
+would start an argument with `-` is not run.
+
 ### `modelScopes`
 
 A list of rules that limit which providers serve a repository: work repositories only through the work account, say. Each rule names

@@ -26,6 +26,7 @@ extension Configuration {
         compare("hooks", previous.hooks, hooks)
         compare("threads", previous.threads, threads)
         compare("agents", previous.agents, agents)
+        compare("openers", previous.openers, openers)
         compare("sandbox", previous.sandbox, sandbox)
         compare("ui", previous.ui, ui)
         compare("skills", previous.skills, skills)

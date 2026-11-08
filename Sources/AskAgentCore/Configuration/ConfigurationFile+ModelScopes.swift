@@ -28,6 +28,7 @@ extension ConfigurationFile {
     }
 
     /// Refuses the rules in a project's file, and a rule that matches nothing in particular or allows nothing.
+    // @dl:accept -- every section a project may not set is refused by the same idiom; the key and the reason are the data
     static func validateModelScopes(_ scopes: [ModelScope]?, path: String, isProject: Bool) throws(ConfigurationError) {
         guard let scopes else { return }
         if isProject {
