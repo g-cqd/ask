@@ -226,7 +226,7 @@ extension ScreenComposer {
                 let kind = kinds.flatMap { $0.indices.contains(row.line) ? $0[row.line] : nil } ?? .kept
                 let rowStyle = diff?.style(kind, over: style) ?? style
                 let marker = row.offset == 0 ? diff?.marker(kind, inset: inset, over: rowStyle) : nil
-                return Line(
+                var line = Line(
                     text: margin + row.text,
                     style: rowStyle,
                     source: Source(
@@ -239,6 +239,8 @@ extension ScreenComposer {
                     accents: (marker.map { [$0] } ?? [])
                         + (accents?.accents(for: row, inset: inset, over: rowStyle) ?? [])
                 )
+                if code?.spans != nil { line.links = accents?.links(for: row, inset: inset) ?? [] }
+                return line
             }
     }
 }

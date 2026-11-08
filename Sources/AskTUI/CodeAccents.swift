@@ -13,6 +13,14 @@ struct CodeAccents {
 
     init(_ text: String, code: FileCode) {
         let wrapped = text.utf8.contains(0x09) ? text.replacing("\t", with: "    ") : text
+        if let spans = code.spans {
+            lines = Self.lines(
+                wrapped,
+                spans: spans,
+                tabs: text.split(separator: "\n", omittingEmptySubsequences: false)
+            )
+            return
+        }
         let lexer = LexicalLineLexer(language: code.language)
         var sides = LexSides()
         var tokens: [LineToken] = []
@@ -38,6 +46,48 @@ struct CodeAccents {
         }
     }
 
+    /// The output's own spans (note n30), each line's moved by the three bytes every tab before it became, as the wrap measures it.
+    private static func lines(_ wrapped: String, spans: [[OutputEscapes.Span]], tabs original: [Substring]) -> [(
+        text: Substring, ascii: Bool, tokens: [(bytes: Range<Int>, style: Style)]
+    )] {
+        var lines: [(text: Substring, ascii: Bool, tokens: [(bytes: Range<Int>, style: Style)])] = []
+        for (index, line) in wrapped.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
+            let lineSpans = spans.indices.contains(index) ? spans[index] : []
+            let tabs =
+                original.indices.contains(index)
+                ? original[index].utf8.indices
+                    .compactMap { position in
+                        original[index].utf8[position] == 0x09
+                            ? original[index].utf8.distance(from: original[index].startIndex, to: position) : nil
+                    } : []
+            let moved = { (byte: Int) in byte + 3 * tabs.count { $0 < byte } }
+            let tokens = lineSpans.map {
+                (bytes: moved($0.bytes.lowerBound) ..< moved($0.bytes.upperBound), style: $0.style)
+            }
+            lines.append((line, line.utf8.allSatisfy { $0 < 0x80 }, tokens))
+        }
+        return lines
+    }
+
+    /// The links of `row` (note n30): each span's link over the columns it covers.
+    mutating func links(for row: TextWrap.Row, inset: Int) -> [PathLinks.Link] {
+        guard lines.indices.contains(row.line), lines[row.line].tokens.contains(where: { $0.style.link != nil }) else {
+            return []
+        }
+        let start = byte(at: row.line, offset: row.offset)
+        let end = start + row.text.utf8.count
+        let columns = Self.columns(of: row.text)
+        return lines[row.line].tokens
+            .compactMap { token in
+                guard let uri = token.style.link, token.bytes.upperBound > start, token.bytes.lowerBound < end else {
+                    return nil
+                }
+                let low = columns(Swift.max(token.bytes.lowerBound, start) - start)
+                let high = columns(Swift.min(token.bytes.upperBound, end) - start)
+                return high > low ? PathLinks.Link(columns: inset + low ..< inset + high, uri: uri) : nil
+            }
+    }
+
     /// The accents of `row`, its columns counted from the start of the drawn line, `inset` columns in; each a token's colour over
     /// `base`, so output stays dim and the block's background shows through.
     mutating func accents(for row: TextWrap.Row, inset: Int, over base: Style) -> [ScreenComposer.Accent] {
@@ -46,7 +96,8 @@ struct CodeAccents {
         let end = start + row.text.utf8.count
         var result: [ScreenComposer.Accent] = []
         let columns = Self.columns(of: row.text)
-        for token in lines[row.line].tokens where token.bytes.upperBound > start && token.bytes.lowerBound < end {
+        for token in lines[row.line].tokens
+        where token.bytes.upperBound > start && token.bytes.lowerBound < end && Self.draws(token.style) {
             let low = columns(Swift.max(token.bytes.lowerBound, start) - start)
             let high = columns(Swift.min(token.bytes.upperBound, end) - start)
             if high > low {
@@ -101,6 +152,15 @@ struct CodeAccents {
         style.dim = base.dim || token.dim
         style.italic = base.italic || token.italic
         style.bold = base.bold || token.bold
+        if token.underline != .none { style.underline = token.underline }
+        style.strikethrough = base.strikethrough || token.strikethrough
         return style
+    }
+
+    /// Whether a token changes how its columns look: one that only links leaves that to the row's links.
+    private static func draws(_ token: Style) -> Bool {
+        var look = token
+        look.link = nil
+        return look != Style()
     }
 }

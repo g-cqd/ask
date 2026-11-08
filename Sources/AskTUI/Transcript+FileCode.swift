@@ -5,7 +5,12 @@ extension Transcript {
     /// output and a `write`'s content, by the path the call names, then a `#!` line for a name without an extension. Nil for any other
     /// tool, a failed call, or a language the lexers do not know, which draws plain.
     func fileCode(at index: Int) -> FileCode? {
-        guard highlight, case .tool(let name, _, let status, let output, let input) = items[index] else { return nil }
+        guard case .tool(let name, _, let status, let output, let input) = items[index] else { return nil }
+        // The program's own colours (note n30), whatever `highlight` says; a file tool's input keeps its language.
+        if let spans = outputSpans[index], toolPaths[index] == nil || !["write", "edit"].contains(name) {
+            return FileCode(part: .output, language: .plain, spans: shownSpans(spans, at: index))
+        }
+        guard highlight else { return nil }
         guard let path = toolPaths[index] else {
             // Output still arriving is not recognised: it is incomplete, and it changes with every chunk.
             if case .running = status { return nil }
@@ -31,6 +36,13 @@ extension Transcript {
                 )
             default: return nil
         }
+    }
+
+    /// `spans` by the shown output's hard lines: a folded output's tail follows its head, past the hidden middle.
+    private func shownSpans(_ spans: [[OutputEscapes.Span]], at index: Int) -> [[OutputEscapes.Span]] {
+        guard let shown = shownToolOutput(at: index), shown.folded, let head = shown.markerLine else { return spans }
+        let tail = Swift.min(spans.count, head + shown.hiddenLines)
+        return Array(spans.prefix(head)) + spans[tail...]
     }
 
     /// A tool's output that is JSON or a unified diff, by its content (roadmap 0152, phase 5); nil for any other output.

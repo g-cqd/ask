@@ -1,5 +1,13 @@
 /// A tool's output as its block keeps it (note n47).
 extension Transcript {
+    /// What block `index` keeps of `output`: its escapes read into ``outputSpans`` and removed (note n30), then ``kept(_:)``.
+    mutating func keep(_ output: String, at index: Int) -> String {
+        let read = OutputEscapes(output)
+        let spans = read.lines.prefix(Self.outputLineLimit)
+        outputSpans[index] = spans.contains { !$0.isEmpty } ? Array(spans) : nil
+        return Self.kept(read.text)
+    }
+
     /// The output without its trailing line feeds, and at most ``outputLineLimit`` lines, with the cut said. Lines are counted by
     /// their line feeds, read as bytes: splitting the output by `Character` cost a tenth of a long session's resume, and never cut CRLF
     /// text, whose `\r\n` is one `Character` (note n47).

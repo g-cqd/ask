@@ -56,6 +56,10 @@ conversation copies what is shown, as soon as you let go.
 - Tool blocks are headed by their modifiers first, then their target: `read · lines 10–45 · path`, `write · 2 B · path`, `write · exact replacement · path`, `job · stop · #abcd`, and for commands `shell · timeout 5 min · swift build`; a timeout equal to the default is not
   written (`ui.showTimeout`, `ui.timeoutLabel`). Folded, a long command is cut with `…`
   before the status; opened, the command is shown in full and brighter, with its output below.
+- A command's own colours show in its output: the colours, bold, dim, italic, underline and strikethrough it asks for, and the links
+  it writes (OSC 8) to web pages, files and email addresses. Everything else a program writes to steer a terminal is removed: cursor
+  moves, clears, title changes, clipboard writes and the rest. No escape reaches your terminal from a tool, and copying the output copies
+  its plain text. A background colour is not drawn, so the block's own shows.
 - A compaction is a block of its own, folded by default, headed by what it did: `compaction · 182k → 3.1k tokens`, the tokens it read into the tokens
   of its summary, with its duration and status. Opened, it shows the summary, drawn as Markdown.
 - An `edit` block, opened, shows the change as lines: `- ` before each line it removes, on a red tint, `+ ` before each line it adds, on
