@@ -6,6 +6,14 @@ import Testing
 
 @testable import AskTools
 
+/// `count` questions, each with one choice.
+private func series(_ count: Int) -> String {
+    let items = (1 ... count).map { #"{"question": "q\#($0)?", "header": "h\#($0)", "choices": [{"label": "yes"}]}"# }
+    return #"{"questions": [\#(items.joined(separator: ","))]}"#
+}
+
+private let seventeen = series(17)
+
 /// The `question` tool (roadmap 0117): the model's questions reach the person whole, the answers come back one line per question, a
 /// refusal says so, and a malformed question is refused with what is wrong, before anyone is asked.
 @Suite("The model asks the person questions")
@@ -58,13 +66,22 @@ struct QuestionToolTests {
         #expect(output.content.hasPrefix("Scope: no answer\n"))
     }
 
+    @Test func `a series of sixteen reaches the person whole (note n14)`() async {
+        let (output, asked) = await run(
+            series(16),
+            answering: Array(repeating: PersonAnswer(chosen: [0], note: ""), count: 16)
+        )
+        #expect(!output.isError && asked.count == 16, "\(output.content)")
+    }
+
     @Test func `declining is said plainly, so the model goes on`() async {
         let (output, _) = await run(Self.two, answering: nil)
         #expect(!output.isError && output.content.contains("declined to answer"))
     }
 
     @Test(arguments: [
-        (#"{"questions": []}"#, "1 to 4"),
+        (#"{"questions": []}"#, "1 to 16"),
+        (seventeen, "1 to 16"),
         (#"{"questions": [{"question": "q", "header": "a header far too long"}]}"#, "12"),
         (#"{"questions": [{"question": "q", "header": "h", "note": "maybe"}]}"#, "note"),
         (#"{"questions": [{"header": "h"}]}"#, "question"),

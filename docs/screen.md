@@ -66,8 +66,10 @@ conversation copies what is shown, as soon as you let go.
 
 ## When the model asks you
 
-The model can ask you up to four questions at once, each with choices and room for a note. They appear above the input, as a
-command's approval does, with a tab per question when there are several. A choice is marked `( )` when you pick one, `[ ]` when you may
+The model can ask you up to sixteen questions at once, each with choices and room for a note. They appear above the input, as a
+command's approval does, with a tab per question when there are several. When the headers don't fit on the row, the question shown
+keeps its header and the others show their initial; with more still, the row shows those around the current one, and `‹` or `›` where
+some are left out. A choice is marked `( )` when you pick one, `[ ]` when you may
 check several. The note is the row after the last choice.
 
 - **Tab** and **Shift+Tab** move between the tabs, the choices and the note.
