@@ -26,6 +26,13 @@ struct TranscriptKeptTests {
         lines(5_000), String(repeating: "\n", count: 900) + "x"
     ]
 
+    @Test func `only ask's and read's own notes are notes, both ends of each`() {
+        #expect(FileCode.isNote("[lines 10–45 of 90]") && FileCode.isNote("… 4 more lines not shown"))
+        for line in ["[lines 10–45", "lines 10–45]", "… 4 more lines", "4 more lines not shown", "[x]", "… x"] {
+            #expect(!FileCode.isNote(Substring(line)), "\(line)")
+        }
+    }
+
     @Test(arguments: texts)
     func `LF text is kept as it was`(text: String) {
         #expect(Transcript.kept(text) == Self.reference(text))
