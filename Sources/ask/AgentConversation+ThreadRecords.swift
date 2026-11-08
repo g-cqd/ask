@@ -70,10 +70,11 @@ extension AgentConversation {
                     definition.isEmpty ? nil : agentDefinitions(workspace: workspace).first { $0.name == definition }
                 threads.markSubagent(record.id, definition: found)
             }
+            let branch = recorder.tree.activeBranch()
             let lane = replayed(
-                recorder.tree.activeBranch(),
+                branch,
                 after: record.at,
-                placing: Self.threadBlocks(records, under: record.id)
+                placing: Self.threadBlocks(records, under: record.id, on: branch)
             )
             shown += lane.map { .thread(id: record.id, $0) }
         }
@@ -113,8 +114,9 @@ extension AgentConversation {
         return updates
     }
 
-    /// The blocks the threads under `parent` (main when nil) leave in its conversation: where each started, and where each merged.
-    static func threadBlocks(_ records: [ThreadRecord], under parent: String?) -> [(
+    /// The blocks the threads under `parent` (main when nil) leave in its conversation, `branch`: where each started, and where each
+    /// merged, at the end of the turn its summary came in (``ThreadRecord/shown(in:)``).
+    static func threadBlocks(_ records: [ThreadRecord], under parent: String?, on branch: [SessionEntry]) -> [(
         at: EntryID?, update: ConversationUpdate
     )] {
         let started = records.filter { $0.event == .started && $0.parent == parent }
@@ -140,7 +142,7 @@ extension AgentConversation {
                         prompt: prompt,
                         summary: record.summary ?? ""
                     )
-                    return (record.at, merged)
+                    return (record.shown(in: branch), merged)
                 case .identity, .renamed: return nil
             }
         }

@@ -400,12 +400,23 @@ The default of 4 stays; nothing here argues for a lower cap.
 
 Each step is probed through the release binary in a PTY, as `probe-thread.py` does.
 
-## Left (audit, 2026-11-06)
+## Left (audit, 2026-11-06), settled 2026-11-08
 
-The order above is built through step 8 (subagents, 0063, done). Left, all from the 2026-11-04 notes above:
+The order above is built through step 8 (subagents, 0063, done). The audit's four items:
 
-- A thread started before main has a session is not recorded (main has no file yet).
-- `/new` and `/resume` with threads running stop them without asking.
-- Where a child merged into a parent thread, the merge block goes after the parent's leaf then, which may come before its later replies.
-- The stop with its confirmation is not probed.
+- ~~A thread started before main has a session is not recorded.~~ Done in fc65236e: `probe-thread-stop.py` checks it is recorded in
+  main's session.
+- ~~`/new` and `/resume` with threads running stop them without asking.~~ They ask first, since 1ab245c0; `probe-thread-stop.py` checks
+  that no stays and yes switches, leaving the thread unmerged.
+- ~~Where a child merged, the merge block may come before the parent's later replies.~~ Done (2026-11-08). A merge is recorded at the
+  parent's leaf then, but its summary goes with the parent's next prompt (`attachReports`), not with a running turn's tool results.
+  So a resume shows the block at the end of the turn it came in, before the next prompt (`ThreadRecord.shown(in:)`,
+  `ThreadBlockPlacementTests`). This applies to main and to a parent thread alike. `probe-thread-merge-midturn.py` merges while main
+  runs a command; the build before fails its order check. Live, the block still appears when the merge happens.
+- ~~The stop with its confirmation is not probed.~~ Ctrl+C in a lane no longer asks (note n52), and `probe-thread-stop.py` checks it
+  stops the thread and the one under it.
 
+## Still owed
+
+- **Tasks and notes in a thread** (item 7 above): a thread uses main's task list and notes. Whether its tasks carry the thread's name
+  is the owner's to decide.
