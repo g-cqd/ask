@@ -61,3 +61,9 @@ opened or run without the person's click; nothing outside what the sandbox may r
 ## Not in scope
 
 Openers and the confirmation of what a click runs (t215, note n32), which needs a design record of its own. Tool output and search results.
+
+## Progress (2026-11-08)
+
+- Step 1 is done: TerminalKit 37d0143 adds `MarkdownLinks.paths` and `MarkdownPath` (`MarkdownPathTests`, 4, red first), and ask
+  pins it in its four manifests and locks. Nothing in ask uses it yet.
+- Next: `PathDisplay` and the settings (steps 2 and 5), then the probe.
