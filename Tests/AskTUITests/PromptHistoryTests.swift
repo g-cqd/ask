@@ -31,6 +31,14 @@ struct PromptHistoryTests {
         for _ in 0 ..< times { _ = controller.handle(event, pageRows: 10, columns: 60) }
     }
 
+    @Test func `a key the input ignores recalls nothing, only a plain Up or Down does`() {
+        var screen = controller(sent: ["first", "second"])
+        press(up, &screen, times: 2)
+        #expect(screen.state.editor.text == "first")
+        press(.key(KeyEvent(keyCode: 0xE000)), &screen)
+        #expect(screen.state.editor.text == "first", "a private-use key, which the input ignores, is not Down")
+    }
+
     @Test func `Up recalls the newest first, and Down comes back to the draft`() {
         var screen = controller(sent: ["first", "second"])
         var copy = self

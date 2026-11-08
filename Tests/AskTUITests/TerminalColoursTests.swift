@@ -69,6 +69,15 @@ struct TerminalColoursTests {
         #expect(!TerminalPage(background: SIMD3(0, 43, 54)).isLight)
     }
 
+    @Test
+    func `the input and a running tool sit a little nearer the text on a dark page than on a light one, as tuned`() {
+        for page in [TerminalPage.light, .dark] {
+            let theme = ScreenTheme(page: page)
+            #expect(theme.input == page.tint(toward: page.foreground, share: page.isLight ? 0.05 : 0.06))
+            #expect(theme.pending == page.tint(toward: page.foreground, share: page.isLight ? 0.06 : 0.065))
+        }
+    }
+
     @Test func `adopting the terminal's page retints the blocks and the input, keeping tint off off`() {
         var state = ScreenState(label: "m", options: ScreenOptions())
         let before = state.theme.inputBackground
