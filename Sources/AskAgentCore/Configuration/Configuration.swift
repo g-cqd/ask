@@ -64,6 +64,7 @@ public struct Configuration: Sendable, Equatable {
     public var modelScopes = Setting(value: [ModelScope](), source: .defaults)  // which providers serve here, 0094
     public var hooks = Setting(value: HooksSection(), source: .defaults)  // how long hooks keep a run going, 0192
     public var agents = Setting(value: AgentsSection(), source: .defaults)  // subagents, off by default, 0063
+    public var openers = Setting(value: OpenersSection(), source: .defaults)  // what a clicked link opens with, 0216
     public var threads = Setting(value: ThreadsSection(), source: .defaults)  // how many threads, how deep, 0195
     /// Where each `ui` and `skills` key came from, by its dotted name; read through `source(ofKey:)`.
     var keySources: [String: Source] = [:]
@@ -111,6 +112,7 @@ public struct Configuration: Sendable, Equatable {
         next.hooks = next.hooks.layered(file.hooks, from: source)
         next.threads = next.threads.layered(file.threads, from: source)
         next.agents = next.agents.layered(file.agents, from: source)
+        next.openers = next.openers.layered(file.openers, from: source)
         next.mcp = next.mcp.layered(file.mcp, from: source)
         next.environment = next.environment.layered(file.environment, from: source)
         return next

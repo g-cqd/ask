@@ -50,12 +50,12 @@ enum SettingCatalog {
         .choice(Choice.allCases.map(\.rawValue))
     }
 
-    static let all: [Setting] = top + ui + sandbox + approvals + hooks + threads + agents + skills + environment
+    static let all: [Setting] = beforeOpeners + openers
 
     // @dl:disable near-clone -- the rows below are the catalog's data: a key, a type, an example, a default and help each
     // @dl:disable structural-clone -- the same rows, matched by their shape
 
-    private static let top: [Setting] = [
+    static let top: [Setting] = [
         row(
             "model",
             .text,
@@ -128,7 +128,7 @@ enum SettingCatalog {
         )
     ]
 
-    private static let sandbox: [Setting] = [
+    static let sandbox: [Setting] = [
         row("sandbox.write", .structured, #""workspace""#, "workspace", "Where tools and commands may write."),
         row("sandbox.read", .structured, #""anywhere""#, "anywhere", "Where they may read."),
         row(
@@ -157,7 +157,7 @@ enum SettingCatalog {
         )
     ]
 
-    private static let approvals: [Setting] = [
+    static let approvals: [Setting] = [
         row(
             "approvals.default",
             .choice(["ask", "allow"]),
@@ -178,7 +178,7 @@ enum SettingCatalog {
         )
     ]
 
-    private static let skills: [Setting] = [
+    static let skills: [Setting] = [
         row(
             "skills.enabled",
             .boolean,
@@ -197,7 +197,7 @@ enum SettingCatalog {
         )
     ]
 
-    private static let environment: [Setting] = [
+    static let environment: [Setting] = [
         row(
             "environment.withhold",
             .structured,

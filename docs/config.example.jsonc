@@ -270,6 +270,20 @@
     "shell": "zsh"
   },
 
+  "openers": {
+    // The app a clicked file opens in. Default: the system's choice. Your own file only.
+    "file": "Xcode",
+
+    // The app a clicked folder opens in. Default: the system's choice. Your own file only.
+    "folder": "Finder",
+
+    // The app a clicked web link opens in. Default: the system's choice. Your own file only.
+    "web": "Safari",
+
+    // Rules matching a clicked link to an app or a command, the first that matches winning. Default: none. Your own file only.
+    "rules": [{"match": {"extensions": ["md"]}, "app": "Typora"}]
+  },
+
   // MCP servers whose tools are offered to the model, by name (docs/skills-and-mcp.md).
   "mcp": {
     "docs": {"url": "https://example.com/mcp", "enabled": false}

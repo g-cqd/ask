@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-11-08
 ---
@@ -59,3 +59,11 @@ openers, and ADR-0148's safeguards each have a test.
 ## Not in scope
 
 Opening links on anything but a click; openers for tool output's links beyond what the screen already links.
+
+## Progress (2026-11-08)
+
+- Steps 1 and 2 are done. `openers` is read from your own file and refused in a project's
+  (`OpenersConfigurationTests`, red on a stub). `OpenerChoice.choose` picks the first matching rule, then the kind's app, then the
+  system's. It fills placeholders in one pass, so a value is never read again, and refuses a value that would start an argument with
+  `-` (`OpenerChoiceTests`, 5, red on a stub). AskAgentCore now depends on AemiRegex.
+- Nothing calls it yet: a click still opens as before. Next is step 3, apps, through the conversation, which knows the configuration.

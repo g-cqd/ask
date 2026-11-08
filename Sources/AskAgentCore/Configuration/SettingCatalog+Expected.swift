@@ -9,7 +9,7 @@ extension SettingCatalog {
     /// The sections, which take an object.
     // @dl:accept -- every configuration section is decoded, layered and compared by the same idiom; the keys are the data
     static let sections: Set<String> = [
-        "sandbox", "ui", "ui.fold", "skills", "approvals", "hooks", "threads", "agents", "environment", "mcp"
+        "sandbox", "ui", "ui.fold", "skills", "approvals", "hooks", "threads", "agents", "environment", "mcp", "openers"
     ]
 
     /// The structured settings' values, which their kind alone does not say.
@@ -26,7 +26,8 @@ extension SettingCatalog {
         "skills.sources": "a list of harness names",
         "environment.withhold": "a list of variable names", "environment.pass": "a list of variable names",
         "ui.stopTwice": #"a list of "esc" and "ctrl-c""#,
-        "ui.pathAncestors": "a whole number of 0 or more, or null for no limit"
+        "ui.pathAncestors": "a whole number of 0 or more, or null for no limit",
+        "openers.rules": "a list of rules, each with a match and an app or a command"
     ]
     // @dl:enable near-clone
 

@@ -19,8 +19,8 @@ of opening it (roadmap 0075).
 The owner chose these on 2026-11-08:
 
 1. **Only the person's own configuration defines openers.** That is the user configuration file (`~/.config/ask`). A project's file
-   cannot add, change or remove an opener, trusted or not. An `openers` section in a project file is refused with a notice naming the
-   file, and ask goes on without it. Nothing the model writes, or a tool returns, reaches the opener table.
+   cannot add, change or remove an opener, trusted or not. A project file with an `openers` section is refused, naming the key, as
+   one with `approvals` is. Nothing the model writes, or a tool returns, reaches the opener table.
 2. **A command is a list of arguments, run without a shell.** Placeholders (`{path}`, `{line}`, `{column}`, `{url}`) are replaced
    inside the one argument they stand in, and are never parsed again. A link whose substituted value starts with `-` is refused, so
    it cannot become an option. The link's text is never an argument, only its target, decoded from the URI.
