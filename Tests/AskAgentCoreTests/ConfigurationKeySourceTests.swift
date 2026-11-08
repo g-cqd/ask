@@ -54,6 +54,7 @@ struct ConfigurationKeySourceTests {
         #expect(Self.full.value(forKey: "fold.tools") == "true")
         #expect(Self.full.value(forKey: "fold.thinking") == "false")
         #expect(Self.full.value(forKey: "sidebar") == "closed")
+        #expect(Self.full.value(forKey: "sidebarJobs") == "tree")
         #expect(Self.full.value(forKey: "inputPrefix") == "\"\"")
         #expect(Self.full.value(forKey: "stopKeys") == "ctrl-c")
         #expect(Self.full.value(forKey: "stopTwice") == "esc")
@@ -61,6 +62,16 @@ struct ConfigurationKeySourceTests {
         #expect(Self.full.value(forKey: "listAllModels") == "false")
         #expect(Self.full.value(forKey: "durations") == "words")
         #expect(UISection().value(forKey: "tint") == nil)
+    }
+
+    @Test func `either stop-twice field alone still writes the pair, with the other at its default`() {
+        var ctrlCOnly = UISection()
+        ctrlCOnly.abortTurnRequiresConfirmation = true
+        var escOnly = UISection()
+        escOnly.escapeInterruptRequiresConfirmation = false
+        #expect(ctrlCOnly.value(forKey: "stopTwice") == "esc, ctrl-c")
+        #expect(escOnly.value(forKey: "stopTwice") == "none")
+        #expect(UISection().value(forKey: "stopTwice") == nil)
     }
 
     @Test func `each key keeps the layer that set it, and the rest are defaults`() {
