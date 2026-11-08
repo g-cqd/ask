@@ -42,6 +42,8 @@ struct ConfigurationKeySourceTests {
         section.sidebarLayout = "bottom"
         section.dim = .faint
         section.sessionTint = .status
+        section.paths = .asWritten
+        section.pathAncestors = 3
         return section
     }()
 

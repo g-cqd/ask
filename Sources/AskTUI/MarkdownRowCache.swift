@@ -20,6 +20,7 @@ final class MarkdownRowCache: Sendable, Equatable {
         var firstBlockWidth: Int?
         var highlight: Bool
         var home: String?
+        var paths: PathDisplay?
     }
 
     /// One top-level block's rows and what they were drawn from.

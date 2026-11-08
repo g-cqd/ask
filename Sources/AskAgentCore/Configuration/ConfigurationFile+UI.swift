@@ -13,6 +13,8 @@ extension ConfigurationFile {
                 switch key.stringValue {
                     case "scrollLines": section.scrollLines = try container.decode(Int.self, forKey: key)
                     case "inputRows": section.promptRows = try container.decode(Int.self, forKey: key)
+                    case "pathAncestors":
+                        section.pathAncestors = try ConfigurationFile.decodeAncestors(container, key: key, named: name)
                     case "inputPrefix": section.prompt = try container.decode(String.self, forKey: key)
                     // @dl:accept -- key table rows
                     case "fold": try decodeFold(container.decode(FoldDecoded.self, forKey: key))
@@ -51,6 +53,7 @@ extension ConfigurationFile {
                 try ConfigurationFile.decodeChoice(container, key: key, as: type, named: name)
             }
             switch key.stringValue {
+                // @dl:accept -- one row per choice key, each naming its own enumeration; the rows are data
                 case "appearance": section.appearance = try word(AppearancePreference.self)
                 case "spinner": section.spinner = try word(SpinnerPreference.self)
                 case "stopKeys": section.interruptKeys = try word(InterruptKeysPreference.self)
@@ -59,6 +62,7 @@ extension ConfigurationFile {
                 case "sessionColor": section.sessionColor = try word(SessionColorPreference.self)
                 case "dim": section.dim = try word(DimPreference.self)
                 case "sessionTint": section.sessionTint = try word(SessionTintPreference.self)
+                case "paths": section.paths = try word(PathsPreference.self)
                 case "timeoutLabel":
                     section.timeoutLabel = try ConfigurationFile.decodeLabel(container, key: key, named: name)
                 default: throw UnknownKey(key: name)
@@ -124,6 +128,14 @@ extension ConfigurationFile {
     }
 
     /// An on/off setting: `true` or `false`, or `"on"` or `"off"`, so neither way of writing it is an error.
+    /// `ui.pathAncestors` (roadmap 0215): a whole number of folders, 0 or more, or `null` for no limit.
+    static func decodeAncestors(_ container: KeyedDecodingContainer<Key>, key: Key, named name: String) throws -> Int {
+        if try container.decodeNil(forKey: key) { return UISection.noAncestorLimit }
+        let count = try container.decode(Int.self, forKey: key)
+        guard count >= 0 else { throw BadValue(key: name, shown: String(count)) }
+        return count
+    }
+
     static func decodeSwitch(_ container: KeyedDecodingContainer<Key>, key: Key, name: String) throws -> Bool {
         if let flag = try? container.decode(Bool.self, forKey: key) { return flag }
         let word = try container.decode(String.self, forKey: key)

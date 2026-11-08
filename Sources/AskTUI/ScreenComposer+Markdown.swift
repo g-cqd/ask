@@ -20,8 +20,11 @@ extension ScreenComposer {
         columns: Int,
         style: BlockStyle,
         firstBlockWidth: Int? = nil,
-        lead: Int = 0
+        lead: Int = 0,
+        paths: Bool = false
     ) -> [Line] {
+        // Paths are shown short in replies and reasoning only, never in the person's own words (the owner, 2026-11-08).
+        let display = paths ? style.paths : nil
         // `lead` more columns on the left, for a mark before the first row that the others hang under (a queued message's).
         let inset = style.inset + lead
         let width = Swift.max(1, columns - 2 * style.inset - lead)
@@ -33,7 +36,7 @@ extension ScreenComposer {
                 },
             renderer: MarkdownRenderer(
                 theme: markdownTheme,
-                links: markdownLinks(home: transcript.home),
+                links: markdownLinks(home: transcript.home, paths: display),
                 highlighter: transcript.highlight ? CodeHighlighter.standard : nil,
                 softBreaks: .lineBreak
             ),
@@ -49,7 +52,8 @@ extension ScreenComposer {
             inset: inset,
             firstBlockWidth: firstBlockWidth,
             highlight: transcript.highlight,
-            home: transcript.home
+            home: transcript.home,
+            paths: display
         )
         let kept = cache.kept(for: settings, text: text)
         var blocks: [MarkdownRowCache.Block] = []
@@ -83,12 +87,22 @@ extension ScreenComposer {
 
     /// Links to the web and mail as they are, and a link to an absolute or home path (with a `:line` or `:line:column` after it, as a compiler
     /// writes one) as a `file://` link, as tool output's paths are (roadmap 0075).
-    static func markdownLinks(home: String?) -> MarkdownLinks {
+    /// With `paths`, the paths in the prose are shown short and linked too (roadmap 0215).
+    static func markdownLinks(home: String?, paths: PathDisplay? = nil) -> MarkdownLinks {
         let home = home ?? NSHomeDirectory()
-        return MarkdownLinks { target in
-            guard target.hasPrefix("/") || target.hasPrefix("~/") else { return nil }
-            return PathLinks.uri(withoutLocation(target), home: home)
-        }
+        return MarkdownLinks(
+            resolve: { target in
+                guard target.hasPrefix("/") || target.hasPrefix("~/") else { return nil }
+                return PathLinks.uri(withoutLocation(target), home: home)
+            },
+            paths: finder(paths)
+        )
+    }
+
+    /// The renderer's path hook for `display`, or nil without one.
+    private static func finder(_ display: PathDisplay?) -> (@Sendable (String) -> [MarkdownPath])? {
+        guard let display else { return nil }
+        return { text in display.paths(in: text) }
     }
 
     /// `path` without a trailing `:12` or `:12:5`.
