@@ -107,3 +107,25 @@ dead code. Regression test in `CommandWordsQuotingTests`. The mutation run to co
 - One toolchain everywhere: `.swift-version` (6.4.2) names it, CI installs it from that file, and `Scripts/quality.sh` refuses another
   compiler and takes swift-format from the same toolchain.
 
+
+## The gate made to run (2026-11-08)
+
+No scheduled run was green from 3 to 8 November. Each fix showed the next cause:
+
+1. The tools version (fbc406e8).
+2. The build timeout, now 1200 s (24754a72).
+3. The source standards failing on the tool's in-place rewrite, which they now skip (427a7d05).
+4. A per-mutant timeout of 30 s, which made every AskAgentCore mutant time out and count as detected; now 120 s.
+5. Real survivors, covered with tests (427a7d05; output-escape and code-accent survivors on 2026-11-08).
+
+A run by hand now takes the files changed in the last day by default (08d8da81). Every file, about 5000 mutants, cannot finish
+within the job's 240 minutes, so Monday's full run cannot write its baseline. Fixing that (shards, or a rotating slice) is open.
+
+### Accepted survivors
+
+`development/mutation-baseline.json` lists the survivors accepted on purpose. JSON holds no comments, so each one's reason is here:
+
+- `Sources/AskTUI/CodeAccents.swift`, `cursor.line != line || cursor.offset > offset` in `byte(at:offset:)`, with `||` made `&&`. The
+  condition says when the walk starts again from the line's start instead of going on from the last row. Rows come in order, and a
+  line's first row is at offset 0. So under `&&` a new line is either still reset (the last row's offset was above 0) or carries
+  nothing (offset 0, byte 0). The bytes found are the same either way, and no output can tell the two apart: an equivalent mutant.

@@ -10,11 +10,13 @@ struct CodeAccents {
     private var lines: [(text: Substring, ascii: Bool, tokens: [(bytes: Range<Int>, style: Style)])] = []
     /// Where the last row ended: its hard line, grapheme offset, and byte offset in that line.
     private var cursor = (line: -1, offset: 0, byte: 0)
+    /// The output's own links (note n30), by hard line: byte ranges as the wrap measures them, and their targets.
+    private var links: [[(bytes: Range<Int>, uri: String)]] = []
 
     init(_ text: String, code: FileCode) {
         let wrapped = text.utf8.contains(0x09) ? text.replacing("\t", with: "    ") : text
         if let spans = code.spans {
-            lines = Self.lines(
+            (lines, links) = Self.lines(
                 wrapped,
                 spans: spans,
                 tabs: text.split(separator: "\n", omittingEmptySubsequences: false)
@@ -47,10 +49,13 @@ struct CodeAccents {
     }
 
     /// The output's own spans (note n30), each line's moved by the three bytes every tab before it became, as the wrap measures it.
-    private static func lines(_ wrapped: String, spans: [[OutputEscapes.Span]], tabs original: [Substring]) -> [(
-        text: Substring, ascii: Bool, tokens: [(bytes: Range<Int>, style: Style)]
-    )] {
+    /// A span that only links is a link, not a token: it changes nothing the row draws.
+    private static func lines(_ wrapped: String, spans: [[OutputEscapes.Span]], tabs original: [Substring]) -> (
+        [(text: Substring, ascii: Bool, tokens: [(bytes: Range<Int>, style: Style)])],
+        [[(bytes: Range<Int>, uri: String)]]
+    ) {
         var lines: [(text: Substring, ascii: Bool, tokens: [(bytes: Range<Int>, style: Style)])] = []
+        var links: [[(bytes: Range<Int>, uri: String)]] = []
         for (index, line) in wrapped.split(separator: "\n", omittingEmptySubsequences: false).enumerated() {
             let lineSpans = spans.indices.contains(index) ? spans[index] : []
             let tabs =
@@ -61,30 +66,25 @@ struct CodeAccents {
                             ? original[index].utf8.distance(from: original[index].startIndex, to: position) : nil
                     } : []
             let moved = { (byte: Int) in byte + 3 * tabs.count { $0 < byte } }
-            let tokens = lineSpans.map {
-                (bytes: moved($0.bytes.lowerBound) ..< moved($0.bytes.upperBound), style: $0.style)
-            }
+            let bytes = { (span: OutputEscapes.Span) in moved(span.bytes.lowerBound) ..< moved(span.bytes.upperBound) }
+            let tokens = lineSpans.filter { Self.draws($0.style) }.map { (bytes: bytes($0), style: $0.style) }
             lines.append((line, line.utf8.allSatisfy { $0 < 0x80 }, tokens))
+            links.append(lineSpans.compactMap { span in span.style.link.map { (bytes: bytes(span), uri: $0) } })
         }
-        return lines
+        return (lines, links)
     }
 
     /// The links of `row` (note n30): each span's link over the columns it covers.
     mutating func links(for row: TextWrap.Row, inset: Int) -> [PathLinks.Link] {
-        guard lines.indices.contains(row.line), lines[row.line].tokens.contains(where: { $0.style.link != nil }) else {
-            return []
-        }
+        guard links.indices.contains(row.line), !links[row.line].isEmpty else { return [] }
         let start = byte(at: row.line, offset: row.offset)
         let end = start + row.text.utf8.count
         let columns = Self.columns(of: row.text)
-        return lines[row.line].tokens
-            .compactMap { token in
-                guard let uri = token.style.link, token.bytes.upperBound > start, token.bytes.lowerBound < end else {
-                    return nil
-                }
-                let low = columns(Swift.max(token.bytes.lowerBound, start) - start)
-                let high = columns(Swift.min(token.bytes.upperBound, end) - start)
-                return high > low ? PathLinks.Link(columns: inset + low ..< inset + high, uri: uri) : nil
+        return links[row.line]
+            .compactMap { link in
+                let low = columns(Swift.max(link.bytes.lowerBound, start) - start)
+                let high = columns(Swift.min(link.bytes.upperBound, end) - start)
+                return high > low ? PathLinks.Link(columns: inset + low ..< inset + high, uri: link.uri) : nil
             }
     }
 
@@ -96,8 +96,7 @@ struct CodeAccents {
         let end = start + row.text.utf8.count
         var result: [ScreenComposer.Accent] = []
         let columns = Self.columns(of: row.text)
-        for token in lines[row.line].tokens
-        where token.bytes.upperBound > start && token.bytes.lowerBound < end && Self.draws(token.style) {
+        for token in lines[row.line].tokens where token.bytes.overlaps(start ..< end) {
             let low = columns(Swift.max(token.bytes.lowerBound, start) - start)
             let high = columns(Swift.min(token.bytes.upperBound, end) - start)
             if high > low {

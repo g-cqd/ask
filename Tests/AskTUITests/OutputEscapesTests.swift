@@ -103,6 +103,23 @@ struct OutputEscapesTests {
         #expect(!parsed.text.contains("\u{1B}"))
     }
 
+    @Test func `an empty parameter resets, and a number too long to be one is ignored`() {
+        let reset = OutputEscapes("\(Self.esc)[31ma\(Self.esc)[mb\(Self.esc)[31;mc")
+        #expect(reset.lines == [[.init(bytes: 0 ..< 1, style: Style(fg: .indexed(1)))]])
+        let long = OutputEscapes("\(Self.esc)[31ma\(Self.esc)[1234567mb")
+        #expect(long.lines == [[.init(bytes: 0 ..< 2, style: Style(fg: .indexed(1)))]])
+    }
+
+    @Test func `controls are removed from output that has no escape at all`() {
+        let parsed = OutputEscapes("a\u{07}b\u{08}c\u{7F}d\u{00}e")
+        #expect(parsed.text == "abcde")
+        #expect(parsed.lines.allSatisfy { $0.isEmpty })
+    }
+
+    @Test func `a string ended by BEL ends there`() {
+        #expect(OutputEscapes("a\(Self.esc)_Gf=100\u{07}b\(Self.esc)P1$r\u{07}c").text == "abc")
+    }
+
     @Test func `spans count bytes, so text before a colour may be wide`() {
         let parsed = OutputEscapes("é漢\(Self.esc)[31mx")
         #expect(parsed.text == "é漢x")

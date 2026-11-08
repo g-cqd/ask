@@ -12,5 +12,15 @@
  },
  "score": 100,
  "toolVersion": "1.6.4",
- "undetected": []
+ "undetected": [
+  {
+   "file": "Sources/AskTUI/CodeAccents.swift",
+   "fingerprint": "9af36fe0bed41e683aa3af9070ddc91d",
+   "line": 116,
+   "operator": "LogicalOperatorReplacement",
+   "original": "||",
+   "replacement": "&&",
+   "status": "survived"
+  }
+ ]
 }
