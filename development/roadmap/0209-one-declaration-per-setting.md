@@ -11,10 +11,9 @@ places in four targets. Seven `*Preference` enums in AskAgentCore have twins in 
 
 ## Decision first
 
-An ADR, on the owner's answer to the question in the research note, §5.1:
-
-- (a) AskTUI depends on a leaf target of shared value types, so each enum is declared once; or
-- (b) the twins stay, and a test checks every pair's cases against each other.
+The owner answered on 2026-11-08 (research note, §5.1): **AskTUI may depend on a leaf target of shared value types.** The ADR
+records this and chooses the target, either AskCore or a new one, by what else would have to move with it. Each enum is then
+declared once, and the screen's twins are deleted.
 
 ## The plan
 
@@ -24,8 +23,8 @@ An ADR, on the owner's answer to the question in the research note, §5.1:
 2. **One descriptor per key.** Each key is described once: its type, its default, its documentation sentence, and its catalog row. From
    that one declaration come `keys`, `layered`, `value(forKey:)`, the decoding and the catalog. The descriptor is a value in a table,
    with no macros and no code generation step at build time.
-3. **The bridge.** Under (a), the mapping in `RunSettings+Screen.swift` becomes assignments with no `rawValue`. Under (b), the
-   checking test from step 1 becomes the guard.
+3. **The bridge.** The mapping in `RunSettings+Screen.swift` becomes plain assignments, with no `rawValue`. The twin test from
+   step 1 then has nothing left to check, and is deleted along with the twins.
 4. **Migrate a section at a time**, starting with `ui` (the largest), with `docs/config.example.jsonc` regenerated and unchanged.
 
 ## Done when

@@ -32,19 +32,18 @@ From the rationalisation pass (research/rationalisation-2026-11.md §3; note n53
    - done, with what is left moved to a new entry;
    - still in progress, with a `Still owed` section;
    - not started again, because nothing landed.
-3. **Other repositories' entries** become pointers in ask's roadmap, once the owner agrees (research note §5.2). Their tracking
-   moves to the repository that holds their code.
+3. **Other repositories' entries** move, as the owner chose on 2026-11-08. Each one's text goes to the roadmap of the repository
+   that holds its code. ask keeps a pointer entry for it, marked done.
 4. **A generated index:** `development/roadmap/README.md`, listing number, title, status and date, grouped by status. A test fails
    when it is stale, the way `docs/config.example.jsonc` is regenerated.
 5. **No feature without an entry.** A user-visible change, meaning a new setting, command or tool, cites an entry or an ADR in its
    commit message. This is a white paper rule, not a hook.
-6. **The diary**, as the owner decides (research note §5.3): either it resumes, or §4 says commit messages and `Still owed`
-   sections replace it.
+6. **The diary resumes**, as the owner chose on 2026-11-08: one file per working day, beginning with 2026-11-08-01.
 
 ## Done when
 
-The template test passes. Every in-progress entry says what it still owes. The index is generated and guarded. The owner has
-answered §5.2 and §5.3, and the white paper says so.
+The template test passes. Every in-progress entry says what it still owes. The index is generated and guarded. The moved
+entries are pointers.
 
 ## Not in scope
 
