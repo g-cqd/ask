@@ -1,12 +1,19 @@
 name: Mutation
 
 # Mutation testing (roadmap 0166), once a day, not on every push (owner, 2026-11-01): the Sources files changed in the last day, with no
-# new surviving mutant allowed beyond development/mutation-baseline.json; on Mondays, and when run by hand, every file, uploading a fresh
-# baseline to commit by hand.
+# new surviving mutant allowed beyond development/mutation-baseline.json; on Mondays every file, uploading a fresh baseline to commit by
+# hand. Run by hand, it takes the scope it is given: the files changed in the last day by default, to confirm a fix in minutes; every
+# file only when asked, since that takes longer than the job's limit (2026-11-08: about 5000 mutants).
 on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
+    inputs:
+      scope:
+        description: "changed: the Sources files changed in the last day; all: every file and the baseline"
+        type: choice
+        options: [changed, all]
+        default: changed
 
 permissions:
   contents: read
@@ -52,7 +59,11 @@ jobs:
       - name: Plan · Choose Scope
         id: kind
         run: |
-          if [ "${{ github.event_name }}" = workflow_dispatch ] || [ "$(date -u +%u)" = 1 ]; then echo "all=true" >> "$GITHUB_OUTPUT"; fi
+          if [ "${{ github.event_name }}" = workflow_dispatch ]; then
+            if [ "${{ inputs.scope }}" = all ]; then echo "all=true" >> "$GITHUB_OUTPUT"; fi
+          elif [ "$(date -u +%u)" = 1 ]; then
+            echo "all=true" >> "$GITHUB_OUTPUT"
+          fi
       - name: Mutation · Files Changed in the Last Day
         if: ${{ steps.kind.outputs.all != 'true' }}
         run: |
