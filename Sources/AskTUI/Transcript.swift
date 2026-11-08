@@ -58,6 +58,8 @@ public struct Transcript: Sendable, Equatable {
     var imagePlacements: [Int: [ImagePlacement?]] = [:]
     /// The file each file tool's call names (roadmap 0152), whose language colours the file's text in its block.
     var toolPaths: [Int: String] = [:]
+    /// The colours and links each tool block's output asked for with its escapes (note n30), by its kept output's hard line.
+    var outputSpans: [Int: [[OutputEscapes.Span]]] = [:]
     var completedJobs: Set<String> = []
     /// Which tool blocks the user opened or closed, over the default for the kind (TerminalKit roadmap 0018).
     var folds = FoldStore<Int>()
@@ -117,6 +119,7 @@ public struct Transcript: Sendable, Equatable {
         imagePlacements.removeAll()
         choiceSummaryAt = nil
         toolPaths.removeAll(keepingCapacity: true)
+        outputSpans.removeAll()
         completedJobs.removeAll(keepingCapacity: true)
         folds.clearChoices()
         codeFolds.clearChoices()
@@ -175,7 +178,13 @@ public struct Transcript: Sendable, Equatable {
         finishProgress(at: index, now: now)
         // A tool the person interrupted stays orange whatever it returned, unless it finished its work.
         let status = interrupted.contains(index) && status != .succeeded ? .interrupted : status
-        items[index] = .tool(name: name, summary: summary, status: status, output: Self.kept(output), fullInput: input)
+        items[index] = .tool(
+            name: name,
+            summary: summary,
+            status: status,
+            output: keep(output, at: index),
+            fullInput: input
+        )
         self.replacements[index] = replacements
         toolImages[index] = images.isEmpty ? nil : images
         revisions[index] = bump()

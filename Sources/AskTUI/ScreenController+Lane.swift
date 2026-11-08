@@ -87,7 +87,7 @@ extension ScreenController {
     mutating func receive(output text: String, of id: String) {
         guard state.lane?.id == id else { return }
         state.transcript.removeAll()
-        state.transcript.addNotice(text.isEmpty ? "(no output yet)" : text, isError: false)
+        state.transcript.addNotice(text.isEmpty ? "(no output yet)" : OutputEscapes(text).text, isError: false)
     }
 
     private mutating func swapLane() {

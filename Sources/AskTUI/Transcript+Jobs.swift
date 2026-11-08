@@ -10,7 +10,7 @@ extension Transcript {
             name: name,
             summary: title,
             status: job.status,
-            output: Self.kept(job.output),
+            output: keep(job.output, at: index),
             fullInput: input
         )
         var clock = BlockProgress(at: job.startedAt, spinner: progress[index]?.spinner ?? spinnerStyle)
