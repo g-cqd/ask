@@ -81,6 +81,9 @@ struct ThreadLaneTests {
         #expect(controller.state.lane?.id == "thread-1" && controller.state.lane?.isThread == true)
         _ = controller.handle(.focusThread(id: "thread-9"))
         #expect(controller.state.lane?.id == "thread-1", "a thread that is not listed is not shown")
+        controller.leaveLane()
+        _ = controller.handle(.focusThread(id: "thread-9"))
+        #expect(controller.state.lane == nil, "nor is any other thread shown in its place")
     }
 
     @Test func `rename typed in a thread's lane names that thread, and the lane stays`() {
