@@ -104,7 +104,8 @@ final class AgentConversation: Conversation {
     func history() -> [ConversationUpdate] {
         guard let tree = session.withLock({ $0?.tree }) else { return [contextUpdate()] }
         // With its threads' blocks where they started and merged (roadmap 0195).
-        let updates = replayed(tree.activeBranch(), after: nil, placing: Self.threadBlocks(tree.threads, under: nil))
+        let branch = tree.activeBranch()
+        let updates = replayed(branch, after: nil, placing: Self.threadBlocks(tree.threads, under: nil, on: branch))
         return updates + [.status(usage.withLock { $0.compact }), contextUpdate()]
     }
 
