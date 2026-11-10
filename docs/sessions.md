@@ -13,7 +13,8 @@ grouped by project. A message counts as sent only once it is written there, so a
 | `ask sessions` | | List this project's sessions, newest first. |
 | | `/new` | Start a fresh conversation; the current one stays saved. |
 
-A session remembers the account it used and resumes on it.
+A session remembers the account it used and resumes on it. On exit, ask prints a command to resume the saved session in its
+working directory, retaining the launch flags and safely escaping spaces and shell metacharacters.
 
 ## Going back, and branching
 

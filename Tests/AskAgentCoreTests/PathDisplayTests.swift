@@ -36,6 +36,22 @@ struct PathDisplayTests {
         )
     }
 
+    @Test func `resume flags and values stay literal even when the working directory is home`() {
+        // n54 / t247: resolving a non-path against cwd made flags become ~/--thinking, and values become ~/high.
+        let home = FileManager.default.currentDirectoryPath
+        let arguments = [
+            "--thinking", "high", "--no-sandbox", "--yes", "--selected-provider", "anthropic", "--selected-model",
+            "claude-opus-5-5", "relative/file", "~/project", "~"
+        ]
+        for argument in arguments {
+            #expect(PathDisplay.tilde(argument, home: home) == argument)
+            #expect(PathDisplay.shellArgument(argument, home: home) == argument)
+        }
+        #expect(PathDisplay.tilde("", home: home).isEmpty)
+        #expect(PathDisplay.shellArgument("", home: home) == "''")
+        #expect(PathDisplay.shellArgument("a b;$x", home: home) == "a\\ b\\;\\$x")
+    }
+
     @Test func `shell argument escapes spaces and special characters while keeping leading tilde unquoted`() {
         let path = "/Users/testuser/Work Space/project's ask"
         let escaped = PathDisplay.shellArgument(path, home: home)
