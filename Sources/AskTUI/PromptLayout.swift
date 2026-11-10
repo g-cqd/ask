@@ -43,7 +43,7 @@ struct PromptLayout: Sendable {
         if let cache, cache.columns == columns, cache.text == editor.text {
             layout = cache.layout
         } else {
-            layout = InputLayout(editor.text, columns: columns, firstRowIndent: prefix.count)
+            layout = InputLayout(editor.text, columns: columns, firstRowIndent: prefix.count, wrapsWords: true)
             cache = (editor.text, columns, layout)
         }
         let cap = min(max(1, maximumRows), max(1, screenRows / 3), max(1, screenRows - 1))

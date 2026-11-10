@@ -216,7 +216,7 @@ public struct PromptEditor: Sendable, Equatable {
             goalWidth = nil
             return moveVertically(by: step)
         }
-        let layout = InputLayout(text, columns: columns, firstRowIndent: firstRowIndent)
+        let layout = InputLayout(text, columns: columns, firstRowIndent: firstRowIndent, wrapsWords: true)
         let position = layout.position(at: cursor)
         let row = position.row + step
         guard layout.rows.indices.contains(row) else { return .ignored }
