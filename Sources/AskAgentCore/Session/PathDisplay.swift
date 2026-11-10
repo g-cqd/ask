@@ -4,6 +4,8 @@ public import Foundation
 public enum PathDisplay {
     /// Formats an absolute path with a leading `~` if it lies within `home`.
     public static func tilde(_ path: String, home: String = NSHomeDirectory()) -> String {
+        // A flag or relative value is not a path to canonicalise against cwd (n54); only absolute paths may shorten.
+        guard path.hasPrefix("/") else { return path }
         if path == home { return "~" }
         if path.hasPrefix(home + "/") {
             return "~" + path.dropFirst(home.count)
