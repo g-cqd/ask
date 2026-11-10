@@ -64,6 +64,29 @@ struct SelfCheckTests {
         #expect(inherited.hasPrefix("key=[] "), "with none given, the child inherits this process's")
     }
 
+    @Test func `reload checks the new build in its captured workspace and refuses a missing one`() async throws {
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let workspace = directory.appending(path: "project with spaces", directoryHint: .isDirectory)
+        try FileManager.default.createDirectory(at: workspace, withIntermediateDirectories: true)
+        let path = try build("/bin/pwd -P")
+        let outcome = await SelfCheck.run(path, workingDirectory: workspace.path, timeout: Self.patience)
+        guard case .passed(let observed) = outcome else {
+            Issue.record("workspace self-check failed: \(outcome)")
+            return
+        }
+        #expect(URL(fileURLWithPath: observed).resolvingSymlinksInPath() == workspace.resolvingSymlinksInPath())
+        guard
+            case .failed = await SelfCheck.run(
+                path,
+                workingDirectory: workspace.appending(path: "missing").path,
+                timeout: Self.patience
+            )
+        else {
+            Issue.record("a missing reload workspace must not fall back to the parent's cwd")
+            return
+        }
+    }
+
     @Test func `a build that exits non-zero fails, with its code and what it said on standard error`() async throws {
         let path = try build(#"echo "config.json:3:13: unexpected ']'" >&2; exit 78"#)
         #expect(

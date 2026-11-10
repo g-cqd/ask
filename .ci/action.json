@@ -36,7 +36,7 @@
     {
       "id": "script-guards",
       "title": "Quality \u00b7 Scripts, Records & Layering",
-      "run": "python3 Scripts/test-measurements.py && python3 Scripts/check-records.py && python3 -B Scripts/test-workflow.py && python3 -B Scripts/test-sign.py && python3 -B Scripts/test-layers.py && python3 -B Scripts/test-update-pins.py && python3 -B Scripts/test-land.py && python3 -B Scripts/check-layers.py",
+      "run": "python3 Scripts/test-measurements.py && python3 Scripts/check-records.py && python3 -B Scripts/test-workflow.py && python3 -B Scripts/test-sign.py && python3 -B Scripts/test-layers.py && python3 -B Scripts/test-update-pins.py && python3 -B Scripts/test-land.py && python3 -B Scripts/check-layers.py && python3 -B Scripts/check-reload-workspace.py",
       "os": "macOS"
     }
   ]

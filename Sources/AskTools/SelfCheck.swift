@@ -24,6 +24,7 @@ public enum SelfCheck {
     ///     check loads the configuration it will really run on.
     ///   - environment: the environment the check runs with, or nil for this process's own. ask passes the one it was launched
     ///     with, because its own has had its credentials blanked and a check that finds no key would refuse a build that works (ADR-0113).
+    ///   - workingDirectory: the session workspace, explicitly re-entered by the child; nil inherits the caller's directory.
     ///   - timeout: how long it gets.
     ///   - clock: what the timeout is measured on.
     /// - Returns: the outcome. Never throws: every way it can go wrong is a ``Outcome/failed(_:)``.
@@ -31,11 +32,19 @@ public enum SelfCheck {
         _ executable: String,
         arguments: [String] = [],
         environment: [String: String]? = nil,
+        workingDirectory: String? = nil,
         timeout: Duration = defaultTimeout,
         clock: any Clock<Duration> = ContinuousClock()
     ) async -> Outcome {
         await withTaskGroup(of: Outcome?.self) { group in
-            group.addTask { await execute(executable, arguments: arguments, environment: environment) }
+            group.addTask {
+                await execute(
+                    executable,
+                    arguments: arguments,
+                    environment: environment,
+                    workingDirectory: workingDirectory
+                )
+            }
             group.addTask {
                 // A cancelled sleep is the check finishing first.
                 guard (try? await clock.sleep(for: timeout)) != nil else { return nil }
@@ -47,15 +56,19 @@ public enum SelfCheck {
         }
     }
 
-    private static func execute(_ executable: String, arguments: [String], environment: [String: String]?) async
-        -> Outcome
-    {
+    private static func execute(
+        _ executable: String,
+        arguments: [String],
+        environment: [String: String]?,
+        workingDirectory: String?
+    ) async -> Outcome {
         let options = JobProcess.groupOptions(graceSeconds: 1)
         do {
             let result = try await Subprocess.run(
                 .path(FilePath(executable)),
                 arguments: .init(["--self-check"] + arguments),
                 environment: environment.map(JobProcess.environment) ?? .inherit,
+                workingDirectory: workingDirectory.map { FilePath($0) },
                 platformOptions: options,
                 input: .none,
                 output: .string(limit: 16 << 10),
