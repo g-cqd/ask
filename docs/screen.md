@@ -171,3 +171,6 @@ While the model works, commands still work:
 - `/compact`, `/new`, `/resume`, `/rewind`, `/encrypt` and `/reload` wait for the turn to end, shown as waiting, then run in the order you typed
   them. If you stop the turn, they follow `ui.queuedOnStop` like queued messages: with `none` they come back to the input.
 - `/skill:NAME` is a message, so it joins the turn like any other.
+
+The input wraps at word boundaries when a word fits a row; a word wider than the input still splits. Soft wrapping does not add
+newlines or remove spaces from what you send or copy. Cursor movement, clicks and selection use the same wrapped rows.
