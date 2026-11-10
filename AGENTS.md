@@ -71,9 +71,10 @@ and SHA-256 in the family's lock, `Scripts/analyzers.lock` in Aemi-Studio/aemi a
 
 **Mutation testing, on changed files (roadmap 0166).** `Scripts/mutate-changed.sh [BASE]` runs swift-mutation-testing (pinned by version
 and SHA-256 in the script) on the `Sources` files changed against `BASE`, each with its target's tests, and fails on a surviving mutant
-not in `development/mutation-baseline.json`: kill it with a test. Minutes per file cold, seconds once its verdicts are cached; before
-a commit that changes logic, run it. `ASK_MUTATE=1 git push` runs it as a pre-push task; CI runs it on pushes that touch `Sources`,
-and weekly on every file, uploading a fresh baseline.
+not in `development/mutation-baseline.json`: kill it with a test. **CI only:** the owner chose on 2026-11-10 to leave mutation
+runs to CI because of their local resource and time cost. Do not run `mutate-changed.sh` or set `ASK_MUTATE=1` locally.
+Run ordinary release tests and the non-mutation quality gate locally; report mutation verification separately from CI.
+CI runs mutation on pushes that touch `Sources`, and weekly on every file, uploading a fresh baseline.
 
 **When a refactor or factorisation is on the table, ask what Swift already offers first** (white paper §8):
 result builders, scoped closures, protocol extensions with defaults, typed throws, `callAsFunction`, key paths,
