@@ -153,7 +153,8 @@ extension ScreenController {
 
     private func copyIfCommitted(_ update: SelectionController<Int>.Update) -> [Effect] {
         guard update.committed, options.copyOnSelect,
-            let text = selector.selection?.text(in: TranscriptContent(state.transcript)), !text.isEmpty
+            let selection = selector.selection,
+            let text = ReplyPathCopy.text(selection, in: state.transcript, display: state.blocks.paths), !text.isEmpty
         else { return [] }
         return [.copy(text)]
     }

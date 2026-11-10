@@ -86,5 +86,12 @@ walks refuse symlinks. Relative references through symlinks remain text. This do
 
 ## Still owed
 
-- Full-path copying for relative references, and path shortening in notices, already requested by the owner.
+- Path shortening in notices, already requested by the owner.
 - Real-terminal checks are deferred. The safety follow-up passed the full release/quality gate (3,779 tests); mutation is CI-only.
+
+## Copy follow-up (2026-11-10)
+
+Whole accepted relative prose references now expand to absolute workspace paths when copied, after source-coordinate slicing.
+Both automatic drag copy and Ctrl+C use it; partial references, user/tool text and Markdown code/explicit links remain literal.
+Location suffixes and punctuation are preserved. Regression and full-gate results are recorded in diary 2026-11-10-07.
+Notice shortening remains owed; notices may already expand complete relative references on copy.
