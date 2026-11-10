@@ -18,6 +18,8 @@ final class AgentConversation: Conversation {
     let makeLoop: @Sendable (RunSettings, LoopHooks) throws -> AgentLoop
     /// The sandbox the model narrowed this conversation to; it outlives loop rebuilds, not /new or /resume.
     let narrowing = SessionNarrowing()
+    /// Reply-path metadata is cached per conversation, never shared across policies or projects.
+    let replyPaths = ReplyPathExistence()
     /// Approval questions waiting for an answer, the grants for this session, and where to ask (roadmap 0019).
     let approvals = Mutex(Approvals())
     let directory: SessionDirectory

@@ -28,6 +28,9 @@ public protocol Conversation: Sendable {
     /// an `@` first appears and again once the listing is old, off the input path.
     func projectFiles() async -> ProjectFiles
 
+    /// Whether a relative reply path may be linked: the current read policy, and no traversal through symlinks.
+    func replyPathExists(_ path: String) -> Bool
+
     /// The skills the `/` picker offers, as commands named `skill:name` with their descriptions. Asked for once, when the picker first opens.
     func skillCommands() async -> [SlashCommand]
 
@@ -133,6 +136,9 @@ extension Conversation {
 
     /// Never asks for input, so never answered.
     public func answer(input id: Int, with text: String?) {}
+
+    /// Without the host's read policy, rendering performs no filesystem lookup.
+    public func replyPathExists(_ path: String) -> Bool { false }
 
     /// No skills to offer.
     public func skillCommands() async -> [SlashCommand] { [] }

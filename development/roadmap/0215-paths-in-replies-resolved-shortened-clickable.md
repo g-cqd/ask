@@ -48,7 +48,7 @@ opened or run without the person's click; nothing outside what the sandbox may r
 5. **Settings.**
    - `ui.paths`: `"short"` (the default) or `"asWritten"`, which keeps today's text and links only.
    - `ui.pathAncestors`: an integer, default 2, or `"any"`.
-6. **Later, if wanted:** a relative path copies in full, and notices are shortened too.
+6. **Still required by the owner's answers:** a relative path copies in full, and notices are shortened too.
 
 ## Done when
 
@@ -76,3 +76,15 @@ Openers and the confirmation of what a click runs (t215, note n32), which needs 
   hook in pieces. TerminalKit ccac505 runs the hook over each stretch of adjacent prose, and has a test with underscores.
 - Links keep `PathLinks.uri`'s standardised form (`/private/var/…` is written `/var/…`), the same file.
 - Left: notices are linked but not shortened (step 4); a relative path copies as written, not in full (step 6).
+
+## Safety follow-up (2026-11-10)
+
+The former lexical workspace guard and TUI fileExists cache did not enforce read policy or prevent symlink traversal.
+ReplyPathExistence now belongs to AskTools, called through Conversation with the current policy and session narrowing.
+No host policy means no relative lookup. Policy/workspace changes invalidate the per-conversation bounded cache; descriptor-relative
+walks refuse symlinks. Relative references through symlinks remain text. This does not claim live invalidation for changed files.
+
+## Still owed
+
+- Full-path copying for relative references, and path shortening in notices, already requested by the owner.
+- Real-terminal checks are deferred. The safety follow-up passed the full release/quality gate (3,779 tests); mutation is CI-only.

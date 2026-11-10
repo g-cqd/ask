@@ -52,6 +52,9 @@ final class ScreenSession {
         frames = screen.frames
         clipboard = screen.clipboard
         controller = ScreenController(label: label, commands: conversation.commands, options: options)
+        controller.state.blocks.paths?.exists = { path in
+            conversation.replyPathExists(path)
+        }
         controller.state.nativeSelectionHint = options.mouse ? screen.clipboard.nativeSelectionHint : ""
         controller.setScreenRows(rows)
         colours = TerminalColours(following: options, connection: screen.connection)
