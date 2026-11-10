@@ -11,4 +11,11 @@ extension AgentConversation {
         let listing = await ProjectLister.list(in: settings.workspace, policy: settings.sandbox)
         return ProjectFiles(paths: listing.paths, hidden: listing.hidden, truncated: listing.truncated)
     }
+
+    /// No target resolution or stat outside the effective read policy, including the model's session narrowing.
+    func replyPathExists(_ path: String) -> Bool {
+        let settings = current.withLock { $0.settings }
+        let policy = narrowing.policy.map { settings.sandbox.intersecting($0) } ?? settings.sandbox
+        return replyPaths.exists(path, in: settings.workspace, policy: policy)
+    }
 }

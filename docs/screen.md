@@ -174,3 +174,7 @@ While the model works, commands still work:
 
 The input wraps at word boundaries when a word fits a row; a word wider than the input still splits. Soft wrapping does not add
 newlines or remove spaces from what you send or copy. Cursor movement, clicks and selection use the same wrapped rows.
+
+Relative paths in replies are linked only when the session's read policy permits an existence check inside the workspace.
+These automatic checks do not follow symlinks; a relative reference through one remains text. Existence answers are cached
+within the conversation, and changing its read policy clears those answers before reuse.

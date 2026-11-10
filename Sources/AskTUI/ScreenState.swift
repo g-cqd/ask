@@ -171,7 +171,7 @@ public struct ScreenState: Sendable, Equatable {
                 home: options.home ?? NSHomeDirectory(),
                 ancestors: options.pathAncestors,
                 shortens: options.shortPaths,
-                exists: PathExistence.shared.exists
+                exists: { _ in false }
             )
         }
     }
