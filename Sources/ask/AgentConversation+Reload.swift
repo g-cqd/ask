@@ -97,7 +97,8 @@ extension AgentConversation {
         if case .failed(let reason) = await SelfCheck.run(
             latest.path,
             arguments: source.flags.arguments,
-            environment: LaunchEnvironment.values
+            environment: LaunchEnvironment.values,
+            workingDirectory: source.workspace
         ) {
             update(
                 .notice(
@@ -159,9 +160,15 @@ extension AgentConversation {
         if (try? sessionGrants.write(to: grantsPath)) != nil { arguments += ["--reload-grants", grantsPath] }
         // The thread whose lane is shown, shown again by the new build.
         if let focused = focusedThread.withLock({ $0 }) { arguments += ["--focus-thread", focused] }
-        let failure = Reexec.replaceProcess(with: target.path, arguments: arguments)
+        let failure = Reexec.replaceProcess(
+            with: target.path,
+            arguments: arguments,
+            workingDirectory: source.workspace,
+            environment: LaunchEnvironment.values
+        )
         fail(
-            "ask: could not start the new build (errno \(failure)). Your session is saved: run `ask --continue`.",
+            "ask: could not restore the workspace or start the new build (errno \(failure)). "
+                + "Your session is saved; return to its workspace before running `ask --continue`.",
             code: 70
         )
     }

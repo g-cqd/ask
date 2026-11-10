@@ -41,3 +41,7 @@ An encrypted session opens only with your password, the recovery code, or the ke
 session you are in (opening or setting up the keys first, in the screen); `/encrypt off` writes it back in clear. `ask keys password`
 changes the password, and `ask keys forget` removes the key from your keychain. The session's task list and notes are kept the same way
 as the session. `ask sessions` lists sessions it cannot open as locked.
+
+When `/reload` switches to a newer build, its self-check and replacement run in this session's workspace. If that directory is
+unavailable, reload reports the failure instead of starting in another project. Once the workspace is available again, reload
+re-enters it rather than inheriting a stale working-directory handle.
