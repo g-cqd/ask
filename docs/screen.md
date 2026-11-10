@@ -178,3 +178,7 @@ newlines or remove spaces from what you send or copy. Cursor movement, clicks an
 Relative paths in replies are linked only when the session's read policy permits an existence check inside the workspace.
 These automatic checks do not follow symlinks; a relative reference through one remains text. Existence answers are cached
 within the conversation, and changing its read policy clears those answers before reuse.
+
+Copying a complete, accepted relative path in a reply, thinking block or ask notice produces its full workspace path, including
+any line/column suffix. Partial selections remain literal. User messages and tool output are not rewritten; inline code,
+fences and explicit Markdown links also remain literal when Markdown is enabled.

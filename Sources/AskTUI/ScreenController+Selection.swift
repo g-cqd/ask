@@ -12,7 +12,7 @@ extension ScreenController {
             return []
         }
         guard Self.isClipboardChord(key, "c") else { return nil }
-        let text = selection.text(in: TranscriptContent(state.transcript))
+        let text = ReplyPathCopy.text(selection, in: state.transcript, display: state.blocks.paths)
         clearSelection()
         guard let text, !text.isEmpty else { return [] }
         return [.copy(text)]
