@@ -1,4 +1,10 @@
 extension ScreenController {
+    /// Whether the screen is at work for the tab's progress (note n59): a turn, a compaction, or a command in the foreground, such
+    /// as the person's `!` one outside any turn. A background job or an aside is not; nor is reconnecting, which is waiting.
+    var isWorking: Bool {
+        state.running || state.compacting || state.transcript.latestForegroundTool != nil
+    }
+
     var hasLiveProgress: Bool {
         state.running || state.compacting || state.reconnecting || !state.runnerProgress.isEmpty
             || (state.lane?.stashed ?? state.transcript).hasLiveProgress

@@ -11,6 +11,8 @@ struct ScreenTerminal {
     let clipboard: ScreenClipboard
     /// Whether the environment says the terminal may draw kitty graphics (roadmap 0208), so it is asked.
     var mayDrawImages = false
+    /// Whether the terminal reads OSC 9;4 as progress (note n59), so it is sent.
+    var readsProgress = false
 }
 
 /// The modes the screen asks the terminal for: the full-screen set, with the mouse reported unless `options` turn it off.

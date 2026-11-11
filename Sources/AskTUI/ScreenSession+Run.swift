@@ -72,21 +72,6 @@ extension ScreenSession {
         try? connection.write(pointer.sequence)
     }
 
-    /// The terminal's own pointer and title again, whatever ask last set (note n13, note n60).
-    private func giveBackTerminal() {
-        if pointer != .default { try? connection.write(PointerShape.default.sequence) }
-        if title != nil { titles.finish(TabTitle.restore) }
-    }
-
-    /// Sends the tab's title when it changed (note n60), saving the terminal's own first; off this thread (``TabTitleWriter``).
-    func syncTitle() {
-        let wanted = controller.tabTitle
-        guard wanted != title else { return }
-        if title == nil { titles.send(TabTitle.save) }
-        title = wanted
-        titles.send(TabTitle.sequence(wanted))
-    }
-
     func syncAutoscroll() {
         let sink = sink
         autoscroll.update(wanted: controller.isAutoscrolling) { sink.yield(.tick) }

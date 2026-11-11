@@ -124,7 +124,12 @@ extension ScreenController {
     }
 
     /// The terminal tab's title as the screen now has it (note n60).
-    var tabTitle: String { TabTitle.text(name: state.conversationName, workspace: options.workspace) }
+    var tabTitle: String { tabTitle(spinner: nil) }
+
+    /// The tab's title with `spinner`'s frame leading it, while a long action runs (note n61).
+    func tabTitle(spinner: String?) -> String {
+        TabTitle.text(name: state.conversationName, workspace: options.workspace, spinner: spinner)
+    }
 
     private mutating func clearConversation() {
         state.transcript.removeAll()

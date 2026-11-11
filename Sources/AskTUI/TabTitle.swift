@@ -7,13 +7,15 @@ enum TabTitle {
     /// The longest title, in characters: a tab shows less.
     static let limit = 80
 
-    /// The title for a conversation called `name` in `workspace`: its name, else the folder's, else ask alone. Control characters are
+    /// The title for a conversation called `name` in `workspace`: its name, else the folder's, else ask alone; `spinner`'s frame leads
+    /// it while a long action runs (note n61). Control characters are
     /// dropped, so nothing in a name can end the sequence or start another.
-    static func text(name: String?, workspace: String?) -> String {
+    static func text(name: String?, workspace: String?, spinner: String? = nil) -> String {
         let named = name.map(clean).flatMap { $0.isEmpty ? nil : $0 }
         let folder = workspace.flatMap { $0.split(separator: "/").last.map(String.init) }.map(clean)
-        guard let shown = named ?? folder, !shown.isEmpty else { return "ask" }
-        return String(("ask · " + shown).prefix(limit))
+        let lead = spinner.map { $0 + " " } ?? ""
+        guard let shown = named ?? folder, !shown.isEmpty else { return lead + "ask" }
+        return String((lead + "ask · " + shown).prefix(limit))
     }
 
     private static func clean(_ text: String) -> String {
