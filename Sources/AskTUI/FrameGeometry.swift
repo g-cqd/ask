@@ -8,6 +8,8 @@ struct FrameGeometry: Sendable {
     var foldBlocks: [Int?] = []
     /// Whether each transcript row is a long output's marker, which toggles the output's middle (roadmap 0078).
     var middleFolds: [Bool] = []
+    /// Which of its block's pictures each transcript row draws, so a click there folds that picture (roadmap 0208).
+    var pictureFolds: [Int?] = []
     /// The links each transcript row draws, so a click on one opens it.
     var links: [[PathLinks.Link]] = []
     /// How many rows the transcript took, from the top.

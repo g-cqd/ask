@@ -72,7 +72,7 @@ extension ScreenComposer {
                 replacements: transcript.replacements[index],
                 code: transcript.fileCode(at: index),
                 images: transcript.toolImages[index] ?? [],
-                placements: transcript.imagePlacements[index] ?? []
+                placements: transcript.shownPlacements(at: index)
             )
             guard let output else { return rows }
             return withOutputMarker(

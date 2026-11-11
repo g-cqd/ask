@@ -103,11 +103,16 @@ Run in kitty 0.49.2, Ghostty 1.4.0 and WezTerm, screenshots read for their pixel
     (`Sidebar.transcriptColumns`: all of it when the sidebar is in the band);
   - a resize or the sidebar opening left a picture too wide. It is placed again, smaller, under the same id, after any event.
 
+## Built 2026-11-11
+
+- A picture is placed again whenever its fit changes, so one narrowed by a small screen grows back when it widens
+  (`ToolImageEdgeTests`, red first).
+- A click on a picture's line or its cells folds that picture away, leaving its line, and a second shows it; the tool's output
+  folds apart from it (`PictureFoldTests`, red first; `probe-images.py`, 9 checks, two of them the click).
+
 ## Left
 
 - The look confirmed by the owner, in their own kitty or Ghostty.
 - JPEG, GIF and WebP keep their line only: kitty takes PNG or raw pixels, so they need converting first.
-- A picture placed again only shrinks: one made narrow by a small screen stays narrow when the screen grows.
-- The folded state hides nothing yet (the picture shows, as chosen, but a click does not fold it away).
 - Lifetime: every picture of a resumed session is sent at once; the roadmap's "sent while laid out" is not built, nor measured
   against the memory budget (0088).
