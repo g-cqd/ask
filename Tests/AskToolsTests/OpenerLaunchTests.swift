@@ -6,6 +6,8 @@ import Testing
 @testable import AskTools
 
 /// An opener's command (ADR-0148) against scripts standing in for an editor: run with its arguments as they are, no shell, no input.
+/// Each run that should end has a clock that never advances, so its two seconds cannot run out on a loaded machine (they did, at a
+/// load average of 70, and a script that ended normally read as still running).
 @Suite("An opener's command runs as its arguments say, with no shell", .timeLimit(.minutes(1)))
 struct OpenerLaunchTests {
     private let directory: URL
@@ -36,7 +38,8 @@ struct OpenerLaunchTests {
         let outcome = await OpenerLaunch.run(
             ["tool"] + hostile,
             environment: environment,
-            workingDirectory: directory.path
+            workingDirectory: directory.path,
+            clock: TestClock()
         )
         #expect(outcome == .finished)
         #expect(read("out") == "5|" + hostile.map { $0 + "|" }.joined())
@@ -48,9 +51,17 @@ struct OpenerLaunchTests {
     @Test func `a program is found on the given PATH or by its path, and one that is not there is said`() async throws {
         defer { try? FileManager.default.removeItem(at: directory) }
         let path = try tool("exit 0")
-        #expect(await OpenerLaunch.run([path], environment: [:], workingDirectory: directory.path) == .finished)
         #expect(
-            await OpenerLaunch.run(["no-such-tool-1234"], environment: environment, workingDirectory: directory.path)
+            await OpenerLaunch.run([path], environment: [:], workingDirectory: directory.path, clock: TestClock())
+                == .finished
+        )
+        #expect(
+            await OpenerLaunch.run(
+                ["no-such-tool-1234"],
+                environment: environment,
+                workingDirectory: directory.path,
+                clock: TestClock()
+            )
                 == .failed("no-such-tool-1234 is not on your PATH")
         )
         #expect(
@@ -62,7 +73,7 @@ struct OpenerLaunchTests {
                 == .failed("\(directory.path)/absent is not a program that can be run")
         )
         #expect(
-            await OpenerLaunch.run([], environment: environment, workingDirectory: directory.path)
+            await OpenerLaunch.run([], environment: environment, workingDirectory: directory.path, clock: TestClock())
                 == .failed("no program")
         )
     }
@@ -71,7 +82,12 @@ struct OpenerLaunchTests {
         defer { try? FileManager.default.removeItem(at: directory) }
         try tool("read line; exit 3")
         #expect(
-            await OpenerLaunch.run(["tool"], environment: environment, workingDirectory: directory.path) == .exited(3)
+            await OpenerLaunch.run(
+                ["tool"],
+                environment: environment,
+                workingDirectory: directory.path,
+                clock: TestClock()
+            ) == .exited(3)
         )
     }
 

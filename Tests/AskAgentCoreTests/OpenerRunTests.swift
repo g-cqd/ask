@@ -35,6 +35,7 @@ struct OpenerRunTests {
 
     @Test func `the arguments are shown one line, each kept apart`() {
         #expect(OpenerRun.shown(["code", "--goto", "/a/b.swift:12"]) == "code --goto /a/b.swift:12")
+        #expect(OpenerRun.shown(["code", "{path}:{line}"]) == "code {path}:{line}", "a placeholder is shown bare")
         #expect(OpenerRun.shown(["open", "/a/My Notes/b c.md", ""]) == "open '/a/My Notes/b c.md' ''")
         #expect(OpenerRun.shown(["t", "it's"]) == #"t 'it'\''s'"#)
     }

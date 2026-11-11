@@ -97,11 +97,26 @@ def main():
             click(terminal, "notes.txt")
             terminal.until(lambda: ran() != "")
             check("and the next click asks nothing", ran_with("12") and "Run your opener" not in terminal.text())
+            # /config openers lists what was allowed always, and revokes it: the next click asks again. The list is a notice, whose
+            # paths are shown short, so the probe's script reads as `../tool`: its name is what is looked for.
+            terminal.send(b"/config openers\r")
+            terminal.until(lambda: "Opener commands allowed always" in terminal.text())
+            check("/config openers lists the command and what it is for",
+                  "tool {path} {line}  for files" in terminal.text())
+            terminal.send(b"/config openers revoke 1\r")
+            terminal.until(lambda: "No longer allowed always" in terminal.text())
+            os.remove(out)
+            click(terminal, "notes.txt")
+            terminal.until(lambda: "Run your opener" in terminal.text())
+            check("revoked, the command asks again", ran() == "")
+            terminal.send(b"\x1b")
+            terminal.until(lambda: "Run your opener" not in terminal.text())
             terminal.close()
             terminal = None
             # Under --yes, which the probes' terminal gives by default, nothing is asked and nothing is kept.
-            os.remove(out)
-            os.remove(grants)
+            for path in (out, grants):
+                if os.path.exists(path):
+                    os.remove(path)
             server.responses = [agent.turn([("text", f"See {target}:7 again.")], "end_turn")]
             terminal = folding.Terminal(project, environment, columns=120)
             terminal.until(lambda: "ask>" in terminal.text())

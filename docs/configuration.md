@@ -336,7 +336,8 @@ A `command` is a list of arguments, run without a shell: `["code", "--goto", "{p
 whose value would start an argument with `-` is not run. The program, the first argument, is yours alone: it may hold no placeholder.
 
 A command asks before it runs, showing its arguments: **this time**, **always**, or **deny**. "Always" is kept (in
-`~/.local/state/ask/openers.json`) until you change the command or what its rule matches, and then it asks again. With `--yes`, or
+`~/.local/state/ask/openers.json`) until you change the command or what its rule matches, and then it asks again. `/config openers` lists
+what you allowed always, and `/config openers revoke 2` (or `revoke all`) takes it back. With `--yes`, or
 approvals that allow by default, a command runs unasked; with `--ask all` it asks every time. A command, like an app, is offered
 only what a plain click would open: a file that would run is still only shown in the Finder, and a file that is not there is not
 opened. It runs as you would run it, outside the sandbox the model's commands get, without the variables ask withholds from
