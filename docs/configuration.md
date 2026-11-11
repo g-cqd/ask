@@ -321,8 +321,9 @@ in the file's order; when none matches, the subagent uses the model it would hav
 What a link you click opens with (roadmap 0216, ADR-0148). Your own file only: a project's file that sets `openers` is refused. With
 none, a click opens a page in your browser, a file or folder in its app, and shows a file that would run in the Finder instead.
 
-An app set here never opens what would run: an app, a script or a program is still only shown in the Finder, whatever you set, because
-the path may be one the model wrote. An app that is not on this Mac is said on the status line, and the link opens as it would without it.
+A script (a `.sh`, a `.command`, a file starting with `#!`) opens in the app you set, as any document does, without being run. An app, an
+installer or a compiled program is still only shown in the Finder, whatever you set: opening an app launches it, and the path may be
+one the model wrote. An app that is not on this Mac is said on the status line, and the link opens as it would without it.
 
 | Key | Default | What it does |
 |---|---|---|
@@ -339,8 +340,8 @@ A command asks before it runs, showing its arguments: **this time**, **always**,
 `~/.local/state/ask/openers.json`) until you change the command or what its rule matches, and then it asks again. `/config openers` lists
 what you allowed always, and `/config openers revoke 2` (or `revoke all`) takes it back. With `--yes`, or
 approvals that allow by default, a command runs unasked; with `--ask all` it asks every time. A command, like an app, is offered
-only what a plain click would open: a file that would run is still only shown in the Finder, and a file that is not there is not
-opened. It runs as you would run it, outside the sandbox the model's commands get, without the variables ask withholds from
+what a plain click would open, and scripts; an app, an installer or a compiled program is still only shown in the Finder, and a file
+that is not there is not opened. It runs as you would run it, outside the sandbox the model's commands get, without the variables ask withholds from
 commands, and is left running if it stays open.
 
 ### `modelScopes`

@@ -21,7 +21,9 @@ extension ScreenComposer {
             if width > 0, look != .default {
                 line.accents.append(Accent(columns: column ..< column + width, style: look))
             }
-            if width > 0, let uri { line.links.append(PathLinks.Link(columns: column ..< column + width, uri: uri)) }
+            if width > 0, let uri {
+                line.links.append(PathLinks.Link(columns: column ..< column + width, carrying: uri))
+            }
             if let range = run.source {
                 segments.add(range, of: run.text, at: column, width: width, source: &source)
             }
@@ -29,7 +31,9 @@ extension ScreenComposer {
         line.text = text
         line.segments = segments.segments
         line.accents = merged(line.accents, columns: \.columns) { $0.style == $1.style }
-        line.links = merged(line.links, columns: \.columns) { $0.uri == $1.uri }
+        line.links = merged(line.links, columns: \.columns) {
+            $0.uri == $1.uri && $0.line == $1.line && $0.column == $1.column
+        }
         if let first = line.segments.first {
             line.source = Source(
                 block: block,

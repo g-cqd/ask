@@ -52,7 +52,9 @@ struct PlainAssistantCharacterisationTests {
     @Test func `the rows of every message at every width are those ask drew before Markdown`() {
         // Re-pinned with roadmap 0075's links in every block and TerminalKit's `Style.linkID`: with the links left out and `linkID: nil`
         // removed from the styles' text, the digest was the earlier 5_925_546_613_186_270_904, so nothing else moved.
-        #expect(Self.digest() == 9_049_284_615_859_004_974)
+        // Moved on purpose (the owner, 2026-11-11): a link that crosses a wrap is one link on each row it covers. A check of old against
+        // new linking over this corpus changed 230 rows' links, each a link reaching a row's edge, and no text, style or source.
+        #expect(Self.digest() == 6_555_768_067_171_518_940)
     }
 
     @Test func `a message draws as its wrapped source, markers and all, and a long fence folds to a dim line`() {

@@ -29,7 +29,8 @@ struct PathDisplayTests {
 
     @Test func `inside the project a path is shown relative to it, its location kept, and opens the file`() throws {
         let path = try #require(found("See /w/proj/Sources/a.swift:12:5.", display())["/w/proj/Sources/a.swift:12:5"])
-        #expect(path.shown == "Sources/a.swift:12:5" && path.uri == "file:///w/proj/Sources/a.swift")
+        // The place rides on the address until a link is made from it, so a row that wraps before `:12:5` keeps it (2026-11-11).
+        #expect(path.shown == "Sources/a.swift:12:5" && path.uri == "file:///w/proj/Sources/a.swift#L12C5")
     }
 
     @Test func `up to the limit above the project it is shown from there, and beyond it as written`() {

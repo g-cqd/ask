@@ -92,8 +92,7 @@ Opening links on anything but a click; openers for tool output's links beyond wh
 
 A path's `:12` or `:12:5` reaches `{line}` and `{column}`. The link's address is still the file alone, which is what the terminal
 is given; the row it is drawn on says what follows it (`PathLinks.located`), and a click carries the place after the address as
-`#L12C5`, which `ClickedLink` reads back and `LinkOpener` leaves out of the file's name. A path wrapped before its place loses it,
-and opens at line 1. `LinkLocationTests` (4) and `ClickedLinkTests`, red before.
+`#L12C5`, which `ClickedLink` reads back and `LinkOpener` leaves out of the file's name. `LinkLocationTests` (4) and `ClickedLinkTests`, red before.
 
 ## Step 4: commands (2026-11-11)
 
@@ -118,7 +117,15 @@ Done, but for the list of what was allowed:
 
 - Steps 5 (`/config resolveOpeners`) and 6 (presets) are **proposals of mine, not the owner's asks** (white paper §7, 2026-11-11):
   not built, and not scheduled until the owner has refined or dropped them.
-- The owner's answer on whether a rule may open what would run in an editor; today it may not.
 
 `/config openers` is done (2026-11-11): it lists what was allowed always, numbered, and `/config openers revoke N` or `revoke all`
 takes it back (`OpenerGrantsTests`; the probe's seventh and eighth checks). Step 4 is complete.
+
+## The owner's answers (2026-11-11)
+
+- **A script opens in the app or command a rule names.** By its type or a `#!` first line (`LinkOpener.isScript`). An app, an installer,
+  a workflow and a compiled program are still only shown: opening an app in the Finder launches it. A plain click with no opener still
+  only shows a script. `LinkOpenerAppTests`, red before.
+- **A path that wraps before its place keeps it.** A path the hook finds carries its place on its address until the link is made
+  (`PathLinks.carrying`); a plain row is linked as its whole hard line and the link cut at the rows' edges (`linkedRows`), which also
+  ended a long wrapped path being linked as two pieces naming files that are not there. `WrappedLinkPlaceTests`, red before.

@@ -61,8 +61,8 @@ you send or copy.
   before it. Paths in code, in Markdown links, in your own messages and in tool output are copied as written.
 - File paths, web addresses and email addresses anywhere in the conversation are links: a click opens a file or folder in its app, a
   page in your browser, an address in Mail. A file that would run (an app, a script, a program) is shown in the Finder instead.
-  With [openers](configuration.md) set, a click opens in the app you chose, or runs your command after asking; a path's `:12` goes
-  with it as the line.
+  With [openers](configuration.md) set, a click opens in the app you chose (a script too), or runs your command after asking; a
+  path's `:12` goes with it as the line, even when the path wraps onto the next row.
 - Tool calls, the model's thinking and long code blocks start **folded** to one line. Click a block to open it in place; **Ctrl+O** opens or
   folds the tool output, **Ctrl+T** the thinking and **Ctrl+G** the code blocks.
 - Tool blocks are headed by their modifiers first, then their target: `read · lines 10–45 · path`, `write · 2 B · path`, `write · exact replacement · path`, `job · stop · #abcd`, and for commands `shell · timeout 5 min · swift build`; a timeout equal to the default is not

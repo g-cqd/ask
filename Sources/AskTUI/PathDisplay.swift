@@ -27,7 +27,12 @@ struct PathDisplay: Sendable, Equatable {
                 guard let (shown, absolute) = resolve(word.path), let uri = PathLinks.uri(absolute, home: home) else {
                     return nil
                 }
-                return MarkdownPath(bytes: word.bytes, shown: shown + word.location, uri: uri)
+                // The place goes with the address, so a row that wraps before it still has it (the owner, 2026-11-11).
+                return MarkdownPath(
+                    bytes: word.bytes,
+                    shown: shown + word.location,
+                    uri: PathLinks.carrying(word.location, on: uri)
+                )
             }
     }
 

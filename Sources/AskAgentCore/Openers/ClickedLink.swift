@@ -56,8 +56,10 @@ public struct ClickedLink: Sendable, Equatable {
     /// `L12` or `L12C5` as a line and a column; nil for anything else.
     private static func place(_ fragment: String?) -> (line: Int, column: Int?)? {
         guard let fragment, fragment.hasPrefix("L") else { return nil }
+        // The screen reads `#L12C5` too (PathLinks.Link); AskTUI may not import this target, so one reader waits on roadmap 0209.
         let parts = fragment.dropFirst().split(separator: "C", maxSplits: 1, omittingEmptySubsequences: false)
         func number(_ text: Substring) -> Int? {
+            // @dl:accept -- the same small reader on both sides of a boundary the layering forbids crossing
             (1 ... 9).contains(text.count) && text.allSatisfy { $0.isASCII && $0.isNumber } ? Int(text) : nil
         }
         guard let first = parts.first, let line = number(first) else { return nil }

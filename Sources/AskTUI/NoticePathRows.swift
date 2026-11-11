@@ -70,7 +70,7 @@ enum NoticePathRows {
                             )
                             if let uri = piece.uri {
                                 line.links.append(
-                                    .init(columns: col ..< col + UnicodeWidth.displayWidth(of: part), uri: uri)
+                                    .init(columns: col ..< col + UnicodeWidth.displayWidth(of: part), carrying: uri)
                                 )
                             }
                         }

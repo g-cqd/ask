@@ -70,7 +70,7 @@ extension ScreenComposer {
     ) -> [Line] {
         // Paths, web and email addresses become links in every block (roadmap 0075), beside a Markdown row's own links. Once per layout
         // of the block, not per frame; the row cache then redraws only what changed.
-        let content = content.map { linked($0, home: style.home, commands: style.commands) }
+        let content = linkedRows(content, home: style.home, commands: style.commands)
         guard style.padded else { return content }
         let tint =
             !style.theme.tinted
