@@ -6,10 +6,11 @@ internal import TerminalKitInput
 /// a number checks, and the note row edits as the input does. Enter goes on (after the last of a series, to a review that Enter sends and
 /// Esc leaves), Esc on a question declines them all, Ctrl+C declines and stops the turn. The input keeps its draft and takes no key.
 extension ScreenController {
-    mutating func askQuestions(id: Int, questions: [ScreenQuestion]) {
-        guard !questions.isEmpty else { return }
+    mutating func askQuestions(id: Int, questions: [ScreenQuestion]) -> [Effect] {
+        guard !questions.isEmpty else { return [] }
         state.pendingQuestions = PendingQuestions(id: id, questions: questions)
         state.scrollback = 0
+        return notifyingAway("waiting for your answer")
     }
 
     /// What a key does to the questions; nil when no question waits, or in a lane for any key but Esc.
@@ -184,6 +185,7 @@ extension ScreenController {
 
     /// The run ended: whatever still waited on the person goes, questions included.
     mutating func runEnded() -> [Effect] {
+        let wasTurn = state.running
         state.compacting = false
         state.reconnecting = false
         state.connectingMCP = false
@@ -197,6 +199,8 @@ extension ScreenController {
             state.pendingInput = nil
             state.inputAnswer.clear()
         }
-        return declined + endRun()
+        let effects = declined + endRun()
+        // A turn that ended, not one that a queued message starts at once.
+        return wasTurn && !state.running ? effects + notifyingAway("done") : effects
     }
 }

@@ -38,6 +38,7 @@ final class ScreenSession {
     let titles: TabTitleWriter
     /// Whether OSC 9;4 is sent (note n59), and whether its busy mark is up.
     let readsProgress: Bool
+    let notification: TerminalNotification
     var progressShown = false
     var longAction = LongAction()
 
@@ -53,6 +54,7 @@ final class ScreenSession {
         connection = screen.connection
         titles = TabTitleWriter(connection: screen.connection)
         readsProgress = screen.readsProgress
+        notification = screen.notification
         input = InputSource(connection: screen.connection, escapeIsUnambiguous: screen.session.escapeIsUnambiguous)
         self.conversation = conversation
         let size = try? screen.connection.getSize()
@@ -163,6 +165,7 @@ final class ScreenSession {
                 sink.yield(.update(.promptWithdrawn(id: id, withdrawn: conversation.withdraw(id))))
             case .runCommand(let name, let arguments):
                 run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }
+            case .notify(let text): titles.send(notification.sequence(text))
             case .runShell(let command, let sends):
                 // Not the screen's run: the person's command goes on beside the turn, and Ctrl+C stops the turn, not it.
                 _ = conversation.shell(command, sends: sends) { sink.yield(.update($0)) }

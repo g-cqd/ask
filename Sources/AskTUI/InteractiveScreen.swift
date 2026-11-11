@@ -68,7 +68,8 @@ public func runInteractiveScreen(
                 read: HostPasteboard.read
             ),
             mayDrawImages: TerminalGraphics.mayDraw(environment: ProcessInfo.processInfo.environment),
-            readsProgress: TerminalProgress.isRead(environment: ProcessInfo.processInfo.environment)
+            readsProgress: TerminalProgress.isRead(environment: ProcessInfo.processInfo.environment),
+            notification: TerminalNotification(style: options.notify, environment: ProcessInfo.processInfo.environment)
         ),
         conversation: conversation,
         label: label,
@@ -104,7 +105,8 @@ func runInteractiveScreen(
             frames: frames,
             clipboard: ScreenClipboard(connection: connection, environment: environment, pasteboard: pasteboard),
             mayDrawImages: TerminalGraphics.mayDraw(environment: environment),
-            readsProgress: TerminalProgress.isRead(environment: environment)
+            readsProgress: TerminalProgress.isRead(environment: environment),
+            notification: TerminalNotification(style: options.notify, environment: environment)
         ),
         conversation: conversation,
         label: label,

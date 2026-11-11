@@ -3,7 +3,7 @@ internal import Foundation
 internal import Synchronization
 internal import TerminalKitIO
 
-/// Sends the tab's title (note n60) from a thread of its own, in the order asked: never from the screen's thread, which a terminal that
+/// Sends the tab's title (note n60), its progress and notifications (note n62) from a thread of its own, in the order asked: never from the screen's thread, which a terminal that
 /// is slow to take a frame must not hold up (note n18), as the first title, sent right behind the first frame, did. The thread starts
 /// with the first title and ends with ``finish(_:)``.
 final class TabTitleWriter: Sendable {
