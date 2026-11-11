@@ -19,6 +19,7 @@ extension Transcript {
         copy.timeoutDisplay = timeoutDisplay
         copy.timeoutLabel = timeoutLabel
         copy.home = home
+        copy.history.limit = history.limit
         return copy
     }
 }

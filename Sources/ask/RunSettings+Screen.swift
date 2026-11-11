@@ -52,6 +52,8 @@ extension RunSettings {
         options.notify = Self.word(ui.notify, or: defaults.notify)
         options.statusPath = Self.word(ui.statusPath, or: defaults.statusPath)
         options.statusPathSide = Self.word(ui.statusPathSide, or: defaults.statusPathSide)
+        options.historyLimit =
+            ui.historyLimit.map { $0 == UISection.noHistoryLimit ? nil : $0 } ?? defaults.historyLimit
         options.outputFoldLines = ui.outputFoldLines ?? defaults.outputFoldLines
         options.outputFoldBytes = ui.outputFoldBytes ?? defaults.outputFoldBytes
         options.home = LaunchEnvironment.values["HOME"]

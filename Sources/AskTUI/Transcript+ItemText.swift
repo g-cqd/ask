@@ -25,6 +25,7 @@ extension Transcript.Item {
         switch self {
             case .user(let text), .assistant(let text), .notice(let text, _), .queued(let text): return text
             case .jobEnded(let label, _, _): return label
+            case .trimmed: return ""
             case .thinking(let text):
                 let body = Transcript.kept(text)
                 let header = Self.thinkingHeader(running: running)

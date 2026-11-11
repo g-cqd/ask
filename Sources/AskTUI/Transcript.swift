@@ -26,6 +26,8 @@ public struct Transcript: Sendable, Equatable {
         case queued(String)
         /// A completed background job, with status metadata drawn at the right edge.
         case jobEnded(label: String, status: ToolStatus, lines: Int)
+        /// A block that left the screen past `ui.historyLimit` (note n29): nothing of it is kept here.
+        case trimmed
     }
 
     public internal(set) var items: [Item] = []
@@ -35,6 +37,7 @@ public struct Transcript: Sendable, Equatable {
     let markdownRows = MarkdownRowCache()
     private var nextRevision = 0
     var progress: [Int: BlockProgress] = [:]
+    var history = HistoryTrim()  // `ui.historyLimit` (note n29): the blocks kept, and those let go.
     var toolBlocks: [String: Int] = [:]
     var commandBlocks: Set<Int> = []  // The tool blocks whose input is a command, which heads the block (roadmap 0080).
     var summaryBlocks: Set<Int> = []  // A compaction's and other summaries ask wrote: see Transcript+Summary.swift.
@@ -209,6 +212,7 @@ public struct Transcript: Sendable, Equatable {
         items.append(item)
         if case .thinking = item { progress[items.count - 1] = BlockProgress(at: .now, spinner: spinnerStyle) }
         revisions.append(bump())
+        trimHistory()
     }
 
     private mutating func replaceLast(_ item: Item) {

@@ -79,6 +79,7 @@ extension RunSettings {
         ui.notify = NotifyPreference(rawValue: options.notify.rawValue)
         ui.statusPath = StatusPathPreference(rawValue: options.statusPath.rawValue)
         ui.statusPathSide = StatusPathSidePreference(rawValue: options.statusPathSide.rawValue)
+        ui.historyLimit = options.historyLimit ?? UISection.noHistoryLimit
         return ui
     }
 

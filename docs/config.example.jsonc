@@ -82,6 +82,9 @@
     // How many folders above the project a path may share one with to be shown from there, or null for no limit. Default: 2.
     "pathAncestors": 2,
 
+    // The most blocks the screen keeps, the oldest let go first, or null for all; the session file keeps everything. Default: null.
+    "historyLimit": 2000,
+
     // What a click acts on brightens under the pointer. Default: true.
     "hover": true,
 

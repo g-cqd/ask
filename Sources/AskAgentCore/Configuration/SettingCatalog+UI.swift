@@ -41,6 +41,13 @@ extension SettingCatalog {
             "2",
             "How many folders above the project a path may share one with to be shown from there, or null for no limit."
         ),
+        row(
+            "ui.historyLimit",
+            .structured,
+            "2000",
+            "null",
+            "The most blocks the screen keeps, the oldest let go first, or null for all; the session file keeps everything."
+        ),
         row("ui.hover", .boolean, "true", "true", "What a click acts on brightens under the pointer."),
         row("ui.leaveFinishedJob", .boolean, "true", "true", "When a job you watch ends, go back to the conversation."),
         row(

@@ -25,5 +25,6 @@ extension Transcript {
         completedJobs.removeAll(keepingCapacity: true)
         folds.clearChoices()
         codeFolds.clearChoices()
+        history = HistoryTrim(limit: history.limit)
     }
 }

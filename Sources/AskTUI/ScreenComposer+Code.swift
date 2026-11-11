@@ -15,6 +15,12 @@ extension ScreenComposer {
         columns: Int,
         style: BlockStyle = .plain
     ) -> [Line] {
+        // A block past `ui.historyLimit` draws nothing, but the newest of them says how many there are (note n29).
+        if case .trimmed = transcript.items[index] {
+            guard index == transcript.history.boundary else { return [] }
+            let margin = String(repeating: " ", count: style.inset)
+            return [Line(text: margin + HistoryTrim.notice(transcript.history.trimmed), style: Style(dim: true))]
+        }
         var rows = stillLines(in: transcript, at: index, shown: shown, columns: columns, style: style)
         if case .user = transcript.items[index] { rows = withSkillTokens(rows, known: transcript.tokenNames) }
         guard transcript.shimmer, let progress = transcript.progress[index], progress.ended == nil else { return rows }

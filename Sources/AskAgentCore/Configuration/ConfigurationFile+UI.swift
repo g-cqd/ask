@@ -14,7 +14,19 @@ extension ConfigurationFile {
                     case "scrollLines": section.scrollLines = try container.decode(Int.self, forKey: key)
                     case "inputRows": section.promptRows = try container.decode(Int.self, forKey: key)
                     case "pathAncestors":
-                        section.pathAncestors = try ConfigurationFile.decodeAncestors(container, key: key, named: name)
+                        section.pathAncestors = try ConfigurationFile.decodeCount(
+                            container,
+                            key: key,
+                            named: name,
+                            least: 0
+                        )
+                    case "historyLimit":
+                        section.historyLimit = try ConfigurationFile.decodeCount(
+                            container,
+                            key: key,
+                            named: name,
+                            least: 1
+                        )
                     case "inputPrefix": section.prompt = try container.decode(String.self, forKey: key)
                     // @dl:accept -- key table rows
                     case "fold": try decodeFold(container.decode(FoldDecoded.self, forKey: key))
@@ -55,6 +67,7 @@ extension ConfigurationFile {
             switch key.stringValue {
                 // @dl:accept -- one row per choice key, each naming its own enumeration; the rows are data
                 case "appearance": section.appearance = try word(AppearancePreference.self)
+                // @dl:accept -- the same table of choice keys, one row each
                 case "spinner": section.spinner = try word(SpinnerPreference.self)
                 case "stopKeys": section.interruptKeys = try word(InterruptKeysPreference.self)
                 case "queuedOnStop": section.interruptSendsQueued = try word(QueuedAfterInterruptPreference.self)
@@ -130,15 +143,18 @@ extension ConfigurationFile {
         }
     }
 
-    /// An on/off setting: `true` or `false`, or `"on"` or `"off"`, so neither way of writing it is an error.
-    /// `ui.pathAncestors` (roadmap 0215): a whole number of folders, 0 or more, or `null` for no limit.
-    static func decodeAncestors(_ container: KeyedDecodingContainer<Key>, key: Key, named name: String) throws -> Int {
-        if try container.decodeNil(forKey: key) { return UISection.noAncestorLimit }
+    /// A limit: a whole number, `least` or more, or `null` for none (`ui.pathAncestors`, roadmap 0215; `ui.historyLimit`, note n29),
+    /// which both read as -1 (``UISection/noAncestorLimit``, ``UISection/noHistoryLimit``).
+    static func decodeCount(_ container: KeyedDecodingContainer<Key>, key: Key, named name: String, least: Int) throws
+        -> Int
+    {
+        if try container.decodeNil(forKey: key) { return -1 }
         let count = try container.decode(Int.self, forKey: key)
-        guard count >= 0 else { throw BadValue(key: name, shown: String(count)) }
+        guard count >= least else { throw BadValue(key: name, shown: String(count)) }
         return count
     }
 
+    /// An on/off setting: `true` or `false`, or `"on"` or `"off"`, so neither way of writing it is an error.
     static func decodeSwitch(_ container: KeyedDecodingContainer<Key>, key: Key, name: String) throws -> Bool {
         if let flag = try? container.decode(Bool.self, forKey: key) { return flag }
         let word = try container.decode(String.self, forKey: key)

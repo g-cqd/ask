@@ -27,6 +27,7 @@ extension SettingCatalog {
         "environment.withhold": "a list of variable names", "environment.pass": "a list of variable names",
         "ui.stopTwice": #"a list of "esc" and "ctrl-c""#,
         "ui.pathAncestors": "a whole number of 0 or more, or null for no limit",
+        "ui.historyLimit": "a whole number of 1 or more, or null for no limit",
         "openers.rules": "a list of rules, each with a match and an app or a command"
     ]
     // @dl:enable near-clone

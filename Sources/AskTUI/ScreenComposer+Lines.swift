@@ -157,6 +157,7 @@ extension ScreenComposer {
                 )
             case .thinking(let text):
                 return thinkingLines(text, folded: folded, block: block, width: width, style: style, progress: progress)
+            case .trimmed: return []
             case .jobEnded(let label, let status, let lines):
                 return blockHeader(
                     label,

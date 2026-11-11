@@ -47,6 +47,7 @@ struct ConfigurationKeySourceTests {
         section.notify = .bell
         section.statusPath = .home
         section.statusPathSide = .trailing
+        section.historyLimit = 500
         return section
     }()
 
