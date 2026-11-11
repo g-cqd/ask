@@ -23,6 +23,31 @@ enum PathLinks {
             self.column = column
         }
 
+        /// A link from an address that may carry its place (``PathLinks/carrying(_:on:)``): the place is taken off, so the terminal
+        /// is given the file alone.
+        init(columns: Range<Int>, carrying address: String) {
+            guard address.hasPrefix("file://"), let hash = address.lastIndex(of: "#"),
+                let place = Self.place(address[address.index(after: hash)...])
+            else {
+                self.init(columns: columns, uri: address)
+                return
+            }
+            self.init(columns: columns, uri: String(address[..<hash]), line: place.line, column: place.column)
+        }
+
+        /// `L12` or `L12C5`; nil for anything else.
+        private static func place(_ text: Substring) -> (line: Int, column: Int?)? {
+            guard text.first == "L" else { return nil }
+            let parts = text.dropFirst().split(separator: "C", maxSplits: 1, omittingEmptySubsequences: false)
+            func number(_ part: Substring) -> Int? {
+                (1 ... 9).contains(part.count) && part.allSatisfy { $0.isASCII && $0.isNumber } ? Int(part) : nil
+            }
+            guard let first = parts.first, let line = number(first) else { return nil }
+            guard parts.count == 2 else { return (line, nil) }
+            guard let column = number(parts[1]) else { return nil }
+            return (line, column)
+        }
+
         /// What a click opens: the address, with the place in the file after it as `#L12C5`. Only a click takes this form; the
         /// terminal is given ``uri``.
         var target: String {

@@ -2,6 +2,14 @@ internal import TerminalKitText
 
 /// The place written after a path (roadmap 0216): `a.swift:12` or `a.swift:12:5`, as a compiler writes it.
 extension PathLinks {
+    /// `address` with `location` (`:12` or `:12:5`) carried after it as `#L12C5`, for a link drawn on rows that may wrap: the
+    /// place goes with the link whatever row it ends on. ``Link/init(columns:carrying:)`` takes it off again.
+    static func carrying(_ location: String, on address: String) -> String {
+        let numbers = location.split(separator: ":").compactMap { Int($0) }
+        guard address.hasPrefix("file://"), let line = numbers.first else { return address }
+        return address + "#L\(line)" + (numbers.count > 1 ? "C\(numbers[1])" : "")
+    }
+
     /// `links` with the line and column each file link ends with, or is followed by, in `text`, the row they are drawn on. A reply's
     /// shortened path covers its place; a path in plain text is followed by it.
     static func located(_ links: [Link], in text: String) -> [Link] {
