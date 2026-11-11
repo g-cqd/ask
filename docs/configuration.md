@@ -332,9 +332,15 @@ the path may be one the model wrote. An app that is not on this Mac is said on t
 | `rules` | none | Rules matching a clicked link to an `app` or a `command`, the first that matches winning, before the three above. A rule's `match` takes `kind` (`"file"`, `"folder"`, `"web"`), `extensions` (`["md"]`, without case), `host` (`"github.com"`, also matching its subdomains) and `pattern` (an AemiRegex over a file's path or a web link's address); each one given must hold. |
 
 A `command` is a list of arguments, run without a shell: `["code", "--goto", "{path}:{line}"]`. `{path}`, `{line}`, `{column}` and
-`{url}` are filled inside the argument they are written in, and never read again; a missing line or column is `1`. A link whose value
-would start an argument with `-` is not run. Not yet: a command rule is matched, and the status line says it is not run yet (roadmap 0216); app rules and the
-kinds' apps work.
+`{url}` are filled inside the argument they are written in, and never read again; a path with no line or column gets `1`. A link
+whose value would start an argument with `-` is not run. The program, the first argument, is yours alone: it may hold no placeholder.
+
+A command asks before it runs, showing its arguments: **this time**, **always**, or **deny**. "Always" is kept (in
+`~/.local/state/ask/openers.json`) until you change the command or what its rule matches, and then it asks again. With `--yes`, or
+approvals that allow by default, a command runs unasked; with `--ask all` it asks every time. A command, like an app, is offered
+only what a plain click would open: a file that would run is still only shown in the Finder, and a file that is not there is not
+opened. It runs as you would run it, outside the sandbox the model's commands get, without the variables ask withholds from
+commands, and is left running if it stays open.
 
 ### `modelScopes`
 
