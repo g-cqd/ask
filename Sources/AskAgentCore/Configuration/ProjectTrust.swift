@@ -68,14 +68,9 @@ public struct ProjectTrust: Sendable, Equatable {
     /// error, not an empty store, so a corrupted file cannot silently untrust or, worse, hide why.
     /// - Throws: ``ConfigurationError``.
     public static func load(_ path: String) throws(ConfigurationError) -> ProjectTrust {
-        guard let bytes = try ConfigurationFileReader.read(path) else { return ProjectTrust() }
-        do {
-            var trust = ProjectTrust()
-            trust.entries = try AemiJSON.JSONDecoder().decode([String: String].self, from: bytes)
-            return trust
-        } catch {
-            throw .invalid(path: path, line: nil, column: nil, reason: "not a trust store: \(error)")
-        }
+        var trust = ProjectTrust()
+        trust.entries = try OwnerStore.load([String: String].self, from: path, what: "a trust store") ?? [:]
+        return trust
     }
 
     /// Writes the store to `path`, owner-only, replacing it atomically, in a directory made owner-only.
@@ -84,21 +79,6 @@ public struct ProjectTrust: Sendable, Equatable {
 
     /// ``save(to:)`` with the flush replaced, so a test can see when it happens and make it fail.
     func save(to path: String, flush: (Int32) -> Int32) throws(ConfigurationError) {
-        let directory = (path as NSString).deletingLastPathComponent
-        try? FileManager.default.createDirectory(
-            atPath: directory,
-            withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700]
-        )
-        var encoder = AemiJSON.JSONEncoder()
-        encoder.prettyPrinted = true
-        encoder.options.keyOrder = .sorted
-        guard let data = try? encoder.encode(entries) else {
-            throw .invalid(path: path, line: nil, column: nil, reason: "cannot encode")
-        }
-        // The folder is made above; the new file is flushed, renamed over the store, and the folder flushed (ADR-0089).
-        do { try AtomicFile.replace(URL(fileURLWithPath: path), with: [UInt8](data), flush: flush) } catch {
-            throw .unreadable(path: path, errno: error.code)
-        }
+        try OwnerStore.save(entries, to: path, flush: flush)
     }
 }
