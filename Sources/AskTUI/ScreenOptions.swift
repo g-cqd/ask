@@ -87,6 +87,9 @@ public struct ScreenOptions: Sendable, Equatable {
     public var outputFoldLines = 200
     /// `ui.notify` (note n62): a bell or a notification when a turn ends or ask waits, while the terminal is not focused.
     public var notify = NotifyStyle.off
+    /// `ui.statusPath` and `ui.statusPathSide` (notes n6 and n63): the folder ask works in, on the status line.
+    public var statusPath = StatusPathForm.folder
+    public var statusPathSide = StatusPathSide.leading
     public var outputFoldBytes = 32 * 1024
 
     /// The look before roadmap 0074: an `ask> ` prefix, no tint, no rule. What the screen's older tests were written against.

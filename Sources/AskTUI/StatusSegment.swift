@@ -3,7 +3,8 @@
 struct StatusSegment: Equatable {
     /// What a click on the segment means, so the composer can say which columns it covers.
     enum Target: Equatable {
-        case none, runners, below
+        /// `mark` is the leading mark, which keeps its colour wherever it is and only while it is shown.
+        case none, runners, below, mark
     }
 
     /// The forms it can take, longest first; never empty.
@@ -15,6 +16,10 @@ struct StatusSegment: Equatable {
     var droppable = true
     /// How far down ``forms`` the fit has gone.
     var form = 0
+    /// Whether it goes with the piece that ``carries`` it: never shortened or dropped alone (the leading mark, with the model's name).
+    var attached = false
+    /// Whether dropping it drops the attached pieces too (the model's name, with the mark).
+    var carries = false
 
     init(_ forms: [String], priority: Int, target: Target = .none, droppable: Bool = true) {
         self.forms = forms

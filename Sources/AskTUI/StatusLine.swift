@@ -37,15 +37,16 @@ struct StatusLine {
     /// Shortens the least important piece that can be shortened, else drops the least important that may be, until the line fits.
     private mutating func fit() {
         while width > columns {
-            guard let index = segments.indices.min(by: { segments[$0].priority < segments[$1].priority }) else {
+            let free = segments.indices.filter { !segments[$0].attached }
+            guard let index = free.min(by: { segments[$0].priority < segments[$1].priority }) else {
                 return
             }
             // The least important piece is shortened or dropped before a more important one is touched.
             if segments[index].hasShorterForm {
                 segments[index].form += 1
-            } else if segments[index].droppable, segments.count > 1 {
-                segments.remove(at: index)
-            } else if let other = segments.indices.filter({ segments[$0].hasShorterForm })
+            } else if segments[index].droppable, free.count > 1 {
+                drop(index)
+            } else if let other = free.filter({ segments[$0].hasShorterForm })
                 .min(by: {
                     segments[$0].priority < segments[$1].priority
                 })
@@ -57,12 +58,20 @@ struct StatusLine {
         }
     }
 
+    /// Drops the piece at `index`, and with it the pieces attached to it when it carries them (the mark, with the model's name).
+    private mutating func drop(_ index: Int) {
+        let carries = segments[index].carries
+        segments.remove(at: index)
+        if carries { segments.removeAll { $0.attached } }
+    }
+
     /// The row, with the columns the clickable pieces cover and an accent on the leading mark.
     func line(style: Style) -> (line: ScreenComposer.Line, runners: Range<Int>?, below: Range<Int>?) {
         var text = ""
         var column = 0
         var runners: Range<Int>?
         var below: Range<Int>?
+        var mark: Range<Int>?
         // In the bottom band the count is last, at the trailing edge, under the sidebar.
         let ordered = trailingRunners ? segments.filter { $0.target != .runners } : segments
         let trailing = trailingRunners ? segments.first { $0.target == .runners } : nil
@@ -75,6 +84,7 @@ struct StatusLine {
             switch segment.target {
                 case .runners: runners = span
                 case .below: below = span
+                case .mark: mark = span
                 case .none: break
             }
             text += segment.text
@@ -92,9 +102,10 @@ struct StatusLine {
             text = ColumnSlicer.split(text, columns: 0 ..< columns).selected
         }
         var accents: [ScreenComposer.Accent] = []
-        if let markStyle, let first = text.first {
-            let width = Swift.max(UnicodeWidth.displayWidth(of: String(first)), markWidth)
-            accents = [.init(columns: 0 ..< Swift.min(width, UnicodeWidth.displayWidth(of: text)), style: markStyle)]
+        if let markStyle, let mark {
+            let width = Swift.max(mark.count, markWidth)
+            let end = Swift.min(mark.lowerBound + width, UnicodeWidth.displayWidth(of: text))
+            if end > mark.lowerBound { accents = [.init(columns: mark.lowerBound ..< end, style: markStyle)] }
         } else if let first = text.first, first == "!" || first == "⚠" {
             accents = [.init(columns: 0 ..< UnicodeWidth.displayWidth(of: String(first)), style: Self.warning)]
         }
