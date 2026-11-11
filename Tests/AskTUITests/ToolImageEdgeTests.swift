@@ -71,4 +71,21 @@ struct ToolImageEdgeTests {
             "\(wide) -> \(narrow)"
         )
     }
+
+    @Test func `a wider transcript places a narrowed picture again at its size, and an unchanged one is left`() throws {
+        var images = try #require(ScreenImages(connection: MockTerminalConnection(), mayDraw: true))
+        _ = images.take(Array("\u{1B}_Gi=\(TerminalGraphics.queryID);OK\u{1B}\\".utf8))
+        var transcript = Transcript()
+        withPicture(&transcript)
+        let size = TerminalSize(columns: 100, rows: 60, pixelWidth: 1000, pixelHeight: 1200)
+        _ = images.place(in: &transcript, size: size, inset: 1, transcriptColumns: 100)
+        let wide = try #require(transcript.imagePlacements[0]?.first ?? nil)
+        _ = images.place(in: &transcript, size: size, inset: 1, transcriptColumns: 40)
+        let grown = images.place(in: &transcript, size: size, inset: 1, transcriptColumns: 100)
+        #expect(grown)
+        #expect(transcript.imagePlacements[0]?.first ?? nil == wide, "back at its own size, under the same id")
+        let before = transcript.revisions
+        let unchanged = images.place(in: &transcript, size: size, inset: 1, transcriptColumns: 100)
+        #expect(!unchanged && transcript.revisions == before, "nothing changed, nothing placed")
+    }
 }
