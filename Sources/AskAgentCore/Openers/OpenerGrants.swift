@@ -56,31 +56,12 @@ public struct OpenerGrants: Sendable, Equatable {
     /// The store at `path`: empty when there is none. One that is there and cannot be read is an error, never "nothing allowed"
     /// passed off as the whole truth, nor, worse, a reason to ask nothing.
     public static func load(_ path: String) throws(ConfigurationError) -> OpenerGrants {
-        guard let bytes = try ConfigurationFileReader.read(path) else { return OpenerGrants() }
-        do {
-            var grants = OpenerGrants()
-            grants.entries = try AemiJSON.JSONDecoder().decode([String: Grant].self, from: bytes)
-            return grants
-        } catch {
-            throw .invalid(path: path, line: nil, column: nil, reason: "not a store of allowed openers: \(error)")
-        }
+        var grants = OpenerGrants()
+        grants.entries =
+            try OwnerStore.load([String: Grant].self, from: path, what: "a store of allowed openers") ?? [:]
+        return grants
     }
 
     /// Writes the store to `path`, the person's alone, replacing it atomically.
-    public func save(to path: String) throws(ConfigurationError) {
-        try? FileManager.default.createDirectory(
-            atPath: (path as NSString).deletingLastPathComponent,
-            withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700]
-        )
-        var encoder = AemiJSON.JSONEncoder()
-        encoder.prettyPrinted = true
-        encoder.options.keyOrder = .sorted
-        guard let data = try? encoder.encode(entries) else {
-            throw .invalid(path: path, line: nil, column: nil, reason: "cannot encode")
-        }
-        do { try AtomicFile.replace(URL(fileURLWithPath: path), with: [UInt8](data), flush: FileFlush.barrier) } catch {
-            throw .unreadable(path: path, errno: error.code)
-        }
-    }
+    public func save(to path: String) throws(ConfigurationError) { try OwnerStore.save(entries, to: path) }
 }
