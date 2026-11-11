@@ -78,7 +78,8 @@ enum LinkOpener {
                 NSWorkspace.shared.open([url], withApplicationAt: app, configuration: NSWorkspace.OpenConfiguration())
                 return nil
             case .missingApp(let name):
-                return "Not opened: your openers name \(name), which is not on this Mac."
+                // As roadmap 0216 says: said, and the link opens as it would without the opener.
+                return missingAppNotice(name, usual: perform(uri))
             case .open(let url):
                 return NSWorkspace.shared.open(url) ? nil : "Nothing opened \(url.absoluteString)."
             case .reveal(let url):
@@ -87,6 +88,11 @@ enum LinkOpener {
             case .refuse:
                 return "Not opened: only web, mail and file links open, and only files that are there."
         }
+    }
+
+    /// What is said when the openers name an app that is not there: that, then whatever the usual way of opening the link said.
+    static func missingAppNotice(_ name: String, usual: String?) -> String {
+        "Not opened in \(name): your openers name it, and it is not on this Mac." + (usual.map { " " + $0 } ?? "")
     }
 
     private static func fileAction(_ url: URL) -> Action {

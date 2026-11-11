@@ -40,9 +40,12 @@ struct LinkOpenerAppTests {
         #expect(
             LinkOpener.perform("file:///a", opening: .command(["code", "/a"], rule: 0))?.hasPrefix("Not run") == true
         )
+        // The wording only: performing it would open the link the usual way, as roadmap 0216 says, and a test clicks nothing.
+        let missing = LinkOpener.missingAppNotice("No Such App 1234", usual: nil)
+        #expect(missing.contains("No Such App 1234") && ClipboardNotice.needsAttention(missing))
         #expect(
-            LinkOpener.perform("https://x.example", opening: .app("No Such App 1234"))?.contains("No Such App 1234")
-                == true
+            LinkOpener.missingAppNotice("X", usual: "Nothing opened https://x.example.")
+                .hasSuffix("Nothing opened https://x.example.")
         )
     }
 
