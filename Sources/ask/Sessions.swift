@@ -32,13 +32,8 @@ struct Sessions: ParsableCommand {
             let prompts =
                 summary.map { $0.isLocked ? "locked" : $0.prompts == 1 ? "1 prompt" : "\($0.prompts) prompts" }
                 ?? "unreadable"
-            let first = summary?.firstPrompt.map { Self.oneLine($0, limit: 60) } ?? ""
+            let first = summary?.described(limit: 60) ?? ""
             print("\(listing.name)  \(listing.modified.formatted(format))  \(prompts)  \(first)")
         }
-    }
-
-    /// `text` on one line, cut to `limit` characters with an ellipsis.
-    static func oneLine(_ text: String, limit: Int) -> String {
-        SessionOutline.oneLine(text, limit: limit)
     }
 }

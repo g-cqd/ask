@@ -219,7 +219,7 @@ extension AgentConversation {
 
     /// Compacts at the user's request, whatever the context's size. Nothing is made up: with nothing recorded, or
     /// nothing before the recent messages, it says so.
-    private func compact(update: @Sendable (ConversationUpdate) -> Void) async {
+    private func compact(update: @escaping @Sendable (ConversationUpdate) -> Void) async {
         guard recordedSession(orSay: "Nothing to compact yet.", update: update) != nil else { return }
         do {
             await refreshSettings(update: update)
