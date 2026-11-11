@@ -117,6 +117,11 @@ public struct SessionTree: Sendable, Equatable {
     /// Records a fact about a thread.
     mutating func recordThread(_ record: ThreadRecord) { threads.append(record) }
 
+    /// The conversation's name (note n60): its latest rename, if it has one.
+    public var conversationName: String? {
+        threads.last { $0.event == .renamed && $0.id == ThreadRecord.conversation }?.title
+    }
+
     /// Forgets the last thread record, when it could not be persisted.
     mutating func forgetLastThread() { if !threads.isEmpty { threads.removeLast() } }
 

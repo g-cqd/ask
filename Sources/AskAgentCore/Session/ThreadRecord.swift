@@ -24,6 +24,9 @@ public struct ThreadRecord: Sendable, Equatable {
     /// On a start: that it is a subagent (roadmap 0063), and the definition it runs as; empty for none. Nil for a thread.
     public var subagent: String?
 
+    /// The id a ``Event/renamed`` record names the conversation itself by (note n60), which no thread has: threads are `thread-N`.
+    public static let conversation = "conversation"
+
     public init(_ event: Event, id: String) {
         self.event = event
         self.id = id

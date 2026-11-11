@@ -4,8 +4,16 @@ internal import Foundation
 public struct SessionSummary: Sendable, Equatable {
     /// The user's first prompt, if any.
     public let firstPrompt: String?
+    /// The conversation's name (note n60), if it was named.
+    public let name: String?
     /// The user's prompts; ask's own continuation requests are not counted.
     public let prompts: Int
+
+    /// How a session list describes it in at most `limit` characters, on one line: its name, then its first prompt (note n60).
+    public func described(limit: Int) -> String {
+        let parts = [name, firstPrompt].compactMap { $0 }
+        return SessionOutline.oneLine(parts.joined(separator: " · "), limit: limit)
+    }
 
     /// Whether the session is encrypted and could not be read: no keys were given, or not its keys.
     public let isLocked: Bool
@@ -22,6 +30,7 @@ public struct SessionSummary: Sendable, Equatable {
                 return SkillInvocation.shown(text)
             }
         firstPrompt = prompts.first
+        name = tree.conversationName
         self.prompts = prompts.count
         isLocked = false
         isThread = tree.threads.contains { $0.event == .identity }
@@ -29,6 +38,7 @@ public struct SessionSummary: Sendable, Equatable {
 
     private init(locked: Void) {
         firstPrompt = nil
+        name = nil
         prompts = 0
         isLocked = true
         isThread = false
