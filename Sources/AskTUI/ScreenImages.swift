@@ -5,7 +5,8 @@ internal import TerminalKitIO
 /// tool's PNG once, under an id of its own, and records where it is placed, so the composer draws its placeholder rows.
 ///
 /// A picture is sent off the screen's thread (a large one is a megabyte of text to the terminal, which must not hold a key or a
-/// frame); the terminal shows its cells empty until it arrives. Other kinds than PNG keep their line only, for now.
+/// frame); the terminal shows its cells empty until it arrives. A JPEG, GIF or WebP is made a PNG first, there too
+/// (``PictureTranscode``); other kinds keep their line only.
 struct ScreenImages {
     private let connection: any TerminalConnection
     /// Whether the terminal said it draws them; nil until it answers.
@@ -13,6 +14,8 @@ struct ScreenImages {
     /// The next id, in a range of ask's own within the 24 bits a placeholder's colour carries.
     private var nextID: UInt32 = 0xA5_0001
     private(set) var placed: [UInt32] = []
+    /// Each placed picture's size, read once: a JPEG's is read by ImageIO, which must not run again at every event.
+    private var sizes: [UInt32: (width: Int, height: Int)] = [:]
 
     /// The pictures for `connection`, when the environment says the terminal may draw them; nil otherwise.
     init?(connection: any TerminalConnection, mayDraw: Bool) {
@@ -66,14 +69,18 @@ struct ScreenImages {
     }
 
     /// `image` placed within `limits`: sent and placed when `held` is nil, placed again under its id when its fit changed; nil for
-    /// one this does not draw (not a PNG, no size in its header, or ids used up).
+    /// one this does not draw (not a kind it sends, no size in its header, or ids used up).
     private mutating func placement(
         _ image: ToolImage,
         held: ImagePlacement?,
         _ cell: (width: Int, height: Int),
         _ limits: (columns: Int, rows: Int)
     ) -> ImagePlacement? {
-        guard image.mediaType == "image/png", let pixels = image.pixelSize else { return nil }
+        let converted = PictureTranscode.kinds.contains(image.mediaType)
+        guard image.mediaType == "image/png" || converted,
+            let pixels = held.flatMap({ sizes[$0.id] })
+                ?? (converted ? PictureTranscode.size(image.data) : image.pixelSize)
+        else { return nil }
         let fit = ImagePlacement.fit(pixels: pixels, cell: cell, maxColumns: limits.columns, maxRows: limits.rows)
         if let held {
             // Placed again whenever its fit changed: smaller when the transcript narrows, back to its size when it widens.
@@ -85,8 +92,25 @@ struct ScreenImages {
         let placement = ImagePlacement(id: nextID, columns: fit.columns, rows: fit.rows)
         nextID += 1
         placed.append(placement.id)
-        send(ImagePlacement.commands(id: placement.id, png: image.data, columns: fit.columns, rows: fit.rows))
+        sizes[placement.id] = pixels
+        guard converted else {
+            send(ImagePlacement.commands(id: placement.id, png: image.data, columns: fit.columns, rows: fit.rows))
+            return placement
+        }
+        // Made a PNG off the screen's thread too, at the size it takes: decoding a photograph must not hold a key or a frame.
+        let longSide = Swift.max(fit.columns * cell.width, fit.rows * cell.height)
+        let (connection, data) = (connection, image.data)
+        Task.detached(priority: .utility) {
+            guard let commands = Self.converted(data, longSide: longSide, as: placement) else { return }
+            try? connection.write(commands)
+        }
         return placement
+    }
+
+    /// The commands that send `data`, made a PNG whose long side is `longSide`, as `placement`; nil when it does not decode.
+    static func converted(_ data: [UInt8], longSide: Int, as placement: ImagePlacement) -> [UInt8]? {
+        guard let png = PictureTranscode.png(data, longSide: longSide) else { return nil }
+        return ImagePlacement.commands(id: placement.id, png: png, columns: placement.columns, rows: placement.rows)
     }
 
     /// Writes `bytes` off the screen's thread: a picture is a megabyte of text to the terminal, which must not hold a key or a frame.

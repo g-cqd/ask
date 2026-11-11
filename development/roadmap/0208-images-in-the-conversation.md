@@ -109,10 +109,12 @@ Run in kitty 0.49.2, Ghostty 1.4.0 and WezTerm, screenshots read for their pixel
   (`ToolImageEdgeTests`, red first).
 - A click on a picture's line or its cells folds that picture away, leaving its line, and a second shows it; the tool's output
   folds apart from it (`PictureFoldTests`, red first; `probe-images.py`, 9 checks, two of them the click).
+- 2026-11-12: JPEG, GIF (its first frame) and WebP are drawn too: made a PNG off the screen's thread, at the size they are shown and never
+  larger, upright when stored on their side (`PictureTranscode`, ImageIO; `PictureTranscodeTests`, red first; `probe-images.py`,
+  11 checks, a JPEG among them). Without ImageIO (Linux) they keep their line.
 
 ## Left
 
 - The look confirmed by the owner, in their own kitty or Ghostty.
-- JPEG, GIF and WebP keep their line only: kitty takes PNG or raw pixels, so they need converting first.
 - Lifetime: every picture of a resumed session is sent at once; the roadmap's "sent while laid out" is not built, nor measured
   against the memory budget (0088).
