@@ -27,9 +27,9 @@ public enum SessionLog {
             self.maximumArchiveBytes = maximumArchiveBytes
         }
 
-        /// 1 MiB per line, matching the tool-output ceiling in roadmap 0011; 64 MiB per archive.
+        /// 1 MiB per line, matching the tool-output ceiling in roadmap 0011; 256 MiB per archive.
         /// Policy values, not measurements.
-        public static let standard = Limits(maximumLineBytes: 1 << 20, maximumArchiveBytes: 64 << 20)
+        public static let standard = Limits(maximumLineBytes: 1 << 20, maximumArchiveBytes: 256 << 20)
     }
 
     /// The whole session: header, every entry in archive order, then the current leaf.
