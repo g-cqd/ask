@@ -25,3 +25,9 @@ Pinned-dependency release/quality passed (3,773 tests). TerminalKit b692bf8 adds
 in 110a83b4. The click-and-copy regression spans a soft row break; resize and vertical-navigation checks use the same source map.
 Mutation testing is left to CI, per the owner's instruction; no local mutation result is claimed. The owner's real-terminal
 appearance check remains deferred and is not claimed by these headless tests.
+
+## Review (2026-11-11)
+
+A word that ended in the last cell sent the space after it to the start of the next row. TerminalKit a9e4b65 keeps a cell for that
+space, so no row starts with it and a word does not move when the space is typed; ask pins it. A word as wide as the input still
+fills its row, and its space starts the next.

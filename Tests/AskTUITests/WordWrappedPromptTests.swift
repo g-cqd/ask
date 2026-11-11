@@ -57,4 +57,16 @@ struct WordWrappedPromptTests {
         #expect(wide.highlights == [3 ..< 13])
         #expect(String(editor.text.dropFirst(3).prefix(10)) == "lo world a")
     }
+
+    /// TerminalKit a9e4b65 (the review of 2026-11-11): its own test is red on the revision before; this pins what ask draws with it.
+    @Test func `a word that would end in the last cell leaves it for its space, so no row starts with one`() {
+        var editor = PromptEditor()
+        editor.paste("hello world foo")
+        var prompt = PromptLayout()
+        #expect(
+            prompt.frame(editor, prompt: "", columns: 11, screenRows: 24, maximumRows: 6).lines == [
+                "hello ", "world foo"
+            ]
+        )
+    }
 }
