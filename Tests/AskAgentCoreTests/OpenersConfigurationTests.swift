@@ -1,3 +1,4 @@
+import Foundation
 import Testing
 
 @testable import AskAgentCore
@@ -50,5 +51,33 @@ struct OpenersConfigurationTests {
         ] {
             #expect(throws: ConfigurationError.self, "\(bad)") { try file(bad) }
         }
+    }
+
+    /// Step 4: a command that could not be run safely is refused when it is read, by name.
+    @Test func `a command's program is fixed, its placeholders are the four, and it holds no control character`() throws
+    {
+        for (bad, word) in [
+            (#"["{path}"]"#, "program"), (#"["open-{url}", "x"]"#, "program"), (#"["code", "{file}"]"#, "{file}"),
+            (#"["code", "{path}:{lines}"]"#, "{lines}"), (#"["code", "a\u001Bb"]"#, "control"),
+            (#"["code", "a\nb"]"#, "control"),
+            (#"["co\u0000de"]"#, "control")
+        ] {
+            let reason = OpenerRule.problem(in: try decoded(bad))
+            #expect(reason?.contains(word) == true, "\(bad): \(reason ?? "accepted")")
+            #expect(throws: ConfigurationError.self) {
+                try file(#"{"rules": [{"match": {"kind": "file"}, "command": \#(bad)}]}"#)
+            }
+        }
+        for good in [
+            #"["code", "--goto", "{path}:{line}:{column}"]"#, #"["open", "-a", "Safari", "{url}"]"#,
+            #"["tool", "{}", "{ }", "a{b"]"#,
+            #"["/usr/local/bin/my tool", "{path}"]"#
+        ] {
+            #expect(OpenerRule.problem(in: try decoded(good)) == nil, "\(good)")
+        }
+    }
+
+    private func decoded(_ json: String) throws -> [String] {
+        try JSONDecoder().decode([String].self, from: Data(json.utf8))
     }
 }
