@@ -91,12 +91,8 @@ extension ConfigurationFile {
             guard (rule.app == nil) != (rule.command == nil) else {
                 throw .outOfRange(path: path, key: key, reason: "needs either an app or a command, and not both")
             }
-            if let command = rule.command, command.first?.isEmpty ?? true {
-                throw .outOfRange(
-                    path: path,
-                    key: key + ".command",
-                    reason: "needs a program to run, as its first argument"
-                )
+            if let command = rule.command, let reason = OpenerRule.problem(in: command) {
+                throw .outOfRange(path: path, key: key + ".command", reason: reason)
             }
             if let pattern = rule.pattern, (try? Pattern(pattern)) == nil {
                 throw .outOfRange(path: path, key: key + ".match.pattern", reason: "is not a pattern AemiRegex reads")
