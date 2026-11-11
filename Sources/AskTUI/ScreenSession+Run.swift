@@ -34,8 +34,7 @@ extension ScreenSession {
         colours?.ask()
         images?.ask()
         defer { images?.clear() }
-        // The terminal's own pointer again, whatever ask last set.
-        defer { if pointer != .default { try? connection.write(PointerShape.default.sequence) } }
+        defer { giveBackTerminal() }
         defer {
             forwarding.cancel()
             resizing.cancel()
@@ -49,6 +48,7 @@ extension ScreenSession {
             for task in jobOutput.values { task.cancel() }
         }
         render(full: true)
+        syncTitle()
         for await event in events {
             if takeImageAnswer(event) { continue }
             if let taken = colours?.take(event) {
@@ -58,6 +58,7 @@ extension ScreenSession {
             }
             guard await handle(event) else { return exit }
             syncPointer()
+            syncTitle()
             // After every event: an update may bring a picture, and a resize or the sidebar opening may leave one too wide.
             if images?.supported == true { placeImages() }
         }
@@ -69,6 +70,21 @@ extension ScreenSession {
         guard controller.state.pointer != pointer else { return }
         pointer = controller.state.pointer
         try? connection.write(pointer.sequence)
+    }
+
+    /// The terminal's own pointer and title again, whatever ask last set (note n13, note n60).
+    private func giveBackTerminal() {
+        if pointer != .default { try? connection.write(PointerShape.default.sequence) }
+        if title != nil { titles.finish(TabTitle.restore) }
+    }
+
+    /// Sends the tab's title when it changed (note n60), saving the terminal's own first; off this thread (``TabTitleWriter``).
+    func syncTitle() {
+        let wanted = controller.tabTitle
+        guard wanted != title else { return }
+        if title == nil { titles.send(TabTitle.save) }
+        title = wanted
+        titles.send(TabTitle.sequence(wanted))
     }
 
     func syncAutoscroll() {
