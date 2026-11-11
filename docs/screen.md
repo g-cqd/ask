@@ -49,11 +49,16 @@ and ends with `⊘`, apart from a failure's red `✗`, and whatever it had alrea
 With the mouse, a click puts the cursor, a drag selects, a double click takes a word and a triple click a line. A selection in the
 conversation copies what is shown, as soon as you let go.
 
+The input wraps between words; only a word wider than the input is cut. Wrapping adds no line break and removes no space from what
+you send or copy.
+
 ## Reading the conversation
 
-- In the model's replies and reasoning a path inside the project is shown relative to it (`Sources/a.swift:12`), and one near it from the
-  folder they share (`../other/notes.md`; `ui.paths`, `ui.pathAncestors`). A relative path is a link when it names a file or folder in
-  the project. Copying takes the path as the model wrote it. Your own messages keep their paths as you wrote them.
+- In the model's replies and reasoning, and in ask's own notices, a path inside the project is shown relative to it
+  (`Sources/a.swift:12`), and one near it from the folder they share (`../other/notes.md`; `ui.paths`, `ui.pathAncestors`). A relative
+  path is a link when it names a file or folder in the project that ask may read; one reached through a symbolic link stays text.
+  Copying takes the full path: a shortened one as it was written, and a relative one, selected whole, with the project's folder
+  before it. Paths in code, in Markdown links, in your own messages and in tool output are copied as written.
 - File paths, web addresses and email addresses anywhere in the conversation are links: a click opens a file or folder in its app, a
   page in your browser, an address in Mail. A file that would run (an app, a script, a program) is shown in the Finder instead.
 - Tool calls, the model's thinking and long code blocks start **folded** to one line. Click a block to open it in place; **Ctrl+O** opens or
@@ -171,16 +176,3 @@ While the model works, commands still work:
 - `/compact`, `/new`, `/resume`, `/rewind`, `/encrypt` and `/reload` wait for the turn to end, shown as waiting, then run in the order you typed
   them. If you stop the turn, they follow `ui.queuedOnStop` like queued messages: with `none` they come back to the input.
 - `/skill:NAME` is a message, so it joins the turn like any other.
-
-The input wraps at word boundaries when a word fits a row; a word wider than the input still splits. Soft wrapping does not add
-newlines or remove spaces from what you send or copy. Cursor movement, clicks and selection use the same wrapped rows.
-
-Relative paths in replies are linked only when the session's read policy permits an existence check inside the workspace.
-These automatic checks do not follow symlinks; a relative reference through one remains text. Existence answers are cached
-within the conversation, and changing its read policy clears those answers before reuse.
-
-Copying a complete, accepted relative path in a reply, thinking block or ask notice produces its full workspace path, including
-any line/column suffix. Partial selections remain literal. User messages and tool output are not rewritten; inline code,
-fences and explicit Markdown links also remain literal when Markdown is enabled.
-
-Paths in ask's own notices are shown short and linked the same way. A notice is plain text: nothing in it is read as Markdown.

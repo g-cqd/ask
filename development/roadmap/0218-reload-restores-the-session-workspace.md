@@ -25,3 +25,10 @@ not silently become another project. Mutation testing remains CI-only. Real-volu
 `Scripts/check-reload-workspace.py` passes five isolated cases and runs in the CI script guard. The self-check workspace test
 failed first, then passed with the explicit Subprocess directory. Full release/quality verification passed (3,776 tests).
 A real-volume remount and live terminal reload remain separately unverified; shipping rebuild follows landing.
+
+## Review (2026-11-11)
+
+- The fix above covers a running ask. A launch from a shell whose directory was replaced had no working directory at all and ran
+  on; that is what the reloaded session of 2026-11-10 met. ask now goes back to the shell's `PWD` when it is there, saying so, and
+  stops when it is not (`LaunchDirectory`, `enterLaunchDirectory`).
+- A reload whose session directory is gone said the new build failed its self-check. It names the directory now.

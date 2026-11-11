@@ -47,7 +47,7 @@ opened or run without the person's click; nothing outside what the sandbox may r
    gain links through `PathLinks`, and they are shortened only if notices move to the Markdown renderer.
 5. **Settings.**
    - `ui.paths`: `"short"` (the default) or `"asWritten"`, which keeps today's text and links only.
-   - `ui.pathAncestors`: an integer, default 2, or `"any"`.
+   - `ui.pathAncestors`: an integer, default 2, or `null` for no limit (as built; the plan first said `"any"`).
 6. **Still required by the owner's answers:** a relative path copies in full, and notices are shortened too.
 
 ## Done when
@@ -104,3 +104,8 @@ them alone. A selection copies the notice as it was written, the full path inclu
 
 - Paths inside inline code and fences are left as written, by choice of the hook; the owner has not asked for them.
 - Real-terminal checks, which the owner deferred.
+
+## Review (2026-11-11)
+
+"Not there" was kept for the whole conversation, so a file the model made after first naming it was never linked. It is now
+believed for two seconds (`ReplyPathExistence.missingFor`); a path found is kept.
