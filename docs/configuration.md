@@ -322,7 +322,7 @@ What a link you click opens with (roadmap 0216, ADR-0148). Your own file only: a
 none, a click opens a page in your browser, a file or folder in its app, and shows a file that would run in the Finder instead.
 
 An app set here never opens what would run: an app, a script or a program is still only shown in the Finder, whatever you set, because
-the path may be one the model wrote.
+the path may be one the model wrote. An app that is not on this Mac is said on the status line, and the link opens as it would without it.
 
 | Key | Default | What it does |
 |---|---|---|
