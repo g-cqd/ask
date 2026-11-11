@@ -67,7 +67,8 @@ public func runInteractiveScreen(
                 pasteboard: HostPasteboard.write,
                 read: HostPasteboard.read
             ),
-            mayDrawImages: TerminalGraphics.mayDraw(environment: ProcessInfo.processInfo.environment)
+            mayDrawImages: TerminalGraphics.mayDraw(environment: ProcessInfo.processInfo.environment),
+            readsProgress: TerminalProgress.isRead(environment: ProcessInfo.processInfo.environment)
         ),
         conversation: conversation,
         label: label,
@@ -102,7 +103,8 @@ func runInteractiveScreen(
             renderer: try makeRenderer(on: connection, frames: frames),
             frames: frames,
             clipboard: ScreenClipboard(connection: connection, environment: environment, pasteboard: pasteboard),
-            mayDrawImages: TerminalGraphics.mayDraw(environment: environment)
+            mayDrawImages: TerminalGraphics.mayDraw(environment: environment),
+            readsProgress: TerminalProgress.isRead(environment: environment)
         ),
         conversation: conversation,
         label: label,

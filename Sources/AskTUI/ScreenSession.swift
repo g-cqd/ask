@@ -36,6 +36,10 @@ final class ScreenSession {
     /// The tab's title last sent (note n60); nil before the first, when the terminal's own is saved.
     var title: String?
     let titles: TabTitleWriter
+    /// Whether OSC 9;4 is sent (note n59), and whether its busy mark is up.
+    let readsProgress: Bool
+    var progressShown = false
+    var longAction = LongAction()
 
     init(
         _ screen: ScreenTerminal,
@@ -48,6 +52,7 @@ final class ScreenSession {
         renderer = screen.renderer
         connection = screen.connection
         titles = TabTitleWriter(connection: screen.connection)
+        readsProgress = screen.readsProgress
         input = InputSource(connection: screen.connection, escapeIsUnambiguous: screen.session.escapeIsUnambiguous)
         self.conversation = conversation
         let size = try? screen.connection.getSize()
