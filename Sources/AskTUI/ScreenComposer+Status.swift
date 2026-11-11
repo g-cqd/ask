@@ -98,8 +98,16 @@ extension ScreenComposer {
         mark: StatusLeadingMark = StatusLeadingMark(character: "")
     ) -> [StatusSegment] {
         var pieces = waiting(state)
-        let labels = labelForms(of: state, mark: mark.character)
-        pieces.append(StatusSegment(labels, priority: 90))
+        // It goes with the model's name, as when the two were one piece; the folder may sit between them (note n6).
+        var leading = StatusSegment(mark.character, priority: 90, target: .mark)
+        leading.attached = true
+        if !mark.character.isEmpty { pieces.append(leading) }
+        // The folder ask works in (notes n6 and n63): shortened, then dropped, before the context's use is.
+        let path = state.statusPath.isEmpty ? nil : StatusSegment(state.statusPath, priority: 35)
+        if let path, state.statusPathSide == .leading { pieces.append(path) }
+        var label = StatusSegment(state.labelVariants.isEmpty ? [state.label] : state.labelVariants, priority: 90)
+        label.carries = true
+        pieces.append(label)
         if !state.context.isEmpty { pieces.append(StatusSegment(state.context, priority: 40)) }
         if !state.detail.isEmpty { pieces.append(StatusSegment(state.detail, priority: 20)) }
         if state.quitArmedAt != nil {
@@ -125,6 +133,7 @@ extension ScreenComposer {
                 .map { "\($0.0) \($0.1)\($0.0 == 1 ? "" : "s")" }.joined(separator: " · ")
             pieces.append(StatusSegment(text, priority: 50, target: .runners))
         }
+        if let path, state.statusPathSide == .trailing { pieces.append(path) }
         return pieces
     }
 
@@ -142,13 +151,6 @@ extension ScreenComposer {
             pieces.append(StatusSegment(state.nativeSelectionHint, priority: 5))
         }
         return pieces
-    }
-
-    /// The label as it is said at each length: prefixed with the leading mark if non-empty.
-    private static func labelForms(of state: ScreenState, mark: String) -> [String] {
-        let forms = state.labelVariants.isEmpty ? [state.label] : state.labelVariants
-        guard !mark.isEmpty else { return forms }
-        return forms.map { "\(mark) · \($0)" }
     }
 
     /// The rows of the open runner strip. Empty when it is closed.

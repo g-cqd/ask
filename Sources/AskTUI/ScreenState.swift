@@ -88,6 +88,10 @@ public struct ScreenState: Sendable, Equatable {
     var sessionIdentity: String?
     /// What the conversation is called (note n60), for the tab's title; nil before it has a name.
     var conversationName: String?
+    /// The folder ask works in, as the status line says it, longest form first (`ui.statusPath`, notes n6 and n63); empty when it
+    /// is off or not known.
+    var statusPath: [String] = []
+    var statusPathSide = StatusPathSide.leading
     /// Whether the terminal has focus, as it last reported (note n62); nil until it says, which counts as not focused.
     var focused: Bool?
     /// A line a running command asked for, while it waits: the keys go to ``inputAnswer`` until Enter or Esc.
@@ -169,6 +173,9 @@ public struct ScreenState: Sendable, Equatable {
         )
         blocks = BlockStyle(padded: options.padding, theme: theme, localizedDurations: options.localizedDurations)
         blocks.home = options.home
+        statusPath =
+            options.workspace.map { Self.statusPathForms(of: $0, options.statusPath, home: options.home) } ?? []
+        statusPathSide = options.statusPathSide
         blocks.paths = options.workspace.map { workspace in
             PathDisplay(
                 workspace: PathDisplay.normalized(workspace),
@@ -177,6 +184,19 @@ public struct ScreenState: Sendable, Equatable {
                 shortens: options.shortPaths,
                 exists: { _ in false }
             )
+        }
+    }
+
+    /// `workspace` as `form` says it, then as its last folder, which the status line shortens it to when narrow.
+    static func statusPathForms(of workspace: String, _ form: StatusPathForm, home: String?) -> [String] {
+        let path = PathDisplay.normalized(workspace)
+        let folder = path.split(separator: "/").last.map(String.init) ?? path
+        switch form {
+            case .off: return []
+            case .folder: return [folder]
+            case .home:
+                return Array(Set([HomePath.abbreviate(path, home: home), folder])).sorted { $0.count > $1.count }
+            case .full: return path == folder ? [path] : [path, folder]
         }
     }
 
