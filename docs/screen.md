@@ -17,6 +17,11 @@ The status line starts with a spinner while ask works. It reads `Compacting...` 
   add `:12-30` for a line range. The model then reads the file itself.
 - **`/continue`**, or just `continue`, `resume`, `go ahead` or `go` as the whole message, or **Right pressed twice** on an empty input while nothing
   runs, tells the model to carry on where it stopped. A sentence that merely starts with one of those words is sent as written.
+- **`!command`** runs the command in your shell (`$SHELL`), at once, even while the model is working, and shows its output and status
+  in an open block. It asks nothing, and runs under the session's sandbox. The model sees the command and its output with your next
+  message. **`!!command`** sends them to the model at once, which answers (during a turn they wait behind it, like a message you type).
+  Still running after 5 seconds, a command goes on as a background job, which you can watch and stop like the model's. A message
+  that must start with `!` begins `\!`.
 
 While the model is working, **Enter** queues your message as steering: it is sent after the model's current step. `/follow-up TEXT` (or
 **Alt+Enter**, where the terminal reports it) queues a message for when the turn is over. **Option+Up**, with an empty input, takes the newest
