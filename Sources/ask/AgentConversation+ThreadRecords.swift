@@ -38,10 +38,10 @@ extension AgentConversation {
     }
 
     /// Empties the thread table, stopping what runs there, and rebuilds it from the active session's records: what the screen needs to
-    /// list each thread and show its conversation, with the blocks of the threads under it.
+    /// list each thread and show its conversation, with the blocks of the threads under it, and the conversation's name (note n60).
     func restoreThreads() -> [ConversationUpdate] {
         threads.reset()
-        guard let main = session.withLock({ $0 }) else { return [.runners(threads.runners)] }
+        guard let main = session.withLock({ $0 }) else { return [.runners(threads.runners), .conversationName(nil)] }
         let records = main.tree.threads
         var shown: [ConversationUpdate] = []
         for record in records where record.event == .started {
@@ -78,7 +78,7 @@ extension AgentConversation {
             )
             shown += lane.map { .thread(id: record.id, $0) }
         }
-        return [.runners(threads.runners)] + shown
+        return [.runners(threads.runners), .conversationName(main.tree.conversationName)] + shown
     }
 
     /// `branch` from the entry after `start` (all of it when nil or not on it), as the screen shows it, each block after the entry it

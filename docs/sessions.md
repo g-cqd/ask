@@ -13,6 +13,11 @@ grouped by project. A message counts as sent only once it is written there, so a
 | `ask sessions` | | List this project's sessions, newest first. |
 | | `/new` | Start a fresh conversation; the current one stays saved. |
 
+A conversation gets a short name from your first message, and a new one after each compaction, from what it kept. Apple's
+on-device model writes it, so it costs nothing; where that model is not available (an older Mac, or Apple Intelligence off) the
+conversation has no name. The name is saved with the session. The terminal's tab reads `ask · name`, or `ask · folder` while there is
+no name, and gets its own title back when ask closes; the session lists show the name before the first message.
+
 A session remembers the account it used and resumes on it. On exit, ask prints a command to resume the saved session in its
 working directory, retaining the launch flags and safely escaping spaces and shell metacharacters.
 

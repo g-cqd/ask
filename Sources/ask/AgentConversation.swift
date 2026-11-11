@@ -22,6 +22,8 @@ final class AgentConversation: Conversation {
     let replyPaths = ReplyPathExistence()
     /// What the person's `!` commands printed since their last message, which goes with the next one (note n56).
     let shellReports = Mutex<[String]>([])
+    /// The sessions whose naming from their first request was tried already (note n60), so a turn does not ask again.
+    let namingTried = Mutex<Set<String>>([])
     /// Approval questions waiting for an answer, the grants for this session, and where to ask (roadmap 0019).
     let approvals = Mutex(Approvals())
     let directory: SessionDirectory
@@ -168,6 +170,7 @@ final class AgentConversation: Conversation {
                 if self.session.withLock({ $0 == nil }) { try await SessionKeyAccess.settled() }
                 let recorder = try self.recorder()
                 self.saveHeldIdeas(update: update)
+                self.nameConversation(startingWith: prompt, update: update)
                 try self.current.withLock { $0.settings }.record(in: recorder)
                 try await loop.run(prompt, in: recorder, input: input) { self.deliver($0, to: update) }
             } catch AgentError.promptBlocked(let reason) {
@@ -184,12 +187,13 @@ final class AgentConversation: Conversation {
     }
 
     /// Shows an event on the screen and adds what it cost to the status line.
-    func deliver(_ event: AgentEvent, to update: @Sendable (ConversationUpdate) -> Void) {
+    func deliver(_ event: AgentEvent, to update: @escaping @Sendable (ConversationUpdate) -> Void) {
         if event.usage != nil {
             recordUsage(event)
             update(.status(usage.withLock { $0.compact }))
             update(contextUpdate())
         }
         for shown in Self.updates(for: event) { update(shown) }
+        if case .compacted(let summary, _) = event { renameConversation(fromSummary: summary, update: update) }
     }
 }

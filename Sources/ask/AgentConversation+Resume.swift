@@ -64,7 +64,7 @@ extension AgentConversation {
                 if summary?.isThread == true { return nil }
                 let first =
                     summary?.isLocked == true
-                    ? "locked" : summary?.firstPrompt.map { Sessions.oneLine($0, limit: 80) } ?? ""
+                    ? "locked" : summary?.described(limit: 80) ?? ""
                 return ChoiceRow(
                     label: item.name,
                     detail: first,
