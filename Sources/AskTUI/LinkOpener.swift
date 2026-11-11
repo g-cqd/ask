@@ -21,11 +21,11 @@ enum LinkOpener {
     }
 
     /// What clicking `uri` does when the person's openers name `app` for it (roadmap 0216): what would be opened is opened in that
-    /// app, found by bundle identifier or by name in the usual folders. What would run is still only shown, whatever the app: the path
-    /// may be the model's, an app bundle is a folder to the Finder, and a terminal runs a script it is handed (note n33).
+    /// app, found by bundle identifier or by name in the usual folders, and so is a script (the owner, 2026-11-11). An app, an installer
+    /// or a compiled program is still only shown, whatever the app: an app bundle is a folder to the Finder, and opening it launches it.
     static func action(for uri: String, app: String, folders: [URL] = applicationFolders) -> Action {
         let usual = action(for: uri)
-        guard case .open(let target) = usual else { return usual }
+        guard let target = openableByChoice(usual) else { return usual }
         guard let found = application(named: app, folders: folders) else { return .missingApp(app) }
         return .openWith(target, app: found)
     }
@@ -91,11 +91,44 @@ enum LinkOpener {
         }
     }
 
-    /// Whether a click on `uri` runs the command `opening` names: only for what a plain click would open. What would run is still
-    /// only shown, and what is not there is not opened, as for an app (the review of 2026-11-11).
+    /// Whether a click on `uri` runs the command `opening` names: for what a plain click would open, and a script (the owner,
+    /// 2026-11-11). An app, an installer or a compiled program is still only shown, and what is not there is not opened.
     static func runsCommand(_ uri: String, opening: LinkOpening) -> Bool {
-        guard case .command = opening, case .open = action(for: uri) else { return false }
-        return true
+        guard case .command = opening else { return false }
+        return openableByChoice(action(for: uri)) != nil
+    }
+
+    /// What the person's chosen app or command may be handed, of what a plain click would do with a link: what it would open, and a
+    /// script it would only show. Nil for anything else.
+    private static func openableByChoice(_ usual: Action) -> URL? {
+        switch usual {
+            case .open(let url): url
+            case .reveal(let url) where isScript(url): url
+            default: nil
+        }
+    }
+
+    /// Whether `file` is a script: text a program reads, by its type or by `#!` on its first line. An app, an installer, a workflow
+    /// and a compiled program are not.
+    static func isScript(_ file: URL) -> Bool {
+        let path = file.path(percentEncoded: false)
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: path, isDirectory: &isDirectory), !isDirectory.boolValue else {
+            return false
+        }
+        if let type = try? file.resourceValues(forKeys: [.contentTypeKey]).contentType,
+            type.conforms(to: .application) || type.conforms(to: .applicationBundle)
+                || (UTType("com.apple.installer-package-archive").map(type.conforms(to:)) ?? false)
+                || (UTType("com.apple.automator-workflow").map(type.conforms(to:)) ?? false)
+        {
+            return false
+        }
+        if let type = try? file.resourceValues(forKeys: [.contentTypeKey]).contentType, type.conforms(to: .script) {
+            return true
+        }
+        guard let handle = try? FileHandle(forReadingFrom: file) else { return false }
+        defer { try? handle.close() }
+        return (try? handle.read(upToCount: 2)) == Data("#!".utf8)
     }
 
     /// What is said when the openers name an app that is not there: that, then whatever the usual way of opening the link said.

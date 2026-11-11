@@ -51,11 +51,10 @@ struct LinkOpenerAppTests {
 
     /// The review of 2026-11-11: an app opener must not undo "what would run is only shown" (roadmap 0075, note n33). An app bundle is
     /// a directory, so `"folder": "Finder"` launched it; a terminal as the file app ran a script.
-    @Test func `what would run is shown in the Finder, whatever app the openers name`() throws {
-        let script = FileManager.default.temporaryDirectory.appending(path: "ask-opener-\(UUID().uuidString).command")
-        try Data("#!/bin/sh\n".utf8).write(to: script)
-        defer { try? FileManager.default.removeItem(at: script) }
-        for target in [Self.calculator, URL(fileURLWithPath: "/bin/ls"), script] {
+    @Test func `an app, an installer or a compiled program is shown in the Finder, whatever app the openers name`()
+        throws
+    {
+        for target in [Self.calculator, URL(fileURLWithPath: "/bin/ls")] {
             for app in ["Finder", "Terminal", "Calculator"] {
                 #expect(
                     LinkOpener.action(for: target.absoluteString, app: app) == .reveal(target),
@@ -63,6 +62,39 @@ struct LinkOpenerAppTests {
                 )
             }
         }
+    }
+
+    /// The owner, 2026-11-11: a script opens in the app the openers name, as any document does. A plain click still only shows it.
+    @Test func `a script opens in the app the openers name, and a plain click still only shows it`() throws {
+        let directory = FileManager.default.temporaryDirectory.appending(path: "ask-scripts-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        // A script by its type, one by its first line and its execute bit, and one the system calls a shell script.
+        let typed = directory.appending(path: "run.command")
+        let marked = directory.appending(path: "build")
+        let shell = directory.appending(path: "quality.sh")
+        for (file, executable) in [(typed, false), (marked, true), (shell, true)] {
+            try Data("#!/bin/sh\necho hi\n".utf8).write(to: file)
+            try FileManager.default.setAttributes(
+                [.posixPermissions: executable ? 0o755 : 0o644],
+                ofItemAtPath: file.path
+            )
+        }
+        for file in [typed, marked, shell] {
+            let target = LinkOpener.action(for: file.absoluteString)
+            guard case .reveal(let shown) = target else {
+                Issue.record("a plain click should only show \(file.lastPathComponent): \(target)")
+                continue
+            }
+            #expect(
+                LinkOpener.action(for: file.absoluteString, app: "Calculator") == .openWith(shown, app: Self.calculator)
+            )
+            #expect(
+                LinkOpener.runsCommand(file.absoluteString, opening: .command(["code", file.path], rule: 0)),
+                "\(file.lastPathComponent) by a command"
+            )
+        }
+        #expect(!LinkOpener.runsCommand("file:///bin/ls", opening: .command(["code", "/bin/ls"], rule: 0)))
     }
 
     /// Step 4: a command is offered only what a plain click would open, as an app is (the review of 2026-11-11).
