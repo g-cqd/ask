@@ -20,6 +20,8 @@ final class AgentConversation: Conversation {
     let narrowing = SessionNarrowing()
     /// Reply-path metadata is cached per conversation, never shared across policies or projects.
     let replyPaths = ReplyPathExistence()
+    /// What the person's `!` commands printed since their last message, which goes with the next one (note n56).
+    let shellReports = Mutex<[String]>([])
     /// Approval questions waiting for an answer, the grants for this session, and where to ask (roadmap 0019).
     let approvals = Mutex(Approvals())
     let directory: SessionDirectory
@@ -137,8 +139,10 @@ final class AgentConversation: Conversation {
 
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
         // A message typed during the turn has its @server:uri read when the loop takes it, then #t3 and #i2, as at the turn's start.
-        let input = PromptQueue { [mcp, threads] text in
-            threads.attachReports(SessionTasks.attachReferences(await mcp.attachResources(text)))
+        let input = PromptQueue { [mcp, threads, self] text in
+            threads.attachReports(
+                SessionTasks.attachReferences(await mcp.attachResources(self.attachingShellReports(text)))
+            )
         }
         promptInput.withLock { $0 = input }
         // Approval questions during this run go to this run's screen updates.
@@ -157,7 +161,7 @@ final class AgentConversation: Conversation {
                 // Each @server:uri read from its server once it is connected (roadmap 0067), then #t3 and #i2 (0186).
                 // A thread that ended since the last message: its answer goes with this one (roadmap 0194).
                 let prompt = self.threads.attachReports(
-                    SessionTasks.attachReferences(await self.mcp.attachResources(expanded))
+                    SessionTasks.attachReferences(await self.mcp.attachResources(self.attachingShellReports(expanded)))
                 )
                 let loop = try self.agentLoop()
                 // A new session waits for how it is to be kept, when the screen is still asking (idea i1).
