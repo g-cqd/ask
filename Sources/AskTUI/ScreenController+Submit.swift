@@ -39,6 +39,13 @@ extension ScreenController {
         switch SlashInput(line) {
             case .prompt(let text):
                 return submitPrompt(Self.isContinueWord(text) ? Self.continueText : text, followUp: followUp)
+            case .shell(let command, let sends):
+                guard !command.isEmpty else {
+                    state.transcript.addNotice("Give a command after !, or !! to send its result.", isError: true)
+                    return []
+                }
+                // The command's block shows it; it runs now, beside any turn (the owner, 2026-11-11).
+                return [.runShell(command, sends: sends)]
             case .command(let name, let arguments):
                 guard let command = SlashCommand.named(name, in: commands) else {
                     state.transcript.addUser(line)

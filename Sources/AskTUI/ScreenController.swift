@@ -14,6 +14,8 @@ public struct ScreenController: Sendable {
         case runCommand(name: String, arguments: String)
         /// Run a command beside the running turn, which goes on (roadmap 0113): it is not the screen's run.
         case runCommandBeside(name: String, arguments: String)
+        /// Run the person's `!` command now, beside any turn (note n56); with `sends`, its result goes to the model after.
+        case runShell(String, sends: Bool)
         case cancelRun
         /// Put this text on the clipboard.
         case copy(String)
