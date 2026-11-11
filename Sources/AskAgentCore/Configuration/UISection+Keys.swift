@@ -60,6 +60,7 @@ extension UISection {
             case "notify": return notify?.rawValue
             case "statusPath": return statusPath?.rawValue
             case "statusPathSide": return statusPathSide?.rawValue
+            case "historyLimit": return historyLimit.map { $0 == Self.noHistoryLimit ? "null" : String($0) }
             case "pathAncestors": return pathAncestors.map { $0 == Self.noAncestorLimit ? "null" : String($0) }
             default: return nil
         }

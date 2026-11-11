@@ -90,6 +90,8 @@ public struct ScreenOptions: Sendable, Equatable {
     /// `ui.statusPath` and `ui.statusPathSide` (notes n6 and n63): the folder ask works in, on the status line.
     public var statusPath = StatusPathForm.folder
     public var statusPathSide = StatusPathSide.leading
+    /// `ui.historyLimit` (note n29): the most blocks the screen keeps; nil, the default, for all of them.
+    public var historyLimit: Int?
     public var outputFoldBytes = 32 * 1024
 
     /// The look before roadmap 0074: an `ask> ` prefix, no tint, no rule. What the screen's older tests were written against.

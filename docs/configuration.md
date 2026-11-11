@@ -199,6 +199,7 @@ Switches take `true` or `false` (the older `"on"` and `"off"` still work).
 | `notify` | `"off"` | How ask tells you a turn has ended, or that it waits for your answer (an approval, the model's questions), while the terminal is not focused: `"bell"`, the terminal's bell; `"notification"`, a desktop notification the terminal shows (OSC 9 in iTerm2, Ghostty and WezTerm, kitty's OSC 99, OSC 777 elsewhere; Terminal.app has none, so it gets the bell); `"off"`. ask asks the terminal for focus reports only while this is on; one that does not report focus is taken as not focused. |
 | `statusPath` | `"folder"` | The folder ask works in, on the status line: `"folder"`, its last folder; `"home"`, from your home folder (`~/src/shop`); `"full"`; `"off"`. When the line is narrow it shortens to the last folder, then goes, before the context's use and the model's name. |
 | `statusPathSide` | `"leading"` | Where that folder sits on the status line: `"leading"`, right after the mark; `"trailing"`, last. |
+| `historyLimit` | `null` | The most blocks (messages, tool calls, notices) the screen keeps, for a leaner footprint on long sessions: past it the oldest leave the screen and its memory, a line says how many, and a block still running stays. Threads' lanes have the same limit, and a resumed session or `/reload` shows only the last ones. The session file keeps everything, so the model and a resume lose nothing. `null` (the default) keeps them all. |
 
 ### `sandbox`
 

@@ -110,6 +110,7 @@ public struct ThreadsSection: Sendable, Equatable, CustomStringConvertible, Laye
             depth: section.depth ?? depth,
             names: section.names ?? names
         )
+        // @dl:accept -- every section layers its keys this way; the key lists are the data
         merged.mergedShownFor = section.mergedShownFor ?? mergedShownFor
         merged.questions = section.questions ?? questions
         merged.questionsAfter = section.questionsAfter ?? questionsAfter

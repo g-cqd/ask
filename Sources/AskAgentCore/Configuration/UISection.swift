@@ -86,6 +86,10 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     /// `ui.statusPath` and `ui.statusPathSide` (notes n6 and n63): the folder on the status line; nil for `folder` and `leading`.
     public var statusPath: StatusPathPreference?
     public var statusPathSide: StatusPathSidePreference?
+    /// `ui.historyLimit` (note n29): the most blocks the screen keeps, ``noHistoryLimit`` for all of them; nil for the default, all.
+    public var historyLimit: Int?
+    /// `ui.historyLimit` `null`: every block.
+    public static let noHistoryLimit = -1
     /// `ui.pathAncestors` `null`: no limit.
     public static let noAncestorLimit = -1
 
@@ -184,63 +188,13 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         "inputPrefix", "tint", "appearance", "separator", "padding", "markdown", "highlight", "durations",
         // @dl:accept -- the rest of the same list of key names
         "spinner", "shimmer", "hover", "showTimeout", "timeoutLabel", "dim", "sessionTint", "statusPath",
+        // @dl:accept -- a list of key names is data, like any other list of names
         "statusPathSide"
     ]
     private static let behaviorKeys = [
         "paths", "pathAncestors", "leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels",
-        "sessionColor", "notify"
+        "sessionColor", "notify", "historyLimit"
     ]
-
-    /// `self` with every key `section` sets replaced.
-    public func layered(with section: UISection) -> UISection {
-        var merged = UISection(
-            // @dl:accept -- each configuration field independently takes its later non-nil value
-            mouse: section.mouse ?? mouse,
-            copyOnSelect: section.copyOnSelect ?? copyOnSelect,
-            foldTools: section.foldTools ?? foldTools,
-            foldThinking: section.foldThinking ?? foldThinking,
-            scrollLines: section.scrollLines ?? scrollLines,
-            promptRows: section.promptRows ?? promptRows,
-            foldCode: section.foldCode ?? foldCode,
-            codeFoldLines: section.codeFoldLines ?? codeFoldLines,
-            outputFoldLines: section.outputFoldLines ?? outputFoldLines,
-            outputFoldBytes: section.outputFoldBytes ?? outputFoldBytes,
-            sidebarOpen: section.sidebarOpen ?? sidebarOpen,
-            sidebarJobsInTree: section.sidebarJobsInTree ?? sidebarJobsInTree,
-            prompt: section.prompt ?? prompt,
-            tint: section.tint ?? tint,
-            // @dl:accept -- each section layers its keys the same way; the key lists are the data
-            separator: section.separator ?? separator,
-            padding: section.padding ?? padding,
-            markdown: section.markdown ?? markdown,
-            highlight: section.highlight ?? highlight,
-            shimmer: section.shimmer ?? shimmer,
-            hover: section.hover ?? hover,
-            localizedDurations: section.localizedDurations ?? localizedDurations,
-            spinner: section.spinner ?? spinner,
-            jobAutoReturnWhenFocused: section.jobAutoReturnWhenFocused ?? jobAutoReturnWhenFocused,
-            abortTurnRequiresConfirmation: section.abortTurnRequiresConfirmation ?? abortTurnRequiresConfirmation,
-            interruptKeys: section.interruptKeys ?? interruptKeys,
-            escapeInterruptRequiresConfirmation: section.escapeInterruptRequiresConfirmation
-                ?? escapeInterruptRequiresConfirmation,
-            interruptSendsQueued: section.interruptSendsQueued ?? interruptSendsQueued,
-            onlyUsefulModels: section.onlyUsefulModels ?? onlyUsefulModels,
-            appearance: section.appearance ?? appearance,
-            // @dl:accept -- every section layers its keys this way; the key lists are the data
-            timeout: section.timeout ?? timeout,
-            timeoutLabel: section.timeoutLabel ?? timeoutLabel,
-            sessionColor: section.sessionColor ?? sessionColor
-        )
-        merged.sidebarLayout = section.sidebarLayout ?? sidebarLayout
-        merged.dim = section.dim ?? dim
-        merged.sessionTint = section.sessionTint ?? sessionTint
-        merged.paths = section.paths ?? paths
-        merged.pathAncestors = section.pathAncestors ?? pathAncestors
-        merged.notify = section.notify ?? notify
-        merged.statusPath = section.statusPath ?? statusPath
-        merged.statusPathSide = section.statusPathSide ?? statusPathSide
-        return merged
-    }
 
     /// The keys this section sets, as a file writes them: `inputRows 4, fold.tools false`.
     public var description: String {

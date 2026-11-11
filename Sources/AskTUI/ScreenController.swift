@@ -148,6 +148,7 @@ public struct ScreenController: Sendable {
         state.transcript.spinnerStyle = options.spinner
         state.transcript.localizedDurations = options.localizedDurations
         state.transcript.timeoutDisplay = options.timeoutDisplay
+        state.transcript.history.limit = options.historyLimit
         state.transcript.timeoutLabel = options.timeoutLabel
         state.transcript.home = options.home
         state.promptRows = options.promptRows
