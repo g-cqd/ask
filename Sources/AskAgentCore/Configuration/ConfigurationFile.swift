@@ -139,18 +139,6 @@ public struct ConfigurationFile: Sendable, Equatable {
         return file
     }
 
-    /// A write or read scope: "workspace", "anywhere", or a list of paths.
-    private static func scope(_ container: KeyedDecodingContainer<Key>, _ key: Key, name: String) throws -> PathSetting
-    {
-        guard let one = try? container.decode(String.self, forKey: key) else {
-            return .paths(try container.decode([String].self, forKey: key))
-        }
-        switch one {
-            case "workspace": return .workspace
-            case "anywhere": return .anywhere
-            default: throw BadValue(key: name, value: one)
-        }
-    }
     struct Key: CodingKey {
         var stringValue: String
         var intValue: Int? { nil }
@@ -166,30 +154,6 @@ public struct ConfigurationFile: Sendable, Equatable {
         let container = try decoder.container(keyedBy: Key.self)
         // @dl:accept -- the walk the key tables share; the analyzer matches it against their closing lines
         for key in container.allKeys { try body(key, container) }
-    }
-
-    /// The `sandbox` object: its two lists, and nothing else.
-    // @dl:accept -- three key tables decoded the same way; the tables are the data, and the walk is already shared
-    private struct SandboxDecoded: Decodable {
-        var section = SandboxSection()
-        init(from decoder: any Decoder) throws {
-            try ConfigurationFile.eachKey(of: decoder) { key, container in
-                switch key.stringValue {
-                    case "readable": section.allowRead = try container.decode([String].self, forKey: key)
-                    case "writable": section.allowWrite = try container.decode([String].self, forKey: key)
-                    case "hide": section.denyRead = try container.decode([String].self, forKey: key)
-                    case "write": section.write = [try ConfigurationFile.scope(container, key, name: "sandbox.write")]
-                    case "read": section.read = [try ConfigurationFile.scope(container, key, name: "sandbox.read")]
-                    case "network":
-                        let name = try container.decode(String.self, forKey: key)
-                        guard let level = SandboxPolicy.Network(named: name) else {
-                            throw BadValue(key: "sandbox.network", value: name)
-                        }
-                        section.network = level
-                    default: throw UnknownKey(key: "sandbox." + key.stringValue)
-                }
-            }
-        }
     }
 
     // @dl:accept -- three key tables decoded the same way; the tables are the data, and the walk is already shared
