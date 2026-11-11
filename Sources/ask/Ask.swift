@@ -211,6 +211,7 @@ struct Ask: AsyncParsableCommand {
     /// ArgumentParser's reflection over the command tree is never paid for (ADR-0065, roadmap 0054).
     /// Anything else goes through the parser exactly as before.
     static func main() async {
+        enterLaunchDirectory()
         guard CommandLine.arguments.count == 1 else { return await main(nil) }
         do { try await LaunchRequest().run() } catch { exit(withError: error) }
     }
