@@ -3,7 +3,8 @@ internal import AskTUI
 internal import Synchronization
 
 /// The conversation's name (note n60; the owner's answers of 2026-11-11): from its first request, then from each compaction's summary,
-/// by Apple's on-device model, which costs nothing. Where that model is not available it stays unnamed, and the tab says the folder.
+/// by the model `threads.names` chooses, as a thread's (note n66): Apple's on-device model by default, which costs nothing; a provider's
+/// with "model"; none with "numbered". Where none answers it stays unnamed, and the tab says the folder.
 /// The name is kept in the session, titles the tab, and shows in the session lists.
 extension AgentConversation {
     /// Names the conversation from its first request as a turn starts with `prompt`, unless it has a name or was tried already.
@@ -28,7 +29,7 @@ extension AgentConversation {
     ) {
         let path = recorder.path
         Task {
-            guard let name = await ThreadNamer.name(for: text),
+            guard let name = await chosenName(for: text),
                 // A session switched to meanwhile is not this one's to name.
                 session.withLock({ $0?.path }) == path
             else { return }

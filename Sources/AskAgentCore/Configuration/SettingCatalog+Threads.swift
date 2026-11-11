@@ -10,7 +10,7 @@ extension SettingCatalog {
             .choice(ThreadsSection.Names.allCases.map(\.rawValue)),
             #""onDevice""#,
             "onDevice",
-            "How a thread is named: by Apple's on-device model from its task where it is available, by a model, or numbered."
+            "How threads and the conversation are named: by Apple's on-device model where it is available, by a model, or numbered."
         ),
         row(
             "threads.namesModel",

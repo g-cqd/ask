@@ -221,7 +221,7 @@
     // How deep threads may nest, from 1 to 8. Default: 3.
     "depth": 3,
 
-    // How a thread is named: by Apple's on-device model from its task where it is available, by a model, or numbered. Default: onDevice. One of: onDevice, numbered, model.
+    // How threads and the conversation are named: by Apple's on-device model where it is available, by a model, or numbered. Default: onDevice. One of: onDevice, numbered, model.
     "names": "onDevice",
 
     // The model names "model" asks, as /model takes it ("provider/model" or a model); empty for the conversation's own. Default: the conversation's model.
