@@ -20,14 +20,12 @@ enum LinkOpener {
         case missingApp(String)
     }
 
-    /// What clicking `uri` does when the person's openers name `app` for it (roadmap 0216): what would be opened or shown is opened in
-    /// that app, found by bundle identifier or by name in the usual folders; nothing else is.
+    /// What clicking `uri` does when the person's openers name `app` for it (roadmap 0216): what would be opened is opened in that
+    /// app, found by bundle identifier or by name in the usual folders. What would run is still only shown, whatever the app: the path
+    /// may be the model's, an app bundle is a folder to the Finder, and a terminal runs a script it is handed (note n33).
     static func action(for uri: String, app: String, folders: [URL] = applicationFolders) -> Action {
-        let target: URL
-        switch action(for: uri) {
-            case .open(let url), .reveal(let url): target = url
-            default: return .refuse
-        }
+        let usual = action(for: uri)
+        guard case .open(let target) = usual else { return usual }
         guard let found = application(named: app, folders: folders) else { return .missingApp(app) }
         return .openWith(target, app: found)
     }

@@ -45,4 +45,20 @@ struct LinkOpenerAppTests {
                 == true
         )
     }
+
+    /// The review of 2026-11-11: an app opener must not undo "what would run is only shown" (roadmap 0075, note n33). An app bundle is
+    /// a directory, so `"folder": "Finder"` launched it; a terminal as the file app ran a script.
+    @Test func `what would run is shown in the Finder, whatever app the openers name`() throws {
+        let script = FileManager.default.temporaryDirectory.appending(path: "ask-opener-\(UUID().uuidString).command")
+        try Data("#!/bin/sh\n".utf8).write(to: script)
+        defer { try? FileManager.default.removeItem(at: script) }
+        for target in [Self.calculator, URL(fileURLWithPath: "/bin/ls"), script] {
+            for app in ["Finder", "Terminal", "Calculator"] {
+                #expect(
+                    LinkOpener.action(for: target.absoluteString, app: app) == .reveal(target),
+                    "\(target) in \(app)"
+                )
+            }
+        }
+    }
 }
