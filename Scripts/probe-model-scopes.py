@@ -7,7 +7,7 @@ A fake Anthropic server, synthetic Codex credentials and cached model lists in t
 Each refusal has a control run, the same but with the rule pointing elsewhere, that must go through, so a probe that cannot fail
 does not pass.
 """
-import importlib.util, json, os, subprocess, sys, tempfile
+import importlib.util, json, os, re, subprocess, sys, tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 
@@ -99,7 +99,9 @@ def picker_session(binary, inside):
 def tui(binary):
     print("B: /model")
     status, shown, screen = picker_session(binary, inside=True)
-    check("the default your files chose gives way to the rule's first provider", "✓ · codex/" in status, status)
+    # The folder may sit between the mark and the model (ui.statusPath, notes n6 and n63).
+    check("the default your files chose gives way to the rule's first provider",
+          re.search(r"✓ · (\S+ · )?codex/", status) is not None, status)
     check("the list holds the allowed accounts' models", "codex/gpt-6-mini" in shown, shown)
     check("and nothing of a provider the rule leaves out", "anthropic" not in shown, shown)
     check("/model naming one is refused with the rule",
