@@ -110,6 +110,20 @@ extension SettingCatalog {
         ),
         row("ui.spinner", words(SpinnerPreference.self), #""line""#, "line", "The spinner."),
         row(
+            "ui.statusPath",
+            words(StatusPathPreference.self),
+            #""home""#,
+            "folder",
+            "The folder ask works in, on the status line: its last folder, from home, in full, or off."
+        ),
+        row(
+            "ui.statusPathSide",
+            words(StatusPathSidePreference.self),
+            #""trailing""#,
+            "leading",
+            "Where that folder sits: right after the mark, or last."
+        ),
+        row(
             "ui.showTimeout",
             words(TimeoutPreference.self),
             #""auto""#,

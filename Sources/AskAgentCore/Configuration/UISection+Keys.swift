@@ -58,6 +58,8 @@ extension UISection {
             case "sessionTint": return sessionTint?.rawValue
             case "paths": return paths?.rawValue
             case "notify": return notify?.rawValue
+            case "statusPath": return statusPath?.rawValue
+            case "statusPathSide": return statusPathSide?.rawValue
             case "pathAncestors": return pathAncestors.map { $0 == Self.noAncestorLimit ? "null" : String($0) }
             default: return nil
         }

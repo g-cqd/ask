@@ -77,6 +77,8 @@ extension RunSettings {
         ui.outputFoldLines = options.outputFoldLines
         ui.outputFoldBytes = options.outputFoldBytes
         ui.notify = NotifyPreference(rawValue: options.notify.rawValue)
+        ui.statusPath = StatusPathPreference(rawValue: options.statusPath.rawValue)
+        ui.statusPathSide = StatusPathSidePreference(rawValue: options.statusPathSide.rawValue)
         return ui
     }
 

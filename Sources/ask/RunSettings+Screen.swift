@@ -44,13 +44,14 @@ extension RunSettings {
             interruptSendsQueued: ui.interruptSendsQueued.flatMap { QueuedAfterInterrupt(rawValue: $0.rawValue) }
                 ?? defaults.interruptSendsQueued
         )
-        options.dim = ui.dim.flatMap { ScreenDim(rawValue: $0.rawValue) } ?? defaults.dim
-        options.sessionTint =
-            ui.sessionTint.flatMap { ScreenSessionTint(rawValue: $0.rawValue) } ?? defaults.sessionTint
+        options.dim = Self.word(ui.dim, or: defaults.dim)
+        options.sessionTint = Self.word(ui.sessionTint, or: defaults.sessionTint)
         options.appearance = appearance
-        options.timeoutDisplay = ui.timeout.flatMap { TimeoutDisplay(rawValue: $0.rawValue) } ?? defaults.timeoutDisplay
+        options.timeoutDisplay = Self.word(ui.timeout, or: defaults.timeoutDisplay)
         options.timeoutLabel = ui.timeoutLabel ?? defaults.timeoutLabel
-        options.notify = ui.notify.flatMap { NotifyStyle(rawValue: $0.rawValue) } ?? defaults.notify
+        options.notify = Self.word(ui.notify, or: defaults.notify)
+        options.statusPath = Self.word(ui.statusPath, or: defaults.statusPath)
+        options.statusPathSide = Self.word(ui.statusPathSide, or: defaults.statusPathSide)
         options.outputFoldLines = ui.outputFoldLines ?? defaults.outputFoldLines
         options.outputFoldBytes = ui.outputFoldBytes ?? defaults.outputFoldBytes
         options.home = LaunchEnvironment.values["HOME"]
@@ -75,6 +76,14 @@ extension RunSettings {
     }
 
     /// `threads.questions` as the screen takes it.
+    /// The screen's option named by the same word as the setting `value`, else `fallback`: the two enumerations spell their cases
+    /// alike, one in the configuration, one on the screen.
+    static func word<Setting: RawRepresentable, Option: RawRepresentable>(_ value: Setting?, or fallback: Option)
+        -> Option
+    where Setting.RawValue == String, Option.RawValue == String {
+        value.flatMap { Option(rawValue: $0.rawValue) } ?? fallback
+    }
+
     static func screenMode(_ mode: ThreadsSection.Questions) -> ThreadQuestionsMode {
         switch mode {
             case .focus: .focus

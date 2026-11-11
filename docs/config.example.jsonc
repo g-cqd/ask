@@ -144,6 +144,12 @@
     // The spinner. Default: line. One of: braille, braillefull, braillequarter, snake, line, random.
     "spinner": "line",
 
+    // The folder ask works in, on the status line: its last folder, from home, in full, or off. Default: folder. One of: folder, home, full, off.
+    "statusPath": "home",
+
+    // Where that folder sits: right after the mark, or last. Default: leading. One of: leading, trailing.
+    "statusPathSide": "trailing",
+
     // When a command's timeout is written in its header. Default: auto. One of: auto, always, never.
     "showTimeout": "auto",
 
