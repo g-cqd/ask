@@ -9,22 +9,43 @@ public final class ReplyPathExistence: Sendable {
     private struct Cache {
         var workspace = ""
         var policy = SandboxPolicy.unrestricted
-        var results: [String: Bool] = [:]
+        /// Paths found, kept until the policy changes: a file since removed says so on the click.
+        var found: Set<String> = []
+        /// When each path was last not found: asked again once that is older than ``missingFor``.
+        var missing: [String: ContinuousClock.Instant] = [:]
     }
     private let cache = Mutex(Cache())
 
-    public init() {}
+    private let now: @Sendable () -> ContinuousClock.Instant
 
-    /// A bounded cache belonging to one conversation. Every policy/workspace change clears its answers before reuse.
+    /// - Parameter now: the time, for the age of a "not there" answer; a test passes its own.
+    public init(now: @escaping @Sendable () -> ContinuousClock.Instant = { .now }) { self.now = now }
+
+    /// How long "not there" is believed. A reply is laid out again on every streamed delta, so the answer must be kept; but the model
+    /// names a file it is about to write, and that file must be found once it is there.
+    static let missingFor = Duration.seconds(2)
+    private static let limit = 4_096
+
+    /// Whether `path` may be linked. Answers are kept for this conversation, and all forgotten when the policy or the workspace changes.
     public func exists(_ path: String, in workspace: String, policy: SandboxPolicy) -> Bool {
-        cache.withLock { cache in
+        let time = now()
+        return cache.withLock { cache in
             if cache.workspace != workspace || cache.policy != policy {
                 cache = Cache(workspace: workspace, policy: policy)
             }
-            if let result = cache.results[path] { return result }
+            if cache.found.contains(path) { return true }
+            if let asked = cache.missing[path], time - asked < Self.missingFor { return false }
             let result = Self.check(path, in: workspace, policy: policy)
-            if cache.results.count >= 4_096 { cache.results.removeAll(keepingCapacity: true) }
-            cache.results[path] = result
+            if cache.found.count + cache.missing.count >= Self.limit {
+                cache.found.removeAll(keepingCapacity: true)
+                cache.missing.removeAll(keepingCapacity: true)
+            }
+            if result {
+                cache.missing[path] = nil
+                cache.found.insert(path)
+            } else {
+                cache.missing[path] = time
+            }
             return result
         }
     }

@@ -1,5 +1,6 @@
 internal import AskAgentCore
 internal import Foundation
+internal import Synchronization
 internal import Testing
 
 @testable import AskTools
@@ -52,5 +53,32 @@ struct ReplyPathExistenceTests {
         for path in ["", "a.txt", workspace.path + "/../outside/secret.txt", workspace.path + "/a\0.txt"] {
             #expect(!checker.exists(path, in: workspace.path, policy: .unrestricted))
         }
+    }
+
+    /// The review of 2026-11-11: "not there" was kept for the whole conversation, so a file the model made after first naming it
+    /// was never linked.
+    @Test func `a file made after it was first looked for is found once the answer has aged, and not before`() throws {
+        let root = FileManager.default.temporaryDirectory.appending(path: "reply-new-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let start = ContinuousClock.now
+        let elapsed = Mutex(Duration.zero)
+        let checker = ReplyPathExistence(now: { start + elapsed.withLock { $0 } })
+        let file = root.appending(path: "new.txt")
+        #expect(!checker.exists(file.path, in: root.path, policy: .unrestricted))
+        try Data("x".utf8).write(to: file)
+        elapsed.withLock { $0 = .seconds(1) }
+        #expect(
+            !checker.exists(file.path, in: root.path, policy: .unrestricted),
+            "within its age the answer is kept, not looked up again"
+        )
+        elapsed.withLock { $0 = .seconds(3) }
+        #expect(checker.exists(file.path, in: root.path, policy: .unrestricted))
+        try FileManager.default.removeItem(at: file)
+        elapsed.withLock { $0 = .seconds(60) }
+        #expect(
+            checker.exists(file.path, in: root.path, policy: .unrestricted),
+            "a file found stays found: a click says when it is gone"
+        )
     }
 }
