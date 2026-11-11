@@ -50,6 +50,13 @@ extension SettingCatalog {
             "off",
             "A colour of the session's own on the status line: always, or only while another ask runs."
         ),
+        row(
+            "ui.notify",
+            words(NotifyPreference.self),
+            #""bell""#,
+            "off",
+            "While you look elsewhere, a bell or a notification when a turn ends or ask waits for your answer."
+        ),
         row("ui.listAllModels", .boolean, "false", "false", "Model lists also show models ask cannot use."),
         row("ui.fold.tools", .boolean, "true", "true", "Tool calls start folded."),
         row("ui.fold.thinking", .boolean, "true", "true", "The model's reasoning starts folded."),

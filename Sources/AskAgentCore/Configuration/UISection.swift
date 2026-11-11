@@ -81,6 +81,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     /// one may be, ``noAncestorLimit`` for no limit; nil for the defaults, `short` and 2.
     public var paths: PathsPreference?
     public var pathAncestors: Int?
+    /// `ui.notify` (note n62): how ask tells you it is done or waiting while you look elsewhere; nil for `off`.
+    public var notify: NotifyPreference?
     /// `ui.pathAncestors` `null`: no limit.
     public static let noAncestorLimit = -1
 
@@ -181,7 +183,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     ]
     private static let behaviorKeys = [
         "paths", "pathAncestors", "leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels",
-        "sessionColor"
+        "sessionColor", "notify"
     ]
 
     /// `self` with every key `section` sets replaced.
@@ -229,6 +231,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         merged.sessionTint = section.sessionTint ?? sessionTint
         merged.paths = section.paths ?? paths
         merged.pathAncestors = section.pathAncestors ?? pathAncestors
+        merged.notify = section.notify ?? notify
         return merged
     }
 

@@ -63,6 +63,7 @@ extension ConfigurationFile {
                 case "dim": section.dim = try word(DimPreference.self)
                 case "sessionTint": section.sessionTint = try word(SessionTintPreference.self)
                 case "paths": section.paths = try word(PathsPreference.self)
+                case "notify": section.notify = try word(NotifyPreference.self)
                 case "timeoutLabel":
                     section.timeoutLabel = try ConfigurationFile.decodeLabel(container, key: key, named: name)
                 default: throw UnknownKey(key: name)
