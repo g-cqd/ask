@@ -13,6 +13,12 @@ import Testing
 struct PersonCommandTests {
     private let root: URL
 
+    /// A tool on a clock that never moves: a command ends by itself, however slow the machine, and is never left as a job by its
+    /// wait running out (the real clock's five seconds ran out on a loaded CI runner).
+    private static func tool() -> BashTool {
+        BashTool(jobs: JobTable(environment: ["PATH": "/usr/bin:/bin"]), clock: TestClock()) { _ in }
+    }
+
     init() throws {
         root = FileManager.default.temporaryDirectory.appending(path: "ask-person-\(UUID().uuidString)")
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
@@ -20,7 +26,7 @@ struct PersonCommandTests {
 
     @Test func `it runs as written, with what shellcheck would refuse, in the shell named`() async {
         defer { try? FileManager.default.removeItem(at: root) }
-        let tool = BashTool(jobs: JobTable(environment: ["PATH": "/usr/bin:/bin"]))
+        let tool = Self.tool()
         // `echo $X` unquoted is what the model's command is refused for once; the person's is not.
         let output = await tool.runForPerson(
             #"X=hi; echo $X "$0""#,
@@ -32,7 +38,7 @@ struct PersonCommandTests {
 
     @Test func `a SHELL that is no shell gives the one the model's commands get`() async {
         defer { try? FileManager.default.removeItem(at: root) }
-        let tool = BashTool(jobs: JobTable(environment: ["PATH": "/usr/bin:/bin"]))
+        let tool = Self.tool()
         for shell in [nil, "/no/such/shell", "zsh"] as [String?] {
             let output = await tool.runForPerson(
                 #"echo "$0""#,
@@ -49,7 +55,7 @@ struct PersonCommandTests {
         try FileManager.default.createDirectory(at: protected, withIntermediateDirectories: true)
         let rule = SandboxRule(try #require(CanonicalPath.of(protected.path, relativeTo: "/")), .subpath)
         let context = ToolContext(workingDirectory: root.path, sandbox: SandboxPolicy(denyWrite: [rule]))
-        let tool = BashTool(jobs: JobTable(environment: ["PATH": "/usr/bin:/bin"]))
+        let tool = Self.tool()
         let output = await tool.runForPerson("touch inside; touch protected/x", shell: "/bin/sh", in: context)
         #expect(FileManager.default.fileExists(atPath: root.appending(path: "inside").path))
         #expect(!FileManager.default.fileExists(atPath: protected.appending(path: "x").path))
