@@ -72,4 +72,39 @@ struct OpenerGrantsTests {
         #expect(OpenerRule(kind: .folder, command: ["x"]).matchDescription == "folders")
         #expect(OpenerRule(pattern: "a", command: ["x"]).matchDescription == "links matching a")
     }
+
+    @Test func `the list numbers what is allowed, and says when nothing is`() {
+        var grants = OpenerGrants()
+        #expect(
+            grants.report == [
+                "No opener command is allowed always. Answer a command's question with \"always\" to allow one."
+            ]
+        )
+        grants.allow(rule)
+        grants.allow(OpenerRule(kind: .web, host: "github.com", command: ["open", "-a", "My Browser", "{url}"]))
+        #expect(
+            grants.report == [
+                "Opener commands allowed always (/config openers revoke N, or revoke all):",
+                "  1. code --goto {path}:{line}  for files ending .swift",
+                "  2. open -a 'My Browser' {url}  for web links at github.com"
+            ]
+        )
+    }
+
+    @Test func `one is revoked by its number, all by a word, and anything else revokes nothing`() {
+        var grants = OpenerGrants()
+        grants.allow(rule)
+        let web = OpenerRule(kind: .web, command: ["open", "{url}"])
+        grants.allow(web)
+        #expect(grants.revoke(naming: "3") == .nothing("There is no 3: the list has 2."))
+        #expect(grants.revoke(naming: "0") == .nothing("There is no 0: the list has 2."))
+        #expect(grants.revoke(naming: "code") == .nothing("Say which: a number from the list, or all."))
+        #expect(grants.allows(rule) && grants.allows(web))
+        #expect(grants.revoke(naming: "2") == .revoked(["open {url}"]))
+        #expect(grants.allows(rule) && !grants.allows(web))
+        grants.allow(web)
+        #expect(grants.revoke(naming: "ALL") == .revoked(["code --goto {path}:{line}", "open {url}"]))
+        #expect(grants == OpenerGrants())
+        #expect(grants.revoke(naming: "all") == .nothing("Nothing is allowed always."))
+    }
 }

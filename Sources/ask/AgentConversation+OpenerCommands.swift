@@ -80,4 +80,24 @@ extension AgentConversation {
         }
         return choice != .deny
     }
+
+    /// `/config openers`: the commands allowed always; `/config openers revoke N` or `revoke all` takes them back (ADR-0148).
+    func openersCommand(_ arguments: String, update: @Sendable (ConversationUpdate) -> Void) {
+        let path = OpenerGrants.path(environment: LaunchEnvironment.values)
+        let words = arguments.split(separator: " ").dropFirst().map(String.init)
+        do {
+            var grants = try OpenerGrants.load(path)
+            guard words.first?.lowercased() == "revoke" else {
+                return update(.notice(grants.report.joined(separator: "\n"), isError: false))
+            }
+            switch grants.revoke(naming: words.dropFirst().first ?? "") {
+                case .nothing(let reason): update(.notice(reason, isError: true))
+                case .revoked(let commands):
+                    try grants.save(to: path)
+                    update(.notice("No longer allowed always: " + commands.joined(separator: "; "), isError: false))
+            }
+        } catch {
+            update(.notice("\(error)", isError: true))
+        }
+    }
 }

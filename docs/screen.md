@@ -159,7 +159,7 @@ when it ends. With no command running, Ctrl+B moves the cursor as usual.
 | `/rename` | In a thread's lane, `/rename TITLE` names the thread. A thread is otherwise named by Apple's on-device model from its task, where it is available (`threads.names`), or numbered. |
 | `/merge` | In a thread's lane, merges the thread back with a summary, and the threads under it: the only way a thread merges (a subagent aside). Refused while it works. `/close` is the same. |
 | `/compact` | Summarise the conversation now to free room in the context window. |
-| `/config` | Open the settings editor (`/config user` or `/config project`), or `/config show` to re-read the files and show them. |
+| `/config` | Open the settings editor (`/config user` or `/config project`), or `/config show` to re-read the files and show them. `/config openers` lists the opener commands you allowed always, and revokes them. |
 | `/mcp` | Show the MCP servers and their tools. |
 | `/reload` | Switch to a newer build of ask that appeared beside the running one, keeping the session; `/reload now` stops running jobs first. The new build must start (`--self-check`) and, when the running build is signed with a team's identity, be signed the same way: `Scripts/build-release.sh` builds and signs. |
 | `/skill:NAME` | Ask for a skill by name. |

@@ -116,6 +116,8 @@ Done, but for the list of what was allowed:
 
 ## Still owed
 
-- `/config openers`: the list of what was allowed always, and revoking one. Until then, removing `openers.json` revokes all.
 - Step 5 (`/config resolveOpeners`) and step 6 (presets).
 - The owner's answer on whether a rule may open what would run in an editor; today it may not.
+
+`/config openers` is done (2026-11-11): it lists what was allowed always, numbered, and `/config openers revoke N` or `revoke all`
+takes it back (`OpenerGrantsTests`; the probe's seventh and eighth checks). Step 4 is complete.

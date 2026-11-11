@@ -14,7 +14,8 @@ extension AgentConversation {
             // @dl:accept -- this table's head matches the built-in table's head; the entries are the data
             SlashCommand(
                 name: "config",
-                summary: "Edit settings interactively, or /config show to read and show every setting and its source.",
+                summary:
+                    "Edit settings, /config show to read them with their sources, /config openers for the commands allowed always.",
                 // @dl:accept -- a test's command table reads like this one: names, sentences and categories are the data
                 takesChoices: true,
                 // @dl:accept -- a test's command table reads like this one: names, sentences and categories are the data
@@ -171,6 +172,8 @@ extension AgentConversation {
                     let scope = arguments.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
                     if scope == "user" || scope == "project" {
                         await self.openConfigEditor(ConfigEditor.Scope(rawValue: scope) ?? .user, update: update)
+                    } else if scope.hasPrefix("openers") {
+                        self.openersCommand(arguments, update: update)
                     } else {
                         await self.showConfiguration(update: update)
                     }

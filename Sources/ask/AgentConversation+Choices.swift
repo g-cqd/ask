@@ -16,7 +16,8 @@ extension AgentConversation {
                 let project = configEditorPath(.project)
                 return [
                     ChoiceRow(label: "user", detail: user.path, arguments: "user"),
-                    ChoiceRow(label: "project", detail: project.path, arguments: "project")
+                    ChoiceRow(label: "project", detail: project.path, arguments: "project"),
+                    ChoiceRow(label: "openers", detail: "the opener commands allowed always", arguments: "openers")
                 ]
             case "resume": return sessionRows()
             case "threads": return threadRows()

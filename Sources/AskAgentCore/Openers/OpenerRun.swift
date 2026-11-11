@@ -21,7 +21,7 @@ public enum OpenerRun: Sendable, Equatable {
                 && argument.unicodeScalars.allSatisfy { scalar in
                     scalar.isASCII
                         && (scalar.properties.isAlphabetic || scalar.properties.numericType != nil
-                            || "-_./:=+,@%".unicodeScalars.contains(scalar))
+                            || "-_./:=+,@%{}".unicodeScalars.contains(scalar))
                 }
             return plain ? argument : "'" + argument.replacing("'", with: #"'\''"#) + "'"
         }
