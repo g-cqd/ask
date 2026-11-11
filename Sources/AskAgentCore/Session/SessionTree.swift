@@ -205,13 +205,19 @@ public struct SessionTree: Sendable, Equatable {
         return walked.reversed()
     }
 
-    /// A compaction must keep a message on its own ancestry: the parent and everything above it.
+    /// A compaction must keep a message on its own ancestry: the parent and everything above it. Walked up in place, copying no
+    /// entry: a long session restores many compactions, and copying the whole lineage for each was a fifth of a resume (t233).
     private func validate(_ payload: SessionPayload, under parent: EntryID?) throws(SessionTreeError) {
         guard case .compaction(_, let firstKept) = payload else { return }
-        let lineage = ancestry(of: parent)
-        guard let kept = lineage.first(where: { $0.id == firstKept }), !kept.payload.isCompaction else {
-            throw .invalidCompactionBoundary(firstKept)
+        var cursor = parent
+        while let current = cursor, let position = positions[current] {
+            if current == firstKept {
+                guard !entries[position].payload.isCompaction else { break }
+                return
+            }
+            cursor = entries[position].parentID
         }
+        throw .invalidCompactionBoundary(firstKept)
     }
 
     /// The next unused local identifier. Skips identifiers a restored archive already holds.
