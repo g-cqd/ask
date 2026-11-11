@@ -16,6 +16,7 @@ struct SubprocessInventoryTests {
         "StdioTransport.swift": "an MCP stdio server is a process by the protocol",
         "StdioTransport+Run.swift": "an MCP stdio server is a process by the protocol",
         "Reexec.swift": "/reload replaces ask with its new build: execve, not a child",
+        "OpenerLaunch.swift": "the person's own opener command, started on their click (ADR-0148)",
         "CommandCheck.swift":
             "a command is parsed by the shell that will run it, and read by shellcheck, before it runs (ADR-0139)"
     ]
