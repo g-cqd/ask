@@ -86,6 +86,8 @@ public struct ScreenState: Sendable, Equatable {
     public var pendingQuestions: PendingQuestions?
     /// What names this session for its colour (roadmap 0164); nil draws the status line as usual.
     var sessionIdentity: String?
+    /// What the conversation is called (note n60), for the tab's title; nil before it has a name.
+    var conversationName: String?
     /// A line a running command asked for, while it waits: the keys go to ``inputAnswer`` until Enter or Esc.
     public var pendingInput: PendingInput?
     /// What is typed for ``pendingInput``; never drawn but as dots when the input is a secret.

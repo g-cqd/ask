@@ -33,6 +33,9 @@ final class ScreenSession {
     var images: ScreenImages?
     /// The pointer's shape last sent to the terminal (OSC 22, note n13).
     var pointer = PointerShape.default
+    /// The tab's title last sent (note n60); nil before the first, when the terminal's own is saved.
+    var title: String?
+    let titles: TabTitleWriter
 
     init(
         _ screen: ScreenTerminal,
@@ -44,6 +47,7 @@ final class ScreenSession {
         terminal = screen.session
         renderer = screen.renderer
         connection = screen.connection
+        titles = TabTitleWriter(connection: screen.connection)
         input = InputSource(connection: screen.connection, escapeIsUnambiguous: screen.session.escapeIsUnambiguous)
         self.conversation = conversation
         let size = try? screen.connection.getSize()

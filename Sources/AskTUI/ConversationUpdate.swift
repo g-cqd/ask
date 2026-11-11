@@ -10,6 +10,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     indirect case batch([ConversationUpdate])
     /// What names this session, for a colour of its own on the status line (roadmap 0164); nil takes the colour away.
     case sessionIdentity(String?)
+    /// What the conversation is called (note n60), which titles the terminal's tab; nil while it has no name.
+    case conversationName(String?)
     case assistantText(String)
     /// A message for the model that the conversation wrote for the person (a `!!` command's result, note n56): taken as if they had
     /// typed and sent it, so it starts a turn, or waits behind the running one.

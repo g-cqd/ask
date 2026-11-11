@@ -22,17 +22,15 @@ extension ScreenController {
                 state.transcript.addChoiceSummary(HomePath.abbreviate(text, home: options.home))
             case .detail(let text): receive(detail: HomePath.abbreviate(text, home: options.home))
             case .requestExit(let exit): state.exitRequest = exit
-            case .label, .labelVariants, .sandboxActive, .sessionIdentity, .status, .context: applyStatusLine(update)
+            case .label, .labelVariants, .sandboxActive, .sessionIdentity, .conversationName, .status, .context:
+                applyStatusLine(update)
             case .runners(let list): setRunners(list)
             case .runnerActivity(let seen): state.runnerActivity.merge(seen) { Swift.max($0, $1) }
             case .runnerOutput: break
             case .files(let list): return receive(files: list)
             case .skills(let list): receive(skills: list)
             case .choices(let command, let rows): return receive(command: command, choices: rows)
-            case .choicesStale(let command):
-                state.choices[command]?.stale = true
-                asking.remove(command)
-                return []
+            case .choicesStale(let command): staleChoices(command)
             case .configEditor(let snapshot): return receive(config: snapshot)
             case .askInput(let id, let prompt, let secret, let transient):
                 askInput(id: id, prompt: prompt, secret: secret, transient: transient)
@@ -112,14 +110,25 @@ extension ScreenController {
                 state.labelVariants = forms
             case .sandboxActive(let active): state.sandboxed = active
             case .sessionIdentity(let seed): state.sessionIdentity = seed
+            case .conversationName(let name): state.conversationName = name
             case .status(let text): state.detail = text
             case .context(let text): state.context = text
             default: break
         }
     }
 
+    /// The list `command` showed is out of date: kept, marked so, and asked for again when it is next opened.
+    private mutating func staleChoices(_ command: String) {
+        state.choices[command]?.stale = true
+        asking.remove(command)
+    }
+
+    /// The terminal tab's title as the screen now has it (note n60).
+    var tabTitle: String { TabTitle.text(name: state.conversationName, workspace: options.workspace) }
+
     private mutating func clearConversation() {
         state.transcript.removeAll()
+        state.conversationName = nil
         clearSelection()
         state.detail = ""
         state.context = ""
