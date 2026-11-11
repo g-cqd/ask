@@ -24,7 +24,7 @@ struct OutputEscapes: Sendable, Equatable {
 
     init(_ raw: String) {
         // Most output has no escape: it is kept as it is, unread.
-        guard raw.utf8.contains(where: { $0 == 0x1B || $0 == 0xC2 }) || Self.hasControl(raw) else {
+        guard Self.needsReading(raw) else {
             text = raw
             lines = []
             return
@@ -36,8 +36,16 @@ struct OutputEscapes: Sendable, Equatable {
         lines = reader.lines
     }
 
-    private static func hasControl(_ raw: String) -> Bool {
-        raw.utf8.contains { ($0 < 0x20 && $0 != 0x09 && $0 != 0x0A && $0 != 0x0D) || $0 == 0x7F }
+    /// Whether `raw` holds an escape, a C1 lead byte, or a control but tab, line feed and carriage return. One pass over the bytes
+    /// in place: two through `String.UTF8View`, a byte at a time, were a sixth of a long session's resume (t233).
+    static func needsReading(_ raw: String) -> Bool {
+        var raw = raw
+        return raw.withUTF8 { bytes in
+            bytes.contains { byte in
+                byte == 0x1B || byte == 0xC2 || byte == 0x7F
+                    || (byte < 0x20 && byte != 0x09 && byte != 0x0A && byte != 0x0D)
+            }
+        }
     }
 
     private struct Reader {

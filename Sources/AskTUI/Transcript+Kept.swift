@@ -12,14 +12,19 @@ extension Transcript {
     /// their line feeds, read as bytes: splitting the output by `Character` cost a tenth of a long session's resume, and never cut CRLF
     /// text, whose `\r\n` is one `Character` (note n47).
     static func kept(_ output: String) -> String {
-        let text = withoutTrailingLineEnds(output)
-        var feeds = 0
-        var cut = text.endIndex
-        for index in text.utf8.indices where text.utf8[index] == UInt8(ascii: "\n") {
-            feeds += 1
-            if feeds == outputLineLimit { cut = index }
+        var text = withoutTrailingLineEnds(output)
+        // Counted over the bytes in place: walking `String.UTF8View`'s indices cost as much again (t233).
+        let (feeds, offset) = text.withUTF8 { bytes in
+            var feeds = 0
+            var offset = bytes.count
+            for (position, byte) in bytes.enumerated() where byte == UInt8(ascii: "\n") {
+                feeds += 1
+                if feeds == outputLineLimit { offset = position }
+            }
+            return (feeds, offset)
         }
         guard feeds >= outputLineLimit else { return String(text) }
+        var cut = text.utf8.index(text.startIndex, offsetBy: offset)
         // The last kept line's own carriage return goes, or it would join the note's line feed into one `\r\n`.
         if cut > text.startIndex, text.utf8[text.utf8.index(before: cut)] == UInt8(ascii: "\r") {
             cut = text.utf8.index(before: cut)
