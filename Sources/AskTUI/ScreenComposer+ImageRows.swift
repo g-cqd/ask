@@ -2,8 +2,8 @@ internal import TerminalKitCodecs
 internal import TerminalKitStyle
 
 /// The rows that say a tool's pictures, right under its header (roadmap 0208): what each is, its pixel size and its byte size,
-/// whether the output is folded or not (the owner, 2026-11-06: shown at once). Where the terminal draws pixels, the picture will
-/// take rows here too; elsewhere this row is all there is.
+/// whether the output is folded or not (the owner, 2026-11-06: shown at once, folded on a click). Where the terminal draws pixels,
+/// the picture takes rows here too, unless it is folded away; elsewhere this row is all there is.
 extension ScreenComposer {
     static func withImageRows(
         _ lines: [Line],
@@ -17,9 +17,15 @@ extension ScreenComposer {
         let source = Source(block: block, line: 0, offset: 0, col: inset, text: "")
         var rows: [Line] = []
         for (index, image) in images.enumerated() {
-            rows.append(Line(text: margin + caption(image), style: Style(dim: true), source: source))
+            var shown = [Line(text: margin + caption(image), style: Style(dim: true), source: source)]
             if index < placements.count, let placement = placements[index] {
-                rows += pictureRows(placement, margin: margin, source: source)
+                shown += pictureRows(placement, margin: margin, source: source)
+            }
+            // A click on its line or its cells folds this picture, not the tool's output.
+            rows += shown.map { line in
+                var line = line
+                line.picture = index
+                return line
             }
         }
         return [header] + rows + lines.dropFirst()

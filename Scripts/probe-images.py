@@ -3,10 +3,10 @@
 
 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-images.py .build/release/ask
 
-The model reads a PNG with the read tool. Its block shows the picture's row under the header (`PNG · 3×2 · … B`), and so does the
-session resumed with --continue. As Ghostty, whose answer to kitty's graphics query the probe gives as kitty would, the picture is
-sent and placed virtually, and its placeholder cells are drawn; as Terminal.app, nothing is asked or sent. Hermetic: a picture made
-here, no window, credentials or clipboard.
+The model reads a PNG with the read tool. Its block shows the picture's row under the header (`PNG · 3×2 · … B`), and so does
+the session resumed with --continue. As Ghostty, whose answer to kitty's graphics query the probe gives as kitty would, the
+picture is sent and placed virtually, and its placeholder cells are drawn; a click on its line folds it away, a second shows it.
+As Terminal.app, nothing is asked or sent. Hermetic: a picture made here, no window, credentials or clipboard.
 """
 import importlib.util
 import json
@@ -100,6 +100,15 @@ def main():
         check("the answer was not typed into the input", "Gi=" not in terminal.text())
         check("the picture is sent as PNG and placed virtually", b"a=t" in raw and b"f=100" in raw and b"U=1" in raw)
         check("its placeholder cells are drawn", "\U0010EEEE".encode() in raw)
+        # A click on its line folds the picture away, leaving the line; a second shows it (the owner, 2026-11-06).
+        cells = lambda: sum("\U0010EEEE" in line for line in terminal.screen.display)
+        terminal.until(lambda: cells() > 0)
+        terminal.click(row)
+        terminal.until(lambda: cells() == 0)
+        check("a click on its line folds the picture away, and the line stays", row in terminal.text())
+        terminal.click(row)
+        terminal.until(lambda: cells() > 0)
+        check("a second click shows it again", True)
         terminal.send(b"/quit\r")
         terminal.close()
         terminal = probe.Terminal(project, environment, rows=40, resume=True)

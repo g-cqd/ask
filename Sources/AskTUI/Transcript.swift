@@ -58,6 +58,7 @@ public struct Transcript: Sendable, Equatable {
     var toolImages: [Int: [ToolImage]] = [:]
     /// Where each block's pictures are placed as pixels, once the terminal draws them; a nil one has its line only.
     var imagePlacements: [Int: [ImagePlacement?]] = [:]
+    var foldedPictures: [Int: Set<Int>] = [:]  // By block, the pictures a click folded away (roadmap 0208).
     /// The file each file tool's call names (roadmap 0152), whose language colours the file's text in its block.
     var toolPaths: [Int: String] = [:]
     /// The colours and links each tool block's output asked for with its escapes (note n30), by its kept output's hard line.
