@@ -18,6 +18,10 @@ on-device model writes it, so it costs nothing; where that model is not availabl
 conversation has no name. The name is saved with the session. The terminal's tab reads `ask · name`, or `ask · folder` while there is
 no name, and gets its own title back when ask closes; the session lists show the name before the first message.
 
+Once a turn, a compaction or a command has gone on for five seconds, a spinner leads the tab's title until it is done. Terminals that
+show progress themselves (iTerm2 3.6 or later, Ghostty 1.2 or later) are also told with OSC 9;4; others are not sent it, since an older
+terminal shows OSC 9 as a notification.
+
 A session remembers the account it used and resumes on it. On exit, ask prints a command to resume the saved session in its
 working directory, retaining the launch flags and safely escaping spaces and shell metacharacters.
 
