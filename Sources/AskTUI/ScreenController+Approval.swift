@@ -5,10 +5,18 @@ internal import TerminalKitInput
 /// letter checks its row, Enter confirms; Esc denies at once; Ctrl+C stops the turn; Ctrl+O unfolds the command. Once answered, the
 /// question leaves nothing behind: the tool's own block says what happened (roadmap 0157).
 extension ScreenController {
-    mutating func ask(id: Int, question: String, kind: ApprovalKind = .grant, detail: String? = nil) {
+    /// - Returns: the answer to an opener's question this one takes the place of: denied, since no run waits on it to cancel it, and
+    ///   its command would otherwise wait for an answer nobody can give.
+    @discardableResult
+    mutating func ask(id: Int, question: String, kind: ApprovalKind = .grant, detail: String? = nil) -> [Effect] {
+        var displaced: [Effect] = []
+        if let waiting = state.pendingApproval, waiting.id != id, case .opener = waiting.kind {
+            displaced = [.answerApproval(id: waiting.id, .deny)]
+        }
+        defer { state.scrollback = 0 }
         let question = HomePath.abbreviate(question, home: options.home)
         state.pendingApproval = PendingApproval(id: id, question: question, kind: kind, detail: detail)
-        state.scrollback = 0
+        return displaced
     }
 
     /// Other keys are ignored, so a stray key neither answers nor types into the prompt.
@@ -17,6 +25,8 @@ extension ScreenController {
         // Ctrl-C keeps its meaning: abort the turn. Cancelling it answers the question no.
         if key.keyCode == 0x03 || (key.modifiers.contains(.ctrl) && (key.keyCode == 0x63 || key.keyCode == 0x43)) {
             settle(pending, saying: "denied")
+            // An opener's question is a click's, not the turn's (ADR-0148): it is denied, and the model goes on.
+            if case .opener = pending.kind { return [.answerApproval(id: pending.id, .deny)] }
             return abort()
         }
         let options = pending.options

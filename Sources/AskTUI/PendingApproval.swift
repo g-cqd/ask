@@ -20,7 +20,7 @@ public struct PendingApproval: Sendable, Equatable {
         self.detail = detail.flatMap { $0.contains { !$0.isWhitespace } ? $0 : nil }
         let start =
             switch kind {
-                case .grant, .command: 0
+                case .grant, .command, .opener: 0
                 case .destructive, .confirm: ApprovalOption.options(for: kind).count - 1
             }
         cursor = start
