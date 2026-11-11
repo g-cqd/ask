@@ -5,7 +5,8 @@ ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-images.py .build/release/ask
 
 The model reads a PNG with the read tool. Its block shows the picture's row under the header (`PNG · 3×2 · … B`), and so does
 the session resumed with --continue. As Ghostty, whose answer to kitty's graphics query the probe gives as kitty would, the
-picture is sent and placed virtually, and its placeholder cells are drawn; a click on its line folds it away, a second shows it.
+picture is sent and placed virtually, and its placeholder cells are drawn; a click on its line folds it away, a second shows it;
+a JPEG is sent made a PNG.
 As Terminal.app, nothing is asked or sent. Hermetic: a picture made here, no window, credentials or clipboard.
 """
 import importlib.util
@@ -15,6 +16,7 @@ import fcntl
 import re
 import shutil
 import struct
+import subprocess
 import sys
 import termios
 import tempfile
@@ -77,9 +79,14 @@ def main():
     picture = png(3, 2)
     with open(os.path.join(project, "shot.png"), "wb") as file:
         file.write(picture)
+    # A JPEG of it, made by macOS's own sips: drawn too, made a PNG first (kitty takes PNG or raw pixels).
+    subprocess.run(["sips", "-s", "format", "jpeg", os.path.join(project, "shot.png"), "--out",
+                    os.path.join(project, "photo.jpg")], check=True, capture_output=True)
     turn = probe.agent.turn
     server = probe.agent.Server([turn([("call", "r1", "read", {"path": "shot.png"})], "tool_use"),
-                                 turn([("text", "SEEN IT")], "end_turn")])
+                                 turn([("text", "SEEN IT")], "end_turn"),
+                                 turn([("call", "r2", "read", {"path": "photo.jpg"})], "tool_use"),
+                                 turn([("text", "SEEN TOO")], "end_turn")])
     environment = probe.agent.environment(state, server.url, config=config)
     environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")
     row = f"PNG · 3×2 · {len(picture)} B"
@@ -109,6 +116,12 @@ def main():
         terminal.click(row)
         terminal.until(lambda: cells() > 0)
         check("a second click shows it again", True)
+        terminal.send(b"look at the photo\r")
+        terminal.until(lambda: "SEEN TOO" in terminal.text())
+        check("a JPEG shows its row too", "JPEG · 3×2" in terminal.text())
+        # Its transmission is a PNG's: base64 of the PNG signature, a second time, and never a JPEG's (/9j/).
+        terminal.until(lambda: bytes(terminal.raw).count(b"iVBORw0KGgo") >= 2)
+        check("and is sent to the terminal made a PNG", b"/9j/" not in bytes(terminal.raw))
         terminal.send(b"/quit\r")
         terminal.close()
         terminal = probe.Terminal(project, environment, rows=40, resume=True)
