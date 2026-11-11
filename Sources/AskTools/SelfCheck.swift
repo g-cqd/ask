@@ -62,6 +62,7 @@ public enum SelfCheck {
         environment: [String: String]?,
         workingDirectory: String?
     ) async -> Outcome {
+        if let reason = unavailable(workingDirectory) { return .failed(reason) }
         let options = JobProcess.groupOptions(graceSeconds: 1)
         do {
             let result = try await Subprocess.run(
@@ -85,5 +86,17 @@ public enum SelfCheck {
         } catch {
             return Task.isCancelled ? .failed("the check was cancelled") : .failed("it could not start: \(error)")
         }
+    }
+
+    /// Why nothing can start in `directory`, when it is not there; nil when it is, or when none was given. Said in these words by a
+    /// reload too, so a session whose directory is gone does not read as a new build that cannot start.
+    public static func unavailable(_ directory: String?) -> String? {
+        guard let directory else { return nil }
+        var isDirectory: ObjCBool = false
+        guard !FileManager.default.fileExists(atPath: directory, isDirectory: &isDirectory) || !isDirectory.boolValue
+        else {
+            return nil
+        }
+        return "this session's directory, \(directory), is not there now, so nothing can start in it"
     }
 }

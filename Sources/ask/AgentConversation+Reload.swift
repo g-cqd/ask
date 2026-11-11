@@ -92,6 +92,10 @@ extension AgentConversation {
             )
             return
         }
+        if let reason = SelfCheck.unavailable(source.workspace) {
+            update(.notice("Not reloading: \(reason). Staying on the running build.", isError: true))
+            return
+        }
         update(.notice("Checking the new build (\(latest.summary))…", isError: false))
         guard await signatureAllows(latest, update: update) else { return }
         if case .failed(let reason) = await SelfCheck.run(

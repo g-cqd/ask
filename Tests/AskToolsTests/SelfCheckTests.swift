@@ -75,16 +75,10 @@ struct SelfCheckTests {
             return
         }
         #expect(URL(fileURLWithPath: observed).resolvingSymlinksInPath() == workspace.resolvingSymlinksInPath())
-        guard
-            case .failed = await SelfCheck.run(
-                path,
-                workingDirectory: workspace.appending(path: "missing").path,
-                timeout: Self.patience
-            )
-        else {
-            Issue.record("a missing reload workspace must not fall back to the parent's cwd")
-            return
-        }
+        let gone = workspace.appending(path: "missing").path
+        let refused = await SelfCheck.run(path, workingDirectory: gone, timeout: Self.patience)
+        // Named for what it is: before the review of 2026-11-11 this read as the new build failing to start.
+        #expect(refused == .failed("this session's directory, \(gone), is not there now, so nothing can start in it"))
     }
 
     @Test func `a build that exits non-zero fails, with its code and what it said on standard error`() async throws {
