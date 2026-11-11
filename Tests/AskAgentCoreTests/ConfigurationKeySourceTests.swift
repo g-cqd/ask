@@ -45,6 +45,8 @@ struct ConfigurationKeySourceTests {
         section.paths = .asWritten
         section.pathAncestors = 3
         section.notify = .bell
+        section.statusPath = .home
+        section.statusPathSide = .trailing
         return section
     }()
 

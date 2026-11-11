@@ -83,6 +83,9 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     public var pathAncestors: Int?
     /// `ui.notify` (note n62): how ask tells you it is done or waiting while you look elsewhere; nil for `off`.
     public var notify: NotifyPreference?
+    /// `ui.statusPath` and `ui.statusPathSide` (notes n6 and n63): the folder on the status line; nil for `folder` and `leading`.
+    public var statusPath: StatusPathPreference?
+    public var statusPathSide: StatusPathSidePreference?
     /// `ui.pathAncestors` `null`: no limit.
     public static let noAncestorLimit = -1
 
@@ -179,7 +182,9 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     private static let lookKeys = [
         // @dl:accept -- a list of key names is data, like any other list of names
         "inputPrefix", "tint", "appearance", "separator", "padding", "markdown", "highlight", "durations",
-        "spinner", "shimmer", "hover", "showTimeout", "timeoutLabel", "dim", "sessionTint"
+        // @dl:accept -- the rest of the same list of key names
+        "spinner", "shimmer", "hover", "showTimeout", "timeoutLabel", "dim", "sessionTint", "statusPath",
+        "statusPathSide"
     ]
     private static let behaviorKeys = [
         "paths", "pathAncestors", "leaveFinishedJob", "stopKeys", "stopTwice", "queuedOnStop", "listAllModels",
@@ -232,6 +237,8 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         merged.paths = section.paths ?? paths
         merged.pathAncestors = section.pathAncestors ?? pathAncestors
         merged.notify = section.notify ?? notify
+        merged.statusPath = section.statusPath ?? statusPath
+        merged.statusPathSide = section.statusPathSide ?? statusPathSide
         return merged
     }
 

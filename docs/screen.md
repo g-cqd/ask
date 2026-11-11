@@ -7,6 +7,9 @@ questions and approvals open just above the box.
 
 The status line starts with a spinner while ask works. It reads `Compacting...` in purple while the conversation is being summarised, and
 `Reconnecting...` in yellow while ask waits to try again after the connection dropped; neither adds anything to the conversation.
+Right after its mark it names the folder ask works in, by its last folder (`ui.statusPath`: `"home"` or `"full"` for more, `"off"`
+for none; `ui.statusPathSide` `"trailing"` puts it last). When the line is narrow the folder shortens to its last part, then goes
+first.
 
 ## Writing a prompt
 

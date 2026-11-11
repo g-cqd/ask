@@ -197,6 +197,8 @@ Switches take `true` or `false` (the older `"on"` and `"off"` still work).
 | `listAllModels` | `false` | Model lists also show models ask cannot use (image, audio, completion-only, no tool calls), as `ask models --all` does. |
 | `sessionColor` | `"off"` | A colour of the session's own as the status line's background, to tell sessions apart: `"always"`, seeded by the project's path and the session file's name so a session keeps its colour; `"others"`, the same colour only while another ask runs on this Mac; `"off"`. |
 | `notify` | `"off"` | How ask tells you a turn has ended, or that it waits for your answer (an approval, the model's questions), while the terminal is not focused: `"bell"`, the terminal's bell; `"notification"`, a desktop notification the terminal shows (OSC 9 in iTerm2, Ghostty and WezTerm, kitty's OSC 99, OSC 777 elsewhere; Terminal.app has none, so it gets the bell); `"off"`. ask asks the terminal for focus reports only while this is on; one that does not report focus is taken as not focused. |
+| `statusPath` | `"folder"` | The folder ask works in, on the status line: `"folder"`, its last folder; `"home"`, from your home folder (`~/src/shop`); `"full"`; `"off"`. When the line is narrow it shortens to the last folder, then goes, before the context's use and the model's name. |
+| `statusPathSide` | `"leading"` | Where that folder sits on the status line: `"leading"`, right after the mark; `"trailing"`, last. |
 
 ### `sandbox`
 
