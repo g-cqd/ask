@@ -187,10 +187,10 @@ extension ScreenController {
         return copyIfCommitted(update)
     }
 
-    /// The link drawn at `cell` of the transcript, if any.
+    /// What a click on the link drawn at `cell` of the transcript opens, if there is one: its address, and its place in the file.
     func link(at cell: CellPosition) -> String? {
         guard frame.links.indices.contains(cell.row) else { return nil }
-        return frame.links[cell.row].first { $0.columns.contains(cell.col) }?.uri
+        return frame.links[cell.row].first { $0.columns.contains(cell.col) }?.target
     }
 
     /// Toggles tools/thinking from any owned row, including padding; code folds still use their fence lines.

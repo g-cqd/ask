@@ -12,6 +12,23 @@ enum PathLinks {
     struct Link: Sendable, Equatable {
         var columns: Range<Int>
         var uri: String
+        /// The line and column written after a path (`a.swift:12:5`), for an opener that takes them (roadmap 0216); nil when none was.
+        var line: Int?
+        var column: Int?
+
+        init(columns: Range<Int>, uri: String, line: Int? = nil, column: Int? = nil) {
+            self.columns = columns
+            self.uri = uri
+            self.line = line
+            self.column = column
+        }
+
+        /// What a click opens: the address, with the place in the file after it as `#L12C5`. Only a click takes this form; the
+        /// terminal is given ``uri``.
+        var target: String {
+            guard let line, uri.hasPrefix("file://") else { return uri }
+            return uri + "#L\(line)" + (column.map { "C\($0)" } ?? "")
+        }
     }
 
     /// What may stand before a path, and what ends one.

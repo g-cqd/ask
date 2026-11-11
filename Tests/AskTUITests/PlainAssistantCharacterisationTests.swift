@@ -25,7 +25,7 @@ struct PlainAssistantCharacterisationTests {
             .map { line in
                 let source = line.source.map { "\($0.line):\($0.offset):\($0.col):\($0.text)" } ?? "-"
                 return
-                    "\(line.text)|\(line.style)|\(source)|\(line.accents)|\(line.links)|\(line.foldBlock.map(String.init) ?? "-")"
+                    "\(line.text)|\(line.style)|\(source)|\(line.accents)|\(line.pins)|\(line.foldBlock.map(String.init) ?? "-")"
             }
             .joined(separator: "\n")
     }
