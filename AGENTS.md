@@ -186,6 +186,11 @@ Diary claims are per day (`--date YYYY-MM-DD` when needed). Claims cover this cl
 From a clean task worktree, `Scripts/land.sh` integrates, runs the full gate, fast-forwards local main and removes that task's worktree/branch; `--keep` retains it.
 It never pushes. A failed gate/conflict keeps the task intact. Inspect the owner before removing a stale `.git/ask-land.lock`.
 
+**Reinstall at the end of every session (the owner, 2026-11-11).** Before ending a working session, build the release binary from
+the landed main (`swift build -c release --product ask`) and install it as `~/.local/bin/ask`: stage it beside the target with
+`mktemp`, `install -m 755`, check that the staged copy runs `--help`, then `mv` it over, so a failed build never replaces a working
+binary. Say in the final report which commit it was built from, or why it was not installed.
+
 Atomic and buildable. The message states **why** — the diff already says what. Never mix a refactor
 and a behaviour change. Slice by behaviour, not by file type.
 
