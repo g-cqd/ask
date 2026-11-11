@@ -34,8 +34,8 @@ struct ScreenImages {
     }
 
     /// Sends and places every PNG of `transcript` not placed yet, sized to the terminal's cells and to `transcriptColumns` (the
-    /// terminal's width when nil; less when the sidebar is open), and places again, smaller, one that no longer fits; true when it
-    /// placed one.
+    /// terminal's width when nil; less when the sidebar is open), and places again one whose fit changed, smaller or larger; true
+    /// when it placed one.
     mutating func place(in transcript: inout Transcript, size: TerminalSize, inset: Int, transcriptColumns: Int? = nil)
         -> Bool
     {
@@ -47,10 +47,7 @@ struct ScreenImages {
         var any = false
         for (index, images) in transcript.toolImages {
             let held = transcript.imagePlacements[index]
-            guard held == nil || held?.contains(where: { ($0?.columns ?? 0) > max(1, limits.columns) }) == true else {
-                continue
-            }
-            transcript.imagePlacements[index] = images.enumerated()
+            let placements = images.enumerated()
                 .map { position, image in
                     placement(
                         image,
@@ -59,6 +56,8 @@ struct ScreenImages {
                         limits
                     )
                 }
+            guard placements != held else { continue }
+            transcript.imagePlacements[index] = placements
             // A new revision, so the block is laid out again with its placeholder rows: the layout keeps a block's rows until then.
             transcript.revisions[index] = transcript.bump()
             any = true
@@ -66,7 +65,7 @@ struct ScreenImages {
         return any
     }
 
-    /// `image` placed within `limits`: sent and placed when `held` is nil, placed again under its id when it no longer fits; nil for
+    /// `image` placed within `limits`: sent and placed when `held` is nil, placed again under its id when its fit changed; nil for
     /// one this does not draw (not a PNG, no size in its header, or ids used up).
     private mutating func placement(
         _ image: ToolImage,
@@ -77,7 +76,8 @@ struct ScreenImages {
         guard image.mediaType == "image/png", let pixels = image.pixelSize else { return nil }
         let fit = ImagePlacement.fit(pixels: pixels, cell: cell, maxColumns: limits.columns, maxRows: limits.rows)
         if let held {
-            guard held.columns > max(1, limits.columns) else { return held }
+            // Placed again whenever its fit changed: smaller when the transcript narrows, back to its size when it widens.
+            guard held.columns != fit.columns || held.rows != fit.rows else { return held }
             send(ImagePlacement.placement(id: held.id, columns: fit.columns, rows: fit.rows))
             return ImagePlacement(id: held.id, columns: fit.columns, rows: fit.rows)
         }
