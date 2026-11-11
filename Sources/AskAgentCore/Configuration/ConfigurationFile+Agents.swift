@@ -1,6 +1,7 @@
 // @dl:accept -- every configuration section is decoded, layered and compared by the same idiom; the keys are the data
 extension ConfigurationFile {
     /// The `agents` keys (roadmap 0063, ADR-0146); unknown keys are refused.
+    // @dl:accept -- each section decodes its own keys through the shared walk; the tables are the data
     struct AgentsDecoded: Decodable {
         var section = AgentsSection()
 
