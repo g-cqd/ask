@@ -169,12 +169,10 @@ require controlled probes, not prohibitions inferred from a failed build.
 
 ## 6. Terminal doctrine
 
-The terminal belongs to **TerminalKit**, and so does its doctrine (synchronised output, capability detection,
-the tiered reset ladder); a copy here would be a second thing to drift. Two corrections stay as the shape of
-the mistake: **DECSTR resets no DEC private mode** (measured on four emulators, TerminalKit ADR-0002), and
-capabilities are **probed**, never read from environment variables (an inherited `KITTY_WINDOW_ID` once lied);
-silence means *unknown*, not *unsupported*. Probing is not free: two queries against a terminal that answers
-nothing cost **520 ms** against a 25 ms budget, so a probe never gates the first frame.
+The terminal belongs to **TerminalKit**, and so does its doctrine (synchronised output, capability detection, the reset ladder).
+Two mistakes stay recorded: **DECSTR resets no DEC private mode** (four emulators, TerminalKit ADR-0002), and capabilities are
+**probed**, never read from the environment (an inherited `KITTY_WINDOW_ID` lied); silence means *unknown*. Two queries a terminal
+does not answer cost **520 ms** against a 25 ms budget, so a probe never gates the first frame.
 
 ## 7. Bans
 
@@ -183,6 +181,8 @@ nothing cost **520 ms** against a 25 ms budget, so a probe never gates the first
 - Big-bang rewrites. Drive-by churn beyond the task's scope. Adding a dependency for convenience:
   **a dependency is an architectural decision.**
 - Taking on a bug the task did not ask about, mid-task: report it as follow-up instead.
+- **Building more than the owner asked.** No feature, setting, step or extra they did not ask for. An idea goes to the owner
+  first and is refined with them; only then is it a task or a roadmap entry. A plan marks what was asked and what is proposed.
 
 ## 8. Structure and idiom
 
