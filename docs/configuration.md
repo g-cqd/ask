@@ -321,6 +321,9 @@ in the file's order; when none matches, the subagent uses the model it would hav
 What a link you click opens with (roadmap 0216, ADR-0148). Your own file only: a project's file that sets `openers` is refused. With
 none, a click opens a page in your browser, a file or folder in its app, and shows a file that would run in the Finder instead.
 
+An app set here never opens what would run: an app, a script or a program is still only shown in the Finder, whatever you set, because
+the path may be one the model wrote.
+
 | Key | Default | What it does |
 |---|---|---|
 | `file` | the system's choice | The app a clicked file opens in: a name (`"Xcode"`) or a bundle identifier. |
