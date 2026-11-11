@@ -8,6 +8,7 @@ struct ApprovalOption: Sendable, Equatable {
     let said: String
 
     static let allowOnce = ApprovalOption(
+        // @dl:accept -- the answers are a table: each a label, a letter, a choice and what is said; the words are the data
         label: "Allow this time",
         letter: "y",
         choice: .once,
@@ -19,6 +20,14 @@ struct ApprovalOption: Sendable, Equatable {
         choice: .session,
         said: "allowed for the session"
     )
+    /// Kept until revoked (ADR-0148), unlike a session's grant.
+    static let allowAlways = ApprovalOption(
+        // @dl:accept -- the answers are a table: each a label, a letter, a choice and what is said; the words are the data
+        label: "Always allow this command",
+        letter: "a",
+        choice: .session,
+        said: "always allowed"
+    )
     static let deny = ApprovalOption(label: "Deny", letter: "n", choice: .deny, said: "denied")
     static let yes = ApprovalOption(label: "Yes", letter: "y", choice: .once, said: "yes")
     static let no = ApprovalOption(label: "No", letter: "n", choice: .deny, said: "no")
@@ -28,6 +37,7 @@ struct ApprovalOption: Sendable, Equatable {
         switch kind {
             case .grant, .destructive: return [allowOnce, allowSession, deny]
             case .confirm: return [yes, no]
+            case .opener(let remembers): return remembers ? [allowOnce, allowAlways, deny] : [allowOnce, deny]
             case .command(let phrases, let programs):
                 guard !phrases.isEmpty else { return [allowOnce, deny] }
                 let named = quoted(phrases)

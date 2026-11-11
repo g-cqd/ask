@@ -9,4 +9,6 @@ public enum ApprovalKind: Sendable, Equatable {
     /// A command line (roadmap 0134): this time, its subcommands for the session, its programs for the session, or deny; "this time"
     /// checked. With no phrases (a line a grant cannot cover), only this time or deny.
     case command(phrases: [String], programs: [String])
+    /// A command opener's question (ADR-0148): this time, always, or deny; "this time" checked. Without `remembers`, this time or deny.
+    case opener(remembers: Bool)
 }

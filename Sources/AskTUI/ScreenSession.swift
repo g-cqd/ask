@@ -190,10 +190,7 @@ final class ScreenSession {
                 controller.state.clipboardNotice = clipboard.copy(text) {
                     sink.yield(.copied(notice: $0, failed: $1, generation: generation))
                 }
-            case .openLink(let uri):
-                if let notice = LinkOpener.perform(uri, opening: conversation.opening(for: uri)) {
-                    controller.state.clipboardNotice = notice
-                }
+            case .openLink(let uri): open(uri)
             case .quit:
                 run?.cancel()
                 // A cancelled run stops its tools' processes before it ends; wait for that.

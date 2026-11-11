@@ -20,6 +20,8 @@ extension AgentConversation {
         /// Server tools the user allowed for the session, as `server/tool` (ADR-0111).
         var destructiveGrants: Set<String> = []
         var ask: (@Sendable (ConversationUpdate) -> Void)?
+        /// A command opener's questions (ADR-0148), which have three answers and no run to carry them.
+        var openers: [Int: CheckedContinuation<ApprovalChoice, Never>] = [:]
         /// The model's questions waiting for the person (roadmap 0117).
         var questions: [Int: CheckedContinuation<[PersonAnswer]?, Never>] = [:]
 
@@ -142,6 +144,9 @@ extension AgentConversation {
     }
 
     func answer(approval id: Int, with choice: ApprovalChoice) {
+        if let opener = approvals.withLock({ $0.openers.removeValue(forKey: id) }) {
+            return opener.resume(returning: choice)
+        }
         approvals.withLock { state in
             let scope = state.callScopes.removeValue(forKey: id)
             if choice == .session {

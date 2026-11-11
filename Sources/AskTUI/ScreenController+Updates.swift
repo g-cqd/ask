@@ -50,7 +50,7 @@ extension ScreenController {
             case .returnQueuedPrompts: returningInput = true
             case .clearConversation: clearConversation()
             case .askApproval(let id, let question, let kind, let detail):
-                ask(id: id, question: question, kind: kind, detail: detail)
+                return ask(id: id, question: question, kind: kind, detail: detail)
             case .askQuestions(let id, let questions): askQuestions(id: id, questions: questions)
             case .asideStarted(let id, let question, let name):
                 state.transcript.startTool(name: name, summary: question, id: id)

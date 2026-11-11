@@ -66,7 +66,8 @@ enum LinkOpener {
             case .system: perform(uri)
             case .app(let name): perform(uri, app: name)
             case .refused(let reason): reason
-            case .command: "Not run: commands as openers are not run yet (roadmap 0216, step 4)."
+            // A command that ``runsCommand(_:opening:)`` refused: the link is treated as with no opener, which shows or refuses it.
+            case .command: perform(uri)
         }
     }
 
@@ -88,6 +89,13 @@ enum LinkOpener {
             case .refuse:
                 return "Not opened: only web, mail and file links open, and only files that are there."
         }
+    }
+
+    /// Whether a click on `uri` runs the command `opening` names: only for what a plain click would open. What would run is still
+    /// only shown, and what is not there is not opened, as for an app (the review of 2026-11-11).
+    static func runsCommand(_ uri: String, opening: LinkOpening) -> Bool {
+        guard case .command = opening, case .open = action(for: uri) else { return false }
+        return true
     }
 
     /// What is said when the openers name an app that is not there: that, then whatever the usual way of opening the link said.

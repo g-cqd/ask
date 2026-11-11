@@ -55,6 +55,10 @@ public protocol Conversation: Sendable {
     /// What a click on `uri` opens with, from the person's openers (roadmap 0216).
     func opening(for uri: String) -> LinkOpening
 
+    /// Runs the command the person's openers name for `uri`, asking first unless it was allowed (ADR-0148). What it asks and says
+    /// arrives through `update`.
+    func runOpener(for uri: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
+
     /// What the person typed in thread `id`'s lane (roadmap 0194): steering while it runs, its next message once it has ended.
     func sendToThread(_ id: String, text: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
 
@@ -148,6 +152,10 @@ extension Conversation {
 
     /// No openers: the system's choice.
     public func opening(for uri: String) -> LinkOpening { .system }
+
+    /// No openers, so no command to run.
+    // @dl:accept -- a protocol's defaults that do nothing differ only in what they are not asked to do
+    public func runOpener(for uri: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {}
 
     /// No threads, so none to stop.
     public func stopThread(_ id: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {}
