@@ -98,9 +98,31 @@ public struct BashTool: ArgumentTool {
         let yield = arguments.yieldSeconds.map { Swift.min(Swift.max(1, $0), Self.maximumTimeout) }
         let timeout = Swift.min(Swift.max(1, arguments.timeoutSeconds ?? Self.defaultTimeout), Self.maximumTimeout)
         let limit = readiness == nil ? (yield ?? timeout) : timeout
+        var result = try await launch(
+            arguments.command,
+            shell: shell,
+            readiness: readiness,
+            yield: yield,
+            limit: limit,
+            in: context
+        )
+        // Told when the command failed, where they may say why; a command that succeeded needs no lint.
+        Self.annotate(&result, checked)
+        return result
+    }
+
+    /// Starts `command` as a job and waits for it: until it ends, `readiness` holds, or `limit` seconds have passed.
+    private func launch(
+        _ command: String,
+        shell: String,
+        readiness: ShellReadiness?,
+        yield: Int?,
+        limit: Int,
+        in context: ToolContext
+    ) async throws(ToolFailure) -> ToolOutput {
         let observe = observe
         let job = access.jobs.start(
-            arguments.command,
+            command,
             in: context,
             keepsInputOpen: yield != nil || readiness != nil,
             keeping: Self.keptBytes,
@@ -115,15 +137,35 @@ public struct BashTool: ArgumentTool {
                 try await access.jobs.foreground.race {
                     try await JobWaiting.wait(for: job, readiness: readiness, seconds: limit, clock: clock, in: context)
                 } ?? .backgrounded
-            var result = await Self.output(of: outcome, job: job, readiness: readiness, yield: yield, limit: limit)
-            // Told when the command failed, where they may say why; a command that succeeded needs no lint.
-            Self.annotate(&result, checked)
-            return result
+            return await Self.output(of: outcome, job: job, readiness: readiness, yield: yield, limit: limit)
         } catch {
             job.stop()
             await job.ended()
             // The wait throws only ToolFailure; the race around it widens the type, not what it throws.
             throw error as? ToolFailure ?? ToolFailure("The command's wait failed: \(error)")
+        }
+    }
+
+    /// How long the person's own command (`!`, note n56) is waited for before it is left running as a job.
+    public static let personYield = 5
+
+    /// Runs the person's own `!` command (note n56), as `run` runs the model's, with what the owner chose on 2026-11-11: `shell` is
+    /// theirs (their `$SHELL`; one that is no shell gives the model's), the context's sandbox holds, and nothing is asked or refused for shellcheck's findings, since they wrote it. Still running
+    /// after ``personYield`` seconds, it goes on as a job.
+    public func runForPerson(_ command: String, shell: String?, in context: ToolContext) async -> ToolOutput {
+        // Their login shell when it is one; else the one their model's commands get.
+        let shell = shell.flatMap { JobTable.isShell($0) ? $0 : nil } ?? access.jobs.commandShell(nil, in: context)
+        do {
+            return try await launch(
+                command,
+                shell: shell,
+                readiness: nil,
+                yield: Self.personYield,
+                limit: Self.personYield,
+                in: context
+            )
+        } catch {
+            return error.output
         }
     }
 
