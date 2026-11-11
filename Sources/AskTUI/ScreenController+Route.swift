@@ -54,6 +54,8 @@ extension ScreenController {
                 return edit(key, columns: columns, interrupt: Interrupt(at: now, armedAt: armedAt))
             case .mouse(let mouse):
                 return handle(mouse: mouse, at: now)
+            case .focusIn: return noteFocus(true)
+            case .focusOut: return noteFocus(false)
             case .paste(let text) where state.pendingInput != nil:
                 state.inputAnswer.paste(text.filter { !$0.isNewline })
                 return []

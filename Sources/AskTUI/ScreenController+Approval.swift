@@ -16,7 +16,7 @@ extension ScreenController {
         defer { state.scrollback = 0 }
         let question = HomePath.abbreviate(question, home: options.home)
         state.pendingApproval = PendingApproval(id: id, question: question, kind: kind, detail: detail)
-        return displaced
+        return displaced + notifyingAway("waiting for your answer")
     }
 
     /// Other keys are ignored, so a stray key neither answers nor types into the prompt.

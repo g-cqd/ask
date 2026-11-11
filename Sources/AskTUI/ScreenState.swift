@@ -88,6 +88,8 @@ public struct ScreenState: Sendable, Equatable {
     var sessionIdentity: String?
     /// What the conversation is called (note n60), for the tab's title; nil before it has a name.
     var conversationName: String?
+    /// Whether the terminal has focus, as it last reported (note n62); nil until it says, which counts as not focused.
+    var focused: Bool?
     /// A line a running command asked for, while it waits: the keys go to ``inputAnswer`` until Enter or Esc.
     public var pendingInput: PendingInput?
     /// What is typed for ``pendingInput``; never drawn but as dots when the input is a secret.
