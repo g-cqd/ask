@@ -14,6 +14,8 @@ struct LinkOpenerTests {
         try Data("x".utf8).write(to: file)
         defer { try? FileManager.default.removeItem(at: file) }
         #expect(LinkOpener.action(for: file.absoluteString) == .open(file))
+        // The place a click carries after the address (roadmap 0216) is no part of the file's name.
+        #expect(LinkOpener.action(for: file.absoluteString + "#L12C5") == .open(file))
         #expect(LinkOpener.action(for: FileManager.default.temporaryDirectory.absoluteString) != .refuse)
     }
 

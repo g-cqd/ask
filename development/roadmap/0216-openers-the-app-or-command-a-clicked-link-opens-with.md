@@ -87,3 +87,10 @@ Opening links on anything but a click; openers for tool output's links beyond wh
 - **A missing app** only showed its notice. It now opens the link the usual way too, as step 3 says above.
 - Still as it was, and said here so it is not taken for done: the app's own failure to open a link is not reported (the call has
   no completion handler), and a rule's pattern is compiled at each click, not once at load.
+
+## The line and column (2026-11-11)
+
+A path's `:12` or `:12:5` reaches `{line}` and `{column}`. The link's address is still the file alone, which is what the terminal
+is given; the row it is drawn on says what follows it (`PathLinks.located`), and a click carries the place after the address as
+`#L12C5`, which `ClickedLink` reads back and `LinkOpener` leaves out of the file's name. A path wrapped before its place loses it,
+and opens at line 1. `LinkLocationTests` (4) and `ClickedLinkTests`, red before.

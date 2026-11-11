@@ -43,7 +43,7 @@ struct MarkdownRowCharacterisationTests {
                     transcript.setHighlight(highlight)
                     transcript.addAssistantText(message)
                     let rendering = ScreenComposer.lines(in: transcript, at: 0, columns: columns, style: style)
-                        .map { "\($0.text)|\($0.accents)|\($0.links)|\($0.segments)|\(String(describing: $0.source))" }
+                        .map { "\($0.text)|\($0.accents)|\($0.pins)|\($0.segments)|\(String(describing: $0.source))" }
                         .joined(separator: "\n")
                     for byte in rendering.utf8 {
                         hash ^= UInt64(byte)

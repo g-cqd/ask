@@ -36,11 +36,33 @@ public struct ClickedLink: Sendable, Equatable {
             case "file":
                 let path = url.path(percentEncoded: false)
                 guard !path.isEmpty else { return nil }
-                self.init(kind: isDirectory(path) ? .folder : .file, url: uri, path: path)
+                // `#L12C5` after the address is the place a click carries (the screen's `PathLinks.Link.target`), not part of it.
+                let place = Self.place(url.fragment())
+                let address = place == nil ? uri : String(uri[..<(uri.lastIndex(of: "#") ?? uri.endIndex)])
+                self.init(
+                    kind: isDirectory(path) ? .folder : .file,
+                    url: address,
+                    path: path,
+                    line: place?.line,
+                    column: place?.column
+                )
             case "http", "https":
                 guard let host = url.host(), !host.isEmpty else { return nil }
                 self.init(kind: .web, url: uri, host: host)
             default: return nil
         }
+    }
+
+    /// `L12` or `L12C5` as a line and a column; nil for anything else.
+    private static func place(_ fragment: String?) -> (line: Int, column: Int?)? {
+        guard let fragment, fragment.hasPrefix("L") else { return nil }
+        let parts = fragment.dropFirst().split(separator: "C", maxSplits: 1, omittingEmptySubsequences: false)
+        func number(_ text: Substring) -> Int? {
+            (1 ... 9).contains(text.count) && text.allSatisfy { $0.isASCII && $0.isNumber } ? Int(text) : nil
+        }
+        guard let first = parts.first, let line = number(first) else { return nil }
+        guard parts.count == 2 else { return (line, nil) }
+        guard let column = number(parts[1]) else { return nil }
+        return (line, column)
     }
 }

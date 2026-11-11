@@ -24,7 +24,7 @@ struct CodeHighlightCharacterisationTests {
                     transcript.setCodeFoldLines(20)
                     transcript.addAssistantText(message)
                     let rendering = ScreenComposer.lines(in: transcript, at: 0, columns: columns, style: style)
-                        .map { "\($0.text)|\($0.style)|\($0.accents)|\($0.links)" }
+                        .map { "\($0.text)|\($0.style)|\($0.accents)|\($0.pins)" }
                         .joined(separator: "\n")
                     for byte in rendering.utf8 {
                         hash ^= UInt64(byte)

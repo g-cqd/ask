@@ -69,7 +69,7 @@ struct FileToolCharacterisationTests {
             for columns in 1 ... 80 {
                 for style in [BlockStyle.plain, BlockStyle()] {
                     let rendering = ScreenComposer.lines(in: transcript, at: 0, columns: columns, style: style)
-                        .map { "\($0.text)|\($0.style)|\($0.accents)|\($0.links)|\(String(describing: $0.source))" }
+                        .map { "\($0.text)|\($0.style)|\($0.accents)|\($0.pins)|\(String(describing: $0.source))" }
                         .joined(separator: "\n")
                     for byte in rendering.utf8 {
                         hash ^= UInt64(byte)

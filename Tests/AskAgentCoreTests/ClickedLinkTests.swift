@@ -23,4 +23,21 @@ struct ClickedLinkTests {
             #expect(ClickedLink(uri: uri, isDirectory: { _ in false }) == nil, "\(uri)")
         }
     }
+
+    @Test func `a place after the address is its line and column, and no part of the address`() throws {
+        let both = try #require(ClickedLink(uri: "file:///a/b.swift#L12C5", isDirectory: { _ in false }))
+        #expect(both == ClickedLink(kind: .file, url: "file:///a/b.swift", path: "/a/b.swift", line: 12, column: 5))
+        let line = try #require(ClickedLink(uri: "file:///a/b.swift#L7", isDirectory: { _ in false }))
+        #expect(line.line == 7 && line.column == nil && line.url == "file:///a/b.swift")
+        // Anything else after `#` is the page's own, and left alone.
+        let web = try #require(ClickedLink(uri: "https://x.example/a#L12", isDirectory: { _ in false }))
+        #expect(web.url == "https://x.example/a#L12" && web.line == nil)
+        let odd = try #require(ClickedLink(uri: "file:///a/b.swift#section", isDirectory: { _ in false }))
+        #expect(odd.line == nil && odd.path == "/a/b.swift")
+        let filled = OpenerChoice.choose(
+            for: both,
+            in: OpenersSection(rules: [OpenerRule(command: ["code", "--goto", "{path}:{line}:{column}"])])
+        )
+        #expect(filled == .command(["code", "--goto", "/a/b.swift:12:5"], rule: 0))
+    }
 }

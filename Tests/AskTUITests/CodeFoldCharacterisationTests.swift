@@ -33,7 +33,7 @@ struct CodeFoldCharacterisationTests {
                         transcript.addAssistantText(message)
                         let rendering =
                             ScreenComposer.lines(in: transcript, at: 0, columns: columns, style: BlockStyle())
-                            .map { "\($0.text)|\($0.style)|\($0.accents)|\($0.links)|\(String(describing: $0.source))" }
+                            .map { "\($0.text)|\($0.style)|\($0.accents)|\($0.pins)|\(String(describing: $0.source))" }
                             .joined(separator: "\n")
                         for byte in rendering.utf8 {
                             hash ^= UInt64(byte)

@@ -88,14 +88,16 @@ extension ScreenComposer {
 
     /// `line` with the paths and addresses in its text linked, where no link of its own already is; `~` is `home`, or the account's home.
     static func linked(_ line: Line, home: String?, commands: Set<String> = []) -> Line {
-        guard LinkCandidates.mayHoldLink(line.text) else { return line }
-        let found = PathLinks.links(in: line.text, home: home ?? NSHomeDirectory(), commands: commands)
-            .filter { link in
-                !line.links.contains { $0.columns.overlaps(link.columns) }
-            }
-        guard !found.isEmpty else { return line }
         var line = line
-        line.links = (line.links + found).sorted { $0.columns.lowerBound < $1.columns.lowerBound }
+        if LinkCandidates.mayHoldLink(line.text) {
+            let found = PathLinks.links(in: line.text, home: home ?? NSHomeDirectory(), commands: commands)
+                .filter { link in !line.links.contains { $0.columns.overlaps(link.columns) } }
+            if !found.isEmpty {
+                line.links = (line.links + found).sorted { $0.columns.lowerBound < $1.columns.lowerBound }
+            }
+        }
+        // The place written after a path, for the click (roadmap 0216).
+        if !line.links.isEmpty { line.links = PathLinks.located(line.links, in: line.text) }
         return line
     }
 
