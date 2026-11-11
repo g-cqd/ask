@@ -94,3 +94,28 @@ A path's `:12` or `:12:5` reaches `{line}` and `{column}`. The link's address is
 is given; the row it is drawn on says what follows it (`PathLinks.located`), and a click carries the place after the address as
 `#L12C5`, which `ClickedLink` reads back and `LinkOpener` leaves out of the file's name. A path wrapped before its place loses it,
 and opens at line 1. `LinkLocationTests` (4) and `ClickedLinkTests`, red before.
+
+## Step 4: commands (2026-11-11)
+
+Done, but for the list of what was allowed:
+
+- **Checked when read** (`OpenerRule.problem(in:)`): the program holds no placeholder, a `{word}` that is no placeholder is refused,
+  and so is a control character.
+- **Asked first** (`OpenerRun.decide`): this time, always, or deny, with the arguments shown each kept apart. Unasked under `--yes`
+  or approvals that allow by default; asked every time, with no "always", under `--ask all`.
+- **Always** is kept in `~/.local/state/ask/openers.json` (`OpenerGrants`), the person's alone, under the SHA-256 of the command as
+  written and the rule's match.
+- **Run** by `OpenerLaunch`: no shell, no input, output discarded, a session of its own, the environment commands get; waited for
+  two seconds, then left running. A status that is not 0 or a program not found is said.
+- **Only what would open**: what would run is still only shown; a file that is not there is not opened (the review's line).
+- **The question is the click's, not the turn's**: Ctrl+C denies it and leaves the model alone; a model's question arriving
+  meanwhile denies it; a click while another question waits is refused.
+- `Scripts/probe-openers.py`, six checks through the release binary with a stand-in command that writes a file: asked, allowed
+  once and run with the path and the line, denied, allowed always and kept, not asked again, and unasked under `--yes`. The build
+  before fails the first.
+
+## Still owed
+
+- `/config openers`: the list of what was allowed always, and revoking one. Until then, removing `openers.json` revokes all.
+- Step 5 (`/config resolveOpeners`) and step 6 (presets).
+- The owner's answer on whether a rule may open what would run in an editor; today it may not.
