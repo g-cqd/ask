@@ -33,7 +33,7 @@ All of a rule's criteria must hold. A rule names either an `app` or a `command`.
 1. **The section** (AskAgentCore):
    - Decode `openers`, kinds and rules, refusing a rule with both or neither of `app` and `command`.
    - Compile patterns once, through AemiRegex, refusing a bad one by name.
-   - A project file's `openers` is ignored with a notice.
+   - A project file's `openers` is refused, naming the key, as ADR-0148 says (the plan first said ignored with a notice).
    - Add the catalog and docs.
    - Red first: parsing, refusal, the project's section ignored.
 2. **Matching** (pure): from a clicked URI to the opener that applies, or none, with the placeholders' values.
@@ -76,3 +76,14 @@ Opening links on anything but a click; openers for tool output's links beyond wh
     They are shown now (`ClipboardNoticeTests`, red first).
   - The probe clicks a missing file under a command rule, so nothing is launched by either build; the build before fails it.
 - Not yet: a link's line does not reach `{line}`. Path links leave their `:line` out of the URI, so `{line}` is 1 for now.
+
+## Review (2026-11-11)
+
+- **An app opener opened what would run.** Step 3 took what the system rule only reveals (an app, a script, an executable) and
+  opened it in the app the openers name. An app bundle is a directory, so `"folder": "Finder"`, this entry's own example, launched a
+  clicked `.app`; a terminal as the file app ran a clicked script. Fixed: an app opener opens only what the system rule would open
+  (`LinkOpenerAppTests`, nine cases, red before). **Step 4 must hold the same line:** a command is not offered a target that would
+  run, unless the owner decides otherwise.
+- **A missing app** only showed its notice. It now opens the link the usual way too, as step 3 says above.
+- Still as it was, and said here so it is not taken for done: the app's own failure to open a link is not reported (the call has
+  no completion handler), and a rule's pattern is compiled at each click, not once at load.

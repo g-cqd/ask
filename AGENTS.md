@@ -33,9 +33,9 @@ rather than trusting its source, and keep the notes in `development/research/`, 
 
 ```sh
 Scripts/quality.sh              # format, lint, build and test
-Scripts/quality.sh --check      # verify only; what CI would run (it has never started: billing, roadmap 0028)
+Scripts/quality.sh --check      # verify only; what CI runs
 .ci/swift-ci run quality        # CI's quality check: format, lint, the analyzers, the audit and guards; what a push runs
-Scripts/mutate-changed.sh       # mutation testing of the Sources files changed against origin/main; no new survivor allowed
+Scripts/mutate-changed.sh       # mutation testing of changed Sources files: run by CI only, never locally (see Gates)
 Scripts/dependency-audit.sh     # each target declares what it imports and imports what it declares; a stage of quality.sh
 python3 Scripts/check-layers.py # ADR-0009's target layering over the manifest; a stage of quality.sh
 Scripts/roadmap.sh open         # the open roadmap entries, read from their front matter
@@ -60,7 +60,7 @@ tests. Style is Aemi's canonical configuration, synced rather than reinvented â€
 A pre-commit hook runs lint. A green test run is not a green commit.
 
 **Structure is gated too (ADR-0021).** `SourceStructureTests` and `ProviderNeutralityTests` run inside
-`swift test`, so the pre-push hook and `quality.sh` enforce them (CI would, if it ran): one top-level type per file, named for it;
+`swift test`, so the pre-push hook, `quality.sh` and CI enforce them: one top-level type per file, named for it;
 no file over 250 lines, tests included; provider names only in `AskAI/Anthropic`, `AskAI/Claude` and
 `Sources/ask`. Read the `ask-structure` skill before adding or moving code. `SourceStructure.knownViolations`
 is a ratchet baseline: it shrinks and never takes a new entry.
@@ -201,7 +201,7 @@ providers are Claude (a subscription or a key), Codex (the ChatGPT subscription,
 sessions, encryption, tasks and notes, compaction, hooks), `AskTools` (`read`, `write`, `edit`, `bash`, `tasks`, `notes`, `question`, `skill`, `server_resource`, jobs, sandbox narrowing), `AskMCP` (an MCP client for stdio and streamable HTTP, tools, resources, templates, and subscriptions),
 `AskTUI` (the interactive screen) and the `ask` binary, which is the composition root and is covered by PTY and end-to-end probes (`Scripts/probe-*.py`).
 Skills (0061) are built; MCP (0067) and hooks (0192) are in progress. Not built: the codemode host (0012), the extension host (0033), subagents (0063), a
-version and a release (0070); CI has never run (billing).
+version and a release (0070). CI runs on every push (`gh run list -R g-cqd/ask`).
 
 `development/roadmap/` says what is owed and in what order. What is *not known* is registered, with what would settle it, in
 `development/research/` (`antigravity-2026-10.md`; the project-wide snapshot is `reassessment-2026-10-25.md`): read them before probing

@@ -16,6 +16,10 @@ grouped by project. A message counts as sent only once it is written there, so a
 A session remembers the account it used and resumes on it. On exit, ask prints a command to resume the saved session in its
 working directory, retaining the launch flags and safely escaping spaces and shell metacharacters.
 
+ask works in the folder it is started in, and `/reload` starts the newer build in that same folder. If the folder was replaced under
+your shell (removed and made again, or its volume mounted again), ask goes back to it and says so; when it is not there at all, ask
+says that and stops, and `/reload` stays on the running build.
+
 ## Going back, and branching
 
 `/rewind` (or `/tree`) lists the prompts of this session, numbered. `/rewind N` goes back to just before prompt N and puts that prompt in the input: edit it
@@ -41,7 +45,3 @@ An encrypted session opens only with your password, the recovery code, or the ke
 session you are in (opening or setting up the keys first, in the screen); `/encrypt off` writes it back in clear. `ask keys password`
 changes the password, and `ask keys forget` removes the key from your keychain. The session's task list and notes are kept the same way
 as the session. `ask sessions` lists sessions it cannot open as locked.
-
-When `/reload` switches to a newer build, its self-check and replacement run in this session's workspace. If that directory is
-unavailable, reload reports the failure instead of starting in another project. Once the workspace is available again, reload
-re-enters it rather than inheriting a stale working-directory handle.
