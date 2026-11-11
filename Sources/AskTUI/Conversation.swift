@@ -55,6 +55,12 @@ public protocol Conversation: Sendable {
     /// What a click on `uri` opens with, from the person's openers (roadmap 0216).
     func opening(for uri: String) -> LinkOpening
 
+    /// Runs the person's `!` command in their shell (note n56), its block arriving through `update`; with `sends`, its result is then
+    /// sent to the model as their message (``ConversationUpdate/submitPrompt(_:)``), else it goes with their next one.
+    func shell(_ command: String, sends: Bool, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<
+        Void, Never
+    >
+
     /// Runs the command the person's openers name for `uri`, asking first unless it was allowed (ADR-0148). What it asks and says
     /// arrives through `update`.
     func runOpener(for uri: String, update: @escaping @Sendable (ConversationUpdate) -> Void)
@@ -149,6 +155,15 @@ extension Conversation {
 
     /// No runners, so no output.
     public func runnerOutput(_ id: String) async -> String { "" }
+
+    /// No shell to run it in.
+    public func shell(
+        _ command: String,
+        sends: Bool,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) -> Task<Void, Never> {
+        Task { update(.notice("There is no shell here to run \(command).", isError: true)) }
+    }
 
     /// No openers: the system's choice.
     public func opening(for uri: String) -> LinkOpening { .system }

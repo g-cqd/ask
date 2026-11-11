@@ -11,6 +11,9 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// What names this session, for a colour of its own on the status line (roadmap 0164); nil takes the colour away.
     case sessionIdentity(String?)
     case assistantText(String)
+    /// A message for the model that the conversation wrote for the person (a `!!` command's result, note n56): taken as if they had
+    /// typed and sent it, so it starts a turn, or waits behind the running one.
+    case submitPrompt(String)
     /// A tool began. With `command`, the full input is a command, which heads the block after its limits, and `summary` is unused.
     /// `path` is the file the call names, whose language colours a file's text in the block (roadmap 0152).
     case toolStarted(

@@ -154,6 +154,9 @@ final class ScreenSession {
                 sink.yield(.update(.promptWithdrawn(id: id, withdrawn: conversation.withdraw(id))))
             case .runCommand(let name, let arguments):
                 run = conversation.command(name, arguments: arguments) { sink.yield(.update($0)) }
+            case .runShell(let command, let sends):
+                // Not the screen's run: the person's command goes on beside the turn, and Ctrl+C stops the turn, not it.
+                _ = conversation.shell(command, sends: sends) { sink.yield(.update($0)) }
             case .runCommandBeside(let name, let arguments):
                 // Not the screen's run: the turn's task stays the one Ctrl+C stops, and no end of run is sent.
                 _ = conversation.command(name, arguments: arguments, beside: true) { sink.yield(.update($0)) }

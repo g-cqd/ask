@@ -10,6 +10,7 @@ extension ScreenController {
         switch update {
             case .batch(let updates): return updates.flatMap { apply($0) }
             case .userPrompt(let text): replayPrompt(text)
+            case .submitPrompt(let text): return submitPrompt(text, followUp: false)
             case .assistantText(let text): state.transcript.addAssistantText(text)
             case .thinkingText(let text): state.transcript.addThinkingText(text)
             case .toolStarted, .toolFinished: return applyTool(update)
@@ -23,8 +24,7 @@ extension ScreenController {
             case .requestExit(let exit): state.exitRequest = exit
             case .label, .labelVariants, .sandboxActive, .sessionIdentity, .status, .context: applyStatusLine(update)
             case .runners(let list): setRunners(list)
-            case .runnerActivity(let seen):
-                state.runnerActivity.merge(seen) { Swift.max($0, $1) }
+            case .runnerActivity(let seen): state.runnerActivity.merge(seen) { Swift.max($0, $1) }
             case .runnerOutput: break
             case .files(let list): return receive(files: list)
             case .skills(let list): receive(skills: list)
@@ -81,6 +81,10 @@ extension ScreenController {
                 command: command,
                 path: path
             )
+            // A tool the model calls is named as an identifier; `!` is only ever the person's own command (note n56).
+            if name == "!", let id, let index = state.transcript.toolBlocks[id] {
+                state.transcript.personCommandBlocks.insert(index)
+            }
         } else if case .toolFinished(let status, let output, let id, let job, let replacements, let images) = update {
             state.transcript.finishTool(
                 status,

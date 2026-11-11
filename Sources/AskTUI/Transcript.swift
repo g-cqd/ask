@@ -36,11 +36,10 @@ public struct Transcript: Sendable, Equatable {
     private var nextRevision = 0
     var progress: [Int: BlockProgress] = [:]
     var toolBlocks: [String: Int] = [:]
-    /// The tool blocks whose input is a command, which heads the block (roadmap 0080).
-    var commandBlocks: Set<Int> = []
+    var commandBlocks: Set<Int> = []  // The tool blocks whose input is a command, which heads the block (roadmap 0080).
     var summaryBlocks: Set<Int> = []  // A compaction's and other summaries ask wrote: see Transcript+Summary.swift.
-    /// `/btw` asides (roadmap 0194): a summary block of their own colour, open, and no part of the run.
-    var asideBlocks: Set<Int> = []
+    var asideBlocks: Set<Int> = []  // `/btw` asides (roadmap 0194): open, in their own colour, not in the run.
+    var personCommandBlocks: Set<Int> = []  // The person's own `!` commands (note n56): open from the start.
     /// Where threads started (roadmap 0195): each such block's thread, which a click on it opens.
     var forkBlocks: [Int: String] = [:]
     /// The block that holds the latest choice's summary, which the next one replaces while it is still the last (note n28).
@@ -110,6 +109,7 @@ public struct Transcript: Sendable, Equatable {
         commandBlocks.removeAll(keepingCapacity: true)
         summaryBlocks.removeAll(keepingCapacity: true)
         asideBlocks.removeAll(keepingCapacity: true)
+        personCommandBlocks.removeAll(keepingCapacity: true)
         forkBlocks.removeAll(keepingCapacity: true)
         interrupted.removeAll(keepingCapacity: true)
         jobBlocks.removeAll(keepingCapacity: true)
@@ -209,7 +209,7 @@ public struct Transcript: Sendable, Equatable {
     /// Whether blocks of the item's kind start folded: tools and thinking apart, and a summary ask wrote always (owner, 2026-11-02).
     private func foldsByDefault(_ index: Int) -> Bool {
         if case .thinking = items[index] { return thinkingFoldedByDefault }
-        if asideBlocks.contains(index) { return false }
+        if asideBlocks.contains(index) || personCommandBlocks.contains(index) { return false }
         if summaryBlocks.contains(index) { return true }
         return toolsFoldedByDefault
     }
