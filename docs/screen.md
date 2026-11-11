@@ -182,3 +182,5 @@ within the conversation, and changing its read policy clears those answers befor
 Copying a complete, accepted relative path in a reply, thinking block or ask notice produces its full workspace path, including
 any line/column suffix. Partial selections remain literal. User messages and tool output are not rewritten; inline code,
 fences and explicit Markdown links also remain literal when Markdown is enabled.
+
+Paths in ask's own notices are shown short and linked the same way. A notice is plain text: nothing in it is read as Markdown.

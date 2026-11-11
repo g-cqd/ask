@@ -31,12 +31,13 @@ enum ReplyPathCopy {
                     case .assistant, .thinking, .notice: true
                     default: false
                 }
+            let markdown: Bool = if case .notice = transcript.items[block] { false } else { transcript.markdown }
             blocks.append(
                 slice(
                     text,
                     bytes: low ..< high,
                     display: eligible && !transcript.summaryBlocks.contains(block) ? display : nil,
-                    markdown: transcript.markdown
+                    markdown: markdown
                 )
             )
         }

@@ -86,7 +86,6 @@ walks refuse symlinks. Relative references through symlinks remain text. This do
 
 ## Still owed
 
-- Path shortening in notices, already requested by the owner.
 - Real-terminal checks are deferred. The safety follow-up passed the full release/quality gate (3,779 tests); mutation is CI-only.
 
 ## Copy follow-up (2026-11-10)
@@ -95,3 +94,13 @@ Whole accepted relative prose references now expand to absolute workspace paths 
 Both automatic drag copy and Ctrl+C use it; partial references, user/tool text and Markdown code/explicit links remain literal.
 Location suffixes and punctuation are preserved. Regression and full-gate results are recorded in diary 2026-11-10-07.
 Notice shortening remains owed; notices may already expand complete relative references on copy.
+
+## Notices (2026-11-10)
+
+Step 4 is done: a notice's paths are shown short and linked, as plain text (`NoticePathRows`), with `ui.paths` `asWritten` leaving
+them alone. A selection copies the notice as it was written, the full path included (`NoticePathsTests`, 4, two red before).
+
+## What is left
+
+- Paths inside inline code and fences are left as written, by choice of the hook; the owner has not asked for them.
+- Real-terminal checks, which the owner deferred.

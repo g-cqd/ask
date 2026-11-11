@@ -171,7 +171,7 @@ extension ScreenComposer {
                     style: Style(dim: true, italic: true)
                 )
             case .notice(let text, let isError):
-                return rows(text, style: isError ? Style(fg: .indexed(1)) : Style(dim: true))
+                return NoticePathRows.lines(text, isError: isError, block: block, width: width, style: style)
             case .queued(let text):
                 return queuedLines(text, block: block, width: width, inset: inset, progress: progress)
         }
