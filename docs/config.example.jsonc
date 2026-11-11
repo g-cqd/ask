@@ -91,6 +91,9 @@
     // A colour of the session's own on the status line: always, or only while another ask runs. Default: off. One of: off, always, others.
     "sessionColor": "off",
 
+    // While you look elsewhere, a bell or a notification when a turn ends or ask waits for your answer. Default: off. One of: off, bell, notification.
+    "notify": "bell",
+
     // Model lists also show models ask cannot use. Default: false.
     "listAllModels": false,
 

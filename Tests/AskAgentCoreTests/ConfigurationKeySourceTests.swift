@@ -44,6 +44,7 @@ struct ConfigurationKeySourceTests {
         section.sessionTint = .status
         section.paths = .asWritten
         section.pathAncestors = 3
+        section.notify = .bell
         return section
     }()
 
