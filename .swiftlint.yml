@@ -33,6 +33,7 @@ excluded:
   - .git
   - Tests        # test suites are out of the metrics gate for the initial roll-out (revisit in WS3)
   - Benchmarks   # ordo-one statistical benchmark suites, not shipped source
+  - Conformance  # the MCP conformance suite's client (roadmap 0123), tooling, not shipped
   - Plugins      # build/command plugins (BenchCompare, Lint, …) are tooling, not shipped library
   - "**/ADSQLBench/**"  # ADDB's SQL benchmark executable harness (scenario tables), like Benchmarks/ — not a shipped library
   - "**/Generated/**"   # machine-generated sources (e.g. ADHTML's DOM codegen) — not hand-authored, regenerate at the source
