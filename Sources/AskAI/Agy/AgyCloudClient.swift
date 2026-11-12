@@ -5,10 +5,12 @@ internal import Foundation
 public struct AgyCloudClient: Sendable {
     private let transport: any HTTPTransport
     private let baseURL: URL
+    private let versions: AgyVersions?
 
-    /// A client sending through `transport`.
-    public init(transport: any HTTPTransport) {
+    /// A client sending through `transport`, naming the `agy` version `versions` reads (the built-in one without it).
+    public init(transport: any HTTPTransport, versions: AgyVersions? = nil) {
         self.transport = transport
+        self.versions = versions
         baseURL = AgyCloud.baseURL
     }
 
@@ -67,7 +69,10 @@ public struct AgyCloudClient: Sendable {
         let bytes = try Array(AemiJSON.JSONEncoder().encode(body))
         var request = HTTPRequest.account("POST", URL.constant(baseURL.absoluteString + path), body: bytes)
         request.headers = request.headers.filter { $0.name != "user-agent" }
-        request.headers += [("authorization", "Bearer " + accessToken), ("user-agent", AgyCloud.userAgent)]
+        let version = await versions?.current(now: Date().timeIntervalSince1970) ?? AgyVersions.known
+        request.headers += [
+            ("authorization", "Bearer " + accessToken), ("user-agent", AgyCloud.userAgent(version: version))
+        ]
         return try await transport.collecting(request, limit: limit)
     }
 

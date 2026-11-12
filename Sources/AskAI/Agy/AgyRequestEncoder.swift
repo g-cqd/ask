@@ -14,12 +14,17 @@ public enum AgyRequestEncoder {
     ///   - project: the account's Cloud Code project.
     ///   - requestID: an id for this request.
     ///   - promptID: an id for the prompt it belongs to.
+    ///   - version: the `agy` version the identity names (``AgyVersions``).
     /// - Returns: the JSON body.
     /// - Throws: ``ThinkingError/unsupportedProtocol(_:)`` when the request asks for an explicit thinking control, which this protocol
     ///   has no tested way to carry.
-    public static func encode(_ request: ModelRequest, project: String, requestID: String, promptID: String)
-        throws(ThinkingError) -> [UInt8]
-    {
+    public static func encode(
+        _ request: ModelRequest,
+        project: String,
+        requestID: String,
+        promptID: String,
+        version: String = AgyVersions.known
+    ) throws(ThinkingError) -> [UInt8] {
         if request.thinking != nil { throw .unsupportedProtocol("Antigravity") }
         let contents = Content.all(in: request)
         var writer = JSONStreamWriter(capacity: 4_096)
@@ -27,7 +32,7 @@ public enum AgyRequestEncoder {
             writer.field("project", project)
             writer.field("requestId", requestID)
             writer.field("model", request.model)
-            writer.field("userAgent", AgyCloud.userAgent)
+            writer.field("userAgent", AgyCloud.userAgent(version: version))
             writer.field("requestType", "agent")
             writer.field("userPromptId", promptID)
             writer.key("request")

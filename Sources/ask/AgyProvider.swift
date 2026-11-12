@@ -6,22 +6,25 @@ internal import Foundation
 struct AgyProvider: ModelProvider {
     let access: AgyAccess
     let client: AgyClient
+    let versions: AgyVersions
 
     func stream(_ request: ModelRequest) -> AsyncThrowingStream<ModelEvent, any Error> {
-        let (access, client) = (access, client)
+        let (access, client, versions) = (access, client, versions)
         return ModelStream.after {
-            let session = try await access.session(now: Date().timeIntervalSince1970)
-            return client.stream(request, session: session)
+            let now = Date().timeIntervalSince1970
+            let session = try await access.session(now: now)
+            return client.stream(request, session: session, version: await versions.current(now: now))
         }
     }
 }
 
 /// Access to the stored Antigravity sign-in, which looks in the installed `agy` for a secret Google accepts when the stored one is not.
 func makeAgyAccess(transport: URLSessionTransport) -> AgyAccess {
-    AgyAccess(
-        file: NamedConnections.file(for: nil),
+    let file = NamedConnections.file(for: nil)
+    return AgyAccess(
+        file: file,
         client: AgyAuthClient(transport: transport),
-        cloud: AgyCloudClient(transport: transport),
+        cloud: AgyCloudClient(transport: transport, versions: AgyVersions.beside(file, transport: transport)),
         findSecret: { try await installedClientSecret(transport: transport) }
     )
 }

@@ -25,6 +25,7 @@ An unknown has an **id** (`U1`…), what would settle it, what that costs, and w
 | A refresh through the shipping binary works end to end, with the record at mode 0600 and the other providers' records untouched | O | ADR-0109 |
 | Cloud Code answers to ask's own identity for onboarding, the model list and streaming, but returns 20 catalog entries; with the `antigravity/cli/1.4.0` prefix it returns 26 (since `b9f80b8`, diary 2026-10-27-09; ADR-0080 amended) | O | ADR-0080 |
 | The host is `daily-cloudcode-pa.googleapis.com`, the one `agy` itself calls; a production host `cloudcode-pa.googleapis.com` exists in the binary | O / R | ADR-0080 |
+| The model list grows with the `antigravity/cli/<version>` prefix: 20 entries below 1.2, 23 at 1.2.0, 27 from 1.3.0, 20 for no version; the CLI's update service names the stable version (2026-11-12) | O | roadmap 0225 |
 
 ### Onboarding and the model list
 

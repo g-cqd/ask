@@ -49,7 +49,11 @@ func agyProvider(transport: URLSessionTransport) -> any ModelProvider {
     let access = makeAgyAccess(transport: transport)
     let notice = RotationNotice(provider: "Antigravity")
     return NoticingProvider(
-        base: AgyProvider(access: access, client: AgyClient(transport: transport)),
+        base: AgyProvider(
+            access: access,
+            client: AgyClient(transport: transport),
+            versions: AgyVersions.beside(NamedConnections.file(for: nil), transport: transport)
+        ),
         notice: { notice.message(unsavedBecause: access.unsavedReason) }
     )
 }
