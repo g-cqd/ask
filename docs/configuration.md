@@ -12,7 +12,9 @@ its default. To see what is in force and where each value came from, run:
 ask config
 ```
 
-Inside ask, `/config` opens an editor for the same settings, and `/config show` re-reads the files and shows them. ask watches the files while it
+Inside ask, `/config` opens an editor for the same settings, and `/config show` re-reads the files and shows them. A change made
+there touches only the setting it sets: your comments, trailing commas and key quotes stay as you wrote them, a new setting is
+written in your file's style, and a removed one takes the comment lines above it. ask watches the files while it
 runs: a saved change applies at once, to a running turn from its next request, and your draft is left as it is (`/verbose` lists
 what changed). A project file is noticed even when its `.ask` folder did not exist when ask started. If an edit is broken, ask
 says so and keeps the previous settings.
