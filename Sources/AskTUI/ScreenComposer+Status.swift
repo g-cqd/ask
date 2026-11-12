@@ -133,7 +133,15 @@ extension ScreenComposer {
                 .map { "\($0.0) \($0.1)\($0.0 == 1 ? "" : "s")" }.joined(separator: " · ")
             pieces.append(StatusSegment(text, priority: 50, target: .runners))
         }
+        return pieces + trailing(for: state, path: path)
+    }
+
+    /// The pieces at the line's end: the folder when it is put there, then the workspace's git state (roadmap 0186), which shortens,
+    /// then goes, before the folder does.
+    private static func trailing(for state: ScreenState, path: StatusSegment?) -> [StatusSegment] {
+        var pieces: [StatusSegment] = []
         if let path, state.statusPathSide == .trailing { pieces.append(path) }
+        if !state.gitStatus.isEmpty { pieces.append(StatusSegment(state.gitStatus, priority: 30)) }
         return pieces
     }
 

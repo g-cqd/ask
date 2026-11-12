@@ -47,3 +47,8 @@ owner in the note.
 
 - The status segment: wanted, at the end of the status bar.
 - Private repositories: a token from the environment (`GITHUB_TOKEN`), never `gh`'s.
+
+## Done (2026-11-12): the status segment
+
+`GitStatus` (AskTools) and the last status segment (`StatusGitTests`, `GitStatusTests`); refreshed at the start, after a tool call
+and at a run's end. Still owed: `#123` from the forge, with `GITHUB_TOKEN` for private repositories.

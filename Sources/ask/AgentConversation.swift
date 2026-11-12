@@ -52,6 +52,8 @@ final class AgentConversation: Conversation {
     let handover = LoopHandover()
     /// The threads `/thread` started (roadmap 0194), and the jobs they are listed beside.
     let threads = ThreadTable()
+    /// The status bar's git segment (roadmap 0186).
+    let gitStatus = GitStatusRefresh()
     /// The thread whose lane the screen shows, for `/reload` to show it again (roadmap 0195).
     let focusedThread = Mutex<String?>(nil)
 
@@ -195,7 +197,13 @@ final class AgentConversation: Conversation {
                 update(.returnQueuedPrompts)
             }
             update(.runEnded)
+            self.refreshGitStatus(update)
         }
+    }
+
+    /// Reads the workspace's git state again for the status bar.
+    func refreshGitStatus(_ update: @escaping @Sendable (ConversationUpdate) -> Void) {
+        gitStatus.request(in: current.withLock { $0.settings.workspace }, update: update)
     }
 
     /// Shows an event on the screen and adds what it cost to the status line.
@@ -206,6 +214,8 @@ final class AgentConversation: Conversation {
             update(contextUpdate())
         }
         for shown in Self.updates(for: event) { update(shown) }
+        // A tool may have changed the files or the branch.
+        if case .toolFinished = event { refreshGitStatus(update) }
         if case .compacted(let summary, _) = event { renameConversation(fromSummary: summary, update: update) }
     }
 }

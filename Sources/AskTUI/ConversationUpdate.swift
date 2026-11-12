@@ -61,6 +61,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     case status(String)
     /// Latest measured context occupancy and model capacity, separate from cumulative token spend.
     case context(String)
+    /// The workspace's git state for the end of the status line, longest form first; empty outside a repository (roadmap 0186).
+    case gitStatus([String])
     /// Close the screen once the run that sent this has ended, so the caller can act on `exit`.
     case requestExit(ScreenExit)
     /// A queued message was persisted; remove its pending copy and show it in the conversation.
