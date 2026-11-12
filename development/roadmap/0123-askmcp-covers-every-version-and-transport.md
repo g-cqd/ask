@@ -53,6 +53,22 @@ apple-docs' public instance (`https://apple-docs-mcp.everest.mt/mcp`) through th
 replies, protocol 2025-11-25, stateless; ask offered its nine tools and a `search_docs` call returned real documentation, in 1.5 s for
 the whole `ask -p` run. It also offers resources, which ask cannot read yet.
 
+## The conformance suite, step 1 (2026-11-12)
+
+`Conformance/` (a package apart, so ask ships none of it) builds `mcp-conformance-client` on AskMCP: start, list the tools, call the
+first, close. `Scripts/mcp-conformance.sh` runs the official suite's client scenarios (`@modelcontextprotocol/conformance` 0.1) against
+it, with `Conformance/expected-failures.yml` as the baseline: a run fails on a regression and on a known failure that now passes.
+
+| Scenario | Result |
+|---|---|
+| `initialize`, `tools_call` | pass |
+| `sse-retry` | failed before (no wait, no `Last-Event-ID`, the call failed); passes now: a reply's stream that ends unanswered is resumed after the server's `retry` with `Last-Event-ID`, up to three times |
+| `auth/resource-mismatch` | pass |
+| `elicitation-sep1034-client-defaults` | fails: elicitation not declared (step 4) |
+| the other 21 `auth/*` | fail: the conformance client does not sign in; ask's sign-in (`MCPSignInFlow`, internal to AskTools) needs a headless browser step reachable from this client |
+
+The suite also lists a 2026-07-28 specification version (the Copilot runtime speaks it); AskMCP negotiates up to 2025-11-25.
+
 ## Owner's decisions (2026-10-28)
 
 - The plan above is accepted.

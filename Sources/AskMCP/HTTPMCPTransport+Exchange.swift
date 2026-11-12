@@ -119,17 +119,59 @@ extension HTTPMCPTransport {
         if !answered { fail(requestID, "the server replied without answering") }
     }
 
+    /// Delivers a reply's events. A request's stream that ends before its answer, having named its events, is resumed (MCP
+    /// 2025-11-25, "Resumability and redelivery"): after the server's `retry` wait, a GET with `Last-Event-ID`, at most
+    /// ``resumeAttempts`` times, before the request is failed.
     func deliverEvents(_ reply: HTTPStreamingResponse, requestID: Int?) async throws {
         var decoder = SSEDecoder(limits: .init(maximumEventBytes: Self.maximumMessageBytes))
+        var answered = try await deliverStream(reply, decoder: &decoder, requestID: requestID)
+        var attempts = 0
+        while !answered, requestID != nil, let last = decoder.lastEventID, attempts < Self.resumeAttempts,
+            !state.withLock({ $0.closed })
+        {
+            attempts += 1
+            try? await clock.sleep(for: decoder.retry ?? Self.defaultRetry)
+            guard let resumed = try? await resume(after: last) else { break }
+            answered = try await deliverStream(resumed, decoder: &decoder, requestID: requestID)
+        }
+        if !answered { fail(requestID, "the server ended its reply without answering") }
+    }
+
+    /// How many times a request's stream is resumed before it is failed.
+    static let resumeAttempts = 3
+    /// The wait before resuming when the server named none.
+    static let defaultRetry: Duration = .seconds(1)
+
+    /// Whether one stream brought the answer to `requestID`; `decoder` keeps its last id and retry for a resumption.
+    private func deliverStream(
+        _ reply: HTTPStreamingResponse,
+        decoder: inout SSEDecoder,
+        requestID: Int?
+    ) async throws -> Bool {
         var answered = false
         for try await chunk in reply.body {
             var events: [SSEEvent] = []
             try chunk.withUnsafeBufferPointer { try decoder.feed($0.span, into: &events) }
-            for event in events where event.name == "message" {
+            for event in events where event.name == "message" && !event.data.isEmpty {
                 answered = deliver(event.data, for: requestID) || answered
             }
         }
-        if !answered { fail(requestID, "the server ended its reply without answering") }
+        return answered
+    }
+
+    /// The GET that resumes a stream after the event named `last`, or nil when the server does not resume it.
+    private func resume(after last: String) async throws -> HTTPStreamingResponse? {
+        var headers = await requestHeaders().filter { $0.name != "Content-Type" && $0.name != "Accept" }
+        headers.append(("Accept", "text/event-stream"))
+        headers.append(("Last-Event-ID", last))
+        let reply = try await http.send(
+            HTTPRequest(url: url, method: "GET", headers: headers, body: [], allowsRedirects: false)
+        )
+        guard 200 ..< 300 ~= reply.status, (reply.headers["content-type"] ?? "").contains("text/event-stream") else {
+            return nil
+        }
+        noteSession(reply)
+        return reply
     }
 
     /// Hands a message to the connection.

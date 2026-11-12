@@ -2,7 +2,7 @@
 ///
 /// Every byte is examined once. A line that arrives whole is parsed in place from the caller's chunk; only a
 /// line split across chunks is carried, so the cost does not depend on how the network cut the stream. `id`
-/// and `retry` are ignored: a provider stream is not resumed.
+/// and `retry` are kept for a stream that is resumed (MCP's streamable HTTP); a provider stream ignores them.
 public struct SSEDecoder: Sendable {
     /// Ceilings that keep a hostile or broken stream from growing memory without bound.
     public struct Limits: Sendable, Equatable {
@@ -24,6 +24,10 @@ public struct SSEDecoder: Sendable {
     }
 
     private let limits: Limits
+    /// The last `id` field's value, the one a resumed stream names in `Last-Event-ID`.
+    public private(set) var lastEventID: String?
+    /// The last `retry` field's wait, when it was digits only.
+    public private(set) var retry: Duration?
     private var carry: [UInt8] = []
     private var name: [UInt8] = []
     private var data: [UInt8] = []
@@ -114,7 +118,31 @@ public struct SSEDecoder: Sendable {
         } else if field.matches(.eventField) {
             name.removeAll(keepingCapacity: true)
             name.append(span: value)
+        } else if field.matches(.idField) {
+            remember(id: value)
+        } else if field.matches(.retryField) {
+            remember(retry: value)
         }
+    }
+
+    /// An `id` with a NUL in it is ignored, as the specification says.
+    private mutating func remember(id value: Span<UInt8>) {
+        var bytes: [UInt8] = []
+        bytes.append(span: value)
+        guard !bytes.contains(0) else { return }
+        lastEventID = String(decoding: bytes, as: UTF8.self)
+    }
+
+    /// A `retry` that is not ASCII digits alone is ignored.
+    private mutating func remember(retry value: Span<UInt8>) {
+        guard !value.isEmpty, value.count <= 9 else { return }
+        var milliseconds = 0
+        for offset in 0 ..< value.count {
+            let byte = value[offset]
+            guard byte >= 0x30, byte <= 0x39 else { return }
+            milliseconds = milliseconds * 10 + Int(byte - 0x30)
+        }
+        retry = .milliseconds(milliseconds)
     }
 
     private mutating func dispatch(into events: inout [SSEEvent]) {
@@ -139,6 +167,8 @@ extension UInt8 {
 extension [UInt8] {
     fileprivate static let dataField = Array("data".utf8)
     fileprivate static let eventField = Array("event".utf8)
+    fileprivate static let idField = Array("id".utf8)
+    fileprivate static let retryField = Array("retry".utf8)
 }
 
 extension Span<UInt8> {
