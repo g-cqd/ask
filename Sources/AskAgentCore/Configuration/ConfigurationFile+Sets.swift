@@ -24,6 +24,7 @@ extension ConfigurationFile {
             case "mcp": mcp != nil
             case "presets": presets != nil
             case "environment": environment != nil
+            case "jobs": jobs != nil
             default: false
         }
     }

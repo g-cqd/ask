@@ -320,6 +320,15 @@ its task, and keeps only the tools it names (none named, it keeps all of a subag
 connection lists: an id, a display name written any way (`Claude Opus 5.5`), or a family word (`haiku`, the first such model listed),
 in the file's order; when none matches, the subagent uses the model it would have had.
 
+### `jobs`
+
+The commands the model sends to the background (the shell tool's jobs). Every finished job is kept by default, with the output the
+model has not read yet, so it can still ask for it later.
+
+| Key | Default | What it does |
+|---|---|---|
+| `keepFinished` | `null` | The most finished jobs kept, the oldest let go first; `null` keeps them all, `0` none. A running job is never let go, and the job tools say when one asked for was. |
+
 ### `openers`
 
 What a link you click opens with (roadmap 0216, ADR-0148). Your own file only: a project's file that sets `openers` is refused. With

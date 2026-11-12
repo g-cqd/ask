@@ -35,6 +35,7 @@ extension ConfigEditor {
             case "hooks": known = Set(HooksSection.keys)
             case "threads": known = Set(ThreadsSection.keys)
             case "agents": known = Set(AgentsSection.keys)
+            case "jobs": known = Set(JobsSection.keys)
             case "environment": known = Set(EnvironmentSection.keys)
             case "mcp": return Self.strippedServers(object, path: path, warnings: &warnings)
             default: return value

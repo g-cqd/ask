@@ -6,9 +6,14 @@ struct JobAccess: Sendable {
     let clock: any Clock<Duration>
 
     /// The job named `id`.
-    /// - Throws: a ``ToolFailure`` naming it when there is none.
+    /// - Throws: a ``ToolFailure`` naming it when there is none, saying so when it finished and was let go (`jobs.keepFinished`).
     func job(_ id: String) throws(ToolFailure) -> Job {
-        guard let job = jobs.job(id) else { throw ToolFailure("No job named \(id).") }
+        guard let job = jobs.job(id) else {
+            guard jobs.wasLetGo(id) else { throw ToolFailure("No job named \(id).") }
+            throw ToolFailure(
+                "\(id) finished and was let go, with its output: jobs.keepFinished keeps only the most recent finished jobs."
+            )
+        }
         return job
     }
 }

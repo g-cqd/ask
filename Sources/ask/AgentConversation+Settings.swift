@@ -1,5 +1,6 @@
 internal import AskAgentCore
 internal import AskTUI
+internal import AskTools
 internal import Synchronization
 
 /// The settings in force, read again when they may have changed.
@@ -32,6 +33,7 @@ extension AgentConversation {
             return (updates, changed && current.turnRunning)
         }
         keepAwake.use(fresh.configuration.keepAwake.value, display: fresh.configuration.keepDisplayAwake.value)
+        jobs.keepFinished = fresh.configuration.jobs.value.limit
         for item in updates { update(item) }
         // A turn running takes the change on its next request (roadmap 0113).
         if handOver {

@@ -24,7 +24,7 @@ struct SettingCatalogTests {
             "ui": UISection.keys, "sandbox": SandboxSection.keys, "approvals": ApprovalsSection.keys,
             "skills": SkillsSection.keys, "hooks": HooksSection.keys, "threads": ThreadsSection.keys,
             "agents": AgentsSection.keys, "environment": EnvironmentSection.keys,
-            "openers": OpenersSection.keys
+            "openers": OpenersSection.keys, "jobs": JobsSection.keys
         ]
         for (section, keys) in sections {
             #expect(catalogKeys(under: section) == Set(keys), "\(section)")
