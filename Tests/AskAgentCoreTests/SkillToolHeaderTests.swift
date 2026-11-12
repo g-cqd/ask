@@ -28,7 +28,7 @@ struct SkillToolHeaderTests {
     }
 
     @Test func `another tool with the same fields keeps its input`() throws {
-        #expect(try header(#"{"name":"pdf"}"#, tool: "mcp__x__get") == #"{"name":"pdf"}"#)
-        #expect(try header(#"{"name":"pdf"}"#, tool: nil) == #"{"name":"pdf"}"#)
+        #expect(try header(#"{"name":"pdf"}"#, tool: "mcp__x__get") == "name pdf")
+        #expect(try header(#"{"name":"pdf"}"#, tool: nil) == "name pdf")
     }
 }

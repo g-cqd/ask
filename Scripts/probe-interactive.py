@@ -1452,6 +1452,8 @@ def probe_question_tool():
     results = [check("the tool is offered on the screen", wait(lambda: "question" in offered()), offered())]
     results.append(check("the first question is shown with its choices",
                          wait(lambda: "What should change?" in screen.screen.text() and "Everything" in screen.screen.text())))
+    results.append(check("while it is asked, the transcript has no block for the call (note n68)",
+                         "question ·" not in screen.screen.text(), screen.screen.text()))
     # Down and Space pick "Everything", Tab reaches the note row, Enter goes to the next question, Space checks "Unit", Enter reviews.
     for key in ["\x1b[B", " ", "\t", "k", "e", "e", "p", " ", "i", "t", "\r", " ", "\r"]:
         screen.type(key)
@@ -1464,6 +1466,9 @@ def probe_question_tool():
                          wait(lambda: 'Scope: chose \\"Everything\\"; note: \\"keep it\\"' in got() and 'Tests: chose \\"Unit\\"' in got()), got()))
     screen.until("Thanks, noted.", 15)
     screen.until_status("ready")
+    results.append(check("once answered, its block shows, without JSON",
+                         "question · What should change?" in screen.screen.text() and "{" not in screen.screen.text(),
+                         screen.screen.text()))
     screen.type("/quit\r")
     results.append(check("clean exit", screen.finish() == 0))
     printed = agent.Server([agent.turn([("text", "ok")], "end_turn")])

@@ -21,6 +21,8 @@ extension ScreenComposer {
             let margin = String(repeating: " ", count: style.inset)
             return [Line(text: margin + HistoryTrim.notice(transcript.history.trimmed), style: Style(dim: true))]
         }
+        // The question panel asks the model's questions; their block shows only once they are answered (note n68).
+        if case .tool("question", _, .running, _, _) = transcript.items[index] { return [] }
         var rows = stillLines(in: transcript, at: index, shown: shown, columns: columns, style: style)
         if case .user = transcript.items[index] { rows = withSkillTokens(rows, known: transcript.tokenNames) }
         guard transcript.shimmer, let progress = transcript.progress[index], progress.ended == nil else { return rows }

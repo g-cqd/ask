@@ -32,8 +32,8 @@ struct ToolSummaryTests {
         #expect(summary(#"{"path":"a.txt","command":"cat a.txt"}"#) == "cat a.txt")
     }
 
-    @Test func `a call with neither is shown as its input`() {
-        #expect(summary(#"{"query":"urlsession"}"#) == #"{"query":"urlsession"}"#)
+    @Test func `a call with neither is shown as its input in words`() {
+        #expect(summary(#"{"query":"urlsession"}"#) == "query urlsession")
     }
 
     @Test func `only the first line of a command is shown`() {
@@ -51,8 +51,8 @@ struct ToolSummaryTests {
         #expect(summary(#"{"command":"\#(exact)"}"#) == exact)
     }
 
-    @Test func `a command that is not text falls back to the input`() {
-        #expect(summary(#"{"command":7}"#) == #"{"command":7}"#)
+    @Test func `a command that is not text falls back to the input in words`() {
+        #expect(summary(#"{"command":7}"#) == "command 7")
     }
 
     @Test func `an empty command is an empty line, not the input`() {
