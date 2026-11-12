@@ -11,6 +11,8 @@ enum HostPasteboard {
     /// What a paste read: the text, nothing to paste, or a refusal to say.
     enum Reading: Sendable, Equatable {
         case text(String)
+        /// A picture's bytes (roadmap 0224): a copied image file's, or the pasteboard's PNG or TIFF.
+        case picture([UInt8])
         case empty
         case denied(String)
     }
@@ -29,6 +31,21 @@ enum HostPasteboard {
         return pasteboard.setString(text, forType: .string) ? .copied : .failed("the pasteboard refused the text")
     }
 
+    /// The picture `pasteboard` holds: the first copied file named as one, or its PNG or TIFF data; nil for none.
+    static func picture(on pasteboard: NSPasteboard) -> [UInt8]? {
+        let files =
+            pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+        if let file = files.first(where: { PastedPath.extensions.contains($0.pathExtension.lowercased()) }),
+            let data = FileManager.default.contents(atPath: file.path)
+        {
+            return [UInt8](data)
+        }
+        for type in [NSPasteboard.PasteboardType.png, .tiff] {
+            if let data = pasteboard.data(forType: type), !data.isEmpty { return [UInt8](data) }
+        }
+        return nil
+    }
+
     /// The text `pasteboard` holds, unless the person has denied this program access to it.
     static func read(from pasteboard: NSPasteboard) -> Reading {
         if pasteboard.accessBehavior == .alwaysDeny {
@@ -36,6 +53,9 @@ enum HostPasteboard {
                 "Paste refused: pasteboard access is denied for this terminal in System Settings, Privacy & Security."
             )
         }
+        // A picture wins over the text it carries (the owner, 2026-11-12): a copied image file first, as Finder puts its icon
+        // beside it, then the picture itself.
+        if let bytes = picture(on: pasteboard) { return .picture(bytes) }
         guard let text = pasteboard.string(forType: .string), !text.isEmpty else { return .empty }
         return .text(text)
     }

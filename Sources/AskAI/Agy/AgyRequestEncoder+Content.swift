@@ -52,6 +52,8 @@ extension AgyRequestEncoder {
                         )
                         if !nested { pictures += images.map(Part.inline) }
                     case .text(let value) where !value.isEmpty: text.append(.text(value))
+                    // A picture the person pasted follows the text it was pasted with (roadmap 0224).
+                    case .image(let image): text.append(.inline(image))
                     default: break
                 }
             }
@@ -78,7 +80,7 @@ extension AgyRequestEncoder {
                         parts.append(.call(id: id, name: name, args: input, signature: signature))
                         pending = nil
                         firstCallSeen = true
-                    case .redactedThinking, .toolResult: break
+                    case .redactedThinking, .toolResult, .image: break
                 }
             }
             return parts

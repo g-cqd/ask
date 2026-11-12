@@ -124,6 +124,15 @@ extension AgentConversation {
     }
 
     func sendToThread(_ id: String, text: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
+        sendToThread(id, text: text, images: [], update: update)
+    }
+
+    func sendToThread(
+        _ id: String,
+        text: String,
+        images: [ToolImage],
+        update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) {
         // A merged thread is closed (roadmap 0195): its conversation stays readable, and `/thread` there branches from it.
         switch threads.thread(id)?.state {
             case .merged?:
@@ -136,8 +145,9 @@ extension AgentConversation {
                 return
             default: break
         }
-        guard !threads.steer(id, with: text) else { return }
-        runThread(id, text, update: update)
+        let parts = images.map(\.part)
+        guard !threads.steer(id, with: text, images: parts) else { return }
+        runThread(id, text, images: parts, update: update)
     }
 
     func stopThreads() async { await threads.stopAll() }
@@ -153,7 +163,12 @@ extension AgentConversation {
     }
 
     /// Runs `text` in thread `name`, its events drawn in its conversation, then reports its answer to main.
-    func runThread(_ name: String, _ text: String, update: @escaping @Sendable (ConversationUpdate) -> Void) {
+    func runThread(
+        _ name: String,
+        _ text: String,
+        images: [ImagePart] = [],
+        update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) {
         guard let thread = threads.thread(name) else { return }
         let threads = threads
         // What threads under it merged goes with what it is sent next, as main's do.
@@ -182,7 +197,7 @@ extension AgentConversation {
                 // What it asks goes to its lane, and the jobs its commands start are listed under it.
                 try await JobOwner.$current.withValue(name) {
                     try await ApprovalRoute.$current.withValue(route) {
-                        try await loop.run(prompt, in: thread.recorder, input: queue) { event in
+                        try await loop.run(prompt, images: images, in: thread.recorder, input: queue) { event in
                             if let spent = event.usage {
                                 self.usage.withLock { $0.addBeside(spent) }
                                 update(.status(self.usage.withLock { $0.compact }))

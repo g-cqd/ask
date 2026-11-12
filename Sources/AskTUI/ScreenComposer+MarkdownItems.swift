@@ -18,7 +18,15 @@ extension ScreenComposer {
                     under: Style(bold: true)
                 )
                 // The older look set the user's message off with a blank row above it; the padded one has a row of padding for that.
-                return (style.padded ? [] : [Line(text: "", style: .default)]) + rows
+                // Its pasted pictures under it (roadmap 0224).
+                let shown = withPictures(
+                    rows,
+                    images: transcript.toolImages[index] ?? [],
+                    placements: transcript.shownPlacements(at: index),
+                    block: index,
+                    inset: style.inset
+                )
+                return (style.padded ? [] : [Line(text: "", style: .default)]) + shown
             case .queued(let text):
                 // As the person's sent messages are (note n43), dim, under the queued mark.
                 let progress = transcript.progress[index]

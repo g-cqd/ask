@@ -116,7 +116,9 @@ final class AgentConversation: Conversation {
         return updates + [.status(usage.withLock { $0.compact }), contextUpdate()]
     }
 
-    func enqueue(_ text: String, id: Int, followUp: Bool) {
+    func enqueue(_ text: String, id: Int, followUp: Bool) { enqueue(text, images: [], id: id, followUp: followUp) }
+
+    func enqueue(_ text: String, images: [ToolImage], id: Int, followUp: Bool) {
         // A skill asked for during a turn is expanded as at a turn's start; a skill that cannot be loaded sends the message back to the
         // input. The queue attaches @server:uri, #t3 and #i2 when the loop takes it (0067, 0186).
         let update = approvals.withLock { $0.ask }
@@ -129,7 +131,8 @@ final class AgentConversation: Conversation {
                 QueuedPrompt(
                     id: id,
                     text: sent,
-                    delivery: followUp ? .followUp : .steering
+                    delivery: followUp ? .followUp : .steering,
+                    images: images.map(\.part)
                 )
             )
     }
@@ -141,6 +144,12 @@ final class AgentConversation: Conversation {
     }
 
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
+        start(prompt, images: [], update: update)
+    }
+
+    func start(_ prompt: String, images: [ToolImage], update: @escaping @Sendable (ConversationUpdate) -> Void)
+        -> Task<Void, Never>
+    {
         // A message typed during the turn has its @server:uri read when the loop takes it, then #t3 and #i2, as at the turn's start.
         let input = PromptQueue { [mcp, threads, self] text in
             threads.attachReports(
@@ -173,7 +182,9 @@ final class AgentConversation: Conversation {
                 self.saveHeldIdeas(update: update)
                 self.nameConversation(startingWith: prompt, update: update)
                 try self.current.withLock { $0.settings }.record(in: recorder)
-                try await loop.run(prompt, in: recorder, input: input) { self.deliver($0, to: update) }
+                try await loop.run(prompt, images: images.map(\.part), in: recorder, input: input) {
+                    self.deliver($0, to: update)
+                }
             } catch AgentError.promptBlocked(let reason) {
                 // A hook kept the message out (roadmap 0192): nothing was recorded; it goes back to the input with the reason.
                 update(.notice(reason, isError: true))

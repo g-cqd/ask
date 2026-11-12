@@ -1,4 +1,4 @@
-internal import AskAI
+public import AskAI
 
 /// A recorded session as the events that produced it, so a resumed conversation is shown by the same code that
 /// showed it live.
@@ -9,6 +9,8 @@ public enum SessionReplay {
     /// One step: a prompt the user wrote, or something the loop reported.
     public enum Step: Sendable, Equatable {
         case prompt(String)
+        /// The pictures pasted into the prompt just before (roadmap 0224).
+        case pictures([ImagePart])
         case event(AgentEvent)
     }
 
@@ -51,9 +53,10 @@ public enum SessionReplay {
     ) -> [Step] {
         switch payload {
             case .destination, .unrecognized: return []
-            case .user(let text) where text == AgentLoop.continuationPrompt: return [.event(.continuedAtOutputLimit)]
-            case .user(let text) where text == AgentLoop.reconnectionPrompt: return [.event(.continuedAfterDrop)]
-            case .user(let text): return [.prompt(SkillInvocation.shown(text))]
+            case .user(let text, _) where text == AgentLoop.continuationPrompt: return [.event(.continuedAtOutputLimit)]
+            case .user(let text, _) where text == AgentLoop.reconnectionPrompt: return [.event(.continuedAfterDrop)]
+            case .user(let text, let images):
+                return [.prompt(SkillInvocation.shown(text))] + (images.isEmpty ? [] : [.pictures(images)])
             case .assistant(let text): return [.event(.model(.textDelta(index: 0, text)))]
             case .compaction(let summary, _): return [.event(.compacted(summary: summary, usage: TokenUsage()))]
             case .toolResult: return []  // Its call is not in context: the request drops it too.

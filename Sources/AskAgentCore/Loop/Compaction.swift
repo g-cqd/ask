@@ -123,7 +123,7 @@ public enum Compaction {
         var results: [String: String] = [:]
         for entry in entries {
             switch entry.payload {
-                case .user(let text): asked.append(clipped(text, toBytes: 2_000))
+                case .user(let text, _): asked.append(clipped(text, toBytes: 2_000))
                 case .compaction(let summary, _): summaries.append(summary)
                 case .toolResult(let id, let content, _, _, _):
                     results[id] = clipped(content, toBytes: 400, note: "omitted")
@@ -160,7 +160,8 @@ public enum Compaction {
     static func size(_ payload: SessionPayload) -> Int {
         switch payload {
             case .destination, .unrecognized: return 0
-            case .user(let text), .assistant(let text): return text.utf8.count
+            case .user(let text, let images): return text.utf8.count + images.count * imageBytes
+            case .assistant(let text): return text.utf8.count
             case .toolResult(_, let content, _, let images, _): return content.utf8.count + images.count * imageBytes
             case .compaction(let summary, _): return summary.utf8.count
             case .response(let response, _):

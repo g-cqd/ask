@@ -11,6 +11,7 @@ extension ScreenController {
             case .batch(let updates): return updates.flatMap { apply($0) }
             case .userPrompt(let text): replayPrompt(text)
             case .submitPrompt(let text): return submitPrompt(text, followUp: false)
+            case .pictureAttached, .promptPictures: applyPicture(update)
             case .assistantText(let text): state.transcript.addAssistantText(text)
             case .thinkingText(let text): state.transcript.addThinkingText(text)
             case .toolStarted, .toolFinished: return applyTool(update)

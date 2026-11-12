@@ -5,7 +5,7 @@ public enum SessionPayload: Sendable, Equatable {
     /// Routing metadata, never part of a model's input or replayed as a prompt.
     case destination(SessionDestination)
     /// A user turn.
-    case user(String)
+    case user(String, images: [ImagePart] = [])
     /// An assistant turn of plain text.
     case assistant(String)
     /// A complete assistant response, kept whole so a resumed session replays requests exactly: thinking

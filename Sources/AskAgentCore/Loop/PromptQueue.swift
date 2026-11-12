@@ -60,13 +60,18 @@ public final class PromptQueue: Sendable {
         // so a withdrawal meanwhile refuses it; others may come and go, so it leaves the queue by its id.
         defer { state.withLock { $0.recording = nil } }
         // Prepared, then what the hooks make of it (roadmap 0192): nil keeps it out, and it leaves the queue unrecorded.
-        let ready = QueuedPrompt(id: prompt.id, text: await prepare(prompt.text), delivery: prompt.delivery)
+        let ready = QueuedPrompt(
+            id: prompt.id,
+            text: await prepare(prompt.text),
+            delivery: prompt.delivery,
+            images: prompt.images
+        )
         guard let text = await admit(ready) else {
             state.withLock { state in state.pending.removeAll { $0.id == prompt.id } }
             return nil
         }
-        try session.append(.user(text))
+        try session.append(.user(text, images: prompt.images))
         state.withLock { state in state.pending.removeAll { $0.id == prompt.id } }
-        return QueuedPrompt(id: prompt.id, text: text, delivery: prompt.delivery)
+        return QueuedPrompt(id: prompt.id, text: text, delivery: prompt.delivery, images: prompt.images)
     }
 }
