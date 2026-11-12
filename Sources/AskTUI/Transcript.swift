@@ -36,7 +36,7 @@ public struct Transcript: Sendable, Equatable {
     /// The rows of the Markdown messages' blocks, kept between layouts (roadmap 0152); shared by copies, equal to any other.
     let markdownRows = MarkdownRowCache()
     private var nextRevision = 0
-    var progress: [Int: BlockProgress] = [:]
+    var progress = ProgressClocks()
     var history = HistoryTrim()  // `ui.historyLimit` (note n29): the blocks kept, and those let go.
     var toolBlocks: [String: Int] = [:]
     var commandBlocks: Set<Int> = []  // The tool blocks whose input is a command, which heads the block (roadmap 0080).

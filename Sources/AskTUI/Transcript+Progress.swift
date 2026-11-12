@@ -3,12 +3,14 @@ internal import TerminalKitText
 extension Transcript {
     /// Yielded jobs outlive the turn, so they are not candidates for its implicit tool completion.
     var latestForegroundTool: Int? {
-        items.indices.last {
-            // A background job and an aside are no part of the run: its end and its stop leave them going.
-            guard !jobBlocks.values.contains($0), !asideBlocks.contains($0) else { return false }
-            if case .tool(_, _, .running, _, _) = items[$0] { return true }
-            return false
-        }
+        // A running tool's clock is live (`startTool`), so the few live blocks are where to look.
+        progress.live.sorted()
+            .last {
+                // A background job and an aside are no part of the run: its end and its stop leave them going.
+                guard !jobBlocks.values.contains($0), !asideBlocks.contains($0) else { return false }
+                if case .tool(_, _, .running, _, _) = items[$0] { return true }
+                return false
+            }
     }
 
     /// Cancellation can end a run without delivering a result for its last tool.
@@ -67,11 +69,11 @@ extension Transcript {
         progress[items.count - 1] = BlockProgress(at: now, spinner: spinnerStyle)
     }
 
-    var hasLiveProgress: Bool { progress.values.contains { $0.ended == nil } }
+    var hasLiveProgress: Bool { !progress.live.isEmpty }
 
     /// Only live blocks change revision; completed blocks remain cached across animation ticks.
     mutating func advanceProgress(at instant: ContinuousClock.Instant = .now, advancingFrames: Bool = true) {
-        for index in progress.keys where progress[index]?.ended == nil {
+        for index in progress.live {
             progress[index]?.sampled = instant
             if advancingFrames { progress[index]?.frame += 1 }
             revisions[index] = bump()
