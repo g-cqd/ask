@@ -51,6 +51,14 @@ The user's proposal, 2026-10-19. It is to be investigated, not built yet.
 - **Trust.** The summariser reads the whole conversation. A hosted cheap model sends it to a provider. The
   choice must be explicit, follow ADR-0020's capability rules, and be off by default.
 
+## Research (2026-11-12)
+
+`development/research/background-compaction-2026-11.md`, from `Scripts/measure-compactions.py 30`: 240 compactions in the 30 largest
+sessions, each at about 152k tokens of context, leaving about 46k, about 102 requests apart, writing a summary of about 3,100 tokens,
+so each stops the run for at least 40 to 80 s. Old tool results and thinking are three quarters of the window's bytes. Apple's
+on-device model (4,096 tokens) cannot keep the summary. Three decisions are the owner's (which piece first, which model, a replay's
+budget).
+
 ## Done when
 
 This entry becomes a design note with measured numbers, and a decision on whether to build it.
