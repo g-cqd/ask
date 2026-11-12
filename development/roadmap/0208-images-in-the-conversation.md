@@ -107,8 +107,7 @@ Run in kitty 0.49.2, Ghostty 1.4.0 and WezTerm, screenshots read for their pixel
 
 - A picture is placed again whenever its fit changes, so one narrowed by a small screen grows back when it widens
   (`ToolImageEdgeTests`, red first).
-- A click on a picture's line or its cells folds that picture away, leaving its line, and a second shows it; the tool's output
-  folds apart from it (`PictureFoldTests`, red first; `probe-images.py`, 9 checks, two of them the click).
+- A click on a picture's line or its cells folded that picture away (replaced the same day, below).
 - 2026-11-12: JPEG, GIF (its first frame) and WebP are drawn too: made a PNG off the screen's thread, at the size they are shown and never
   larger, upright when stored on their side (`PictureTranscode`, ImageIO; `PictureTranscodeTests`, red first; `probe-images.py`,
   11 checks, a JPEG among them). Without ImageIO (Linux) they keep their line.
@@ -117,6 +116,11 @@ Run in kitty 0.49.2, Ghostty 1.4.0 and WezTerm, screenshots read for their pixel
   within 10 blocks of the blocks shown are sent, and one past 40 is deleted from the terminal, its data freed, and sent again when
   the view comes back (`ScreenImagesWindowTests`, red first; `probe-images-window.py`: a resumed session sends nothing for a
   picture far above, and sends it once scrolled to; the installed binary sent it at once).
+
+- 2026-11-12, the owner after seeing it in kitty: a folded block is one line, pictures or not. A picture block starts open, so the
+  picture shows at once; open, each picture comes before its details line; folded, the block is its header alone, the pictures'
+  details on its right (the first, and how many more). A click anywhere on the block folds or opens it; the per-picture fold is
+  gone (`PictureFoldTests`, red first; `probe-images.py`, 11 checks).
 
 ## Left
 

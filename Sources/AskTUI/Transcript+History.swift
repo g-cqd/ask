@@ -47,7 +47,6 @@ extension Transcript {
             replacements[index] = nil
             toolImages[index] = nil
             imagePlacements[index] = nil
-            foldedPictures[index] = nil
             toolPaths[index] = nil
             outputSpans[index] = nil
             folds.clearChoice(for: index)

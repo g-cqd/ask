@@ -216,9 +216,7 @@ extension ScreenController {
                 style: state.blocks
             )
             .count
-        if frame.pictureFolds.indices.contains(row), let picture = frame.pictureFolds[row] {
-            state.transcript.togglePicture(picture, at: block)
-        } else if frame.middleFolds.indices.contains(row), frame.middleFolds[row] {
+        if frame.middleFolds.indices.contains(row), frame.middleFolds[row] {
             state.transcript.toggleCodeFold(Transcript.outputFence, at: block)
         } else if let source, let fence = state.transcript.codeFence(toggledByLine: source.line, at: block) {
             state.transcript.toggleCodeFold(fence, at: block)

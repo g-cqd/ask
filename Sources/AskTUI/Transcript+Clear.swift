@@ -19,7 +19,6 @@ extension Transcript {
         // Kept by block, like the rest: the next block at a place must not inherit a picture or a summary (roadmap 0208, note n28).
         toolImages.removeAll()
         imagePlacements.removeAll()
-        foldedPictures.removeAll()
         choiceSummaryAt = nil
         toolPaths.removeAll(keepingCapacity: true)
         outputSpans.removeAll()

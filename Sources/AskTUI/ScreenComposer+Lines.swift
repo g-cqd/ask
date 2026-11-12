@@ -146,7 +146,8 @@ extension ScreenComposer {
                     style: style,
                     context: context
                 )
-                // Its pictures show whether the output is folded or not (the owner, 2026-11-06: shown at once).
+                // Open, its pictures under its header; folded, its one line says what they are (the owner, 2026-11-12).
+                guard !folded else { return content }
                 return withImageRows(
                     content,
                     images: context.images,

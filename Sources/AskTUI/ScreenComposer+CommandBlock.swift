@@ -64,8 +64,10 @@ extension ScreenComposer {
         let shownOutput = context.output ?? output
         let inset = style.inset
         let width = Swift.max(1, columns - 2 * inset)
-        let metadata = toolMetadata(name: name, status: status, output: output, style: style, context: context)
+        var metadata = toolMetadata(name: name, status: status, output: output, style: style, context: context)
         if folded {
+            // One line however many pictures it has: what they are goes on the header's right (the owner, 2026-11-12).
+            if let pictures = pictureSummary(context.images) { metadata = pictures + " · " + metadata }
             let header =
                 context.command
                 ? Transcript.Item.commandHeader(name: name, parameters: summary, command: input, folded: true)

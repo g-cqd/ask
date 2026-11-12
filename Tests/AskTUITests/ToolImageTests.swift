@@ -60,11 +60,11 @@ struct ToolImageTests {
             .map { $0.text.trimmingTrailingSpaces }
     }
 
-    @Test(arguments: [true, false])
-    func `a picture's row follows the header, folded or not`(folded: Bool) {
-        let shown = rows(screen(folded: folded), folded: folded)
-        #expect(shown.count >= 2, "\(shown)")
-        #expect(shown.dropFirst().first?.contains("PNG · 1280×800 · 29 B") == true, "\(shown)")
+    @Test func `open, the picture's details follow the header; folded, they are on the header's one line`() {
+        let open = rows(screen(folded: false), folded: false)
+        #expect(open.count >= 2 && open.dropFirst().first?.contains("PNG · 1280×800 · 29 B") == true, "\(open)")
+        let folded = rows(screen(folded: true), folded: true).filter { !$0.allSatisfy(\.isWhitespace) }
+        #expect(folded.count == 1 && folded.first?.contains("PNG · 1280×800 · 29 B") == true, "\(folded)")
     }
 }
 

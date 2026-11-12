@@ -58,7 +58,6 @@ extension ScreenComposer {
             rows: map,
             foldBlocks: foldBlocks,
             middleFolds: middleFolds,
-            pictureFolds: pictureFolds,
             transcriptRows: layout.transcript,
             columns: layout.columns,
             totalLines: totalLines,
