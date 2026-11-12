@@ -87,3 +87,14 @@ safety, reliability and resilience budgets of `ask` and the analyzers are not to
 - How long the full A flow takes end to end: the check and the resolve are measured, the CI queue is not under our control.
 - That a scheduled "family at head" job is cheap enough on the runners available; it needs the Linux and macOS minutes.
 - The probe reads only `https://github.com/g-cqd/...` and `Aemi-Studio/...` revision pins; other spellings are listed, not planned.
+
+## Addendum, 2026-11-12: one bump, by hand
+
+Roadmap 0170 needed two public members in AemiJSON (806b481). ask could not take them alone: SwiftPM wants one revision per
+package in a graph, and AemiHMMML pinned AemiJSON, AemiMarkdown and AemiMermaid pinned AemiHMMML, and TerminalKit pinned
+AemiMarkdown. So one library change became **five pin commits in five repositories** (AemiHMMML ed8469a, AemiMarkdown 81108b1,
+AemiMermaid 9941c38, TerminalKit b726ad1, then ask's two manifests and two lock files), three dependency levels, each tested
+before the next (AemiMarkdown 146 tests, TerminalKit 726, ask's full gate). Two checkouts held someone else's unpushed work
+(AemiMarkdown's uncommitted app changes, TerminalKit's note), so each repin was made in a worktree off `origin/main` and pushed
+from there. The graph was worked out by hand with grep; option A's `order` would have given it at once, and option B would have
+needed only ask's lock file to move.
