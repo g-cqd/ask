@@ -152,3 +152,23 @@ The three can coexist: C now, A as the first SDK step (it needs only the client)
 - Copilot CLI licence (`@github/copilot` 1.0.109, LICENSE.md)
 - microsoft/vscode#347616 (users on the removal) and #340335 (BYOK in the Agent Host harness)
 - ask: `Sources/AskAI/Copilot/*`, roadmap 0193
+
+## Recorded (2026-11-12): the pinned runtime's sign-in and account calls
+
+The Copilot CLI 1.0.109 (`@github/copilot-darwin-arm64`, tarball sha256 `d00563d5…c37a`) run once through a local recording proxy,
+its home and its keychain throwaway (deleted after; the owner's login keychain left as it was). Tokens, cookies and machine IDs are
+not kept.
+
+- Sign-in: the CLI's own GitHub app, client `Ov23ctDVkRmgkPke0Mmm`, by a browser flow with a loopback callback (default on a desktop)
+  or a device code (`--device-code`); scopes `read:user read:org repo gist codespace …`. It accepts `COPILOT_GITHUB_TOKEN`, `GH_TOKEN`
+  or `GITHUB_TOKEN`: fine-grained tokens with "Copilot Requests", the CLI app's tokens and `gh`'s; not classic `ghp_` tokens.
+- No token exchange: the GitHub token goes straight to Copilot's API. No `copilot_internal/v2/token` call was seen.
+- The API's host follows the plan: `api.individual.githubcopilot.com` or `api.business.githubcopilot.com`.
+- Its headers: `copilot-integration-id: copilot-developer-cli`, `copilot-harness-id: copilot-sdk`, `editor-version: copilot/1.0.109`,
+  `user-agent: copilot/1.0.109 (darwin <node version>) term/<terminal>`, `openai-intent: conversation-agent`, `x-initiator: user`,
+  `x-interaction-id` and `x-client-machine-id` (UUIDs), `x-github-api-version: 2026-09-21`.
+- Behind the proxy the runtime refuses an organisation's account on its own side: a configured trust root (`SSL_CERT_FILE`,
+  `NODE_EXTRA_CA_CERTS`) means, in its words, "the organization memberships backing this pin could in principle be intercepted".
+- Without the proxy GitHub refused both the owner's work account and g-cqd: "Access denied by policy settings" (the Copilot CLI
+  policy, separate from `gh`'s), so no model call was recorded. VS Code's Agent Host identity (the SDK's client info,
+  `vscode/<version>`) was not observed either.
