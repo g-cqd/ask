@@ -35,3 +35,21 @@ the research that explains every way it affects ask, then the whole integration 
 ## For the owner
 
 A or B or both; the CLI installed or bundled; the CLI's login or an ask OAuth app; the old path's future; which GitHub account.
+
+## Owner (2026-11-12)
+
+- Both A then B, now, with the Copilot runtime fetched at build time: a pinned, checksummed Copilot CLI shipped beside ask (its
+  licence allows unmodified copies only, so it cannot be built from source).
+- ask stays a harness of its own too: its Copilot account mimics the new VS Code exactly (what VS Code's Agent Host sends through
+  the runtime, recorded from the runtime and followed release by release, as 0193 does), and keeps the old Local harness mimic as a
+  second variant ("keep supporting both"), until it breaks.
+- Sign-in: ask's own GitHub OAuth app (the owner registers it), and the VS Code mimic's sign-in as well.
+- Account: whichever the person signs in with.
+
+## Order
+
+1. Record what the runtime sends to CAPI (sign-in, token, headers, client identity), from the pinned CLI in a sandbox; the new mimic
+   as a variant of `CopilotClient`, the old one kept; a choice between them.
+2. The pinned runtime fetched by the build (version, checksum, licence beside it).
+3. The Swift JSON-RPC client (stage 1), then A (stage 2), then B (stage 3).
+4. ask's OAuth app sign-in once the owner has registered it.
