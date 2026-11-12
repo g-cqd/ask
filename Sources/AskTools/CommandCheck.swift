@@ -80,14 +80,14 @@ enum CommandCheck {
             .first { FileManager.default.isExecutableFile(atPath: $0) }
     }
 
-    private struct Ran: Sendable, Equatable {
+    struct Ran: Sendable, Equatable {
         let status: Int32
         let output: String
         let error: String
     }
 
     /// How a check's program ended.
-    private enum Outcome: Sendable, Equatable {
+    enum Outcome: Sendable, Equatable {
         case ran(Ran)
         /// It could not start.
         case missing
@@ -96,7 +96,7 @@ enum CommandCheck {
     }
 
     /// `executable` run to its end with `arguments`, stopped at `deadline`.
-    private static func run(
+    static func run(
         _ executable: String,
         _ arguments: [String],
         input: String? = nil,

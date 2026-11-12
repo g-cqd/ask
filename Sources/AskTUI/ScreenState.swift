@@ -93,6 +93,8 @@ public struct ScreenState: Sendable, Equatable {
     /// The folder ask works in, as the status line says it, longest form first (`ui.statusPath`, notes n6 and n63); empty when it
     /// is off or not known.
     var statusPath: [String] = []
+    /// The workspace's git state, longest form first (roadmap 0186).
+    var gitStatus: [String] = []
     var statusPathSide = StatusPathSide.leading
     /// Whether the terminal has focus, as it last reported (note n62); nil until it says, which counts as not focused.
     var focused: Bool?

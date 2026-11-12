@@ -13,6 +13,7 @@ extension AgentConversation {
         let jobs = jobs
         let mcp = mcp
         let threads = threads
+        refreshGitStatus(update)
         return Task {
             await withTaskGroup(of: Void.self) { group in
                 group.addTask {
