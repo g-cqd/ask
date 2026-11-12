@@ -7,7 +7,7 @@ extension ScreenComposer {
     static func pickerLines(for state: ScreenState, columns: Int, rows: Int) -> [Line] {
         if let pending = state.pendingApproval { return approvalLines(pending, columns: columns, rows: rows) }
         if let pending = state.pendingQuestions { return questionLines(pending, columns: columns, rows: rows) }
-        guard let picker = state.picker else { return [] }
+        guard let picker = state.picker else { return pastedPictureLines(for: state, columns: columns, rows: rows) }
         let hovered: Int? = if case .picker(let index) = state.hover { index } else { nil }
         return pickerLines(picker, columns: columns, rows: rows, hovered: hovered)
     }

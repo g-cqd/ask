@@ -13,6 +13,8 @@ enum ScreenEvent: Sendable {
     case copied(notice: String, failed: Bool, generation: Int)
     /// A paste the terminal passed on could not read the pasteboard: why, for the transcript (roadmap 0082).
     case pasteRefused(String)
+    /// A paste the terminal passed on found a picture on the pasteboard (roadmap 0224).
+    case pastedPicture([UInt8])
     /// The two seconds after an arming Ctrl+C are over.
     case quitWindowEnded(generation: Int)
     /// A thread's question has waited its `threads.questions` delay.

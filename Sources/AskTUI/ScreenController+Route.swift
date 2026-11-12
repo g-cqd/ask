@@ -61,13 +61,18 @@ extension ScreenController {
                 return []
             case .paste where state.picker?.kind.isConfig == true:
                 return []
-            case .paste(let text):
-                removeInputSelection()
-                clearSelection()
-                state.editor.paste(text)
-                return []
+            case .paste(let text): return paste(text)
             default:
                 return []
         }
+    }
+
+    /// Pasted text: a path that names a picture is the picture (the owner, 2026-11-12, roadmap 0224); any other text goes in the input.
+    private mutating func paste(_ text: String) -> [Effect] {
+        if let path = PastedPath.picture(text) { return [.attachPicture(path: path)] }
+        removeInputSelection()
+        clearSelection()
+        state.editor.paste(text)
+        return []
     }
 }

@@ -8,6 +8,8 @@ internal import TerminalKitText
 public struct ScreenState: Sendable, Equatable {
     public var transcript = Transcript()
     public var editor = PromptEditor()
+    /// The pictures pasted into the input, by the number their `[image N]` token names (roadmap 0224).
+    var pictures = PastedPictures()
     /// The requested input height; layout also caps it to a third of the screen (ADR-0046).
     public var promptRows = ScreenOptions().promptRows
     /// Shown at the left of the status line, such as the model.

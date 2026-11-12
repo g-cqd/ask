@@ -25,6 +25,8 @@ public struct ScreenController: Sendable {
         case openLink(String)
         /// Read the host's pasteboard and paste it, as a bracketed paste would (roadmap 0082).
         case pasteFromClipboard
+        /// Read the picture at this path, pasted or dropped onto the input, and attach it (roadmap 0224).
+        case attachPicture(path: String)
         case answerApproval(id: Int, ApprovalChoice)
         /// The answers to the model's questions, or nil when the person declined (roadmap 0117).
         case answerQuestions(id: Int, [QuestionAnswer]?)
