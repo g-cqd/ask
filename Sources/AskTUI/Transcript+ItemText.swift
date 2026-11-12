@@ -63,7 +63,8 @@ extension Transcript.Item {
         output _: String,
         folded _: Bool
     ) -> String {
-        "\(name) · \(summary)".replacing("\n", with: " ")
+        // Nothing after the name when there is nothing to say (note n70).
+        (summary.isEmpty ? name : "\(name) · \(summary)").replacing("\n", with: " ")
     }
 
     /// A command block's header (roadmap 0080): the tool, its limits, then the command. Folded, only the command's first line, with `…`

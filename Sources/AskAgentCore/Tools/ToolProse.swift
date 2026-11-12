@@ -35,11 +35,14 @@ enum ToolProse {
         }
     }
 
-    /// `key value` for the one line: a list as its size, a record left out.
+    /// `key value` for the one line: a list as its size, a record as its fields in parentheses (note n70), or its name alone.
     private static func brief(_ key: String, _ value: JSONValue) -> String? {
         switch value {
             case .array(let items) where !items.isEmpty: "\(items.count) \(words(key))"
-            case .array, .object, .null: nil
+            case .object(let members) where !members.isEmpty:
+                inline(value).isEmpty ? words(key) : "\(words(key)) (\(inline(value)))"
+            case .object: words(key)
+            case .array, .null: nil
             case .string(let text) where text.isEmpty: nil
             default: scalar(value).map { "\(words(key)) \(TextLines.first(of: $0) ?? $0)" }
         }

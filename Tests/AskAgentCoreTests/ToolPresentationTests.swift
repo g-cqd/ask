@@ -125,4 +125,21 @@ struct ToolPresentationTests {
         #expect(ToolSummary.fullInput(for: changes) == "Changes:\n  - op add · title x\n  - op state · ids t1")
         #expect(!ToolSummary.header(for: changes).contains("{") && !ToolSummary.fullInput(for: changes).contains("{"))
     }
+
+    /// The one line is never empty when the call says something (note n70): a record's fields go in parentheses after its name.
+    @Test func `a call whose input is records reads them on the header`() throws {
+        #expect(ToolSummary.header(for: try input(#"{"read":{"view":"new"}}"#)) == "read (view new)")
+        #expect(
+            ToolSummary.header(for: try input(#"{"read":{"ids":"t5 t228","view":"all"}}"#))
+                == "read (ids t5 t228 · view all)"
+        )
+        #expect(
+            ToolSummary.header(
+                for: try input(#"{"changes":[{"ids":"n70","state":"acknowledged"}],"read":{"view":"new"}}"#)
+            )
+                == "1 changes · read (view new)"
+        )
+        #expect(ToolSummary.header(for: try input(#"{"read":{}}"#)) == "read")
+        #expect(ToolSummary.header(for: try input(#"{}"#)).isEmpty)
+    }
 }
