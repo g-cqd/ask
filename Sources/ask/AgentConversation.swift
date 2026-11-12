@@ -155,7 +155,9 @@ final class AgentConversation: Conversation {
         // A message typed during the turn has its @server:uri read when the loop takes it, then #t3 and #i2, as at the turn's start.
         let input = PromptQueue { [mcp, threads, self] text in
             threads.attachReports(
-                SessionTasks.attachReferences(await mcp.attachResources(self.attachingShellReports(text)))
+                await self.attachingForgeReferences(
+                    SessionTasks.attachReferences(await mcp.attachResources(self.attachingShellReports(text)))
+                )
             )
         }
         promptInput.withLock { $0 = input }
@@ -175,7 +177,11 @@ final class AgentConversation: Conversation {
                 // Each @server:uri read from its server once it is connected (roadmap 0067), then #t3 and #i2 (0186).
                 // A thread that ended since the last message: its answer goes with this one (roadmap 0194).
                 let prompt = self.threads.attachReports(
-                    SessionTasks.attachReferences(await self.mcp.attachResources(self.attachingShellReports(expanded)))
+                    await self.attachingForgeReferences(
+                        SessionTasks.attachReferences(
+                            await self.mcp.attachResources(self.attachingShellReports(expanded))
+                        )
+                    )
                 )
                 let loop = try self.agentLoop()
                 // A new session waits for how it is to be kept, when the screen is still asking (idea i1).

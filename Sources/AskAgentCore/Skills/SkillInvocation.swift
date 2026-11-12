@@ -137,7 +137,7 @@ public enum SkillInvocation {
         // The earliest attachment: a skill's, a task's or an idea's (0186), or a server's resource (0067).
         let cuts = [
             marker, ListReferences.taskMarker, ListReferences.ideaMarker, ResourceReferences.marker,
-            ListReferences.threadMarker
+            ListReferences.threadMarker, ForgeReferences.marker
         ]
         .compactMap { prompt.range(of: $0)?.lowerBound }
         guard let cut = cuts.min() else { return prompt }
