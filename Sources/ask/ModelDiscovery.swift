@@ -26,7 +26,10 @@ enum ModelDiscovery {
             cache: ModelCatalogFile(
                 url: credentials.url.deletingLastPathComponent().appending(path: "models-agy.json")
             ),
-            cloud: AgyCloudClient(transport: transport),
+            cloud: AgyCloudClient(
+                transport: transport,
+                versions: AgyVersions.beside(credentials, transport: transport)
+            ),
             access: makeAgyAccess(transport: transport)
         )
     }

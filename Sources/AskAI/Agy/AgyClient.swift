@@ -20,22 +20,28 @@ public struct AgyClient: Sendable {
     }
 
     /// Sends `request` under `session` and streams the response's events. The stream throws a ``ProviderStreamError``, or the
-    /// ``ThinkingError`` of a request for an explicit thinking control, before anything is sent.
-    public func stream(_ request: ModelRequest, session: AgySession) -> AsyncThrowingStream<ModelEvent, any Error> {
+    /// ``ThinkingError`` of a request for an explicit thinking control, before anything is sent. `version` is the `agy` version the
+    /// identity names (``AgyVersions``).
+    public func stream(
+        _ request: ModelRequest,
+        session: AgySession,
+        version: String = AgyVersions.known
+    ) -> AsyncThrowingStream<ModelEvent, any Error> {
         let body: [UInt8]
         do {
             body = try AgyRequestEncoder.encode(
                 request,
                 project: session.projectID,
                 requestID: "ask-" + newID(),
-                promptID: newID()
+                promptID: newID(),
+                version: version
             )
         } catch { return error.failedStream }
         let endpoint = ProviderEndpoint(
             transport: transport,
             url: Self.address,
             apiKey: session.accessToken,
-            headers: ["user-agent": AgyCloud.userAgent]
+            headers: ["user-agent": AgyCloud.userAgent(version: version)]
         )
         return endpoint.stream(body, decoder: AgyStreamDecoder.self)
     }
