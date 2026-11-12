@@ -88,7 +88,7 @@ struct AgentHookPointsTests {
         let events = Mutex<[AgentEvent]>([])
         try await loop.run("Go", in: file) { event in events.withLock { $0.append(event) } }
         let users = file.tree.entries.compactMap { entry -> String? in
-            if case .user(let text) = entry.payload { text } else { nil }
+            if case .user(let text, _) = entry.payload { text } else { nil }
         }
         #expect(users == ["Go", "[hook auditor] checked echo"])
         #expect(events.withLock { $0 }.contains(.hookAddedContext("[hook auditor] checked echo")))

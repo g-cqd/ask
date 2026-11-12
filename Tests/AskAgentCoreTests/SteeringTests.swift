@@ -26,7 +26,7 @@ struct SteeringTests {
 
     private func prompts(_ session: SessionRecorder) -> [String] {
         session.tree.entries.compactMap {
-            if case .user(let text) = $0.payload { return text }
+            if case .user(let text, _) = $0.payload { return text }
             return nil
         }
     }

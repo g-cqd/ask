@@ -41,7 +41,7 @@ public struct SessionOutline: Sendable, Equatable {
         var firstAfter: [EntryID?: EntryID] = [:]
         var built: [Turn] = []
         for entry in tree.entries {
-            guard case .user(let text) = entry.payload else { continue }
+            guard case .user(let text, _) = entry.payload else { continue }
             let number = built.count + 1
             numbers[entry.id] = number
             let follows: Follows

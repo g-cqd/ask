@@ -1,4 +1,4 @@
-internal import AskAI
+public import AskAI
 
 /// The agent loop: request, stream, record, run tools, record their results, repeat.
 ///
@@ -153,29 +153,32 @@ public struct AgentLoop: Sendable {
     /// would finish. One message enters per boundary, with steering first. Unsent input remains queued on failure.
     /// - Parameters:
     ///   - prompt: the initial user message.
+    ///   - images: the pictures pasted into it (roadmap 0224).
     ///   - session: where completed work is persisted.
     ///   - input: messages queued while this run is in flight; nil for a run without interactive input.
     ///   - events: completed steps, including acknowledgments of persisted queued messages.
     /// - Throws: an ``AgentError``. Cancelling the task aborts the run as ``AgentError/cancelled``.
     public func run(
         _ prompt: String,
+        images: [ImagePart] = [],
         in session: SessionRecorder,
         input: PromptQueue? = nil,
         events: (AgentEvent) -> Void
     ) async throws(AgentError) {
         var loop = self
         loop.stopMark = session.tree.entries.count
-        try await loop.drive(prompt, in: session, input: input, events: events)
+        try await loop.drive(prompt, images: images, in: session, input: input, events: events)
     }
 
     /// `run`'s body, on a copy that takes what is offered to it before each request.
     private mutating func drive(
         _ prompt: String,
+        images: [ImagePart],
         in session: SessionRecorder,
         input: PromptQueue?,
         events: (AgentEvent) -> Void
     ) async throws(AgentError) {
-        try await recordFirst(prompt, in: session, events: events)
+        try await recordFirst(prompt, images: images, in: session, events: events)
         var watch = WindowWatch()
         var turn = 0
         while turn < settings.maximumTurns {

@@ -28,7 +28,13 @@ struct WirePayload: Codable {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         switch try container.decode(Kind.self, forKey: .kind) {
             case .destination: value = .destination(try container.decode(SessionDestination.self, forKey: .destination))
-            case .user: value = .user(try container.decode(String.self, forKey: .text))
+            case .user:
+                // The pictures the person pasted, by reference into the image store (roadmap 0224); older builds read the text alone.
+                let (images, lost) = try Self.images(in: container, decoder: decoder)
+                value = .user(
+                    try container.decode(String.self, forKey: .text) + Self.lostNote(lost, "pasted"),
+                    images: images
+                )
             case .assistant: value = .assistant(try container.decode(String.self, forKey: .text))
             case .compaction:
                 value = .compaction(
@@ -49,15 +55,10 @@ struct WirePayload: Codable {
                     rewrite: try container.decodeIfPresent(RequestRewrite.self, forKey: .rewrite)
                 )
             case .toolResult:
-                let store = decoder.userInfo[SessionImageStore.userInfoKey] as? SessionImageStore
-                var images: [ImagePart] = []
-                var lost = 0
-                for wire in try container.decodeIfPresent([WireImage].self, forKey: .images) ?? [] {
-                    if let part = try wire.part(from: store) { images.append(part) } else { lost += 1 }
-                }
+                let (images, lost) = try Self.images(in: container, decoder: decoder)
                 value = .toolResult(
                     callID: try container.decode(String.self, forKey: .callID),
-                    content: try container.decode(String.self, forKey: .content) + Self.lostNote(lost),
+                    content: try container.decode(String.self, forKey: .content) + Self.lostNote(lost, "read"),
                     isError: try container.decode(Bool.self, forKey: .isError),
                     images: images,
                     facts: ToolFacts(replacements: try container.decodeIfPresent(Int.self, forKey: .replacements))
@@ -68,14 +69,15 @@ struct WirePayload: Codable {
     func encode(to encoder: any Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         switch value {
-            case .unrecognized: throw Unwritable()
             // @dl:accept -- routing is explicitly encoded as session data, like the log envelope, not as Swift's synthesized enum format
+            case .unrecognized: throw Unwritable()
             case .destination(let destination):
                 try container.encode(Kind.destination, forKey: .kind)
                 try container.encode(destination, forKey: .destination)
-            case .user(let text):
+            case .user(let text, let images):
                 try container.encode(Kind.user, forKey: .kind)
                 try container.encode(text, forKey: .text)
+                try Self.encode(images, into: &container, encoder: encoder)
             case .assistant(let text):
                 try container.encode(Kind.assistant, forKey: .kind)
                 try container.encode(text, forKey: .text)
@@ -94,10 +96,7 @@ struct WirePayload: Codable {
                 try container.encode(WireUsage(response.usage), forKey: .usage)
             case .toolResult(let callID, let content, let isError, let images, let facts):
                 try container.encode(Kind.toolResult, forKey: .kind)
-                if !images.isEmpty {
-                    let store = encoder.userInfo[SessionImageStore.userInfoKey] as? SessionImageStore
-                    try container.encode(images.map { WireImage($0, in: store) }, forKey: .images)
-                }
+                try Self.encode(images, into: &container, encoder: encoder)
                 try container.encode(callID, forKey: .callID)
                 try container.encode(content, forKey: .content)
                 try container.encode(isError, forKey: .isError)
@@ -105,10 +104,34 @@ struct WirePayload: Codable {
         }
     }
 
-    /// What the model is told of pictures a resumed session no longer has.
-    private static func lostNote(_ count: Int) -> String {
+    /// The pictures an entry names, and how many of them are no longer in the store.
+    private static func images(in container: KeyedDecodingContainer<CodingKeys>, decoder: any Decoder) throws
+        -> (images: [ImagePart], lost: Int)
+    {
+        let store = decoder.userInfo[SessionImageStore.userInfoKey] as? SessionImageStore
+        var images: [ImagePart] = []
+        var lost = 0
+        for wire in try container.decodeIfPresent([WireImage].self, forKey: .images) ?? [] {
+            if let part = try wire.part(from: store) { images.append(part) } else { lost += 1 }
+        }
+        return (images, lost)
+    }
+
+    /// Writes `images` by reference into the store, or inline when there is none; nothing for none.
+    private static func encode(
+        _ images: [ImagePart],
+        into container: inout KeyedEncodingContainer<CodingKeys>,
+        encoder: any Encoder
+    ) throws {
+        guard !images.isEmpty else { return }
+        let store = encoder.userInfo[SessionImageStore.userInfoKey] as? SessionImageStore
+        try container.encode(images.map { WireImage($0, in: store) }, forKey: .images)
+    }
+
+    /// What the model is told of pictures a resumed session no longer has: `how` they came, read by a tool or pasted.
+    private static func lostNote(_ count: Int, _ how: String) -> String {
         guard count > 0 else { return "" }
-        let what = count == 1 ? "an image read here is" : "\(count) images read here are"
+        let what = count == 1 ? "an image \(how) here is" : "\(count) images \(how) here are"
         return "\n[\(what) no longer available: the file in the session's images directory is missing or damaged]"
     }
 
