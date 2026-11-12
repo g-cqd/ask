@@ -44,7 +44,7 @@ struct ConfigEditorModelTests {
     @Test func `committing a boolean updates only that nested key and preserves unrelated JSON5 settings`() throws {
         let file = path()
         let json5 = """
-            // a comment the editor does not claim to preserve
+            // a comment the editor keeps (roadmap 0170)
             {
               model: 'claude-sonnet-5-5',
               ui: {
@@ -60,14 +60,14 @@ struct ConfigEditorModelTests {
         #expect(editor.settings.first { $0.path == ["ui", "tint"] }?.value == "off")
         try editor.commit("on", at: ["ui", "tint"])
         let saved = String(decoding: try Data(contentsOf: URL(fileURLWithPath: file)), as: UTF8.self)
-        #expect(saved.contains("\"model\": \"claude-sonnet-5-5\""))
+        #expect(saved.contains("model: 'claude-sonnet-5-5'"), "what was not changed is as written")
         #expect(
-            saved.contains("\"tint\": true") && saved.contains("\"inputPrefix\": \"ask> \""),
+            saved.contains("tint: true") && saved.contains("inputPrefix: 'ask> '"),
             "an old name is saved as the new one"
         )
-        #expect(saved.contains("\"future\": {") && saved.contains("\"keep\": true"))
+        #expect(saved.contains("future: { keep: true }"))
         #expect(saved.hasSuffix("}\n"), "the file's trailing newline is preserved")
-        #expect(!saved.contains("// a comment"), "AemiJSON re-encodes JSON5 as strict JSON; comments are not preserved")
+        #expect(saved.contains("// a comment the editor keeps"), "the file's comments are kept (roadmap 0170)")
         editor = try ConfigEditor(path: file, isProject: false)
         #expect(editor.settings.first { $0.path == ["ui", "tint"] }?.value == "on")
         #expect(editor.setting(["ui", "tint"])?.wire == .boolean)

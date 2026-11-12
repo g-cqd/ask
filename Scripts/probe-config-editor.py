@@ -22,7 +22,7 @@ def main():
         os.makedirs(project)
         os.makedirs(config + "/ask")
         Path(config + "/ask/config.json").write_text(
-            '// a comment the editor does not keep\n{\n  "maxTurns": 40,\n  "thinking": "low",\n  "ui": {\n    "tint": "off",\n    "inputPrefix": "ask> ",\n    "scrollLines": 2\n  }\n}\n')
+            '// a comment the editor keeps (roadmap 0170)\n{\n  "maxTurns": 40,\n  "thinking": "low",\n  "ui": {\n    "tint": "off",\n    "inputPrefix": "ask> ",\n    "scrollLines": 2\n  }\n}\n')
         server = probe.agent.Server([probe.agent.turn([("text", "OK")], "end_turn")])
         environment = probe.agent.environment(root + "/state", server.url, config=config)
         environment.update(TERM="xterm-256color", TERM_PROGRAM="ghostty")
@@ -46,7 +46,10 @@ def main():
             probe.check("the save changes only the edited key and keeps every other setting",
                         '"tint": true' in saved and "maxTurns" in saved and "scrollLines" in saved
                         and "thinking" in saved and "mouse" not in saved and "model" not in saved)
-            probe.check("the save is strict JSON with no comment left", "//" not in saved and " {" in saved)
+            original = ('// a comment the editor keeps (roadmap 0170)\n{\n  "maxTurns": 40,\n  "thinking": "low",\n  "ui": {\n'
+                        '    "tint": "off",\n    "inputPrefix": "ask> ",\n    "scrollLines": 2\n  }\n}\n')
+            probe.check("the save keeps the file's comment, and only the edited value's bytes change",
+                        saved == original.replace('"tint": "off"', '"tint": true'))
             terminal.send(b"\x1b")
             terminal.until(lambda: "ask>" in terminal.text())
             probe.check("escape closes the editor and returns to the prompt", "ui.spinner" not in terminal.text())

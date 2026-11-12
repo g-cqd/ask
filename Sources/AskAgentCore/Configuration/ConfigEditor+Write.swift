@@ -84,6 +84,17 @@ extension ConfigEditor {
         } catch {
             throw .configuration(error)
         }
+        // The file's own text changed where the setting is (roadmap 0170); written anew only when that cannot be done.
+        if let source = self.bytes,
+            let edited = ConfigSourceEdit.edited(
+                source,
+                to: candidate,
+                format: ConfigEditorFormat(of: String(decoding: source, as: UTF8.self))
+            )
+        {
+            try Self.writeAtomically(edited, to: self.path, preserving: mode)
+            return
+        }
         let bytes: [UInt8]
         do {
             bytes = try Self.encoding(
