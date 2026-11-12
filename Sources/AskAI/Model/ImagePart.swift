@@ -63,7 +63,11 @@ extension ImagePart {
 
     private static func imageCount(in message: ModelMessage) -> Int {
         message.blocks.reduce(0) { count, block in
-            if case .toolResult(_, _, _, let images) = block { count + images.count } else { count }
+            switch block {
+                case .toolResult(_, _, _, let images): count + images.count
+                case .image: count + 1
+                default: count
+            }
         }
     }
 
@@ -73,6 +77,11 @@ extension ImagePart {
         return messages.map { message in
             var message = message
             message.blocks = message.blocks.map { block in
+                if case .image(let image) = block {
+                    // A pasted picture let go becomes a line in the person's message, where it was (roadmap 0224).
+                    defer { index += 1 }
+                    return reason(index, image).map { .text("[an image pasted here not sent: \($0)]") } ?? block
+                }
                 guard case .toolResult(let id, let content, let isError, let images) = block, !images.isEmpty else {
                     return block
                 }

@@ -150,6 +150,7 @@ public enum AnthropicRequestEncoder {
                     $0.raw(input.bytes)
                     breakpoint(if: cached, &$0)
                 }
+            case .image(let image): encode(image, into: &writer, cached: cached)
             case .toolResult(let id, let content, let isError, let images):
                 writer.object {
                     $0.field("type", "tool_result")
@@ -164,17 +165,7 @@ public enum AnthropicRequestEncoder {
                                 $0.field("type", "text")
                                 $0.field("text", content)
                             }
-                            for image in images {
-                                parts.object {
-                                    $0.field("type", "image")
-                                    $0.key("source")
-                                    $0.object {
-                                        $0.field("type", "base64")
-                                        $0.field("media_type", image.mediaType)
-                                        $0.field("data", Data(image.data).base64EncodedString())
-                                    }
-                                }
-                            }
+                            for image in images { encode(image, into: &parts) }
                         }
                     }
                     if isError {
@@ -183,6 +174,20 @@ public enum AnthropicRequestEncoder {
                     }
                     breakpoint(if: cached, &$0)
                 }
+        }
+    }
+
+    /// An image content block: in a tool result (roadmap 0084), or in the person's message (roadmap 0224).
+    private static func encode(_ image: ImagePart, into writer: inout JSONStreamWriter, cached: Bool = false) {
+        writer.object {
+            $0.field("type", "image")
+            $0.key("source")
+            $0.object {
+                $0.field("type", "base64")
+                $0.field("media_type", image.mediaType)
+                $0.field("data", Data(image.data).base64EncodedString())
+            }
+            breakpoint(if: cached, &$0)
         }
     }
 

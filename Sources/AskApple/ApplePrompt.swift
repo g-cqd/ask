@@ -29,7 +29,7 @@ enum ApplePrompt {
                         let label = (names[id] ?? "tool") + (isError ? " failed" : " returned")
                         let shown = clipped(ImagePart.noting(images, in: content), to: resultLimit)
                         parts.append("The \(label):\n" + shown)
-                    case .text, .thinking, .redactedThinking: break
+                    case .text, .thinking, .redactedThinking, .image: break
                 }
             }
             if !parts.isEmpty { turns.append(parts.joined(separator: "\n")) }
