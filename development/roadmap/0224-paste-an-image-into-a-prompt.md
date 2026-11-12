@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-11-12
 ---
@@ -42,6 +42,19 @@ Asked (the owner): 1, 3, 4, 5. Mine: 2, which the owner chose, with the answers 
 - A pasted or dropped path that names an image file is attached; any other text stays text.
 - In the input: the `[image N]` token where it was pasted, and the caption on a line above the input.
 - The plan above: build it.
+
+## Built 2026-11-12
+
+| Step | Where | Proof |
+|---|---|---|
+| 1, pasteboard and path | `HostPasteboard.picture(on:)`: a copied image file, then PNG, then TIFF, over text; `PastedPath.picture` for a pasted or dropped path | `PastedPictureTests`; `probe-paste-image.py` (a dropped path) |
+| 2, the input | `PastedPictures`: `[image N]` tokens, numbers never reused; Backspace deletes a token whole; captions in the picker's rows while it is shut | `PastedPictureTests`, red on stubs (16 issues) |
+| 3, sending | `RequestBlock.image` on every wire (Anthropic, chat, Responses, Antigravity; Apple ignores it, as it takes none); filtered as tool pictures are; `Conversation.preparePicture` bounds it (`PastedImage`, the read tool's `ImageReader`) and refuses for a model not known to take images | `UserImageWireTests`, `PastedImageTests`; the probe's request |
+| 4, keeping | `SessionPayload.user(_, images:)`, by hash in the image store; an older build reads the text; a lost picture becomes a line | `PastedImageSessionTests` |
+| 5, showing | the message's block, Markdown or not, live and resumed (`SessionReplay.Step.pictures`); a thread's lane too | `PastedPictureTests`, `ThreadLaneTests`; the probe, live and resumed |
+
+Not verified: a picture copied to the real pasteboard (the probe cannot set the person's pasteboard); the refusal for a model that
+takes no images, through the binary; a real terminal.
 
 ## Not in this entry
 

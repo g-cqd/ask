@@ -16,16 +16,30 @@ extension ScreenComposer {
     }
 
     /// `lines`, a message's rows, with its pictures' captions and cells after them.
-    static func withPictures(_ lines: [Line], _ context: ToolContext, block: Int, inset: Int) -> [Line] {
-        guard !context.images.isEmpty, let last = lines.last else { return lines }
+    static func withPictures(
+        _ lines: [Line],
+        images: [ToolImage],
+        placements: [ImagePlacement?],
+        block: Int,
+        inset: Int
+    ) -> [Line] {
+        guard !images.isEmpty, let last = lines.last else { return lines }
         // The image rows go after a header; here the message's last row stands for it, and is put back in place.
-        let rows = withImageRows(
-            [last],
-            images: context.images,
-            placements: context.placements,
-            block: block,
-            inset: inset
-        )
+        let rows = withImageRows([last], images: images, placements: placements, block: block, inset: inset)
         return lines.dropLast() + rows
+    }
+
+    /// The person's message drawn as plain text: its rows, with its pictures under them.
+    static func userLines(_ message: [Line], context: ToolContext, block: Int, style: BlockStyle) -> [Line] {
+        // The older look set the user's message off with a blank row above it; the padded one has a row of padding for that.
+        let lead = style.padded ? [] : [Line(text: "", style: .default)]
+        return lead
+            + withPictures(
+                message,
+                images: context.images,
+                placements: context.placements,
+                block: block,
+                inset: style.inset
+            )
     }
 }
