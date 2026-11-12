@@ -2,9 +2,10 @@ import Testing
 
 @testable import AskTUI
 
-/// A picture shows at once and folds on a click (the owner, 2026-11-06; roadmap 0208): a click on its line or its rows folds that
-/// picture away, leaving its line, and a second shows it; the tool's own output fold is not touched.
-@Suite("A click folds a picture away, and shows it again")
+/// A picture block folds as every block does (the owner, 2026-11-12): to one line, its header, with the pictures' details on its
+/// right. It starts open, so a picture shows at once (2026-11-06), whatever `ui.fold.tools` says: open, each picture, then its
+/// details line, then the tool's output. A click on the block folds or opens it, pictures and all.
+@Suite("A picture block folds to one line, and opens with its pictures then their details")
 struct PictureFoldTests {
     private static let pictures = [
         ToolImage(mediaType: "image/png", data: ToolImageTests.png(100, 100)),
@@ -16,30 +17,41 @@ struct PictureFoldTests {
 
     private func transcript() -> Transcript {
         var transcript = Transcript()
+        transcript.setToolsFoldedByDefault(true)
         transcript.startTool(name: "read", summary: "a.png", id: "r1")
         transcript.finishTool(.succeeded, output: "Read a.png", id: "r1", images: Self.pictures)
         transcript.imagePlacements[0] = Self.placements
         return transcript
     }
 
-    private func pictureRows(_ lines: [ScreenComposer.Line]) -> [Int?] {
-        lines.filter { $0.text.contains("PNG ·") || $0.text.unicodeScalars.contains { $0.value == 0x10EEEE } }
-            .map(\.picture)
+    private func isCell(_ line: ScreenComposer.Line) -> Bool {
+        line.text.unicodeScalars.contains { $0.value == 0x10EEEE }
     }
 
-    @Test func `a folded picture draws its line only, and each row says which picture it shows`() {
+    @Test func `it starts open, though tools fold by default: each picture, then its details, then the output`() {
+        let transcript = transcript()
+        #expect(!transcript.isFolded(0))
+        let lines = ScreenComposer.lines(in: transcript, at: 0, columns: 100)
+        let kinds =
+            lines.map {
+                isCell($0)
+                    ? "cell" : $0.text.contains("PNG ·") ? "details" : $0.text.contains("Read a.png") ? "output" : ""
+            }
+            .filter { !$0.isEmpty }
+        #expect(kinds == ["cell", "cell", "cell", "details", "cell", "cell", "details", "output"], "\(kinds)")
+    }
+
+    @Test func `folded, it is one line: the header, with the pictures' details on its right`() {
         var transcript = transcript()
-        let open = ScreenComposer.lines(in: transcript, at: 0, columns: 100)
-        #expect(pictureRows(open) == [0, 0, 0, 0, 1, 1, 1], "each line and its rows name their picture")
-        transcript.togglePicture(0, at: 0)
-        let folded = ScreenComposer.lines(in: transcript, at: 0, columns: 100)
-        #expect(pictureRows(folded) == [0, 1, 1, 1], "the first picture keeps its line, the second is as it was")
-        #expect(transcript.isPictureFolded(0, at: 0) && !transcript.isPictureFolded(1, at: 0))
-        transcript.togglePicture(0, at: 0)
-        #expect(ScreenComposer.lines(in: transcript, at: 0, columns: 100) == open)
+        transcript.toggleFold(0)
+        let lines = ScreenComposer.lines(in: transcript, at: 0, columns: 100)
+            .filter { !$0.text.allSatisfy(\.isWhitespace) }
+        #expect(lines.count == 1, "\(lines.map(\.text))")
+        #expect(lines.first?.text.contains("read") == true && lines.first?.text.contains("PNG · 100×100") == true)
+        #expect(lines.first?.text.contains("2 pictures") == true || lines.first?.text.contains("PNG · 100×100") == true)
     }
 
-    @Test func `a click on a picture folds that picture, not the tool's output, and a second shows it`() throws {
+    @Test func `a click on the picture folds the whole block, and another opens it`() throws {
         var rig = PointerRig(
             columns: 100,
             rows: 40,
@@ -49,27 +61,15 @@ struct PictureFoldTests {
             ]
         )
         rig.controller.state.transcript.imagePlacements[0] = Self.placements
-        // As the screen's pictures do when they place one: a new revision, so the block is laid out again with its rows.
         rig.controller.state.transcript.revisions[0] = rig.controller.state.transcript.bump()
         rig.draw()
-        let outputFolded = rig.controller.state.transcript.isFolded(0)
-        let line = try #require((0 ..< 40).first { rig.text(row: $0).contains("PNG ·") })
-        _ = rig.click(row: line + 1, col: 6)
-        #expect(rig.controller.state.transcript.isPictureFolded(0, at: 0))
-        #expect(rig.controller.state.transcript.isFolded(0) == outputFolded, "the output's fold is the tool's own")
+        #expect(!rig.controller.state.transcript.isFolded(0))
+        let cell = try #require((0 ..< 40).first { rig.text(row: $0).unicodeScalars.contains { $0.value == 0x10EEEE } })
+        _ = rig.click(row: cell, col: 6)
+        #expect(rig.controller.state.transcript.isFolded(0))
         rig.draw()
-        // Its rows gone, the line has moved: the transcript keeps its end at the bottom.
-        let folded = try #require((0 ..< 40).first { rig.text(row: $0).contains("PNG ·") })
-        _ = rig.click(row: folded, col: 6)
-        #expect(!rig.controller.state.transcript.isPictureFolded(0, at: 0))
-    }
-
-    @Test func `a cleared conversation forgets which pictures were folded`() {
-        var transcript = transcript()
-        transcript.togglePicture(0, at: 0)
-        transcript.removeAll()
-        transcript.startTool(name: "read", summary: "a.png", id: "r1")
-        transcript.finishTool(.succeeded, output: "Read a.png", id: "r1", images: Self.pictures)
-        #expect(!transcript.isPictureFolded(0, at: 0))
+        let header = try #require((0 ..< 40).first { rig.text(row: $0).contains("PNG ·") })
+        _ = rig.click(row: header, col: 6)
+        #expect(!rig.controller.state.transcript.isFolded(0))
     }
 }

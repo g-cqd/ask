@@ -28,7 +28,7 @@ struct ToolImageEdgeTests {
         #expect(!rows.contains { $0.contains("PNG") }, "\(rows)")
     }
 
-    @Test func `two pictures in one block: a line each, each followed by its own rows`() {
+    @Test func `two pictures in one block: each its own rows, then its line`() {
         var transcript = Transcript()
         withPicture(
             &transcript,
@@ -40,7 +40,7 @@ struct ToolImageEdgeTests {
         let rows = ScreenComposer.lines(in: transcript, at: 0, columns: 100, style: .plain).map(\.text)
         let lines = rows.indices.filter { rows[$0].contains("PNG ·") }
         #expect(lines.count == 2, "\(rows)")
-        #expect(lines.count == 2 && lines[1] - lines[0] == 3, "the first picture's two rows come between: \(rows)")
+        #expect(lines.count == 2 && lines[1] - lines[0] == 2, "the second picture's one row comes between: \(rows)")
     }
 
     @Test func `a picture is sized to the transcript's width, which the open sidebar narrows`() throws {

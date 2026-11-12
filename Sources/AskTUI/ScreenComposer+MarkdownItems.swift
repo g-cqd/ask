@@ -22,7 +22,7 @@ extension ScreenComposer {
                 let shown = withPictures(
                     rows,
                     images: transcript.toolImages[index] ?? [],
-                    placements: transcript.shownPlacements(at: index),
+                    placements: transcript.imagePlacements[index] ?? [],
                     block: index,
                     inset: style.inset
                 )

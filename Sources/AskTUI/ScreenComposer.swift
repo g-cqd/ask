@@ -23,8 +23,6 @@ public struct ScreenComposer: Sendable {
         var foldBlock: Int?
         /// Whether a click on the row toggles the middle of a long tool output rather than the whole block (roadmap 0078).
         var foldsMiddle = false
-        /// Which of its block's pictures the row draws, its line or its cells, so a click on it folds that picture (roadmap 0208).
-        var picture: Int?
         /// Runs of columns drawn in a style of their own over ``style``, such as a warning mark in colour.
         var accents: [Accent]
         /// File paths in the row, drawn as terminal hyperlinks over whatever style the column has.
@@ -81,7 +79,6 @@ public struct ScreenComposer: Sendable {
     var blockStyle = BlockStyle.plain
     var foldBlocks: [Int?] = []
     var middleFolds: [Bool] = []
-    var pictureFolds: [Int?] = []
     var rowLinks: [[PathLinks.Link]] = []
     /// What each row of the buffer holds since the last frame, and the size it was composed at.
     var shown: [Shown?] = []

@@ -40,7 +40,7 @@ struct ImagePlacementTests {
         )
     }
 
-    @Test func `its rows follow its line: placeholder cells in its colour, one row per cell row`() {
+    @Test func `its rows come before its line: placeholder cells in its colour, one row per cell row`() {
         let image = ToolImage(mediaType: "image/png", data: ToolImageTests.png(100, 100))
         let header = ScreenComposer.Line(text: "read · a.png", style: .default)
         let rows = ScreenComposer.withImageRows(
@@ -50,11 +50,12 @@ struct ImagePlacementTests {
             block: 0,
             inset: 0
         )
-        #expect(rows.count == 1 + 1 + 5, "header, line, five rows")
-        let first = rows[2]
+        #expect(rows.count == 1 + 5 + 1, "header, five rows, line")
+        #expect(rows[6].text.contains("PNG ·"), "the picture, then what it is")
+        let first = rows[1]
         #expect(first.text.filter { $0.unicodeScalars.first == KittyPlaceholder.character }.count == 10)
         let color = KittyPlaceholder.color(for: 42)
         #expect(first.style.fg == .rgb(r: color.red, g: color.green, b: color.blue))
-        #expect(rows[6].text.contains(KittyPlaceholder.cell(row: 4, column: 9)!))
+        #expect(rows[5].text.contains(KittyPlaceholder.cell(row: 4, column: 9)!))
     }
 }

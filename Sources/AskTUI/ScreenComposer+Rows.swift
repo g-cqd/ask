@@ -28,7 +28,6 @@ extension ScreenComposer {
         let map = Self.provenance(of: visible, rows: rows, transcriptRows: transcriptRows)
         foldBlocks = Array(repeating: nil, count: transcriptRows - visible.count) + visible.map(\.foldBlock)
         middleFolds = Array(repeating: false, count: transcriptRows - visible.count) + visible.map(\.foldsMiddle)
-        pictureFolds = Array(repeating: nil, count: transcriptRows - visible.count) + visible.map(\.picture)
         rowLinks = Array(repeating: [], count: transcriptRows - visible.count) + visible.map(\.links)
         var highlights = [Range<Int>?](repeating: nil, count: transcriptRows)
         if let selection = state.selection {

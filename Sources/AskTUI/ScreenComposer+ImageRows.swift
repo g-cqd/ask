@@ -1,9 +1,9 @@
 internal import TerminalKitCodecs
 internal import TerminalKitStyle
 
-/// The rows that say a tool's pictures, right under its header (roadmap 0208): what each is, its pixel size and its byte size,
-/// whether the output is folded or not (the owner, 2026-11-06: shown at once, folded on a click). Where the terminal draws pixels,
-/// the picture takes rows here too, unless it is folded away; elsewhere this row is all there is.
+/// The rows of a tool's pictures, right under its header (roadmap 0208): each picture where the terminal draws pixels, then what it
+/// is, its pixel size and its byte size (the owner, 2026-11-12); elsewhere that line is all there is. A folded block shows none of
+/// them: its one line says what the pictures are (``pictureSummary(_:)``).
 extension ScreenComposer {
     static func withImageRows(
         _ lines: [Line],
@@ -17,16 +17,11 @@ extension ScreenComposer {
         let source = Source(block: block, line: 0, offset: 0, col: inset, text: "")
         var rows: [Line] = []
         for (index, image) in images.enumerated() {
-            var shown = [Line(text: margin + caption(image), style: Style(dim: true), source: source)]
+            // The picture, then what it is (the owner, 2026-11-12).
             if index < placements.count, let placement = placements[index] {
-                shown += pictureRows(placement, margin: margin, source: source)
+                rows += pictureRows(placement, margin: margin, source: source)
             }
-            // A click on its line or its cells folds this picture, not the tool's output.
-            rows += shown.map { line in
-                var line = line
-                line.picture = index
-                return line
-            }
+            rows.append(Line(text: margin + caption(image), style: Style(dim: true), source: source))
         }
         return [header] + rows + lines.dropFirst()
     }
@@ -41,6 +36,12 @@ extension ScreenComposer {
                     .joined()
                 return Line(text: margin + cells, style: style, source: source)
             }
+    }
+
+    /// What a folded block's header says of its pictures: the first one's details, and how many more there are.
+    static func pictureSummary(_ images: [ToolImage]) -> String? {
+        guard let first = images.first else { return nil }
+        return caption(first) + (images.count > 1 ? " + \(images.count - 1) more" : "")
     }
 
     /// `PNG · 1280×800 · 245 KB`.
