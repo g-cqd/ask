@@ -84,6 +84,10 @@ length target before the background summary is built.
 With a length target: one-shot 45 %, incremental Haiku 24 % of early facts (long windows 30 % against 10 %); worse in 19 of 30. The
 background summary as tried would lose detail; the owner chooses whether and how to go on.
 
+## Owner (2026-11-12, after the second replay)
+
+Stop here: light compaction stays, compaction keeps its one-shot summary; no background summary.
+
 ## Done when
 
 This entry becomes a design note with measured numbers, and a decision on whether to build it.

@@ -59,3 +59,8 @@ A or B or both; the CLI installed or bundled; the CLI's login or an ask OAuth ap
 The runtime's sign-in and account calls (research note, "Recorded"): its own OAuth app, no token exchange, a plan-specific host,
 `copilot-developer-cli` / `copilot-sdk` headers. GitHub refused a model call on both accounts (the Copilot CLI policy). The owner:
 docs only for now; the new mimic is to be built from this and the SDK's client-info docs, and verified when an account allows it.
+
+## Owner (2026-11-12): paused
+
+Paused until one of the owner's accounts allows the Copilot runtime (GitHub refused it a model call on both). Today's Copilot path
+stays as it is.
