@@ -65,6 +65,14 @@ budget).
 - The background summary after: a choice of the same provider's cheap model or a local one out of process, opt-in.
 - A replay of about 30 real compactions to measure summary quality.
 
+## Built (2026-11-12): light compaction
+
+`ContextClearing`: from 60 % of the compaction threshold, a tool's output and the reasoning before the kept tail leave the request
+(the session keeps them; the summary still reads them). Worked out from the context, not recorded, so the prefix stays the same and
+the cache breaks once a clearing; a clearing frees at least as many bytes as the trigger has tokens. Measured on the 30 largest
+sessions: providers keep and count earlier reasoning (about a third of a window); old tool output alone spaces compactions about
+1.2x further apart (simulated). Next: the replay of about 30 compactions, then the background summary.
+
 ## Done when
 
 This entry becomes a design note with measured numbers, and a decision on whether to build it.
