@@ -53,3 +53,9 @@ A or B or both; the CLI installed or bundled; the CLI's login or an ask OAuth ap
 2. The pinned runtime fetched by the build (version, checksum, licence beside it).
 3. The Swift JSON-RPC client (stage 1), then A (stage 2), then B (stage 3).
 4. ask's OAuth app sign-in once the owner has registered it.
+
+## Recorded (2026-11-12)
+
+The runtime's sign-in and account calls (research note, "Recorded"): its own OAuth app, no token exchange, a plan-specific host,
+`copilot-developer-cli` / `copilot-sdk` headers. GitHub refused a model call on both accounts (the Copilot CLI policy). The owner:
+docs only for now; the new mimic is to be built from this and the SDK's client-info docs, and verified when an account allows it.
