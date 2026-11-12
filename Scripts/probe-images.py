@@ -114,7 +114,7 @@ def main():
         terminal.click(row)
         terminal.until(lambda: cells() == 0)
         terminal.repaint()  # pyte has no regional scrolling: what moved is drawn again before it is read
-        header = [line for line in terminal.screen.display if "read" in line and "PNG · 3×2" in line]
+        header = [line for line in terminal.screen.display if "see · shot.png" in line and "PNG · 3×2" in line]
         check("a click folds the block to one line, its header saying what the picture is",
               len(header) == 1 and not any(line.strip().startswith("PNG ·") for line in terminal.screen.display))
         terminal.click("PNG · 3×2")

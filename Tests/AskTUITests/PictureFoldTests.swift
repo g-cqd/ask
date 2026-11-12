@@ -47,7 +47,7 @@ struct PictureFoldTests {
         let lines = ScreenComposer.lines(in: transcript, at: 0, columns: 100)
             .filter { !$0.text.allSatisfy(\.isWhitespace) }
         #expect(lines.count == 1, "\(lines.map(\.text))")
-        #expect(lines.first?.text.contains("read") == true && lines.first?.text.contains("PNG · 100×100") == true)
+        #expect(lines.first?.text.contains("see") == true && lines.first?.text.contains("PNG · 100×100") == true)
         #expect(lines.first?.text.contains("2 pictures") == true || lines.first?.text.contains("PNG · 100×100") == true)
     }
 
@@ -71,5 +71,21 @@ struct PictureFoldTests {
         let header = try #require((0 ..< 40).first { rig.text(row: $0).contains("PNG ·") })
         _ = rig.click(row: header, col: 6)
         #expect(!rig.controller.state.transcript.isFolded(0))
+    }
+
+    @Test func `a read that returned a picture is shown as see, folded or open; one that did not stays read`() {
+        var transcript = transcript()
+        let header = { (t: Transcript, index: Int) in
+            ScreenComposer.lines(in: t, at: index, columns: 100).first { !$0.text.allSatisfy(\.isWhitespace) }?.text
+                ?? ""
+        }
+        #expect(header(transcript, 0).contains("see · a.png"), "\(header(transcript, 0))")
+        transcript.toggleFold(0)
+        #expect(header(transcript, 0).contains("see · a.png"), "\(header(transcript, 0))")
+        transcript.startTool(name: "read", summary: "notes.txt", id: "r2")
+        transcript.finishTool(.succeeded, output: "hello", id: "r2")
+        #expect(header(transcript, 1).contains("read · notes.txt"), "\(header(transcript, 1))")
+        guard case .tool(let name, _, _, _, _) = transcript.items[0] else { return }
+        #expect(name == "read", "only the screen says see; the tool is read")
     }
 }

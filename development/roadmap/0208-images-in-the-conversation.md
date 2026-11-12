@@ -122,6 +122,9 @@ Run in kitty 0.49.2, Ghostty 1.4.0 and WezTerm, screenshots read for their pixel
   details on its right (the first, and how many more). A click anywhere on the block folds or opens it; the per-picture fold is
   gone (`PictureFoldTests`, red first; `probe-images.py`, 11 checks).
 
+- 2026-11-12: a `read` that returned pictures is named `see` on screen (the owner offered see, watch or observe and left the choice;
+  `see` fits a still picture). The tool, the session and what is copied stay `read` (`PictureFoldTests`, red first).
+
 ## Left
 
 - The look confirmed by the owner, in their own kitty or Ghostty.

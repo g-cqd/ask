@@ -38,6 +38,14 @@ extension ScreenComposer {
             }
     }
 
+    /// A `read` that returned pictures, named `see` on screen (the owner, 2026-11-12); the tool, and what is copied, stay `read`.
+    static func shownAsSeen(_ item: Transcript.Item, images: [ToolImage]) -> Transcript.Item {
+        guard !images.isEmpty, case .tool("read", let summary, let status, let output, let input) = item else {
+            return item
+        }
+        return .tool(name: "see", summary: summary, status: status, output: output, fullInput: input)
+    }
+
     /// What a folded block's header says of its pictures: the first one's details, and how many more there are.
     static func pictureSummary(_ images: [ToolImage]) -> String? {
         guard let first = images.first else { return nil }
