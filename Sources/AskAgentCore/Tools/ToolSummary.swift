@@ -22,6 +22,7 @@ public enum ToolSummary {
         let questions: [Asked]?
 
         struct Asked: Decodable {
+            let header: String?
             let question: String?
         }
 
@@ -42,7 +43,8 @@ public enum ToolSummary {
     public static func line(for input: JSONObject) -> String { line(fields(input), input) }
 
     static func line(_ fields: Fields?, _ input: JSONObject) -> String {
-        compact(fields?.command ?? fields?.path ?? asked(fields) ?? String(decoding: input.bytes, as: UTF8.self))
+        // Never the input's JSON (note n68): what it says, in words.
+        compact(fields?.command ?? fields?.path ?? asked(fields) ?? ToolProse.summary(input) ?? "")
     }
 
     /// `What should change? (+1 more)`: the first of the model's questions, and how many follow.
@@ -95,44 +97,22 @@ public enum ToolSummary {
     /// The file the call names, as the model wrote it; nil for a call that names none.
     public static func path(for input: JSONObject) -> String? { fields(input)?.path }
 
-    /// Complete text, never the truncated header: a command or a file's content as itself, anything else as indented JSON.
+    /// Complete text, never the truncated header: a command or a file's content as itself, the questions asked in words, anything
+    /// else as labelled lines (note n68); empty when the header says it all.
     public static func fullInput(for input: JSONObject) -> String { fullInput(fields(input), input) }
 
     static func fullInput(_ fields: Fields?, _ input: JSONObject) -> String {
-        guard let fields else { return indented(input) }
+        guard let fields else { return ToolProse.details(input, fitting: maximumCharacters) }
         if let command = fields.command { return command }
         if let old = fields.oldText, let new = fields.newText { return EditDiff.text(old: old, new: new) }
-        return fields.content ?? fields.newText ?? indented(input)
-    }
-
-    /// The input as JSON indented by two spaces, keys in the model's order (roadmap 0078); its own bytes if that fails. A top-level
-    /// string with a line feed is text a person reads, so it is left out of the JSON and shown after it as written, under its name.
-    static func indented(_ input: JSONObject) -> String {
-        guard let document = try? AemiJSON.parse(input.bytes) else {
-            return String(decoding: input.bytes, as: UTF8.self)
+        if let questions = fields.questions {
+            return
+                questions.compactMap { asked in
+                    asked.question.map { question in asked.header.map { "\($0): \(question)" } ?? question }
+                }
+                .joined(separator: "\n")
         }
-        let root = JSONValue(document.root)
-        guard case .object(let members) = root else {
-            return pretty(root) ?? String(decoding: input.bytes, as: UTF8.self)
-        }
-        var json: [String] = []
-        var texts: [String] = []
-        for (key, value) in members {
-            if case .string(let text) = value, text.contains("\n") {
-                texts.append("\(key):\n\(text)")
-            } else if let name = pretty(.string(key)), let shown = pretty(value) {
-                json.append("  \(name): " + shown.replacing("\n", with: "\n  "))
-            } else {
-                return String(decoding: input.bytes, as: UTF8.self)
-            }
-        }
-        let object = json.isEmpty ? (texts.isEmpty ? ["{}"] : []) : ["{\n" + json.joined(separator: ",\n") + "\n}"]
-        return (object + texts).joined(separator: "\n")
-    }
-
-    private static func pretty(_ value: JSONValue) -> String? {
-        let options = JSONEncodingOptions(prettyPrinted: true, prettyKeySeparator: .javaScript, indent: .spaces(2))
-        return (try? value.encodedBytes(options: options)).map { String(decoding: $0, as: UTF8.self) }
+        return fields.content ?? fields.newText ?? ToolProse.details(input, fitting: maximumCharacters)
     }
 
     /// `512 B`, or the largest IEC unit that keeps the number at least one, to one decimal at most, with the exact count:

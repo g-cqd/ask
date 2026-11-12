@@ -97,55 +97,32 @@ struct ToolPresentationTests {
         #expect(ToolSummary.formatBytes(1023, locale: Self.german) == "1023 B")
     }
 
-    /// An MCP server's or another unknown tool's input is shown as indented JSON, keys in the model's order (roadmap 0078).
-    @Test func `unknown tools show their input as indented JSON in its own order`() throws {
+    /// An MCP server's or another unknown tool's input reads as labelled lines, never JSON (note n68): keys as words in the model's
+    /// order, nested values indented under their label, lists of words joined, yes and no, empty values left out.
+    @Test func `unknown tools show their input as labelled lines in its own order`() throws {
         let json = try input(#"{"zeta":"z\"q","nested":{"b":1,"a":[2,3]},"empty":{},"flag":true}"#)
-        let shown = ToolSummary.fullInput(for: json)
-        #expect(
-            shown == """
-                {
-                  "zeta": "z\\"q",
-                  "nested": {
-                    "b": 1,
-                    "a": [
-                      2,
-                      3
-                    ]
-                  },
-                  "empty": {},
-                  "flag": true
-                }
-                """
-        )
-        // Still the same JSON: what is shown parses back to the input's value.
-        #expect(try JSONValue(AemiJSON.parse(Array(shown.utf8)).root) == JSONValue(AemiJSON.parse(json.bytes).root))
+        #expect(ToolSummary.fullInput(for: json) == "Zeta: z\"q\nNested:\n  B: 1\n  A: 2, 3\nFlag: yes")
     }
 
-    /// A multi-line string is the text a person reads, so it is shown as written under its name, after the rest (roadmap 0078).
-    @Test func `an unknown tool's multi-line strings are shown as their text, in order, after the rest`() throws {
+    /// A multi-line string is the text a person reads: shown as written, indented under its label, where it stands.
+    @Test func `an unknown tool's multi-line strings are shown as their text, in order`() throws {
         let json = try input(#"{"title":"one line","body":"first\n\tsecond \"quoted\"","n":2,"tail":"a\nb"}"#)
         #expect(
-            ToolSummary.fullInput(for: json) == """
-                {
-                  "title": "one line",
-                  "n": 2
-                }
-                body:
-                first
-                \tsecond "quoted"
-                tail:
-                a
-                b
-                """
+            ToolSummary.fullInput(for: json)
+                == "Title: one line\nBody:\n  first\n  \tsecond \"quoted\"\nN: 2\nTail:\n  a\n  b"
         )
+        #expect(ToolSummary.fullInput(for: try input(#"{"sql":"select 1\nfrom t"}"#)) == "Sql:\n  select 1\n  from t")
+        #expect(ToolSummary.fullInput(for: try input(#"{"o":{"s":"a\nb"}}"#)) == "O:\n  S:\n    a\n    b")
     }
 
-    @Test func `an input of only multi-line strings shows no empty object`() throws {
-        #expect(ToolSummary.fullInput(for: try input(#"{"sql":"select 1\nfrom t"}"#)) == "sql:\nselect 1\nfrom t")
-    }
-
-    @Test func `a multi-line string inside a nested value stays JSON`() throws {
-        let shown = ToolSummary.fullInput(for: try input(#"{"o":{"s":"a\nb"}}"#))
-        #expect(shown.contains(#""s": "a\nb""#))
+    /// When the one-line header says everything, the block has no details; a list is counted on the header and listed below.
+    @Test func `a call the header says in full has no details, and a list is counted then listed`() throws {
+        let query = try input(#"{"query":"foo","limit":5}"#)
+        #expect(ToolSummary.header(for: query) == "query foo · limit 5")
+        #expect(ToolSummary.fullInput(for: query).isEmpty)
+        let changes = try input(#"{"changes":[{"op":"add","title":"x"},{"op":"state","ids":"t1"}]}"#)
+        #expect(ToolSummary.header(for: changes) == "2 changes")
+        #expect(ToolSummary.fullInput(for: changes) == "Changes:\n  - op add · title x\n  - op state · ids t1")
+        #expect(!ToolSummary.header(for: changes).contains("{") && !ToolSummary.fullInput(for: changes).contains("{"))
     }
 }

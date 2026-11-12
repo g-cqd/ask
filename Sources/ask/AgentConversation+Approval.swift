@@ -68,7 +68,7 @@ extension AgentConversation {
             question,
             remembering: (nil, call.grantKey),
             kind: .destructive,
-            detail: String(decoding: call.input.bytes, as: UTF8.self)
+            detail: ToolSummary.fullInput(for: call.input)
         )
     }
 
