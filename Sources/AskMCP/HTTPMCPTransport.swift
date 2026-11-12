@@ -91,17 +91,8 @@ public final class HTTPMCPTransport: MCPTransport {
     private func listen() async {
         // A conversation that closed while this task was starting sends nothing.
         guard !state.withLock({ $0.closed }) else { return }
-        var headers = await requestHeaders().filter { $0.name != "Content-Type" }
-        headers.removeAll { $0.name == "Accept" }
-        headers.append(("Accept", "text/event-stream"))
         do {
-            let reply = try await http.send(
-                HTTPRequest(url: url, method: "GET", headers: headers, body: [], allowsRedirects: false)
-            )
-            guard 200 ..< 300 ~= reply.status, (reply.headers["content-type"] ?? "").contains("text/event-stream")
-            else {
-                return
-            }
+            guard let reply = try await eventStream() else { return }
             try await deliverEvents(reply, requestID: nil)
         } catch {
             return

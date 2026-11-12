@@ -161,16 +161,22 @@ extension HTTPMCPTransport {
 
     /// The GET that resumes a stream after the event named `last`, or nil when the server does not resume it.
     private func resume(after last: String) async throws -> HTTPStreamingResponse? {
+        let reply = try await eventStream(extra: [("Last-Event-ID", last)])
+        if let reply { noteSession(reply) }
+        return reply
+    }
+
+    /// A GET of the endpoint for events, with `extra` headers; nil unless it answered with an event stream.
+    func eventStream(extra: [(name: String, value: String)] = []) async throws -> HTTPStreamingResponse? {
         var headers = await requestHeaders().filter { $0.name != "Content-Type" && $0.name != "Accept" }
         headers.append(("Accept", "text/event-stream"))
-        headers.append(("Last-Event-ID", last))
+        headers += extra
         let reply = try await http.send(
             HTTPRequest(url: url, method: "GET", headers: headers, body: [], allowsRedirects: false)
         )
         guard 200 ..< 300 ~= reply.status, (reply.headers["content-type"] ?? "").contains("text/event-stream") else {
             return nil
         }
-        noteSession(reply)
         return reply
     }
 
