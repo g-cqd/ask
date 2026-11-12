@@ -59,6 +59,12 @@ so each stops the run for at least 40 to 80 s. Old tool results and thinking are
 on-device model (4,096 tokens) cannot keep the summary. Three decisions are the owner's (which piece first, which model, a replay's
 budget).
 
+## Owner (2026-11-12)
+
+- Light edits first: old tool output and earlier thinking dropped, no new model.
+- The background summary after: a choice of the same provider's cheap model or a local one out of process, opt-in.
+- A replay of about 30 real compactions to measure summary quality.
+
 ## Done when
 
 This entry becomes a design note with measured numbers, and a decision on whether to build it.

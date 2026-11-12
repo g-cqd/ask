@@ -43,3 +43,7 @@ owner in the note.
 - Tests: `ListReferencesTests`, `ReferencePickerTests`; 7 mutants, six killed, the seventh a redundant guard, removed.
 - Still owed: `#123` (the forge), and the status segment, in the research note's order.
 
+## Owner (2026-11-12)
+
+- The status segment: wanted, at the end of the status bar.
+- Private repositories: a token from the environment (`GITHUB_TOKEN`), never `gh`'s.
