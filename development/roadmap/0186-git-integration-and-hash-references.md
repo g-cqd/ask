@@ -52,3 +52,8 @@ owner in the note.
 
 `GitStatus` (AskTools) and the last status segment (`StatusGitTests`, `GitStatusTests`); refreshed at the start, after a tool call
 and at a run's end. Still owed: `#123` from the forge, with `GITHUB_TOKEN` for private repositories.
+
+## Done (2026-11-12): `#123`
+
+`ForgeReferences` and `ForgeReader`: a pull request or issue attached from the origin's GitHub repository, `GITHUB_TOKEN` when set.
+Still owed: open pull requests in the `#` picker, the resolved token's look, the branch's pull request in the status segment.

@@ -172,12 +172,17 @@ extension AgentConversation {
         guard let thread = threads.thread(name) else { return }
         let threads = threads
         // What threads under it merged goes with what it is sent next, as main's do.
-        let queue = PromptQueue { [mcp] text in
-            threads.attachReports(SessionTasks.attachReferences(await mcp.attachResources(text)), for: name)
+        let queue = PromptQueue { [mcp, self] text in
+            threads.attachReports(
+                await self.attachingForgeReferences(SessionTasks.attachReferences(await mcp.attachResources(text))),
+                for: name
+            )
         }
         let task = Task {
             let prompt = threads.attachReports(
-                SessionTasks.attachReferences(await self.mcp.attachResources(text)),
+                await self.attachingForgeReferences(
+                    SessionTasks.attachReferences(await self.mcp.attachResources(text))
+                ),
                 for: name
             )
             let outcome: RunnerInfo.State

@@ -113,7 +113,9 @@ func runPrompt(
     defer { keepAwake.turnEnded() }
     let run = Task<Void, any Error> {
         // Each @server:uri read from its server, which has connected above (roadmap 0067).
-        try await loop.run(await mcp.attachResources(sent), in: session) { renderer.render($0) }
+        // Then each #123 it names, from the workspace's GitHub repository (roadmap 0186).
+        let attached = await ForgeAttachment.attach(await mcp.attachResources(sent), workspace: settings.workspace)
+        try await loop.run(attached, in: session) { renderer.render($0) }
     }
     let interrupted = Mutex<Int32?>(nil)
     let signals = SignalHandler(
