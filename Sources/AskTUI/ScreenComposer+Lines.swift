@@ -139,7 +139,7 @@ extension ScreenComposer {
                 return rows(text, style: .default)
             case .tool:
                 let content = toolContentLines(
-                    item,
+                    shownAsSeen(item, images: context.images),
                     folded: folded,
                     block: block,
                     columns: columns,
