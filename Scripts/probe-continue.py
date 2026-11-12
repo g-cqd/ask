@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check "continue" through the real binary, a scripted provider and a PTY (roadmaps 0097 and 0112).
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-continue.py .build/release/ask
+Scripts/probe-continue.py .build/release/ask
 
 The bare word `continue`, then Right pressed twice on an empty input, must each reach the provider as the same one message; a sentence that
 starts with the word must reach it unchanged. pyte, not a physical terminal.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe the swift preset (roadmap 0190) through the real binary, a PTY and a local fake provider; apple-docs needs the network.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-mcp-preset.py .build/release/ask [--without-swift-search]
+Scripts/probe-mcp-preset.py .build/release/ask [--without-swift-search]
 
 `"presets": ["swift"]` and nothing else: after the first message `/mcp` lists apple-docs and swift-search as ready, and the first
 request offers their tools. With --without-swift-search the PATH has no swift-search: apple-docs still connects, and the turn says

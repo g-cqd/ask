@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """`jobs.keepFinished` (the owner, 2026-11-06; t232) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-jobs-keep-finished.py .build/release/ask
+Scripts/probe-jobs-keep-finished.py .build/release/ask
 
 With a limit of 1, the model runs two commands to the background and waits for each to finish, then starts a third. Asked about
 the first, the job tool says it finished and was let go, naming the setting; asked about the second, it still answers. Hermetic: no

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe the sidebar in the bottom band (notes n39, n40; `ui.sidebarLayout`) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-sidebar-band.py .build/release/ask
+Scripts/probe-sidebar-band.py .build/release/ask
 
 At 120 by 40 with the sidebar open in the band: the transcript keeps the whole width, the input and the sidebar share six rows behind
 a divider, the status line's counts sit at its trailing edge once a thread works, and a click on the thread's row in the band opens its

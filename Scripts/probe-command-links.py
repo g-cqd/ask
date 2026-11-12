@@ -2,7 +2,7 @@
 """Note n11 through the real binary, a scripted provider and a PTY: in a reply, only ask's own commands are drawn as commands, and a
 click on one fills an empty input; another single `/word` is text, and a path is still a hyperlink.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-command-links.py .build/release/ask
+Scripts/probe-command-links.py .build/release/ask
 
 Requires pyte. This reads ask's bytes through an emulator, not a physical terminal's look.
 """

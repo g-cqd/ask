@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """`!` and `!!` (note n56) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-shell-line.py .build/release/ask
+Scripts/probe-shell-line.py .build/release/ask
 
 `!echo …` shows its block with the output, asks the model nothing, and its result goes with the next message; `!!printf …` sends the
 command and its output to the model at once. The build before sends `!echo …` to the model as a message.

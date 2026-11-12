@@ -3,15 +3,17 @@
 ask moves the transcript with SU and SD (`CSI n S`, `CSI n T`) inside a scroll region (DECSTBM). pyte implements the region and the
 one-line index and reverse index, but not SU or SD, so a probe reading after a scroll saw stale rows and had to force a full repaint with
 a resize. With this screen the rows are what a terminal would show without that. It also reads kitty's colon underline (`ESC[4:1m`), which
-pyte took for text. Import it after pyte is on the path:
+pyte took for text. It finds pyte itself (`probe_pyte`):
 
-    sys.path.insert(0, os.environ.get("ASK_PYTE", "/tmp/ask-pty/lib"))
     import probe_screen
     screen, stream = probe_screen.make(columns, rows)
 """
 import re
 
-import pyte
+import probe_pyte
+
+probe_pyte.ensure()
+import pyte  # noqa: E402
 
 # An SGR sequence, and an unfinished one at the end of a read.
 _SGR = re.compile(rb"\x1b\[([0-9;:]*)m")

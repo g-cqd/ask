@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A long action in the terminal's tab (notes n59 and n61) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-terminal-progress.py .build/release/ask
+Scripts/probe-terminal-progress.py .build/release/ask
 
 The model takes seven seconds to answer. Nothing shows for the first five; then a spinner leads the tab's title and, in a terminal
 that reads it (Ghostty 1.2 here), OSC 9;4 marks it busy; when the answer is in, both go. Terminal.app, which does not read OSC 9;4,

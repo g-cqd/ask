@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """`ui.notify` (note n62) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-notify.py .build/release/ask
+Scripts/probe-notify.py .build/release/ask
 
 With `"notification"` in Ghostty: focus reports are asked for; a turn that ends before the terminal says anything of its focus is
 told with OSC 9; one that ends while the terminal says it is focused is not; once it says focus is lost, again. With the setting off,

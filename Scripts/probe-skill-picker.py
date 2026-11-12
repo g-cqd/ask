@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe `/skill:name` and the `/` picker's skills through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-skill-picker.py .build/release/ask
+Scripts/probe-skill-picker.py .build/release/ask
 
 Hermetic: ask's skills directory follows $XDG_CONFIG_HOME and `skills.sources: ["ask"]` narrows the search to it. No window, credentials or clipboard.
 """

@@ -2,7 +2,7 @@
 """Probe the list's marks for running threads and jobs (roadmap 0195, note n15) through the real binary, a PTY and a local fake
 provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-runner-marks.py .build/release/ask
+Scripts/probe-runner-marks.py .build/release/ask
 
 A thread waits on a quiet `sleep 30`: once three seconds pass with nothing from either, the thread is marked ◇ and its job $. Main's
 command prints every half second: its job keeps spinning, its output reported to the screen by the job table. Hermetic.

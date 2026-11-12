@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """`ui.historyLimit` (note n29) through the real binary and a PTY, on resumed sessions.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-history-limit.py .build/release/ask
+Scripts/probe-history-limit.py .build/release/ask
 
 A: 40 messages resumed with a limit of 6: scrolled to the top, a line says how many earlier blocks are not shown, and none of them
 is drawn.

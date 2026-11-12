@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe `/notes`, its `:subcommands` and the `notes` tool through the real binary, a PTY and a local fake provider (roadmap 0180).
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-ideas.py .build/release/ask
+Scripts/probe-ideas.py .build/release/ask
 
 A note is saved (its line is the note: nothing more is said); `/notes` lists it and choosing it shows it in the transcript; `/notes:edit` puts it in the input to edit
 with the list closed; Enter keeps the edit and opens the list again with the new words; the model is sent no note unasked, and reads

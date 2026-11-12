@@ -2,7 +2,7 @@
 """Probe `/notes` typed before the first prompt (the owner's choice, 2026-11-02, roadmap 0180) through the real binary, a PTY and a
 local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-ideas-early.py .build/release/ask
+Scripts/probe-ideas-early.py .build/release/ask
 
 Before any session, `/notes TEXT` says the note is kept for the session; the first prompt starts the session and saves it, saying so;
 `/notes:all` lists it. Hermetic: no window, credentials or clipboard.

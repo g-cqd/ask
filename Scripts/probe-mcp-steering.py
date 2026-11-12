@@ -2,7 +2,7 @@
 """Probe `@server:uri` in a message typed during a turn (roadmap 0067) through the real binary, a PTY, a local fake provider and the
 fixture server in its `resources` mode.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-mcp-steering.py .build/release/ask
+Scripts/probe-mcp-steering.py .build/release/ask
 
 A slow call to the fixture's echo holds the turn; meanwhile a steering message names `@fx:note://a`. The next request carries the
 note's text after the typed line, and the screen shows the typed line alone.

@@ -2,7 +2,7 @@
 """Probe where a resume shows a thread merged while its parent was working (roadmap 0195, the audit of 2026-11-06), through the real
 binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-merge-midturn.py .build/release/ask
+Scripts/probe-thread-merge-midturn.py .build/release/ask
 
 Main runs a slow command; meanwhile the person merges a thread by `/merge` in its lane. The merge is recorded at main's leaf then, but its
 summary goes with the next prompt, not with the command's result. So once resumed, the merge block comes after the reply main gave at the

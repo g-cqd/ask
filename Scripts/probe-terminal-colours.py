@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check that the tints follow the terminal's colours (roadmap 0108) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-terminal-colours.py .build/release/ask
+Scripts/probe-terminal-colours.py .build/release/ask
 
 pyte answers no colour query, so the probe answers for the terminal, as Apple Terminal would. It posts the notification macOS sends when the
 appearance changes (it changes no setting; apps that listen re-read the appearance they already have). This verifies ask's bytes through an

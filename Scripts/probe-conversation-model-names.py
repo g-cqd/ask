@@ -2,7 +2,7 @@
 """The conversation's name, and so the tab's title, follow `threads.names` as a thread's do (note n66; the owner, 2026-11-11), through
 the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-conversation-model-names.py .build/release/ask
+Scripts/probe-conversation-model-names.py .build/release/ask
 
 "model": the conversation's own model is asked for the name, from the first request, and the tab says the name it gives.
 "numbered": no model is asked, and the tab keeps the folder. "onDevice", the default, is Apple's model: what it answers is the

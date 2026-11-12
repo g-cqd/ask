@@ -2,7 +2,7 @@
 """Probe a followed resource (the owner's choice, 2026-11-02, roadmap 0067) through the real binary, a PTY, a local fake provider and the
 fixture server in its `resources` mode, which says a resource changed as soon as it is subscribed to.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-mcp-subscribe.py .build/release/ask
+Scripts/probe-mcp-subscribe.py .build/release/ask
 
 A message attaching `@fx:note://a` subscribes to it; the server's change is told to the person, naming the reference to send again, and
 the model is sent nothing more.

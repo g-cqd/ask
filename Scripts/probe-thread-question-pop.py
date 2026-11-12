@@ -2,7 +2,7 @@
 """Probe where a thread's approval question appears (`threads.questions`, roadmap 0195, note n19) through the real binary, a PTY and a
 local fake provider, with approvals on.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-question-pop.py .build/release/ask
+Scripts/probe-thread-question-pop.py .build/release/ask
 
 `focus`: while the person is in main, a thread's question shows there at once, named for its thread; answering it there runs the
 command, the thread finishes, merges by `/merge`, and its lane asks nothing more. `after` with `questionsAfter` "3s": not at once, then once it

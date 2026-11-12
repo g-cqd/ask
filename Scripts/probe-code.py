@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe long code blocks in a real reply through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-code.py .build/release/ask
+Scripts/probe-code.py .build/release/ask
 
 Reuses the folding probe's PTY/emulator harness. No window, real credentials or host clipboard writes (Ghostty identity, OSC 52).
 """

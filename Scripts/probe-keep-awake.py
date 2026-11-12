@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check keepAwake (roadmap 0090) through the real binary, a scripted provider, a PTY and the system's own list of power assertions.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-keep-awake.py .build/release/ask
+Scripts/probe-keep-awake.py .build/release/ask
 
 While ask runs a slow shell command, `pmset -g assertions` must list ask's assertion under ask's pid; once the turn ends it must be gone;
 a background job keeps it until the job ends; with "keepAwake": "off" there is none at any time. Takes real power assertions for a few

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe bounded input, visual-row editing and resize through the real binary and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-input.py .build/release/ask
+Scripts/probe-input.py .build/release/ask
 
 Reuses the folding probe's PTY/emulator harness. No window, real credentials or host clipboard writes.
 """

@@ -4,8 +4,8 @@
 No window is opened and nothing touches the clipboard: the terminal is announced as Ghostty or WezTerm, which take OSC 52, so the
 host's pasteboard (`pbcopy`) is never used. The screen is read through `pyte`, a terminal emulator; install it first:
 
-    python3 -m pip install --target /tmp/ask-pty/lib pyte
-    ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-pointer.py [path/to/ask]
+    Scripts/probe-deps.sh
+    Scripts/probe-pointer.py [path/to/ask]
 
 pyte does not implement SU and SD (`CSI S`, `CSI T`), which the screen uses to move the transcript; `probe_screen` adds them, so rows
 read after a scroll are what a terminal shows. The scroll checks still force a full repaint before reading, as a second opinion.
@@ -14,7 +14,9 @@ Exit 0 when every check passes, 1 otherwise.
 """
 import base64, fcntl, os, pty, re, select, shutil, signal, struct, sys, tempfile, termios, time
 
-sys.path.insert(0, os.environ.get("ASK_PYTE", "/tmp/ask-pty/lib"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_pyte  # noqa: E402
+probe_pyte.ensure()
 import pyte
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

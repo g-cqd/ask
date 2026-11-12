@@ -3,7 +3,7 @@
 shows the current one in full and the others by their initial, a › where the rest are left out, Right moves along it, and after the review the model gets sixteen
 answers back.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-question-series.py .build/release/ask
+Scripts/probe-question-series.py .build/release/ask
 
 Requires pyte.
 """

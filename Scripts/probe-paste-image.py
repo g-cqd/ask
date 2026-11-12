@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A picture pasted into a prompt (roadmap 0224; the owner, 2026-11-12) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-paste-image.py .build/release/ask
+Scripts/probe-paste-image.py .build/release/ask
 
 A PNG's path is pasted as a terminal pastes a dropped file (bracketed, with a blank after it): the input gets `[image 1]`, its
 caption shows above the input, and the message sent carries the picture as an image block after its text. Resumed, the message

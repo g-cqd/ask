@@ -2,7 +2,7 @@
 """Roadmap 0092 on the real binary: a model two Codex accounts serve is one row of `/model`, its accounts listed once it is chosen,
 and the account chosen is remembered for it.
 
-    ASK_PYTE=/tmp/ask-pty/lib python3 Scripts/probe-model-accounts.py [.build/release/ask]
+    python3 Scripts/probe-model-accounts.py [.build/release/ask]
 
 Synthetic credentials and cached model lists in a temporary directory: nothing is sent to Codex, no real sign-in is touched.
 """

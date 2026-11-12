@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe paths in replies (roadmap 0215) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-reply-paths.py .build/release/ask
+Scripts/probe-reply-paths.py .build/release/ask
 
 The model's reply names a file of the project by its absolute path, with a line, and another by a relative path; it also names a relative
 path that does not exist. The reply shows the first relative to the project, links both that exist as ask's own OSC 8, and leaves the

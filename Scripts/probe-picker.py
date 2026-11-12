@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe the `/` command picker (roadmap 0048, ADR-0066) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-picker.py .build/release/ask [--control OLDER_BINARY]
+Scripts/probe-picker.py .build/release/ask [--control OLDER_BINARY]
 
 Reuses the folding probe's PTY/emulator harness; no window, credentials or clipboard. With --control, the first scenario also
 runs against a binary that predates the picker and must show NO picker: a probe that cannot fail is not a probe.

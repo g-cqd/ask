@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Pictures sent to the terminal only while they are near the view (roadmap 0208), through the real binary, a PTY and a fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-images-window.py .build/release/ask
+Scripts/probe-images-window.py .build/release/ask
 
 The model reads a PNG, then twelve more exchanges push it far above the view. Resumed as Ghostty, the session sends no picture
 while its block is that far up; scrolled back to the top, the picture is sent then, and its cells drawn. Hermetic: a picture made

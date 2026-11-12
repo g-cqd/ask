@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe threads across a resume (roadmap 0195, step 3) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-resume.py .build/release/ask
+Scripts/probe-thread-resume.py .build/release/ask
 
 A first run merges one thread by `/merge` and quits while a second is still working. `ask --continue` then rebuilds the tree from the session's
 records: main shows where the first started and where it merged, in place; it comes back merged and read-only, the second comes back

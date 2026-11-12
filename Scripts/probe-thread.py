@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe `/thread` (roadmaps 0194, 0195) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread.py .build/release/ask
+Scripts/probe-thread.py .build/release/ask
 
 After one prompt, `/thread` forks the conversation and runs it beside main, marked where it started. In its lane, `/thread` starts a
 thread under it. Both end and stay unmerged, idle (note n52: a thread merges only by `/merge`). `/merge` in the outer one's lane merges

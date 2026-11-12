@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe `/fork` (ADR-0094) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-fork.py .build/release/ask [--control OLDER_BINARY]
+Scripts/probe-fork.py .build/release/ask [--control OLDER_BINARY]
 
 Two prompts, a fork of the whole conversation, a fork from before the second prompt, and a look at the files: the original is byte for
 byte what it was, the forks are files of their own, and what the provider is sent after a fork is its branch. With --control, a binary

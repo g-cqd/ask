@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe a project's agent definitions (roadmap 0063 phase 3, ADR-0146) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-subagent-project-definitions.py .build/release/ask
+Scripts/probe-subagent-project-definitions.py .build/release/ask
 
 A definition in the project's `.agents/agents` is not offered until the person trusts it: `ask trust --agents` at a terminal says what
 it trusts, and the next session's `agent` tool names it; changed afterwards, it is not offered again. Hermetic.

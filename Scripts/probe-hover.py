@@ -3,7 +3,7 @@
 every row of a wrapped one, and turns the pointer into a hand (OSC 22); off it, the arrow again; and ask leaves the terminal's own
 pointer when it quits with the hand shown.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-hover.py .build/release/ask
+Scripts/probe-hover.py .build/release/ask
 
 Requires pyte. This reads ask's bytes through an emulator, not a physical terminal's pointer.
 """

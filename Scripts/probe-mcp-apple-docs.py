@@ -2,7 +2,7 @@
 """Probe resources against the live apple-docs server (roadmap 0067) through the real binary, a PTY and a local fake provider; it needs
 the network.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-mcp-apple-docs.py .build/release/ask
+Scripts/probe-mcp-apple-docs.py .build/release/ask
 
 `@apple-docs:` lists the server's resources and its templates; choosing the page template writes `apple-docs://doc/` for the person to
 finish; the finished `@apple-docs:apple-docs://doc/swiftui/view` is read when the message is sent and reaches the model after the typed

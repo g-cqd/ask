@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe the MCP servers in the screen (ADR-0099) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-mcp-screen.py .build/release/ask [--control OLDER_BINARY]
+Scripts/probe-mcp-screen.py .build/release/ask [--control OLDER_BINARY]
 
 The servers connect while the person has not typed anything, and the screen says so; `/mcp` lists them; a server that cannot start
 is said once and the screen still works; /help lists the command. With --control, a binary that predates the feature does not know

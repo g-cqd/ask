@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check a command's own colours and links in its block (note n30) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-output-colours.py .build/release/ask
+Scripts/probe-output-colours.py .build/release/ask
 
 The command prints a red bold word, an OSC 8 link, a title change (OSC 0) and a line clear. The block shows the text without any of
 the escapes as text, the word in red and bold, and the link as ask's own OSC 8; the title change and the clear never reach the

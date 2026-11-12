@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe the runner sidebar through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-sidebar.py .build/release/ask
+Scripts/probe-sidebar.py .build/release/ask
 
 `ui.sidebar: "open"` opens it at start. A real background job, listed under a Jobs heading, (a loopback http.server the fake model starts and later stops) appears in it, a click on its row
 shows what it printed in place of the conversation, Esc returns, and Ctrl+\\ closes and opens the panel. No window, credentials or clipboard.

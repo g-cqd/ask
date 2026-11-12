@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A compaction is a block (roadmap 0105) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-compaction-block.py .build/release/ask
+Scripts/probe-compaction-block.py .build/release/ask
 
 `/compact` with nothing to summarise ends as a failed block, folded, with no notice, and a click opens it onto the reason. (The done
 path is covered by CompactionBlockTests.) The binary is the one probe-folding takes: .build/release/ask. pyte, not a physical terminal.

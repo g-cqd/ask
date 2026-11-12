@@ -2,7 +2,7 @@
 """Probe the model-assisted resolution of a definition's model word (roadmap 0063 phase 4, ADR-0146) through the real binary, a PTY and
 a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-subagent-model-words.py .build/release/ask
+Scripts/probe-subagent-model-words.py .build/release/ask
 
 A definition asks for "Storyteller", which no listed id matches. The connection's cheap listed model is asked which listed id that
 means, given the word and the ids only, and answers one; the subagent runs on it. A second session asks nothing: the answer was kept.

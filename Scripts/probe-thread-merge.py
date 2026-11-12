@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe `/merge` (roadmap 0195) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-merge.py .build/release/ask
+Scripts/probe-thread-merge.py .build/release/ask
 
 A thread that is stopped is kept unmerged, with nothing asked (note n52), and never merges on its own: `/merge` in its lane merges it,
 with a summary request, and main shows the merge. While it works, `/merge` is refused. Hermetic: no window, credentials or clipboard.

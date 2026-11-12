@@ -12,7 +12,7 @@ H: /fork while a turn runs makes the copy at once and stays with the turn.
 I: /skill:NAME typed while a turn runs reaches the model expanded, as at a turn's start.
 J: /logout of the account in use waits for the turn's end.
 
-    ASK_PYTE=/tmp/ask-pty/lib python3 Scripts/probe-mid-turn.py [.build/release/ask]
+    python3 Scripts/probe-mid-turn.py [.build/release/ask]
 """
 import importlib.util, json, os, sys, tempfile, time
 

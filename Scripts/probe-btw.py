@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe `/btw` (roadmap 0194) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-btw.py .build/release/ask
+Scripts/probe-btw.py .build/release/ask
 
 While a turn runs a command, `/btw` asks beside it: its answer appears in a block of its own while the turn goes on, the turn then ends as
 it would have, the aside's request carries the question and ask's instruction, and the session file holds no trace of the aside.

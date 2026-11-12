@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe that a thread merges only by `/merge` (note n52, roadmap 0195) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-merge-manual.py .build/release/ask
+Scripts/probe-thread-merge-manual.py .build/release/ask
 
 The file still sets the retired `threads.merge` ("auto", then "ask"): ask opens. A thread that finished asks nothing, in main or in its
 lane, and stays unmerged, marked ○, with no summary written; `/merge` in its lane merges it. Hermetic.

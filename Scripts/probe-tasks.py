@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Does the model keep a task list through the `tasks` tool, kept beside the session? (roadmap 0179, ADR-0140)
 
-Usage: ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-tasks.py .build/release/ask
+Usage: Scripts/probe-tasks.py .build/release/ask
 
 A local fake Anthropic server has the model add two tasks, the second blocked by the first, start the first and list them; the probe reads
 the tool results from the next request. No network, no real credentials. Three runs:

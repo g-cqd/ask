@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Real bash job + scripted provider + PTY: idle progress, strip spacing, input and focus.
 
-ASK_PYTE=/tmp/ask-pty/lib python3 Scripts/probe-job-progress.py .build/release/ask
+python3 Scripts/probe-job-progress.py .build/release/ask
 Uses pyte for position-addressed frames; forces a full repaint after transcript changes
 because pyte does not implement regional scrolling. Not a physical-terminal claim.
 """
