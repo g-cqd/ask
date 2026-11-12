@@ -113,8 +113,12 @@ Run in kitty 0.49.2, Ghostty 1.4.0 and WezTerm, screenshots read for their pixel
   larger, upright when stored on their side (`PictureTranscode`, ImageIO; `PictureTranscodeTests`, red first; `probe-images.py`,
   11 checks, a JPEG among them). Without ImageIO (Linux) they keep their line.
 
+- 2026-11-12: sent while laid out. Every picture is placed, so its rows are kept and nothing moves as the view scrolls; only those
+  within 10 blocks of the blocks shown are sent, and one past 40 is deleted from the terminal, its data freed, and sent again when
+  the view comes back (`ScreenImagesWindowTests`, red first; `probe-images-window.py`: a resumed session sends nothing for a
+  picture far above, and sends it once scrolled to; the installed binary sent it at once).
+
 ## Left
 
 - The look confirmed by the owner, in their own kitty or Ghostty.
-- Lifetime: every picture of a resumed session is sent at once; the roadmap's "sent while laid out" is not built, nor measured
-  against the memory budget (0088).
+- The terminal's memory for pictures is not measured against the budget (0088); ask holds each picture's bytes as before.

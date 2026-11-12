@@ -11,7 +11,7 @@ final class ScreenSession {
     let input: InputSource
     let conversation: any Conversation
     var controller: ScreenController
-    private let frames: FrameBox
+    let frames: FrameBox
     private var clipboard: ScreenClipboard
     /// The screen's height, for paging; the render loop knows its own.
     private var rows: Int
