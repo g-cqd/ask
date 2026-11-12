@@ -1,0 +1,27 @@
+# Known failures of the MCP conformance suite's client scenarios (roadmap 0123). The run fails when one of these passes (remove it)
+# or when anything else fails (a regression).
+client:
+  # Elicitation is not declared by ask's client yet (roadmap 0123, step 4).
+  - elicitation-sep1034-client-defaults
+  # The conformance client does not sign in yet: ask's sign-in needs a headless browser step in this client (roadmap 0123).
+  - auth/metadata-default
+  - auth/metadata-var1
+  - auth/metadata-var2
+  - auth/metadata-var3
+  - auth/basic-cimd
+  - auth/scope-from-www-authenticate
+  - auth/scope-from-scopes-supported
+  - auth/scope-omitted-when-undefined
+  - auth/scope-step-up
+  - auth/scope-retry-limit
+  - auth/token-endpoint-auth-basic
+  - auth/token-endpoint-auth-post
+  - auth/token-endpoint-auth-none
+  - auth/pre-registration
+  - auth/2025-03-26-oauth-metadata-backcompat
+  - auth/2025-03-26-oauth-endpoint-fallback
+  - auth/offline-access-scope
+  - auth/offline-access-not-supported
+  - auth/client-credentials-jwt
+  - auth/client-credentials-basic
+  - auth/cross-app-access-complete-flow
