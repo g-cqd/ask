@@ -3,7 +3,7 @@ internal import Foundation
 /// A picture pasted or dropped onto the input (roadmap 0224), read and prepared off the screen's thread: the conversation bounds it
 /// as it will be sent, or says why it cannot be; its token then goes into the input.
 extension ScreenSession {
-    /// A message, started or queued, with the pictures its `[image N]` tokens name.
+    /// A message, started, queued or sent in a thread's lane, with the pictures its `[image N]` tokens name.
     func send(_ effect: ScreenController.Effect) {
         let sink = sink
         switch effect {
@@ -18,6 +18,9 @@ extension ScreenSession {
                     id: id,
                     followUp: followUp
                 )
+            case .sendToThread(let id, let text):
+                let images = controller.state.pictures.images(in: text)
+                conversation.sendToThread(id, text: text, images: images) { sink.yield(.update($0)) }
             default: break
         }
     }

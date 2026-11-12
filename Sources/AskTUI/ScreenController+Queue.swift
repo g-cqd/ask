@@ -21,7 +21,7 @@ extension ScreenController {
     }
 
     /// The pictures `text` names, under the block just added for it, as a tool's are (roadmap 0224).
-    private mutating func showPictures(of text: String) {
+    mutating func showPictures(of text: String) {
         let images = state.pictures.images(in: text)
         guard !images.isEmpty else { return }
         state.transcript.toolImages[state.transcript.items.count - 1] = images

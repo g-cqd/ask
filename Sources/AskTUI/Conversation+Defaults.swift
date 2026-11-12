@@ -13,6 +13,15 @@ extension Conversation {
         enqueue(text, id: id, followUp: followUp)
     }
 
+    public func sendToThread(
+        _ id: String,
+        text: String,
+        images: [ToolImage],
+        update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) {
+        sendToThread(id, text: text, update: update)
+    }
+
     public func preparePicture(_ bytes: [UInt8]) async -> PicturePreparation {
         .refused("this conversation takes no pictures")
     }
