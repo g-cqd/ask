@@ -170,4 +170,43 @@ struct AgentLoopCompactionTests {
         // Keeping everything leaves nothing to summarise.
         #expect(Compaction.cut(entries, keepingRecentBytes: 1_000) == nil)
     }
+
+    /// Light compaction in the loop (roadmap 0032): past 60 % of the threshold, the request carries old output as a line and no
+    /// old reasoning, and a later request reaches as far, so the cache breaks once.
+    @Test func `near the threshold, the request leaves out old output and reasoning, and keeps doing so`() async throws
+    {
+        let file = try newFile()
+        let input = try JSONObject(validating: Array("{}".utf8))
+        let big = String(repeating: "y", count: 40_000)
+        _ = try file.append(.user("start"))
+        for round in 0 ..< 6 {
+            let response = AssembledResponse(
+                id: "m\(round)",
+                model: "x",
+                blocks: [
+                    .thinking(text: "t", signature: "s\(round)"), .toolCall(id: "c\(round)", name: "bash", input: input)
+                ],
+                stopReason: .toolUse,
+                usage: TokenUsage(input: round == 5 ? 700 : 10),
+                unrecognized: []
+            )
+            _ = try file.append(.response(response))
+            _ = try file.append(.toolResult(callID: "c\(round)", content: big, isError: false))
+        }
+        let provider = ScriptedProvider([.reply("one"), .reply("two")])
+        let loop = loop(provider, compactAt: 1_000, keepRecentBytes: 90_000)
+        try await loop.run("next", in: file) { _ in }
+        try await loop.run("again", in: file) { _ in }
+        #expect(kinds(file).contains("compaction") == false, "below the threshold: no compaction")
+        for request in provider.requests {
+            let results = request.messages.flatMap(\.blocks)
+                .compactMap { block -> String? in
+                    if case .toolResult(_, let content, _, _) = block { return content }
+                    return nil
+                }
+            #expect(results.first?.hasPrefix("[ask left this output out") == true)
+            #expect(results.last == big)
+        }
+        #expect(provider.requests[0].messages.first == provider.requests[1].messages.first, "the same prefix")
+    }
 }

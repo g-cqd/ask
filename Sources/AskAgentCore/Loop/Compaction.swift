@@ -44,14 +44,20 @@ public enum Compaction {
     ///   - bytes: how much recent text to keep.
     /// - Returns: the index of the first kept entry, or nil when nothing would be left to summarise.
     static func cut(_ context: [SessionEntry], keepingRecentBytes bytes: Int) -> Int? {
-        var index = context.count
+        cut(context[...], keepingRecentBytes: bytes)
+    }
+
+    /// The same, for the first entries of a context, without copying them.
+    static func cut(_ context: ArraySlice<SessionEntry>, keepingRecentBytes bytes: Int) -> Int? {
+        let start = context.startIndex
+        var index = context.endIndex
         var kept = 0
-        while index > 0, kept < bytes {
+        while index > start, kept < bytes {
             index -= 1
             kept += size(context[index].payload)
         }
-        while index > 0, !startsATurn(context[index].payload) { index -= 1 }
-        return index > 0 ? index : nil
+        while index > start, !startsATurn(context[index].payload) { index -= 1 }
+        return index > start ? index : nil
     }
 
     /// Whether the branch may hold anything before a kept tail of `bytes`, without building the context: the

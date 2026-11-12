@@ -28,8 +28,13 @@ public struct RequestContext: Sendable, Equatable {
     private var unanswered: [String] = []
 
     /// The messages for `context`, root first, as ``SessionTree/context()`` returns it.
-    public init(_ context: [SessionEntry]) {
-        for entry in context { add(entry.payload) }
+    /// - Parameters:
+    ///   - context: the entries, root first.
+    ///   - reach: entries before it have their output and reasoning cleared (``ContextClearing``, roadmap 0032).
+    public init(_ context: [SessionEntry], clearingBefore reach: Int? = nil) {
+        for (index, entry) in context.enumerated() {
+            add(index < (reach ?? 0) ? ContextClearing.cleared(entry.payload) : entry.payload)
+        }
         answerOutstanding()
     }
 
