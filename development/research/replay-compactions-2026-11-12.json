@@ -1,0 +1,676 @@
+[
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 0,
+  "chars": 133899,
+  "calls": 3,
+  "questions": 5,
+  "oneShot": [
+   0,
+   0,
+   1,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   1,
+   0,
+   0
+  ],
+  "oneShotChars": 12900,
+  "incrementalChars": 8934
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 7,
+  "chars": 90285,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 16675,
+  "incrementalChars": 3477
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 14,
+  "chars": 105526,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   0,
+   1,
+   1,
+   1,
+   1
+  ],
+  "incremental": [
+   1,
+   0,
+   1,
+   1,
+   0
+  ],
+  "oneShotChars": 11825,
+  "incrementalChars": 6629
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 21,
+  "chars": 127202,
+  "calls": 3,
+  "questions": 5,
+  "oneShot": [
+   1,
+   0,
+   1,
+   1,
+   0
+  ],
+  "incremental": [
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "oneShotChars": 13333,
+  "incrementalChars": 6118
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 28,
+  "chars": 676405,
+  "calls": 12,
+  "questions": 5,
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 12067,
+  "incrementalChars": 6529
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 35,
+  "chars": 92641,
+  "calls": 2,
+  "questions": 6,
+  "oneShot": [
+   0,
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 8696,
+  "incrementalChars": 3274
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 42,
+  "chars": 106896,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 8975,
+  "incrementalChars": 4133
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 49,
+  "chars": 198089,
+  "calls": 4,
+  "questions": 5,
+  "oneShot": [
+   1,
+   0,
+   0,
+   1,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   1
+  ],
+  "oneShotChars": 8472,
+  "incrementalChars": 2496
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 56,
+  "chars": 123283,
+  "calls": 3,
+  "questions": 5,
+  "oneShot": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 8510,
+  "incrementalChars": 3047
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 63,
+  "chars": 122692,
+  "calls": 3,
+  "questions": 5,
+  "oneShot": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   1,
+   0,
+   1,
+   0,
+   0
+  ],
+  "oneShotChars": 11668,
+  "incrementalChars": 5318
+ },
+ {
+  "session": "20261029T090543Z-67df8a4b.jsonl",
+  "window": 70,
+  "chars": 51610,
+  "calls": 1,
+  "questions": 5,
+  "oneShot": [
+   1,
+   1,
+   1,
+   1,
+   0
+  ],
+  "incremental": [
+   1,
+   1,
+   1,
+   0,
+   0
+  ],
+  "oneShotChars": 10927,
+  "incrementalChars": 4473
+ },
+ {
+  "session": "20261029T090543Z-67df8a4b.jsonl",
+  "window": 77,
+  "chars": 60247,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   0,
+   0,
+   0,
+   1,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 17140,
+  "incrementalChars": 3513
+ },
+ {
+  "session": "20261029T090543Z-67df8a4b.jsonl",
+  "window": 84,
+  "chars": 375795,
+  "calls": 7,
+  "questions": 5,
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 11551,
+  "incrementalChars": 4402
+ },
+ {
+  "session": "20261029T090543Z-67df8a4b.jsonl",
+  "window": 91,
+  "error": "Expecting ',' delimiter: line 1 column 479 (char 478)"
+ },
+ {
+  "session": "20261105T165936Z-08ffd7f4.jsonl",
+  "window": 98,
+  "chars": 306576,
+  "calls": 6,
+  "questions": 5,
+  "oneShot": [
+   1,
+   1,
+   0,
+   0,
+   1
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 14625,
+  "incrementalChars": 5628
+ },
+ {
+  "session": "20261105T165936Z-08ffd7f4.jsonl",
+  "window": 105,
+  "chars": 568008,
+  "calls": 10,
+  "questions": 5,
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "oneShotChars": 10411,
+  "incrementalChars": 5310
+ },
+ {
+  "session": "20261101T232953Z-0228c20d.jsonl",
+  "window": 112,
+  "chars": 589012,
+  "calls": 10,
+  "questions": 5,
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 9595,
+  "incrementalChars": 4911
+ },
+ {
+  "session": "20261104T133515Z-34ec0c46.jsonl",
+  "window": 119,
+  "chars": 118668,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 13082,
+  "incrementalChars": 3459
+ },
+ {
+  "session": "20261028T064028Z-412fcd46.jsonl",
+  "window": 126,
+  "chars": 116151,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   1,
+   1,
+   1,
+   0,
+   1
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 20784,
+  "incrementalChars": 8023
+ },
+ {
+  "session": "20261028T064028Z-412fcd46.jsonl",
+  "window": 133,
+  "chars": 94513,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 16169,
+  "incrementalChars": 2995
+ },
+ {
+  "session": "20261028T064028Z-412fcd46.jsonl",
+  "window": 140,
+  "chars": 275439,
+  "calls": 5,
+  "questions": 5,
+  "oneShot": [
+   1,
+   1,
+   0,
+   0,
+   1
+  ],
+  "incremental": [
+   0,
+   1,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 15119,
+  "incrementalChars": 4525
+ },
+ {
+  "session": "20261028T064028Z-412fcd46.jsonl",
+  "window": 147,
+  "chars": 73474,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   1
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   1
+  ],
+  "oneShotChars": 12549,
+  "incrementalChars": 4126
+ },
+ {
+  "session": "20261029T144705Z-59ceedee.jsonl",
+  "window": 154,
+  "chars": 113203,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 16787,
+  "incrementalChars": 5683
+ },
+ {
+  "session": "20261029T144705Z-59ceedee.jsonl",
+  "window": 161,
+  "chars": 116046,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 11618,
+  "incrementalChars": 4163
+ },
+ {
+  "session": "20261029T144705Z-59ceedee.jsonl",
+  "window": 168,
+  "chars": 92978,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   0,
+   1,
+   1,
+   1,
+   0
+  ],
+  "incremental": [
+   1,
+   1,
+   1,
+   1,
+   0
+  ],
+  "oneShotChars": 10268,
+  "incrementalChars": 4040
+ },
+ {
+  "session": "20261029T144705Z-59ceedee.jsonl",
+  "window": 175,
+  "chars": 83732,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   0,
+   0,
+   1,
+   1,
+   1
+  ],
+  "incremental": [
+   0,
+   1,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 12211,
+  "incrementalChars": 4994
+ },
+ {
+  "session": "20261104T092206Z-ceb0a365.jsonl",
+  "window": 182,
+  "chars": 284324,
+  "calls": 5,
+  "questions": 5,
+  "oneShot": [
+   1,
+   1,
+   0,
+   1,
+   1
+  ],
+  "incremental": [
+   1,
+   1,
+   0,
+   1,
+   1
+  ],
+  "oneShotChars": 14437,
+  "incrementalChars": 6793
+ },
+ {
+  "session": "20261111T082730Z-bb70274e.jsonl",
+  "window": 189,
+  "chars": 178235,
+  "calls": 3,
+  "questions": 5,
+  "oneShot": [
+   1,
+   1,
+   0,
+   1,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 18504,
+  "incrementalChars": 7083
+ },
+ {
+  "session": "20261028T104300Z-6f1a567c.jsonl",
+  "window": 196,
+  "chars": 90505,
+  "calls": 2,
+  "questions": 5,
+  "oneShot": [
+   1,
+   1,
+   1,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   1,
+   0,
+   0
+  ],
+  "oneShotChars": 16372,
+  "incrementalChars": 4705
+ },
+ {
+  "session": "20261106T102919Z-363897e9.jsonl",
+  "window": 203,
+  "chars": 165194,
+  "calls": 3,
+  "questions": 5,
+  "oneShot": [
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 13117,
+  "incrementalChars": 2767
+ }
+]

@@ -73,6 +73,12 @@ the cache breaks once a clearing; a clearing frees at least as many bytes as the
 sessions: providers keep and count earlier reasoning (about a third of a window); old tool output alone spaces compactions about
 1.2x further apart (simulated). Next: the replay of about 30 compactions, then the background summary.
 
+## Replay (2026-11-12)
+
+30 real compactions (`Scripts/replay-compactions.py`): early facts kept 35 % by today's one-shot summary, 24 % by a summary Haiku
+kept up to date; Haiku's were a third as long (no length set), so the gap may be the prompt. Owner to decide on a second run with a
+length target before the background summary is built.
+
 ## Done when
 
 This entry becomes a design note with measured numbers, and a decision on whether to build it.

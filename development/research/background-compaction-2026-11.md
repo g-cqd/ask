@@ -44,3 +44,22 @@ roughly 3 to 5 hours spent waiting. A summary kept ready removes that wait; the 
 ## Not measured
 
 The wait itself (no timestamps in sessions), the provider-side token count of old thinking, summary quality, and any local model.
+
+## Replay (2026-11-12, the owner's budget of about 30)
+
+`Scripts/replay-compactions.py --windows 30` (results in `replay-compactions-2026-11-12.json`): 30 compaction windows of the 30
+largest sessions, Claude sessions only. `claude-haiku-5-5` amended a summary chunk by chunk (60 KB each, tool output clipped to
+1,500 characters); `claude-sonnet-5-5` wrote five questions on specific facts from each window's first 40 % and graded whether each
+summary held the answer. 29 windows graded (one grader reply was not JSON).
+
+| | Early facts kept | Summary length (median) |
+|---|---|---|
+| ask's one-shot summary (today) | 35 % (median 20 %) | 12,549 characters |
+| Incremental, `claude-haiku-5-5` | 24 % (median 20 %) | 4,525 characters |
+
+- Incremental was worse in 14 windows, better in 4, equal in 11. On long windows (four chunks or more, 8 windows) the two were close:
+  30 % against 28 %.
+- Confound: the incremental summaries came out a third as long; the prompt set no length. The gap may be the prompt more than the
+  method. A second run with a length target and "keep what still matters from the current summary" would settle it, with the
+  questions kept so both runs are graded alike.
+- Whatever the summariser, today's compaction keeps about a third of the early facts a later turn might need.
