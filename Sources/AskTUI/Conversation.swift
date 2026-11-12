@@ -12,6 +12,17 @@ public protocol Conversation: Sendable {
     /// Until then the screen owns a copy, which it starts after normal completion or restores on failure.
     func enqueue(_ text: String, id: Int, followUp: Bool)
 
+    /// `start`, with the pictures the person pasted into `prompt` (roadmap 0224).
+    func start(_ prompt: String, images: [ToolImage], update: @escaping @Sendable (ConversationUpdate) -> Void)
+        -> Task<Void, Never>
+
+    /// `enqueue`, with the pictures the person pasted into `text` (roadmap 0224).
+    func enqueue(_ text: String, images: [ToolImage], id: Int, followUp: Bool)
+
+    /// A picture the person pasted, as it will be sent (roadmap 0224): bounded as the read tool bounds one, or refused with the
+    /// reason, such as a model that takes no images.
+    func preparePicture(_ bytes: [UInt8]) async -> PicturePreparation
+
     /// Takes back queued message `id` before the run takes it (roadmap 0174).
     /// - Returns: false when the run has taken it, or it is not queued.
     func withdraw(_ id: Int) -> Bool

@@ -16,7 +16,7 @@ final class ScreenSession {
     /// The screen's height, for paging; the render loop knows its own.
     private var rows: Int
     private var columns: Int
-    private var run: Task<Void, Never>?
+    var run: Task<Void, Never>?
     var runnerOutput = RunnerOutputWatch()
     /// The lane the conversation was last told is shown.
     private var shownLane: String?
@@ -124,8 +124,7 @@ final class ScreenSession {
                 }
             case .copied(let notice, let failed, let generation):
                 controller.finishCopy(notice, failed: failed, generation: generation)
-            case .pasteRefused(let reason):
-                controller.state.transcript.addNotice(reason, isError: true)
+            case .pasteRefused, .pastedPicture: pasted(event)
             case .quitWindowEnded(let generation):
                 controller.quitWindowEnded(generation: generation)
             case .threadQuestionDelayEnded: controller.threadQuestionDelayEnded()
@@ -157,10 +156,7 @@ final class ScreenSession {
     private func perform(_ effect: ScreenController.Effect) async -> Bool {
         let sink = sink
         switch effect {
-            case .startRun(let prompt):
-                run = conversation.start(prompt) { sink.yield(.update($0)) }
-            case .queuePrompt(let id, let text, let followUp):
-                conversation.enqueue(text, id: id, followUp: followUp)
+            case .startRun, .queuePrompt: send(effect)
             case .withdrawPrompt(let id):
                 sink.yield(.update(.promptWithdrawn(id: id, withdrawn: conversation.withdraw(id))))
             case .runCommand(let name, let arguments):
@@ -200,6 +196,7 @@ final class ScreenSession {
                 run?.cancel()
             case .pasteFromClipboard:
                 clipboard.paste(into: sink)
+            case .attachPicture(let path): attach { FileManager.default.contents(atPath: path).map { [UInt8]($0) } }
             case .copy(let text):
                 let generation = controller.beginCopy()
                 controller.state.clipboardNotice = clipboard.copy(text) {

@@ -2,6 +2,21 @@ internal import TerminalKitCodecs
 internal import TerminalKitInput
 
 extension Conversation {
+    /// Without pictures: a conversation that takes none starts the text alone.
+    public func start(_ prompt: String, images: [ToolImage], update: @escaping @Sendable (ConversationUpdate) -> Void)
+        -> Task<Void, Never>
+    {
+        start(prompt, update: update)
+    }
+
+    public func enqueue(_ text: String, images: [ToolImage], id: Int, followUp: Bool) {
+        enqueue(text, id: id, followUp: followUp)
+    }
+
+    public func preparePicture(_ bytes: [UInt8]) async -> PicturePreparation {
+        .refused("this conversation takes no pictures")
+    }
+
     public func withdraw(_ id: Int) -> Bool { false }
 
     /// No in-flight input; the screen starts unacknowledged messages after the current run ends.

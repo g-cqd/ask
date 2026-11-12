@@ -135,7 +135,8 @@ extension ScreenComposer {
         switch item {
             case .user(let text):
                 // The older look set the user's message off with a blank row above it; the padded one has a row of padding for that.
-                return (style.padded ? [] : [Line(text: "", style: .default)]) + rows(text, style: Style(bold: true))
+                let lead = style.padded ? [] : [Line(text: "", style: .default)]
+                return lead + withPictures(rows(text, style: Style(bold: true)), context, block: block, inset: inset)
             case .assistant(let text):
                 return rows(text, style: .default)
             case .tool:

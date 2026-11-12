@@ -95,4 +95,12 @@ struct PastedImageSessionTests {
             "\(String(describing: lost))"
         )
     }
+
+    @Test func `a resumed message's pictures are replayed right after it`() {
+        let entries = [
+            SessionEntry(id: EntryID("1"), parentID: nil, payload: .user("look", images: [picture])),
+            SessionEntry(id: EntryID("2"), parentID: EntryID("1"), payload: .user("plain"))
+        ]
+        #expect(SessionReplay.steps(entries) == [.prompt("look"), .pictures([picture]), .prompt("plain")])
+    }
 }
