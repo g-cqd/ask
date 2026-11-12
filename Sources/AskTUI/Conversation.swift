@@ -19,6 +19,14 @@ public protocol Conversation: Sendable {
     /// `enqueue`, with the pictures the person pasted into `text` (roadmap 0224).
     func enqueue(_ text: String, images: [ToolImage], id: Int, followUp: Bool)
 
+    /// `sendToThread`, with the pictures the person pasted into `text` (roadmap 0224).
+    func sendToThread(
+        _ id: String,
+        text: String,
+        images: [ToolImage],
+        update: @escaping @Sendable (ConversationUpdate) -> Void
+    )
+
     /// A picture the person pasted, as it will be sent (roadmap 0224): bounded as the read tool bounds one, or refused with the
     /// reason, such as a model that takes no images.
     func preparePicture(_ bytes: [UInt8]) async -> PicturePreparation

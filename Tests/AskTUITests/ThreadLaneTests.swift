@@ -124,4 +124,16 @@ struct ThreadLaneTests {
         #expect(controller.state.lane == nil)
         #expect(effects.contains(.runCommand(name: "tasks", arguments: "")))
     }
+
+    @Test func `a picture pasted in its lane goes with the message there, and shows under it (roadmap 0224)`() {
+        var controller = controller()
+        _ = controller.enterLane(runner)
+        let picture = ToolImage(mediaType: "image/png", data: ToolImageTests.png(10, 10))
+        _ = controller.handle(.pictureAttached(picture))
+        let effects = type(" this", &controller)
+        #expect(effects == [.sendToThread(id: "thread-1", text: "[image 1] this")])
+        let index = controller.state.transcript.items.count - 1
+        #expect(controller.state.transcript.toolImages[index] == [picture])
+        #expect(controller.state.pictures.images(in: "[image 1] this") == [picture], "what the session sends with it")
+    }
 }

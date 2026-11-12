@@ -6,8 +6,6 @@ extension ScreenSession {
         _ sink: AsyncStream<ScreenEvent>.Continuation
     ) {
         switch effect {
-            case .sendToThread(let id, let text):
-                conversation.sendToThread(id, text: text) { sink.yield(.update($0)) }
             case .startThread(let parent, let text):
                 Task { await conversation.startThread(text, from: parent) { sink.yield(.update($0)) } }
             case .stopThread(let id): conversation.stopThread(id) { sink.yield(.update($0)) }

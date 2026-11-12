@@ -156,7 +156,7 @@ final class ScreenSession {
     private func perform(_ effect: ScreenController.Effect) async -> Bool {
         let sink = sink
         switch effect {
-            case .startRun, .queuePrompt: send(effect)
+            case .startRun, .queuePrompt, .sendToThread: send(effect)
             case .withdrawPrompt(let id):
                 sink.yield(.update(.promptWithdrawn(id: id, withdrawn: conversation.withdraw(id))))
             case .runCommand(let name, let arguments):
@@ -176,7 +176,7 @@ final class ScreenSession {
             case .armThreadQuestionTimer, .armQuitTimer, .armSandboxNoteTimer: Self.armTimer(effect, sink)
             case .readRunnerOutput(let id):
                 runnerOutput.watch(id, in: conversation, sink: sink)
-            case .sendToThread, .startThread, .stopThread, .renameThread, .mergeThread:
+            case .startThread, .stopThread, .renameThread, .mergeThread:
                 Self.performThread(effect, conversation, sink)
             case .watchJob(let id):
                 jobOutput[id]?.cancel()

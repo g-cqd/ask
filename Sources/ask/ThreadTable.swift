@@ -1,3 +1,4 @@
+internal import AskAI
 internal import AskAgentCore
 internal import AskTUI
 internal import Synchronization
@@ -102,10 +103,10 @@ final class ThreadTable: Sendable {
     }
 
     /// Steers a running thread with `text`; false when it is not running, and the message is its next run's.
-    func steer(_ name: String, with text: String) -> Bool {
+    func steer(_ name: String, with text: String, images: [ImagePart] = []) -> Bool {
         state.withLock { state in
             guard let queue = state.threads[name]?.queue else { return false }
-            queue.append(QueuedPrompt(id: state.nextPrompt, text: text))
+            queue.append(QueuedPrompt(id: state.nextPrompt, text: text, images: images))
             state.nextPrompt -= 1
             return true
         }
