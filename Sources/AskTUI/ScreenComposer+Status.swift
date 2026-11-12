@@ -136,12 +136,19 @@ extension ScreenComposer {
         return pieces + trailing(for: state, path: path)
     }
 
+    /// The git state's forms with the branch's pull request after each: `main · 3 changed · #42`, down to `main #42`.
+    private static func gitForms(_ state: ScreenState) -> [String] {
+        guard let number = state.branchPullRequest else { return state.gitStatus }
+        return state.gitStatus.enumerated()
+            .map { index, form in form + (index == state.gitStatus.count - 1 ? " #\(number)" : " · #\(number)") }
+    }
+
     /// The pieces at the line's end: the folder when it is put there, then the workspace's git state (roadmap 0186), which shortens,
     /// then goes, before the folder does.
     private static func trailing(for state: ScreenState, path: StatusSegment?) -> [StatusSegment] {
         var pieces: [StatusSegment] = []
         if let path, state.statusPathSide == .trailing { pieces.append(path) }
-        if !state.gitStatus.isEmpty { pieces.append(StatusSegment(state.gitStatus, priority: 30)) }
+        if !state.gitStatus.isEmpty { pieces.append(StatusSegment(gitForms(state), priority: 30)) }
         return pieces
     }
 

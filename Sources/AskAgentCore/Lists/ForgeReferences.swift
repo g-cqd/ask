@@ -56,9 +56,16 @@ public enum ForgeReferences {
 
     /// A pull request or issue from GitHub's `/repos/{owner}/{repo}/issues/{number}` answer, or nil for anything else.
     public static func item(from json: [UInt8]) -> Item? {
-        guard let decoded = try? AemiJSON.JSONDecoder().decode(Answer.self, from: json),
-            let number = decoded.number, let title = decoded.title, let state = decoded.state
-        else { return nil }
+        (try? AemiJSON.JSONDecoder().decode(Answer.self, from: json)).flatMap(item)
+    }
+
+    /// The items of a list answer (`/issues?state=open`, `/pulls`), in its order; an entry that is not one is left out.
+    public static func items(fromList json: [UInt8]) -> [Item] {
+        ((try? AemiJSON.JSONDecoder().decode([Answer].self, from: json)) ?? []).compactMap(item)
+    }
+
+    private static func item(_ decoded: Answer) -> Item? {
+        guard let number = decoded.number, let title = decoded.title, let state = decoded.state else { return nil }
         let pull = decoded.pull_request
         return Item(
             number: number,

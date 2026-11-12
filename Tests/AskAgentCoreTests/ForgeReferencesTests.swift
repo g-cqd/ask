@@ -58,4 +58,13 @@ struct ForgeReferencesTests {
         #expect(SkillInvocation.shown(sent) == "look at #7")
         #expect(ForgeReferences.attach("plain", items: []) == "plain")
     }
+
+    @Test func `a list of open pull requests and issues reads as items, in its order`() {
+        let list =
+            #"[{"number":3,"title":"A","state":"open","html_url":"u3","user":{"login":"x"},"pull_request":{}},{"number":2,"title":"B","state":"open","html_url":"u2","user":{"login":"y"}},{"nope":1}]"#
+        let items = ForgeReferences.items(fromList: Array(list.utf8))
+        #expect(items.map(\.number) == [3, 2])
+        #expect(items.map(\.kind) == ["pull request", "issue"])
+        #expect(ForgeReferences.items(fromList: Array("{}".utf8)).isEmpty)
+    }
 }

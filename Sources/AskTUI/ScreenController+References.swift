@@ -49,6 +49,6 @@ extension ScreenController {
     mutating func refreshTokens() {
         let skills = (state.skills ?? []).map { "/" + $0.name }
         let references = state.choices[Self.referenceList]?.rows.map(\.label) ?? []
-        state.transcript.setTokenNames(Set(skills + references))
+        state.transcript.setTokenNames(Set(skills + references).union(state.resolvedReferences))
     }
 }

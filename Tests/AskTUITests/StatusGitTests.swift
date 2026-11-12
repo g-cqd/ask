@@ -32,4 +32,17 @@ struct StatusGitTests {
         let mark = ScreenComposer.leadingMark(for: none).character
         #expect(text(none) == "\(mark) · claude-5 · 12%")
     }
+
+    @Test func `the branch's pull request follows the git state in every form, and goes with it`() {
+        var controller = ScreenController(label: "claude-5")
+        controller.state.context = "12%"
+        _ = controller.handle(.gitStatus(["main · 3 changed", "main ·3", "main"]))
+        _ = controller.handle(.branchPullRequest(42))
+        let mark = ScreenComposer.leadingMark(for: controller.state).character
+        #expect(text(controller.state) == "\(mark) · claude-5 · 12% · main · 3 changed · #42")
+        let short = "\(mark) · claude-5 · 12% · main #42"
+        #expect(text(controller.state, columns: short.count) == short)
+        _ = controller.handle(.branchPullRequest(nil))
+        #expect(text(controller.state) == "\(mark) · claude-5 · 12% · main · 3 changed")
+    }
 }

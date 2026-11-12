@@ -24,7 +24,7 @@ extension ScreenController {
             case .detail(let text): receive(detail: HomePath.abbreviate(text, home: options.home))
             case .requestExit(let exit): state.exitRequest = exit
             case .label, .labelVariants, .sandboxActive, .sessionIdentity, .conversationName, .status, .context,
-                .gitStatus:
+                .gitStatus, .branchPullRequest, .referencesResolved:
                 applyStatusLine(update)
             case .runners(let list): setRunners(list)
             case .runnerActivity(let seen): state.runnerActivity.merge(seen) { Swift.max($0, $1) }
@@ -101,6 +101,12 @@ extension ScreenController {
 
     /// What the status line shows: the label, the sandbox, the session's colour, the detail and the context. Called with those
     /// updates only.
+    /// The `#123` of a sent message that resolved: drawn as tokens from now on (roadmap 0186).
+    private mutating func addResolved(_ names: [String]) {
+        state.resolvedReferences.formUnion(names)
+        refreshTokens()
+    }
+
     private mutating func applyStatusLine(_ update: ConversationUpdate) {
         switch update {
             case .label(let text):
@@ -116,6 +122,8 @@ extension ScreenController {
             case .status(let text): state.detail = text
             case .context(let text): state.context = text
             case .gitStatus(let forms): state.gitStatus = forms
+            case .branchPullRequest(let number): state.branchPullRequest = number
+            case .referencesResolved(let names): addResolved(names)
             default: break
         }
     }
