@@ -1,0 +1,1352 @@
+[
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 0,
+  "chars": 133899,
+  "calls": 3,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Where was the encrypted migration tarball found, and how was it decrypted and extracted?",
+    "a": "At /Volumes/Personal/Github/_migration/g-cqd-migration-20261028.tar.gpg, with a separate PASSPHRASE-g-cqd-migration-20261028.txt next to it. It was decrypted with gpg --batch --pinentry-mode loopback --passphrase-file and piped to tar into /Volumes/Personal/Github/g-cqd-migration-20261028 (chmod -R go-rwx afterwards)."
+   },
+   {
+    "q": "Which shell does the bash tool run, and what workarounds did the agent have to use because of it?",
+    "a": "fish. Bash-style `for ... do/done`, `VAR=value`, heredocs (`<<'E'`) and `$?` all failed. The agent used fish `for ... end`, `set VAR value`, `$status`, and the write tool to create files such as Scripts/tracking.py."
+   },
+   {
+    "q": "How was the pi-integrations divergence between the migration bundle and the local ~/Developer clone reconciled?",
+    "a": "The bundle's main ends at 4384a75 (two claude fixes from 10-25). The local clone had two newer commits, the Copilot domain (816b902) and the Mistral full catalog (ac88554), on top of the shared base 704928a. The agent rebased the local commits onto the bundle's main (producing 736983a and b0168ba), fast-forwarded main, and fetched the feature/mistral-vibe-full-catalog branch. The origin remote was set to git@github.com:g-cqd/pi-integrations.git, and commit.gpgsign was set to false locally."
+   },
+   {
+    "q": "How were the ask and pi session histories from the migration and this computer combined, and what were the resulting counts?",
+    "a": "With `cp -Rn` (no-clobber) from both the migration (ask/state-ask/sessions, sessions/pi-sessions, sessions/agent-chat) and the local stores (~/.local/state/ask/sessions, ~/.pi/agent/sessions) into /Volumes/Personal/Github/sessions/{ask,pi,agent-chat}. The result was 167 ask session files and 79 pi session files."
+   },
+   {
+    "q": "What did the ask quality gate (Scripts/quality.sh --check, run with output to tracking-gate-ask.log) report for the analyzers?",
+    "a": "swift-format and swiftlint (--strict) ran first. deadwood 0.11.1 gave 16 notes (0 errors or warnings), mostly 'referenced-only-by-tests' items such as rotationIsUnsaved and removeAgy/removeCodex. dolly 0.11.0 gave 669 notes (86 suppressed), largely near-clones in Tests. arcleak 0.12.0 gave 0 findings (2 suppressed). The build and test stage then ran in release mode, with a swift-argument-parser 'maintenance.lock' cache warning."
+   }
+  ],
+  "oneShot": [
+   0,
+   1,
+   0,
+   1,
+   1
+  ],
+  "incremental": [
+   0,
+   1,
+   0,
+   1,
+   0
+  ],
+  "oneShotChars": 12900,
+  "incrementalChars": 12192
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 7,
+  "chars": 90285,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "In the first benchmark, which approach did the agent conclude was better for downscaling images, and what were the key numbers for the 48 MP JPEG case?",
+    "a": "ImageIO thumbnail (CGImageSourceCreateThumbnailAtIndex) beat decode + Accelerate/vImage Lanczos scale. For the 48 MP JPEG it took about 170 ms and 56 MiB peak footprint, against about 740 ms and 388 MiB for vImage. vImage only tied on PNG, where it used about 3x the memory."
+   },
+   {
+    "q": "What change did the agent make to the encode order in ImageReader.swift, and why?",
+    "a": "PNG encoding of a photo costs about 260-350 ms and gives 3-5 MB, while JPEG costs 10-30 ms and gives 0.4-0.7 MB. Photos now try JPEG first. PNG still goes first when the source is image/png or image/gif or has an alpha channel (the `favoursPNG` check). The pi limits were kept: 2000 px, 4.5 MiB as base64, the same JPEG qualities, and shrinking by a quarter."
+   },
+   {
+    "q": "What did the second live large-context probe (roadmap 0069) show, and where was it recorded?",
+    "a": "It used gpt-oss-120b-medium with the same 137,838-token prompt. There were two HTTP 503 'No capacity' errors, retried after 1 s and 2 s. It then compacted and retried, and finally stopped with 'does not fit ... even after compacting', because compaction can't shrink a single huge user message. It is recorded in docs/diary/2026-10-28-05.md."
+   },
+   {
+    "q": "What new requirements did the user add in their follow-up message?",
+    "a": "Measure the Core Image and Metal paths as well. Assess compatibility with BMP, AVIF, GIF, video (MP4) and sending PDF, with no compaction needed for them for now. Videos should accept arguments to pick frames: specific frames or a number of frames, a frequency, an offset, and a max count of images sent at once. Sending multiple images at once should be allowed if possible. Then continue the work."
+   },
+   {
+    "q": "What did the agent's formats and media probes find about BMP, AVIF, GIF, PDF and video support?",
+    "a": "ImageIO decodes com.microsoft.bmp, public.avif and com.compuserve.gif. Synthetic test files at 2000x1500 decoded in about 49 ms (BMP), 129 ms (AVIF) and 148 ms (GIF). PDFKit opened a 20-page PDF in 3 ms and rendered a page at 1545x1999 in 1-3 ms. For video, AVFoundation on 30 s test MP4s (made with ffmpeg) gave 8 frames in 256 ms (1080p) or 1148 ms (4K) with exact timing, and 32 ms or 69 ms with keyframe-tolerant timing."
+   }
+  ],
+  "oneShot": [
+   0,
+   1,
+   1,
+   1,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 16675,
+  "incrementalChars": 4037
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 14,
+  "chars": 105526,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "What are the effective defaults for `ui.sidebar`, `ui.prompt`, and `ui.scrollLines` in ScreenOptions, which the agent found while working out what `ask config` should show for the `ui` section?",
+    "a": "ui.sidebar is false (closed), ui.prompt is an empty string \"\", and ui.scrollLines is 3 (from ScreenOptions.init defaults in Sources/AskTUI/ScreenOptions.swift)."
+   },
+   {
+    "q": "What gap did the user point out in `ask config` output, and which roadmap entry number was created to track it?",
+    "a": "`ask config` does not show the `ui`, `skills` or `mcp` sections (it only prints provider, model, thinking, maxTurns, compactAt, sandbox, environment and the two config file paths). It was filed as roadmap 0103 ('ask config shows every section')."
+   },
+   {
+    "q": "What did the user request about the README and docs folder organisation, and which roadmap entry captured it?",
+    "a": "Make the README lean and approachable (easy-to-use view first, configuration presented approachably), put consumer-facing documentation in the docs folder, and make sure the development documentation infrastructure (adr, diary, roadmap, research) cannot be mistaken for consumer docs. It was recorded as roadmap 0102 'User documentation apart from the development records'."
+   },
+   {
+    "q": "How does auto compaction currently work, and what change did the user ask for (and which roadmap entry)?",
+    "a": "compactAt is a fixed token count, default 150,000 (config `compactAt`, flag `--compact-at`, 0 disables it), passed as requestedCompactAt into ContextBudget in Sources/AskAgentCore/Loop/ContextBudget.swift, which derives a threshold from the model's context window and never raises a user-requested value. The user wants compaction to work with a ratio of the window instead; this is roadmap 0104 'compaction as a share of the window'."
+   },
+   {
+    "q": "Where is the `ask config` report generated, and how does the agent plan to implement 0103?",
+    "a": "In `RunSettings.report(userFile:projectFile:)` in Sources/ask/RunSettings.swift (also shown by `/config`), which prints one row per setting with its [source]. The plan is to add a per-key source table to `Configuration` (Sources/AskAgentCore/Configuration/Configuration.swift, whose `applying(_:from:)` layers files) and print each `ui` key's effective value using the screen's own defaults (ScreenOptions)."
+   }
+  ],
+  "oneShot": [
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "incremental": [
+   0,
+   1,
+   1,
+   1,
+   1
+  ],
+  "oneShotChars": 11825,
+  "incrementalChars": 7948
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 21,
+  "chars": 127202,
+  "calls": 3,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why did the wait-gap probe's check 'it times out instead, as a text that never came' fail initially, and where does the text 'nothing happened within' come from in the source?",
+    "a": "The probe sent `wait` with `output_contains`, but the job-waiting timeout text `[nothing happened within N s; job-N still running]` is produced in Sources/AskTools/JobActionTool.swift (line ~83, for the `job` tool's wait action) while WaitTool.swift (line 90) has its own `[nothing happened within N s]`. The probe was fixed by switching the t3 call from the `wait` tool to the `job` tool with action wait, after which all 3 checks passed."
+   },
+   {
+    "q": "In Scripts/probe-interactive.py, how does the tool row format on screen differ from what the probe originally expected, and what changes were made to the A, B and D checks?",
+    "a": "Tool rows are now `shell \u00b7 <command> \u2026 N lines \u00b7 \u2713/\u2717` (result folded into the row, ending in \u2713 or \u2717) instead of `bash <command> \u2713`. A and D got a new `tool_shown(command, mark)` helper in Screen. B now checks the row ends in \u2717, and the `[aborted; the command and its children were stopped]` text is checked in the session record rather than on screen. D's 'Resumed session' and '% cached' status checks were dropped or changed because they are now details."
+   },
+   {
+    "q": "Why do several interactive probe sections (F, G, H, I) need `--verbose`, and what is the ADR that caused this?",
+    "a": "ADR-0119 made things like the thinking status, 'Configuration reloaded.' announcements, 'Resumed session \u2026' startup notices, and 'A new ask binary appeared.' into details that are only shown with `--verbose`. The reload code passes `--verbose` on to the new build, so H, H2 and I can start with `--verbose`; the thinking probe's line 232 also got `--verbose` with a comment citing ADR-0119."
+   },
+   {
+    "q": "Why did probe G fail on `/config now` checks even after updating wording, and how was it fixed?",
+    "a": "`/config now` prints a report of about 45 rows, taller than the probe's 30-row emulated screen (ROWS, COLUMNS = 30, 100), so the `maxTurns` line scrolled off. The fix was to temporarily set the module-global ROWS to a larger value (80 rows) for the duration of probe_slash (the Emulator reads the globals each time), and to use `/config now` since plain `/config` now opens an interactive picker."
+   },
+   {
+    "q": "After running H\u2013M, which probe sections still failed and what was the plan for J/K/L regarding the `wait` gate?",
+    "a": "Failures remained in H (new build announced, new process reloaded, resumed session), I (good-build reload, same session), K (Esc with draft, Ctrl-C erasing draft, editor holding unsent messages, nothing auto-requested, unsent messages never in session) and M (transcript shows prompt on four rows); J and L passed. For J/K/L, which use `wait {file_exists: ...}` gates, the agent was considering swapping in a foreground shell loop that blocks until the file appears, noting bash's default timeout is 120 s (max 600), same as the old gate."
+   }
+  ],
+  "oneShot": [
+   0,
+   0,
+   1,
+   0,
+   0
+  ],
+  "incremental": [
+   1,
+   1,
+   1,
+   1,
+   0
+  ],
+  "oneShotChars": 13333,
+  "incrementalChars": 7332
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 28,
+  "chars": 676405,
+  "calls": 12,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why did the Claude status line show `\u2014%/?` for the context window before the fix, and where in the code did it return early?",
+    "a": "ask only looked up a Claude model's context size when a thinking level was set explicitly. In `ModelDiscovery.resolveAll`, `if initial.provider == .anthropic { return \u2026 }` (added in commit 1048552 on 10-21) returns early and never reads the cached `models-anthropic.json`. The only reader was `ThinkingDiscovery.withNativeLimits`, and the user's config sets no thinking level."
+   },
+   {
+    "q": "What did the startup-time comparison for the context-window fix show, and against what budget?",
+    "a": "A median of 40.3 ms before the fix (/tmp/ask-old) and 40.6 ms after (/tmp/ask-new), over 30 alternating runs each with the real config on a loaded machine. The cold-start budget is 50 ms, so there was no visible change."
+   },
+   {
+    "q": "What did the user decide about the Atelier FileWatcher, and what are the constraints from aemi's repo and CI?",
+    "a": "The user said to promote both kinds of watchers (Atelier's FSEvents FileWatcher and ask's kqueue DirectoryWatch/BinaryWatcher) into a generalized, composable, reusable set of watcher APIs in AemiIO, then use that in ask and Atelier. aemi's sources may not import Foundation (its tests may), and AemiIO uses strict memory safety, so unsafe calls need `unsafe` markers. SwiftLint file length is 500 (warning) and 800 (error). CI runs Swift 6.3.3 and 6.4.1 on macOS, while only 6.4.0 is installed locally. ask, TerminalKit, AemiJSON and Atelier all pin aemi at commit f6da05c, so they must be updated together."
+   },
+   {
+    "q": "Where did the new watcher code go in aemi, and what is the current state of the AemiIO tests?",
+    "a": "The source is in `/Volumes/Personal/Github/g-cqd/aemi/Sources/AemiIO/Watching/`. It holds FileWatchEvent, CanonicalPath, FileIdentity, KernelQueue, DetachedThread, KqueueWatchState, KqueueWatcher, DirectoryWatch, WatchTable, FSEventStreamController and FileWatcher. The tests are in `Tests/AemiIOTests/` (WatchingSupport, FileWatcherTests, KqueueWatcherTests). The last run was 58 tests in 11 suites with one failure, an expectation `!woken` at KqueueWatcherTests.swift:221 in the DirectoryWatch test 'a change to the directory ends the wait, a wake ends it with false\u2026'. I was rewriting that test."
+   },
+   {
+    "q": "How did I handle the build-output filtering problem while compiling AemiIO, and what was the misleading result?",
+    "a": "My first grep filter only matched lines starting with a path followed by error/warning, so it hid an error and printed nothing. A later 'tail -2' check showed the build had actually failed on FSEventStreamController.swift:78 (expected '{' after 'if' condition). I widened the filter into /tmp/aemib.sh to catch every error form, then fixed the strict-memory-safety errors (adding `unsafe` markers, `@safe` on FSEventStreamController, and removing unnecessary `unsafe`), after which the build was clean."
+   }
+  ],
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 12067,
+  "incrementalChars": 11806
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 35,
+  "chars": 92641,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Which wish-file items did the agent list as still-open wishes, and which two wishes that looked uncovered turned out to be done?",
+    "a": "Open: 0092, 0094, 0110, 0116, 0137, 0148, 0101, 0107, 0115, 0109, 0121, 0122, 0130, 0135, 0140, 0149, 0150. The two that looked uncovered but are done: 'context fill not shown' (0147) and the Pi thinking blocks (0167)."
+   },
+   {
+    "q": "What is the proposed batch order of the schedule the user approved with 'go ahead, seems nice'?",
+    "a": "Batch A: record cleanup (close done-in-fact entries, 0101 Process() guard); B: accounts and scoping (0092 second login, 0094 providers per repo); C: security and keys (0110 Keychain, 0153 audit leftovers); D: cost per turn (0137 slimmer tool schemas); E: interaction (0116 confirmation picker, 0078 tool block presentation); F: larger work later (0152 syntax highlighting, 0115 taking over a session)."
+   },
+   {
+    "q": "How is the Batch A record cleanup being done, and why was a worktree used instead of main's checkout?",
+    "a": "In a new task worktree at /tmp/ask-claude-rcIb/wt-records on branch records-cleanup (from origin/main), to be landed with Scripts/land.sh (land.py) so the script is tested for real (0068's remaining step). Main's checkout has an untracked .vscode/ that clean(main) may reject; the agent also appended .vscode/ to .git/info/exclude."
+   },
+   {
+    "q": "What did the agent find about 0077 (Replace Swift Regex by AemiRegex), and what evidence supports it?",
+    "a": "0077 is done in fact: no Swift Regex remains in Sources (the only use, ProviderFailure+Overflow.contextWindow, now uses a linear-time Pattern), and Tests/AskCoreTests/NoSwiftRegexTests.swift guards against new uses."
+   },
+   {
+    "q": "What constraints or open decisions did the agent flag for the user regarding 0110 and the parked items?",
+    "a": "0110 (Keychain) needs a one-time signing: ASK_SIGNING_IDENTITY=\"Apple Development: Guillaume Coquard (B85BJQQ6R8)\" Scripts/build-release.sh then 'Always Allow'; the user should confirm that identity because its certificate's organisation says 'oculavis GmbH'. Parked: 0088 (memory, 24.1 MiB active vs 20 budget, deferred by owner), 0109/0130, 0122, research items, pixel UI (0003/0012/0014/0015), 0070 release, 0032/0063/0107, 0055."
+   }
+  ],
+  "oneShot": [
+   0,
+   1,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   1
+  ],
+  "oneShotChars": 8696,
+  "incrementalChars": 4742
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 42,
+  "chars": 106896,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Which new config keys were being added for folding long tool output, and what test value did the 'full' UISection in ConfigurationKeySourceTests get for them?",
+    "a": "`ui.fold.outputLines` and `ui.fold.outputBytes`; the test's full UISection was given outputFoldLines: 200 and outputFoldBytes: 32768."
+   },
+   {
+    "q": "How did the agent verify that the click test actually covers the new marker-row branch, and what was the result?",
+    "a": "By mutation: it edited Sources/AskTUI/ScreenController+Pointer.swift to change `frame.middleFolds[row] {` to `frame.middleFolds[row], false {` (backing up to /tmp/p.bak), rebuilt and ran ToolOutputFoldTests, which went red (6 tests, 3 issues); it then restored the file from the backup."
+   },
+   {
+    "q": "Why did the SourceStructureTests failure occur and how was it fixed?",
+    "a": "The test enforces that a file extending a type is named Base+Topic.swift; Sources/AskTUI/ToolContext.swift extends ScreenComposer, so it was renamed (git mv) to Sources/AskTUI/ScreenComposer+ToolContext.swift."
+   },
+   {
+    "q": "What lint (SwiftLint metric) violations remained after formatting, and where?",
+    "a": "function_parameter_count (7 params, max 6) in ScreenComposer+CommandBlock.swift:106 and ScreenComposer+ToolInput.swift:15 (toolInputLines); large_tuple (more than 3 members) in ScreenComposer+ToolContext.swift:4; and in ConfigurationFile.swift cyclomatic complexity 11 (max 10) at line 74 and type body length 201 lines (max 200)."
+   },
+   {
+    "q": "Why did the agent's new ToolOutputFoldTests initially fail to compile and what drawing-test adjustment made them pass?",
+    "a": "Missing imports under member-import-visibility: Foundation (for trimmingCharacters) and TerminalKitStyle (for `dim`) had to be added; and the PointerRig screen was too small, so rows were increased from 60 to 340 (columns 80, rows: 340, searching 0 ..< 340), after which all 13 tests passed."
+   }
+  ],
+  "oneShot": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 8975,
+  "incrementalChars": 1554
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 49,
+  "chars": 198089,
+  "calls": 4,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why did folding of long code blocks fail at the start of this session, and what was the root cause found by the probe?",
+    "a": "The fold check compared blocks against line 0 because top-level blocks from AemiMarkdown carry an empty node.range (0..<0); source positions had to be taken from elsewhere (e.g. the first code line's range / the fence the block opens on)."
+   },
+   {
+    "q": "Why couldn't the first round of commits be pushed, and how was it resolved in the next turn?",
+    "a": "Push failed with 'Permission denied (publickey)': GitHub accepted the key /Volumes/Personal/Github/ssh/gcqd_github but ssh couldn't read its passphrase from the Keychain in that session ('read_passphrase: can't open /dev/tty'). After the user said to continue, the push worked without any workaround (TerminalKit fc2fd94 and ask 96f2439 were pushed)."
+   },
+   {
+    "q": "What were the benchmark results for the render of the 38 KB reply with a 400-line Swift block (120 columns, highlighting on, open) before and after the optimisations?",
+    "a": "Open and highlighted went from 9.52 ms originally to 2.78 ms after the first round, then 2.34 ms after the second round (confirmed ~2.33 ms on the real pin). Folded and highlighted went from 3.65 ms to about 0.70 ms."
+   },
+   {
+    "q": "Why did ask's quality gate fail after the first and second rounds, and how was each fixed?",
+    "a": "First: AskTUITests imported AemiMarkdown (the benchmark calls MarkdownParser directly) without declaring it, so the dependency audit failed. Fix: add .product(name: \"AemiMarkdown\", package: \"AemiMarkdown\") to the AskTUITests dependencies in Package.swift. Second: SwiftLint function_parameter_count \u2014 the rewritten `add` had 7 parameters (limit 6). Fix: moved segments and their end into a small RowSegments builder type that owns `add`."
+   },
+   {
+    "q": "What is the state of the pin cascade and Atelier repin at the end, and what verification was done?",
+    "a": "The cascade (Scripts/update-pins.py --apply) pinned ask to TerminalKit 7d8fd8b as ask commit c740ec5 with a clean gate. Atelier's TerminalKit pin was changed from 0e598c0a\u2026 to the 7d8fd8b revision in AtelierCore, KittyCode and GitDiffViewer (Package.swift/Package.resolved); the AtelierCore, GitDiffViewer and KittyCode suites all passed with no failures, and the Atelier commit was in progress (pre-commit lint passing) when the transcript ends."
+   }
+  ],
+  "oneShot": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 8472,
+  "incrementalChars": 546
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 56,
+  "chars": 123283,
+  "calls": 3,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "After the first mutant run over the resource-attachment code, how many mutants survived, and what was the result after the tests were tightened?",
+    "a": "Five mutants survived (plus two that didn't build, which were rewritten). After tightening the tests and rewriting those two, all 20 mutants were killed."
+   },
+   {
+    "q": "Why did the first `Scripts/quality.sh` gate run fail, and how was it fixed?",
+    "a": "The static analyzer reported a near-clone warning: the show-or-close tail of the `#` reference picker (ScreenController+References.swift) duplicated the `@` resource picker in ScreenController+Resources.swift. The agent extracted the shared tail into one helper instead of accepting the clone with a directive."
+   },
+   {
+    "q": "What happened with the ProviderProxyTests failure during the second gate run, and what did the agent conclude?",
+    "a": "\"a tunnel to an allowed target relays both ways\" failed at ProviderProxyTests.swift:73 (`reply.hasSuffix(\"ping\")`). The test passed 5 of 5 when run alone and the sandbox networking code wasn't touched, so the agent treated it as flaky under gate load and reran the gate, which came back `[OK] clean`."
+   },
+   {
+    "q": "What did the CI investigation of commit 6626b42 show about task t183 (CI red on every commit)?",
+    "a": "The run for 6626b42 failed at the 'Quality gate' step (`Scripts/quality.sh --check`, exit code 1), the same late failure as t183, even though all five pinned family revisions were by then on GitHub. So the unpushed pins weren't the cause. The job log couldn't be read (403, needs admin rights). The CI log ends at line 11042 versus 10969 for the local gate, and the tests pass locally even with an empty HOME and CI env vars."
+   },
+   {
+    "q": "What did the agent write for task t50 (dylib extension platform), and what status and reasoning did it give it?",
+    "a": "It wrote ADR 0142 ('Compiled extensions are a C table in a signed dylib, loaded on first use') with status `proposed`, because the owner hasn't decided. It also linked the ADR from roadmap 0140. The cost question was settled by 0114's measurements: a stdio JSON-RPC round trip costs about 20\u201336 \u00b5s, under 1% of the 4 ms input budget. Trust would work by file content (e.g. the dylib's code-directory hash), like the existing project trust."
+   }
+  ],
+  "oneShot": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 8510,
+  "incrementalChars": 3746
+ },
+ {
+  "session": "20261029T141105Z-e3608c29.jsonl",
+  "window": 63,
+  "chars": 122692,
+  "calls": 3,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "What was the original maximum number of questions in the question tool (QuestionTool.swift), and what limit is being changed to for note n14?",
+    "a": "The original limit was 4 questions (maxItems 4, 'a list of 1 to 4 questions'); it is being raised to 16, with up to 8 choices per question unchanged."
+   },
+   {
+    "q": "How does the tab row display a series of many questions when the screen is too narrow for every header?",
+    "a": "The shown tab appears in full in brackets (e.g. [Alpha]) and the others by their initial. If even initials do not fit, the row slides to keep the shown tab, and a \u203a marks tabs left out."
+   },
+   {
+    "q": "What bug was found while probing with Scripts/probe-question-series.py, and where is it?",
+    "a": "TerminalKit's SequenceRouter.csiKeyCode(for:) in Sources/TerminalKitInput/SequenceRouter.swift does not decode the legacy CSI Z sequence (ESC [ Z), which Shift+Tab sends in terminals without the kitty keyboard protocol. As a result, Shift+Tab did not move focus from the choices back to the tabs in the probe."
+   },
+   {
+    "q": "Which worktrees and branches are being used for this work, and how does the work get landed on main?",
+    "a": "The ask repo uses worktree ../ask-questions on branch questions16 (from origin/main). TerminalKit uses worktree ../TerminalKit-backtab on branch backtab. Landing uses /tmp/ask-claude-rcIb/land.sh BRANCH, which rebases on origin/main, pushes to origin main, fast-forwards local main, and removes the worktree."
+   },
+   {
+    "q": "Which docs and tests were updated or added for the 16-question change, and what was not verified?",
+    "a": "docs/screen.md was changed from 'up to four' to 'up to sixteen' questions. Tests were updated in Tests/AskToolsTests/QuestionToolTests.swift (a 16-series test and the '1 to 16' message) and a new Tests/AskTUITests/QuestionTabsTests.swift was added. Roadmap 0117 still says '1 to 4' at lines 29 and 53. The PTY probe Scripts/probe-question-series.py had not fully passed, since the Right-key step failed before the Shift+Tab decoder fix. The behaviour was also not seen in a real terminal."
+   }
+  ],
+  "oneShot": [
+   0,
+   1,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   1,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 11668,
+  "incrementalChars": 6647
+ },
+ {
+  "session": "20261029T090543Z-67df8a4b.jsonl",
+  "window": 70,
+  "chars": 51610,
+  "calls": 1,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why were both of AemiProtobuf's CI runs (2026-10-26 and 2026-10-28) failing, according to roadmap 0040?",
+    "a": "Jobs run on `macos-26` with the image's Swift 6.3.3, while Package.swift and .swift-version ask for Swift 6.4 (error: package is using Swift tools version 6.4.0 but the installed version is 6.3.3), and swift-format is not on the runner."
+   },
+   {
+    "q": "Which action did the agent use to install the toolchain that `.swift-version` names, and how is it referenced in aemi's workflow?",
+    "a": "swift-actions/setup-swift, pinned by commit SHA (364295d9c23900ce04d4e5cc708387921b4e50f9) as aemi's swift-tool.yml does; analyzerkit's macOS job already gets 6.4 this way (about 6 minutes to install)."
+   },
+   {
+    "q": "Why does roadmap 0037 (aemi's shared workflow) not fix AemiProtobuf's CI, and why does the 0040 entry live in analyzerkit's roadmap?",
+    "a": "AemiProtobuf deliberately does not use aemi's shared workflow (its ADR-0006), so 0037 does not reach it; the entry is in analyzerkit because roadmap 0017 depends on AemiProtobuf being green."
+   },
+   {
+    "q": "What did the agent verify before pushing the AemiProtobuf CI change, and what was the push's state at last check?",
+    "a": "It confirmed swift.org lists 6.4.0 as a real release (so .swift-version 6.4.0 can be installed), actionlint and shellcheck passed, and the format gate (Scripts/quality.sh format) passed with swift-format off the PATH. The commit was pushed to main and run 40959879484 was in_progress; its result was not yet known."
+   },
+   {
+    "q": "What constraints does roadmap 0043 set for the project-derived test/generated/script classification work?",
+    "a": "Classify using SwiftPM target kinds and Xcode product types before path conventions, with provenance and conservative fallback. Never execute Package.swift or project scripts during ordinary analysis. Record ambiguous or dynamic cases as unknown rather than silently classifying them as production. Evaluate SwiftSyntax and existing parsers before adding a dependency or building a parser. All five tools must agree on region selection for the same fixture and configuration."
+   }
+  ],
+  "oneShot": [
+   1,
+   1,
+   0,
+   1,
+   0
+  ],
+  "incremental": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 10927,
+  "incrementalChars": 4718
+ },
+ {
+  "session": "20261029T090543Z-67df8a4b.jsonl",
+  "window": 77,
+  "chars": 60247,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "What was the commit message and hash of the commit that completed roadmap item 0005 in AemiJSON, and what commit preceded it?",
+    "a": "Commit 52378bd \"fix: coding errors carry the path from the root (roadmap 0005)\"; it followed 7bee863 \"test: coding errors carry the path Foundation gives (roadmap 0005, red)\"."
+   },
+   {
+    "q": "What environment variable was set when committing, and what did the roadmap 0005 file's status get changed to?",
+    "a": "AD_TYPECHECK_BUDGET_MS=250 was set on the git commit; the 0005 roadmap file status was changed from not-started to done."
+   },
+   {
+    "q": "What limits and framing modes does roadmap item 0006 (AemiJSONRPC) specify?",
+    "a": "Content-Length framing (LSP) with an 8 KiB header limit and a body limit, case-insensitive header names, other headers ignored; plus newline-delimited messages (MCP stdio) with a line limit. Delimiters are found with AemiKernels.firstIndexOfByte, and stdio is read in 64 KiB blocks."
+   },
+   {
+    "q": "Which existing swift-search files will 0006 be ported from, and which consumers will migrate?",
+    "a": "Ported from swift-search LSPFrame, LSPFrameDecoder, LanguageServerConnection and MCPStdio (with their tests first). Consumers: swift-search, arcleak (LspServer.swift), ask (AskMCP), Atelier (AtelierLSP/JSONRPC.swift), each migrating in its own entry."
+   },
+   {
+    "q": "What did the analyzers diff show after the `under` helper refactor in TapeEncoder.swift, and was lint/test clean?",
+    "a": "Lint was clean and tests passed (459 tests in 43 suites). The analyzer diff showed the TapeEncoder.swift structural-clone warning (3 regions, ~50 tokens) disappeared, while a new TapeDecoder.swift structural-clone warning (similarity 0.96) appeared, so 13 warnings total."
+   }
+  ],
+  "oneShot": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   1
+  ],
+  "oneShotChars": 17140,
+  "incrementalChars": 6356
+ },
+ {
+  "session": "20261029T090543Z-67df8a4b.jsonl",
+  "window": 84,
+  "chars": 375795,
+  "calls": 7,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why did the assistant place the three analyzer commits in a new clone with the ticket MAIN-24613, and what are the clone's path and branch name?",
+    "a": "The user earlier said to pick the ticket number last used to touch the tools; that was MAIN-24613 (PR #1772, git hooks). The assistant can't create Jira tickets, and an invented number would break workflows that read the ticket from the branch name. Clone: ~/Developer/maintastic/ios/ci-MAIN-24613-analyzers, branch feature/atlas/ci/MAIN-24613-Update-Analyzers (cut from origin/develop)."
+   },
+   {
+    "q": "Which analyzer versions were bumped (old to new), and why was the cache path changed to `<tool>/cache` and deadwood's `--no-cache` removed?",
+    "a": "arcleak 0.12.0\u21920.14.0, dolly 0.11.0\u21920.13.0, deadwood 0.11.1\u21920.13.0. The new versions ignore the old `facts` cache file and would run uncached on runners that keep their cache directory, so all three now get `--cache-path <tool dir>/cache`. deadwood's 64 MiB cache limit is gone, so it uses its cache again."
+   },
+   {
+    "q": "What did the user ask regarding commit history and comment/README style, and what was the resulting state of the branch?",
+    "a": "The user asked to drop the failing (red-test) commit and to stop using the DangerPlugins README as a changelog, keeping comments factual to the current state without referring to prior state. The red test was squashed into the update, leaving two commits: 'MAIN-24613 Update arcleak to 0.14.0, dolly to 0.13.0 and deadwood to 0.13.0' and 'MAIN-24613 Stop excluding from arcleak what the unit tests do not build'. README/comment mentions of old versions, timings and the old `facts` file were removed."
+   },
+   {
+    "q": "Why did the user flag the test 'finds the pinned bundle of each tool and the version that it names', and how was it fixed?",
+    "a": "The user worried Dependabot bumps would break it because the fixtures copied the real pinned versions. The AnalyzerFixtures versions were changed to made-up, distinct ones (arcleak 1.0.0, dolly 2.0.0, deadwood 3.0.0), the fixture comment no longer names real versions, and the test expects [\"1.0.0\",\"2.0.0\",\"3.0.0\"]. The test really checks that AnalyzerLocator finds each tool's bundle and reads its version from its own info.json manifest."
+   },
+   {
+    "q": "What PR was opened for this work and how was its body filled, per the user's 'very short' PR style?",
+    "a": "PR #1805 on maintastic/app-ios, title '[ATLAS] MAIN-24613 Update arcleak, dolly and deadwood', base develop, not draft, 2 commits. The body follows the template like #1803: Summary has the ticket heading plus one line 'arcleak 0.14.0, dolly 0.13.0, deadwood 0.13.0'; Testing and Potential Risks are left empty with boxes ticked; no reviewers added because CODEOWNERS requests @maintastic/ios automatically. The assistant had not checked CI or Danger on it."
+   }
+  ],
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 11551,
+  "incrementalChars": 5100
+ },
+ {
+  "session": "20261029T090543Z-67df8a4b.jsonl",
+  "window": 91,
+  "chars": 95477,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Which code items did the dolly dead-code cleanup remove, and what was the dolly commit message prefix/hash?",
+    "a": "Removed CoreMLSemanticEmbeddingProvider, UnconfiguredSemanticEmbeddingProvider (plus the notConfigured/snippetTooLong/unsupportedOutputDtype error cases), computePairwiseSimilarities (MinHash batch section), shouldSwitchToTopDown, ConcurrencyConfiguration.serial, and TokenCorpus.lineCount. Committed as 7bbcd92 'refactor: drops code no caller reaches ...'."
+   },
+   {
+    "q": "Why was RepeatGroup.occurrences restored after being deleted in the dolly cleanup?",
+    "a": "Tests/DollyCoreTests/LCPArrayTests.swift:45 uses RepeatGroup.occurrences, so swift test failed to compile; under the agent's keep-if-tested rule, tests-only code stays, so it was restored."
+   },
+   {
+    "q": "What pins were updated in the AemiProtobuf and analyzerkit repos, and what resulting commits were pushed?",
+    "a": "aemi -> d088893 (d088893ed63e996df96e065d628e9ba34d4f3097) and AemiJSON -> ddeebd8; AemiProtobuf commit 6c3810b ('build: pins AemiJSON ddeebd8, aemi d088893'), then analyzerkit repinned AemiProtobuf 6c3810b, AemiJSON ddeebd8, aemi d088893 and pushed commit 1f03de0. Both built and tests passed."
+   },
+   {
+    "q": "What did running deadwood on the sibling repos (arcleak, deadwood, fcheck, modeler, analyzerkit) find?",
+    "a": "0 findings for arcleak, deadwood (3 suppressed), fcheck and modeler; analyzerkit had 1 warning: unused method cachedPaths(at:identity:salt:) in CorpusScan/FactsStore.swift:271."
+   },
+   {
+    "q": "What is step 2 (wire mirrors) doing, and what TDD workflow was used so far in analyzerkit?",
+    "a": "It consolidates the duplicated per-tool Fingerprint/Baseline (arcleak, deadwood, dolly copies) and PathPresentation into analyzerkit's shared ReportSupport target (alongside BaselineFile and PathPresenter). A red test Tests/ReportSupportTests/FingerprintAndBaselineTests.swift was committed first (810f650, failing on missing 'Fingerprinted'), then Sources/ReportSupport/Baseline.swift was implemented (using partitioned(by:)) and the tests passed."
+   }
+  ],
+  "oneShot": [
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "incremental": [
+   0,
+   0,
+   1,
+   0,
+   0
+  ],
+  "oneShotChars": 16075,
+  "incrementalChars": 6609
+ },
+ {
+  "session": "20261105T165936Z-08ffd7f4.jsonl",
+  "window": 98,
+  "chars": 306576,
+  "calls": 6,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "What were the measured results of the `Surface.rgbaBytes` fix (per-pixel append loop replaced with one bulk copy) for a 1640x976 frame?",
+    "a": "Instructions went from 53 M to 1.2 M, and wall time from about 5.7 ms to about 0.14 ms (300 samples). It was committed as 3bc3dd7."
+   },
+   {
+    "q": "In the colour probe run on the Display P3 laptop panel, how did frames tagged sRGB compare with frames tagged with the window's own colour space, and which tag did the app keep?",
+    "a": "sRGB-tagged frames came out within 3/255 (green 0,255,0 shown as 3,255,0). Tagging with the window's colour space was off by up to 26/255 (255,128,64 showed as 255,119,38). The app keeps the sRGB tag, and the window server converts to the screen the window is on. This was recorded in ADR-0009 (still proposed) and committed as 26866be."
+   },
+   {
+    "q": "What was the root cause of mouse wheel events not scrolling the history in the app, and how was it fixed?",
+    "a": "TerminalModel's stored `grid` was nil when mouse events arrived (debug output showed `grid=nil`), so the mouse handler returned early. The fix removed the stored `grid` property and had the handler call `currentGrid()` (made non-private) to compute the grid."
+   },
+   {
+    "q": "Which user note arrived during this stretch of work, what did it say, and how was it handled?",
+    "a": "Note n10 (2026-11-06 14:32): 'color accuracy and matching of the screen profile the window is on is very critical'. It was acknowledged but not fulfilled; it stays open until text blending and other displays are checked."
+   },
+   {
+    "q": "How is the scrollback viewport implemented across core, renderer and app, and what did the benchmark check show about the renderer change?",
+    "a": "Core reads history and screen as one sequence through `Screen.viewportCell/Text/isViewportWrapped(scrolledBack:)` and a `Viewport` state type. The renderer takes a `scrolledBack` parameter, and the cell reads were routed through `frame.cell(row:column:)`. The app scrolls with the wheel and Shift+Page keys, and sends arrow keys when alternate scroll (mode 1007) is on in the alternate screen. The renderer benchmark showed no real regression: 'only the cursor moves' went from 1143 K to 1150 K instructions, and 'one row changed' stayed near 1162-1167 K. Committed as 61ec579."
+   }
+  ],
+  "oneShot": [
+   1,
+   1,
+   0,
+   1,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 14625,
+  "incrementalChars": 7861
+ },
+ {
+  "session": "20261105T165936Z-08ffd7f4.jsonl",
+  "window": 105,
+  "chars": 568008,
+  "calls": 10,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "In the web step b answers, what did the owner decide about \u2318L (which already opened the Command Bar), and what happened to Rename Tab's \u21e7\u2318R shortcut?",
+    "a": "\u2318L stays the Command Bar, which also takes addresses: a 'Go to <address>' row loads in the focused page, or in a new page tab if a terminal is focused. Rename Tab's \u21e7\u2318R was removed (menu and double-click only), and \u21e7\u2318R became Reload Without Cache."
+   },
+   {
+    "q": "During on-screen verification of step b, why did the \u2318[ (Back) test appear to do nothing, and how was Back verified instead?",
+    "a": "The test helper used keycode 33, which is '\u00fc' on this German keyboard layout, not '['. (An earlier helper version had also left Command held down in the system state.) Back was verified by clicking the History menu's Back item through System Events/osascript, which worked."
+   },
+   {
+    "q": "Which test failed in the full run for step b, and what was the cause and fix?",
+    "a": "The 'BannedAPITests' test failed because AddressTextField.swift:36 used DispatchQueue (banned by owner note n7: Swift concurrency only). The fix was to replace it with `Task { @MainActor in ... }`. The SwiftLint type-body-length warning on TabSidebar (204 lines) was handled by moving the accessory out of the body."
+   },
+   {
+    "q": "For web step c, which built-in search engines did the owner choose and which of them gets no suggestions, and why?",
+    "a": "Google (default), DuckDuckGo, Bing, Ecosia and Kagi. Bing gets no suggestions because its old osjson endpoint returns nothing and it no longer answers in the OpenSearch JSON format, which is the only suggestion format the owner allowed; the other four answer in that format."
+   },
+   {
+    "q": "For the command bar redesign in step c, how did the owner want the study done, and which propositions did they choose to take?",
+    "a": "The owner wanted a study of Spotlight, Raycast and Sol shown first, then all of it done. Because none of the apps is installed and opening Spotlight isn't allowed, the study (docs/research/command-bar-design-2026-11-12.md) drew on Raycast docs and Sol's README, with Spotlight from memory. The owner took propositions 1 Row states, 4 Row actions (\u2318K), 5 Engine chip, 6 Row accessory and 7 Recall with \u2191, and wanted the address field's list to share the same rows and states as one shared view."
+   }
+  ],
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 10411,
+  "incrementalChars": 110
+ },
+ {
+  "session": "20261101T232953Z-0228c20d.jsonl",
+  "window": 112,
+  "chars": 589012,
+  "calls": 10,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why did the recovery test suite initially hang for 600 seconds, and what did the agent do to isolate it?",
+    "a": "Something looped forever in the recovery loop (it was not guaranteed to blank at least one byte per pass). The agent ran each targeted YAMLRecoveryTests case individually under `timeout 40`, then made YAMLRecovery.swift terminate: every pass must blank at least one byte; otherwise, or past the cap, it blanks from the earliest known point, and if that changes nothing, it blanks everything."
+   },
+   {
+    "q": "What was the discrepancy in the yaml-test-suite error-case count, and how was it resolved?",
+    "a": "The README, plan and ADR-0012 said 95 error cases, but the suite has 94. The 95th `error` hit from `find -name error` was the fixtures' `tags/error` directory, not a case (94 `error` files; 402 `in.yaml` files). The agent corrected 95 to 94 in README, ADR-0012, ADR-0014 and the plan."
+   },
+   {
+    "q": "How did the agent fix the duplicate-key handling in recovering mode, and which files were involved?",
+    "a": "The key table kept the first `a`, so a third `a` found the already-unlinked first one and the second stayed. The agent made the table point at the surviving key: `YAMLKeyTable` got a replace operation touching only the entry's hash bucket. The replaced key is marked with `parent = -2` and pruned once when the mapping closes, in YAMLComposer.swift. The 'duplicateKeys' test then passed."
+   },
+   {
+    "q": "What did the CI run on 933f941 show, and what was the cause of the failing job?",
+    "a": "All jobs passed except `Sanitizers \u00b7 Address \u00b7 Linux \u00b7 Swift 6.4.1` (and the Gate that depends on it). LeakSanitizer reported ~560 KB leaked in 10,002 allocations from `ProjectionTests.deepNesting`, which builds 5,000-deep projected JSON values. The agent changed the test to take the JSON values apart iteratively and keep only the tree. A rerun in the swift:6.4.1-noble container left one 4,096-byte leak, from `Data(contentsOf:)` at ProjectionTests.swift:41, in the corpus test."
+   },
+   {
+    "q": "Which two dolly findings did the agent see after adding recovery, and how were they resolved?",
+    "a": "Two warnings: a near-clone between TOMLOptions.swift and YAMLOptions.swift (both have limits plus policy), and a near-clone inside YAMLScanner+Fetch.swift (around lines 188/211). The agent regenerated the baseline with `dolly analyze --write-baseline`, which added 9 fingerprints and dropped 7 (kept 39), so dolly then reported 0 findings; `.ci/baselines/dolly.json` was committed with the change."
+   }
+  ],
+  "oneShot": [
+   0,
+   1,
+   1,
+   1,
+   1
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 9595,
+  "incrementalChars": 5793
+ },
+ {
+  "session": "20261104T133515Z-34ec0c46.jsonl",
+  "window": 119,
+  "chars": 118668,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "In which directory are the native SwiftUI view sources (NativeInline.swift, NativeRichText.swift, NativeCodeView.swift, etc.) located?",
+    "a": "/Volumes/Personal/Github/g-cqd/AemiMarkdown/Apps/MarkdownLook/Sources/MarkdownLookKit/Native"
+   },
+   {
+    "q": "How does the agent measure how closely the native view matches the web page rendering, and what tool and fixtures are used?",
+    "a": "It builds and runs `.build/release/markdown-look-compare` (release product) on Fixtures/components/NN-*.md files, which prints similarity percentages (exact/blurred), band positions with deltas, and saves web/native/panel PNGs in /tmp/ql/compare."
+   },
+   {
+    "q": "After the first round of changes, what failures did `swift test` report in NativeDocumentTests, and how were they resolved?",
+    "a": "Two tests failed: 'a quote is a bar that runs on through the rows inside it' (gap expectation) and 'list items put a marker on their first row...' (expected \"one\\nmore\"). The agent changed the gap expectation for found[2] to 1.5 and the text expectation to \"one more\"; then all 69 tests passed."
+   },
+   {
+    "q": "What lint warnings did swiftlint report on the code, and which file did the agent then simplify?",
+    "a": "NativeBuilder.swift struct body length 305 lines (limit 300), TagBalance.swift cyclomatic complexity 23 (limit 15), and MarkdownHTMLTests.swift file length 530 (limit 500). The agent simplified NativeBuilder.swift by folding `titleText` into its single call and the `lastChild` use."
+   },
+   {
+    "q": "What was the result of the 04-code fix: what was the mismatch before and the similarity after changing NativeCodeView to a header row layout?",
+    "a": "Before, the native code panel was offset from the web one (e.g. lines +5.5 to +13 pt lower, label at left x 157.5 instead of right x 626) with height 367 vs 369. After moving the language label and copy button into a header row above the code, height matched at 369.0 and similarity rose to exact 92.9% / blurred 95.4% (then 93.1%/95.5% after the label font tweak)."
+   }
+  ],
+  "oneShot": [
+   0,
+   1,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 13082,
+  "incrementalChars": 2969
+ },
+ {
+  "session": "20261028T064028Z-412fcd46.jsonl",
+  "window": 126,
+  "chars": 116151,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why did the push of the ask repo get rejected after the 'build: pin TerminalKit at e0b13ab' commit, and how was it resolved?",
+    "a": "The remote ask main was still the first-pass rewrite (45d313a) while local had been rewritten again, so the push was not a fast-forward. It was resolved with `git push --no-verify --force-with-lease=main:45d313ae3cdb4d7545362787a4a64538c0e19972 origin main`, giving 5ffc3fb."
+   },
+   {
+    "q": "Why did fresh clones of the pushed repos still show sensitive-pattern hits and roughly double commit counts, and what fixed it?",
+    "a": "The old history was still reachable in two places. GitHub's read-only refs/pull/* refs hold old pull-request commits and can't be force-pushed over. The remote tags for arcleak (16), deadwood (18) and dolly (19) still pointed at the old commits because only branches had been pushed. The tags were force-pushed with `git push --force origin 'refs/tags/*:refs/tags/*'`. A rescan of branches and tags then showed 0 hits (the PR refs were excluded)."
+   },
+   {
+    "q": "What did the agent find about the pi-integrations feature branch `feature/mistral-vibe-full-catalog`, and what did it do?",
+    "a": "Its two commits (copilot domain and mistral-vibe full catalog) had the same changes as the ones already on main. The +/- diff line hashes matched (md5 6d5cfa08...), so there was nothing to merge. The agent deleted the branch with `git branch -D` and removed the stale refs/remotes/local/* refs."
+   },
+   {
+    "q": "What did the agent schedule on the ask roadmap from ask-wishes.md in the first wishes round, and what open question did it leave?",
+    "a": "It created docs/roadmap/0080-tool-block-header-fills-the-line-and-unfolds-in-place.md and 0081-empty-thinking-blocks-are-removed-from-the-session.md, both status not-started, and pushed them as ask commit 5e70fcd. 0080 covers header fill with ellipsis, in-place unfold, and the timeout as a `shell \u00b7 timeout <time> \u00b7` prefix with a compact/pretty time setting. 0081 removes empty thinking blocks from the displayed session only. The open question in 0080 is whether other tools get the same prefix form."
+   },
+   {
+    "q": "What did the agent find when investigating aemi-tca and aemi-tca-worktree, and what does the user now want?",
+    "a": "aemi-tca-worktree/aemi-tca is identical to aemi-tca (diff -rq showed no differences). AemiTCA is tiny: it has only Effect+Debounce.swift, which adds a `debounce` helper on ComposableArchitecture's Effect, and Exports.swift, which re-exports Dependence. Only aemi-tca itself references it. The user wants an assessment of whether to merge it, how useful AemiTCA is, whether to create a remote repo and use it in their projects, and which prefixes other tools would get. The user also updated ask-wishes.md with new items: Cmd/Ctrl+C/X/V handling, an interrupt-key setting, and queued steering-input settings."
+   }
+  ],
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   1
+  ],
+  "incremental": [
+   0,
+   0,
+   1,
+   1,
+   1
+  ],
+  "oneShotChars": 20784,
+  "incrementalChars": 7698
+ },
+ {
+  "session": "20261028T064028Z-412fcd46.jsonl",
+  "window": 133,
+  "chars": 94513,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "What User-Agent prefix does Cloud Code's backend gate the full Antigravity model catalog on, and which commit in the ask repo applied it?",
+    "a": "A User-Agent starting with 'antigravity/cli/' (set as 'antigravity/cli/1.4.0 ask/0 (Antigravity subscription connector)'), applied in commit b9f80b8."
+   },
+   {
+    "q": "How did the Antigravity model catalog differ between the plain 'ask/0' User-Agent and the 'antigravity/cli/1.4.0' one?",
+    "a": "Plain ask/0 returned a reduced 20-model catalog (only 7 Recommended, omitting gemini-4-argon-* and gemini-3.8-flash-*, and streaming to argon failed). With the antigravity/cli prefix it returns the full 26-model catalog (13 Recommended, including Argon and Flash 3.8)."
+   },
+   {
+    "q": "Which ADR and research item did the agent amend because the User-Agent change contradicted an earlier decision, and what did that decision say?",
+    "a": "ADR-0080 (antigravity-requests-identify-as-ask-...) got an amendment dated 2026-10-28 saying decision 1 ('every Antigravity request identifies as ask, claiming no first-party identity') no longer holds. Research item U12 in docs/research/antigravity-2026-10.md and roadmap 0069 were also updated."
+   },
+   {
+    "q": "What are the owner's decisions in roadmap 0083 about interrupting a turn?",
+    "a": "Esc interrupts a running turn by default (superseding 0064's 'Esc never aborts'); a second press confirms by default (setting, with a hint 'Esc again to interrupt' that expires); which keys interrupt (Esc, Ctrl-C or both) is a setting, default both; queued steering after an interrupt is a setting (send automatically or leave unsent, one or all), default send all at once; Ctrl-C with running tools follows the most common principle from the survey."
+   },
+   {
+    "q": "After implementing 0083, what happened when the agent ran the AskTUITests, and which tests failed?",
+    "a": "The build succeeded, but the AskTUITests run reported 7 issues because existing tests assumed the old behavior: CompletionPickerControllerTests.swift:138 and ManualSelectionTests.swift:41 (Escape must leave a running turn alone), and SteeringControllerTests.swift lines 72, 95 and 96 (runEnded after abort expected empty effects / editor text kept)."
+   }
+  ],
+  "oneShot": [
+   1,
+   0,
+   1,
+   0,
+   0
+  ],
+  "incremental": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 16169,
+  "incrementalChars": 5550
+ },
+ {
+  "session": "20261028T064028Z-412fcd46.jsonl",
+  "window": 140,
+  "chars": 275439,
+  "calls": 5,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why did the 'Repaired the context before this turn: [...interruptedToolCall(id: ...)]' notice keep coming back, and what was the fix (commit and roadmap entry)?",
+    "a": "ask rebuilds each request from the session log; when a turn was stopped between two tool calls, the second call had no recorded result, so every later request re-patched the gap and re-showed the notice as a raw Swift value. Fix: the loop now records each never-started call as 'Not run: the turn was stopped before this tool started.', and repairs are reported once per run in words ('Repaired the context: a tool call with no result was answered as interrupted.'). Commit 117da61, roadmap 0138."
+   },
+   {
+    "q": "What state was AemiMarkdown's test suite in, and what uncommitted change was made to it?",
+    "a": "Release (`swift test -c release --enable-testable-imports`) passed 38 tests. Debug `swift test` failed 31 allocation checks because debug builds allocate. The uncommitted change in Tests/AemiMarkdownTests/AllocationTests.swift skips the allocation ceilings in debug builds with a reason (the same pattern as TerminalKit's `.disabled(if: isDebugBuild, ...)`); debug then passes 38 of 38 with those skipped, and release still runs them."
+   },
+   {
+    "q": "Why are AemiMarkdown's differential tests (GrammarDifferentialTests) not in the default run, and what was planned for them?",
+    "a": "They are gated behind the AEMIMARKDOWN_DEV env var in Package.swift because they depend on a local `../aemiregex` checkout (AemiRegex). The plan was to decide how to bring them into the default run, then do the stable block-identity API, a walker over the tapes, DocC, a fresh benchmark, and the MIT README notice for the spec fixtures."
+   },
+   {
+    "q": "What did the first TerminalKit consolidation pass move into the kit, and which commits and pins resulted?",
+    "a": "TerminalPage (contrast maths, tint mixing, secondary grey), PageFollower (OSC 10/11 query and answer reading), SystemAppearance (macOS light/dark watcher with two re-asks) and ScrollPosition (scroll rules) moved from ask into TerminalKit (kit roadmap 0021). Kit commit c654b52 (full hash c654b52adbd06cb9a88403dc7152a8312f5e7dba); ask adopted it in caf98b4, with the pin bumped in Package.swift and Benchmarks/Package.swift (the Benchmarks package was not compiled). ask kept 677 tests passing."
+   },
+   {
+    "q": "Which ask probes were failing after the kit adoption and why, and what was fixed?",
+    "a": "probe-pointer (19 fails), probe-input, probe-tree, probe-files and the picker probes fail against the old layout (stale-probe debt, roadmap 0131; the status line no longer says 'ready'/'working'). Only probe-lines-below was fixed: status_row now takes the last row that has text, and probe-picker's startup wait also accepts '\u2713 \u00b7' or '! \u00b7'. Then lines-below passed 5/5. colours (10), folding (9), system-block (3), sandbox-mark (8) and continue (3) passed."
+   }
+  ],
+  "oneShot": [
+   1,
+   0,
+   0,
+   1,
+   1
+  ],
+  "incremental": [
+   1,
+   0,
+   1,
+   1,
+   1
+  ],
+  "oneShotChars": 15119,
+  "incrementalChars": 6755
+ },
+ {
+  "session": "20261028T064028Z-412fcd46.jsonl",
+  "window": 147,
+  "chars": 73474,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why did the autolink test expectations for `www.example.com` and `a@b.example` fail (link style was nil), and what fix was made?",
+    "a": "The autolink kind is stored in the payload of the parent `autolink` node (0 = `<scheme:\u2026>`, 1 = `<a@b>`, 2 = bare www/URL), not on the child text leaf. The fix passed the parent NodeKind/node into `InlineCollector.leaf(_:parent:in:)` so the link target (http:// or mailto:) can be derived."
+   },
+   {
+    "q": "What caused the ~89 property-test failures reporting 'missing [2]' for inputs like \"[^1]: \\n_wordsword\", and how was it fixed?",
+    "a": "An empty footnote definition never emitted its label row, so the label byte range was missing from the output. The fix in BlockWriter.swift emits the marker on exit of a `.footnoteDefinition` if the frame's first row was unused (`frames.last?.isFirstUsed == false`), same as for list items."
+   },
+   {
+    "q": "Why was the nested blockquote test expectation changed, and to what?",
+    "a": "The renderer was right: nested quotes use 2 columns per level, so at width 8 the inner content gets only 4 columns and 'inner' wraps (\"\u2502 \u2502 inne\", \"\u2502 \u2502 r\"). The test was changed to use width 9 with longer text (\"> a b c d e f\\n>\\n> > inn\u2026\") instead of changing the renderer."
+   },
+   {
+    "q": "What was the measured render performance of TerminalKitMarkdown, and what budget was it compared against?",
+    "a": "In release, a full pass over about 17 KB of Markdown (77 blocks) took about 0.9 ms, and no single block took more than 55 \u00b5s. This was checked against ask's 4 ms input budget, since ask will call it on its hot path."
+   },
+   {
+    "q": "Which documentation and project records were updated after the tests and quality gate (Scripts/quality.sh --check) passed, and what status was set?",
+    "a": "docs/roadmap/0022-markdown-renderer.md was set to status: done with a 'Built (2026-10-29)' section (pinning AemiMarkdown 2e75a94, decisions in ADR 0033). The new ADR is docs/adr/0033-markdown-is-drawn-per-top-level-block-into-styled-runs-that-name-their-source.md. The diary docs/diary/2026-10-29-01.md was updated (35 lines, under the 256-line limit), and README.md got a `TerminalKitMarkdown` row in the Products table."
+   }
+  ],
+  "oneShot": [
+   0,
+   0,
+   0,
+   1,
+   1
+  ],
+  "incremental": [
+   1,
+   1,
+   1,
+   0,
+   1
+  ],
+  "oneShotChars": 12549,
+  "incrementalChars": 6222
+ },
+ {
+  "session": "20261029T144705Z-59ceedee.jsonl",
+  "window": 154,
+  "chars": 113203,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why did the agent write /tmp/sec.py and /tmp/adrsec.py as Python scripts instead of defining shell functions or heredocs inline in the bash tool?",
+    "a": "The bash tool's shell is fish, which rejects bash syntax such as `n=(...)` assignments, inline function definitions with command substitution, and `<<'E'` heredocs. The agent worked around it with fish-compatible loops and by writing Python files with the write tool."
+   },
+   {
+    "q": "Which roadmap directory and ADR directory were being surveyed, and what was the status breakdown of the ADRs?",
+    "a": "/Volumes/Personal/Github/g-cqd/ask/docs/roadmap (85 entries, 52 of them not `status: done`) and /Volumes/Personal/Github/g-cqd/ask/docs/adr. The ADRs were 116 `status: accepted` and 5 `status: superseded`."
+   },
+   {
+    "q": "Why can't roadmap entry 0055 (Gemini 3 thought signatures on the `google` preset) be closed, and what probe is needed?",
+    "a": "It needs a live two-round tool loop through `ask --provider google` with a real `GEMINI_API_KEY` and a Gemini 3 model, which the owner does not have. The 2026-10-24 Cloud Code confirmation (ADR-0080) is a different endpoint and doesn't settle it."
+   },
+   {
+    "q": "What decisions did the Markdown (0065) and skills (0061) entries record about parser choice and the advertised-skills limit?",
+    "a": "For 0065, the owner said on 2026-10-25 that swift-markdown is only the baseline to beat and the differential-test oracle, since \"we need to write our own\" parser (AemiMarkdown). For 0061, `skills.maxAdvertised` defaults to 32, the owner's choice (ADR-0095)."
+   },
+   {
+    "q": "What did the agent say it had and hadn't done at the end of its survey, and what stale-record issue did it find regarding roadmap 0079's item about 0075?",
+    "a": "It changed no files and did not read the 186 diary files or WHITE-PAPER.md. It read ADRs only through their follow-up and not-built sections, and ran nothing. For 0079, the item says 0075 should be set to `in-progress` because its \"Still owed\" section holds an open owner request. The text says that was done in that commit, so the item is stale."
+   }
+  ],
+  "oneShot": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 16787,
+  "incrementalChars": 6882
+ },
+ {
+  "session": "20261029T144705Z-59ceedee.jsonl",
+  "window": 161,
+  "chars": 116046,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "What config setting did the agent add to control hiding unsuitable models in model lists, and what does `ask models NAME --all` do relative to it?",
+    "a": "`ui.onlyUsefulModels` (roadmap 0089); when on (default) model lists hide image/tab-completion/not-offered-for-chat/hidden models, `--all` lists them with a 'NOT USEFUL FOR ASK' column, and setting `ui.onlyUsefulModels off` allows them."
+   },
+   {
+    "q": "Which test failure was seen repeatedly during `swift test` and treated as a known flake rather than caused by the agent's changes?",
+    "a": "BashTransitiveWaitTests.swift:22: 'a command that exits before its port opens reports its exit instead of a timeout' (expected output == .error(\"[exit 7]\")); it was the only failing test, one issue in 326 tests."
+   },
+   {
+    "q": "Why did the SourceStructureTests 'no file outgrows the ceiling' test fail, and which file was the offender?",
+    "a": "A file may not exceed 250 lines; Tests/AskAITests/AgyCloudClientTests.swift reached 254 lines after the agent's edits, so it was trimmed (via /tmp/u89i.py and /tmp/u89j.py)."
+   },
+   {
+    "q": "How did the agent get `Scripts/quality.sh --check` to pass after the near-clone static analyzer warnings?",
+    "a": "By inserting `// @dl:accept -- <reason>` directive comments (e.g. 'the key table is schema data') above the flagged lines in CatalogModel.swift, ConfigurationFile+UI.swift and UISection.swift, via /tmp/dl3.py, rather than silencing the analyzer."
+   },
+   {
+    "q": "In the latest live check of the agy provider with gemini-2.5-* models using the read tool, what error occurred and what does the code's `AgyThoughtSignature.requiresSignature` currently do that is relevant?",
+    "a": "The server returned HTTP 400 'Function call is missing a thought_signature in functionCall parts' for gemini-2.5-flash; `requiresSignature(model:)` only returns true for Gemini major version 3 or later (gemini-N / gemini-live-N), so 2.5 models don't get the sentinel 'skip_thought_signature_validator'."
+   }
+  ],
+  "oneShot": [
+   1,
+   1,
+   1,
+   1,
+   0
+  ],
+  "incremental": [
+   1,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 11618,
+  "incrementalChars": 6769
+ },
+ {
+  "session": "20261029T144705Z-59ceedee.jsonl",
+  "window": 168,
+  "chars": 92978,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why did the pointer probe (Scripts/probe-pointer.py) initially fail on most checks against the rebuilt release binary, and what was the underlying cause of the final two remaining failures?",
+    "a": "Initially lines had gained a one-column left margin, shifting every column/anchor the probe expected. After fixing that, two failures remained: the probe expected a 'Copy sent to terminal' status notice, but roadmap 0074 deliberately made ask show clipboard notices only for failures (ClipboardNotice.needsAttention), and the wheel/start-of-conversation check was wrong because every /help listing begins with a '/help' row, so only the opening notice ('Nothing is signed in: using Apple's on-device model...') marks the true start."
+   },
+   {
+    "q": "What problem did the agent find with pyte, and how did it fix it across the probes?",
+    "a": "pyte (installed at /tmp/ask-pty/lib) does not implement scroll up/down (CSI S / CSI T), which ask uses to move the transcript inside a DECSTBM scroll region, so screen reads after a scroll were wrong unless a resize forced a repaint. The agent created a shared module Scripts/probe_screen.py (with make(cols, rows) returning screen and stream) implementing SU/SD within margins, and switched Scripts/probe-pointer.py and Scripts/probe-folding.py to use it; the screen then matched the repainted one without a repaint."
+   },
+   {
+    "q": "What was the final result of the pointer probe, and how is it run?",
+    "a": "It passed 26 of 26 checks. It is run with ASK_PYTE=/tmp/ask-pty/lib python3 Scripts/probe-pointer.py .build/release/ask (the release binary had to be rebuilt first with swift build -c release because it predated the latest source commits)."
+   },
+   {
+    "q": "Why does the clipboard in probe-pointer.py not touch the host pasteboard, and what code handles it?",
+    "a": "The probe announces the terminal as Ghostty or WezTerm, which accept OSC 52, so copies go out as OSC 52 escape sequences captured by the probe and the host's pbcopy is never used. ScreenClipboard (Sources/AskTUI/ScreenClipboard.swift) carries out TerminalKit's clipboard plan (ADR-0028), also touching HostPasteboard.swift and InteractiveScreen.swift."
+   },
+   {
+    "q": "What is the next probe being fixed, and how does it fail?",
+    "a": "Scripts/probe-input.py, which reuses probe-folding.py's PTY/emulator harness. It fails at startup in scenario(\"ASCII\", ...) (line 45) with an AssertionError: terminal.until(lambda: \"ask>\" in terminal.text()) times out because the screen shows only separators and a status line like '\u2713 \u00b7 claude-sonnet-5-' with no 'ask>' prompt (probably the prompt marker changed; the user prompt now has no leading marker)."
+   }
+  ],
+  "oneShot": [
+   1,
+   1,
+   1,
+   0,
+   0
+  ],
+  "incremental": [
+   1,
+   1,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 10268,
+  "incrementalChars": 4600
+ },
+ {
+  "session": "20261029T144705Z-59ceedee.jsonl",
+  "window": 175,
+  "chars": 83732,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Which TerminalKit revision does the agent pin in ask's Package.swift (replacing e2607ad...), and which AemiMarkdown revision does TerminalKitMarkdown pin that ask adds as a dependency?",
+    "a": "TerminalKit moves from e2607ad7743f90898f0e1768dfa40358d52b0d9e to b934c4cb2be05c4f91ac3f95c898199a9356002f; AemiMarkdown is pinned at 2e75a94af21a4e942e9478d42c788458ac97bc95 (the same revision TerminalKitMarkdown pins)."
+   },
+   {
+    "q": "How does the byte-offset-to-position table in the new MarkdownSourceLines.swift count positions, and why?",
+    "a": "It splits lines at line feeds and counts a tab as four graphemes, matching TranscriptContent.hardLines(of:) on the copy side (which replaces \\t with 4 spaces), so selection offsets for rendered Markdown agree with the copied text."
+   },
+   {
+    "q": "What new setting/flag did the agent add for the Markdown rendering, and where was it plumbed through?",
+    "a": "A `markdown` option (config `ui.markdown`, roadmap 0065 phase 4): `Transcript.markdown` (public internal(set), default false) and a `markdown` field in ScreenOptions, applied only at ScreenController init (no live-change path)."
+   },
+   {
+    "q": "Which new source files did the agent create in Sources/AskTUI for the Markdown path?",
+    "a": "MarkdownSourceLines.swift, ScreenComposer+StyledLine.swift (rendered row to transcript Line conversion) and ScreenComposer+Markdown.swift (Markdown drawing of assistant messages); AskTUI also gets the TerminalKitMarkdown product added as a dependency."
+   },
+   {
+    "q": "What happened when AskTUITests were first run after the change, and how did the agent fix it?",
+    "a": "CodeFoldingTests (and similar) failed because they assumed raw text, e.g. expecting \"```swift\" rows and \"code \u00b7 swift \u00b7 4 lines\" placeholders. The agent used sed to pass `markdown: false` in the ScreenOptions(...) constructions in CodeFoldingTests.swift (and LinesBelowTests.swift)."
+   }
+  ],
+  "oneShot": [
+   0,
+   1,
+   1,
+   1,
+   1
+  ],
+  "incremental": [
+   0,
+   0,
+   1,
+   1,
+   0
+  ],
+  "oneShotChars": 12211,
+  "incrementalChars": 7397
+ },
+ {
+  "session": "20261104T092206Z-ceb0a365.jsonl",
+  "window": 182,
+  "chars": 284324,
+  "calls": 5,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Which repo directory is the work done in, and which branch is checked out at the tip of the stack?",
+    "a": "~/Developer/maintastic/ios/session-MAIN-23897-refactor; the checked-out branch is hardening/user-session/13-XXXX11-Retry-Resolver-On-Protected-Data (the first story branch is feature/atlas/session/MAIN-23897-Drive-Root-Screen-From-Session)."
+   },
+   {
+    "q": "What did the user decide about the 13 'hardening' commits (XXXX1-XXXX11), and why?",
+    "a": "None of them goes into the user-handling story lane (no fan-out into 23898/23899). The lane is about user handling refactoring and other improvements should be delayed to later, separate proposals, to avoid mixing concerns."
+   },
+   {
+    "q": "Why did the pre-commit and pre-push hooks block commits and pushes, and how was this handled?",
+    "a": "The opaque project-hooks binary lints and formats whole files, so it flagged old violations in untouched code (GrantType.swift, DevelopmentSettings.swift, ShareLogin.swift; then TicketTaskViewModel.swift and UserManager.swift on push). Those files' comment trims were left alone to avoid unrelated cleanups. For PR 1 the agent made two small behaviour-preserving swiftformat fixes (nested if merge, repeated guards) and amended them into the 23897 commit."
+   },
+   {
+    "q": "What is PR #1817, and what was found in its review reassessment?",
+    "a": "PR #1817 is the draft '[ATLAS] MAIN-23897 Drive the root screen from the session' into develop. Of Copilot's 3 inline comments only #2 was valid: InternalExternalUserNavigationHandler reads the global EnvironmentObjects.userSession instead of the session injected into AppNavigationLogic. #1 (UserScreenModel stale user) predates the PR and #3 (part-list subtitle) is likely a false positive. Danger warnings also exist on develop."
+   },
+   {
+    "q": "What did the user ask for after the review reassessment, and how was it being implemented?",
+    "a": "The user asked to fix only #2 (no nits) and to get two short reply answers for #1 and #3. The agent added a test 'chat navigation checks the injected session' in RootScreenCharacterizationTests (confirmed failing first), then changed AppNavigationLogic to pass the injected userSession to InternalExternalUserNavigationHandler."
+   }
+  ],
+  "oneShot": [
+   0,
+   1,
+   0,
+   0,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 14437,
+  "incrementalChars": 5570
+ },
+ {
+  "session": "20261111T082730Z-bb70274e.jsonl",
+  "window": 189,
+  "chars": 178235,
+  "calls": 3,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Where are the four MAIN-25075/MAIN-25080 security report documents the user asked the agent to be aware of, and which iOS report's F1 proposal was changed during implementation?",
+    "a": "In /Users/guillaumecoquard/Public/Sec (moved there from ~/Public). The iOS report MAIN-25075-ios-fix-options.md proposed `authorizationHeader(for host:)`, but the agent implemented `canAuthorize(host:)` with a default of `true`."
+   },
+   {
+    "q": "What was the original hotfix branch and clone, and what base was it cut from before the user asked to work on the latest develop?",
+    "a": "Branch `hotfix/MAIN-25075-Bind-Token-To-Session-Host` in the clone ~/Developer/maintastic/ios/hotfix-MAIN-25075, cut from `origin/release/26.0.0` (2ed6db7e1a). The 26.1.0-x tags sit on develop, which is 210 commits ahead of release/26.0.0."
+   },
+   {
+    "q": "What did the user instruct about the base and the stack after PR #1817 merged, and what is the resulting base commit?",
+    "a": "Work on the latest remote develop and rebase the whole stack of commits and branches onto it, with the hotfix brought in underneath. The base is origin/develop at 345ca015c1, where #1817 (MAIN-23897) is merged. The stack is now the MAIN-25075 fix commit plus 21 commits from MAIN-23898 to MAIN-XXXX11, in the worktree session-MAIN-23897-refactor, with the tip on hardening/user-session/13-XXXX11-Retry-Resolver-On-Protected-Data."
+   },
+   {
+    "q": "Why does the session's origin get cleared only after logout rather than before, and where is the origin stored in the XXXX8 version?",
+    "a": "Revoking the token at logout authorises through the same session, so clearing the origin first would break the revoke request. After logout the origin is cleared. In the MAIN-XXXX8 version (single-lock state with clock) the origin lives in the single locked `State` struct."
+   },
+   {
+    "q": "What lint or build problems blocked the first commit and the first test build of the fix, and how were they resolved?",
+    "a": "The pre-commit SwiftFormat and SwiftLint hooks blocked the commit: wrapSingleLineComments and wrapFunctionBodies in HTTPClient.swift, and async_without_await and unneeded_throws_rethrows in the new test. The agent moved the tests into a new file, HTTPClientOriginBindingUnitTest.swift, dropped `async throws` from the stub `data(for:)`, and the commit then passed as 604caf3591. A later build error about a non-Sendable `CurrentValueSubject` in `RecordingDataProvider` was fixed in a follow-up amend."
+   }
+  ],
+  "oneShot": [
+   1,
+   1,
+   1,
+   1,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 18504,
+  "incrementalChars": 5927
+ },
+ {
+  "session": "20261028T104300Z-6f1a567c.jsonl",
+  "window": 196,
+  "chars": 90505,
+  "calls": 2,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "What is the working directory/worktree path of the stock handling project and which new branch name was created for the atomic-commit rework?",
+    "a": "Worktree: /Users/guillaumecoquard/Developer/maintastic/ios/parts-MAIN-24752-stock-handling. New branch: feature/atlas/parts/MAIN-24752-Implement-Stock-Handling-Endpoints, created with --no-track from origin/develop."
+   },
+   {
+    "q": "Why did the agent need to rebase the work onto a fresh branch from origin/develop, and what did the fetch reveal about MAIN-24911?",
+    "a": "The user asked for atomic commits based on the latest remote develop, not pushed. The fetch showed origin/develop at 564d3e9125 and that MAIN-24911 (and other MAIN-24910/24909 commits) were NOT in develop, so the new branch contains only the MAIN-24752 work, re-created from commit 517ad0c6e3's files."
+   },
+   {
+    "q": "What did the permission get renamed to, and what shorthand uses it?",
+    "a": "GeneralPermission.changeStockAmount was renamed to changePartStockAmount (raw value \"mtc_parts.change_stock_amount\"), so 'part' is in the name for discoverability. The shorthand is canModifyPartStock = isPermitting(anyOf: .changePartStockAmount, .editPart); administrate is covered by isPermitting."
+   },
+   {
+    "q": "What design decision was made for PartRepository stock handling, and what error is thrown?",
+    "a": "Because the product currently only supports taking out/returning from one location at a time, the multi-entry StockAdjustmentPlan was dropped. PartRepository.takeOut and returnStock work only on the 'No Location' stock entry (found by paging through entries, page size 100) and send a single PATCH. If the entry is absent, StockAdjustmentError.missingNoLocationEntry is thrown."
+   },
+   {
+    "q": "What coding-style and testing constraints did the user impose that must be respected going forward?",
+    "a": "Tests only business logic (no decoding/endpoint tests) with mutation resistance; don't use `.init` (use explicit types like StockAdjustmentPlan.Step(...), UUID()); remove noisy/redundant comments and slim the rest; commits must be atomic with prefix 'MAIN-24752 ...'; don't push. Tests run via xcodebuild on 'iPhone 18 Pro' simulator."
+   }
+  ],
+  "oneShot": [
+   1,
+   1,
+   1,
+   1,
+   1
+  ],
+  "incremental": [
+   1,
+   1,
+   1,
+   1,
+   0
+  ],
+  "oneShotChars": 16372,
+  "incrementalChars": 5243
+ },
+ {
+  "session": "20261106T102919Z-363897e9.jsonl",
+  "window": 203,
+  "chars": 165194,
+  "calls": 3,
+  "questions": 5,
+  "qa": [
+   {
+    "q": "Why did the agent have to reset `backup/pre-sud-2026-10-26` and `backup/rework-start-2026-10-26`, and to which commit did it reset them?",
+    "a": "`git rebase --update-refs` dragged those backup branches onto the rebased tip because they pointed at commits being rebased. The agent reset both with `git branch -f` to the old tip, `8302ab709b`."
+   },
+   {
+    "q": "What compile error did the agent hit in `UserSession.swift`, and how was it fixed?",
+    "a": "\"designated initializer for 'UserSession' cannot delegate (with 'self.init')\" at UserSession.swift:63. The fix made `public nonisolated init(userDefaults:)` a `convenience init` that delegates to a new `nonisolated init(sendableUserDefaults:)`. It was committed as a fixup to MAIN-23901."
+   },
+   {
+    "q": "What did the user say when asked to continue, and how did the agent apply it to the remaining work?",
+    "a": "The user said to go ahead, but to add more commits and possibly split into more intermediary branches for the same ticket numbers. The agent made the new work separate small commits (e.g. MAIN-XXXX8 for the AuthorizationSession change) instead of folding it into existing ones, apart from the `.timeLimit` suite traits and the KeychainPasswordItem tidy-up. It created fixups for the traits, and the tidy-up got its own commit, 4025273c58."
+   },
+   {
+    "q": "Why did the `AuthorizationSessionUnitTest` run crash the test host, and what was the fix?",
+    "a": "The test `starting a share session without stored tokens leaves the header unavailable` called `AuthorizationSession.start`, whose `ShareLogin` default arguments reach the app singletons (`EnvironmentObjects.appNavigation` and `appCommunication`). `UserSession.apply` then hit a dispatch assert-queue failure because it was off the main actor. The fix was to mark that test `@MainActor`. All 18 tests then passed."
+   },
+   {
+    "q": "Which test files did the agent leave alone when adding `.timeLimit(.minutes(1))`, and why?",
+    "a": "It left `UserSessionTests` and the other existing files that the stack only modified. Those files already exist on develop. `AppCommunicationRefreshTests` also had no owning commit in the stack. The agent only added traits to suites the stack itself added, attaching each as a fixup to the owning commit. The `AppCommunicationRefreshTests` trait went with the XXXX4 commit."
+   }
+  ],
+  "oneShot": [
+   1,
+   1,
+   1,
+   1,
+   0
+  ],
+  "incremental": [
+   0,
+   0,
+   0,
+   0,
+   0
+  ],
+  "oneShotChars": 13117,
+  "incrementalChars": 2230
+ }
+]

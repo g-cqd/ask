@@ -63,3 +63,18 @@ summary held the answer. 29 windows graded (one grader reply was not JSON).
   method. A second run with a length target and "keep what still matters from the current summary" would settle it, with the
   questions kept so both runs are graded alike.
 - Whatever the summariser, today's compaction keeps about a third of the early facts a later turn might need.
+
+## Second replay (2026-11-12): with a length target
+
+The same 30 windows, the incremental prompt asking to keep what still matters and aim at about 12,000 characters; the questions kept
+in `replay-compactions-2026-11-12-length.json`, both summaries graded on them.
+
+| | Early facts kept | Long windows (4 chunks or more, 8) | Summary length (median) |
+|---|---|---|---|
+| ask's one-shot summary | 45 % | 30 % | 12,724 characters |
+| Incremental, `claude-haiku-5-5` | 24 % | 10 % | 5,927 (p10 2,230, p90 7,948) |
+
+- Incremental was worse in 19 windows, better in 4, equal in 7. Haiku did not reach the length asked.
+- So the gap is not the first run's prompt: a running summary amended by Haiku keeps about half of what the one-shot keeps, and less
+  the longer the window. Built as it is, the background summary would make compaction instant and worse. Other ways (a stronger
+  cheap model, amending less often, a log of facts rather than prose) are the owner's to choose before anything is built.

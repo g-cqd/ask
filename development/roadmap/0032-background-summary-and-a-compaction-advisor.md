@@ -79,6 +79,11 @@ sessions: providers keep and count earlier reasoning (about a third of a window)
 kept up to date; Haiku's were a third as long (no length set), so the gap may be the prompt. Owner to decide on a second run with a
 length target before the background summary is built.
 
+## Second replay (2026-11-12)
+
+With a length target: one-shot 45 %, incremental Haiku 24 % of early facts (long windows 30 % against 10 %); worse in 19 of 30. The
+background summary as tried would lose detail; the owner chooses whether and how to go on.
+
 ## Done when
 
 This entry becomes a design note with measured numbers, and a decision on whether to build it.

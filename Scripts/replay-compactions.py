@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Roadmap 0032's replay: a summary kept up to date by a cheap model, against the one-shot summary ask wrote, on real compactions.
 
-Scripts/replay-compactions.py [--windows 30] [--sessions 30] [--jobs 6] [--out FILE]
+Scripts/replay-compactions.py [--windows 30] [--sessions 30] [--jobs 6] [--out FILE] [--length CHARS]
 
 For each chosen compaction window of the largest local sessions (Claude sessions only: nothing goes to a provider that had not seen
 it), the window is rendered as a transcript (tool output clipped), then:
@@ -67,6 +67,9 @@ def render(entries):
     return '\n'.join(out)
 
 
+LENGTH = 0
+
+
 def incremental(text, cwd):
     summary = ''
     chunks = [text[i:i + CHUNK] for i in range(0, len(text), CHUNK)]
@@ -75,7 +78,8 @@ def incremental(text, cwd):
             'You keep a running summary of a coding agent\'s conversation, so the agent can continue the work without the original '
             'messages. Include the user\'s goals and constraints, decisions and why, files read or changed with paths, commands run and '
             'what they showed, exact identifiers, values and error messages that still matter, what is done, in progress and next. '
-            'Do not call tools. Reply with the updated summary only.\n\n'
+            + (f'Keep everything in the current summary that still matters, and aim for about {LENGTH:,} characters. ' if LENGTH else '')
+            + 'Do not call tools. Reply with the updated summary only.\n\n'
             f'CURRENT SUMMARY:\n{summary or "(none yet)"}\n\nNEW MESSAGES:\n{chunk}'), cwd)
     return summary, len(chunks)
 
@@ -106,7 +110,7 @@ def one(window, cwd):
     if len(qa) < 3:
         return {'session': name, 'window': index, 'error': 'no questions'}
     kept, calls = incremental(text, cwd)
-    return {'session': name, 'window': index, 'chars': len(text), 'calls': calls, 'questions': len(qa),
+    return {'session': name, 'window': index, 'chars': len(text), 'calls': calls, 'questions': len(qa), 'qa': qa,
             'oneShot': grade(original, qa, cwd), 'incremental': grade(kept, qa, cwd),
             'oneShotChars': len(original), 'incrementalChars': len(kept)}
 
@@ -117,7 +121,10 @@ def main():
     parser.add_argument('--sessions', type=int, default=30)
     parser.add_argument('--jobs', type=int, default=6)
     parser.add_argument('--out', default='/tmp/replay-compactions.json')
+    parser.add_argument('--length', type=int, default=0, help='the length the incremental summary aims at, in characters')
     options = parser.parse_args()
+    global LENGTH
+    LENGTH = options.length
     every = windows(options.sessions)
     step = max(1, len(every) // options.windows)
     chosen = every[::step][:options.windows]
