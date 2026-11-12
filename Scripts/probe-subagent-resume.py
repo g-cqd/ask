@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe a subagent across a resume (roadmap 0063 phase 5, ADR-0146) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-subagent-resume.py .build/release/ask
+Scripts/probe-subagent-resume.py .build/release/ask
 
 ask quits while a subagent works. Resumed, it comes back stopped, its block still saying it is a subagent, its lane holding what it did;
 typed in its lane, it goes on as a subagent: no agent tool of its own, and its writes refused. Hermetic.

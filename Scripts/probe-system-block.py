@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """ask's own messages are purple blocks and the user's are blue (roadmaps 0106 and 0129) through the real binary and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-system-block.py .build/release/ask
+Scripts/probe-system-block.py .build/release/ask
 
 `/help` prints ask's own message: its rows must have a purple background (more red than green than the blue user block's). The echoed
 command is the user's block. pyte, not a physical terminal.

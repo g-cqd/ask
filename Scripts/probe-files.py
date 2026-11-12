@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe the `@` file picker (roadmap 0048, ADR-0069) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-files.py .build/release/ask [--control OLDER_BINARY]
+Scripts/probe-files.py .build/release/ask [--control OLDER_BINARY]
 
 The project is a real git repository: tracked files, an untracked one, an ignored directory, a name with a space, and a directory the
 user's configuration hides from the sandbox. With --control, an older binary (before the picker) must show no list.

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """`/tree` opens a picker of the session's prompts (roadmap 0093) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-tree-picker.py .build/release/ask
+Scripts/probe-tree-picker.py .build/release/ask
 
 After two prompts, `/tree` lists both, newest first; choosing the older one goes back to before it and puts its text in the input.
 pyte, not a physical terminal.

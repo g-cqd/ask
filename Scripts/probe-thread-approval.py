@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe a thread's approval question (roadmap 0195) through the real binary, a PTY and a local fake provider, with approvals on.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-approval.py .build/release/ask
+Scripts/probe-thread-approval.py .build/release/ask
 
 A thread's command asks for permission. With `threads.questions` "lane" (probe-thread-question-pop.py has the others), the question is
 the thread's: main never shows it, the thread is listed as waiting for approval

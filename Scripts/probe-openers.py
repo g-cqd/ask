@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe openers (roadmap 0216, ADR-0148) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-openers.py .build/release/ask
+Scripts/probe-openers.py .build/release/ask
 
 The person's own file has a command rule for files; the command is a script of the probe's own that writes its arguments to a file,
 so nothing of the machine's is launched. The model's reply names a file that is there, with a line. A click on it asks first;

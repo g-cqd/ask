@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe a server's progress in the screen (roadmap 0067) through the real binary, a PTY, a local fake provider and the fixture server.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-mcp-progress.py .build/release/ask
+Scripts/probe-mcp-progress.py .build/release/ask
 
 A call to the fixture's echo with `slow` is told "half way" by the server and then waits: while it waits, the block's header says
 `50% · half way`; when it ends, the header no longer does.

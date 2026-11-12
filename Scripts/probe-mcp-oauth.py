@@ -3,7 +3,7 @@
 OAuth server; no browser opens: with `ASK_NO_BROWSER` the address is only shown, and the probe follows it as a browser that approves at
 once.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-mcp-oauth.py .build/release/ask
+Scripts/probe-mcp-oauth.py .build/release/ask
 
 The first message connects the server, which refuses; the screen asks whether to sign in; yes registers ask, sends the person to
 approve, takes the code back on this machine, exchanges it with PKCE, saves the tokens and connects the server: `/mcp` says it is ready.

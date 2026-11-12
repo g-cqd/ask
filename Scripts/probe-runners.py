@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe the status count and the runner strip below the status with real jobs in a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-runners.py .build/release/ask
+Scripts/probe-runners.py .build/release/ask
 
 A real background job (a loopback http.server the fake model starts, waits on and later stops) is counted, listed by a click on the
 count and by /jobs, and leaves the count when the model stops it. No window, real credentials or host clipboard writes.

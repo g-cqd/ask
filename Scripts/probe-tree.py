@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe `/tree` (ADR-0093) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-tree.py .build/release/ask [--control OLDER_BINARY]
+Scripts/probe-tree.py .build/release/ask [--control OLDER_BINARY]
 
 Two prompts, a listing, a step back to before the second with its text returned to the editor, a changed resend, and a look at what the
 provider is then sent: the branch, with no trace of the turn that was set aside. With --control, a binary that predates `/tree` must

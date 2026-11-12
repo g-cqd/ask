@@ -2,11 +2,13 @@
 """ui.sessionColor (roadmap 0164) through the real binary in a PTY, read with pyte: the status line's background is the session's colour
 with "always", plain with "off", and with "others" coloured only while another process called ask runs (a copy of sleep named ask).
 
-    ASK_PYTE=/tmp/ask-pty/lib python3 Scripts/probe-session-colour.py [.build/release/ask]
+    python3 Scripts/probe-session-colour.py [.build/release/ask]
 """
 import os, pty, select, shutil, signal, subprocess, sys, tempfile, time
 
-sys.path.insert(0, os.environ.get("ASK_PYTE", "/tmp/ask-pty/lib"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_pyte  # noqa: E402
+probe_pyte.ensure()
 import pyte
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import probe_keychain

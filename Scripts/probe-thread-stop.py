@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe stopping threads (roadmap 0195) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-stop.py .build/release/ask
+Scripts/probe-thread-stop.py .build/release/ask
 
 A thread started before any prompt is recorded in main's session. Ctrl+C in its lane stops it and the thread under it, and asks
 nothing (note n52); `/merge` there merges them from the bottom up. `/new` while a thread works asks first: no stays, yes switches and

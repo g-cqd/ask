@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Measure ask's resident memory with several threads at work (roadmaps 0194, 0195: the measure `threads.max` owes).
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/measure-thread-memory.py .build/release/ask [THREADS]
+Scripts/measure-thread-memory.py .build/release/ask [THREADS]
 
 Starts the real binary on a PTY against a local fake provider, then one thread at a time (each running a quiet `sleep`, so it stays
 at work), up to THREADS (8 by default; `threads.max` is raised to allow it). After each, once the thread's job is listed and memory has

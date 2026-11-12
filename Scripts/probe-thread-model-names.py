@@ -2,7 +2,7 @@
 """Probe threads named by a provider's model (`threads.names` "model", `threads.namesModel`; roadmap 0195, note n20) through the real
 binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-model-names.py .build/release/ask
+Scripts/probe-thread-model-names.py .build/release/ask
 
 With no `namesModel`, the conversation's own model is asked for the name, from the task, and the thread is listed by the name it gives.
 With `namesModel` "anthropic/claude-probe-namer", that model is asked. The naming request is answered by its content (it races the

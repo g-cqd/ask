@@ -1,0 +1,3 @@
+# What the PTY probes read the screen with (t246): pinned, installed by Scripts/probe-deps.sh into a cache that outlives /tmp.
+pyte==0.8.2
+wcwidth==0.9.4

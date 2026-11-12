@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A long tool output folds its middle (roadmap 0078), through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-output-fold.py .build/release/ask
+Scripts/probe-output-fold.py .build/release/ask
 
 A read of a 300-line file under `ui.fold.outputLines` 10: the open block shows five lines from each end with a marker between, its
 header still counts 300 lines, a click on the marker shows the middle and Ctrl+G folds it again. A write with old_text and replace_all then

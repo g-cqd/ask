@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The folder ask works in, on the status line (notes n6 and n63), through the real binary and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-status-path.py .build/release/ask
+Scripts/probe-status-path.py .build/release/ask
 
 By default the last folder sits right after the mark; `ui.statusPath` "full" shows the whole path, "off" none; at a narrow width the
 folder goes before the model's name. The build before shows no folder.

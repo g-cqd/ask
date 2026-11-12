@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The tab's title (notes n49 and n60) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-tab-title.py .build/release/ask
+Scripts/probe-tab-title.py .build/release/ask
 
 The terminal's title is saved first, the tab says `ask · project` while the conversation has no name, and the saved title is given
 back on /quit. A session named in its file comes back with its name in the tab and in /resume's list. Whether Apple's on-device model

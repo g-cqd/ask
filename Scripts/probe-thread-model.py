@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe `threads.model` (roadmap 0195) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-model.py .build/release/ask
+Scripts/probe-thread-model.py .build/release/ask
 
 With `threads.model` "anthropic/claude-probe-thread", main keeps its model while a thread's requests, and the request for its
 summary once `/merge` merges it, go to that one. A model that does not resolve (a provider with no key) refuses `/thread`, saying why, and main goes on.

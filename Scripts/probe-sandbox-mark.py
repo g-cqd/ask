@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """The status mark says whether the sandbox is on, and a click names it (roadmap 0133) through the real binary and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-sandbox-mark.py .build/release/ask
+Scripts/probe-sandbox-mark.py .build/release/ask
 
 Sandboxed: a green check; a click shows a green `Sandboxed`, and five seconds later the check is back. With `--no-sandbox`: a `!` in the
 warning colour; a click shows `Not sandboxed`. A click away from the mark does nothing. pyte, not a physical terminal.

@@ -205,6 +205,8 @@ providers are Claude (a subscription or a key), Codex (the ChatGPT subscription,
 (Cloud Code) and any OpenAI-compatible or Responses server by configuration or preset), `AskAgentCore` (the loop, tools contract,
 sessions, encryption, tasks and notes, compaction, hooks), `AskTools` (`read`, `write`, `edit`, `bash`, `tasks`, `notes`, `question`, `skill`, `server_resource`, jobs, sandbox narrowing), `AskMCP` (an MCP client for stdio and streamable HTTP, tools, resources, templates, and subscriptions),
 `AskTUI` (the interactive screen) and the `ask` binary, which is the composition root and is covered by PTY and end-to-end probes (`Scripts/probe-*.py`).
+The PTY probes read the screen with pyte, pinned in `Scripts/probe-requirements.txt`: `Scripts/probe-deps.sh` installs it once into
+a cache that outlives `/tmp` (`ASK_PYTE` names another place), and a probe without it says to run that.
 Skills (0061) are built; MCP (0067) and hooks (0192) are in progress. Not built: the codemode host (0012), the extension host (0033), subagents (0063), a
 version and a release (0070). CI runs on every push (`gh run list -R g-cqd/ask`).
 

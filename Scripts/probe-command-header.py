@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check command headers (roadmap 0080) and blank thinking (roadmap 0081) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-command-header.py .build/release/ask
+Scripts/probe-command-header.py .build/release/ask
 
 Requires pyte. This verifies ask's bytes through an emulator, not a physical terminal's rendering.
 """

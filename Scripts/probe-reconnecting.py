@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check that a dropped connection is said by the status bar, not by a block, through the real binary, a PTY and a provider that fails first.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-reconnecting.py .build/release/ask
+Scripts/probe-reconnecting.py .build/release/ask
 
 The provider answers 529 (overloaded) with retry-after 2 s, then the answer. While ask waits, the status bar must start with the spinner and
 "Reconnecting..."; the conversation must hold no message about it; after the answer the usual mark is back. pyte, not a physical terminal.

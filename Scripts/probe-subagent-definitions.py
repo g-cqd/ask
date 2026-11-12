@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe agent definitions (roadmap 0063 phase 3, ADR-0146) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-subagent-definitions.py .build/release/ask
+Scripts/probe-subagent-definitions.py .build/release/ask
 
 A definition in the person's own `agents` directory is named in the `agent` tool's description; a call naming it starts a subagent
 whose first request holds the definition's instructions before its task, whose tools are only those the definition keeps, and whose

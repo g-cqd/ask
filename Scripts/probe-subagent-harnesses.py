@@ -2,7 +2,7 @@
 """Probe other harnesses' agent definitions (roadmap 0063 phase 3, ADR-0146, `agents.otherHarnesses`) through the real binary, a PTY and
 a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-subagent-harnesses.py .build/release/ask
+Scripts/probe-subagent-harnesses.py .build/release/ask
 
 In a throwaway home, one definition each in Claude's (`.claude/agents/*.md`), Codex's (`.codex/agents/*.toml`) and Copilot's
 (`.copilot/agents/*.agent.md`) folders: with `agents.otherHarnesses` unset the agent tool names none of them; on, it names all three.

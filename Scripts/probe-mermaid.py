@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe Mermaid diagrams in the transcript (roadmap 0198) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-mermaid.py .build/release/ask
+Scripts/probe-mermaid.py .build/release/ask
 
 A reply holding a closed mermaid fence is drawn as the diagram, boxes and labels, with no fence or source line left; a sequence
 diagram is drawn too; the prose around them stays. Hermetic: no window, credentials or clipboard.

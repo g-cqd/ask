@@ -2,7 +2,7 @@
 """Probe that stopping stops a subagent and leaves nothing running (roadmap 0063, phase 2; ADR-0146) through the real binary, a PTY
 and a local fake provider, with real processes.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-subagent-stop.py .build/release/ask
+Scripts/probe-subagent-stop.py .build/release/ask
 
 Main's model starts a subagent whose command is a long `sleep` marked so it can be found; Ctrl+C stops main's turn, and with it the
 subagent: within a few seconds no process with the mark is left, and the subagent merges on its own. Hermetic.

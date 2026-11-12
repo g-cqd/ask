@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe a click on a picker row (roadmap 0048, ADR-0070) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-picker-click.py .build/release/ask [--control OLDER_BINARY]
+Scripts/probe-picker-click.py .build/release/ask [--control OLDER_BINARY]
 
 Reuses the command picker probe's harness. With --control, a binary that predates clickable rows must leave the draft as it was after
 the same click: a probe that cannot fail is not a probe.

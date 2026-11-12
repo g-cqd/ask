@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe the threads settings, `/rename` and `/threads` (roadmap 0195) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-names.py .build/release/ask
+Scripts/probe-thread-names.py .build/release/ask
 
 With `threads.max` 1 and `threads.depth` 1, a second thread while one works is refused, and so is a thread inside a thread. `/rename`
 in a thread's lane names it in the list, and the name comes back after `ask --continue`. `/threads` lists the session's threads and

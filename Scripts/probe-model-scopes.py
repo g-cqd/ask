@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Roadmap 0094 on the real binary: a `modelScopes` rule in your own file limits which providers serve a repository.
 
-    ASK_PYTE=/tmp/ask-pty/lib python3 Scripts/probe-model-scopes.py [.build/release/ask]
+    python3 Scripts/probe-model-scopes.py [.build/release/ask]
 
 A fake Anthropic server, synthetic Codex credentials and cached model lists in temporary directories: nothing leaves the machine.
 Each refusal has a control run, the same but with the rule pointing elsewhere, that must go through, so a probe that cannot fail

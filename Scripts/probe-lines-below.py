@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe the held view and the "N lines below" count (ADR-0072) through the real binary, a PTY and a gated fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-lines-below.py .build/release/ask [--control OLDER_BINARY]
+Scripts/probe-lines-below.py .build/release/ask [--control OLDER_BINARY]
 
 The provider streams a reply in two parts and holds the second until the probe has scrolled back, so the reader is looking at
 something while more text arrives below it. With --control, a binary that predates the change must let the screen slide: a probe that

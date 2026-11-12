@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe subagents (roadmap 0063, ADR-0146) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-subagent.py .build/release/ask
+Scripts/probe-subagent.py .build/release/ask
 
 Off, the default: no request offers the `agent` tool. On (`agents.enabled`): main's model calls it; the subagent's first request holds
 its task and nothing of main's conversation, and offers no `agent` tool (depth 1); its write is refused, since subagents are read-only;

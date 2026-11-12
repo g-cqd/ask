@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Live probe of the interactive screen with Antigravity, through the real binary, a PTY and a terminal emulator.
 
-ASK_LIVE_AGY=1 ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-agy-live.py .build/release/ask
+ASK_LIVE_AGY=1 Scripts/probe-agy-live.py .build/release/ask
 
 Opt-in, because it sends real requests with the signed-in Antigravity account (about a dozen small ones) and reads the real
 credentials. Sessions go to a throwaway state directory, and the project is a throwaway one. Nothing printed is a token. The

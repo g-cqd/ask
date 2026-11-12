@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """A terminal resize after /reload is handled (roadmap 0132) through the real binary, a scripted provider and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-reload-resize.py .build/release/ask
+Scripts/probe-reload-resize.py .build/release/ask
 
 `/reload` replaces the process with the new build. The thread that does it had SIGWINCH, SIGTERM and SIGINT blocked, and `execve` gave
 that mask to the new process, whose threads all inherited it, so a resize was never delivered and the screen was left torn. The probe

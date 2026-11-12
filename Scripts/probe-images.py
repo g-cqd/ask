@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe a tool's picture on the screen (roadmap 0208) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-images.py .build/release/ask
+Scripts/probe-images.py .build/release/ask
 
 The model reads a PNG with the read tool. Its block shows the picture's row under the header (`PNG · 3×2 · … B`), and so does
 the session resumed with --continue. As Ghostty, whose answer to kitty's graphics query the probe gives as kitty would, the

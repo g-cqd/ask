@@ -2,7 +2,7 @@
 """Measures how long a wheel step takes to reach the screen (note n18, task t206): the time from a wheel report written to ask's
 terminal to the first byte of the frame it causes, through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/measure-scroll-latency.py .build/release/ask [--load] [--busy] [--steps N]
+Scripts/measure-scroll-latency.py .build/release/ask [--load] [--busy] [--steps N]
 
 The conversation is long (one reply of a few thousand lines), so there is far to scroll. `--load` keeps every core busy with a loop of
 its own, as a build beside ask does; `--busy` keeps ask's own turn busy, a command flooding its block with output, while it scrolls.

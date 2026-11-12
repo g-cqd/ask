@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe `/reload` with a thread's lane shown (roadmap 0195) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-thread-reload.py .build/release/ask
+Scripts/probe-thread-reload.py .build/release/ask
 
 ask runs from a directory a build is installed into. A thread runs and is merged by `/merge`; its lane is opened; a new build is installed and
 `/reload` typed in the lane. The new process resumes the session and shows the same thread's lane again, its conversation drawn from

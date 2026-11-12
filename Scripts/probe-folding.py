@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Exercise thinking/tool folding through the real binary, a local scripted provider, and a PTY.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-folding.py .build/release/ask
+Scripts/probe-folding.py .build/release/ask
 
 Requires pyte. No windows or credentials; Ghostty identity routes copies to captured OSC 52 rather than pbcopy.
 This verifies ask's bytes through an emulator, not a physical terminal's rendering or clipboard.
@@ -20,7 +20,9 @@ import tempfile
 import termios
 import time
 
-sys.path.insert(0, os.environ.get("ASK_PYTE", "/tmp/ask-pty/lib"))
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import probe_pyte  # noqa: E402
+probe_pyte.ensure()
 import pyte
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

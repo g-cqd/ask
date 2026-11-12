@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Probe encrypted sessions (ADR-0138, roadmap 0182) through the real binary, a PTY and a local fake provider.
 
-ASK_PYTE=/tmp/ask-pty/lib Scripts/probe-session-encryption.py .build/release/ask
+Scripts/probe-session-encryption.py .build/release/ask
 
 A fresh state: the first-start questions asked inside the screen once it is drawn (idea i1) and answered there: yes, the key not
 remembered, a password typed twice as hidden input, the recovery code read off the question that shows it and gone once answered; one
