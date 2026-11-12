@@ -52,7 +52,7 @@ public enum OpenAIRequestEncoder {
                 }
                 // A tool message holds text only on this wire, so the pictures follow in a user message.
                 ImagePart.writeFollowing(shown, as: .chat, into: &writer)
-                if !text.isEmpty {
+                if !ImagePart.writePasted(in: message.blocks, text: text, as: .chat, into: &writer), !text.isEmpty {
                     writer.object {
                         $0.field("role", "user")
                         $0.field("content", text.joined(separator: "\n\n"))

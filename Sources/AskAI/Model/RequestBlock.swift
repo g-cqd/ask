@@ -8,4 +8,6 @@ public enum RequestBlock: Sendable, Equatable {
     case toolCall(id: String, name: String, input: JSONObject)
     /// A tool's result: its text, and any images it returned (roadmap 0084).
     case toolResult(id: String, content: String, isError: Bool, images: [ImagePart] = [])
+    /// A picture the person pasted into their message (roadmap 0224).
+    case image(ImagePart)
 }

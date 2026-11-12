@@ -64,7 +64,8 @@ public enum ResponsesRequestEncoder {
                 }
                 ImagePart.writeFollowing(shown, as: .responses, into: &writer)
                 let text = message.blocks.compactMap { if case .text(let text) = $0 { text } else { nil } }
-                if !text.isEmpty {
+                if !ImagePart.writePasted(in: message.blocks, text: text, as: .responses, into: &writer), !text.isEmpty
+                {
                     writer.object { writer in
                         writer.field("role", "user")
                         writer.key("content")
@@ -105,7 +106,7 @@ public enum ResponsesRequestEncoder {
                         flush(&writer)
                         writer.raw(item)
                     }
-                case .redactedThinking, .toolResult: break
+                case .redactedThinking, .toolResult, .image: break
             }
         }
         flush(&writer)
