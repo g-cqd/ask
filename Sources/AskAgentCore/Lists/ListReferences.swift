@@ -24,16 +24,23 @@ public enum ListReferences {
 
     /// The `t3` and `n2` of each `#t3`, `#n2` that starts a word, in order; punctuation after it is not part of it.
     static func words(_ text: String) -> [String] {
-        var found: [String] = []
+        // `attach` reads the number; a word that is none (`#tx`) attaches nothing there.
+        hashWords(in: text)
+            .filter { word in
+                guard let kind = word.first else { return false }
+                return (kind == "t" || kind == "n" || kind == "i") && word.count > 1
+            }
+            .map(String.init)
+    }
+
+    /// The letters and digits after each `#` that starts a word in `text`, in order; for `#t3` and for `#123` (``ForgeReferences``).
+    static func hashWords(in text: String) -> [Substring] {
+        var found: [Substring] = []
         var previous: Character = " "
         for (index, character) in zip(text.indices, text) {
             defer { previous = character }
             guard character == "#", previous.isWhitespace else { continue }
-            let word = text[text.index(after: index)...].prefix { $0.isLetter || $0.isNumber }
-            // `attach` reads the number; a word that is none (`#tx`) attaches nothing there.
-            if let kind = word.first, kind == "t" || kind == "n" || kind == "i", word.count > 1 {
-                found.append(String(word))
-            }
+            found.append(text[text.index(after: index)...].prefix { $0.isLetter || $0.isNumber })
         }
         return found
     }
