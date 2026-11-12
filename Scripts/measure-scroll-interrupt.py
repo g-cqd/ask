@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Attempt n55/t236's input stall behind wheel reports, through the release binary and a headless PTY.
 
-Scripts/measure-scroll-interrupt.py .build/release/ask [--events 2000] [--runs 6]
+Scripts/measure-scroll-interrupt.py .build/release/ask [--events 2000] [--runs 6] [--session FILE]
 Uses measure-scroll-latency.py's PTY and fake provider; no pyte, real account or real terminal is needed.
 A reverse-direction report and pasted draft follow each burst. The draft is erased, never submitted.
 This is a reproduction attempt, not a precision benchmark: marker observation polls every 50 ms.
@@ -12,6 +12,7 @@ import importlib.util
 import os
 from pathlib import Path
 import statistics
+import shutil
 import tempfile
 import time
 
@@ -35,6 +36,7 @@ def main():
     parser.add_argument('binary', type=lambda value: str(Path(value).resolve()))
     parser.add_argument('--events', type=int, default=2000)
     parser.add_argument('--runs', type=int, default=6)
+    parser.add_argument('--session', help='a session file to resume (a copy is read), in place of the long reply')
     options = parser.parse_args()
     if not 1 <= options.events <= 100_000 or not 1 <= options.runs <= 100:
         parser.error('Use 1..100000 events and 1..100 runs.')
@@ -50,10 +52,16 @@ def main():
         try:
             env = measure.agent.environment(root + '/state', server.url, config=str(config.parent))
             env.update(TERM='xterm-256color', TERM_PROGRAM='kitty')
-            terminal = measure.Pty(options.binary, str(project), env)
-            terminal.until('ask>', seconds=120)
-            terminal.send(b'go\r')
-            terminal.until('LONG DONE', seconds=120)
+            arguments = []
+            if options.session:
+                copy = Path(root, Path(options.session).name)
+                shutil.copyfile(options.session, copy)
+                arguments = ['--resume', str(copy)]
+            terminal = measure.Pty(options.binary, str(project), env, arguments)
+            terminal.until('ask>', seconds=180)
+            if not options.session:
+                terminal.send(b'go\r')
+                terminal.until('LONG DONE', seconds=120)
             milliseconds = []
             for run in range(options.runs):
                 marker = f'INTERRUPT_{run:03d}_{measure.MARK}_READY'
