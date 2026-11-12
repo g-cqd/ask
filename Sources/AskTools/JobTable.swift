@@ -18,6 +18,8 @@ public final class JobTable: Sendable {
     private let displayIDs = Mutex(JobDisplayIDs())
     private let observers = Mutex<[Int: AsyncStream<[JobSummary]>.Continuation]>([:])
     private let nextObserver = Atomic<Int>(0)
+    /// How many finished jobs are kept, and which were let go (`jobs.keepFinished`).
+    let retention = Mutex(JobRetention())
     /// Stops the jobs' groups if ask is killed, which nothing in ask can observe (ADR-0079).
     let watchdog = JobWatchdog()
     /// Distinguishes this process's output files from another ask's in the same directory.
@@ -142,10 +144,12 @@ public final class JobTable: Sendable {
         )
         jobs.withLock { $0[id] = job }
         if let owner = JobOwner.current { owners.withLock { $0[id] = owner } }
+        letGoFinished()
         notifyObservers()
         // The table learns of an ending the way `job_stop` does, by waiting for it, so nothing polls.
         Task { [weak self] in
             await job.ended()
+            self?.letGoFinished()
             self?.notifyObservers()
         }
         return job
@@ -203,7 +207,18 @@ public final class JobTable: Sendable {
         observers.withLock { for continuation in $0.values { continuation.yield(list) } }
     }
 
-    private static func number(_ id: String) -> Int { Int(id.dropFirst(4)) ?? 0 }
+    private static func number(_ id: String) -> Int { order(id) }
+
+    /// Removes the jobs `choose` picks, and who they were started for, under the table's lock; returns them.
+    func removeJobs(_ choose: ([String: Job]) -> [Job]) -> [Job] {
+        let gone = jobs.withLock { jobs in
+            let chosen = choose(jobs)
+            for job in chosen { jobs[job.id] = nil }
+            return chosen
+        }
+        owners.withLock { owners in for job in gone { owners[job.id] = nil } }
+        return gone
+    }
 
     /// Stops every running job and waits for each to end: SIGTERM to its group, then SIGKILL after two
     /// seconds.

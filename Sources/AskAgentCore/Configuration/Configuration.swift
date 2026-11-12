@@ -66,6 +66,7 @@ public struct Configuration: Sendable, Equatable {
     public var agents = Setting(value: AgentsSection(), source: .defaults)  // subagents, off by default, 0063
     public var openers = Setting(value: OpenersSection(), source: .defaults)  // what a clicked link opens with, 0216
     public var threads = Setting(value: ThreadsSection(), source: .defaults)  // how many threads, how deep, 0195
+    public var jobs = Setting(value: JobsSection(), source: .defaults)  // how many finished jobs are kept, t232
     /// Where each `ui` and `skills` key came from, by its dotted name; read through `source(ofKey:)`.
     var keySources: [String: Source] = [:]
 
@@ -113,6 +114,7 @@ public struct Configuration: Sendable, Equatable {
         next.threads = next.threads.layered(file.threads, from: source)
         next.agents = next.agents.layered(file.agents, from: source)
         next.openers = next.openers.layered(file.openers, from: source)
+        next.jobs = next.jobs.layered(file.jobs, from: source)
         next.mcp = next.mcp.layered(file.mcp, from: source)
         next.environment = next.environment.layered(file.environment, from: source)
         return next

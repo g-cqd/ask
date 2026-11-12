@@ -32,5 +32,5 @@ extension SettingCatalog {
 
 extension SettingCatalog {
     /// Every setting but the openers', section by section.
-    static let beforeOpeners = top + ui + sandbox + approvals + hooks + threads + agents + skills + environment
+    static let beforeOpeners = top + ui + sandbox + approvals + hooks + threads + agents + skills + environment + jobs
 }

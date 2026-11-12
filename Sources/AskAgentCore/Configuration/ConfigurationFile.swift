@@ -33,6 +33,7 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var agents: AgentsSection?  // roadmap 0063, ADR-0146; a project's may only turn them off
     public var presets: [String]?  // roadmap 0190: sets of MCP servers ask knows, added to `mcp`
     public var openers: OpenersSection?  // roadmap 0216, ADR-0148; the person's own file only
+    public var jobs: JobsSection?  // t232: how many finished jobs are kept
 
     /// The keys ask knows, in the order `ask config` shows them.
     // @dl:accept -- the list of keys is data; the sandbox policy's list of names is other data
@@ -40,7 +41,8 @@ public struct ConfigurationFile: Sendable, Equatable {
         // @dl:accept -- the list of keys is data, like the sandbox policy's lists of paths
         "model", "provider", "thinking", "maxTurns", "compactAt", "keepAwake", "keepDisplayAwake", "credentials",
         "approvals", "modelScopes", "sessionEncryption", "sessionCompression", "sessionPassword", "taskScope",
-        "hooks", "threads", "agents", "sandbox", "ui", "skills", "presets", "mcp", "environment", "openers"
+        "hooks", "threads", "agents", "sandbox", "ui", "skills", "presets", "mcp", "environment", "openers",
+        "jobs"
     ]
 
     /// A file with these values.
@@ -198,6 +200,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     case "threads": file.threads = try container.decode(ThreadsDecoded.self, forKey: key).section
                     case "agents": file.agents = try container.decode(AgentsDecoded.self, forKey: key).section
                     case "openers": file.openers = try container.decode(OpenersDecoded.self, forKey: key).section
+                    case "jobs": file.jobs = try container.decode(JobsDecoded.self, forKey: key).section
                     case "modelScopes":
                         file.modelScopes = try container.decode([ModelScopeDecoded].self, forKey: key).map(\.scope)
                     case "environment":

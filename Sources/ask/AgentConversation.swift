@@ -102,6 +102,7 @@ final class AgentConversation: Conversation {
             display: settings.configuration.keepDisplayAwake.value
         )
         Self.follow(jobs, with: keepAwake)
+        jobs.keepFinished = settings.configuration.jobs.value.limit
         if let grants { approvals.withLock { $0.restore(grants) } }
     }
 

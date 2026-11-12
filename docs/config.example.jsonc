@@ -282,6 +282,11 @@
     "shell": "zsh"
   },
 
+  "jobs": {
+    // How many finished jobs ask keeps for the job tool, with their output, the oldest let go first; null for all of them. Default: null.
+    "keepFinished": 200
+  },
+
   "openers": {
     // The app a clicked file opens in. Default: the system's choice. Your own file only.
     "file": "Xcode",
