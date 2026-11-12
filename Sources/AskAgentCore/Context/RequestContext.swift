@@ -37,7 +37,10 @@ public struct RequestContext: Sendable, Equatable {
         switch payload {
             // What a newer ask wrote is not this build's to send (ADR-0144).
             case .destination, .unrecognized: break
-            case .user(let text): addUser(.text(text))
+            case .user(let text, let images):
+                addUser(.text(text))
+                // The pictures the person pasted follow their text, in the same message (roadmap 0224).
+                for image in images { append(.image(image), role: .user) }
             case .compaction(let summary, _): addUser(.text(Self.summaryPrefix + summary))
             case .assistant(let text): addAssistant([.text(text)])
             case .response(let response, _): addAssistant(response.blocks.compactMap { replayable($0) })
