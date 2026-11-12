@@ -87,4 +87,35 @@ struct ForgeReaderTests {
         )
         #expect(asked.withLock { $0 } == 1)
     }
+
+    @Test func `the open pull requests and issues, and the branch's pull request, from the origin's repository`()
+        async throws
+    {
+        let directory = try repository(origin: "https://github.com/g-cqd/ask.git")
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let asked = Mutex<[String]>([])
+        let fetch: ForgeReader.Fetch = { request in
+            let url = request.url?.absoluteString ?? ""
+            asked.withLock { $0.append(url) }
+            let body =
+                url.contains("/pulls?")
+                ? #"[{"number":42,"title":"Work","state":"open","html_url":"u","user":{"login":"x"}}]"#
+                : #"[{"number":42,"title":"Work","state":"open","html_url":"u","user":{"login":"x"},"pull_request":{}},{"number":7,"title":"Bug","state":"open","html_url":"v","user":{"login":"y"}}]"#
+            return (Data(body.utf8), Self.response(request, 200))
+        }
+        let path = ProcessInfo.processInfo.environment["PATH"]
+        let open = await ForgeReader.openItems(workspace: directory.path, token: nil, path: path, fetch: fetch)
+        #expect(open.map(\.number) == [42, 7])
+        let pull = await ForgeReader.branchPullRequest(
+            branch: "work",
+            workspace: directory.path,
+            token: nil,
+            path: path,
+            fetch: fetch
+        )
+        #expect(pull == 42)
+        let urls = asked.withLock { $0 }
+        #expect(urls.contains("https://api.github.com/repos/g-cqd/ask/issues?state=open&sort=updated&per_page=30"))
+        #expect(urls.contains("https://api.github.com/repos/g-cqd/ask/pulls?state=open&head=g-cqd:work&per_page=1"))
+    }
 }

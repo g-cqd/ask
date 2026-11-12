@@ -63,6 +63,10 @@ public enum ConversationUpdate: Sendable, Equatable {
     case context(String)
     /// The workspace's git state for the end of the status line, longest form first; empty outside a repository (roadmap 0186).
     case gitStatus([String])
+    /// The open pull request of the workspace's branch, or none (roadmap 0186).
+    case branchPullRequest(Int?)
+    /// The `#123` of a sent message that resolved, drawn as tokens from now on (roadmap 0186).
+    case referencesResolved([String])
     /// Close the screen once the run that sent this has ended, so the caller can act on `exit`.
     case requestExit(ScreenExit)
     /// A queued message was persisted; remove its pending copy and show it in the conversation.

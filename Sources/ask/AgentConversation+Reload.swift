@@ -14,6 +14,7 @@ extension AgentConversation {
         let mcp = mcp
         let threads = threads
         refreshGitStatus(update)
+        refreshForge(update)
         return Task {
             await withTaskGroup(of: Void.self) { group in
                 group.addTask {

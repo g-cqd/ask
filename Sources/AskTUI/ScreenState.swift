@@ -95,6 +95,10 @@ public struct ScreenState: Sendable, Equatable {
     var statusPath: [String] = []
     /// The workspace's git state, longest form first (roadmap 0186).
     var gitStatus: [String] = []
+    /// The open pull request of the workspace's branch (roadmap 0186).
+    var branchPullRequest: Int?
+    /// The `#123` that resolved when sent, drawn as tokens (roadmap 0186).
+    var resolvedReferences: Set<String> = []
     var statusPathSide = StatusPathSide.leading
     /// Whether the terminal has focus, as it last reported (note n62); nil until it says, which counts as not focused.
     var focused: Bool?

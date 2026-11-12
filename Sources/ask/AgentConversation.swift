@@ -53,7 +53,9 @@ final class AgentConversation: Conversation {
     /// The threads `/thread` started (roadmap 0194), and the jobs they are listed beside.
     let threads = ThreadTable()
     /// The status bar's git segment (roadmap 0186).
-    let gitStatus = GitStatusRefresh()
+    let gitStatus = CoalescedRefresh()
+    /// The `#` picker's pull requests and issues, and the branch's pull request (roadmap 0186).
+    let forge = ForgeListing()
     /// The thread whose lane the screen shows, for `/reload` to show it again (roadmap 0195).
     let focusedThread = Mutex<String?>(nil)
 
@@ -156,7 +158,8 @@ final class AgentConversation: Conversation {
         let input = PromptQueue { [mcp, threads, self] text in
             threads.attachReports(
                 await self.attachingForgeReferences(
-                    SessionTasks.attachReferences(await mcp.attachResources(self.attachingShellReports(text)))
+                    SessionTasks.attachReferences(await mcp.attachResources(self.attachingShellReports(text))),
+                    update: update
                 )
             )
         }
@@ -180,7 +183,8 @@ final class AgentConversation: Conversation {
                     await self.attachingForgeReferences(
                         SessionTasks.attachReferences(
                             await self.mcp.attachResources(self.attachingShellReports(expanded))
-                        )
+                        ),
+                        update: update
                     )
                 )
                 let loop = try self.agentLoop()
@@ -204,12 +208,20 @@ final class AgentConversation: Conversation {
             }
             update(.runEnded)
             self.refreshGitStatus(update)
+            self.refreshForge(update)
         }
     }
 
     /// Reads the workspace's git state again for the status bar.
     func refreshGitStatus(_ update: @escaping @Sendable (ConversationUpdate) -> Void) {
-        gitStatus.request(in: current.withLock { $0.settings.workspace }, update: update)
+        let workspace = current.withLock { $0.settings.workspace }
+        let path = LaunchEnvironment.values["PATH"]
+        gitStatus.request { update(.gitStatus(await GitStatus.read(in: workspace, path: path))) }
+    }
+
+    /// Reads the workspace's open pull requests and issues, and its branch's pull request, when they are due.
+    func refreshForge(_ update: @escaping @Sendable (ConversationUpdate) -> Void) {
+        forge.request(in: current.withLock { $0.settings.workspace }, update: update)
     }
 
     /// Shows an event on the screen and adds what it cost to the status line.

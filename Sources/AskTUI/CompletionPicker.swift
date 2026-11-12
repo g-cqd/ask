@@ -21,7 +21,7 @@ struct CompletionPicker: Sendable, Equatable {
             switch self {
                 case .commands: "commands"
                 case .files: "files"
-                case .references: "tasks and ideas"
+                case .references: "tasks, notes, pull requests and issues"
                 case .resources(let server): "resources · \(server)"
                 case .choices(let name): name
                 case .config(let scope, _): "config · \(scope)"

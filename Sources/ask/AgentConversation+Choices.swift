@@ -57,10 +57,11 @@ extension AgentConversation {
             .map { list in
                 list.ideas.filter(\.state.isOpen).map { (name: "#" + $0.name, line: list.line($0)) }
             } ?? []
+        // Then the workspace's open pull requests and issues, as last read (roadmap 0186).
         return (tasks + ideas)
             .map {
                 ChoiceRow(label: $0.name, detail: String($0.line.drop { $0 != " " }.dropFirst()), arguments: $0.name)
-            }
+            } + forge.rows
     }
 
     /// A list's rows: `all`, then each entry by its name, its line after the name as the detail; none for an empty list.

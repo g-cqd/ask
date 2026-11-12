@@ -57,3 +57,8 @@ and at a run's end. Still owed: `#123` from the forge, with `GITHUB_TOKEN` for p
 
 `ForgeReferences` and `ForgeReader`: a pull request or issue attached from the origin's GitHub repository, `GITHUB_TOKEN` when set.
 Still owed: open pull requests in the `#` picker, the resolved token's look, the branch's pull request in the status segment.
+
+## Done (2026-11-12): the picker, the branch's pull request, resolved tokens
+
+`ForgeListing` (at the start, then at most every five minutes after a run): open pull requests and issues in the `#` picker, the
+branch's pull request at the end of the git segment; a `#123` that resolved is a token. Left: a click on the status's number.
