@@ -19,11 +19,5 @@ public struct CopilotClientVersion: Sendable, Equatable, Codable {
     var isPlain: Bool { Self.isPlain(vscode) && Self.isPlain(chat) }
 
     /// Two to four dot-separated numbers of at most six digits each.
-    static func isPlain(_ text: String) -> Bool {
-        let parts = text.split(separator: ".", omittingEmptySubsequences: false)
-        return (2 ... 4).contains(parts.count)
-            && parts.allSatisfy { part in
-                (1 ... 6).contains(part.count) && part.allSatisfy { $0.isASCII && $0.isNumber }
-            }
-    }
+    static func isPlain(_ text: String) -> Bool { text.isPlainVersion }
 }
