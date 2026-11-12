@@ -5,6 +5,8 @@ internal import TerminalKitInput
 public enum ConversationUpdate: Sendable, Equatable {
     /// A prompt the user wrote earlier, shown when a recorded session is resumed.
     case userPrompt(String)
+    /// The pictures pasted into the prompt just replayed (roadmap 0224).
+    case promptPictures([ToolImage])
     /// Several updates applied as one, in order, and drawn once: a conversation rebuilt at once (`/rewind`, roadmap 0160) would
     /// otherwise draw a frame, and copy the transcript, for every item.
     indirect case batch([ConversationUpdate])
@@ -16,6 +18,8 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// A message for the model that the conversation wrote for the person (a `!!` command's result, note n56): taken as if they had
     /// typed and sent it, so it starts a turn, or waits behind the running one.
     case submitPrompt(String)
+    /// A picture the person pasted, ready to send (roadmap 0224): its token goes into the input at the cursor.
+    case pictureAttached(ToolImage)
     /// A tool began. With `command`, the full input is a command, which heads the block after its limits, and `summary` is unused.
     /// `path` is the file the call names, whose language colours a file's text in the block (roadmap 0152).
     case toolStarted(

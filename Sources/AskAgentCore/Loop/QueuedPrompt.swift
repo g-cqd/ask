@@ -1,3 +1,5 @@
+public import AskAI
+
 /// A user message waiting for a safe boundary, identified so a front end acknowledges it only after persistence.
 public struct QueuedPrompt: Sendable, Equatable {
     /// When the message may enter the conversation.
@@ -11,11 +13,14 @@ public struct QueuedPrompt: Sendable, Equatable {
     public let id: Int
     public let text: String
     public let delivery: Delivery
+    /// The pictures pasted into it (roadmap 0224).
+    public var images: [ImagePart] = []
 
     /// A pending message. Identifiers must be unique within a run.
-    public init(id: Int, text: String, delivery: Delivery = .steering) {
+    public init(id: Int, text: String, delivery: Delivery = .steering, images: [ImagePart] = []) {
         self.id = id
         self.text = text
         self.delivery = delivery
+        self.images = images
     }
 }

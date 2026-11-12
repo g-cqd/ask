@@ -63,6 +63,7 @@ extension ScreenController {
     mutating func sendToThread(_ text: String) -> [Effect]? {
         guard let lane = state.lane, lane.isThread else { return nil }
         state.transcript.addUser(text)
+        showPictures(of: text)
         state.scrollback = 0
         return [.sendToThread(id: lane.id, text: text)]
     }

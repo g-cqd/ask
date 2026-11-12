@@ -50,7 +50,7 @@ struct AgentHookPromptTests {
             failure = error
         }
         let users = file.tree.entries.compactMap { entry -> String? in
-            if case .user(let text) = entry.payload { text } else { nil }
+            if case .user(let text, _) = entry.payload { text } else { nil }
         }
         return Outcome(users: users, events: events.withLock { $0 }, requests: provider.requests.count, error: failure)
     }

@@ -95,6 +95,7 @@ extension AgentConversation {
             for step in SessionReplay.steps(pending) {
                 switch step {
                     case .prompt(let text): updates.append(.userPrompt(text))
+                    case .pictures(let images): updates.append(.promptPictures(images.map(ToolImage.init)))
                     case .event(let event):
                         recordUsage(event)
                         updates += Self.updates(for: event)

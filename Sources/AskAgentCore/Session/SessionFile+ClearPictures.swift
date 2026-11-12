@@ -10,8 +10,11 @@ extension SessionFile {
     var clearPictureNames: Set<String> {
         Set(
             tree.entries.flatMap { entry -> [String] in
-                guard case .toolResult(_, _, _, let images, _) = entry.payload else { return [] }
-                return images.map { SessionImageStore.hash(of: $0.data) }
+                switch entry.payload {
+                    case .toolResult(_, _, _, let images, _), .user(_, let images):
+                        return images.map { SessionImageStore.hash(of: $0.data) }
+                    default: return []
+                }
             }
         )
     }

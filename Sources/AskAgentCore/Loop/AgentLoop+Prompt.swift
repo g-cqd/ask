@@ -1,3 +1,5 @@
+internal import AskAI
+
 /// Hooks seeing the person's messages before they enter the conversation (roadmap 0192, ADR-0143): the run's first message and each
 /// queued one. Rewrites chain in order, context joins after the message labelled by its hook, and the first block keeps it out.
 extension AgentLoop {
@@ -46,7 +48,12 @@ extension AgentLoop {
 
     /// Records the run's first message as the hooks leave it.
     /// - Throws: ``AgentError/promptBlocked(_:)`` when a hook keeps it out, before anything is recorded or sent.
-    func recordFirst(_ prompt: String, in session: SessionRecorder, events: (AgentEvent) -> Void)
+    func recordFirst(
+        _ prompt: String,
+        images: [ImagePart] = [],
+        in session: SessionRecorder,
+        events: (AgentEvent) -> Void
+    )
         async throws(AgentError)
     {
         switch await submitting(prompt) {
@@ -55,7 +62,8 @@ extension AgentLoop {
                 throw .promptBlocked(reason)
             case .send(let text, let changedBy, let timedOut):
                 for name in timedOut { events(.hookTimedOut(hook: name, point: "prompt.submit")) }
-                try record(.user(text), in: session)
+                // Hooks see the text; the pictures pasted with it pass as they are (roadmap 0224).
+                try record(.user(text, images: images), in: session)
                 if !changedBy.isEmpty { events(.hookChangedPrompt(hooks: changedBy)) }
         }
     }

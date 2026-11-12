@@ -33,6 +33,7 @@ public struct RequestRewrite: Sendable, Equatable, Codable {
             case .redactedThinking(let data): data.utf8.count
             case .toolCall(_, let name, let input): name.utf8.count + input.bytes.count
             case .toolResult(_, let content, _, _): content.utf8.count
+            case .image: 0
         }
     }
 }

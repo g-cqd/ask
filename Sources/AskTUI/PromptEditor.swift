@@ -161,6 +161,11 @@ public struct PromptEditor: Sendable, Equatable {
     }
 
     private mutating func delete(forward: Bool) -> Outcome {
+        // A pasted picture's token goes whole with one Backspace (roadmap 0224).
+        if !forward, let length = PastedPictures.tokenLength(endingAt: text[..<index(cursor)]) {
+            remove(cursor - length ..< cursor)
+            return .edited
+        }
         let target = forward ? cursor : cursor - 1
         guard target >= 0, target < text.count else { return .ignored }
         text.remove(at: index(target))

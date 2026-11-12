@@ -29,6 +29,7 @@ struct ScreenClipboard {
         Task {
             switch await read() {
                 case .text(let text): sink.yield(.input(.paste(text)))
+                case .picture(let bytes): sink.yield(.pastedPicture(bytes))
                 case .denied(let reason): sink.yield(.pasteRefused(reason))
                 case .empty: break
             }

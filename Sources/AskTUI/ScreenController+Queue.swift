@@ -16,7 +16,15 @@ extension ScreenController {
         }
         if state.running { return queue(text, followUp: followUp) }
         state.transcript.addUser(text)
+        showPictures(of: text)
         return begin(.startRun(text))
+    }
+
+    /// The pictures `text` names, under the block just added for it, as a tool's are (roadmap 0224).
+    mutating func showPictures(of text: String) {
+        let images = state.pictures.images(in: text)
+        guard !images.isEmpty else { return }
+        state.transcript.toolImages[state.transcript.items.count - 1] = images
     }
 
     mutating func queue(_ text: String, followUp: Bool) -> [Effect] {
@@ -26,6 +34,7 @@ extension ScreenController {
             return []
         }
         state.transcript.addQueued(text)
+        showPictures(of: text)
         let index = state.transcript.items.count - 1
         let prompt = Pending(id: nextPromptID, text: text, followUp: followUp, transcriptIndex: index)
         nextPromptID += 1
