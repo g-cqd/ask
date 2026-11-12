@@ -14,6 +14,10 @@ first.
 ## Writing a prompt
 
 - **Enter** sends. **Shift+Enter** or **Ctrl+J** starts a new line; a paste keeps its line breaks.
+- **A picture** goes with your message: copy one and paste it with Ctrl+V or Command+V (when the terminal passes the key on), or drop
+  an image file on the window, or paste its path. It shows as `[image 1]` where it was pasted, with its kind and size above the
+  input; one Backspace removes it. It is sent after your text, made smaller first when it is past 2000 pixels, and shows under your
+  message, as a tool's pictures do. A model that takes no images refuses it, and says so.
 - **`/`** at the start lists the commands, narrowed as you type. Up and Down choose; Enter or Tab inserts the choice without sending it, so
   a second Enter runs it. A click on a row runs it at once.
 - **`@`** at the start of a word lists the project's files (`.gitignore` applies, and only what the sandbox lets ask read). Enter inserts `@path`;

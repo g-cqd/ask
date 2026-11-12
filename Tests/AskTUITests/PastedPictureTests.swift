@@ -75,14 +75,18 @@ struct PastedPictureTests {
     }
 
     @Test func `the person's message shows its pictures' captions under its text`() {
-        var transcript = Transcript()
-        transcript.addUser("look [image 1]")
-        transcript.toolImages[0] = [Self.png]
-        let rows = ScreenComposer.lines(in: transcript, at: 0, columns: 80)
-            .map { $0.text.trimmingCharacters(in: .whitespaces) }
-        let message = rows.firstIndex { $0.contains("look [image 1]") }
-        let caption = rows.firstIndex { $0.hasPrefix("PNG · 1280×800") }
-        #expect(message != nil && caption != nil && message! < caption!, "\(rows)")
+        // Drawn as Markdown, as the screen draws a message, and as plain text.
+        for markdown in [true, false] {
+            var transcript = Transcript()
+            transcript.markdown = markdown
+            transcript.addUser("look [image 1]")
+            transcript.toolImages[0] = [Self.png]
+            let rows = ScreenComposer.lines(in: transcript, at: 0, columns: 80)
+                .map { $0.text.trimmingCharacters(in: .whitespaces) }
+            let message = rows.firstIndex { $0.contains("look [image 1]") }
+            let caption = rows.firstIndex { $0.hasPrefix("PNG · 1280×800") }
+            #expect(message != nil && caption != nil && message! < caption!, "markdown \(markdown): \(rows)")
+        }
     }
 
     @Test func `a resumed message's pictures show under it`() {
