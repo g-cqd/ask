@@ -46,4 +46,11 @@ struct ImagePlacement: Sendable, Equatable {
         )
         return GraphicsEncoder.encode(transmit) + placement(id: id, columns: columns, rows: rows)
     }
+
+    /// The command that deletes `id` from the terminal and frees its data, quietly.
+    static func deletion(id: UInt32) -> [UInt8] {
+        GraphicsEncoder.encode(
+            GraphicsCommand(action: .delete, deletion: .image(id: id, freeingData: true), isQuiet: true)
+        )
+    }
 }

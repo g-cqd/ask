@@ -1,5 +1,6 @@
 internal import TerminalKitIO
 internal import TerminalKitInput
+internal import TerminalKitText
 
 /// The screen's pictures as pixels (roadmap 0208): the terminal's answer, and placing what is new once an update is applied.
 extension ScreenSession {
@@ -9,6 +10,17 @@ extension ScreenSession {
         guard images?.take(bytes) == true else { return false }
         placeImages()
         return true
+    }
+
+    /// The blocks the last frame drew rows of, first to last; nil before a frame, when every picture counts as near (roadmap 0208).
+    static func shownBlocks(_ frame: FrameGeometry) -> ClosedRange<Int>? {
+        let blocks = (0 ..< frame.transcriptRows)
+            .compactMap { row in
+                frame.rows.provenance(atRow: row)?.block
+                    ?? (frame.foldBlocks.indices.contains(row) ? frame.foldBlocks[row] : nil)
+            }
+        guard let first = blocks.min(), let last = blocks.max() else { return nil }
+        return first ... last
     }
 
     /// Sends and places the pictures not placed yet, sized to the terminal's cells, and draws again when one was. The width left
@@ -22,7 +34,8 @@ extension ScreenSession {
             in: &controller.state.transcript,
             size: size,
             inset: 1,
-            transcriptColumns: columns
+            transcriptColumns: columns,
+            near: Self.shownBlocks(frames.load())
         )
         images = held
         if placed { render() }
