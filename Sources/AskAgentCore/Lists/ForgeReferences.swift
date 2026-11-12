@@ -31,19 +31,12 @@ public enum ForgeReferences {
 
     /// The numbers of the `#123` that start a word in the typed line, in order, each once, at most ``limit``.
     public static func numbers(in text: String) -> [Int] {
-        let typed = SkillInvocation.shown(text)
         var found: [Int] = []
-        var previous: Character = " "
-        for (index, character) in zip(typed.indices, typed) {
-            defer { previous = character }
-            guard character == "#", previous.isWhitespace else { continue }
-            let rest = typed[typed.index(after: index)...]
-            let digits = rest.prefix { $0.isASCII && $0.isNumber }
-            let next = rest.dropFirst(digits.count).first
-            guard !digits.isEmpty, next.map({ !$0.isLetter && !$0.isNumber }) ?? true, let number = Int(digits) else {
-                continue
-            }
-            if !found.contains(number) { found.append(number) }
+        // A word of digits alone: `#4x` and `#t4` are not numbers.
+        for word in ListReferences.hashWords(in: SkillInvocation.shown(text))
+        where word.allSatisfy({ $0.isASCII && $0.isNumber }) {
+            guard let number = Int(word), !found.contains(number) else { continue }
+            found.append(number)
             if found.count == limit { break }
         }
         return found
