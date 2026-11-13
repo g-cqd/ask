@@ -125,7 +125,7 @@ func makeLoop(
         FileTools.all + [
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
             NarrowSandboxTool(jobs: jobs), TasksTool(board: SessionTasks.board),
-            IdeasTool(board: SessionTasks.ideas, tasks: SessionTasks.board)
+            IdeasTool(board: SessionTasks.ideas, tasks: SessionTasks.board), SessionSearchTool()
         ] + (skills.tool.map { [$0] } ?? []) + (askPerson == nil ? [] : [QuestionTool()])
         + (startSubagent == nil ? [] : [AgentTool(definitions: definitions)])
     // A definition's subagent keeps only the tools it names, and no server's unless named.

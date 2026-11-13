@@ -234,6 +234,10 @@ final class AgentConversation: Conversation {
         for shown in Self.updates(for: event) { update(shown) }
         // A tool may have changed the files or the branch.
         if case .toolFinished = event { refreshGitStatus(update) }
-        if case .compacted(let summary, _) = event { renameConversation(fromSummary: summary, update: update) }
+        if case .compacted(let summary, _) = event {
+            renameConversation(fromSummary: summary, update: update)
+            // What a compaction folds away stays searchable: the index takes it now (t209).
+            Task.detached(priority: .utility) { await SessionSearch.shared.update() }
+        }
     }
 }

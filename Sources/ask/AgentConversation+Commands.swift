@@ -77,6 +77,7 @@ extension AgentConversation {
             SlashCommand(
                 name: "rewind",
                 summary: "Go back to before a prompt: choose it, or /rewind N. Also /tree.",
+                // @dl:accept -- the command list is a table: each entry a name, a sentence and when it runs
                 takesChoices: true,
                 duringTurn: .afterTurn
             ),
@@ -90,6 +91,12 @@ extension AgentConversation {
             SlashCommand(
                 name: "fork",
                 summary: "Continue in a new session: /fork, or /fork N from before prompt N. The original stays.",
+                duringTurn: .atOnce
+            ),
+            SlashCommand(
+                name: "search",
+                summary:
+                    "Search every session on this machine: /search cache key. Typos and parts of identifiers match.",
                 duringTurn: .atOnce
             ),
             SlashCommand(
@@ -194,6 +201,7 @@ extension AgentConversation {
                 case "notes", "notes:all", "notes:show", "notes:edit", "notes:add", "notes:delete", "notes:search":
                     self.notes(command: name, arguments: arguments, update: update)
                 case "tasks": update(.notice(SessionTasks.answer(to: arguments), isError: false))
+                case "search": update(.notice(await SessionSearchCommand.answer(to: arguments), isError: false))
                 case "btw": await self.aside(arguments, update: update)
                 case "thread": await self.startThread(arguments, update: update)
                 case "threads": self.showThreads(arguments, update: update)
