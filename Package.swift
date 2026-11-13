@@ -198,6 +198,7 @@ let package = Package(
         .executableTarget(
             name: "ask",
             dependencies: [
+                .product(name: "AemiSearch", package: "AemiSearch"),
                 "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskTools", "AskTUI",
                 .product(name: "AemiJSON", package: "AemiJSON"),
                 .product(name: "ArgumentParser", package: "swift-argument-parser"),
@@ -227,7 +228,8 @@ let package = Package(
             name: "AskAgentCoreTests",
             dependencies: [
                 "AskAgentCore", "AskAI", .product(name: "AemiIO", package: "aemi"),
-                .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiTesting", package: "aemi")
+                .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiTesting", package: "aemi"),
+                .product(name: "AemiSearch", package: "AemiSearch")
             ],
             path: "Tests/AskAgentCoreTests",
             swiftSettings: packageSettings
