@@ -55,7 +55,8 @@ public struct ApprovalPolicy: Sendable, Equatable {
     /// The built-in tools that change things: commands, files, and what is typed into a job.
     static func changesThings(_ tool: String, _ input: JSONObject) -> Bool {
         switch tool {
-            case "bash", "write", "edit": true
+            // `fetch` reads, but its address can carry what it read elsewhere out (roadmap 0237).
+            case "bash", "write", "edit", "fetch": true
             case "job": fields(of: input).action == "input"
             default: false
         }
@@ -90,6 +91,7 @@ public struct ApprovalPolicy: Sendable, Equatable {
                 guard let path = fields(of: input).path else { return .tool(tool) }
                 let absolute = path.hasPrefix("/") ? path : workingDirectory + "/" + path
                 return .file((absolute as NSString).standardizingPath)
+            case "fetch": return FetchAddress.host(of: fields(of: input).url ?? "").map(CallScope.host) ?? .tool(tool)
             default: return .tool(tool)
         }
     }
@@ -106,5 +108,6 @@ public struct ApprovalPolicy: Sendable, Equatable {
         var action: String?
         var server: String?
         var tool: String?
+        var url: String?
     }
 }

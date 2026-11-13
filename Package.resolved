@@ -1,5 +1,5 @@
 {
-  "originHash" : "29858373522b34abf273c2f39ad529bfffb3a76da8908fbf26ffe8736f71828b",
+  "originHash" : "97431bb693fcbd660b70de0a4cd741e2603c6c0d51dddfdfcd546613607288b8",
   "pins" : [
     {
       "identity" : "aemi",
@@ -15,6 +15,14 @@
       "location" : "https://github.com/g-cqd/AemiHMMML.git",
       "state" : {
         "revision" : "ed8469a6b6893265ad8ceede6f7fee00d3169e88"
+      }
+    },
+    {
+      "identity" : "aemihtml",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/g-cqd/AemiHTML.git",
+      "state" : {
+        "revision" : "80c20f9dd4a77f2c18147708c1157b419f79b157"
       }
     },
     {

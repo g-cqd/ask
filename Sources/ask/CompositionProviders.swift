@@ -127,7 +127,7 @@ func makeLoop(
         FileTools.all + [
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
             NarrowSandboxTool(jobs: jobs), TasksTool(board: SessionTasks.board),
-            IdeasTool(board: SessionTasks.ideas, tasks: SessionTasks.board)
+            IdeasTool(board: SessionTasks.ideas, tasks: SessionTasks.board), FetchTool()
         ] + (currentSession.map { [SessionSearchTool(currentSession: $0)] } ?? []) + (skills.tool.map { [$0] } ?? [])
         + (askPerson == nil ? [] : [QuestionTool()])
         + (startSubagent == nil ? [] : [AgentTool(definitions: definitions)])
