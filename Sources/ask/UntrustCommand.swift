@@ -1,6 +1,7 @@
 // @dl:accept -- the commands share a shape
 internal import ArgumentParser
 internal import AskAgentCore
+internal import AskSession
 internal import Foundation
 
 /// `ask untrust`: stop applying this project's `.ask/config.json`.

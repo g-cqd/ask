@@ -3,7 +3,7 @@ internal import Foundation
 
 /// One file of a project's that trust is given or taken from by name (`ask trust --skills`, `--agents`): what it is called, where it
 /// is, the digest of its bytes now, and what it says it is for, which the person is shown before it is trusted.
-struct TrustedFile {
+package struct TrustedFile {
     let name: String
     /// Shown after the name: where it comes from, for a skill.
     let origin: String?
@@ -34,7 +34,7 @@ struct TrustedFile {
 
     /// `ask trust --skills` or `--agents`: says each file and what it is for, so the person sees the words, then trusts them; says
     /// the names nothing answered, and exits 66 when there were any.
-    static func trust(
+    package static func trust(
         _ found: (found: [TrustedFile], missing: [String]),
         kind: String,
         store path: String,
@@ -55,7 +55,7 @@ struct TrustedFile {
     }
 
     /// `ask untrust --skills` or `--agents`.
-    static func untrust(_ found: (found: [TrustedFile], missing: [String]), kind: String, store path: String) {
+    package static func untrust(_ found: (found: [TrustedFile], missing: [String]), kind: String, store path: String) {
         do { try apply(found.found, granting: false, store: path) } catch { fail("ask: \(error)", code: 73) }
         for file in found.found { print("No longer trusting \(file.name): \(file.file)") }
         for name in found.missing { print("No project \(kind) called \(name).") }

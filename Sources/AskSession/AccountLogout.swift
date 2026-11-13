@@ -2,7 +2,7 @@ internal import AskAI
 internal import Foundation
 
 /// Forgets what was signed in: one account, or all of them. Shared by `ask logout` and `/logout`, so either can sign out anything the other can.
-struct AccountLogout {
+package struct AccountLogout {
     /// Why nothing could be forgotten.
     struct Failure: Error, CustomStringConvertible {
         let description: String
@@ -10,10 +10,12 @@ struct AccountLogout {
 
     let environment: [String: String]
 
+    package init(environment: [String: String]) { self.environment = environment }
+
     /// Forgets `target`, or everything when nil.
     /// - Returns: what was done, in a sentence.
     /// - Throws: the credential store's or the registry's error, or a ``Failure`` for a name that is nothing signed in.
-    func run(_ target: String?) throws -> String {
+    package func run(_ target: String?) throws -> String {
         let file = CredentialFile.standard(environment: environment)
         guard let target else {
             try file.remove()

@@ -1,5 +1,6 @@
 internal import ArgumentParser
 internal import AskAI
+internal import AskSession
 
 /// Lists local names and credential presence, never remote account identities or tokens.
 struct ConnectionsCommand: ParsableCommand {

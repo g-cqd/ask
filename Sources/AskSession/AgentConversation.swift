@@ -23,7 +23,7 @@ final class AgentConversation: Conversation {
     /// What the person's `!` commands printed since their last message, which goes with the next one (note n56).
     let shellReports = Mutex<[String]>([])
     /// The sessions whose naming from their first request was tried already (note n60), so a turn does not ask again.
-    let namingTried = Mutex<Set<String>>([])
+    let namingTried = Mutex<Set<String>>([]), namer = Mutex<(@Sendable (String) async -> String?)?>(nil)
     /// Approval questions waiting for an answer, the grants for this session, and where to ask (roadmap 0019).
     let approvals = Mutex(Approvals())
     let directory: SessionDirectory

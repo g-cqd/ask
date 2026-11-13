@@ -1,14 +1,14 @@
-internal import AskAI
+package import AskAI
 internal import Foundation
 
 /// Signs in to a provider, by account or by key, over whatever ``SignInInteraction`` the caller has: `ask login` on the terminal and `/login`
 /// on the screen are the same code, so neither can offer a way the other lacks.
-struct AccountLogin: Sendable {
+package struct AccountLogin: Sendable {
     /// Why a sign-in did not finish, in words for the person.
-    struct Failure: Error, CustomStringConvertible {
-        let description: String
+    package struct Failure: Error, CustomStringConvertible {
+        package let description: String
         /// Whether the person ended it, which is not a failure to report as one.
-        let cancelled: Bool
+        package let cancelled: Bool
         init(_ description: String, cancelled: Bool = false) {
             self.description = description
             self.cancelled = cancelled
@@ -22,7 +22,7 @@ struct AccountLogin: Sendable {
     let environment: [String: String]
     let transport = URLSessionTransport()
 
-    init(interaction: any SignInInteraction, environment: [String: String] = LaunchEnvironment.values) {
+    package init(interaction: any SignInInteraction, environment: [String: String] = LaunchEnvironment.values) {
         self.interaction = interaction
         self.environment = environment
     }
@@ -39,7 +39,7 @@ struct AccountLogin: Sendable {
     /// Signs in as `request` says.
     /// - Returns: a line saying who is signed in, for the person.
     /// - Throws: a ``Failure``, or the sign-in's own error, both of which print as sentences.
-    func run(_ request: LoginRequest) async throws -> String {
+    package func run(_ request: LoginRequest) async throws -> String {
         if request.usesTypedKey { return try await signInWithKey(request) }
         let connection = try request.connection.map { name in
             try NamedConnections.registry(environment: environment)

@@ -7,7 +7,7 @@ internal import Testing
 /// change to the loop.
 ///
 /// Provider-specific code lives in `Sources/AskAI/Anthropic` and `Sources/AskAI/Claude` (the wire protocol
-/// and the subscription sign-in) and is bound together in `Sources/ask`, the composition root. Everything
+/// and the subscription sign-in) and is bound together in `Sources/AskSession`, the composition of a run (ADR-0149). Everything
 /// else is the vocabulary those adapters translate into, and a provider's name appearing there means the
 /// seam has started to bend around one provider. The roadmap's own rule for the second provider was "map
 /// onto the seam, never widen it"; this is the part of that rule a scan can hold.

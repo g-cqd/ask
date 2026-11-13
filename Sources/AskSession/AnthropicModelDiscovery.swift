@@ -1,9 +1,9 @@
-internal import AskAI
+package import AskAI
 internal import Foundation
 
 /// Binds native discovery to the same endpoint and credential owner as Messages. This factory itself performs no reads.
-enum AnthropicModelDiscovery {
-    static func catalog(
+package enum AnthropicModelDiscovery {
+    package static func catalog(
         environment: [String: String],
         connection: ConnectionRecord? = nil
     ) -> AnthropicModelCatalog {

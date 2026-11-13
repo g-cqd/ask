@@ -22,6 +22,8 @@ struct LaunchRequestParityTests {
         var pending = false
         for line in text.split(separator: "\n", omittingEmptySubsequences: false) {
             if line.hasPrefix("    @Flag") || line.hasPrefix("    @Option") { pending = true }
+            // The request's properties are `package`: the executable sets them across the target boundary (roadmap 0229).
+            let line = line.hasPrefix("    package var ") ? "    " + line.dropFirst("    package ".count) : line
             guard line.hasPrefix("    var "), pending || !attributed else { continue }
             pending = false
             let declaration = line.dropFirst("    var ".count)
@@ -47,7 +49,7 @@ struct LaunchRequestParityTests {
 
     @Test func `the launch request declares every option with the same default`() throws {
         let options = try Self.properties(in: "Sources/ask/Ask.swift", attributed: true)
-        let request = try Self.properties(in: "Sources/ask/LaunchRequest.swift", attributed: false)
+        let request = try Self.properties(in: "Sources/AskSession/LaunchRequest.swift", attributed: false)
         #expect(Set(options.map(\.name)) == Set(request.map(\.name)))
         for option in options {
             #expect(request.contains(option), "\(option.name) differs between Ask and LaunchRequest")

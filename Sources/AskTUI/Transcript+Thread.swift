@@ -3,7 +3,9 @@ extension Transcript {
     /// An empty transcript drawn as this one is (its folds' defaults, Markdown, colours, durations, home), with revisions and a row
     /// cache of its own.
     func emptyLike(revisionBase: Int) -> Transcript {
+        // @dl:accept -- each setting carried over, one per line; another list of assignments (the launch request's) reads alike
         var copy = Transcript(revisionBase: revisionBase)
+        // @dl:accept -- each setting carried over, one per line; another list of assignments (the launch request's) reads alike
         copy.shimmer = shimmer
         copy.toolsFoldedByDefault = toolsFoldedByDefault
         copy.thinkingFoldedByDefault = thinkingFoldedByDefault

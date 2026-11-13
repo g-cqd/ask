@@ -62,7 +62,7 @@ A pre-commit hook runs lint. A green test run is not a green commit.
 **Structure is gated too (ADR-0021).** `SourceStructureTests` and `ProviderNeutralityTests` run inside
 `swift test`, so the pre-push hook, `quality.sh` and CI enforce them: one top-level type per file, named for it;
 no file over 250 lines, tests included; provider names only in `AskAI/Anthropic`, `AskAI/Claude` and
-`Sources/ask`. Read the `ask-structure` skill before adding or moving code. `SourceStructure.knownViolations`
+`Sources/AskSession` (with `Sources/ask`). Read the `ask-structure` skill before adding or moving code. `SourceStructure.knownViolations`
 is a ratchet baseline: it shrinks and never takes a new entry.
 
 **Static analysis is gated too (ADR-0022).** deadwood, dolly and arcleak run under `--strict`, pinned by version
@@ -204,7 +204,9 @@ Targets: `AskCore` (budgets, documentation layout, source standards), `AskAI` (`
 providers are Claude (a subscription or a key), Codex (the ChatGPT subscription, over the Responses protocol), Antigravity
 (Cloud Code) and any OpenAI-compatible or Responses server by configuration or preset), `AskAgentCore` (the loop, tools contract,
 sessions, encryption, tasks and notes, compaction, hooks), `AskTools` (`read`, `write`, `edit`, `bash`, `tasks`, `notes`, `question`, `skill`, `server_resource`, jobs, sandbox narrowing), `AskMCP` (an MCP client for stdio and streamable HTTP, tools, resources, templates, and subscriptions),
-`AskTUI` (the interactive screen) and the `ask` binary, which is the composition root and is covered by PTY and end-to-end probes (`Scripts/probe-*.py`).
+`AskTUI` (the interactive screen), `AskSession` (the conversation, its commands, sessions, threads, goals and loops, sign-in, model discovery and
+the composition of a run, with `package` access: ADR-0149) and the `ask` binary, which is the options and subcommands over `AskSession`. The whole
+is also covered by PTY and end-to-end probes (`Scripts/probe-*.py`).
 The PTY probes read the screen with pyte, pinned in `Scripts/probe-requirements.txt`: `Scripts/probe-deps.sh` installs it once into
 a cache that outlives `/tmp` (`ASK_PYTE` names another place), and a probe without it says to run that.
 Skills (0061) are built; MCP (0067) and hooks (0192) are in progress. Not built: the codemode host (0012), the extension host (0033), subagents (0063), a

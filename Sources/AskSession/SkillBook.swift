@@ -1,10 +1,10 @@
-internal import AskAgentCore
+package import AskAgentCore
 internal import AskTools
 internal import Foundation
 
 /// The skills one run offers: found when the loop is made (on the first prompt, never at launch), listed in the system prompt, and served by the
 /// `skill` tool. Nothing else about a skill reaches the model.
-struct SkillBook {
+package struct SkillBook {
     let block: String?
     let tool: SkillTool?
     let catalog: SkillCatalog
@@ -43,7 +43,7 @@ struct SkillBook {
     }
 
     /// What the user has trusted. A store that cannot be read trusts nothing: the project's skills are then not loaded, which is the safe way to be wrong.
-    static func trust() -> ProjectTrust {
+    package static func trust() -> ProjectTrust {
         (try? ProjectTrust.load(ConfigurationSource.here.loader.trustPath)) ?? ProjectTrust()
     }
 

@@ -1,11 +1,11 @@
-internal import AskAI
+package import AskAI
 internal import AskAgentCore
 internal import AskApple
 internal import Foundation
 
 /// The CLI's binding of discovery to the current connection; provider behavior stays in AskAI.
-enum ModelDiscovery {
-    static func codex(environment: [String: String], connection: ConnectionRecord? = nil) -> CodexModelCatalog {
+package enum ModelDiscovery {
+    package static func codex(environment: [String: String], connection: ConnectionRecord? = nil) -> CodexModelCatalog {
         let credentials = NamedConnections.file(for: connection, environment: environment)
         return CodexModelCatalog(
             credentials: credentials,
@@ -18,7 +18,7 @@ enum ModelDiscovery {
     }
 
     /// The Antigravity account's list, kept in `models-agy.json` beside the credentials.
-    static func agy(environment: [String: String] = LaunchEnvironment.values) -> AgyModelCatalog {
+    package static func agy(environment: [String: String] = LaunchEnvironment.values) -> AgyModelCatalog {
         let credentials = NamedConnections.file(for: nil, environment: environment)
         let transport = URLSessionTransport()
         return AgyModelCatalog(
@@ -163,7 +163,7 @@ enum ModelDiscovery {
         )
     }
 
-    static func exitCode(for error: any Error) -> Int32 {
+    package static func exitCode(for error: any Error) -> Int32 {
         if case ConnectionError.signInRequired = error { return 77 }
         if error is ConfigurationError || error is ProviderSettingsError || error is ConnectionError
             || error is SessionDestinationError || error is ModelAliasError || error is ThinkingError

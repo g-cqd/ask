@@ -12,6 +12,8 @@ extension AgentConversation {
 
     /// A name for `text` by the model `threads.names` chooses, when it answers in time; nil with "numbered".
     func chosenName(for text: String) async -> String? {
+        // A test's namer stands in for the model (ADR-0149).
+        if let namer = namer.withLock({ $0 }) { return await namer(text) }
         switch current.withLock({ $0.settings.configuration.threads.value.naming }) {
             case .numbered: return nil
             case .model:

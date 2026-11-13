@@ -1,5 +1,6 @@
 internal import ArgumentParser
 internal import AskAI
+internal import AskSession
 internal import Foundation
 
 /// Gives a model on one connection a name of the user's own; the server's id is what is sent.

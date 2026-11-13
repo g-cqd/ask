@@ -1,5 +1,6 @@
 internal import ArgumentParser
 internal import AskAgentCore
+internal import AskSession
 internal import Foundation
 
 /// `ask sessions`: this project's sessions, the one written last first, with how each began.

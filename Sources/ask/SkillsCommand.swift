@@ -1,6 +1,7 @@
 // @dl:accept -- the commands share a shape
 internal import ArgumentParser
 internal import AskAgentCore
+internal import AskSession
 internal import Foundation
 
 /// `ask skills`: the skills ask can see, from every harness's directories, and what it noticed about each (roadmap 0061).

@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-11-13
 ---
@@ -21,3 +21,16 @@ Engineering plan phase B (`development/research/engineering-plan-2026-11.md`), t
 ## Done when
 
 `AskSessionTests` exists, the mutation run reaches the conversation, and the sweep is green.
+
+## Step 1 done (2026-11-13)
+
+ADR-0149. 138 files moved unchanged from `Sources/ask` to `Sources/AskSession`; 18 stay (the options and subcommands). The surface
+is `package` access, widened by the compiler's diagnostics: about 110 declarations and 12 imports. `AskSessionTests` exists, with a
+fixture (a conversation over a temporary home, no network) and `SessionSwitchTests`: the defect of 2026-11-13 (a session kept locked
+while its name was asked for) is reproduced in a unit test, red with the fix removed. The mutation run's full matrix has two
+`AskSession` shards. The release build, the probes and the suite pass.
+
+## Left
+
+Step 2 (the command registry, roadmap 0210) waits for the owner's answer on 0209/0210 (§5.1 of the rationalisation note). Step 3:
+more lifecycle tests (fork, resume, reload) on the fixture; `ConversationUpdate` moved below AskTUI for the RPC front end (0234).

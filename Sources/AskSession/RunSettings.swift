@@ -5,7 +5,7 @@ internal import Foundation
 
 /// Everything one run takes from configuration, resolved together: the layers, and the model they name. A
 /// reload produces a whole `RunSettings` or fails, so a half-edited file never leaves ask half-configured.
-struct RunSettings: Equatable {
+package struct RunSettings: Equatable {
     var configuration: Configuration
     var model: ResolvedModel
     /// What the tools may touch: ask's protections, or nothing when the user turned them off.
@@ -69,7 +69,7 @@ struct RunSettings: Equatable {
 
     /// The settings, one per line with where each came from, then the two files and what became of them: what
     /// `ask config` prints and `/config` shows.
-    func report(userFile: String, projectFile: String) -> [String] {
+    package func report(userFile: String, projectFile: String) -> [String] {
         func row(_ name: String, _ value: String, _ source: Configuration.Source) -> String {
             name.padding(toLength: max(10, name.count + 1), withPad: " ", startingAt: 0) + "\(value)  [\(source)]"
         }

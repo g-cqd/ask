@@ -1,5 +1,6 @@
 internal import ArgumentParser
 internal import AskAI
+internal import AskSession
 
 /// Removal retires the stable id, so a future connection with the same name is not the same destination.
 struct RemoveConnectionCommand: ParsableCommand {

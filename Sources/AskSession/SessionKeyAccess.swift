@@ -1,22 +1,22 @@
 internal import AskAI
-internal import AskAgentCore
+package import AskAgentCore
 internal import Darwin
 internal import Synchronization
 
 /// The keys of encrypted sessions for this process (ADR-0138, roadmap 0182): decided once before the screen opens, then used by every
 /// session the run makes, resumes or forks. Unlocked from the keychain when remembered, else with the password asked on the terminal,
 /// the recovery code standing in for a forgotten one.
-enum SessionKeyAccess {
+package enum SessionKeyAccess {
     private static let held = Mutex<SessionKeyring?>(nil)
     private static let decided = Mutex(SessionProtection.plain)
 
-    static var vault: SessionVault {
+    package static var vault: SessionVault {
         SessionVault(stateRoot: SessionDirectory.stateRoot(environment: LaunchEnvironment.values))
     }
     /// How new sessions are kept this run.
     static var protection: SessionProtection { decided.withLock { $0 } }
     /// The keyring, once unlocked.
-    static var keyring: SessionKeyring? { held.withLock { $0 } }
+    package static var keyring: SessionKeyring? { held.withLock { $0 } }
 
     static func decide(_ protection: SessionProtection) {
         decided.withLock { $0 = protection }
@@ -29,7 +29,7 @@ enum SessionKeyAccess {
 
     /// The keyring: held already, remembered in the keychain, or opened with the password `asker` gets (three tries), then with the
     /// recovery code. Nil when there are no keys, nothing could open them, or there is no one to ask.
-    static func unlock(remember: Bool, asker: (any SetupInteraction)?) async -> SessionKeyring? {
+    package static func unlock(remember: Bool, asker: (any SetupInteraction)?) async -> SessionKeyring? {
         if let keyring { return keyring }
         let vault = vault
         guard vault.hasKeys else { return nil }

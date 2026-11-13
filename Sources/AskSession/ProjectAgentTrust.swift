@@ -4,7 +4,7 @@ internal import Foundation
 /// What `ask trust --agents` and `ask untrust --agents` act on (roadmap 0063 phase 3): this project's agent definitions in
 /// `.agents/agents` as they are now, optionally narrowed to the names a person gave. Trust is for each file's bytes, kept under its real
 /// path in the store the configuration and the skills use, so a definition that changes is untrusted until the person looks again.
-enum ProjectAgentTrust {
+package enum ProjectAgentTrust {
     /// Other harnesses' folders of definitions (`agents.otherHarnesses`): under the home, and in a project.
     static let harnessFolders: [(user: String, project: String)] = [
         (".claude/agents", ".claude/agents"), (".codex/agents", ".codex/agents"), (".copilot/agents", ".github/agents")
@@ -16,7 +16,7 @@ enum ProjectAgentTrust {
     }
 
     /// The project's definitions in `workspace`, trusted or not, narrowed to `names` when there are any.
-    static func files(named names: [String], in workspace: String = FileManager.default.currentDirectoryPath)
+    package static func files(named names: [String], in workspace: String = FileManager.default.currentDirectoryPath)
         -> (found: [TrustedFile], missing: [String])
     {
         // Every folder a project may hold definitions in, read or not: trusting one now covers it if the setting is turned on later.

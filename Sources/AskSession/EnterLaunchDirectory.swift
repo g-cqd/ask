@@ -7,7 +7,7 @@ internal import Foundation
 /// Stopping is a refusal, and its reason is this: with no working directory the project is the empty path, so the session would be
 /// filed under no project, the project's configuration would not be read, and no command could start. The usual launch pays one
 /// `getcwd` here, which it made anyway a little later.
-func enterLaunchDirectory() {
+package func enterLaunchDirectory() {
     let current = FileManager.default.currentDirectoryPath
     guard current.isEmpty else { return }
     let resolution = LaunchDirectory.resolve(current: current, shell: LaunchEnvironment.values["PWD"]) { path in

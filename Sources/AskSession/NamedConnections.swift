@@ -1,9 +1,9 @@
-internal import AskAI
+package import AskAI
 internal import Foundation
 
 /// Binds named registrations to ask's private config directory, never to a project-supplied credential path.
-enum NamedConnections {
-    static func registry(environment: [String: String] = LaunchEnvironment.values) -> ConnectionRegistry {
+package enum NamedConnections {
+    package static func registry(environment: [String: String] = LaunchEnvironment.values) -> ConnectionRegistry {
         ConnectionRegistry(
             directory: CredentialFile.standard(environment: environment).url.deletingLastPathComponent()
                 .appending(path: "connections")
@@ -18,18 +18,18 @@ enum NamedConnections {
             ?? .standard(environment: environment)
     }
 
-    static func aliases(
+    package static func aliases(
         for record: ConnectionRecord,
         environment: [String: String] = LaunchEnvironment.values
     ) -> ModelAliasFile {
         registry(environment: environment).aliases(for: record)
     }
 
-    static func reserved() throws -> [String] {
+    package static func reserved() throws -> [String] {
         try ProviderSettings.load(from: askConfigDirectory() + "/providers.json").configuredNames
     }
 
-    static func named(_ raw: String, environment: [String: String] = LaunchEnvironment.values) throws
+    package static func named(_ raw: String, environment: [String: String] = LaunchEnvironment.values) throws
         -> ConnectionRecord
     {
         guard let name = ConnectionRecord.canonical(raw) else { throw ConnectionError.invalidName }
@@ -41,7 +41,7 @@ enum NamedConnections {
         return record
     }
 
-    static func report(_ notices: [String]) {
+    package static func report(_ notices: [String]) {
         for notice in notices { FileHandle.standardError.write(Data(("ask: " + notice + "\n").utf8)) }
     }
 }

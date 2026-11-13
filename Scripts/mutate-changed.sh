@@ -9,7 +9,7 @@
 #   Scripts/mutate-changed.sh install         install the tool only
 #
 # One plan for the package, kept to the changed files and split by target: Sources/AskTUI/... runs with AskTUITests. The executable
-# target (Sources/ask) has no test target, so its files are left out and said so. A run fails on any surviving mutant not in
+# target (Sources/ask: the options and subcommands) has no test target, so its files are left out and said so. A run fails on any surviving mutant not in
 # development/mutation-baseline.json (--max-new-survivors 0), which --all rewrites; until a full run writes it, it lists none, so every
 # survivor in a changed file counts. Verdicts are cached per mutant by the tool, so a rerun tests only what changed. The tool reports
 # every kill here as "killed without activation": its activation probe does not reach SwiftPM's test processes, so that warning is
