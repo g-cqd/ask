@@ -17,4 +17,6 @@ struct LoopHooks: Sendable {
     var reportEvent: (@Sendable (AgentEvent) -> Void)?
     /// The current session's file, which `search_session` searches (t209); nil offers no search.
     var currentSession: (@Sendable () -> SessionRecorder?)?
+    /// Hooks of the conversation's own, after the configured ones: the goal's (roadmap 0227), for the main loop only.
+    var extraHooks: [any AgentHook] = []
 }

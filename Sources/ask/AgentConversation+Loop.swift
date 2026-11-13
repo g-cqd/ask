@@ -13,7 +13,9 @@ extension AgentConversation {
         try current.withLock { current throws -> AgentLoop in
             if let existing = current.loop { return existing }
             mcp.apply(current.settings.configuration.mcp.value.servers)
-            let created = try makeLoop(current.settings, loopHooks(current.settings)).handing(over: handover)
+            var hooks = loopHooks(current.settings)
+            hooks.extraHooks = [goalHook(current.settings)]
+            let created = try makeLoop(current.settings, hooks).handing(over: handover)
             current.loop = created
             return created
         }
@@ -143,6 +145,7 @@ func runInteractive(
                     startSubagent: hooks.startSubagent,
                     keepTools: hooks.keepTools,
                     currentSession: hooks.currentSession,
+                    extraHooks: hooks.extraHooks,
                     reportEvent: hooks.reportEvent
                 )
             }

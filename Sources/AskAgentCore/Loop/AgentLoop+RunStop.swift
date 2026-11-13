@@ -17,7 +17,9 @@ extension AgentLoop {
         events: (AgentEvent) -> Void
     ) async throws(AgentError) -> Bool {
         guard !hooks.isEmpty else { return false }
-        guard hookContinues < settings.maximumHookContinues else {
+        // Past the continue limit only the hooks with a bound of their own are asked (a goal, roadmap 0227).
+        let asked = hookContinues < settings.maximumHookContinues ? hooks : hooks.filter(\.hasOwnBound)
+        guard !asked.isEmpty else {
             events(.hookContinuesStopped(.continues(settings.maximumHookContinues)))
             return false
         }
@@ -33,7 +35,7 @@ extension AgentLoop {
         stopMark = session.tree.entries.count
         // @dl:accept -- each hook point asks its hooks the same way through HookDeadline.ask; the point, answer type and fallback are the data
         var messages: [String] = []
-        for hook in hooks {
+        for hook in asked {
             let decision = await HookDeadline.ask(hook, at: "run.stop", clock: clock, orElse: .stop, timedOut: events) {
                 await hook.runStop(stop)
             }

@@ -97,6 +97,7 @@ func makeLoop(
     startSubagent: SubagentTask.Starter? = nil,
     keepTools: Set<String>? = nil,
     currentSession: (@Sendable () -> SessionRecorder?)? = nil,
+    extraHooks: [any AgentHook] = [],
     reportEvent: (@Sendable (AgentEvent) -> Void)? = nil
 ) throws -> AgentLoop {
     // The agent tool only where agents.enabled is on and something can start one (roadmap 0063): off, no request carries it.
@@ -155,7 +156,8 @@ func makeLoop(
         tools: tools,
         settings: agent,
         context: context,
-        hooks: checkHooks(run.configuration.hooks.value, tools: tools, context: context, reportEvent: reportEvent),
+        hooks: checkHooks(run.configuration.hooks.value, tools: tools, context: context, reportEvent: reportEvent)
+            + extraHooks,
         // Offline, a failed request waits for the network instead of spending its retries (roadmap 0141).
         network: SystemNetworkPath()
     )
