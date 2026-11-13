@@ -104,7 +104,7 @@ decision is reopened only by new evidence.
 ## 1. Red TDD
 
 - **Red first.** Written, run, and observed to fail **for the right reason**, before the implementation
-  exists. A test that has never failed has proven nothing.
+  exists. A test that has never failed has proven nothing. An interactive behaviour's red is a PTY probe, run nightly.
 - **One behaviour per test**, named in backticks as a sentence:
   ``@Test func `every diary file is within the line budget`()`` — the name says what must hold, so a
   failure names its own cause.

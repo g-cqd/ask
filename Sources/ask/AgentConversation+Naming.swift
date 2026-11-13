@@ -28,9 +28,11 @@ extension AgentConversation {
         update: @escaping @Sendable (ConversationUpdate) -> Void
     ) {
         let path = recorder.path
-        Task {
+        // Held weakly while the name is asked for: a session switched away from is let go at once, its writer lock with it (the PTY
+        // sweep's probe-interactive N, 2026-11-13), and is not this one's to name.
+        Task { [weak recorder] in
             guard let name = await chosenName(for: text),
-                // A session switched to meanwhile is not this one's to name.
+                let recorder,
                 session.withLock({ $0?.path }) == path
             else { return }
             try? recorder.recordThread(.renamed(ThreadRecord.conversation, to: name))

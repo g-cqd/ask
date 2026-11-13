@@ -1,0 +1,76 @@
+name: Probes
+
+# The PTY sweep (roadmap 0211), nightly and on demand: every Scripts/probe-*.py against one release build. A probe that fails beside the
+# others runs again alone, and passing then is reported FLAKY, not failed. The summary and the logs are uploaded; the job summary lists
+# what failed with the end of its log. A failed scheduled run opens an issue that the next green one closes.
+on:
+  schedule:
+    - cron: "41 2 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: probes-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  sweep:
+    name: Probes · PTY Sweep · macOS
+    runs-on: macos-26
+    timeout-minutes: 180
+    steps:
+      - name: Setup · Check Out Sources
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup · Read .swift-version
+        run: echo "SWIFT_VERSION=$(cat .swift-version)" >> "$GITHUB_ENV"
+      - name: Setup · Install Swift
+        uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3.0.0-beta.1
+        with:
+          swift-version: ${{ env.SWIFT_VERSION }}
+      - name: Probes · Sweep
+        run: Scripts/sweep.sh --jobs 3
+      - name: Probes · Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo '## PTY sweep'
+            echo '```'
+            cat .build/sweep/summary.txt 2>/dev/null || echo 'no summary: the sweep did not run'
+            echo '```'
+            grep -E '^(FAIL|TIME) ' .build/sweep/summary.txt 2>/dev/null | awk '{print $3}' | while read -r name; do
+              echo "### $name"
+              echo '```'
+              tail -n 40 ".build/sweep/logs/$name.log"
+              echo '```'
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Artifacts · Upload Sweep
+        if: ${{ always() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: sweep
+          path: .build/sweep
+          if-no-files-found: ignore
+
+  report:
+    name: Probes · Failure Issue
+    needs: sweep
+    if: ${{ always() && github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Setup · Check Out Sources
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Report · Open or Close the Issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          OUTCOME: ${{ needs.sweep.result == 'success' && 'success' || 'failure' }}
+        run: Scripts/ci-failure-issue.sh Probes "$OUTCOME" "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
