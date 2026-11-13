@@ -1,3 +1,5 @@
+internal import AemiSearch
+internal import AskAI
 internal import AskAgentCore
 internal import AskTUI
 internal import Foundation
@@ -56,5 +58,38 @@ struct SessionSwitchTests {
         }
         var names = named.makeAsyncIterator()
         #expect(await names.next() == "Parser work")
+    }
+
+    /// A compaction brings the search index up to date in the background (t209). On a long session that takes a while, and the task
+    /// must not hold the session meanwhile: it works from what the session held at that moment.
+    @Test func `a session left right after a compaction is released while its index is still being built`() async throws
+    {
+        let fixture = try await ConversationFixture()
+        let conversation = fixture.conversation
+        let first = try fixture.newSession()
+        let line = String(repeating: "alpha beta gamma delta ", count: 40)
+        for index in 0 ..< 4_000 { _ = try first.append(.user("\(index) \(line)")) }
+        let path = first.path
+        conversation.activateSession(first, update: fixture.update)
+        weak let held = first
+        conversation.deliver(.compacted(summary: "Summary.", usage: TokenUsage()), to: fixture.update)
+        conversation.activateSession(nil, update: fixture.update)
+        _ = consume first
+        #expect(held == nil, "the indexing task does not hold the old recorder")
+        #expect(ConversationFixture.isUnlocked(path))
+    }
+
+    @Test func `the index of a session left behind is dropped from memory, and made again when it is searched`()
+        async throws
+    {
+        let fixture = try await ConversationFixture()
+        let session = try fixture.newSession()
+        _ = try session.append(.user("the cache key is the URL"))
+        let search = SessionSearch.of(session: session.path)
+        #expect(await search.search(SearchQuery("cache"), in: session).count == 1)
+        fixture.conversation.activateSession(session, update: fixture.update)
+        fixture.conversation.activateSession(nil, update: fixture.update)
+        #expect(SessionSearch.of(session: session.path) !== search, "the one that was open is forgotten")
+        #expect(await SessionSearch.of(session: session.path).search(SearchQuery("cache"), in: session).count == 1)
     }
 }

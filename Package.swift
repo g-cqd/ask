@@ -272,7 +272,10 @@ let package = Package(
         ),
         .testTarget(
             name: "AskSessionTests",
-            dependencies: ["AskSession", "AskAgentCore", "AskAI", "AskTools", "AskTUI"],
+            dependencies: [
+                "AskSession", "AskAgentCore", "AskAI", "AskTools", "AskTUI",
+                .product(name: "AemiSearch", package: "AemiSearch")
+            ],
             path: "Tests/AskSessionTests",
             swiftSettings: packageSettings
         ),
