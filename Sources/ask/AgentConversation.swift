@@ -52,8 +52,8 @@ final class AgentConversation: Conversation {
     let handover = LoopHandover()
     /// The threads `/thread` started (roadmap 0194), and the jobs they are listed beside.
     let threads = ThreadTable()
-    /// The goal `/goal` sets, judged when each run ends (roadmap 0227).
-    let goal = GoalState()
+    /// The goal `/goal` sets (roadmap 0227), and `/loop`'s prompts with the task that sends them (0228).
+    let goal = GoalState(), recurring = RecurringDriver()
     /// The status bar's git segment (roadmap 0186).
     let gitStatus = CoalescedRefresh()
     /// The `#` picker's pull requests and issues, and the branch's pull request (roadmap 0186).
