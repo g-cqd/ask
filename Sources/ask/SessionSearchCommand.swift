@@ -2,9 +2,14 @@ internal import AemiSearch
 internal import AskAgentCore
 internal import AskTools
 internal import Foundation
+internal import Synchronization
 
 /// `/search QUERY` (t209): the same search of the current session as the model's `search_session`, shown to the person.
 enum SessionSearchCommand {
+    static func answer(to arguments: String, in conversation: AgentConversation) async -> String {
+        await answer(to: arguments, session: conversation.session.withLock { $0 })
+    }
+
     static func answer(to arguments: String, session: SessionRecorder?) async -> String {
         let query = arguments.trimmingCharacters(in: .whitespaces)
         guard !query.isEmpty else { return "Give words to search for: /search cache key." }
