@@ -150,6 +150,9 @@ def main():
             deadline = time.monotonic() + 60
             while not server.requests and time.monotonic() < deadline:
                 time.sleep(0.05)
+            # The command asks before it runs: unanswered, the turn waits at the question and is not busy at all (found 2026-11-13).
+            session.until("Allow it?", seconds=30)
+            session.send(b"y\r")
             time.sleep(1)  # the command started
         if options.load:
             count = max(1, round((os.cpu_count() or 8) * options.load))
