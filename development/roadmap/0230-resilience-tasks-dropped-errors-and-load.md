@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-11-13
 ---
@@ -49,6 +49,26 @@ read for what it captures across a session switch:
 `SessionSwitchTests` holds the rule for the two that broke it: red on the code before each fix. A per-session task group was not
 needed for these; it is the answer if a third one appears.
 
-## Left
+## Part 3 done (2026-11-13): typing under load, measured; nothing to fix
 
-Part 3 (the input path under load).
+`Scripts/measure-typing-under-load.py`: the time from a key written to ask's terminal to the read that carries that character back
+(each key a character of its own), with a floor measured first (the terminal driver's echo through `/bin/cat`, 0.1 ms) and the
+harness raised to the focal role, so the load does not hold the measuring back. On this machine (10 cores), 100 keys a row, twice:
+
+| | median | p95 | worst |
+|---|---|---|---|
+| idle | 0.3 ms | 0.4 | 0.6 |
+| every core busy (load x1) | 0.2 to 0.3 | 0.4 | 0.5 |
+| ask's turn busy (a command flooding its block) | 0.3 | 0.5 | 0.8 |
+| turn busy and load x4 | 0.3 | 0.3 | 0.5 |
+| an 81 MB session resumed, idle | 0.3 to 0.6 | 0.8 | 1.1 |
+| that session, a key right behind 40 wheel reports | 2.2 | 3.0 | 4.7 |
+| behind 400 wheel reports | 6.2 | 8.1 | 8.6 |
+| behind 400, load x4 | 6.9 | 10.8 | 13.3 |
+| behind 2,000, load x4 | 25.4 | 30.2 | 34.6 |
+
+The budget is 4 ms. A key waits about 13 to 15 microseconds per wheel report ahead of it on the longest session, under four times the
+machine's cores in load: the stall of note n55 (0.5 to 0.9 ms a report, seconds for a fling) is gone and stays gone under load.
+Found on the way: `measure-scroll-latency.py --busy` never answered the command's approval, so its turn was never busy; it answers
+now. Not measured: a real terminal's own momentum events, and a turn busy on the long session (resuming it and sending a prompt
+compacts first).
