@@ -14,6 +14,7 @@ final class ConversationFixture: Sendable {
     let root: URL
     let directory: SessionDirectory
     let conversation: AgentConversation
+    let environment: [String: String]
     private let seen = Mutex<[ConversationUpdate]>([])
 
     var updates: [ConversationUpdate] { seen.withLock { $0 } }
@@ -23,7 +24,13 @@ final class ConversationFixture: Sendable {
         root = FileManager.default.temporaryDirectory.appending(path: "ask-session-\(UUID().uuidString)")
         let project = root.appending(path: "project").path
         try FileManager.default.createDirectory(atPath: project, withIntermediateDirectories: true)
-        let environment = ["HOME": root.path, "ANTHROPIC_API_KEY": "test-key", "PATH": "/usr/bin:/bin"]
+        // Its own configuration and state: without these, ask's files are the person's (their credentials, on 2026-11-13).
+        let environment = [
+            "HOME": root.path, "XDG_CONFIG_HOME": root.appending(path: "config").path,
+            "XDG_STATE_HOME": root.appending(path: "state").path, "ANTHROPIC_API_KEY": "test-key",
+            "PATH": "/usr/bin:/bin"
+        ]
+        self.environment = environment
         let source = ConfigurationSource(
             workingDirectory: project,
             flags: .init(model: "claude-test-1", provider: "anthropic"),

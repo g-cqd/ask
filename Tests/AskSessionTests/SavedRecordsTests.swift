@@ -1,3 +1,4 @@
+internal import AskAI
 internal import AskAgentCore
 internal import AskTUI
 internal import Foundation
@@ -38,5 +39,12 @@ struct SavedRecordsTests {
         fixture.conversation.saveThreadRecord(.renamed("thread-1", to: "Parser"), in: session, as: "the thread's name")
         fixture.conversation.saveThreadRecord(.renamed("thread-1", to: "Parser"), in: nil, as: "the thread's name")
         #expect(notices(fixture).isEmpty)
+    }
+
+    /// The fixture's files are its own: a conversation under test never reads or writes the person's configuration.
+    @Test func `the fixture's credentials and connections are under its own folder`() async throws {
+        let fixture = try await ConversationFixture()
+        #expect(CredentialFile.standard(environment: fixture.environment).url.path.hasPrefix(fixture.root.path))
+        #expect(askConfigDirectory(environment: fixture.environment).hasPrefix(fixture.root.path))
     }
 }
