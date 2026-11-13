@@ -163,6 +163,7 @@ extension AgentConversation {
         ]
         // What the person allowed for the session goes with it, in a file only they can read, taken once (roadmap 0159).
         let grantsPath = NSTemporaryDirectory() + "ask-reload-grants-" + UUID().uuidString + ".json"
+        // try?: without the file the new build asks again for what was allowed; nothing else is lost
         if (try? sessionGrants.write(to: grantsPath)) != nil { arguments += ["--reload-grants", grantsPath] }
         // The thread whose lane is shown, shown again by the new build.
         if let focused = focusedThread.withLock({ $0 }) { arguments += ["--focus-thread", focused] }

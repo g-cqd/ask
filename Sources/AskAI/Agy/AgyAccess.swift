@@ -99,6 +99,7 @@ public struct AgyAccess: Sendable {
             unsaved.hold(result, replacing: held.stored, because: held.reason)
         } else {
             // The project is the account's and is found again if it is not kept, so a failed save costs one request.
+            // try?: the project is found again by one request when it was not kept (see above)
             _ = try? file.saveAgy(result, ifStill: credentials)
             // @dl:accept -- Claude's, Codex's and Antigravity's accessors are twins over different credential types and errors; a protocol to share them would cost more than it saves (a refactor of the three, if it is ever worth it, is its own change)
         }
@@ -117,6 +118,7 @@ public struct AgyAccess: Sendable {
     /// out or in again meanwhile, and what they did stands.
     private func settleUnsaved() {
         guard let held = unsaved.value else { return }
+        // try?: what could not be saved stays held and is tried again on the next request
         if (try? file.saveAgy(held.current, ifStill: held.stored)) != nil { unsaved.clear() }
     }
 

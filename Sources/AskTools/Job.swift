@@ -176,6 +176,7 @@ public final class Job: Sendable {
             if let file = state.file, state.fileBytes < Self.maximumFileBytes {
                 let room = Self.maximumFileBytes - state.fileBytes
                 let written = Array(bytes.prefix(room))
+                // try?: a file that cannot be written is marked full, so no further write is tried; the job goes on
                 if (try? file.writeAll(written)) == nil { state.fileBytes = Self.maximumFileBytes }
                 state.fileBytes += written.count
             }

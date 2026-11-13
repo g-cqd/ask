@@ -69,6 +69,10 @@ is a ratchet baseline: it shrinks and never takes a new entry.
 and SHA-256 in the family's lock, `Scripts/analyzers.lock` in Aemi-Studio/aemi at the commit `Scripts/analyzers.sh` names. A finding is fixed, or accepted where it is with a reason
 (`// @dl:accept -- why`, `@dw:`, `@al:`, on the line above the anchor); there are no baselines.
 
+**A dropped write error is gated too (roadmap 0230).** `DroppedWriteErrorsTests`: a `try?` before a call that keeps the person's data
+(a session record, a saved credential, a copied list, a file written) either becomes a failure said to the person, or carries
+`// try?: why` on its line or the one above.
+
 **Mutation testing, on changed files (roadmap 0166).** `Scripts/mutate-changed.sh [BASE]` runs swift-mutation-testing (pinned by version
 and SHA-256 in the script) on the `Sources` files changed against `BASE`, each with its target's tests, and fails on a surviving mutant
 not in `development/mutation-baseline.json`: kill it with a test. **CI only:** the owner chose on 2026-11-10 to leave mutation

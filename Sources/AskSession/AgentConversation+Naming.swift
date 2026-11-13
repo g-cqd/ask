@@ -35,7 +35,7 @@ extension AgentConversation {
                 let recorder,
                 session.withLock({ $0?.path }) == path
             else { return }
-            try? recorder.recordThread(.renamed(ThreadRecord.conversation, to: name))
+            saveThreadRecord(.renamed(ThreadRecord.conversation, to: name), in: recorder, as: "the conversation's name")
             update(.conversationName(name))
         }
     }

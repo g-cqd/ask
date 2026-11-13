@@ -81,6 +81,7 @@ public struct ClaudeAccess: Sendable {
     /// signed out or in again meanwhile, and what they did stands.
     private func settleUnsaved() {
         guard let held = unsaved.value else { return }
+        // try?: what could not be saved stays held and is tried again on the next request
         if (try? file.saveClaude(held.current, ifStill: held.stored, connection: connection)) != nil { unsaved.clear() }
     }
 

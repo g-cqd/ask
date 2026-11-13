@@ -86,11 +86,12 @@ public final class ChangeBoard<List: ChangeList>: Sendable {
     }
 
     /// The list of the session at `original` copied for its fork at `fork`, when the list is the session's own.
-    public static func copyForFork(from original: String, to fork: String, scope: TaskScope) {
+    /// - Throws: the copy's error: the fork would otherwise start with an empty list and nothing would say so.
+    public static func copyForFork(from original: String, to fork: String, scope: TaskScope) throws {
         guard scope == .session else { return }
         let source = path(forSessionAt: original, scope: .session)
         guard FileManager.default.fileExists(atPath: source) else { return }
-        try? FileManager.default.copyItem(atPath: source, toPath: path(forSessionAt: fork, scope: .session))
+        try FileManager.default.copyItem(atPath: source, toPath: path(forSessionAt: fork, scope: .session))
     }
 }
 
