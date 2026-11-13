@@ -61,7 +61,8 @@ extension AgentConversation {
             reportEvent: { [weak self] event in
                 guard let self, let ask = self.approvals.withLock({ $0.ask }) else { return }
                 self.deliver(event, to: ask)
-            }
+            },
+            currentSession: { [weak self] in self?.session.withLock { $0?.path } }
         )
     }
 
@@ -141,6 +142,7 @@ func runInteractive(
                     progress: hooks.progress,
                     startSubagent: hooks.startSubagent,
                     keepTools: hooks.keepTools,
+                    currentSession: hooks.currentSession,
                     reportEvent: hooks.reportEvent
                 )
             }

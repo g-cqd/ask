@@ -96,6 +96,7 @@ func makeLoop(
     progress: ToolProgressReporter? = nil,
     startSubagent: SubagentTask.Starter? = nil,
     keepTools: Set<String>? = nil,
+    currentSession: (@Sendable () -> String?)? = nil,
     reportEvent: (@Sendable (AgentEvent) -> Void)? = nil
 ) throws -> AgentLoop {
     // The agent tool only where agents.enabled is on and something can start one (roadmap 0063): off, no request carries it.
@@ -125,8 +126,9 @@ func makeLoop(
         FileTools.all + [
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
             NarrowSandboxTool(jobs: jobs), TasksTool(board: SessionTasks.board),
-            IdeasTool(board: SessionTasks.ideas, tasks: SessionTasks.board), SessionSearchTool()
-        ] + (skills.tool.map { [$0] } ?? []) + (askPerson == nil ? [] : [QuestionTool()])
+            IdeasTool(board: SessionTasks.ideas, tasks: SessionTasks.board)
+        ] + (currentSession.map { [SessionSearchTool(currentSession: $0)] } ?? []) + (skills.tool.map { [$0] } ?? [])
+        + (askPerson == nil ? [] : [QuestionTool()])
         + (startSubagent == nil ? [] : [AgentTool(definitions: definitions)])
     // A definition's subagent keeps only the tools it names, and no server's unless named.
     let tools = try ToolRegistry(

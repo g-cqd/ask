@@ -4,36 +4,42 @@ public import AskAI
 public import AskAgentCore
 internal import Foundation
 
-/// `search_sessions` (t209): the model searches every plain session on this machine, past ones included, for what the current
-/// context no longer holds: typed lines, replies, tool calls and results, compaction summaries. Ranked snippets, each with its session
-/// and entry; typos and parts of identifiers are found.
+/// `search_session` (t209; the owner, 2026-11-12: the current session only): the model searches this session's whole history, what
+/// compaction folded away included: typed lines, replies, tool calls and results, summaries. Ranked snippets, each with its entry;
+/// typos and parts of identifiers are found. No other session is read.
 public struct SessionSearchTool: Tool {
     public let definition = ToolDefinition(
-        name: "search_sessions",
+        name: "search_session",
         description: """
-            Search every past and current session on this machine (typed lines, replies, tool calls and results, summaries); typos and \
-            parts of identifiers match. kind: user, reply, call, tool, summary. project: the session folder's name.
+            Search this session's whole history, what compaction folded away included (typed lines, replies, tool calls and results, \
+            summaries); typos and parts of identifiers match. kind: user, reply, call, tool, summary.
             """
     ) {
         ToolProperty.string("query")
         ToolProperty.string("kind").optional
-        ToolProperty.string("project").optional
         ToolProperty.integer("limit", minimum: 1, maximum: 50).optional
     }
 
-    private let search: SessionSearch
+    private let currentSession: @Sendable () -> String?
 
-    public init(search: SessionSearch = .shared) { self.search = search }
+    /// Searches the session `currentSession` names at the time of each call (a fork or a new session moves it).
+    public init(currentSession: @escaping @Sendable () -> String?) { self.currentSession = currentSession }
 
     public func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
         let root = (try? AemiJSON.parse(input.bytes))?.root
         guard let text = root?["query"].string, !text.isEmpty else { return .error("Give a query.") }
-        var fields: [String: String] = [:]
-        if let kind = root?["kind"].string { fields["kind"] = kind }
-        if let project = root?["project"].string { fields["project"] = project }
+        guard let path = currentSession() else { return ToolOutput("This conversation has no session to search yet.") }
+        let fields = root?["kind"].string.map { ["kind": $0] } ?? [:]
         let limit = root?["limit"].int ?? 10
-        let hits = await search.search(SearchQuery(text, fields: fields, limit: limit))
-        return ToolOutput(Self.text(of: hits, query: text))
+        return ToolOutput(await Self.answer(SearchQuery(text, fields: fields, limit: limit), in: path))
+    }
+
+    /// The hits for `query` in the session at `path`, as text; or why it cannot be searched.
+    public static func answer(_ query: SearchQuery, in path: String) async -> String {
+        let search = SessionSearch.of(session: path)
+        let hits = await search.search(query)
+        if await search.unreadable { return "This session is encrypted; searching it is not available yet." }
+        return text(of: hits, query: query.text)
     }
 
     /// One block per hit: `session · kind · entry` then its snippet.

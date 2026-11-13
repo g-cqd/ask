@@ -1,53 +1,41 @@
 internal import AemiSearch
 internal import Foundation
 
-/// Where the session index is kept: `<root>/search/index` (an AemiSearch snapshot) and `<root>/search/progress` (one `offset\tpath`
-/// line per session), both the person's alone (0600, in a 0700 folder) and replaced atomically. A damaged snapshot is dropped and
-/// rebuilt from the sessions.
+/// Where a session's index is kept: `<session>.search` (an AemiSearch snapshot) and `<session>.search-offset` (the bytes of the session
+/// it holds), beside the session in its 0700 folder, each 0600 and replaced atomically. A damaged or missing one is rebuilt from the
+/// session. Neither ends in `.jsonl`, so neither is taken for a session.
 extension SessionSearch {
-    var indexPath: String { searchDirectory + "/index" }
-    var progressPath: String { searchDirectory + "/progress" }
+    var indexPath: String { sessionPath + ".search" }
+    var offsetPath: String { sessionPath + ".search-offset" }
 
     /// The index, read from its file the first time.
     func loaded() -> SearchIndex {
         if let index { return index }
         let read = readSnapshot()
-        index = read ?? SearchIndex()
-        if read == nil { progress = [:] }
-        return index ?? SearchIndex()
+        let opened = read ?? SearchIndex()
+        if read == nil { offset = 0 }
+        index = opened
+        return opened
     }
 
     private func readSnapshot() -> SearchIndex? {
         guard let data = FileManager.default.contents(atPath: indexPath),
             let snapshot = try? SearchIndex(serialized: Array(data)),
-            let lines = try? String(contentsOfFile: progressPath, encoding: .utf8)
+            let text = try? String(contentsOfFile: offsetPath, encoding: .utf8),
+            let read = Int(text.trimmingCharacters(in: .whitespacesAndNewlines))
         else { return nil }
-        var read: [String: Int] = [:]
-        for line in lines.split(separator: "\n") {
-            let parts = line.split(separator: "\t", maxSplits: 1)
-            guard parts.count == 2, let offset = Int(parts[0]) else { return nil }
-            read[String(parts[1])] = offset
-        }
-        progress = read
+        offset = read
         return snapshot
     }
 
     func save() {
         guard let index else { return }
-        let manager = FileManager.default
-        try? manager.createDirectory(
-            atPath: searchDirectory,
-            withIntermediateDirectories: true,
-            attributes: [.posixPermissions: 0o700]
-        )
-        let lines = progress.sorted { $0.key < $1.key }.map { "\($0.value)\t\($0.key)" }.joined(separator: "\n")
         write(Data(index.serialized()), to: indexPath)
-        write(Data(lines.utf8), to: progressPath)
+        write(Data(String(offset).utf8), to: offsetPath)
     }
 
     private func write(_ data: Data, to path: String) {
-        let url = URL(fileURLWithPath: path)
-        guard (try? data.write(to: url, options: [.atomic])) != nil else { return }
+        guard (try? data.write(to: URL(fileURLWithPath: path), options: [.atomic])) != nil else { return }
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: path)
     }
 }
