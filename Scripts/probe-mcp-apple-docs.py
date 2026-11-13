@@ -37,7 +37,7 @@ def main():
         ms.press(terminal, b"\r")
         terminal.until(lambda: "ask> Explain @apple-docs:apple-docs://doc/" in terminal.text() and "{+key}" not in terminal.text().split("ask>")[-1])
         pp.check("choosing it writes the fixed part, to be finished",
-                 terminal.text().split("ask>")[-1].split("\n")[0].strip().endswith("@apple-docs:apple-docs://doc/"))
+                 terminal.text().split("ask>")[-1].split("\n")[0].strip(" │").endswith("@apple-docs:apple-docs://doc/"))
         ms.type_text(terminal, "swiftui/view please")
         ms.press(terminal, b"\r")
         terminal.until(lambda: "Read the page." in terminal.text())

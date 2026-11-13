@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: done
 blocked-by: []
 date: 2026-11-08
 ---
@@ -39,3 +39,14 @@ issue, and the next green run closes it.
 ## Not in scope
 
 Real-terminal tests (kitty, Ghostty), which stay manual and are listed as unverified where they apply. Speeding up individual probes.
+
+## Done (2026-11-13)
+
+`Scripts/sweep.sh` (with `Scripts/sweep_one.py`: a time limit that kills the probe's process group) runs every probe against one
+release build, 4 at a time by default, then each failure again alone: passing alone, it is `FLAKY`, said, not failed.
+`Scripts/sweep-skip.txt` names the probes it cannot run, with why. pyte and wcwidth are pinned by version and PyPI's hashes
+(`--require-hashes`). `probes.yml` runs it nightly; `ci-failure-issue.sh` opens an issue for a failed scheduled run of `probes.yml` or
+`mutation.yml` (cancelled counts), and the next green run closes it. First local sweep: 106 passed, 2 flaky, 1 skipped; it found a
+real defect (a session switched away from stayed locked while its name was asked for).
+
+Not verified: the workflow on GitHub (the next night), and an issue opened and closed by a real run.

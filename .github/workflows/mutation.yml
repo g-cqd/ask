@@ -172,3 +172,24 @@ jobs:
         with:
           name: mutation-baseline
           path: development/mutation-baseline.json
+
+  report:
+    name: Mutation · Failure Issue
+    needs: [scope, mutate, full, baseline]
+    if: ${{ always() && github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Setup · Check Out Sources
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Report · Open or Close the Issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          # A cancelled run counts: the full run's cancellations went unseen for a week (roadmap 0211).
+          OUTCOME: >-
+            ${{ (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) && 'failure' || 'success' }}
+        run: Scripts/ci-failure-issue.sh Mutation "$OUTCOME" "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

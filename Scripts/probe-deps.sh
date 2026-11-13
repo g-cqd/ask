@@ -4,5 +4,5 @@
 set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 directory=$(python3 "$here/probe_pyte.py" --print-directory)
-python3 -m pip install --quiet --disable-pip-version-check --upgrade --target "$directory" -r "$here/probe-requirements.txt"
+python3 -m pip install --quiet --disable-pip-version-check --upgrade --require-hashes --target "$directory" -r "$here/probe-requirements.txt"
 echo "$directory"

@@ -1,3 +1,17 @@
-# What the PTY probes read the screen with (t246): pinned, installed by Scripts/probe-deps.sh into a cache that outlives /tmp.
-pyte==0.8.2
-wcwidth==0.9.4
+# What the PTY probes read the screen with (t246, roadmap 0211): pinned by version and by PyPI's published hashes, installed by
+# Scripts/probe-deps.sh into a cache that outlives /tmp; pip refuses anything else. wcwidth ships per-platform wheels: the macOS and
+# Linux ones are listed, with its pure wheel and source.
+pyte==0.8.2 \
+    --hash=sha256:85db42a35798a5aafa96ac4d8da78b090b2c933248819157fc0e6f78876a0135 \
+    --hash=sha256:5af970e843fa96a97149d64e170c984721f20e52227a2f57f0a54207f08f083f
+wcwidth==0.9.4 \
+    --hash=sha256:901eace6d2dd25ebb917d0ce5db18e5c537e1504c905cf32f0d006c12098b05d \
+    --hash=sha256:fd8d57d3cdfe570e3265c8fab1885c24e34ef40889c0759c0c304a19e9835954 \
+    --hash=sha256:f279f32c8e206a9092fa350e53ca0c2bd8072e45b1c9fd31bb6d476b59b591c4 \
+    --hash=sha256:b7969c9aa258d536df54c8ac8af5cad0c74a6268c9972e1fb60a5f29feffb66d \
+    --hash=sha256:ab1e5190fb82476e75fbf963e9d59b4fb1c1e1f4ced82069a0c989016aa959f7 \
+    --hash=sha256:87e4101789415a6cf55ec4c53eceeb4782c2654c88692941cb588f19dca1959f \
+    --hash=sha256:d68f09093c9bec9226a52edc47487042ed4f64c5df91d06f00419495071c0279 \
+    --hash=sha256:a8c9ce14c6b4a499e61de6de7e9e456de11be8bc991554e2ab2ed4feb40b9664 \
+    --hash=sha256:b185c8b927b23af2721be1783499d1cfa5c028b098b0858951b4ae224477f1c2 \
+    --hash=sha256:093469e01d881bff3db93ff3f56c364dc87c441ea01f9f41c22de0c0bdf5c6ef
