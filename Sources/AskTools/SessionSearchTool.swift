@@ -20,26 +20,25 @@ public struct SessionSearchTool: Tool {
         ToolProperty.integer("limit", minimum: 1, maximum: 50).optional
     }
 
-    private let currentSession: @Sendable () -> String?
+    private let currentSession: @Sendable () -> SessionRecorder?
 
-    /// Searches the session `currentSession` names at the time of each call (a fork or a new session moves it).
-    public init(currentSession: @escaping @Sendable () -> String?) { self.currentSession = currentSession }
+    /// Searches the session `currentSession` gives at the time of each call (a fork or a new session moves it).
+    public init(currentSession: @escaping @Sendable () -> SessionRecorder?) { self.currentSession = currentSession }
 
     public func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
         let root = (try? AemiJSON.parse(input.bytes))?.root
         guard let text = root?["query"].string, !text.isEmpty else { return .error("Give a query.") }
-        guard let path = currentSession() else { return ToolOutput("This conversation has no session to search yet.") }
+        guard let session = currentSession() else {
+            return ToolOutput("This conversation has no session to search yet.")
+        }
         let fields = root?["kind"].string.map { ["kind": $0] } ?? [:]
         let limit = root?["limit"].int ?? 10
-        return ToolOutput(await Self.answer(SearchQuery(text, fields: fields, limit: limit), in: path))
+        return ToolOutput(await Self.answer(SearchQuery(text, fields: fields, limit: limit), in: session))
     }
 
-    /// The hits for `query` in the session at `path`, as text; or why it cannot be searched.
-    public static func answer(_ query: SearchQuery, in path: String) async -> String {
-        let search = SessionSearch.of(session: path)
-        let hits = await search.search(query)
-        if await search.unreadable { return "This session is encrypted; searching it is not available yet." }
-        return text(of: hits, query: query.text)
+    /// The hits for `query` in `session`, as text.
+    public static func answer(_ query: SearchQuery, in session: SessionRecorder) async -> String {
+        text(of: await SessionSearch.of(session: session.path).search(query, in: session), query: query.text)
     }
 
     /// One block per hit: `session · kind · entry` then its snippet.

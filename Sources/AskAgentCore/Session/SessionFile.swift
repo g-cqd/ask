@@ -1,4 +1,5 @@
 public import AemiIO
+internal import CryptoKit
 internal import Darwin
 public import System
 
@@ -52,6 +53,8 @@ public struct SessionFile: ~Copyable {
     private(set) var needsRewrite: Bool
     /// Internal for the opening extension, which passes it on to a fork.
     let calls: SessionFileCalls
+    /// The key the session's search index is sealed under: the user key's, for an encrypted session; nil in the clear (t209).
+    var searchKey: SymmetricKey? { format.encrypted ? keyring?.searchKey : nil }
     /// Where the pictures of tool results are kept, beside the session file.
     private var images: SessionImageStore {
         SessionImageStore(besideSessionAt: path.string, key: format.encrypted ? keyring?.imageKey : nil)

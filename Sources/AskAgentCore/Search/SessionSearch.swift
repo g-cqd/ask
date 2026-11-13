@@ -1,11 +1,12 @@
 public import AemiSearch
+internal import CryptoKit
 internal import Foundation
 internal import Synchronization
 
 /// Search over the current session's whole history (t209; the owner, 2026-11-12: the current session only), what compaction folded
-/// away included: an AemiSearch index kept beside the session file (`<session>.search`), brought up to date at every compaction and
-/// before a search, reading only what the file gained since. No other session is read. An encrypted session is not indexed yet: its
-/// index is to be kept under its key.
+/// away included: an AemiSearch index of the session's entries, whatever the file's format, kept beside it as `<session>.search` and
+/// brought up to date at every compaction and before a search. An encrypted session's index is sealed (AES-GCM) under a key derived
+/// from the user key, never written in the clear; with no key open it stays in memory.
 public actor SessionSearch {
     private static let open = Mutex<[String: SessionSearch]>([:])
 
@@ -21,52 +22,40 @@ public actor SessionSearch {
 
     let sessionPath: String
     var index: SearchIndex?
-    /// The bytes of the session already indexed.
-    var offset = 0
-    /// Whether the session is one this search cannot read (encrypted).
-    public private(set) var unreadable = false
+    /// How many of the session's entries the index holds (entries are only appended).
+    var indexed = 0
 
     public init(sessionPath: String) { self.sessionPath = sessionPath }
 
-    /// Indexes what the session gained since the last update, and saves the index when anything was added.
+    /// Indexes the entries `session` gained since the last update and saves the index; returns how many documents were added.
     @discardableResult
-    public func update() -> Int {
-        let index = loaded()
-        let added = indexNewLines(into: index)
-        if added > 0 { save() }
-        return added
-    }
-
-    /// The best hits for `query` in this session, after an update.
-    public func search(_ query: SearchQuery) -> [SearchHit] {
-        update()
-        return loaded().search(query)
-    }
-
-    /// Indexes the complete lines after the recorded offset; returns how many documents were added.
-    private func indexNewLines(into index: SearchIndex) -> Int {
-        guard let handle = FileHandle(forReadingAtPath: sessionPath) else { return 0 }
-        defer { try? handle.close() }
-        guard (try? handle.seekToEnd()).map({ Int($0) > offset }) == true else { return 0 }
-        try? handle.seek(toOffset: UInt64(offset))
-        guard let data = try? handle.readToEnd(), !data.isEmpty else { return 0 }
-        let bytes = Array(data)
-        if offset == 0, !bytes.starts(with: Array(#"{"type":"session""#.utf8)) {
-            unreadable = true
-            return 0
+    public func update(from session: SessionRecorder) -> Int {
+        let sealing = session.searchSealing
+        let entries = session.tree.entries
+        let index = loaded(key: sealing.key)
+        if entries.count < indexed {
+            // Not the history this index was built from: start again.
+            self.index = SearchIndex()
+            indexed = 0
         }
-        guard let lastNewline = bytes.lastIndex(of: 0x0A) else { return 0 }
-        let session = ((sessionPath as NSString).lastPathComponent as NSString).deletingPathExtension
+        let target = self.index ?? index
         let time = Int64(Date().timeIntervalSince1970)
         var added = 0
-        for line in bytes[...lastNewline].split(separator: 0x0A) {
-            for document in SessionSearchDocuments.documents(fromLine: line, session: session, project: "", time: time)
-            {
-                index.add(document)
+        for entry in entries[indexed...] {
+            for document in SessionSearchDocuments.documents(of: entry, time: time) {
+                target.add(document)
                 added += 1
             }
         }
-        offset += lastNewline + 1
+        let grew = entries.count > indexed
+        indexed = entries.count
+        if grew { save(encrypted: sealing.encrypted, key: sealing.key) }
         return added
+    }
+
+    /// The best hits for `query` in `session`, after an update.
+    public func search(_ query: SearchQuery, in session: SessionRecorder) -> [SearchHit] {
+        update(from: session)
+        return (index ?? SearchIndex()).search(query)
     }
 }

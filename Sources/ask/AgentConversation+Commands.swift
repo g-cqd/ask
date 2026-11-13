@@ -202,8 +202,8 @@ extension AgentConversation {
                     self.notes(command: name, arguments: arguments, update: update)
                 case "tasks": update(.notice(SessionTasks.answer(to: arguments), isError: false))
                 case "search":
-                    let path = self.session.withLock { $0?.path }
-                    update(.notice(await SessionSearchCommand.answer(to: arguments, session: path), isError: false))
+                    let recorder = self.session.withLock { $0 }
+                    update(.notice(await SessionSearchCommand.answer(to: arguments, session: recorder), isError: false))
                 case "btw": await self.aside(arguments, update: update)
                 case "thread": await self.startThread(arguments, update: update)
                 case "threads": self.showThreads(arguments, update: update)

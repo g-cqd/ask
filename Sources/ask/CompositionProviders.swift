@@ -96,7 +96,7 @@ func makeLoop(
     progress: ToolProgressReporter? = nil,
     startSubagent: SubagentTask.Starter? = nil,
     keepTools: Set<String>? = nil,
-    currentSession: (@Sendable () -> String?)? = nil,
+    currentSession: (@Sendable () -> SessionRecorder?)? = nil,
     reportEvent: (@Sendable (AgentEvent) -> Void)? = nil
 ) throws -> AgentLoop {
     // The agent tool only where agents.enabled is on and something can start one (roadmap 0063): off, no request carries it.
