@@ -1,3 +1,6 @@
+internal import Foundation
+internal import System
+
 /// A session kept as a framed file (ADR-0138): each JSONL line a frame, compressed, encrypted, or both.
 extension SessionFile {
     /// A file's bytes, and for a framed file the writer that appends to it.
@@ -64,5 +67,9 @@ extension SessionFile {
         }
         // The rewrite sealed them again; the clear copies go, unless another session may still name them.
         if !clearPictures.isEmpty { removeClearPictures(named: clearPictures) }
+        // A search index written in the clear goes too; the next search builds it again, sealed (t209).
+        if format.encrypted, !previous.0.encrypted {
+            try? FileManager.default.removeItem(atPath: path.string + ".search")
+        }
     }
 }

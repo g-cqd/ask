@@ -16,5 +16,5 @@ struct LoopHooks: Sendable {
     var keepTools: Set<String>?
     var reportEvent: (@Sendable (AgentEvent) -> Void)?
     /// The current session's file, which `search_session` searches (t209); nil offers no search.
-    var currentSession: (@Sendable () -> String?)?
+    var currentSession: (@Sendable () -> SessionRecorder?)?
 }

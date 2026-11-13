@@ -18,6 +18,11 @@ public struct SessionKeyring: Sendable {
         FileKey(key: try keys.dataKey(in: envelope, userKey: userKey), envelope: envelope)
     }
 
+    /// The key an encrypted session's search index is sealed under (t209), derived like the pictures' key, for another use.
+    var searchKey: SymmetricKey {
+        HKDF<SHA256>.deriveKey(inputKeyMaterial: userKey, info: Data("ask.search.v1".utf8), outputByteCount: 32)
+    }
+
     /// The key an encrypted session's pictures are sealed under: one for every session of the user key, so the store shares them.
     var imageKey: SymmetricKey {
         HKDF<SHA256>

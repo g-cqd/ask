@@ -62,7 +62,7 @@ extension AgentConversation {
                 guard let self, let ask = self.approvals.withLock({ $0.ask }) else { return }
                 self.deliver(event, to: ask)
             },
-            currentSession: { [weak self] in self?.session.withLock { $0?.path } }
+            currentSession: { [weak self] in self?.session.withLock { $0 } }
         )
     }
 

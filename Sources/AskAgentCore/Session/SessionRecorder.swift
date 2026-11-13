@@ -1,3 +1,4 @@
+internal import CryptoKit
 internal import Synchronization
 public import System
 
@@ -110,6 +111,9 @@ public final class SessionRecorder: Sendable {
 
     /// Where the session lives.
     public var path: String { file.withLock { $0.path.string } }
+
+    /// Whether the session is kept encrypted, and the key its search index is sealed under (nil when none is open).
+    var searchSealing: (encrypted: Bool, key: SymmetricKey?) { file.withLock { ($0.format.encrypted, $0.searchKey) } }
 
     /// How the file is kept (ADR-0138).
     public var format: SessionFormat { file.withLock { $0.format } }
