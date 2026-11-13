@@ -1,4 +1,4 @@
-internal import AskAgentCore
+package import AskAgentCore
 
 /// The harnesses whose skill directories ask reads. Adding a harness is adding a row.
 ///
@@ -8,7 +8,8 @@ internal import AskAgentCore
 /// (design note, 2026-10-24).
 // @dl:accept -- a table of harnesses: each row is data
 extension SkillSource {
-    static let standard: [SkillSource] = [
+    // @dl:accept -- a table of harnesses: each row is data
+    package static let standard: [SkillSource] = [
         // @dl:accept -- a table of harnesses: each row is data, and they are alike because the conventions are
         SkillSource(id: "agents", userRoots: [".agents/skills"], projectRoots: [".agents/skills"], bundledRoots: []),
         // @dl:accept -- the test fixture repeats these rows on purpose: a test must not depend on the table it checks
@@ -43,5 +44,5 @@ extension SkillSource {
     ]
 
     /// The ids `from` may name, bundled included.
-    static var ids: [String] { standard.map(\.id) + [bundledID] }
+    package static var ids: [String] { standard.map(\.id) + [bundledID] }
 }

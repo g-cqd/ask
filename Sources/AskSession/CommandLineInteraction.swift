@@ -2,11 +2,13 @@ internal import Darwin
 internal import Foundation
 
 /// A sign-in on the terminal ask was started from.
-struct CommandLineInteraction: SignInInteraction {
-    /// Written at once: `print` is buffered when stdout is a pipe, so a prompt written with it would wait for the sign-in it asks about.
-    func say(_ text: String) { FileHandle.standardOutput.write(Data((text + "\n").utf8)) }
+package struct CommandLineInteraction: SignInInteraction {
+    package init() {}
 
-    func ask(_ prompt: String, secret: Bool) async -> String? {
+    /// Written at once: `print` is buffered when stdout is a pipe, so a prompt written with it would wait for the sign-in it asks about.
+    package func say(_ text: String) { FileHandle.standardOutput.write(Data((text + "\n").utf8)) }
+
+    package func ask(_ prompt: String, secret: Bool) async -> String? {
         guard secret, isatty(STDIN_FILENO) == 1 else {
             say(prompt)
             return await Task.detached { readLine(strippingNewline: true) }.value

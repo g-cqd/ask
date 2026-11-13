@@ -1,5 +1,6 @@
 internal import ArgumentParser
 internal import AskAI
+internal import AskSession
 internal import Foundation
 
 /// `ask login`: sign in to a provider, with its account or with an API key. Claude by default.

@@ -1,13 +1,14 @@
-/// The `ask` executable: argument parsing and the composition root, nothing else.
-///
-/// Everything with behaviour lives in library targets so it can be tested; this file only binds them.
-
 internal import ArgumentParser
 internal import AskAI
 internal import AskAgentCore
 internal import AskCore
+internal import AskSession
 internal import AskTUI
 internal import Foundation
+
+/// The `ask` executable: argument parsing and the composition root, nothing else.
+///
+/// Everything with behaviour lives in library targets so it can be tested; this file only binds them.
 
 @main
 struct Ask: AsyncParsableCommand {
@@ -226,9 +227,4 @@ struct Ask: AsyncParsableCommand {
         guard CommandLine.arguments.count == 1 else { return await main(nil) }
         do { try await LaunchRequest().run() } catch { exit(withError: error) }
     }
-}
-
-func fail(_ message: String, code: Int32) -> Never {
-    FileHandle.standardError.write(Data((message + "\n").utf8))
-    Foundation.exit(code)
 }

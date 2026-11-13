@@ -1,12 +1,12 @@
 internal import AskAI
-internal import AskAgentCore
+package import AskAgentCore
 internal import AskTools
 internal import Foundation
 
 /// Where a run's settings come from, and how to read them again: the loader, the command-line flags that stay
 /// the highest layer across reloads, and `providers.json`.
-struct ConfigurationSource: Sendable {
-    let loader: ConfigurationLoader
+package struct ConfigurationSource: Sendable {
+    package let loader: ConfigurationLoader
     let providersPath: String
     var flags: Flags
     let environment: [String: String]
@@ -140,7 +140,7 @@ struct ConfigurationSource: Sendable {
     }
 
     /// The source for the current directory with no flags: what the configuration commands read.
-    static var here: ConfigurationSource {
+    package static var here: ConfigurationSource {
         ConfigurationSource(workingDirectory: FileManager.default.currentDirectoryPath, flags: Flags())
     }
 }

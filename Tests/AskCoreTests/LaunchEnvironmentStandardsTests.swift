@@ -3,8 +3,9 @@ internal import Testing
 
 @testable import AskCore
 
-/// ask blanks the credentials it has read from its own process (ADR-0113), so what the executable reads afterwards must come from the snapshot taken at
-/// launch. `Sources/ask` has no tests, so the rule is a source scan: a read of the live environment there would work until the day it needed a blanked value.
+/// ask blanks the credentials it has read from its own process (ADR-0113), so what it reads afterwards must come from the snapshot
+/// taken at launch. The rule is a source scan of the executable and of `Sources/AskSession`, the conversation it composes (roadmap
+/// 0229): a read of the live environment there would work until the day it needed a blanked value.
 @Suite("The executable reads the launch environment, never its own blanked copy")
 struct LaunchEnvironmentStandardsTests {
     /// The library calls whose default reads the live environment.
@@ -44,7 +45,7 @@ struct LaunchEnvironmentStandardsTests {
     }
 
     @Test func `nothing in the executable reads the process's own environment`() throws {
-        let offenders = try files(in: "Sources/ask")
+        let offenders = try (files(in: "Sources/ask") + files(in: "Sources/AskSession"))
             .flatMap { file in
                 file.text.split(separator: "\n", omittingEmptySubsequences: false).enumerated()
                     .filter { !$0.element.trimmingCharacters(in: .whitespaces).hasPrefix("//") }
@@ -57,7 +58,7 @@ struct LaunchEnvironmentStandardsTests {
     }
 
     @Test func `a library call whose default is the live environment is given the launch one`() throws {
-        let offenders = try files(in: "Sources/ask")
+        let offenders = try (files(in: "Sources/ask") + files(in: "Sources/AskSession"))
             .flatMap { file in
                 Self.callsWithoutEnvironment(in: file.text).map { "\(file.name):\($0)" }
             }

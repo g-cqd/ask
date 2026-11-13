@@ -22,6 +22,8 @@ ALLOWED = {
     "AskApple": {"AskAI", "AskAgentCore", "AskCore"},
     "AskTools": {"AskAgentCore", "AskAI", "AskMCP", "AskCore"},
     "AskTUI": set(),
+    # The conversation and the composition of a run (ADR-0149): above every library, below only the executable.
+    "AskSession": {"AskAI", "AskAgentCore", "AskApple", "AskCore", "AskMCP", "AskTools", "AskTUI"},
 }
 
 

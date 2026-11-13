@@ -32,7 +32,7 @@ func requestAuth(_ authorization: AnthropicAuthorization) -> @Sendable () async 
 }
 
 /// ask's configuration directory, from the environment ask was launched with.
-func askConfigDirectory(environment: [String: String] = LaunchEnvironment.values) -> String {
+package func askConfigDirectory(environment: [String: String] = LaunchEnvironment.values) -> String {
     ConfigDirectory.path(environment: environment, home: NSHomeDirectory())
 }
 

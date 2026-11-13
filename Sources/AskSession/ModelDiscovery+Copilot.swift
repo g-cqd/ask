@@ -1,4 +1,4 @@
-internal import AskAI
+package import AskAI
 internal import Foundation
 
 extension ModelDiscovery {
@@ -23,7 +23,7 @@ extension ModelDiscovery {
         )
     }
 
-    static func copilot(environment: [String: String]) -> CopilotCatalog {
+    package static func copilot(environment: [String: String]) -> CopilotCatalog {
         CopilotCatalog(file: .standard(environment: environment), transport: URLSessionTransport())
     }
 }

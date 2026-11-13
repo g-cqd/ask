@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Check the real Reexec in isolated child processes, without a provider, PTY, account or terminal (n64, roadmap 0218).
 
-Compiles Sources/ask/Reexec.swift with swiftc -O. A stale cwd is reproduced by removing and recreating its directory, not a
+Compiles Sources/AskSession/Reexec.swift with swiftc -O. A stale cwd is reproduced by removing and recreating its directory, not a
 volume unmount. Tests the exact production exec helper; the harness passes a saved environment as the composition root does.
 """
 from pathlib import Path
@@ -47,7 +47,7 @@ def main():
         harness.write_text(HARNESS)
         binary = root / 'check'
         subprocess.run(['swiftc', '-O', '-enable-upcoming-feature', 'InternalImportsByDefault',
-                        str(ROOT / 'Sources/ask/Reexec.swift'), str(harness), '-o', str(binary)], check=True)
+                        str(ROOT / 'Sources/AskSession/Reexec.swift'), str(harness), '-o', str(binary)], check=True)
         for mode in ['ordinary', 'stale', 'missing', 'empty', 'relative']:
             workspace = root / f'{mode} project with spaces'
             workspace.mkdir()

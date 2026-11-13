@@ -1,5 +1,6 @@
 internal import ArgumentParser
 internal import AskAI
+internal import AskSession
 
 /// Renaming changes a local label, never the credential or cache location.
 struct RenameConnectionCommand: ParsableCommand {

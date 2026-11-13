@@ -7,35 +7,37 @@ internal import Foundation
 /// What a launch takes from the command line, as plain values. The defaults are a bare `ask`: nothing given, the
 /// interactive screen in a new session. ``Ask`` builds one from its parsed options; a bare launch builds the default
 /// directly, so both run the one implementation below.
-struct LaunchRequest {
-    var budgets = false
-    var prompt: String?
+package struct LaunchRequest {
+    package var budgets = false
+    package var prompt: String?
     /// With `prompt`: the run's events as JSON lines on standard output (roadmap 0234).
-    var json = false
-    var model: String?
-    var provider: String?
-    var thinking: String?
-    var maxTurns: Int?
-    var compactAt: String?
-    var noSandbox = false
-    var yes = false
-    var yolo = false
-    var allow: [String] = []
-    var ask: [String] = []
-    var askAlways = false
-    var network: String?
-    var write: [String] = []
-    var read: [String] = []
-    var selfCheck = false
-    var verbose = false
-    var reloadedFrom: String?
-    var reloadStarted: Int?
-    var reloadGrants: String?
-    var focusThread: String?
-    var selectedProvider: String?
-    var selectedModel: String?
-    var continueLatest = false
-    var resume: String?
+    package var json = false
+    package var model: String?
+    package var provider: String?
+    package var thinking: String?
+    package var maxTurns: Int?
+    package var compactAt: String?
+    package var noSandbox = false
+    package var yes = false
+    package var yolo = false
+    package var allow: [String] = []
+    package var ask: [String] = []
+    package var askAlways = false
+    package var network: String?
+    package var write: [String] = []
+    package var read: [String] = []
+    package var selfCheck = false
+    package var verbose = false
+    package var reloadedFrom: String?
+    package var reloadStarted: Int?
+    package var reloadGrants: String?
+    package var focusThread: String?
+    package var selectedProvider: String?
+    package var selectedModel: String?
+    package var continueLatest = false
+    package var resume: String?
+
+    package init() {}
 
     /// `--write` or `--read` as a setting.
     private static func scope(_ values: [String]) -> PathSetting? {
@@ -74,7 +76,7 @@ struct LaunchRequest {
         )
     }
 
-    func run() async throws {
+    package func run() async throws {
         if budgets {
             FileHandle.standardOutput.write(Data(try Budget.reportJSON()))
             return

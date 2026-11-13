@@ -1,35 +1,37 @@
+internal import AskSession
+
 extension Ask {
     /// What this command line asks for, as plain values (see ``LaunchRequest``).
     var request: LaunchRequest {
-        LaunchRequest(
-            budgets: budgets,
-            // @dl:accept -- every launch option passed through as a value, one per line: the request's shape, not repeated logic
-            prompt: prompt,
-            json: json,
-            model: model,
-            provider: provider,
-            thinking: thinking,
-            maxTurns: maxTurns,
-            compactAt: compactAt,
-            noSandbox: noSandbox,
-            yes: yes,
-            yolo: yolo,
-            allow: allow,
-            ask: ask,
-            askAlways: askAlways,
-            network: network,
-            write: write,
-            read: read,
-            selfCheck: selfCheck,
-            verbose: verbose,
-            reloadedFrom: reloadedFrom,
-            reloadStarted: reloadStarted,
-            reloadGrants: reloadGrants,
-            focusThread: focusThread,
-            selectedProvider: selectedProvider,
-            selectedModel: selectedModel,
-            continueLatest: continueLatest,
-            resume: resume
-        )
+        var request = LaunchRequest()
+        // @dl:accept -- every launch option passed through as a value, one per line: the request's shape, not repeated logic
+        request.budgets = budgets
+        request.prompt = prompt
+        request.json = json
+        request.model = model
+        request.provider = provider
+        request.thinking = thinking
+        request.maxTurns = maxTurns
+        request.compactAt = compactAt
+        request.noSandbox = noSandbox
+        request.yes = yes
+        request.yolo = yolo
+        request.allow = allow
+        request.ask = ask
+        request.askAlways = askAlways
+        request.network = network
+        request.write = write
+        request.read = read
+        request.selfCheck = selfCheck
+        request.verbose = verbose
+        request.reloadedFrom = reloadedFrom
+        request.reloadStarted = reloadStarted
+        request.reloadGrants = reloadGrants
+        request.focusThread = focusThread
+        request.selectedProvider = selectedProvider
+        request.selectedModel = selectedModel
+        request.continueLatest = continueLatest
+        request.resume = resume
+        return request
     }
 }

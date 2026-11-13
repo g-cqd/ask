@@ -2,6 +2,7 @@ internal import ArgumentParser
 internal import AskAI
 internal import AskAgentCore
 internal import AskApple
+internal import AskSession
 internal import Foundation
 
 /// `ask models NAME`: read a connection's or provider's model list afresh, and keep it for the runs that follow.

@@ -199,14 +199,24 @@ let package = Package(
             path: "Sources/AskTUI",
             swiftSettings: packageSettings
         ),
+        // The conversation and what it owns (roadmap 0229, ADR-0149): commands, sessions, threads, goals, loops, sign-in, model
+        // discovery and the composition of a run, out of the executable so they are tested and mutation-checked. `package` access
+        // is its surface: only this package's executable and tests use it.
+        .target(
+            name: "AskSession",
+            dependencies: [
+                .product(name: "AemiSearch", package: "AemiSearch"),
+                "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskMCP", "AskTools", "AskTUI",
+                .product(name: "AemiJSON", package: "AemiJSON"),
+                .product(name: "TerminalKitInput", package: "TerminalKit")
+            ],
+            swiftSettings: packageSettings
+        ),
         .executableTarget(
             name: "ask",
             dependencies: [
-                .product(name: "AemiSearch", package: "AemiSearch"),
-                "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskTools", "AskTUI",
-                .product(name: "AemiJSON", package: "AemiJSON"),
-                .product(name: "ArgumentParser", package: "swift-argument-parser"),
-                .product(name: "TerminalKitInput", package: "TerminalKit")
+                "AskSession", "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskTUI",
+                .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
             path: "Sources/ask",
             swiftSettings: packageSettings,
@@ -258,6 +268,12 @@ let package = Package(
             ],
             path: "Tests/AskMCPTests",
             exclude: ["Fixtures"],
+            swiftSettings: packageSettings
+        ),
+        .testTarget(
+            name: "AskSessionTests",
+            dependencies: ["AskSession", "AskAgentCore", "AskAI", "AskTools", "AskTUI"],
+            path: "Tests/AskSessionTests",
             swiftSettings: packageSettings
         ),
         .testTarget(

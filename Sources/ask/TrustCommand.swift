@@ -1,6 +1,7 @@
 // @dl:accept -- `ask trust` and `ask untrust` are two one-screen commands over ProjectTrust; what they share is the ParsableCommand shape
 internal import ArgumentParser
 internal import AskAgentCore
+internal import AskSession
 internal import Foundation
 
 /// `ask trust`: let this project's `.ask/config.json` apply, as it is now.

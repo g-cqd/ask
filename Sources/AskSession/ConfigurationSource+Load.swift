@@ -46,7 +46,7 @@ extension ConfigurationSource {
 
     /// Reads every layer and resolves the model, all or nothing.
     /// - Throws: a ``ConfigurationError`` or a ``ProviderSettingsError``, naming the file.
-    func load(allowNetwork: Bool = true) async throws -> RunSettings {
+    package func load(allowNetwork: Bool = true) async throws -> RunSettings {
         var (result, details) = try layers()
         let providers = try ProviderSettings.load(from: providersPath)
         // A flag or a /model choice is the user's say; otherwise a resumed session stays where it was sent (ADR-0048).

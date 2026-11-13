@@ -1,13 +1,13 @@
-internal import AskAI
+package import AskAI
 internal import Foundation
 
 /// The CLI's binding of an OpenAI-compatible provider's model list to ask's private config directory.
-enum ProviderModelDiscovery {
+package enum ProviderModelDiscovery {
     /// The catalog of the provider `listing` describes, kept in `models-NAME.json` beside the credentials.
     ///
     /// A provider name that is not a plain word (one a `providers.json` could hold, with a slash or a dot-dot) keeps no cache:
     /// the name would become part of a path.
-    static func catalog(
+    package static func catalog(
         for listing: ProviderSettings.Listing,
         environment: [String: String]
     ) -> ProviderModelCatalog {

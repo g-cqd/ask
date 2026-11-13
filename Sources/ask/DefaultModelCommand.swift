@@ -1,6 +1,7 @@
 // @dl:accept -- two small commands that read best as their own sentences; a shared base would obscure each
 internal import ArgumentParser
 internal import AskAI
+internal import AskSession
 
 /// Chooses the model a connection uses when none is asked for, or clears the choice.
 struct DefaultModelCommand: ParsableCommand {

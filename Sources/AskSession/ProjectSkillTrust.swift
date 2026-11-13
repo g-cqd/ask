@@ -5,9 +5,9 @@ internal import Foundation
 /// the names a person gave. Trust is for the file's bytes (its SHA-256, kept under the file's real path in the same store as the configuration's), so a
 /// skill that changes is untrusted until the user looks again. It covers the `SKILL.md` text, which is what the model reads and what is advertised; it
 /// does not cover the other files beside it, which the model may read or run only under its sandbox.
-enum ProjectSkillTrust {
+package enum ProjectSkillTrust {
     /// The project's skills, all harnesses, trusted or not, as the files trust is given or taken from.
-    static func files(named names: [String]) -> (found: [TrustedFile], missing: [String]) {
+    package static func files(named names: [String]) -> (found: [TrustedFile], missing: [String]) {
         let trust = SkillBook.trust()
         let catalog = SkillDiscovery.discover(
             workingDirectory: FileManager.default.currentDirectoryPath,

@@ -1,6 +1,7 @@
 internal import ArgumentParser
 internal import AskAI
 internal import AskAgentCore
+internal import AskSession
 internal import Foundation
 
 /// `ask keys`: the keys of encrypted sessions (ADR-0138, roadmap 0182). `password` sets a new password, opening the keys with the old one

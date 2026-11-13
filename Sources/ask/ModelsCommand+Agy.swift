@@ -1,4 +1,5 @@
 internal import AskAI
+internal import AskSession
 internal import Foundation
 
 extension ModelsCommand {

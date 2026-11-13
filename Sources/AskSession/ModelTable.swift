@@ -1,12 +1,12 @@
-internal import AskAI
+package import AskAI
 internal import Foundation
 
 /// A model list as a table: what the server reports, and `unknown` for what it does not.
-enum ModelTable {
+package enum ModelTable {
     /// Prints notices to standard error and descriptors to standard output. Only Codex's priority order chooses a default.
     /// `showAll` lists the models the `ui.onlyUsefulModels` filter hides too, with the reason; so does the setting being off. When it
     /// hides some, the last line says how many, so nothing leaves the list unannounced.
-    static func print(_ full: CatalogSnapshot, defaultFirst: Bool, showAll: Bool = false) {
+    package static func print(_ full: CatalogSnapshot, defaultFirst: Bool, showAll: Bool = false) {
         NamedConnections.report(full.notices)
         let filtering = !showAll && ModelFilter.onlyUseful()
         let snapshot = CatalogSnapshot(

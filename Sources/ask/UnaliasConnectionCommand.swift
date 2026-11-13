@@ -1,5 +1,6 @@
 internal import ArgumentParser
 internal import AskAI
+internal import AskSession
 
 /// Removes an alias; the model it named is untouched.
 struct UnaliasConnectionCommand: ParsableCommand {
