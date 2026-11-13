@@ -6,4 +6,6 @@ public enum CallScope: Sendable, Equatable {
     case file(String)
     /// Any other tool: its later calls, for the session.
     case tool(String)
+    /// A web host `fetch` reads (roadmap 0237): its other pages, for the session.
+    case host(String)
 }

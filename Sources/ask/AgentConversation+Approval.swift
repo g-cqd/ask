@@ -91,7 +91,7 @@ extension AgentConversation {
                 case .command(let words) where words.coverable:
                     .command(phrases: words.phrases, programs: words.programs)
                 case .command: .command(phrases: [], programs: [])
-                case .file, .tool: .grant
+                case .file, .tool, .host: .grant
             }
         return await ask(
             question,

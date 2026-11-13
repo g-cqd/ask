@@ -26,13 +26,13 @@ public struct SessionSearchTool: Tool {
     public init(currentSession: @escaping @Sendable () -> SessionRecorder?) { self.currentSession = currentSession }
 
     public func run(_ input: JSONObject, in context: ToolContext) async -> ToolOutput {
-        let root = (try? AemiJSON.parse(input.bytes))?.root
-        guard let text = root?["query"].string, !text.isEmpty else { return .error("Give a query.") }
+        let given = ToolInput(input)
+        guard let text = given.text("query") else { return .error("Give a query.") }
         guard let session = currentSession() else {
             return ToolOutput("This conversation has no session to search yet.")
         }
-        let fields = root?["kind"].string.map { ["kind": $0] } ?? [:]
-        let limit = root?["limit"].int ?? 10
+        let fields = given.text("kind").map { ["kind": $0] } ?? [:]
+        let limit = given.root?["limit"].int ?? 10
         return ToolOutput(await Self.answer(SearchQuery(text, fields: fields, limit: limit), in: session))
     }
 

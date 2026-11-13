@@ -27,6 +27,8 @@ public struct SessionGrants: Sendable, Equatable {
         var programs: [String]
         var files: [String]
         var tools: [String]
+        /// Web hosts `fetch` may read (roadmap 0237); absent in a file written before them.
+        var hosts: [String]?
         var sandbox: [Request]
         var destructive: [String]
     }
@@ -39,6 +41,7 @@ public struct SessionGrants: Sendable, Equatable {
             programs: record.programs,
             files: record.files,
             tools: record.tools,
+            hosts: record.hosts,
             sandbox: sandbox.map { Wire.Request(network: $0.network?.description, write: $0.write, read: $0.read) },
             destructive: destructive.sorted()
         )
@@ -55,7 +58,13 @@ public struct SessionGrants: Sendable, Equatable {
             let wire = try? AemiJSON.JSONDecoder().decode(Wire.self, from: Array(data))
         else { return nil }
         return SessionGrants(
-            calls: CallGrants(phrases: wire.phrases, programs: wire.programs, files: wire.files, tools: wire.tools),
+            calls: CallGrants(
+                phrases: wire.phrases,
+                programs: wire.programs,
+                files: wire.files,
+                tools: wire.tools,
+                hosts: wire.hosts ?? []
+            ),
             sandbox: wire.sandbox.map {
                 SandboxRequest(
                     network: $0.network.flatMap(SandboxPolicy.Network.init(named:)),

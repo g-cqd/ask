@@ -99,6 +99,9 @@ let package = Package(
         .package(url: "https://github.com/g-cqd/AemiHMMML.git", revision: "ed8469a6b6893265ad8ceede6f7fee00d3169e88"),
         // AemiIO's durability profiles for session files (ADR-0017). The same revision TerminalKit and
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
+        // Web pages as Markdown for `fetch` (roadmap 0237): its readable content, without the page's chrome. On the same aemi and
+        // AemiMarkdown revisions.
+        .package(url: "https://github.com/g-cqd/AemiHTML.git", revision: "80c20f9dd4a77f2c18147708c1157b419f79b157"),
         // Full-text search over sessions, tasks and notes (t209), on the same aemi revision.
         .package(url: "https://github.com/g-cqd/AemiSearch.git", revision: "3894f0cd180529b82ddb190e50b5b52e7092f4c0"),
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "0bae2edb1a89bd3d931fb3122c2184cc5c368834"),
@@ -165,6 +168,7 @@ let package = Package(
             dependencies: [
                 "AskAgentCore", "AskAI", "AskMCP", .product(name: "AemiKernel", package: "aemi"),
                 .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiSearch", package: "AemiSearch"),
+                .product(name: "AemiHTML", package: "AemiHTML"),
                 // File watching (aemi ADR 0016): the new build beside the running one, the configuration files.
                 .product(name: "AemiIO", package: "aemi"), .product(name: "Subprocess", package: "swift-subprocess")
             ],

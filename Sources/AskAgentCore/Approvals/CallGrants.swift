@@ -5,6 +5,7 @@ public struct CallGrants: Sendable, Equatable {
     private var programs: Set<String> = []
     private var files: Set<String> = []
     private var tools: Set<String> = []
+    private var hosts: Set<String> = []
 
     public init() {}
 
@@ -14,19 +15,27 @@ public struct CallGrants: Sendable, Equatable {
         public let programs: [String]
         public let files: [String]
         public let tools: [String]
+        public var hosts: [String] = []
     }
 
     /// The grants as a ``Record``.
     public var record: Record {
-        Record(phrases: phrases.sorted(), programs: programs.sorted(), files: files.sorted(), tools: tools.sorted())
+        Record(
+            phrases: phrases.sorted(),
+            programs: programs.sorted(),
+            files: files.sorted(),
+            tools: tools.sorted(),
+            hosts: hosts.sorted()
+        )
     }
 
     /// Grants restored from ``record``.
-    public init(phrases: [String], programs: [String], files: [String], tools: [String]) {
+    public init(phrases: [String], programs: [String], files: [String], tools: [String], hosts: [String] = []) {
         self.phrases = Set(phrases)
         self.programs = Set(programs)
         self.files = Set(files)
         self.tools = Set(tools)
+        self.hosts = Set(hosts)
     }
 
     /// Remembers what an "Allow for the session" answer to a question about `scope` allows.
@@ -35,6 +44,7 @@ public struct CallGrants: Sendable, Equatable {
             case .command(let words): phrases.formUnion(words.phrases)
             case .file(let path): files.insert(path)
             case .tool(let name): tools.insert(name)
+            case .host(let host): hosts.insert(host)
         }
     }
 
@@ -49,6 +59,7 @@ public struct CallGrants: Sendable, Equatable {
                 return words.commands.allSatisfy { phrases.contains($0.phrase) || programs.contains($0.program) }
             case .file(let path): return files.contains(path)
             case .tool(let name): return tools.contains(name)
+            case .host(let host): return hosts.contains(host)
         }
     }
 }
