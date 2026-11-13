@@ -129,3 +129,11 @@ within the job's 240 minutes, so Monday's full run cannot write its baseline. Fi
   condition says when the walk starts again from the line's start instead of going on from the last row. Rows come in order, and a
   line's first row is at offset 0. So under `&&` a new line is either still reset (the last row's offset was above 0) or carries
   nothing (offset 0, byte 0). The bytes found are the same either way, and no output can tell the two apart: an equivalent mutant.
+
+## The full run sharded (2026-11-13)
+
+The daily gate failed on almost every run since 2026-11-02: the Monday full run (about 5,000 mutants) never fitted a job's 240
+minutes, so the baseline (one entry, 2026-10-31) was never refreshed, and every survivor in a touched file counted as new. The owner
+chose sharding: the full run is 20 jobs, each a target's files split by mutant count into about 300 mutants
+(`Scripts/mutate-changed.sh --all TARGET I/N`), gating nothing; a last job merges their parts (`merge DIR 20`), refusing when one is
+missing, and uploads `mutation-baseline` to commit by hand.
