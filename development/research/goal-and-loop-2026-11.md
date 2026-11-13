@@ -55,3 +55,10 @@ Claude Code has both, documented (code.claude.com/docs/en/goal, /scheduled-tasks
 3. `/loop` runs as threads (never blocking) or in the main conversation (as Claude Code's do).
 4. A bare `/loop` with a maintenance prompt (branch's pull request, CI, unfinished work), and a project `loop.md` for it, or not.
 5. One-shot reminders (`/loop in 20m TASK`) in the same command, or not.
+
+## The owner's answers (2026-11-12)
+
+1. The judge: a small model of the session's provider.
+2. At a bound: ask the person when they are there, else stop.
+3. `/loop` runs in the main conversation.
+4. and 5. (a bare `/loop`'s maintenance prompt, one-shot reminders): not answered; left out until asked.
