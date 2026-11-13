@@ -116,3 +116,11 @@ Five phases, each a set of roadmap entries, in order; each ends with a measured 
 2. B1: moving the conversation into a library target `AskSession` (the largest change here, mechanical but wide).
 3. C2: a gate rule against new `try?` around writes without a reason, or review only.
 4. A3: budgets checked nightly with an issue when over, or gated on every push (slower CI).
+
+## The owner's answers (2026-11-13)
+
+- Phase A is not a priority: B, C, D and E follow (roadmap 0229 to 0232).
+- B (`AskSession`): yes. C: a gate rule against a new `try?` around a write without a reason.
+- Budgets: on every release (0232, with roadmap 0070's release).
+- From the study of other agents: file checkpoints (0233), machine-readable runs (0234), ACP (0235), diagnostics after edits (0236),
+  web fetch (0237); the cheap ones (0234's JSON lines, 0237) come first, between the phases.
