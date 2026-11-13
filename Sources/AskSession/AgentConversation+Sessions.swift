@@ -72,7 +72,12 @@ extension AgentConversation {
     /// Called only between runs, once a replacement has been opened successfully. Releasing the old recorder
     /// also releases its writer lock. Learned window state must not carry over from another session.
     func activateSession(_ replacement: SessionRecorder?, update: @Sendable (ConversationUpdate) -> Void) {
-        session.withLock { $0 = replacement }
+        let left = session.withLock { current in
+            defer { current = replacement }
+            return current?.path
+        }
+        // The session left behind keeps nothing in memory: its search index is read again if it is ever searched (roadmap 0230).
+        if let left, left != replacement?.path { SessionSearch.forget(session: left) }
         plannedSession.withLock { $0 = nil }
         let scope = current.withLock { $0.settings.configuration.taskScope.value }
         let tasksNotice = SessionTasks.follow(replacement, scope: scope)

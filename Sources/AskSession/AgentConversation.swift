@@ -239,10 +239,10 @@ final class AgentConversation: Conversation {
         if case .compacted(let summary, _) = event {
             renameConversation(fromSummary: summary, update: update)
             // What a compaction folds away stays searchable: the index takes it now (t209).
+            // From a snapshot: the task must not hold the session, which the person may leave meanwhile (roadmap 0230).
             if let recorder = session.withLock({ $0 }) {
-                Task.detached(priority: .utility) {
-                    await SessionSearch.of(session: recorder.path).update(from: recorder)
-                }
+                let (path, snapshot) = (recorder.path, SessionSearch.Snapshot(of: recorder))
+                Task.detached(priority: .utility) { await SessionSearch.of(session: path).update(from: snapshot) }
             }
         }
     }

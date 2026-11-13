@@ -33,6 +33,22 @@ marked full, reload grants, a remembered account, a renewal reported to its call
 
 Tests: `SavedRecordsTests` (the fork's notice; red with the notice removed), `TaskBoardTests` (the copy throws).
 
+## Part 1 done (2026-11-13): what background tasks hold
+
+The count was wrong: 110 included the structured `addTask`. There are 72 unstructured tasks: 33 keep or return their handle, 2 are
+awaited on the spot, 37 are started and left (AskTUI 15, AskSession 12, AskTools 7, AskMCP 2, AskAgentCore 1). Each of the 37 was
+read for what it captures across a session switch:
+
+- **Held a session (defects):** the conversation's naming (fixed 2026-11-13) and the search index update at a compaction: a session
+  left right after a compaction stayed locked while its index was built. It now works from a snapshot of the entries.
+- **Kept memory:** a session's search index stayed in memory for the life of the process; leaving a session now forgets it.
+- **Hold no session:** a thread's naming, merge and stop (by name), the MCP sign-in, an opener's command, the goal's directive (50 ms),
+  the git and forge refreshes (a path), the command dispatch, the screen's one-shot reads (files, skills, choices, clipboard,
+  pictures), the jobs' watchers (weak). `KeepAwake`'s follower lives as long as the process, by design.
+
+`SessionSwitchTests` holds the rule for the two that broke it: red on the code before each fix. A per-session task group was not
+needed for these; it is the answer if a third one appears.
+
 ## Left
 
-Part 1 (the 110 unstructured tasks) and part 3 (the input path under load).
+Part 3 (the input path under load).
