@@ -4,6 +4,10 @@ model, the first verdict must continue the run, the second end the goal.
 
 Scripts/probe-goal.py .build/release/ask
 """
+import importlib.util, json, os, sys, tempfile, time
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+os.chdir(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
+binary = os.path.abspath(sys.argv[1]); sys.argv = [sys.argv[0], binary]
 spec = importlib.util.spec_from_file_location('pi', 'Scripts/probe-interactive.py'); pi = importlib.util.module_from_spec(spec); spec.loader.exec_module(pi)
 agent = pi.agent
 verdicts = ['NOT YET: the file says draft, it should say final', 'MET: the agent showed the file says final']

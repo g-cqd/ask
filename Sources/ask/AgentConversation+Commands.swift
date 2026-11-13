@@ -90,6 +90,7 @@ extension AgentConversation {
             ),
             SlashCommand(
                 name: "fork",
+                // @dl:accept -- the conversation's list: every entry is a name and a sentence
                 summary: "Continue in a new session: /fork, or /fork N from before prompt N. The original stays.",
                 duringTurn: .atOnce
             ),
@@ -198,6 +199,7 @@ extension AgentConversation {
                 case "resume": await self.resumeSession(arguments: arguments, update: update)
                 // @dl:accept -- a dispatch table: each case hands one command name to its handler; the names are the data
                 case "rewind", "tree": self.tree(arguments: arguments, update: update)
+                // @dl:accept -- a dispatch table: each case hands one command name to its handler
                 case "fork": await self.forkSession(arguments: arguments, update: update)
                 case "encrypt": await self.encrypt(arguments: arguments, update: update)
                 case "model": await self.model(arguments: arguments, update: update)
@@ -209,8 +211,7 @@ extension AgentConversation {
                 case "tasks": update(.notice(SessionTasks.answer(to: arguments), isError: false))
                 case "goal": self.goalCommand(arguments, update: update)
                 case "search":
-                    let recorder = self.session.withLock { $0 }
-                    update(.notice(await SessionSearchCommand.answer(to: arguments, session: recorder), isError: false))
+                    update(.notice(await SessionSearchCommand.answer(to: arguments, in: self), isError: false))
                 case "btw": await self.aside(arguments, update: update)
                 case "thread": await self.startThread(arguments, update: update)
                 case "threads": self.showThreads(arguments, update: update)
