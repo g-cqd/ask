@@ -30,6 +30,9 @@ struct Ask: AsyncParsableCommand {
     )
     var prompt: String?
 
+    @Flag(help: "With -p: write the run's events to standard output as JSON lines ({\"v\":1,\"type\":…}), for scripts.")
+    var json = false
+
     @Option(help: "The model to use. Default: config.json, else the provider's default model.")
     var model: String?
 
@@ -160,6 +163,7 @@ struct Ask: AsyncParsableCommand {
     var resume: String? = nil
 
     func validate() throws {
+        try validateOutput()
         if continueLatest, resume != nil { throw ValidationError("Use --continue or --resume, not both.") }
         if resume == "", prompt != nil {
             throw ValidationError("With --prompt, --resume needs a session name or path.")
@@ -191,6 +195,13 @@ struct Ask: AsyncParsableCommand {
     }
 
     /// `--write` and `--read`: each value is a keyword or an absolute path, and keywords stand alone.
+    /// `--json` goes with `-p` (roadmap 0234).
+    private func validateOutput() throws {
+        if json, prompt == nil {
+            throw ValidationError("--json goes with -p: it writes a print run's events as JSON lines.")
+        }
+    }
+
     private static func validateScopes(write: [String], read: [String]) throws {
         for (flag, values) in [("--write", write), ("--read", read)] {
             for value in values

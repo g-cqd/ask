@@ -10,6 +10,8 @@ internal import Foundation
 struct LaunchRequest {
     var budgets = false
     var prompt: String?
+    /// With `prompt`: the run's events as JSON lines on standard output (roadmap 0234).
+    var json = false
     var model: String?
     var provider: String?
     var thinking: String?
@@ -117,7 +119,8 @@ struct LaunchRequest {
                 source: source,
                 settings: settings,
                 resumed: restored,
-                startupNotices: startupNotices
+                startupNotices: startupNotices,
+                json: json
             )
             return
         }

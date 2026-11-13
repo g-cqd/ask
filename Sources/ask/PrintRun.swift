@@ -72,7 +72,8 @@ func runPrompt(
     source: ConfigurationSource,
     settings: RunSettings,
     resumed: SessionRecorder?,
-    startupNotices: [String]
+    startupNotices: [String],
+    json: Bool = false
 )
     async
 {
@@ -86,7 +87,13 @@ func runPrompt(
     let transport = URLSessionTransport()
     await requireSignIn(for: model, transport: transport)
     let jobs = JobTable(environment: LaunchEnvironment.values)
-    let renderer = PrintRenderer()
+    // With --json the events go to standard output as JSON lines instead (roadmap 0234); the renderer still counts the tokens.
+    let renderer = json ? PrintRenderer(out: { _ in }, err: { _ in }) : PrintRenderer()
+    let events = json ? JSONEvents() : nil
+    let show: @Sendable (AgentEvent) -> Void = { event in
+        renderer.render(event)
+        events?.write(event)
+    }
     let loop: AgentLoop
     let mcp = startMCPServers(settings, jobs: jobs)
     do {
@@ -97,7 +104,7 @@ func runPrompt(
             jobs: jobs,
             transport: transport,
             live: mcp.live,
-            reportEvent: { renderer.render($0) }
+            reportEvent: show
         )
     } catch {
         fail("ask: \(error)", code: 70)
@@ -115,7 +122,7 @@ func runPrompt(
         // Each @server:uri read from its server, which has connected above (roadmap 0067).
         // Then each #123 it names, from the workspace's GitHub repository (roadmap 0186).
         let attached = await ForgeAttachment.attach(await mcp.attachResources(sent), workspace: settings.workspace)
-        try await loop.run(attached, in: session) { renderer.render($0) }
+        try await loop.run(attached, in: session, events: show)
     }
     let interrupted = Mutex<Int32?>(nil)
     let signals = SignalHandler(
@@ -131,6 +138,7 @@ func runPrompt(
     await jobs.stopAll()
     await mcp.stop()
     signals.stop()
+    events?.end(session: sessionPath)
     FileHandle.standardError.write(Data("ask: tokens \(renderer.usageSummary)\nask: session \(sessionPath)\n".utf8))
     if let signal = interrupted.withLock({ $0 }) { Foundation.exit(128 + signal) }
     if case .failure(let error) = result { fail("ask: \(error)", code: 69) }

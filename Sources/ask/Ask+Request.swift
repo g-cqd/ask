@@ -5,6 +5,7 @@ extension Ask {
             budgets: budgets,
             // @dl:accept -- every launch option passed through as a value, one per line: the request's shape, not repeated logic
             prompt: prompt,
+            json: json,
             model: model,
             provider: provider,
             thinking: thinking,
