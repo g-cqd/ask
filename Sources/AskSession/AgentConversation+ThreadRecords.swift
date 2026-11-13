@@ -27,14 +27,18 @@ extension AgentConversation {
         )
         // A subagent says so, and as which definition, so a resume brings it back as one (roadmap 0063 phase 5).
         started.subagent = subagent
-        try? main.recordThread(started)
-        try? recorder.recordThread(.identity(name, of: main.path))
+        saveThreadRecord(started, in: main, as: "that \(name) started")
+        saveThreadRecord(.identity(name, of: main.path), in: recorder, as: "which conversation \(name) belongs to")
     }
 
     /// Records that `name` merged, with `summary`, at the leaf of the conversation it merged into.
     func recordMerged(_ name: String, summary: String, into parent: SessionRecorder?) {
         guard let main = session.withLock({ $0 }) else { return }
-        try? main.recordThread(.merged(name, summary: summary, at: (parent ?? main).tree.leaf))
+        saveThreadRecord(
+            .merged(name, summary: summary, at: (parent ?? main).tree.leaf),
+            in: main,
+            as: "that \(name) merged"
+        )
     }
 
     /// Empties the thread table, stopping what runs there, and rebuilds it from the active session's records: what the screen needs to

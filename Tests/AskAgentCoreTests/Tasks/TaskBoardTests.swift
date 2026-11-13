@@ -23,8 +23,12 @@ struct TaskBoardTests {
         #expect(try board.current() == nil && !board.isAttached)
         try board.attach(sessionPath: directory + "/a.jsonl", format: .plain, keyring: nil, scope: .session)
         try board.change { $0.adding(title: "carried over") }
-        TaskBoard.copyForFork(from: directory + "/a.jsonl", to: directory + "/b.jsonl", scope: .session)
-        TaskBoard.copyForFork(from: directory + "/a.jsonl", to: directory + "/c.jsonl", scope: .workspace)
+        try TaskBoard.copyForFork(from: directory + "/a.jsonl", to: directory + "/b.jsonl", scope: .session)
+        try TaskBoard.copyForFork(from: directory + "/a.jsonl", to: directory + "/c.jsonl", scope: .workspace)
+        // A copy that cannot be made is an error the fork tells the person of, not an empty list (roadmap 0230).
+        #expect(throws: CocoaError.self) {
+            try TaskBoard.copyForFork(from: directory + "/a.jsonl", to: directory + "/b.jsonl", scope: .session)
+        }
         try board.attach(sessionPath: directory + "/b.jsonl", format: .plain, keyring: nil, scope: .session)
         try board.change { $0.adding(title: "only in the fork") }
         #expect(try board.current()?.tasks.map(\.title) == ["carried over", "only in the fork"])

@@ -70,6 +70,7 @@ final class MCPStoredAuthorization: MCPAuthorization {
         saved.accessToken = fresh.access
         saved.refreshToken = fresh.refresh ?? record.refreshToken
         saved.expiresAt = fresh.expires?.timeIntervalSince1970
+        // try?: the caller is told the renewal was not kept, and signs in again
         return (try? file.renewMCP(saved, replacing: record)) == true
     }
 

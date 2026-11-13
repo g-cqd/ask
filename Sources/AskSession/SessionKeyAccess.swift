@@ -43,7 +43,7 @@ package enum SessionKeyAccess {
                 !password.isEmpty
             else { break }
             if let opened = try? vault.unlock(password: password) {
-                return keep(opened, remember: remember)
+                return keep(opened, remember: remember, telling: terminal)
             }
             terminal.say(attempt < 3 ? "That is not the password." : "That is not the password either.")
         }
@@ -53,7 +53,7 @@ package enum SessionKeyAccess {
             let opened = try? vault.unlock(recoveryCode: code)
         else { return nil }
         terminal.say("Opened with the recovery code. Set a new password with `ask keys password`.")
-        return keep(opened, remember: remember)
+        return keep(opened, remember: remember, telling: terminal)
     }
 
     /// New keys: a password typed twice, and the recovery code shown once.
@@ -74,7 +74,12 @@ package enum SessionKeyAccess {
             }
             password = first
         }
-        guard let password, let made = try? vault.create(password: password) else { return nil }
+        guard let password else { return nil }
+        let made: (keyring: SessionKeyring, recoveryCode: String)
+        do { made = try vault.create(password: password) } catch {
+            terminal.say("The keys could not be created: \(error)")
+            return nil
+        }
         await terminal.showOnce(
             """
 
@@ -85,12 +90,21 @@ package enum SessionKeyAccess {
             Press Return when it is kept.
             """
         )
-        return keep(made.keyring, remember: remember)
+        return keep(made.keyring, remember: remember, telling: terminal)
     }
 
-    private static func keep(_ keyring: SessionKeyring, remember: Bool) -> SessionKeyring {
+    /// Holds `keyring` for this run and, when asked, keeps its key in the keychain; says so when the keychain refuses.
+    private static func keep(_ keyring: SessionKeyring, remember: Bool, telling asker: any SetupInteraction)
+        -> SessionKeyring
+    {
         held.withLock { $0 = keyring }
-        if remember, let store = keychain() { try? vault.remember(keyring, in: store) }
+        if remember, let store = keychain() {
+            do { try vault.remember(keyring, in: store) } catch {
+                asker.say(
+                    "The key could not be kept in the keychain (\(error)); the password is asked again next time."
+                )
+            }
+        }
         return keyring
     }
 }

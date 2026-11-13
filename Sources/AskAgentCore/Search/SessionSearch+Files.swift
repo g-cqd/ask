@@ -49,6 +49,7 @@ extension SessionSearch {
             guard let sealed = try? AES.GCM.seal(data, using: key, authenticating: nameTag).combined else { return }
             data = sealed
         }
+        // try?: the index is a cache, built again from the session
         guard (try? data.write(to: URL(fileURLWithPath: indexPath), options: [.atomic])) != nil else { return }
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: indexPath)
     }

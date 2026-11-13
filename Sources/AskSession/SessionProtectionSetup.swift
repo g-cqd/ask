@@ -35,8 +35,12 @@ enum SessionProtectionSetup {
             // Closed without an answer: plain for this run, and asked again at the next start.
             guard let answer = await firstStart(asker) else { return plain }
             (encrypt, remember) = answer
-            try? vault.record(SessionEncryptionChoice(encrypt: encrypt, remember: remember))
-            asker.say("Change this any time with sessionEncryption and sessionPassword in your config.")
+            do {
+                try vault.record(SessionEncryptionChoice(encrypt: encrypt, remember: remember))
+                asker.say("Change this any time with sessionEncryption and sessionPassword in your config.")
+            } catch {
+                asker.say("Your choice could not be saved (\(error)); ask asks again at the next start.")
+            }
         } else if policy.mode == .ask {
             guard let asker else {
                 if deferring { return nil }

@@ -109,7 +109,7 @@ extension AgentConversation {
         let title = title.trimmingCharacters(in: .whitespacesAndNewlines)
         guard threads.thread(id) != nil, !title.isEmpty else { return }
         threads.rename(id, to: title)
-        try? session.withLock { $0 }?.recordThread(.renamed(id, to: title))
+        saveThreadRecord(.renamed(id, to: title), in: session.withLock { $0 }, as: "the thread's name")
         update(.runners(threads.runners))
     }
 

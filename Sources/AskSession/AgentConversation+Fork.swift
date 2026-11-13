@@ -59,8 +59,13 @@ extension AgentConversation {
         try directory.create()
         let copy = try original.fork(upTo: leaf, to: FilePath(directory.newSessionPath()))
         let scope = current.withLock { $0.settings.configuration.taskScope.value }
-        TaskBoard.copyForFork(from: original.path, to: copy.path, scope: scope)
-        IdeaBoard.copyForFork(from: original.path, to: copy.path, scope: scope)
+        // The fork stands without its lists; the person is told which did not come (roadmap 0230).
+        do { try TaskBoard.copyForFork(from: original.path, to: copy.path, scope: scope) } catch {
+            tell("The fork has no copy of the task list: \(error)")
+        }
+        do { try IdeaBoard.copyForFork(from: original.path, to: copy.path, scope: scope) } catch {
+            tell("The fork has no copy of the notes: \(error)")
+        }
         return copy
     }
 

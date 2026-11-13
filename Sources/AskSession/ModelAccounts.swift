@@ -27,6 +27,7 @@ enum ModelAccounts {
     static func remember(_ account: String, for model: String, environment: [String: String] = LaunchEnvironment.values)
     {
         guard let kind = kind(of: account, connections: connections(environment: environment)) else { return }
+        // try?: a choice that cannot be kept is made again by the person; it is a preference, not data
         try? memory(environment: environment).remember(account, for: model, kind: kind)
     }
 

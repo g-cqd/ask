@@ -146,6 +146,7 @@ struct WirePayload: Codable {
 
         init(_ part: ImagePart, in store: SessionImageStore?) {
             mediaType = part.mediaType
+            // try?: a picture that cannot be stored stays inline in the entry (the branch below)
             if let store, let name = try? store.put(part.data) {
                 sha256 = name
             } else {
