@@ -15,4 +15,6 @@ struct LoopHooks: Sendable {
     /// The tools a definition's subagent keeps (roadmap 0063 phase 3); nil keeps them all.
     var keepTools: Set<String>?
     var reportEvent: (@Sendable (AgentEvent) -> Void)?
+    /// The current session's file, which `search_session` searches (t209); nil offers no search.
+    var currentSession: (@Sendable () -> String?)?
 }

@@ -237,7 +237,9 @@ final class AgentConversation: Conversation {
         if case .compacted(let summary, _) = event {
             renameConversation(fromSummary: summary, update: update)
             // What a compaction folds away stays searchable: the index takes it now (t209).
-            Task.detached(priority: .utility) { await SessionSearch.shared.update() }
+            if let path = session.withLock({ $0?.path }) {
+                Task.detached(priority: .utility) { await SessionSearch.of(session: path).update() }
+            }
         }
     }
 }
