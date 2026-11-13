@@ -2,7 +2,10 @@
 # Mutation testing of the Sources files changed against BASE (roadmap 0166), with swift-mutation-testing from a pinned release.
 #
 #   Scripts/mutate-changed.sh [BASE]          changed files against BASE (default origin/main), committed or not
-#   Scripts/mutate-changed.sh --all           every file, and the baseline rewritten (the weekly run)
+#   Scripts/mutate-changed.sh --all           every file, and the baseline rewritten
+#   Scripts/mutate-changed.sh --all TARGET I/N one shard of every file: TARGET's files split in N by mutant count, shard I (1-based);
+#                                             its baseline part is left in .build/mutation (the weekly run, one job per shard)
+#   Scripts/mutate-changed.sh merge DIR N     the N baseline parts in DIR merged into the baseline; fails when one is missing
 #   Scripts/mutate-changed.sh install         install the tool only
 #
 # One plan for the package, kept to the changed files and split by target: Sources/AskTUI/... runs with AskTUITests. The executable
@@ -14,6 +17,22 @@
 #
 # Exit: 0 no new survivor, 1 new survivors (or a failed run), 2 the tool could not be installed.
 set -eu
+
+if [ "${1:-}" = merge ]; then
+    cd "$(dirname "$0")/.."
+    python3 - "$2" "$3" development/mutation-baseline.json <<'MERGE'
+import json, pathlib, sys
+parts_dir, expected, out = pathlib.Path(sys.argv[1]), int(sys.argv[2]), pathlib.Path(sys.argv[3])
+parts = [json.loads(p.read_text()) for p in sorted(parts_dir.rglob("baseline-*.json"))]
+if len(parts) != expected:
+    sys.exit(f"[FAIL] {len(parts)} baseline parts of {expected}: a shard did not finish, so no baseline is written")
+# One baseline for the package: every shard's survivors, and the lowest score (only --max-score-drop reads it).
+merged = dict(parts[0], undetected=[u for part in parts for u in part["undetected"]], score=min(part["score"] for part in parts))
+out.write_text(json.dumps(merged, indent=1, sort_keys=True) + "\n")
+print(f"[OK] baseline written from {expected} parts: {len(merged['undetected'])} undetected mutants")
+MERGE
+    exit $?
+fi
 
 VERSION=v1.6.4
 SHA256=c8a0690598766bba4a5f4616f8f99b8909ddf884bbcdb41c83ace62451cd8303
@@ -68,11 +87,19 @@ fi
 
 "$tool" plan . --sources-path Sources --output "$work/plan.json" --quiet
 printf '%s\n' "$changed" > "$work/changed.txt"
+# A shard of the weekly run: one target, and of its files the I-th of N groups, balanced by mutant count.
+shard_target=""
+shard=""
+if [ "${1:-}" = --all ] && [ -n "${2:-}" ]; then
+    shard_target="$2"
+    shard="${3:-1/1}"
+fi
 
 # One plan per target, each kept to the changed files of that target; the targets with mutants are printed.
-targets=$(python3 - "$work" <<'PY'
+targets=$(python3 - "$work" "$shard_target" "$shard" <<'PY'
 import collections, json, pathlib, sys
 work = pathlib.Path(sys.argv[1])
+only, shard = sys.argv[2], sys.argv[3]
 plan = json.loads((work / "plan.json").read_text())
 changed = set((work / "changed.txt").read_text().split())
 tests = {path.name for path in pathlib.Path("Tests").iterdir() if path.is_dir()}
@@ -80,7 +107,20 @@ by_target = collections.defaultdict(list)
 for mutant in plan["mutants"]:
     if mutant["file"] in changed:
         by_target[mutant["file"].split("/")[1]].append(mutant)
+if only:
+    by_target = {only: by_target.get(only, [])}
+    index, count = (int(n) for n in shard.split("/"))
+    # Files to shards, the largest first, each to the lightest shard so far: every shard gets about the same number of mutants.
+    per_file = collections.Counter(m["file"] for m in by_target[only])
+    loads, owner = [0] * count, {}
+    for file, size in sorted(per_file.items(), key=lambda item: (-item[1], item[0])):
+        lightest = loads.index(min(loads))
+        owner[file] = lightest
+        loads[lightest] += size
+    by_target[only] = [m for m in by_target[only] if owner[m["file"]] == index - 1]
 for target, mutants in sorted(by_target.items()):
+    if not mutants:
+        continue
     if target + "Tests" not in tests:
         files = sorted({m["file"] for m in mutants})
         print(f"[SKIP] {target} has no test target: {', '.join(files)}", file=sys.stderr)
@@ -99,17 +139,22 @@ fi
 status=0
 printf '%s\n' "$targets" | while read -r target count; do
     printf '== %s: %s mutants\n' "$target" "$count"
+    # The full run writes the baseline and gates nothing: its survivors are what the baseline is for.
+    gate="--baseline $BASELINE --max-new-survivors 0"
     extra=""
-    [ "${1:-}" = --all ] && extra="--write-baseline $work/baseline-$target.json"
+    if [ "${1:-}" = --all ]; then
+        gate=""
+        extra="--write-baseline $work/baseline-$target-$(printf '%s' "${shard:-1/1}" | tr / -).json"
+    fi
     # A cold build of a test target on a hosted runner took over 300 s (the scheduled runs of 2026-11-06 and 07 stopped there). A
     # mutant's run gets 120 s: AskAgentCoreTests alone takes about 30 s, the tool's default, so every mutant timed out locally.
     # shellcheck disable=SC2086 # the gate and extra options are word lists
     "$tool" run . --plan "$work/plan-$target.json" --target "${target}Tests" --build-timeout 1200 --timeout 120 \
-        --markdown-output "$work/report-$target.md" --baseline "$BASELINE" --max-new-survivors 0 $extra \
+        --markdown-output "$work/report-$target.md" $gate $extra \
         || echo "$target" >> "$work/failed"
     [ -f "$work/report-$target.md" ] && cat "$work/report-$target.md"
 done
-if [ "${1:-}" = --all ]; then
+if [ "${1:-}" = --all ] && [ -z "$shard_target" ]; then
     python3 - "$work" "$BASELINE" <<'PY'
 import json, pathlib, sys
 work, out = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
