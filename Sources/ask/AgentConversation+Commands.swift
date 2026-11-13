@@ -95,18 +95,6 @@ extension AgentConversation {
                 duringTurn: .atOnce
             ),
             SlashCommand(
-                name: "goal",
-                summary:
-                    "Work until a condition holds, judged after each run: /goal CONDITION, /goal to see it, /goal clear.",
-                duringTurn: .atOnce
-            ),
-            SlashCommand(
-                name: "search",
-                summary:
-                    "Search this session's whole history: /search cache key. Typos and parts of identifiers match.",
-                duringTurn: .atOnce
-            ),
-            SlashCommand(
                 name: "tasks",
                 summary: "Show the session's task list: /tasks all with the done ones, /tasks t3 for one task.",
                 // @dl:accept -- the command list is a table: each entry a name, a sentence and when it runs
@@ -172,7 +160,7 @@ extension AgentConversation {
                 category: .tools,
                 duringTurn: .afterTurn
             )
-        ]
+        ] + workCommands
     }
 
     func command(
@@ -209,9 +197,6 @@ extension AgentConversation {
                 case "notes", "notes:all", "notes:show", "notes:edit", "notes:add", "notes:delete", "notes:search":
                     self.notes(command: name, arguments: arguments, update: update)
                 case "tasks": update(.notice(SessionTasks.answer(to: arguments), isError: false))
-                case "goal": self.goalCommand(arguments, update: update)
-                case "search":
-                    update(.notice(await SessionSearchCommand.answer(to: arguments, in: self), isError: false))
                 case "btw": await self.aside(arguments, update: update)
                 case "thread": await self.startThread(arguments, update: update)
                 case "threads": self.showThreads(arguments, update: update)
@@ -221,7 +206,10 @@ extension AgentConversation {
                     update(.notice("/rename TITLE names a thread: type it in the thread's lane.", isError: false))
                 case "mcp": self.mcpCommand(arguments, update: update)
                 case "reload": await self.reload(arguments: arguments, update: update)
-                default: update(.notice("There is no command /\(name).", isError: true))
+                default:
+                    if await !self.workCommand(name, arguments: arguments, update: update) {
+                        update(.notice("There is no command /\(name).", isError: true))
+                    }
             }
             update(.runEnded)
         }
