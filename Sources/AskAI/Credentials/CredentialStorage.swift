@@ -27,7 +27,16 @@ public enum CredentialStorage: String, Sendable, CaseIterable {
     /// The process's choice.
     public static var chosen: CredentialStorage { current.withLock { $0 } }
 
-    /// Whether the running binary is signed with an identity, not ad hoc: what makes its Keychain items readable across rebuilds.
+    /// The identifier ask is signed with (`Scripts/sign.sh`).
+    public static let signingIdentifier = "ask"
+
+    /// Whether a signature makes a build ask's own and stable across rebuilds: an identity (not ad hoc) and ask's identifier. Another
+    /// program with a stable signature (a test host, signed by Apple) is not ask: its Keychain items would be asked for by ask itself.
+    static func countsAsStable(adhoc: Bool, hasCertificates: Bool, identifier: String?) -> Bool {
+        !adhoc && hasCertificates && identifier == signingIdentifier
+    }
+
+    /// Whether the running binary is ask signed with an identity, not ad hoc: what makes its Keychain items readable across rebuilds.
     public static let runningBuildIsStablySigned: Bool = {
         var code: SecCode?
         guard SecCodeCopySelf([], &code) == errSecSuccess, let code else { return false }
@@ -40,6 +49,10 @@ public enum CredentialStorage: String, Sendable, CaseIterable {
         else { return false }
         let flags = (info[kSecCodeInfoFlags] as? UInt32) ?? 0
         let adhoc = flags & UInt32(SecCodeSignatureFlags.adhoc.rawValue) != 0
-        return !adhoc && info[kSecCodeInfoCertificates] != nil
+        return countsAsStable(
+            adhoc: adhoc,
+            hasCertificates: info[kSecCodeInfoCertificates] != nil,
+            identifier: info[kSecCodeInfoIdentifier] as? String
+        )
     }()
 }
