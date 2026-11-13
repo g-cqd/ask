@@ -88,6 +88,30 @@ struct AgentHookRunStopTests {
         #expect(continuedEvents(outcome.events) == 1)
     }
 
+    /// A hook with a bound of its own (a goal, roadmap 0227) is asked past the setting; the others are not.
+    private final class Bounded: AgentHook {
+        var hasOwnBound: Bool { true }
+        private let seen = Mutex(0)
+        var asked: Int { seen.withLock { $0 } }
+        func runStop(_ stop: RunStop) async -> RunStopDecision {
+            let count = seen.withLock { count in
+                count += 1
+                return count
+            }
+            return count < 5 ? .continue("More.") : .stop
+        }
+    }
+
+    @Test func `past the continue setting, only a hook with its own bound is asked`() async throws {
+        let bounded = Bounded()
+        let other = Stopper { _ in .stop }
+        let outcome = try await run([other, bounded], replies: 8, continues: 2)
+        #expect(bounded.asked == 5)
+        #expect(other.asked == [0, 1])
+        #expect(outcome.requests == 5)
+        #expect(stopped(outcome.events).isEmpty)
+    }
+
     @Test func `continues stop at the setting, and the run says so`() async throws {
         let hook = Stopper { _ in .continue("Again.") }
         let outcome = try await run([hook], continues: 2)

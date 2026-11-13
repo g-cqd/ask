@@ -94,6 +94,12 @@ extension AgentConversation {
                 duringTurn: .atOnce
             ),
             SlashCommand(
+                name: "goal",
+                summary:
+                    "Work until a condition holds, judged after each run: /goal CONDITION, /goal to see it, /goal clear.",
+                duringTurn: .atOnce
+            ),
+            SlashCommand(
                 name: "search",
                 summary:
                     "Search this session's whole history: /search cache key. Typos and parts of identifiers match.",
@@ -201,6 +207,7 @@ extension AgentConversation {
                 case "notes", "notes:all", "notes:show", "notes:edit", "notes:add", "notes:delete", "notes:search":
                     self.notes(command: name, arguments: arguments, update: update)
                 case "tasks": update(.notice(SessionTasks.answer(to: arguments), isError: false))
+                case "goal": self.goalCommand(arguments, update: update)
                 case "search":
                     let recorder = self.session.withLock { $0 }
                     update(.notice(await SessionSearchCommand.answer(to: arguments, session: recorder), isError: false))

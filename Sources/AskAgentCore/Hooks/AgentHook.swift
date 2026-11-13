@@ -41,6 +41,8 @@ public protocol AgentHook: Sendable {
     func toolResultDecision(_ call: ToolInvocation, _ output: ToolOutput) async -> ToolResultDecision
     /// Whether a run that would end goes on (roadmap 0192): asked after the person's follow-ups, within the continue and turn limits.
     func runStop(_ stop: RunStop) async -> RunStopDecision
+    /// Whether the hook bounds its own continues (a goal, roadmap 0227), and is asked past `hooks.maxContinues`.
+    var hasOwnBound: Bool { get }
     /// Whether a subagent's run that would end goes on (roadmap 0192); calls ``runStop(_:)`` by default.
     func subagentStop(_ stop: RunStop) async -> RunStopDecision
     /// Called before a compaction starts; may append instructions to the summarisation prompt (roadmap 0192).
@@ -65,6 +67,7 @@ extension AgentHook {
     public var name: String { String(describing: type(of: self)) }
     public var deadline: Duration? { nil }
     public var failureMode: HookFailureMode { .open }
+    public var hasOwnBound: Bool { false }
     public func sessionStart(sessionPath: String) async -> SessionStartDecision { .allow }
     public func promptSubmit(_ text: String) async -> PromptSubmitDecision { .allow }
     public func requestBefore(_ request: ModelRequest) async -> RequestBeforeDecision { .allow }
