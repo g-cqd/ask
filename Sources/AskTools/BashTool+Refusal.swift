@@ -16,6 +16,14 @@ extension BashTool {
         if checked.unchecked { result.content += "\n" + uncheckedNote }
     }
 
+    /// What the check says of `command`: nothing, without checking, when it was found clean before.
+    func check(_ command: String, shell: String, path: String?) async -> CommandCheck.Result {
+        if clean.contains(command, shell: shell, path: path) { return CommandCheck.Result() }
+        let checked = await CommandCheck.check(command, shell: shell, path: path)
+        if checked.isClean { clean.remember(command, shell: shell, path: path) }
+        return checked
+    }
+
     /// Throws when `checked` refuses `command`.
     func refuse(_ command: String, shell: String, _ checked: CommandCheck.Result) throws(ToolFailure) {
         if let syntaxError = checked.syntaxError {

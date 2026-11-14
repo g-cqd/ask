@@ -17,6 +17,9 @@ enum CommandCheck {
         var findings: [String] = []
         /// Whether the parse or shellcheck ran past the deadline, so the command runs unchecked.
         var unchecked = false
+
+        /// Whether the check had nothing to say: the command parses, shellcheck found nothing, and both finished.
+        var isClean: Bool { syntaxError == nil && findings.isEmpty && !unchecked }
     }
 
     static let maximumFindings = 5

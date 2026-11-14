@@ -54,8 +54,8 @@ public struct BashTool: ArgumentTool {
 
     private let access: JobAccess
     private let observe: @Sendable (Event) -> Void
-    /// The commands refused once for shellcheck's findings.
-    let refused = RefusedCommands()
+    /// The commands refused once for shellcheck's findings, and those found clean, which are not checked again.
+    let refused = RefusedCommands(), clean = CleanCommands()
 
     /// A bash tool with its own job table, timing out on the continuous clock.
     public init() { self.init(jobs: JobTable()) }
@@ -89,11 +89,7 @@ public struct BashTool: ArgumentTool {
             )
         }
         let shell = access.jobs.commandShell(arguments.shell, in: context)
-        let checked = await CommandCheck.check(
-            arguments.command,
-            shell: shell,
-            path: access.jobs.visiblePath(in: context)
-        )
+        let checked = await check(arguments.command, shell: shell, path: access.jobs.visiblePath(in: context))
         try refuse(arguments.command, shell: shell, checked)
         let yield = arguments.yieldSeconds.map { Swift.min(Swift.max(1, $0), Self.maximumTimeout) }
         let timeout = Swift.min(Swift.max(1, arguments.timeoutSeconds ?? Self.defaultTimeout), Self.maximumTimeout)
