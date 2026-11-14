@@ -30,7 +30,10 @@ public enum ResourceReferences {
                     body.count > limit
                     ? body.prefix(limit) + "\n[cut at \(limit / 1024) KB; read the rest with server_resource]"
                     : body[...]
-                return "\(marker)\(reference.server):\(reference.uri) ---\n\(cut)\n--- end of resource ---"
+                // A server's text is not the person's (ADR-0150): said so, and unable to close its section.
+                return "\(marker)\(reference.server):\(reference.uri) ---\n"
+                    + UntrustedText.notice(from: "the MCP server \(reference.server)") + "\n"
+                    + UntrustedText.insideAttachment(String(cut)) + "\n--- end of resource ---"
             }
             .joined()
     }

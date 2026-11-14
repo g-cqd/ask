@@ -86,10 +86,12 @@ public enum ForgeReferences {
         let body =
             item.body.count > bodyLimit
             ? String(item.body.prefix(bodyLimit)) + "\n[cut at \(bodyLimit) characters]" : item.body
-        let by = item.author.isEmpty ? "" : " by \(item.author)"
-        return
-            "\(marker)\(item.number) ---\n\(item.kind) #\(item.number) (\(item.state))\(by): \(item.title)\n\(item.url)\n\n"
-            + body + "\n--- end of #\(item.number) ---"
+        // Everything GitHub gave is others' text (ADR-0150): said so, each field on one line, the body unable to close the section.
+        let line = { (text: String) in text.split(whereSeparator: \.isNewline).joined(separator: " ") }
+        let by = item.author.isEmpty ? "" : " by \(line(item.author))"
+        return "\(marker)\(item.number) ---\n\(UntrustedText.notice(from: "GitHub, written by others"))\n"
+            + "\(item.kind) #\(item.number) (\(item.state))\(by): \(line(item.title))\n\(line(item.url))\n\n"
+            + UntrustedText.insideAttachment(body) + "\n--- end of #\(item.number) ---"
     }
 
     private static func isName(_ part: Substring) -> Bool {

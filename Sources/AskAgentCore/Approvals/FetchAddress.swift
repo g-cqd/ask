@@ -43,12 +43,19 @@ public enum FetchAddress {
         }
     }
 
+    /// Why `host` is refused for what it resolves to, or nil: a name pointing at a private, loopback or link-local address, which the
+    /// name alone does not show (security audit 3). This machine by its own name is the person's to read.
+    public static func refusal(of host: String, resolvingTo addresses: [String]) -> Refusal? {
+        guard !isLocal(host), let inward = addresses.first(where: isPrivateLiteral) else { return nil }
+        return .privateAddress("\(host) (it resolves to \(inward))")
+    }
+
     static func isLocal(_ host: String) -> Bool {
         host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "[::1]"
     }
 
-    /// A literal address in a private, loopback, link-local or unspecified range (a name is not resolved here: the reply's address is
-    /// not checked, so a name pointing inward is the approval's to catch).
+    /// A literal address in a private, loopback, link-local or unspecified range. A name is checked by what it resolves to
+    /// (``refusal(of:resolvingTo:)``).
     static func isPrivateLiteral(_ host: String) -> Bool {
         let bare = host.trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
         let parts = bare.split(separator: ".").compactMap { Int($0) }
@@ -62,7 +69,8 @@ public enum FetchAddress {
         }
         let lower = bare.lowercased()
         return lower.contains(":")
-            && (lower == "::" || lower.hasPrefix("fe80") || lower.hasPrefix("fc") || lower.hasPrefix("fd")
+            && (lower == "::" || lower == "::1" || lower.hasPrefix("fe80") || lower.hasPrefix("fc")
+                || lower.hasPrefix("fd")
                 || lower.hasPrefix("::ffff:"))
     }
 }

@@ -1,3 +1,2 @@
 # Probes the sweep skips (roadmap 0211): the name, then why. Each needs what a sweep cannot give.
 probe-copilot-flow not a PTY probe: it runs swift test --filter Copilot, which CI already runs; its fake server is unused
-probe-fetch needs the network: it reads a public page
