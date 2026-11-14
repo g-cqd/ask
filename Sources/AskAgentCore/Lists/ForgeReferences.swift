@@ -86,11 +86,13 @@ public enum ForgeReferences {
         let body =
             item.body.count > bodyLimit
             ? String(item.body.prefix(bodyLimit)) + "\n[cut at \(bodyLimit) characters]" : item.body
-        // Everything GitHub gave is others' text (ADR-0150): said so, each field on one line, the body unable to close the section.
+        // Everything GitHub gave is others' text (ADR-0150): said so, each field on one line, and neither the address, which has
+        // a line of its own, nor the body able to close the section.
         let line = { (text: String) in text.split(whereSeparator: \.isNewline).joined(separator: " ") }
         let by = item.author.isEmpty ? "" : " by \(line(item.author))"
+        let address = UntrustedText.insideAttachment(line(item.url))
         return "\(marker)\(item.number) ---\n\(UntrustedText.notice(from: "GitHub, written by others"))\n"
-            + "\(item.kind) #\(item.number) (\(item.state))\(by): \(line(item.title))\n\(line(item.url))\n\n"
+            + "\(item.kind) #\(item.number) (\(line(item.state)))\(by): \(line(item.title))\n\(address)\n\n"
             + UntrustedText.insideAttachment(body) + "\n--- end of #\(item.number) ---"
     }
 
