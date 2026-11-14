@@ -1,0 +1,93 @@
+name: Fuzz
+
+# Coverage-guided fuzzing of the parsers that read bytes ask did not write (roadmap 0232), weekly and on demand: Scripts/fuzz.sh runs
+# libFuzzer over each target of Fuzz/ for ten minutes, all at once. A finding fails the run and its input is uploaded; it becomes a
+# red test before its fix, and a seed after. The corpus each target grew is kept between runs. A failed scheduled run opens an issue
+# that the next green one closes.
+on:
+  schedule:
+    - cron: "23 3 * * 2"
+  workflow_dispatch:
+    inputs:
+      seconds:
+        description: "Seconds each target runs"
+        default: "600"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: fuzz-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  fuzz:
+    name: Fuzz · Parsers · macOS
+    runs-on: macos-26
+    timeout-minutes: 90
+    steps:
+      - name: Setup · Check Out Sources
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Setup · Read .swift-version
+        run: echo "SWIFT_VERSION=$(cat .swift-version)" >> "$GITHUB_ENV"
+      - name: Setup · Install Swift
+        uses: swift-actions/setup-swift@364295d9c23900ce04d4e5cc708387921b4e50f9 # v3.0.0-beta.1
+        with:
+          swift-version: ${{ env.SWIFT_VERSION }}
+      - name: Cache · Restore Corpus
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: fuzz-corpus
+          key: fuzz-corpus-${{ github.run_id }}
+          restore-keys: fuzz-corpus-
+      - name: Fuzz · Every Target
+        env:
+          ASK_FUZZ_CORPUS: ${{ github.workspace }}/fuzz-corpus
+          SECONDS_EACH: ${{ inputs.seconds || '600' }}
+        run: Scripts/fuzz.sh "$SECONDS_EACH"
+      - name: Fuzz · Job Summary
+        if: ${{ always() }}
+        run: |
+          {
+            echo '## Fuzzing'
+            echo '```'
+            for log in .build/fuzz/*/run.log; do
+              [ -f "$log" ] || continue
+              echo "$(basename "$(dirname "$log")"): $(grep -aE 'PROPERTY BROKEN|ERROR: libFuzzer|DONE' "$log" | head -2 | tr '\n' ' ' | cut -c1-300)"
+            done
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Cache · Save Corpus
+        if: ${{ always() }}
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: fuzz-corpus
+          key: fuzz-corpus-${{ github.run_id }}
+      - name: Artifacts · Upload Findings
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: fuzz-findings
+          path: .build/fuzz
+          if-no-files-found: ignore
+
+  report:
+    name: Fuzz · Failure Issue
+    needs: fuzz
+    if: ${{ always() && github.event_name == 'schedule' }}
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Setup · Check Out Sources
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Report · Open or Close the Issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          OUTCOME: ${{ needs.fuzz.result == 'success' && 'success' || 'failure' }}
+        run: Scripts/ci-failure-issue.sh Fuzz "$OUTCOME" "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"

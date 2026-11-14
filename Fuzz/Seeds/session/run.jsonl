@@ -1,0 +1,7 @@
+{"type":"session","version":2}
+{"id":null,"type":"leaf"}
+{"id":"0","payload":{"destination":{"connectionID":"provider:anthropic","model":"claude-sonnet-5-5","name":"anthropic"},"kind":"destination"},"type":"entry"}
+{"id":"1","parent":"0","payload":{"kind":"user","text":"Run it."},"type":"entry"}
+{"id":"2","parent":"1","payload":{"blocks":[{"text":"Running it.","type":"text"},{"id":"t1","input":"{\"command\": \"echo seed\"}","name":"bash","type":"tool_call"}],"id":"m","kind":"response","model":"fake","stopReason":"tool_use","usage":{"input":1,"output":5}},"type":"entry"}
+{"id":"3","parent":"2","payload":{"callID":"t1","content":"seed\n[exit 0]","isError":false,"kind":"tool_result"},"type":"entry"}
+{"id":"4","parent":"3","payload":{"blocks":[{"text":"Done: seed.","type":"text"}],"id":"m","kind":"response","model":"fake","stopReason":"end_turn","usage":{"input":1,"output":5}},"type":"entry"}

@@ -43,6 +43,7 @@ ask --provider NAME --model ID  # a provider from ~/.config/ask/providers.json (
 swift test -c release --enable-testable-imports   # tests, without re-linting
 python3 Scripts/measure-budgets.py .build/release/ask 12   # the four budgets
 python3 Scripts/measure-action.py .build/release/ask 10 500  # the action, in detail, after 500 turns
+Scripts/fuzz.sh 60 sse          # libFuzzer on the byte parsers (Fuzz/); weekly in CI; a finding becomes a red test, then a seed
 ```
 
 Build and test in **release, always**. A debug build measures a program nobody ships.

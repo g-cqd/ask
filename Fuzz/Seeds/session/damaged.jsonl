@@ -1,0 +1,9 @@
+{"type":"session","version":2}
+{"id":"0","payload":{"kind":"user","text":"start"},"type":"entry"}
+{"id":"1","parent":"0","payload":{"kind":"assistant","text":"old reply"},"type":"entry"}
+{"id":"c","parent":"1","payload":{"firstKept":"1","kind":"compaction","summary":"s"},"type":"entry"}
+{"id":"0","type":"leaf"}
+{"id":"9","parent":"missing","payload":{"kind":"user","text":"orphan"},"type":"entry"}
+{"id":"1","parent":"0","payload":{"kind":"user","text":"duplicate id"},"type":"entry"}
+{"type":"entry","id":"t","parent":"c","payload":{"kind":"tool_result","callID":"nope","content":"x","isError":true}}
+torn line {"id":

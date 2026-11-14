@@ -57,10 +57,17 @@ let strictSettings: [SwiftSetting] = [
     .unsafeFlags(["-Xfrontend", "-warn-long-expression-type-checking=500"])
 ]
 
+// Fuzzing (roadmap 0232): `ASK_FUZZ=1` instruments ask's own modules for libFuzzer's coverage and opens their internals to the fuzz
+// package (`Fuzz/`, built by `Scripts/fuzz.sh`). Only that package is built this way: the executable and the tests would not link.
+// Instrumenting the whole graph (`swift build --sanitize fuzzer`) was tried first: the macro host's swift-syntax alone took over
+// half an hour.
+let fuzzSettings: [SwiftSetting] =
+    Context.environment["ASK_FUZZ"] == nil ? [] : [.unsafeFlags(["-sanitize=fuzzer", "-enable-testing"])]
+
 /// Settings for every target in this package. `swift build` and `swift test` always run release
 /// configuration: the package ships a terminal agent whose entire reason to exist is latency, and a
 /// debug build measures a program nobody runs.
-let packageSettings: [SwiftSetting] = strictSettings
+let packageSettings: [SwiftSetting] = strictSettings + fuzzSettings
 
 let package = Package(
     name: "ask",
