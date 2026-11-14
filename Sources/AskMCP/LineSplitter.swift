@@ -4,8 +4,9 @@ internal import Foundation
 ///
 /// A line is complete at its newline; a carriage return before it is dropped and an empty line is not a message. Newlines are found with
 /// `memchr` in the new bytes only, so a megabyte that arrives in many chunks costs a megabyte and not its square, and a chunk that holds whole
-/// lines while nothing is pending is cut straight into them, copied once (roadmap 0114). A line that grows past the limit without ending is
-/// a stream that has gone wrong (a server printing something that is not messages), and everything after is refused.
+/// lines while nothing is pending is cut straight into them, copied once (roadmap 0114). A line longer than the limit is a stream that
+/// has gone wrong (a server printing something that is not messages), and everything after is refused: the same whether the line came
+/// whole, in pieces, or was ended by its last piece (the fuzzer found the three treated differently, roadmap 0232).
 struct LineSplitter {
     private var pending: [UInt8] = []
     private let maximumLineBytes: Int
@@ -27,6 +28,11 @@ struct LineSplitter {
         var start = 0
         while start < buffer.count, let found = memchr(base + start, 0x0A, buffer.count - start) {
             let newline = found - UnsafeMutableRawPointer(mutating: base)
+            guard pending.count + (newline - start) <= maximumLineBytes else {
+                overflowed = true
+                pending = []
+                return lines
+            }
             if pending.isEmpty {
                 append(UnsafeRawBufferPointer(rebasing: buffer[start ..< newline]), to: &lines)
             } else {
