@@ -62,6 +62,17 @@ session. `sandbox.readable` and `sandbox.writable` open one for good. A command 
 such as `Operation not permitted`: `gh`, `docker`, `kubectl` or `npm` need theirs allowed, and `git push -u` or `git remote add` need
 `.git/config`.
 
+## Text from outside
+
+The model can read a web page with its `fetch` tool: `https` only (and `http` to this machine), never an address on a private
+network, by its name or by what its name resolves to. Each new host asks you first, and **Allow for the session** covers that host. A
+redirect to another host is not followed: the model is told where it leads, and fetching that asks you again. A page comes back as
+Markdown, at most 60,000 characters.
+
+A page, a `#123` from GitHub and a `@server:uri` resource are other people's text. ask says so to the model where each starts, and
+none of them can end its own section to pass for your words or for ask's. This bounds what such text can cause, it does not make a
+model deaf to it: what changes things (a command, a file written, an address fetched, an app opened) still asks you.
+
 ## When the model asks for more
 
 The model can ask to narrow its own sandbox for a call, or for the rest of the conversation; that needs no approval. If it asks for **more**

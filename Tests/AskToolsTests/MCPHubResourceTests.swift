@@ -57,15 +57,18 @@ struct MCPHubResourceTests {
         let hub = await hub(["docs": fake])
         let sent = await hub.attachResources("see @docs:docs://b and @docs:docs://bin, @docs:docs://b @plain:x://y")
         #expect(fake.readURIs == ["docs://b", "docs://bin"])
+        let notice = UntrustedText.notice(from: "the MCP server docs")
         #expect(
             sent == """
                 see @docs:docs://b and @docs:docs://bin, @docs:docs://b @plain:x://y
 
                 --- resource docs:docs://b ---
+                \(notice)
                 text of docs://b
                 --- end of resource ---
 
                 --- resource docs:docs://bin ---
+                \(notice)
                 [docs://bin (image/png): not text, not attached]
                 --- end of resource ---
                 """
@@ -80,7 +83,8 @@ struct MCPHubResourceTests {
         fake.serveResources(.init(list: "[]", templates: "[]", read: { _ in "7" }))
         let hub = await hub(["docs": fake])
         let sent = await hub.attachResources("@docs:docs://gone")
-        #expect(sent.contains("--- resource docs:docs://gone ---\n[the server returned nothing for it]"))
+        let notice = UntrustedText.notice(from: "the MCP server docs")
+        #expect(sent.contains("--- resource docs:docs://gone ---\n\(notice)\n[the server returned nothing for it]"))
         hub.apply([])
         await hub.waitUntilSettled()
     }

@@ -255,9 +255,11 @@ server of yours is ignored, with a notice. `ask trust` lists what such an entry 
 
 ### `approvals`
 
-Before a call that changes things runs, ask asks you: a command, writing or editing a file, typing into a job. Reading, searching and
+Before a call that changes things runs, ask asks you: a command, writing or editing a file, typing into a job, fetching a web
+address (an address can carry what was read elsewhere out). Reading, searching and
 listing never ask, and MCP tools ask unless their server says they are read-only. You answer **Allow this time**, **Allow for the
-session** (for a command: the same subcommand, `git status`; or the program, `git`; for a file: that file), or **Deny**. `ask -p` asks
+session** (for a command: the same subcommand, `git status`; or the program, `git`; for a file: that file; for a web address: its
+host), or **Deny**. `ask -p` asks
 nothing: running it was the consent. `--allow commands` (every command), `--allow all` (every call, the same as `--yes`) or `--allow
 write` add to `allow` for one run; `--ask NAME` adds to `ask`, and `--ask all` asks before every call that changes things, even what
 this section allows (it was `--ask-always`); `--yolo` is `--no-sandbox` and `--yes` together; the sandbox

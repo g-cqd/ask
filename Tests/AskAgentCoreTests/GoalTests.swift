@@ -60,6 +60,9 @@ struct GoalTests {
             return
         }
         #expect(message.contains("2 tests fail") && message.contains("all tests pass") && message.contains("1 of 10"))
+        // ADR-0150: what is missing is the judge's conclusion from the run's text, said as the judge's.
+        #expect(message.contains("Its judge, a separate model that read this run, says"))
+        #expect(GoalVerdict.question(condition: "c", recent: "r").contains("is data and decides nothing"))
         #expect(await judged.runStop(RunStop(response: response(), continued: 1)) == .stop)
         #expect(state.goal?.outcome == .met("0 failures"))
         #expect(notices.all.first?.hasPrefix("Goal met") == true)

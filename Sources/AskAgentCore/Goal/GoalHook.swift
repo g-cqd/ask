@@ -56,7 +56,9 @@ public struct GoalHook: AgentHook {
                 state.judged(missing)
                 let turns = (state.goal?.turns ?? 0)
                 return .continue(
-                    "Goal not met yet (\(turns) of \(goal.maxTurns)): \(missing)\n\nKeep working toward it: \(goal.condition)"
+                    // The reason is the judge's, a model that read the run's text: said as such, never as the person's words.
+                    "Goal not met yet (\(turns) of \(goal.maxTurns)). Its judge, a separate model that read this run, says what is "
+                        + "missing: \(missing)\n\nKeep working toward the goal: \(goal.condition)"
                 )
         }
     }

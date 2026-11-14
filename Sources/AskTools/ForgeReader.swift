@@ -1,3 +1,4 @@
+internal import AskAI
 public import AskAgentCore
 public import Foundation
 
@@ -71,47 +72,69 @@ public enum ForgeReader {
 
     /// The workspace's current branch, or nil when HEAD is detached or it is not a repository.
     public static func currentBranch(workspace: String, path: String?) async -> String? {
-        guard let git = CommandCheck.executable("git", path: path) else { return nil }
-        let outcome = await CommandCheck.run(
-            git,
-            ["-C", workspace, "symbolic-ref", "--quiet", "--short", "HEAD"],
-            environment: CommandCheck.environment(path: path),
-            deadline: .seconds(2)
-        )
-        guard case .ran(let ran) = outcome, ran.status == 0 else { return nil }
-        let branch = ran.output.trimmingCharacters(in: .whitespacesAndNewlines)
+        let found = await GitQuery.output(["symbolic-ref", "--quiet", "--short", "HEAD"], in: workspace, path: path)
+        let branch = found?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return branch.isEmpty ? nil : branch
     }
 
-    private static let live: Fetch = { try await URLSession.shared.data(for: $0) }
+    /// The most of an answer read: GitHub's list of 30 open items is well under it.
+    static let maximumBytes = 4 * 1024 * 1024
+    private static let transport = URLSessionTransport()
+
+    /// A request through ask's transport: no cache or cookie kept on disk, no stored credential sent, no redirect followed (the
+    /// system's shared session did all three: security audit 3), and no more than ``maximumBytes`` read.
+    private static let live: Fetch = { request in
+        guard let url = request.url else { throw URLError(.badURL) }
+        let headers = (request.allHTTPHeaderFields ?? [:]).map { (name: $0.key, value: $0.value) }
+        let reply = try await transport.send(
+            HTTPRequest(url: url, method: "GET", headers: headers, body: [], allowsRedirects: false)
+        )
+        var bytes: [UInt8] = []
+        for try await chunk in reply.body {
+            bytes += chunk
+            guard bytes.count <= maximumBytes else { throw URLError(.dataLengthExceedsMaximum) }
+        }
+        guard let response = HTTPURLResponse(url: url, statusCode: reply.status, httpVersion: nil, headerFields: nil)
+        else {
+            throw URLError(.badServerResponse)
+        }
+        return (Data(bytes), response)
+    }
 
     private static func base(_ repository: ForgeReferences.Repository) -> String {
         "https://api.github.com/repos/\(repository.owner)/\(repository.name)"
     }
 
     private static func repository(of workspace: String, path: String?) async -> ForgeReferences.Repository? {
-        guard let git = CommandCheck.executable("git", path: path) else { return nil }
-        let outcome = await CommandCheck.run(
-            git,
-            ["-C", workspace, "remote", "get-url", "origin"],
-            environment: CommandCheck.environment(path: path),
-            deadline: .seconds(2)
-        )
-        guard case .ran(let ran) = outcome, ran.status == 0 else { return nil }
-        return ForgeReferences.repository(fromRemote: ran.output)
+        await GitQuery.output(["remote", "get-url", "origin"], in: workspace, path: path)
+            .flatMap(ForgeReferences.repository(fromRemote:))
     }
 
     /// The body of a GET of GitHub's API that answered 200 within three seconds, or nil.
-    private static func get(_ address: String, token: String?, fetch: Fetch) async -> Data? {
+    private static func get(_ address: String, token: String?, fetch: @escaping Fetch) async -> Data? {
         guard let url = URL(string: address) else { return nil }
         var request = URLRequest(url: url, timeoutInterval: 3)
         request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
         request.setValue("2022-11-28", forHTTPHeaderField: "X-GitHub-Api-Version")
         request.setValue("ask", forHTTPHeaderField: "User-Agent")
         if let token, !token.isEmpty { request.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
-        guard let (data, response) = try? await fetch(request), (response as? HTTPURLResponse)?.statusCode == 200 else {
-            return nil
+        // Three seconds for the whole answer: the transport's own patience is a model's, minutes long.
+        let sent = request
+        return await withTaskGroup(of: Data?.self) { group in
+            group.addTask {
+                guard let (data, response) = try? await fetch(sent), (response as? HTTPURLResponse)?.statusCode == 200
+                else {
+                    return nil
+                }
+                return data
+            }
+            group.addTask {
+                try? await ContinuousClock().sleep(for: .seconds(3))
+                return nil
+            }
+            let first = await group.next() ?? nil
+            group.cancelAll()
+            return first
         }
-        return data
     }
 }
