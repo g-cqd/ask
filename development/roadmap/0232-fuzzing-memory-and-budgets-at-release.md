@@ -21,11 +21,12 @@ Engineering plan phase E; the owner (2026-11-13): budgets checked on every relea
 instrument. Four defects found and fixed test-first, each input now a seed: `LineSplitter` and `SSEDecoder` applied their limit
 differently to a whole line and a cut one; a forge item's state and address could start a section. 300 s of all six is clean.
 
-## Step 2: measured, waiting for a decision
+## Step 2: done (2026-11-14, diary 2026-11-14-04 and -05)
 
-Idle is 17.3–17.9 MB resident on mbp23, 5.6 MB of it ask's own. About 3.1 MB is what linking AppKit, PDFKit, AVFoundation
-(0.9 MB) and FoundationModels (2.6 MB) costs before any call; the heap and the threads are not the excess. Under 15 MiB needs
-those loaded on first use (the model in a helper or a lazy library), or a different budget: the owner's choice.
+Two causes. The status bar's read of GitHub at the start loaded the network stack into an idle ask (5.9 MiB): it is now read by a
+child process (ADR-0152). About 3 MiB is what linking AppKit, PDFKit, AVFoundation and FoundationModels costs before any call:
+the owner chose to change the budget rather than load them late (ADR-0151: 24 MiB idle, 30 active). Under the gate: idle
+22.4 MiB before, 17.2 after; active 27.6; all five budgets hold.
 
 ## Done when
 
