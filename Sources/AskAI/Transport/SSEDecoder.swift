@@ -1,8 +1,10 @@
 /// Decodes server-sent events incrementally, framed per the WHATWG specification.
 ///
 /// Every byte is examined once. A line that arrives whole is parsed in place from the caller's chunk; only a
-/// line split across chunks is carried, so the cost does not depend on how the network cut the stream. `id`
-/// and `retry` are kept for a stream that is resumed (MCP's streamable HTTP); a provider stream ignores them.
+/// line split across chunks is carried, so the cost does not depend on how the network cut the stream, and
+/// neither does what is refused: a line is measured, with its event's data so far, at its end and while it is
+/// carried (the fuzzer found a long line that was not `data` passing whole and refused in pieces, roadmap 0232).
+/// `id` and `retry` are kept for a stream that is resumed (MCP's streamable HTTP); a provider stream ignores them.
 public struct SSEDecoder: Sendable {
     /// Ceilings that keep a hostile or broken stream from growing memory without bound.
     public struct Limits: Sendable, Equatable {
@@ -90,6 +92,9 @@ public struct SSEDecoder: Sendable {
     }
 
     private mutating func process(_ raw: Span<UInt8>, into events: inout [SSEEvent]) throws(SSEError) {
+        guard raw.count + data.count <= limits.maximumEventBytes else {
+            throw .eventTooLarge(limit: limits.maximumEventBytes)
+        }
         var line = raw
         if atStart {
             atStart = false
@@ -109,9 +114,7 @@ public struct SSEDecoder: Sendable {
         if valueStart < line.count, line[valueStart] == .space { valueStart += 1 }
         let value = line.extracting(valueStart ..< line.count)
         if field.matches(.dataField) {
-            guard data.count + value.count + 1 <= limits.maximumEventBytes else {
-                throw .eventTooLarge(limit: limits.maximumEventBytes)
-            }
+            // Within the limit: the line was, and the value with its line feed is shorter than the line.
             data.append(span: value)
             data.append(.lineFeed)
             hasData = true

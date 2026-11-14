@@ -80,6 +80,27 @@ struct SSEDecoderTests {
         #expect(try decode(["data: 0123456789\n\n"], limits: limits) == [event("message", "0123456789")])
     }
 
+    /// Found by the fuzzer (roadmap 0232): only a line the network cut was measured, so a long line that was not `data` passed
+    /// whole and was refused in pieces.
+    @Test func `a line past the limit is refused the same whole or cut, whatever its field`() throws {
+        let limits = SSEDecoder.Limits(maximumEventBytes: 16)
+        let stream = "data: a\n\n: " + String(repeating: "x", count: 15) + "\ndata: b\n\n"
+        for chunks in [[stream], ["data: a\n\n: xxxx", "xxxxxxxxxxx\ndata: b\n\n"], stream.map { String($0) }] {
+            var decoder = SSEDecoder(limits: limits)
+            var events: [SSEEvent] = []
+            #expect(throws: SSEError.eventTooLarge(limit: 16), "\(chunks.count) chunks") {
+                for chunk in chunks {
+                    let bytes = Array(chunk.utf8)
+                    try decoder.feed(bytes.span, into: &events)
+                }
+            }
+            #expect(events == [event("message", "a")], "\(chunks.count) chunks")
+        }
+        let atTheLimit = ": " + String(repeating: "x", count: 14) + "\ndata: b\n\n"
+        #expect(try decode([atTheLimit], limits: limits) == [event("message", "b")])
+        #expect(try decode(atTheLimit.map { String($0) }, limits: limits) == [event("message", "b")])
+    }
+
     @Test func `the end of the stream reports an unterminated event`() throws {
         var decoder = SSEDecoder()
         var events: [SSEEvent] = []
