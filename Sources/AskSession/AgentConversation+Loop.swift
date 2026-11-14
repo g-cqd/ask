@@ -152,19 +152,18 @@ func runInteractive(
         )
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.
-        let sessionPicker = pickSession ? conversation.sessionPickerOpening() : []
-        let exit = try await runInteractiveScreen(
-            conversation: conversation,
-            label: settings.label,
-            history: [.labelVariants(settings.labelVariants), .sandboxActive(!settings.sandbox.isUnrestricted)]
-                + conversation.history() + conversation.restoreThreads()
-                // The thread a reload left shown is shown again (roadmap 0195).
-                + (reloaded?.focusThread.map { [.focusThread(id: $0)] } ?? []) + sessionPicker,
-            notices: startupNotices + settings.description,
-            details: details + settings.detailLines + ProjectInstructions.describe(files),
-            options: settings.screenOptions,
-            beforeSignalExit: { jobs.terminateAllNow() }
-        )
+        // Standard error is the screen's terminal: kept in a file for the screen's life (the owner, 2026-11-14).
+        let exit = try await keepingStandardErrorOffTheScreen {
+            try await runInteractiveScreen(
+                conversation: conversation,
+                label: settings.label,
+                history: conversation.openingUpdates(settings, reloaded: reloaded, pickSession: pickSession),
+                notices: startupNotices + settings.description,
+                details: details + settings.detailLines + ProjectInstructions.describe(files),
+                options: settings.screenOptions,
+                beforeSignalExit: { jobs.terminateAllNow() }
+            )
+        }
         await conversation.stopThreads()
         await jobs.stopAll()
         await mcp.stop()
@@ -176,5 +175,16 @@ func runInteractive(
         await mcp.stop()
         // The screen has already restored the terminal by the time an error reaches here.
         fail("ask: \(error)", code: 70)
+    }
+}
+
+extension AgentConversation {
+    /// What the screen opens with: the model's label, whether the sandbox is on, the session's history and threads, the thread a
+    /// reload left shown (roadmap 0195), and the session picker when it was asked for.
+    func openingUpdates(_ settings: RunSettings, reloaded: ReloadNotice?, pickSession: Bool) -> [ConversationUpdate] {
+        [.labelVariants(settings.labelVariants), .sandboxActive(!settings.sandbox.isUnrestricted)]
+            + history() + restoreThreads()
+            + (reloaded?.focusThread.map { [.focusThread(id: $0)] } ?? [])
+            + (pickSession ? sessionPickerOpening() : [])
     }
 }

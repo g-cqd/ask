@@ -9,6 +9,9 @@ In a git repository the status line ends with its state: `main ↑2 ↓1 · 3 ch
 upstream, files changed, and the branch's open pull request on GitHub), shorter as the window narrows. ask reads it itself, at the
 start, after each tool call and when a run ends, in a way that runs nothing the repository's own configuration names.
 
+While the screen is open, anything written to ask's standard error (by a library it uses, never by ask itself) goes to
+`~/.local/state/ask/stderr.log` and not onto the screen; when you quit, ask says so if something was written.
+
 The status line starts with a spinner while ask works. It reads `Compacting...` in purple while the conversation is being summarised, and
 `Reconnecting...` in yellow while ask waits to try again after the connection dropped; neither adds anything to the conversation.
 Right after its mark it names the folder ask works in, by its last folder (`ui.statusPath`: `"home"` or `"full"` for more, `"off"`
