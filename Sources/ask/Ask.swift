@@ -18,7 +18,7 @@ struct Ask: AsyncParsableCommand {
         subcommands: [
             Login.self, Logout.self, ModelsCommand.self, ConnectionsCommand.self, Sessions.self, ConfigCommand.self,
             TrustCommand.self, SkillsCommand.self, KeysCommand.self,
-            UntrustCommand.self
+            UntrustCommand.self, ForgeCommand.self
         ]
     )
 

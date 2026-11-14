@@ -7,7 +7,9 @@ questions and approvals open just above the box.
 
 In a git repository the status line ends with its state: `main ↑2 ↓1 · 3 changed · #42` (the branch, commits ahead of and behind its
 upstream, files changed, and the branch's open pull request on GitHub), shorter as the window narrows. ask reads it itself, at the
-start, after each tool call and when a run ends, in a way that runs nothing the repository's own configuration names.
+start, after each tool call and when a run ends, in a way that runs nothing the repository's own configuration names. What it
+asks GitHub (the pull request, and the list `#` offers) is asked by a short-lived `ask forge` process, at the start and at most
+every five minutes after a run, so an ask you have not spoken to yet keeps no network code in memory.
 
 While the screen is open, anything written to ask's standard error (by a library it uses, never by ask itself) goes to
 `~/.local/state/ask/stderr.log` and not onto the screen; when you quit, ask says so if something was written.

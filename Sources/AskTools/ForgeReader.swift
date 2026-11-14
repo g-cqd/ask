@@ -105,7 +105,8 @@ public enum ForgeReader {
         "https://api.github.com/repos/\(repository.owner)/\(repository.name)"
     }
 
-    private static func repository(of workspace: String, path: String?) async -> ForgeReferences.Repository? {
+    /// The GitHub repository `workspace`'s `origin` names, or nil: asked of git alone, nothing of the network.
+    static func repository(of workspace: String, path: String?) async -> ForgeReferences.Repository? {
         await GitQuery.output(["remote", "get-url", "origin"], in: workspace, path: path)
             .flatMap(ForgeReferences.repository(fromRemote:))
     }
