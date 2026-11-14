@@ -49,8 +49,9 @@ public enum Budget {
     /// tool, drawing (ADR-0053).
     ///
     /// Measured 2.5–2.9 ms median, 3.1 ms p95, the same fresh and after 500 turns. The next request leaves about
-    /// 1.5 ms later (4.0–4.5 ms, growing slightly with history). A sandboxed `bash` command adds its spawn,
-    /// about 16 ms in all. Set at 5 ms, then 8 ms by the owner (ADR-0122).
+    /// 1.5 ms later (4.0–4.5 ms, growing slightly with history). A sandboxed `bash` command adds its check,
+    /// its shell and the sandbox: 55 ms for a new command and 33 ms for a repeated one on an M2 Pro with Homebrew's bash and
+    /// shellcheck (diary 2026-11-14-07; it was 16 ms before the check existed). Set at 5 ms, then 8 ms by the owner (ADR-0122).
     public static let actionToActionMilliseconds: Double = 8
 
     /// Whether a measurement is inside budget.

@@ -10,8 +10,10 @@ reader notes when the frame showing the tool's ✓ is drawn; the server notes wh
   shown: last byte of the tool-call response  ->  the frame showing the tool finished
   next:  last byte of the tool-call response  ->  the next request received
 
-for `read` of a small file (in-process: ask's own work) and for `bash echo` (adds the sandboxed spawn). Isolated
-configuration and state, no credentials. With history-turns, every run resumes a session of that many turns.
+for `read` of a small file (in-process: ask's own work) and for `bash echo` (adds the check, the shell and the sandbox).
+Isolated configuration and state, no credentials. The run's HOME is an empty folder, not the account's, so the sandbox
+protects two homes and its profile costs about 30 ms more than a person's does (diary 2026-11-14-07): the bash figure
+here is for comparing builds, not what a person waits. With history-turns, every run resumes a session of that many turns.
 With narrow, the model first narrows the session to network none; timing starts at the subsequent tool response.
 With warm, a distinct read runs first instead, for a matched warm-transport control without session narrowing.
 """
