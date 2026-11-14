@@ -41,7 +41,8 @@ python3 Scripts/check-layers.py # ADR-0009's target layering over the manifest; 
 Scripts/roadmap.sh open         # the open roadmap entries, read from their front matter
 ask --provider NAME --model ID  # a provider from ~/.config/ask/providers.json (ADR-0027)
 swift test -c release --enable-testable-imports   # tests, without re-linting
-python3 Scripts/measure-budgets.py .build/release/ask 12   # the four budgets
+python3 Scripts/measure-budgets.py .build/release/ask 12   # the five budgets
+Scripts/install.sh              # build, measure the budgets, install in ~/.local/bin only when they hold
 python3 Scripts/measure-action.py .build/release/ask 10 500  # the action, in detail, after 500 turns
 Scripts/fuzz.sh 60 sse          # libFuzzer on the byte parsers (Fuzz/); weekly in CI; a finding becomes a red test, then a seed
 ```
@@ -191,10 +192,11 @@ Diary claims are per day (`--date YYYY-MM-DD` when needed). Claims cover this cl
 From a clean task worktree, `Scripts/land.sh` integrates, runs the full gate, fast-forwards local main and removes that task's worktree/branch; `--keep` retains it.
 It never pushes. A failed gate/conflict keeps the task intact. Inspect the owner before removing a stale `.git/ask-land.lock`.
 
-**Reinstall at the end of every session (the owner, 2026-11-11).** Before ending a working session, build the release binary from
-the landed main (`swift build -c release --product ask`) and install it as `~/.local/bin/ask`: stage it beside the target with
-`mktemp`, `install -m 755`, check that the staged copy runs `--help`, then `mv` it over, so a failed build never replaces a working
-binary. Say in the final report which commit it was built from, or why it was not installed.
+**Reinstall at the end of every session (the owner, 2026-11-11).** Before ending a working session, run `Scripts/install.sh` from
+the landed main: it builds the release binary, measures the five budgets under load and replaces `~/.local/bin/ask` only when all
+hold (staged beside the target, run once, moved over it), so neither a failed build nor one over budget replaces a working binary.
+A refusal is reported, not retried until it passes: that would be the best run. Say in the final report which commit it was built
+from, or why it was not installed.
 
 Atomic and buildable. The message states **why** — the diff already says what. Never mix a refactor
 and a behaviour change. Slice by behaviour, not by file type.
