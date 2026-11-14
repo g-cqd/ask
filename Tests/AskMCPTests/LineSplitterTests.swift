@@ -62,4 +62,18 @@ struct LineSplitterTests {
     @Test func `a line exactly at the limit is a line`() {
         #expect(lines(["0123456789\n"], limit: 10) == ["0123456789"])
     }
+
+    /// Found by the fuzzer (roadmap 0232): the limit was applied only to a line still waiting for its end, so the same line was
+    /// refused in pieces and accepted when it came whole, or when its end came with the last piece.
+    @Test func `a line past the limit is refused the same way whole, in pieces, or ended by its last piece`() {
+        let long = "ok\n" + String(repeating: "x", count: 11) + "\nafter\n"
+        for chunks in [
+            [long], ["ok\n", "xxxxxx", "xxxxx\nafter\n"], ["ok\nxxxxxxxxx", "xx\n", "after\n"], long.map { String($0) }
+        ] {
+            var splitter = LineSplitter(maximumLineBytes: 10)
+            let made = chunks.flatMap { splitter.feed(Array($0.utf8)).map { String(decoding: $0, as: UTF8.self) } }
+            #expect(made == ["ok"], "\(chunks.count) chunks")
+            #expect(splitter.overflowed, "\(chunks.count) chunks")
+        }
+    }
 }
