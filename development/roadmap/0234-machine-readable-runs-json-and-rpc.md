@@ -24,3 +24,8 @@ A probe reads a `--json` run's lines and finds each event kind; the RPC mode dri
 `hook_continued` and `finished`, each `{"v":1,"type":…}`, then an `end` line with the session and the tokens. Tested
 (`JSONEventWriterTests`, red with the input as a string) and live (`Scripts/probe-print-json.py`). Step 2, the RPC mode, is next for
 ACP.
+
+## Step 2: decided, design proposed (2026-11-14, ADR-0153)
+
+The owner chose ACP as serve's protocol and the whole conversation as a served session, so this step and roadmap 0235 are one
+piece of work. The wire is AemiJSONRPC's (already in the pinned AemiJSON). The design and the order of work are proposed in `development/research/serve-design-2026-11-14.md`; nothing is built.

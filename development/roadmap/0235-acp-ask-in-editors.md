@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-11-13
 ---
@@ -14,3 +14,7 @@ replies and thinking, tool calls, ask's approvals and questions as the editor's 
 ## Done when
 
 Zed runs ask through ACP for a prompt with a tool call and an approval (checked by the owner), and a probe drives the protocol.
+
+## 2026-11-14
+
+One with roadmap 0234 step 2: `ask serve` is the ACP agent (ADR-0153), not a second front named `--acp`.
