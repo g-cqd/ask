@@ -61,6 +61,10 @@ ask -p "summarise the changes on this branch"
 `-p` runs one prompt with the same tools and sandbox, prints the answer and exits. A question the sandbox would put to you is refused
 instead, since nobody is there to answer.
 
+For a script, `ask -p "…" --json` writes the run to standard output as JSON lines, one event each, every one with `"v":1` and a
+`type`: `text`, `thinking`, `tool_call` (with its `input`), `tool_result`, `response` (with the tokens used), `retry`, `finished`, and
+a last `end` naming the session file. ask's own messages stay on standard error.
+
 ## Next
 
 - [The screen and its keys](screen.md)
