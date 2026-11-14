@@ -16,6 +16,7 @@ Swift 6.4, macOS 26 and a clone. Anyone but the author starts at the wrong end.
    (today it records a format version, not a build). The scheme is a decision (an ADR): a date, a counter or semantic versions.
 2. **A release script** that builds the shipping binary (not the testable one, which the tests overwrite and which is larger), checks its size against the last release
    and runs the four budgets, and writes the binary, its checksum and the commit.
+   Since 2026-11-14 `Scripts/install.sh` gates the local install on the budgets (roadmap 0232); the release script reuses it.
 3. **An install path** the README can state in three lines, and an upgrade path: what happens to `~/.config/ask` and to sessions written by an older build (the session
    format is versioned and an upgrade keeps a backup, `SessionFile.swift`; what an *older* build does with a *newer* file is to be probed, not assumed).
 4. **The session format's baseline (ADR-0144).** Before the first release candidate, 1.0.0-rc.1, remove every `SessionMigration`

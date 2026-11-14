@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-11-13
 ---
@@ -28,6 +28,14 @@ child process (ADR-0152). About 3 MiB is what linking AppKit, PDFKit, AVFoundati
 the owner chose to change the budget rather than load them late (ADR-0151: 24 MiB idle, 30 active). Under the gate: idle
 22.4 MiB before, 17.2 after; active 27.6; all five budgets hold.
 
+## Step 3: done (2026-11-14, diary 2026-11-14-06)
+
+No release exists to gate (roadmap 0070), so the owner put the budgets where a build ships today: `Scripts/install.sh` builds the
+shipping binary, measures the five budgets under load and installs only when all hold. Broken once on purpose: it refused. Cold
+start is strict, as measured (the owner, with the evening's numbers: its loaded median is 30 to 97 ms on a Mac in use). The
+unloaded numbers are in the diary. Found and passed on: a sandboxed command costs 97 ms, 42 of them the profile's compilation.
+
 ## Done when
 
-Fuzzers run weekly with no open crash, memory is under budget, and the release workflow runs the budgets.
+Fuzzers run weekly with no open crash, memory is under budget, and the release workflow runs the budgets (the install, until
+there is a release).

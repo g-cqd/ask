@@ -59,6 +59,11 @@ guards that keep it the same launch as a parsed empty command line. Five other l
 fixups, async main, library count, page faults, a size-optimised build). A profile of 60 launches puts 26% of samples in the
 loader resolving ask's 2,020 imported symbols and 24% in system initializers that any Foundation program pays.
 
+## Decided for the install (2026-11-14, diary 2026-11-14-06)
+
+`Scripts/install.sh` refuses an install whose loaded cold-start median is over 50 ms: strict, as measured (the owner). On mbp23
+in use the loaded median ran from 30 to 97 ms in one evening, each cohort split between launches near 30 ms and near 105 ms.
+
 ## Still owed
 
 - Decide, with the owner, how budget verification should treat the efficiency-core share (ADR-0038 set the budgets):
