@@ -1,0 +1,12 @@
+m{"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2025-11-25","capabilities":{"tools":{"listChanged":true},"resources":{"subscribe":true}},"serverInfo":{"name":"s","version":"1","title":"S"},"instructions":"x"}}
+{"jsonrpc":"2.0","id":2,"result":{"tools":[{"name":"t","title":"T","description":"d","inputSchema":{"type":"object","properties":{"q":{"type":"string"}},"required":["q"]},"annotations":{"readOnlyHint":true,"destructiveHint":false}}],"nextCursor":"c"}}
+{"jsonrpc":"2.0","id":3,"result":{"content":[{"type":"text","text":"ok"},{"type":"image","data":"aGk=","mimeType":"image/png"},{"type":"resource","resource":{"uri":"x://a","text":"b","mimeType":"text/plain"}},{"type":"resource_link","uri":"x://b","name":"n"}],"isError":false,"structuredContent":{"a":1}}}
+{"jsonrpc":"2.0","id":4,"result":{"resources":[{"uri":"x://a","name":"a","title":"A","description":"d","mimeType":"text/plain","size":3}],"resourceTemplates":[{"uriTemplate":"x://{id}","name":"t"}],"contents":[{"uri":"x://a","text":"b"},{"uri":"x://c","blob":"aGk=","mimeType":"image/png"}]}}
+{"jsonrpc":"2.0","id":5,"error":{"code":-32601,"message":"Method not found","data":{"x":1}}}
+{"jsonrpc":"2.0","id":"s","method":"roots/list"}
+{"jsonrpc":"2.0","method":"notifications/progress","params":{"progressToken":7,"progress":1,"total":2,"message":"m"}}
+{"jsonrpc":"2.0","method":"notifications/resources/updated","params":{"uri":"x://a"}}
+not json
+{"jsonrpc":"1.0"}
+[1,2]
+
