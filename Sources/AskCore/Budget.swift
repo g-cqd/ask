@@ -25,14 +25,16 @@ public enum Budget {
     /// Measured 5,712 KiB median with a 32 KiB spread when the budget was first set at 8 MiB, over a program with no
     /// agent in it. With the loop, providers, tools and the full-screen interface the median is about 9 MiB, so the
     /// 8 MiB limit was exceeded for a long time and reported nothing useful. The owner raised it to 24 MiB (ADR-0038) and,
-    /// on 2026-10-28, set it to 15 MiB (ADR-0122; 12.0 MiB measured, ADR-0116 added about 2). It is a ceiling that
-    /// catches a regression: a change that adds memory still needs its before and after numbers.
-    public static let idleMemoryMebibytes: Int = 15
+    /// on 2026-10-28, set it to 15 MiB (ADR-0122; 12.0 MiB measured, ADR-0116 added about 2), then, on 2026-11-14, to 24 MiB
+    /// (ADR-0151): 16.4 MiB measured, 3 of them what linking AppKit, PDFKit, AVFoundation and FoundationModels costs before any
+    /// call. It is a ceiling that catches a regression: a change that adds memory still needs its before and after numbers.
+    public static let idleMemoryMebibytes: Int = 24
 
     /// Resident memory right after a tool call has been answered and shown (the model asked, `read` ran, the result is on
     /// screen), in mebibytes. The owner chose 20 on 2026-10-28 (ADR-0122), and raised it to 25 on 2026-11-02 (roadmap 0088): 24,016 KiB
-    /// measured, most of what is left being the frameworks URLSession loads at its first request. It is checked on a loaded machine.
-    public static let activeMemoryMebibytes: Int = 25
+    /// measured, most of what is left being the frameworks URLSession loads at its first request. Raised to 30 on 2026-11-14
+    /// (ADR-0151; 27.7 MiB measured, the same linking cost on top). It is checked on a loaded machine.
+    public static let activeMemoryMebibytes: Int = 30
 
     /// One byte written to the terminal to its echo reaching the output stream, in milliseconds.
     ///

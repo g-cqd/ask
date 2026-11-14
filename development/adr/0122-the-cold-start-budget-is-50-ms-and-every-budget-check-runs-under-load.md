@@ -33,6 +33,10 @@ time to the first usable frame may be 50 ms.
 Not run for this ADR: the harness change is exercised by `Scripts/test-measurements.py`, and the loaded numbers are recorded in
 the diary entry of the same day.
 
+## Amendment (2026-11-14)
+
+The memory numbers below are replaced by ADR-0151 (24 MiB idle, 30 MiB active). The rest stands.
+
 ## Amendment (2026-10-28, later)
 
 The owner set the numbers, all to be assessed on a loaded machine: cold start 50 ms; idle memory 15 MiB (was 24); **active memory 20 MiB (new: resident size right after a tool call is answered and shown, sampled by `Scripts/measure-action.py`)**; input delay 4 ms (was 2); action to result 8 ms (was 5). "Input and action not above 8 ms, and input below 4" was read as action 8 and input 4.

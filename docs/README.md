@@ -10,7 +10,7 @@ ask is a terminal coding agent for macOS. What it gives you:
 - **Tasks and notes.** The model keeps a task list (`tasks`, `/tasks`), and `/notes` saves your own notes as you work without interrupting a turn.
 - **Your skills, MCP servers and hooks.** Skills written for other harnesses work as they are; MCP servers add tools and resources; hooks can check a run before it finishes.
 - **No setup needed.** `ask config` shows every setting, its default, and where it came from.
-- **Fast and light, by number.** A 50 ms cold start, 15 MiB idle, 25 MiB active, 4 ms from a key press to the screen, 8 ms from a tool call to its result: `ask --budgets` prints these budgets,
+- **Fast and light, by number.** A 50 ms cold start, 24 MiB idle, 30 MiB active, 4 ms from a key press to the screen, 8 ms from a tool call to its result: `ask --budgets` prints these budgets,
   and the release build is measured against them.
 
 ## The guide

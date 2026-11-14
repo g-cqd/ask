@@ -119,10 +119,10 @@ struct BudgetTests {
         }
     }
 
-    @Test func `the idle memory budget is the 15 MiB the owner chose, so changing it is a deliberate act`() {
-        // ADR-0122 (earlier ADR-0038 set 24). The earlier 8 MiB had been exceeded since before the agent loop landed; the measured median is
-        // about 9 MiB. Moving this number again means editing this test and writing down why.
-        #expect(Budget.idleMemoryMebibytes == 15)
+    @Test func `the idle memory budget is the 24 MiB the owner chose, so changing it is a deliberate act`() {
+        // ADR-0151 (ADR-0038 set 24, ADR-0122 15). The earlier 8 MiB had been exceeded since before the agent loop landed. Moving
+        // this number again means editing this test and writing down why.
+        #expect(Budget.idleMemoryMebibytes == 24)
     }
 
     @Test func `the cold start budget is the 50 ms the owner chose, so changing it is a deliberate act`() {
@@ -131,8 +131,8 @@ struct BudgetTests {
     }
 
     @Test func `active memory and the delays are the numbers the owner chose`() {
-        // ADR-0122, 2026-10-28; active memory raised to 25 by the owner on 2026-11-02 (roadmap 0088).
-        #expect(Budget.activeMemoryMebibytes == 25)
+        // ADR-0122, 2026-10-28; active memory raised to 25 by the owner on 2026-11-02 (roadmap 0088), to 30 on 2026-11-14 (ADR-0151).
+        #expect(Budget.activeMemoryMebibytes == 30)
         #expect(Budget.inputDelayMilliseconds == 4)
         #expect(
             !Budget.isWithinBudget(
@@ -140,7 +140,7 @@ struct BudgetTests {
                 idleMemoryMebibytes: 5,
                 inputDelay: 0.1,
                 action: 1,
-                activeMemoryMebibytes: 25.5
+                activeMemoryMebibytes: 30.5
             )
         )
         #expect(
@@ -149,7 +149,7 @@ struct BudgetTests {
                 idleMemoryMebibytes: 5,
                 inputDelay: 0.1,
                 action: 1,
-                activeMemoryMebibytes: 25
+                activeMemoryMebibytes: 30
             )
         )
     }
