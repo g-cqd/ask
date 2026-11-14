@@ -6,8 +6,9 @@ internal import Foundation
 ///
 /// Parsing runs nothing: `-n` reads without executing, the environment is the PATH alone (no `BASH_ENV`, which bash would source even
 /// then), zsh skips its startup files (`-f`) and fish its configuration. shellcheck reads the command from its input and no
-/// `.shellcheckrc` (`--norc`). Costs measured on an M3: 2 to 8 ms to parse, about 23 ms for shellcheck. A check that cannot run lets
-/// the command run as it would have; one that takes more than 3 s does too, and the result says it was not checked.
+/// `.shellcheckrc` (`--norc`). Costs measured on an M3: 2 to 8 ms to parse, about 23 ms for shellcheck, which is its start alone; so
+/// it starts while the shell parses, and a command that does not parse does not wait for it (diary 2026-11-14-07). A check that cannot
+/// run lets the command run as it would have; one that takes more than 3 s does too, and the result says it was not checked.
 enum CommandCheck {
     struct Result: Sendable, Equatable {
         /// What the shell said, when the command does not parse.
@@ -34,6 +35,10 @@ enum CommandCheck {
         let parse = parsing(command, with: name)
         let environment = environment(path: path)
         var result = Result()
+        let shellcheck = name == "bash" || name == "sh" ? executable("shellcheck", path: path) : nil
+        let lint = shellcheck.map { shellcheck in
+            Task { await run(shellcheck, linting(name), input: command, environment: environment, deadline: deadline) }
+        }
         let parsed = await run(shell, parse, environment: environment, deadline: deadline)
         result.unchecked = parsed == .late
         if case .ran(let parsed) = parsed, parsed.status != 0 {
@@ -41,10 +46,7 @@ enum CommandCheck {
             result.syntaxError = said.isEmpty ? "\(name) could not parse it" : said
             return result
         }
-        guard name == "bash" || name == "sh", let shellcheck = executable("shellcheck", path: path) else {
-            return result
-        }
-        let linted = await run(shellcheck, linting(name), input: command, environment: environment, deadline: deadline)
+        guard let linted = await lint?.value else { return result }
         if linted == .late { result.unchecked = true }
         if case .ran(let checked) = linted {
             result.findings = checked.output.split(separator: "\n").prefix(maximumFindings)
