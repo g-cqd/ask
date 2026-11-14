@@ -107,6 +107,13 @@ class MeasurementTests(unittest.TestCase):
              contextlib.redirect_stdout(io.StringIO()), contextlib.redirect_stderr(io.StringIO()):
             self.assertEqual(budgets.main(), 1)
 
+    def test_a_command_is_measured_without_its_approval_question(self):
+        # The bash leg completed 0 of 10 runs for as long as commands were asked about: each waited at the question.
+        self.assertEqual(action.launch_arguments('bash')[1:], ['--yes'])
+        self.assertEqual(action.launch_arguments('bash', '/h.jsonl')[1:], ['--yes', '--resume', '/h.jsonl'])
+        self.assertEqual(action.launch_arguments('read')[1:], [])
+        self.assertEqual(action.launch_arguments('read', '/h.jsonl')[1:], ['--resume', '/h.jsonl'])
+
     def test_p95_uses_nearest_rank_in_a_small_sample(self):
         # With 12 samples p95 is the last, not the second-to-last (91.7th percentile).
         self.assertIn('p95 12.00', action.summary(list(range(1, 13))))

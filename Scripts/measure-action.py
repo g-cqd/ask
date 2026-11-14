@@ -94,6 +94,13 @@ def history_file(state, project, turns):
     return path
 
 
+def launch_arguments(tool, history=None):
+    """ask's arguments for a run that measures `tool`. A command is asked about before it runs, and the question would be timed as
+    the action (every bash run waited at it, so none completed): `--yes` answers it. `read` is never asked about, and runs as before."""
+    arguments = [BINARY] + (["--yes"] if tool == "bash" else [])
+    return arguments + (["--resume", history] if history else [])
+
+
 last_rss_kb = ""
 
 
@@ -110,9 +117,7 @@ def one_run(tool):
         open(os.path.join(project, "warm.txt"), "w").write("warm transport\n")
         responses.insert(0, agent.turn([("call", "warm", "read", {"path": "warm.txt"})], "tool_use"))
     server = TimedServer(responses)
-    arguments = [BINARY]
-    if HISTORY:
-        arguments += ["--resume", history_file(state, os.path.realpath(project), HISTORY)]
+    arguments = launch_arguments(tool, history_file(state, os.path.realpath(project), HISTORY) if HISTORY else None)
     pid, fd = pty.fork()
     if pid == 0:
         # The size is set before exec: ask reads it at once, and setting it from the parent races that read.
