@@ -219,6 +219,12 @@ let package = Package(
             ],
             swiftSettings: packageSettings
         ),
+        // Codemode's VM (ADR-0156): JavaScriptCore hosting one script whose only way out is the tools it is handed. It knows
+        // none of ask's libraries; the hidden `ask codemode` runs it in a process of its own.
+        .target(
+            name: "AskCodemode",
+            swiftSettings: packageSettings
+        ),
         // `ask serve`: the Agent Client Protocol on a connection (ADR-0153), over AemiJSONRPC. The one place that knows the protocol.
         .target(
             name: "AskACP",
@@ -287,6 +293,12 @@ let package = Package(
             ],
             path: "Tests/AskMCPTests",
             exclude: ["Fixtures"],
+            swiftSettings: packageSettings
+        ),
+        .testTarget(
+            name: "AskCodemodeTests",
+            dependencies: ["AskCodemode"],
+            path: "Tests/AskCodemodeTests",
             swiftSettings: packageSettings
         ),
         .testTarget(
