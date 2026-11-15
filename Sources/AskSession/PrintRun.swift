@@ -77,7 +77,7 @@ func runPrompt(
 )
     async
 {
-    let workingDirectory = FileManager.default.currentDirectoryPath
+    let workingDirectory = source.workspace
     let directory = SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values)
     let model = settings.model
     say(startupNotices + settings.description)

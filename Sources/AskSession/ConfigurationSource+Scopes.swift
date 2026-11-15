@@ -15,6 +15,7 @@ extension ConfigurationSource {
     ) async throws -> (model: ResolvedModel, notices: [String], details: [String]) {
         var choice = choice
         choice.scope = ModelScopeGate.match(configuration, project: workspace, environment: environment)
+        choice.onlyUsefulModels = configuration.ui.value.onlyUsefulModels ?? true
         let discovered = try await ModelDiscovery.resolve(
             providers: providers,
             provider: provider,

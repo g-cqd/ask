@@ -19,10 +19,10 @@ enum ModelChoices {
     }
 
     /// The rows, the current model's provider first.
-    static func rows(current: ResolvedModel, environment: [String: String]) async -> [ChoiceRow] {
+    static func rows(current: ResolvedModel, project: String, environment: [String: String]) async -> [ChoiceRow] {
         let now = Date().timeIntervalSince1970
         // Only the providers the project's modelScopes rule allows (roadmap 0094).
-        let scope = ModelScopeGate.current(environment: environment)
+        let scope = ModelScopeGate.current(project: project, environment: environment)
         let listings = Self.listings(environment: environment, now: now).filter { scope?.allows($0.provider) ?? true }
         let results = await withTaskGroup(of: (String, Result<[CatalogModel], any Error>).self) { group in
             for listing in listings {
@@ -32,7 +32,7 @@ enum ModelChoices {
             for await (provider, result) in group { all[provider] = result }
             return all
         }
-        let onlyUseful = ModelFilter.onlyUseful(environment: environment)
+        let onlyUseful = ModelFilter.onlyUseful(project: project, environment: environment)
         let currentName = current.connection?.name ?? current.providerName
         var ordered = listings.map(\.provider)
         if let index = ordered.firstIndex(of: currentName) { ordered.insert(ordered.remove(at: index), at: 0) }

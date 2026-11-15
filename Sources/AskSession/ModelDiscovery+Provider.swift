@@ -22,6 +22,8 @@ extension ModelDiscovery {
         var thinking = ThinkingLevel.providerDefault
         /// The project's `modelScopes` rule: inference passes over the providers it does not allow (roadmap 0094).
         var scope: ModelScopeMatch?
+        /// `ui.onlyUsefulModels` of the project's configuration: whether a model picked from a catalog passes over the ones of no use.
+        var onlyUsefulModels = true
     }
 
     /// The provider and model once `provider/model` is read and, for a model no provider was named for, the provider that serves it is found

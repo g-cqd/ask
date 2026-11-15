@@ -21,7 +21,9 @@ struct ModelsCommand: AsyncParsableCommand {
     func run() async throws {
         let environment = LaunchEnvironment.values
         let named = connection == "claude" ? ProviderSettings.anthropic : connection
-        if let scope = ModelScopeGate.current(environment: environment), !scope.allows(named) {
+        // A command of the terminal, about the folder it was typed in.
+        let project = FileManager.default.currentDirectoryPath
+        if let scope = ModelScopeGate.current(project: project, environment: environment), !scope.allows(named) {
             fail("ask: \(scope.refusal(of: named))", code: 78)
         }
         do {

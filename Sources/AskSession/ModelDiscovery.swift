@@ -115,6 +115,7 @@ package enum ModelDiscovery {
             return try await fromCodexCatalog(
                 connection,
                 environment: environment,
+                onlyUseful: choice.onlyUsefulModels,
                 allowNetwork: allowNetwork,
                 resolve: resolve,
                 notices: notices
@@ -138,6 +139,7 @@ package enum ModelDiscovery {
     private static func fromCodexCatalog(
         _ connection: ConnectionRecord?,
         environment: [String: String],
+        onlyUseful: Bool,
         allowNetwork: Bool,
         resolve: ([CatalogModel]) throws -> ResolvedModel,
         notices: [String]
@@ -153,7 +155,7 @@ package enum ModelDiscovery {
             snapshot = cached
         }
         let chosen = try resolve(
-            ModelUsefulness.shown(snapshot.models, onlyUseful: ModelFilter.onlyUseful(environment: environment))
+            ModelUsefulness.shown(snapshot.models, onlyUseful: onlyUseful)
         )
         return (
             chosen,

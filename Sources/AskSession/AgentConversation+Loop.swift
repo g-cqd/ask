@@ -112,7 +112,7 @@ func runInteractive(
 ) async {
     // Before a new build can replace this one's file, which /reload compares against (roadmap 0153).
     LaunchSignature.start()
-    let workingDirectory = FileManager.default.currentDirectoryPath
+    let workingDirectory = source.workspace
     let directory = SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values)
     let details = startupDetails(resumed: resumed, reloaded: reloaded)
     let jobs = JobTable(environment: LaunchEnvironment.values)

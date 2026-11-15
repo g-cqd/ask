@@ -9,8 +9,8 @@ extension AgentConversation {
     func choices(for command: String) async -> [ChoiceRow] {
         switch command {
             case "model":
-                let model = current.withLock { $0.settings.model }
-                return await ModelChoices.rows(current: model, environment: LaunchEnvironment.values)
+                let (model, project) = current.withLock { ($0.settings.model, $0.settings.workspace) }
+                return await ModelChoices.rows(current: model, project: project, environment: LaunchEnvironment.values)
             case "config":
                 let user = configEditorPath(.user)
                 let project = configEditorPath(.project)

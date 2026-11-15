@@ -1,5 +1,4 @@
 package import AskAgentCore
-internal import Foundation
 
 /// The `modelScopes` rule for the project ask runs in (roadmap 0094, ADR-0137): what `/model`, `ask models` and the choice of a model
 /// read. No rules means no git file is read.
@@ -12,10 +11,11 @@ package enum ModelScopeGate {
         return configuration.modelScope(for: RepositoryFacts.read(project: project, environment: environment))
     }
 
-    /// The rule for the current folder, read from the effective configuration; nil when the configuration cannot be read (the run
-    /// reports that problem itself, and refuses there).
-    package static func current(environment: [String: String] = LaunchEnvironment.values) -> ModelScopeMatch? {
-        let project = FileManager.default.currentDirectoryPath
+    /// The rule for `project`, read from its effective configuration; nil when the configuration cannot be read (the run reports
+    /// that problem itself, and refuses there).
+    package static func current(project: String, environment: [String: String] = LaunchEnvironment.values)
+        -> ModelScopeMatch?
+    {
         let loader = ConfigurationLoader(
             project: project,
             configDirectory: askConfigDirectory(environment: environment),

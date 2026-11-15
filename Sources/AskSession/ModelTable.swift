@@ -8,7 +8,8 @@ package enum ModelTable {
     /// hides some, the last line says how many, so nothing leaves the list unannounced.
     package static func print(_ full: CatalogSnapshot, defaultFirst: Bool, showAll: Bool = false) {
         NamedConnections.report(full.notices)
-        let filtering = !showAll && ModelFilter.onlyUseful()
+        // A command of the terminal, about the folder it was typed in.
+        let filtering = !showAll && ModelFilter.onlyUseful(project: FileManager.default.currentDirectoryPath)
         let snapshot = CatalogSnapshot(
             models: ModelUsefulness.shown(full.models, onlyUseful: filtering),
             notices: full.notices
