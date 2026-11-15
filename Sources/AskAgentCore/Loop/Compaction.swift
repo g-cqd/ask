@@ -135,7 +135,9 @@ public enum Compaction {
                     results[id] = clipped(content, toBytes: 400, note: "omitted")
                 case .response(let response, _):
                     for case .toolCall(let id, let name, let input) in response.blocks {
-                        calls.append((id, "\(name) \(String(decoding: input.bytes, as: UTF8.self))"))
+                        // A call's input can be a whole file: its start and end say which call it was.
+                        let text = String(decoding: input.bytes, as: UTF8.self)
+                        calls.append((id, "\(name) \(clipped(text, toBytes: 2_000, note: "omitted"))"))
                     }
                 case .assistant, .destination, .unrecognized: continue
             }
@@ -150,7 +152,7 @@ public enum Compaction {
         return lines.joined(separator: "\n")
     }
 
-    private static func startsATurn(_ payload: SessionPayload) -> Bool {
+    static func startsATurn(_ payload: SessionPayload) -> Bool {
         switch payload {
             case .user, .assistant, .response: true
             case .toolResult, .compaction, .destination, .unrecognized: false

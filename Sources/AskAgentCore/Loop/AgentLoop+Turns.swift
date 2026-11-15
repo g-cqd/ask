@@ -72,6 +72,10 @@ extension AgentLoop {
 
     /// Streams one response for the tree's context, as the `request.before` hooks leave the request, and assembles it; nil when a change
     /// was offered while a retry waited. The rewrite, when hooks made one, goes with the response to be recorded.
+    ///
+    /// A request clearly longer than the window is refused here, unsent (ADR-0155), once a response has come since the last compaction:
+    /// before one, the conversation is as short as compacting makes it, so the server decides and a wrong estimate cannot end the run.
+    /// - Throws: ``AgentError/contextOverflow(_:)`` when the request is refused for its length, by the server or before it is sent.
     func respond(to tree: SessionTree, events: (AgentEvent) -> Void) async throws(AgentError)
         -> (response: AssembledResponse, rewrite: RequestRewrite?)?
     {
@@ -92,6 +96,7 @@ extension AgentLoop {
                 rewrittenBy.append(hook.name)
             }
         }
+        if Compaction.contextTokens(sinceCompactionIn: tree) != nil { try refuseIfClearlyTooLong(sent) }
         guard let response = try await stream(sent, events: events, handsOver: true) else { return nil }
         let rewrite =
             rewrittenBy.isEmpty

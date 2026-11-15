@@ -43,6 +43,10 @@ A model can only read so much at once (its context window). When the conversatio
 and keeps the recent messages word for word, then carries on. `/compact` does it now. The threshold is the `compactAt` setting
 ([Configuration](configuration.md)): a share up to 1 such as `0.6`, a number of tokens such as `100000`, or `0` to wait until the window is full.
 
+Before that, once the conversation is past 60% of the threshold, ask leaves old tool output out of what it sends, with a line saying
+so; the session file keeps it. What was left out stays out when you change model. A conversation that is still too long for the model you change to is
+summarised in several requests, each of a part that fits, so it takes longer than usual and shows as compacting the whole time.
+
 ## Encrypted sessions
 
 Sessions can be encrypted, compressed, or both (`sessionEncryption`, `sessionCompression`, `sessionPassword` in

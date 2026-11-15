@@ -12,9 +12,21 @@ struct ContextClearingTests {
 
     /// A call with reasoning, its result, `rounds` times; the last response reports `tokens`.
     private func context(rounds: Int, tokens: Int, compactedFirst: Bool = false) throws -> [SessionEntry] {
+        try context(sizes: Array(repeating: 1_000, count: rounds - 1) + [tokens], compactedFirst: compactedFirst)
+    }
+
+    /// The same, the response of each round reporting its own size; `between` is recorded before the round `at`.
+    private func context(
+        sizes: [Int],
+        compactedFirst: Bool = false,
+        between: SessionPayload? = nil,
+        at: Int = 0,
+        rewritten: Int? = nil
+    ) throws -> [SessionEntry] {
         let input = try JSONObject(validating: Array("{}".utf8))
         var payloads: [SessionPayload] = compactedFirst ? [] : [.user("start")]
-        for round in 0 ..< rounds {
+        for (round, tokens) in sizes.enumerated() {
+            if let between, round == at { payloads.append(between) }
             let response = AssembledResponse(
                 id: "m\(round)",
                 model: "x",
@@ -23,10 +35,14 @@ struct ContextClearingTests {
                     .toolCall(id: "t\(round)", name: "bash", input: input)
                 ],
                 stopReason: .toolUse,
-                usage: TokenUsage(input: round == rounds - 1 ? tokens : 1_000),
+                usage: TokenUsage(input: tokens),
                 unrecognized: []
             )
-            payloads += [.response(response), .toolResult(callID: "t\(round)", content: Self.big, isError: false)]
+            let rewrite = round == rewritten ? RequestRewrite(hooks: ["h"], bytesBefore: 9, bytesAfter: 1) : nil
+            payloads += [
+                .response(response, rewrite: rewrite),
+                .toolResult(callID: "t\(round)", content: Self.big, isError: false)
+            ]
         }
         var entries: [SessionEntry] = []
         if compactedFirst {
@@ -88,5 +104,32 @@ struct ContextClearingTests {
             $0.id == EntryID("e0") ? SessionEntry(id: $0.id, parentID: EntryID("x"), payload: $0.payload) : $0
         }
         #expect(ContextClearing.reach(in: entries, at: 90_000, keepingRecentBytes: 100_000) == nil)
+    }
+
+    /// Eight rounds reach 95,000 tokens, a clearing is made at a 90,000-token trigger, and the next response reports what is left.
+    private static let cleared = Array(repeating: 1_000, count: 7) + [95_000, 20_000, 22_000]
+
+    @Test func `a clearing made under a lower trigger reaches as far once the trigger is higher`() throws {
+        // Measured (diary 2026-11-15): 14 clearings at a 408,945-token trigger, then a model whose trigger was 463,200; no response
+        // had reached it, nothing was cleared, and the request went from 240,000 tokens to 3,330,961.
+        let entries = try context(sizes: Self.cleared)
+        let made = try #require(ContextClearing.reach(in: entries, at: 90_000, keepingRecentBytes: 100_000))
+        #expect(ContextClearing.reach(in: entries, at: 150_000, keepingRecentBytes: 100_000) == made)
+    }
+
+    @Test func `a smaller count from another destination is that model's count, not a clearing`() throws {
+        let other = SessionDestination(connectionID: "provider:b", authorizationID: nil, name: "b", model: "y")
+        let entries = try context(sizes: Self.cleared, between: .destination(other), at: 8)
+        #expect(ContextClearing.reach(in: entries, at: 150_000, keepingRecentBytes: 100_000) == nil)
+    }
+
+    @Test func `a smaller count after a hook rewrote the request is the hook's doing, not a clearing`() throws {
+        let entries = try context(sizes: Self.cleared, rewritten: 8)
+        #expect(ContextClearing.reach(in: entries, at: 150_000, keepingRecentBytes: 100_000) == nil)
+    }
+
+    @Test func `a count that falls by less than an eighth is not taken for a clearing`() throws {
+        let entries = try context(sizes: Array(repeating: 1_000, count: 7) + [95_000, 85_000, 86_000])
+        #expect(ContextClearing.reach(in: entries, at: 150_000, keepingRecentBytes: 100_000) == nil)
     }
 }

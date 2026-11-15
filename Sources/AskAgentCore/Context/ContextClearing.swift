@@ -22,16 +22,47 @@ enum ContextClearing {
     }
 
     /// The index in `context` before which output and reasoning are cleared, or nil when nothing is: the cut of the kept tail
-    /// (`keep` bytes) at the last response whose size reached `trigger` and whose clearing freed enough.
+    /// (`keep` bytes) at the last response whose size reached `trigger` and whose clearing freed enough, or after which a clearing
+    /// shows in the sizes.
+    ///
+    /// The trigger is the current model's, and a clearing may have been made under a lower one, before a change of model or of
+    /// `compactAt`. Measured (ADR-0155): 14 clearings at 408,945 tokens, then a model whose trigger was 463,200; no response had
+    /// reached it, so nothing was cleared and a 240,000-token request became one of 3,330,961. A context only grows, so a response
+    /// much smaller than the one before it, to the same model and as ask built it, is a clearing that was made: it is kept.
     static func reach(in context: [SessionEntry], at trigger: Int, keepingRecentBytes keep: Int) -> Int? {
         var reach: Int?
+        var before: (index: Int, size: Int, model: String)?
+        /// Moves the reach to the kept tail's cut at the response at `index`, when that clears at least `least` bytes more.
+        func clear(at index: Int, freeing least: Int) {
+            guard let cut = Compaction.cut(context[...index], keepingRecentBytes: keep), cut > (reach ?? 0) else {
+                return
+            }
+            if freed(context[(reach ?? 0) ..< cut]) >= Swift.max(minimumBytes, least) { reach = cut }
+        }
         for index in firstNew(in: context) ..< context.count {
-            guard case .response(let response, _) = context[index].payload, size(response.usage) >= trigger,
-                let cut = Compaction.cut(context[...index], keepingRecentBytes: keep), cut > (reach ?? 0)
-            else { continue }
-            if freed(context[(reach ?? 0) ..< cut]) >= Swift.max(minimumBytes, trigger) { reach = cut }
+            switch context[index].payload {
+                case .destination: before = nil
+                case .response(let response, let rewrite):
+                    let size = size(response.usage)
+                    if let earlier = before, rewrite == nil, earlier.model == response.model,
+                        fell(from: earlier.size, to: size)
+                    {
+                        clear(at: earlier.index, freeing: earlier.size - size)
+                    }
+                    // A request hooks rewrote, or one with no count, says nothing of the context's size.
+                    before = rewrite == nil && size > 0 ? (index, size, response.model) : nil
+                    if size >= trigger { clear(at: index, freeing: trigger) }
+                default: continue
+            }
         }
         return reach
+    }
+
+    /// Whether a response of `size` tokens after one of `earlier` shows a clearing between them: smaller by an eighth, and by what the
+    /// least clearing frees at eight bytes a token. A clearing frees a quarter of the context or more; a model that drops its earlier
+    /// reasoning, or counts a little differently from one request to the next, frees less.
+    private static func fell(from earlier: Int, to size: Int) -> Bool {
+        earlier - size >= Swift.max(minimumBytes / 8, earlier / 8)
     }
 
     /// `payload` as a request before the reach sends it.

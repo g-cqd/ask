@@ -14,6 +14,9 @@ public struct AgentSettings: Sendable, Equatable {
     /// When the threshold was asked as a share of the window, that percentage: a window the server shows later is then compacted at the same
     /// share of it, rather than at the tokens worked out before it was known (roadmap 0104).
     public var compactAtShare: Int?
+    /// The model's context window in tokens, when its provider or the configuration says; nil when only a refusal can show it. A request
+    /// clearly longer than it is compacted before it is sent (ADR-0155).
+    public var contextWindow: Int?
     /// How much of the recent conversation a compaction keeps word for word, in bytes of text.
     public var keepRecentBytes: Int
     /// How much tool output one turn may add, in bytes, shared by its calls; nil for no limit beyond the tools' own.
