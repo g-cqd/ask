@@ -8,6 +8,8 @@ A: one session: initialize, session/new, a prompt with two tool calls in it, a s
    client, which allows the first and denies the second; the session file is the one the id names.
 B: two sessions in two folders: each keeps its own file and its own history.
 C: nothing but protocol messages on standard output, and ask ends when its input does.
+E: a prompt whose command sleeps is cancelled: it answers `cancelled` at once, the command is gone, the session goes on; and a
+   line that is not JSON is answered, with what follows it taken in its order.
 D: a second `ask serve` loads the first session: its prompts, answers and calls are replayed in order before the answer, and the
    next prompt continues it in the same file.
 
@@ -19,6 +21,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import time
 
 here = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("agent_probe", os.path.join(here, "probe-agent-run.py"))
@@ -37,6 +40,8 @@ class Client:
         self.next_id, self.lines, self.not_json = 1, [], []
         # The option chosen for each permission ask makes, in order; "once" when the list is used up.
         self.choices, self.asked = [], []
+        # Called with each message read while a request waits for its answer, and with this client.
+        self.watch = None
 
     def request(self, method, params):
         """The answer to the request, and the notifications that came before it."""
@@ -58,12 +63,18 @@ class Client:
             if parsed.get("id") == identifier and "method" not in parsed:
                 return parsed, before
             before.append(parsed)
+            if self.watch:
+                self.watch(parsed, self)
             if parsed.get("method") == "session/request_permission":
                 self.asked.append(parsed["params"])
                 chosen = self.choices.pop(0) if self.choices else "once"
                 reply = {"jsonrpc": "2.0", "id": parsed["id"], "result": {"outcome": {"outcome": "selected", "optionId": chosen}}}
                 self.process.stdin.write((json.dumps(reply) + "\n").encode())
                 self.process.stdin.flush()
+
+    def notify(self, method, params):
+        self.process.stdin.write((json.dumps({"jsonrpc": "2.0", "method": method, "params": params}) + "\n").encode())
+        self.process.stdin.flush()
 
     def close(self):
         """Ends the input; returns ask's exit status and what it said on standard error."""
@@ -108,6 +119,8 @@ def main():
         agent.turn([("text", "Second answer.")], "end_turn"),
         agent.turn([("text", "Hello from two.")], "end_turn"),
         agent.turn([("text", "Continued.")], "end_turn"),
+        agent.turn([("call", "t9", "bash", {"command": "sleep 47.3"})], "tool_use"),
+        agent.turn([("text", "After the cancel.")], "end_turn"),
     ])
     state = os.path.join(root, "state")
     client = Client(binary, elsewhere, agent.environment(state, server.url))
@@ -212,6 +225,39 @@ def main():
             "session/load", {"sessionId": "../" + os.path.basename(os.path.dirname(agent.sessions(state)[0])) + "/" + other,
                              "cwd": one})[0].get("error", {}).get("code") == -32002),
     ]
+    print("E: a turn is cancelled while its command runs")
+
+    def cancel_once_it_runs(message, client):
+        update = message.get("params", {}).get("update", {})
+        if update.get("toolCallId") == "t9" and update.get("sessionUpdate") == "tool_call_update" and "title" in update:
+            client.watch = None
+            client.notify("session/cancel", {"sessionId": session})
+
+    client.watch = cancel_once_it_runs
+    started = time.monotonic()
+    answer, before = client.request("session/prompt", prompt(session, "Wait a while."))
+    took = time.monotonic() - started
+    sleeping = subprocess.run(["pgrep", "-f", "sleep 47.3"], capture_output=True, text=True).stdout.split()
+    after, said_after = client.request("session/prompt", prompt(session, "And now?"))
+    results += [
+        agent.check("the prompt answers cancelled, not an error, and long before the command would have ended",
+                    answer.get("result") == {"stopReason": "cancelled"} and took < 20, (answer, round(took, 1))),
+        agent.check("the command was told as running, and is gone", any(u.get("status") == "in_progress" for u in calls(before, "t9"))
+                    and not sleeping, (calls(before, "t9"), sleeping)),
+        agent.check("the session takes the next prompt", after.get("result") == {"stopReason": "end_turn"}
+                    and chunks(said_after, "agent_message_chunk", session) == "After the cancel.", (after, said_after)),
+    ]
+    garbage = Client(binary, elsewhere, agent.environment(state, server.url))
+    garbage.process.stdin.write(b'this is not JSON\n{"jsonrpc":"2.0","id":5,"method":"session/new","params":{"cwd":"/"}}\n'
+                                b'{"jsonrpc":"2.0","id":6,"method":"initialize","params":{"protocolVersion":1}}\n')
+    garbage.process.stdin.flush()
+    answers = [json.loads(garbage.process.stdout.readline()) for _ in range(3)]
+    results += [
+        agent.check("a line that is not JSON is answered with a parse error", answers[0].get("error", {}).get("code") == -32700, answers[0]),
+        agent.check("what one write holds is taken in its order: the request before initialize is refused, initialize answered",
+                    sorted((a.get("id"), a.get("error", {}).get("code")) for a in answers[1:]) == [(5, -32600), (6, None)], answers[1:]),
+    ]
+    garbage.close()
     status, said = client.close()
     results.append(agent.check("it ends with 0 too", status == 0, (status, said[-300:])))
     server.httpd.shutdown()

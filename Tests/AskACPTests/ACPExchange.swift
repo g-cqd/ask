@@ -87,6 +87,11 @@ final class ACPExchange: JSONRPCSink, Sendable {
         send(raw: [#"{"jsonrpc":"2.0","id":\#(id),\#(body)}"# + "\n"])
     }
 
+    /// Sends the notification `method` with `params` (JSON text).
+    func notify(_ method: String, _ params: String) {
+        send(raw: [#"{"jsonrpc":"2.0","method":"\#(method)","params":\#(params)}"# + "\n"])
+    }
+
     /// Sends `text` as it is, in the pieces given: what a client that is not well behaved writes.
     func send(raw pieces: [String]) { for piece in pieces { feed.yield(Array(piece.utf8)) } }
 

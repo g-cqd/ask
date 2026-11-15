@@ -25,7 +25,7 @@ struct ACPTurnReader {
             case .notice(let reason, isError: true): failure = reason
             case .promptAccepted(let id, _): turns.take(id)
             case .promptRefused(let id): turns.refuse(id, because: failure)
-            default: await show(update)
+            default: await show(update, in: turns)
         }
         return true
     }
@@ -41,7 +41,7 @@ struct ACPTurnReader {
     }
 
     /// Tells the client of a call, asks it an approval, declines what it cannot be asked yet, or sends what ``ACPUpdate`` maps.
-    private mutating func show(_ update: ConversationUpdate) async {
+    private mutating func show(_ update: ConversationUpdate, in turns: ACPTurns? = nil) async {
         switch update {
             case .toolStarted(let name, let summary, let id?, let fullInput, let command, let path):
                 let call = ACPToolCall.Begun(
@@ -59,7 +59,7 @@ struct ACPTurnReader {
                 running.removeAll { $0.id == id }
                 await send(ACPToolCall.finished(id: id, status, output: output))
             case .askApproval(let id, let question, let kind, let detail):
-                await approve(id, question, kind, detail)
+                await approve(id, question, kind, detail, in: turns)
             // Until the client can be asked these (elicitation), nobody can answer, and a turn that waited would never end.
             case .askQuestions(let id, _): session.conversation.answer(questions: id, with: nil)
             case .askInput(let id, _, _, _): session.conversation.answer(input: id, with: nil)
@@ -69,12 +69,24 @@ struct ACPTurnReader {
     }
 
     /// Asks the client the approval the conversation asked as `id`, about the call that began last, and answers the conversation.
-    private mutating func approve(_ id: Int, _ question: String, _ kind: ApprovalKind, _ detail: String?) async {
+    private mutating func approve(
+        _ id: Int,
+        _ question: String,
+        _ kind: ApprovalKind,
+        _ detail: String?,
+        in turns: ACPTurns?
+    ) async {
         // A question no call of the model's is behind (a command of the person's own) is shown as a call of its own.
         let call = running.last ?? (id: "approval-\(id)", title: question)
-        let answer = await client.requestPermission(
-            ACPPermission.request(session: session.id, call: call.id, question: question, detail: detail, kind: kind)
+        let request = ACPPermission.request(
+            session: session.id,
+            call: call.id,
+            question: question,
+            detail: detail,
+            kind: kind
         )
+        // Through the turn, which stops waiting when it is cancelled; a replay asks nothing.
+        let answer = await turns?.permission(request, from: client)
         let choice = ACPPermission.choice(from: answer, kind: kind)
         session.conversation.answer(approval: id, with: choice)
         if running.last?.id == call.id {

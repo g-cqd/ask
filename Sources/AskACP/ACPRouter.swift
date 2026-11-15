@@ -21,30 +21,46 @@ final class ACPRouter: Sendable {
     /// Gives the connection updates are sent on.
     func attach(_ connection: JSONRPCConnection) { client.withLock { $0 = connection } }
 
-    /// The answer to `request`.
-    func answer(_ request: JSONRPCRequest) async -> Result<JSONValue, JSONRPCError> {
-        if request.method == "initialize" { return initialize(request.params) }
-        guard initialized.withLock({ $0 }) else { return .failure(.notInitialized(request.method)) }
+    /// Admits `request` where the connection reads it, in the order the client wrote its requests, and returns the work that
+    /// answers it. What must follow that order is decided here: whether `initialize` has been answered, and a prompt's place
+    /// among its session's prompts and cancellations.
+    func admit(_ request: JSONRPCRequest) -> JSONRPCConnection.RequestWork {
+        if request.method == "initialize" {
+            let answer = initialize(request.params)
+            return { answer }
+        }
+        guard initialized.withLock({ $0 }) else { return { .failure(.notInitialized(request.method)) } }
+        let params = request.params
         switch (request.method, sessions) {
-            case ("session/new", let sessions?): return await sessions.new(request.params)
-            case ("session/prompt", let sessions?): return await prompt(request.params, in: sessions)
+            case ("session/new", let sessions?): return { await sessions.new(params) }
+            case ("session/prompt", let sessions?): return prompt(params, in: sessions)
             case ("session/load", let sessions?) where sessions.canLoad:
-                return await sessions.load(request.params, client: asClient)
-            default: return .failure(.methodNotFound(request.method))
+                let client = asClient
+                return { await sessions.load(params, client: client) }
+            default: return { .failure(.methodNotFound(request.method)) }
         }
     }
 
+    /// What the client says without asking: `session/cancel`. Any other notification is ignored, as one nobody knows must be.
+    func notified(_ notification: JSONRPCNotification) {
+        guard notification.method == "session/cancel", let sessions,
+            case .success(let turns) = sessions.turns(of: notification.params)
+        else { return }
+        turns.cancel()
+    }
+
     /// `session/prompt`: the turn's updates go to the client as `session/update`, and the answer follows the last of them.
-    private func prompt(_ params: JSON?, in sessions: ACPSessions) async -> Result<JSONValue, JSONRPCError> {
+    private func prompt(_ params: JSON?, in sessions: ACPSessions) -> JSONRPCConnection.RequestWork {
         let turns: ACPTurns
         switch sessions.turns(of: params) {
             case .success(let found): turns = found
-            case .failure(let error): return .failure(error)
+            case .failure(let error): return { .failure(error) }
         }
         switch ACPPrompt.text(of: params) {
-            case .failure(let error): return .failure(error)
+            case .failure(let error): return { .failure(error) }
             case .success(let text):
-                return await turns.prompt(text, client: asClient)
+                let (admitted, client) = (turns.admit(), asClient)
+                return { await turns.prompt(text, admitted: admitted, client: client) }
         }
     }
 

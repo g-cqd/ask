@@ -11,26 +11,42 @@ final class DirectedConversation: Conversation {
         /// The questions `id` asked were answered, or declined.
         case answeredQuestions(Int, declined: Bool)
         case answeredInput(Int, String?)
+        /// The run that last started was cancelled, as Esc cancels it.
+        case stopped
     }
 
     private let asked = Mailbox<Asked>()
+    private let log = Mutex<[Asked]>([])
+
+    /// Everything the driver has asked so far, in order.
+    var everything: [Asked] { log.withLock { $0 } }
     private let update = Mutex<(@Sendable (ConversationUpdate) -> Void)?>(nil)
 
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
         self.update.withLock { $0 = update }
-        asked.post(.started(prompt))
-        return Task {}
+        note(.started(prompt))
+        // The run: it does nothing, and says so when it is cancelled. A stream nobody feeds ends only by cancellation.
+        return Task { [weak self] in
+            let (never, _) = AsyncStream<Void>.makeStream()
+            for await _ in never {}
+            if Task.isCancelled { self?.note(.stopped) }
+        }
     }
 
-    func enqueue(_ text: String, id: Int, followUp: Bool) { asked.post(.enqueued(text, id: id, followUp: followUp)) }
+    func enqueue(_ text: String, id: Int, followUp: Bool) { note(.enqueued(text, id: id, followUp: followUp)) }
 
-    func answer(approval id: Int, with choice: ApprovalChoice) { asked.post(.answeredApproval(id, choice)) }
+    func answer(approval id: Int, with choice: ApprovalChoice) { note(.answeredApproval(id, choice)) }
 
     func answer(questions id: Int, with answers: [QuestionAnswer]?) {
-        asked.post(.answeredQuestions(id, declined: answers == nil))
+        note(.answeredQuestions(id, declined: answers == nil))
     }
 
-    func answer(input id: Int, with text: String?) { asked.post(.answeredInput(id, text)) }
+    func answer(input id: Int, with text: String?) { note(.answeredInput(id, text)) }
+
+    private func note(_ asked: Asked) {
+        log.withLock { $0.append(asked) }
+        self.asked.post(asked)
+    }
 
     /// The next thing the driver asked, awaited; nil when the test is cancelled first.
     func next() async -> Asked? { await asked.next() }
