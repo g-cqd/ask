@@ -211,7 +211,7 @@ Targets: `AskCore` (budgets, documentation layout, source standards), `AskAI` (`
 providers are Claude (a subscription or a key), Codex (the ChatGPT subscription, over the Responses protocol), Antigravity
 (Cloud Code) and any OpenAI-compatible or Responses server by configuration or preset), `AskAgentCore` (the loop, tools contract,
 sessions, encryption, tasks and notes, compaction, hooks), `AskTools` (`read`, `write`, `edit`, `bash`, `tasks`, `notes`, `question`, `skill`, `server_resource`, jobs, sandbox narrowing), `AskMCP` (an MCP client for stdio and streamable HTTP, tools, resources, templates, and subscriptions),
-`AskTUI` (the interactive screen), `AskSession` (the conversation, its commands, sessions, threads, goals and loops, sign-in, model discovery and
+`AskTUI` (the interactive screen), `AskACP` (`ask serve`: the Agent Client Protocol on a connection, over AemiJSONRPC; ADR-0153), `AskSession` (the conversation, its commands, sessions, threads, goals and loops, sign-in, model discovery and
 the composition of a run, with `package` access: ADR-0149) and the `ask` binary, which is the options and subcommands over `AskSession`. The whole
 is also covered by PTY and end-to-end probes (`Scripts/probe-*.py`).
 The PTY probes read the screen with pyte, pinned in `Scripts/probe-requirements.txt`: `Scripts/probe-deps.sh` installs it once into

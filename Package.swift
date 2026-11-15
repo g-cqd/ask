@@ -219,10 +219,20 @@ let package = Package(
             ],
             swiftSettings: packageSettings
         ),
+        // `ask serve`: the Agent Client Protocol on a connection (ADR-0153), over AemiJSONRPC. The one place that knows the protocol.
+        .target(
+            name: "AskACP",
+            dependencies: [
+                .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiJSONRPC", package: "AemiJSON"),
+                // The thread standard input is read on (AemiJSONRPC's descriptor reader runs on its pool).
+                .product(name: "AemiRuntime", package: "aemi")
+            ],
+            swiftSettings: packageSettings
+        ),
         .executableTarget(
             name: "ask",
             dependencies: [
-                "AskSession", "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskTUI",
+                "AskSession", "AskACP", "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskTUI",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
             path: "Sources/ask",
@@ -275,6 +285,15 @@ let package = Package(
             ],
             path: "Tests/AskMCPTests",
             exclude: ["Fixtures"],
+            swiftSettings: packageSettings
+        ),
+        .testTarget(
+            name: "AskACPTests",
+            dependencies: [
+                "AskACP", .product(name: "AemiJSON", package: "AemiJSON"),
+                .product(name: "AemiJSONRPC", package: "AemiJSON")
+            ],
+            path: "Tests/AskACPTests",
             swiftSettings: packageSettings
         ),
         .testTarget(
