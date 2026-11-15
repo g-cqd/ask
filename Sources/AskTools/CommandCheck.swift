@@ -135,9 +135,16 @@ enum CommandCheck {
             process.standardError = error
             process.standardInput = feed
             do { try process.run() } catch { return .missing }
-            if let input { feed.fileHandleForWriting.write(Data(input.utf8)) }
-            try? feed.fileHandleForWriting.close()
+            // Before the input is written: a program that never reads it is stopped at the deadline, which ends the write.
             let watchdog = CheckWatchdog(process, deadline: deadline)
+            if let input {
+                // A program that ended without reading (a shellcheck that fails to start) makes the write fail, where it would
+                // have ended ask with SIGPIPE.
+                _ = fcntl(feed.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
+                // try?: the program's status, read below, says what happened to it; an input it did not take is not a failure of ask's
+                try? feed.fileHandleForWriting.write(contentsOf: Data(input.utf8))
+            }
+            try? feed.fileHandleForWriting.close()
             let out = output.fileHandleForReading.readDataToEndOfFile()
             let err = error.fileHandleForReading.readDataToEndOfFile()
             process.waitUntilExit()
