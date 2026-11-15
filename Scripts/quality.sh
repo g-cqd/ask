@@ -42,8 +42,14 @@ if [ "$check_only" -eq 0 ]; then
 fi
 printf '==> CI quality (.ci/swift-ci run quality)\n'
 # What CI's quality job runs, from .ci/action.json: swift-format --strict, SwiftLint metrics, the pinned analyzers (deadwood,
-# dolly, arcleak), then the declared-dependency audit (Scripts/dependency-audit.sh) and the script, record and layering guards.
+# dolly, arcleak).
 .ci/swift-ci run quality || fail "CI quality"
+# CI runs these two as jobs of their own, and `run quality` does not: from 2026-11-04 to 2026-11-16 this script said it ran
+# them and ran neither, and a target that imported what it did not declare went to CI red (diary 2026-11-16-01).
+printf '==> declared dependencies (.ci/swift-ci run dependency-audit)\n'
+.ci/swift-ci run dependency-audit || fail "declared dependencies"
+printf '==> scripts, records and layering (.ci/swift-ci run script-guards)\n'
+.ci/swift-ci run script-guards || fail "scripts, records and layering"
 
 printf '==> build and test (release)\n'
 # Explicit testability for optimized tests (ADR-0006). Benchmark/shipping binaries are built
