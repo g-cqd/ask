@@ -11,6 +11,7 @@ public struct ToolContext: Sendable, Equatable {
             && (left.destructiveApprover == nil) == (right.destructiveApprover == nil)
             && left.imageLimits == right.imageLimits && (left.callGate == nil) == (right.callGate == nil)
             && (left.progress == nil) == (right.progress == nil) && left.callID == right.callID
+            && (left.nested == nil) == (right.nested == nil)
     }
 
     /// Relative paths resolve against this directory.
@@ -24,7 +25,7 @@ public struct ToolContext: Sendable, Equatable {
     /// The run's policy before session and per-call narrowing; a session change never escapes this ceiling.
     public let runSandbox: SandboxPolicy
     /// Who is asked when a call's `sandbox` argument asks for more than `sandbox` allows; nil refuses (roadmap 0019).
-    public let approve: SandboxApprover?
+    public private(set) var approve: SandboxApprover?
     /// The session-wide narrowing the model asked for, applied to every call; nil when the run offers none.
     public let narrowing: SessionNarrowing?
     /// What of ask's own environment a command may inherit (ADR-0106). Everything by default, so a caller that wants protection says so.
@@ -43,6 +44,8 @@ public struct ToolContext: Sendable, Equatable {
     public let progress: ToolProgressReporter?
     /// The call this context runs, set by the loop for each call; nil outside one.
     public private(set) var callID: String?
+    /// The run's other tools, for a tool that runs a script (ADR-0156); set by the loop for each call, nil outside one.
+    public private(set) var nested: NestedTools?
 
     /// A context rooted at `workingDirectory`.
     /// - Parameters:
@@ -99,6 +102,29 @@ public struct ToolContext: Sendable, Equatable {
     public func during(call id: String) -> ToolContext {
         var copy = self
         copy.callID = id
+        return copy
+    }
+
+    /// This context for a call that may call the run's other tools.
+    func offering(_ nested: NestedTools) -> ToolContext {
+        var copy = self
+        copy.nested = nested
+        return copy
+    }
+
+    /// This context for a call a script makes (ADR-0156). The person approved the script as a whole, so they are not asked
+    /// again: the policy still decides and hooks still answer first, and what would have asked the person runs. Nobody widens
+    /// the sandbox in the middle of a script, and a server's own question is not asked. A script's call calls no further.
+    func withinScript() -> ToolContext {
+        var copy = self
+        if let gate = callGate {
+            var approved = ToolCallGate(policy: gate.policy) { _ in true }
+            approved.first = gate.first
+            copy.callGate = approved
+        }
+        copy.approve = nil
+        copy.destructiveApprover = nil
+        copy.nested = nil
         return copy
     }
 

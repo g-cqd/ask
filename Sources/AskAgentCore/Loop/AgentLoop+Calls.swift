@@ -9,7 +9,7 @@ extension AgentLoop {
     ) {
         let answers = HookAnswers()
         return await passing(original, answers: answers, events: events) { call in
-            approving(context.during(call: call.id), answers)
+            approving(context.during(call: call.id), answers).offering(nestedTools(for: call, answers))
         }
     }
 
