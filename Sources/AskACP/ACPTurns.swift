@@ -10,7 +10,6 @@ internal import Synchronization
 /// ends. One the turn did not take before it ended is not lost: it starts the next turn, as the screen starts the copy it kept.
 final class ACPTurns: Sendable {
     typealias Outcome = Result<JSONValue, JSONRPCError>
-    typealias Notify = @Sendable (JSONValue) async -> Void
 
     /// A prompt waiting for its answer: the turn's own, or one sent during it.
     private struct Waiting {
@@ -32,7 +31,7 @@ final class ACPTurns: Sendable {
     init(session: ACPSession) { self.session = session }
 
     /// `session/prompt`: the answer, when the turn `text` started or steered has ended.
-    func prompt(_ text: String, notify: @escaping Notify) async -> Outcome {
+    func prompt(_ text: String, client: ACPClient) async -> Outcome {
         await withCheckedContinuation { reply in
             let steering = state.withLock { state -> Int? in
                 defer { state.nextID += 1 }
@@ -46,18 +45,16 @@ final class ACPTurns: Sendable {
             if let steering {
                 session.conversation.enqueue(text, id: steering, followUp: false)
             } else {
-                Task { await self.run(startingWith: text, reply: reply, notify: notify) }
+                Task { await self.run(startingWith: text, reply: reply, client: client) }
             }
         }
     }
 
     /// Runs turns until no prompt waits for one: the first, then one for each prompt a turn ended without taking.
-    private func run(startingWith text: String, reply: CheckedContinuation<Outcome, Never>, notify: @escaping Notify)
-        async
-    {
+    private func run(startingWith text: String, reply: CheckedContinuation<Outcome, Never>, client: ACPClient) async {
         var (text, reply) = (text, reply)
         while true {
-            let outcome = await turn(text, notify: notify)
+            let outcome = await turn(text, client: client)
             let failed = if case .failure = outcome { true } else { false }
             let (answered, next) = state.withLock { state -> ([Waiting], Waiting?) in
                 // A turn that failed answers every prompt sent during it with the failure: the client holds their text.
@@ -78,48 +75,24 @@ final class ACPTurns: Sendable {
         }
     }
 
-    /// One turn, read to its end: each update sent before the next is read, so the client sees them in the order they were said.
-    private func turn(_ text: String, notify: Notify) async -> Outcome {
+    /// One turn, read to its end.
+    private func turn(_ text: String, client: ACPClient) async -> Outcome {
         let (updates, feed) = AsyncStream<ConversationUpdate>.makeStream()
         _ = session.conversation.start(text) { feed.yield($0) }
-        var failure: String?
-        var failed = false
+        var reader = ACPTurnReader(session: session, client: client)
         // What the conversation says after the turn's end (the git state read again, a list read) is not the turn's: not read.
         reading: for await update in updates {
-            for update in update.flattened {
-                switch update {
-                    case .runEnded:
-                        feed.finish()
-                        break reading
-                    case .returnQueuedPrompts: failed = true
-                    case .notice(let reason, isError: true): failure = reason
-                    case .promptAccepted(let id, _): take(id)
-                    case .promptRefused(let id): refuse(id, because: failure)
-                    default:
-                        guard !decline(update), let payload = ACPUpdate.payload(for: update) else { continue }
-                        await notify(["sessionId": .string(session.id), "update": payload])
-                }
+            for update in update.flattened where await !reader.read(update, in: self) {
+                feed.finish()
+                break reading
             }
         }
-        guard failed else { return .success(["stopReason": "end_turn"]) }
-        return .failure(JSONRPCError(code: JSONRPCError.internalError, message: failure ?? "The turn failed."))
-    }
-
-    /// Declines what the conversation asks the person, and says whether `update` was such a question. Until the client can be
-    /// asked (`session/request_permission`, elicitation), nobody can answer, and a turn that waited for one would never end: a
-    /// call that needs approval is refused, which its result tells the model, and a question is declined.
-    private func decline(_ update: ConversationUpdate) -> Bool {
-        switch update {
-            case .askApproval(let id, _, _, _): session.conversation.answer(approval: id, with: .deny)
-            case .askQuestions(let id, _): session.conversation.answer(questions: id, with: nil)
-            case .askInput(let id, _, _, _): session.conversation.answer(input: id, with: nil)
-            default: return false
-        }
-        return true
+        guard reader.failed else { return .success(["stopReason": "end_turn"]) }
+        return .failure(JSONRPCError(code: JSONRPCError.internalError, message: reader.failure ?? "The turn failed."))
     }
 
     /// The turn took the prompt sent during it as `id`: it is answered when the turn ends.
-    private func take(_ id: Int) {
+    func take(_ id: Int) {
         state.withLock { state in
             guard let index = state.during.firstIndex(where: { $0.id == id }) else { return }
             state.during[index].taken = true
@@ -127,7 +100,7 @@ final class ACPTurns: Sendable {
     }
 
     /// The conversation did not take the prompt sent as `id` (a skill it names cannot be loaded): its request says so.
-    private func refuse(_ id: Int, because reason: String?) {
+    func refuse(_ id: Int, because reason: String?) {
         let refused = state.withLock { state -> Waiting? in
             guard let index = state.during.firstIndex(where: { $0.id == id }) else { return nil }
             return state.during.remove(at: index)

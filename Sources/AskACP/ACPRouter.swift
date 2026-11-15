@@ -42,15 +42,23 @@ final class ACPRouter: Sendable {
         switch ACPPrompt.text(of: params) {
             case .failure(let error): return .failure(error)
             case .success(let text):
-                return await turns.prompt(text) { await self.send($0) }
+                return await turns.prompt(text, client: ACPClient(notify: send, requestPermission: requestPermission))
         }
     }
 
     /// Sends one `session/update` to the client.
-    private func send(_ update: JSONValue) async {
+    @Sendable private func send(_ update: JSONValue) async {
         // try?: a client that has gone is not told; the turn goes on to its end and its session keeps what was said
         try? await client.withLock { $0 }?.notify("session/update", update)
     }
+
+    /// Asks the client for a permission, for as long as its person takes to answer; nil when it gives no answer.
+    @Sendable private func requestPermission(_ params: JSONValue) async -> JSON? {
+        try? await client.withLock { $0 }?.request("session/request_permission", params, timeout: Self.patience)
+    }
+
+    /// A person may leave a question open overnight; the connection's own two minutes would refuse the call for them.
+    private static let patience: Duration = .seconds(365 * 24 * 3600)
 
     /// `initialize`: the version is ask's whatever the client named, since a client that speaks another is to be told the latest
     /// ask supports and decides for itself. The capabilities say only what is built.

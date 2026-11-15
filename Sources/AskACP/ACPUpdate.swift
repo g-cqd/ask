@@ -9,16 +9,16 @@ enum ACPUpdate {
         switch update {
             case .assistantText(let text): chunk("agent_message_chunk", text)
             case .thinkingText(let text): chunk("agent_thought_chunk", text)
-            // Decided where a turn is read (``ACPTurns``): a list is its members, the end and the failure end the request, and
-            // what became of a message sent during the turn answers that message's request.
+            // Decided where a turn is read (``ACPTurnReader``): a list is its members, the end and the failure end the request,
+            // what became of a message sent during the turn answers that message's request, a tool call is told with its state,
+            // an approval is asked of the client, and what the client cannot be asked yet is declined.
             // @dl:accept -- a switch that names every case on purpose: the lists are the decision, and lists of cases look alike
             case .batch, .runEnded, .returnQueuedPrompts, .promptAccepted, .promptRefused, .notice: nil
-            // Declined where a turn is read, until the client can be asked: approvals, the model's questions, a line of input.
-            case .askApproval, .askQuestions, .askInput: nil
-            // Not built yet (the order of work in `development/research/serve-design-2026-11-14.md`): tool calls, the replay
-            // of a session, compaction, usage, the name, the commands.
+            case .toolStarted, .toolFinished, .askApproval, .askQuestions, .askInput: nil
+            // Not built yet (the order of work in `development/research/serve-design-2026-11-14.md`): a call's progress and a
+            // job's output, the replay of a session, compaction, usage, the name, the commands.
             // @dl:accept -- a switch that names every case on purpose: the lists are the decision, and lists of cases look alike
-            case .toolStarted, .toolFinished, .toolProgress, .jobOutput: nil
+            case .toolProgress, .jobOutput: nil
             case .userPrompt, .promptPictures, .compacting, .compactionFinished, .status, .context, .conversationName:
                 nil
             case .skills, .choices, .choicesStale, .submitPrompt, .detail, .choiceSummary: nil

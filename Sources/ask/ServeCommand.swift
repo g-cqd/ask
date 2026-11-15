@@ -19,7 +19,7 @@ struct ServeCommand: AsyncParsableCommand {
         await ACPServer.serveStandardStreams(agent: ACPImplementation(name: "ask", title: "ask", version: "0")) {
             folder in
             let made = try await sessions.make(in: folder)
-            return ACPSession(id: made.id, conversation: made.conversation)
+            return ACPSession(id: made.id, folder: made.folder, conversation: made.conversation)
         }
         // The client has gone: what its sessions left running goes with it.
         await sessions.stopAll()

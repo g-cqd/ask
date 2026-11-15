@@ -19,6 +19,7 @@ final class ACPExchange: JSONRPCSink, Sendable {
     private let state = Mutex(State())
     private let feed: AsyncThrowingStream<[UInt8], any Error>.Continuation
     private let served = Mailbox<Bool>()
+    private let asked = Mailbox<JSON>()
     private let output = Output()
 
     init(agent: ACPImplementation = ACPImplementation(name: "ask", version: "0"), sessions: ACPSession.Source? = nil) {
@@ -49,6 +50,8 @@ final class ACPExchange: JSONRPCSink, Sendable {
                 state.log.append(message)
                 guard !message["method"].exists, let id = message["id"].int else {
                     state.others.append(message)
+                    // A request of the server's own, which the test answers as the client's person would.
+                    if message["method"].exists, message["id"].exists { asked.post(message) }
                     continue
                 }
                 if let waiter = state.waiters.removeValue(forKey: id) {
@@ -68,6 +71,16 @@ final class ACPExchange: JSONRPCSink, Sendable {
     /// The `session/update` notifications written so far, each as its `params`.
     var updates: [JSONValue] {
         log.filter { $0["method"].string == "session/update" }.map { JSONValue($0["params"]) }
+    }
+
+    /// The next request the server makes of the client, awaited; nil when the test is cancelled first.
+    func nextRequest() async -> JSON? { await asked.next() }
+
+    /// Answers the server's request `request` with `result` (JSON text), or with an error when `result` is nil.
+    func respond(to request: JSON?, _ result: String?) {
+        let id = request?["id"].int ?? -1
+        let body = result.map { #""result":\#($0)"# } ?? #""error":{"code":-32603,"message":"the client failed"}"#
+        send(raw: [#"{"jsonrpc":"2.0","id":\#(id),\#(body)}"# + "\n"])
     }
 
     /// Sends `text` as it is, in the pieces given: what a client that is not well behaved writes.

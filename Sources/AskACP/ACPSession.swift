@@ -6,10 +6,13 @@ package struct ACPSession: Sendable {
     package typealias Source = @Sendable (_ cwd: String) async throws -> ACPSession
 
     package let id: String
+    /// The session's folder, absolute: what a relative path in a tool call is relative to.
+    package let folder: String
     package let conversation: any Conversation
 
-    package init(id: String, conversation: any Conversation) {
+    package init(id: String, folder: String, conversation: any Conversation) {
         self.id = id
+        self.folder = folder
         self.conversation = conversation
     }
 }

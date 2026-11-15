@@ -11,7 +11,7 @@ struct ACPPromptTurnTests {
     /// A client with one session, `s1`, served by the conversation returned.
     private func session(_ id: String = "s1") async -> (client: ACPExchange, conversation: DirectedConversation) {
         let conversation = DirectedConversation()
-        let client = ACPExchange { _ in ACPSession(id: id, conversation: conversation) }
+        let client = ACPExchange { _ in ACPSession(id: id, folder: "/work", conversation: conversation) }
         _ = await client.initialize()
         _ = await client.request("session/new", #"{"cwd":"/work"}"#)
         return (client, conversation)
@@ -120,7 +120,9 @@ struct ACPPromptTurnTests {
         let first = DirectedConversation()
         let second = DirectedConversation()
         let client = ACPExchange { cwd in
-            cwd == "/one" ? ACPSession(id: "a", conversation: first) : ACPSession(id: "b", conversation: second)
+            cwd == "/one"
+                ? ACPSession(id: "a", folder: "/work", conversation: first)
+                : ACPSession(id: "b", folder: "/work", conversation: second)
         }
         _ = await client.initialize()
         #expect(await client.request("session/new", #"{"cwd":"/one"}"#)["result"]["sessionId"].string == "a")
@@ -139,14 +141,12 @@ struct ACPPromptTurnTests {
         _ = await client.end()
     }
 
-    /// Until the client can be asked (`session/request_permission`, elicitation: the order of work), nobody can answer: a turn
-    /// that waited for an answer would never end.
+    /// Until the client can be asked these (elicitation: the order of work), nobody can answer: a turn that waited for an answer
+    /// would never end.
     @Test func `what nobody can be asked yet is declined at once, so the turn goes on`() async {
         let (client, conversation) = await session()
         async let answer = client.request("session/prompt", prompt("go"))
         _ = await conversation.next()
-        conversation.say(.askApproval(id: 4, question: "Run make?"))
-        #expect(await conversation.next() == .answeredApproval(4, .deny))
         conversation.say(.askQuestions(id: 5, questions: []))
         #expect(await conversation.next() == .answeredQuestions(5, declined: true))
         conversation.say(.askInput(id: 6, prompt: "Your key", secret: true))

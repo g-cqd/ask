@@ -13,6 +13,8 @@ package final class ServedSessions: Sendable {
     /// A served conversation and the name of its session: its session file's, so the session can be found again by it.
     package struct Made: Sendable {
         package let id: String
+        /// The folder the conversation works in: the one asked for, as the kernel names it.
+        package let folder: String
         package let conversation: any Conversation
     }
 
@@ -80,7 +82,7 @@ package final class ServedSessions: Sendable {
         )
         held.withLock { $0.append(Held(conversation: conversation, jobs: jobs, mcp: mcp)) }
         let file = (conversation.plannedSessionPath() as NSString).lastPathComponent
-        return Made(id: (file as NSString).deletingPathExtension, conversation: conversation)
+        return Made(id: (file as NSString).deletingPathExtension, folder: workspace, conversation: conversation)
     }
 
     /// Stops what the sessions left running: their threads, their jobs, their MCP servers.

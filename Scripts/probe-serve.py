@@ -4,8 +4,8 @@ conversation of its own in the folder the client names (ADR-0154). Driven here o
 from a working directory that is none of the sessions'.
 
 A: one session: initialize, session/new, a prompt with two tool calls in it, a second prompt. The model's words arrive as chunks,
-   in order, before the answer; the read was of the session's folder; the write, which needs an approval nobody can give yet, is
-   refused; the session file is the one the id names.
+   in order, before the answer; each call is told as it begins and ends; the read was of the session's folder; the write asks the
+   client, which allows the first and denies the second; the session file is the one the id names.
 B: two sessions in two folders: each keeps its own file and its own history.
 C: nothing but protocol messages on standard output, and ask ends when its input does.
 
@@ -33,6 +33,8 @@ class Client:
         self.process = subprocess.Popen([binary, "serve"], cwd=cwd, env=env, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                         stderr=subprocess.PIPE)
         self.next_id, self.lines, self.not_json = 1, [], []
+        # The option chosen for each permission ask makes, in order; "once" when the list is used up.
+        self.choices, self.asked = [], []
 
     def request(self, method, params):
         """The answer to the request, and the notifications that came before it."""
@@ -54,6 +56,12 @@ class Client:
             if parsed.get("id") == identifier and "method" not in parsed:
                 return parsed, before
             before.append(parsed)
+            if parsed.get("method") == "session/request_permission":
+                self.asked.append(parsed["params"])
+                chosen = self.choices.pop(0) if self.choices else "once"
+                reply = {"jsonrpc": "2.0", "id": parsed["id"], "result": {"outcome": {"outcome": "selected", "optionId": chosen}}}
+                self.process.stdin.write((json.dumps(reply) + "\n").encode())
+                self.process.stdin.flush()
 
     def close(self):
         """Ends the input; returns ask's exit status and what it said on standard error."""
@@ -72,6 +80,12 @@ def chunks(messages, kind, session):
                    and m["params"]["update"]["sessionUpdate"] == kind)
 
 
+def calls(messages, call):
+    """The updates about tool call `call`, in order."""
+    return [m["params"]["update"] for m in messages
+            if m.get("method") == "session/update" and m["params"]["update"].get("toolCallId") == call]
+
+
 def prompt(session, text):
     return {"sessionId": session, "prompt": [{"type": "text", "text": text}]}
 
@@ -88,6 +102,7 @@ def main():
         agent.turn([("text", "Reading. "), ("call", "t1", "read", {"path": "note.txt"})], "tool_use"),
         agent.turn([("call", "t2", "write", {"path": "made.txt", "content": "made by serve\n"})], "tool_use"),
         agent.turn([("text", "It says: the note of one.")], "end_turn"),
+        agent.turn([("call", "t3", "write", {"path": "refused.txt", "content": "never\n"})], "tool_use"),
         agent.turn([("text", "Second answer.")], "end_turn"),
         agent.turn([("text", "Hello from two.")], "end_turn"),
     ])
@@ -110,21 +125,31 @@ def main():
         agent.check("the read was of the session's folder, not of the one ask was started in",
                     len(server.requests) >= 2 and "the note of one" in json.dumps(server.requests[1]["body"]["messages"][-1]),
                     server.requests[1]["body"]["messages"][-1] if len(server.requests) >= 2 else "no second request"),
-        # Until the client can be asked (session/request_permission, the next step), a call that needs approval is refused.
-        agent.check("a call that needs approval is refused, and the model is told so",
-                    len(server.requests) >= 3 and "The user did not allow this call." in json.dumps(server.requests[2]["body"]["messages"][-1]),
-                    server.requests[2]["body"]["messages"][-1] if len(server.requests) >= 3 else "no third request"),
-        agent.check("so nothing was written, in either folder", not os.path.exists(os.path.join(one, "made.txt"))
-                    and not os.path.exists(os.path.join(elsewhere, "made.txt")), os.listdir(one) + os.listdir(elsewhere)),
+        agent.check("the read is told as a tool call of the session's folder, begun then completed",
+                    [(u.get("sessionUpdate"), u.get("status")) for u in calls(before, "t1")]
+                    == [("tool_call", "in_progress"), ("tool_call_update", "completed")]
+                    and calls(before, "t1")[0].get("locations") == [{"path": os.path.join(one, "note.txt")}], calls(before, "t1")),
+        agent.check("the write asks the client, with the screen's answers",
+                    [(a["toolCall"]["toolCallId"], [o["optionId"] for o in a["options"]]) for a in client.asked]
+                    == [("t2", ["once", "session", "deny"])], client.asked),
+        agent.check("allowed once, it wrote in the session's folder and nowhere else",
+                    os.path.exists(os.path.join(one, "made.txt")) and not os.path.exists(os.path.join(elsewhere, "made.txt"))
+                    and calls(before, "t2")[-1].get("status") == "completed", (os.listdir(one), os.listdir(elsewhere))),
         agent.check("the session's file is the one its id names",
                     [os.path.basename(f) for f in files] == [session + ".jsonl"], files),
     ]
+    client.choices = ["deny"]
     again, before = client.request("session/prompt", prompt(session, "And again?"))
     results += [
+        agent.check("a write the client denies writes nothing, and the model is told",
+                    not os.path.exists(os.path.join(one, "refused.txt")) and len(server.requests) == 5
+                    and "did not allow" in json.dumps(server.requests[4]["body"]["messages"][-1])
+                    and calls(before, "t3")[-1].get("status") == "failed",
+                    (calls(before, "t3"), server.requests[-1]["body"]["messages"][-1])),
         agent.check("a second prompt is the next turn", again.get("result") == {"stopReason": "end_turn"}
                     and chunks(before, "agent_message_chunk", session) == "Second answer.", (again, before)),
         agent.check("it carries the first turn's history",
-                    len(server.requests) == 4 and "What does note.txt say?" in json.dumps(server.requests[3]["body"]["messages"]),
+                    len(server.requests) == 5 and "What does note.txt say?" in json.dumps(server.requests[3]["body"]["messages"]),
                     len(server.requests)),
         agent.check("still one session file", len(agent.sessions(state)) == 1, agent.sessions(state)),
     ]

@@ -9,7 +9,7 @@ import Testing
 struct ACPSteeringTests {
     private func session() async -> (client: ACPExchange, conversation: DirectedConversation) {
         let conversation = DirectedConversation()
-        let client = ACPExchange { _ in ACPSession(id: "s1", conversation: conversation) }
+        let client = ACPExchange { _ in ACPSession(id: "s1", folder: "/work", conversation: conversation) }
         _ = await client.initialize()
         _ = await client.request("session/new", #"{"cwd":"/work"}"#)
         return (client, conversation)

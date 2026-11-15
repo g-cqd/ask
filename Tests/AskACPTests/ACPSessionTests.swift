@@ -18,7 +18,7 @@ struct ACPSessionTests {
         let asked = Mutex<[String]>([])
         let client = ACPExchange { cwd in
             asked.withLock { $0.append(cwd) }
-            return ACPSession(id: "2026-11-15T10-00-00", conversation: DirectedConversation())
+            return ACPSession(id: "2026-11-15T10-00-00", folder: "/work", conversation: DirectedConversation())
         }
         _ = await client.initialize()
         let answer = await client.request("session/new", #"{"cwd":"/work/app","mcpServers":[]}"#)
@@ -32,7 +32,7 @@ struct ACPSessionTests {
         let asked = Mutex(0)
         let client = ACPExchange { _ in
             asked.withLock { $0 += 1 }
-            return ACPSession(id: "s", conversation: DirectedConversation())
+            return ACPSession(id: "s", folder: "/work", conversation: DirectedConversation())
         }
         _ = await client.initialize()
         let answer = await client.request("session/new", params)
@@ -52,7 +52,7 @@ struct ACPSessionTests {
     }
 
     @Test func `a prompt for a session that was not made is not found, and names it`() async {
-        let client = ACPExchange { _ in ACPSession(id: "made", conversation: DirectedConversation()) }
+        let client = ACPExchange { _ in ACPSession(id: "made", folder: "/work", conversation: DirectedConversation()) }
         _ = await client.initialize()
         _ = await client.request("session/new", #"{"cwd":"/work"}"#)
         let answer = await client.request(
