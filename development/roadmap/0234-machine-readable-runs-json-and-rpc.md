@@ -68,3 +68,10 @@ is answered. `session/cancel` stops the turn as Esc does and answers its prompt 
 whose command sleeps. Left: the smaller updates, an edit's diff, the model's questions, the client's MCP servers, a client that
 goes away mid-write, the user guide and the help.
 
+## Step 2, seventh part: the smaller updates (2026-11-15, diary 2026-11-15-14)
+
+Notices and compactions, to a client that advertised them; the session's title, also when it is chosen after the turn; usage
+in tokens; a call's progress. Left: the slash commands (a design for the owner: which are served, what a picker becomes), a
+job's output between turns, an edit's diff, the model's questions, the client's MCP servers, a client that goes away mid-write,
+the user guide and the help.
+
