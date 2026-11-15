@@ -33,16 +33,30 @@ enum CommandCheck {
         !unjudgeable.contains { finding.hasSuffix($0) }
     }
 
-    static func check(_ command: String, shell: String, path: String?, deadline: Duration = deadline) async -> Result {
+    /// Runs one of a check's programs to its end: ``run(_:_:input:environment:deadline:)``, unless a test gives its own, so that the
+    /// order of a check's two parts is tested without a process and without holding a thread (diary 2026-11-15-02).
+    typealias Runner =
+        @Sendable (
+            _ executable: String, _ arguments: [String], _ input: String?, _ environment: [String: String],
+            _ deadline: Duration
+        ) async -> Outcome
+
+    static func check(
+        _ command: String,
+        shell: String,
+        path: String?,
+        deadline: Duration = deadline,
+        run: @escaping Runner = CommandCheck.run
+    ) async -> Result {
         let name = (shell as NSString).lastPathComponent
         let parse = parsing(command, with: name)
         let environment = environment(path: path)
         var result = Result()
         let shellcheck = name == "bash" || name == "sh" ? executable("shellcheck", path: path) : nil
         let lint = shellcheck.map { shellcheck in
-            Task { await run(shellcheck, linting(name), input: command, environment: environment, deadline: deadline) }
+            Task { await run(shellcheck, linting(name), command, environment, deadline) }
         }
-        let parsed = await run(shell, parse, environment: environment, deadline: deadline)
+        let parsed = await run(shell, parse, nil, environment, deadline)
         result.unchecked = parsed == .late
         if case .ran(let parsed) = parsed, parsed.status != 0 {
             let said = parsed.error.trimmingCharacters(in: .whitespacesAndNewlines)
