@@ -52,3 +52,14 @@ whole, on by default, JavaScript first and Python (asyncio, the default runtime)
 order of work are in the ADR; the evidence in `development/research/codemode-2026-11-15.md`. `blocked-by` 0014 no longer
 holds: a script's result is text, as pi's is, and pictures are left for later.
 
+## Built for JavaScript (2026-11-15, diary 2026-11-15-18)
+
+`codemode({code})`: a script in JavaScriptCore, in a child `ask codemode`, whose only way out is the tools; its calls pass the
+loop's hooks and the sandbox; the person is asked once for the whole script. Limits as in ADR-0156, each a red test.
+`Scripts/probe-codemode.py` drives it through the real binary. Measured: 11.5 ms of process a script; idle +0.4 MB, active
++0.8 MB, cold start unchanged.
+
+Left: Python on the same bridge (asyncio, the default `python3`, a profile that allows the interpreter alone); pi's `only`
+mode; pictures; the two open points of the ADR (may a script call `question` and `agent`; ask only when a script's first call
+would have asked).
+
