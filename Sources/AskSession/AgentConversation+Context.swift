@@ -7,7 +7,8 @@ extension AgentConversation {
     /// Capacity is read afresh so switching models cannot leave the old denominator on screen.
     func contextUpdate() -> ConversationUpdate {
         let limit = current.withLock { $0.settings.model.contextWindow }
-        return .context(usage.withLock { $0.contextStatus(limit: limit) })
+        let (said, used) = usage.withLock { ($0.contextStatus(limit: limit), $0.contextTokens) }
+        return .context(said, used: used, size: limit)
     }
 
     /// Keep spend cumulative, but occupancy belongs to one response, never the sum of requests.

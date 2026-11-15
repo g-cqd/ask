@@ -120,7 +120,7 @@ extension ScreenController {
             case .sessionIdentity(let seed): state.sessionIdentity = seed
             case .conversationName(let name): state.conversationName = name
             case .status(let text): state.detail = text
-            case .context(let text): state.context = text
+            case .context(let text, _, _): state.context = text
             case .gitStatus(let forms): state.gitStatus = forms
             case .branchPullRequest(let number): state.branchPullRequest = number
             case .referencesResolved(let names): addResolved(names)

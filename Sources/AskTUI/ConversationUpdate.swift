@@ -59,8 +59,9 @@ public enum ConversationUpdate: Sendable, Equatable {
     case labelVariants([String])
     /// A short status for the status line, such as token usage.
     case status(String)
-    /// Latest measured context occupancy and model capacity, separate from cumulative token spend.
-    case context(String)
+    /// Latest measured context occupancy and model capacity, separate from cumulative token spend: as the status line says it,
+    /// and as numbers of tokens for a driver that shows them its own way; a number is nil when it is not known.
+    case context(String, used: Int? = nil, size: Int? = nil)
     /// The workspace's git state for the end of the status line, longest form first; empty outside a repository (roadmap 0186).
     case gitStatus([String])
     /// The open pull request of the workspace's branch, or none (roadmap 0186).
