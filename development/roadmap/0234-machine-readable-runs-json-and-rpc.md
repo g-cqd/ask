@@ -81,3 +81,9 @@ When the client's input ends, the turns that run for it are stopped, and a write
 and not the end of ask. Left: the slash commands (a design for the owner), a job's output between turns, an edit's diff, the
 model's questions, the client's MCP servers, the user guide and the help.
 
+## Step 2, ninth part: the model's questions (2026-11-15, diary 2026-11-15-16)
+
+The `question` tool's questions are one form (`elicitation/create`, form mode) for a client that shows forms, and its answer is
+the person's. Left: the slash commands (a design for the owner), a job's output between turns, an edit's diff, the client's MCP
+servers, the user guide and the help. Paused here: the owner put codemode (roadmap 0012) first.
+
