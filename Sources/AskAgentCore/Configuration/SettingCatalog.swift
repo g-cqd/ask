@@ -89,13 +89,7 @@ enum SettingCatalog {
             "Whether new sessions are encrypted: on, off, or asked when each begins."
         ),
         row("sessionCompression", .boolean, "false", "false", "Whether session files are compressed."),
-        row(
-            "taskScope",
-            words(TaskScope.self),
-            #""session""#,
-            "session",
-            "A task list for each session, or one for the workspace."
-        ),
+        codemode, taskScope,
         row(
             "sessionPassword",
             words(SessionPasswordMode.self),

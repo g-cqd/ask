@@ -145,6 +145,7 @@ Switches are `true` or `false`; `"on"` and `"off"` are still read.
 | `sessionEncryption` | asked at first start | Whether new sessions are encrypted (ADR-0138): `"on"`, `"off"`, or `"ask"` when each begins. Encrypted sessions open only with your password or recovery code; ask shows the recovery code once, when it makes the keys. A workspace's file overrides yours either way. `/encrypt on` rewrites the current session encrypted and removes its pictures' unencrypted copies when no other session names them; the drive may still hold the file's old blocks until they are reused, as with any deleted file. |
 | `sessionCompression` | `false` | Whether session files are compressed (about half their size). A compressed or encrypted file is no longer readable with `cat`. |
 | `sessionPassword` | asked at first start | `"remember"` keeps the key your password opens in the keychain, so no password is asked at start; `"everyStart"` asks it at every start. |
+| `codemode` | `true` | Whether the model may run one script over the tools in place of many calls (see [Codemode](sandbox.md#codemode)). `false` (or `"off"`) leaves it only the tools themselves. |
 | `taskScope` | `session` | Whose task list the `tasks` tool and `/tasks` use: each session's own (kept beside it, forked with it), or `"workspace"` for one list every session of the project shares. Kept as the session is: plain, compressed or encrypted. |
 | `credentials` | `"auto"` | Where your API keys and sign-in tokens are kept: `"keychain"` in the macOS Keychain (only ask can read them without you being asked), `"file"` in `~/.config/ask/credentials.json`, or `"auto"`: the Keychain for a signed build of ask, the file for an unsigned one, whose every rebuild the Keychain would ask about. Emails, expiry dates and account names stay in the file either way. Changing it moves what is stored. Your own file only. |
 | `presets` | none | Sets of MCP servers ask knows, added to the file's `mcp`: `["swift"]` connects apple-docs (Apple's documentation, from its public instance) and swift-search (your Swift code; it runs `swift-search mcp`, so it must be on your PATH). A server the file names itself wins, and a change such as `"mcp": {"apple-docs": {"enabled": false}}` applies to the preset's. A project's file may name a preset, as it may name servers: it is read only once you trust the project. |
@@ -256,7 +257,8 @@ server of yours is ignored, with a notice. `ask trust` lists what such an entry 
 ### `approvals`
 
 Before a call that changes things runs, ask asks you: a command, writing or editing a file, typing into a job, fetching a web
-address (an address can carry what was read elsewhere out). Reading, searching and
+address (an address can carry what was read elsewhere out), running a `codemode` script (asked once, with the script shown: what
+the script then calls is not asked about again, and stays inside the sandbox). Reading, searching and
 listing never ask, and MCP tools ask unless their server says they are read-only. You answer **Allow this time**, **Allow for the
 session** (for a command: the same subcommand, `git status`; or the program, `git`; for a file: that file; for a web address: its
 host), or **Deny**. `ask -p` asks

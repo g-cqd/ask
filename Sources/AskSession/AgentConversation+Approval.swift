@@ -80,12 +80,15 @@ extension AgentConversation {
     /// Asks the person about a call that changes things (roadmap 0134), unless a grant for the session covers it.
     func approveCall(_ approval: ToolCallApproval) async -> Bool {
         if approvals.withLock({ $0.calls.covers(approval.scope) }) { return true }
-        // A command is shown whole under the question; a file or a job is named in it.
+        // A command, and a codemode script (ADR-0156), are shown whole under the question; a file or a job is named in it.
         let isCommand: Bool = if case .command = approval.scope { true } else { false }
+        let isScript = approval.scope == .tool("codemode")
         let question =
             isCommand
             ? "\(approval.tool) wants to run this. Allow it?"
-            : "\(approval.tool) \(ToolSummary.line(for: approval.input)). Allow it?"
+            : isScript
+                ? "codemode wants to run a \(ToolSummary.line(for: approval.input)). What it calls is not asked about again. Allow it?"
+                : "\(approval.tool) \(ToolSummary.line(for: approval.input)). Allow it?"
         let kind: ApprovalKind =
             switch approval.scope {
                 case .command(let words) where words.coverable:
@@ -98,7 +101,7 @@ extension AgentConversation {
             remembering: (nil, nil),
             kind: kind,
             scope: approval.scope,
-            detail: isCommand ? ToolSummary.fullInput(for: approval.input) : nil
+            detail: isCommand || isScript ? ToolSummary.fullInput(for: approval.input) : nil
         )
     }
 

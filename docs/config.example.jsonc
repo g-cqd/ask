@@ -30,6 +30,9 @@
   // Whether session files are compressed. Default: false.
   "sessionCompression": false,
 
+  // Whether the model may run one script over the tools in place of many calls. Default: true.
+  "codemode": true,
+
   // A task list for each session, or one for the workspace. Default: session. One of: session, workspace.
   "taskScope": "session",
 

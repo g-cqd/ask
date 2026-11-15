@@ -73,6 +73,24 @@ A page, a `#123` from GitHub and a `@server:uri` resource are other people's tex
 none of them can end its own section to pass for your words or for ask's. This bounds what such text can cause, it does not make a
 model deaf to it: what changes things (a command, a file written, an address fetched, an app opened) still asks you.
 
+## Codemode
+
+Instead of calling its tools one after another, the model can write one JavaScript script that calls them: several at once, one
+feeding the next, with the noise filtered out before the result reaches the conversation. It saves round trips to the model, which
+are what a long task waits on.
+
+- **A script can reach nothing but the tools.** It runs in a process of its own with no files, no network, no timers and no
+  modules. Every read, write and command it makes is a tool call, checked by the sandbox and by your hooks as a direct call is.
+- **You are asked once, for the whole script**, with the script shown under the question and the tools it names in the question.
+  What it then calls is not asked about again. A call that would need more than the sandbox allows is refused, not asked about.
+  **Allow for the session** covers later scripts; `--allow codemode` and `approvals.allow` do too.
+- **It is bounded.** A script has 120 seconds unless its first line asks for another deadline (ten minutes at most), 256 MiB of
+  memory, 16 tool calls running at once, and returns at most 10,000 tokens: past that, the start and the end, with the whole
+  written beside the session's other outputs. A script past a limit fails and says which.
+- The calls a script made are not kept in the session, only the script and what it returned.
+
+`"codemode": false` in the configuration turns it off; the model then has only the tools themselves.
+
 ## When the model asks for more
 
 The model can ask to narrow its own sandbox for a call, or for the rest of the conversation; that needs no approval. If it asks for **more**

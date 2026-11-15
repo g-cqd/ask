@@ -55,8 +55,9 @@ public struct ApprovalPolicy: Sendable, Equatable {
     /// The built-in tools that change things: commands, files, and what is typed into a job.
     static func changesThings(_ tool: String, _ input: JSONObject) -> Bool {
         switch tool {
-            // `fetch` reads, but its address can carry what it read elsewhere out (roadmap 0237).
-            case "bash", "write", "edit", "fetch": true
+            // `fetch` reads, but its address can carry what it read elsewhere out (roadmap 0237). A `codemode` script is asked
+            // about once, as a whole: what it calls is not asked about again (ADR-0156).
+            case "bash", "write", "edit", "fetch", "codemode": true
             case "job": fields(of: input).action == "input"
             default: false
         }

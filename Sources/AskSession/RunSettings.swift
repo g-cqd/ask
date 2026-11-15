@@ -92,6 +92,7 @@ package struct RunSettings: Equatable {
             row("compactAt", Self.describe(c.compactAt.value), c.compactAt.source),
             row("keepAwake", c.keepAwake.value.rawValue, c.keepAwake.source),
             row("keepDisplayAwake", c.keepDisplayAwake.value ? "true" : "false", c.keepDisplayAwake.source),
+            row("codemode", c.codemode.value ? "true" : "false", c.codemode.source),
             "sandbox   " + (sandbox.isUnrestricted ? "off (--no-sandbox)" : "on")
                 + (sandbox.isUnrestricted || c.sandbox.value.isEmpty
                     ? "" : ", \(c.sandbox.value)  [\(c.sandbox.source)]"),

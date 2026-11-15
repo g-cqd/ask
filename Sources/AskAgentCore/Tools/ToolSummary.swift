@@ -20,6 +20,8 @@ public enum ToolSummary {
         let yieldSeconds: Int?
         /// The `question` tool's questions (roadmap 0117): only their words are shown.
         let questions: [Asked]?
+        /// A `codemode` script (ADR-0156).
+        let code: String?
 
         struct Asked: Decodable {
             let header: String?
@@ -27,7 +29,7 @@ public enum ToolSummary {
         }
 
         enum CodingKeys: String, CodingKey {
-            case command, path, content, offset, limit, job, action, questions
+            case command, path, content, offset, limit, job, action, questions, code
             case oldText = "old_text"
             case newText = "new_text"
             case timeoutSeconds = "timeout_seconds"
@@ -44,7 +46,10 @@ public enum ToolSummary {
 
     static func line(_ fields: Fields?, _ input: JSONObject) -> String {
         // Never the input's JSON (note n68): what it says, in words.
-        compact(fields?.command ?? fields?.path ?? asked(fields) ?? ToolProse.summary(input) ?? "")
+        compact(
+            fields?.command ?? fields?.path ?? asked(fields) ?? fields?.code.map(script) ?? ToolProse.summary(input)
+                ?? ""
+        )
     }
 
     /// `What should change? (+1 more)`: the first of the model's questions, and how many follow.
@@ -112,7 +117,7 @@ public enum ToolSummary {
                 }
                 .joined(separator: "\n")
         }
-        return fields.content ?? fields.newText ?? ToolProse.details(input, fitting: maximumCharacters)
+        return fields.content ?? fields.newText ?? fields.code ?? ToolProse.details(input, fitting: maximumCharacters)
     }
 
     /// `512 B`, or the largest IEC unit that keeps the number at least one, to one decimal at most, with the exact count:

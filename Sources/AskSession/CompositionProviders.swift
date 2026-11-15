@@ -80,6 +80,13 @@ func checkHooks(
     ]
 }
 
+/// The `codemode` tool (ADR-0156), unless the configuration turns it off: each script runs in a child of this executable, so
+/// there is none where the executable cannot be found.
+func codemodeTools(_ configuration: Configuration) -> [any Tool] {
+    guard configuration.codemode.value, let executable = BinaryIdentity.running()?.path else { return [] }
+    return [CodemodeTool(executable: executable)]
+}
+
 /// The agent loop with the tools, rooted at `workingDirectory`, following `instructions` after ask's own. Jobs
 /// live in `jobs`, which the caller stops when ask exits.
 func makeLoop(
@@ -130,7 +137,7 @@ func makeLoop(
             NarrowSandboxTool(jobs: jobs), TasksTool(board: lists.board),
             IdeasTool(board: lists.ideas, tasks: lists.board), FetchTool()
         ] + (currentSession.map { [SessionSearchTool(currentSession: $0)] } ?? []) + (skills.tool.map { [$0] } ?? [])
-        + (askPerson == nil ? [] : [QuestionTool()])
+        + (askPerson == nil ? [] : [QuestionTool()]) + codemodeTools(run.configuration)
         + (startSubagent == nil ? [] : [AgentTool(definitions: definitions)])
     // A definition's subagent keeps only the tools it names, and no server's unless named.
     let tools = try ToolRegistry(

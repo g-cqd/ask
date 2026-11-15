@@ -1,6 +1,8 @@
 extension Configuration {
-    /// The session keys of `file` over this configuration (roadmap 0182): a workspace's file overrides the user's either way.
+    /// The session keys of `file` over this configuration (roadmap 0182), and `codemode` (ADR-0156): a workspace's file overrides
+    /// the user's either way.
     mutating func layerSessions(_ file: ConfigurationFile, from source: Source) {
+        if let codemode = file.codemode { self.codemode = Setting(value: codemode, source: source) }
         if let mode = file.sessionEncryption { sessionEncryption = Setting(value: mode, source: source) }
         if let compress = file.sessionCompression { sessionCompression = Setting(value: compress, source: source) }
         if let password = file.sessionPassword { sessionPassword = Setting(value: password, source: source) }
