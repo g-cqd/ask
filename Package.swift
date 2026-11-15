@@ -223,6 +223,8 @@ let package = Package(
         .target(
             name: "AskACP",
             dependencies: [
+                // The screen's `Conversation` is the seam the agent is driven through: this is its second driver (ADR-0154).
+                "AskTUI",
                 .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiJSONRPC", package: "AemiJSON"),
                 // The thread standard input is read on (AemiJSONRPC's descriptor reader runs on its pool).
                 .product(name: "AemiRuntime", package: "aemi")
@@ -290,7 +292,7 @@ let package = Package(
         .testTarget(
             name: "AskACPTests",
             dependencies: [
-                "AskACP", .product(name: "AemiJSON", package: "AemiJSON"),
+                "AskACP", "AskTUI", .product(name: "AemiJSON", package: "AemiJSON"),
                 .product(name: "AemiJSONRPC", package: "AemiJSON")
             ],
             path: "Tests/AskACPTests",

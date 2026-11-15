@@ -1,3 +1,4 @@
+internal import AemiJSON
 internal import AemiJSONRPC
 
 /// The errors ACP v1 names (Errors), with the words ask says them in.
@@ -15,5 +16,10 @@ extension JSONRPCError {
     /// Parameters that are malformed or hold a value ask does not support: -32602.
     static func invalidParams(_ reason: String) -> JSONRPCError {
         JSONRPCError(code: invalidParams, message: "Invalid params: \(reason)")
+    }
+
+    /// A request names a session that is not active on the connection: -32002, with the id asked for.
+    static func unknownSession(_ id: String) -> JSONRPCError {
+        JSONRPCError(code: -32002, message: "Resource not found: no session \(id)", data: ["sessionId": .string(id)])
     }
 }

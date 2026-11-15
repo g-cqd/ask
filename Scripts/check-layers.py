@@ -22,8 +22,8 @@ ALLOWED = {
     "AskApple": {"AskAI", "AskAgentCore", "AskCore"},
     "AskTools": {"AskAgentCore", "AskAI", "AskMCP", "AskCore"},
     "AskTUI": set(),
-    # The Agent Client Protocol on a connection (ADR-0153): it knows the protocol and none of ask's libraries yet.
-    "AskACP": set(),
+    # The Agent Client Protocol on a connection (ADR-0153): a second driver of the screen's `Conversation` (ADR-0154).
+    "AskACP": {"AskTUI"},
     # The conversation and the composition of a run (ADR-0149): above every library, below only the executable.
     "AskSession": {"AskAI", "AskAgentCore", "AskApple", "AskCore", "AskMCP", "AskTools", "AskTUI"},
 }
