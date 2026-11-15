@@ -1,9 +1,10 @@
 /// One answer of an approval question as the section draws it (roadmap 0116): its words, the letter that checks it (its number does
-/// too), and what choosing it means.
-struct ApprovalOption: Sendable, Equatable {
-    let label: String
+/// too), and what choosing it means. Another driver of the conversation offers the same answers in the same words (ADR-0154), so
+/// the words, which say how far an answer reaches, and the choice are public.
+public struct ApprovalOption: Sendable, Equatable {
+    public let label: String
     let letter: Character
-    let choice: ApprovalChoice
+    public let choice: ApprovalChoice
     /// What the conversation's block says after the question once this was chosen.
     let said: String
 
@@ -33,7 +34,7 @@ struct ApprovalOption: Sendable, Equatable {
     static let no = ApprovalOption(label: "No", letter: "n", choice: .deny, said: "no")
 
     /// The answers of a question of `kind`, in the order they are drawn.
-    static func options(for kind: ApprovalKind) -> [ApprovalOption] {
+    public static func options(for kind: ApprovalKind) -> [ApprovalOption] {
         switch kind {
             case .grant, .destructive: return [allowOnce, allowSession, deny]
             case .confirm: return [yes, no]
