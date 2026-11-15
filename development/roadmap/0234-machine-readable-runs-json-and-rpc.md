@@ -36,3 +36,11 @@ The owner accepted the design. `AskACP` answers `initialize` over AemiJSONRPC; `
 a session can be served. Building it showed the family's connection losing the order of requests and dropping what it could not
 read; fixed in AemiJSON (`31ce461`), which ask takes at the family's next repin. Next: the session's folder, then `session/new`
 and `session/prompt`.
+
+## Step 2, second part: sessions and prompts in the protocol's library (2026-11-15, diaries 03, 06, 07)
+
+A conversation reads its own folder and keeps its own task list and notes, so several can share a process. `AskACP` serves
+`session/new` and `session/prompt` over the screen's `Conversation` seam: text and thinking as chunks in order, the answer after
+them, a prompt during a turn steering it. Tested against a directed conversation. Next: `ask serve` makes real conversations,
+and `Scripts/probe-serve.py` drives one against the fake model server.
+
