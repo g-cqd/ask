@@ -43,6 +43,9 @@ final class ACPRouter: Sendable {
         }
     }
 
+    /// The client's input has ended: every turn that runs for it is stopped.
+    func clientLeft() { sessions?.cancelAll() }
+
     /// What the client says without asking: `session/cancel`. Any other notification is ignored, as one nobody knows must be.
     func notified(_ notification: JSONRPCNotification) {
         guard notification.method == "session/cancel", let sessions,

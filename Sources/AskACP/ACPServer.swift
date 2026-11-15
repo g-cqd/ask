@@ -11,6 +11,7 @@ package final class ACPServer: Sendable {
     package static let protocolVersion = 1
 
     private let connection: JSONRPCConnection
+    private let router: ACPRouter
 
     /// A server that writes to `output` and says it is `agent`. With `sessions` it serves them (`session/new`, `session/prompt`),
     /// and with `load` saved ones too (`session/load`); without, it answers `initialize` and has no session methods.
@@ -21,6 +22,7 @@ package final class ACPServer: Sendable {
         load: ACPSession.Loader? = nil
     ) {
         let router = ACPRouter(agent: agent, sessions: sessions.map { ACPSessions(source: $0, loader: load) })
+        self.router = router
         connection = JSONRPCConnection(
             serving: output,
             framing: .lines,
@@ -30,8 +32,10 @@ package final class ACPServer: Sendable {
         router.attach(connection)
     }
 
-    /// Serves the client whose bytes are `chunks` until they end, and every request read from them has been answered.
+    /// Serves the client whose bytes are `chunks` until they end, and every request read from them has been answered. When
+    /// they end the client has gone: the turns that still run for it are stopped, as its own cancellation would stop them, so
+    /// the answers this waits for come at once and not when a model or a command has finished for nobody.
     package func run(reading chunks: some AsyncSequence<[UInt8], any Error>) async {
-        await connection.run(reading: chunks)
+        await connection.run(reading: ChunksUntilGone(base: chunks) { [router] in router.clientLeft() })
     }
 }

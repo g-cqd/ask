@@ -10,6 +10,7 @@ B: two sessions in two folders: each keeps its own file and its own history.
 C: nothing but protocol messages on standard output, and ask ends when its input does.
 E: a prompt whose command sleeps is cancelled: it answers `cancelled` at once, the command is gone, the session goes on; and a
    line that is not JSON is answered, with what follows it taken in its order.
+G: the client goes away while a command runs: ask stops the command and ends with 0, not killed by a pipe nobody reads.
 F: a turn the provider refuses is answered with an error that says why, a client that shows notices is told as it happens,
    and the session takes the next prompt.
 D: a second `ask serve` loads the first session: its prompts, answers and calls are replayed in order before the answer, and the
@@ -45,8 +46,9 @@ class Client:
         # Called with each message read while a request waits for its answer, and with this client.
         self.watch = None
 
-    def request(self, method, params):
-        """The answer to the request, and the notifications that came before it."""
+    def request(self, method, params, until=None):
+        """The answer to the request, and the notifications that came before it. With `until`, a test of each message read, it
+        returns (None, messages) as soon as one passes, without waiting for the answer."""
         identifier, self.next_id = self.next_id, self.next_id + 1
         message = {"jsonrpc": "2.0", "id": identifier, "method": method, "params": params}
         self.process.stdin.write((json.dumps(message) + "\n").encode())
@@ -73,6 +75,8 @@ class Client:
                 reply = {"jsonrpc": "2.0", "id": parsed["id"], "result": {"outcome": {"outcome": "selected", "optionId": chosen}}}
                 self.process.stdin.write((json.dumps(reply) + "\n").encode())
                 self.process.stdin.flush()
+            if until and until(parsed):
+                return None, before
 
     def notify(self, method, params):
         self.process.stdin.write((json.dumps({"jsonrpc": "2.0", "method": method, "params": params}) + "\n").encode())
@@ -125,6 +129,7 @@ def main():
         agent.turn([("text", "After the cancel.")], "end_turn"),
         agent.sse([{"type": "error", "error": {"type": "permission_error", "message": "Your key may not use this model."}}]),
         agent.turn([("text", "After the failure.")], "end_turn"),
+        agent.turn([("call", "t10", "bash", {"command": "sleep 48.6"})], "tool_use"),
     ])
     state = os.path.join(root, "state")
     client = Client(binary, elsewhere, agent.environment(state, server.url))
@@ -277,8 +282,28 @@ def main():
                     sorted((a.get("id"), a.get("error", {}).get("code")) for a in answers[1:]) == [(5, -32600), (6, None)], answers[1:]),
     ]
     garbage.close()
-    status, said = client.close()
-    results.append(agent.check("it ends with 0 too", status == 0, (status, said[-300:])))
+
+    print("G: the client goes away while a command runs")
+
+    def runs(message):
+        update = message.get("params", {}).get("update", {})
+        return update.get("toolCallId") == "t10" and update.get("sessionUpdate") == "tool_call_update" and "title" in update
+
+    client.request("session/prompt", prompt(session, "Wait again."), until=runs)
+    # The client dies: both its ends of the pipes close, with the command running and its answer still owed.
+    client.process.stdin.close()
+    client.process.stdout.close()
+    try:
+        status = client.process.wait(timeout=20)
+    except subprocess.TimeoutExpired:
+        client.process.kill()
+        status = "still running 20 s after its client had gone"
+    sleeping = subprocess.run(["pgrep", "-f", "sleep 48.6"], capture_output=True, text=True).stdout.split()
+    results += [
+        agent.check("ask ends by itself, with 0, and not killed by the pipe it could no longer write to", status == 0,
+                    (status, client.process.stderr.read().decode()[-300:])),
+        agent.check("the command it ran for that client is gone with it", not sleeping, sleeping),
+    ]
     server.httpd.shutdown()
     print("PASS" if all(results) else "FAIL")
     return 0 if all(results) else 1

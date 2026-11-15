@@ -13,6 +13,11 @@ final class ACPSessions: Sendable {
         self.loader = loader
     }
 
+    /// Cancels every session's turn, as `session/cancel` would each.
+    func cancelAll() {
+        for turns in active.withLock({ Array($0.values) }) { turns.cancel() }
+    }
+
     /// Whether saved sessions can be loaded (`loadSession`).
     var canLoad: Bool { loader != nil }
 
