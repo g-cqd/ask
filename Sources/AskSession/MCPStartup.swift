@@ -4,8 +4,12 @@ internal import Foundation
 
 /// The MCP servers of `settings`, connecting (ADR-0099), and watched with the jobs so that ask being killed does not leave them (ADR-0102).
 /// With none configured this does nothing.
-func startMCPServers(_ settings: RunSettings, jobs: JobTable, connectsOnFirstNeed: Bool = false) -> MCPHub {
-    let environment = LaunchEnvironment.values
+func startMCPServers(
+    _ settings: RunSettings,
+    jobs: JobTable,
+    connectsOnFirstNeed: Bool = false,
+    environment: [String: String] = LaunchEnvironment.values
+) -> MCPHub {
     let hub = MCPHub(
         environment: environment,
         connectsOnFirstNeed: connectsOnFirstNeed,
