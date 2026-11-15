@@ -12,7 +12,7 @@ let package = Package(
         // The same revisions ask pins: one revision of a package in a graph.
         .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "806b481d8cc7e21f07d45537b625c5ac9abfc87e"),
         .package(url: "https://github.com/g-cqd/AemiSearch.git", revision: "3894f0cd180529b82ddb190e50b5b52e7092f4c0"),
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "53e06bfe2814fdb2256baa31bb9b93525434d3e2")
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "791a6cae3c70dc7f48fafa6d95807ebe2325b3a7")
     ],
     targets: [
         .executableTarget(
