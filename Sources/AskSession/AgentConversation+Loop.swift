@@ -102,6 +102,35 @@ extension AgentConversation {
     }
 }
 
+/// What makes a conversation's loop from its settings and its hooks: the tools over `jobs`, the servers of `mcp`, a transport of
+/// its own. The screen's conversation and a served one (ADR-0154) are made with the same.
+func conversationLoop(instructions files: [ProjectInstructions.File], jobs: JobTable, mcp: MCPHub)
+    -> @Sendable (RunSettings, LoopHooks) throws -> AgentLoop
+{
+    { settings, hooks in
+        try makeLoop(
+            settings,
+            instructions: files,
+            jobs: jobs,
+            transport: URLSessionTransport(),
+            // @dl:accept -- the hooks passed through, one argument per field
+            approve: hooks.approve,
+            narrowing: hooks.narrowing,
+            lists: hooks.lists,
+            live: mcp.live,
+            destructiveApprover: hooks.destructiveApprover,
+            callGate: hooks.callGate,
+            askPerson: hooks.askPerson,
+            progress: hooks.progress,
+            startSubagent: hooks.startSubagent,
+            keepTools: hooks.keepTools,
+            currentSession: hooks.currentSession,
+            extraHooks: hooks.extraHooks,
+            reportEvent: hooks.reportEvent
+        )
+    }
+}
+
 /// The interactive screen in the working directory.
 func runInteractive(
     source: ConfigurationSource,
@@ -129,28 +158,7 @@ func runInteractive(
             jobs: jobs,
             mcp: mcp,
             grants: reloaded?.grantsPath.flatMap(SessionGrants.take(from:)),
-            makeLoop: { settings, hooks in
-                try makeLoop(
-                    settings,
-                    instructions: files,
-                    jobs: jobs,
-                    transport: URLSessionTransport(),
-                    // @dl:accept -- the hooks passed through, one argument per field
-                    approve: hooks.approve,
-                    narrowing: hooks.narrowing,
-                    lists: hooks.lists,
-                    live: mcp.live,
-                    destructiveApprover: hooks.destructiveApprover,
-                    callGate: hooks.callGate,
-                    askPerson: hooks.askPerson,
-                    progress: hooks.progress,
-                    startSubagent: hooks.startSubagent,
-                    keepTools: hooks.keepTools,
-                    currentSession: hooks.currentSession,
-                    extraHooks: hooks.extraHooks,
-                    reportEvent: hooks.reportEvent
-                )
-            }
+            makeLoop: conversationLoop(instructions: files, jobs: jobs, mcp: mcp)
         )
         // A shutdown signal exits at once from the screen, so its jobs are signalled there; a normal quit
         // stops them gracefully below.
