@@ -22,10 +22,14 @@ final class ACPExchange: JSONRPCSink, Sendable {
     private let asked = Mailbox<JSON>()
     private let output = Output()
 
-    init(agent: ACPImplementation = ACPImplementation(name: "ask", version: "0"), sessions: ACPSession.Source? = nil) {
+    init(
+        agent: ACPImplementation = ACPImplementation(name: "ask", version: "0"),
+        sessions: ACPSession.Source? = nil,
+        load: ACPSession.Loader? = nil
+    ) {
         let (stream, feed) = AsyncThrowingStream<[UInt8], any Error>.makeStream()
         self.feed = feed
-        let server = ACPServer(output: output, agent: agent, sessions: sessions)
+        let server = ACPServer(output: output, agent: agent, sessions: sessions, load: load)
         Task { [served] in
             await server.run(reading: stream)
             served.post(true)

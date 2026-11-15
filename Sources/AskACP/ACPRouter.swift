@@ -13,9 +13,9 @@ final class ACPRouter: Sendable {
     /// Where updates are sent: the connection, which is made after this and so given once it exists.
     private let client = Mutex<JSONRPCConnection?>(nil)
 
-    init(agent: ACPImplementation, sessions: ACPSession.Source?) {
+    init(agent: ACPImplementation, sessions: ACPSessions?) {
         self.agent = agent
-        self.sessions = sessions.map(ACPSessions.init)
+        self.sessions = sessions
     }
 
     /// Gives the connection updates are sent on.
@@ -28,6 +28,8 @@ final class ACPRouter: Sendable {
         switch (request.method, sessions) {
             case ("session/new", let sessions?): return await sessions.new(request.params)
             case ("session/prompt", let sessions?): return await prompt(request.params, in: sessions)
+            case ("session/load", let sessions?) where sessions.canLoad:
+                return await sessions.load(request.params, client: asClient)
             default: return .failure(.methodNotFound(request.method))
         }
     }
@@ -42,9 +44,12 @@ final class ACPRouter: Sendable {
         switch ACPPrompt.text(of: params) {
             case .failure(let error): return .failure(error)
             case .success(let text):
-                return await turns.prompt(text, client: ACPClient(notify: send, requestPermission: requestPermission))
+                return await turns.prompt(text, client: asClient)
         }
     }
+
+    /// The client, as a turn or a replay reaches it.
+    private var asClient: ACPClient { ACPClient(notify: send, requestPermission: requestPermission) }
 
     /// Sends one `session/update` to the client.
     @Sendable private func send(_ update: JSONValue) async {
@@ -72,7 +77,9 @@ final class ACPRouter: Sendable {
         info["version"] = .string(agent.version)
         return .success(
             [
-                "protocolVersion": .int(Int64(ACPServer.protocolVersion)), "agentCapabilities": [:],
+                "protocolVersion": .int(Int64(ACPServer.protocolVersion)),
+                // Only what is built: a saved session can be loaded when this server was given the means.
+                "agentCapabilities": sessions?.canLoad == true ? ["loadSession": true] : [:],
                 "agentInfo": .object(info), "authMethods": []
             ]
         )

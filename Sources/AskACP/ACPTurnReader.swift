@@ -30,6 +30,16 @@ struct ACPTurnReader {
         return true
     }
 
+    /// Tells the client one thing a saved session holds (`session/load`). What was said live about a run is not history and is
+    /// not replayed (Session Setup, "Loading a session"), and a record holds no question still waiting for its answer.
+    mutating func replay(_ update: ConversationUpdate) async {
+        switch update {
+            case .notice, .askApproval, .askQuestions, .askInput: return
+            case .runEnded, .returnQueuedPrompts, .promptAccepted, .promptRefused: return
+            default: await show(update)
+        }
+    }
+
     /// Tells the client of a call, asks it an approval, declines what it cannot be asked yet, or sends what ``ACPUpdate`` maps.
     private mutating func show(_ update: ConversationUpdate) async {
         switch update {

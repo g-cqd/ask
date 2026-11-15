@@ -4,6 +4,7 @@ package import AskTUI
 internal import AskTools
 internal import Foundation
 internal import Synchronization
+internal import System
 
 /// The conversations `ask serve` holds (ADR-0154): one for each session a client asks for, made for the client's folder as the
 /// screen's is made for the launch's, and what each leaves running until ask exits.
@@ -16,6 +17,18 @@ package final class ServedSessions: Sendable {
         /// The folder the conversation works in: the one asked for, as the kernel names it.
         package let folder: String
         package let conversation: any Conversation
+    }
+
+    /// A saved session opened again, and what it holds, oldest first.
+    package struct Loaded: Sendable {
+        package let made: Made
+        package let history: [ConversationUpdate]
+    }
+
+    /// Why a saved session could not be opened.
+    package struct CannotOpen: Error, CustomStringConvertible {
+        package let description: String
+        init(_ description: String) { self.description = description }
     }
 
     /// Why no conversation could be made for a folder.
@@ -58,11 +71,58 @@ package final class ServedSessions: Sendable {
     /// A conversation for `folder`, which is read as the kernel would (links followed), and must be one.
     /// - Throws: ``NotAFolder``, or why the folder's configuration gives no run (no model, a file that does not parse).
     package func make(in folder: String) async throws -> Made {
+        let workspace = try workspace(folder)
+        let conversation = try await conversation(in: workspace, resumed: nil)
+        let file = (conversation.plannedSessionPath() as NSString).lastPathComponent
+        return Made(id: (file as NSString).deletingPathExtension, folder: workspace, conversation: conversation)
+    }
+
+    /// The saved session `id` of `folder`, opened to be continued, with what it holds as the screen would show it again; nil when
+    /// the folder has no such session.
+    /// - Throws: ``NotAFolder``, ``CannotOpen``, or why the folder's configuration gives no run.
+    package func load(_ id: String, in folder: String) async throws -> Loaded? {
+        let workspace = try workspace(folder)
+        // An id is a session file's name: one that could name anything else (a path, a hidden file) names no session.
+        guard Self.isSessionName(id) else { return nil }
+        let path = SessionDirectory(project: workspace, environment: environment).path + "/" + id + ".jsonl"
+        guard FileManager.default.fileExists(atPath: path) else { return nil }
+        let recorder: SessionRecorder
+        do {
+            recorder = SessionRecorder(try SessionFile.open(at: FilePath(path), keyring: SessionKeyAccess.keyring))
+        } catch .locked {
+            // Its password is asked on a terminal, never through a client (ADR-0154): the keys are opened there, once.
+            throw CannotOpen(
+                "session \(id) is encrypted and its keys are not open: run `ask --resume \(id)` in a terminal once"
+            )
+        } catch .inUse {
+            throw CannotOpen("session \(id) is open in another ask")
+        } catch {
+            throw CannotOpen("session \(id) cannot be read: \(error)")
+        }
+        let conversation = try await conversation(in: workspace, resumed: recorder)
+        return Loaded(
+            made: Made(id: id, folder: workspace, conversation: conversation),
+            history: conversation.history()
+        )
+    }
+
+    /// Whether `id` can only be a session file's name in its folder: ASCII letters, digits, `-` and `_`.
+    static func isSessionName(_ id: String) -> Bool {
+        !id.isEmpty && id.allSatisfy { $0.isASCII && ($0.isLetter || $0.isNumber || $0 == "-" || $0 == "_") }
+    }
+
+    private func workspace(_ folder: String) throws -> String {
         var isDirectory: ObjCBool = false
         guard let workspace = CanonicalPath.of(folder, relativeTo: "/"),
             FileManager.default.fileExists(atPath: workspace, isDirectory: &isDirectory), isDirectory.boolValue
         else { throw NotAFolder(path: folder) }
+        return workspace
+    }
+
+    /// A conversation in `workspace` as a launch makes the screen's: new, or continuing the session `resumed`.
+    private func conversation(in workspace: String, resumed: SessionRecorder?) async throws -> AgentConversation {
         let source = ConfigurationSource(workingDirectory: workspace, flags: flags, environment: environment)
+            .resuming(resumed)
         let settings = try await source.load(allowNetwork: allowNetwork)
         await decideProtection(settings.configuration)
         let jobs = JobTable(environment: environment)
@@ -70,6 +130,7 @@ package final class ServedSessions: Sendable {
         let mcp = startMCPServers(settings, jobs: jobs, connectsOnFirstNeed: true, environment: environment)
         let conversation = AgentConversation(
             directory: SessionDirectory(project: workspace, environment: environment),
+            resumed: resumed,
             settings: settings,
             source: source,
             jobs: jobs,
@@ -81,8 +142,7 @@ package final class ServedSessions: Sendable {
             )
         )
         held.withLock { $0.append(Held(conversation: conversation, jobs: jobs, mcp: mcp)) }
-        let file = (conversation.plannedSessionPath() as NSString).lastPathComponent
-        return Made(id: (file as NSString).deletingPathExtension, folder: workspace, conversation: conversation)
+        return conversation
     }
 
     /// Stops what the sessions left running: their threads, their jobs, their MCP servers.

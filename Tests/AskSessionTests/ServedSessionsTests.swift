@@ -2,6 +2,7 @@ import AskAgentCore
 import AskTUI
 import Foundation
 import Synchronization
+import System
 import Testing
 
 @testable import AskSession
@@ -78,5 +79,58 @@ struct ServedSessionsTests {
         }
         let refused = await #expect(throws: ServedSessions.NotAFolder.self) { _ = try await sessions.make(in: file) }
         #expect(refused?.description == "\(file) is not a folder ask can work in")
+    }
+
+    /// A saved session of `folder` holding a prompt and its answer, closed again so that it can be opened.
+    private func savedSession(_ id: String, in folder: String, root: URL) throws {
+        let environment = ["HOME": root.path, "XDG_STATE_HOME": root.appending(path: "state").path]
+        let directory = SessionDirectory(project: folder, environment: environment)
+        try FileManager.default.createDirectory(atPath: directory.path, withIntermediateDirectories: true)
+        let file = try SessionFile.create(
+            at: FilePath(directory.path + "/" + id + ".jsonl"),
+            format: SessionFormat(compressed: false, encrypted: false)
+        )
+        let recorder = SessionRecorder(file)
+        _ = try recorder.append(.user("What is in the note?"))
+        _ = try recorder.append(.assistant("The note says hello."))
+    }
+
+    @Test func `a saved session is opened to be continued, with what it holds, oldest first`() async throws {
+        let (sessions, root, folders) = try layout()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try savedSession("20261115T100000Z-0badcafe", in: folders[0], root: root)
+        let loaded = try #require(try await sessions.load("20261115T100000Z-0badcafe", in: folders[0]))
+        #expect(loaded.made.id == "20261115T100000Z-0badcafe" && loaded.made.folder == folders[0])
+        let said = loaded.history.filter { update in
+            if case .userPrompt = update { true } else if case .assistantText = update { true } else { false }
+        }
+        #expect(said == [.userPrompt("What is in the note?"), .assistantText("The note says hello.")])
+        let conversation = try #require(loaded.made.conversation as? AgentConversation)
+        #expect(conversation.session.withLock { $0?.path }?.hasSuffix("/20261115T100000Z-0badcafe.jsonl") == true)
+        // It has one writer: the conversation that holds it.
+        await #expect(throws: ServedSessions.CannotOpen.self) {
+            _ = try await sessions.load("20261115T100000Z-0badcafe", in: folders[0])
+        }
+        await sessions.stopAll()
+    }
+
+    @Test func `a session the folder does not have, or a name that is not one, is none`() async throws {
+        let (sessions, root, folders) = try layout()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try savedSession("20261115T100000Z-0badcafe", in: folders[0], root: root)
+        #expect(try await sessions.load("20261115T100000Z-0badcafe", in: folders[1]) == nil, "another folder's")
+        #expect(try await sessions.load("20261115T100000Z-missing0", in: folders[0]) == nil)
+        // A name that reaches out of the folder's sessions is no session, whatever file it would find.
+        let environment = ["HOME": root.path, "XDG_STATE_HOME": root.appending(path: "state").path]
+        let directory = SessionDirectory(project: folders[0], environment: environment).path
+        try Data("{}".utf8).write(to: URL(fileURLWithPath: directory + "/../outside.jsonl"))
+        for name in [
+            "../outside", "../../../../outside", ".", "", "20261115T100000Z-0badcafe.jsonl", "a/b", "a b", "é", "a\0",
+            "²"
+        ] {
+            #expect(try await sessions.load(name, in: folders[0]) == nil, "\(name)")
+            #expect(!ServedSessions.isSessionName(name), "\(name)")
+        }
+        #expect(ServedSessions.isSessionName("20261115T100000Z-0badcafe") && ServedSessions.isSessionName("a_B-9"))
     }
 }

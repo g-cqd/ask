@@ -8,6 +8,8 @@ A: one session: initialize, session/new, a prompt with two tool calls in it, a s
    client, which allows the first and denies the second; the session file is the one the id names.
 B: two sessions in two folders: each keeps its own file and its own history.
 C: nothing but protocol messages on standard output, and ask ends when its input does.
+D: a second `ask serve` loads the first session: its prompts, answers and calls are replayed in order before the answer, and the
+   next prompt continues it in the same file.
 
 Scripts/probe-serve.py .build/release/ask
 """
@@ -105,6 +107,7 @@ def main():
         agent.turn([("call", "t3", "write", {"path": "refused.txt", "content": "never\n"})], "tool_use"),
         agent.turn([("text", "Second answer.")], "end_turn"),
         agent.turn([("text", "Hello from two.")], "end_turn"),
+        agent.turn([("text", "Continued.")], "end_turn"),
     ])
     state = os.path.join(root, "state")
     client = Client(binary, elsewhere, agent.environment(state, server.url))
@@ -179,6 +182,38 @@ def main():
             json.loads(line).get("jsonrpc") == "2.0" for line in client.lines), client.not_json[:3]),
         agent.check("ask ends when its input does, with 0", status == 0, (status, said[-400:])),
     ]
+    print("D: another ask loads the first session")
+    client = Client(binary, elsewhere, agent.environment(state, server.url))
+    opened, _ = client.request("initialize", {"protocolVersion": 1})
+    loaded, replayed = client.request("session/load", {"sessionId": session, "cwd": one, "mcpServers": []})
+    told = [u.get("sessionUpdate") for u in (m["params"]["update"] for m in replayed if m.get("method") == "session/update")]
+    answer, before = client.request("session/prompt", prompt(session, "Go on."))
+    last = server.requests[-1]["body"]["messages"]
+    results += [
+        agent.check("ask says it can load", opened.get("result", {}).get("agentCapabilities", {}).get("loadSession") is True, opened),
+        agent.check("the load answers after the replay", loaded.get("result") == {} and len(replayed) > 0, loaded),
+        agent.check("the prompts are replayed as the person's",
+                    chunks(replayed, "user_message_chunk", session) == "What does note.txt say?And again?", replayed),
+        agent.check("the answers are replayed as the model's",
+                    chunks(replayed, "agent_message_chunk", session) == "Reading. It says: the note of one.Second answer.", replayed),
+        agent.check("the calls are replayed with how they ended",
+                    [calls(replayed, c)[-1].get("status") for c in ("t1", "t2", "t3")] == ["completed", "completed", "failed"],
+                    [calls(replayed, c) for c in ("t1", "t2", "t3")]),
+        agent.check("nothing is asked again, and the replay starts with the first prompt",
+                    not client.asked and told[:1] == ["user_message_chunk"], (client.asked, told)),
+        agent.check("the loaded session goes on with its history", answer.get("result") == {"stopReason": "end_turn"}
+                    and chunks(before, "agent_message_chunk", session) == "Continued."
+                    and "What does note.txt say?" in json.dumps(last) and last[-1]["content"][-1].get("text") == "Go on.", last[-1]),
+        agent.check("it wrote to the same file", sorted(os.path.basename(f) for f in agent.sessions(state))
+                    == sorted([session + ".jsonl", other + ".jsonl"]), agent.sessions(state)),
+        agent.check("a session of another folder is not found there",
+                    client.request("session/load", {"sessionId": other, "cwd": one})[0].get("error", {}).get("code") == -32002),
+        agent.check("a name that is a path is not found", client.request(
+            "session/load", {"sessionId": "../" + os.path.basename(os.path.dirname(agent.sessions(state)[0])) + "/" + other,
+                             "cwd": one})[0].get("error", {}).get("code") == -32002),
+    ]
+    status, said = client.close()
+    results.append(agent.check("it ends with 0 too", status == 0, (status, said[-300:])))
     server.httpd.shutdown()
     print("PASS" if all(results) else "FAIL")
     return 0 if all(results) else 1

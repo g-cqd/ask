@@ -9,6 +9,8 @@ enum ACPUpdate {
         switch update {
             case .assistantText(let text): chunk("agent_message_chunk", text)
             case .thinkingText(let text): chunk("agent_thought_chunk", text)
+            // Said only when a saved session is shown again: a prompt the person wrote then.
+            case .userPrompt(let text): chunk("user_message_chunk", text)
             // Decided where a turn is read (``ACPTurnReader``): a list is its members, the end and the failure end the request,
             // what became of a message sent during the turn answers that message's request, a tool call is told with its state,
             // an approval is asked of the client, and what the client cannot be asked yet is declined.
@@ -19,7 +21,7 @@ enum ACPUpdate {
             // job's output, the replay of a session, compaction, usage, the name, the commands.
             // @dl:accept -- a switch that names every case on purpose: the lists are the decision, and lists of cases look alike
             case .toolProgress, .jobOutput: nil
-            case .userPrompt, .promptPictures, .compacting, .compactionFinished, .status, .context, .conversationName:
+            case .promptPictures, .compacting, .compactionFinished, .status, .context, .conversationName:
                 nil
             case .skills, .choices, .choicesStale, .submitPrompt, .detail, .choiceSummary: nil
             // The screen's furniture, which no client is sent (ADR-0154): the status line's segments, the pickers' rows, drafts,
@@ -34,7 +36,8 @@ enum ACPUpdate {
         }
     }
 
-    /// A piece of a message: the model's words, or its reasoning.
+    /// A piece of a message: the person's words, the model's, or its reasoning.
+    // @dl:accept -- the tests spell the same shape themselves, so that a wrong shape here is not also the one they expect
     private static func chunk(_ kind: String, _ text: String) -> JSONValue {
         ["sessionUpdate": .string(kind), "content": ["type": "text", "text": .string(text)]]
     }

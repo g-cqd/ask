@@ -11,10 +11,15 @@ package final class ACPServer: Sendable {
 
     private let connection: JSONRPCConnection
 
-    /// A server that writes to `output` and says it is `agent`. With `sessions` it serves them (`session/new`, `session/prompt`);
-    /// without, it answers `initialize` and has no session methods.
-    package init(output: any JSONRPCSink, agent: ACPImplementation, sessions: ACPSession.Source? = nil) {
-        let router = ACPRouter(agent: agent, sessions: sessions)
+    /// A server that writes to `output` and says it is `agent`. With `sessions` it serves them (`session/new`, `session/prompt`),
+    /// and with `load` saved ones too (`session/load`); without, it answers `initialize` and has no session methods.
+    package init(
+        output: any JSONRPCSink,
+        agent: ACPImplementation,
+        sessions: ACPSession.Source? = nil,
+        load: ACPSession.Loader? = nil
+    ) {
+        let router = ACPRouter(agent: agent, sessions: sessions.map { ACPSessions(source: $0, loader: load) })
         connection = JSONRPCConnection(sink: output, framing: .lines) { await router.answer($0) }
         router.attach(connection)
     }

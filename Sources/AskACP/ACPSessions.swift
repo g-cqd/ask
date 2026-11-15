@@ -5,9 +5,16 @@ internal import Synchronization
 /// The sessions active on a connection (ACP v1, Session Setup): made by `session/new`, named by the id it answered.
 final class ACPSessions: Sendable {
     private let source: ACPSession.Source
+    private let loader: ACPSession.Loader?
     private let active = Mutex<[String: ACPTurns]>([:])
 
-    init(source: @escaping ACPSession.Source) { self.source = source }
+    init(source: @escaping ACPSession.Source, loader: ACPSession.Loader? = nil) {
+        self.source = source
+        self.loader = loader
+    }
+
+    /// Whether saved sessions can be loaded (`loadSession`).
+    var canLoad: Bool { loader != nil }
 
     /// `session/new`: a session for the directory the client names, which must be an absolute path.
     func new(_ params: JSON?) async -> Result<JSONValue, JSONRPCError> {
@@ -23,6 +30,28 @@ final class ACPSessions: Sendable {
                 JSONRPCError(code: JSONRPCError.internalError, message: "The session could not be made: \(error)")
             )
         }
+    }
+
+    /// `session/load`: the saved session the client names, replayed to it as updates before the answer, then active.
+    func load(_ params: JSON?, client: ACPClient) async -> Result<JSONValue, JSONRPCError> {
+        guard let id = params?["sessionId"].string, let cwd = params?["cwd"].string, cwd.hasPrefix("/") else {
+            return .failure(.invalidParams("session/load needs sessionId, and cwd, an absolute path"))
+        }
+        // Its file has one writer, which is the conversation that already serves it here.
+        guard active.withLock({ $0[id] }) == nil else {
+            return .failure(.invalidParams("session \(id) is already active on this connection"))
+        }
+        let loaded: ACPSession.Loaded?
+        do { loaded = try await loader?(id, cwd) } catch {
+            return .failure(
+                JSONRPCError(code: JSONRPCError.internalError, message: "The session could not be loaded: \(error)")
+            )
+        }
+        guard let loaded else { return .failure(.unknownSession(id)) }
+        var reader = ACPTurnReader(session: loaded.session, client: client)
+        for update in loaded.history.flatMap(\.flattened) { await reader.replay(update) }
+        active.withLock { $0[id] = ACPTurns(session: loaded.session) }
+        return .success([:])
     }
 
     /// The turns of session `id`, or the error an unknown session is answered with (Errors, "Unknown sessions").
