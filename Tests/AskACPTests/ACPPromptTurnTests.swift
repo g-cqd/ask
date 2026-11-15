@@ -138,4 +138,22 @@ struct ACPPromptTurnTests {
         )
         _ = await client.end()
     }
+
+    /// Until the client can be asked (`session/request_permission`, elicitation: the order of work), nobody can answer: a turn
+    /// that waited for an answer would never end.
+    @Test func `what nobody can be asked yet is declined at once, so the turn goes on`() async {
+        let (client, conversation) = await session()
+        async let answer = client.request("session/prompt", prompt("go"))
+        _ = await conversation.next()
+        conversation.say(.askApproval(id: 4, question: "Run make?"))
+        #expect(await conversation.next() == .answeredApproval(4, .deny))
+        conversation.say(.askQuestions(id: 5, questions: []))
+        #expect(await conversation.next() == .answeredQuestions(5, declined: true))
+        conversation.say(.askInput(id: 6, prompt: "Your key", secret: true))
+        #expect(await conversation.next() == .answeredInput(6, nil))
+        conversation.say(.assistantText("I could not."), .runEnded)
+        #expect(await answer["result"]["stopReason"].string == "end_turn")
+        #expect(client.updates == [chunk("agent_message_chunk", "I could not.")])
+        _ = await client.end()
+    }
 }

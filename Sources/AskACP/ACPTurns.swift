@@ -96,13 +96,26 @@ final class ACPTurns: Sendable {
                     case .promptAccepted(let id, _): take(id)
                     case .promptRefused(let id): refuse(id, because: failure)
                     default:
-                        guard let payload = ACPUpdate.payload(for: update) else { continue }
+                        guard !decline(update), let payload = ACPUpdate.payload(for: update) else { continue }
                         await notify(["sessionId": .string(session.id), "update": payload])
                 }
             }
         }
         guard failed else { return .success(["stopReason": "end_turn"]) }
         return .failure(JSONRPCError(code: JSONRPCError.internalError, message: failure ?? "The turn failed."))
+    }
+
+    /// Declines what the conversation asks the person, and says whether `update` was such a question. Until the client can be
+    /// asked (`session/request_permission`, elicitation), nobody can answer, and a turn that waited for one would never end: a
+    /// call that needs approval is refused, which its result tells the model, and a question is declined.
+    private func decline(_ update: ConversationUpdate) -> Bool {
+        switch update {
+            case .askApproval(let id, _, _, _): session.conversation.answer(approval: id, with: .deny)
+            case .askQuestions(let id, _): session.conversation.answer(questions: id, with: nil)
+            case .askInput(let id, _, _, _): session.conversation.answer(input: id, with: nil)
+            default: return false
+        }
+        return true
     }
 
     /// The turn took the prompt sent during it as `id`: it is answered when the turn ends.
