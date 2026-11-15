@@ -83,23 +83,22 @@ extension AgentLoop {
         }
     }
 
-    /// One summarisation request: the context as last sent, then the instruction. Only retries are reported;
-    /// the summary is ask's own request and is not shown as the assistant speaking.
     /// Each tool result in a summary request that had to be made smaller keeps at most this much of its output.
     static var clippedResultBytes: Int { 4_096 }
 
     /// Asks the model to summarise everything before the kept tail.
     ///
     /// The first request is the context as last sent plus the instruction, so the provider reads it from its cache
-    /// (ADR-0026). When that is refused for its length, the request is made again with only the part being replaced
-    /// and each tool output in it clipped: the summary covers that part alone, and a small window can hold it. When the
-    /// model writes no summary, a mechanical record of the part takes its place (``Compaction/record(of:)``).
+    /// (ADR-0026). When that is refused for its length, or is clearly too long to send, only the part being replaced is
+    /// summarised, as it was last sent and with each tool output clipped, in as many requests as it takes for each to fit
+    /// (``summariseInParts(_:instruction:events:)``, ADR-0155). When the model writes no summary, a mechanical record of
+    /// the part takes its place (``Compaction/record(of:)``).
     /// - Parameters:
     ///   - context: the context as the tree gives it.
     ///   - contextFull: the compaction cannot be skipped, so the kept tail shrinks if it would leave nothing.
     ///   - extraInstructions: additional summarisation instructions from `compaction.before` hooks.
     ///   - events: where retries are reported.
-    /// - Returns: the summary, the usage of the request that made it, and the first entry kept word for word.
+    /// - Returns: the summary, the usage of the requests that made it, and the first entry kept word for word.
     /// - Throws: ``AgentError`` when there is nothing to summarise or the requests fail.
     private func summarise(
         _ context: [SessionEntry],
@@ -115,35 +114,51 @@ extension AgentLoop {
                 ?? (contextFull ? Compaction.cut(context, keepingAtMost: tail) : nil)
         else { throw .provider("nothing before the recent messages to summarise") }
         let instruction = ([Compaction.instruction] + extraInstructions).joined(separator: "\n\n")
-        let response: AssembledResponse
+        let reach = clearingReach(in: context)
         do {
-            response = try await summaryResponse(for: context, instruction: instruction, events: events)
+            let whole = request(for: context, clearingBefore: reach) { _ in }
+            let response = try await summaryResponse(to: whole, instruction: instruction, events: events)
+            let text = Self.text(of: response)
+            // No summary from the model, as a reasoning model out of reply budget does: record the part instead.
+            let summary = !text.allSatisfy(\.isWhitespace) ? text : Compaction.record(of: context[..<cut])
+            return (summary, response.usage, context[cut].id)
         } catch .contextOverflow {
-            let older = Compaction.clippingResults(context[..<cut], toBytes: Self.clippedResultBytes)
-            response = try await summaryResponse(for: older, instruction: instruction, events: events)
+            let sent = context[..<cut].enumerated()
+                .map { index, entry in
+                    index < (reach ?? 0)
+                        ? SessionEntry(
+                            id: entry.id,
+                            parentID: entry.parentID,
+                            payload: ContextClearing.cleared(entry.payload)
+                        )
+                        : entry
+                }
+            let older = Compaction.clippingResults(sent, toBytes: Self.clippedResultBytes)
+            let made = try await summariseInParts(older, instruction: instruction, events: events)
+            return (made.summary, made.usage, context[cut].id)
         }
-        let text = Self.joined(response.blocks) { if case .text(let text) = $0 { text } else { nil } }
-        // No summary from the model, as a reasoning model out of reply budget does: record the part instead.
-        let summary = !text.allSatisfy(\.isWhitespace) ? text : Compaction.record(of: context[..<cut])
-        return (summary, response.usage, context[cut].id)
     }
 
-    /// The model's reply to `entries` followed by the summary instruction.
-    private func summaryResponse(for entries: [SessionEntry], instruction: String, events: (AgentEvent) -> Void)
+    /// The model's reply to `request` followed by the summary instruction. Only retries are reported; the summary is ask's own
+    /// request and is not shown as the assistant speaking.
+    /// - Throws: ``AgentError/contextOverflow(_:)`` when the request is refused for its length, by the server or before it is sent.
+    func summaryResponse(to request: ModelRequest, instruction: String, events: (AgentEvent) -> Void)
         async throws(AgentError) -> AssembledResponse
     {
-        var request = request(for: entries) { _ in }
+        var request = request
         if request.messages.last?.role == .user {
             request.messages[request.messages.count - 1].blocks.append(.text(instruction))
         } else {
             request.messages.append(ModelMessage(role: .user, blocks: [.text(instruction)]))
         }
+        try refuseIfClearlyTooLong(request)
         return try await stream(request) { event in
             if case .retrying = event { events(event) }
         }
     }
 
-    private static func joined(_ blocks: [ContentBlock], _ text: (ContentBlock) -> String?) -> String {
-        blocks.compactMap(text).joined(separator: "\n")
+    /// The text a response wrote, its blocks joined.
+    static func text(of response: AssembledResponse) -> String {
+        response.blocks.compactMap { if case .text(let text) = $0 { text } else { nil } }.joined(separator: "\n")
     }
 }
