@@ -61,3 +61,10 @@ AemiJSON pin), then `session/load`.
 A saved session is opened by its id for its folder, replayed to the client as updates, and continued. `probe-serve.py` loads the
 first process's session from a second. Next: `session/cancel`, once ask pins the AemiJSON that admits requests in order.
 
+## Step 2, sixth part: order and cancellation (2026-11-15, diary 2026-11-15-13)
+
+ask pins the AemiJSON whose connection serves: requests are admitted in the order they arrive, and a line that is not a message
+is answered. `session/cancel` stops the turn as Esc does and answers its prompt `cancelled`. `probe-serve.py` cancels a turn
+whose command sleeps. Left: the smaller updates, an edit's diff, the model's questions, the client's MCP servers, a client that
+goes away mid-write, the user guide and the help.
+
