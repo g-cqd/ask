@@ -8,6 +8,8 @@ internal import Synchronization
 final class ACPRouter: Sendable {
     private let agent: ACPImplementation
     private let initialized = Mutex(false)
+    /// What the client said it can show, in the `initialize` that was answered.
+    private let capabilities = Mutex(ACPClientCapabilities())
     /// The sessions, when this server can make them; without, the session methods are not ask's.
     private let sessions: ACPSessions?
     /// Where updates are sent: the connection, which is made after this and so given once it exists.
@@ -65,7 +67,9 @@ final class ACPRouter: Sendable {
     }
 
     /// The client, as a turn or a replay reaches it.
-    private var asClient: ACPClient { ACPClient(notify: send, requestPermission: requestPermission) }
+    private var asClient: ACPClient {
+        ACPClient(capabilities: capabilities.withLock { $0 }, notify: send, requestPermission: requestPermission)
+    }
 
     /// Sends one `session/update` to the client.
     @Sendable private func send(_ update: JSONValue) async {
@@ -88,6 +92,7 @@ final class ACPRouter: Sendable {
             return .failure(.invalidParams("initialize needs protocolVersion, an integer"))
         }
         initialized.withLock { $0 = true }
+        capabilities.withLock { $0 = ACPClientCapabilities(initialize: params) }
         var info: OrderedDictionary<String, JSONValue> = ["name": .string(agent.name)]
         if let title = agent.title { info["title"] = .string(title) }
         info["version"] = .string(agent.version)

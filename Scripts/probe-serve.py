@@ -10,6 +10,8 @@ B: two sessions in two folders: each keeps its own file and its own history.
 C: nothing but protocol messages on standard output, and ask ends when its input does.
 E: a prompt whose command sleeps is cancelled: it answers `cancelled` at once, the command is gone, the session goes on; and a
    line that is not JSON is answered, with what follows it taken in its order.
+F: a turn the provider refuses is answered with an error that says why, a client that shows notices is told as it happens,
+   and the session takes the next prompt.
 D: a second `ask serve` loads the first session: its prompts, answers and calls are replayed in order before the answer, and the
    next prompt continues it in the same file.
 
@@ -121,6 +123,8 @@ def main():
         agent.turn([("text", "Continued.")], "end_turn"),
         agent.turn([("call", "t9", "bash", {"command": "sleep 47.3"})], "tool_use"),
         agent.turn([("text", "After the cancel.")], "end_turn"),
+        agent.sse([{"type": "error", "error": {"type": "permission_error", "message": "Your key may not use this model."}}]),
+        agent.turn([("text", "After the failure.")], "end_turn"),
     ])
     state = os.path.join(root, "state")
     client = Client(binary, elsewhere, agent.environment(state, server.url))
@@ -197,7 +201,8 @@ def main():
     ]
     print("D: another ask loads the first session")
     client = Client(binary, elsewhere, agent.environment(state, server.url))
-    opened, _ = client.request("initialize", {"protocolVersion": 1})
+    shows = {"session": {"notices": {}, "compaction": {}}}
+    opened, _ = client.request("initialize", {"protocolVersion": 1, "clientCapabilities": shows})
     loaded, replayed = client.request("session/load", {"sessionId": session, "cwd": one, "mcpServers": []})
     told = [u.get("sessionUpdate") for u in (m["params"]["update"] for m in replayed if m.get("method") == "session/update")]
     answer, before = client.request("session/prompt", prompt(session, "Go on."))
@@ -246,6 +251,20 @@ def main():
                     and not sleeping, (calls(before, "t9"), sleeping)),
         agent.check("the session takes the next prompt", after.get("result") == {"stopReason": "end_turn"}
                     and chunks(said_after, "agent_message_chunk", session) == "After the cancel.", (after, said_after)),
+    ]
+    print("F: a turn the provider refuses")
+    failed, before = client.request("session/prompt", prompt(session, "Fail."))
+    notices = [m["params"]["update"] for m in before
+               if m.get("method") == "session/update" and m["params"]["update"].get("sessionUpdate") == "notice"]
+    again, said_again = client.request("session/prompt", prompt(session, "Still there?"))
+    results += [
+        agent.check("the prompt is answered with an error that says why", failed.get("error", {}).get("code") == -32603
+                    and "may not use this model" in failed["error"].get("message", ""), failed),
+        agent.check("and a client that shows notices was told as it happened", any(
+            n.get("severity") == "error" and "may not use this model" in n.get("title", "") + n.get("description", "")
+            for n in notices), notices),
+        agent.check("the session goes on", again.get("result") == {"stopReason": "end_turn"}
+                    and chunks(said_again, "agent_message_chunk", session) == "After the failure.", (again, said_again)),
     ]
     garbage = Client(binary, elsewhere, agent.environment(state, server.url))
     garbage.process.stdin.write(b'this is not JSON\n{"jsonrpc":"2.0","id":5,"method":"session/new","params":{"cwd":"/"}}\n'

@@ -48,9 +48,10 @@ final class ACPSessions: Sendable {
             )
         }
         guard let loaded else { return .failure(.unknownSession(id)) }
+        let turns = ACPTurns(session: loaded.session)
         var reader = ACPTurnReader(session: loaded.session, client: client)
-        for update in loaded.history.flatMap(\.flattened) { await reader.replay(update) }
-        active.withLock { $0[id] = ACPTurns(session: loaded.session) }
+        for update in loaded.history.flatMap(\.flattened) { await reader.replay(update, in: turns) }
+        active.withLock { $0[id] = turns }
         return .success([:])
     }
 

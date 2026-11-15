@@ -33,6 +33,8 @@ final class ACPTurns: Sendable {
         /// The conversation's run, while a turn is read, and the permission the client is being asked.
         var run: Task<Void, Never>?
         var asking: Task<JSON?, Never>?
+        /// How many compactions the client was told of, this session: each has an id of its own.
+        var compactions = 0
     }
 
     private static let cancelled: Outcome = .success(["stopReason": "cancelled"])
@@ -41,6 +43,14 @@ final class ACPTurns: Sendable {
     private let state = Mutex(State())
 
     init(session: ACPSession) { self.session = session }
+
+    /// An id for a compaction, never given twice in the session.
+    func nextCompactionID() -> String {
+        state.withLock { state in
+            state.compactions += 1
+            return "compaction-\(state.compactions)"
+        }
+    }
 
     /// Admits a prompt, where the connection reads it: its place among the session's prompts and cancellations.
     func admit() -> Int {
@@ -116,7 +126,9 @@ final class ACPTurns: Sendable {
     /// cancellation is never answered as an error (Prompt Turn, "Cancellation").
     private func turn(_ prompt: Waiting, client: ACPClient) async -> Outcome {
         let (updates, feed) = AsyncStream<ConversationUpdate>.makeStream()
-        let run = session.conversation.start(prompt.text) { feed.yield($0) }
+        let run = session.conversation.start(prompt.text) { [session] update in
+            if case .terminated = feed.yield(update) { Self.late(update, of: session, to: client) }
+        }
         // A cancellation read between the prompt's admission and here found no run to stop.
         if state.withLock({ state in
             state.run = run
@@ -132,6 +144,7 @@ final class ACPTurns: Sendable {
                 break reading
             }
         }
+        await reader.end(in: self)
         let stopped = state.withLock { state in
             state.run = nil
             return prompt.sequence <= state.cancelledThrough
@@ -139,6 +152,15 @@ final class ACPTurns: Sendable {
         if stopped { return Self.cancelled }
         guard reader.failed else { return .success(["stopReason": "end_turn"]) }
         return .failure(JSONRPCError(code: JSONRPCError.internalError, message: reader.failure ?? "The turn failed."))
+    }
+
+    /// What the conversation says once its turn has been answered: the name it was given meanwhile is still the session's
+    /// title. Anything else said late (the git state read again, a list) was the screen's.
+    private static func late(_ update: ConversationUpdate, of session: ACPSession, to client: ACPClient) {
+        for update in update.flattened {
+            guard case .conversationName = update, let payload = ACPUpdate.payload(for: update) else { continue }
+            Task { await client.notify(["sessionId": .string(session.id), "update": payload]) }
+        }
     }
 
     /// Asks the client a permission, and stops waiting for its answer when the turn is cancelled: nil then, as when it gives none.

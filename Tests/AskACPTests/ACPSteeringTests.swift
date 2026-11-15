@@ -66,7 +66,12 @@ struct ACPSteeringTests {
         _ = await client.end()
     }
 
-    @Test func `one the conversation refuses is told why, and the turn goes on`() async {
+    /// The two orders a conversation says it in: a skill that cannot be loaded gives its reason and then refuses; a hook that
+    /// blocks a message refuses and then gives its reason.
+    @Test(arguments: [true, false])
+    func `one the conversation refuses is told why, whichever comes first, and the turn goes on`(reasonFirst: Bool)
+        async
+    {
         let (client, conversation) = await session()
         async let first = client.request("session/prompt", prompt("build it"))
         _ = await conversation.next()
@@ -75,11 +80,36 @@ struct ACPSteeringTests {
             Issue.record("the second prompt was not offered to the turn")
             return
         }
-        conversation.say(.notice("There is no skill named missing.", isError: true), .promptRefused(id: id))
+        let reason = ConversationUpdate.notice("There is no skill named missing.", isError: true)
+        if reasonFirst {
+            conversation.say(reason, .promptRefused(id: id))
+        } else {
+            conversation.say(.promptRefused(id: id), reason)
+        }
         let refused = await second
         #expect(refused["error"]["code"].int == -32602)
         #expect(refused["error"]["message"].string == "Invalid params: There is no skill named missing.")
         conversation.say(.assistantText("Built."), .runEnded)
+        #expect(await first["result"]["stopReason"].string == "end_turn", "a refused message is not the turn's failure")
+        _ = await client.end()
+    }
+
+    @Test func `one refused with no reason given is still answered, when the turn ends at the latest`() async {
+        let (client, conversation) = await session()
+        async let first = client.request("session/prompt", prompt("build it"))
+        _ = await conversation.next()
+        async let second = client.request("session/prompt", prompt("again"))
+        guard case .enqueued(_, let id, _) = await conversation.next() else {
+            Issue.record("the second prompt was not offered to the turn")
+            return
+        }
+        conversation.say(
+            .notice("Unrelated.", isError: true),
+            .assistantText("Working."),
+            .promptRefused(id: id),
+            .runEnded
+        )
+        #expect(await second["error"]["message"].string == "Invalid params: the prompt was not taken")
         #expect(await first["result"]["stopReason"].string == "end_turn")
         _ = await client.end()
     }

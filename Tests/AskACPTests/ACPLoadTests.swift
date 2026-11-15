@@ -20,7 +20,9 @@ struct ACPLoadTests {
         .batch([.assistantText("It says: the note.")]),
         // What a record's replay also says, and no client is sent: a notice of the time, the screen's status.
         .notice("The model's server was slow.", isError: true), .status("12k tokens"), .context("4%"),
-        .userPrompt("Thanks."), .assistantText("Any time.")
+        .userPrompt("Thanks."),
+        .compactionFinished(.succeeded, text: "They spoke of a note.", tokens: "9k → 1k tokens"),
+        .assistantText("Any time.")
     ]
 
     /// What the loader was asked, in order.
@@ -70,7 +72,8 @@ struct ACPLoadTests {
         async
     {
         let (client, _, asked) = client()
-        _ = await client.initialize()
+        // A client that shows notices: the one the session holds is still not replayed, being no part of its history.
+        _ = await client.initialize(capabilities: ACPExchange.showsEverything)
         let answer = await client.request("session/load", #"{"sessionId":"s9","cwd":"/work","mcpServers":[]}"#)
         #expect(JSONValue(answer["result"]) == [:])
         #expect(asked.all == ["s9 in /work"])
@@ -86,6 +89,11 @@ struct ACPLoadTests {
                 "content": [["type": "content", "content": ["type": "text", "text": "the note\n"]]]
             ],
             chunk("agent_message_chunk", "It says: the note."), chunk("user_message_chunk", "Thanks."),
+            // A compaction the session holds is one that is done: one update, with what it kept.
+            [
+                "sessionUpdate": "compaction_update", "compactionId": "compaction-1", "status": "completed",
+                "summary": [["type": "text", "text": "They spoke of a note."]]
+            ],
             chunk("agent_message_chunk", "Any time.")
         ]
         #expect(client.updates.compactMap { $0["update"] } == expected)

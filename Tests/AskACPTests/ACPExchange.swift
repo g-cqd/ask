@@ -20,6 +20,7 @@ final class ACPExchange: JSONRPCSink, Sendable {
     private let feed: AsyncThrowingStream<[UInt8], any Error>.Continuation
     private let served = Mailbox<Bool>()
     private let asked = Mailbox<JSON>()
+    private let told = Mailbox<JSON>()
     private let output = Output()
 
     init(
@@ -56,6 +57,7 @@ final class ACPExchange: JSONRPCSink, Sendable {
                     state.others.append(message)
                     // A request of the server's own, which the test answers as the client's person would.
                     if message["method"].exists, message["id"].exists { asked.post(message) }
+                    if message["method"].string == "session/update" { told.post(message) }
                     continue
                 }
                 if let waiter = state.waiters.removeValue(forKey: id) {
@@ -76,6 +78,9 @@ final class ACPExchange: JSONRPCSink, Sendable {
     var updates: [JSONValue] {
         log.filter { $0["method"].string == "session/update" }.map { JSONValue($0["params"]) }
     }
+
+    /// The next `session/update` the server sends, awaited, of those not yet taken this way; nil when the test is cancelled first.
+    func nextUpdate() async -> JSON? { await told.next() }
 
     /// The next request the server makes of the client, awaited; nil when the test is cancelled first.
     func nextRequest() async -> JSON? { await asked.next() }
@@ -130,13 +135,17 @@ final class ACPExchange: JSONRPCSink, Sendable {
         }
     }
 
-    /// `initialize`, as a client opens: the answer.
-    func initialize(version: Int = 1) async -> JSON {
+    /// `initialize`, as a client opens, saying what it can do (`clientCapabilities`, JSON text): the answer.
+    func initialize(version: Int = 1, capabilities: String = "{}") async -> JSON {
         await request(
             "initialize",
-            #"{"protocolVersion":\#(version),"clientCapabilities":{},"clientInfo":{"name":"probe","version":"1"}}"#
+            #"{"protocolVersion":\#(version),"clientCapabilities":\#(capabilities),"#
+                + #""clientInfo":{"name":"probe","version":"1"}}"#
         )
     }
+
+    /// A client that shows notices and compactions (`session.notices`, `session.compaction`).
+    static let showsEverything = #"{"session":{"notices":{},"compaction":{}}}"#
 
     /// Ends the client's side and waits for the server to finish; returns what it wrote that answered no request of `request`.
     func end() async -> [JSON] {

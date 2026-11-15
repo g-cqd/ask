@@ -39,8 +39,9 @@ enum ACPToolCall {
         return (title, .object(update))
     }
 
-    /// `tool_call_update`: the call ended, with what it returned.
-    static func finished(id: String, _ status: Transcript.ToolStatus, output: String) -> JSONValue {
+    /// `tool_call_update`: the call ended, with what it returned; and with its `title` again, when its progress had been on it.
+    static func finished(id: String, _ status: Transcript.ToolStatus, output: String, title: String? = nil) -> JSONValue
+    {
         let said: JSONValue =
             switch status {
                 case .succeeded: "completed"
@@ -49,8 +50,10 @@ enum ACPToolCall {
                 case .failed, .interrupted: "failed"
             }
         var update: OrderedDictionary<String, JSONValue> = [
-            "sessionUpdate": "tool_call_update", "toolCallId": .string(id), "status": said
+            "sessionUpdate": "tool_call_update", "toolCallId": .string(id)
         ]
+        if let title { update["title"] = .string(title) }
+        update["status"] = said
         if !output.isEmpty { update["content"] = [text(output)] }
         return .object(update)
     }
@@ -62,6 +65,11 @@ enum ACPToolCall {
         ]
         if running { update["status"] = "in_progress" }
         return .object(update)
+    }
+
+    /// `tool_call_update`: how far the running call has got, said on its title as the screen says it on the block's header.
+    static func progressed(id: String, title: String, progress: String) -> JSONValue {
+        ["sessionUpdate": "tool_call_update", "toolCallId": .string(id), "title": .string("\(title) · \(progress)")]
     }
 
     /// ACP's category for ask's tool `name`, which a client picks an icon by; `other` for any it does not know (an MCP server's).
