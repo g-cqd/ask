@@ -174,7 +174,9 @@ let package = Package(
             name: "AskTools",
             dependencies: [
                 "AskAgentCore", "AskAI", "AskCodemode", "AskMCP", .product(name: "AemiKernel", package: "aemi"),
-                .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiSearch", package: "AemiSearch"),
+                .product(name: "AemiJSON", package: "AemiJSON"),
+                // The connection a codemode script's process is spoken to on (ADR-0156).
+                .product(name: "AemiJSONRPC", package: "AemiJSON"), .product(name: "AemiSearch", package: "AemiSearch"),
                 .product(name: "AemiHTML", package: "AemiHTML"),
                 // File watching (aemi ADR 0016): the new build beside the running one, the configuration files.
                 .product(name: "AemiIO", package: "aemi"), .product(name: "Subprocess", package: "swift-subprocess")
@@ -332,7 +334,7 @@ let package = Package(
             dependencies: [
                 "AskTools", "AskAgentCore", "AskAI", "AskCodemode", "AskMCP",
                 .product(name: "AemiTesting", package: "aemi"), .product(name: "AemiRegex", package: "aemiregex"),
-                .product(name: "AemiJSON", package: "AemiJSON")
+                .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiJSONRPC", package: "AemiJSON")
             ],
             path: "Tests/AskToolsTests",
             swiftSettings: packageSettings
