@@ -1,5 +1,5 @@
 /// A tool a script may call: its name as the model knows it, the name a script writes after `tools.`, and what it is for.
-package struct CodemodeTool: Sendable, Equatable, Codable {
+package struct CodemodeCallable: Sendable, Equatable, Codable {
     /// The tool's own name, such as `mcp__dev-radius__search`.
     package let name: String
     package let description: String

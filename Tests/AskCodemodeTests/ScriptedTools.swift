@@ -15,7 +15,7 @@ final class ScriptedTools: Sendable {
         "read": "Read a file.", "fail": "Always fails.", "held": "Answers when the test lets it.",
         "mcp__dev-radius__search": "Search."
     ]
-    static let offered = described.map { CodemodeTool(name: $0.key, description: $0.value) }
+    static let offered = described.map { CodemodeCallable(name: $0.key, description: $0.value) }
 
     /// The calls made, as `name arguments`, in the order they were made.
     var calls: [String] { made.withLock { $0 } }

@@ -17,7 +17,7 @@ package final class CodemodeVM {
     package static let maximumCharacters = 16 << 20
     package static let maximumItems = 100_000
 
-    private let tools: [CodemodeTool]
+    private let tools: [CodemodeCallable]
     private let call: Caller
     private let answers = CodemodeAnswers()
     private var result = CodemodeResult()
@@ -27,14 +27,14 @@ package final class CodemodeVM {
     private var calls = 0
     private var ended = false
 
-    private init(tools: [CodemodeTool], call: @escaping Caller) {
+    private init(tools: [CodemodeCallable], call: @escaping Caller) {
         self.tools = tools
         self.call = call
     }
 
     /// Runs `code` to its end on a thread of its own: what it said, and why it failed if it did. `tools` are what it may call,
     /// each call answered by `call`.
-    package static func run(_ code: String, tools: [CodemodeTool], call: @escaping Caller) async -> CodemodeResult {
+    package static func run(_ code: String, tools: [CodemodeCallable], call: @escaping Caller) async -> CodemodeResult {
         await withCheckedContinuation { finished in
             let thread = Thread { finished.resume(returning: CodemodeVM(tools: tools, call: call).run(code)) }
             // A script may recurse as deep as JavaScriptCore lets it; a secondary thread's half megabyte is little for that.
@@ -136,7 +136,7 @@ package final class CodemodeVM {
     }
 
     /// A tool as the prelude takes it.
-    private static func described(_ tool: CodemodeTool) -> [String: String] {
+    private static func described(_ tool: CodemodeCallable) -> [String: String] {
         ["name": tool.name, "identifier": tool.identifier, "description": tool.description]
     }
 

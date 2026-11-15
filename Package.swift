@@ -223,6 +223,11 @@ let package = Package(
         // none of ask's libraries; the hidden `ask codemode` runs it in a process of its own.
         .target(
             name: "AskCodemode",
+            dependencies: [
+                .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiJSONRPC", package: "AemiJSON"),
+                // The thread standard input is read on (AemiJSONRPC's descriptor reader runs on its pool).
+                .product(name: "AemiRuntime", package: "aemi")
+            ],
             swiftSettings: packageSettings
         ),
         // `ask serve`: the Agent Client Protocol on a connection (ADR-0153), over AemiJSONRPC. The one place that knows the protocol.
@@ -240,7 +245,7 @@ let package = Package(
         .executableTarget(
             name: "ask",
             dependencies: [
-                "AskSession", "AskACP", "AskAI", "AskAgentCore", "AskApple", "AskCore", "AskTUI",
+                "AskSession", "AskACP", "AskAI", "AskAgentCore", "AskApple", "AskCodemode", "AskCore", "AskTUI",
                 .product(name: "ArgumentParser", package: "swift-argument-parser")
             ],
             path: "Sources/ask",
@@ -297,7 +302,10 @@ let package = Package(
         ),
         .testTarget(
             name: "AskCodemodeTests",
-            dependencies: ["AskCodemode"],
+            dependencies: [
+                "AskCodemode", .product(name: "AemiJSON", package: "AemiJSON"),
+                .product(name: "AemiJSONRPC", package: "AemiJSON")
+            ],
             path: "Tests/AskCodemodeTests",
             swiftSettings: packageSettings
         ),
