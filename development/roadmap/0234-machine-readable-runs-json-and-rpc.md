@@ -56,3 +56,8 @@ A served turn tells each tool call as it begins and ends, and asks the client fo
 person, with the screen's answers. `probe-serve.py` allows one write and denies another. Next: `session/cancel` (needs the
 AemiJSON pin), then `session/load`.
 
+## Step 2, fifth part: `session/load` (2026-11-15, diary 2026-11-15-11)
+
+A saved session is opened by its id for its folder, replayed to the client as updates, and continued. `probe-serve.py` loads the
+first process's session from a second. Next: `session/cancel`, once ask pins the AemiJSON that admits requests in order.
+
