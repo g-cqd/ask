@@ -7,6 +7,10 @@ internal import Synchronization
 /// away included: an AemiSearch index of the session's entries, whatever the file's format, kept beside it as `<session>.search` and
 /// brought up to date at every compaction and before a search. An encrypted session's index is sealed (AES-GCM) under a key derived
 /// from the user key, never written in the clear; with no key open it stays in memory.
+///
+/// The index is as large as the session it indexes, and is used a few times in its life: once it is in its file it is let go, and
+/// read again by the next search or update (62 MB, read in 0.14 s, for a session of 81 MB; diary 2026-11-15-12). One that could
+/// not be written is the only copy, and stays.
 public actor SessionSearch {
     private static let open = Mutex<[String: SessionSearch]>([:])
 
@@ -24,6 +28,10 @@ public actor SessionSearch {
     var index: SearchIndex?
     /// How many of the session's entries the index holds (entries are only appended).
     var indexed = 0
+    /// Whether the index's file holds what ``index`` holds, so that the memory can be let go.
+    var inFile = false
+    /// Whether the index is in memory now.
+    var holdsIndex: Bool { index != nil }
 
     public init(sessionPath: String) { self.sessionPath = sessionPath }
 
@@ -52,6 +60,17 @@ public actor SessionSearch {
     /// The same, from what the session held when `snapshot` was taken.
     @discardableResult
     public func update(from snapshot: Snapshot) -> Int {
+        defer { letGo() }
+        return refresh(from: snapshot)
+    }
+
+    /// Lets the index out of memory when its file holds it.
+    private func letGo() {
+        if inFile { index = nil }
+    }
+
+    /// Brings the index up to `snapshot`, in memory and in its file; returns how many documents were added.
+    private func refresh(from snapshot: Snapshot) -> Int {
         let sealing = snapshot.sealing
         let entries = snapshot.entries
         let index = loaded(key: sealing.key)
@@ -59,6 +78,7 @@ public actor SessionSearch {
             // Not the history this index was built from: start again.
             self.index = SearchIndex()
             indexed = 0
+            inFile = false
         }
         let target = self.index ?? index
         let time = Int64(Date().timeIntervalSince1970)
@@ -71,13 +91,14 @@ public actor SessionSearch {
         }
         let grew = entries.count > indexed
         indexed = entries.count
-        if grew { save(encrypted: sealing.encrypted, key: sealing.key) }
+        if grew { inFile = save(encrypted: sealing.encrypted, key: sealing.key) }
         return added
     }
 
     /// The best hits for `query` in `session`, after an update.
     public func search(_ query: SearchQuery, in session: SessionRecorder) -> [SearchHit] {
-        update(from: session)
+        defer { letGo() }
+        _ = refresh(from: Snapshot(of: session))
         return (index ?? SearchIndex()).search(query)
     }
 }

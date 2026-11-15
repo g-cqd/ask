@@ -15,6 +15,7 @@ extension SessionSearch {
         if let index { return index }
         let read = readFile(key: key)
         indexed = read?.indexed ?? 0
+        inFile = read != nil
         let opened = read?.index ?? SearchIndex()
         index = opened
         return opened
@@ -39,18 +40,22 @@ extension SessionSearch {
 
     /// Writes the index: sealed under `key` for an encrypted session, in the clear otherwise; an encrypted session with no key open
     /// writes nothing.
-    func save(encrypted: Bool, key: SymmetricKey?) {
-        guard let index, !encrypted || key != nil else { return }
+    /// - Returns: whether the file now holds the index.
+    func save(encrypted: Bool, key: SymmetricKey?) -> Bool {
+        guard let index, !encrypted || key != nil else { return false }
         var bytes: [UInt8] = []
         for offset in 0 ..< 8 { bytes.append(UInt8(truncatingIfNeeded: indexed >> (offset * 8))) }
         bytes += index.serialized()
         var data = Data(bytes)
         if let key {
-            guard let sealed = try? AES.GCM.seal(data, using: key, authenticating: nameTag).combined else { return }
+            guard let sealed = try? AES.GCM.seal(data, using: key, authenticating: nameTag).combined else {
+                return false
+            }
             data = sealed
         }
         // try?: the index is a cache, built again from the session
-        guard (try? data.write(to: URL(fileURLWithPath: indexPath), options: [.atomic])) != nil else { return }
+        guard (try? data.write(to: URL(fileURLWithPath: indexPath), options: [.atomic])) != nil else { return false }
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: indexPath)
+        return true
     }
 }
