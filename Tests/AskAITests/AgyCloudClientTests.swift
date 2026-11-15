@@ -141,7 +141,8 @@ struct AgyCloudClientTests {
             gemini-3.5-flash-lite gemini-2.5-flash gemini-2.5-flash-lite gemini-2.5-flash-thinking gemini-2.5-pro \
             gemini-3.1-flash-lite
             """
-        #expect(shown(list).map(\.id) == expected.split(separator: " ").map(String.init))
+        let names: [String] = expected.split(separator: " ").map { String($0) }  // apart: slow to type-check in #expect
+        #expect(shown(list).map(\.id) == names)
     }
 
     @Test func `image and internal entries are kept, marked, and hidden by the filter`() async throws {
