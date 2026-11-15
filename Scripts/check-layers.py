@@ -20,7 +20,7 @@ ALLOWED = {
     "AskMCP": {"AskAI", "AskCore"},
     "AskAgentCore": {"AskAI", "AskCore"},
     "AskApple": {"AskAI", "AskAgentCore", "AskCore"},
-    "AskTools": {"AskAgentCore", "AskAI", "AskMCP", "AskCore"},
+    "AskTools": {"AskAgentCore", "AskAI", "AskMCP", "AskCore", "AskCodemode"},
     "AskTUI": set(),
     # Codemode's VM and its bridge's messages (ADR-0156): it knows none of ask's libraries.
     "AskCodemode": set(),

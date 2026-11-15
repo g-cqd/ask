@@ -31,22 +31,23 @@ package enum CodemodeWire {
         return ["code": .string(code), "tools": .array(listed)]
     }
 
-    package static func run(from parameters: JSON?) -> Run? {
-        parameters.flatMap { try? AemiJSON.JSONDecoder().decode(Run.self, from: $0) }
-    }
-
     package static func callParameters(tool: String, arguments: String) -> JSONValue {
         ["tool": .string(tool), "arguments": .string(arguments)]
     }
 
-    package static func call(from parameters: JSON?) -> Call? {
-        parameters.flatMap { try? AemiJSON.JSONDecoder().decode(Call.self, from: $0) }
-    }
-
     package static func answer(_ text: String) -> JSONValue { ["text": .string(text)] }
 
-    package static func answerText(from result: JSON) -> String? {
-        (try? AemiJSON.JSONDecoder().decode(Answer.self, from: result))?.text
+    package static func run(from parameters: JSON?) -> Run? { read(parameters) }
+
+    package static func call(from parameters: JSON?) -> Call? { read(parameters) }
+
+    package static func answerText(from result: JSON) -> String? { (read(result) as Answer?)?.text }
+
+    package static func result(from json: JSON) -> CodemodeResult? { read(json) }
+
+    /// What `json` holds as a `Value`, or nil when it is not one.
+    private static func read<Value: Decodable>(_ json: JSON?) -> Value? {
+        json.flatMap { try? AemiJSON.JSONDecoder().decode(Value.self, from: $0) }
     }
 
     package static func encoded(_ result: CodemodeResult) -> JSONValue {
@@ -56,9 +57,5 @@ package enum CodemodeWire {
         if let failure = result.failure { encoded["failure"] = .string(failure) }
         encoded["unsettled"] = .int(Int64(result.unsettled))
         return .object(encoded)
-    }
-
-    package static func result(from json: JSON) -> CodemodeResult? {
-        try? AemiJSON.JSONDecoder().decode(CodemodeResult.self, from: json)
     }
 }

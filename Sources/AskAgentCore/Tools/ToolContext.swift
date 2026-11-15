@@ -106,7 +106,7 @@ public struct ToolContext: Sendable, Equatable {
     }
 
     /// This context for a call that may call the run's other tools.
-    func offering(_ nested: NestedTools) -> ToolContext {
+    public func offering(_ nested: NestedTools) -> ToolContext {
         var copy = self
         copy.nested = nested
         return copy

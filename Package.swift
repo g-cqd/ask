@@ -173,7 +173,7 @@ let package = Package(
         .target(
             name: "AskTools",
             dependencies: [
-                "AskAgentCore", "AskAI", "AskMCP", .product(name: "AemiKernel", package: "aemi"),
+                "AskAgentCore", "AskAI", "AskCodemode", "AskMCP", .product(name: "AemiKernel", package: "aemi"),
                 .product(name: "AemiJSON", package: "AemiJSON"), .product(name: "AemiSearch", package: "AemiSearch"),
                 .product(name: "AemiHTML", package: "AemiHTML"),
                 // File watching (aemi ADR 0016): the new build beside the running one, the configuration files.
@@ -330,8 +330,9 @@ let package = Package(
         .testTarget(
             name: "AskToolsTests",
             dependencies: [
-                "AskTools", "AskAgentCore", "AskAI", "AskMCP", .product(name: "AemiTesting", package: "aemi"),
-                .product(name: "AemiRegex", package: "aemiregex"), .product(name: "AemiJSON", package: "AemiJSON")
+                "AskTools", "AskAgentCore", "AskAI", "AskCodemode", "AskMCP",
+                .product(name: "AemiTesting", package: "aemi"), .product(name: "AemiRegex", package: "aemiregex"),
+                .product(name: "AemiJSON", package: "AemiJSON")
             ],
             path: "Tests/AskToolsTests",
             swiftSettings: packageSettings
