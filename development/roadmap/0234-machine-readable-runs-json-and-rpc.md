@@ -75,3 +75,9 @@ in tokens; a call's progress. Left: the slash commands (a design for the owner: 
 job's output between turns, an edit's diff, the model's questions, the client's MCP servers, a client that goes away mid-write,
 the user guide and the help.
 
+## Step 2, eighth part: a client that goes away (2026-11-15, diary 2026-11-15-15)
+
+When the client's input ends, the turns that run for it are stopped, and a write to a client that no longer reads is an error
+and not the end of ask. Left: the slash commands (a design for the owner), a job's output between turns, an edit's diff, the
+model's questions, the client's MCP servers, the user guide and the help.
+
