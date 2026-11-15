@@ -1,5 +1,8 @@
 # `ask serve`: the design proposed (2026-11-14)
 
+**Accepted on 2026-11-14 as proposed (ADR-0154), with one correction: `AskACP` depends on AskTUI's `Conversation`, not on
+`AskSession`.** Kept as written for what was proposed.
+
 What ADR-0153 decided: ACP v1 is the protocol, a served session is the conversation, the family's code is used where it exists.
 What it left: everything below. This is a proposal for the owner to read before any code; nothing here is decided, and the open
 points at the end are questions.

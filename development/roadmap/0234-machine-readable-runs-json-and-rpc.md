@@ -29,3 +29,10 @@ ACP.
 
 The owner chose ACP as serve's protocol and the whole conversation as a served session, so this step and roadmap 0235 are one
 piece of work. The wire is AemiJSONRPC's (already in the pinned AemiJSON). The design and the order of work are proposed in `development/research/serve-design-2026-11-14.md`; nothing is built.
+
+## Step 2, first part: `initialize` (2026-11-15, ADR-0154, diary 2026-11-15-01)
+
+The owner accepted the design. `AskACP` answers `initialize` over AemiJSONRPC; `ask serve` runs it, hidden from the help until
+a session can be served. Building it showed the family's connection losing the order of requests and dropping what it could not
+read; fixed in AemiJSON (`31ce461`), which ask takes at the family's next repin. Next: the session's folder, then `session/new`
+and `session/prompt`.
