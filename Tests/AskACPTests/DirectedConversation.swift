@@ -8,8 +8,8 @@ final class DirectedConversation: Conversation {
         case started(String)
         case enqueued(String, id: Int, followUp: Bool)
         case answeredApproval(Int, ApprovalChoice)
-        /// The questions `id` asked were answered, or declined.
-        case answeredQuestions(Int, declined: Bool)
+        /// The questions `id` asked were answered, or declined (nil).
+        case answeredQuestions(Int, [QuestionAnswer]?)
         case answeredInput(Int, String?)
         /// The run that last started was cancelled, as Esc cancels it.
         case stopped
@@ -38,7 +38,7 @@ final class DirectedConversation: Conversation {
     func answer(approval id: Int, with choice: ApprovalChoice) { note(.answeredApproval(id, choice)) }
 
     func answer(questions id: Int, with answers: [QuestionAnswer]?) {
-        note(.answeredQuestions(id, declined: answers == nil))
+        note(.answeredQuestions(id, answers))
     }
 
     func answer(input id: Int, with text: String?) { note(.answeredInput(id, text)) }

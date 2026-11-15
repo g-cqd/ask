@@ -98,8 +98,9 @@ struct ACPTurnReader {
             case .toolStarted, .toolFinished, .toolProgress: await call(update)
             case .askApproval(let id, let question, let kind, let detail):
                 await approve(id, question, kind, detail, in: turns)
-            // Until the client can be asked these (elicitation), nobody can answer, and a turn that waited would never end.
-            case .askQuestions(let id, _): session.conversation.answer(questions: id, with: nil)
+            case .askQuestions(let id, let questions): await ask(id, questions, in: turns)
+            // A line a command wants of the person (a key, a code): a form may not ask for a secret, and no command is served
+            // yet. Declined, since a turn that waited for it would never end.
             case .askInput(let id, _, _, _): session.conversation.answer(input: id, with: nil)
             case .compacting, .compactionFinished: await compaction(update, in: turns)
             case .notice(let text, let isError):
@@ -156,6 +157,15 @@ struct ACPTurnReader {
         }
     }
 
+    /// Asks the person the model's questions, through a client that shows forms, and answers the conversation; a client that
+    /// shows none is not asked, and the questions are declined, which the model is told.
+    private func ask(_ id: Int, _ questions: [ScreenQuestion], in turns: ACPTurns) async {
+        guard client.capabilities.form else { return session.conversation.answer(questions: id, with: nil) }
+        let request = ACPElicitation.request(session: session.id, call: running.last?.id, questions: questions)
+        let answer = await turns.asking { [client] in await client.elicit(request) }
+        session.conversation.answer(questions: id, with: ACPElicitation.answers(from: answer, to: questions))
+    }
+
     /// Asks the client the approval the conversation asked as `id`, about the call that began last, and answers the conversation.
     private mutating func approve(
         _ id: Int,
@@ -174,7 +184,7 @@ struct ACPTurnReader {
             kind: kind
         )
         // Through the turn, which stops waiting when it is cancelled.
-        let answer = await turns.permission(request, from: client)
+        let answer = await turns.asking { [client] in await client.requestPermission(request) }
         let choice = ACPPermission.choice(from: answer, kind: kind)
         session.conversation.answer(approval: id, with: choice)
         if running.last?.id == call.id {

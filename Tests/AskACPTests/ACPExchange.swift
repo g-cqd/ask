@@ -147,6 +147,9 @@ final class ACPExchange: JSONRPCSink, Sendable {
     /// A client that shows notices and compactions (`session.notices`, `session.compaction`).
     static let showsEverything = #"{"session":{"notices":{},"compaction":{}}}"#
 
+    /// A client that can show a form (`elicitation.form`).
+    static let showsForms = #"{"elicitation":{"form":{}}}"#
+
     /// Ends the client's input, as a client that has gone leaves it, without waiting for the server.
     func hangUp() { feed.finish() }
 

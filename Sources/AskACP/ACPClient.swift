@@ -9,4 +9,6 @@ struct ACPClient: Sendable {
     /// Asks `session/request_permission` with these `params`: the result, or nil when the client gave none (it refused the
     /// request, or has gone).
     let requestPermission: @Sendable (JSONValue) async -> JSON?
+    /// Asks `elicitation/create` with these `params`: the result, or nil when the client gave none.
+    let elicit: @Sendable (JSONValue) async -> JSON?
 }

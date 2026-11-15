@@ -148,7 +148,7 @@ struct ACPPromptTurnTests {
         async let answer = client.request("session/prompt", prompt("go"))
         _ = await conversation.next()
         conversation.say(.askQuestions(id: 5, questions: []))
-        #expect(await conversation.next() == .answeredQuestions(5, declined: true))
+        #expect(await conversation.next() == .answeredQuestions(5, nil))
         conversation.say(.askInput(id: 6, prompt: "Your key", secret: true))
         #expect(await conversation.next() == .answeredInput(6, nil))
         conversation.say(.assistantText("I could not."), .runEnded)

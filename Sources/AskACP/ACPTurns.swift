@@ -163,9 +163,10 @@ final class ACPTurns: Sendable {
         }
     }
 
-    /// Asks the client a permission, and stops waiting for its answer when the turn is cancelled: nil then, as when it gives none.
-    func permission(_ params: JSONValue, from client: ACPClient) async -> JSON? {
-        let asking = Task { await client.requestPermission(params) }
+    /// Asks the client what only its person can answer (a permission, a form), and stops waiting for the answer when the turn is
+    /// cancelled: nil then, as when it gives none.
+    func asking(_ ask: @escaping @Sendable () async -> JSON?) async -> JSON? {
+        let asking = Task { await ask() }
         if state.withLock({ state in
             state.asking = asking
             return state.run?.isCancelled == true

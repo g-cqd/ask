@@ -7,13 +7,16 @@ struct ACPClientCapabilities: Sendable, Equatable {
     var notices = false
     /// `session.compaction`: compactions as entities of the timeline.
     var compaction = false
+    /// `elicitation.form`: a form for the person to fill.
+    var form = false
 
     init() {}
 
     /// What the `params` of `initialize` advertise.
     init(initialize params: JSON?) {
-        guard let session = params?["clientCapabilities"]["session"] else { return }
-        notices = session["notices"].isObject
-        compaction = session["compaction"].isObject
+        guard let capabilities = params?["clientCapabilities"] else { return }
+        notices = capabilities["session"]["notices"].isObject
+        compaction = capabilities["session"]["compaction"].isObject
+        form = capabilities["elicitation"]["form"].isObject
     }
 }

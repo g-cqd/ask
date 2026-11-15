@@ -71,7 +71,12 @@ final class ACPRouter: Sendable {
 
     /// The client, as a turn or a replay reaches it.
     private var asClient: ACPClient {
-        ACPClient(capabilities: capabilities.withLock { $0 }, notify: send, requestPermission: requestPermission)
+        ACPClient(
+            capabilities: capabilities.withLock { $0 },
+            notify: send,
+            requestPermission: requestPermission,
+            elicit: elicit
+        )
     }
 
     /// Sends one `session/update` to the client.
@@ -83,6 +88,11 @@ final class ACPRouter: Sendable {
     /// Asks the client for a permission, for as long as its person takes to answer; nil when it gives no answer.
     @Sendable private func requestPermission(_ params: JSONValue) async -> JSON? {
         try? await client.withLock { $0 }?.request("session/request_permission", params, timeout: Self.patience)
+    }
+
+    /// Asks the client to show a form, for as long as its person takes to fill it; nil when it gives no answer.
+    @Sendable private func elicit(_ params: JSONValue) async -> JSON? {
+        try? await client.withLock { $0 }?.request("elicitation/create", params, timeout: Self.patience)
     }
 
     /// A person may leave a question open overnight; the connection's own two minutes would refuse the call for them.

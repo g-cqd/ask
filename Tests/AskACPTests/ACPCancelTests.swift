@@ -56,7 +56,7 @@ struct ACPCancelTests {
     @Test func `a prompt cancelled before its work began starts nothing`() async {
         let conversation = DirectedConversation()
         let turns = ACPTurns(session: ACPSession(id: "s1", folder: "/work", conversation: conversation))
-        let client = ACPClient(notify: { _ in }, requestPermission: { _ in nil })
+        let client = ACPClient(notify: { _ in }, requestPermission: { _ in nil }, elicit: { _ in nil })
         let admitted = turns.admit()
         turns.cancel()
         // Awaited through a mailbox: a prompt that is never answered then fails the test at its time limit, and does not hold it.

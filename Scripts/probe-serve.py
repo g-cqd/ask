@@ -10,6 +10,7 @@ B: two sessions in two folders: each keeps its own file and its own history.
 C: nothing but protocol messages on standard output, and ask ends when its input does.
 E: a prompt whose command sleeps is cancelled: it answers `cancelled` at once, the command is gone, the session goes on; and a
    line that is not JSON is answered, with what follows it taken in its order.
+H: the model asks a question: the client is asked for a form, and the model is told what the person chose.
 G: the client goes away while a command runs: ask stops the command and ends with 0, not killed by a pipe nobody reads.
 F: a turn the provider refuses is answered with an error that says why, a client that shows notices is told as it happens,
    and the session takes the next prompt.
@@ -43,6 +44,8 @@ class Client:
         self.next_id, self.lines, self.not_json = 1, [], []
         # The option chosen for each permission ask makes, in order; "once" when the list is used up.
         self.choices, self.asked = [], []
+        # What a form is answered with (declined by default), and the forms ask asked for.
+        self.form_answer, self.forms = {"action": "decline"}, []
         # Called with each message read while a request waits for its answer, and with this client.
         self.watch = None
 
@@ -73,6 +76,11 @@ class Client:
                 self.asked.append(parsed["params"])
                 chosen = self.choices.pop(0) if self.choices else "once"
                 reply = {"jsonrpc": "2.0", "id": parsed["id"], "result": {"outcome": {"outcome": "selected", "optionId": chosen}}}
+                self.process.stdin.write((json.dumps(reply) + "\n").encode())
+                self.process.stdin.flush()
+            if parsed.get("method") == "elicitation/create":
+                self.forms.append(parsed["params"])
+                reply = {"jsonrpc": "2.0", "id": parsed["id"], "result": self.form_answer}
                 self.process.stdin.write((json.dumps(reply) + "\n").encode())
                 self.process.stdin.flush()
             if until and until(parsed):
@@ -129,6 +137,10 @@ def main():
         agent.turn([("text", "After the cancel.")], "end_turn"),
         agent.sse([{"type": "error", "error": {"type": "permission_error", "message": "Your key may not use this model."}}]),
         agent.turn([("text", "After the failure.")], "end_turn"),
+        agent.turn([("call", "t11", "question", {"questions": [
+            {"question": "Which side?", "header": "Side", "choices": [{"label": "Left"}, {"label": "Right"}], "note": "none"}]})],
+            "tool_use"),
+        agent.turn([("text", "Right it is.")], "end_turn"),
         agent.turn([("call", "t10", "bash", {"command": "sleep 48.6"})], "tool_use"),
     ])
     state = os.path.join(root, "state")
@@ -206,7 +218,7 @@ def main():
     ]
     print("D: another ask loads the first session")
     client = Client(binary, elsewhere, agent.environment(state, server.url))
-    shows = {"session": {"notices": {}, "compaction": {}}}
+    shows = {"session": {"notices": {}, "compaction": {}}, "elicitation": {"form": {}}}
     opened, _ = client.request("initialize", {"protocolVersion": 1, "clientCapabilities": shows})
     loaded, replayed = client.request("session/load", {"sessionId": session, "cwd": one, "mcpServers": []})
     told = [u.get("sessionUpdate") for u in (m["params"]["update"] for m in replayed if m.get("method") == "session/update")]
@@ -270,6 +282,19 @@ def main():
             for n in notices), notices),
         agent.check("the session goes on", again.get("result") == {"stopReason": "end_turn"}
                     and chunks(said_again, "agent_message_chunk", session) == "After the failure.", (again, said_again)),
+    ]
+    print("H: the model asks the person a question")
+    client.form_answer = {"action": "accept", "content": {"q1": "Right"}}
+    asked, said_asked = client.request("session/prompt", prompt(session, "Ask me."))
+    told = json.dumps(server.requests[-1]["body"]["messages"][-1])
+    results += [
+        agent.check("the client is asked for a form, about the question's call, with the choices by their words",
+                    [(f.get("mode"), f.get("toolCallId"), f.get("message"),
+                      [o["const"] for o in f["requestedSchema"]["properties"]["q1"]["oneOf"]]) for f in client.forms]
+                    == [("form", "t11", "Which side?", ["Left", "Right"])], client.forms),
+        agent.check("the model is told what the person chose", "Right" in told and "Left" not in told, told[:400]),
+        agent.check("and the turn goes on", asked.get("result") == {"stopReason": "end_turn"}
+                    and chunks(said_asked, "agent_message_chunk", session) == "Right it is.", (asked, said_asked)),
     ]
     garbage = Client(binary, elsewhere, agent.environment(state, server.url))
     garbage.process.stdin.write(b'this is not JSON\n{"jsonrpc":"2.0","id":5,"method":"session/new","params":{"cwd":"/"}}\n'

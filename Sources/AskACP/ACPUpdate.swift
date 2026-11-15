@@ -18,7 +18,7 @@ enum ACPUpdate {
                 ["sessionUpdate": "usage_update", "used": .int(Int64(used)), "size": .int(Int64(size))]
             // Decided where a turn is read (``ACPTurnReader``): a list is its members, the end and the failure end the request,
             // what became of a message sent during the turn answers that message's request, a tool call is told with its state
-            // and its progress, an approval is asked of the client, what the client cannot be asked yet is declined, and a
+            // and its progress, an approval and the model's questions are asked of the client, a line a command wants is declined, and a
             // notice or a compaction is told to a client that shows them.
             // @dl:accept -- a switch that names every case on purpose: the lists are the decision, and lists of cases look alike
             case .batch, .runEnded, .returnQueuedPrompts, .promptAccepted, .promptRefused, .notice: nil
