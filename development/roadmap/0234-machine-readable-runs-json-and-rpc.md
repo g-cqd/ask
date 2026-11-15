@@ -44,3 +44,9 @@ A conversation reads its own folder and keeps its own task list and notes, so se
 them, a prompt during a turn steering it. Tested against a directed conversation. Next: `ask serve` makes real conversations,
 and `Scripts/probe-serve.py` drives one against the fake model server.
 
+## Step 2, third part: `ask serve` serves conversations (2026-11-15, diary 2026-11-15-08)
+
+`ServedSessions` makes a conversation for each session a client asks for, in the client's folder; `Scripts/probe-serve.py`
+drives one over pipes against the fake model server. Until the client can be asked, a call that needs approval is declined.
+Next: tool calls and `session/request_permission`.
+

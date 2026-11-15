@@ -7,6 +7,10 @@ final class DirectedConversation: Conversation {
     enum Asked: Sendable, Equatable {
         case started(String)
         case enqueued(String, id: Int, followUp: Bool)
+        case answeredApproval(Int, ApprovalChoice)
+        /// The questions `id` asked were answered, or declined.
+        case answeredQuestions(Int, declined: Bool)
+        case answeredInput(Int, String?)
     }
 
     private let asked = Mailbox<Asked>()
@@ -19,6 +23,14 @@ final class DirectedConversation: Conversation {
     }
 
     func enqueue(_ text: String, id: Int, followUp: Bool) { asked.post(.enqueued(text, id: id, followUp: followUp)) }
+
+    func answer(approval id: Int, with choice: ApprovalChoice) { asked.post(.answeredApproval(id, choice)) }
+
+    func answer(questions id: Int, with answers: [QuestionAnswer]?) {
+        asked.post(.answeredQuestions(id, declined: answers == nil))
+    }
+
+    func answer(input id: Int, with text: String?) { asked.post(.answeredInput(id, text)) }
 
     /// The next thing the driver asked, awaited; nil when the test is cancelled first.
     func next() async -> Asked? { await asked.next() }
