@@ -1,0 +1,42 @@
+import json, statistics, subprocess, sys, threading, time
+def run(argv, script, env=None):
+    t0 = time.monotonic()
+    p = subprocess.Popen(argv, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, env=env)
+    lock = threading.Lock()
+    def send(m):
+        with lock:
+            p.stdin.write((json.dumps(m) + "\n").encode()); p.stdin.flush()
+    ready = None; calls = 0; out = None
+    for line in p.stdout:
+        m = json.loads(line)
+        if "ready" in m:
+            ready = time.monotonic() - t0; send({"script": script})
+        elif "call" in m:
+            calls += 1
+            reply = {"id": m["call"], "result": f'{m["tool"]}:{json.dumps(m["args"])}'}
+            if m["tool"] == "slow": threading.Timer(0.03, send, [reply]).start()
+            else: send(reply)
+        elif "done" in m or "failed" in m:
+            out = m; break
+    total = time.monotonic() - t0
+    p.stdin.close(); p.wait(timeout=5)
+    err = p.stderr.read().decode()[-200:]
+    return ready, total, calls, out, err
+JS = {
+ "one call": "const a = await tools.read({path:'x'}); return a.length;",
+ "100 parallel x 30 ms": "const all = await Promise.all(Array.from({length:100}, (_, i) => tools.slow({i}))); return all.length;",
+ "1000 parallel x 0 ms": "const all = await Promise.all(Array.from({length:1000}, (_, i) => tools.fast({i}))); return all.length;",
+}
+PY = {
+ "one call": "a = await tools.read(path='x')\nreturn len(a)",
+ "100 parallel x 30 ms": "all = await asyncio.gather(*[tools.slow(i=i) for i in range(100)])\nreturn len(all)",
+ "1000 parallel x 0 ms": "all = await asyncio.gather(*[tools.fast(i=i) for i in range(1000)])\nreturn len(all)",
+}
+runtimes = json.loads(sys.argv[1])
+for name, argv in runtimes.items():
+    scripts = PY if "python" in name else JS
+    for label, script in scripts.items():
+        rs = [run(argv, script) for _ in range(7)]
+        bad = [r for r in rs if not r[3] or "failed" in r[3]]
+        if bad: print(f"{name:22s} {label:22s} FAILED {bad[0][3]} {bad[0][4]}"); continue
+        print(f"{name:22s} {label:22s} ready {statistics.median(r[0] for r in rs)*1000:6.1f} ms  whole {statistics.median(r[1] for r in rs)*1000:7.1f} ms  (min {min(r[1] for r in rs)*1000:6.1f})  calls {rs[0][2]} -> {rs[0][3]}")

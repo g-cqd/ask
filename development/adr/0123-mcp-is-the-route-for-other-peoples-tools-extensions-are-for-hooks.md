@@ -22,3 +22,8 @@ proposal below.
 ## Consequences
 
 0033 and 0012 carry a note pointing here; 0033's remaining work shrinks to the hook points. Nothing built changes.
+
+## Amendment (2026-11-15)
+
+The third point, that codemode waits, is replaced by ADR-0156: the owner put it first. The first two stand.
+

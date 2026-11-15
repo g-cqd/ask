@@ -1,6 +1,6 @@
 ---
-status: not-started
-blocked-by: ["0014"]
+status: in-progress
+blocked-by: []
 date: 2026-10-18
 ---
 
@@ -44,3 +44,11 @@ leaves no work running.
 ## Decision (2026-10-28, ADR-0123)
 
 Shelved until real use (0071) shows many-step tool sequences that cost too many round trips.
+
+## Un-shelved (2026-11-15, ADR-0156)
+
+The owner put codemode first. Decided: JavaScriptCore in a helper process of ask's, tools only, a script approved once as a
+whole, on by default, JavaScript first and Python (asyncio, the default runtime) after. The limits, with their numbers, and the
+order of work are in the ADR; the evidence in `development/research/codemode-2026-11-15.md`. `blocked-by` 0014 no longer
+holds: a script's result is text, as pi's is, and pictures are left for later.
+
