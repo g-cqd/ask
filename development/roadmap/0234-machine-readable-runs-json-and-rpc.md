@@ -50,3 +50,9 @@ and `Scripts/probe-serve.py` drives one against the fake model server.
 drives one over pipes against the fake model server. Until the client can be asked, a call that needs approval is declined.
 Next: tool calls and `session/request_permission`.
 
+## Step 2, fourth part: tool calls and approvals (2026-11-15, diary 2026-11-15-10)
+
+A served turn tells each tool call as it begins and ends, and asks the client for the approvals the screen would ask the
+person, with the screen's answers. `probe-serve.py` allows one write and denies another. Next: `session/cancel` (needs the
+AemiJSON pin), then `session/load`.
+
