@@ -145,7 +145,8 @@ func checkSelf(_ settings: RunSettings) {
             settings,
             instructions: [],
             jobs: JobTable(environment: LaunchEnvironment.values),
-            transport: URLSessionTransport()
+            transport: URLSessionTransport(),
+            lists: SessionTasks()
         )
     } catch {
         fail("ask: \(error)", code: 70)

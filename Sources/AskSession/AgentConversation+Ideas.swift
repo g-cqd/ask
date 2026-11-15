@@ -11,19 +11,19 @@ extension AgentConversation {
     func notes(command: String = "notes", arguments: String, update: @Sendable (ConversationUpdate) -> Void) {
         switch IdeaList.parse(command: command, arguments: arguments) {
             case .list(let all):
-                update(.notice(Self.ideasText { $0.listing(all: all) }, isError: false))
+                update(.notice(ideasText { $0.listing(all: all) }, isError: false))
             case .show(let id):
                 update(
                     .notice(
-                        Self.ideasText { $0.showing(id) ?? "There is no note n\(id)." },
-                        isError: (try? SessionTasks.ideas.current())??.idea(id) == nil
+                        ideasText { $0.showing(id) ?? "There is no note n\(id)." },
+                        isError: (try? lists.ideas.current())??.idea(id) == nil
                     )
                 )
             case .edit(let edit):
                 editNote(edit, update: update)
             case .delete(let id):
                 // The answer names what went, as the command's own line no longer shows (note n48).
-                let gone = (try? SessionTasks.ideas.current())??.idea(id)?.text
+                let gone = (try? lists.ideas.current())??.idea(id)?.text
                 changeIdeas(update: update) { _ in
                     .remove(id: id)
                 } then: { list in
@@ -31,7 +31,7 @@ extension AgentConversation {
                     return "Deleted n\(id)" + (gone.map { ": \($0)" } ?? "") + "."
                 }
             case .search(let query):
-                update(.notice(Self.ideasText { $0.searching(query) }, isError: false))
+                update(.notice(ideasText { $0.searching(query) }, isError: false))
             case .add(let text):
                 saveIdea(text, update: update)
             case .usage:
@@ -46,9 +46,9 @@ extension AgentConversation {
             return
         }
         // Before the first prompt there is no session to keep it with yet: held, and saved when the session starts (owner, 2026-11-02).
-        if SessionTasks.waitsForSession {
+        if lists.waitsForSession {
             let made = Self.now
-            SessionTasks.ideas.hold { $0.adding(text, at: made) }
+            lists.ideas.hold { $0.adding(text, at: made) }
             update(
                 .notice(
                     "Kept: it is saved to your notes when the session starts, with your first prompt.",
@@ -68,7 +68,7 @@ extension AgentConversation {
     /// Saves the notes typed before the session started, now that it has, and says so.
     func saveHeldIdeas(update: @Sendable (ConversationUpdate) -> Void) {
         do {
-            let made = try SessionTasks.ideas.applyHeld()
+            let made = try lists.ideas.applyHeld()
             guard let list = made.last else { return }
             let names = list.ideas.suffix(made.count).map(\.name).joined(separator: ", ")
             update(
@@ -84,7 +84,7 @@ extension AgentConversation {
 
     private func editNote(_ edit: IdeaList.Edit, update: @Sendable (ConversationUpdate) -> Void) {
         guard let text = edit.text else {
-            guard let draft = (try? SessionTasks.ideas.current())??.draft(editing: edit.id) else {
+            guard let draft = (try? lists.ideas.current())??.draft(editing: edit.id) else {
                 update(.notice("There is no note n\(edit.id).", isError: true))
                 return
             }
@@ -102,7 +102,7 @@ extension AgentConversation {
 
     /// Each note, to show or act on it, and every one with the fulfilled and dismissed.
     func ideaRows(includeAll: Bool = true) -> [ChoiceRow] {
-        guard let list = try? SessionTasks.ideas.current() else { return [] }
+        guard let list = try? lists.ideas.current() else { return [] }
         return Self.ideaRows(list, includeAll: includeAll)
     }
 
@@ -121,8 +121,8 @@ extension AgentConversation {
         then done: (IdeaList) -> String?
     ) {
         do {
-            guard let list = try SessionTasks.ideas.change(make) else {
-                update(.notice(SessionTasks.unavailable, isError: true))
+            guard let list = try lists.ideas.change(make) else {
+                update(.notice(lists.unavailable, isError: true))
                 return
             }
             if let said = done(list) { update(.notice(said, isError: false)) }
@@ -133,13 +133,13 @@ extension AgentConversation {
         }
     }
 
-    private static func ideasText(_ text: (IdeaList) -> String) -> String {
+    private func ideasText(_ text: (IdeaList) -> String) -> String {
         do {
-            if let list = try SessionTasks.ideas.current() { return text(list) }
+            if let list = try lists.ideas.current() { return text(list) }
         } catch {
             return "The notes could not be read: \(error)"
         }
-        return SessionTasks.unavailable
+        return lists.unavailable
     }
 
     private static func words(_ error: IdeaListError) -> String {

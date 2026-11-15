@@ -16,8 +16,8 @@ final class AgentConversation: Conversation {
     let sourceState: Mutex<ConfigurationSource>
     var source: ConfigurationSource { sourceState.withLock { $0 } }
     let makeLoop: @Sendable (RunSettings, LoopHooks) throws -> AgentLoop
-    /// The sandbox the model narrowed this conversation to; it outlives loop rebuilds, not /new or /resume.
-    let narrowing = SessionNarrowing()
+    /// The sandbox the model narrowed this conversation to (it outlives loop rebuilds, not /new or /resume); its tasks and notes.
+    let narrowing = SessionNarrowing(), lists = SessionTasks()
     /// Reply-path metadata is cached per conversation, never shared across policies or projects.
     let replyPaths = ReplyPathExistence()
     /// What the person's `!` commands printed since their last message, which goes with the next one (note n56).
@@ -102,7 +102,7 @@ final class AgentConversation: Conversation {
         self.directory = directory
         current = Mutex(Current(settings: settings))
         session.withLock { $0 = resumed }
-        _ = SessionTasks.follow(resumed, scope: settings.configuration.taskScope.value)
+        _ = lists.follow(resumed, scope: settings.configuration.taskScope.value)
         keepAwake = KeepAwake(
             mode: settings.configuration.keepAwake.value,
             display: settings.configuration.keepDisplayAwake.value
@@ -160,7 +160,7 @@ final class AgentConversation: Conversation {
         let input = PromptQueue { [mcp, threads, self] text in
             threads.attachReports(
                 await self.attachingForgeReferences(
-                    SessionTasks.attachReferences(await mcp.attachResources(self.attachingShellReports(text))),
+                    lists.attachReferences(await mcp.attachResources(self.attachingShellReports(text))),
                     update: update
                 )
             )
@@ -183,7 +183,7 @@ final class AgentConversation: Conversation {
                 // A thread that ended since the last message: its answer goes with this one (roadmap 0194).
                 let prompt = self.threads.attachReports(
                     await self.attachingForgeReferences(
-                        SessionTasks.attachReferences(
+                        lists.attachReferences(
                             await self.mcp.attachResources(self.attachingShellReports(expanded))
                         ),
                         update: update

@@ -1,23 +1,26 @@
 internal import AskAgentCore
 internal import Synchronization
 
-/// The task list and the ideas of the session in use (ADR-0140, roadmaps 0179 and 0180), one of each for the process: their tools and
-/// commands read them, and they follow the session as one is made, resumed, forked or replaced.
-enum SessionTasks {
-    static let board = TaskBoard()
-    static let ideas = IdeaBoard()
-    /// Why the session's lists could not be opened, for `/tasks` and `/ideas` to say.
-    static let problem = Mutex<String?>(nil)
+/// The task list and the notes of a conversation's session (ADR-0140, roadmaps 0179 and 0180): their tools and commands read them,
+/// and they follow the session as one is made, resumed, forked or replaced.
+///
+/// One of each for a conversation, not for the process (ADR-0154): `ask serve` holds several conversations at once, and with one
+/// list between them each wrote the other's session (diary 2026-11-15-06).
+final class SessionTasks: Sendable {
+    let board = TaskBoard()
+    let ideas = IdeaBoard()
+    /// Why the session's lists could not be opened, for `/tasks` and `/notes` to say.
+    let problem = Mutex<String?>(nil)
 
     /// Uses `recorder`'s lists, or none; why they could not be opened, when they could not.
-    static func follow(_ recorder: SessionRecorder?, scope: TaskScope) -> String? {
-        let reason = attach(board, to: recorder, scope: scope) ?? attach(ideas, to: recorder, scope: scope)
+    func follow(_ recorder: SessionRecorder?, scope: TaskScope) -> String? {
+        let reason = Self.attach(board, to: recorder, scope: scope) ?? Self.attach(ideas, to: recorder, scope: scope)
         problem.withLock { $0 = reason }
         return reason
     }
 
     /// The task list of the session in use, or why there is none.
-    static func answer(to arguments: String) -> String {
+    func answer(to arguments: String) -> String {
         do {
             if let list = try board.current() { return list.answer(to: arguments) }
         } catch {
@@ -27,22 +30,22 @@ enum SessionTasks {
     }
 
     /// `text` with the tasks and ideas it names (`#t3`, `#i2`) attached (roadmap 0186).
-    static func attachReferences(_ text: String) -> String {
+    func attachReferences(_ text: String) -> String {
         let tasks = (try? board.current()) ?? nil
         let notes = (try? ideas.current()) ?? nil
         return ListReferences.attach(text, tasks: tasks, ideas: notes)
     }
 
     /// Whether the lists are not there only because no session has started yet (no first prompt), not because they failed to open.
-    static var waitsForSession: Bool { !ideas.isAttached && problem.withLock { $0 } == nil }
+    var waitsForSession: Bool { !ideas.isAttached && problem.withLock { $0 } == nil }
 
     /// Why a list is not there.
-    static var unavailable: String {
+    var unavailable: String {
         problem.withLock { $0 } ?? "Nothing is kept yet: the session starts with the first prompt."
     }
 
     /// Both lists written again in `format`, as `/encrypt` changes their session's.
-    static func convert(to format: SessionFormat) throws {
+    func convert(to format: SessionFormat) throws {
         try board.convert(to: format)
         try ideas.convert(to: format)
     }

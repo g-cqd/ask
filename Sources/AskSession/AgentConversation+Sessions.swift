@@ -80,7 +80,7 @@ extension AgentConversation {
         if let left, left != replacement?.path { SessionSearch.forget(session: left) }
         plannedSession.withLock { $0 = nil }
         let scope = current.withLock { $0.settings.configuration.taskScope.value }
-        let tasksNotice = SessionTasks.follow(replacement, scope: scope)
+        let tasksNotice = lists.follow(replacement, scope: scope)
         // The model's narrowing belongs to the conversation it was made in.
         narrowing.policy = nil
         promptInput.withLock { $0 = nil }

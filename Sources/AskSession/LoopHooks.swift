@@ -6,6 +6,8 @@ internal import AskAgentCore
 struct LoopHooks: Sendable {
     var approve: SandboxApprover?
     var narrowing: SessionNarrowing
+    /// The conversation's task list and notes, which the `tasks` and `notes` tools write.
+    var lists: SessionTasks
     var destructiveApprover: DestructiveApprover?
     var callGate: ToolCallGate?
     var askPerson: PersonQuestion.Asker?

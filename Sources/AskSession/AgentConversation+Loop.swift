@@ -52,6 +52,7 @@ extension AgentConversation {
         return LoopHooks(
             approve: { [weak self] in await self?.approve($0) ?? false },
             narrowing: narrowing,
+            lists: lists,
             destructiveApprover: { [weak self] in await self?.approveDestructive($0) ?? false },
             callGate: callGate(for: settings),
             askPerson: { [weak self] in await self?.askPerson($0) },
@@ -87,7 +88,7 @@ extension AgentConversation {
                         )
                     )
                     let scope = current.withLock { $0.settings.configuration.taskScope.value }
-                    _ = SessionTasks.follow(recorder, scope: scope)
+                    _ = lists.follow(recorder, scope: scope)
                 }
                 try recorder.select(
                     destination,
@@ -137,6 +138,7 @@ func runInteractive(
                     // @dl:accept -- the hooks passed through, one argument per field
                     approve: hooks.approve,
                     narrowing: hooks.narrowing,
+                    lists: hooks.lists,
                     live: mcp.live,
                     destructiveApprover: hooks.destructiveApprover,
                     callGate: hooks.callGate,

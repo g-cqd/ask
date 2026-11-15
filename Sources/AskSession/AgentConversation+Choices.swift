@@ -41,19 +41,19 @@ extension AgentConversation {
 
     /// Each task, to show it in full, and the whole list with the done ones.
     private func taskRows() -> [ChoiceRow] {
-        guard let list = try? SessionTasks.board.current() else { return [] }
+        guard let list = try? lists.board.current() else { return [] }
         return Self.listRows(list.tasks.map { ($0.name, list.line($0)) }, all: "every task, done ones too")
     }
 
     /// The tasks not done and the ideas still open, for `#` (roadmap 0186): `#t3` and `#i2`, each with its line.
     private func referenceRows() -> [ChoiceRow] {
         let tasks =
-            ((try? SessionTasks.board.current()) ?? nil)
+            ((try? lists.board.current()) ?? nil)
             .map { list in
                 list.tasks.filter { $0.state != .done }.map { (name: "#" + $0.name, line: list.line($0)) }
             } ?? []
         let ideas =
-            ((try? SessionTasks.ideas.current()) ?? nil)
+            ((try? lists.ideas.current()) ?? nil)
             .map { list in
                 list.ideas.filter(\.state.isOpen).map { (name: "#" + $0.name, line: list.line($0)) }
             } ?? []

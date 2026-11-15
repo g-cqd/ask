@@ -89,6 +89,7 @@ func makeLoop(
     transport: URLSessionTransport,
     approve: SandboxApprover? = nil,
     narrowing: SessionNarrowing = SessionNarrowing(),
+    lists: SessionTasks,
     live: LiveTools? = nil,
     destructiveApprover: DestructiveApprover? = nil,
     callGate: ToolCallGate? = nil,
@@ -126,8 +127,8 @@ func makeLoop(
     let offered: [any Tool] =
         FileTools.all + [
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
-            NarrowSandboxTool(jobs: jobs), TasksTool(board: SessionTasks.board),
-            IdeasTool(board: SessionTasks.ideas, tasks: SessionTasks.board), FetchTool()
+            NarrowSandboxTool(jobs: jobs), TasksTool(board: lists.board),
+            IdeasTool(board: lists.ideas, tasks: lists.board), FetchTool()
         ] + (currentSession.map { [SessionSearchTool(currentSession: $0)] } ?? []) + (skills.tool.map { [$0] } ?? [])
         + (askPerson == nil ? [] : [QuestionTool()])
         + (startSubagent == nil ? [] : [AgentTool(definitions: definitions)])

@@ -30,9 +30,9 @@ private func say(_ lines: [String]) {
 private func promptSession(
     resumed: SessionRecorder?,
     in directory: SessionDirectory,
-    model: ResolvedModel,
     source: ConfigurationSource,
-    settings: RunSettings
+    settings: RunSettings,
+    lists: SessionTasks
 ) -> SessionRecorder {
     let session: SessionRecorder
     if let resumed {
@@ -52,10 +52,10 @@ private func promptSession(
             fail("ask: cannot create a session: \(error)", code: 73)
         }
     }
-    if let notice = SessionTasks.follow(session, scope: settings.configuration.taskScope.value) { say([notice]) }
+    if let notice = lists.follow(session, scope: settings.configuration.taskScope.value) { say([notice]) }
     do {
         try session.select(
-            SessionRouting.destination(model),
+            SessionRouting.destination(settings.model),
             explicitlySelected: source.flags.provider != nil || source.flags.selected != nil
         )
     } catch { fail("ask: \(error)", code: 78) }
@@ -95,6 +95,7 @@ func runPrompt(
         events?.write(event)
     }
     let loop: AgentLoop
+    let lists = SessionTasks()
     let mcp = startMCPServers(settings, jobs: jobs)
     do {
         await waitForMCPServers(mcp)
@@ -103,18 +104,17 @@ func runPrompt(
             instructions: files,
             jobs: jobs,
             transport: transport,
+            lists: lists,
             live: mcp.live,
             reportEvent: show
         )
     } catch {
         fail("ask: \(error)", code: 70)
     }
-    let session = promptSession(resumed: resumed, in: directory, model: model, source: source, settings: settings)
+    let session = promptSession(resumed: resumed, in: directory, source: source, settings: settings, lists: lists)
     let sessionPath = session.path
 
-    let sent = SessionTasks.attachReferences(
-        expandingSkill(prompt, settings: settings, workingDirectory: workingDirectory)
-    )
+    let sent = lists.attachReferences(expandingSkill(prompt, settings: settings, workingDirectory: workingDirectory))
     // Awake for the run and for any job it leaves running until ask stops them below (roadmap 0090).
     let keepAwake = awake(settings)
     defer { keepAwake.turnEnded() }

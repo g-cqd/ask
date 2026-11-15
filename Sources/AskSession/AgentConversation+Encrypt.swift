@@ -44,7 +44,7 @@ extension AgentConversation {
         do {
             try recorder.change(to: format, keyring: keyring)
             if current.withLock({ $0.settings.configuration.taskScope.value }) == .session {
-                try SessionTasks.convert(to: format)
+                try lists.convert(to: format)
             }
             update(
                 .notice(

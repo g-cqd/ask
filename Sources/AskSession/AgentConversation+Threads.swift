@@ -175,7 +175,7 @@ extension AgentConversation {
         let queue = PromptQueue { [mcp, self] text in
             threads.attachReports(
                 await self.attachingForgeReferences(
-                    SessionTasks.attachReferences(await mcp.attachResources(text)),
+                    lists.attachReferences(await mcp.attachResources(text)),
                     update: update
                 ),
                 for: name
@@ -184,7 +184,7 @@ extension AgentConversation {
         let task = Task {
             let prompt = threads.attachReports(
                 await self.attachingForgeReferences(
-                    SessionTasks.attachReferences(await self.mcp.attachResources(text)),
+                    lists.attachReferences(await self.mcp.attachResources(text)),
                     update: update
                 ),
                 for: name
