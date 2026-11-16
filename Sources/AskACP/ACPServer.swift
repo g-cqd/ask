@@ -21,7 +21,13 @@ package final class ACPServer: Sendable {
         sessions: ACPSession.Source? = nil,
         load: ACPSession.Loader? = nil
     ) {
-        let router = ACPRouter(agent: agent, sessions: sessions.map { ACPSessions(source: $0, loader: load) })
+        // Read back while an answer is waited for, so that what follows an answer is written after it.
+        let output = ACPOutput(output)
+        let router = ACPRouter(
+            agent: agent,
+            sessions: sessions.map { ACPSessions(source: $0, loader: load) },
+            output: output
+        )
         self.router = router
         connection = JSONRPCConnection(
             serving: output,

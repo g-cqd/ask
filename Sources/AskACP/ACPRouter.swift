@@ -14,10 +14,13 @@ final class ACPRouter: Sendable {
     private let sessions: ACPSessions?
     /// Where updates are sent: the connection, which is made after this and so given once it exists.
     private let client = Mutex<JSONRPCConnection?>(nil)
+    /// What is written, which says when a request has been answered.
+    private let output: ACPOutput
 
-    init(agent: ACPImplementation, sessions: ACPSessions?) {
+    init(agent: ACPImplementation, sessions: ACPSessions?, output: ACPOutput) {
         self.agent = agent
         self.sessions = sessions
+        self.output = output
     }
 
     /// Gives the connection updates are sent on.
@@ -36,7 +39,7 @@ final class ACPRouter: Sendable {
         switch (request.method, sessions) {
             case ("session/new", let sessions?):
                 let client = capabilities.withLock { $0 }
-                return { await sessions.new(params, client: client) }
+                return { await self.new(params, in: sessions, client: client, answering: request.id) }
             case ("session/prompt", let sessions?): return prompt(params, in: sessions)
             case ("session/load", let sessions?) where sessions.canLoad:
                 let client = asClient
@@ -54,6 +57,24 @@ final class ACPRouter: Sendable {
             case .success(let turns) = sessions.turns(of: notification.params)
         else { return }
         turns.cancel()
+    }
+
+    /// `session/new`: the session's id, and after that answer its commands, since the client learns of the session from the
+    /// answer and would not know whose commands came before it (Slash Commands, "Advertising commands").
+    private func new(
+        _ params: JSON?,
+        in sessions: ACPSessions,
+        client: ACPClientCapabilities,
+        answering id: JSONRPCID
+    ) async -> Result<JSONValue, JSONRPCError> {
+        await sessions.new(params, client: client)
+            .map { session in
+                output.after(id) { [send] in
+                    guard let commands = await ACPCommands.update(for: session.conversation) else { return }
+                    await send(["sessionId": .string(session.id), "update": commands])
+                }
+                return ["sessionId": .string(session.id)]
+            }
     }
 
     /// `session/prompt`: the turn's updates go to the client as `session/update`, and the answer follows the last of them.

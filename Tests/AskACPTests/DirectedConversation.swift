@@ -6,6 +6,8 @@ final class DirectedConversation: Conversation {
     /// What the driver asked of the conversation.
     enum Asked: Sendable, Equatable {
         case started(String)
+        /// A command was run, as `/name arguments` runs it on the screen.
+        case commanded(String, String)
         case enqueued(String, id: Int, followUp: Bool)
         case answeredApproval(Int, ApprovalChoice)
         /// The questions `id` asked were answered, or declined (nil).
@@ -21,10 +23,32 @@ final class DirectedConversation: Conversation {
     /// Everything the driver has asked so far, in order.
     var everything: [Asked] { log.withLock { $0 } }
     private let update = Mutex<(@Sendable (ConversationUpdate) -> Void)?>(nil)
+    /// The commands and the skills it says it has.
+    let commands: [SlashCommand]
+    private let skills: [SlashCommand]
+
+    init(commands: [SlashCommand] = [], skills: [SlashCommand] = []) {
+        self.commands = commands
+        self.skills = skills
+    }
+
+    func skillCommands() async -> [SlashCommand] { skills }
 
     func start(_ prompt: String, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
+        run(.started(prompt), update: update)
+    }
+
+    func command(
+        _ name: String,
+        arguments: String,
+        update: @escaping @Sendable (ConversationUpdate) -> Void
+    ) -> Task<Void, Never> {
+        run(.commanded(name, arguments), update: update)
+    }
+
+    private func run(_ asked: Asked, update: @escaping @Sendable (ConversationUpdate) -> Void) -> Task<Void, Never> {
         self.update.withLock { $0 = update }
-        note(.started(prompt))
+        note(asked)
         // The run: it does nothing, and says so when it is cancelled. A stream nobody feeds ends only by cancellation.
         return Task { [weak self] in
             let (never, _) = AsyncStream<Void>.makeStream()

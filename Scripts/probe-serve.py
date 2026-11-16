@@ -6,8 +6,9 @@ from a working directory that is none of the sessions'.
 A: one session: initialize, session/new, a prompt with two tool calls in it, a second prompt. The model's words arrive as chunks,
    in order, before the answer; each call is told as it begins and ends; the read was of the session's folder; the write asks the
    client, which allows the first and denies the second, and is told as a diff with the model's input; the session file is the
-   one the id names.
-B: two sessions in two folders: each keeps its own file and its own history.
+   one the id names. The session's commands are told after the answer that made it.
+B: two sessions in two folders: each keeps its own file and its own history. A prompt that is a command (`/tasks`) is run by
+   ask and answered without the model; one that names a skill reaches the model with the skill's text.
 C: nothing but protocol messages on standard output, and ask ends when its input does.
 E: a prompt whose command sleeps is cancelled: it answers `cancelled` at once, the command is gone, the session goes on; and a
    line that is not JSON is answered, with what follows it taken in its order.
@@ -134,6 +135,7 @@ def main():
         agent.turn([("call", "t3", "write", {"path": "refused.txt", "content": "never\n"})], "tool_use"),
         agent.turn([("text", "Second answer.")], "end_turn"),
         agent.turn([("text", "Hello from two.")], "end_turn"),
+        agent.turn([("text", "Demo done.")], "end_turn"),
         agent.turn([("text", "Continued.")], "end_turn"),
         agent.turn([("call", "t9", "bash", {"command": "sleep 47.3"})], "tool_use"),
         agent.turn([("text", "After the cancel.")], "end_turn"),
@@ -146,6 +148,12 @@ def main():
         agent.turn([("call", "t10", "bash", {"command": "sleep 48.6"})], "tool_use"),
     ])
     state = os.path.join(root, "state")
+    # One skill, and no other: ask's own directory only, so the machine's skills are not among the commands.
+    os.makedirs(os.path.join(state, "config", "ask", "skills", "demo"))
+    with open(os.path.join(state, "config", "ask", "config.json"), "w") as file:
+        json.dump({"skills": {"sources": ["ask"]}}, file)
+    with open(os.path.join(state, "config", "ask", "skills", "demo", "SKILL.md"), "w") as file:
+        file.write("---\nname: demo\ndescription: Does the demo.\n---\n# demo\n\nDo the demo thing.\n")
     client = Client(binary, elsewhere, agent.environment(state, server.url))
 
     print("A: one session")
@@ -154,10 +162,16 @@ def main():
     session = made.get("result", {}).get("sessionId", "")
     answer, before = client.request("session/prompt", prompt(session, "What does note.txt say?"))
     files = agent.sessions(state)
+    commands = before[0].get("params", {}).get("update", {}) if before else {}
     made_diff = {"type": "diff", "path": os.path.join(one, "made.txt"), "newText": "made by serve\n"}
     results = [
         agent.check("initialize answers version 1", opened.get("result", {}).get("protocolVersion") == 1, opened),
         agent.check("session/new answers an id", bool(session), made),
+        agent.check("the session's commands are told after that answer: the ones served, and the skill",
+                    before[0].get("params", {}).get("sessionId") == session
+                    and commands.get("sessionUpdate") == "available_commands_update"
+                    and [c["name"] for c in commands.get("availableCommands", [])] == ["compact", "tasks", "skill:demo"],
+                    before[:1]),
         agent.check("the turn ends with end_turn", answer.get("result") == {"stopReason": "end_turn"}, answer),
         agent.check("the model's words came as chunks, in order, before the answer",
                     chunks(before, "agent_message_chunk", session) == "Reading. It says: the note of one.", before),
@@ -216,6 +230,22 @@ def main():
                     .get("error", {}).get("message", "")),
     ]
 
+    asked = len(server.requests)
+    listed, said = client.request("session/prompt", prompt(other, "/tasks"))
+    unasked = len(server.requests)
+    skilled, _ = client.request("session/prompt", prompt(other, "/skill:demo show it"))
+    results += [
+        agent.check("a command typed as a prompt is run by ask, answered with what it says, and the model is not asked",
+                    listed.get("result") == {"stopReason": "end_turn"} and unasked == asked
+                    and chunks(said, "agent_message_chunk", other).strip() != "",
+                    (listed, unasked - asked, chunks(said, "agent_message_chunk", other))),
+        agent.check("a skill typed as a prompt reaches the model with the skill's text",
+                    skilled.get("result") == {"stopReason": "end_turn"} and len(server.requests) == asked + 1
+                    and "Do the demo thing." in json.dumps(server.requests[-1]["body"]["messages"][-1])
+                    and "show it" in json.dumps(server.requests[-1]["body"]["messages"][-1]),
+                    (skilled, server.requests[-1]["body"]["messages"][-1])),
+    ]
+
     print("C: the streams")
     status, said = client.close()
     results += [
@@ -244,6 +274,7 @@ def main():
                     [calls(replayed, c) for c in ("t1", "t2", "t3")]),
         agent.check("nothing is asked again, and the replay starts with the first prompt",
                     not client.asked and told[:1] == ["user_message_chunk"], (client.asked, told)),
+        agent.check("its commands are told after what it holds", told[-1:] == ["available_commands_update"], told[-3:]),
         agent.check("the loaded session goes on with its history", answer.get("result") == {"stopReason": "end_turn"}
                     and chunks(before, "agent_message_chunk", session) == "Continued."
                     and "What does note.txt say?" in json.dumps(last) and last[-1]["content"][-1].get("text") == "Go on.", last[-1]),

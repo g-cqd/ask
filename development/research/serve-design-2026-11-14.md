@@ -45,7 +45,7 @@ compatibility kit. A claim below that depends on one of those says so or is in t
 | compaction started, finished | `compaction_update`, when the client advertises `session.compaction` |
 | tokens in the context | `usage_update` |
 | the conversation's name | `session_info_update` |
-| skills and slash commands | `available_commands_update`; a prompt that starts with `/` is ask's command, as typed on the screen |
+| skills and slash commands | `available_commands_update`; a prompt that is a served command (`tasks`, `compact`: built 2026-11-16) is ask's, as typed on the screen; any other is the model's |
 | the turn ended | the `session/prompt` response: `end_turn`, `cancelled`, `max_turn_requests`; a failure is a JSON-RPC error |
 | `session/cancel` | what Esc does |
 | `session/load` | the session file replayed as updates; the id is the session file's name |

@@ -16,16 +16,20 @@ final class ACPTurns: Sendable {
     typealias Outcome = Result<JSONValue, JSONRPCError>
 
     /// A prompt waiting for its answer: the turn's own, or one sent during it.
-    private struct Waiting {
+    struct Waiting {
         /// Its place among the session's prompts, which is also the id the conversation knows it by.
         let sequence: Int
         let text: String
+        /// The command it is, when it is one: it runs as a turn of its own, and steers none.
+        let command: ACPCommands.Typed?
         var taken = false
         let reply: CheckedContinuation<Outcome, Never>
     }
 
-    private struct State {
+    struct State {
         var running = false
+        /// Whether the turn that runs is the model's, which a prompt sent during it steers; a command's takes none.
+        var steered = false
         /// How many prompts were admitted, and through which of them the client has cancelled.
         var sequence = 0
         var cancelledThrough = 0
@@ -35,22 +39,29 @@ final class ACPTurns: Sendable {
         var asking: Task<JSON?, Never>?
         /// How many compactions the client was told of, this session: each has an id of its own.
         var compactions = 0
-    }
 
-    private static let cancelled: Outcome = .success(["stopReason": "cancelled"])
-
-    private let session: ACPSession
-    private let state = Mutex(State())
-
-    init(session: ACPSession) { self.session = session }
-
-    /// An id for a compaction, never given twice in the session.
-    func nextCompactionID() -> String {
-        state.withLock { state in
-            state.compactions += 1
-            return "compaction-\(state.compactions)"
+        /// What becomes of the prompt admitted as `sequence` as it arrives, which a turn that starts is noted by. A command
+        /// steers nothing and is steered by nothing: it waits for the turn's end, and so does a prompt sent while one runs.
+        mutating func place(_ sequence: Int, isCommand: Bool) -> Place {
+            // Cancelled before its work began: it neither starts a turn nor steers one.
+            if sequence <= cancelledThrough { return .cancelled }
+            guard running else {
+                (running, steered) = (true, !isCommand)
+                return .starts
+            }
+            return !isCommand && steered ? .steers : .waits
         }
     }
+
+    /// What becomes of a prompt as it arrives: it starts a turn, steers the one that runs, or waits for its end.
+    enum Place { case cancelled, starts, steers, waits }
+
+    static let cancelled: Outcome = .success(["stopReason": "cancelled"])
+
+    let session: ACPSession
+    let state = Mutex(State())
+
+    init(session: ACPSession) { self.session = session }
 
     /// Admits a prompt, where the connection reads it: its place among the session's prompts and cancellations.
     func admit() -> Int {
@@ -71,24 +82,22 @@ final class ACPTurns: Sendable {
         asking?.cancel()
     }
 
-    /// `session/prompt`: the answer, when the turn `text` started or steered has ended.
+    /// `session/prompt`: the answer, when the turn `text` started or steered has ended. A command (``ACPCommands``) is a turn of
+    /// its own: sent during another, it runs when that one has ended.
     func prompt(_ text: String, admitted sequence: Int, client: ACPClient) async -> Outcome {
         await withCheckedContinuation { reply in
-            let waiting = Waiting(sequence: sequence, text: text, reply: reply)
-            let steers = state.withLock { state -> Bool? in
-                // Cancelled before its work began: it neither starts a turn nor steers one.
-                if sequence <= state.cancelledThrough { return nil }
-                guard state.running else {
-                    state.running = true
-                    return false
-                }
-                state.during.append(waiting)
-                return true
+            let command = ACPCommands.typed(text, in: session.conversation)
+            let waiting = Waiting(sequence: sequence, text: text, command: command, reply: reply)
+            let place = state.withLock { state -> Place in
+                let place = state.place(sequence, isCommand: command != nil)
+                if place == .steers || place == .waits { state.during.append(waiting) }
+                return place
             }
-            switch steers {
-                case nil: reply.resume(returning: Self.cancelled)
-                case true?: session.conversation.enqueue(text, id: sequence, followUp: false)
-                case false?: Task { await self.run(startingWith: waiting, client: client) }
+            switch place {
+                case .cancelled: reply.resume(returning: Self.cancelled)
+                case .steers: steer(waiting)
+                case .starts: Task { await self.run(startingWith: waiting, client: client) }
+                case .waits: break
             }
         }
     }
@@ -109,26 +118,40 @@ final class ACPTurns: Sendable {
                 let answered = state.during.filter { waiting in !left.contains { $0.sequence == waiting.sequence } }
                 state.during = Array(left.dropFirst())
                 state.running = !left.isEmpty
+                state.steered = left.first.map { $0.command == nil } ?? false
                 return (answered, left.first)
             }
             current.reply.resume(returning: outcome)
             for waiting in answered { waiting.reply.resume(returning: outcome) }
             guard let next else { return }
             current = next
-            // The others it left behind steer the turn that now starts.
-            for waiting in state.withLock({ $0.during }) {
-                session.conversation.enqueue(waiting.text, id: waiting.sequence, followUp: false)
+            // The others it left behind steer the turn that now starts, when it is the model's; the commands among them wait.
+            guard next.command == nil else { continue }
+            for waiting in state.withLock({ $0.during }) where waiting.command == nil {
+                steer(waiting)
             }
         }
+    }
+
+    /// Offers a prompt sent during the model's turn to that turn.
+    private func steer(_ waiting: Waiting) {
+        let text = ACPCommands.prompt(waiting.text, in: session.conversation)
+        session.conversation.enqueue(text, id: waiting.sequence, followUp: false)
     }
 
     /// One turn, read to its end: `cancelled` when the client cancelled its prompt, whatever the conversation then said, since a
     /// cancellation is never answered as an error (Prompt Turn, "Cancellation").
     private func turn(_ prompt: Waiting, client: ACPClient) async -> Outcome {
         let (updates, feed) = AsyncStream<ConversationUpdate>.makeStream()
-        let run = session.conversation.start(prompt.text) { [session] update in
+        let said: @Sendable (ConversationUpdate) -> Void = { [session] update in
             if case .terminated = feed.yield(update) { Self.late(update, of: session, to: client) }
         }
+        let run =
+            if let command = prompt.command {
+                session.conversation.command(command.name, arguments: command.arguments, update: said)
+            } else {
+                session.conversation.start(ACPCommands.prompt(prompt.text, in: session.conversation), update: said)
+            }
         // A cancellation read between the prompt's admission and here found no run to stop.
         if state.withLock({ state in
             state.run = run
@@ -136,7 +159,7 @@ final class ACPTurns: Sendable {
         }) {
             run.cancel()
         }
-        var reader = ACPTurnReader(session: session, client: client)
+        var reader = ACPTurnReader(session: session, client: client, answers: prompt.command != nil)
         // What the conversation says after the turn's end (the git state read again, a list read) is not the turn's: not read.
         reading: for await update in updates {
             for update in update.flattened where await !reader.read(update, in: self) {
@@ -152,46 +175,5 @@ final class ACPTurns: Sendable {
         if stopped { return Self.cancelled }
         guard reader.failed else { return .success(["stopReason": "end_turn"]) }
         return .failure(JSONRPCError(code: JSONRPCError.internalError, message: reader.failure ?? "The turn failed."))
-    }
-
-    /// What the conversation says once its turn has been answered: the name it was given meanwhile is still the session's
-    /// title. Anything else said late (the git state read again, a list) was the screen's.
-    private static func late(_ update: ConversationUpdate, of session: ACPSession, to client: ACPClient) {
-        for update in update.flattened {
-            guard case .conversationName = update, let payload = ACPUpdate.payload(for: update) else { continue }
-            Task { await client.notify(["sessionId": .string(session.id), "update": payload]) }
-        }
-    }
-
-    /// Asks the client what only its person can answer (a permission, a form), and stops waiting for the answer when the turn is
-    /// cancelled: nil then, as when it gives none.
-    func asking(_ ask: @escaping @Sendable () async -> JSON?) async -> JSON? {
-        let asking = Task { await ask() }
-        if state.withLock({ state in
-            state.asking = asking
-            return state.run?.isCancelled == true
-        }) {
-            asking.cancel()
-        }
-        let answer = await asking.value
-        state.withLock { $0.asking = nil }
-        return answer
-    }
-
-    /// The turn took the prompt sent during it as `id`: it is answered when the turn ends.
-    func take(_ id: Int) {
-        state.withLock { state in
-            guard let index = state.during.firstIndex(where: { $0.sequence == id }) else { return }
-            state.during[index].taken = true
-        }
-    }
-
-    /// The conversation did not take the prompt sent as `id` (a skill it names cannot be loaded): its request says so.
-    func refuse(_ id: Int, because reason: String?) {
-        let refused = state.withLock { state -> Waiting? in
-            guard let index = state.during.firstIndex(where: { $0.sequence == id }) else { return nil }
-            return state.during.remove(at: index)
-        }
-        refused?.reply.resume(returning: .failure(.invalidParams(reason ?? "the prompt was not taken")))
     }
 }

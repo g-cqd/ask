@@ -98,3 +98,10 @@ the client's MCP servers, not offering `question` to a client that shows no form
 A session is made knowing whether its client shows forms; one that shows none is not offered the `question` tool. Left: the
 slash commands, a job's output between turns, the client's MCP servers, the user guide and the help.
 
+## Step 2, twelfth part: the commands (2026-11-16, diary 2026-11-16-03)
+
+A client is told the commands a session serves and its skills (`available_commands_update`), and a prompt that is a served
+command runs it, answered with what it says. Served: `tasks` and `compact`, a default taken while the owner was away; which
+others are served, and what a picker becomes in a client, is still the owner's (roadmap 0210). Left: a job's output between
+turns, the client's MCP servers, the user guide and the help.
+

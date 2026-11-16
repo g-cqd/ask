@@ -22,14 +22,14 @@ final class ACPSessions: Sendable {
     var canLoad: Bool { loader != nil }
 
     /// `session/new`: a session for the directory the client names, which must be an absolute path.
-    func new(_ params: JSON?, client: ACPClientCapabilities) async -> Result<JSONValue, JSONRPCError> {
+    func new(_ params: JSON?, client: ACPClientCapabilities) async -> Result<ACPSession, JSONRPCError> {
         guard let cwd = params?["cwd"].string, cwd.hasPrefix("/") else {
             return .failure(.invalidParams("session/new needs cwd, an absolute path"))
         }
         do {
             let session = try await source(ACPSession.Asked(cwd: cwd, showsForms: client.form))
             active.withLock { $0[session.id] = ACPTurns(session: session) }
-            return .success(["sessionId": .string(session.id)])
+            return .success(session)
         } catch {
             return .failure(
                 JSONRPCError(code: JSONRPCError.internalError, message: "The session could not be made: \(error)")
@@ -37,7 +37,8 @@ final class ACPSessions: Sendable {
         }
     }
 
-    /// `session/load`: the saved session the client names, replayed to it as updates before the answer, then active.
+    /// `session/load`: the saved session the client names, replayed to it as updates before the answer, then its commands,
+    /// then active. The client named the session, so it knows whose they are before the answer.
     func load(_ params: JSON?, client: ACPClient) async -> Result<JSONValue, JSONRPCError> {
         guard let id = params?["sessionId"].string, let cwd = params?["cwd"].string, cwd.hasPrefix("/") else {
             return .failure(.invalidParams("session/load needs sessionId, and cwd, an absolute path"))
@@ -57,6 +58,9 @@ final class ACPSessions: Sendable {
         let turns = ACPTurns(session: loaded.session)
         var reader = ACPTurnReader(session: loaded.session, client: client)
         for update in loaded.history.flatMap(\.flattened) { await reader.replay(update, in: turns) }
+        if let commands = await ACPCommands.update(for: loaded.session.conversation) {
+            await client.notify(["sessionId": .string(id), "update": commands])
+        }
         active.withLock { $0[id] = turns }
         return .success([:])
     }
