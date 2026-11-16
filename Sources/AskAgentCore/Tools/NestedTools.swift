@@ -4,6 +4,10 @@ public import AskAI
 /// loop's, through its hooks and the sandbox; the loop gives this to a tool with its context, so a tool that calls others
 /// holds no registry of its own.
 public struct NestedTools: Sendable {
+    /// The tools a script may not call, besides the one that runs it (the owner, 2026-11-16): it has nobody to put a question
+    /// to in the middle of a script, and no use for an agent of its own, for now.
+    public static let withheld: Set<String> = ["question", "agent"]
+
     /// The tools that can be called, as the model knows them.
     public let definitions: @Sendable () -> [ToolDefinition]
     /// Calls the tool `name` with `input`: its output, an error output when it failed or may not run.

@@ -33,6 +33,8 @@ struct NestedToolCallsTests {
         let asked: Int
         let bash: Int
         let read: Int
+        /// How many times `question` and `agent` ran.
+        let others: Int
         let offered: [String]?
     }
 
@@ -44,6 +46,7 @@ struct NestedToolCallsTests {
         let path = directory.appending(path: "\(UUID().uuidString).jsonl").path
         let file = SessionRecorder(try SessionFile.create(at: .init(path), durability: .none))
         let (script, bash, read) = (ScriptingTool(), CountingTool("bash"), CountingTool("read"))
+        let (question, agent) = (CountingTool("question"), CountingTool("agent"))
         let asked = Mutex(0)
         let gate = ToolCallGate(policy: ApprovalPolicy()) { _ in
             asked.withLock { $0 += 1 }
@@ -52,7 +55,7 @@ struct NestedToolCallsTests {
         let input = #"{"calls":[\#(calls)],"together":\#(together)}"#
         let loop = AgentLoop(
             provider: ScriptedProvider([.call(id: "t1", name: "script", input: input), .reply("Done.")]),
-            tools: try ToolRegistry([script, bash, read]),
+            tools: try ToolRegistry([script, bash, read, question, agent]),
             settings: AgentSettings(model: "m", maximumTokens: 64, systemPrompt: [], maximumTurns: 4),
             context: ToolContext(workingDirectory: directory.path, callGate: gated ? gate : nil),
             hooks: hooks
@@ -69,15 +72,23 @@ struct NestedToolCallsTests {
             asked: asked.withLock { $0 },
             bash: bash.count,
             read: read.count,
+            others: question.count + agent.count,
             offered: script.offered
         )
     }
 
     @Test func `it is offered the run's other tools, and what it calls runs`() async throws {
         let outcome = try await run(#""read","bash","read""#)
-        #expect(outcome.offered == ["bash", "read"], "every tool but itself")
+        #expect(outcome.offered == ["bash", "read"], "every tool but itself, and but those a script may not call")
         #expect(outcome.result == "ok: ran\nok: ran\nok: ran")
         #expect(outcome.read == 2 && outcome.bash == 1)
+    }
+
+    /// The owner, 2026-11-16: a script asking the person a question, or starting an agent, makes no sense for now.
+    @Test func `a script can neither ask the person a question nor start an agent`() async throws {
+        let outcome = try await run(#""question","agent","read""#)
+        #expect(outcome.result == "error: A script cannot call question.\nerror: A script cannot call agent.\nok: ran")
+        #expect(outcome.others == 0 && outcome.read == 1)
     }
 
     @Test func `only the call the model made is an event and a record`() async throws {

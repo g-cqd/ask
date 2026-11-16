@@ -2,15 +2,19 @@ internal import AskAI
 
 /// The calls a tool makes for the model (ADR-0156).
 extension AgentLoop {
-    /// What the call `outer` may call: every other tool of the run. A nested call passes the hooks as a call of the model's
+    /// What the call `outer` may call: every other tool of the run, but those withheld from scripts (``NestedTools/withheld``). A nested call passes the hooks as a call of the model's
     /// does, and runs in `outer`'s context as a script's call (``ToolContext/withinScript()``). Its start is not an event and
     /// it is not recorded: the model made one call, and reads one result.
     func nestedTools(for outer: ToolInvocation, _ answers: HookAnswers) -> NestedTools {
         let loop = self
         return NestedTools(
-            definitions: { loop.tools.definitions.filter { $0.name != outer.name } },
+            definitions: {
+                loop.tools.definitions.filter { $0.name != outer.name && !NestedTools.withheld.contains($0.name) }
+            },
             call: { name, input in
-                guard name != outer.name else { return .error("A script cannot call \(name).") }
+                guard name != outer.name, !NestedTools.withheld.contains(name) else {
+                    return .error("A script cannot call \(name).")
+                }
                 let call = ToolInvocation(id: outer.id, name: name, input: input)
                 var (output, contexts) = await loop.passing(
                     call,
