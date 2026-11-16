@@ -16,7 +16,11 @@ package final class ServedSessions: Sendable {
         package let id: String
         /// The folder the conversation works in: the one asked for, as the kernel names it.
         package let folder: String
-        package let conversation: any Conversation
+        let serving: AgentConversation
+        package var conversation: any Conversation { serving }
+
+        /// What it holds now, as the screen would show it again, oldest first.
+        package func history() -> [ConversationUpdate] { serving.history() }
     }
 
     /// A saved session opened again, and what it holds, oldest first.
@@ -85,7 +89,7 @@ package final class ServedSessions: Sendable {
         let asked = Asked(asksPerson: asksPerson, servers: servers)
         let conversation = try await conversation(in: workspace, resumed: nil, asked: asked)
         let file = (conversation.plannedSessionPath() as NSString).lastPathComponent
-        return Made(id: (file as NSString).deletingPathExtension, folder: workspace, conversation: conversation)
+        return Made(id: (file as NSString).deletingPathExtension, folder: workspace, serving: conversation)
     }
 
     /// The saved session `id` of `folder`, opened to be continued, with what it holds as the screen would show it again; nil when
@@ -117,10 +121,8 @@ package final class ServedSessions: Sendable {
         }
         let asked = Asked(asksPerson: asksPerson, servers: servers)
         let conversation = try await conversation(in: workspace, resumed: recorder, asked: asked)
-        return Loaded(
-            made: Made(id: id, folder: workspace, conversation: conversation),
-            history: conversation.history()
-        )
+        let made = Made(id: id, folder: workspace, serving: conversation)
+        return Loaded(made: made, history: made.history())
     }
 
     /// Whether `id` can only be a session file's name in its folder: ASCII letters, digits, `-` and `_`.

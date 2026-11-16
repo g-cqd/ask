@@ -42,10 +42,18 @@ package struct ACPSession: Sendable {
     /// The session's folder, absolute: what a relative path in a tool call is relative to.
     package let folder: String
     package let conversation: any Conversation
+    /// What the session holds now, as the conversation says it, oldest first: what a client that loads it again is told.
+    package let history: @Sendable () -> [ConversationUpdate]
 
-    package init(id: String, folder: String, conversation: any Conversation) {
+    package init(
+        id: String,
+        folder: String,
+        conversation: any Conversation,
+        history: @escaping @Sendable () -> [ConversationUpdate] = { [] }
+    ) {
         self.id = id
         self.folder = folder
         self.conversation = conversation
+        self.history = history
     }
 }

@@ -44,7 +44,9 @@ struct ACPLoadTests {
                 guard id == "s9" else { return nil }
                 guard session.cwd == "/work" else { throw Locked() }
                 return ACPSession.Loaded(
-                    session: ACPSession(id: id, folder: session.cwd, conversation: conversation),
+                    session: ACPSession(id: id, folder: session.cwd, conversation: conversation) {
+                        history + [.assistantText("And since.")]
+                    },
                     history: history
                 )
             }
@@ -157,14 +159,49 @@ struct ACPLoadTests {
         _ = await client.end()
     }
 
-    @Test func `a session already active on the connection is not loaded again`() async {
-        let (client, _, asked) = client()
+    @Test
+    func `a session the connection already serves is told again from what it holds now, and stays the one it was`()
+        async
+    {
+        let (client, conversation, asked) = client()
         _ = await client.initialize()
         _ = await client.request("session/load", #"{"sessionId":"s9","cwd":"/work"}"#)
-        let again = await client.request("session/load", #"{"sessionId":"s9","cwd":"/work"}"#)
-        #expect(again["error"]["code"].int == -32602)
-        #expect(again["error"]["message"].string == "Invalid params: session s9 is already active on this connection")
-        #expect(asked.all.count == 1)
+        let first = client.updates.count
+        let again = await client.request("session/load", #"{"sessionId":"s9","cwd":"/elsewhere"}"#)
+        #expect(JSONValue(again["result"]) == [:])
+        #expect(asked.all.count == 1, "its file has one writer: nothing is opened again")
+        let told = client.updates.dropFirst(first).map { $0["update"] }
+        #expect(told.count == first + 1 && told.last == chunk("agent_message_chunk", "And since."), "\(told)")
+        async let answer = client.request(
+            "session/prompt",
+            #"{"sessionId":"s9","prompt":[{"type":"text","text":"go on"}]}"#
+        )
+        #expect(await conversation.next() == .started("go on"), "the conversation it had")
+        conversation.say(.runEnded)
+        #expect(await answer["result"]["stopReason"].string == "end_turn")
+        _ = await client.end()
+    }
+
+    @Test func `one with a turn running is not told again until the turn has ended`() async {
+        let (client, conversation, _) = client()
+        _ = await client.initialize()
+        _ = await client.request("session/load", #"{"sessionId":"s9","cwd":"/work"}"#)
+        let first = client.updates.count
+        async let answer = client.request(
+            "session/prompt",
+            #"{"sessionId":"s9","prompt":[{"type":"text","text":"go on"}]}"#
+        )
+        #expect(await conversation.next() == .started("go on"))
+        let during = await client.request("session/load", #"{"sessionId":"s9","cwd":"/work"}"#)
+        #expect(during["error"]["code"].int == -32602)
+        #expect(
+            during["error"]["message"].string
+                == "Invalid params: session s9 has a turn running: load it again once the turn has ended"
+        )
+        #expect(client.updates.count == first, "nothing of the history is mixed with the turn's")
+        conversation.say(.runEnded)
+        _ = await answer
+        #expect(JSONValue(await client.request("session/load", #"{"sessionId":"s9","cwd":"/work"}"#)["result"]) == [:])
         _ = await client.end()
     }
 }

@@ -18,3 +18,9 @@ Zed runs ask through ACP for a prompt with a tool call and an approval (checked 
 ## 2026-11-14
 
 One with roadmap 0234 step 2: `ask serve` is the ACP agent (ADR-0153), not a second front named `--acp`.
+
+## 2026-11-16
+
+Built with roadmap 0234 step 2, which is done: a probe drives the protocol (`Scripts/probe-serve.py`), and ACP's compatibility
+kit judges ask conformant (`Scripts/probe-acp-tck.py`). What keeps this entry open is the owner's: Zed running ask for a prompt
+with a tool call and an approval. `docs/editors.md` says how to name ask there; what Zed draws for each message is not known.

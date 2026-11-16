@@ -5,6 +5,9 @@ internal import Synchronization
 /// What happens during a turn besides its reading: the client is asked, a prompt sent meanwhile is taken or refused, a
 /// compaction is given its id, and what is said after the turn's end is sorted.
 extension ACPTurns {
+    /// Whether a turn runs in the session now.
+    var isRunning: Bool { state.withLock { $0.running } }
+
     /// An id for a compaction, never given twice in the session.
     func nextCompactionID() -> String {
         state.withLock { state in

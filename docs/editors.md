@@ -21,8 +21,8 @@ custom agent, in its settings:
 
 Write the full path to ask when the editor does not start programs with your shell's `PATH`.
 
-ask is checked against the protocol by a client of its own, message by message. It has not yet been run under each editor: what an
-editor draws for a given message is that editor's.
+ask is checked against the protocol by a client of its own and by the protocol's compatibility kit. It has not yet been run under
+each editor: what an editor draws for a given message is that editor's.
 
 ## What a session is
 

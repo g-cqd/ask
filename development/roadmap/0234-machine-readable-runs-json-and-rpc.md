@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-11-13
 ---
@@ -115,4 +115,11 @@ the help.
 
 What a yielded command prints after its call has ended is told on that call, during the turn or after it, and then how it
 ended. Left: the user guide and the help.
+
+## Step 2 built (2026-11-16, diary 2026-11-16-03)
+
+`ask serve` is listed in the help and has its page of the user guide (`docs/editors.md`). ACP's compatibility kit judges it
+conformant (`Scripts/probe-acp-tck.py`, 32 of 32 mandatory), after one disagreement it found: a session the connection
+already serves could not be loaded again. Not done, and not this entry's to decide: the owner's look at it in Zed; which
+commands beyond `/tasks` and `/compact` a client is served (roadmap 0210); a model picker; pictures in a prompt; SSE servers.
 

@@ -23,7 +23,7 @@ struct ServeCommand: AsyncParsableCommand {
                     asksPerson: asked.showsForms,
                     servers: Self.settings(asked.servers)
                 )
-                return ACPSession(id: made.id, folder: made.folder, conversation: made.conversation)
+                return Self.session(made)
             },
             load: { id, asked in
                 let servers = Self.settings(asked.servers)
@@ -35,15 +35,15 @@ struct ServeCommand: AsyncParsableCommand {
                         servers: servers
                     )
                 else { return nil }
-                let made = loaded.made
-                return ACPSession.Loaded(
-                    session: ACPSession(id: made.id, folder: made.folder, conversation: made.conversation),
-                    history: loaded.history
-                )
+                return ACPSession.Loaded(session: Self.session(loaded.made), history: loaded.history)
             }
         )
         // The client has gone: what its sessions left running goes with it.
         await sessions.stopAll()
+    }
+
+    private static func session(_ made: ServedSessions.Made) -> ACPSession {
+        ACPSession(id: made.id, folder: made.folder, conversation: made.conversation) { made.history() }
     }
 
     /// A client's MCP servers as ask's settings name one; their names are made ones ask allows where the session is made.

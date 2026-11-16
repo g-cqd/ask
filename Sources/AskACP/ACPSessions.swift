@@ -48,10 +48,7 @@ final class ACPSessions: Sendable {
         guard let id = params?["sessionId"].string, let cwd = params?["cwd"].string, cwd.hasPrefix("/") else {
             return .failure(.invalidParams("session/load needs sessionId, and cwd, an absolute path"))
         }
-        // Its file has one writer, which is the conversation that already serves it here.
-        guard active.withLock({ $0[id] }) == nil else {
-            return .failure(.invalidParams("session \(id) is already active on this connection"))
-        }
+        if let turns = active.withLock({ $0[id] }) { return await again(turns, to: client) }
         let loaded: ACPSession.Loaded?
         let (servers, unusable) = ACPMCPServer.servers(of: params)
         let asked = ACPSession.Asked(cwd: cwd, showsForms: client.capabilities.form, servers: servers)
@@ -68,6 +65,25 @@ final class ACPSessions: Sendable {
             await client.notify(["sessionId": .string(id), "update": update])
         }
         active.withLock { $0[id] = turns }
+        return .success([:])
+    }
+
+    /// A session this connection already serves, loaded again: told again from what it holds now, and still the one it was.
+    /// Its file has one writer, the conversation that serves it here, so nothing is opened: its folder and its servers stay
+    /// the ones it has.
+    private func again(_ turns: ACPTurns, to client: ACPClient) async -> Result<JSONValue, JSONRPCError> {
+        let session = turns.session
+        // What is told again and what a turn says as it runs would reach the client as one history, which it could not part.
+        guard !turns.isRunning else {
+            return .failure(
+                .invalidParams("session \(session.id) has a turn running: load it again once the turn has ended")
+            )
+        }
+        var reader = ACPTurnReader(session: session, client: client)
+        for update in session.history().flatMap(\.flattened) { await reader.replay(update, in: turns) }
+        for update in await opening(session, unusable: [], to: client.capabilities) {
+            await client.notify(["sessionId": .string(session.id), "update": update])
+        }
         return .success([:])
     }
 

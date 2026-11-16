@@ -15,6 +15,7 @@ C: nothing but protocol messages on standard output, and ask ends when its input
 E: a prompt whose command sleeps is cancelled: it answers `cancelled` at once, the command is gone, the session goes on; and a
    line that is not JSON is answered, with what follows it taken in its order.
 H: the model asks a question: the client is asked for a form, and the model is told what the person chose.
+J: a session loaded again by the connection that serves it is told again whole, as it is now, and goes on.
 I: a command that goes on after its call has ended (a `bash` call that yielded) is told on that call as it prints, after
    the turn has ended, and then that it ended.
 G: the client goes away while a command runs: ask stops the command and ends with 0, not killed by a pipe nobody reads.
@@ -423,6 +424,13 @@ def main():
                     later[-1] is not None and ended[-1] is not None and "early-line" in of_the_job(ended[-1])
                     and "status" not in last and last.get("sessionUpdate") == "tool_call_update", (later[-3:], ended[-2:])),
     ]
+
+    print("J: the session, loaded again by the connection that serves it")
+    again, told_again = client.request("session/load", {"sessionId": session, "cwd": one, "mcpServers": []})
+    said_again = json.dumps([m["params"]["update"] for m in told_again if m.get("method") == "session/update"])
+    results.append(agent.check("it is told again whole, what this connection added with it, and stays the one it was",
+                               again.get("result") == {} and "user_message_chunk" in said_again and "Start it." in said_again
+                               and "late-line" in said_again, (again, said_again[-500:])))
 
     print("G: the client goes away while a command runs")
 
