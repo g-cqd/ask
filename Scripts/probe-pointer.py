@@ -293,11 +293,13 @@ t = with_help("ghostty", helps=4)
 before = len(t.copies())
 t.mouse(0, 5, 12, wait=0.1)
 t.mouse(32, 5, 0, wait=0.1)
-# The button is held still: a terminal reports no motion, so only the timer can scroll. Held until the start is in view (or 15 s).
+# The button is held still: a terminal reports no motion, so only the timer can scroll. Held until the start is in view, which
+# takes 9 s here and took more than 15 s on CI's runner (90 of 98 lines in 16.6 s, 2026-11-16): the wait is the question's, not a
+# budget, so it is 60 s at most.
 held_for = time.time()
 t.pump(1.0)
 check("a held drag shows no copy before release", t.copies()[before:] == [])
-while time.time() - held_for < 15 and not at_start(t):
+while time.time() - held_for < 60 and not at_start(t):
     t.pump(0.5)
 t.pump(0.5)
 t.mouse(0, 5, 0, release=True, wait=0.5)

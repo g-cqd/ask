@@ -140,7 +140,7 @@ def probe_round_trip():
         results.append(check("system is the canonical line", first["system"] == [{"type": "text", "text": CANONICAL}], first["system"]))
         results.append(check("prompt leads the first user message", "You are ask" in first["messages"][0]["content"][0]["text"]))
         offered = [t["name"] for t in first["tools"] if t["name"] != "skill"]
-        results.append(check("tools offered", offered == ["read", "write", "bash", "job", "narrow_sandbox", "tasks", "notes", "fetch"],
+        results.append(check("tools offered", offered == ["read", "write", "bash", "job", "narrow_sandbox", "tasks", "notes", "fetch", "codemode"],
                              offered))
         last = second["messages"][-1]["content"][0]
         results.append(check("tool result sent back", last["type"] == "tool_result" and "probe-ok" in last["content"], last))
@@ -348,6 +348,25 @@ def tool_results(server):
     return {b["tool_use_id"]: b["content"] for b in blocks if b["type"] == "tool_result"}
 
 
+def server_alone(yielded):
+    """For a server ask started whose port never opened: what the job printed, and the same server started without ask, with how
+    long its port took. It tells a slow machine from a sandbox that keeps the server from listening."""
+    named = re.search(r"whole output in (.+?);", yielded or "")
+    try:
+        printed = open(named.group(1)).read()[-400:] if named else "no file named"
+    except OSError as error:
+        printed = str(error)
+    port, began = free_port(), time.time()
+    alone = subprocess.Popen(["python3", "-m", "http.server", str(port), "--bind", "127.0.0.1"], stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT, text=True)
+    while time.time() - began < 60 and not accepts(port) and alone.poll() is None:
+        time.sleep(0.2)
+    took = f"its port opened after {time.time() - began:.1f} s" if accepts(port) else f"its port did not open in {time.time() - began:.0f} s"
+    alone.kill()
+    said = alone.communicate()[0][-300:]
+    return f"the job printed {printed!r}; without ask, {shutil.which('python3')}: {took}, saying {said!r}"
+
+
 def probe_jobs():
     print("F: a server run as a job: yielded, waited on, used, stopped; a long output kept in a file")
     project, state, port = tempfile.mkdtemp(), tempfile.mkdtemp(), free_port()
@@ -364,7 +383,8 @@ def probe_jobs():
     if len(server.requests) == 6:
         got = tool_results(server)
         results += [check("bash yielded the server as job-1", "still running as job-1 after 1 s" in got.get("t1", ""), got.get("t1")),
-                    check("wait saw the port open", f"[job-1 port {port} accepts connections]" in got.get("t2", ""), got.get("t2")),
+                    check("wait saw the port open", f"[job-1 port {port} accepts connections]" in got.get("t2", ""),
+                          got.get("t2") if "accepts connections" in got.get("t2", "") else (got.get("t2"), server_alone(got.get("t1")))),
                     check("the server answered", "Directory listing" in got.get("t3", ""), got.get("t3")),
                     check("job_stop stopped it", got.get("t5", "").startswith("[job-1 stopped]"), got.get("t5"))]
         named = re.search(r"\[whole output in (.+?)\]", got.get("t4", ""))
