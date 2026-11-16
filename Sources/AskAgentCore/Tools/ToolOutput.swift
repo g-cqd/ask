@@ -9,6 +9,8 @@ public struct ToolOutput: Sendable, Equatable {
     public var backgroundJob: String?
     /// Images the tool returned (roadmap 0084), sent to a model that takes images.
     public var images: [ImagePart] = []
+    /// Whether the tool cut ``content`` itself, to a limit its caller chose: the registry's cap then leaves it as it is.
+    public var bounded = false
     /// What the tool did, typed, for the screen; the model reads ``content`` only.
     public var facts = ToolFacts()
 

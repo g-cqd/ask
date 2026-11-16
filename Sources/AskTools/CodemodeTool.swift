@@ -82,7 +82,10 @@ public struct CodemodeTool: ArgumentTool {
             }
         }
         let report = CodemodeReport.text(result, took: took)
-        return ToolOutput(Self.fitted(report, to: limits, in: context), isError: result.failure != nil)
+        var output = ToolOutput(Self.fitted(report, to: limits, in: context), isError: result.failure != nil)
+        // Cut here, to what the script asked for: the registry's cap would cut it again, at less and without saying where.
+        output.bounded = true
+        return output
     }
 
     /// `report` within the tokens the script may return; what does not fit is written whole beside the session's other outputs.

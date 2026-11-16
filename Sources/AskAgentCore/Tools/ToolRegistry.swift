@@ -37,7 +37,7 @@ public struct ToolRegistry: Sendable {
     private func offered() -> [any Tool] { live?.snapshot(excluding: Set(order)) ?? [] }
 
     /// Runs the tool called `name`.
-    /// - Returns: its capped output, or an error output when no tool has that name.
+    /// - Returns: its output, capped unless the tool bounded it itself, or an error output when no tool has that name.
     public func run(name: String, input: JSONObject, in context: ToolContext) async -> ToolOutput {
         // The session's narrowing applies to every call, and a call may narrow further, never widen (roadmap 0019).
         var context = context
@@ -68,7 +68,7 @@ public struct ToolRegistry: Sendable {
             let names = order + offered().map(\.definition.name)
             return .error("No tool is named \(name). Available: \(names.joined(separator: ", ")).")
         }
-        output.content = cap.apply(output.content)
+        if !output.bounded { output.content = cap.apply(output.content) }
         return output
     }
 

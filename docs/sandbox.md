@@ -88,8 +88,9 @@ long task waits on. The script is JavaScript, or Python when there is a `python3
   What it then calls is not asked about again. A call that would need more than the sandbox allows is refused, not asked about.
   **Allow for the session** covers later scripts; `--yes`, `--allow codemode` and `approvals.allow` do too.
 - **It is bounded.** A script has 120 seconds unless its first line asks for another deadline (ten minutes at most), 256 MiB of
-  memory, 16 tool calls running at once, and a megabyte of output, of which at most 10,000 tokens are returned: past that, the
-  start and the end, with the whole written beside the session's other outputs. A script past a limit fails and says which.
+  memory, 16 tool calls running at once, and a megabyte of output, of which 10,000 tokens are returned unless its first line
+  asks for another number (100,000 at most): past that, the start and the end, with the whole written beside the session's
+  other outputs. A script past a limit fails and says which.
 - The calls a script made are not kept in the session, only the script and what it returned.
 
 `"codemode": false` in the configuration turns it off; the model then has only the tools themselves.

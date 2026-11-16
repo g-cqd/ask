@@ -8,7 +8,11 @@ import Testing
 @Suite("Tools dispatch by name, and every outcome is a bounded output")
 struct ToolRegistryTests {
     private struct Echo: ArgumentTool {
-        struct Arguments: Decodable, Sendable { let text: String }
+        struct Arguments: Decodable, Sendable {
+            let text: String
+            /// Whether the tool says it bounded the text itself.
+            var bounded: Bool?
+        }
         let definition = ToolDefinition(
             name: "echo",
             description: "Echo text.",
@@ -16,7 +20,9 @@ struct ToolRegistryTests {
         )
 
         func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
-            ToolOutput(arguments.text)
+            var output = ToolOutput(arguments.text)
+            output.bounded = arguments.bounded ?? false
+            return output
         }
     }
 
@@ -79,5 +85,16 @@ struct ToolRegistryTests {
         let registry = try ToolRegistry([Echo()], cap: OutputCap(maximumLines: 2, maximumBytes: 10_000))
         let output = await registry.run(name: "echo", input: input(#"{"text":"a\nb\nc\nd"}"#), in: context)
         #expect(output.content == "a\n[… 2 lines omitted …]\nd")
+    }
+
+    /// A tool whose caller chose how much it returns has cut to that already: a second cut would undo the choice, unsaid.
+    @Test func `an output its tool bounded itself is not cut again`() async throws {
+        let registry = try ToolRegistry([Echo()], cap: OutputCap(maximumLines: 2, maximumBytes: 10_000))
+        let output = await registry.run(
+            name: "echo",
+            input: input(#"{"text":"a\nb\nc\nd","bounded":true}"#),
+            in: context
+        )
+        #expect(output.content == "a\nb\nc\nd")
     }
 }

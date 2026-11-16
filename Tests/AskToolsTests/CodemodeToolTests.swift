@@ -109,6 +109,17 @@ struct CodemodeToolTests {
         #expect(whole.contains("line 150\n") && whole.hasSuffix("line 300\n</console_output>"))
     }
 
+    /// The registry cuts a tool's output at 50 KiB and 2,000 lines; a script's is cut here, to what its first line asked for.
+    @Test func `what a script returns is bounded here, to its own limit, and says so`() async {
+        let code =
+            #"// @options: {"max_output_tokens": 50000}"#
+            + "\nfor (let i = 0; i < 3000; i++) text('x'.repeat(40)); return 'end';"
+        let output = await run(code)
+        #expect(output.bounded && !output.content.contains("omitted") && output.content.utf8.count > 120_000)
+        let cut = await run(#"// @options: {"max_output_tokens": 60}"# + "\nreturn 'x'.repeat(4000);")
+        #expect(cut.bounded && cut.content.contains("omitted"))
+    }
+
     @Test func `outside a turn there is nothing to call, and it says so`() async {
         let output = await run("return 1;", in: ToolContext(workingDirectory: "/work"))
         #expect(
