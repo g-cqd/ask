@@ -72,15 +72,22 @@ struct CodemodeFailureTests {
 
     @Test func `output past what may be held fails the script, whatever it catches`() async {
         let result = await run(
-            "try { for (;;) text('x'.repeat(1 << 20)); } catch (e) { text('caught'); } return 'done';"
+            "try { for (;;) text('x'.repeat(1 << 16)); } catch (e) { text('caught'); } return 'done';"
         )
         #expect(
             result.failure
-                == "The script said more than 16777216 characters; write large data to a file with a tool instead."
+                == "The script said more than 1048576 characters; write large data to a file with a tool instead."
         )
         #expect(result.items.count == 16)
         let many = await run("try { for (;;) text(''); } catch (e) {} return 1;")
-        #expect(many.failure == "The script made more than 100000 text and console calls.")
-        #expect(many.items.count == 100_000)
+        #expect(many.failure == "The script made more than 10000 text and console calls.")
+        #expect(many.items.count == 10_000)
+    }
+
+    /// The result crosses to the keeper as one line of at most 8 MiB: the worst a script can say has to fit in it.
+    @Test func `the most a script may say fits in one line of the wire`() {
+        let worstCharacters = CodemodeVM.maximumCharacters * 6
+        let worstItems = CodemodeVM.maximumItems * #"{"text":"","console":false},"#.utf8.count
+        #expect(worstCharacters + worstItems + 4096 < 8 << 20)
     }
 }

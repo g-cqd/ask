@@ -1,6 +1,7 @@
 internal import AemiJSON
 internal import AemiJSONRPC
 internal import AskCodemode
+internal import Synchronization
 
 /// Keeps one script's process (ADR-0156): starts it, gives it the script, runs the tools it asks for, and holds it to its
 /// limits. A script past its deadline, past its memory, or whose process is gone is a failure that says which.
@@ -28,8 +29,17 @@ struct CodemodeKeeper: Sendable {
         let calls = CodemodeCalls(limit: limits.callsInFlight, call: call, called: called)
         let connection = JSONRPCConnection(serving: CodemodeChildSink(child), framing: .lines) { calls.admit($0) }
         let (chunks, feed) = AsyncThrowingStream<[UInt8], any Error>.makeStream()
+        // A line longer than the connection takes would be dropped by it, and the script would then wait out its deadline for
+        // an answer that had come: seen here, it ends the script at once.
+        let oversized = Mutex(false)
         let reading = Task {
-            for await line in child.incoming { feed.yield(line + [0x0A]) }
+            for await line in child.incoming {
+                guard line.count < LineFraming.defaultMaximumLineLength else {
+                    oversized.withLock { $0 = true }
+                    break
+                }
+                feed.yield(line + [0x0A])
+            }
             feed.finish()
         }
         // The calls a script makes run as children of this task: ending it is what cancels those still running.
@@ -44,7 +54,12 @@ struct CodemodeKeeper: Sendable {
         } catch {
             serving.cancel()
             reading.cancel()
-            result = CodemodeResult(failure: Self.reason(error, exit: await child.close(), limits))
+            let exit = await child.close()
+            result = CodemodeResult(
+                failure: oversized.withLock { $0 }
+                    ? "The script's result is too large to return. Return less, or write it to a file with a tool."
+                    : Self.reason(error, exit: exit, limits)
+            )
         }
         return result
     }

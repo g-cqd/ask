@@ -13,9 +13,11 @@ package final class CodemodeVM {
     package typealias Caller =
         @Sendable (_ tool: String, _ arguments: String) async -> Result<String, CodemodeCallFailure>
 
-    /// The most a script may say before it fails: held whole until it ends, so bounded (pi's numbers).
-    package static let maximumCharacters = 16 << 20
-    package static let maximumItems = 100_000
+    /// The most a script may say before it fails. It is held whole until the script ends, and then crosses to the keeper as one
+    /// line of at most 8 MiB (AemiJSONRPC's): the worst these can come to on the wire, six bytes a character and thirty an
+    /// item, fits in it. pi's numbers (16 Mi, 100,000) did not, and a result past the line was dropped (diary 2026-11-16-02).
+    package static let maximumCharacters = 1 << 20
+    package static let maximumItems = 10_000
 
     private let tools: [CodemodeCallable]
     private let call: Caller

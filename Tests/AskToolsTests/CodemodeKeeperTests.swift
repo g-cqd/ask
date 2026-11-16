@@ -109,4 +109,42 @@ struct CodemodeKeeperTests {
         held[1].cancel()
         for task in held { #expect(await task.value.failure == "The script was stopped.") }
     }
+
+    /// A script's result crosses to its keeper as one line, and the connection takes lines of 8 MiB. Found with Python's first
+    /// run (diary 2026-11-16-02): a result past that was dropped, and the script "ran past its deadline" two minutes later.
+    @Test func `the most a script may say comes back whole, however it is escaped on the way`() async {
+        // Control characters are six bytes each on the wire: the worst a script can do with a character.
+        let code = "text('\\u0001'.repeat(\(CodemodeVM.maximumCharacters - 3))); return 'end';"
+        let result = await keeper().run(code, tools: [], limits: CodemodeLimits(deadline: .seconds(30)), call: none)
+        #expect(result.failure == nil)
+        #expect(result.items.count == 2 && result.items.first?.text.utf16.count == CodemodeVM.maximumCharacters - 3)
+        #expect(result.items.last?.text == "end")
+    }
+
+    @Test func `as many items as a script may make come back whole`() async {
+        let code = "for (let i = 1; i < \(CodemodeVM.maximumItems); i++) console.log(''); return 1;"
+        let result = await keeper().run(code, tools: [], limits: CodemodeLimits(deadline: .seconds(30)), call: none)
+        #expect(result.failure == nil && result.items.count == CodemodeVM.maximumItems)
+    }
+
+    @Test func `a child whose message is longer than a line may be fails the script at once, and says so`() async {
+        let oversized: CodemodeChild.Start = { _ in
+            let (incoming, lines) = AsyncStream<[UInt8]>.makeStream()
+            return CodemodeChild(
+                incoming: incoming,
+                send: { _ in lines.yield([UInt8](repeating: 0x78, count: (8 << 20) + 1)) },
+                close: {
+                    lines.finish()
+                    return nil
+                }
+            )
+        }
+        // Thirty seconds of deadline: a keeper that waited for it would fail the test's own time limit first.
+        let result = await keeper(oversized)
+            .run("x", tools: [], limits: CodemodeLimits(deadline: .seconds(300)), call: none)
+        #expect(
+            result.failure
+                == "The script's result is too large to return. Return less, or write it to a file with a tool."
+        )
+    }
 }
