@@ -2,6 +2,7 @@ internal import AemiKernel
 public import AskAI
 public import AskAgentCore
 internal import Foundation
+internal import Synchronization
 
 /// `edit`: replaces an exact piece of text that occurs once, or everywhere when asked.
 public struct EditTool: ArgumentTool {
@@ -32,10 +33,22 @@ public struct EditTool: ArgumentTool {
         SandboxRequest.property
     }
 
+    /// Held from an edit's reading of its file to its writing of it. A script makes its calls at once (ADR-0156), and of
+    /// sixteen edits at once to one file each read the same text and wrote its own change over the others': all said they were
+    /// made, two or three were. One lock for every file: an edit takes about a millisecond, and none waits on another's model.
+    private static let turn = Mutex(())
+
     public init() {}
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         guard !arguments.oldText.isEmpty else { return .error("old_text must not be empty.") }
+        return try Self.turn.withLock { (_: inout Void) throws(ToolFailure) -> ToolOutput in
+            try edit(arguments, in: context)
+        }
+    }
+
+    /// Reads the file, replaces, and writes it back: one edit at a time (``turn``).
+    private func edit(_ arguments: Arguments, in context: ToolContext) throws(ToolFailure) -> ToolOutput {
         let url = try FileTools.authorized(arguments.path, for: [.read, .write], in: context)
         let text = try FileTools.text(at: url, shownAs: arguments.path, in: context)
         // Exact UTF-8 bytes, not canonically equivalent characters: the model must reproduce what the file holds,

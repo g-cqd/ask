@@ -121,6 +121,26 @@ struct FileToolsTests {
         #expect(mode as? Int == 0o755)
     }
 
+    /// A script makes its calls at once (ADR-0156). An edit reads, changes and writes back: sixteen at once on one file each
+    /// said it was made, and two or three were (diary 2026-11-16-03).
+    @Test func `edits made at once to one file are all made`() async throws {
+        let count = 64
+        let padding = String(repeating: "a line that is only here to make the file long\n", count: 2000)
+        try file("many.txt", (0 ..< count).map { "marker-\($0)-old\n" }.joined() + padding)
+        let context = context
+        let made = await withTaskGroup(of: Bool.self) { group in
+            for index in 0 ..< count {
+                let input = input(
+                    #"{"path":"many.txt","old_text":"marker-\#(index)-old","new_text":"marker-\#(index)-new"}"#
+                )
+                group.addTask { !(await EditTool().run(input, in: context).isError) }
+            }
+            return await group.reduce(into: 0) { $0 += $1 ? 1 : 0 }
+        }
+        #expect(made == count)
+        #expect(try contents("many.txt") == (0 ..< count).map { "marker-\($0)-new\n" }.joined() + padding)
+    }
+
     @Test func `edit refuses no match and several matches, and changes nothing`() async throws {
         try file("d.txt", "x x x")
         let none = await EditTool().run(input(#"{"path":"d.txt","old_text":"y","new_text":"z"}"#), in: context)

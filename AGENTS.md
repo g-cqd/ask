@@ -45,6 +45,7 @@ python3 Scripts/measure-budgets.py .build/release/ask 12   # the five budgets
 Scripts/install.sh              # build, measure the budgets, install in ~/.local/bin only when they hold
 python3 Scripts/measure-action.py .build/release/ask 10 500  # the action, in detail, after 500 turns
 python3 Scripts/probe-codemode.py .build/release/ask         # a codemode script through the real binary: limits, sandbox, approval
+python3 Scripts/probe-codemode-at-once.py .build/release/ask # the calls a script makes at once: edits, writes, jobs, MCP, tasks
 Scripts/fuzz.sh 60 sse          # libFuzzer on the byte parsers (Fuzz/); weekly in CI; a finding becomes a red test, then a seed
 ```
 

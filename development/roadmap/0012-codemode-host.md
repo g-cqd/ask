@@ -75,4 +75,6 @@ Left: pi's `only` mode; pictures; a memory watch from outside the Python process
 
 A script that asks for more output than a tool's cap gets it (`ToolOutput.bounded`). A script stopped at its deadline or at its
 memory keeps what it had said: it crosses to the keeper as it is said. A Python script's memory is watched from outside its
-process: one allocation larger than the limit is stopped as it grows.
+process: one allocation larger than the limit is stopped as it grows. Calls made at once beyond reads and commands
+were probed (`Scripts/probe-codemode-at-once.py`): writes, jobs, MCP and tasks hold; edits at once to one file lost all but two
+or three, and are now made one at a time.
