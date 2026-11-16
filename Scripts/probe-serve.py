@@ -16,7 +16,8 @@ G: the client goes away while a command runs: ask stops the command and ends wit
 F: a turn the provider refuses is answered with an error that says why, a client that shows notices is told as it happens,
    and the session takes the next prompt.
 D: a second `ask serve` loads the first session: its prompts, answers and calls are replayed in order before the answer, and the
-   next prompt continues it in the same file.
+   next prompt continues it in the same file. Its client shows forms, so the model is offered the `question` tool there, which it
+   was not for the first client, which shows none.
 
 Scripts/probe-serve.py .build/release/ask
 """
@@ -223,6 +224,7 @@ def main():
         agent.check("ask ends when its input does, with 0", status == 0, (status, said[-400:])),
     ]
     print("D: another ask loads the first session")
+    formless = [[tool["name"] for tool in r["body"].get("tools", [])] for r in server.requests]
     client = Client(binary, elsewhere, agent.environment(state, server.url))
     shows = {"session": {"notices": {}, "compaction": {}}, "elicitation": {"form": {}}}
     opened, _ = client.request("initialize", {"protocolVersion": 1, "clientCapabilities": shows})
@@ -245,6 +247,11 @@ def main():
         agent.check("the loaded session goes on with its history", answer.get("result") == {"stopReason": "end_turn"}
                     and chunks(before, "agent_message_chunk", session) == "Continued."
                     and "What does note.txt say?" in json.dumps(last) and last[-1]["content"][-1].get("text") == "Go on.", last[-1]),
+        agent.check("the model was offered the question tool for this client, which shows forms, and not for the first, which shows none",
+                    "question" in [tool["name"] for tool in server.requests[-1]["body"].get("tools", [])]
+                    and len(formless) >= 4 and all("read" in names and "question" not in names for names in formless),
+                    (len(formless), [names for names in formless if "question" in names or "read" not in names][:1],
+                     [tool["name"] for tool in server.requests[-1]["body"].get("tools", [])])),
         agent.check("it wrote to the same file", sorted(os.path.basename(f) for f in agent.sessions(state))
                     == sorted([session + ".jsonl", other + ".jsonl"]), agent.sessions(state)),
         agent.check("a session of another folder is not found there",

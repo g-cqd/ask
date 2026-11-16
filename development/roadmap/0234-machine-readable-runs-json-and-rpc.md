@@ -93,3 +93,8 @@ A call is told with the input as the model wrote it (`rawInput`), and a `write` 
 again when it ends. A whole file written is a diff with no old text. Left: the slash commands, a job's output between turns,
 the client's MCP servers, not offering `question` to a client that shows no form, the user guide and the help.
 
+## Step 2, eleventh part: no question for a client without forms (2026-11-16, diary 2026-11-16-03)
+
+A session is made knowing whether its client shows forms; one that shows none is not offered the `question` tool. Left: the
+slash commands, a job's output between turns, the client's MCP servers, the user guide and the help.
+

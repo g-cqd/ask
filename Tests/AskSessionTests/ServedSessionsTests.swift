@@ -1,10 +1,11 @@
-import AskAgentCore
+import AskAI
 import AskTUI
 import Foundation
 import Synchronization
 import System
 import Testing
 
+@testable import AskAgentCore
 @testable import AskSession
 
 /// The conversations `ask serve` makes (ADR-0154): each for the folder its client named, whatever folder the process is in.
@@ -56,6 +57,31 @@ struct ServedSessionsTests {
             made[0].lists !== made[2].lists && made[0].jobs !== made[2].jobs,
             "two sessions of one folder share nothing"
         )
+        await sessions.stopAll()
+    }
+
+    /// A client that shows no form has nobody to put the model's questions to: the model is not offered the tool.
+    @Test func `a session whose client cannot be asked offers the model no question tool, and any other does`()
+        async throws
+    {
+        let (sessions, root, folders) = try layout()
+        defer { try? FileManager.default.removeItem(at: root) }
+        try savedSession("20261115T100000Z-0badcafe", in: folders[1], root: root)
+        let loaded = try #require(
+            try await sessions.load("20261115T100000Z-0badcafe", in: folders[1], asksPerson: false)
+        )
+        let made = try await [
+            sessions.make(in: folders[0]), sessions.make(in: folders[0], asksPerson: false), loaded.made
+        ]
+        let offered = try made.map { session -> Bool in
+            let conversation = try #require(session.conversation as? AgentConversation)
+            let settings = conversation.current.withLock { $0.settings }
+            let loop = try conversation.makeLoop(settings, conversation.loopHooks(settings))
+            let names = Set(loop.tools.definitions.map(\.name))
+            #expect(names.contains("read"), "the other tools are offered either way")
+            return names.contains("question")
+        }
+        #expect(offered == [true, false, false])
         await sessions.stopAll()
     }
 

@@ -18,12 +18,14 @@ struct ServeCommand: AsyncParsableCommand {
         // ask has no version yet (roadmap 0070): "0", as its other identities say.
         await ACPServer.serveStandardStreams(
             agent: ACPImplementation(name: "ask", title: "ask", version: "0"),
-            sessions: { folder in
-                let made = try await sessions.make(in: folder)
+            sessions: { asked in
+                let made = try await sessions.make(in: asked.cwd, asksPerson: asked.showsForms)
                 return ACPSession(id: made.id, folder: made.folder, conversation: made.conversation)
             },
-            load: { id, folder in
-                guard let loaded = try await sessions.load(id, in: folder) else { return nil }
+            load: { id, asked in
+                guard let loaded = try await sessions.load(id, in: asked.cwd, asksPerson: asked.showsForms) else {
+                    return nil
+                }
                 let made = loaded.made
                 return ACPSession.Loaded(
                     session: ACPSession(id: made.id, folder: made.folder, conversation: made.conversation),

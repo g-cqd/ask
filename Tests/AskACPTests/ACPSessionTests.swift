@@ -15,15 +15,28 @@ struct ACPSessionTests {
     }
 
     @Test func `session new makes a session for the directory named, and answers its id`() async {
-        let asked = Mutex<[String]>([])
-        let client = ACPExchange { cwd in
-            asked.withLock { $0.append(cwd) }
+        let asked = Mutex<[ACPSession.Asked]>([])
+        let client = ACPExchange { session in
+            asked.withLock { $0.append(session) }
             return ACPSession(id: "2026-11-15T10-00-00", folder: "/work", conversation: DirectedConversation())
         }
         _ = await client.initialize()
         let answer = await client.request("session/new", #"{"cwd":"/work/app","mcpServers":[]}"#)
         #expect(JSONValue(answer["result"]) == ["sessionId": "2026-11-15T10-00-00"])
-        #expect(asked.withLock { $0 } == ["/work/app"])
+        #expect(asked.withLock { $0 } == [ACPSession.Asked(cwd: "/work/app", showsForms: false)])
+        _ = await client.end()
+    }
+
+    /// What a session can do for its client is decided where it is made, so the source is told what the client shows.
+    @Test func `the source is told whether the client shows forms`() async {
+        let asked = Mutex<[ACPSession.Asked]>([])
+        let client = ACPExchange { session in
+            asked.withLock { $0.append(session) }
+            return ACPSession(id: "s\(session.cwd.count)", folder: session.cwd, conversation: DirectedConversation())
+        }
+        _ = await client.initialize(capabilities: ACPExchange.showsForms)
+        _ = await client.request("session/new", #"{"cwd":"/work"}"#)
+        #expect(asked.withLock { $0 } == [ACPSession.Asked(cwd: "/work", showsForms: true)])
         _ = await client.end()
     }
 

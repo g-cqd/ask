@@ -119,8 +119,8 @@ struct ACPPromptTurnTests {
     @Test func `each session's updates name it`() async {
         let first = DirectedConversation()
         let second = DirectedConversation()
-        let client = ACPExchange { cwd in
-            cwd == "/one"
+        let client = ACPExchange { asked in
+            asked.cwd == "/one"
                 ? ACPSession(id: "a", folder: "/work", conversation: first)
                 : ACPSession(id: "b", folder: "/work", conversation: second)
         }

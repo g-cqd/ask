@@ -22,12 +22,12 @@ final class ACPSessions: Sendable {
     var canLoad: Bool { loader != nil }
 
     /// `session/new`: a session for the directory the client names, which must be an absolute path.
-    func new(_ params: JSON?) async -> Result<JSONValue, JSONRPCError> {
+    func new(_ params: JSON?, client: ACPClientCapabilities) async -> Result<JSONValue, JSONRPCError> {
         guard let cwd = params?["cwd"].string, cwd.hasPrefix("/") else {
             return .failure(.invalidParams("session/new needs cwd, an absolute path"))
         }
         do {
-            let session = try await source(cwd)
+            let session = try await source(ACPSession.Asked(cwd: cwd, showsForms: client.form))
             active.withLock { $0[session.id] = ACPTurns(session: session) }
             return .success(["sessionId": .string(session.id)])
         } catch {
@@ -47,7 +47,8 @@ final class ACPSessions: Sendable {
             return .failure(.invalidParams("session \(id) is already active on this connection"))
         }
         let loaded: ACPSession.Loaded?
-        do { loaded = try await loader?(id, cwd) } catch {
+        let asked = ACPSession.Asked(cwd: cwd, showsForms: client.capabilities.form)
+        do { loaded = try await loader?(id, asked) } catch {
             return .failure(
                 JSONRPCError(code: JSONRPCError.internalError, message: "The session could not be loaded: \(error)")
             )

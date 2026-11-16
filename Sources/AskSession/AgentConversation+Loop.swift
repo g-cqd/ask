@@ -103,10 +103,14 @@ extension AgentConversation {
 }
 
 /// What makes a conversation's loop from its settings and its hooks: the tools over `jobs`, the servers of `mcp`, a transport of
-/// its own. The screen's conversation and a served one (ADR-0154) are made with the same.
-func conversationLoop(instructions files: [ProjectInstructions.File], jobs: JobTable, mcp: MCPHub)
-    -> @Sendable (RunSettings, LoopHooks) throws -> AgentLoop
-{
+/// its own. The screen's conversation and a served one (ADR-0154) are made with the same. `asksPerson`: whether the model is
+/// offered the tool that asks the person questions; a served client that shows no form has nobody to put them to.
+func conversationLoop(
+    instructions files: [ProjectInstructions.File],
+    jobs: JobTable,
+    mcp: MCPHub,
+    asksPerson: Bool = true
+) -> @Sendable (RunSettings, LoopHooks) throws -> AgentLoop {
     { settings, hooks in
         try makeLoop(
             settings,
@@ -120,7 +124,7 @@ func conversationLoop(instructions files: [ProjectInstructions.File], jobs: JobT
             live: mcp.live,
             destructiveApprover: hooks.destructiveApprover,
             callGate: hooks.callGate,
-            askPerson: hooks.askPerson,
+            askPerson: asksPerson ? hooks.askPerson : nil,
             progress: hooks.progress,
             startSubagent: hooks.startSubagent,
             keepTools: hooks.keepTools,

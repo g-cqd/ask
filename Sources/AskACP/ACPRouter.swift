@@ -34,7 +34,9 @@ final class ACPRouter: Sendable {
         guard initialized.withLock({ $0 }) else { return { .failure(.notInitialized(request.method)) } }
         let params = request.params
         switch (request.method, sessions) {
-            case ("session/new", let sessions?): return { await sessions.new(params) }
+            case ("session/new", let sessions?):
+                let client = capabilities.withLock { $0 }
+                return { await sessions.new(params, client: client) }
             case ("session/prompt", let sessions?): return prompt(params, in: sessions)
             case ("session/load", let sessions?) where sessions.canLoad:
                 let client = asClient

@@ -39,12 +39,12 @@ struct ACPLoadTests {
         let history = history
         let client = ACPExchange(
             sessions: { _ in ACPSession(id: "new", folder: "/work", conversation: DirectedConversation()) },
-            load: { id, cwd in
-                asked.note("\(id) in \(cwd)")
+            load: { id, session in
+                asked.note("\(id) in \(session.cwd)\(session.showsForms ? ", with forms" : "")")
                 guard id == "s9" else { return nil }
-                guard cwd == "/work" else { throw Locked() }
+                guard session.cwd == "/work" else { throw Locked() }
                 return ACPSession.Loaded(
-                    session: ACPSession(id: id, folder: cwd, conversation: conversation),
+                    session: ACPSession(id: id, folder: session.cwd, conversation: conversation),
                     history: history
                 )
             }
@@ -66,6 +66,14 @@ struct ACPLoadTests {
             await unable.request("session/load", #"{"sessionId":"s9","cwd":"/work"}"#)["error"]["code"].int == -32601
         )
         _ = await unable.end()
+    }
+
+    @Test func `the loader is told whether the client shows forms`() async {
+        let (client, _, asked) = client()
+        _ = await client.initialize(capabilities: ACPExchange.showsForms)
+        _ = await client.request("session/load", #"{"sessionId":"s9","cwd":"/work"}"#)
+        #expect(asked.all == ["s9 in /work, with forms"])
+        _ = await client.end()
     }
 
     @Test func `what the session holds is replayed in order, each update naming it, and the answer follows the last`()

@@ -68,11 +68,12 @@ package final class ServedSessions: Sendable {
         self.decidesProtection = decidesProtection
     }
 
-    /// A conversation for `folder`, which is read as the kernel would (links followed), and must be one.
+    /// A conversation for `folder`, which is read as the kernel would (links followed), and must be one. `asksPerson`: whether
+    /// the model's questions can reach a person; where they cannot, the model is not offered the tool that asks them.
     /// - Throws: ``NotAFolder``, or why the folder's configuration gives no run (no model, a file that does not parse).
-    package func make(in folder: String) async throws -> Made {
+    package func make(in folder: String, asksPerson: Bool = true) async throws -> Made {
         let workspace = try workspace(folder)
-        let conversation = try await conversation(in: workspace, resumed: nil)
+        let conversation = try await conversation(in: workspace, resumed: nil, asksPerson: asksPerson)
         let file = (conversation.plannedSessionPath() as NSString).lastPathComponent
         return Made(id: (file as NSString).deletingPathExtension, folder: workspace, conversation: conversation)
     }
@@ -80,7 +81,7 @@ package final class ServedSessions: Sendable {
     /// The saved session `id` of `folder`, opened to be continued, with what it holds as the screen would show it again; nil when
     /// the folder has no such session.
     /// - Throws: ``NotAFolder``, ``CannotOpen``, or why the folder's configuration gives no run.
-    package func load(_ id: String, in folder: String) async throws -> Loaded? {
+    package func load(_ id: String, in folder: String, asksPerson: Bool = true) async throws -> Loaded? {
         let workspace = try workspace(folder)
         // An id is a session file's name: one that could name anything else (a path, a hidden file) names no session.
         guard Self.isSessionName(id) else { return nil }
@@ -99,7 +100,7 @@ package final class ServedSessions: Sendable {
         } catch {
             throw CannotOpen("session \(id) cannot be read: \(error)")
         }
-        let conversation = try await conversation(in: workspace, resumed: recorder)
+        let conversation = try await conversation(in: workspace, resumed: recorder, asksPerson: asksPerson)
         return Loaded(
             made: Made(id: id, folder: workspace, conversation: conversation),
             history: conversation.history()
@@ -120,7 +121,11 @@ package final class ServedSessions: Sendable {
     }
 
     /// A conversation in `workspace` as a launch makes the screen's: new, or continuing the session `resumed`.
-    private func conversation(in workspace: String, resumed: SessionRecorder?) async throws -> AgentConversation {
+    private func conversation(
+        in workspace: String,
+        resumed: SessionRecorder?,
+        asksPerson: Bool
+    ) async throws -> AgentConversation {
         let source = ConfigurationSource(workingDirectory: workspace, flags: flags, environment: environment)
             .resuming(resumed)
         let settings = try await source.load(allowNetwork: allowNetwork)
@@ -138,7 +143,8 @@ package final class ServedSessions: Sendable {
             makeLoop: conversationLoop(
                 instructions: instructionFiles(workingDirectory: workspace),
                 jobs: jobs,
-                mcp: mcp
+                mcp: mcp,
+                asksPerson: asksPerson
             )
         )
         held.withLock { $0.append(Held(conversation: conversation, jobs: jobs, mcp: mcp)) }
