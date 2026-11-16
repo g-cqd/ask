@@ -124,7 +124,7 @@ package struct ConfigurationSource: Sendable {
             workspace: workspace,
             home: home,
             // Every home's: the account's holds the toolchains, $HOME the configuration a command's `~` finds.
-            always: homes.flatMap(Self.developerReads(home:))
+            always: homes.flatMap(Self.developerReads(home:)) + Self.developerTools(environment: environment)
                 + section.allowRead.map { SandboxSection.expand($0, home: home) }
         )
         return policy

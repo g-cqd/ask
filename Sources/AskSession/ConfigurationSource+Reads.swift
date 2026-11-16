@@ -17,4 +17,27 @@ extension ConfigurationSource {
             home + "/.ssh/config", home + "/.ssh/known_hosts"
         ] + named
     }
+
+    /// Where the system records the developer directory `xcode-select` chose.
+    static let developerDirectoryLink = "/var/db/xcode_select_link"
+
+    /// The application holding the developer tools this Mac uses, when it is not the `/Applications/Xcode.app` every run can
+    /// read: Xcode under another name (a beta, a version in its name) or in another place. `xcrun`, which `cc`, `git`,
+    /// `python3` and `swift` in `/usr/bin` all go through, loads its library from there, and fails outright when it cannot.
+    /// Named by `DEVELOPER_DIR`, or else by `xcode-select`'s link; only an application is allowed, whatever the variable says.
+    static func developerTools(environment: [String: String], link: String = developerDirectoryLink) -> [String] {
+        let selected = try? FileManager.default.destinationOfSymbolicLink(atPath: link)
+        return [environment["DEVELOPER_DIR"], selected].compactMap { $0 }.compactMap(application(holding:))
+    }
+
+    /// The outermost application `path` is in or names, absolute; nil when it is in none.
+    static func application(holding path: String) -> String? {
+        guard path.hasPrefix("/") else { return nil }
+        var kept: [Substring] = []
+        for component in path.split(separator: "/") {
+            kept.append(component)
+            if component.hasSuffix(".app"), component.count > 4 { return "/" + kept.joined(separator: "/") }
+        }
+        return nil
+    }
 }
