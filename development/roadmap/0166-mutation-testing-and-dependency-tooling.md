@@ -137,3 +137,22 @@ minutes, so the baseline (one entry, 2026-10-31) was never refreshed, and every 
 chose sharding: the full run is 20 jobs, each a target's files split by mutant count into about 300 mutants
 (`Scripts/mutate-changed.sh --all TARGET I/N`), gating nothing; a last job merges their parts (`merge DIR 20`), refusing when one is
 missing, and uploads `mutation-baseline` to commit by hand.
+
+## litmus, in CI only (2026-11-16)
+
+The owner (2026-11-16): not swift-mutation-testing but litmus, the family's own (`g-cqd/litmus`), and only in CI. What led there:
+the Monday run of 2026-11-16 lost three shards to the 240 minutes (AskSession 1/2 and 2/2, AskTools 2/2) with nothing in their logs,
+the tool's output being buffered until the job was cancelled; the daily run of 2026-11-15 says why AskSession is slow, "the unmutated
+suite fails against the schema build but passes without it: building its mutants one by one", 73 mutants in 131 minutes.
+
+`Scripts/mutate-changed.sh` now runs litmus 0.3.2, pinned by version and SHA-256, and refuses to run outside GitHub Actions; the
+pre-push hook's opt-in step (`ASK_MUTATE=1`) is gone. Daily: the files changed in the last day (`--diff-base`, `--diff-scope files`),
+failing on a survivor the baseline does not hold. Mondays: 8 shards of whole targets (`--shard K/8`), merged by `litmus merge`, the
+baseline written by `litmus analyze --write-baseline`. Each run has a budget, after which it starts nothing and says what it did not
+run, and uploads what it recorded whatever ended it. The old baseline was the other tool's format, which litmus refuses, so it is
+removed: until a full run is committed, every survivor in a changed file counts, as before 2026-11-13. Its one accepted survivor
+(above) will be in the new baseline with the others; litmus also takes one in the source, `// @lm:accept:next replace-logical -- why`.
+
+Not verified, and only a run in CI can: that litmus builds and runs ask's suite at all on a hosted runner; how long a target takes
+(AskTUI alone was about 1,800 mutants for the other tool, and a shard cannot split a target); whether 8 shards and five hours each
+cover every file. The first full run's merged report says how many mutants a budget left out.

@@ -1,7 +1,7 @@
 # CI
 
 `.github/workflows/ci.yml` calls the family's pinned swift-ci workflow, configured by `action.json`, then measures the
-performance budgets on a PTY (reported, not enforced: ADR-0122). `mutation.yml` runs mutation testing nightly.
+performance budgets on a PTY (reported, not enforced: ADR-0122). `mutation.yml` runs mutation testing nightly, with litmus.
 `Scripts/quality.sh` runs the same quality checks locally (`.ci/swift-ci run quality`) and the release tests.
 
 Each change runs quality — swift-format, SwiftLint metrics, the pinned analyzers over `Sources` and `Tests`, then

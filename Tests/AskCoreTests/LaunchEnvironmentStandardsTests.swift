@@ -40,7 +40,7 @@ struct LaunchEnvironmentStandardsTests {
     private func files(in directory: String) throws -> [(name: String, text: String)] {
         let root = SourceStandards.repositoryRoot.appending(path: directory)
         return try FileManager.default.contentsOfDirectory(at: root, includingPropertiesForKeys: nil)
-            .filter { $0.pathExtension == "swift" }
+            .filter { $0.pathExtension == "swift" && !SourceStandards.isMutationRewrite($0) }
             .map { ($0.lastPathComponent, try String(contentsOf: $0, encoding: .utf8)) }
     }
 

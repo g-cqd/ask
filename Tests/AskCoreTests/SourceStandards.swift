@@ -30,12 +30,12 @@ enum SourceStandards {
         swiftFiles(in: repositoryRoot.appending(path: "Sources")).filter { !isGuard($0) && !isMutationRewrite($0) }
     }
 
-    /// The marker swift-mutation-testing writes into each file it rewrites with its mutants (schemata), in place, for a run.
-    static let mutationMarker = "__SwiftMutationTesting_"
+    /// What litmus names every declaration it adds to a file it rewrites with its mutants (a schema), in place, for a run in CI.
+    static let mutationMarker = "__litmus_"
 
-    /// Whether the mutation tool has rewritten this file for a run: its switch over the mutants makes a file longer and declares a
-    /// type of the tool's, so the standards would fail the unmutated suite and the tool would stop, every verdict suspect. The file as
-    /// committed is checked by every other run.
+    /// Whether the mutation tool has rewritten this file for a run: its declarations make a file longer and read the process's
+    /// environment, so the standards would fail the suite with no mutant active and the tool would stop, every verdict
+    /// suspect. The file as committed is checked by every other run.
     static func isMutationRewrite(_ url: URL) -> Bool {
         (try? String(contentsOf: url, encoding: .utf8))?.contains(mutationMarker) ?? false
     }

@@ -35,7 +35,7 @@ rather than trusting its source, and keep the notes in `development/research/`, 
 Scripts/quality.sh              # format, lint, build and test
 Scripts/quality.sh --check      # verify only; what CI runs
 .ci/swift-ci run quality        # CI's quality check: format, lint, the analyzers, the audit and guards; what a push runs
-Scripts/mutate-changed.sh       # mutation testing of changed Sources files: run by CI only, never locally (see Gates)
+Scripts/mutate-changed.sh       # mutation testing with litmus: CI runs it, and it refuses to run anywhere else (see Gates)
 Scripts/dependency-audit.sh     # each target declares what it imports and imports what it declares; a stage of quality.sh
 python3 Scripts/check-layers.py # ADR-0009's target layering over the manifest; a stage of quality.sh
 Scripts/roadmap.sh open         # the open roadmap entries, read from their front matter
@@ -77,12 +77,14 @@ and SHA-256 in the family's lock, `Scripts/analyzers.lock` in Aemi-Studio/aemi a
 (a session record, a saved credential, a copied list, a file written) either becomes a failure said to the person, or carries
 `// try?: why` on its line or the one above.
 
-**Mutation testing, on changed files (roadmap 0166).** `Scripts/mutate-changed.sh [BASE]` runs swift-mutation-testing (pinned by version
-and SHA-256 in the script) on the `Sources` files changed against `BASE`, each with its target's tests, and fails on a surviving mutant
-not in `development/mutation-baseline.json`: kill it with a test. **CI only:** the owner chose on 2026-11-10 to leave mutation
-runs to CI because of their local resource and time cost. Do not run `mutate-changed.sh` or set `ASK_MUTATE=1` locally.
+**Mutation testing, on changed files (roadmap 0166).** `Scripts/mutate-changed.sh [BASE]` runs litmus, the family's own
+(`g-cqd/litmus`, pinned by version and SHA-256 in the script), on the `Sources` files changed against `BASE`, and fails on a surviving
+or unreached mutant not in `development/mutation-baseline.json`: kill it with a test. **CI only** (the owner, 2026-11-10 and
+2026-11-16): a run takes a runner for hours and rewrites the checkout it runs in, so the script refuses to run anywhere else.
 Run ordinary release tests and the non-mutation quality gate locally; report mutation verification separately from CI.
-CI runs mutation on pushes that touch `Sources`, and weekly on every file, uploading a fresh baseline.
+CI runs it once a day on the files changed that day, and on Mondays on every file, uploading a fresh baseline to commit by hand.
+A run stops at its budget and says what it did not run. litmus rewrites sources in place for a run, so a test that reads `Sources`
+leaves out a file holding `SourceStandards.mutationMarker`.
 
 **When a refactor or factorisation is on the table, ask what Swift already offers first** (white paper §8):
 result builders, scoped closures, protocol extensions with defaults, typed throws, `callAsFunction`, key paths,

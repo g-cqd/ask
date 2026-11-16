@@ -1,56 +1,43 @@
 #!/bin/sh
-# Mutation testing of the Sources files changed against BASE (roadmap 0166), with swift-mutation-testing from a pinned release.
+# Mutation testing (roadmap 0166) with litmus (https://github.com/g-cqd/litmus), from a pinned release. In CI only (the owner,
+# 2026-11-10 and 2026-11-16): a run takes a runner for hours, and it rewrites the checkout it runs in.
 #
-#   Scripts/mutate-changed.sh [BASE]          changed files against BASE (default origin/main), committed or not
-#   Scripts/mutate-changed.sh --all           every file, and the baseline rewritten
-#   Scripts/mutate-changed.sh --all TARGET I/N one shard of every file: TARGET's files split in N by mutant count, shard I (1-based);
-#                                             its baseline part is left in .build/mutation (the weekly run, one job per shard)
-#   Scripts/mutate-changed.sh merge DIR N     the N baseline parts in DIR merged into the baseline; fails when one is missing
-#   Scripts/mutate-changed.sh install         install the tool only
+#   Scripts/mutate-changed.sh [BASE]        the Sources files changed against BASE (default origin/main)
+#   Scripts/mutate-changed.sh --all K/N     shard K of N of every file (the weekly run, one job per shard): its run is left in
+#                                           $LITMUS_OUTPUT for the merge
+#   Scripts/mutate-changed.sh merge DIR     the shards' runs under DIR as one run, and the baseline written from it
+#   Scripts/mutate-changed.sh install       install the tool only
 #
-# One plan for the package, kept to the changed files and split by target: Sources/AskTUI/... runs with AskTUITests. The executable
-# target (Sources/ask: the options and subcommands) has no test target, so its files are left out and said so. A run fails on any surviving mutant not in
-# development/mutation-baseline.json (--max-new-survivors 0), which --all rewrites; until a full run writes it, it lists none, so every
-# survivor in a changed file counts. Verdicts are cached per mutant by the tool, so a rerun tests only what changed. The tool reports
-# every kill here as "killed without activation": its activation probe does not reach SwiftPM's test processes, so that warning is
-# not gated on.
+# litmus rewrites a batch of mutants into the sources, each behind a switch of its own, builds once and runs the tests that can
+# reach a mutant with only that one switched on. A shard is whole targets (`Sources/AskTUI`), so a shard rebuilds only what it
+# mutates. The executable target (Sources/ask: the options and subcommands) has no test target, so its files are left out.
 #
-# Exit: 0 no new survivor, 1 new survivors (or a failed run), 2 the tool could not be installed.
+# A changed-files run fails on a surviving or unreached mutant that development/mutation-baseline.json does not hold: kill it with
+# a test. Until a full run has written that file, every one counts. A run stops starting work at its budget and says how many
+# mutants it did not run, the changed lines first, so a job ends by itself with what it found instead of being cancelled with
+# nothing.
+#
+# Exit: 0 nothing new, 1 new survivors, 2 not in CI or the tool could not be installed; any other is litmus's own (70: a run whose
+# evidence is incomplete).
 set -eu
 
-if [ "${1:-}" = merge ]; then
-    cd "$(dirname "$0")/.."
-    python3 - "$2" "$3" development/mutation-baseline.json <<'MERGE'
-import json, pathlib, sys
-parts_dir, expected, out = pathlib.Path(sys.argv[1]), int(sys.argv[2]), pathlib.Path(sys.argv[3])
-parts = [json.loads(p.read_text()) for p in sorted(parts_dir.rglob("baseline-*.json"))]
-if len(parts) != expected:
-    sys.exit(f"[FAIL] {len(parts)} baseline parts of {expected}: a shard did not finish, so no baseline is written")
-# One baseline for the package: every shard's survivors, and the lowest score (only --max-score-drop reads it).
-merged = dict(parts[0], undetected=[u for part in parts for u in part["undetected"]], score=min(part["score"] for part in parts))
-out.write_text(json.dumps(merged, indent=1, sort_keys=True) + "\n")
-print(f"[OK] baseline written from {expected} parts: {len(merged['undetected'])} undetected mutants")
-MERGE
-    exit $?
-fi
-
-VERSION=v1.6.4
-SHA256=c8a0690598766bba4a5f4616f8f99b8909ddf884bbcdb41c83ace62451cd8303
-ARCHIVE="swift-mutation-testing-$VERSION-macos.tar.gz"
+VERSION=0.3.2
+SHA256=4e273655bc89a2f87b7993f1640ac835286fcd1d9f288aeaaacb8b9aea1af288
+ARCHIVE="litmus-$VERSION-macos-arm64.tar.gz"
 BASELINE=development/mutation-baseline.json
 
-case "$(uname -s)" in
-    Darwin) cache_root="$HOME/Library/Caches" ;;
-    *) cache_root="${XDG_CACHE_HOME:-$HOME/.cache}" ;;
-esac
-dir="$cache_root/g-cqd-mutation/swift-mutation-testing-$VERSION"
-tool="$dir/swift-mutation-testing"
+if [ "${GITHUB_ACTIONS:-}" != true ]; then
+    echo "[FAIL] mutation testing runs in CI only: gh workflow run mutation.yml -R g-cqd/ask" >&2
+    exit 2
+fi
+
+dir="$HOME/Library/Caches/g-cqd-mutation/litmus-$VERSION"
+tool="$dir/litmus"
 
 install_tool() {
     [ -x "$tool" ] && return 0
     scratch=$(mktemp -d)
-    curl -fsSL --retry 3 -o "$scratch/$ARCHIVE" \
-        "https://github.com/ericodx/swift-mutation-testing/releases/download/$VERSION/$ARCHIVE" \
+    curl -fsSL --retry 3 -o "$scratch/$ARCHIVE" "https://github.com/g-cqd/litmus/releases/download/v$VERSION/$ARCHIVE" \
         || { rm -rf "$scratch"; printf '[FAIL] could not fetch %s\n' "$ARCHIVE" >&2; exit 2; }
     actual=$(shasum -a 256 "$scratch/$ARCHIVE" | cut -d' ' -f1)
     if [ "$actual" != "$SHA256" ]; then
@@ -60,117 +47,57 @@ install_tool() {
     fi
     tar -xzf "$scratch/$ARCHIVE" -C "$scratch"
     mkdir -p "$dir"
-    mv "$scratch/swift-mutation-testing" "$tool"
+    mv "$scratch/litmus-$VERSION-macos-arm64/litmus" "$tool"
     rm -rf "$scratch"
+}
+
+# The report litmus printed: in the log, and on the run's summary page.
+said() {
+    cat "$1"
+    if [ -n "${GITHUB_STEP_SUMMARY:-}" ]; then cat "$1" >> "$GITHUB_STEP_SUMMARY"; fi
 }
 
 install_tool
 [ "${1:-}" = install ] && exit 0
 
 cd "$(dirname "$0")/.."
-# The tool takes report and baseline paths relative to the project, so the run's files live in the build directory.
-work=.build/mutation
-rm -rf "$work"
-mkdir -p "$work"
+# A run's directory must be new and outside the sources; the workflow uploads it.
+output="${LITMUS_OUTPUT:-${RUNNER_TEMP:-/tmp}/litmus-run}"
 
-if [ "${1:-}" = --all ]; then
-    changed=$(git ls-files 'Sources/*.swift')
-else
-    base="${1:-origin/main}"
-    # Committed since BASE, staged or not yet staged; deleted files have no mutants.
-    changed=$( (git diff --name-only --diff-filter=AMR "$base" -- 'Sources/*.swift'; git ls-files --others --exclude-standard 'Sources/*.swift') | sort -u)
-fi
-if [ -z "$changed" ]; then
-    echo "[OK] no changed Sources files"
-    exit 0
+if [ "${1:-}" = merge ]; then
+    "$tool" merge "$2"/*/ --output "$output"
+    # The whole run's verdict, for the summary. Its survivors are what the baseline is for, so they do not fail it; a run that is
+    # not whole does (a mutant with no verdict: 70). What a budget left out is said there, and is not in the baseline.
+    status=0
+    "$tool" analyze . --results "$output/run.pb" --format markdown > "$output/report.md" || status=$?
+    said "$output/report.md"
+    "$tool" analyze . --results "$output/run.pb" --write-baseline "$BASELINE"
+    exit "$status"
 fi
 
-"$tool" plan . --sources-path Sources --output "$work/plan.json" --quiet
-printf '%s\n' "$changed" > "$work/changed.txt"
-# A shard of the weekly run: one target, and of its files the I-th of N groups, balanced by mutant count.
-shard_target=""
-shard=""
-if [ "${1:-}" = --all ] && [ -n "${2:-}" ]; then
-    shard_target="$2"
-    shard="${3:-1/1}"
-fi
-
-# One plan per target, each kept to the changed files of that target; the targets with mutants are printed.
-targets=$(python3 - "$work" "$shard_target" "$shard" <<'PY'
-import collections, json, pathlib, sys
-work = pathlib.Path(sys.argv[1])
-only, shard = sys.argv[2], sys.argv[3]
-plan = json.loads((work / "plan.json").read_text())
-changed = set((work / "changed.txt").read_text().split())
-tests = {path.name for path in pathlib.Path("Tests").iterdir() if path.is_dir()}
-by_target = collections.defaultdict(list)
-for mutant in plan["mutants"]:
-    if mutant["file"] in changed:
-        by_target[mutant["file"].split("/")[1]].append(mutant)
-if only:
-    by_target = {only: by_target.get(only, [])}
-    index, count = (int(n) for n in shard.split("/"))
-    # Files to shards, the largest first, each to the lightest shard so far: every shard gets about the same number of mutants.
-    per_file = collections.Counter(m["file"] for m in by_target[only])
-    loads, owner = [0] * count, {}
-    for file, size in sorted(per_file.items(), key=lambda item: (-item[1], item[0])):
-        lightest = loads.index(min(loads))
-        owner[file] = lightest
-        loads[lightest] += size
-    by_target[only] = [m for m in by_target[only] if owner[m["file"]] == index - 1]
-for target, mutants in sorted(by_target.items()):
-    if not mutants:
-        continue
-    if target + "Tests" not in tests:
-        files = sorted({m["file"] for m in mutants})
-        print(f"[SKIP] {target} has no test target: {', '.join(files)}", file=sys.stderr)
-        continue
-    files = {m["file"] for m in mutants}
-    kept = dict(plan, mutants=mutants, files=[f for f in plan["files"] if f["path"] in files])
-    (work / f"plan-{target}.json").write_text(json.dumps(kept))
-    print(f"{target} {len(mutants)}")
-PY
-)
-if [ -z "$targets" ]; then
-    echo "[OK] no mutants in the changed files"
-    exit 0
-fi
-
+# Sources only: the repository's other packages (Benchmarks, Fuzz) are not this one's. In place, since the checkout is the
+# runner's own and thrown away, and the tests then find the repository they read where it is. A cold build of everything took a
+# hosted runner close to ten minutes (the runs of 2026-11-12 to 15), so a build gets thirty.
+common="--trust-project --workspace in-place --only-path Sources/** --exclude-path Sources/ask/** --build-timeout 1800"
 status=0
-printf '%s\n' "$targets" | while read -r target count; do
-    printf '== %s: %s mutants\n' "$target" "$count"
-    # The full run writes the baseline and gates nothing: its survivors are what the baseline is for.
-    gate="--baseline $BASELINE --max-new-survivors 0"
-    extra=""
-    if [ "${1:-}" = --all ]; then
-        gate=""
-        extra="--write-baseline $work/baseline-$target-$(printf '%s' "${shard:-1/1}" | tr / -).json"
+if [ "${1:-}" = --all ]; then
+    # shellcheck disable=SC2086 # the options are a word list; set -f keeps their globs for litmus
+    (set -f; "$tool" run . $common --shard "$2" --budget "${LITMUS_BUDGET:-18000}" --output "$output" --report markdown) \
+        > "$output.md" || status=$?
+    said "$output.md"
+    # A shard that ran to its end has done its part, whatever its verdict (70: a mutant with none): the merge judges the whole,
+    # once. One that did not (the suite failing with no mutant active, a build that never worked) fails here, where its log is.
+    if [ "$status" != 0 ] && python3 -c 'import json, sys; sys.exit(json.load(open(sys.argv[1])).get("complete") is not True)' \
+        "$output/run.json" 2> /dev/null; then
+        echo "::warning::litmus ended with $status on shard $2, its run complete: left to the merge"
+        status=0
     fi
-    # A cold build of a test target on a hosted runner took over 300 s (the scheduled runs of 2026-11-06 and 07 stopped there). A
-    # mutant's run gets 120 s: AskAgentCoreTests alone takes about 30 s, the tool's default, so every mutant timed out locally.
-    # shellcheck disable=SC2086 # the gate and extra options are word lists
-    "$tool" run . --plan "$work/plan-$target.json" --target "${target}Tests" --build-timeout 1200 --timeout 120 \
-        --markdown-output "$work/report-$target.md" $gate $extra \
-        || echo "$target" >> "$work/failed"
-    [ -f "$work/report-$target.md" ] && cat "$work/report-$target.md"
-done
-if [ "${1:-}" = --all ] && [ -z "$shard_target" ]; then
-    python3 - "$work" "$BASELINE" <<'PY'
-import json, pathlib, sys
-work, out = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
-parts = [json.loads(p.read_text()) for p in sorted(work.glob("baseline-*.json"))]
-if parts:
-    # One baseline for the package: every target's survivors, and the lowest score (only --max-score-drop reads it).
-    merged = dict(parts[0], undetected=[u for part in parts for u in part["undetected"]],
-                  score=min(part["score"] for part in parts))
-    out.write_text(json.dumps(merged, indent=1, sort_keys=True) + "\n")
-    print(f"[OK] baseline written: {out}")
-PY
+    exit "$status"
 fi
-if [ -f "$work/failed" ]; then
-    printf '[FAIL] new surviving mutants, or a failed run, in: %s\n' "$(tr '\n' ' ' < "$work/failed")"
-    status=1
-else
-    echo "[OK] no new surviving mutant"
-fi
-exit $status
+
+# shellcheck disable=SC2086 # as above
+(set -f; "$tool" run . $common --diff-base "${1:-origin/main}" --diff-scope files --budget "${LITMUS_BUDGET:-10800}" \
+    --output "$output" --report markdown --baseline "$BASELINE" --gate new-survivors) > "$output.md" || status=$?
+said "$output.md"
+if [ "$status" = 1 ]; then echo "[FAIL] new surviving mutants: kill each with a test"; fi
+exit "$status"
