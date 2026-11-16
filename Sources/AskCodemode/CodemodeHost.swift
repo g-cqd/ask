@@ -5,8 +5,9 @@ internal import Foundation
 internal import Synchronization
 
 /// The process that hosts a script's VM (ADR-0156): `ask codemode`, a child of the ask that runs the tools. It is asked to run
-/// one script, asks its parent for each tool the script calls, and answers with what the script came to. It is a process of
-/// its own so that a script which never yields, or takes all the memory, is ended by ending the process.
+/// one script, asks its parent for each tool the script calls, tells it each thing the script says, and answers with how the
+/// script ended. It is a process of its own so that a script which never yields, or takes all the memory, is ended by ending
+/// the process; what the script had said by then has left it already.
 package final class CodemodeHost: Sendable {
     /// The exit status of a host that ended itself for the memory it had taken.
     package static let memoryExit: Int32 = 86
@@ -58,12 +59,28 @@ package final class CodemodeHost: Sendable {
         guard let run = CodemodeWire.run(from: request.params) else {
             return { .failure(JSONRPCError(code: JSONRPCError.invalidParams, message: "run needs code and tools")) }
         }
-        return {
-            let result = await CodemodeVM.run(run.code, tools: run.tools) { tool, arguments in
-                await self.call(tool, arguments)
+        return { await self.run(run) }
+    }
+
+    /// Runs the script: what it says goes to the parent as it is said, in order, and the answer follows the last of it.
+    private func run(_ run: CodemodeWire.Run) async -> Result<JSONValue, JSONRPCError> {
+        let (items, said) = AsyncStream<CodemodeItem>.makeStream()
+        let listener = parent.withLock { $0 }
+        let telling = Task {
+            for await item in items {
+                // try?: a parent that no longer reads has nobody to tell; the script ends with the process
+                try? await listener?.notify(CodemodeWire.said, CodemodeWire.saidParameters(item))
             }
-            return .success(CodemodeWire.encoded(result))
         }
+        let result = await CodemodeVM.run(
+            run.code,
+            tools: run.tools,
+            said: { said.yield($0) },
+            call: { tool, arguments in await self.call(tool, arguments) }
+        )
+        said.finish()
+        await telling.value
+        return .success(CodemodeWire.encoded(result))
     }
 
     /// Asks the parent to call `tool`: its text, or why it failed.

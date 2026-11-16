@@ -151,14 +151,13 @@ struct CodemodePythonTests {
     }
 
     /// The deadline is short on purpose: should the watch ever be lost, the script is stopped before it has taken the machine.
-    @Test func `a script that allocates without end is stopped at its memory, and says so`() async {
+    @Test func `a script that allocates without end is stopped at its memory, and keeps what it had said`() async {
         let result = await run(
-            "big = []\nwhile True: big.append([0] * (1 << 16))",
+            "text(\"before\")\nprint(\"a line\")\nbig = []\nwhile True: big.append([0] * (1 << 16))",
             limits: CodemodeLimits(deadline: .seconds(3), memoryMiB: 96)
         )
-        #expect(
-            result.failure == "The script took more than 96 MiB of memory and was stopped. What it had said is lost."
-        )
+        #expect(result.failure == "The script took more than 96 MiB of memory and was stopped.")
+        #expect(result.items == [CodemodeItem(text: "before"), CodemodeItem(text: "a line", console: true)])
     }
 
     @Test func `a script that spins is stopped at its deadline`() async {

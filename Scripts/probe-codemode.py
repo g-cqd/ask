@@ -5,7 +5,8 @@ script runs in a child `ask codemode`, and its calls come back through the loop.
 A: `ask -p`: a script reads two files at once, runs a command, filters, and returns one line. The model's next request holds
    that line and none of what the tools returned; the files' whole text never reached it.
 B: the limits, through the real process: a script that spins is stopped at its deadline, one that allocates without end at
-   its memory, and neither leaves a process behind. A script that asks for more output than a tool is cut at gets it whole.
+   its memory, each keeps what it had said, and neither leaves a process behind. A script that asks for more output than a
+   tool is cut at gets it whole.
 C: the sandbox holds inside a script: a write in the workspace lands, one outside it is refused, and the script is told.
 E: the same in Python: a script on the first python3 of the PATH calls the tools, reaches nothing by itself (no file of the
    person's, no write, no network, no program), and is stopped at its memory.
@@ -63,10 +64,10 @@ for name, attempt in {
 through = await tools.write(path="python-made.txt", content="made by a Python script\\n")
 return [tried, through.splitlines()[0]]"""
 
-PYTHON_ALLOCATE = "big = []\nwhile True: big.append([0] * (1 << 16))"
+PYTHON_ALLOCATE = "text('said before')\nbig = []\nwhile True: big.append([0] * (1 << 16))"
 
-SPIN = '// @options: {"timeout_ms": 700}\nwhile (true) {}'
-ALLOCATE = "const big = []; for (;;) big.push(new Array(1 << 17).fill(1));"
+SPIN = '// @options: {"timeout_ms": 700}\ntext("said before"); console.log("a line");\nwhile (true) {}'
+ALLOCATE = 'text("said before"); await tools.read({ path: "a.txt" });\nconst big = []; for (;;) big.push(new Array(1 << 17).fill(1));'
 LARGE = '// @options: {"max_output_tokens": 80000}\nfor (let i = 0; i < 3000; i++) text("row " + i + " " + "x".repeat(60)); return "end";'
 WRITES = """const inside = await tools.write({ path: "made.txt", content: "made by a script\\n" });
 let outside;
@@ -122,9 +123,12 @@ def main():
     spun, took, _ = run_print(binary, project, SPIN)
     results.append(agent.check("a script that spins is stopped at its deadline, and says so",
                                "ran past its deadline of 0.7 s" in spun and 0.7 <= took < 15, (spun[:200], round(took, 1))))
+    results.append(agent.check("and keeps what it had said",
+                               spun.endswith("\nsaid before\n<console_output>\na line\n</console_output>"), spun[-200:]))
     grown, took, _ = run_print(binary, project, ALLOCATE)
-    results.append(agent.check("a script that allocates without end is stopped at its memory, and says so",
-                               "took more than 256 MiB of memory" in grown and took < 30, (grown[:200], round(took, 1))))
+    results.append(agent.check("a script that allocates without end is stopped at its memory, says so, and keeps what it had said",
+                               "took more than 256 MiB of memory" in grown and grown.endswith("\nsaid before") and took < 30,
+                               (grown[:200], round(took, 1))))
     results.append(agent.check("neither left a process behind", not hosts(), hosts()))
     large, _, _ = run_print(binary, project, LARGE)
     results.append(agent.check("a script that asks to return more than a tool's 50 KiB and 2,000 lines is returned whole",
@@ -186,8 +190,9 @@ def main():
         agent.check("and wrote nothing by itself, but writes through the tool",
                     not os.path.exists(os.path.join(project, "python-wrote.txt"))
                     and os.path.exists(os.path.join(project, "python-made.txt")), os.listdir(project)),
-        agent.check("a Python script that allocates without end is stopped at its memory",
-                    "took more than 256 MiB of memory" in grown and grew < 30, (grown[:200], round(grew, 1))),
+        agent.check("a Python script that allocates without end is stopped at its memory, and keeps what it had said",
+                    "took more than 256 MiB of memory" in grown and grown.endswith("\nsaid before") and grew < 30,
+                    (grown[:200], round(grew, 1))),
         agent.check("no Python is left behind", not left, left),
     ]
     server.httpd.shutdown()

@@ -66,7 +66,7 @@ struct CodemodeKeeperTests {
         let result = await keeper(CodemodeChildren.silent)
             .run("while (true) {}", tools: [], limits: limits, call: none)
         let expected =
-            "The script ran past its deadline of 0.04 s and was stopped. What it had said is lost. "
+            "The script ran past its deadline of 0.04 s and was stopped. "
             + #"A first line `// @options: {"timeout_ms": …}` allows up to 600000."#
         #expect(result == CodemodeResult(failure: expected))
     }
@@ -74,15 +74,39 @@ struct CodemodeKeeperTests {
     @Test func `a process that ended itself for its memory says so, and one that died says how`() async {
         let memory = await keeper(CodemodeChildren.gone(exit: 86))
             .run("x", tools: [], limits: CodemodeLimits(), call: none)
-        #expect(
-            memory.failure == "The script took more than 256 MiB of memory and was stopped. What it had said is lost."
-        )
+        #expect(memory.failure == "The script took more than 256 MiB of memory and was stopped.")
         let died = await keeper(CodemodeChildren.gone(exit: 139))
             .run("x", tools: [], limits: CodemodeLimits(), call: none)
-        #expect(
-            died.failure
-                == "The process that ran the script ended before it answered (exit 139). What it had said is lost."
-        )
+        #expect(died.failure == "The process that ran the script ended before it answered (exit 139).")
+    }
+
+    /// What a script says reaches its keeper as it says it. The keeper is stopped here once the script's call has arrived, which
+    /// comes after what it said: no clock decides what the keeper had heard.
+    @Test func `a script that is stopped keeps what it had said until then`() async {
+        let said = [CodemodeItem(text: "before"), CodemodeItem(text: "a line", console: true)]
+        let keeper = keeper(CodemodeChildren.saying(said))
+        let arrived = AsyncStream<Void>.makeStream()
+        let never = AsyncStream<Void>.makeStream()
+        let running = Task {
+            await keeper.run("x", tools: [], limits: CodemodeLimits(deadline: .seconds(300))) { _, _ in
+                arrived.continuation.yield()
+                // Answered only by the script's end: the wait is over when the call is cancelled.
+                for await _ in never.stream {}
+                return .success("")
+            }
+        }
+        for await _ in arrived.stream { break }
+        running.cancel()
+        #expect(await running.value == CodemodeResult(items: said, failure: "The script was stopped."))
+    }
+
+    /// A script's process holds itself to what a script may say; one that does not is stopped by its keeper.
+    @Test func `a process that says more than a script may is stopped, with what a script may say`() async {
+        let many = [CodemodeItem](repeating: CodemodeItem(text: "x"), count: CodemodeVM.maximumItems + 1)
+        let result = await keeper(CodemodeChildren.saying(many))
+            .run("x", tools: [], limits: CodemodeLimits(deadline: .seconds(300)), call: none)
+        #expect(result.items.count == CodemodeVM.maximumItems)
+        #expect(result.failure?.hasPrefix("The script said more than 1048576 characters") == true)
     }
 
     @Test func `a process that cannot start is a failure, not a wait`() async {

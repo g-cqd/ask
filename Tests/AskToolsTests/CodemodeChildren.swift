@@ -1,10 +1,11 @@
 import AemiJSONRPC
 import AskCodemode
+import Synchronization
 
 @testable import AskTools
 
-/// Children for a keeper under test: the real host, run in this process over streams; one that never answers; one that is
-/// gone, with the exit status it left.
+/// Children for a keeper under test: the real host, run in this process over streams; one that never answers; one that says
+/// things and never ends; one that is gone, with the exit status it left.
 enum CodemodeChildren {
     private struct Sink: JSONRPCSink {
         let lines: AsyncStream<[UInt8]>.Continuation
@@ -46,6 +47,40 @@ enum CodemodeChildren {
         { _ in
             let (incoming, lines) = AsyncStream<[UInt8]>.makeStream()
             return CodemodeChild(incoming: incoming, send: { _ in lines.finish() }, close: { status })
+        }
+    }
+
+    /// A child that, given its script, says `items`, then calls `read`, and never ends.
+    static func saying(_ items: [CodemodeItem]) -> CodemodeChild.Start {
+        { _ in
+            let (incoming, lines) = AsyncStream<[UInt8]>.makeStream()
+            let asked = Mutex(false)
+            return CodemodeChild(
+                incoming: incoming,
+                send: { _ in
+                    // Its script is the first thing it is sent; what comes after is the answer to its call.
+                    guard
+                        !asked.withLock({ was in
+                            defer { was = true }
+                            return was
+                        })
+                    else { return }
+                    for item in items {
+                        lines.yield(
+                            try JSONRPC.notification(
+                                method: CodemodeWire.said,
+                                params: CodemodeWire.saidParameters(item)
+                            )
+                        )
+                    }
+                    let call = CodemodeWire.callParameters(tool: "read", arguments: "{}")
+                    lines.yield(try JSONRPC.request(id: .number(1), method: CodemodeWire.call, params: call))
+                },
+                close: {
+                    lines.finish()
+                    return nil
+                }
+            )
         }
     }
 }

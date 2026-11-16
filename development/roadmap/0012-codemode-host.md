@@ -71,3 +71,7 @@ unless `--yes` or `--yolo` is on. The output a script may hold is 1 Mi character
 
 Left: pi's `only` mode; pictures; a memory watch from outside the Python process.
 
+## The known gaps (2026-11-16, diary 2026-11-16-03)
+
+A script that asks for more output than a tool's cap gets it (`ToolOutput.bounded`). A script stopped at its deadline or at its
+memory keeps what it had said: it crosses to the keeper as it is said.

@@ -133,3 +133,10 @@ installed package), under a profile of its own whatever the session's sandbox is
 the system's libraries readable. Its memory is watched from inside (`setrlimit` is not enforced on macOS). The tool describes
 Python, and takes `language`, only where there is one.
 
+## Amendment (2026-11-16): what a script says crosses as it is said
+
+A script's output no longer crosses as one line when it ends. Each thing it says is a `said` notification to its keeper, as it
+is said, and `run` is answered with how the script ended. A script stopped at its deadline or at its memory therefore keeps
+what it had said until then, and its failure says so no longer by "What it had said is lost." (diary 2026-11-16-03). The 8 MiB
+of a line bounds one thing said; the megabyte and the 10,000 items stay, held by the script's process and checked again by the
+keeper, which stops a process that says more.

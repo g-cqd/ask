@@ -54,7 +54,7 @@ extension CodemodePythonPrelude {
                     except Stopped:
                         pass
                     finish(describe(error))
-            result = {"items": State.items, "unsettled": sum(1 for f in State.pending.values() if not f.done())}
+            result = {"unsettled": sum(1 for f in State.pending.values() if not f.done())}
             if State.failure is not None:
                 result["failure"] = State.failure
             send({"jsonrpc": "2.0", "id": request.get("id"), "result": result})

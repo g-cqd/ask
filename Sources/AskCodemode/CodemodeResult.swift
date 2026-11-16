@@ -1,5 +1,5 @@
 /// What a script came to: what it said, in order, and how it ended. A script that failed keeps what it had said.
-package struct CodemodeResult: Sendable, Equatable, Codable {
+package struct CodemodeResult: Sendable, Equatable {
     /// What the script said, its `return` last.
     package var items: [CodemodeItem] = []
     /// Why it failed, in the script's own terms (`TypeError: … (codemode.js:3)`); nil when it completed.

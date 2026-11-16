@@ -27,7 +27,7 @@ package enum CodemodePythonPrelude {
             """Unwinds a script whose result is already fixed."""
 
         class State:
-            items, characters, ended, failure, pending, calls, loop = [], 0, False, None, {}, 0, None
+            items, characters, ended, failure, pending, calls, loop = 0, 0, False, None, {}, 0, None
 
         def send(message):
             bridge_out.write(json.dumps(message, ensure_ascii=False).encode("utf-8", "replace") + b"\n")
@@ -40,7 +40,7 @@ package enum CodemodePythonPrelude {
         def emit(text, console):
             if State.ended:
                 return
-            if len(State.items) >= MAXIMUM_ITEMS:
+            if State.items >= MAXIMUM_ITEMS:
                 finish("The script made more than %d text and print calls." % MAXIMUM_ITEMS)
                 raise Stopped()
             if State.characters + len(text) > MAXIMUM_CHARACTERS:
@@ -48,7 +48,9 @@ package enum CodemodePythonPrelude {
                 finish(said_too_much % MAXIMUM_CHARACTERS)
                 raise Stopped()
             State.characters += len(text)
-            State.items.append({"text": text, "console": console})
+            State.items += 1
+            # Told as it is said: a script that is stopped keeps what it had said.
+            send({"jsonrpc": "2.0", "method": "said", "params": {"text": text, "console": console}})
 
         def said(value):
             if isinstance(value, str):
