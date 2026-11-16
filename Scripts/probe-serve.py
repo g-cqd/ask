@@ -294,6 +294,10 @@ def main():
                     (there, [name for name in offered if "mcp__" in name], server.requests[-1]["body"]["messages"][-1])),
     ]
 
+    listed = subprocess.run([binary, "--help"], capture_output=True, text=True).stdout
+    results.append(agent.check("`ask --help` lists serve", any(line.split()[:1] == ["serve"] for line in listed.splitlines()),
+                               listed[-600:]))
+
     print("C: the streams")
     status, said = client.close()
     results += [

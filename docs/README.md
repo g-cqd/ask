@@ -22,6 +22,7 @@ ask is a terminal coding agent for macOS. What it gives you:
 - [Providers and accounts](providers.md): signing in, choosing a model, several accounts, your own server.
 - [The sandbox](sandbox.md): what the model can reach, and how to change it.
 - [Skills and MCP servers](skills-and-mcp.md): giving the model instructions and more tools.
+- [ask in an editor](editors.md): `ask serve`, for an editor that speaks the Agent Client Protocol.
 
 This folder is for people using ask. How ask is built (decisions, plans, the working log) lives in [`development/`](../development/), and
 none of it is needed to use ask.

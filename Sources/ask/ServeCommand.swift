@@ -5,13 +5,11 @@ internal import AskSession
 
 /// `ask serve`: ask as an agent an editor drives, speaking the Agent Client Protocol on standard input and output (ADR-0153).
 /// Standard output carries the protocol and nothing else. Each session the client asks for is a conversation of its own, in the
-/// folder the client names (ADR-0154). Not listed in the help yet: it serves prompts and answers, and not yet tool calls,
-/// approvals or cancellation (roadmap 0234 step 2).
+/// folder the client names (ADR-0154).
 struct ServeCommand: AsyncParsableCommand {
     static let configuration = CommandConfiguration(
         commandName: "serve",
-        abstract: "Speak the Agent Client Protocol on standard input and output, for an editor to drive ask.",
-        shouldDisplay: false
+        abstract: "Speak the Agent Client Protocol on standard input and output, for an editor to drive ask."
     )
 
     func run() async {
