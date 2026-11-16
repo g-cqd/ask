@@ -108,3 +108,16 @@ description says how a script calls them and repeats none. `codemode` in the con
 ## Probes
 
 `development/research/codemode-2026-11-15.md` and diary 2026-11-15-17.
+
+## Amendment (2026-11-16): the open points, settled
+
+The owner's answers, asked with the first version running:
+
+1. **Python runs on the first `python3` on the `PATH`.** Not the system's `/usr/bin/python3`, which is Xcode's shim (158 ms to
+   start with asyncio, against 55).
+2. **A script may call neither `question` nor `agent`**: "makes no sense for now". Every other tool but `codemode` itself.
+3. **A script is asked about once, whatever it calls, unless `--yes` or `--yolo` is on.** The question is not put off until a
+   script's first call that would have asked. An answer for the session and `approvals.allow` cover later scripts, as before.
+
+Both lists under "Open, for the owner" above are closed by this.
+
