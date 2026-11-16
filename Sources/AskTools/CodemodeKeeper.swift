@@ -49,6 +49,12 @@ struct CodemodeKeeper: Sendable {
             }
             feed.finish()
         }
+        // The watch ends the process and no more: what the script had written is still read, to the end of its output.
+        let watch = child.memory.map { memory in
+            CodemodeWatch(memory, limit: limits.memoryMiB << 20) {
+                stopped.withLock { $0 = $0 ?? Self.tookMemory(limits) }
+            }
+        }
         // The calls a script makes run as children of this task: ending it is what cancels those still running.
         let serving = Task { await connection.run(reading: chunks) }
         let parameters = CodemodeWire.runParameters(code: code, tools: tools)
@@ -57,9 +63,9 @@ struct CodemodeKeeper: Sendable {
             let answer = try await connection.request(CodemodeWire.run, parameters, timeout: limits.deadline)
             result =
                 CodemodeWire.result(from: answer) ?? CodemodeResult(failure: "The script's result could not be read.")
-            await Self.end(child, serving, reading)
+            await Self.end(child, serving, reading, watch)
         } catch {
-            let exit = await Self.end(child, serving, reading)
+            let exit = await Self.end(child, serving, reading, watch)
             result = CodemodeResult(failure: stopped.withLock { $0 } ?? Self.reason(error, exit: exit, limits))
         }
         // Whatever ended it, what it had said by then is kept.
@@ -72,10 +78,19 @@ struct CodemodeKeeper: Sendable {
     private static let saidTooMuch =
         "The script said more than \(CodemodeVM.maximumCharacters) characters; write large data to a file with a tool instead."
 
+    private static func tookMemory(_ limits: CodemodeLimits) -> String {
+        "The script took more than \(limits.memoryMiB) MiB of memory and was stopped."
+    }
+
+    /// Ends the watch first: the child's process id is its own only until it is closed.
     @discardableResult
-    private static func end(_ child: CodemodeChild, _ serving: Task<Void, Never>, _ reading: Task<Void, Never>) async
-        -> Int32?
-    {
+    private static func end(
+        _ child: CodemodeChild,
+        _ serving: Task<Void, Never>,
+        _ reading: Task<Void, Never>,
+        _ watch: CodemodeWatch?
+    ) async -> Int32? {
+        watch?.end()
         serving.cancel()
         reading.cancel()
         return await child.close()
@@ -83,9 +98,7 @@ struct CodemodeKeeper: Sendable {
 
     /// Why a script did not end by itself, in words for the model.
     private static func reason(_ error: any Error, exit: Int32?, _ limits: CodemodeLimits) -> String {
-        if exit == CodemodeHost.memoryExit {
-            return "The script took more than \(limits.memoryMiB) MiB of memory and was stopped."
-        }
+        if exit == CodemodeHost.memoryExit { return tookMemory(limits) }
         switch error {
             case JSONRPCConnectionError.timedOut:
                 let seconds =

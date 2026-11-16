@@ -151,6 +151,20 @@ struct CodemodePythonTests {
     }
 
     /// The deadline is short on purpose: should the watch ever be lost, the script is stopped before it has taken the machine.
+    /// One allocation larger than the limit holds the interpreter's lock while it is filled, so the script's own watch sees it
+    /// only once made. That watch is given a limit it never reaches here: only the keeper's, from outside, can stop the script.
+    @Test func `one allocation larger than the limit is stopped by the keeper, from outside the process`() async {
+        let start: CodemodeChild.Start = { _ in await PythonOnPath.start(1 << 20) }
+        let result = await CodemodeKeeper(start: start, scripts: CodemodeLimiter(1))
+            .run(
+                "text(\"before\")\nawait tools.read(path=\"x\")\nbig = [0] * (1 << 27)\nreturn len(big)",
+                tools: tools,
+                limits: CodemodeLimits(deadline: .seconds(30), memoryMiB: 96)
+            ) { _, _ in .success("") }
+        #expect(result.failure == "The script took more than 96 MiB of memory and was stopped.")
+        #expect(result.items == text("before"))
+    }
+
     @Test func `a script that allocates without end is stopped at its memory, and keeps what it had said`() async {
         let result = await run(
             "text(\"before\")\nprint(\"a line\")\nbig = []\nwhile True: big.append([0] * (1 << 16))",

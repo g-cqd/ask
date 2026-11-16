@@ -103,7 +103,7 @@ enum CodemodePython {
                 arguments: profile.arguments + ["-p", profile.text] + run,
                 inheriting: [:]
             )
-            return await CodemodeChild.launched(launch)
+            return await CodemodeChild.launched(launch, watched: true)
         }
     }
 }

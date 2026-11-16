@@ -50,8 +50,9 @@ enum CodemodeChildren {
         }
     }
 
-    /// A child that, given its script, says `items`, then calls `read`, and never ends.
-    static func saying(_ items: [CodemodeItem]) -> CodemodeChild.Start {
+    /// A child that, given its script, says `items`, then calls `read`, and never ends. With `footprint`, its keeper watches
+    /// the memory that reads so, and stopping it ends its output as a process's end does.
+    static func saying(_ items: [CodemodeItem], footprint: (@Sendable () -> Int)? = nil) -> CodemodeChild.Start {
         { _ in
             let (incoming, lines) = AsyncStream<[UInt8]>.makeStream()
             let asked = Mutex(false)
@@ -79,7 +80,8 @@ enum CodemodeChildren {
                 close: {
                     lines.finish()
                     return nil
-                }
+                },
+                memory: footprint.map { CodemodeChild.Memory(footprint: $0, stop: { lines.finish() }) }
             )
         }
     }

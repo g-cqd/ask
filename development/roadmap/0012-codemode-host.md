@@ -74,4 +74,5 @@ Left: pi's `only` mode; pictures; a memory watch from outside the Python process
 ## The known gaps (2026-11-16, diary 2026-11-16-03)
 
 A script that asks for more output than a tool's cap gets it (`ToolOutput.bounded`). A script stopped at its deadline or at its
-memory keeps what it had said: it crosses to the keeper as it is said.
+memory keeps what it had said: it crosses to the keeper as it is said. A Python script's memory is watched from outside its
+process: one allocation larger than the limit is stopped as it grows.

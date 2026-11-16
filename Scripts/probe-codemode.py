@@ -9,18 +9,21 @@ B: the limits, through the real process: a script that spins is stopped at its d
    tool is cut at gets it whole.
 C: the sandbox holds inside a script: a write in the workspace lands, one outside it is refused, and the script is told.
 E: the same in Python: a script on the first python3 of the PATH calls the tools, reaches nothing by itself (no file of the
-   person's, no write, no network, no program), and is stopped at its memory.
+   person's, no write, no network, no program), and is stopped at its memory: one allocation of 3 GiB as it grows, its
+   peak read from outside the process.
 D: through `ask serve`, where a person is asked: one question for the script, with the script shown; the write it makes is
    not asked about again; denied, nothing runs.
 
 Scripts/probe-codemode.py .build/release/ask
 """
+import ctypes
 import importlib.util
 import json
 import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -66,6 +69,10 @@ return [tried, through.splitlines()[0]]"""
 
 PYTHON_ALLOCATE = "text('said before')\nbig = []\nwhile True: big.append([0] * (1 << 16))"
 
+# One allocation, twelve times the limit: made under the interpreter's lock, so nothing inside the process sees it grow.
+PYTHON_ONE_ALLOCATION = ("import time\ntext('said before')\nawait tools.read(path='a.txt')\ntime.sleep(1)\n"
+                         "big = [0] * (3 << 27)\nreturn len(big)")
+
 SPIN = '// @options: {"timeout_ms": 700}\ntext("said before"); console.log("a line");\nwhile (true) {}'
 ALLOCATE = 'text("said before"); await tools.read({ path: "a.txt" });\nconst big = []; for (;;) big.push(new Array(1 << 17).fill(1));'
 LARGE = '// @options: {"max_output_tokens": 80000}\nfor (let i = 0; i < 3000; i++) text("row " + i + " " + "x".repeat(60)); return "end";'
@@ -96,6 +103,24 @@ def run_print(binary, project, script, extra=(), language=None):
     result = last_result(server) if len(server.requests) >= 2 else "(the model was not asked again) " + run.stderr[-300:]
     server.httpd.shutdown()
     return result, took, json.dumps(server.requests[-1]["body"]) if server.requests else ""
+
+
+def python_peak(done):
+    """The most a script's Python took, in MiB, read from outside it every millisecond: a list that holds it, and the thread."""
+    proc, usage, peak = ctypes.CDLL("/usr/lib/libproc.dylib"), (ctypes.c_uint64 * 64)(), [0]
+
+    def watch():
+        found = []
+        while not done.is_set() and not found:
+            found = subprocess.run(["pgrep", "-f", "codemode.py"], capture_output=True, text=True).stdout.split()
+        # rusage_info_v4: sixteen bytes of identifier, then 64-bit fields, of which the eighth is the physical footprint.
+        while found and not done.is_set() and proc.proc_pid_rusage(int(found[0]), 4, ctypes.byref(usage)) == 0:
+            peak[0] = max(peak[0], usage[9] >> 20)
+            time.sleep(0.001)
+
+    thread = threading.Thread(target=watch, daemon=True)
+    thread.start()
+    return peak, thread
 
 
 def hosts():
@@ -180,6 +205,11 @@ def main():
     refused = {"home": "PermissionError", "passwd": "PermissionError", "write": "PermissionError",
                "network": "PermissionError", "program": "PermissionError"}
     grown, grew, _ = run_print(binary, project, PYTHON_ALLOCATE, language="python")
+    done = threading.Event()
+    peak, watching = python_peak(done)
+    once, _, _ = run_print(binary, project, PYTHON_ONE_ALLOCATION, language="python")
+    done.set()
+    watching.join()
     left = subprocess.run(["pgrep", "-f", "codemode.py"], capture_output=True, text=True).stdout.split()
     results += [
         agent.check("a Python script completed, and what it returned is the result",
@@ -193,6 +223,9 @@ def main():
         agent.check("a Python script that allocates without end is stopped at its memory, and keeps what it had said",
                     "took more than 256 MiB of memory" in grown and grown.endswith("\nsaid before") and grew < 30,
                     (grown[:200], round(grew, 1))),
+        agent.check(f"one allocation of 3 GiB is stopped as it grows, long before it is made (its peak: {peak[0]} MiB)",
+                    "took more than 256 MiB of memory" in once and once.endswith("\nsaid before") and 200 < peak[0] < 1024,
+                    once[:200]),
         agent.check("no Python is left behind", not left, left),
     ]
     server.httpd.shutdown()

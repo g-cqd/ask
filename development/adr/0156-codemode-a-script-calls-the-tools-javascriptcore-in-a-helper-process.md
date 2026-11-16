@@ -140,3 +140,9 @@ is said, and `run` is answered with how the script ended. A script stopped at it
 what it had said until then, and its failure says so no longer by "What it had said is lost." (diary 2026-11-16-03). The 8 MiB
 of a line bounds one thing said; the megabyte and the 10,000 items stay, held by the script's process and checked again by the
 keeper, which stops a process that says more.
+
+## Amendment (2026-11-16): a Python script's memory is watched from outside too
+
+The keeper reads the footprint of a Python script's process every 2 ms and ends it past the limit. One allocation larger than
+the limit holds the interpreter's lock while it is filled, so the watch inside saw it only once made: 3 GiB taken, against
+about 260 MiB now (diary 2026-11-16-03). The watch inside stays as the second of two. JavaScript's host still watches itself.
