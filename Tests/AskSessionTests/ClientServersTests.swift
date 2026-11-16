@@ -25,7 +25,11 @@ struct ClientServersTests {
                 in: "/work"
             )
             .map(\.name)
-        #expect(names == ["git", "git-2", "git-3", String(long.prefix(32)), String(long.prefix(30)) + "-2"])
+        // Typed and named before the expectation: inside it, the literal took CI's compiler past its limit for one expression.
+        let cut = String(long.prefix(32))
+        let second = String(long.prefix(30)) + "-2"
+        let expected: [String] = ["git", "git-2", "git-3", cut, second]
+        #expect(names == expected)
         #expect(names.allSatisfy(MCPServerSetting.isValid(name:)))
     }
 
