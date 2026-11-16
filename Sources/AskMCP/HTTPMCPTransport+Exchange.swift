@@ -25,14 +25,11 @@ extension HTTPMCPTransport {
     /// One message, one POST, and whatever comes back.
     func exchange(_ message: [UInt8], requestID: Int?) async {
         do {
+            let headers = await requestHeaders()
+            // A conversation that closed while this message was on its way has ended its session: nothing more is said on it.
+            guard !state.withLock({ $0.closed }) else { return }
             var reply = try await http.send(
-                HTTPRequest(
-                    url: url,
-                    method: "POST",
-                    headers: await requestHeaders(),
-                    body: message,
-                    allowsRedirects: false
-                )
+                HTTPRequest(url: url, method: "POST", headers: headers, body: message, allowsRedirects: false)
             )
             // Refused for want of a sign-in: renewed once and sent again, else kept for the host to ask the person (roadmap 0067).
             if let challenge = Self.refusal(reply) {
