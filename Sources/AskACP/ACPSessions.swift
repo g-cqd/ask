@@ -22,14 +22,15 @@ final class ACPSessions: Sendable {
     var canLoad: Bool { loader != nil }
 
     /// `session/new`: a session for the directory the client names, which must be an absolute path.
-    func new(_ params: JSON?, client: ACPClientCapabilities) async -> Result<ACPSession, JSONRPCError> {
+    func new(_ params: JSON?, client: ACPClientCapabilities) async -> Result<Opened, JSONRPCError> {
         guard let cwd = params?["cwd"].string, cwd.hasPrefix("/") else {
             return .failure(.invalidParams("session/new needs cwd, an absolute path"))
         }
+        let (servers, unusable) = ACPMCPServer.servers(of: params)
         do {
-            let session = try await source(ACPSession.Asked(cwd: cwd, showsForms: client.form))
+            let session = try await source(ACPSession.Asked(cwd: cwd, showsForms: client.form, servers: servers))
             active.withLock { $0[session.id] = ACPTurns(session: session) }
-            return .success(session)
+            return .success(Opened(session: session, told: await opening(session, unusable: unusable, to: client)))
         } catch {
             return .failure(
                 JSONRPCError(code: JSONRPCError.internalError, message: "The session could not be made: \(error)")
@@ -48,7 +49,8 @@ final class ACPSessions: Sendable {
             return .failure(.invalidParams("session \(id) is already active on this connection"))
         }
         let loaded: ACPSession.Loaded?
-        let asked = ACPSession.Asked(cwd: cwd, showsForms: client.capabilities.form)
+        let (servers, unusable) = ACPMCPServer.servers(of: params)
+        let asked = ACPSession.Asked(cwd: cwd, showsForms: client.capabilities.form, servers: servers)
         do { loaded = try await loader?(id, asked) } catch {
             return .failure(
                 JSONRPCError(code: JSONRPCError.internalError, message: "The session could not be loaded: \(error)")
@@ -58,11 +60,30 @@ final class ACPSessions: Sendable {
         let turns = ACPTurns(session: loaded.session)
         var reader = ACPTurnReader(session: loaded.session, client: client)
         for update in loaded.history.flatMap(\.flattened) { await reader.replay(update, in: turns) }
-        if let commands = await ACPCommands.update(for: loaded.session.conversation) {
-            await client.notify(["sessionId": .string(id), "update": commands])
+        for update in await opening(loaded.session, unusable: unusable, to: client.capabilities) {
+            await client.notify(["sessionId": .string(id), "update": update])
         }
         active.withLock { $0[id] = turns }
         return .success([:])
+    }
+
+    /// A session that was made, and what its client is told once it knows of it.
+    struct Opened {
+        let session: ACPSession
+        let told: [JSONValue]
+    }
+
+    /// What a client is told of a session as it opens: its commands, and each MCP server it named that cannot be run, when
+    /// it shows notices.
+    private func opening(
+        _ session: ACPSession,
+        unusable: [String],
+        to client: ACPClientCapabilities
+    ) async -> [JSONValue] {
+        var told: [JSONValue] = []
+        if let commands = await ACPCommands.update(for: session.conversation) { told.append(commands) }
+        if client.notices { told += unusable.compactMap { ACPNotice.update($0, isError: true) } }
+        return told
     }
 
     /// The turns of session `id`, or the error an unknown session is answered with (Errors, "Unknown sessions").

@@ -105,3 +105,9 @@ command runs it, answered with what it says. Served: `tasks` and `compact`, a de
 others are served, and what a picker becomes in a client, is still the owner's (roadmap 0210). Left: a job's output between
 turns, the client's MCP servers, the user guide and the help.
 
+## Step 2, thirteenth part: the client's MCP servers (2026-11-16, diary 2026-11-16-03)
+
+A session has the MCP servers its client names in `session/new` and `session/load`, started in the session's folder or
+spoken to over HTTP, beside the configuration's. SSE is not built. Left: a job's output between turns, the user guide and
+the help.
+

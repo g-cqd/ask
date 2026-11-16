@@ -17,6 +17,14 @@ package struct ACPSession: Sendable {
         /// Whether the client shows forms (`elicitation.form`): one that shows none cannot be asked the model's questions, so
         /// its session is made without the tool that asks them.
         package let showsForms: Bool
+        /// The MCP servers the session is to have beside the agent's own.
+        package let servers: [ACPMCPServer]
+
+        package init(cwd: String, showsForms: Bool, servers: [ACPMCPServer] = []) {
+            self.cwd = cwd
+            self.showsForms = showsForms
+            self.servers = servers
+        }
     }
 
     /// A saved session opened again: the session, and what it holds as the conversation says it, oldest first.

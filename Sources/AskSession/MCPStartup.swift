@@ -3,16 +3,18 @@ internal import AskTools
 internal import Foundation
 
 /// The MCP servers of `settings`, connecting (ADR-0099), and watched with the jobs so that ask being killed does not leave them (ADR-0102).
-/// With none configured this does nothing.
+/// With none configured this does nothing. `also`: servers that run beside them whatever the configuration becomes.
 func startMCPServers(
     _ settings: RunSettings,
     jobs: JobTable,
     connectsOnFirstNeed: Bool = false,
+    also: [MCPServerSetting] = [],
     environment: [String: String] = LaunchEnvironment.values
 ) -> MCPHub {
     let hub = MCPHub(
         environment: environment,
         connectsOnFirstNeed: connectsOnFirstNeed,
+        also: also,
         transport: MCPHub.standardTransport(inheriting: environment, jobs: jobs)
     )
     hub.apply(settings.configuration.mcp.value.servers)

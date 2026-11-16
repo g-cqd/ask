@@ -29,6 +29,8 @@ public final class MCPHub: Sendable {
     private let signInSink: AsyncStream<String>.Continuation
     private let environment: [String: String]
     private let transport: MCPHost.TransportFactory
+    /// The servers that run beside whatever the configuration names, and in place of one of theirs with the same name.
+    private let also: [MCPServerSetting]
     let state = Mutex(State())
 
     /// A hub whose servers are made by `transport`.
@@ -36,14 +38,18 @@ public final class MCPHub: Sendable {
     ///   - environment: what `${NAME}` in a server's settings is filled from.
     ///   - connectsOnFirstNeed: start nothing until ``connect()`` (roadmap 0143), so an idle ask holds no server: an interactive
     ///     session's hub. A one-shot run's connects at once.
+    ///   - also: servers no configuration names, which a change of configuration therefore neither stops nor forgets: the ones
+    ///     a client gave its session (ADR-0154).
     ///   - transport: how a server's transport is made; ``standardTransport(userAgent:)`` for real ones.
     public init(
         environment: [String: String],
         connectsOnFirstNeed: Bool = false,
+        also: [MCPServerSetting] = [],
         transport: @escaping MCPHost.TransportFactory
     ) {
         self.environment = environment
         self.transport = transport
+        self.also = also
         (notices, noticeSink) = AsyncStream.makeStream(of: String.self, bufferingPolicy: .bufferingNewest(64))
         (resourceListChanges, listChangeSink) = AsyncStream.makeStream(
             of: String.self,
@@ -65,7 +71,8 @@ public final class MCPHub: Sendable {
 
     /// Makes `servers` the ones that run. Returns at once; nothing happens if they are the ones already running. Before the first need,
     /// they are only kept.
-    public func apply(_ servers: [MCPServerSetting]) {
+    public func apply(_ configured: [MCPServerSetting]) {
+        let servers = configured.filter { server in !also.contains { $0.name == server.name } } + also
         state.withLock { state in
             guard servers != state.servers else { return }
             state.servers = servers

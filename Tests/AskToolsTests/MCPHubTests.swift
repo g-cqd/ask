@@ -55,6 +55,26 @@ struct MCPHubTests {
         await hub.stop()
     }
 
+    /// The servers a client gave its session (ADR-0154) are no part of the configuration, so a change of it leaves them.
+    @Test func `servers given beside the configuration run with it, outlive its changes, and replace one of its names`()
+        async throws
+    {
+        let factory = Factory()
+        let given = [MCPServerSetting(name: "b", command: "given"), MCPServerSetting(name: "c", command: "third")]
+        let hub = MCPHub(environment: [:], also: given, transport: { server, _, _ in factory.make(server) })
+        hub.apply([MCPServerSetting(name: "a", command: "one"), MCPServerSetting(name: "b", command: "configured")])
+        await hub.waitUntilSettled()
+        // Servers connect at once, each in its own time: the order their tools are listed in is not theirs.
+        let all = try names(hub).sorted()
+        #expect(all == ["mcp__a__one", "mcp__b__given", "mcp__c__third"])
+        hub.apply([])
+        await hub.waitUntilSettled()
+        let left = try names(hub).sorted()
+        #expect(left == ["mcp__b__given", "mcp__c__third"])
+        #expect(!factory.made.contains("configured"))
+        await hub.stop()
+    }
+
     @Test func `a changed configuration stops the old servers and starts the new`() async throws {
         let factory = Factory()
         let hub = hub(factory)

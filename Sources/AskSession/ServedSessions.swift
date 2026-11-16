@@ -1,5 +1,5 @@
 internal import AskAI
-internal import AskAgentCore
+package import AskAgentCore
 package import AskTUI
 internal import AskTools
 internal import Foundation
@@ -37,6 +37,13 @@ package final class ServedSessions: Sendable {
         package var description: String { "\(path) is not a folder ask can work in" }
     }
 
+    /// What a client asked of a session besides its folder: whether the model's questions can reach a person, and the MCP
+    /// servers the session is to have beside the configuration's.
+    private struct Asked {
+        let asksPerson: Bool
+        let servers: [MCPServerSetting]
+    }
+
     private struct Held {
         let conversation: AgentConversation
         let jobs: JobTable
@@ -70,10 +77,13 @@ package final class ServedSessions: Sendable {
 
     /// A conversation for `folder`, which is read as the kernel would (links followed), and must be one. `asksPerson`: whether
     /// the model's questions can reach a person; where they cannot, the model is not offered the tool that asks them.
+    /// `servers`: MCP servers the client gave the session (``ClientServers``).
     /// - Throws: ``NotAFolder``, or why the folder's configuration gives no run (no model, a file that does not parse).
-    package func make(in folder: String, asksPerson: Bool = true) async throws -> Made {
+    package func make(in folder: String, asksPerson: Bool = true, servers: [MCPServerSetting] = []) async throws -> Made
+    {
         let workspace = try workspace(folder)
-        let conversation = try await conversation(in: workspace, resumed: nil, asksPerson: asksPerson)
+        let asked = Asked(asksPerson: asksPerson, servers: servers)
+        let conversation = try await conversation(in: workspace, resumed: nil, asked: asked)
         let file = (conversation.plannedSessionPath() as NSString).lastPathComponent
         return Made(id: (file as NSString).deletingPathExtension, folder: workspace, conversation: conversation)
     }
@@ -81,7 +91,12 @@ package final class ServedSessions: Sendable {
     /// The saved session `id` of `folder`, opened to be continued, with what it holds as the screen would show it again; nil when
     /// the folder has no such session.
     /// - Throws: ``NotAFolder``, ``CannotOpen``, or why the folder's configuration gives no run.
-    package func load(_ id: String, in folder: String, asksPerson: Bool = true) async throws -> Loaded? {
+    package func load(
+        _ id: String,
+        in folder: String,
+        asksPerson: Bool = true,
+        servers: [MCPServerSetting] = []
+    ) async throws -> Loaded? {
         let workspace = try workspace(folder)
         // An id is a session file's name: one that could name anything else (a path, a hidden file) names no session.
         guard Self.isSessionName(id) else { return nil }
@@ -100,7 +115,8 @@ package final class ServedSessions: Sendable {
         } catch {
             throw CannotOpen("session \(id) cannot be read: \(error)")
         }
-        let conversation = try await conversation(in: workspace, resumed: recorder, asksPerson: asksPerson)
+        let asked = Asked(asksPerson: asksPerson, servers: servers)
+        let conversation = try await conversation(in: workspace, resumed: recorder, asked: asked)
         return Loaded(
             made: Made(id: id, folder: workspace, conversation: conversation),
             history: conversation.history()
@@ -124,7 +140,7 @@ package final class ServedSessions: Sendable {
     private func conversation(
         in workspace: String,
         resumed: SessionRecorder?,
-        asksPerson: Bool
+        asked: Asked
     ) async throws -> AgentConversation {
         let source = ConfigurationSource(workingDirectory: workspace, flags: flags, environment: environment)
             .resuming(resumed)
@@ -132,7 +148,13 @@ package final class ServedSessions: Sendable {
         await decideProtection(settings.configuration)
         let jobs = JobTable(environment: environment)
         // Connected on a session's first message, as the screen's are (roadmap 0143).
-        let mcp = startMCPServers(settings, jobs: jobs, connectsOnFirstNeed: true, environment: environment)
+        let mcp = startMCPServers(
+            settings,
+            jobs: jobs,
+            connectsOnFirstNeed: true,
+            also: ClientServers.settings(asked.servers, in: workspace),
+            environment: environment
+        )
         let conversation = AgentConversation(
             directory: SessionDirectory(project: workspace, environment: environment),
             resumed: resumed,
@@ -144,7 +166,7 @@ package final class ServedSessions: Sendable {
                 instructions: instructionFiles(workingDirectory: workspace),
                 jobs: jobs,
                 mcp: mcp,
-                asksPerson: asksPerson
+                asksPerson: asked.asksPerson
             )
         )
         held.withLock { $0.append(Held(conversation: conversation, jobs: jobs, mcp: mcp)) }

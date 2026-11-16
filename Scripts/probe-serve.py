@@ -7,7 +7,9 @@ A: one session: initialize, session/new, a prompt with two tool calls in it, a s
    in order, before the answer; each call is told as it begins and ends; the read was of the session's folder; the write asks the
    client, which allows the first and denies the second, and is told as a diff with the model's input; the session file is the
    one the id names. The session's commands are told after the answer that made it.
-B: two sessions in two folders: each keeps its own file and its own history. A prompt that is a command (`/tasks`) is run by
+B: two sessions in two folders: each keeps its own file and its own history. The second is given an MCP server, which the
+   model is offered there and not in the first, and which runs in the session's folder; one of a kind ask does not speak to
+   costs the session nothing. A prompt that is a command (`/tasks`) is run by
    ask and answered without the model; one that names a skill reaches the model with the skill's text.
 C: nothing but protocol messages on standard output, and ask ends when its input does.
 E: a prompt whose command sleeps is cancelled: it answers `cancelled` at once, the command is gone, the session goes on; and a
@@ -36,6 +38,8 @@ agent = importlib.util.module_from_spec(spec)
 saved, sys.argv = sys.argv, sys.argv[:1]
 spec.loader.exec_module(agent)
 sys.argv = saved
+
+FIXTURE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "Tests", "AskMCPTests", "Fixtures", "fixture-server.py")
 
 
 class Client:
@@ -116,6 +120,11 @@ def calls(messages, call):
             if m.get("method") == "session/update" and m["params"]["update"].get("toolCallId") == call]
 
 
+def formless_tools(server, count):
+    """The names of the tools offered in each of the first `count` requests: the first session's."""
+    return [[tool["name"] for tool in request["body"].get("tools", [])] for request in server.requests[:count]]
+
+
 def prompt(session, text):
     return {"sessionId": session, "prompt": [{"type": "text", "text": text}]}
 
@@ -136,6 +145,8 @@ def main():
         agent.turn([("text", "Second answer.")], "end_turn"),
         agent.turn([("text", "Hello from two.")], "end_turn"),
         agent.turn([("text", "Demo done.")], "end_turn"),
+        agent.turn([("call", "t20", "mcp__My-Fixture__pwd", {})], "tool_use"),
+        agent.turn([("text", "It runs there.")], "end_turn"),
         agent.turn([("text", "Continued.")], "end_turn"),
         agent.turn([("call", "t9", "bash", {"command": "sleep 47.3"})], "tool_use"),
         agent.turn([("text", "After the cancel.")], "end_turn"),
@@ -213,7 +224,10 @@ def main():
     ]
 
     print("B: a second session, in another folder")
-    made, _ = client.request("session/new", {"cwd": two, "mcpServers": []})
+    # Its own MCP servers: one ask starts, named as a person would name it, and one of a kind ask does not speak to.
+    given = [{"name": "My Fixture", "command": sys.executable, "args": [FIXTURE], "env": [{"name": "GIVEN", "value": "1"}]},
+             {"type": "sse", "name": "old", "url": "http://127.0.0.1:9/sse", "headers": []}]
+    made, _ = client.request("session/new", {"cwd": two, "mcpServers": given})
     other = made.get("result", {}).get("sessionId", "")
     answer, before = client.request("session/prompt", prompt(other, "Hello?"))
     last = server.requests[-1]["body"]["messages"] if server.requests else []
@@ -244,6 +258,18 @@ def main():
                     and "Do the demo thing." in json.dumps(server.requests[-1]["body"]["messages"][-1])
                     and "show it" in json.dumps(server.requests[-1]["body"]["messages"][-1]),
                     (skilled, server.requests[-1]["body"]["messages"][-1])),
+    ]
+
+    there, _ = client.request("session/prompt", prompt(other, "Where does it run?"))
+    offered = [tool["name"] for tool in server.requests[-1]["body"].get("tools", [])]
+    results += [
+        agent.check("ask says it speaks to a session's servers over HTTP",
+                    opened.get("result", {}).get("agentCapabilities", {}).get("mcpCapabilities") == {"http": True}, opened),
+        agent.check("the session has the server its client gave it, which the first session has not, and it runs in the session's folder",
+                    there.get("result") == {"stopReason": "end_turn"} and "mcp__My-Fixture__pwd" in offered
+                    and not any("mcp__" in name for names in formless_tools(server, 5) for name in names)
+                    and two in json.dumps(server.requests[-1]["body"]["messages"][-1]),
+                    (there, [name for name in offered if "mcp__" in name], server.requests[-1]["body"]["messages"][-1])),
     ]
 
     print("C: the streams")

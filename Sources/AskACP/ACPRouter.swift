@@ -59,8 +59,9 @@ final class ACPRouter: Sendable {
         turns.cancel()
     }
 
-    /// `session/new`: the session's id, and after that answer its commands, since the client learns of the session from the
-    /// answer and would not know whose commands came before it (Slash Commands, "Advertising commands").
+    /// `session/new`: the session's id, and after that answer what the client is told of it (its commands), since the client
+    /// learns of the session from the answer and would not know whose they were before it (Slash Commands, "Advertising
+    /// commands").
     private func new(
         _ params: JSON?,
         in sessions: ACPSessions,
@@ -68,12 +69,12 @@ final class ACPRouter: Sendable {
         answering id: JSONRPCID
     ) async -> Result<JSONValue, JSONRPCError> {
         await sessions.new(params, client: client)
-            .map { session in
+            .map { opened in
+                let session = opened.session.id
                 output.after(id) { [send] in
-                    guard let commands = await ACPCommands.update(for: session.conversation) else { return }
-                    await send(["sessionId": .string(session.id), "update": commands])
+                    for update in opened.told { await send(["sessionId": .string(session), "update": update]) }
                 }
-                return ["sessionId": .string(session.id)]
+                return ["sessionId": .string(session)]
             }
     }
 
@@ -121,6 +122,16 @@ final class ACPRouter: Sendable {
     /// A person may leave a question open overnight; the connection's own two minutes would refuse the call for them.
     private static let patience: Duration = .seconds(365 * 24 * 3600)
 
+    /// Only what is built: a saved session can be loaded when this server was given the means, and a session's MCP servers
+    /// may be spoken to over HTTP (not over SSE) when it makes sessions at all.
+    private func capabilities(of sessions: ACPSessions?) -> OrderedDictionary<String, JSONValue> {
+        guard let sessions else { return [:] }
+        var offered: OrderedDictionary<String, JSONValue> = [:]
+        if sessions.canLoad { offered["loadSession"] = true }
+        offered["mcpCapabilities"] = ["http": true]
+        return offered
+    }
+
     /// `initialize`: the version is ask's whatever the client named, since a client that speaks another is to be told the latest
     /// ask supports and decides for itself. The capabilities say only what is built.
     private func initialize(_ params: JSON?) -> Result<JSONValue, JSONRPCError> {
@@ -135,8 +146,7 @@ final class ACPRouter: Sendable {
         return .success(
             [
                 "protocolVersion": .int(Int64(ACPServer.protocolVersion)),
-                // Only what is built: a saved session can be loaded when this server was given the means.
-                "agentCapabilities": sessions?.canLoad == true ? ["loadSession": true] : [:],
+                "agentCapabilities": .object(capabilities(of: sessions)),
                 "agentInfo": .object(info), "authMethods": []
             ]
         )

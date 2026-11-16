@@ -58,10 +58,10 @@ struct ACPLoadTests {
 
     @Test func `a server that can load says so, and one that cannot does not`() async {
         let (able, _, _) = client()
-        #expect(JSONValue(await able.initialize()["result"]["agentCapabilities"]) == ["loadSession": true])
+        #expect(await able.initialize()["result"]["agentCapabilities"]["loadSession"].bool == true)
         _ = await able.end()
         let unable = ACPExchange { _ in ACPSession(id: "s", folder: "/work", conversation: DirectedConversation()) }
-        #expect(JSONValue(await unable.initialize()["result"]["agentCapabilities"]) == [:])
+        #expect(!(await unable.initialize()["result"]["agentCapabilities"]["loadSession"].exists))
         #expect(
             await unable.request("session/load", #"{"sessionId":"s9","cwd":"/work"}"#)["error"]["code"].int == -32601
         )
