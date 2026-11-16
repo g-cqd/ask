@@ -67,6 +67,54 @@ struct ACPToolCallTests {
         #expect(sent.last?["content"] == [["type": "content", "content": ["type": "text", "text": "boom\n[exit 2]"]]])
     }
 
+    /// Tool Calls, "Diffs": a client shows a change to a file as a diff, and an update's content replaces the call's.
+    @Test func `an edit is told with the model's input and a diff, which it keeps when it ends, before what it said`()
+        async
+    {
+        let input = #"{"path":"a.txt","old_text":"one\n","new_text":"two\n","replace_all":false}"#
+        let sent = await updates(
+            for: .toolStarted(name: "edit", summary: "a.txt", id: "t5", path: "a.txt", rawInput: Array(input.utf8)),
+            .toolFinished(.succeeded, output: "Replaced 1 occurrence in a.txt", id: "t5")
+        )
+        let diff: JSONValue = ["type": "diff", "path": "/work/a.txt", "oldText": "one\n", "newText": "two\n"]
+        #expect(sent.first?["content"] == [diff])
+        let raw: JSONValue = ["path": "a.txt", "old_text": "one\n", "new_text": "two\n", "replace_all": false]
+        #expect(sent.first?["rawInput"] == raw)
+        let said: JSONValue = ["type": "content", "content": ["type": "text", "text": "Replaced 1 occurrence in a.txt"]]
+        #expect(sent.last?["content"] == [diff, said])
+    }
+
+    @Test func `a whole file written is a diff with no old text, and one that failed keeps no diff`() async {
+        let input = #"{"path":"/tmp/new.txt","content":"all of it\n"}"#
+        let sent = await updates(
+            for: .toolStarted(
+                name: "write",
+                summary: "/tmp/new.txt",
+                id: "t6",
+                fullInput: "all of it\n",
+                path: "/tmp/new.txt",
+                rawInput: Array(input.utf8)
+            ),
+            .toolFinished(.failed("Refused."), output: "Refused.", id: "t6")
+        )
+        #expect(sent.first?["content"] == [["type": "diff", "path": "/tmp/new.txt", "newText": "all of it\n"]])
+        #expect(sent.last?["content"] == [["type": "content", "content": ["type": "text", "text": "Refused."]]])
+    }
+
+    @Test func `a read carries the model's input, and its text as before`() async {
+        let sent = await updates(
+            for: .toolStarted(
+                name: "read",
+                summary: "a.txt",
+                id: "t7",
+                path: "a.txt",
+                rawInput: Array(#"{"path":"a.txt","limit":3}"#.utf8)
+            )
+        )
+        #expect(sent.first?["rawInput"] == ["path": "a.txt", "limit": 3])
+        #expect(sent.first?["content"] == nil)
+    }
+
     @Test func `a write is an edit of the file it names, with what it writes as its content`() async {
         let sent = await updates(
             for: .toolStarted(name: "write", summary: "/tmp/a.txt", id: "t3", fullInput: "hello\n", path: "/tmp/a.txt")

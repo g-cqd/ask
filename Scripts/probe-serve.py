@@ -5,7 +5,8 @@ from a working directory that is none of the sessions'.
 
 A: one session: initialize, session/new, a prompt with two tool calls in it, a second prompt. The model's words arrive as chunks,
    in order, before the answer; each call is told as it begins and ends; the read was of the session's folder; the write asks the
-   client, which allows the first and denies the second; the session file is the one the id names.
+   client, which allows the first and denies the second, and is told as a diff with the model's input; the session file is the
+   one the id names.
 B: two sessions in two folders: each keeps its own file and its own history.
 C: nothing but protocol messages on standard output, and ask ends when its input does.
 E: a prompt whose command sleeps is cancelled: it answers `cancelled` at once, the command is gone, the session goes on; and a
@@ -152,6 +153,7 @@ def main():
     session = made.get("result", {}).get("sessionId", "")
     answer, before = client.request("session/prompt", prompt(session, "What does note.txt say?"))
     files = agent.sessions(state)
+    made_diff = {"type": "diff", "path": os.path.join(one, "made.txt"), "newText": "made by serve\n"}
     results = [
         agent.check("initialize answers version 1", opened.get("result", {}).get("protocolVersion") == 1, opened),
         agent.check("session/new answers an id", bool(session), made),
@@ -172,6 +174,10 @@ def main():
         agent.check("allowed once, it wrote in the session's folder and nowhere else",
                     os.path.exists(os.path.join(one, "made.txt")) and not os.path.exists(os.path.join(elsewhere, "made.txt"))
                     and calls(before, "t2")[-1].get("status") == "completed", (os.listdir(one), os.listdir(elsewhere))),
+        agent.check("the write is told with the model's input and as a diff of the file, which it keeps when it ends",
+                    calls(before, "t2")[0].get("rawInput") == {"path": "made.txt", "content": "made by serve\n"}
+                    and calls(before, "t2")[0].get("content") == [made_diff] and calls(before, "t2")[-1]["content"][0] == made_diff,
+                    calls(before, "t2")),
         agent.check("the session's file is the one its id names",
                     [os.path.basename(f) for f in files] == [session + ".jsonl"], files),
     ]

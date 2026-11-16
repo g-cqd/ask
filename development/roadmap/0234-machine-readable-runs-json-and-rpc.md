@@ -87,3 +87,9 @@ The `question` tool's questions are one form (`elicitation/create`, form mode) f
 the person's. Left: the slash commands (a design for the owner), a job's output between turns, an edit's diff, the client's MCP
 servers, the user guide and the help. Paused here: the owner put codemode (roadmap 0012) first.
 
+## Step 2, tenth part: an edit's diff (2026-11-16, diary 2026-11-16-03)
+
+A call is told with the input as the model wrote it (`rawInput`), and a `write` or an `edit` as a `diff` of its file, said
+again when it ends. A whole file written is a diff with no old text. Left: the slash commands, a job's output between turns,
+the client's MCP servers, not offering `question` to a client that shows no form, the user guide and the help.
+

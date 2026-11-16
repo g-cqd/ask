@@ -21,14 +21,17 @@ public enum ConversationUpdate: Sendable, Equatable {
     /// A picture the person pasted, ready to send (roadmap 0224): its token goes into the input at the cursor.
     case pictureAttached(ToolImage)
     /// A tool began. With `command`, the full input is a command, which heads the block after its limits, and `summary` is unused.
-    /// `path` is the file the call names, whose language colours a file's text in the block (roadmap 0152).
+    /// `path` is the file the call names, whose language colours a file's text in the block (roadmap 0152). `rawInput` is the
+    /// input as the model wrote it, a JSON object's bytes, for a front that passes it on (ADR-0154); empty when there is none,
+    /// as for a command the person typed. The screen does not read it.
     case toolStarted(
         name: String,
         summary: String,
         id: String? = nil,
         fullInput: String = "",
         command: ToolCommand? = nil,
-        path: String? = nil
+        path: String? = nil,
+        rawInput: [UInt8] = []
     )
     /// More of the model's reasoning, shown as a block that starts folded.
     case thinkingText(String)

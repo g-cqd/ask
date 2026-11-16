@@ -8,6 +8,8 @@ struct ACPTurnReader {
     private struct Call {
         let id: String
         let title: String
+        /// The change it makes to a file, which a client shows as a diff, when it is an edit.
+        var change: JSONValue?
         var progressed = false
     }
 
@@ -115,17 +117,18 @@ struct ACPTurnReader {
     /// A tool call: that it began, how far it has got, that it ended. A block with no id is not a call of the model's.
     private mutating func call(_ update: ConversationUpdate) async {
         switch update {
-            case .toolStarted(let name, let summary, let id?, let fullInput, let command, let path):
+            case .toolStarted(let name, let summary, let id?, let fullInput, let command, let path, let rawInput):
                 let call = ACPToolCall.Begun(
                     id: id,
                     name: name,
                     summary: summary,
                     fullInput: fullInput,
                     isCommand: command != nil,
-                    path: path
+                    path: path,
+                    rawInput: rawInput
                 )
                 let started = ACPToolCall.started(call, in: session.folder)
-                running.append(Call(id: id, title: started.title))
+                running.append(Call(id: id, title: started.title, change: started.change))
                 await send(started.update)
             case .toolProgress(let id, let text):
                 guard let index = running.firstIndex(where: { $0.id == id }) else { return }
@@ -133,9 +136,10 @@ struct ACPTurnReader {
                 await send(ACPToolCall.progressed(id: id, title: running[index].title, progress: text))
             case .toolFinished(let status, let output, let id?, _, _, _):
                 // Its progress was on its title: it has its own again.
-                let title = running.first { $0.id == id && $0.progressed }?.title
+                let call = running.first { $0.id == id }
                 running.removeAll { $0.id == id }
-                await send(ACPToolCall.finished(id: id, status, output: output, title: title))
+                let title = call?.progressed == true ? call?.title : nil
+                await send(ACPToolCall.finished(id: id, status, output: output, title: title, change: call?.change))
             default: break
         }
     }

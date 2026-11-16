@@ -72,7 +72,7 @@ extension ScreenController {
 
     /// A tool's start or end. Called with those two updates only.
     private mutating func applyTool(_ update: ConversationUpdate) -> [Effect] {
-        if case .toolStarted(let name, let summary, let id, let input, let command, let path) = update {
+        if case .toolStarted(let name, let summary, let id, let input, let command, let path, _) = update {
             state.transcript.startTool(
                 name: name,
                 summary: summary,

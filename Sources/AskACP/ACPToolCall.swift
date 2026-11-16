@@ -3,9 +3,9 @@ internal import AskTUI
 
 /// A tool call as ACP shows it (ACP v1, Tool Calls), from what the conversation says of it: the block the screen draws.
 ///
-/// The conversation says a call's name as the screen shows it (a command's is its shell's), a line about its input and its input
-/// in full as text; not the input as the model wrote it. So a call here has a title, a kind, the file it names and its text,
-/// a command's `rawInput`, and no diff of an edit.
+/// The conversation says a call's name as the screen shows it (a command's is its shell's), a line about its input, its input in
+/// full as text, and the input as the model wrote it. So a call here has a title, a kind, the file it names, its `rawInput`, and
+/// either its text or, for a change to a file, a diff.
 enum ACPToolCall {
     /// A call as the conversation says it began.
     struct Begun {
@@ -15,11 +15,21 @@ enum ACPToolCall {
         let fullInput: String
         let isCommand: Bool
         let path: String?
+        /// The input as the model wrote it, a JSON object's bytes; empty for a call that is not the model's.
+        var rawInput: [UInt8] = []
+    }
+
+    /// A call as ACP is told it began: the `tool_call`, the title it was given, and the change it makes to a file, when it is
+    /// one, which is said again when it ends.
+    struct Started {
+        let title: String
+        let change: JSONValue?
+        let update: JSONValue
     }
 
     /// `tool_call`: a call began, in the session whose folder is `folder`. A command's title is its first line; any other's is
     /// the screen's header for it.
-    static func started(_ call: Begun, in folder: String) -> (title: String, update: JSONValue) {
+    static func started(_ call: Begun, in folder: String) -> Started {
         let title =
             call.isCommand
             ? firstLine(of: call.fullInput) : (call.summary.isEmpty ? call.name : "\(call.name) \(call.summary)")
@@ -28,20 +38,46 @@ enum ACPToolCall {
             "name": .string(call.name),
             "kind": .string(call.isCommand ? "execute" : kind(of: call.name)), "status": "in_progress"
         ]
-        if let path = call.path {
-            update["locations"] = [["path": .string(path.hasPrefix("/") ? path : folder + "/" + path)]]
-        }
-        if call.isCommand {
+        let location = call.path.map { $0.hasPrefix("/") ? $0 : folder + "/" + $0 }
+        if let location { update["locations"] = [["path": .string(location)]] }
+        let input = (try? AemiJSON.parse(call.rawInput))?.root
+        let change = call.isCommand ? nil : location.flatMap { change(input, to: $0, by: call.name) }
+        if let input, input.isObject {
+            update["rawInput"] = JSONValue(input)
+        } else if call.isCommand {
+            // A command the person typed has no input of the model's: what it runs is its input.
             update["rawInput"] = ["command": .string(call.fullInput)]
-        } else if !call.fullInput.isEmpty {
+        }
+        if let change {
+            update["content"] = [change]
+        } else if !call.isCommand, !call.fullInput.isEmpty {
             update["content"] = [text(call.fullInput)]
         }
-        return (title, .object(update))
+        return Started(title: title, change: change, update: .object(update))
+    }
+
+    /// The change a `write` or an `edit` makes to the file at `path`, as a diff (Tool Calls, "Diffs"): the text replaced and what
+    /// replaces it, or a whole file's new content. A whole file is said with no old text, as a new one is, since what the file
+    /// held is not known here: a client shows all of it as added.
+    private static func change(_ input: JSON?, to path: String, by tool: String) -> JSONValue? {
+        guard let input, kind(of: tool) == "edit" else { return nil }
+        if let old = input["old_text"].string, let new = input["new_text"].string {
+            return ["type": "diff", "path": .string(path), "oldText": .string(old), "newText": .string(new)]
+        }
+        guard let content = input["content"].string else { return nil }
+        return ["type": "diff", "path": .string(path), "newText": .string(content)]
     }
 
     /// `tool_call_update`: the call ended, with what it returned; and with its `title` again, when its progress had been on it.
-    static func finished(id: String, _ status: Transcript.ToolStatus, output: String, title: String? = nil) -> JSONValue
-    {
+    /// A call's content is replaced by an update's, so the `change` a call made is said again before what it returned; one that
+    /// failed made none.
+    static func finished(
+        id: String,
+        _ status: Transcript.ToolStatus,
+        output: String,
+        title: String? = nil,
+        change: JSONValue? = nil
+    ) -> JSONValue {
         let said: JSONValue =
             switch status {
                 case .succeeded: "completed"
@@ -54,7 +90,10 @@ enum ACPToolCall {
         ]
         if let title { update["title"] = .string(title) }
         update["status"] = said
-        if !output.isEmpty { update["content"] = [text(output)] }
+        var content: [JSONValue] = []
+        if case .succeeded = status, let change { content.append(change) }
+        if !output.isEmpty { content.append(text(output)) }
+        if !content.isEmpty { update["content"] = .array(content) }
         return .object(update)
     }
 

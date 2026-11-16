@@ -52,7 +52,9 @@ extension AgentConversation {
                                 defaultTimeout: .seconds(BashTool.defaultTimeout)
                             )
                         },
-                    path: started.path
+                    path: started.path,
+                    // The bytes the call already holds, not a copy.
+                    rawInput: input.bytes
                 )
             case .toolFinished(let id, _, let output):
                 // The last line only for a failure, read from the output's end: splitting every output for it cost seconds (n47).
