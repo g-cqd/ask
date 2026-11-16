@@ -1,0 +1,25 @@
+import os, resource, sys, threading, time
+limit = int(sys.argv[1]) << 20
+mode = sys.argv[2]
+start = time.monotonic()
+if mode == "rlimit":
+    for name in ("RLIMIT_AS", "RLIMIT_DATA", "RLIMIT_RSS"):
+        try: resource.setrlimit(getattr(resource, name), (limit, limit)); print(name, "set", file=sys.stderr)
+        except Exception as e: print(name, "refused:", e, file=sys.stderr)
+else:
+    def watch():
+        while resource.getrusage(resource.RUSAGE_SELF).ru_maxrss <= limit: time.sleep(0.002)
+        os.write(2, ("watch: maxrss %d MiB after %.0f ms\n" % (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss >> 20, (time.monotonic() - start) * 1000)).encode())
+        os._exit(86)
+    threading.Thread(target=watch, daemon=True).start()
+kind = sys.argv[3]
+try:
+    if kind == "loop":
+        big = []
+        while True: big.append([0] * (1 << 16))
+    elif kind == "one":
+        s = "x" * (3 << 30); print("one allocation of 3 GiB done after %.0f ms, maxrss %d MiB" % ((time.monotonic() - start) * 1000, resource.getrusage(resource.RUSAGE_SELF).ru_maxrss >> 20), file=sys.stderr); time.sleep(0.2)
+    elif kind == "bytes":
+        s = bytes(3 << 30); print("bytes(3 GiB) done, maxrss %d MiB" % (resource.getrusage(resource.RUSAGE_SELF).ru_maxrss >> 20), file=sys.stderr); time.sleep(0.2)
+except MemoryError:
+    print("MemoryError after %.0f ms, maxrss %d MiB" % ((time.monotonic() - start) * 1000, resource.getrusage(resource.RUSAGE_SELF).ru_maxrss >> 20), file=sys.stderr)

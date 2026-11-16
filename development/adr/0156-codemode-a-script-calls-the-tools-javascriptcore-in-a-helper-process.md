@@ -121,3 +121,15 @@ The owner's answers, asked with the first version running:
 
 Both lists under "Open, for the owner" above are closed by this.
 
+## Amendment (2026-11-16): the output limits, and Python as built
+
+**A script may say 1 Mi characters in 10,000 items**, not pi's 16 Mi and 100,000 as the table above has it. A script's result
+crosses to its keeper as one line, and the connection takes lines of 8 MiB: a result past that was dropped, and the script
+waited out its deadline (diary 2026-11-16-02). The new numbers fit at their worst, six bytes a character on the wire. What the
+model is returned is unchanged: 10,000 tokens by default, the whole in a file.
+
+**Python** runs on the first `python3` of the `PATH`, as it really is on disk, with `-I -S` (no variable, no user site, no
+installed package), under a profile of its own whatever the session's sandbox is: everything denied, then its interpreter and
+the system's libraries readable. Its memory is watched from inside (`setrlimit` is not enforced on macOS). The tool describes
+Python, and takes `language`, only where there is one.
+

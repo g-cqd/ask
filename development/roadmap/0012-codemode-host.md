@@ -1,5 +1,5 @@
 ---
-status: in-progress
+status: done
 blocked-by: []
 date: 2026-10-18
 ---
@@ -62,4 +62,12 @@ loop's hooks and the sandbox; the person is asked once for the whole script. Lim
 Left: Python on the same bridge (asyncio, the default `python3`, a profile that allows the interpreter alone); pi's `only`
 mode; pictures; the two open points of the ADR (may a script call `question` and `agent`; ask only when a script's first call
 would have asked).
+
+## Python, and the owner's answers (2026-11-16, diary 2026-11-16-02)
+
+`language: "python"`: a script on the first `python3` of the `PATH`, under a profile that lets it read its interpreter and
+nothing else, on the same bridge and the same limits. A script may call neither `question` nor `agent`. It is asked about once
+unless `--yes` or `--yolo` is on. The output a script may hold is 1 Mi characters: pi's 16 Mi did not fit the wire.
+
+Left: pi's `only` mode; pictures; a memory watch from outside the Python process.
 
