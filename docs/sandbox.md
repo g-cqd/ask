@@ -75,18 +75,21 @@ model deaf to it: what changes things (a command, a file written, an address fet
 
 ## Codemode
 
-Instead of calling its tools one after another, the model can write one JavaScript script that calls them: several at once, one
-feeding the next, with the noise filtered out before the result reaches the conversation. It saves round trips to the model, which
-are what a long task waits on.
+Instead of calling its tools one after another, the model can write one script that calls them: several at once, one feeding the
+next, with the noise filtered out before the result reaches the conversation. It saves round trips to the model, which are what a
+long task waits on. The script is JavaScript, or Python when there is a `python3` on your `PATH` (the first one found).
 
-- **A script can reach nothing but the tools.** It runs in a process of its own with no files, no network, no timers and no
-  modules. Every read, write and command it makes is a tool call, checked by the sandbox and by your hooks as a direct call is.
+- **A script can reach nothing but the tools.** It runs in a process of its own with no files, no network and no other programs.
+  Every read, write and command it makes is a tool call, checked by the sandbox and by your hooks as a direct call is. A
+  JavaScript script has no modules and no timers; a Python script has its standard library and no installed packages, and runs
+  under a profile that lets it read its own interpreter and nothing of yours, whatever the session's sandbox is set to.
+- **It cannot ask you a question or start an agent**: those two tools are not a script's to call.
 - **You are asked once, for the whole script**, with the script shown under the question and the tools it names in the question.
   What it then calls is not asked about again. A call that would need more than the sandbox allows is refused, not asked about.
-  **Allow for the session** covers later scripts; `--allow codemode` and `approvals.allow` do too.
+  **Allow for the session** covers later scripts; `--yes`, `--allow codemode` and `approvals.allow` do too.
 - **It is bounded.** A script has 120 seconds unless its first line asks for another deadline (ten minutes at most), 256 MiB of
-  memory, 16 tool calls running at once, and returns at most 10,000 tokens: past that, the start and the end, with the whole
-  written beside the session's other outputs. A script past a limit fails and says which.
+  memory, 16 tool calls running at once, and a megabyte of output, of which at most 10,000 tokens are returned: past that, the
+  start and the end, with the whole written beside the session's other outputs. A script past a limit fails and says which.
 - The calls a script made are not kept in the session, only the script and what it returned.
 
 `"codemode": false` in the configuration turns it off; the model then has only the tools themselves.

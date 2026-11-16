@@ -4,7 +4,7 @@ extension ToolSummary {
     /// A `codemode` script in a line (ADR-0156): how long it is, and the tools it names, in the order it first names them. The
     /// names are read off the text (`tools.name`, `tools["name"]`): what a person is shown before they allow it, not a promise
     /// of what it calls.
-    static func script(_ code: String) -> String {
+    static func script(_ code: String, language: String? = nil) -> String {
         let lines = code.split(whereSeparator: \.isNewline).count { !$0.allSatisfy(\.isWhitespace) }
         var named: [String] = []
         var rest = code[...]
@@ -20,7 +20,9 @@ extension ToolSummary {
             }
             if !name.isEmpty, !named.contains(String(name)) { named.append(String(name)) }
         }
-        let length = "script of \(lines) line\(lines == 1 ? "" : "s")"
+        // The person allowing it is told which interpreter runs it, when it is not the one a script runs on by default.
+        let kind = language == "python" ? "Python script" : "script"
+        let length = "\(kind) of \(lines) line\(lines == 1 ? "" : "s")"
         return named.isEmpty ? length : length + " calling " + named.joined(separator: ", ")
     }
 }

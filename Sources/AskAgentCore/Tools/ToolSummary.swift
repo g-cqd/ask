@@ -20,8 +20,9 @@ public enum ToolSummary {
         let yieldSeconds: Int?
         /// The `question` tool's questions (roadmap 0117): only their words are shown.
         let questions: [Asked]?
-        /// A `codemode` script (ADR-0156).
+        /// A `codemode` script (ADR-0156), and the language it says it is in.
         let code: String?
+        let language: String?
 
         struct Asked: Decodable {
             let header: String?
@@ -29,7 +30,7 @@ public enum ToolSummary {
         }
 
         enum CodingKeys: String, CodingKey {
-            case command, path, content, offset, limit, job, action, questions, code
+            case command, path, content, offset, limit, job, action, questions, code, language
             case oldText = "old_text"
             case newText = "new_text"
             case timeoutSeconds = "timeout_seconds"
@@ -47,7 +48,8 @@ public enum ToolSummary {
     static func line(_ fields: Fields?, _ input: JSONObject) -> String {
         // Never the input's JSON (note n68): what it says, in words.
         compact(
-            fields?.command ?? fields?.path ?? asked(fields) ?? fields?.code.map(script) ?? ToolProse.summary(input)
+            fields?.command ?? fields?.path ?? asked(fields) ?? fields?.code
+                .map { script($0, language: fields?.language) } ?? ToolProse.summary(input)
                 ?? ""
         )
     }

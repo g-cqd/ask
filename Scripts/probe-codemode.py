@@ -7,6 +7,8 @@ A: `ask -p`: a script reads two files at once, runs a command, filters, and retu
 B: the limits, through the real process: a script that spins is stopped at its deadline, one that allocates without end at
    its memory, and neither leaves a process behind.
 C: the sandbox holds inside a script: a write in the workspace lands, one outside it is refused, and the script is told.
+E: the same in Python: a script on the first python3 of the PATH calls the tools, reaches nothing by itself (no file of the
+   person's, no write, no network, no program), and is stopped at its memory.
 D: through `ask serve`, where a person is asked: one question for the script, with the script shown; the write it makes is
    not asked about again; denied, nothing runs.
 
@@ -40,6 +42,29 @@ const made = await tools.bash({ command: 'echo "built in $(basename "$PWD")"' })
 const errors = (a + b).split("\\n").filter((line) => line.includes("ERROR"));
 return `${errors.length} errors; ${made.trim().split("\\n")[0]}`;"""
 
+PYTHON_READ_AND_FILTER = """import asyncio
+a, b = await asyncio.gather(tools.read(path="a.txt"), tools.read(path="b.txt"))
+made = await tools.bash(command='echo "built in $(basename "$PWD")"')
+errors = [line for line in (a + b).split("\\n") if "ERROR" in line]
+return str(len(errors)) + " errors; " + made.strip().splitlines()[0]
+"""
+
+PYTHON_REACH = """import os, socket, subprocess
+tried = {}
+for name, attempt in {
+    "home": lambda: os.listdir(HOME), "passwd": lambda: open("/etc/passwd").read(),
+    "write": lambda: open(WORKSPACE + "/python-wrote.txt", "w").write("x"),
+    "network": lambda: socket.create_connection(("1.1.1.1", 80), 2), "program": lambda: subprocess.run(["/bin/ls"]),
+}.items():
+    try:
+        attempt(); tried[name] = "REACHED"
+    except OSError as error:
+        tried[name] = type(error).__name__
+through = await tools.write(path="python-made.txt", content="made by a Python script\\n")
+return [tried, through.splitlines()[0]]"""
+
+PYTHON_ALLOCATE = "big = []\nwhile True: big.append([0] * (1 << 16))"
+
 SPIN = '// @options: {"timeout_ms": 700}\nwhile (true) {}'
 ALLOCATE = "const big = []; for (;;) big.push(new Array(1 << 17).fill(1));"
 WRITES = """const inside = await tools.write({ path: "made.txt", content: "made by a script\\n" });
@@ -57,8 +82,9 @@ def last_result(server):
     return ""
 
 
-def run_print(binary, project, script, extra=()):
-    server = agent.Server([agent.turn([("call", "c1", "codemode", {"code": script})], "tool_use"),
+def run_print(binary, project, script, extra=(), language=None):
+    arguments = {"code": script, **({"language": language} if language else {})}
+    server = agent.Server([agent.turn([("call", "c1", "codemode", arguments)], "tool_use"),
                            agent.turn([("text", "Done.")], "end_turn")])
     state = tempfile.mkdtemp()
     started = time.monotonic()
@@ -136,6 +162,29 @@ def main():
     ]
     status, said = client.close()
     results.append(agent.check("ask ends with 0, with no host left", status == 0 and not hosts(), (status, hosts(), said[-200:])))
+
+    print("E: the same in Python, on the first python3 of the PATH")
+    result, took, request = run_print(binary, project, PYTHON_READ_AND_FILTER, language="python")
+    home = os.path.expanduser("~")
+    reach = PYTHON_REACH.replace("HOME", json.dumps(home)).replace("WORKSPACE", json.dumps(project))
+    reached, _, _ = run_print(binary, project, reach, language="python")
+    refused = {"home": "PermissionError", "passwd": "PermissionError", "write": "PermissionError",
+               "network": "PermissionError", "program": "PermissionError"}
+    grown, grew, _ = run_print(binary, project, PYTHON_ALLOCATE, language="python")
+    left = subprocess.run(["pgrep", "-f", "codemode.py"], capture_output=True, text=True).stdout.split()
+    results += [
+        agent.check("a Python script completed, and what it returned is the result",
+                    result.startswith("Script completed in ") and result.endswith(f"5 errors; built in {os.path.basename(project)}"),
+                    result[:300]),
+        agent.check("what the tools returned never reached the model", "nothing to see" not in request, len(request)),
+        agent.check("by itself it reaches no file, no network and no program", json.dumps(refused) in reached, reached[:400]),
+        agent.check("and wrote nothing by itself, but writes through the tool",
+                    not os.path.exists(os.path.join(project, "python-wrote.txt"))
+                    and os.path.exists(os.path.join(project, "python-made.txt")), os.listdir(project)),
+        agent.check("a Python script that allocates without end is stopped at its memory",
+                    "took more than 256 MiB of memory" in grown and grew < 30, (grown[:200], round(grew, 1))),
+        agent.check("no Python is left behind", not left, left),
+    ]
     server.httpd.shutdown()
     print("PASS" if all(results) else "FAIL")
     return 0 if all(results) else 1

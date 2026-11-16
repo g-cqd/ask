@@ -80,11 +80,11 @@ func checkHooks(
     ]
 }
 
-/// The `codemode` tool (ADR-0156), unless the configuration turns it off: each script runs in a child of this executable, so
-/// there is none where the executable cannot be found.
+/// The `codemode` tool (ADR-0156), unless the configuration turns it off: each JavaScript script runs in a child of this
+/// executable, so there is none where the executable cannot be found; Python scripts run on the first `python3` of the `PATH`.
 func codemodeTools(_ configuration: Configuration) -> [any Tool] {
     guard configuration.codemode.value, let executable = BinaryIdentity.running()?.path else { return [] }
-    return [CodemodeTool(executable: executable)]
+    return [CodemodeTool(executable: executable, path: LaunchEnvironment.values["PATH"])]
 }
 
 /// The agent loop with the tools, rooted at `workingDirectory`, following `instructions` after ask's own. Jobs

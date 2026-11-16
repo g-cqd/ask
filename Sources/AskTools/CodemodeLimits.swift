@@ -17,12 +17,14 @@ struct CodemodeLimits: Sendable, Equatable {
     /// How many of its tool calls run at once; the others wait their turn.
     var callsInFlight = 16
 
-    /// The limits for `code`: ask's, with what its first line sets (`// @options: {"timeout_ms": …, "max_output_tokens": …}`).
+    /// The limits for `code`: ask's, with what its first line sets (`// @options: {"timeout_ms": …, "max_output_tokens": …}`, or
+    /// the same after `#` in Python).
     static func parse(_ code: String) -> Result<CodemodeLimits, ToolFailure> {
         var limits = CodemodeLimits()
         let first = code.prefix { !$0.isNewline }.drop { $0 == " " || $0 == "\t" }
-        guard first.hasPrefix("//") else { return .success(limits) }
-        let comment = first.dropFirst(2).drop { $0 == " " }
+        // A comment of JavaScript, or of Python.
+        guard first.hasPrefix("//") || first.hasPrefix("#") else { return .success(limits) }
+        let comment = first.drop { $0 == "/" || $0 == "#" }.drop { $0 == " " }
         guard comment.hasPrefix("@options:") else { return .success(limits) }
         let json = Array(comment.dropFirst("@options:".count).utf8)
         guard let options = (try? AemiJSON.parse(json))?.root.object else {

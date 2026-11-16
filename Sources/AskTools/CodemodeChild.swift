@@ -18,22 +18,28 @@ struct CodemodeChild: Sendable {
     /// that spins does not hear.
     static func process(_ executable: String) -> Start {
         { memoryMiB in
-            let launch = StdioLaunch(
-                executable: executable,
-                arguments: ["codemode", "--memory", "\(memoryMiB)"],
-                inheriting: [:]
-            )
-            let transport = StdioTransport(launch, grace: .milliseconds(200))
-            guard await transport.waitUntilRunning() != nil else { return nil }
-            return CodemodeChild(
-                incoming: transport.incoming,
-                send: { try await transport.send($0) },
-                close: {
-                    await transport.close()
-                    guard case .exited(let status) = transport.exit else { return nil }
-                    return Int32(status)
-                }
+            await launched(
+                StdioLaunch(
+                    executable: executable,
+                    arguments: ["codemode", "--memory", "\(memoryMiB)"],
+                    inheriting: [:]
+                )
             )
         }
+    }
+
+    /// The child `launch` starts, once it runs; nil when it could not be started.
+    static func launched(_ launch: StdioLaunch) async -> CodemodeChild? {
+        let transport = StdioTransport(launch, grace: .milliseconds(200))
+        guard await transport.waitUntilRunning() != nil else { return nil }
+        return CodemodeChild(
+            incoming: transport.incoming,
+            send: { try await transport.send($0) },
+            close: {
+                await transport.close()
+                guard case .exited(let status) = transport.exit else { return nil }
+                return Int32(status)
+            }
+        )
     }
 }

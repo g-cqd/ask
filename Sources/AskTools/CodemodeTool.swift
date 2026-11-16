@@ -13,43 +13,57 @@ internal import Foundation
 public struct CodemodeTool: ArgumentTool {
     public struct Arguments: Decodable, Sendable {
         let code: String
+        /// The language the script is written in; JavaScript when it says nothing.
+        var language: String?
     }
 
-    public let definition = ToolDefinition(
-        name: "codemode",
-        description: """
-            Run one JavaScript script that calls the other tools, instead of calling them one at a time. Use it for independent calls \
-            at once (Promise.all), for chains where one result feeds the next, and to filter large results down to what matters \
-            before they reach you. The script is the body of an async function: use top-level await and return. Call a tool as \
-            `await tools.<name>({...})` with the arguments of a direct call; it resolves to the tool's text and rejects with an Error \
-            when the call fails. `text(value)` adds output, `console.log` is kept apart, the returned value comes last; `ALL_TOOLS` \
-            lists what can be called. Nothing else exists: no files, network, timers or modules, everything goes through tools. \
-            A first line `// @options: {"timeout_ms": 60000, "max_output_tokens": 2000}` changes the limits (120 s, 10000 tokens). \
-            Calls made before a failure are not undone.
-            """
-    ) {
-        ToolProperty.string("code", minLength: 1)
-    }
+    public let definition: ToolDefinition
 
     private let keeper: CodemodeKeeper
+    /// What runs a Python script, when there is a Python to run one.
+    private let python: CodemodeKeeper?
     private let clock: any Clock<Duration>
 
-    /// The tool, running each script in a child `executable codemode`: ask itself.
-    public init(executable: String) {
-        keeper = CodemodeKeeper(start: CodemodeChild.process(executable))
-        clock = ContinuousClock()
+    /// The tool, running each JavaScript script in a child `executable codemode` (ask itself), and each Python script on the
+    /// first `python3` of `path`, a `PATH`, when there is one (the owner, 2026-11-16).
+    public init(executable: String, path: String?) {
+        self.init(
+            start: CodemodeChild.process(executable),
+            python: CodemodePython.first(onPath: path).map(CodemodePython.child),
+            scripts: CodemodeKeeper.scripts
+        )
     }
 
-    init(start: @escaping CodemodeChild.Start, scripts: CodemodeLimiter, clock: any Clock<Duration> = ContinuousClock())
-    {
+    init(
+        start: @escaping CodemodeChild.Start,
+        python: CodemodeChild.Start? = nil,
+        scripts: CodemodeLimiter,
+        clock: any Clock<Duration> = ContinuousClock()
+    ) {
         keeper = CodemodeKeeper(start: start, scripts: scripts)
+        self.python = python.map { CodemodeKeeper(start: $0, scripts: scripts) }
+        definition = Self.definition(python: python != nil)
         self.clock = clock
+    }
+
+    /// The keeper that runs a script written in `language`.
+    private func keeper(for language: String?) throws(ToolFailure) -> CodemodeKeeper {
+        guard let language = CodemodeLanguage(rawValue: language ?? CodemodeLanguage.javascript.rawValue) else {
+            throw ToolFailure("ask runs scripts in \(CodemodeLanguage.named), not in \(language ?? "that").")
+        }
+        switch (language, python) {
+            case (.javascript, _): return keeper
+            case (.python, let python?): return python
+            case (.python, nil):
+                throw ToolFailure("There is no python3 on the PATH to run a Python script: write it in JavaScript.")
+        }
     }
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         guard let nested = context.nested else {
             throw ToolFailure("codemode runs inside a turn of the conversation, where there are tools to call.")
         }
+        let keeper = try keeper(for: arguments.language)
         let limits = try CodemodeLimits.parse(arguments.code).get()
         let callable = nested.definitions()
             .map { CodemodeCallable(name: $0.name, description: Self.brief($0.description)) }
