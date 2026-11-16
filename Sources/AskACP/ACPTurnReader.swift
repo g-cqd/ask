@@ -92,6 +92,8 @@ struct ACPTurnReader {
         switch update {
             case .notice, .askApproval, .askQuestions, .askInput: return
             case .runEnded, .returnQueuedPrompts, .promptAccepted, .promptRefused: return
+            // A job a saved call left running is not this conversation's to watch.
+            case .toolStarted, .toolFinished, .toolProgress: await call(update)
             default: await show(update, in: turns)
         }
     }
@@ -100,7 +102,11 @@ struct ACPTurnReader {
     /// what ``ACPUpdate`` maps.
     private mutating func show(_ update: ConversationUpdate, in turns: ACPTurns) async {
         switch update {
-            case .toolStarted, .toolFinished, .toolProgress: await call(update)
+            case .toolStarted, .toolProgress: await call(update)
+            case .toolFinished(_, _, let id, let job, _, _):
+                await call(update)
+                // The command goes on after its call: what it prints from here is told on that call.
+                if let id, let job { turns.watch(job, startedBy: id, client: client) }
             case .askApproval(let id, let question, let kind, let detail):
                 await approve(id, question, kind, detail, in: turns)
             case .askQuestions(let id, let questions): await ask(id, questions, in: turns)

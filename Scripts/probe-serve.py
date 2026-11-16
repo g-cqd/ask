@@ -15,6 +15,8 @@ C: nothing but protocol messages on standard output, and ask ends when its input
 E: a prompt whose command sleeps is cancelled: it answers `cancelled` at once, the command is gone, the session goes on; and a
    line that is not JSON is answered, with what follows it taken in its order.
 H: the model asks a question: the client is asked for a form, and the model is told what the person chose.
+I: a command that goes on after its call has ended (a `bash` call that yielded) is told on that call as it prints, after
+   the turn has ended, and then that it ended.
 G: the client goes away while a command runs: ask stops the command and ends with 0, not killed by a pipe nobody reads.
 F: a turn the provider refuses is answered with an error that says why, a client that shows notices is told as it happens,
    and the session takes the next prompt.
@@ -30,6 +32,7 @@ import os
 import subprocess
 import sys
 import tempfile
+import threading
 import time
 
 here = os.path.dirname(os.path.abspath(__file__))
@@ -92,6 +95,22 @@ class Client:
                 self.process.stdin.flush()
             if until and until(parsed):
                 return None, before
+
+    def read_until(self, test, seconds):
+        """The messages read until one passes `test`, which is the last; ask is killed when none does in `seconds`, and the
+        last is then None."""
+        guard = threading.Timer(seconds, self.process.kill)
+        guard.start()
+        read = []
+        while True:
+            line = self.process.stdout.readline()
+            if not line:
+                return read + [None]
+            self.lines.append(line)
+            read.append(json.loads(line))
+            if test(read[-1]):
+                guard.cancel()
+                return read
 
     def notify(self, method, params):
         self.process.stdin.write((json.dumps({"jsonrpc": "2.0", "method": method, "params": params}) + "\n").encode())
@@ -156,6 +175,9 @@ def main():
             {"question": "Which side?", "header": "Side", "choices": [{"label": "Left"}, {"label": "Right"}], "note": "none"}]})],
             "tool_use"),
         agent.turn([("text", "Right it is.")], "end_turn"),
+        agent.turn([("call", "t12", "bash", {"command": "echo early-line; sleep 3; echo late-line", "yield_seconds": 1})],
+                   "tool_use"),
+        agent.turn([("text", "It goes on.")], "end_turn"),
         agent.turn([("call", "t10", "bash", {"command": "sleep 48.6"})], "tool_use"),
     ])
     state = os.path.join(root, "state")
@@ -377,6 +399,26 @@ def main():
                     sorted((a.get("id"), a.get("error", {}).get("code")) for a in answers[1:]) == [(5, -32600), (6, None)], answers[1:]),
     ]
     garbage.close()
+
+    print("I: a command goes on after its call has ended")
+
+    def of_the_job(message):
+        update = (message or {}).get("params", {}).get("update", {})
+        return json.dumps(update.get("content", "")) if update.get("toolCallId") == "t12" else ""
+
+    went_on, said_going = client.request("session/prompt", prompt(session, "Start it."))
+    later = client.read_until(lambda message: "late-line" in of_the_job(message), 30)
+    ended = later if "] ended" in of_the_job(later[-1]) else later + client.read_until(lambda m: "] ended" in of_the_job(m), 30)
+    last = (ended[-1] or {}).get("params", {}).get("update", {})
+    results += [
+        agent.check("the turn ends while the command runs, its call completed, with what it had printed by then",
+                    went_on.get("result") == {"stopReason": "end_turn"} and "completed" in [
+                        update.get("status") for update in calls(said_going, "t12")]
+                    and not any("late-line" in of_the_job(m) for m in said_going), (went_on, calls(said_going, "t12"))),
+        agent.check("what it prints after the turn is told on its call, between turns, and then that it ended",
+                    later[-1] is not None and ended[-1] is not None and "early-line" in of_the_job(ended[-1])
+                    and "status" not in last and last.get("sessionUpdate") == "tool_call_update", (later[-3:], ended[-2:])),
+    ]
 
     print("G: the client goes away while a command runs")
 

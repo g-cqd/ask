@@ -13,9 +13,13 @@ final class ACPSessions: Sendable {
         self.loader = loader
     }
 
-    /// Cancels every session's turn, as `session/cancel` would each.
+    /// Cancels every session's turn, as `session/cancel` would each, and stops telling of the jobs that go on: the client
+    /// has gone.
     func cancelAll() {
-        for turns in active.withLock({ Array($0.values) }) { turns.cancel() }
+        for turns in active.withLock({ Array($0.values) }) {
+            turns.cancel()
+            turns.stopWatching()
+        }
     }
 
     /// Whether saved sessions can be loaded (`loadSession`).

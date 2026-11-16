@@ -111,3 +111,8 @@ A session has the MCP servers its client names in `session/new` and `session/loa
 spoken to over HTTP, beside the configuration's. SSE is not built. Left: a job's output between turns, the user guide and
 the help.
 
+## Step 2, fourteenth part: a command that goes on after its call (2026-11-16, diary 2026-11-16-03)
+
+What a yielded command prints after its call has ended is told on that call, during the turn or after it, and then how it
+ended. Left: the user guide and the help.
+

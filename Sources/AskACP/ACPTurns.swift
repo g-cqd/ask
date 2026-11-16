@@ -39,6 +39,9 @@ final class ACPTurns: Sendable {
         var asking: Task<JSON?, Never>?
         /// How many compactions the client was told of, this session: each has an id of its own.
         var compactions = 0
+        /// The jobs whose output the client is told of, by job, and how many were ever watched (``watch(_:startedBy:client:)``).
+        var watching: [String: Watch] = [:]
+        var watches = 0
 
         /// What becomes of the prompt admitted as `sequence` as it arrives, which a turn that starts is noted by. A command
         /// steers nothing and is steered by nothing: it waits for the turn's end, and so does a prompt sent while one runs.

@@ -15,6 +15,9 @@ final class DirectedConversation: Conversation {
         case answeredInput(Int, String?)
         /// The run that last started was cancelled, as Esc cancels it.
         case stopped
+        /// The job `id` is watched, and no longer is.
+        case watched(String)
+        case unwatched(String)
     }
 
     private let asked = Mailbox<Asked>()
@@ -23,6 +26,7 @@ final class DirectedConversation: Conversation {
     /// Everything the driver has asked so far, in order.
     var everything: [Asked] { log.withLock { $0 } }
     private let update = Mutex<(@Sendable (ConversationUpdate) -> Void)?>(nil)
+    private let jobs = Mutex<[String: @Sendable (JobUpdate) -> Void]>([:])
     /// The commands and the skills it says it has.
     let commands: [SlashCommand]
     private let skills: [SlashCommand]
@@ -56,6 +60,19 @@ final class DirectedConversation: Conversation {
             if Task.isCancelled { self?.note(.stopped) }
         }
     }
+
+    func watchJob(_ id: String, update: @escaping @Sendable (JobUpdate) -> Void) -> Task<Void, Never> {
+        jobs.withLock { $0[id] = update }
+        note(.watched(id))
+        return Task { [weak self] in
+            let (never, _) = AsyncStream<Void>.makeStream()
+            for await _ in never {}
+            self?.note(.unwatched(id))
+        }
+    }
+
+    /// Tells whoever watches the job `job.id` what it has printed.
+    func say(job: JobUpdate) { jobs.withLock { $0[job.id] }?(job) }
 
     func enqueue(_ text: String, id: Int, followUp: Bool) { note(.enqueued(text, id: id, followUp: followUp)) }
 
