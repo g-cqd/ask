@@ -54,8 +54,7 @@ def main():
         server = probe.agent.Server([
             turn([("call", "t1", "bash", {"command": command, "yield_seconds": 1})], "tool_use"),
             turn([("text", "JOB RUNNING")], "end_turn"),
-            turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_output": "STREAM_TWO", "timeout_seconds": 3})],
-                 "tool_use"),
+            turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "timeout_seconds": 1})], "tool_use"),
             turn([("text", "WAIT PRESERVED")], "end_turn"),
         ])
         environment = probe.agent.environment(root + "/state", server.url, config=str(config))

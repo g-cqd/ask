@@ -70,8 +70,8 @@ def main():
             file.write("{ ui: { sidebar: 'open', sidebarLayout: 'full', inputPrefix: 'ask> ' } }")
         turn = probe.agent.turn
         server = probe.agent.Server([
-            turn([("call", "t1", "bash", {"command": command, "yield_seconds": 1})], "tool_use"),
-            turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
+            turn([("call", "t1", "bash", {"command": command, "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
+            turn([("call", "t2", "job", {"job": "job-1", "action": "status"})], "tool_use"),
             turn([("text", "Serving.")], "end_turn"),
             turn([("call", "t3", "job", {"job": "job-1", "action": "stop"})], "tool_use"),
             turn([("text", "Stopped.")], "end_turn"),

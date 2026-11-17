@@ -12,13 +12,13 @@ extension BashTool {
                 Each call starts in the working directory: a cd lasts for that command only. A command that does not parse is \
                 refused; one shellcheck faults (ls | grep, cd without || exit, an unquoted $(…)) is refused once: fix it, or \
                 send it again unchanged to run it as written. A server, a watcher or a long build goes on as a job when \
-                yield_seconds or a wait_for is given: the job tool then waits on it, writes to it and stops it.
+                yield_seconds or a wait_for is given: the job tool then waits for its end, writes to it and stops it. A \
+                wait_for that has not happened by timeout_seconds stops the command.
                 """
         ) {
             ToolProperty.string("command").described("What to run.")
             ToolProperty.integer("timeout_seconds", minimum: 1, maximum: 600)
                 .described("Stop the command after this long: 120 unless given.").optional
-            // @dl:accept -- both tools intentionally expose the same readiness wire constraints
             ToolProperty.integer("yield_seconds", minimum: 1, maximum: 600)
                 .described("Return after this long; the command goes on as a job.").optional
             ToolProperty.string("wait_for_output", minLength: 1)

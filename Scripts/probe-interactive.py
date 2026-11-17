@@ -395,8 +395,8 @@ def probe_signal_stops_jobs():
     print("E: SIGTERM with a job running restores the terminal and stops the job")
     project, port = tempfile.mkdtemp(), agent.free_port()
     server = agent.Server([
-        agent.turn([("call", "t1", "bash", {"command": agent.serving(port), "yield_seconds": 1})], "tool_use"),
-        agent.turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
+        agent.turn([("call", "t1", "bash", {"command": agent.serving(port), "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
+        agent.turn([("call", "t2", "job", {"job": "job-1", "action": "status"})], "tool_use"),
         agent.turn([("text", "Serving.")], "end_turn")])
     screen = Screen(server.url, project)
     screen.ready()
@@ -709,8 +709,8 @@ def probe_reload_refused():
     binary = install_build(bin_dir, sign="-")
     port = agent.free_port()
     server = agent.Server([
-        agent.turn([("call", "t1", "bash", {"command": agent.serving(port), "yield_seconds": 1})], "tool_use"),
-        agent.turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
+        agent.turn([("call", "t1", "bash", {"command": agent.serving(port), "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
+        agent.turn([("call", "t2", "job", {"job": "job-1", "action": "status"})], "tool_use"),
         agent.turn([("text", "Serving.")], "end_turn"),
         agent.turn([("text", "Still here.")], "end_turn")])
     # A new build, the reload and the resumed session are details, said with --verbose (ADR-0119); a reload passes it on.

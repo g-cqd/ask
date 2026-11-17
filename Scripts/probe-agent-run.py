@@ -380,11 +380,11 @@ def server_alone(yielded):
 
 
 def probe_jobs():
-    print("F: a server run as a job: yielded, waited on, used, stopped; a long output kept in a file")
+    print("F: a server run as a job: started and ready in one call, waited on, used, stopped; a long output kept in a file")
     project, state, port = tempfile.mkdtemp(), tempfile.mkdtemp(), free_port()
     server = Server([
-        turn([("call", "t1", "bash", {"command": serving(port), "yield_seconds": 1})], "tool_use"),
-        turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
+        turn([("call", "t1", "bash", {"command": serving(port), "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
+        turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "timeout_seconds": 1})], "tool_use"),
         turn([("tool", "t3", f"curl -s http://127.0.0.1:{port}/ | head -c 200")], "tool_use"),
         turn([("tool", "t4", "awk 'BEGIN { for (n = 1; n <= 1500000; n++) print n }'")], "tool_use"),  # macOS seq prints 1.5e+06
         turn([("call", "t5", "job", {"job": "job-1", "action": "stop"})], "tool_use"),
@@ -394,9 +394,11 @@ def probe_jobs():
     results = [check("exit 0", run.returncode == 0, run.stderr[-300:]), check("six requests", len(server.requests) == 6, len(server.requests))]
     if len(server.requests) == 6:
         got = tool_results(server)
-        results += [check("bash yielded the server as job-1", "still running as job-1 after 1 s" in got.get("t1", ""), got.get("t1")),
-                    check("wait saw the port open", f"[job-1 port {port} accepts connections]" in got.get("t2", ""),
-                          got.get("t2") if "accepts connections" in got.get("t2", "") else (got.get("t2"), server_alone(got.get("t1")))),
+        ready = f"[job-1 port {port} accepts connections; still running]"
+        results += [check("bash returned once the port was open, the server left as job-1", ready in got.get("t1", ""),
+                          got.get("t1") if "accepts connections" in got.get("t1", "") else (got.get("t1"), server_alone(got.get("t1")))),
+                    check("a wait for its end ran out and left it running",
+                          "[nothing happened within 1 s; job-1 still running]" in got.get("t2", ""), got.get("t2")),
                     check("the server answered", "Directory listing" in got.get("t3", ""), got.get("t3")),
                     check("job_stop stopped it", got.get("t5", "").startswith("[job-1 stopped]"), got.get("t5"))]
         named = re.search(r"\[whole output in (.+?)\]", got.get("t4", ""))
@@ -414,14 +416,14 @@ def probe_jobs_end_with_ask():
     print("G: a job left running when -p ends is stopped with it")
     project, state, port = tempfile.mkdtemp(), tempfile.mkdtemp(), free_port()
     server = Server([
-        turn([("call", "t1", "bash", {"command": serving(port), "yield_seconds": 1})], "tool_use"),
-        turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
+        turn([("call", "t1", "bash", {"command": serving(port), "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
+        turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "timeout_seconds": 1})], "tool_use"),
         turn([("text", "Left it running.")], "end_turn")])
     run = subprocess.run([ASK, "-p", "Serve and leave it."], cwd=project, env=environment(state, server.url),
                          capture_output=True, text=True, timeout=120)
     got = tool_results(server) if len(server.requests) == 3 else {}
     results = [check("exit 0", run.returncode == 0, run.stderr[-300:]),
-               check("the server was up during the run", f"[job-1 port {port} accepts connections]" in got.get("t2", ""), got),
+               check("the server was up during the run", f"[job-1 port {port} accepts connections; still running]" in got.get("t1", ""), got),
                check("and is gone once ask has exited", not accepts(port))]
     server.httpd.shutdown()
     return all(results)
