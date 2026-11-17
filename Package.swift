@@ -85,7 +85,7 @@ let package = Package(
     dependencies: [
         // The terminal stack. TerminalKit is the whole point of the extraction: `ask` links the same
         // terminal code Atelier's KittyCode does, rather than a third copy of it.
-        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "fcce510ceb722880c73056ba604a77ab8d08004c"),
+        .package(url: "https://github.com/g-cqd/TerminalKit.git", revision: "cda5a1c7ce465ee94df9e20c84c619c4221ef8b0"),
         // JSON for every wire format: sessions now, provider streams and tool arguments next (ADR-0015).
         // Pinned by revision like every Aemi-family package; it shares TerminalKit's Aemi pin.
         .package(url: "https://github.com/g-cqd/AemiJSON.git", revision: "31ce46141763637c60515eb260f67f57954e69bd"),
@@ -94,7 +94,7 @@ let package = Package(
         // The Markdown parser the transcript draws assistant messages with (roadmap 0065); the revision TerminalKitMarkdown pins.
         .package(
             url: "https://github.com/g-cqd/AemiMarkdown.git",
-            revision: "706564dda6f824917ae5f79250f9377dffc809ac"
+            revision: "e8640c9b75106c1996505170fa6306b173d853ff"
         ),
         // Mermaid diagrams in the transcript (roadmap 0198), pinned by revision like the rest of the family.
         .package(
@@ -108,7 +108,7 @@ let package = Package(
         // AemiJSON pin, which SwiftPM requires: one revision per package in a graph.
         // Web pages as Markdown for `fetch` (roadmap 0237): its readable content, without the page's chrome. On the same aemi and
         // AemiMarkdown revisions.
-        .package(url: "https://github.com/g-cqd/AemiHTML.git", revision: "0fbc8c65b9c7bf79f2b46dacd7cc1bb6350ca04f"),
+        .package(url: "https://github.com/g-cqd/AemiHTML.git", revision: "a03a693109576ff93f358a2f189f3c8dbc7c2a6e"),
         // Full-text search over sessions, tasks and notes (t209), on the same aemi revision.
         .package(url: "https://github.com/g-cqd/AemiSearch.git", revision: "3894f0cd180529b82ddb190e50b5b52e7092f4c0"),
         .package(url: "https://github.com/Aemi-Studio/aemi.git", revision: "0bae2edb1a89bd3d931fb3122c2184cc5c368834"),
