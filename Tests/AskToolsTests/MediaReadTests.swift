@@ -87,6 +87,10 @@ struct MediaReadTests {
         let output = try await run("d.pdf", pdf(pages: 12))
         #expect(output.images.count == 8)
         #expect(output.content.contains("12 pages") && output.content.contains("pass pages"))
+        // The line said "showing pages pages 1-8", and "showing page page 3" for one: the word once (diary 2026-11-17-01).
+        #expect(output.content.hasPrefix("d.pdf: PDF, 12 pages; showing pages 1-8;"), "\(output.content)")
+        let one = try await run("d.pdf", pdf(pages: 3), #","pages":"3""#)
+        #expect(one.content == "d.pdf: PDF, 3 pages; showing page 3", "\(one.content)")
     }
 
     @Test func `pages chooses pages, and max_images bounds how many come back`() async throws {

@@ -115,8 +115,7 @@ enum PDFReader {
             var line = "\(path): PDF, \(total) page\(total == 1 ? "" : "s")"
             if !textPages.isEmpty { line += "; text of \(Self.ranges(textPages))" }
             if !picturePages.isEmpty {
-                line += "; \(textPages.isEmpty ? "" : "pictures of ")\(textPages.isEmpty ? "showing page" : "page")"
-                line += "\(picturePages.count == 1 ? "" : "s") \(Self.ranges(picturePages))"
+                line += "; \(textPages.isEmpty ? "showing" : "pictures of") \(Self.ranges(picturePages))"
             }
             let read = textPages.count + picturePages.count
             if wanted.count > read {

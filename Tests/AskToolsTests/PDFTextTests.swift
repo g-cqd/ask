@@ -59,7 +59,10 @@ struct PDFTextTests {
         let output = try await read()
         #expect(!output.isError, "\(output.content)")
         #expect(output.images.count == 1)
-        #expect(output.content.contains("text of pages 1, 3") && output.content.contains("page 2"))
+        #expect(
+            output.content.hasPrefix("d.pdf: PDF, 3 pages; text of pages 1, 3; pictures of page 2"),
+            "\(output.content)"
+        )
         #expect(output.content.contains("[page 1]\n" + sentence) && output.content.contains("Second page."))
         #expect(output.content.contains("render: true"))
     }
