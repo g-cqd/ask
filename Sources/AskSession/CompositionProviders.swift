@@ -134,8 +134,8 @@ func makeLoop(
     let offered: [any Tool] =
         FileTools.all + [
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
-            NarrowSandboxTool(jobs: jobs), TasksTool(board: lists.board),
-            IdeasTool(board: lists.ideas, tasks: lists.board), FetchTool()
+            NarrowSandboxTool(jobs: jobs), TasksTool(board: lists.board, notes: lists.ideas),
+            FetchTool()
         ] + (currentSession.map { [SessionSearchTool(currentSession: $0)] } ?? []) + (skills.tool.map { [$0] } ?? [])
         + (askPerson == nil ? [] : [QuestionTool()]) + codemodeTools(run.configuration)
         + (startSubagent == nil ? [] : [AgentTool(definitions: definitions)])

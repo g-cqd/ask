@@ -98,5 +98,5 @@ public final class ChangeBoard<List: ChangeList>: Sendable {
 /// The task list of the session in use, for the `tasks` tool and `/tasks`.
 public typealias TaskBoard = ChangeBoard<TaskList>
 
-/// The ideas of the session in use, for the `ideas` tool, `/idea` and `/ideas` (roadmap 0180).
+/// The ideas of the session in use, for the `tasks` tool's notes and `/notes` (roadmap 0180).
 public typealias IdeaBoard = ChangeBoard<IdeaList>

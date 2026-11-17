@@ -1,6 +1,6 @@
 internal import AskAgentCore
 
-/// What the `tasks` and `ideas` tools share (ADR-0141): no list before the session's is open; the changes planned and kept under the
+/// What a `tasks` call does on either list (ADR-0141): no list before the session's is open; the changes planned and kept under the
 /// list's lock, then the read; every refusal said in words.
 enum ListToolRun {
     static func run<List: ChangeList>(

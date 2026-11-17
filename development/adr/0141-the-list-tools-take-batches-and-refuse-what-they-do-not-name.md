@@ -1,5 +1,6 @@
 ---
 status: accepted
+amended-by: ADR-0161
 date: 2026-11-01
 ---
 

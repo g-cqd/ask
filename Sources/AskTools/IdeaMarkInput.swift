@@ -7,7 +7,12 @@ struct IdeaMarkInput: Decodable {
     init(from decoder: any Decoder) throws {
         let place = ToolInputError.entry
         let container = try decoder.container(keyedBy: RecordKey.self)
-        try container.only(["ids", "state", "task"], in: place, for: "a change")
+        // One tool, one word for it (ADR-0161): a mark is a `state`, as a task's is. Any other op would write a note, and is
+        // said before the fields it brought are.
+        guard try container.field("op", String.self) ?? "state" == "state" else {
+            throw ToolInputError("\(place): a note takes op state only; notes are the person's to write.")
+        }
+        try container.only(["op", "ids", "state", "task"], in: place, for: "a change to notes")
         guard let ids = try container.refs("ids", prefix: "n", in: place), !ids.isEmpty else {
             throw ToolInputError("\(place): mark needs ids.")
         }

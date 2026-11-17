@@ -96,14 +96,12 @@ struct TasksToolTests {
     }
 
     @Test
-    func `the definitions stay lean and are valid JSON`() throws {
+    func `the definition stays lean and is valid JSON`() throws {
         let tasks = TasksTool(board: TaskBoard()).definition
-        let ideas = IdeasTool(board: IdeaBoard(), tasks: TaskBoard()).definition
         _ = try JSONObject(validating: tasks.inputSchema.bytes)
-        _ = try JSONObject(validating: ideas.inputSchema.bytes)
-        let bytes = [tasks, ideas].map { $0.description.utf8.count + $0.inputSchema.bytes.count }
-        // ADR-0141: 1,333 bytes for the two before; 1,351 after, typed and batched. ADR-0157: 2,656 with what each field says
-        // of itself, the price of the limits and operations a model was refused for not knowing (42 of 1,002 calls).
-        #expect(bytes.reduce(0, +) <= 2_660, "\(bytes)")
+        let bytes = tasks.description.utf8.count + tasks.inputSchema.bytes.count
+        // ADR-0141: 1,351 bytes for `tasks` and `notes`, typed and batched. ADR-0157: 2,656 with what each field says of itself,
+        // the price of the limits and operations a model was refused for not knowing. ADR-0161: 2,208 as one tool for both lists.
+        #expect(bytes <= 2_210, "\(bytes)")
     }
 }

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Probe `/notes`, its `:subcommands` and the `notes` tool through the real binary, a PTY and a local fake provider (roadmap 0180).
+"""Probe `/notes`, its `:subcommands` and the notes of the `tasks` tool through the real binary, a PTY and a local fake provider (roadmap 0180).
 
 Scripts/probe-ideas.py .build/release/ask
 
@@ -41,7 +41,7 @@ def main():
         turn = probe.agent.turn
         server = probe.agent.Server([
             turn([("text", "Started.")], "end_turn"),
-            turn([("call", "c1", "notes", {"read": {}})], "tool_use"),
+            turn([("call", "c1", "tasks", {"list": "notes", "read": {}})], "tool_use"),
             turn([("text", "Read them.")], "end_turn"),
         ])
         environment = probe.agent.environment(root + "/state", server.url, config=config)

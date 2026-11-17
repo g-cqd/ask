@@ -5,7 +5,8 @@ import Testing
 
 @testable import AskTools
 
-/// The `notes` tool of ADR-0141: the model reads and marks the person's notes, in batches, and says which task one became.
+/// The notes, through `tasks` (ADR-0141, ADR-0161): the model reads and marks the person's notes, in batches, and says which task
+/// one became.
 @Suite
 struct IdeasToolTests {
     private let board = IdeaBoard()
@@ -23,7 +24,9 @@ struct IdeasToolTests {
     }
 
     private func call(_ json: String) async throws -> ToolOutput {
-        await IdeasTool(board: board, tasks: tasks).run(try JSONObject(validating: Array(json.utf8)), in: context)
+        let named = #"{"list":"notes","# + json.dropFirst()
+        return await TasksTool(board: tasks, notes: board)
+            .run(try JSONObject(validating: Array(named.utf8)), in: context)
     }
 
     @Test
@@ -65,8 +68,36 @@ struct IdeasToolTests {
 
     @Test
     func `before a session there are no notes, and the tool says so`() async throws {
-        let output = await IdeasTool(board: IdeaBoard(), tasks: TaskBoard())
-            .run(try JSONObject(validating: Array(#"{"read":{}}"#.utf8)), in: context)
-        #expect(output.isError)
+        let output = await TasksTool(board: TaskBoard())
+            .run(try JSONObject(validating: Array(#"{"list":"notes","read":{}}"#.utf8)), in: context)
+        #expect(output == .error("No notes are open for this session."))
+    }
+
+    /// ADR-0161: `list` says which; a call that leaves it out and can only mean the notes is not refused for it.
+    @Test(arguments: [
+        #"{"read":{"ids":"n1"}}"#, #"{"read":{"view":"new"}}"#, #"{"changes":[{"ids":"n1","state":"acknowledged"}]}"#,
+        #"{"changes":[{"op":"state","ids":"n1","state":"acknowledged"}]}"#
+    ])
+    func `a note's id or the view only notes have means the notes, without list`(_ json: String) async throws {
+        let tool = TasksTool(board: tasks, notes: board)
+        let output = await tool.run(try JSONObject(validating: Array(json.utf8)), in: context)
+        #expect(!output.isError && (output.content.contains("n1")), "\(output.content)")
+    }
+
+    @Test
+    func `one call is on one list, and a list that is neither is said`() async throws {
+        let tool = TasksTool(board: tasks, notes: board)
+        func run(_ json: String) async throws -> ToolOutput {
+            await tool.run(try JSONObject(validating: Array(json.utf8)), in: context)
+        }
+        #expect(try await run(#"{"list":"tasks","read":{}}"#).content.contains("t1"))
+        #expect(try await run(#"{"read":{}}"#).content.contains("t1"))
+        let neither = try await run(#"{"list":"ideas","read":{}}"#)
+        #expect(neither.isError && neither.content.contains("list is tasks or notes"))
+        let written = try await run(#"{"list":"notes","changes":[{"op":"add","title":"mine"}]}"#)
+        #expect(written.isError && written.content.contains("the person's to write"))
+        let wrong = try await run(#"{"list":"tasks","read":{"view":"new"}}"#)
+        #expect(wrong.isError && wrong.content.contains("open, done, all or summary"))
+        #expect(try board.current()?.ideas.count == 2)
     }
 }

@@ -17,7 +17,7 @@ struct ToolDescriptionsTests {
         return [
             ReadTool().definition, WriteTool().definition, BashTool(jobs: jobs).definition,
             JobActionTool(jobs: jobs).definition, NarrowSandboxTool(jobs: jobs).definition,
-            TasksTool(board: TaskBoard()).definition, IdeasTool(board: IdeaBoard(), tasks: TaskBoard()).definition,
+            TasksTool(board: TaskBoard()).definition,
             FetchTool().definition, SessionSearchTool(currentSession: { nil }).definition,
             SkillTool(catalog: SkillCatalog(), knownSources: []).definition, QuestionTool().definition,
             CodemodeTool.definition(python: true), AgentTool().definition, MCPSearchTool(catalog: catalog).definition,
