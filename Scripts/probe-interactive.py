@@ -395,7 +395,7 @@ def probe_signal_stops_jobs():
     print("E: SIGTERM with a job running restores the terminal and stops the job")
     project, port = tempfile.mkdtemp(), agent.free_port()
     server = agent.Server([
-        agent.turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
+        agent.turn([("call", "t1", "bash", {"command": agent.serving(port), "yield_seconds": 1})], "tool_use"),
         agent.turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
         agent.turn([("text", "Serving.")], "end_turn")])
     screen = Screen(server.url, project)
@@ -709,7 +709,7 @@ def probe_reload_refused():
     binary = install_build(bin_dir, sign="-")
     port = agent.free_port()
     server = agent.Server([
-        agent.turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
+        agent.turn([("call", "t1", "bash", {"command": agent.serving(port), "yield_seconds": 1})], "tool_use"),
         agent.turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
         agent.turn([("text", "Serving.")], "end_turn"),
         agent.turn([("text", "Still here.")], "end_turn")])
@@ -949,7 +949,7 @@ def probe_session_job_guard():
     project = tempfile.mkdtemp()
     port = agent.free_port()
     server = agent.Server([
-        agent.turn([("call", "start", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1",
+        agent.turn([("call", "start", "bash", {"command": agent.serving(port),
                                              "yield_seconds": 1})], "tool_use"),
         agent.turn([("call", "wait", "wait", {"job": "job-1", "port_open": port, "timeout_seconds": 20})], "tool_use"),
         agent.turn([("text", "BACKGROUND READY")], "end_turn"),

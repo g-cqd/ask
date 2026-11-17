@@ -47,7 +47,7 @@ def click_count(terminal, label):
 
 def main():
     port = probe.agent.free_port()
-    command = f"exec python3 -u -m http.server {port} --bind 127.0.0.1"
+    command = probe.agent.serving(port)
     with tempfile.TemporaryDirectory() as root:
         project, config = root + "/project", root + "/config"
         os.makedirs(project)

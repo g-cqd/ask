@@ -1,3 +1,4 @@
 # Probes the sweep skips (roadmap 0211): the name, then why. Each needs what a sweep cannot give.
 probe-copilot-flow not a PTY probe: it runs swift test --filter Copilot, which CI already runs; its fake server is unused
 probe-agy-login needs the real agy binary and Google's token endpoint, which a runner has not: run it by hand where agy is installed
+probe-acp-tck needs uvx and the network to fetch the pinned compatibility kit, which a runner has not: run it by hand

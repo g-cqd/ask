@@ -348,6 +348,19 @@ def tool_results(server):
     return {b["tool_use_id"]: b["content"] for b in blocks if b["type"] == "tool_result"}
 
 
+def serving(port):
+    """A loopback web server as a shell command, saying `Serving HTTP on` once it listens: Scripts/serve-loopback.py says why it
+    is not `python3 -m http.server`. Run from a copy under a short name, because the probes read the command back from one row of
+    the screen, with what the job is doing after it."""
+    short = "/tmp/ask-serve-loopback.py"
+    source = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "serve-loopback.py")).read()
+    if not os.path.exists(short) or open(short).read() != source:
+        with open(f"{short}.{os.getpid()}", "w") as copy:
+            copy.write(source)
+        os.replace(f"{short}.{os.getpid()}", short)
+    return f"exec python3 -u {short} {port}"
+
+
 def server_alone(yielded):
     """For a server ask started whose port never opened: what the job printed, and the same server started without ask, with how
     long its port took. It tells a slow machine from a sandbox that keeps the server from listening."""
@@ -357,8 +370,7 @@ def server_alone(yielded):
     except OSError as error:
         printed = str(error)
     port, began = free_port(), time.time()
-    alone = subprocess.Popen(["python3", "-m", "http.server", str(port), "--bind", "127.0.0.1"], stdout=subprocess.PIPE,
-                             stderr=subprocess.STDOUT, text=True)
+    alone = subprocess.Popen(serving(port), shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True)
     while time.time() - began < 60 and not accepts(port) and alone.poll() is None:
         time.sleep(0.2)
     took = f"its port opened after {time.time() - began:.1f} s" if accepts(port) else f"its port did not open in {time.time() - began:.0f} s"
@@ -371,7 +383,7 @@ def probe_jobs():
     print("F: a server run as a job: yielded, waited on, used, stopped; a long output kept in a file")
     project, state, port = tempfile.mkdtemp(), tempfile.mkdtemp(), free_port()
     server = Server([
-        turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
+        turn([("call", "t1", "bash", {"command": serving(port), "yield_seconds": 1})], "tool_use"),
         turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
         turn([("tool", "t3", f"curl -s http://127.0.0.1:{port}/ | head -c 200")], "tool_use"),
         turn([("tool", "t4", "awk 'BEGIN { for (n = 1; n <= 1500000; n++) print n }'")], "tool_use"),  # macOS seq prints 1.5e+06
@@ -402,7 +414,7 @@ def probe_jobs_end_with_ask():
     print("G: a job left running when -p ends is stopped with it")
     project, state, port = tempfile.mkdtemp(), tempfile.mkdtemp(), free_port()
     server = Server([
-        turn([("call", "t1", "bash", {"command": f"exec python3 -m http.server {port} --bind 127.0.0.1", "yield_seconds": 1})], "tool_use"),
+        turn([("call", "t1", "bash", {"command": serving(port), "yield_seconds": 1})], "tool_use"),
         turn([("call", "t2", "job", {"job": "job-1", "action": "wait", "wait_for_port": port, "timeout_seconds": 20})], "tool_use"),
         turn([("text", "Left it running.")], "end_turn")])
     run = subprocess.run([ASK, "-p", "Serve and leave it."], cwd=project, env=environment(state, server.url),
