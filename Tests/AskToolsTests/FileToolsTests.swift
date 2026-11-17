@@ -98,7 +98,12 @@ struct FileToolsTests {
         let replaced = await WriteTool()
             .run(input(#"{"path":"dup.txt","old_text":"token","new_text":"one","replace_all":true}"#), in: context)
         #expect(!replaced.isError)
+        #expect(replaced.content == "Replaced 3 occurrences in dup.txt.", "\(replaced.content)")
         #expect(try contents("dup.txt") == "one one one")
+        try file("single.txt", "just one token here")
+        let single = await WriteTool()
+            .run(input(#"{"path":"single.txt","old_text":"token","new_text":"word"}"#), in: context)
+        #expect(single.content == "Replaced 1 occurrence in single.txt.", "\(single.content)")
     }
 
     @Test func `write rejects ambiguous modes without touching the file`() async throws {

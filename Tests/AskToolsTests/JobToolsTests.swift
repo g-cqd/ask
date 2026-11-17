@@ -116,6 +116,16 @@ struct JobToolsTests {
         #expect(try await ProcessExit.observed(child), "the backgrounded child must die with the group")
     }
 
+    /// ADR-0160: a stop that happened is the tool succeeding; a stop of what had already been stopped is told as it ended, an error.
+    @Test func `stopping a job that was already stopped says so, and is no success`() async throws {
+        _ = try await started(#"sleep 300 & echo "child $!"; wait"#, printed: "child ")
+        let tool = JobActionTool(jobs: jobs)
+        let first = await tool.run(input(#"{"job":"job-1","action":"stop"}"#), in: context)
+        #expect(!first.isError && first.content.hasPrefix("[job-1 stopped]"), "\(first)")
+        let again = await tool.run(input(#"{"job":"job-1","action":"stop"}"#), in: context)
+        #expect(again.isError && again.content.hasPrefix("[job-1 had already ended]"), "\(again)")
+    }
+
     @Test(arguments: [false, true])
     func `ask exiting stops every job, waiting or not`(atOnce: Bool) async throws {
         let (_, started) = try await started(#"sleep 300 & echo "child $!"; wait"#, printed: "child ")

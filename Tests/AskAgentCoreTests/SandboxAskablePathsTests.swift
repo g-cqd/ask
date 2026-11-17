@@ -94,11 +94,15 @@ struct SandboxAskablePathsTests {
         guard case .refused(let asked) = request.applied(to: policy, workingDirectory: workspace) else {
             return #expect(Bool(false), "a protected path is not taken without asking")
         }
-        #expect(asked.first?.contains(".zshrc") == true)
+        #expect(asked.first?.hasPrefix("writing /Users/someone/.zshrc (protected: ") == true, "\(asked)")
         let granted = request.granted(over: policy, workingDirectory: workspace)
         #expect(may(granted, .write, home + "/.zshrc"))
         #expect(!may(granted, .write, home + "/.bashrc"), "only what was asked for")
         let read = try #require(try SandboxRequest.in(input(#"{"sandbox":{"read":["/Users/someone/.config/gh"]}}"#)))
+        guard case .refused(let reading) = read.applied(to: policy, workingDirectory: workspace) else {
+            return #expect(Bool(false), "a protected path is not read without asking")
+        }
+        #expect(reading.first?.hasPrefix("reading /Users/someone/.config/gh (protected: ") == true, "\(reading)")
         #expect(may(read.granted(over: policy, workingDirectory: workspace), .read, home + "/.config/gh/hosts.yml"))
     }
 
