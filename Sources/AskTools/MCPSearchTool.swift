@@ -3,7 +3,8 @@ public import AskAI
 public import AskAgentCore
 internal import Foundation
 
-/// `search_catalog`: finds tools among the servers that have too many to list (ADR-0100).
+/// `search_catalog`: finds tools among the servers that have too many to list (ADR-0100). What it finds is called with
+/// `dispatch_call` and never joins the tool list (ADR-0163): a list that changes costs the next request the provider's cache.
 struct MCPSearchTool: ArgumentTool {
     struct Arguments: Decodable, Sendable {
         let query: String
@@ -25,12 +26,11 @@ struct MCPSearchTool: ArgumentTool {
             description: """
                 Find a tool among the MCP servers that have too many to list here: \(reached).
                 Search by words from what you want to do (a part of a tool's name counts most); each match shows what the tool \
-                does and the schema of its arguments. Matches become directly callable on the next turn; dispatch_call also \
-                works.
+                does and the schema of its arguments. Call what it finds with dispatch_call.
                 """
         ) {
             ToolProperty.string("query")
-                .described("Words from what you want to do; empty lists every tool's name, and makes none callable.")
+                .described("Words from what you want to do; empty lists every tool's name.")
             ToolProperty.string("server").described("Only this server's tools.").optional
         }
     }
@@ -49,7 +49,6 @@ struct MCPSearchTool: ArgumentTool {
                 "No tool matches \"\(words)\". Search with other words, or with an empty query to list the names."
             )
         }
-        catalog.promote(matches)
         let more =
             matches.count == Self.limit
             ? "\n\n(The best \(Self.limit); narrow the words or name a server for others.)" : ""

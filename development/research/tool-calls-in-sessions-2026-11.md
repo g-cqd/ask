@@ -68,7 +68,7 @@ From the first request of `ask -p hi` on `97d9ffd2` (10 tools, 8,028 characters 
 | `tasks` | 1,011 | `changes` 562, `read` 195 (the rest an earlier shape) |
 | `notes` | 457 | `read` 340, `changes` 123 |
 | `narrow_sandbox` | 5 | `reset: true` 4, `sandbox` 1 |
-| `search_catalog`, `server_resource`, `dispatch_call` | 4, 2, 0 | |
+| `search_catalog`, `server_resource`, `dispatch_call` | 4, 2, 0 | a tool a search promoted was called 5 times; what a promotion cost the cache is in ADR-0163 |
 
 Read with care: these are one person's sessions on a Swift codebase with few PDFs, no video, and MCP servers connected on
 few days. An argument never given here is not an argument nobody needs; it is one whose bytes were paid 47,227 times for nothing

@@ -61,43 +61,37 @@ struct MCPExposureTests {
         #expect(throws: ConfigurationError.self) { try setting(fields) }
     }
 
-    @Test func `browsing does not promote and each search replaces a bounded promoted set`() async throws {
+    /// ADR-0163: a tool list that changes costs the next request the provider's cache, so a search adds nothing to it.
+    @Test(arguments: ["", "tool", "tool12", "zebra"])
+    func `a search leaves the tool list as it was, and what it found is called through dispatch_call`(_ words: String)
+        async throws
+    {
         let names = (1 ... 12).map { "tool\($0)" }
-        let host = world.host([try setting("mode:'search'")], ["s": FakeMCPServer(tools: names)])
+        let fake = FakeMCPServer(tools: names)
+        let host = world.host([try setting("mode:'search'")], ["s": fake])
         host.start()
         await host.waitUntilSettled()
-        _ = try await world.call("search_catalog", #"{"query":""}"#)
-        #expect(world.offered.sorted() == ["dispatch_call", "search_catalog"])
-        _ = try await world.call("search_catalog", #"{"query":"tool"}"#)
-        #expect(world.offered.filter { $0.hasPrefix("mcp__s__") }.count == 8)
-        _ = try await world.call("search_catalog", #"{"query":"tool12"}"#)
-        #expect(world.offered.filter { $0.hasPrefix("mcp__s__") } == ["mcp__s__tool12"])
+        let before = try ToolRegistry([], live: world.live).definitions
+        _ = try await world.call("search_catalog", #"{"query":"\#(words)"}"#)
+        #expect(try ToolRegistry([], live: world.live).definitions == before)
+        #expect(world.offered == ["search_catalog", "dispatch_call"])
+        #expect(try await world.call("mcp__s__tool12").isError && fake.calls.isEmpty, "found is not offered")
+        #expect(try await world.call("dispatch_call", #"{"server":"s","tool":"tool12"}"#) == ToolOutput("ran tool12"))
         await host.stop()
         #expect(world.offered.isEmpty)
     }
 
-    @Test func `search promotes matches and a tool-list change withdraws stale promotions`() async throws {
+    @Test func `a tool the server withdrew is no longer called`() async throws {
         let fake = FakeMCPServer(tools: ["read", "write"])
         let host = world.host([try setting("mode:'search'")], ["s": fake])
         host.start()
         await host.waitUntilSettled()
-        _ = try await world.call("search_catalog", #"{"query":"read"}"#)
-        #expect(world.offered.contains("mcp__s__read"))
-        #expect(!world.offered.contains("mcp__s__write"))
-        #expect(try await world.call("mcp__s__read") == ToolOutput("ran read"))
-        let narrowing = SessionNarrowing()
-        narrowing.policy = SandboxPolicy(network: .none)
-        let restricted = ToolContext(workingDirectory: "/tmp", sandbox: .unrestricted, narrowing: narrowing)
-        #expect(try await world.call("mcp__s__read", in: restricted).isError)
-        #expect(fake.calls.map(\.name) == ["read"])
-        let staleMatches = host.catalog.candidates
+        #expect(try await world.call("dispatch_call", #"{"server":"s","tool":"read"}"#) == ToolOutput("ran read"))
         fake.setTools(["write"])
         fake.announceChange()
         await host.waitUntilListed("s", times: 2)
-        host.catalog.promote(staleMatches.filter { $0.tool.name == "read" })
-        #expect(!world.offered.contains("mcp__s__read"))
-        #expect(try await world.call("mcp__s__read").isError)
+        #expect(try await world.call("dispatch_call", #"{"server":"s","tool":"read"}"#).isError)
+        #expect(fake.calls.map(\.name) == ["read"])
         await host.stop()
-        #expect(world.offered.isEmpty)
     }
 }

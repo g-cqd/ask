@@ -77,7 +77,7 @@ public final class MCPHost: Sendable {
         self.resourceListChanged = resourceListChanged
         self.servers = servers
         self.live = live
-        catalog = MCPCatalog(live: live)
+        catalog = MCPCatalog()
         self.environment = environment
         self.maximumDirectTools = maximumDirectTools
         self.makeTransport = transport

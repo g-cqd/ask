@@ -127,8 +127,11 @@ def probe_b(binary):
     server.httpd.shutdown()
     names = [t["name"] for t in server.requests[0]["body"]["tools"]] if server.requests else []
     got = tool_results(server) if len(server.requests) == 3 else {}
+    lists = [json.dumps(request["body"]["tools"]) for request in server.requests]
     return all([
         check("the run finishes", process.returncode == 0 and len(server.requests) == 3, f"{process.returncode} {process.stderr[-300:]}"),
+        check("the tool list is the same after the search as before it: the provider's cache starts with it (ADR-0163)",
+              len(set(lists)) == 1, [t["name"] for t in server.requests[1]["body"]["tools"]][-3:] if len(server.requests) > 1 else None),
         check("the two tools are offered and none of the server's 20", "search_catalog" in names and "dispatch_call" in names and "mcp_search" not in names and "mcp_call" not in names
               and not any(n.startswith("mcp__") for n in names), names),
         check("the search finds the tool and shows its schema", "many / t17" in got.get("s1", "") and '"type": "object"' in got.get("s1", "").replace('"type":"object"', '"type": "object"'), got.get("s1")),
