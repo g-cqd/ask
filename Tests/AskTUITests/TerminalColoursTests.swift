@@ -14,7 +14,10 @@ struct TerminalColoursTests {
     /// A terminal that says when it has been written to, so a test can wait for a write made off its own task.
     private final class SignallingConnection: TerminalConnection {
         let inner = MockTerminalConnection()
-        let written = DispatchSemaphore(value: 0)
+        let written: AsyncStream<Void>
+        private let wrote: AsyncStream<Void>.Continuation
+
+        init() { (written, wrote) = AsyncStream.makeStream(of: Void.self) }
 
         func read(into buffer: UnsafeMutableRawBufferPointer) throws(TerminalError) -> Int {
             try inner.read(into: buffer)
@@ -22,7 +25,7 @@ struct TerminalColoursTests {
         func write(_ bytes: [UInt8]) throws(TerminalError) { try writeContiguous(ContiguousArray(bytes)) }
         func writeContiguous(_ bytes: ContiguousArray<UInt8>) throws(TerminalError) {
             try inner.writeContiguous(bytes)
-            written.signal()
+            wrote.yield()
         }
         func enterRawMode() throws(TerminalError) { try inner.enterRawMode() }
         func restoreMode() throws(TerminalError) { try inner.restoreMode() }
@@ -88,12 +91,14 @@ struct TerminalColoursTests {
         #expect(plain.theme.inputBackground == .default)
     }
 
-    @Test func `the colours take their own events, ask off the loop, and follow only on auto`() throws {
+    @Test func `the colours take their own events, ask off the loop, and follow only on auto`() async throws {
         let connection = SignallingConnection()
         var colours = try #require(TerminalColours(following: ScreenOptions(), connection: connection))
         #expect(colours.take(.askColours) == .consumed)
-        // A bound far outside what a runner with its pool threads blocked by other suites delays the write by.
-        #expect(connection.written.wait(timeout: .now() + 60) == .success)
+        // The write is made by a task of its own, so it is waited for without holding the thread that task may need: a semaphore
+        // here kept a pool of one thread from ever writing (`LIBDISPATCH_COOPERATIVE_POOL_STRICT=1`, 2026-11-16).
+        var writes = connection.written.makeAsyncIterator()
+        await writes.next()
         #expect(connection.inner.writtenOutput == PageFollower.query)
         #expect(colours.take(.input(.unknown(Array("\u{1b}]10;rgb:00/00/00\u{07}".utf8)))) == .consumed)
         #expect(colours.take(.input(.unknown(Array("\u{1b}]11;rgb:ff/ff/ff\u{07}".utf8)))) == .page(.light))

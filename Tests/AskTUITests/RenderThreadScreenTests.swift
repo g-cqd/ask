@@ -14,12 +14,20 @@ struct RenderThreadScreenTests {
     private final class StallingFirstFrame: TerminalConnection {
         private let inner = MockTerminalConnection()
         private let writes = Atomic<Int>(0)
-        let stalled = DispatchSemaphore(value: 0)
+        private let stalled: AsyncStream<Void>
+        private let stalling: AsyncStream<Void>.Continuation
         private let release = DispatchSemaphore(value: 0)
+
+        init() { (stalled, stalling) = AsyncStream.makeStream(of: Void.self) }
 
         var output: [UInt8] { inner.writtenOutput }
         func feedInput(_ bytes: [UInt8]) { inner.feedInput(bytes) }
-        func waitUntilStalled() { stalled.wait() }
+        /// Returns once the first frame is in its write. Awaited, not blocked on: the screen runs on the pool this caller is on, and
+        /// a semaphore here kept a pool of one thread from ever starting it (`LIBDISPATCH_COOPERATIVE_POOL_STRICT=1`, 2026-11-16).
+        func waitUntilStalled() async {
+            var stalls = stalled.makeAsyncIterator()
+            await stalls.next()
+        }
         func releaseFrame() { release.signal() }
 
         func read(into buffer: UnsafeMutableRawBufferPointer) throws(TerminalError) -> Int {
@@ -28,7 +36,7 @@ struct RenderThreadScreenTests {
         func write(_ bytes: [UInt8]) throws(TerminalError) { try writeContiguous(ContiguousArray(bytes)) }
         func writeContiguous(_ bytes: ContiguousArray<UInt8>) throws(TerminalError) {
             if writes.add(1, ordering: .acquiringAndReleasing).newValue == 2 {
-                stalled.signal()
+                stalling.yield()
                 release.wait()
             }
             try inner.writeContiguous(bytes)
@@ -63,7 +71,7 @@ struct RenderThreadScreenTests {
             )
         }
 
-        connection.waitUntilStalled()  // the first frame is in a write that will not return
+        await connection.waitUntilStalled()  // the first frame is in a write that will not return
         var received = prompts.makeAsyncIterator()
         let prompt = await received.next()  // handled all the same
         connection.releaseFrame()
