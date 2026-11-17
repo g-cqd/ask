@@ -11,13 +11,15 @@ public struct SessionSearchTool: Tool {
     public let definition = ToolDefinition(
         name: "search_session",
         description: """
-            Search this session's whole history, what compaction folded away included (typed lines, replies, tool calls and results, \
-            summaries); typos and parts of identifiers match. kind: user, reply, call, tool, summary.
+            Search this session's whole history, what compaction folded away included: typed lines, replies, tool calls and \
+            results, summaries.
+            Typos and parts of identifiers match. Each hit says where it is and shows the text around it.
             """
     ) {
-        ToolProperty.string("query")
-        ToolProperty.string("kind").optional
-        ToolProperty.integer("limit", minimum: 1, maximum: 50).optional
+        ToolProperty.string("query").described("Words to look for.")
+        ToolProperty.string("kind").described("Only one kind: user, reply, call, tool or summary.").optional
+        ToolProperty.integer("limit", minimum: 1, maximum: 50).described("At most this many hits: 10 unless given.")
+            .optional
     }
 
     private let currentSession: @Sendable () -> SessionRecorder?

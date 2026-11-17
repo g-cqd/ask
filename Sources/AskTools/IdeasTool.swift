@@ -6,33 +6,31 @@ public import AskAgentCore
 public struct IdeasTool: ArgumentTool {
     public typealias Arguments = IdeaRequest
 
-    public let definition = ToolDefinition(
+    public let definition = ListToolSchema.definition(
         name: "notes",
         description: """
-            The person's notes: read them when asked and when you finish work. Shaped as tasks; ids n3 n5-n9. A change sets \
-            their state, and task the task one became.
+            The person's notes to you: read them when asked, and when you finish work.
+            A change only marks what became of some. Shaped as tasks, with ids n3 n5-n9.
             """,
-        fields: [
-            .init(
-                "changes",
-                .array(
-                    .object([
-                        // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
-                        .init("ids", .string()), .init("state", .choice(["acknowledged", "fulfilled", "dismissed"])),
-                        .init("task", .string())
-                    ])
-                )
-            ),
-            .init(
-                "read",
-                .object([
-                    // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
-                    .init("view", .choice(["new", "open", "all", "summary"])), .init("ids", .string()),
-                    .init("text", .string()), .init("limit", .integer())
-                ])
-            )
-        ]
+        change: Self.mark,
+        changes: "Marks, made in order.",
+        read: ListToolSchema.read(
+            views: ["new", "open", "all", "summary"],
+            view: "open unless given; new: not yet acknowledged.",
+            noun: "notes"
+        )
     )
+
+    private static let mark: [ToolSchema.Field] = [
+        // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
+        .init("ids", .string(), "The notes to mark."),
+        .init(
+            "state",
+            .choice(["acknowledged", "fulfilled", "dismissed"]),
+            "acknowledged: read. fulfilled: done. dismissed: not to be done."
+        ),
+        .init("task", .string(), "The one task a note became: t12.")
+    ]
 
     private let board: IdeaBoard
     private let tasks: TaskBoard

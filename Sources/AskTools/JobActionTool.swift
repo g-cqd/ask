@@ -29,20 +29,30 @@ public struct JobActionTool: ArgumentTool, JobTool {
 
     public let definition = ToolDefinition(
         name: "job",
-        description:
-            "Send input (default), inspect status, stop, or wait. wait ends on output/port/file readiness or job completion. "
-            + "timeout_seconds: input default 1, wait default 60, max 600. A wait timeout/cancel leaves the job running."
+        description: """
+            Act on a command bash left running as a job: write to it, read its status and what it printed since, wait for it, \
+            or stop it.
+            A wait returns when the job ends or when what a wait_for names happens; when its time is up the job is left \
+            running. Stop the jobs you started once they are no longer needed.
+            """
     ) {
-        ToolProperty.string("job")
+        ToolProperty.string("job").described("The job's name, as bash gave it: job-1.")
         // @dl:accept -- independent tools declare wire fields through the same builder; their field lists are data
-        ToolProperty.schema("action", #"{"type":"string","enum":["input","status","stop","wait"]}"#).optional
-        ToolProperty.string("text").optional
-        ToolProperty.boolean("close_input").optional
-        ToolProperty.integer("timeout_seconds", minimum: 1, maximum: 600).optional
-        ToolProperty.string("wait_for_output", minLength: 1).optional
-        ToolProperty.integer("wait_for_port", minimum: 1, maximum: 65_535).optional
+        ToolProperty.schema("action", #"{"type":"string","enum":["input","status","stop","wait"]}"#)
+            .described("What to do: input unless given.").optional
+        ToolProperty.string("text").described("With input: what to write to the job's standard input.").optional
+        ToolProperty.boolean("close_input").described("With input: close the job's standard input after writing.")
+            .optional
+        ToolProperty.integer("timeout_seconds", minimum: 1, maximum: 600)
+            .described("How long to wait: 1 with input, 60 with wait, unless given.")
+            .optional
+        ToolProperty.string("wait_for_output", minLength: 1)
+            .described("Return once the job prints this text.").optional
+        ToolProperty.integer("wait_for_port", minimum: 1, maximum: 65_535)
+            .described("Return once this local port accepts connections.").optional
         // @dl:accept -- tool declarations share schema/storage/initializer syntax, not a second implementation
-        ToolProperty.string("wait_for_file", minLength: 1).optional
+        ToolProperty.string("wait_for_file", minLength: 1)
+            .described("Return once this file exists.").optional
     }
 
     private let access: JobAccess

@@ -30,12 +30,16 @@ public struct SkillTool: ArgumentTool {
 
     public let definition = ToolDefinition(
         name: "skill",
-        description:
-            "Load instructions by name, or search metadata with query (empty browses, at most 8 results). from narrows source/scope."
+        description: """
+            Load a skill's instructions by name, or search the skills with query.
+            A search shows at most 8, each with its name, what it is for and where it comes from.
+            """
     ) {
-        ToolProperty.string("name", minLength: 1).optional
-        ToolProperty.string("query").optional
-        ToolProperty.string("from").optional
+        // @dl:accept -- a tool declares its arguments and what each says through one builder: the lists are data
+        ToolProperty.string("name", minLength: 1).described("The skill to load. Not with query.").optional
+        ToolProperty.string("query").described("Words to search names and descriptions for; empty browses.").optional
+        ToolProperty.string("from")
+            .described("Only these sources or scopes, space-separated.").optional
     }
 
     private let catalog: SkillCatalog

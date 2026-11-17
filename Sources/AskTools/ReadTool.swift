@@ -31,25 +31,31 @@ public struct ReadTool: ArgumentTool {
     public let definition = ToolDefinition(
         name: "read",
         description: """
-            Read a UTF-8 text file (optionally offset, the 1-based first line, and limit, a line count), or show an image \
-            (PNG, JPEG, GIF, WebP, BMP, TIFF, HEIC, AVIF), a PDF, or a video (MP4, MOV, M4V) as pictures. For a PDF, pages \
-            such as "1-3,7" chooses pages; a page with text comes as text and one without as a picture, and render \
-            gives pictures of every page. For a video, at (seconds) takes exact frames; otherwise count frames are spread \
-            over start..end (seconds), or one is taken every `every` seconds. max_images (default 8, at most 20) limits the \
-            pictures returned by one call.
+            Read a file: text as text; an image (PNG, JPEG, GIF, WebP, BMP, TIFF, HEIC, AVIF), a PDF or a video (MP4, MOV, M4V) \
+            as pictures.
+            Text comes whole unless offset or limit choose lines. A PDF page with text comes as text, one without as a picture.
             """
     ) {
-        ToolProperty.string("path")
-        ToolProperty.integer("offset", minimum: 1).optional
-        ToolProperty.integer("limit", minimum: 1).optional
-        ToolProperty.string("pages").optional
-        ToolProperty.schema("at", #"{"type":"array","items":{"type":"number","minimum":0}}"#).optional
-        ToolProperty.integer("count", minimum: 1, maximum: 20).optional
-        ToolProperty.schema("every", #"{"type":"number","exclusiveMinimum":0}"#).optional
-        ToolProperty.schema("start", #"{"type":"number","minimum":0}"#).optional
-        ToolProperty.schema("end", #"{"type":"number","minimum":0}"#).optional
-        ToolProperty.integer("max_images", minimum: 1, maximum: 20).optional
-        ToolProperty.boolean("render").optional
+        ToolProperty.string("path").described("The file: absolute, or relative to the working directory.")
+        ToolProperty.integer("offset", minimum: 1).described("Text: the first line to return, counting from 1.")
+            .optional
+        ToolProperty.integer("limit", minimum: 1).described("Text: how many lines to return.").optional
+        // @dl:accept -- a tool declares its arguments and what each says through one builder: the lists are data
+        ToolProperty.string("pages").described(#"PDF: the pages to read, such as "1-3,7"."#).optional
+        ToolProperty.schema("at", #"{"type":"array","items":{"type":"number","minimum":0}}"#)
+            .described("Video: the seconds at which to take frames, exactly.").optional
+        ToolProperty.integer("count", minimum: 1, maximum: 20)
+            .described("Video: how many frames, spread evenly from start to end.").optional
+        ToolProperty.schema("every", #"{"type":"number","exclusiveMinimum":0}"#)
+            .described("Video: a frame every this many seconds.").optional
+        ToolProperty.schema("start", #"{"type":"number","minimum":0}"#)
+            .described("Video: where the frames begin, in seconds.").optional
+        ToolProperty.schema("end", #"{"type":"number","minimum":0}"#)
+            .described("Video: where the frames end, in seconds.").optional
+        // @dl:accept -- a tool declares its arguments and what each says through one builder: the lists are data
+        ToolProperty.integer("max_images", minimum: 1, maximum: 20)
+            .described("The most pictures one call returns: 8 unless given.").optional
+        ToolProperty.boolean("render").described("PDF: every page as a picture, also a page that has text.").optional
         // @dl:accept -- the file tools share a tool's shape: a schema, an empty init, and a run that asks the sandbox first
         SandboxRequest.property
     }

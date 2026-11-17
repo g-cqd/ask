@@ -72,7 +72,7 @@ struct CodemodeLanguageTests {
         let schema = String(decoding: with.inputSchema.bytes, as: UTF8.self)
         #expect(with.description.contains("await tools.<name>({...})"))
         #expect(with.description.contains("await tools.name(key=value)") && !with.description.contains("true"))
-        #expect(schema.contains(#""language":{"type":"string","enum":["javascript","python"]}"#))
+        #expect(schema.contains(#""language":{"type":"string","enum":["javascript","python"],"description":"#))
         #expect(schema.contains(#""required":["code"]"#), "the language is optional")
         let without = tool(python: false).definition
         #expect(!without.description.contains("Python") && !without.description.contains("python"))

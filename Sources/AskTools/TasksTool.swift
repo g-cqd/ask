@@ -6,31 +6,51 @@ public import AskAgentCore
 public struct TasksTool: ArgumentTool {
     public typealias Arguments = TaskRequest
 
-    public let definition = ToolDefinition(
+    public let definition = ListToolSchema.definition(
         name: "tasks",
         description: """
-            Your task list, outside your context: read it when you start work. Send changes, a read, or both; changes are all \
-            or none, and repeating one is harmless. Ids and tags are space-separated: t3 t5-t9, @1 for this call's first add. \
-            Reading ids shows them in full.
+            Your task list, outside your context: read it when you start work.
+            A call makes changes, a read, or both. Changes are made all or none, and repeating one is harmless. An id is t3; \
+            several are space-separated, with ranges: t3 t5-t9; @1 is this call's first add.
             """,
-        fields: [
-            .init("changes", .array(.object(Self.change))),
-            .init("read", .object(Self.read))
-        ]
+        change: Self.change,
+        changes: "Changes, made in order.",
+        read: Self.read
+    )
+
+    private static let read = ListToolSchema.read(
+        views: ["open", "done", "all", "summary"],
+        view: "open unless given.",
+        noun: "tasks"
     )
 
     private static let change: [ToolSchema.Field] = [
         // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
-        .init("op", .choice(["add", "edit", "state", "move", "link", "unlink", "remove"])), .init("ids", .string()),
+        .init(
+            "op",
+            .choice(["add", "edit", "state", "move", "link", "unlink", "remove"]),
+            """
+            add a task; edit one task's title, detail or tags; state sets the state of some; move puts one before another; \
+            link and unlink set blocked_by and related; remove.
+            """
+        ),
+        .init("ids", .string(), "The tasks to change; one for edit and move, none for add."),
         // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
-        .init("title", .string()), .init("detail", .string()), .init("state", .choice(["open", "in_progress", "done"])),
-        .init("tags", .string()), .init("blocked_by", .string()), .init("related", .string()),
-        .init("before", .string())
-    ]
-    private static let read: [ToolSchema.Field] = [
-        // @dl:accept -- the tasks and the ideas are two lists of one store (ADR-0141): their reads, inputs, tools and records share a shape over different fields
-        .init("view", .choice(["open", "done", "all", "summary"])), .init("ids", .string()), .init("text", .string()),
-        .init("limit", .integer())
+        .init("title", .string(), "At most \(ListLimits.titleLength) characters; the rest goes in detail."),
+        .init("detail", .string(), "More about the task."),
+        .init(
+            "state",
+            .choice(["open", "in_progress", "done"]),
+            "For add and state."
+        ),
+        .init(
+            "tags",
+            .string(),
+            "Space-separated words: lowercase letters, digits, dashes."
+        ),
+        .init("blocked_by", .string(), "Ids of tasks it waits for."),
+        .init("related", .string(), "Ids of tasks that bear on it."),
+        .init("before", .string(), "For move: an id, or end.")
     ]
 
     private let board: TaskBoard

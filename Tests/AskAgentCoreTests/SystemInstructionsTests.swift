@@ -12,7 +12,9 @@ struct SystemInstructionsTests {
 
     @Test func `the instructions say how to run long commands as jobs`() {
         let text = SystemInstructions.text(workingDirectory: "/w")
-        for word in ["yield_seconds", "wait", "job_input", "job_stop"] { #expect(text.contains(word), "\(word)") }
+        for word in ["yield_seconds", "use job to wait on them"] { #expect(text.contains(word), "\(word)") }
+        // Tools that were folded into `job`, which the instructions went on naming until 2026-11-17.
+        for gone in ["job_input", "job_stop"] { #expect(!text.contains(gone), "\(gone)") }
     }
 
     @Test func `the instructions say nothing about the sandbox, however the run is restricted`() {

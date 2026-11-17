@@ -7,18 +7,19 @@ internal import AskMCP
 /// `dispatch_call`: calls a tool found with `search_catalog` (ADR-0100). It runs outside ask's sandbox like every server's tool, so it refuses a
 /// narrowed session. Not `mcp_call`: Anthropic refuses a Claude subscription request that offers a tool called `mcp_call` or `mcp_search`,
 /// with an "out of extra usage" message (roadmap 0144); these names were checked live to pass.
+// @dl:accept -- a tool declares its arguments and what each says through one builder: the lists are data
 struct MCPCallTool: Tool {
     let definition = ToolDefinition(
         name: "dispatch_call",
         description: """
-            Call a tool of an MCP server that search_catalog found: the server, the tool's name, and its arguments as an object that fits the \
-            schema the search showed.
+            Call a tool of an MCP server that search_catalog found.
             """
     ) {
-        ToolProperty.string("server")
-        ToolProperty.string("tool")
+        ToolProperty.string("server").described("The server, as the search named it.")
+        ToolProperty.string("tool").described("The tool's name on that server.")
         // @dl:accept -- like server_resource, it holds what it reaches servers through and refuses a narrowed session first
-        ToolProperty.schema("arguments", #"{"type":"object"}"#).optional
+        ToolProperty.schema("arguments", #"{"type":"object"}"#)
+            .described("The tool's arguments, fitting the schema the search showed.").optional
     }
 
     private let catalog: MCPCatalog

@@ -82,4 +82,58 @@ struct ToolSchemaTests {
         #expect(schema(definition) == #"{"type":"object","properties":{"a\"b":{"type":"string"}},"required":["a\"b"]}"#)
         #expect((try? JSONObject(validating: definition.inputSchema.bytes)) != nil)
     }
+
+    @Test func `a property says what it is last, required or not, and what it says is escaped`() {
+        let definition = ToolDefinition(name: "x", description: "x") {
+            ToolProperty.string("path", minLength: 1).described("The file.")
+            ToolProperty.integer("limit", minimum: 1).described(#"How many "lines"."#).optional
+            ToolProperty.boolean("all").optional.described("Every one.")
+        }
+        let expected = #"""
+            {"type":"object","properties":{"path":{"type":"string","minLength":1,"description":"The file."},\#
+            "limit":{"type":"integer","minimum":1,"description":"How many \"lines\"."},\#
+            "all":{"type":"boolean","description":"Every one."}},"required":["path"]}
+            """#
+            .replacingOccurrences(of: "\n", with: "")
+        #expect(schema(definition) == expected)
+        #expect((try? JSONObject(validating: definition.inputSchema.bytes)) != nil)
+    }
+
+    @Test
+    func `a schema written as given says what it is before its closing brace, and one that says nothing is as given`() {
+        let raw = #"{"type":"array","items":{"type":"number"}}"#
+        let definition = ToolDefinition(name: "x", description: "x") {
+            ToolProperty.schema("at", raw).described("The seconds.").optional
+            ToolProperty.schema("plain", raw).optional
+        }
+        let expected = #"""
+            {"type":"object","properties":{\#
+            "at":{"type":"array","items":{"type":"number"},"description":"The seconds."},\#
+            "plain":{"type":"array","items":{"type":"number"}}}}
+            """#
+            .replacingOccurrences(of: "\n", with: "")
+        #expect(schema(definition) == expected)
+    }
+
+    @Test func `a field says what it is last, at any depth, and one that says nothing adds nothing`() {
+        let definition = ToolDefinition(
+            name: "x",
+            description: "x",
+            fields: [
+                .init(
+                    "changes",
+                    .array(.object([.init("op", .choice(["add"]), "What to do."), .init("id", .string())])),
+                    "In order."
+                ),
+                .init("limit", .integer(minimum: 1), "At most this many.")
+            ]
+        )
+        let expected = #"""
+            {"type":"object","properties":{"changes":{"type":"array","items":{"type":"object","properties":{\#
+            "op":{"enum":["add"],"description":"What to do."},"id":{"type":"string"}}},"description":"In order."},\#
+            "limit":{"type":"integer","minimum":1,"description":"At most this many."}}}
+            """#
+            .replacingOccurrences(of: "\n", with: "")
+        #expect(schema(definition) == expected)
+    }
 }

@@ -6,19 +6,29 @@ extension BashTool {
     static func makeDefinition(shell: String) -> ToolDefinition {
         ToolDefinition(
             name: "bash",
-            description:
-                "Run commands using \(shell) (\((shell as NSString).lastPathComponent) syntax\(note(shell))); "
-                + "the command to run goes in command, and shell names another shell's absolute path. "
-                + "timeout_seconds: default 120, max 600. yield_seconds backgrounds; wait_for_output/port/file waits for readiness."
+            description: """
+                Run a command in \(shell) (\((shell as NSString).lastPathComponent) syntax\(note(shell))) and return what it \
+                printed, then [exit N].
+                Each call starts in the working directory: a cd lasts for that command only. A command that does not parse is \
+                refused; one shellcheck faults (ls | grep, cd without || exit, an unquoted $(…)) is refused once: fix it, or \
+                send it again unchanged to run it as written. A server, a watcher or a long build goes on as a job when \
+                yield_seconds or a wait_for is given: the job tool then waits on it, writes to it and stops it.
+                """
         ) {
-            ToolProperty.string("command")
-            ToolProperty.integer("timeout_seconds", minimum: 1, maximum: 600).optional
+            ToolProperty.string("command").described("What to run.")
+            ToolProperty.integer("timeout_seconds", minimum: 1, maximum: 600)
+                .described("Stop the command after this long: 120 unless given.").optional
             // @dl:accept -- both tools intentionally expose the same readiness wire constraints
-            ToolProperty.integer("yield_seconds", minimum: 1, maximum: 600).optional
-            ToolProperty.string("wait_for_output", minLength: 1).optional
-            ToolProperty.integer("wait_for_port", minimum: 1, maximum: 65_535).optional
-            ToolProperty.string("wait_for_file", minLength: 1).optional
-            ToolProperty.string("shell").optional
+            ToolProperty.integer("yield_seconds", minimum: 1, maximum: 600)
+                .described("Return after this long; the command goes on as a job.").optional
+            ToolProperty.string("wait_for_output", minLength: 1)
+                .described("Return once it prints this text; it goes on as a job.").optional
+            ToolProperty.integer("wait_for_port", minimum: 1, maximum: 65_535)
+                .described("Return once this local port accepts connections; it goes on as a job.")
+                .optional
+            ToolProperty.string("wait_for_file", minLength: 1)
+                .described("Return once this file exists; it goes on as a job.").optional
+            ToolProperty.string("shell").described("Another shell for this command, by absolute path.").optional
             SandboxRequest.property
         }
     }

@@ -8,20 +8,24 @@ public struct QuestionTool: Tool {
     public let definition = ToolDefinition(
         name: "question",
         description: """
-            Ask the user up to 16 questions when only they can decide, each with up to 8 choices (one picked, or several with \
-            "multiple": true) and room for a note of their own ("note": "optional", "required" or "none"). The header is a tab \
-            label of at most 12 characters. Ask about real decisions, not to confirm what you were asked to do.
+            Ask the person up to 16 questions at once, when only they can decide.
+            Ask about real decisions, not to confirm what you were asked to do.
             """
     ) {
-        ToolProperty.schema("questions", QuestionTool.schema)
+        ToolProperty.schema("questions", QuestionTool.schema).described("The questions, each a tab the person answers.")
     }
 
     static let schema = #"""
         {"type":"array","minItems":1,"maxItems":16,"items":{"type":"object","required":["question","header"],"properties":{\#
-        "question":{"type":"string"},"header":{"type":"string","maxLength":12},\#
-        "choices":{"type":"array","maxItems":8,"items":{"type":"object","required":["label"],"properties":{\#
-        "label":{"type":"string"},"description":{"type":"string"}}}},\#
-        "multiple":{"type":"boolean"},"note":{"type":"string","enum":["optional","required","none"]}}}}
+        "question":{"type":"string","description":"What is asked, in full."},\#
+        "header":{"type":"string","maxLength":12,"description":"The tab's label: 12 characters at most."},\#
+        "choices":{"type":"array","maxItems":8,"description":"Answers to pick from; one is picked unless multiple.",\#
+        "items":{"type":"object","required":["label"],"properties":{\#
+        "label":{"type":"string","description":"The answer, in a few words."},\#
+        "description":{"type":"string","description":"What picking it means."}}}},\#
+        "multiple":{"type":"boolean","description":"Several choices may be picked."},\#
+        "note":{"type":"string","enum":["optional","required","none"],\#
+        "description":"Room for the person's own words: optional unless given."}}}}
         """#
 
     public init() {}

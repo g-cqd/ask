@@ -4,8 +4,9 @@ internal import AskAI
 extension CodemodeTool {
     /// What a script is for, and what bounds it, whatever it is written in.
     private static let purpose = """
-        instead of calling them one at a time. Use it for independent calls at once, for chains where one result feeds the next, \
-        and to filter large results down to what matters before they reach you.
+        instead of calling them one at a time.
+        Use it for independent calls at once, for chains where one result feeds the next, and to filter large results down to \
+        what matters before they reach you.
         """
     private static let limits = """
         Nothing else exists for a script: no files, network or other programs, everything goes through tools. A first line \
@@ -32,15 +33,16 @@ extension CodemodeTool {
                 description:
                     "Run one JavaScript script that calls the other tools, \(purpose) \(inJavaScript) \(limits)"
             ) {
-                ToolProperty.string("code", minLength: 1)
+                ToolProperty.string("code", minLength: 1).described("The script.")
             }
         }
         return ToolDefinition(
             name: "codemode",
             description: "Run one script that calls the other tools, \(purpose) \(inJavaScript) \(inPython) \(limits)"
         ) {
-            ToolProperty.string("code", minLength: 1)
-            ToolProperty.schema("language", #"{"type":"string","enum":["javascript","python"]}"#).optional
+            ToolProperty.string("code", minLength: 1).described("The script.")
+            ToolProperty.schema("language", #"{"type":"string","enum":["javascript","python"]}"#)
+                .described("What the script is written in: javascript unless given.").optional
         }
     }
 }

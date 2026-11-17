@@ -9,12 +9,15 @@ struct MCPResourceTool: Tool {
     let definition = ToolDefinition(
         name: "server_resource",
         description: """
-            Read what an MCP server offers as resources. The server alone lists its resources and URI templates; with a uri, from the list \
-            or a template filled in, reads it.
+            Read what an MCP server offers as resources: list them, or read one.
             """
     ) {
-        ToolProperty.string("server")
-        ToolProperty.string("uri").optional
+        ToolProperty.string("server").described("The server's name.")
+        ToolProperty.string("uri")
+            .described(
+                "The resource to read, from the list or a template filled in; left out, the list and the templates."
+            )
+            .optional
     }
 
     private let shelf: MCPResourceShelf

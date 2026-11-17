@@ -23,13 +23,15 @@ struct MCPSearchTool: ArgumentTool {
         definition = ToolDefinition(
             name: "search_catalog",
             description: """
-                Some MCP servers have too many tools to list here: \(reached). Find a tool among them by words from what you \
-                want to do (a part of a tool's name counts most); each match shows what the tool does and the schema of its \
-                arguments. Matches become directly callable on the next turn; dispatch_call also works. An empty query lists names without promoting them.
+                Find a tool among the MCP servers that have too many to list here: \(reached).
+                Search by words from what you want to do (a part of a tool's name counts most); each match shows what the tool \
+                does and the schema of its arguments. Matches become directly callable on the next turn; dispatch_call also \
+                works.
                 """
         ) {
             ToolProperty.string("query")
-            ToolProperty.string("server").optional
+                .described("Words from what you want to do; empty lists every tool's name, and makes none callable.")
+            ToolProperty.string("server").described("Only this server's tools.").optional
         }
     }
 

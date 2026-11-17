@@ -17,14 +17,18 @@ public indirect enum ToolSchema: Sendable, Equatable {
     public struct Field: Sendable, Equatable {
         public let name: String
         public let schema: ToolSchema
+        /// What the model is told this field is, beside its name and type (ADR-0157).
+        public let description: String?
 
-        public init(_ name: String, _ schema: ToolSchema) {
+        public init(_ name: String, _ schema: ToolSchema, _ description: String? = nil) {
             self.name = name
             self.schema = schema
+            self.description = description
         }
     }
 
-    func write(into writer: inout JSONStreamWriter) {
+    /// Writes this schema, and last what the field holding it is, when it says.
+    func write(into writer: inout JSONStreamWriter, describedAs description: String? = nil) {
         writer.object { writer in
             switch self {
                 case .string(let maxLength, let pattern):
@@ -48,6 +52,7 @@ public indirect enum ToolSchema: Sendable, Equatable {
                 case .object(let fields, let required, let closed):
                     Self.writeObject(fields, required, closed, into: &writer)
             }
+            if let description { writer.field("description", description) }
         }
     }
 
@@ -64,7 +69,7 @@ public indirect enum ToolSchema: Sendable, Equatable {
         writer.object { writer in
             for field in fields {
                 writer.key(field.name)
-                field.schema.write(into: &writer)
+                field.schema.write(into: &writer, describedAs: field.description)
             }
         }
         if !required.isEmpty {

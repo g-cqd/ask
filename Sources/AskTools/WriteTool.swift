@@ -22,14 +22,17 @@ public struct WriteTool: ArgumentTool {
 
     public let definition = ToolDefinition(
         name: "write",
-        description:
-            "Create, overwrite, or edit a file. Supply content (or new_text) to overwrite, or old_text and new_text for exact replacement."
+        description: """
+            Create or overwrite a file with content, or change part of one by replacing old_text with new_text.
+            old_text must be in the file exactly as written, and once only unless replace_all. Missing directories are made.
+            """
     ) {
-        ToolProperty.string("path")
-        ToolProperty.string("content").optional
-        ToolProperty.string("old_text", minLength: 1).optional
-        ToolProperty.string("new_text").optional
-        ToolProperty.boolean("replace_all").optional
+        ToolProperty.string("path").described("The file: absolute, or relative to the working directory.")
+        ToolProperty.string("content").described("The whole file. Not with old_text.").optional
+        ToolProperty.string("old_text", minLength: 1)
+            .described("The exact text to replace, enough of it to match once.").optional
+        ToolProperty.string("new_text").described("What replaces old_text.").optional
+        ToolProperty.boolean("replace_all").described("Replace every match.").optional
         SandboxRequest.property
     }
 
