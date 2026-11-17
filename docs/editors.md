@@ -39,8 +39,8 @@ Each thread the editor opens is an ask session, in the folder the editor names f
 ## What the editor shows
 
 - **The model's words and its thinking**, as they arrive.
-- **Each tool call**, as it begins and as it ends, with what the model asked for. A `write` or an `edit` is shown as a diff of the
-  file.
+- **Each tool call**, as it begins and as it ends, with what the model asked for. A `write` is shown as a diff of the file: the text it
+  replaces and what replaces it, or a whole file as added.
 - **A command that goes on** after its call has ended (a `bash` call that yields) keeps being told on that call as it prints, even
   after the turn has ended, and then how it ended.
 - **Approvals.** When a call needs your consent, the editor asks you, with the answers the screen offers (this time, for the

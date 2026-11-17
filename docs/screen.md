@@ -95,7 +95,7 @@ you send or copy.
   its plain text. A background colour is not drawn, so the block's own shows.
 - A compaction is a block of its own, folded by default, headed by what it did: `compaction · 182k → 3.1k tokens`, the tokens it read into the tokens
   of its summary, with its duration and status. Opened, it shows the summary, drawn as Markdown.
-- An `edit` block, opened, shows the change as lines: `- ` before each line it removes, on a red tint, `+ ` before each line it adds, on
+- A `write` block that changes part of a file, opened, shows the change as lines: `- ` before each line it removes, on a red tint, `+ ` before each line it adds, on
   a green one, and the lines it keeps between them. With `ui.highlight` on, the code is coloured by the file's language. Copying the
   block copies those lines.
 - Scroll with the wheel or **Page Up**. The view stays on what you were reading while new text arrives, and the status line counts the lines
