@@ -44,7 +44,7 @@ public enum SessionLog {
     /// ``snapshot(_:)`` with the pictures of tool results written to `images` and referenced by hash.
     static func snapshot(_ tree: SessionTree, images: SessionImageStore?) throws(SessionLogError) -> [UInt8] {
         var bytes = try encode(.header(version: formatVersion))
-        for entry in tree.entries { bytes += try encode(.entry(entry), images: images) }
+        for entry in tree.entries { bytes += try encode(.entry(try held(entry)), images: images) }
         for record in tree.threads { bytes += try encode(.thread(record)) }
         // Records of a type a newer ask wrote, in the order they came (ADR-0144).
         for line in tree.unknownRecords { bytes += line + [0x0A] }
@@ -63,7 +63,14 @@ public enum SessionLog {
 
     /// ``line(for:)`` with the pictures of tool results written to `images` and referenced by hash.
     static func line(for entry: SessionEntry, images: SessionImageStore?) throws(SessionLogError) -> [UInt8] {
-        try encode(.entry(entry), images: images)
+        try encode(.entry(try held(entry)), images: images)
+    }
+
+    /// `entry` with its payload in hand, read from the file if it was left there (roadmap 0238). One the file no longer has is not
+    /// written as the note that stands in for it: the session is not rewritten from what is missing.
+    private static func held(_ entry: SessionEntry) throws(SessionLogError) -> SessionEntry {
+        guard let held = entry.holding() else { throw .encodingFailed }
+        return held
     }
 
     /// One newline-terminated record selecting `leaf`, or a new root when nil.

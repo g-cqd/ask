@@ -13,29 +13,50 @@ struct SessionLogRecovery {
     /// Spliced-out compactions, mapped to the parent their children now attach to.
     private var spliced: [EntryID: EntryID?] = [:]
 
-    init(limits: SessionLog.Limits, images: SessionImageStore?) {
+    /// The file the lines come from, when an entry nothing is reading may stay in it instead of in memory (roadmap 0238): a plain
+    /// session, opened to work in. Listing sessions and checking a log do not read a line again, and pass none.
+    private let source: ColdSource?
+
+    init(limits: SessionLog.Limits, images: SessionImageStore?, source: ColdSource? = nil) {
+        self.source = source
         self.limits = limits
         if let images { decoder.userInfo[SessionImageStore.userInfoKey] = images }
     }
 
     /// The session the lines so far describe, and the repairs they needed.
     var result: RecoveredSession {
-        RecoveredSession(tree: SessionMigration.migrated(tree, from: version), issues: issues, formatVersion: version)
+        var migrated = SessionMigration.migrated(tree, from: version)
+        // Only now is the active branch known: what a request may read is held, the rest stays in the file.
+        if source != nil { migrated.holdWarm() }
+        return RecoveredSession(tree: migrated, issues: issues, formatVersion: version)
     }
 
     /// Skips line `number`, which is longer than ``SessionLog/Limits/maximumLineBytes``: a reader that streams the file drops it as it
     /// arrives instead of holding it.
     mutating func skipTooLong(number: Int) { issues.append(.lineTooLong(line: number)) }
 
-    mutating func consume(_ line: ArraySlice<UInt8>, number: Int, isFinal: Bool) throws(SessionLogError) {
+    /// - Parameters:
+    ///   - line: the record, without its line feed.
+    ///   - number: which line of the file it is.
+    ///   - offset: where the line starts in the file, which an entry left in it is read again from.
+    ///   - isFinal: whether it is the last, and has no line feed.
+    /// - Throws: ``SessionLogError`` for what recovery cannot repair.
+    mutating func consume(_ line: ArraySlice<UInt8>, number: Int, offset: Int = 0, isFinal: Bool)
+        throws(SessionLogError)
+    {
         guard line.count <= limits.maximumLineBytes else {
             skipTooLong(number: number)
             return
         }
-        let record: SessionLogRecord
+        var record: SessionLogRecord
         do {
             // The one copy at the boundary: the decoder reads a contiguous `[UInt8]`.
             record = try decoder.decode(SessionLogRecord.self, from: Array(line))
+            // Decoded, so any damage is found and said as it always was; then only where the record is is kept. A session that
+            // is migrated is read as it was migrated, not as the file says.
+            if let source, version == SessionLog.formatVersion, case .entry(let entry) = record {
+                record = .entry(entry.leavingInFile(of: source, at: offset, line: line))
+            }
         } catch {
             // What a newer ask wrote is kept, not read, and is no damage (ADR-0144); anything else that does not decode is.
             if let kept = newer(line) {
@@ -95,7 +116,7 @@ struct SessionLogRecovery {
     private mutating func restore(_ original: SessionEntry, line: Int) {
         var entry = original
         if let parent = entry.parentID, let replacement = spliced[parent] {
-            entry = SessionEntry(id: entry.id, parentID: replacement, payload: entry.payload)
+            entry = entry.reparented(to: replacement)
         }
         // At most two attempts: as written, then re-rooted when the parent is missing.
         for _ in 0 ..< 2 {
@@ -104,7 +125,7 @@ struct SessionLogRecovery {
                 return
             } catch .unknownEntry(let missing) {
                 issues.append(.orphanedEntry(entry.id, missingParent: missing, line: line))
-                entry = SessionEntry(id: entry.id, parentID: nil, payload: entry.payload)
+                entry = entry.reparented(to: nil)
             } catch .invalidCompactionBoundary(let boundary) {
                 issues.append(.droppedCompaction(entry.id, boundary: boundary, line: line))
                 spliced[entry.id] = .some(entry.parentID)

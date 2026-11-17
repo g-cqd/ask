@@ -26,12 +26,7 @@ public enum Compaction {
     /// - Parameter tree: the session.
     /// - Returns: input, cache-read, cache-write and output tokens of the newest response, or nil.
     static func contextTokens(sinceCompactionIn tree: borrowing SessionTree) -> Int? {
-        let newest = tree.nearest { payload in
-            switch payload {
-                case .response, .compaction: true
-                default: false
-            }
-        }
+        let newest = tree.nearest(where: { $0 == .response || $0 == .compaction })
         guard case .response(let response, _) = newest?.payload else { return nil }
         let usage = response.usage
         return (usage.input ?? 0) + (usage.cacheRead ?? 0) + (usage.cacheCreation ?? 0) + (usage.output ?? 0)

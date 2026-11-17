@@ -208,6 +208,8 @@ public struct SessionFile: ~Copyable {
     /// ``format`` keeps no original: it would be the session as it was, unencrypted when encryption is being turned on.
     mutating func rewrite(keepingOriginal: Bool = true) throws(SessionFileError) {
         let temporary = FilePath(path.string + ".tmp")
+        // What was left in the file is read now: the file is about to be replaced, and a payload it no longer has is no session to write.
+        guard tree.holdAll().isEmpty else { throw .log(.encodingFailed) }
         var encoded = try Self.encode(
             try SessionFileIO.encoded { () throws(SessionLogError) in try SessionLog.snapshot(tree, images: images) },
             format: format,

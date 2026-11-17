@@ -18,12 +18,16 @@ struct SessionLogReader {
         _ descriptor: FileDescriptor,
         limits: SessionLog.Limits,
         images: SessionImageStore?,
-        keyring: SessionKeyring? = nil
+        keyring: SessionKeyring? = nil,
+        source: ColdSource? = nil
     ) throws(SessionFileError) -> RecoveredSession {
         let size = Int(try SessionFileIO.io(.read) { try descriptor.seek(offset: 0, from: .end) })
         guard size <= limits.maximumArchiveBytes else { throw .log(.archiveTooLarge(size)) }
         _ = try SessionFileIO.io(.read) { try descriptor.seek(offset: 0, from: .start) }
-        var lines = Lines(recovery: SessionLogRecovery(limits: limits, images: images), limit: limits.maximumLineBytes)
+        var lines = Lines(
+            recovery: SessionLogRecovery(limits: limits, images: images, source: source),
+            limit: limits.maximumLineBytes
+        )
         var total = 0
         var framed: RecoveredSession?
         try readChunks(descriptor, size: size) { chunk throws(SessionFileError) in
@@ -80,6 +84,9 @@ struct SessionLogReader {
         private var pending: [UInt8] = []
         private var pendingTooLong = false
         private var number = 1
+        /// How many bytes the chunks before this one held, and where the line being gathered started.
+        private var fed = 0
+        private var pendingOffset = 0
 
         init(recovery: SessionLogRecovery, limit: Int) {
             self.recovery = recovery
@@ -87,10 +94,12 @@ struct SessionLogReader {
         }
 
         mutating func feed(_ chunk: ArraySlice<UInt8>) throws(SessionLogError) {
+            let origin = fed - chunk.startIndex
+            defer { fed += chunk.count }
             var start = chunk.startIndex
             while let end = chunk[start...].firstIndex(of: 0x0A) {
                 if pending.isEmpty, !pendingTooLong {
-                    try recovery.consume(chunk[start ..< end], number: number, isFinal: false)
+                    try recovery.consume(chunk[start ..< end], number: number, offset: origin + start, isFinal: false)
                 } else {
                     gather(chunk[start ..< end])
                     try endPending(isFinal: false)
@@ -98,6 +107,7 @@ struct SessionLogReader {
                 number += 1
                 start = end + 1
             }
+            if pending.isEmpty, !pendingTooLong { pendingOffset = origin + start }
             gather(chunk[start...])
         }
 
@@ -121,7 +131,7 @@ struct SessionLogReader {
             if pendingTooLong {
                 recovery.skipTooLong(number: number)
             } else {
-                try recovery.consume(pending[...], number: number, isFinal: isFinal)
+                try recovery.consume(pending[...], number: number, offset: pendingOffset, isFinal: isFinal)
             }
             pending.removeAll(keepingCapacity: true)
             pendingTooLong = false

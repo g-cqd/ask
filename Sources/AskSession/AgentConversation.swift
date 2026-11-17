@@ -112,16 +112,6 @@ final class AgentConversation: Conversation {
         if let grants { approvals.withLock { $0.restore(grants) } }
     }
 
-    /// What the screen shows first for a resumed session: its conversation, then its usage so far, which the
-    /// status line keeps adding to.
-    func history() -> [ConversationUpdate] {
-        guard let tree = session.withLock({ $0?.tree }) else { return [contextUpdate()] }
-        // With its threads' blocks where they started and merged (roadmap 0195).
-        let branch = tree.activeBranch()
-        let updates = replayed(branch, after: nil, placing: Self.threadBlocks(tree.threads, under: nil, on: branch))
-        return updates + [.status(usage.withLock { $0.compact }), contextUpdate()]
-    }
-
     func enqueue(_ text: String, id: Int, followUp: Bool) { enqueue(text, images: [], id: id, followUp: followUp) }
 
     func enqueue(_ text: String, images: [ToolImage], id: Int, followUp: Bool) {

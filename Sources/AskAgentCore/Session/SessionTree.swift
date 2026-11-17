@@ -8,7 +8,7 @@
 /// walking parents always terminates.
 public struct SessionTree: Sendable, Equatable {
     /// Every entry, in archive order, across all branches.
-    public private(set) var entries: [SessionEntry] = []
+    public internal(set) var entries: [SessionEntry] = []
     /// The selected entry, or nil when the next append starts a new root.
     public private(set) var leaf: EntryID?
     /// The strict sandbox the session last ran under, or nil when none was recorded (roadmap 0042). Metadata, not
@@ -18,7 +18,7 @@ public struct SessionTree: Sendable, Equatable {
     public private(set) var threads: [ThreadRecord] = []
     /// Records of a type a newer ask wrote (ADR-0144), each line without its newline, kept to be written back and never read.
     public private(set) var unknownRecords: [[UInt8]] = []
-    private var positions: [EntryID: Int] = [:]
+    var positions: [EntryID: Int] = [:]
     private var nextOrdinal = 0
 
     /// The longest identifier a restored archive may contain, in UTF-8 bytes.
@@ -49,7 +49,7 @@ public struct SessionTree: Sendable, Equatable {
         guard size > 0, size <= Self.maximumIdentifierBytes else { throw .invalidIdentifier(entry.id) }
         guard positions[entry.id] == nil else { throw .duplicateEntry(entry.id) }
         if let parent = entry.parentID, positions[parent] == nil { throw .unknownEntry(parent) }
-        try validate(entry.payload, under: entry.parentID)
+        if entry.kind == .compaction { try validate(entry.payload, under: entry.parentID) }
         positions[entry.id] = entries.count
         entries.append(entry)
         leaf = entry.id
@@ -156,11 +156,11 @@ public struct SessionTree: Sendable, Equatable {
     public func context() -> [SessionEntry] {
         let branch = activeBranch()
         guard
-            let compactionIndex = branch.lastIndex(where: { $0.payload.isCompaction }),
+            let compactionIndex = branch.lastIndex(where: { $0.kind == .compaction }),
             case .compaction(_, let firstKept) = branch[compactionIndex].payload,
             let keptIndex = branch[..<compactionIndex].firstIndex(where: { $0.id == firstKept })
         else { return branch }
-        let retained = branch[keptIndex ..< compactionIndex].filter { !$0.payload.isCompaction }
+        let retained = branch[keptIndex ..< compactionIndex].filter { $0.kind != .compaction }
         return [branch[compactionIndex]] + retained + branch[(compactionIndex + 1)...]
     }
 
@@ -172,12 +172,12 @@ public struct SessionTree: Sendable, Equatable {
 
     // MARK: - Private
 
-    /// The nearest entry on the active branch, the leaf first, that `matches` accepts.
-    /// - Complexity: O(distance from the leaf), not O(depth): it stops at the first match.
-    public func nearest(where matches: (SessionPayload) -> Bool) -> SessionEntry? {
+    /// The nearest entry on the active branch, the leaf first, of a kind that `matches` accepts.
+    /// - Complexity: O(distance from the leaf), not O(depth): it stops at the first match, and reads no payload.
+    public func nearest(where matches: (SessionEntry.Kind) -> Bool) -> SessionEntry? {
         var cursor = leaf
         while let current = cursor, let position = positions[current] {
-            if matches(entries[position].payload) { return entries[position] }
+            if matches(entries[position].kind) { return entries[position] }
             cursor = entries[position].parentID
         }
         return nil
@@ -212,7 +212,7 @@ public struct SessionTree: Sendable, Equatable {
         var cursor = parent
         while let current = cursor, let position = positions[current] {
             if current == firstKept {
-                guard !entries[position].payload.isCompaction else { break }
+                guard entries[position].kind != .compaction else { break }
                 return
             }
             cursor = entries[position].parentID
@@ -229,12 +229,5 @@ public struct SessionTree: Sendable, Equatable {
             nextOrdinal += 1
             if positions[candidate] == nil { return candidate }
         }
-    }
-}
-
-extension SessionPayload {
-    fileprivate var isCompaction: Bool {
-        if case .compaction = self { return true }
-        return false
     }
 }

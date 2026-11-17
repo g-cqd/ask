@@ -23,6 +23,11 @@ Once a turn, a compaction or a command has gone on for five seconds, a spinner l
 show progress themselves (iTerm2 3.6 or later, Ghostty 1.2 or later) are also told with OSC 9;4; others are not sent it, since an older
 terminal shows OSC 9 as a notification.
 
+A long conversation comes back showing what the model still reads: from the first message its last compaction kept, on. A line at
+the top says how many earlier entries there are. They stay in the file: `/search` finds them, and `/rewind` goes back to any prompt,
+earlier ones included, and shows the conversation as it was before that prompt. A session that was never compacted is shown whole.
+A plain session file is also not held whole in memory: what the model and the screen do not read is read from the file when asked.
+
 A session remembers the account it used and resumes on it. On exit, ask prints a command to resume the saved session in its
 working directory, retaining the launch flags and safely escaping spaces and shell metacharacters.
 

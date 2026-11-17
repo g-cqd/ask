@@ -24,7 +24,19 @@ fresh ask is 29 MB; two resumed on long sessions were 191 and 199 MB, with peaks
 The search index is let go once it is in its file, and read again by the next search or update (0.14 s for this session). One that
 could not be written is the only copy and stays. An index whose file was lost is now written again (it was not, while held).
 
-## Proposed, not decided: steps 2 to 4
+## Steps 2 and 3: done for a plain session (2026-11-17, ADR-0165, diary 2026-11-17-02)
+
+The tree leaves the payloads nothing reads in the session file, read back at an offset when asked; the screen shows the
+conversation since the last compaction's first kept entry, with a line saying what is left out. On the owner's session: resumed
+resident size 210 to 60 MiB, open 790 to 500 ms. What was proposed below is kept as it was written; the three points "to settle
+before step 2" were answered by probe, not by the owner: the readers of `entries` that need a payload are the replay, the search
+index, a fork and a rewrite, and each now reads it; a rewind's menu needs only prompts, which stay held; and a cold payload in a
+compressed file was not measured, since those sessions are held whole.
+
+Open: a compressed or encrypted session (a frame is not read at an offset), step 4's peaks, loading the earlier part on scrolling
+to the top.
+
+## Proposed, not decided: steps 2 to 4 (as first written)
 
 **2. The tree holds payloads for what a request can use, and where the rest is.** Entries off the active branch, and before the
 last compaction's first kept entry, keep their id, their parent, their kind and where their record is; the payload is read when

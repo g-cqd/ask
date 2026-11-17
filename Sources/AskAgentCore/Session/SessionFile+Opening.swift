@@ -116,7 +116,8 @@ extension SessionFile {
                 lock.descriptor,
                 limits: limits,
                 images: SessionImageStore(besideSessionAt: path.string),
-                keyring: keyring
+                keyring: keyring,
+                source: ColdSource(path: path)
             )
         var storage = SessionStorage(keyring: keyring)
         if let framing = recovered.framing {

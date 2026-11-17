@@ -20,7 +20,7 @@ package final class ServedSessions: Sendable {
         package var conversation: any Conversation { serving }
 
         /// What it holds now, as the screen would show it again, oldest first.
-        package func history() -> [ConversationUpdate] { serving.history() }
+        package func history() -> [ConversationUpdate] { serving.history(whole: true) }
     }
 
     /// A saved session opened again, and what it holds, oldest first.
