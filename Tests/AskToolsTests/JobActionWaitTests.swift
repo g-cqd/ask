@@ -40,6 +40,14 @@ struct JobActionWaitTests {
         #expect(reply.isError && reply.content.contains("READY") && reply.content.contains("[exit 7]"))
     }
 
+    /// ADR-0160: what marks a wait as failed is the command's exit, as it marks `bash`: a job that ended well is a result.
+    @Test func `a job that ended with exit 0 is a result, not an error`() async {
+        let job = await start("echo READY")
+        await job.ended()
+        let reply = await JobActionTool(jobs: jobs).run(input(#"{"job":"job-1","action":"wait"}"#), in: context)
+        #expect(reply == ToolOutput("[job-1 ended]\nREADY\n[exit 0]"))
+    }
+
     @Test(arguments: [false, true])
     func `timeout and cancellation leave an existing job running`(_ cancel: Bool) async throws {
         let job = await start()

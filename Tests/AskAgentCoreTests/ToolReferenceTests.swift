@@ -57,14 +57,25 @@ struct ToolReferenceTests {
     }
 
     @Test func `ask's own tool names map to themselves`() {
-        for name in ["read", "write", "edit", "bash", "wait", "job_input", "job_stop", "narrow_sandbox"] {
+        for name in ["read", "write", "bash", "job", "narrow_sandbox", "skill", "agent"] {
             #expect(ToolAliasTable.standard.lookup(name) == name, "\(name)")
         }
     }
 
+    /// ADR-0160: `edit`, `wait`, `job_input` and `job_stop` were folded into `write` and `job`, and a name that meant one of them
+    /// means the tool that does its work now.
+    @Test func `a name for a tool that was folded into another means that one`() {
+        let folded = [
+            "Edit": "write", "MultiEdit": "write", "str_replace_editor": "write", "apply_patch": "write",
+            "wait": "job", "BashOutput": "job", "job_input": "job", "send_command_input": "job", "KillShell": "job",
+            "job_stop": "job"
+        ]
+        for (spelling, tool) in folded { #expect(ToolAliasTable.standard.lookup(spelling) == tool, "\(spelling)") }
+    }
+
     @Test func `every spelling seen in the owner's harness files is mapped or deliberately not`() {
         let mapped = [
-            "write_to_file": "write", "replace_file_content": "edit", "multi_replace_file_content": "edit",
+            "write_to_file": "write", "replace_file_content": "write", "multi_replace_file_content": "write",
             "invoke_subagent": "agent"
         ]
         for (spelling, tool) in mapped { #expect(ToolAliasTable.standard.lookup(spelling) == tool, "\(spelling)") }

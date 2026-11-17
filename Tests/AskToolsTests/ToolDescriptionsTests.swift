@@ -11,7 +11,7 @@ internal import Testing
 @Suite("Every tool says what it is for in a line, and every argument says what it is")
 struct ToolDescriptionsTests {
     /// Every tool ask declares for a model, but an MCP server's own tools, whose words are the server's.
-    private static var declared: [ToolDefinition] {
+    static var declared: [ToolDefinition] {
         let jobs = JobTable()
         let catalog = MCPCatalog()
         return [

@@ -24,15 +24,19 @@ public struct ToolAliasTable: Sendable, Equatable {
         String(name.lowercased().filter { $0.isLetter || $0.isNumber })
     }
 
-    /// ask's tools, and the other names seen for them in real harness files. Tools ask does not have yet (`grep`, `find`, `ls`, `skill`, `agent`) are
-    /// here so a file written for them is understood the day they exist.
+    /// The ask tools the rows name.
+    var tools: Set<String> { Set(aliases.values) }
+
+    /// ask's tools, and the other names seen for them in real harness files. A name means a tool a model is offered (ADR-0160): another
+    /// harness's `Edit` is ask's `write`, its `KillShell` ask's `job`. Tools ask does not have yet (`grep`, `find`, `ls`) are here so a
+    /// file written for them is understood the day they exist.
     public static let standard = ToolAliasTable([
         // @dl:accept -- a table of tool-name spellings: the rows are the data
         "read": ["read_file", "view_file", "view_file_outline", "view_code_item", "cat", "open", "view", "file_read"],
-        "write": ["write_file", "write_to_file", "create", "create_file", "file_write"],
-        "edit": [
+        "write": [
+            "write_file", "write_to_file", "create", "create_file", "file_write",
             // @dl:accept -- a table of tool-name spellings: the rows are the data
-            "multi_edit", "notebook_edit", "replace_file_content", "multi_replace_file_content", "str_replace",
+            "edit", "multi_edit", "notebook_edit", "replace_file_content", "multi_replace_file_content", "str_replace",
             "str_replace_editor", "replace", "patch", "apply_patch",
             "edit_file"
         ],
@@ -40,9 +44,11 @@ public struct ToolAliasTable: Sendable, Equatable {
             "shell", "run_command", "execute", "exec", "terminal", "run", "sh", "command", "run_shell_command",
             "bash_command"
         ],
-        "wait": ["bash_output", "job_output"],
-        "job_input": ["send_command_input"],
-        "job_stop": ["kill_shell", "kill_bash", "stop_job"],
+        "job": [
+            "wait", "bash_output", "job_output", "job_input", "send_command_input", "job_stop", "kill_shell",
+            "kill_bash",
+            "stop_job"
+        ],
         "narrow_sandbox": [],
         // @dl:accept -- a memberwise initialiser or a field table reads like any other of its kind; the fields are the data
         "grep": ["search", "grep_search", "ripgrep", "rg", "code_search", "search_files"],
