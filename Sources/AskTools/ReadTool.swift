@@ -8,6 +8,9 @@ public struct ReadTool: ArgumentTool {
     /// The most images one call returns when the model does not say, and the most it may ask for.
     static let defaultImages = 8
     static let largestImages = 20
+    /// What `max_images` says of itself: one number for how many pictures, a video's frames among them (ADR-0164).
+    private static let pictures =
+        "The most pictures one call returns: 8 unless given. Video: that many frames, 4 unless given, spread evenly from start to end."
 
     public struct Arguments: Decodable, Sendable {
         let path: String
@@ -15,6 +18,7 @@ public struct ReadTool: ArgumentTool {
         let limit: Int?
         let pages: String?
         let at: [Double]?
+        /// What `max_images` was called for a video before ADR-0164: read as it, said to no model, so that it is not dropped silently.
         let count: Int?
         let every: Double?
         let start: Double?
@@ -44,8 +48,6 @@ public struct ReadTool: ArgumentTool {
         ToolProperty.string("pages").described(#"PDF: the pages to read, such as "1-3,7"."#).optional
         ToolProperty.schema("at", #"{"type":"array","items":{"type":"number","minimum":0}}"#)
             .described("Video: the seconds at which to take frames, exactly.").optional
-        ToolProperty.integer("count", minimum: 1, maximum: 20)
-            .described("Video: how many frames, spread evenly from start to end.").optional
         ToolProperty.schema("every", #"{"type":"number","exclusiveMinimum":0}"#)
             .described("Video: a frame every this many seconds.").optional
         ToolProperty.schema("start", #"{"type":"number","minimum":0}"#)
@@ -53,8 +55,7 @@ public struct ReadTool: ArgumentTool {
         ToolProperty.schema("end", #"{"type":"number","minimum":0}"#)
             .described("Video: where the frames end, in seconds.").optional
         // @dl:accept -- a tool declares its arguments and what each says through one builder: the lists are data
-        ToolProperty.integer("max_images", minimum: 1, maximum: 20)
-            .described("The most pictures one call returns: 8 unless given.").optional
+        ToolProperty.integer("max_images", minimum: 1, maximum: 20).described(Self.pictures).optional
         ToolProperty.boolean("render").described("PDF: every page as a picture, also a page that has text.").optional
         // @dl:accept -- the file tools share a tool's shape: a schema, an empty init, and a run that asks the sandbox first
         SandboxRequest.property
@@ -65,11 +66,13 @@ public struct ReadTool: ArgumentTool {
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         let url = try FileTools.authorized(arguments.path, for: [.read], in: context)
         let header = FileTools.header(of: url, in: context)
-        let maximumImages = min(Self.largestImages, max(1, arguments.maxImages ?? Self.defaultImages))
+        let asked = arguments.maxImages ?? arguments.count
+        let maximumImages = min(Self.largestImages, max(1, asked ?? Self.defaultImages))
         if VideoReader.looksLikeVideo(header) {
             let request = VideoReader.Request(
                 at: arguments.at,
-                count: arguments.count,
+                // One number says how many pictures (ADR-0164): a video's frames are that many, and 4 when the call does not say.
+                count: asked.map { _ in maximumImages },
                 every: arguments.every,
                 start: arguments.start,
                 end: arguments.end,

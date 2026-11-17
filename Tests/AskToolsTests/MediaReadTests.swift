@@ -158,6 +158,23 @@ struct MediaReadTests {
         #expect(every.images.count == 2 && every.content.contains("1 more asked for"))
     }
 
+    /// ADR-0164: `count: 12` beside a limit of 8 gave the first eight of twelve parts, two thirds of the video. One number now.
+    @Test func `max_images is how many frames a video gives, and count, its old name, is not dropped`() async throws {
+        _ = try await video("v.mp4")
+        let twelve = try await read("v.mp4", #","max_images":12"#)
+        #expect(twelve.images.count == 12 && !twelve.content.contains("more asked for"), "\(twelve.content)")
+        #expect(try await read("v.mp4", #","max_images":1"#).images.count == 1)
+        #expect(try await read("v.mp4", #","max_images":99"#).images.count == 20, "at most twenty")
+        let counted = try await read("v.mp4", #","count":12"#)
+        #expect(counted.images.count == 12 && !counted.content.contains("more asked for"), "\(counted.content)")
+        #expect(try await read("v.mp4", #","count":12,"max_images":2"#).images.count == 2, "the name that is told wins")
+        let listed = try await read("v.mp4", #","at":[0.5,1,1.5],"max_images":2"#)
+        #expect(
+            listed.images.count == 2 && listed.content.contains("1 more asked for"),
+            "it still limits what is listed"
+        )
+    }
+
     @Test func `under a restricted sandbox a video is read from a verified copy, and a protected one is refused`()
         async throws
     {
@@ -193,6 +210,9 @@ struct MediaReadTests {
         #expect(plan(.init(every: 1, maximumImages: 3)).wanted == 11)
         #expect(plan(.init(at: [1, 99, -2], maximumImages: 8)).times == [1, 9.95, 0])
         #expect(plan(base).times.count == 4)
+        // What the two numbers did when a call gave one (ADR-0164): eight of twelve parts, and nothing of the last third.
+        #expect(plan(.init(count: 12, maximumImages: 8)).times.last == 6.25)
+        #expect((plan(.init(count: 12, maximumImages: 12)).times.last ?? 0) > 9.5)
     }
 
     /// A file says how long it is, up to Int64 seconds: one frame every 0.04 s of that is past `Int.max`, which must not stop ask.
