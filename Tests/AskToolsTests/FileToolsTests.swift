@@ -63,12 +63,21 @@ struct FileToolsTests {
 
     // MARK: - write (unified write + targeted replacement)
 
-    @Test func `write creates parent directories and replaces whole files with content or new_text`() async throws {
+    @Test func `write creates parent directories and replaces whole files with content`() async throws {
         let output = await WriteTool().run(input(#"{"path":"new/dir/b.txt","content":"hello"}"#), in: context)
         #expect(!output.isError)
         #expect(try contents("new/dir/b.txt") == "hello")
-        _ = await WriteTool().run(input(#"{"path":"new/dir/b.txt","new_text":"bye"}"#), in: context)
+        _ = await WriteTool().run(input(#"{"path":"new/dir/b.txt","content":"bye"}"#), in: context)
         #expect(try contents("new/dir/b.txt") == "bye")
+    }
+
+    @Test func `new_text alone is an edit that lost its old_text, not the whole file`() async throws {
+        try file("whole.txt", "a long file\nwith a line to change\n")
+        let lost = await WriteTool().run(input(#"{"path":"whole.txt","new_text":"with a line changed"}"#), in: context)
+        #expect(lost.isError && lost.content.contains("old_text") && lost.content.contains("content"))
+        #expect(try contents("whole.txt") == "a long file\nwith a line to change\n")
+        let nothing = await WriteTool().run(input(#"{"path":"whole.txt"}"#), in: context)
+        #expect(nothing.isError && nothing.content.contains("content"))
     }
 
     @Test func `write executes targeted string replacement when old_text and new_text are provided`() async throws {

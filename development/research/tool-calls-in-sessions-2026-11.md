@@ -55,6 +55,25 @@ From the first request of `ask -p hi` on `97d9ffd2` (10 tools, 8,028 characters 
 - `write` offers two ways to overwrite a file (`content`, or `new_text` alone).
 - `tasks` and `notes` describe `changes` and `read` nowhere but in the paragraph, and their operations' fields not at all.
 
+## Which arguments are given
+
+`Scripts/measure-tool-arguments.py`, the same sessions on 2026-11-17 (47,227 calls), read before consolidating anything:
+
+| Tool | Calls | What is given |
+|---|---|---|
+| `write` | 1,496 | `content` 1,103; `old_text` with `new_text` 392; **`new_text` alone 1** |
+| `bash` | 38,915 | `timeout_seconds` 20,495; `yield_seconds` 2,286; `sandbox` 840; `wait_for_port` 26, `wait_for_output` 7, `wait_for_file` 1 |
+| `job` | 561 | `wait` 472, `stop` 65, `status` 22, **`input` 0**; `wait_for_file` 2, the other two waits 0 |
+| `read` | 4,141 | `offset` 289, `limit` 320; **the eight PDF and video arguments 0** |
+| `tasks` | 1,011 | `changes` 562, `read` 195 (the rest an earlier shape) |
+| `notes` | 457 | `read` 340, `changes` 123 |
+| `narrow_sandbox` | 5 | `reset: true` 4, `sandbox` 1 |
+| `search_catalog`, `server_resource`, `dispatch_call` | 4, 2, 0 | |
+
+Read with care: these are one person's sessions on a Swift codebase with few PDFs, no video, and MCP servers connected on
+few days. An argument never given here is not an argument nobody needs; it is one whose bytes were paid 47,227 times for nothing
+in this use.
+
 ## Not measured
 
 - Calls that succeeded and were still the wrong call (a `bash cat` where `read` was meant, a whole file rewritten where an edit

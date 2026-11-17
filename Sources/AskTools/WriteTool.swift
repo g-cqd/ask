@@ -2,7 +2,7 @@ public import AskAI
 public import AskAgentCore
 internal import Foundation
 
-/// `write`: creates, overwrites, or applies targeted string replacements to a file.
+/// `write`: the whole file from `content`, or a part of it changed by `old_text` and `new_text`: one way to do each (ADR-0158).
 public struct WriteTool: ArgumentTool {
     public struct Arguments: Decodable, Sendable {
         let path: String
@@ -40,11 +40,11 @@ public struct WriteTool: ArgumentTool {
 
     public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
         guard arguments.content == nil || (arguments.oldText == nil && arguments.newText == nil) else {
-            return .error("Use content alone, or old_text/new_text; do not mix write modes.")
+            return .error("Give content alone for the whole file, or old_text and new_text to change part of it.")
         }
         if let oldText = arguments.oldText {
             guard let newText = arguments.newText else {
-                return .error("new_text is required when old_text is provided.")
+                return .error("Give new_text with old_text: what replaces it, empty to remove it.")
             }
             return try await EditTool()
                 .run(
@@ -52,12 +52,16 @@ public struct WriteTool: ArgumentTool {
                     in: context
                 )
         }
-
-        guard let payload = arguments.content ?? arguments.newText else {
-            return .error("Supply either content/new_text to write, or old_text and new_text to edit.")
+        // Refused, not written as the whole file (ADR-0158): new_text alone is as likely an edit that lost its old_text, and
+        // writing it would leave the file holding only the piece meant to go into it.
+        guard arguments.newText == nil else {
+            return .error("Give old_text with new_text to change part of the file, or content for the whole file.")
+        }
+        guard let content = arguments.content else {
+            return .error("Give content for the whole file, or old_text and new_text to change part of it.")
         }
         let url = try FileTools.authorized(arguments.path, for: [.write], in: context)
-        try FileTools.write(payload, to: url, shownAs: arguments.path, in: context)
-        return ToolOutput("Wrote \(payload.utf8.count) bytes to \(arguments.path).")
+        try FileTools.write(content, to: url, shownAs: arguments.path, in: context)
+        return ToolOutput("Wrote \(content.utf8.count) bytes to \(arguments.path).")
     }
 }
