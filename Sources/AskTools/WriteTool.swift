@@ -46,11 +46,10 @@ public struct WriteTool: ArgumentTool {
             guard let newText = arguments.newText else {
                 return .error("Give new_text with old_text: what replaces it, empty to remove it.")
             }
-            return try await EditTool()
-                .run(
-                    .init(path: arguments.path, oldText: oldText, newText: newText, replaceAll: arguments.replaceAll),
-                    in: context
-                )
+            return try FileEdit.apply(
+                .init(path: arguments.path, oldText: oldText, newText: newText, replaceAll: arguments.replaceAll),
+                in: context
+            )
         }
         // Refused, not written as the whole file (ADR-0158): new_text alone is as likely an edit that lost its old_text, and
         // writing it would leave the file holding only the piece meant to go into it.

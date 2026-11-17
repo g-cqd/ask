@@ -25,9 +25,6 @@ struct ToolDescriptionsTests {
         ]
     }
 
-    /// Declared, and offered to no model: `write` and `job` run them.
-    private static let inner: Set<String> = ["edit", "wait", "job_stop"]
-
     /// The arguments of `schema`, at any depth, that say nothing of themselves and that the object holding them does not name in
     /// what it says, each by its path. A small object may say its fields in one phrase, as `sandbox` does.
     static func silent(in schema: Any?, at path: String = "") -> [String] {
@@ -98,8 +95,12 @@ struct ToolDescriptionsTests {
             }
         }
         let read = Set(Self.declared.map(\.name))
-        #expect(named.count >= 16, "the scan found the declarations: \(named.sorted())")
-        let unread = named.subtracting(read).subtracting(Self.inner).sorted()
-        #expect(unread.isEmpty, "add each to `declared`, or to `inner` when no model is offered it: \(unread)")
+        #expect(
+            named.isSuperset(of: ["read", "write", "bash", "job"]),
+            "the scan finds declarations: \(named.sorted())"
+        )
+        // No exceptions (ADR-0160): what declares a tool is offered to a model, and what is not offered declares none.
+        let unread = named.subtracting(read).sorted()
+        #expect(unread.isEmpty, "add each to `declared`: \(unread)")
     }
 }

@@ -30,13 +30,6 @@ struct ToolDefinitionTests {
         )
     }
 
-    @Test func `edit`() {
-        #expect(
-            schema(EditTool())
-                == #"{"type":"object","properties":{"path":{"type":"string"},"old_text":{"type":"string","minLength":1},"new_text":{"type":"string"},"replace_all":{"type":"boolean"},"sandbox":{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost, provider or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","provider","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}},"required":["path","old_text","new_text"]}"#
-        )
-    }
-
     @Test func `bash`() {
         #expect(
             schema(BashTool())

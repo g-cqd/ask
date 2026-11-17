@@ -56,7 +56,7 @@ enum ACPToolCall {
         return Started(title: title, change: change, update: .object(update))
     }
 
-    /// The change a `write` or an `edit` makes to the file at `path`, as a diff (Tool Calls, "Diffs"): the text replaced and what
+    /// The change a `write` makes to the file at `path`, as a diff (Tool Calls, "Diffs"): the text replaced and what
     /// replaces it, or a whole file's new content. A whole file is said with no old text, as a new one is, since what the file
     /// held is not known here: a client shows all of it as added.
     private static func change(_ input: JSON?, to path: String, by tool: String) -> JSONValue? {

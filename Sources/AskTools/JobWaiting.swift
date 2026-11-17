@@ -1,3 +1,5 @@
+internal import AskAgentCore
+
 /// Waiting on a job with a time limit, shared by the job tools.
 enum JobWaiting {
     enum Outcome: Sendable, Equatable {
@@ -38,6 +40,12 @@ enum JobWaiting {
     /// `.timedOut` after `seconds` on `clock`; nil when cancelled first, by whatever finished before it.
     static func expiry(after seconds: Int, on clock: any Clock<Duration>) async -> Outcome? {
         (try? await clock.sleep(for: .seconds(seconds))) != nil ? .timedOut : nil
+    }
+
+    /// An ended job's result, as `bash` gives one, led by what the wait saw.
+    static func ended(_ job: Job, headline: String) -> ToolOutput {
+        let result = BashTool.finished(job)
+        return ToolOutput(headline + "\n" + result.content, isError: result.isError)
     }
 
     /// `, whole output in <path>` when the job has a file.

@@ -3,7 +3,7 @@ public enum JobStatus: Sendable, Equatable, CustomStringConvertible {
     case running
     case exited(Int)
     case signalled(Int)
-    /// Stopped by `job_stop`, a timeout, an abort, or ask exiting.
+    /// Stopped by `job`, a timeout, an abort, or ask exiting.
     case stopped
     case failedToStart(String)
 

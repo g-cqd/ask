@@ -72,13 +72,19 @@ public struct JobActionTool: ArgumentTool, JobTool {
             case .status:
                 return ToolOutput(BashTool.body(job.takeOutput()) + "[\(job.id) status: \(job.status.description)]")
             case .stop:
-                return try await JobStopTool(jobs: access.jobs).run(.init(job: arguments.job), in: context)
+                let wasRunning = job.status == .running
+                job.stop()
+                await job.ended()
+                let headline = wasRunning ? "[\(job.id) stopped]" : "[\(job.id) had already ended]"
+                let result = JobWaiting.ended(job, headline: headline)
+                // A stop that was asked for and happened is the tool succeeding, not the command failing.
+                return wasRunning && job.status == .stopped ? ToolOutput(result.content) : result
             case .input, .wait:
                 if action == .input { try job.sendInput(arguments.text, closing: arguments.closeInput == true) }
                 let seconds = Swift.min(Swift.max(1, arguments.timeoutSeconds ?? (action == .wait ? 60 : 1)), 600)
                 // The end only (ADR-0159): a text, a port or a file is waited for where the command starts, by bash.
                 let outcome = await JobWaiting.wait(for: job, needle: nil, seconds: seconds, clock: access.clock)
-                if job.status != .running { return WaitTool.ended(job, headline: "[\(job.id) ended]") }
+                if job.status != .running { return JobWaiting.ended(job, headline: "[\(job.id) ended]") }
                 let headline =
                     switch outcome {
                         case .cancelled: "[aborted; \(job.id) still running]"

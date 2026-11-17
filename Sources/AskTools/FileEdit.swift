@@ -1,36 +1,17 @@
 internal import AemiKernel
-public import AskAI
-public import AskAgentCore
+internal import AskAI
+internal import AskAgentCore
 internal import Foundation
 internal import Synchronization
 
-/// `edit`: replaces an exact piece of text that occurs once, or everywhere when asked.
-public struct EditTool: ArgumentTool {
-    public struct Arguments: Decodable, Sendable {
+/// The part of `write` that changes a part of a file: replaces an exact piece of text that occurs once, or everywhere when asked.
+/// Not a tool of its own (ADR-0160): a model is offered `write`, and this is what `old_text` reaches.
+enum FileEdit {
+    struct Change: Sendable {
         let path: String
         let oldText: String
         let newText: String
         let replaceAll: Bool?
-
-        enum CodingKeys: String, CodingKey {
-            // @dl:accept -- legacy edit and unified write preserve the same wire spelling for replacement fields
-            case path
-            case oldText = "old_text"
-            case newText = "new_text"
-            case replaceAll = "replace_all"
-        }
-    }
-
-    public let definition = ToolDefinition(
-        name: "edit",
-        description:
-            "Replace old_text with new_text in a file. old_text must match exactly once unless replace_all is true."
-    ) {
-        ToolProperty.string("path")
-        ToolProperty.string("old_text", minLength: 1)
-        ToolProperty.string("new_text")
-        ToolProperty.boolean("replace_all").optional
-        SandboxRequest.property
     }
 
     /// Held from an edit's reading of its file to its writing of it. A script makes its calls at once (ADR-0156), and of
@@ -38,17 +19,16 @@ public struct EditTool: ArgumentTool {
     /// made, two or three were. One lock for every file: an edit takes about a millisecond, and none waits on another's model.
     private static let turn = Mutex(())
 
-    public init() {}
-
-    public func run(_ arguments: Arguments, in context: ToolContext) async throws(ToolFailure) -> ToolOutput {
-        guard !arguments.oldText.isEmpty else { return .error("old_text must not be empty.") }
-        return try Self.turn.withLock { (_: inout Void) throws(ToolFailure) -> ToolOutput in
-            try edit(arguments, in: context)
+    /// Makes `change`, one edit at a time (``turn``).
+    static func apply(_ change: Change, in context: ToolContext) throws(ToolFailure) -> ToolOutput {
+        guard !change.oldText.isEmpty else { return .error("old_text must not be empty.") }
+        return try turn.withLock { (_: inout Void) throws(ToolFailure) -> ToolOutput in
+            try edit(change, in: context)
         }
     }
 
-    /// Reads the file, replaces, and writes it back: one edit at a time (``turn``).
-    private func edit(_ arguments: Arguments, in context: ToolContext) throws(ToolFailure) -> ToolOutput {
+    /// Reads the file, replaces, and writes it back.
+    private static func edit(_ arguments: Change, in context: ToolContext) throws(ToolFailure) -> ToolOutput {
         let url = try FileTools.authorized(arguments.path, for: [.read, .write], in: context)
         let text = try FileTools.text(at: url, shownAs: arguments.path, in: context)
         // Exact UTF-8 bytes, not canonically equivalent characters: the model must reproduce what the file holds,

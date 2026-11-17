@@ -21,7 +21,7 @@ struct FileToolsSandboxTests {
     }
 
     private func edit(_ path: String) async -> ToolOutput {
-        await EditTool()
+        await WriteTool()
             .run(world.input(#"{"path":"\#(path)","old_text":"history","new_text":"tampered"}"#), in: world.context)
     }
 
@@ -39,7 +39,7 @@ struct FileToolsSandboxTests {
     }
 
     @Test func `editing a file that may not be read says reading is the problem, before anything is read`() async {
-        let output = await EditTool()
+        let output = await WriteTool()
             .run(
                 world.input(#"{"path":"\#(world.config)/credentials.json","old_text":"sk-ant","new_text":"x"}"#),
                 in: world.context
@@ -92,7 +92,7 @@ struct FileToolsSandboxTests {
         #expect(!(await write("sub/new.txt")).isError)
         #expect(world.text("work/sub/new.txt") == "tampered")
         #expect(
-            !(await EditTool()
+            !(await WriteTool()
                 .run(world.input(#"{"path":"file.txt","old_text":"workspace","new_text":"edited"}"#), in: world.context))
                 .isError
         )

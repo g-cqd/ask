@@ -121,7 +121,7 @@ struct FileToolsTests {
             [.posixPermissions: 0o755],
             ofItemAtPath: root.appending(path: "c.sh").path
         )
-        let output = await EditTool()
+        let output = await WriteTool()
             .run(input(#"{"path":"c.sh","old_text":"echo two","new_text":"echo 2"}"#), in: context)
         #expect(!output.isError)
         #expect(try contents("c.sh") == "echo one\necho 2\n")
@@ -142,7 +142,7 @@ struct FileToolsTests {
                 let input = input(
                     #"{"path":"many.txt","old_text":"marker-\#(index)-old","new_text":"marker-\#(index)-new"}"#
                 )
-                group.addTask { !(await EditTool().run(input, in: context).isError) }
+                group.addTask { !(await WriteTool().run(input, in: context).isError) }
             }
             return await group.reduce(into: 0) { $0 += $1 ? 1 : 0 }
         }
@@ -152,12 +152,12 @@ struct FileToolsTests {
 
     @Test func `edit refuses no match and several matches, and changes nothing`() async throws {
         try file("d.txt", "x x x")
-        let none = await EditTool().run(input(#"{"path":"d.txt","old_text":"y","new_text":"z"}"#), in: context)
+        let none = await WriteTool().run(input(#"{"path":"d.txt","old_text":"y","new_text":"z"}"#), in: context)
         #expect(none.isError && none.content.contains("not found"))
-        let many = await EditTool().run(input(#"{"path":"d.txt","old_text":"x","new_text":"z"}"#), in: context)
+        let many = await WriteTool().run(input(#"{"path":"d.txt","old_text":"x","new_text":"z"}"#), in: context)
         #expect(many.isError && many.content.contains("3"))
         #expect(try contents("d.txt") == "x x x")
-        let all = await EditTool()
+        let all = await WriteTool()
             .run(input(#"{"path":"d.txt","old_text":"x","new_text":"z","replace_all":true}"#), in: context)
         #expect(!all.isError)
         #expect(try contents("d.txt") == "z z z")
@@ -167,7 +167,7 @@ struct FileToolsTests {
 
     @Test func `edit matches exact bytes, not canonically equivalent text`() async throws {
         try file("e.txt", "caf\u{0065}\u{0301} and café")  // decomposed, then precomposed
-        let output = await EditTool().run(input(#"{"path":"e.txt","old_text":"café","new_text":"tea"}"#), in: context)
+        let output = await WriteTool().run(input(#"{"path":"e.txt","old_text":"café","new_text":"tea"}"#), in: context)
         #expect(!output.isError, "only the precomposed form matches the quoted bytes")
         #expect(try contents("e.txt") == "caf\u{0065}\u{0301} and tea")
     }

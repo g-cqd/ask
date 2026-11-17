@@ -1,7 +1,7 @@
 internal import Synchronization
 
 extension Job {
-    /// Keep the background job's file available after wait/job_stop consumes its model-facing result.
+    /// Keep the background job's file available after `job` consumes its model-facing result.
     func markBackgrounded() { state.withLock { $0.backgrounded = true } }
 
     func snapshot(output: String?) -> JobSnapshot {

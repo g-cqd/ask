@@ -2,7 +2,7 @@ internal import AskAgentCore
 internal import Foundation
 internal import Synchronization
 
-/// The jobs of one ask process, shared by `bash`, `wait`, `job_input` and `job_stop` (ADR-0027).
+/// The jobs of one ask process, shared by `bash` and `job` (ADR-0027).
 ///
 /// Jobs belong to the process, not to a turn: a server started in one turn is waited on in the next. ask
 /// stops them all when it exits by any path it can see; a SIGKILL of ask is the one it cannot, and the ``JobWatchdog`` covers it
@@ -146,7 +146,7 @@ public final class JobTable: Sendable {
         if let owner = JobOwner.current { owners.withLock { $0[id] = owner } }
         letGoFinished()
         notifyObservers()
-        // The table learns of an ending the way `job_stop` does, by waiting for it, so nothing polls.
+        // The table learns of an ending the way a stop does, by waiting for it, so nothing polls.
         Task { [weak self] in
             await job.ended()
             self?.letGoFinished()
