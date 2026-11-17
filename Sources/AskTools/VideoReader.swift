@@ -7,8 +7,8 @@ internal import Foundation
 /// Shows frames of a video as images (roadmap 0084).
 ///
 /// Which frames is up to the caller: explicit times, a count spread over the video or a window of it, or one every so
-/// many seconds, never more than a limit at once. AVFoundation decodes and scales each frame; sampled frames may come
-/// from the nearest keyframe (4–15× faster, measured in diary 2026-10-28-06), explicit times are exact.
+/// many seconds, never more than a limit at once. AVFoundation decodes and scales each frame, and every frame is the one
+/// at its time: the nearest key frame was 4 to 15 times faster (diary 2026-10-28-06) and gave one frame several times over.
 enum VideoReader {
     /// What the model asked for. Seconds throughout.
     struct Request: Equatable {
@@ -96,13 +96,14 @@ enum VideoReader {
         guard duration.isFinite, duration > 0 else { throw ToolFailure("\(path) is a video with no length.") }
 
         let (times, wanted) = times(duration: duration, request)
-        let exact = request.at != nil
         let generator = AVAssetImageGenerator(asset: asset)
         generator.appliesPreferredTrackTransform = true
         generator.maximumSize = CGSize(width: ImageReader.maximumSide, height: ImageReader.maximumSide)
-        let tolerance = exact ? CMTime.zero : CMTime.positiveInfinity
-        generator.requestedTimeToleranceBefore = tolerance
-        generator.requestedTimeToleranceAfter = tolerance
+        // The frame at each time, not any frame near it: "near" is the nearest key frame, so frames spread over a window came
+        // back as one frame several times, from outside the window (diary 2026-11-17-01). Decoding to the time costs more, at
+        // most twenty times a call.
+        generator.requestedTimeToleranceBefore = .zero
+        generator.requestedTimeToleranceAfter = .zero
 
         var images: [ImagePart] = []
         var shownAt: [Double] = []

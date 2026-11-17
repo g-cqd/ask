@@ -74,6 +74,24 @@ Read with care: these are one person's sessions on a Swift codebase with few PDF
 few days. An argument never given here is not an argument nobody needs; it is one whose bytes were paid 47,227 times for nothing
 in this use.
 
+## Asked of three models (2026-11-17)
+
+After ADR-0161 to 0164 moved things behind arguments, the real binary was run with `-p` on `claude-haiku-5-5`, `gpt-5.6-luna` and
+`gemini-3.8-flash-medium`, once each, in a directory with a five-page PDF and a three-second clip (red, green, blue). The prompts:
+
+- "Check whether I left you any notes for this session, and tell me how many are open."
+- "For the rest of this session nothing you run may reach the network: narrow the sandbox for the session accordingly. Then run
+  `curl -sS -m 3 -o /dev/null -w '%{http_code}' https://example.com` once and tell me what happened."
+- "The xcode MCP server has a tool that lists the open Xcode windows. Find it and call it once, then say in one line which tool
+  you called."
+- "Read page 3 of doc.pdf and tell me the word on it. Read nothing else."
+- "clip.mp4 is three seconds long. Look at six frames between 1.0 s and 2.0 s only, and tell me the colour you see."
+- "What colour is clip.mp4 at exactly 0.5 s, and at exactly 2.5 s? One read."
+
+Every model made the call the argument was meant for, on the first try in 17 of 18 runs (gemini searched three times before
+`dispatch_call`). What each gave is in diary 2026-11-17-01. It is one run a model on prompts that name the thing wanted: it says
+the arguments can be found, not how often they are in real work. The window prompt found a defect in `read`, fixed the same day.
+
 ## Not measured
 
 - Calls that succeeded and were still the wrong call (a `bash cat` where `read` was meant, a whole file rewritten where an edit

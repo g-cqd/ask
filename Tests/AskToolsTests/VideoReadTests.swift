@@ -81,6 +81,29 @@ struct VideoReadTests {
         )
     }
 
+    /// The seconds a read says its frames are at: "… 3 frames at 1.0 s, 1.5 s, 2.0 s".
+    private func stamps(_ output: ToolOutput) -> [Double] {
+        let line = output.content.split(separator: ";").first { $0.contains(" at ") } ?? ""
+        return line.split(separator: " ").compactMap { Double($0) }.dropFirst().map(\.self)
+    }
+
+    /// Found with a real model on a video cut by ffmpeg (diary 2026-11-17-01): six frames asked of 1 s to 2 s came back as one
+    /// frame six times, the key frame at 2.0 s, which is not in the window. Any frame near was allowed; now each part gives its own.
+    @Test func `frames spread over a window are each from its own part of it, and a period gives its exact times`()
+        async throws
+    {
+        _ = try await video("v.mp4")
+        let window = stamps(try await read("v.mp4", #","start":1,"end":2,"max_images":4"#))
+        #expect(window.count == 4 && window == window.sorted() && Set(window).count == 4, "\(window)")
+        #expect(window.allSatisfy { $0 >= 1 && $0 < 2 }, "\(window)")
+        let whole = stamps(try await read("v.mp4", ""))
+        #expect(
+            Set(whole).count == 4 && zip([0, 0.75, 1.5, 2.25], whole).allSatisfy { $0 <= $1 && $1 < $0 + 0.75 },
+            "\(whole)"
+        )
+        #expect(stamps(try await read("v.mp4", #","every":0.5,"start":1,"end":2"#)) == [1, 1.5, 2])
+    }
+
     @Test func `under a restricted sandbox a video is read from a verified copy, and a protected one is refused`()
         async throws
     {
