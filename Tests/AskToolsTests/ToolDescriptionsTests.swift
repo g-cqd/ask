@@ -16,7 +16,7 @@ struct ToolDescriptionsTests {
         let catalog = MCPCatalog()
         return [
             ReadTool().definition, WriteTool().definition, BashTool(jobs: jobs).definition,
-            JobActionTool(jobs: jobs).definition, NarrowSandboxTool(jobs: jobs).definition,
+            JobActionTool(jobs: jobs).definition,
             TasksTool(board: TaskBoard()).definition,
             FetchTool().definition, SessionSearchTool(currentSession: { nil }).definition,
             SkillTool(catalog: SkillCatalog(), knownSources: []).definition, QuestionTool().definition,

@@ -140,7 +140,7 @@ def probe_round_trip():
         results.append(check("system is the canonical line", first["system"] == [{"type": "text", "text": CANONICAL}], first["system"]))
         results.append(check("prompt leads the first user message", "You are ask" in first["messages"][0]["content"][0]["text"]))
         offered = [t["name"] for t in first["tools"] if t["name"] != "skill"]
-        results.append(check("tools offered", offered == ["read", "write", "bash", "job", "narrow_sandbox", "tasks", "fetch", "codemode"],
+        results.append(check("tools offered", offered == ["read", "write", "bash", "job", "tasks", "fetch", "codemode"],
                              offered))
         last = second["messages"][-1]["content"][0]
         results.append(check("tool result sent back", last["type"] == "tool_result" and "probe-ok" in last["content"], last))
@@ -916,10 +916,14 @@ def probe_session_narrowing():
     target = Server([])
     reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo ' curl='$?"
     calls = [("call", "before", "bash", {"command": reach}),
-             ("call", "narrow", "narrow_sandbox", {"sandbox": {"network": "none"}}),
+             ("call", "narrow", "bash", {"command": ":", "sandbox": {"network": "none", "session": "keep"}}),
              ("call", "after", "bash", {"command": reach}),
-             ("call", "reset", "narrow_sandbox", {"reset": True}),
-             ("call", "still", "bash", {"command": reach})]
+             ("call", "reset", "bash", {"command": ":", "sandbox": {"session": "reset"}}),
+             ("call", "still", "bash", {"command": reach}),
+             ("call", "job", "bash", {"command": "sleep 60", "yield_seconds": 1}),
+             ("call", "busy", "bash", {"command": "echo ran", "sandbox": {"write": [], "session": "keep"}}),
+             ("call", "stop", "job", {"job": "job-5", "action": "stop"}),
+             ("call", "free", "bash", {"command": "echo ran", "sandbox": {"write": [], "session": "keep"}})]
     server = Server([turn([c], "tool_use") for c in calls] + [turn([("text", "Done.")], "end_turn")])
     process = subprocess.run([ASK, "-p", "Work."], cwd=project, env=environment(state, server.url), capture_output=True,
                              text=True, timeout=180)
@@ -927,12 +931,17 @@ def probe_session_narrowing():
     server.httpd.shutdown()
     target.httpd.shutdown()
     return all([
-        check("the run finishes", process.returncode == 0 and len(got) == 5, f"{process.returncode} {process.stderr[-300:]}"),
+        check("the run finishes", process.returncode == 0 and len(got) == 9, f"{process.returncode} {process.stderr[-300:]}"),
         check("before narrowing the network is reachable", "HTTP 200 curl=0" in got.get("before", ""), got.get("before")),
-        check("narrow_sandbox only says it narrowed", got.get("narrow", "") == "Narrowed for the rest of the session.", got.get("narrow")),
+        check("the call that keeps it only says it narrowed", got.get("narrow", "").startswith("Narrowed for the rest of the session.")
+              and "none" not in got.get("narrow", ""), got.get("narrow")),
         check("a later call, with no sandbox argument of its own, cannot connect", "curl=7" in got.get("after", ""), got.get("after")),
         check("undoing it under -p is refused", got.get("reset", "") == "Not permitted: that request is refused.", got.get("reset")),
-        check("and the session stays narrowed", "curl=7" in got.get("still", ""), got.get("still"))])
+        check("and the session stays narrowed", "curl=7" in got.get("still", ""), got.get("still")),
+        check("while a job runs the session is not narrowed, and the command does not run",
+              got.get("busy", "").startswith("Stop running jobs first") and "ran" not in got.get("busy", ""), got.get("busy")),
+        check("once it is stopped, it is", got.get("free", "").startswith("Narrowed for the rest of the session.\nran"),
+              f"{got.get('free')} after {got.get('job')} and {got.get('stop')}")])
 
 
 def probe_control_sequences():

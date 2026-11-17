@@ -134,15 +134,15 @@ func makeLoop(
     let offered: [any Tool] =
         FileTools.all + [
             BashTool(jobs: jobs, commandEnvironment: run.commandEnvironment), JobActionTool(jobs: jobs),
-            NarrowSandboxTool(jobs: jobs), TasksTool(board: lists.board, notes: lists.ideas),
-            FetchTool()
+            TasksTool(board: lists.board, notes: lists.ideas), FetchTool()
         ] + (currentSession.map { [SessionSearchTool(currentSession: $0)] } ?? []) + (skills.tool.map { [$0] } ?? [])
         + (askPerson == nil ? [] : [QuestionTool()]) + codemodeTools(run.configuration)
         + (startSubagent == nil ? [] : [AgentTool(definitions: definitions)])
     // A definition's subagent keeps only the tools it names, and no server's unless named.
     let tools = try ToolRegistry(
         keepTools.map { keep in offered.filter { keep.contains($0.definition.name) } } ?? offered,
-        live: keepTools == nil ? live : nil
+        live: keepTools == nil ? live : nil,
+        busy: { !jobs.running.isEmpty }
     )
     let context = ToolContext(
         workingDirectory: workingDirectory,

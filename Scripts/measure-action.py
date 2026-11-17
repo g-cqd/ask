@@ -114,7 +114,7 @@ def one_run(tool):
     responses = [agent.turn([call], "tool_use"), agent.turn([("text", "Finished.")], "end_turn")]
     offset = int(NARROW or WARM)
     if NARROW:
-        responses.insert(0, agent.turn([("call", "n", "narrow_sandbox", {"sandbox": {"network": "none"}})], "tool_use"))
+        responses.insert(0, agent.turn([("call", "n", "bash", {"command": ":", "sandbox": {"network": "none", "session": "keep"}})], "tool_use"))
     elif WARM:
         open(os.path.join(project, "warm.txt"), "w").write("warm transport\n")
         responses.insert(0, agent.turn([("call", "warm", "read", {"path": "warm.txt"})], "tool_use"))

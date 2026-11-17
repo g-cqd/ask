@@ -1623,10 +1623,10 @@ def probe_session_narrowing_screen():
     project = tempfile.mkdtemp()
     target = agent.Server([])
     reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo ' curl='$?"
-    steps = [("call", "n1", "narrow_sandbox", {"sandbox": {"network": "none"}}), ("call", "b1", "bash", {"command": reach}),
-             ("call", "r", "narrow_sandbox", {"reset": True}), ("call", "b2", "bash", {"command": reach})]
+    steps = [("call", "n1", "bash", {"command": ":", "sandbox": {"network": "none", "session": "keep"}}), ("call", "b1", "bash", {"command": reach}),
+             ("call", "r", "bash", {"command": ":", "sandbox": {"session": "reset"}}), ("call", "b2", "bash", {"command": reach})]
     server = agent.Server([agent.turn([c], "tool_use") for c in steps] + [agent.turn([("text", "First done.")], "end_turn"),
-                           agent.turn([("call", "n2", "narrow_sandbox", {"sandbox": {"network": "none"}})], "tool_use"),
+                           agent.turn([("call", "n2", "bash", {"command": ":", "sandbox": {"network": "none", "session": "keep"}})], "tool_use"),
                            agent.turn([("text", "Narrowed again.")], "end_turn"),
                            agent.turn([("call", "b3", "bash", {"command": reach})], "tool_use"),
                            agent.turn([("text", "Still narrowed.")], "end_turn"),
@@ -1681,8 +1681,8 @@ def probe_reset_ignores_unrelated_grants():
     target = agent.Server([])
     reach = f"curl -s -o /dev/null -w 'HTTP %{{http_code}}' -d '{{}}' {target.url}/probe; echo ' curl='$?"
     steps = [("call", "grant", "bash", {"command": "echo granted", "sandbox": {"write": ["/Users/Shared"]}}),
-             ("call", "narrow", "narrow_sandbox", {"sandbox": {"network": "none"}}),
-             ("call", "reset", "narrow_sandbox", {"reset": True}),
+             ("call", "narrow", "bash", {"command": ":", "sandbox": {"network": "none", "session": "keep"}}),
+             ("call", "reset", "bash", {"command": ":", "sandbox": {"session": "reset"}}),
              ("call", "reach", "bash", {"command": reach})]
     server = agent.Server([agent.turn([c], "tool_use") for c in steps]
                           + [agent.turn([("text", "Reset refused.")], "end_turn")])

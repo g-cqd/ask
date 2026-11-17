@@ -29,7 +29,7 @@ extension BashTool {
             ToolProperty.string("wait_for_file", minLength: 1)
                 .described("Return once this file exists; it goes on as a job.").optional
             ToolProperty.string("shell").described("Another shell for this command, by absolute path.").optional
-            SandboxRequest.property
+            SandboxRequest.propertyWithSession
         }
     }
 

@@ -12,10 +12,22 @@ public struct ToolRegistry: Sendable {
     private let order: [String]
     private let cap: OutputCap
     private let live: LiveTools?
+    /// Whether something a call started still runs: it cannot adopt a narrower sandbox, so the session is not narrowed under it.
+    let busy: @Sendable () -> Bool
 
     /// A registry of `tools`, in the order given, capping outputs with `cap`, and after them whatever `live` offers.
+    /// - Parameters:
+    ///   - tools: the tools, in the order a request lists them.
+    ///   - cap: what bounds an output a tool did not bound itself.
+    ///   - live: where tools that come and go are read, each time.
+    ///   - busy: whether something an earlier call started still runs; the default says nothing does.
     /// - Throws: ``DuplicateName`` when two tools share a name.
-    public init(_ tools: [any Tool], cap: OutputCap = .standard, live: LiveTools? = nil) throws(DuplicateName) {
+    public init(
+        _ tools: [any Tool],
+        cap: OutputCap = .standard,
+        live: LiveTools? = nil,
+        busy: @escaping @Sendable () -> Bool = { false }
+    ) throws(DuplicateName) {
         var byName: [String: any Tool] = [:]
         for tool in tools {
             let name = tool.definition.name
@@ -26,6 +38,7 @@ public struct ToolRegistry: Sendable {
         self.order = tools.map(\.definition.name)
         self.cap = cap
         self.live = live
+        self.busy = busy
     }
 
     /// The tools' definitions, for the request.
@@ -39,9 +52,7 @@ public struct ToolRegistry: Sendable {
     /// Runs the tool called `name`.
     /// - Returns: its output, capped unless the tool bounded it itself, or an error output when no tool has that name.
     public func run(name: String, input: JSONObject, in context: ToolContext) async -> ToolOutput {
-        // The session's narrowing applies to every call, and a call may narrow further, never widen (roadmap 0019).
         var context = context
-        if let session = context.narrowing?.policy { context = context.with(context.sandbox.intersecting(session)) }
         if let gate = context.callGate {
             switch gate.policy.decide(tool: name, input: input, workingDirectory: context.workingDirectory) {
                 case .run: break
@@ -55,54 +66,27 @@ public struct ToolRegistry: Sendable {
                     }
             }
         }
+        // The session's narrowing applies to every call, and a call may narrow further, never widen (roadmap 0019).
+        let narrowed = context.narrowing?.policy.map { context.with(context.sandbox.intersecting($0)) } ?? context
         var output: ToolOutput
+        var said: String?
         if let tool = tools[name] {
-            switch await applyingRequest(of: name, input: input, to: context) {
-                case .run(let narrowed): output = await tool.run(input, in: narrowed)
+            switch await applyingRequest(of: name, input: input, to: narrowed, unnarrowed: context) {
+                case .run(let asked, let outcome):
+                    output = await tool.run(input, in: asked)
+                    said = outcome
                 case .refused(let refusal): return refusal
             }
         } else if let tool = offered().first(where: { $0.definition.name == name }) {
             // A foreign tool's arguments are its own: a `sandbox` among them is not a request to narrow ask's sandbox.
-            output = await tool.run(input, in: context)
+            output = await tool.run(input, in: narrowed)
         } else {
             let names = order + offered().map(\.definition.name)
             return .error("No tool is named \(name). Available: \(names.joined(separator: ", ")).")
         }
         if !output.bounded { output.content = cap.apply(output.content) }
+        // What became of the session's sandbox is said once, above what the call itself gave (ADR-0162).
+        if let said { output.content = output.content.isEmpty ? said : said + "\n" + output.content }
         return output
-    }
-
-    /// Where a built-in call goes next: into a context, or back to the model refused.
-    private enum Applied {
-        case run(ToolContext)
-        case refused(ToolOutput)
-    }
-
-    /// The context a built-in tool runs in once the call's own `sandbox` request, if it made one, is applied; or the refusal to return.
-    private func applyingRequest(
-        of name: String,
-        input: JSONObject,
-        to context: ToolContext
-    ) async -> Applied {
-        do {
-            guard let request = try SandboxRequest.in(input) else { return .run(context) }
-            switch request.applied(to: context.sandbox, workingDirectory: context.workingDirectory) {
-                case .narrowed(let policy): return .run(context.with(policy))
-                case .refused(let asked):
-                    // Only the user widens: an approver asks them; without one the call is refused.
-                    let question = SandboxApproval(tool: name, input: input, asked: asked, request: request)
-                    if let approve = context.approve, await approve(question) {
-                        return .run(
-                            context.with(
-                                request.granted(over: context.sandbox, workingDirectory: context.workingDirectory)
-                            )
-                        )
-                    }
-                    return .refused(.error("Not permitted: that request is refused."))
-                case .invalid(let reason): return .refused(.error("Invalid sandbox for \(name): \(reason)."))
-            }
-        } catch {
-            return .refused(.error("Invalid sandbox for \(name): \(error)."))
-        }
     }
 }

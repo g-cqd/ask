@@ -17,7 +17,7 @@ ADR-0020's model-facing half, delivered in three slices.
 - **Approval** (ADR-0055, diary 52): a widening in the screen asks the user, naming the command/path and requested
   capabilities. y once, a for the session (in memory), n or Esc no; Ctrl-C still aborts. Under `-p` a widening
   is refused unless the user already allowed it.
-- **Whole conversation** (ADR-0057, diary 56): `narrow_sandbox` narrows every later dispatch. Further changes
+- **Whole conversation** (ADR-0057, diary 56; ADR-0162): a call's `sandbox` with `session: keep` narrows every later dispatch. Further changes
   preserve dimensions they do not name. Undoing it requires approval; unrelated session grants cannot reset it.
   Stop running jobs first, since they cannot adopt another Seatbelt profile. The state survives loop rebuilds,
   `/model` and configuration changes; `/new`, `/resume` and process replacement clear it.

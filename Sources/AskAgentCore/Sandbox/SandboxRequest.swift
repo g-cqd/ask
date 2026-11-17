@@ -9,19 +9,26 @@ public struct SandboxRequest: Sendable, Equatable {
     /// Paths as given: absolute, or relative to the working directory.
     public var write: [String]?
     public var read: [String]?
+    /// What the call asks of the session's sandbox, beyond its own (ADR-0162); nil, nothing.
+    public var session: Session?
 
-    /// A request for these, any of them absent.
+    /// What a call asks of the sandbox every later call runs under.
+    public enum Session: String, Sendable, Equatable {
+        /// This call's narrowing is every later call's too.
+        case keep
+        /// The run's own sandbox back; the person is asked.
+        case reset
+    }
+
+    /// A request for these, any of them absent, that asks nothing of the session.
     public init(network: SandboxPolicy.Network? = nil, write: [String]? = nil, read: [String]? = nil) {
         self.network = network
         self.write = write
         self.read = read
     }
 
-    /// Whether a call's input asks, with `"reset": true`, to undo the session's narrowing.
-    public static func resets(_ input: JSONObject) -> Bool {
-        struct Reset: Decodable { let reset: Bool? }
-        return (try? AemiJSON.JSONDecoder().decode(Reset.self, from: input.bytes))?.reset == true
-    }
+    /// This request without what it asks of the session: what one call is granted, and what a grant remembers.
+    public var forOneCall: SandboxRequest { SandboxRequest(network: network, write: write, read: read) }
 
     /// The request in a call's input, under the key `sandbox`; nil when the call has none.
     /// - Throws: ``SandboxRequestError`` when the key is present and not a request.
@@ -31,6 +38,7 @@ public struct SandboxRequest: Sendable, Equatable {
                 let network: String?
                 let write: [String]?
                 let read: [String]?
+                let session: String?
             }
             let sandbox: Wire?
         }
@@ -45,6 +53,12 @@ public struct SandboxRequest: Sendable, Equatable {
                 throw SandboxRequestError("network is none, localhost, provider or any, not \"\(name)\"")
             }
             request.network = level
+        }
+        if let name = wire.session {
+            guard let session = Session(rawValue: name) else {
+                throw SandboxRequestError("session is keep or reset, not \"\(name)\"")
+            }
+            request.session = session
         }
         return request
     }
@@ -109,12 +123,4 @@ public struct SandboxRequest: Sendable, Equatable {
         guard case .roots(let roots) = scope else { return "anywhere" }
         return roots.isEmpty ? "only temporary directories" : roots.joined(separator: ", ")
     }
-
-    /// The `sandbox` argument as the model is told about it, declared by the tools that honour it.
-    public static let property =
-        ToolProperty.schema(
-            "sandbox",
-            #"{"type":"object","description":"Narrow this call's sandbox; it cannot widen it. network: none, localhost, provider or any. write, read: paths relative to the working directory.","properties":{"network":{"type":"string","enum":["none","localhost","provider","any"]},"write":{"type":"array","items":{"type":"string"}},"read":{"type":"array","items":{"type":"string"}}}}"#
-        )
-        .optional
 }

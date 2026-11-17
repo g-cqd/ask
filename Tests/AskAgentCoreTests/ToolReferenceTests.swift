@@ -57,7 +57,7 @@ struct ToolReferenceTests {
     }
 
     @Test func `ask's own tool names map to themselves`() {
-        for name in ["read", "write", "bash", "job", "narrow_sandbox", "skill", "agent"] {
+        for name in ["read", "write", "bash", "job", "skill", "agent"] {
             #expect(ToolAliasTable.standard.lookup(name) == name, "\(name)")
         }
     }
