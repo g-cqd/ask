@@ -91,6 +91,24 @@ struct PrintRendererTests {
         )
     }
 
+    @Test func `a refused response is said on standard error, after the half-written line`() {
+        let written = Recorded()
+        let renderer = PrintRenderer(out: written.sink("out"), err: written.sink("err"))
+        renderer.render(.model(.textDelta(index: 0, "Half")))
+        let refused = AssembledResponse(
+            id: "m",
+            model: "any",
+            blocks: [],
+            stopReason: .refusal,
+            usage: TokenUsage(),
+            unrecognized: []
+        )
+        renderer.render(.responded(refused))
+        #expect(written.whole("out") == "Half\n")
+        let notice = RunNotices.refusal(for: .responded(refused)) ?? ""
+        #expect(!notice.isEmpty && written.lines("err") == ["ask: " + notice])
+    }
+
     @Test func `the tokens of the run are counted, responses and compactions both`() {
         let written = Recorded()
         let renderer = PrintRenderer(out: written.sink("out"), err: written.sink("err"))

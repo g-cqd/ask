@@ -35,7 +35,7 @@ public final class PrintRenderer: Sendable {
     /// Prints one event of the run.
     public func render(_ event: AgentEvent) {
         if let spent = event.usage { usage.withLock { $0.add(spent) } }
-        if let notice = RunNotices.compaction(for: event) {
+        if let notice = RunNotices.compaction(for: event) ?? RunNotices.refusal(for: event) {
             endLine()
             err("ask: \(notice)\n")
         }

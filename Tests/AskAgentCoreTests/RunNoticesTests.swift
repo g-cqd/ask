@@ -76,6 +76,32 @@ struct RunNoticesTests {
         )
     }
 
+    @Test func `a refused response is said, with the model and whether it said anything`() {
+        func refused(_ blocks: [ContentBlock], _ reason: StopReason?) -> AgentEvent {
+            .responded(
+                AssembledResponse(
+                    id: "m",
+                    model: "claude-x",
+                    blocks: blocks,
+                    stopReason: reason,
+                    usage: TokenUsage(),
+                    unrecognized: []
+                )
+            )
+        }
+        #expect(
+            RunNotices.refusal(for: refused([], .refusal))
+                == "claude-x refused this request and said nothing (stop reason: refusal). "
+                + "Another model may answer it, or this one once the last message is worded differently."
+        )
+        #expect(
+            RunNotices.refusal(for: refused([.text("I can't")], .refusal))?.hasPrefix("claude-x refused this request (")
+                == true
+        )
+        #expect(RunNotices.refusal(for: refused([], .endTurn)) == nil)
+        #expect(RunNotices.refusal(for: .finished(.refusal)) == nil)
+    }
+
     @Test func `a wait of a fraction says the fraction`() {
         #expect(RunNotices.retry(attempt: 1, of: 2, delay: .milliseconds(1_250), reason: "x").contains("1.25 s"))
     }

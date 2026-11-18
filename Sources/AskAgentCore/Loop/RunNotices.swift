@@ -1,3 +1,5 @@
+internal import AskAI
+
 /// What a run says to a person, in words (roadmap 0028): the same notice in the screen and in `ask -p`.
 public enum RunNotices {
     /// What a compaction says, or nil when `event` is not one.
@@ -32,6 +34,15 @@ public enum RunNotices {
                 "The run reached its limit of \(turns) turns, so hooks were not asked to continue it."
             default: nil
         }
+    }
+
+    /// What a response the model refused says (stop reason `refusal`), or nil for any other event. Without it a refused request
+    /// shows as an empty answer, which a person cannot tell from ask having stopped working (diary 2026-11-18).
+    public static func refusal(for event: AgentEvent) -> String? {
+        guard case .responded(let response) = event, response.stopReason == .refusal else { return nil }
+        let said = response.blocks.contains { if case .text(_) = $0 { true } else { false } }
+        return "\(response.model) refused this request\(said ? "" : " and said nothing") (stop reason: refusal). "
+            + "Another model may answer it, or this one once the last message is worded differently."
     }
 
     /// `A`, `A and B`, `A, B and C`.

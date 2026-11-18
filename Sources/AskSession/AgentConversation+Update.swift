@@ -8,6 +8,7 @@ extension AgentConversation {
     static func updates(for event: AgentEvent) -> [ConversationUpdate] {
         switch event {
             case .compacting: return [.compacting(true)]
+            case .responded: return RunNotices.refusal(for: event).map { [.notice($0, isError: true)] } ?? []
             // A dropped connection is said by the status bar while ask waits to try again, not by a block; the reason is a detail, shown
             // with --verbose.
             case .retrying(let attempt, let total, let delay, let reason):
