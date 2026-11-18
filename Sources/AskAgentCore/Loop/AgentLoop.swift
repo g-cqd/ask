@@ -38,9 +38,12 @@ public struct AgentLoop: Sendable {
 
     /// What the loop sends, as a recorded user message, after the connection dropped part way through a response (roadmap 0141); the
     /// part that arrived is recorded before it.
+    ///
+    /// Worded as a request to go on, not an order to resume output verbatim: Claude Opus 5.5 answered every request after the earlier
+    /// wording (``earlierReconnectionPrompts``) with `stop_reason: refusal` and no output, while this one is answered (diary 2026-11-18).
     public static let reconnectionPrompt =
-        "[ask] The connection dropped while you were answering; what arrived is above. Continue exactly where it stopped, without "
-        + "repeating it. If you were writing a tool call, it was dropped: issue it again."
+        "[ask] The connection dropped while you were answering, so your answer above is incomplete. Please go on from where it "
+        + "ends. A tool call you had started was not received; make it again."
 
     /// The stop reason of a response cut by a dropped connection, as the session keeps it.
     static let droppedStopReason = StopReason.other("ask_connection_lost")

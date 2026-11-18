@@ -102,6 +102,13 @@ struct AgentLoopReconnectTests {
         #expect(provider.requests.count == 3)
     }
 
+    /// Claude Opus 5.5 refused, with no output, every request whose context held the earlier wording after a partial answer, and
+    /// answered the same context with this one (diary 2026-11-18). An order to resume output verbatim is what it refused.
+    @Test func `the reconnection message asks the model to go on, not to continue its output exactly`() {
+        #expect(!AgentLoop.reconnectionPrompt.contains("exactly"))
+        #expect(!AgentLoop.earlierReconnectionPrompts.contains(AgentLoop.reconnectionPrompt))
+    }
+
     @Test func `a resumed session shows the carrying on, not the prompt`() async throws {
         let provider = ScriptedProvider([.textThenTransient("half"), .reply("rest")])
         let (loop, recorder) = try loop(provider, clock: ImmediateClock())

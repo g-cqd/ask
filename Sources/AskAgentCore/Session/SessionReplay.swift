@@ -54,7 +54,7 @@ public enum SessionReplay {
         switch payload {
             case .destination, .unrecognized: return []
             case .user(let text, _) where text == AgentLoop.continuationPrompt: return [.event(.continuedAtOutputLimit)]
-            case .user(let text, _) where text == AgentLoop.reconnectionPrompt: return [.event(.continuedAfterDrop)]
+            case .user(let text, _) where AgentLoop.isReconnectionPrompt(text): return [.event(.continuedAfterDrop)]
             case .user(let text, let images):
                 return [.prompt(SkillInvocation.shown(text))] + (images.isEmpty ? [] : [.pictures(images)])
             case .assistant(let text): return [.event(.model(.textDelta(index: 0, text)))]

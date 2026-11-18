@@ -88,6 +88,15 @@ struct SessionReplayTests {
         )
     }
 
+    @Test func `a dropped connection recorded in an earlier wording still replays as one, not as a prompt`() throws {
+        let earlier = try #require(AgentLoop.earlierReconnectionPrompts.first)
+        let steps = SessionReplay.steps(entries([.user("Go."), .response(response([.text("half")])), .user(earlier)]))
+        #expect(steps.last == .event(.continuedAfterDrop))
+        #expect(!steps.contains(.prompt(earlier)))
+        #expect(AgentLoop.isCarryOnPrompt(earlier) && AgentLoop.isCarryOnPrompt(AgentLoop.reconnectionPrompt))
+        #expect(!AgentLoop.isCarryOnPrompt("Go."))
+    }
+
     @Test func `a session that ended mid-tool, as a crash leaves it, replays the call as interrupted`() throws {
         let input = try JSONObject(validating: Array("{}".utf8))
         let asked = response([.toolCall(id: "t1", name: "bash", input: input)])

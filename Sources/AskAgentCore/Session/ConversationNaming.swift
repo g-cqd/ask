@@ -6,8 +6,7 @@ public enum ConversationNaming {
     public static func source(in tree: SessionTree, prompt: String) -> String? {
         guard tree.conversationName == nil else { return nil }
         let first = SessionSummary(tree).firstPrompt ?? prompt
-        guard first != AgentLoop.continuationPrompt, first != AgentLoop.reconnectionPrompt,
-            first.contains(where: { !$0.isWhitespace })
+        guard !AgentLoop.isCarryOnPrompt(first), first.contains(where: { !$0.isWhitespace })
         else { return nil }
         return first
     }
