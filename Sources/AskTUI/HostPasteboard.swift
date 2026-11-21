@@ -31,15 +31,20 @@ enum HostPasteboard {
         return pasteboard.setString(text, forType: .string) ? .copied : .failed("the pasteboard refused the text")
     }
 
-    /// The picture `pasteboard` holds: the first copied file named as one, or its PNG or TIFF data; nil for none.
-    static func picture(on pasteboard: NSPasteboard) -> [UInt8]? {
-        let files =
-            pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+    /// The files `pasteboard` holds, copied in Finder or another file manager; empty for none.
+    static func files(on pasteboard: NSPasteboard) -> [URL] {
+        pasteboard.readObjects(forClasses: [NSURL.self], options: [.urlReadingFileURLsOnly: true]) as? [URL] ?? []
+    }
+
+    /// The picture `pasteboard` holds: the first of `files` named as one, or, when no file was copied, its PNG or TIFF data (a
+    /// copied file's TIFF is its icon); nil for none.
+    static func picture(on pasteboard: NSPasteboard, files: [URL]) -> [UInt8]? {
         if let file = files.first(where: { PastedPath.extensions.contains($0.pathExtension.lowercased()) }),
             let data = FileManager.default.contents(atPath: file.path)
         {
             return [UInt8](data)
         }
+        guard files.isEmpty else { return nil }
         for type in [NSPasteboard.PasteboardType.png, .tiff] {
             if let data = pasteboard.data(forType: type), !data.isEmpty { return [UInt8](data) }
         }
@@ -55,7 +60,10 @@ enum HostPasteboard {
         }
         // A picture wins over the text it carries (the owner, 2026-11-12): a copied image file first, as Finder puts its icon
         // beside it, then the picture itself.
-        if let bytes = picture(on: pasteboard) { return .picture(bytes) }
+        let files = files(on: pasteboard)
+        if let bytes = picture(on: pasteboard, files: files) { return .picture(bytes) }
+        // A copied file is its full path, not the name its text holds (the owner, 2026-11-21).
+        if let paths = PastedPath.typed(files.map(\.path)) { return .text(paths) }
         guard let text = pasteboard.string(forType: .string), !text.isEmpty else { return .empty }
         return .text(text)
     }
