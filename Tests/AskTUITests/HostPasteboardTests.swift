@@ -39,4 +39,40 @@ struct HostPasteboardTests {
             #expect(HostPasteboard.read(from: pasteboard) == .empty)
         }
     }
+
+    /// Finder's copy of a file: the file's URL, its name as text, and an icon picture (owner, 2026-11-21: "it always pastes the last
+    /// component of the path of the file").
+    private func copyLikeFinder(_ paths: [String], on pasteboard: NSPasteboard) {
+        pasteboard.clearContents()
+        _ = pasteboard.writeObjects(paths.map { URL(fileURLWithPath: $0) as NSURL })
+        pasteboard.addTypes([.string, .tiff], owner: nil)
+        _ = pasteboard.setString(
+            paths.map { ($0 as NSString).lastPathComponent }.joined(separator: "\r"),
+            forType: .string
+        )
+        _ = pasteboard.setData(Data([0x4D, 0x4D, 0x00, 0x2A]), forType: .tiff)
+    }
+
+    @Test func `a copied file reads as its full path, not its name or its icon`() {
+        withPasteboard { pasteboard in
+            copyLikeFinder(["/Users/someone/Documents/report.pdf"], on: pasteboard)
+            #expect(HostPasteboard.read(from: pasteboard) == .text("/Users/someone/Documents/report.pdf"))
+        }
+    }
+
+    @Test func `several copied files read as their paths, each quoted when it holds a blank or a quote`() {
+        withPasteboard { pasteboard in
+            copyLikeFinder(["/tmp/a.txt", "/tmp/my report.pdf", "/tmp/it's.md"], on: pasteboard)
+            #expect(
+                HostPasteboard.read(from: pasteboard) == .text(#"/tmp/a.txt '/tmp/my report.pdf' '/tmp/it'\''s.md'"#)
+            )
+        }
+    }
+
+    @Test func `a copied file whose name holds a control character reads as the text beside it`() {
+        withPasteboard { pasteboard in
+            copyLikeFinder(["/tmp/bad\u{1B}name.txt"], on: pasteboard)
+            #expect(HostPasteboard.read(from: pasteboard) == .text("bad\u{1B}name.txt"))
+        }
+    }
 }
