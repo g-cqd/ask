@@ -1,3 +1,5 @@
+internal import AskCore
+
 extension ScreenController {
     /// Kept by the screen until the agent acknowledges persistence, not merely delivery to its task.
     struct Pending: Sendable {

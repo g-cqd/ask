@@ -155,7 +155,7 @@ extension SettingCatalog {
         ),
         row(
             "ui.queuedOnStop",
-            words(QueuedAfterInterruptPreference.self),
+            words(QueuedAfterInterrupt.self),
             #""all""#,
             "all",
             "What happens to queued messages on a stop."

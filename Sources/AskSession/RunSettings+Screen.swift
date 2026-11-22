@@ -42,8 +42,7 @@ extension RunSettings {
             interruptKeys: ui.interruptKeys ?? defaults.interruptKeys,
             escapeInterruptRequiresConfirmation: ui.escapeInterruptRequiresConfirmation
                 ?? defaults.escapeInterruptRequiresConfirmation,
-            interruptSendsQueued: ui.interruptSendsQueued.flatMap { QueuedAfterInterrupt(rawValue: $0.rawValue) }
-                ?? defaults.interruptSendsQueued
+            interruptSendsQueued: ui.interruptSendsQueued ?? defaults.interruptSendsQueued
         )
         options.dim = ui.dim ?? defaults.dim
         options.sessionTint = ui.sessionTint ?? defaults.sessionTint

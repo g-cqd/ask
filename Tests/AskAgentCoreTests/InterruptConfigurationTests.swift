@@ -23,8 +23,8 @@ struct InterruptConfigurationTests {
 
     @Test func `a later layer replaces only what it sets`() {
         let base = UISection(interruptKeys: .esc, interruptSendsQueued: .all)
-        let layered = base.layered(with: UISection(interruptSendsQueued: QueuedAfterInterruptPreference.none))
-        #expect(layered.interruptKeys == .esc && layered.interruptSendsQueued == QueuedAfterInterruptPreference.none)
+        let layered = base.layered(with: UISection(interruptSendsQueued: QueuedAfterInterrupt.none))
+        #expect(layered.interruptKeys == .esc && layered.interruptSendsQueued == QueuedAfterInterrupt.none)
     }
 
     @Test(arguments: [

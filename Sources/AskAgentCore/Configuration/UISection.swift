@@ -66,7 +66,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     /// `ui.escapeInterruptRequiresConfirmation`: whether Esc must be pressed twice to interrupt (`"on"`, default) or once (`"off"`).
     public var escapeInterruptRequiresConfirmation: Bool?
     /// `ui.interruptSendsQueued`: what happens to queued messages after an interruption: `"none"`, `"next"` or `"all"` (default).
-    public var interruptSendsQueued: QueuedAfterInterruptPreference?
+    public var interruptSendsQueued: QueuedAfterInterrupt?
     /// `ui.onlyUsefulModels`: whether model lists leave out the models of no use to ask (`"on"`, default; roadmap 0089).
     public var onlyUsefulModels: Bool?
     /// `ui.timeout`: when a command's timeout is written: `"auto"` (default), `"always"` or `"never"` (roadmap 0126).
@@ -124,7 +124,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         // @dl:accept -- optional settings are schema data: each parameter names a key
         interruptKeys: InterruptKeys? = nil,
         escapeInterruptRequiresConfirmation: Bool? = nil,
-        interruptSendsQueued: QueuedAfterInterruptPreference? = nil,
+        interruptSendsQueued: QueuedAfterInterrupt? = nil,
         onlyUsefulModels: Bool? = nil,
         appearance: Appearance? = nil,
         timeout: TimeoutPreference? = nil,
