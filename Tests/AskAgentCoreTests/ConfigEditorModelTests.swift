@@ -1,5 +1,6 @@
 import AemiJSON
 import AskAI
+import AskCore
 import Foundation
 import Testing
 
@@ -31,7 +32,7 @@ struct ConfigEditorModelTests {
         )
         #expect(
             settings.contains {
-                $0.path == ["ui", "spinner"] && $0.choices.count == SpinnerPreference.allCases.count + 1
+                $0.path == ["ui", "spinner"] && $0.choices.count == SpinnerStyle.allCases.count + 1
             }
         )
         #expect(settings.contains { $0.path == ["ui", "tint"] && $0.choices == ["unset", "on", "off"] })
