@@ -140,4 +140,31 @@ struct ManagedConfigurationTests {
         let required = try loader().load().configuration.applying(aliasThinking: .low, alias: "work/fast")
         #expect(required.thinking.value == .high)
     }
+
+    @Test func `what a requirement sets is recorded key by key, and a key above counts`() throws {
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        let path = managedFolder + "/requirements.json"
+        try write(
+            path,
+            #"{"model": "m", "ui": {"tint": false}, "sandbox": {"network": "provider"}, "mcp": {"docs": {"url": "https://d.example/mcp"}}}"#
+        )
+        try write(managedFolder + "/defaults.json", #"{"thinking": "high", "ui": {"mouse": false}}"#)
+        let configuration = try loader().load().configuration
+        for key in ["model", "ui.tint", "sandbox.network", "mcp.docs", "mcp.docs.url"] {
+            #expect(configuration.requirement(of: key) == path, "\(key)")
+        }
+        for key in ["thinking", "ui.mouse", "ui", "sandbox.write", "mcp.other"] {
+            #expect(configuration.requirement(of: key) == nil, "\(key)")
+        }
+    }
+
+    @Test func `a model chosen for one run does not replace a required one`() throws {
+        defer { try? FileManager.default.removeItem(atPath: root) }
+        try write(managedFolder + "/requirements.json", #"{"provider": "work"}"#)
+        let required = try loader().load().configuration
+        let chosen = required.applying(selectedProvider: "elsewhere", model: "other", command: "/model")
+        #expect(chosen.provider.value == "work" && chosen.model == required.model)
+        let free = Configuration.defaults.applying(selectedProvider: "elsewhere", model: "other", command: "/model")
+        #expect(free.provider.value == "elsewhere" && free.model.value == "other")
+    }
 }

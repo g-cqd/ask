@@ -113,6 +113,7 @@ public struct ConfigurationLoader: Sendable {
         // Last, so that no file, variable or flag changes them; each key combines by its rule (ADR-0168).
         for (path, file) in requirements {
             configuration = configuration.applying(file, from: .managed(path, required: true))
+                .requiring(file, from: path)
             applied.append(path)
             notices += file.notices
         }

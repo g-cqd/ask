@@ -123,8 +123,9 @@ An administrator can put two files in `/Library/Application Support/ask` (`/etc/
 Each may have drop-ins, `defaults.d/*.json` and `requirements.d/*.json`, applied after it in name order. `ask config` shows a key
 they set with the file's path and "required by your organisation" or "your organisation's default". ask trusts these files only when
 they and their folder belong to root and nobody else may write them; a file that does not, or that is not a valid configuration,
-stops ask with a message naming it, rather than being skipped. Until a later version, `/model` can still change the model for one
-run even when it is required.
+stops ask with a message naming it, rather than being skipped. While ask runs, what is required holds: `/model` and `/thinking`
+refuse to change a required model, provider or thinking level, a resumed session's model gives way to the required one, and `/config`
+shows a required row as not editable and does not save it.
 
 ## Older names
 

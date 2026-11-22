@@ -35,6 +35,11 @@ extension ConfigurationSource {
             }
         }
         if let selected = flags.selected {
+            let required =
+                result.configuration.requirement(of: "model") ?? result.configuration.requirement(of: "provider")
+            if let required, selected.model != result.configuration.model.value {
+                details.append("Your organisation requires the model (\(required)); \(selected.model) is not used.")
+            }
             result.configuration = result.configuration.applying(
                 selectedProvider: selected.provider,
                 model: selected.model,

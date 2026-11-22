@@ -55,6 +55,10 @@ extension AgentConversation {
             )
             return
         }
+        if let path = current.withLock({ $0.settings.configuration.requirement(of: "thinking") }) {
+            update(.notice("Thinking not changed: your organisation requires it (\(path)).", isError: true))
+            return
+        }
         guard let level = ThinkingLevel(rawValue: word) else {
             update(.notice("Thinking not changed: \(word) is not one of \(ThinkingLevel.choices).", isError: true))
             return
