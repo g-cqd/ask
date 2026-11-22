@@ -56,7 +56,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     /// `ui.spinner`: the spinner style used for progress and status line indicators.
     public var spinner: SpinnerPreference?
     /// `ui.appearance`: the tints follow the terminal's colours (`"auto"`, default) or are fixed for a `"light"` or `"dark"` page.
-    public var appearance: AppearancePreference?
+    public var appearance: Appearance?
     /// `ui.jobAutoReturnWhenFocused`: whether leaving a focused job lane automatically returns to main when the job ends.
     public var jobAutoReturnWhenFocused: Bool?
     /// `ui.abortTurnRequiresConfirmation`: whether aborting an active conversation turn requires two Ctrl+C presses within two seconds.
@@ -126,7 +126,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         escapeInterruptRequiresConfirmation: Bool? = nil,
         interruptSendsQueued: QueuedAfterInterruptPreference? = nil,
         onlyUsefulModels: Bool? = nil,
-        appearance: AppearancePreference? = nil,
+        appearance: Appearance? = nil,
         timeout: TimeoutPreference? = nil,
         timeoutLabel: String? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key

@@ -57,7 +57,7 @@ public struct ScreenOptions: Sendable, Equatable {
     /// With ``appearance`` on auto it is only the first guess, until the terminal says what its colours are.
     public var lightBackground: Bool
     /// Where the tints come from (`ui.appearance`): the terminal's own colours, followed while ask runs, or a fixed light or dark page.
-    public var appearance = ScreenAppearance.auto
+    public var appearance = Appearance.auto
     /// The home folder, which ask's own messages write as `~` (roadmap 0128); nil leaves paths as they are.
     public var home: String?
     /// The project, which paths in replies are shown relative to (roadmap 0215); nil leaves them as written.

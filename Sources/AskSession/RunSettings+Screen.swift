@@ -1,4 +1,5 @@
 internal import AskAgentCore
+internal import AskCore
 internal import AskTUI
 
 extension RunSettings {
@@ -8,7 +9,7 @@ extension RunSettings {
         let ui = configuration.ui.value
         let defaults = ScreenOptions()
         let spinnerStyle = ui.spinner.flatMap { SpinnerStyle(rawValue: $0.rawValue) } ?? defaults.spinner
-        let appearance = ui.appearance.flatMap { ScreenAppearance(rawValue: $0.rawValue) } ?? defaults.appearance
+        let appearance = ui.appearance ?? defaults.appearance
         var options = ScreenOptions(
             // @dl:accept -- one argument per setting, each taking its configured value or its default: the list is the data
             mouse: ui.mouse ?? defaults.mouse,

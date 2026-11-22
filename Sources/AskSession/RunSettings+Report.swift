@@ -1,4 +1,5 @@
 internal import AskAgentCore
+internal import AskCore
 internal import AskTUI
 
 extension RunSettings {
@@ -69,7 +70,7 @@ extension RunSettings {
             escapeInterruptRequiresConfirmation: options.escapeInterruptRequiresConfirmation,
             interruptSendsQueued: QueuedAfterInterruptPreference(rawValue: options.interruptSendsQueued.rawValue),
             onlyUsefulModels: configuration.ui.value.onlyUsefulModels ?? true,
-            appearance: AppearancePreference(rawValue: options.appearance.rawValue),
+            appearance: Appearance(rawValue: options.appearance.rawValue),
             timeout: TimeoutPreference(rawValue: options.timeoutDisplay.rawValue),
             timeoutLabel: options.timeoutLabel,
             sessionColor: configuration.ui.value.sessionColor ?? .off
