@@ -76,6 +76,8 @@ public struct Configuration: Sendable, Equatable {
     public var jobs = Setting(value: JobsSection(), source: .defaults)  // how many finished jobs are kept, t232
     /// Where each `ui` and `skills` key came from, by its dotted name; read through `source(ofKey:)`.
     var keySources: [String: Source] = [:]
+    /// The keys an organisation requires (ADR-0168), written in full, each with the document that requires it.
+    var requiredKeys: [String: String] = [:]
 
     /// Built-in defaults only.
     public static let defaults = Configuration(
@@ -96,6 +98,7 @@ public struct Configuration: Sendable, Equatable {
         var next = self
         // @dl:accept -- one layer entry per key: the table is the data
         if let model = file.model { next.model = Setting(value: model, source: source) }
+        // @dl:accept -- one layer entry per key: the table is the data
         if let provider = file.provider { next.provider = Setting(value: provider, source: source) }
         if let thinking = file.thinking { next.thinking = Setting(value: thinking, source: source) }
         if let turns = file.maxTurns { next.maxTurns = Setting(value: turns, source: source) }
@@ -181,7 +184,9 @@ public struct Configuration: Sendable, Equatable {
 
     /// `self` with the provider and model the user chose while ask was running. Both are replaced together: a
     /// model id means nothing without the provider that serves it.
+    /// A provider or model the organisation requires is kept: the choice changes nothing (ADR-0168).
     public func applying(selectedProvider provider: String, model: String, command: String) -> Configuration {
+        guard requirement(of: "model") == nil, requirement(of: "provider") == nil else { return self }
         var next = self
         next.provider = Setting(value: provider, source: .command(command))
         next.model = Setting(value: model, source: .command(command))
