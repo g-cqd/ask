@@ -43,3 +43,13 @@ ADR-0166: the shared value types live once in AskCore, which AskTUI may now impo
 first, then MDM (0130), whose locks need each key's merge rule in its descriptor, so step 2's descriptor carries it. Next: step 1's red
 tests, then the enumerations moved into AskCore one at a time (each its own commit, behaviour unchanged, the twin test green).
 
+## Progress (2026-11-22, diary 2026-11-22-02)
+
+- Step 1 done: `UIKeyReadingTests` and the twin test, each broken once to prove it fires.
+- Step 3 done before step 2: the ten twins are one type each in AskCore (ADR-0166); the twin test and `RunSettings.word` are gone.
+- Step 2 done for `ui`: `UISetting.all` declares each key once (catalog row, read, write back, layer). `ask config` now lists the keys in
+  the catalog's order.
+- Left: the memberwise `UISection.init` and the `@dl:accept` comments it carries; the other sections (`sandbox`, `skills`, `threads`, …)
+  declared the same way, each declaration carrying its merge rule (replace, a protective list that adds, a scope that narrows,
+  the person's own file only), which MDM (0130) needs.
+
