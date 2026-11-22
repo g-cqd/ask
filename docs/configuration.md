@@ -133,6 +133,18 @@ machine's profile, then the person's, after the files above; `ask config` names 
 key in the payload other than those two, or the `Payload…` keys macOS adds itself, stops ask, so that a misspelt `requirments` does not
 leave the machine unmanaged; so does a date or data value, which `config.json` has no way to write.
 
+ask writes what an administrator needs for this, from its own list of settings, so it always matches the version that wrote it:
+
+```sh
+ask config --mdm-schema jamf > ask-jamf.json         # Jamf Pro: Application & Custom Settings, custom schema
+ask config --mdm-schema manifest > studio.aemi.ask.plist  # ProfileManifests: iMazing Profile Editor, ProfileCreator
+ask config --mdm-profile --requirements requirements.json --defaults defaults.json --organization "Example" > ask.mobileconfig
+```
+
+The schemas describe every key with its type, choices, default and help. `--mdm-profile` checks both files as ask would read them
+and writes nothing when ask would refuse them. A property list has no `null`, so a "no limit" such as `"maxTurns": null` cannot go in a
+profile: it is refused, and belongs in `requirements.json` or `defaults.json`.
+
 `requirements.json` may also hold a `policy` section, which no other file may set:
 
 | Key | What it does | Default |
