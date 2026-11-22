@@ -44,10 +44,18 @@ public enum MCPOAuthDiscovery {
         let resource = canonical(server)
         var issuer: URL?
         var scopes: [String] = []
-        for location in protectedResourceLocations(for: server, challenge: challenge) {
+        // A place the server names is asked only if it may be (security audit 2026-11-22, CRIT-05); the well-known places are the
+        // server's own.
+        let named = challenge?.resourceMetadata.flatMap { mayAsk($0, for: server) ? $0 : nil }
+        let locations =
+            named.map { [$0] }
+            ?? protectedResourceLocations(for: server, challenge: MCPAuthChallenge(scope: challenge?.scope))
+        for location in locations {
             guard let root = await json(at: location, http: http) else { continue }
-            if let named = root["resource"].string, canonical(URL(string: named) ?? server) != resource {
-                throw MCPOAuthError("the server's metadata is for another resource")
+            if let named = root["resource"].string {
+                guard let url = URL(string: named), canonical(url) == resource else {
+                    throw MCPOAuthError("the server's metadata is for another resource")
+                }
             }
             root["authorization_servers"]
                 .forEachElement { if issuer == nil, let text = $0.string { issuer = URL(string: text) } }
@@ -57,6 +65,11 @@ public enum MCPOAuthDiscovery {
         // A server without that metadata (MCP 2025-03-26) is its own authorization server.
         guard let asked = issuer ?? URL(string: origin(server)) else {
             throw MCPOAuthError("the server's address has no origin to ask")
+        }
+        guard mayAsk(asked, for: server) else {
+            throw MCPOAuthError(
+                "the server names an authorization server ask will not ask: it must be https, and not a private address"
+            )
         }
         let plan = try await authorizationServer(asked, http: http)
         return MCPOAuthPlan(
@@ -101,6 +114,18 @@ public enum MCPOAuthDiscovery {
             throw MCPOAuthError("an endpoint: \(refusal)")
         }
         return url
+    }
+
+    /// Whether ask may ask `url`, which a server named, during `server`'s discovery: https, and not an address on this machine or
+    /// the local network, unless the server itself is there (security audit 2026-11-22, CRIT-05).
+    static func mayAsk(_ url: URL, for server: URL) -> Bool {
+        let inward = { (host: String) in host == "localhost" || InwardAddress.contains(host) }
+        guard let host = url.host(percentEncoded: false)?.lowercased(), let scheme = url.scheme?.lowercased() else {
+            return false
+        }
+        let serverInward = inward(server.host(percentEncoded: false)?.lowercased() ?? "")
+        if inward(host) { return serverInward }
+        return scheme == "https" || (scheme == "http" && serverInward)
     }
 
     /// The JSON object at `url`, or nil when there is none there.

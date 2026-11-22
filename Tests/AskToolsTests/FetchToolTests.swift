@@ -51,11 +51,17 @@ struct FetchToolTests {
         for refused in [
             "http://example.com", "ftp://example.com", "file:///etc/passwd", "https://10.0.0.1/", "https://192.168.1.1",
             "https://172.20.0.1", "https://169.254.169.254/latest", "https://[fe80::1]/", "https://u:p@example.com",
-            "nope"
+            "nope", "https://[0:0:0:0:0:ffff:169.254.169.254]/latest", "https://[fe81::1]/",
+            "https://[::ffff:a9fe:a9fe]/",
+            "https://[64:ff9b::7f00:1]/", "https://224.0.0.1/"
         ] {
             #expect((try? FetchAddress.check(refused).get()) == nil, "\(refused)")
         }
         #expect(FetchAddress.host(of: "https://Example.COM/x") == "example.com")
+        // Security audit 2026-11-22, CRIT-05: this machine's servers are approved one port at a time.
+        #expect(FetchAddress.host(of: "http://localhost:3000/a") == "localhost:3000")
+        #expect(FetchAddress.host(of: "http://127.0.0.1/") == "127.0.0.1:80")
+        #expect(FetchAddress.host(of: "http://localhost:3000/") != FetchAddress.host(of: "http://localhost:9200/"))
         #expect(FetchAddress.refusal(of: "a.example", resolvingTo: ["93.184.216.34", "::1"]) != nil)
         #expect(FetchAddress.refusal(of: "a.example", resolvingTo: ["93.184.216.34"]) == nil)
         #expect(FetchAddress.refusal(of: "localhost", resolvingTo: ["127.0.0.1"]) == nil)
