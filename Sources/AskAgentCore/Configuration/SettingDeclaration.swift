@@ -14,8 +14,8 @@ struct SettingDeclaration<Section: Sendable>: Sendable {
     /// Takes the later layer's value, where it sets one.
     let layer: @Sendable (inout Section, Section) -> Void
 
-    /// The key under the section, as a file writes it: `fold.tools` under `ui`.
-    var name: String { row.path.dropFirst().joined(separator: ".") }
+    /// The key under the section, as a file writes it: `fold.tools` under `ui`; a key at the top of the file is its own name.
+    var name: String { row.path.dropFirst(row.path.count > 1 ? 1 : 0).joined(separator: ".") }
 
     /// A catalog row: path, type, example, default and help.
     static func row(_ path: String, _ kind: SettingCatalog.Kind, _ example: String, _ value: String, _ help: String)
