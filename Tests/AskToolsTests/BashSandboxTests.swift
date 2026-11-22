@@ -51,6 +51,33 @@ struct BashSandboxTests {
         #expect(await run("cat '\(world.home)/.ssh/config'") == ToolOutput("Host *\n[exit 0]"))
     }
 
+    /// Security audit 2026-11-22 (CRIT-01, HIGH-08): Seatbelt applies the same rules, a prefix rule included.
+    @Test
+    func
+        `a session, Sunset's cookies in any variant and Safari's history cannot be read by a command; a cut output can`()
+        async throws
+    {
+        let plant = { (path: String, text: String) throws in
+            try FileManager.default.createDirectory(
+                atPath: (path as NSString).deletingLastPathComponent,
+                withIntermediateDirectories: true
+            )
+            try Data(text.utf8).write(to: URL(filePath: path))
+        }
+        let refused = [
+            world.state + "/sessions/s.jsonl",
+            world.home + "/Library/HTTPStorages/studio.aemi.sunset.dev.binarycookies",
+            world.home + "/Library/Safari/History.db"
+        ]
+        for path in refused + [world.state + "/output/p/1.log", world.home + "/Library/HTTPStorages/swift-build/x"]
+        where !FileManager.default.fileExists(atPath: path) {
+            try plant(path, "data")
+        }
+        for path in refused { #expect((await run("cat '\(path)'")).isError, "\(path)") }
+        #expect(await run("cat '\(world.state)/output/p/1.log'") == ToolOutput("data\n[exit 0]"))
+        #expect(await run("cat '\(world.home)/Library/HTTPStorages/swift-build/x'") == ToolOutput("data\n[exit 0]"))
+    }
+
     @Test
     func `a shell startup file, a launch agent and a git hook cannot be written by a command (audit findings 1 and 3)`()
         async

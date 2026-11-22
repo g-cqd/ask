@@ -146,8 +146,7 @@ func makeLoop(
     )
     let context = ToolContext(
         workingDirectory: workingDirectory,
-        outputDirectory: SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values).path
-            + "/output",
+        outputDirectory: SessionDirectory(project: workingDirectory, environment: LaunchEnvironment.values).outputPath,
         sandbox: sandbox,
         approve: approve,
         narrowing: narrowing,

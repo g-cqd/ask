@@ -5,17 +5,40 @@ enum StandardProtections {
     /// Other tools' secret stores, kept unreadable: cloud and container credentials, package registries' tokens, browsers' profiles and
     /// cookies. Other agents' sign-ins name providers, so the composition root adds them (`otherSecrets`).
     static let secretDirectories = [
+        // @dl:accept -- a table of names (programs or paths) reads like any list of strings; the entries are the content
         ".aws", ".gnupg", "Library/Keychains", ".config/gh", ".kube", ".config/gcloud", ".azure", "Library/Cookies",
+        // @dl:accept -- a table of names (programs or paths) reads like any list of strings; the entries are the content
         "Library/Application Support/Google/Chrome",
         "Library/Application Support/BraveSoftware", "Library/Application Support/Microsoft Edge",
-        "Library/Application Support/Arc", "Library/Application Support/Firefox"
+        "Library/Application Support/Arc", "Library/Application Support/Firefox",
+        // Security audit 2026-11-22 (CRIT-01, MED-08): Safari's, password managers' and pass's stores, and mail and messages.
+        "Library/Safari", "Library/Containers/com.apple.Safari", "Library/Group Containers/2BUA8C4S2C.com.1password",
+        "Library/Application Support/1Password", "Library/Application Support/Bitwarden", ".password-store",
+        ".config/op",
+        "Library/Messages", "Library/Mail"
+    ]
+
+    /// Places named by how they start, for apps whose data takes their identifier with several endings (`.dev`, `.binarycookies`):
+    /// Sunset's vault, cookies, site data and caches, and Safari's per-app storage (security audit 2026-11-22, CRIT-01).
+    static let secretPrefixes = [
+        "Library/Application Support/Sunset", "Library/HTTPStorages/studio.aemi.sunset",
+        "Library/HTTPStorages/sunset-app",
+        "Library/WebKit/studio.aemi.sunset", "Library/WebKit/sunset-app", "Library/Caches/studio.aemi.sunset",
+        // @dl:accept -- a table of names (programs or paths) reads like any list of strings; the entries are the content
+        "Library/HTTPStorages/com.apple.Safari", "Library/WebKit/com.apple.Safari", "Library/Caches/com.apple.Safari"
     ]
 
     /// Single secret files: netrc, registries' tokens, git's stored credentials, Docker's, and ssh private keys (not
     /// `~/.ssh/config` or `known_hosts`, which `git` over ssh reads).
     static let secretFiles =
+        // @dl:accept -- a table of names (programs or paths) reads like any list of strings; the entries are the content
         [
-            ".netrc", ".npmrc", ".pypirc", ".git-credentials", ".config/git/credentials", ".docker/config.json"
+            ".netrc", ".npmrc", ".pypirc", ".git-credentials", ".config/git/credentials", ".docker/config.json",
+            // Security audit 2026-11-22 (MED-08). Not `.m2/settings.xml` or `gradle.properties`, which builds read.
+            ".pgpass", ".my.cnf", ".vault-token", ".terraform.d/credentials.tfrc.json", ".cargo/credentials.toml",
+            ".cargo/credentials", ".gem/credentials", ".composer/auth.json", ".config/composer/auth.json",
+            ".zsh_history",
+            ".bash_history", ".local/share/fish/fish_history"
         ]
         + ["id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", "id_ecdsa_sk", "id_ed25519_sk"].map { ".ssh/" + $0 }
 

@@ -35,7 +35,7 @@ public struct SeatbeltProfile: Sendable, Equatable {
             return "(param \"\(name)\")"
         }
         func clause(_ rule: SandboxRule, _ prefix: String) -> String {
-            "(\(rule.kind == .subpath ? "subpath" : "literal") \(parameter(prefix, rule.path)))"
+            "(\(rule.seatbeltName) \(parameter(prefix, rule.path)))"
         }
         /// One rule, `(head clause clause …)`, or nothing when there are no clauses.
         func rule(_ head: String, _ clauses: [String]) {

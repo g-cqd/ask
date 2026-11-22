@@ -6,7 +6,8 @@ extension SandboxPolicy {
     /// - **ask's configuration directory** cannot be read or written: it holds the credentials, the trust store and
     ///   the provider keys, and a model that could edit it could widen its own sandbox or trust its own project.
     /// - **ask's state directory** cannot be written: sessions are ask's record, and the model rewriting its own history
-    ///   is not an edit it should be able to make. It can be read, since a cut command output is read back from there.
+    ///   is not an edit it should be able to make. Only its `output` folder can be read, where a cut command output is read back
+    ///   from: the sessions (every project's), the session keys and ask's log cannot (security audit 2026-11-22, HIGH-08).
     /// - **Secret stores** a coding task has no need to read: `~/.aws`, `~/.gnupg`, keychains, `~/.netrc`, and ssh
     ///   *private keys*. Not `~/.ssh/config` or `known_hosts`, which `git` over ssh needs; the key itself is held by
     ///   the agent or read by `ssh`, which would then fail, so a key without an agent must be allowed explicitly.
@@ -44,19 +45,25 @@ extension SandboxPolicy {
         }
         let readable = Set(allowRead.map { canonical($0).lowercased() })
         let writable = Set(allowWrite.map { canonical($0).lowercased() })
-        let secrets = rules(
-            home,
-            StandardProtections.secretDirectories + otherSecrets.directories,
-            StandardProtections.secretFiles + otherSecrets.files
-        )
-        .filter { !readable.contains($0.path.lowercased()) }
+        let secrets =
+            (rules(
+                home,
+                StandardProtections.secretDirectories + otherSecrets.directories,
+                StandardProtections.secretFiles + otherSecrets.files
+            )
+            + StandardProtections.secretPrefixes.map { SandboxRule(canonical(home + "/" + $0), .prefix) })
+            .filter { !readable.contains($0.path.lowercased()) }
         let runsLater =
             (rules(home, StandardProtections.runningDirectories, StandardProtections.runningFiles)
             + rules("", StandardProtections.systemRunningDirectories, [])
             + (workspace.flatMap(repositoryRules) ?? []))
             .filter { !writable.contains($0.path.lowercased()) }
+        let ownState =
+            [SandboxRule(canonical(stateDirectory + "/sessions"), .subpath)]
+            + ["keys.json", "session-encryption.json", "stderr.log"]
+            .map { SandboxRule(canonical(stateDirectory + "/" + $0), .literal) }
         return SandboxPolicy(
-            denyRead: [SandboxRule(canonical(configDirectory), .subpath)] + secrets
+            denyRead: [SandboxRule(canonical(configDirectory), .subpath)] + ownState + secrets
                 + denyRead.map { SandboxRule(canonical($0), .subpath) },
             denyWrite: [SandboxRule(canonical(stateDirectory), .subpath)] + runsLater,
             askable: secrets + runsLater
