@@ -87,11 +87,13 @@ Run commands with fish instead of bash:
 Layers apply in this order, each one overriding the one before:
 
 1. ask's defaults;
-2. your file, `~/.config/ask/config.json`;
-3. the project's file, `.ask/config.json`;
-4. environment variables: `ASK_MODEL`, `ASK_PROVIDER`, `ASK_THINKING`, `ASK_MAX_TURNS`, `ASK_COMPACT_AT`;
-5. command-line flags: `--model`, `--provider`, `--thinking`, `--max-turns`, `--compact-at`, `--network`, `--write`, `--read`,
-   `--no-sandbox`, `--yes`, `--yolo`, `--allow`, `--ask`.
+2. your organisation's defaults, on a managed machine (see below);
+3. your file, `~/.config/ask/config.json`;
+4. the project's file, `.ask/config.json`;
+5. environment variables: `ASK_MODEL`, `ASK_PROVIDER`, `ASK_THINKING`, `ASK_MAX_TURNS`, `ASK_COMPACT_AT`;
+6. command-line flags: `--model`, `--provider`, `--thinking`, `--max-turns`, `--compact-at`, `--network`, `--write`, `--read`,
+   `--no-sandbox`, `--yes`, `--yolo`, `--allow`, `--ask`;
+7. your organisation's requirements, on a managed machine.
 
 Inside a section such as `ui`, a layer replaces only the keys it sets. A later file adds to an earlier one and never wipes it:
 
@@ -107,6 +109,22 @@ trusting it. Some settings can only come from your own file, as the tables below
 
 `docs/config.example.jsonc` holds every setting below with an example value and its default, generated from the code so it never
 drifts; copy from it only what you want to change.
+
+### On a machine your organisation manages
+
+An administrator can put two files in `/Library/Application Support/ask` (`/etc/ask` on Linux), each written exactly like your
+`config.json`, with every key available:
+
+- `defaults.json` sets where you start: your own file, the project's, variables and flags change it as usual;
+- `requirements.json` is applied after everything else, so nothing you set changes it. Each key keeps its rule: a required
+  `sandbox.network` or `sandbox.write` can still be narrowed by you but not widened, even by a flag, and a required
+  `environment.withhold` keeps its entries while yours are added.
+
+Each may have drop-ins, `defaults.d/*.json` and `requirements.d/*.json`, applied after it in name order. `ask config` shows a key
+they set with the file's path and "required by your organisation" or "your organisation's default". ask trusts these files only when
+they and their folder belong to root and nobody else may write them; a file that does not, or that is not a valid configuration,
+stops ask with a message naming it, rather than being skipped. Until a later version, `/model` can still change the model for one
+run even when it is required.
 
 ## Older names
 

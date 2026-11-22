@@ -8,6 +8,9 @@ public enum ConfigurationError: Error, Sendable, Equatable, CustomStringConverti
     case unknownKey(path: String, key: String, known: [String])
     /// A value of the right type outside what the key allows.
     case outOfRange(path: String, key: String, reason: String)
+    /// A managed document (ADR-0168) that someone other than its owner could have written: an organisation's policy that cannot be
+    /// trusted stops ask rather than being dropped.
+    case untrusted(path: String, reason: String)
 
     public var description: String {
         switch self {
@@ -17,6 +20,8 @@ public enum ConfigurationError: Error, Sendable, Equatable, CustomStringConverti
             case .unknownKey(let path, let key, let known):
                 "\(path): unknown key \"\(key)\"; ask knows " + known.map { "\"\($0)\"" }.joined(separator: ", ")
             case .outOfRange(let path, let key, let reason): "\(path): \"\(key)\" \(reason)"
+            case .untrusted(let path, let reason):
+                "\(path): your organisation's configuration cannot be trusted: \(reason). Ask the person who manages this machine."
         }
     }
 }

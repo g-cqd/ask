@@ -30,3 +30,11 @@ questions M1 to M8 for the owner. Nothing is built until they are answered.
 - **Order:** roadmap 0209 (one declaration per setting, with each key's merge rule) first, then this entry.
 - Still open: M1 (the CFPreferences read measured inside ask), M3's user-level file (not chosen), M6 (other tools not read).
 
+## Phase 1 built (2026-11-22, ADR-0168, diary 2026-11-22-04)
+
+`requirements.json` and `defaults.json`, with drop-ins, in `/Library/Application Support/ask` (`/etc/ask` elsewhere): defaults first,
+requirements last, each key by its declared rule; root's and writable by nobody else, or ask stops; shown in `ask config`. Next,
+phase 2: `/model` and `/config` respect requirements; managed-only keys (refusing `--no-sandbox` and `--yolo`; allowlists of providers,
+models and MCP servers). Then the profile's domain `studio.aemi.ask` (phase 3), console schemas and `.mobileconfig` (phase 4), an HTTPS
+endpoint (phase 5).
+
