@@ -53,3 +53,11 @@ tests, then the enumerations moved into AskCore one at a time (each its own comm
   declared the same way, each declaration carrying its merge rule (replace, a protective list that adds, a scope that narrows,
   the person's own file only), which MDM (0130) needs.
 
+## Progress (2026-11-22, second part)
+
+- Every section but `mcp` is declared: `SettingDeclaration<Section>` with its `SettingMerge` rule, a `SettingTable` per section, one
+  `SectionDecoded<Section>` for all of them. The rules as declared: `environment.pass` and `withhold`, `sandbox.hide` add; `sandbox.write`,
+  `read` and `network` narrow; every other key replaces (`sandbox.readable` and `writable` only when they name something).
+- Left: `mcp` (layered by server name, with masks that may only switch off) and the top-level keys (`model`, `thinking`, `maxTurns`, …),
+  which MDM needs declared too; the memberwise `UISection.init`.
+
