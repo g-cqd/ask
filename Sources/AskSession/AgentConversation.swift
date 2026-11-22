@@ -233,6 +233,7 @@ final class AgentConversation: Conversation {
         if case .toolFinished(_, "tasks", _) = event { sayTaskSpend(update: update) }
         if case .compacted(let summary, _) = event {
             renameConversation(fromSummary: summary, update: update)
+            sayCompactionSpend(update: update)
             // What a compaction folds away stays searchable: the index takes it now (t209).
             // From a snapshot: the task must not hold the session, which the person may leave meanwhile (roadmap 0230).
             if let recorder = session.withLock({ $0 }) {
