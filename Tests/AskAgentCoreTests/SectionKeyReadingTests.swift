@@ -55,5 +55,6 @@ struct SectionKeyReadingTests {
         order(JobsSection.self)
         order(SkillsSection.self)
         #expect(UISection.keys == UISection.settings.all.map(\.name))
+        #expect(ThreadsSection.keys == SettingCatalog.threads.map { $0.path.dropFirst().joined(separator: ".") })
     }
 }
