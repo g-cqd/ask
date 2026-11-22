@@ -1,3 +1,4 @@
+internal import AskAI
 public import Foundation
 
 /// The addresses `fetch` reads (roadmap 0237): `https` only (and `http` to this machine, for local servers), no credentials in them,
@@ -20,9 +21,16 @@ public enum FetchAddress {
         return .success(url)
     }
 
-    /// The host an approval for `text` names, lowercased; nil when `text` is no address.
+    /// The host an approval for `text` names, lowercased; nil when `text` is no address. This machine's servers are told apart by
+    /// their port (`localhost:3000`): approving one local server is not approving every other (security audit 2026-11-22, CRIT-05).
     public static func host(of text: String) -> String? {
-        URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines))?.host?.lowercased()
+        guard let url = URL(string: text.trimmingCharacters(in: .whitespacesAndNewlines)),
+            let host = url.host?.lowercased()
+        else {
+            return nil
+        }
+        guard isLocal(host) else { return host }
+        return host + ":" + String(url.port ?? (url.scheme?.lowercased() == "https" ? 443 : 80))
     }
 
     /// Why an address is refused.
@@ -54,23 +62,7 @@ public enum FetchAddress {
         host == "localhost" || host == "127.0.0.1" || host == "::1" || host == "[::1]"
     }
 
-    /// A literal address in a private, loopback, link-local or unspecified range. A name is checked by what it resolves to
+    /// A literal address in a range that is not the public internet (``InwardAddress``). A name is checked by what it resolves to
     /// (``refusal(of:resolvingTo:)``).
-    static func isPrivateLiteral(_ host: String) -> Bool {
-        let bare = host.trimmingCharacters(in: CharacterSet(charactersIn: "[]"))
-        let parts = bare.split(separator: ".").compactMap { Int($0) }
-        if parts.count == 4, parts.allSatisfy({ (0 ... 255).contains($0) }) {
-            switch (parts[0], parts[1]) {
-                case (10, _), (127, _), (0, _), (169, 254), (192, 168): return true
-                case (172, let second): return (16 ... 31).contains(second)
-                case (100, let second): return (64 ... 127).contains(second)
-                default: return false
-            }
-        }
-        let lower = bare.lowercased()
-        return lower.contains(":")
-            && (lower == "::" || lower == "::1" || lower.hasPrefix("fe80") || lower.hasPrefix("fc")
-                || lower.hasPrefix("fd")
-                || lower.hasPrefix("::ffff:"))
-    }
+    static func isPrivateLiteral(_ host: String) -> Bool { InwardAddress.contains(host) }
 }
