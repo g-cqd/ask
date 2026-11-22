@@ -61,3 +61,13 @@ tests, then the enumerations moved into AskCore one at a time (each its own comm
 - Left: `mcp` (layered by server name, with masks that may only switch off) and the top-level keys (`model`, `thinking`, `maxTurns`, …),
   which MDM needs declared too; the memberwise `UISection.init`.
 
+## Progress (2026-11-22, third part; diary 2026-11-22-03)
+
+- The top-level keys are declared (`ConfigurationFile.settings`); the sections read through one table of key-path readers.
+- `UISection`'s and `ConfigurationFile`'s initializers are Swift's own. `@dl:accept`: `ConfigurationFile` 3, `UISection` 2: met.
+- A drifting twin fails a test: met, by construction (there are no twins).
+- **Not met:** adding a `ui` setting with an enum value still takes its type in AskCore, the `UISection` field, its declaration, the
+  screen option, the line in `RunSettings+Screen`, the line in `effectiveUI`, and the docs sentence. Three places would need the screen
+  to read `UISection` directly rather than its own `ScreenOptions`: a change to AskTUI's options, not yet planned.
+- `mcp` is not declared key by key: its layering is by server name, with masks. A managed allowlist of servers (0130) is a new key.
+
