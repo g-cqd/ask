@@ -174,31 +174,7 @@ enum SettingCatalog {
 
     static let skills: [Setting] = SkillsSection.settings.all.map(\.row)
 
-    static let environment: [Setting] = [
-        row(
-            "environment.withhold",
-            .structured,
-            #"["AWS_*"]"#,
-            "ask's and well-known credential variables",
-            "More variables kept from commands."
-        ),
-        row(
-            "environment.pass",
-            .structured,
-            #"["GH_TOKEN"]"#,
-            "none",
-            user: true,
-            "Withheld variables commands get anyway."
-        ),
-        row(
-            "environment.shell",
-            .text,
-            #""zsh""#,
-            "the first bash on your PATH, else /bin/bash, else ksh, sh or dash, else your login shell",
-            user: true,
-            "The shell commands run in."
-        )
-    ]
+    static let environment: [Setting] = EnvironmentSection.settings.all.map(\.row)
     // @dl:enable near-clone
     // @dl:enable structural-clone
 }

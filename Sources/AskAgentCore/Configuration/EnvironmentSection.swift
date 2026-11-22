@@ -1,8 +1,8 @@
 /// The `environment` section of a configuration file: what commands the model runs may and may not inherit of ask's own environment
 /// (ADR-0106). Only names, never values.
 public struct EnvironmentSection: Sendable, Equatable, CustomStringConvertible, LayeredSection {
-    /// The keys a file may set under `environment`.
-    public static let keys = ["pass", "withhold", "shell"]
+    /// The keys a file may set under `environment`, from their declarations (``EnvironmentSection/settings``).
+    public static let keys = settings.all.map(\.name)
 
     /// The most names one list may hold, far above any real use, so a file cannot grow the environment check without bound.
     public static let limit = 256
@@ -31,11 +31,7 @@ public struct EnvironmentSection: Sendable, Equatable, CustomStringConvertible, 
 
     /// `self` with the names `section` adds: layers add to each other, and what a later layer withholds a pass cannot undo.
     public func layered(with section: EnvironmentSection) -> EnvironmentSection {
-        EnvironmentSection(
-            pass: pass + section.pass,
-            withhold: withhold + section.withhold,
-            shell: section.shell ?? shell
-        )
+        declaredLayered(with: section)
     }
 
     /// The names and nothing else: never a value.
