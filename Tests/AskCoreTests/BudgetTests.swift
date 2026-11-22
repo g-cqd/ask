@@ -125,9 +125,9 @@ struct BudgetTests {
         #expect(Budget.idleMemoryMebibytes == 24)
     }
 
-    @Test func `the cold start budget is the 50 ms the owner chose, so changing it is a deliberate act`() {
-        // ADR-0122. Raised from 25 ms because the budget is now checked with the machine loaded.
-        #expect(Budget.coldStartMilliseconds == 50)
+    @Test func `the cold start budget is the 100 ms the owner chose, so changing it is a deliberate act`() {
+        // ADR-0167 (ADR-0122 set 50, raised from 25 because the budget is checked with the machine loaded).
+        #expect(Budget.coldStartMilliseconds == 100)
     }
 
     @Test func `active memory and the delays are the numbers the owner chose`() {
