@@ -39,7 +39,7 @@ extension RunSettings {
             spinner: spinnerStyle,
             jobAutoReturnWhenFocused: ui.jobAutoReturnWhenFocused ?? defaults.jobAutoReturnWhenFocused,
             abortTurnRequiresConfirmation: ui.abortTurnRequiresConfirmation ?? defaults.abortTurnRequiresConfirmation,
-            interruptKeys: ui.interruptKeys.flatMap { InterruptKeys(rawValue: $0.rawValue) } ?? defaults.interruptKeys,
+            interruptKeys: ui.interruptKeys ?? defaults.interruptKeys,
             escapeInterruptRequiresConfirmation: ui.escapeInterruptRequiresConfirmation
                 ?? defaults.escapeInterruptRequiresConfirmation,
             interruptSendsQueued: ui.interruptSendsQueued.flatMap { QueuedAfterInterrupt(rawValue: $0.rawValue) }

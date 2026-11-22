@@ -62,7 +62,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     /// `ui.abortTurnRequiresConfirmation`: whether aborting an active conversation turn requires two Ctrl+C presses within two seconds.
     public var abortTurnRequiresConfirmation: Bool?
     /// `ui.interruptKeys`: which keys interrupt a running turn: `"esc"`, `"ctrl-c"` or `"both"` (default).
-    public var interruptKeys: InterruptKeysPreference?
+    public var interruptKeys: InterruptKeys?
     /// `ui.escapeInterruptRequiresConfirmation`: whether Esc must be pressed twice to interrupt (`"on"`, default) or once (`"off"`).
     public var escapeInterruptRequiresConfirmation: Bool?
     /// `ui.interruptSendsQueued`: what happens to queued messages after an interruption: `"none"`, `"next"` or `"all"` (default).
@@ -122,7 +122,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         jobAutoReturnWhenFocused: Bool? = nil,
         abortTurnRequiresConfirmation: Bool? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
-        interruptKeys: InterruptKeysPreference? = nil,
+        interruptKeys: InterruptKeys? = nil,
         escapeInterruptRequiresConfirmation: Bool? = nil,
         interruptSendsQueued: QueuedAfterInterruptPreference? = nil,
         onlyUsefulModels: Bool? = nil,
