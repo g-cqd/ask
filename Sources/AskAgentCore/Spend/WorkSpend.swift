@@ -74,11 +74,13 @@ public struct WorkSpend: Sendable, Equatable {
 
 extension WorkSpend {
     /// The tokens as the status line says the session's: `↑45k ↓3.1k`, every prompt token sent, cached or not, then those received;
-    /// nil when no response counted either.
+    /// a side no response counted is left out, and nil when neither was.
     public var compactTokens: String? {
-        guard usage.input != nil || usage.output != nil else { return nil }
-        let prompt = (usage.input ?? 0) + (usage.cacheRead ?? 0) + (usage.cacheCreation ?? 0)
-        return "↑\(UsageTotals.short(prompt)) ↓\(UsageTotals.short(usage.output ?? 0))"
+        let counted = [usage.input, usage.cacheRead, usage.cacheCreation].compactMap(\.self)
+        let sent = counted.isEmpty ? nil : "↑" + UsageTotals.short(counted.reduce(0, +))
+        let received = usage.output.map { "↓" + UsageTotals.short($0) }
+        let both = [sent, received].compactMap(\.self)
+        return both.isEmpty ? nil : both.joined(separator: " ")
     }
 
     /// The entries after `start` on `tree`'s active branch: a turn's, when `start` was the leaf as it began; the whole branch when
