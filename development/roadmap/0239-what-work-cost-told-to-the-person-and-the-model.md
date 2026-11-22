@@ -61,6 +61,9 @@ cost of recording is measured on the action-to-action budget.
 - The comparison between two compactions (read as: after each compaction, the work it summarised beside the stretch before, in the
   same words; provisional until the owner sees it): a line after the compaction block. Its time is the time worked, the model's and
   the tools', since a stretch can span a night.
-- Left: the price table that ships with each release; the independent count (`ccusage`) and the recording's cost on the action
-  budget that "done when" asks for.
+- **Done when, for steps 0 and 1** (diary 2026-11-22-04): the totals agree with an independent count of the same logs
+  (`Scripts/probe-spend-count.py`, which stands in for `ccusage`: that reads Claude Code's logs, not ask's) on the five largest logs on
+  the development Mac (up to 33,237 entries) and on a timed one; recording costs no more than the measurement's noise on the action
+  (read: 6.90 ms before, 7.09 ms after, medians of three interleaved rounds of 10, quartiles overlapping).
+- Left: the price table that ships with each release; steps 2 to 4, to decide with the owner on what steps 0 and 1 show.
 
