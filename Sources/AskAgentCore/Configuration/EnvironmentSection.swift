@@ -29,11 +29,6 @@ public struct EnvironmentSection: Sendable, Equatable, CustomStringConvertible, 
 
     public var isEmpty: Bool { pass.isEmpty && withhold.isEmpty && shell == nil }
 
-    /// `self` with the names `section` adds: layers add to each other, and what a later layer withholds a pass cannot undo.
-    public func layered(with section: EnvironmentSection) -> EnvironmentSection {
-        declaredLayered(with: section)
-    }
-
     /// The names and nothing else: never a value.
     public var description: String {
         guard !isEmpty else { return "none" }

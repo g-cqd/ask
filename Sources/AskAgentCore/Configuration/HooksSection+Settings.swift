@@ -1,5 +1,10 @@
 // The hooks settings (roadmap 0192), each declared once (roadmap 0209).
+// @dl:disable near-clone -- a section's settings are data: a key, its field, a type, an example, a default and help each
+// @dl:disable structural-clone -- the same rows, matched by their shape
 extension HooksSection: DeclaredSection {
+    /// A section that sets nothing.
+    init() { self.init(maxContinues: nil) }
+
     static let settings = SettingTable<HooksSection>(
         "hooks",
         [
@@ -37,3 +42,5 @@ extension HooksSection: DeclaredSection {
         ]
     )
 }
+// @dl:enable near-clone
+// @dl:enable structural-clone

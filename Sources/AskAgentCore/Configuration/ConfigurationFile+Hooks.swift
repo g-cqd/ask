@@ -1,15 +1,4 @@
 extension ConfigurationFile {
-    /// The `hooks` keys (roadmap 0192), each read by its declaration; unknown keys are refused.
-    struct HooksDecoded: Decodable {
-        var section = HooksSection()
-
-        init(from decoder: any Decoder) throws {
-            try ConfigurationFile.eachKey(of: decoder) { key, container in
-                try section.read(key.stringValue, at: key, in: container)
-            }
-        }
-    }
-
     /// Only the person's own file says how long hooks keep a run going; a trusted project's may name its check. Counts within range.
     static func validateHooks(_ section: HooksSection?, path: String, isProject: Bool) throws(ConfigurationError) {
         guard let section else { return }

@@ -57,12 +57,6 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible, Laye
         .compactMap { $0 }.joined(separator: ", ")
     }
 
-    /// `self` with a higher file layer's section applied, each key by its own rule (``SandboxSection/settings``): what may be read
-    /// or written again is replaced by the file that names it, and everything else only narrows.
-    func layered(with section: SandboxSection) -> SandboxSection {
-        declaredLayered(with: section)
-    }
-
     /// Where writing is allowed: the intersection of every layer's scope, anywhere when none set one.
     /// Where writing is allowed: the intersection of the layers' scopes, or the workspace when none set one (owner, 2026-10-29); an
     /// explicit `anywhere` opens it.

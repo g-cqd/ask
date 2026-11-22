@@ -26,15 +26,6 @@ public struct AgentsSection: Sendable, Equatable, CustomStringConvertible, Layer
     public var readsOtherHarnesses: Bool { otherHarnesses ?? false }
     public var resolvesWithModel: Bool { resolveWithModel ?? true }
 
-    /// `self` with every key `section` sets replaced.
-    public func layered(with section: AgentsSection) -> AgentsSection {
-        declaredLayered(with: section)
-    }
-
     /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.
-    public func value(forKey key: String) -> String? {
-        declaredValue(forKey: key)
-    }
-
-    public var description: String { SectionText.describe(Self.keys, value(forKey:)) }
+    public var description: String { Self.settings.describe(self) }
 }

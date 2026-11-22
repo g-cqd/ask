@@ -1,26 +1,6 @@
 internal import AemiRegex
 
-// @dl:accept -- every configuration section is decoded, layered and compared by the same idiom; the keys are the data
 extension ConfigurationFile {
-    /// The `openers` keys (roadmap 0216, ADR-0148); unknown keys are refused.
-    struct OpenersDecoded: Decodable {
-        // @dl:accept -- every configuration section is decoded by the same idiom; the keys are the data
-        var section = OpenersSection()
-
-        init(from decoder: any Decoder) throws {
-            try ConfigurationFile.eachKey(of: decoder) { key, container in
-                switch key.stringValue {
-                    // @dl:accept -- key table rows, as every section decodes them
-                    case "file": section.file = try container.decode(String.self, forKey: key)
-                    case "folder": section.folder = try container.decode(String.self, forKey: key)
-                    case "web": section.web = try container.decode(String.self, forKey: key)
-                    case "rules": section.rules = try container.decode([RuleDecoded].self, forKey: key).map(\.rule)
-                    default: throw UnknownKey(key: "openers." + key.stringValue)
-                }
-            }
-        }
-    }
-
     /// One rule: its `match`, and its `app` or `command`.
     struct RuleDecoded: Decodable {
         var rule = OpenerRule()

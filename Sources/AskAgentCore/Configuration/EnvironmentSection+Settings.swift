@@ -1,6 +1,11 @@
 // The environment settings (ADR-0106), each declared once (roadmap 0209). Both lists add up across layers: what one layer withholds,
 // a later one cannot give back by leaving it out.
+// @dl:disable near-clone -- a section's settings are data: a key, its field, a type, an example, a default and help each
+// @dl:disable structural-clone -- the same rows, matched by their shape
 extension EnvironmentSection: DeclaredSection {
+    /// A section that sets nothing.
+    init() { self.init(pass: []) }
+
     static let settings = SettingTable<EnvironmentSection>(
         "environment",
         [
@@ -41,3 +46,5 @@ extension EnvironmentSection: DeclaredSection {
         ]
     )
 }
+// @dl:enable near-clone
+// @dl:enable structural-clone

@@ -25,10 +25,10 @@ struct SectionKeyReadingTests {
             let parsed = try ConfigurationFile.parse(Array(text.utf8), path: setting.name)
             let section = try #require(parsed[keyPath: file], "\(table.section).\(setting.name)")
             #expect(
-                section.declaredValue(forKey: setting.name) != nil,
+                section.value(forKey: setting.name) != nil,
                 "\(table.section).\(setting.name) reads nothing back"
             )
-            let others = names.filter { $0 != setting.name && section.declaredValue(forKey: $0) != nil }
+            let others = names.filter { $0 != setting.name && section.value(forKey: $0) != nil }
             #expect(others.isEmpty, "setting \(table.section).\(setting.name) shows a value for \(others)")
         }
     }
@@ -49,6 +49,7 @@ struct SectionKeyReadingTests {
         try check(ThreadsSection.self, in: \.threads)
         try check(EnvironmentSection.self, in: \.environment)
         try check(SandboxSection.self, in: \.sandbox)
+        try check(OpenersSection.self, in: \.openers)
     }
 
     @Test func `the catalog lists each section's settings in its table's order`() {
@@ -60,6 +61,7 @@ struct SectionKeyReadingTests {
         order(ThreadsSection.self)
         order(EnvironmentSection.self)
         order(SandboxSection.self)
+        order(OpenersSection.self)
         #expect(UISection.keys == UISection.settings.all.map(\.name))
     }
 }

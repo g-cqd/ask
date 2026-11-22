@@ -1,5 +1,10 @@
 // The skills settings (roadmap 0061), each declared once (roadmap 0209).
+// @dl:disable near-clone -- a section's settings are data: a key, its field, a type, an example, a default and help each
+// @dl:disable structural-clone -- the same rows, matched by their shape
 extension SkillsSection: DeclaredSection {
+    /// A section that sets nothing.
+    init() { self.init(enabled: nil) }
+
     static let settings = SettingTable<SkillsSection>(
         "skills",
         [
@@ -38,3 +43,5 @@ extension SkillsSection: DeclaredSection {
         ]
     )
 }
+// @dl:enable near-clone
+// @dl:enable structural-clone

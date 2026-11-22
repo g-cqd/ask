@@ -12,4 +12,9 @@ struct SettingTable<Section: Sendable>: Sendable {
         self.all = all
         named = Dictionary(uniqueKeysWithValues: all.map { ($0.name, $0) })
     }
+
+    /// The keys `section` sets, as a file writes them, in order: `inputRows 4, fold.tools false`; `defaults` when it sets none.
+    func describe(_ section: Section) -> String {
+        SectionText.describe(all.map(\.name)) { named[$0]?.write(section) }
+    }
 }

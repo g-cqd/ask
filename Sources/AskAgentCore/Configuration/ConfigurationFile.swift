@@ -165,6 +165,10 @@ public struct ConfigurationFile: Sendable, Equatable {
         var file = ConfigurationFile()
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
+                /// A section whose settings are each declared once (roadmap 0209), read through its table.
+                func declared<Section: DeclaredSection>(_: Section.Type) throws -> Section {
+                    try container.decode(SectionDecoded<Section>.self, forKey: key).section
+                }
                 switch key.stringValue {
                     case "model": file.model = try container.decode(String.self, forKey: key)
                     // @dl:accept -- the key tables are the data, and the walk over them is already shared
@@ -189,26 +193,31 @@ public struct ConfigurationFile: Sendable, Equatable {
                         file.credentials = try ConfigurationFile.decodeChoice(
                             container,
                             key: key,
+                            // @dl:accept -- each key decodes its own choice through the shared helper; the rows are the data
                             as: CredentialStorage.self
-                                // @dl:accept -- each key decodes its own choice through the shared helper; the rows are the data
                         )
                     // @dl:accept -- the key tables are the data, and the walk over them is already shared
-                    case "sandbox": file.sandbox = try container.decode(SandboxDecoded.self, forKey: key).section
-                    case "ui": file.ui = try container.decode(UIDecoded.self, forKey: key).section
-                    case "skills": file.skills = try container.decode(SkillsDecoded.self, forKey: key).section
+                    case "sandbox":
+                        file.sandbox = try declared(SandboxSection.self)
+                    case "ui": file.ui = try declared(UISection.self)
+                    case "skills":
+                        file.skills = try declared(SkillsSection.self)
                     // @dl:accept -- the key tables are the data, and the walk over them is already shared
                     case "mcp": file.mcp = try container.decode(MCPDecoded.self, forKey: key).section
                     case "presets": file.presets = try container.decode([String].self, forKey: key)
                     case "approvals": file.approvals = try container.decode(ApprovalsDecoded.self, forKey: key).section
-                    case "hooks": file.hooks = try container.decode(HooksDecoded.self, forKey: key).section
-                    case "threads": file.threads = try container.decode(ThreadsDecoded.self, forKey: key).section
-                    case "agents": file.agents = try container.decode(AgentsDecoded.self, forKey: key).section
-                    case "openers": file.openers = try container.decode(OpenersDecoded.self, forKey: key).section
-                    case "jobs": file.jobs = try container.decode(JobsDecoded.self, forKey: key).section
+                    case "hooks":
+                        file.hooks = try declared(HooksSection.self)
+                    case "threads":
+                        file.threads = try declared(ThreadsSection.self)
+                    case "agents":
+                        file.agents = try declared(AgentsSection.self)
+                    case "openers": file.openers = try declared(OpenersSection.self)
+                    case "jobs": file.jobs = try declared(JobsSection.self)
                     case "modelScopes":
                         file.modelScopes = try container.decode([ModelScopeDecoded].self, forKey: key).map(\.scope)
                     case "environment":
-                        file.environment = try container.decode(EnvironmentDecoded.self, forKey: key).section
+                        file.environment = try declared(EnvironmentSection.self)
                     default: throw UnknownKey(key: key.stringValue)
                 }
             }

@@ -1,15 +1,5 @@
 // @dl:accept -- each section decodes its keys through the one shared walk; the key tables are the data
 extension ConfigurationFile {
-    /// The `environment` keys; unknown keys are refused.
-    struct EnvironmentDecoded: Decodable {
-        var section = EnvironmentSection()
-        init(from decoder: any Decoder) throws {
-            try ConfigurationFile.eachKey(of: decoder) { key, container in
-                try section.read(key.stringValue, at: key, in: container)
-            }
-        }
-    }
-
     /// Every name must be a variable name, a prefix (`NAME*`) only in `withhold`, and a project's file may withhold more and pass nothing:
     /// a repository must not hand a command a secret ask would keep from it.
     static func validateEnvironment(_ section: EnvironmentSection?, path: String, isProject: Bool)

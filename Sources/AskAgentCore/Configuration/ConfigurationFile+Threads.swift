@@ -1,20 +1,4 @@
 extension ConfigurationFile {
-    /// The `threads` keys (roadmap 0195), each read by its declaration; unknown keys are refused.
-    struct ThreadsDecoded: Decodable {
-        var section = ThreadsSection()
-
-        init(from decoder: any Decoder) throws {
-            try ConfigurationFile.eachKey(of: decoder) { key, container in
-                // Retired (note n52): a thread merges only by /merge. Still read, so a file that sets it opens.
-                guard key.stringValue != "merge" else {
-                    _ = try container.decode(String.self, forKey: key)
-                    return
-                }
-                try section.read(key.stringValue, at: key, in: container)
-            }
-        }
-    }
-
     /// Counts within range. A project's file may set them too: they only ever limit what runs.
     static func validateThreads(_ section: ThreadsSection?, path: String) throws(ConfigurationError) {
         guard let section else { return }
