@@ -50,3 +50,9 @@ retention. Next: phase 3, the profile's domain `studio.aemi.ask`.
 The profile's domain `studio.aemi.ask`, machine then person, after the files (ADR-0168's amendment). Next: phase 4, console schemas
 (Jamf JSON schema, ProfileManifests) and a `.mobileconfig` generator from the catalog, `SettingCatalog.managedOnly` included.
 
+## Phase 4 built (2026-11-22)
+
+`ask config --mdm-schema jamf|manifest` and `--mdm-profile`. Left: phase 5 (an HTTPS endpoint); the rest of the proposal's
+managed-only keys (an MCP server allowlist by command or URL, hooks and skills only from the organisation, a minimum version, session
+retention); a check of the schemas in a real Jamf Pro and iMazing Profile Editor.
+
