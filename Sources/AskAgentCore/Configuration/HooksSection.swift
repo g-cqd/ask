@@ -22,8 +22,8 @@ public struct HooksSection: Sendable, Equatable, CustomStringConvertible, Layere
         self.checkTimeout = checkTimeout
     }
 
-    /// The keys, in the order they are shown.
-    public static let keys = ["maxContinues", "check", "checkTimeout"]
+    /// The keys, in the order they are shown, from their declarations (``HooksSection/settings``).
+    public static let keys = settings.all.map(\.name)
 
     /// How many continues a run is allowed.
     public var continues: Int { maxContinues ?? Self.defaultMaxContinues }
@@ -32,24 +32,13 @@ public struct HooksSection: Sendable, Equatable, CustomStringConvertible, Layere
     public var checkSeconds: Int { checkTimeout ?? Self.defaultCheckSeconds }
 
     /// `self` with every key `section` sets replaced.
-    // @dl:accept -- each section layers its keys the same way; the key lists are the data
     public func layered(with section: HooksSection) -> HooksSection {
-        HooksSection(
-            // @dl:accept -- every section layers its keys this way; the key lists are the data
-            maxContinues: section.maxContinues ?? maxContinues,
-            check: section.check ?? check,
-            checkTimeout: section.checkTimeout ?? checkTimeout
-        )
+        declaredLayered(with: section)
     }
 
     /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.
     public func value(forKey key: String) -> String? {
-        switch key {
-            case "maxContinues": maxContinues.map(String.init)
-            case "check": check
-            case "checkTimeout": checkTimeout.map(String.init)
-            default: nil
-        }
+        declaredValue(forKey: key)
     }
 
     public var description: String { SectionText.describe(Self.keys, value(forKey:)) }

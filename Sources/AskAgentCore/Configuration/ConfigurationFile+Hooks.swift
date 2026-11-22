@@ -1,18 +1,11 @@
 extension ConfigurationFile {
-    /// The `hooks` keys (roadmap 0192); unknown keys are refused.
+    /// The `hooks` keys (roadmap 0192), each read by its declaration; unknown keys are refused.
     struct HooksDecoded: Decodable {
-        // @dl:accept -- every section of the file is decoded and layered by the same idiom; its keys are the data
         var section = HooksSection()
 
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
-                switch key.stringValue {
-                    case "maxContinues": section.maxContinues = try container.decode(Int.self, forKey: key)
-                    case "check": section.check = try container.decode(String.self, forKey: key)
-                    // @dl:accept -- a key table decoded by the shared walk, as every section's is; the keys are the data
-                    case "checkTimeout": section.checkTimeout = try container.decode(Int.self, forKey: key)
-                    default: throw UnknownKey(key: "hooks." + key.stringValue)
-                }
+                try section.read(key.stringValue, at: key, in: container)
             }
         }
     }
