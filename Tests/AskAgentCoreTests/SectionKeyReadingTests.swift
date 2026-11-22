@@ -43,11 +43,17 @@ struct SectionKeyReadingTests {
     @Test func `a file that sets one key shows a value for it and for no other key`() throws {
         try check(UISection.self, in: \.ui)
         try check(HooksSection.self, in: \.hooks)
+        try check(AgentsSection.self, in: \.agents)
+        try check(JobsSection.self, in: \.jobs)
+        try check(SkillsSection.self, in: \.skills)
     }
 
     @Test func `the catalog lists each section's settings in its table's order`() {
         order(UISection.self)
         order(HooksSection.self)
+        order(AgentsSection.self)
+        order(JobsSection.self)
+        order(SkillsSection.self)
         #expect(UISection.keys == UISection.settings.all.map(\.name))
     }
 }

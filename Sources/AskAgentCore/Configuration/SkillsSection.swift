@@ -18,27 +18,17 @@ public struct SkillsSection: Sendable, Equatable, CustomStringConvertible, Layer
 
     public var isEmpty: Bool { enabled == nil && maxAdvertised == nil && sources == nil }
 
-    /// The keys, in the order they are shown.
-    public static let keys = ["enabled", "maxListed", "sources"]
+    /// The keys, in the order they are shown, from their declarations (``SkillsSection/settings``).
+    public static let keys = settings.all.map(\.name)
 
     /// `self` with every key `section` sets replaced.
     public func layered(with section: SkillsSection) -> SkillsSection {
-        SkillsSection(
-            // @dl:accept -- each section layers its keys the same way; the key lists are the data
-            enabled: section.enabled ?? enabled,
-            maxAdvertised: section.maxAdvertised ?? maxAdvertised,
-            sources: section.sources ?? sources
-        )
+        declaredLayered(with: section)
     }
 
     /// The value of `key` (one of `keys`) as a file writes it, or nil when this section does not set it.
     public func value(forKey key: String) -> String? {
-        switch key {
-            case "enabled": enabled.map { $0 ? "true" : "false" }
-            case "maxListed": maxAdvertised.map(String.init)
-            case "sources": sources.map { $0.joined(separator: ", ") }
-            default: nil
-        }
+        declaredValue(forKey: key)
     }
 
     public var description: String {
