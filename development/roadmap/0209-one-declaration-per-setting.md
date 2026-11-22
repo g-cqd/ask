@@ -1,5 +1,5 @@
 ---
-status: not-started
+status: in-progress
 blocked-by: []
 date: 2026-11-08
 ---
@@ -36,3 +36,10 @@ sentence, if that is not generated. A twin that drifts fails a test. The `@dl:ac
 ## Not in scope
 
 Changing any key's name or meaning; a new configuration format.
+
+## The decision recorded, and the order (2026-11-22)
+
+ADR-0166: the shared value types live once in AskCore, which AskTUI may now import. The owner set the order on 2026-11-22: this entry
+first, then MDM (0130), whose locks need each key's merge rule in its descriptor, so step 2's descriptor carries it. Next: step 1's red
+tests, then the enumerations moved into AskCore one at a time (each its own commit, behaviour unchanged, the twin test green).
+

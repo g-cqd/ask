@@ -21,3 +21,12 @@ eight parts (one managed layer from a profile and a root-owned file, every setti
 per key, managed-only keys, fail closed, shown in `ask config`, MDM console manifests generated from the catalog, watched); and the
 questions M1 to M8 for the owner. Nothing is built until they are answered.
 
+## The owner's answers (2026-11-22)
+
+- **Shape:** requirements and defaults, for every key, plus managed-only keys (Codex's split, Claude Code's coverage).
+- **Sources:** the macOS profile's domain **`studio.aemi.ask`**, a root-owned file, and an HTTPS endpoint (later than the first two).
+- **A managed document that does not parse:** ask refuses to start and names it.
+- **For MDM consoles:** a Jamf JSON schema, a ProfileManifests manifest and a `.mobileconfig` generator, all from the catalog.
+- **Order:** roadmap 0209 (one declaration per setting, with each key's merge rule) first, then this entry.
+- Still open: M1 (the CFPreferences read measured inside ask), M3's user-level file (not chosen), M6 (other tools not read).
+
