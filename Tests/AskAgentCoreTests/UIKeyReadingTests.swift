@@ -29,4 +29,11 @@ struct UIKeyReadingTests {
             #expect(others.isEmpty, "setting \(key) shows a value for \(others)")
         }
     }
+
+    /// `ask config` lists the keys in the order the example file and the `/config` editor show them.
+    @Test func `ask config lists the ui keys in the catalog's order`() {
+        let catalog = SettingCatalog.all.filter { $0.path.first == "ui" }
+            .map { $0.path.dropFirst().joined(separator: ".") }
+        #expect(UISection.keys == catalog)
+    }
 }
