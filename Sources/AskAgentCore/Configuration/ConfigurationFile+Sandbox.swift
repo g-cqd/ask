@@ -49,20 +49,7 @@ extension ConfigurationFile {
         var section = SandboxSection()
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
-                switch key.stringValue {
-                    case "readable": section.allowRead = try container.decode([String].self, forKey: key)
-                    case "writable": section.allowWrite = try container.decode([String].self, forKey: key)
-                    case "hide": section.denyRead = try container.decode([String].self, forKey: key)
-                    case "write": section.write = [try ConfigurationFile.scope(container, key, name: "sandbox.write")]
-                    case "read": section.read = [try ConfigurationFile.scope(container, key, name: "sandbox.read")]
-                    case "network":
-                        let name = try container.decode(String.self, forKey: key)
-                        guard let level = SandboxPolicy.Network(named: name) else {
-                            throw BadValue(key: "sandbox.network", value: name)
-                        }
-                        section.network = level
-                    default: throw UnknownKey(key: "sandbox." + key.stringValue)
-                }
+                try section.read(key.stringValue, at: key, in: container)
             }
         }
     }

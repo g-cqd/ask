@@ -1,8 +1,8 @@
 /// The `sandbox` section of a configuration file: what the user adds to or lifts from ask's default protections
 /// (ADR-0035), and the strict modes (roadmap 0042). Paths are absolute, or start with `~/` for the home directory.
 public struct SandboxSection: Sendable, Equatable, CustomStringConvertible, LayeredSection {
-    /// The keys a file may set under `sandbox`.
-    public static let keys = ["readable", "writable", "hide", "write", "read", "network"]
+    /// The keys a file may set under `sandbox`, from their declarations (``SandboxSection/settings``).
+    public static let keys = settings.all.map(\.name)
 
     /// Secret stores the user allows reading despite the default: `~/.aws` for the aws CLI, say. ask's own
     /// directories are never lifted by this, and only the user's own file may set it: a project that could widen
@@ -57,28 +57,10 @@ public struct SandboxSection: Sendable, Equatable, CustomStringConvertible, Laye
         .compactMap { $0 }.joined(separator: ", ")
     }
 
-    /// `self` with a higher file layer's section applied: what may be read is replaced by the file that names it
-    /// (only the user's can); everything else only narrows: denials accumulate, write scopes intersect, and the
-    /// network takes the lower level.
+    /// `self` with a higher file layer's section applied, each key by its own rule (``SandboxSection/settings``): what may be read
+    /// or written again is replaced by the file that names it, and everything else only narrows.
     func layered(with section: SandboxSection) -> SandboxSection {
-        var next = SandboxSection(
-            allowRead: section.allowRead.isEmpty ? allowRead : section.allowRead,
-            denyRead: denyRead + section.denyRead.filter { !denyRead.contains($0) },
-            // A scope already present narrows nothing more; keeping it once stops a resumed record from growing.
-            write: write + section.write.filter { !write.contains($0) },
-            read: read + section.read.filter { !read.contains($0) },
-            network: Self.lower(network, section.network)
-        )
-        next.allowWrite = section.allowWrite.isEmpty ? allowWrite : section.allowWrite
-        return next
-    }
-
-    /// The lower of two levels, either of which may be unset.
-    private static func lower(_ one: SandboxPolicy.Network?, _ other: SandboxPolicy.Network?) -> SandboxPolicy.Network?
-    {
-        guard let one else { return other }
-        guard let other else { return one }
-        return Swift.min(one, other)
+        declaredLayered(with: section)
     }
 
     /// Where writing is allowed: the intersection of every layer's scope, anywhere when none set one.

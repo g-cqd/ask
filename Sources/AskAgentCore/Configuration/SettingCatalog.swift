@@ -122,34 +122,7 @@ enum SettingCatalog {
         )
     ]
 
-    static let sandbox: [Setting] = [
-        row("sandbox.write", .structured, #""workspace""#, "workspace", "Where tools and commands may write."),
-        row("sandbox.read", .structured, #""anywhere""#, "anywhere", "Where they may read."),
-        row(
-            "sandbox.network",
-            .choice(["none", "localhost", "provider", "any"]),
-            #""any""#,
-            "any",
-            "How far commands reach."
-        ),
-        row("sandbox.hide", .structured, #"["~/notes"]"#, "none", "More paths to hide."),
-        row(
-            "sandbox.readable",
-            .structured,
-            #"["~/.aws"]"#,
-            "none",
-            user: true,
-            "Protected paths to make readable again."
-        ),
-        row(
-            "sandbox.writable",
-            .structured,
-            #"["~/.zshrc"]"#,
-            "none",
-            user: true,
-            "Protected paths to make writable again."
-        )
-    ]
+    static let sandbox: [Setting] = SandboxSection.settings.all.map(\.row)
 
     static let approvals: [Setting] = [
         row(
