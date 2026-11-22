@@ -1,3 +1,4 @@
+internal import AskCore
 internal import Foundation
 internal import TerminalKitText
 

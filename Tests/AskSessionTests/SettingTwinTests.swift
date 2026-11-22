@@ -17,11 +17,7 @@ struct SettingTwinTests {
 
     @Test func `every choice a ui setting offers names a case on the screen`() {
         let found: [String: [String]] = [
-            "spinner": orphans(SpinnerPreference.self, SpinnerStyle.self),
-            "showTimeout": orphans(TimeoutPreference.self, TimeoutDisplay.self),
-            "notify": orphans(NotifyPreference.self, NotifyStyle.self),
-            "statusPath": orphans(StatusPathPreference.self, StatusPathForm.self),
-            "statusPathSide": orphans(StatusPathSidePreference.self, StatusPathSide.self)
+            "spinner": orphans(SpinnerPreference.self, SpinnerStyle.self)
         ]
         let orphaned = found.filter { !$0.value.isEmpty }
         #expect(orphaned.isEmpty, "choices the screen cannot name: \(orphaned)")

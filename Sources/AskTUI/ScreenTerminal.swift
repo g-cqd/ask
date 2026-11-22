@@ -1,3 +1,4 @@
+internal import AskCore
 internal import TerminalKitIO
 internal import TerminalKitInput
 internal import TerminalKitRender

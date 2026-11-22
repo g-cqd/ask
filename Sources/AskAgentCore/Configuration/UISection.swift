@@ -70,7 +70,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     /// `ui.onlyUsefulModels`: whether model lists leave out the models of no use to ask (`"on"`, default; roadmap 0089).
     public var onlyUsefulModels: Bool?
     /// `ui.timeout`: when a command's timeout is written: `"auto"` (default), `"always"` or `"never"` (roadmap 0126).
-    public var timeout: TimeoutPreference?
+    public var timeout: TimeoutDisplay?
     /// `ui.timeoutLabel`: the word in front of a command's timeout, 1 to 8 characters (`"timeout"` by default).
     public var timeoutLabel: String?
     /// `ui.sessionColor`: a colour of the session's own on the status line (roadmap 0164); off by default.
@@ -84,10 +84,10 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     public var paths: PathsPreference?
     public var pathAncestors: Int?
     /// `ui.notify` (note n62): how ask tells you it is done or waiting while you look elsewhere; nil for `off`.
-    public var notify: NotifyPreference?
+    public var notify: NotifyStyle?
     /// `ui.statusPath` and `ui.statusPathSide` (notes n6 and n63): the folder on the status line; nil for `folder` and `leading`.
-    public var statusPath: StatusPathPreference?
-    public var statusPathSide: StatusPathSidePreference?
+    public var statusPath: StatusPathForm?
+    public var statusPathSide: StatusPathSide?
     /// `ui.historyLimit` (note n29): the most blocks the screen keeps, ``noHistoryLimit`` for all of them; nil for the default, all.
     public var historyLimit: Int?
     /// `ui.historyLimit` `null`: every block.
@@ -127,7 +127,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         interruptSendsQueued: QueuedAfterInterrupt? = nil,
         onlyUsefulModels: Bool? = nil,
         appearance: Appearance? = nil,
-        timeout: TimeoutPreference? = nil,
+        timeout: TimeoutDisplay? = nil,
         timeoutLabel: String? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
         sessionColor: SessionColorPreference? = nil

@@ -1,3 +1,4 @@
+import AskCore
 import Testing
 
 @testable import AskAgentCore
@@ -20,7 +21,7 @@ struct NotifyConfigurationTests {
         upper.notify = .off
         #expect(lower.layered(with: upper).notify == .off && lower.layered(with: UISection()).notify == .notification)
         #expect(UISection.keys.contains("notify") && !lower.isEmpty)
-        #expect(NotifyPreference.allCases.map(\.rawValue) == ["off", "bell", "notification"])
+        #expect(NotifyStyle.allCases.map(\.rawValue) == ["off", "bell", "notification"])
     }
 
     @Test func `what is not one of the three is refused`() {
