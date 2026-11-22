@@ -46,3 +46,13 @@ schemas generated from the catalog; roadmap 0209 first. 0209 now declares every 
 
 Recorded in diary 2026-11-22-04: the order against each rule, the trust check against a file another user may write, and failing
 closed.
+
+## Amendment (2026-11-22): the profile, as built
+
+A custom settings payload for `studio.aemi.ask` holds `requirements` and `defaults` dictionaries, each with `config.json`'s keys; no
+other key is accepted except the `Payload…` and `_…` keys macOS writes itself (seen in this Mac's managed preferences). ask reads
+`/Library/Managed Preferences/studio.aemi.ask.plist` and `/Library/Managed Preferences/<user>/studio.aemi.ask.plist` itself, only when
+they exist, under the same trust check as the files, and applies them after the files: CFPreferences would also have found them, but
+its first call costs 3.8 ms, and reading the files keeps the absent case at about 15 µs (diary 2026-11-22-04). Question M1 of the
+research note is settled this way; if macOS stops keeping forced preferences in those files, CFPreferences is the fallback.
+

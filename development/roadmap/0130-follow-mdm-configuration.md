@@ -45,3 +45,8 @@ Required keys hold while ask runs (`/model`, `/thinking`, `/config`, a resumed s
 URL, not by name, which a person chooses), hooks and skills sources only from the organisation, a minimum ask version, session
 retention. Next: phase 3, the profile's domain `studio.aemi.ask`.
 
+## Phase 3 built (2026-11-22)
+
+The profile's domain `studio.aemi.ask`, machine then person, after the files (ADR-0168's amendment). Next: phase 4, console schemas
+(Jamf JSON schema, ProfileManifests) and a `.mobileconfig` generator from the catalog, `SettingCatalog.managedOnly` included.
+

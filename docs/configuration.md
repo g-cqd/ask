@@ -127,6 +127,12 @@ stops ask with a message naming it, rather than being skipped. While ask runs, w
 refuse to change a required model, provider or thinking level, a resumed session's model gives way to the required one, and `/config`
 shows a required row as not editable and does not save it.
 
+An MDM can do the same with a configuration profile: a custom settings payload for the preference domain `studio.aemi.ask`
+holding a `requirements` dictionary, a `defaults` dictionary, or both, each written with the keys of `config.json`. ask reads the
+machine's profile, then the person's, after the files above; `ask config` names them as `…/studio.aemi.ask.plist: requirements`. A
+key in the payload other than those two, or the `Payload…` keys macOS adds itself, stops ask, so that a misspelt `requirments` does not
+leave the machine unmanaged; so does a date or data value, which `config.json` has no way to write.
+
 `requirements.json` may also hold a `policy` section, which no other file may set:
 
 | Key | What it does | Default |
@@ -136,7 +142,8 @@ shows a required row as not editable and does not save it.
 | `providers` | The connections ask may use, by the name `/model` takes, such as `["work"]`; `*` matches anything. | any |
 | `models` | The models ask may use, by id, such as `["claude-*"]`; `*` matches anything. | any |
 
-A run, or a `/model` choice, that the policy does not allow stops with a message naming it and the file. A later drop-in replaces a
+A profile's `requirements` may hold it too. A run, or a `/model` choice, that the policy does not allow stops with a message naming it
+and the file. A later drop-in replaces a
 policy key an earlier document set, as for every other key.
 
 ## Older names
