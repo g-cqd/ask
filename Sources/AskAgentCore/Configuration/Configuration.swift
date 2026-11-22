@@ -18,6 +18,9 @@ public struct Configuration: Sendable, Equatable {
         case session
         /// A connection's model alias, named `connection/alias`.
         case alias(String)
+        /// A document the organisation that manages this machine put there (ADR-0168): a requirement, which no other layer changes,
+        /// or a default, which a person may.
+        case managed(String, required: Bool)
 
         public var description: String {
             switch self {
@@ -28,6 +31,8 @@ public struct Configuration: Sendable, Equatable {
                 case .command(let name): "\(name) (this run)"
                 case .session: "this session's record"
                 case .alias(let name): "alias \(name)"
+                case .managed(let path, let required):
+                    "\(path) (\(required ? "required by your organisation" : "your organisation's default"))"
             }
         }
     }

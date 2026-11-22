@@ -10,11 +10,11 @@ extension Configuration {
     /// - Returns: the configuration to run with.
     public func applying(aliasThinking level: ThinkingLevel, alias: String) -> Configuration {
         switch thinking.source {
-            case .defaults, .file:
+            case .defaults, .file, .managed(_, required: false):
                 var next = self
                 next.thinking = Setting(value: level, source: .alias(alias))
                 return next
-            case .environment, .flag, .command, .session, .alias: return self
+            case .environment, .flag, .command, .session, .alias, .managed(_, required: true): return self
         }
     }
 }

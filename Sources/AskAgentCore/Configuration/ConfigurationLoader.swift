@@ -13,6 +13,8 @@ public struct ConfigurationLoader: Sendable {
     /// Where trust is kept: `~/.config/ask/trusted.json`.
     public let trustPath: String
     public let environment: [String: String]
+    /// What the organisation that manages this machine requires and suggests (ADR-0168).
+    public let managed: ManagedFiles
 
     /// What a successful load found.
     public struct Result: Sendable, Equatable {
@@ -24,8 +26,15 @@ public struct ConfigurationLoader: Sendable {
         public var notices: [String]
     }
 
-    /// A loader for `project`, an absolute path, with ask's configuration in `configDirectory`.
-    public init(project: String, configDirectory: String, environment: [String: String]) {
+    /// A loader for `project`, an absolute path, with ask's configuration in `configDirectory`, and the organisation's documents in
+    /// `managed`'s folder.
+    public init(
+        project: String,
+        configDirectory: String,
+        environment: [String: String],
+        managed: ManagedFiles = ManagedFiles()
+    ) {
+        self.managed = managed
         userPath = configDirectory + "/config.json"
         trustPath = configDirectory + "/trusted.json"
         projectPath = project + "/.ask/config.json"
@@ -57,6 +66,13 @@ public struct ConfigurationLoader: Sendable {
         var configuration = Configuration.defaults
         var applied: [String] = []
         var notices: [String] = []
+        // Both are read first: a document that cannot be trusted or read stops the load before anything applies.
+        let requirements = try managed.load(.requirements)
+        for (path, file) in try managed.load(.defaults) {
+            configuration = configuration.applying(file, from: .managed(path, required: false))
+            applied.append(path)
+            notices += file.notices
+        }
         if let user = try ConfigurationFile.load(userPath) {
             configuration = configuration.applying(user, from: .file(userPath))
             applied.append(userPath)
@@ -94,6 +110,12 @@ public struct ConfigurationLoader: Sendable {
             read: read,
             thinking: thinking
         )
+        // Last, so that no file, variable or flag changes them; each key combines by its rule (ADR-0168).
+        for (path, file) in requirements {
+            configuration = configuration.applying(file, from: .managed(path, required: true))
+            applied.append(path)
+            notices += file.notices
+        }
         return Result(configuration: configuration, applied: applied, notices: notices)
     }
 }
