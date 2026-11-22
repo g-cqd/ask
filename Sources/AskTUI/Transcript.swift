@@ -1,3 +1,4 @@
+public import AskCore
 internal import TerminalKitText
 
 /// The conversation as the screen shows it. Independent of the agent: the composition root translates agent

@@ -47,11 +47,11 @@ extension RunSettings {
         options.dim = ui.dim ?? defaults.dim
         options.sessionTint = ui.sessionTint ?? defaults.sessionTint
         options.appearance = appearance
-        options.timeoutDisplay = Self.word(ui.timeout, or: defaults.timeoutDisplay)
+        options.timeoutDisplay = ui.timeout ?? defaults.timeoutDisplay
         options.timeoutLabel = ui.timeoutLabel ?? defaults.timeoutLabel
-        options.notify = Self.word(ui.notify, or: defaults.notify)
-        options.statusPath = Self.word(ui.statusPath, or: defaults.statusPath)
-        options.statusPathSide = Self.word(ui.statusPathSide, or: defaults.statusPathSide)
+        options.notify = ui.notify ?? defaults.notify
+        options.statusPath = ui.statusPath ?? defaults.statusPath
+        options.statusPathSide = ui.statusPathSide ?? defaults.statusPathSide
         options.historyLimit =
             ui.historyLimit.map { $0 == UISection.noHistoryLimit ? nil : $0 } ?? defaults.historyLimit
         options.outputFoldLines = ui.outputFoldLines ?? defaults.outputFoldLines

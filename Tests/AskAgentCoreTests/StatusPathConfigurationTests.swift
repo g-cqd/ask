@@ -1,3 +1,4 @@
+import AskCore
 import Testing
 
 @testable import AskAgentCore
@@ -19,8 +20,8 @@ struct StatusPathConfigurationTests {
         upper.statusPath = .off
         #expect(lower.layered(with: upper).statusPath == .off && lower.layered(with: UISection()).statusPath == .full)
         #expect(UISection.keys.contains("statusPath") && UISection.keys.contains("statusPathSide"))
-        #expect(StatusPathPreference.allCases.map(\.rawValue) == ["folder", "home", "full", "off"])
-        #expect(StatusPathSidePreference.allCases.map(\.rawValue) == ["leading", "trailing"])
+        #expect(StatusPathForm.allCases.map(\.rawValue) == ["folder", "home", "full", "off"])
+        #expect(StatusPathSide.allCases.map(\.rawValue) == ["leading", "trailing"])
     }
 
     @Test func `what is not one of them is refused`() {

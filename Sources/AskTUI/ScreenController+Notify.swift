@@ -1,3 +1,5 @@
+internal import AskCore
+
 /// `ui.notify` (note n62; the owner's answers of 2026-11-11): while the terminal is not focused, or has not said, a turn's end and
 /// a question for the person are told with a bell or a notification (``TerminalNotification``).
 extension ScreenController {

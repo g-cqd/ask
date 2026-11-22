@@ -71,15 +71,15 @@ extension RunSettings {
             interruptSendsQueued: QueuedAfterInterrupt(rawValue: options.interruptSendsQueued.rawValue),
             onlyUsefulModels: configuration.ui.value.onlyUsefulModels ?? true,
             appearance: Appearance(rawValue: options.appearance.rawValue),
-            timeout: TimeoutPreference(rawValue: options.timeoutDisplay.rawValue),
+            timeout: TimeoutDisplay(rawValue: options.timeoutDisplay.rawValue),
             timeoutLabel: options.timeoutLabel,
             sessionColor: configuration.ui.value.sessionColor ?? .off
         )
         ui.outputFoldLines = options.outputFoldLines
         ui.outputFoldBytes = options.outputFoldBytes
-        ui.notify = NotifyPreference(rawValue: options.notify.rawValue)
-        ui.statusPath = StatusPathPreference(rawValue: options.statusPath.rawValue)
-        ui.statusPathSide = StatusPathSidePreference(rawValue: options.statusPathSide.rawValue)
+        ui.notify = NotifyStyle(rawValue: options.notify.rawValue)
+        ui.statusPath = StatusPathForm(rawValue: options.statusPath.rawValue)
+        ui.statusPathSide = StatusPathSide(rawValue: options.statusPathSide.rawValue)
         ui.historyLimit = options.historyLimit ?? UISection.noHistoryLimit
         return ui
     }
