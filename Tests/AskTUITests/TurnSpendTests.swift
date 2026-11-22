@@ -28,6 +28,11 @@ struct TurnSpendTests {
         )
     }
 
+    @Test func `a done task's line says the same, with hours past an hour`() {
+        let long = TurnSpend(requests: 1, toolCalls: 2, tokens: nil, seconds: 3_725, toolSeconds: 3)
+        #expect(long.summary(localized: false) == "1 request, 2 tools · 1:02:05, tools 0:03")
+    }
+
     @Test func `durations in the locale's words when the screen says them so`() {
         #expect(spend.forms(localized: true).last == "turn " + DurationText.localized(72))
     }

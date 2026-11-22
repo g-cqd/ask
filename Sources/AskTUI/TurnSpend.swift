@@ -17,19 +17,24 @@ public struct TurnSpend: Sendable, Equatable {
         self.toolSeconds = toolSeconds
     }
 
-    /// The segment's forms, longest first: `last turn 4 requests, 6 tools · ↑45k ↓3.1k · 1:12, tools 0:30`, then
-    /// `turn ↑45k ↓3.1k · 1:12`, then `turn 1:12`.
-    func forms(localized: Bool) -> [String] {
+    /// The whole of it, as a done task's line says it too: `4 requests, 6 tools · ↑45k ↓3.1k · 1:12, tools 0:30`, a figure not known
+    /// left out.
+    public func summary(localized: Bool) -> String {
         let say = { (seconds: Int64) in
             localized ? DurationText.localized(seconds) : DurationText.clock(seconds, minutes: true)
         }
-        let time = seconds.map(say)
         let counts =
             "\(requests) request\(requests == 1 ? "" : "s")"
             + (toolCalls == 0 ? "" : ", \(toolCalls) tool\(toolCalls == 1 ? "" : "s")")
         let tools = toolSeconds.flatMap { $0 > 0 && toolCalls > 0 ? ", tools " + say($0) : nil } ?? ""
-        let long = ["last turn " + counts, tokens, time.map { $0 + tools }].compactMap(\.self).joined(separator: " · ")
+        return [counts, tokens, seconds.map { say($0) + tools }].compactMap(\.self).joined(separator: " · ")
+    }
+
+    /// The segment's forms, longest first: `last turn 4 requests, 6 tools · ↑45k ↓3.1k · 1:12, tools 0:30`, then
+    /// `turn ↑45k ↓3.1k · 1:12`, then `turn 1:12`.
+    func forms(localized: Bool) -> [String] {
+        let time = seconds.map { localized ? DurationText.localized($0) : DurationText.clock($0, minutes: true) }
         let middle = (["turn"] + [tokens, time].compactMap(\.self)).joined(separator: " ")
-        return [long, middle] + (time.map { ["turn " + $0] } ?? [])
+        return ["last turn " + summary(localized: localized), middle] + (time.map { ["turn " + $0] } ?? [])
     }
 }

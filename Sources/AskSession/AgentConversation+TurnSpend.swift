@@ -10,17 +10,6 @@ extension AgentConversation {
     ) {
         let spend = WorkSpend.since(start, in: recorder.tree)
         guard !spend.isEmpty else { return }
-        let seconds = { (milliseconds: Int) in Int64(milliseconds / 1_000) }
-        update(
-            .turnSpent(
-                TurnSpend(
-                    requests: spend.requests,
-                    toolCalls: spend.toolCalls,
-                    tokens: spend.compactTokens,
-                    seconds: spend.wallMilliseconds.map(seconds),
-                    toolSeconds: spend.toolMilliseconds.map(seconds)
-                )
-            )
-        )
+        update(.turnSpent(TurnSpend(spend)))
     }
 }
