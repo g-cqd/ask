@@ -20,7 +20,7 @@ public struct ConfigurationFile: Sendable, Equatable {
     public var environment: EnvironmentSection?
     /// What reading it noticed: old setting names read as new ones (roadmap 0154).
     public var notices: [String] = []
-    public var keepAwake: KeepAwakeMode?  // roadmap 0090; not in the initializer, set after it
+    public var keepAwake: KeepAwakeMode?  // roadmap 0090
     public var keepDisplayAwake: Bool?  // roadmap 0154
     public var sessionEncryption: SessionEncryptionMode?  // roadmap 0182, ADR-0138
     public var sessionCompression: Bool?  // roadmap 0182
@@ -46,36 +46,6 @@ public struct ConfigurationFile: Sendable, Equatable {
         "codemode", "hooks", "threads", "agents", "sandbox", "ui", "skills", "presets", "mcp", "environment", "openers",
         "jobs"
     ]
-
-    /// A file with these values.
-    public init(
-        model: String? = nil,
-        provider: String? = nil,
-        maxTurns: Int? = nil,
-        // @dl:accept -- an initializer that takes every key, like each section's own
-        compactAt: CompactionThreshold? = nil,
-        // @dl:accept -- an initializer that takes every key; adding a section adds a parameter
-        sandbox: SandboxSection? = nil,
-        ui: UISection? = nil,
-        thinking: ThinkingLevel? = nil,
-        // @dl:accept -- configuration's optional section parameters are not agent-loop settings; no shared initializer contract
-        skills: SkillsSection? = nil,
-        // @dl:accept -- configuration's optional section parameters are not agent-loop settings; no shared initializer contract
-        mcp: MCPSection? = nil,
-        environment: EnvironmentSection? = nil  // @dl:accept -- an initializer that takes every key
-    ) {
-        // @dl:accept -- member assignments in configuration section initializers
-        self.model = model
-        self.provider = provider
-        self.thinking = thinking
-        self.maxTurns = maxTurns
-        self.compactAt = compactAt
-        self.sandbox = sandbox
-        self.ui = ui
-        self.skills = skills
-        self.mcp = mcp
-        self.environment = environment
-    }
 
     /// The file at `path`, or nil when there is none.
     /// - Throws: ``ConfigurationError`` for a file that exists but is not a valid configuration.
