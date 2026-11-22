@@ -161,8 +161,9 @@ extension AgentConversation {
         arguments += [
             "--reloaded-from", startup.summary, "--reload-started", String(Int(Date().timeIntervalSince1970 * 1_000))
         ]
-        // What the person allowed for the session goes with it, in a file only they can read, taken once (roadmap 0159).
-        let grantsPath = NSTemporaryDirectory() + "ask-reload-grants-" + UUID().uuidString + ".json"
+        // What the person allowed for the session goes with it, in a file only they can read, taken once (roadmap 0159), in ask's
+        // configuration, which no command or file tool may read or write (security audit 2026-11-22, HIGH-10).
+        let grantsPath = Self.reloadGrantsPath(configDirectory: askConfigDirectory())
         // try?: without the file the new build asks again for what was allowed; nothing else is lost
         if (try? sessionGrants.write(to: grantsPath)) != nil { arguments += ["--reload-grants", grantsPath] }
         // The thread whose lane is shown, shown again by the new build.
