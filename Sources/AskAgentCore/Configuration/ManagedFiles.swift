@@ -25,24 +25,27 @@ public struct ManagedFiles: Sendable, Equatable {
     public let directory: String
     /// Whom a document and its folder must belong to: root, unless a test names another.
     public let owner: UInt32
+    /// The configuration profile an MDM installed, read after the files; nil for none.
+    public let profile: ManagedProfile?
 
-    public init(directory: String = Self.systemDirectory, owner: UInt32 = 0) {
+    public init(directory: String = Self.systemDirectory, owner: UInt32 = 0, profile: ManagedProfile? = .system) {
         self.directory = directory
         self.owner = owner
+        self.profile = profile
     }
 
-    /// The documents of `kind`, parsed, in the order they apply: the main file, then the drop-ins by name. Empty when the folder or
-    /// the files are absent.
+    /// The documents of `kind`, parsed, in the order they apply: the main file, the drop-ins by name, then the profile's. Empty when
+    /// there are none.
     /// - Throws: ``ConfigurationError/untrusted(path:reason:)`` for a document someone other than its owner could have written, and the
     ///   errors of ``ConfigurationFile/parse(_:path:isProject:)`` for one that is not a valid configuration.
     public func load(_ kind: Kind) throws(ConfigurationError) -> [(path: String, file: ConfigurationFile)] {
         var found: [(path: String, file: ConfigurationFile)] = []
         for path in paths(of: kind) {
-            try check(path)
+            try Self.trust(path, owner: owner)
             guard let bytes = try ConfigurationFileReader.read(path) else { continue }
             found.append((path, try ConfigurationFile.parse(bytes, path: path)))
         }
-        return found
+        return found + (try profile?.load(kind) ?? [])
     }
 
     /// The main document's path, if it exists, then the drop-ins' in name order.
@@ -54,8 +57,8 @@ public struct ManagedFiles: Sendable, Equatable {
         return (FileManager.default.fileExists(atPath: main) ? [main] : []) + dropIns
     }
 
-    /// Refuses `path` unless it, once its links are followed, and its folder belong to ``owner`` and only the owner may write them.
-    private func check(_ path: String) throws(ConfigurationError) {
+    /// Refuses `path` unless it, once its links are followed, and its folder belong to `owner` and only the owner may write them.
+    static func trust(_ path: String, owner: UInt32) throws(ConfigurationError) {
         guard let resolved = realpath(path, nil) else { throw .unreadable(path: path, errno: errno) }
         defer { free(resolved) }
         let file = String(cString: resolved)
