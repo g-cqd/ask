@@ -1,3 +1,4 @@
+internal import Darwin
 internal import Foundation
 internal import Testing
 
@@ -39,5 +40,28 @@ struct SessionGrantsTests {
         let path = NSTemporaryDirectory() + "ask-grants-" + UUID().uuidString + ".json"
         try Data("not json".utf8).write(to: URL(fileURLWithPath: path))
         #expect(SessionGrants.take(from: path) == nil && !FileManager.default.fileExists(atPath: path))
+    }
+
+    /// Security audit 2026-11-22, HIGH-10: grants let calls run unasked, so only a file the person alone could have written is read.
+    @Test func `a file others may write, a link, or a name already taken is neither read nor written through`() throws {
+        let base = NSTemporaryDirectory() + "ask-grants-" + UUID().uuidString
+        let open = base + "-open.json"
+        try grants().write(to: open)
+        #expect(chmod(open, 0o644) == 0)
+        #expect(
+            SessionGrants.take(from: open) == nil && !FileManager.default.fileExists(atPath: open),
+            "readable by others: refused"
+        )
+        let real = base + "-real.json"
+        let link = base + "-link.json"
+        try grants().write(to: real)
+        try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: real)
+        #expect(SessionGrants.take(from: link) == nil, "a link is not followed")
+        #expect(FileManager.default.fileExists(atPath: real), "and what it pointed at is left alone")
+        #expect(throws: (any Error).self, "a name already taken is not written over") { try grants().write(to: real) }
+        try FileManager.default.createSymbolicLink(atPath: link, withDestinationPath: base + "-elsewhere.json")
+        #expect(throws: (any Error).self, "nor written through a link") { try grants().write(to: link) }
+        #expect(!FileManager.default.fileExists(atPath: base + "-elsewhere.json"))
+        for path in [real, link] { try? FileManager.default.removeItem(atPath: path) }
     }
 }
