@@ -205,7 +205,7 @@ public struct ConfigurationFile: Sendable, Equatable {
                     // @dl:accept -- the key tables are the data, and the walk over them is already shared
                     case "mcp": file.mcp = try container.decode(MCPDecoded.self, forKey: key).section
                     case "presets": file.presets = try container.decode([String].self, forKey: key)
-                    case "approvals": file.approvals = try container.decode(ApprovalsDecoded.self, forKey: key).section
+                    case "approvals": file.approvals = try declared(ApprovalsSection.self)
                     case "hooks":
                         file.hooks = try declared(HooksSection.self)
                     case "threads":
