@@ -1,3 +1,4 @@
+internal import AskCore
 internal import Foundation
 
 /// Monotonic elapsed time and a single-cell animation frame for one live block.

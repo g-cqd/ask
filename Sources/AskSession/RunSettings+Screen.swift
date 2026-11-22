@@ -8,7 +8,7 @@ extension RunSettings {
     var screenOptions: ScreenOptions {
         let ui = configuration.ui.value
         let defaults = ScreenOptions()
-        let spinnerStyle = ui.spinner.flatMap { SpinnerStyle(rawValue: $0.rawValue) } ?? defaults.spinner
+        let spinnerStyle = ui.spinner.flatMap { $0.isOnlyRead ? nil : $0 } ?? defaults.spinner
         let appearance = ui.appearance ?? defaults.appearance
         var options = ScreenOptions(
             // @dl:accept -- one argument per setting, each taking its configured value or its default: the list is the data
@@ -78,14 +78,6 @@ extension RunSettings {
     }
 
     /// `threads.questions` as the screen takes it.
-    /// The screen's option named by the same word as the setting `value`, else `fallback`: the two enumerations spell their cases
-    /// alike, one in the configuration, one on the screen.
-    static func word<Setting: RawRepresentable, Option: RawRepresentable>(_ value: Setting?, or fallback: Option)
-        -> Option
-    where Setting.RawValue == String, Option.RawValue == String {
-        value.flatMap { Option(rawValue: $0.rawValue) } ?? fallback
-    }
-
     static func screenMode(_ mode: ThreadsSection.Questions) -> ThreadQuestionsMode {
         switch mode {
             case .focus: .focus

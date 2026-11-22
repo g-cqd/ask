@@ -70,7 +70,7 @@ extension ConfigurationFile {
                 // @dl:accept -- one row per choice key, each naming its own enumeration; the rows are data
                 case "appearance": section.appearance = try word(Appearance.self)
                 // @dl:accept -- the same table of choice keys, one row each
-                case "spinner": section.spinner = try word(SpinnerPreference.self)
+                case "spinner": section.spinner = try word(SpinnerStyle.self)
                 case "stopKeys": section.interruptKeys = try word(InterruptKeys.self)
                 case "queuedOnStop": section.interruptSendsQueued = try word(QueuedAfterInterrupt.self)
                 case "showTimeout": section.timeout = try word(TimeoutDisplay.self)

@@ -63,7 +63,7 @@ extension RunSettings {
             padding: options.padding,
             markdown: options.markdown,
             localizedDurations: options.localizedDurations,
-            spinner: SpinnerPreference(rawValue: options.spinner.rawValue),
+            spinner: SpinnerStyle(rawValue: options.spinner.rawValue),
             jobAutoReturnWhenFocused: options.jobAutoReturnWhenFocused,
             abortTurnRequiresConfirmation: options.abortTurnRequiresConfirmation,
             interruptKeys: InterruptKeys(rawValue: options.interruptKeys.rawValue),

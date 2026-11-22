@@ -1,19 +1,7 @@
-internal import Foundation
+public import AskCore
 
 /// Built-in spinner frame sequences for status indicators and active progress.
-public enum SpinnerStyle: String, Sendable, CaseIterable {
-    case braille
-    case braillefull
-    case braillequarter
-    case snake
-    case line
-    case random
-
-    /// Concrete non-random styles.
-    public static let allConcrete: [SpinnerStyle] = [
-        .braille, .braillefull, .braillequarter, .snake, .line
-    ]
-
+extension SpinnerStyle {
     /// The frames for this spinner style.
     public var frames: [String] {
         switch self {
@@ -27,7 +15,8 @@ public enum SpinnerStyle: String, Sendable, CaseIterable {
                 return ["⠈", "⠐", "⠠", "⢀", "⡀", "⠄", "⠂", "⠁"]
             case .line:
                 return ["|", "/", "-", "\\"]
-            case .random:
+            // `dot` and `star` never reach the screen (the run draws its default instead), and `random` is resolved first.
+            case .random, .dot, .star:
                 return Self.line.frames
         }
     }

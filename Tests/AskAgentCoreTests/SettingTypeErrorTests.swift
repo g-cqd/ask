@@ -1,3 +1,4 @@
+import AskCore
 internal import Testing
 
 @testable import AskAgentCore
@@ -52,7 +53,7 @@ struct SettingTypeErrorTests {
             let file = try ConfigurationFile.parse(Array(#"{"ui": {"spinner": "\#(name)"}}"#.utf8), path: "c.json")
             #expect(file.ui?.spinner?.rawValue == name, "a file that names \(name) still loads")
         }
-        #expect(!SpinnerPreference.allCases.contains(.star) && !SpinnerPreference.allCases.contains(.dot))
+        #expect(!SpinnerStyle.allCases.contains(.star) && !SpinnerStyle.allCases.contains(.dot))
         #expect(
             try ConfigurationFile.parse(Array(#"{"ui": {"shimmer": false}}"#.utf8), path: "c.json").ui?.shimmer == false
         )

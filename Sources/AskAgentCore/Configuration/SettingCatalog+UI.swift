@@ -116,7 +116,7 @@ extension SettingCatalog {
             "words",
             "Elapsed times as 1 hr, 40 min or as 1:40:00."
         ),
-        row("ui.spinner", words(SpinnerPreference.self), #""line""#, "line", "The spinner."),
+        row("ui.spinner", words(SpinnerStyle.self), #""line""#, "line", "The spinner."),
         row(
             "ui.statusPath",
             words(StatusPathForm.self),

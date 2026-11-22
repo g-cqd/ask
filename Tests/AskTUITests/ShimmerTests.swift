@@ -1,3 +1,4 @@
+import AskCore
 import TerminalKitStyle
 import TerminalKitText
 internal import Testing
@@ -79,8 +80,11 @@ struct ShimmerTests {
         #expect(frames == 15)
     }
 
+    /// Their names are still read (a file naming one loads, ADR-0166 keeps one type for the setting and the screen), and no style draws
+    /// their frames.
     @Test func `the star and dot spinners are gone`() {
-        #expect(SpinnerStyle(rawValue: "star") == nil && SpinnerStyle(rawValue: "dot") == nil)
-        #expect(!SpinnerStyle.allConcrete.contains { $0.frames.contains("✶") || $0.frames.contains("•") })
+        #expect(SpinnerStyle.star.isOnlyRead && SpinnerStyle.dot.isOnlyRead)
+        let every: [SpinnerStyle] = [.braille, .braillefull, .braillequarter, .snake, .line, .dot, .star, .random]
+        #expect(!every.contains { $0.frames.contains("✶") || $0.frames.contains("•") })
     }
 }

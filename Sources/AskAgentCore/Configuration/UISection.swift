@@ -54,7 +54,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
     /// `ui.localizedDurations`: localized elapsed units (`"on"`, default) or a compact clock (`"off"`).
     public var localizedDurations: Bool?
     /// `ui.spinner`: the spinner style used for progress and status line indicators.
-    public var spinner: SpinnerPreference?
+    public var spinner: SpinnerStyle?
     /// `ui.appearance`: the tints follow the terminal's colours (`"auto"`, default) or are fixed for a `"light"` or `"dark"` page.
     public var appearance: Appearance?
     /// `ui.jobAutoReturnWhenFocused`: whether leaving a focused job lane automatically returns to main when the job ends.
@@ -117,7 +117,7 @@ public struct UISection: Sendable, Equatable, CustomStringConvertible, LayeredSe
         shimmer: Bool? = nil,
         hover: Bool? = nil,
         localizedDurations: Bool? = nil,
-        spinner: SpinnerPreference? = nil,
+        spinner: SpinnerStyle? = nil,
         // @dl:accept -- optional settings are schema data: each parameter names a key
         jobAutoReturnWhenFocused: Bool? = nil,
         abortTurnRequiresConfirmation: Bool? = nil,
