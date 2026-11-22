@@ -46,6 +46,8 @@ struct WorkSpendTests {
         )
         let partial = WorkSpend(of: [Self.entry(Self.response("m", TokenUsage(output: 7)), at: nil)])
         #expect(partial.usage == TokenUsage(output: 7), "input never reported is nil, not zero")
+        #expect(partial.compactTokens == "↓7", "and not said as ↑0")
+        #expect(WorkSpend(of: [Self.entry(Self.response("m", TokenUsage(input: 3)), at: nil)]).compactTokens == "↑3")
     }
 
     @Test func `two spends add up, each model once`() {
