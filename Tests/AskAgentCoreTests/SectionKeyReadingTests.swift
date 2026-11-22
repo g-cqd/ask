@@ -46,6 +46,7 @@ struct SectionKeyReadingTests {
         try check(AgentsSection.self, in: \.agents)
         try check(JobsSection.self, in: \.jobs)
         try check(SkillsSection.self, in: \.skills)
+        try check(ThreadsSection.self, in: \.threads)
     }
 
     @Test func `the catalog lists each section's settings in its table's order`() {
@@ -54,7 +55,7 @@ struct SectionKeyReadingTests {
         order(AgentsSection.self)
         order(JobsSection.self)
         order(SkillsSection.self)
+        order(ThreadsSection.self)
         #expect(UISection.keys == UISection.settings.all.map(\.name))
-        #expect(ThreadsSection.keys == SettingCatalog.threads.map { $0.path.dropFirst().joined(separator: ".") })
     }
 }

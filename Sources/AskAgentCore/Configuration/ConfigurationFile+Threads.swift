@@ -1,34 +1,16 @@
 extension ConfigurationFile {
-    /// The `threads` keys (roadmap 0195); unknown keys are refused.
+    /// The `threads` keys (roadmap 0195), each read by its declaration; unknown keys are refused.
     struct ThreadsDecoded: Decodable {
         var section = ThreadsSection()
 
         init(from decoder: any Decoder) throws {
             try ConfigurationFile.eachKey(of: decoder) { key, container in
-                // @dl:accept -- a key table decoded by the shared walk, as every section's is; the keys are the data
-                switch key.stringValue {
-                    case "max": section.max = try container.decode(Int.self, forKey: key)
-                    // @dl:accept -- key table rows
-                    case "depth": section.depth = try container.decode(Int.self, forKey: key)
-                    case "names": section.names = try ConfigurationFile.choice(container, key, "threads.names")
-                    case "mergedShownFor": section.mergedShownFor = try container.decode(String.self, forKey: key)
-                    case "namesModel": section.namesModel = try container.decode(String.self, forKey: key)
-                    case "model": section.model = try container.decode(String.self, forKey: key)
-                    // Retired (note n52): a thread merges only by /merge. Still read, so a file that sets it opens.
-                    // @dl:accept -- key table rows
-                    case "merge": _ = try container.decode(String.self, forKey: key)
-                    case "summaryInstructions":
-                        section.summaryInstructions = try container.decode(String.self, forKey: key)
-                    case "questions":
-                        section.questions = try ConfigurationFile.word(
-                            container,
-                            key,
-                            "threads.questions",
-                            ThreadsSection.questionWords
-                        )
-                    case "questionsAfter": section.questionsAfter = try container.decode(String.self, forKey: key)
-                    default: throw UnknownKey(key: "threads." + key.stringValue)
+                // Retired (note n52): a thread merges only by /merge. Still read, so a file that sets it opens.
+                guard key.stringValue != "merge" else {
+                    _ = try container.decode(String.self, forKey: key)
+                    return
                 }
+                try section.read(key.stringValue, at: key, in: container)
             }
         }
     }

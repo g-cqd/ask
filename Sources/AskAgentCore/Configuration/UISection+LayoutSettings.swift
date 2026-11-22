@@ -73,7 +73,7 @@ extension UISection {
             "tree",
             "section"
         ),
-        .field(
+        .word(
             SettingCatalog.row(
                 "ui.sidebarLayout",
                 .choice(UISection.sidebarLayouts),
@@ -81,12 +81,9 @@ extension UISection {
                 "adaptive",
                 "Where the open sidebar goes: beside the transcript, in the bottom band with the input, or the band where the other would leave the transcript under 100 columns."
             ),
-            \.sidebarLayout
-        ) {
-            try ConfigurationFile.word($0, $1, $2, UISection.sidebarLayouts)
-        } write: {
-            $0
-        },
+            \.sidebarLayout,
+            UISection.sidebarLayouts
+        ),
         .text(
             SettingCatalog.row("ui.inputPrefix", .text, #""> ""#, "none", "Text the input line starts with."),
             \.prompt
