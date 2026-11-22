@@ -55,9 +55,17 @@ struct FileToolsSandboxTests {
         #expect(!FileManager.default.fileExists(atPath: world.config + "/new"))
     }
 
-    @Test func `the state directory can be read but not written or edited`() async {
+    /// Security audit 2026-11-22, HIGH-08: a session is ask's record, every project's; only a command's cut output is read back.
+    @Test func `of the state directory only the commands' output can be read; nothing can be written or edited`()
+        async throws
+    {
         let session = world.state + "/sessions/s.jsonl"
-        #expect(await read(session) == ToolOutput("history"))
+        #expect((await read(session)).content.hasPrefix("Not permitted:"))
+        let output = world.state + "/output/p/1-2-3.log"
+        try FileManager.default.createDirectory(atPath: world.state + "/output/p", withIntermediateDirectories: true)
+        try Data("cut".utf8).write(to: URL(filePath: output))
+        #expect(await read(output) == ToolOutput("cut"))
+        #expect((await write(output)).content.hasPrefix("Not permitted:"))
         #expect((await write(session)).content.hasPrefix("Not permitted:"))
         #expect((await edit(session)).content.hasPrefix("Not permitted:"))
         #expect(world.text(".local/state/ask/sessions/s.jsonl") == "history")

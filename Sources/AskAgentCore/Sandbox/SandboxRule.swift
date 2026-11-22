@@ -8,6 +8,9 @@ public struct SandboxRule: Sendable, Equatable, Hashable {
         case literal
         /// This path and everything beneath it.
         case subpath
+        /// Every path that starts with this one, as text: `…/studio.aemi.sunset` names the `.dev` folder and the
+        /// `.binarycookies` file beside it too, for an app whose data takes its identifier with several endings.
+        case prefix
     }
 
     /// Canonical, as ``CanonicalPath/of(_:relativeTo:)`` makes it.
@@ -20,12 +23,23 @@ public struct SandboxRule: Sendable, Equatable, Hashable {
         self.kind = kind
     }
 
-    /// Whether `candidate`, a canonical path, is the rule's path or under it, for a subpath.
+    /// Whether `candidate`, a canonical path, is the rule's path, under it for a subpath, or starts with it for a prefix.
     public func matches(_ candidate: String) -> Bool {
         let rule = path.lowercased()
         let other = candidate.lowercased()
-        if other == rule { return true }
-        guard kind == .subpath else { return false }
-        return rule == "/" || other.hasPrefix(rule + "/")
+        switch kind {
+            case .literal: return other == rule
+            case .subpath: return other == rule || rule == "/" || other.hasPrefix(rule + "/")
+            case .prefix: return other.hasPrefix(rule)
+        }
+    }
+
+    /// What Seatbelt calls the kind.
+    var seatbeltName: String {
+        switch kind {
+            case .literal: "literal"
+            case .subpath: "subpath"
+            case .prefix: "prefix"
+        }
     }
 }

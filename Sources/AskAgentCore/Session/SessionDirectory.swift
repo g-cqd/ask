@@ -5,6 +5,9 @@ public import Foundation
 /// `O_EXCL` means two runs never write one file.
 public struct SessionDirectory: Sendable, Equatable {
     public let path: String
+    /// Where the project's commands keep their whole output, which the model's tools read back: `<state>/output/<project>`, apart
+    /// from the sessions, which they may not read (security audit 2026-11-22, HIGH-08).
+    public let outputPath: String
 
     /// The directory for the project at `project`, an absolute path.
     public init(
@@ -13,6 +16,7 @@ public struct SessionDirectory: Sendable, Equatable {
         home: String = NSHomeDirectory()
     ) {
         path = Self.stateRoot(environment: environment, home: home) + "/sessions/" + Self.projectName(project)
+        outputPath = Self.stateRoot(environment: environment, home: home) + "/output/" + Self.projectName(project)
     }
 
     /// ask's state directory: `$XDG_STATE_HOME/ask`, else `~/.local/state/ask`. Sessions live under it.

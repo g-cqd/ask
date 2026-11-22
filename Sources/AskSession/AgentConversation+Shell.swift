@@ -27,8 +27,7 @@ extension AgentConversation {
             let context = ToolContext(
                 workingDirectory: settings.workspace,
                 outputDirectory: SessionDirectory(project: settings.workspace, environment: LaunchEnvironment.values)
-                    .path
-                    + "/output",
+                    .outputPath,
                 sandbox: narrowed.map { settings.sandbox.intersecting($0) } ?? settings.sandbox,
                 commandEnvironment: settings.commandEnvironment
             )

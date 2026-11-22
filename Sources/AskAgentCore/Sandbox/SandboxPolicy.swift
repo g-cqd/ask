@@ -150,9 +150,14 @@ public struct SandboxPolicy: Sendable, Equatable {
             }
     }
 
-    /// `rule`, as a sentence fragment: `/Users/g/.aws and everything under it`, or `/Users/g/.ssh/id_rsa`.
+    /// `rule`, as a sentence fragment: `/Users/g/.aws and everything under it`, `/Users/g/.ssh/id_rsa`, or
+    /// `everything named /Users/g/Library/WebKit/studio.aemi.sunset…`.
     static func describe(_ rule: SandboxRule) -> String {
-        rule.kind == .subpath ? "\(rule.path) and everything under it" : rule.path
+        switch rule.kind {
+            case .literal: rule.path
+            case .subpath: "\(rule.path) and everything under it"
+            case .prefix: "everything named \(rule.path)…"
+        }
     }
 }
 
