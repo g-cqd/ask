@@ -66,4 +66,11 @@ struct SectionKeyReadingTests {
         order(ApprovalsSection.self)
         #expect(UISection.keys == UISection.settings.all.map(\.name))
     }
+
+    /// `ConfigurationFile.sets` answers for every key a file may hold; `openers` was missing (found while declaring the top-level keys).
+    @Test func `a file that sets a key says it does, for every key`() throws {
+        let file = try ConfigurationFile.parse(Array(SettingCatalog.example.utf8), path: "example")
+        let unset = ConfigurationFile.keys.filter { !file.sets($0) }
+        #expect(unset.isEmpty, "the example sets these, and the file says it does not: \(unset)")
+    }
 }
