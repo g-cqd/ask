@@ -103,6 +103,19 @@ struct SettingDeclaration<Section: Sendable>: Sendable {
         }
     }
 
+    /// Free text, written back as it is, or in quotes when `quoted`.
+    static func string(
+        _ row: SettingCatalog.Setting,
+        _ field: any WritableKeyPath<Section, String?> & Sendable,
+        quoted: Bool = false
+    ) -> SettingDeclaration {
+        Self.field(row, field) { container, key, _ in
+            try container.decode(String.self, forKey: key)
+        } write: {
+            quoted ? "\"\($0)\"" : $0
+        }
+    }
+
     /// Free text, written back in quotes; `check` reads it (and refuses what it must).
     static func text(
         _ row: SettingCatalog.Setting,
