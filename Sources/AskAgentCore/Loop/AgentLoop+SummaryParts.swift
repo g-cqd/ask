@@ -43,7 +43,7 @@ extension AgentLoop {
                     instruction: whole ? instruction : instruction + "\n\n" + Self.partNote,
                     events: events
                 )
-                usage = Self.sum(usage, response.usage)
+                usage = usage.adding(response.usage)
                 let text = Self.text(of: response)
                 carried = !text.allSatisfy(\.isWhitespace) ? text : Self.joined(carried, Compaction.record(of: part))
             } catch .contextOverflow {
@@ -73,16 +73,5 @@ extension AgentLoop {
 
     private static func joined(_ carried: String?, _ record: String) -> String {
         carried.map { $0 + "\n\n" + record } ?? record
-    }
-
-    /// Two usages added, a count neither reported staying unreported.
-    private static func sum(_ one: TokenUsage, _ other: TokenUsage) -> TokenUsage {
-        func add(_ one: Int?, _ other: Int?) -> Int? { one == nil && other == nil ? nil : (one ?? 0) + (other ?? 0) }
-        return TokenUsage(
-            input: add(one.input, other.input),
-            output: add(one.output, other.output),
-            cacheRead: add(one.cacheRead, other.cacheRead),
-            cacheCreation: add(one.cacheCreation, other.cacheCreation)
-        )
     }
 }
