@@ -48,6 +48,7 @@ struct SectionKeyReadingTests {
         try check(SkillsSection.self, in: \.skills)
         try check(ThreadsSection.self, in: \.threads)
         try check(EnvironmentSection.self, in: \.environment)
+        try check(SandboxSection.self, in: \.sandbox)
     }
 
     @Test func `the catalog lists each section's settings in its table's order`() {
@@ -58,6 +59,7 @@ struct SectionKeyReadingTests {
         order(SkillsSection.self)
         order(ThreadsSection.self)
         order(EnvironmentSection.self)
+        order(SandboxSection.self)
         #expect(UISection.keys == UISection.settings.all.map(\.name))
     }
 }

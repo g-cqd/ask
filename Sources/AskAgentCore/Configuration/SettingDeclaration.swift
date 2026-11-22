@@ -64,38 +64,6 @@ struct SettingDeclaration<Section: Sendable>: Sendable {
         }
     }
 
-    /// A list of words, written back separated by commas; a later layer's list replaces an earlier one's.
-    static func list(_ row: SettingCatalog.Setting, _ field: any WritableKeyPath<Section, [String]?> & Sendable)
-        -> SettingDeclaration
-    {
-        Self.field(row, field) { container, key, _ in
-            try container.decode([String].self, forKey: key)
-        } write: {
-            $0.joined(separator: ", ")
-        }
-    }
-
-    /// A protective list each layer adds to (``SettingMerge/adds``): kept sorted and without repeats, written back separated by
-    /// commas, and nothing when empty.
-    static func adds(_ row: SettingCatalog.Setting, _ field: any WritableKeyPath<Section, [String]> & Sendable)
-        -> SettingDeclaration
-    {
-        SettingDeclaration(
-            row: row,
-            merge: .adds,
-            read: { section, container, key, _ in
-                section[keyPath: field] = Set(try container.decode([String].self, forKey: key)).sorted()
-            },
-            write: { section in
-                let names = section[keyPath: field]
-                return names.isEmpty ? nil : names.joined(separator: ", ")
-            },
-            layer: { section, later in
-                section[keyPath: field] = Set(section[keyPath: field] + later[keyPath: field]).sorted()
-            }
-        )
-    }
-
     /// A whole number.
     static func number(_ row: SettingCatalog.Setting, _ field: any WritableKeyPath<Section, Int?> & Sendable)
         -> SettingDeclaration

@@ -12,7 +12,8 @@ extension EnvironmentSection: DeclaredSection {
                     "ask's and well-known credential variables",
                     "More variables kept from commands."
                 ),
-                \.withhold
+                \.withhold,
+                sorted: true
             ),
             .adds(
                 SettingCatalog.row(
@@ -23,7 +24,8 @@ extension EnvironmentSection: DeclaredSection {
                     user: true,
                     "Withheld variables commands get anyway."
                 ),
-                \.pass
+                \.pass,
+                sorted: true
             ),
             .string(
                 SettingCatalog.row(
