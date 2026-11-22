@@ -13,7 +13,9 @@ import json
 import time
 import os
 import sys
+import shutil
 import tempfile
+import uuid
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 spec = importlib.util.spec_from_file_location("probe_folding", os.path.join(HERE, "probe-folding.py"))
@@ -34,8 +36,11 @@ def click(terminal, needle):
 
 def main():
     check = folding.check
-    with tempfile.TemporaryDirectory() as root:
-        root = os.path.realpath(root)
+    # A folder name with no underscore: the reply holds the path, and a random name ending in `_` made `_l/…_` emphasis, so the
+    # path lost its underscores and named no file (1 run in 8, 2026-11-22).
+    root = os.path.realpath(tempfile.gettempdir()) + "/ao" + uuid.uuid4().hex[:8]
+    os.makedirs(root)
+    try:
         project, config, out = root + "/project", root + "/config", root + "/out"
         os.makedirs(project)
         os.makedirs(config + "/ask")
@@ -100,7 +105,9 @@ def main():
             # /config openers lists what was allowed always, and revokes it: the next click asks again. The list is a notice, whose
             # paths are shown short, so the probe's script reads as `../tool`: its name is what is looked for.
             terminal.send(b"/config openers\r")
-            terminal.until(lambda: "Opener commands allowed always" in terminal.text())
+            # Read until the listed line has come: the heading can arrive in one read and the rest of its frame in the next (seen in
+            # the scheduled sweep, 2026-11-20 to 22: a half-written row showed the picker's old caption behind it).
+            terminal.until(lambda: "Opener commands allowed always" in terminal.text() and "  for " in terminal.text())
             check("/config openers lists the command and what it is for",
                   "tool {path} {line}  for files" in terminal.text())
             terminal.send(b"/config openers revoke 1\r")
@@ -134,6 +141,8 @@ def main():
             if terminal:
                 terminal.close()
             server.httpd.shutdown()
+    finally:
+        shutil.rmtree(root, ignore_errors=True)
 
 
 if __name__ == "__main__":
