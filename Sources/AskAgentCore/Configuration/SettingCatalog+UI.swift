@@ -145,7 +145,7 @@ extension SettingCatalog {
             "timeout",
             "The word in front of a command's timeout, 1 to 8 characters."
         ),
-        row("ui.stopKeys", words(InterruptKeysPreference.self), #""both""#, "both", "Which keys stop a running turn."),
+        row("ui.stopKeys", words(InterruptKeys.self), #""both""#, "both", "Which keys stop a running turn."),
         row(
             "ui.stopTwice",
             .structured,

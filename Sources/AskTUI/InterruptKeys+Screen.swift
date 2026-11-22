@@ -1,9 +1,7 @@
-/// Which keys interrupt a running turn (`ui.interruptKeys`).
-public enum InterruptKeys: String, Sendable {
-    case esc
-    case ctrlC = "ctrl-c"
-    case both
+internal import AskCore
 
+/// Which keys interrupt a running turn (`ui.interruptKeys`).
+extension InterruptKeys {
     /// Whether Esc may interrupt.
     var allowsEscape: Bool { self != .ctrlC }
     /// Whether Ctrl+C may interrupt.

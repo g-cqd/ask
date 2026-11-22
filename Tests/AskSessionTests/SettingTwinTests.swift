@@ -18,7 +18,6 @@ struct SettingTwinTests {
     @Test func `every choice a ui setting offers names a case on the screen`() {
         let found: [String: [String]] = [
             "spinner": orphans(SpinnerPreference.self, SpinnerStyle.self),
-            "stopKeys": orphans(InterruptKeysPreference.self, InterruptKeys.self),
             "queuedOnStop": orphans(QueuedAfterInterruptPreference.self, QueuedAfterInterrupt.self),
             "showTimeout": orphans(TimeoutPreference.self, TimeoutDisplay.self),
             "notify": orphans(NotifyPreference.self, NotifyStyle.self),

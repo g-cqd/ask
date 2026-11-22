@@ -66,7 +66,7 @@ extension RunSettings {
             spinner: SpinnerPreference(rawValue: options.spinner.rawValue),
             jobAutoReturnWhenFocused: options.jobAutoReturnWhenFocused,
             abortTurnRequiresConfirmation: options.abortTurnRequiresConfirmation,
-            interruptKeys: InterruptKeysPreference(rawValue: options.interruptKeys.rawValue),
+            interruptKeys: InterruptKeys(rawValue: options.interruptKeys.rawValue),
             escapeInterruptRequiresConfirmation: options.escapeInterruptRequiresConfirmation,
             interruptSendsQueued: QueuedAfterInterruptPreference(rawValue: options.interruptSendsQueued.rawValue),
             onlyUsefulModels: configuration.ui.value.onlyUsefulModels ?? true,
