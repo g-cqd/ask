@@ -39,6 +39,14 @@ extension AgyStreamDecoder {
         let message = clean(error["message"].string ?? "")
         var kind = ProviderFailure.Kind(status: error["code"].int)
         if kind == .invalidRequest, ProviderFailure.Kind.describesContextOverflow(message) { kind = .contextOverflow }
+        // A quota that names when it lifts, hours away: not retried, and said with its reset (t117).
+        if kind == .rateLimited, let quota = AgyQuotaReset.reading(message) {
+            return ProviderFailure(
+                kind: .usageLimit,
+                message: quota.message.isEmpty ? "the usage limit was reached" : quota.message,
+                resetsInSeconds: ProviderFailure.sensibleReset(quota.seconds)
+            )
+        }
         return ProviderFailure(
             kind: kind,
             message: message.isEmpty ? "the provider reported an error" : message,
