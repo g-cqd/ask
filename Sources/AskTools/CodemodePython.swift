@@ -26,20 +26,49 @@ enum CodemodePython {
     /// The first `python3` on `path`.
     static func first(onPath path: String?) -> String? { CommandCheck.executable("python3", path: path) }
 
-    /// Asks `python` where it really is; nil when it does not answer as a Python does.
-    static func interpreter(_ python: String) async -> Interpreter? {
-        let asked = await CommandCheck.run(
-            python,
-            ["-I", "-S", "-c", whereItIs],
-            environment: [:],
-            deadline: .seconds(10)
-        )
+    /// What the question runs under, for a `python3` that is not the system's (security audit 2026-11-22, HIGH-09): it may read,
+    /// to find itself, and run what it is (a version manager's shim runs the real one), but write nothing and reach no network, so a
+    /// `python3` planted on the `PATH` learns nothing it can keep and does nothing before ask has looked at its answer.
+    static let questionProfile =
+        "(version 1)(deny default)(allow file-read*)(allow process-exec*)(allow process-fork)(allow file-map-executable)"
+        + "(allow sysctl-read)"
+
+    /// Asks `python` where it really is; nil when it does not answer as a Python does, or names a root that would let a script read
+    /// the person's files: `/`, their home, or a folder above it.
+    static func interpreter(_ python: String, home: String = NSHomeDirectory()) async -> Interpreter? {
+        let question = ["-I", "-S", "-c", whereItIs]
+        // The system's own `python3` (root's, in a folder only root writes) is asked as it is: Xcode's shim writes a cache, which
+        // the question's profile refuses. Any other is asked under that profile.
+        let asked =
+            isSystemOwned(python)
+            ? await CommandCheck.run(python, question, environment: [:], deadline: .seconds(10))
+            : await CommandCheck.run(
+                "/usr/bin/sandbox-exec",
+                ["-p", questionProfile, python] + question,
+                environment: [:],
+                deadline: .seconds(10)
+            )
         guard case .ran(let ran) = asked, ran.status == 0 else { return nil }
         let paths = ran.output.split(separator: "\n").map(String.init)
         guard paths.count == 3, paths.allSatisfy({ $0.hasPrefix("/") }) else { return nil }
         var roots: [String] = []
         for root in paths.dropFirst() where !roots.contains(root) { roots.append(root) }
+        let realHome = URL(fileURLWithPath: home).resolvingSymlinksInPath().path
+        guard roots.allSatisfy({ $0 != "/" && $0 != realHome && !realHome.hasPrefix($0 + "/") }) else { return nil }
         return Interpreter(executable: paths[0], roots: roots)
+    }
+
+    /// Whether `program`, links followed, and the folder it is in belong to root and nobody else may write them.
+    static func isSystemOwned(_ program: String) -> Bool {
+        let real = URL(fileURLWithPath: program).resolvingSymlinksInPath().path
+        return [real, (real as NSString).deletingLastPathComponent]
+            .allSatisfy { path in
+                guard let attributes = try? FileManager.default.attributesOfItem(atPath: path),
+                    let owner = attributes[.ownerAccountID] as? NSNumber,
+                    let mode = attributes[.posixPermissions] as? NSNumber
+                else { return false }
+                return owner.intValue == 0 && mode.intValue & 0o022 == 0
+            }
     }
 
     /// The profile a script's Python runs under, as `sandbox-exec`'s arguments: its text, and the paths it names as parameters
